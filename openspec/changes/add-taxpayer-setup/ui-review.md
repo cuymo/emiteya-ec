@@ -118,7 +118,7 @@ comprobaciones correctas:
 
 | Criterio | Motivo |
 | --- | --- |
-| Contraste de 3:1 para iconos significativos | El icono de advertencia (`--warning`) mide 2.5:1 sobre la franja en tema claro (5.3:1 en oscuro). Es decorativo (`aria-hidden`), siempre acompaña a un texto que lleva el significado y es el mismo tono que ya usa `StatusBadge`. Oscurecerlo exige un token nuevo en `design-foundations.md`, fuera de este cambio. |
+| Contraste de 3:1 para iconos significativos | El icono de advertencia (`--warning`) mide 2.5:1 sobre la franja en tema claro (5.3:1 en oscuro). Comprobado decorativo en sus dos usos (la franja de ambiente y `StatusBadge` en tono de advertencia): tiene `aria-hidden="true"`, no es interactivo y el texto junto a él lleva toda la información ("Ambiente de Pruebas: los comprobantes no tienen validez tributaria.", "Pruebas", "Aún no puede emitir"). `environment-notice.test.tsx` lo verifica. No se añade un token solo para cambiar su contraste. |
 | Tablas | Empresa, Ambiente e Inicio no son colecciones. Establecimientos es una lista agrupada y no `AppDataTable`, porque el MVP espera decenas de establecimientos con sus puntos anidados (D7, Q-26): búsqueda, filtros y paginación se añaden si el volumen lo pide. |
 | Editar, detalle y eliminar como registro | La configuración es un único registro vigente: se corrige en la misma página y no se elimina; el historial es P3. |
 | Atajos y vistas guardadas | Uso raro (D14); no se añaden aceleradores. |

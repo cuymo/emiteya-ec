@@ -54,7 +54,14 @@ describe("aviso de ambiente (design D6)", () => {
       });
       renderShell();
       const notice = await screen.findByText(TEST_NOTICE);
-      expect(notice.closest("[role=status]")).not.toBeNull();
+      const strip = notice.closest("[role=status]") as HTMLElement;
+      expect(strip).not.toBeNull();
+      // El icono de advertencia es decorativo: oculto a tecnologías asistivas, no interactivo, y
+      // el texto lleva toda la información (excepción de contraste en ui-review.md).
+      expect(strip.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+      expect(strip.querySelectorAll("button, a, input, [tabindex]")).toHaveLength(0);
+      const badge = screen.getByText("Pruebas").parentElement as HTMLElement;
+      expect(badge.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
       expect(screen.getByText("Pruebas")).toBeDefined();
       expect(screen.queryByRole("button", { name: /cerrar/i })).toBeNull();
     });
