@@ -3,7 +3,7 @@ import type { IncomingHttpHeaders } from "node:http";
 import type { Express, RequestHandler } from "express";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { NO_SECURITY_EVENTS, type SecurityEventSink } from "../../application/security-events.ts";
-import { AUTH_BASE_PATH, type Auth } from "./auth.ts";
+import { AUTH_BASE_PATH, isClientEndpoint, type Auth } from "./auth.ts";
 import { serverHeaders } from "./server-headers.ts";
 
 /** Registra cada respuesta 429 de Better Auth como evento de seguridad (D13). */
@@ -22,6 +22,15 @@ function reportRateLimits(securityEvents: SecurityEventSink): RequestHandler {
   };
 }
 
+/**
+ * Primera capa de la allowlist (D2): solo un método y una ruta exactos de CLIENT_ENDPOINTS llegan a
+ * Better Auth; cualquier otra petición, incluidas variantes de la ruta, sigue hacia el 404 de la
+ * aplicación. El hook de Better Auth vuelve a comprobarlo sobre el endpoint resuelto.
+ */
+const allowClientEndpoints: RequestHandler = (req, _res, next) => {
+  next(isClientEndpoint(req.method, req.path.slice(AUTH_BASE_PATH.length)) ? undefined : "route");
+};
+
 /** Monta Better Auth en /api/auth/* antes de express.json(), que no debe consumir su cuerpo. */
 export function mountAuth(
   app: Express,
@@ -30,6 +39,7 @@ export function mountAuth(
 ): void {
   app.all(
     `${AUTH_BASE_PATH}/{*any}`,
+    allowClientEndpoints,
     serverHeaders,
     reportRateLimits(securityEvents),
     toNodeHandler(auth),

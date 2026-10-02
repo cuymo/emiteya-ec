@@ -16,8 +16,22 @@ import { CLIENT_IP_HEADER, REQUEST_ID_HEADER } from "./server-headers.ts";
 export const AUTH_BASE_PATH = "/api/auth";
 const SIGN_IN_PATH = "/sign-in/email";
 const CHANGE_PASSWORD_PATH = "/change-password";
-/** Endpoints de cliente de los plugins, incluidos los que agreguen versiones futuras (D2). */
-const CLOSED_PREFIXES = ["/organization/", "/admin/"];
+
+/**
+ * Superficie HTTP de Better Auth (design D2): denegada por defecto. Solo las operaciones que usan
+ * las specs actuales. La cuenta y la sesión actuales se leen con GET /api/v1/me, que el servidor
+ * resuelve con auth.api.getSession, y la administración corre en el servidor (auth.api y
+ * auth.$context). Un endpoint que traiga una versión futura queda cerrado hasta añadirlo aquí.
+ */
+export const CLIENT_ENDPOINTS = [
+  { method: "POST", path: SIGN_IN_PATH, purpose: "Iniciar sesión" },
+  { method: "POST", path: "/sign-out", purpose: "Cerrar sesión" },
+  { method: "POST", path: CHANGE_PASSWORD_PATH, purpose: "Cambiar la contraseña propia" },
+] as const;
+
+export function isClientEndpoint(method: string, path: string): boolean {
+  return CLIENT_ENDPOINTS.some((endpoint) => endpoint.method === method && endpoint.path === path);
+}
 /** Mismo código y mensaje que una contraseña incorrecta: no revela la desactivación (D6). */
 const INVALID_CREDENTIALS = {
   code: "INVALID_EMAIL_OR_PASSWORD",
@@ -118,8 +132,9 @@ export function createAuth({
     hooks: {
       // Better Auth espera una promesa y trata una excepción como respuesta de error.
       before: createAuthMiddleware(async (ctx) => {
-        // Las llamadas de servidor (auth.api.*) no son peticiones HTTP y no se ven afectadas.
-        if (ctx.request && CLOSED_PREFIXES.some((prefix) => ctx.path.startsWith(prefix))) {
+        // Allowlist (D2): toda petición HTTP a un endpoint fuera de la lista responde 404. Las
+        // llamadas de servidor (auth.api.*) no son peticiones HTTP y no se ven afectadas.
+        if (ctx.request && !isClientEndpoint(ctx.request.method, ctx.path)) {
           throw new APIError("NOT_FOUND");
         }
         if (ctx.path === CHANGE_PASSWORD_PATH) {
@@ -130,8 +145,8 @@ export function createAuth({
               message: "Unauthorized",
             });
           }
-          // Las demás sesiones se invalidan siempre (D6), aunque el cliente envíe otro valor.
           const body = (ctx.body ?? {}) as Record<string, unknown>;
+          // Las demás sesiones se invalidan siempre (D6), aunque el cliente envíe otro valor.
           return { context: { body: { ...body, revokeOtherSessions: true } } };
         }
         if (ctx.path !== SIGN_IN_PATH) return;

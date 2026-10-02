@@ -46,7 +46,7 @@ del spike no forma parte del producto.
 
 Hallazgos sin criterio propio que el diseño incorpora:
 
-- El plugin Organization expone 36 endpoints de cliente (`set-active`, `update-member-role`, `leave`, `create`…), y el plugin admin 15 (`impersonate-user`, `set-role`…) que operan sobre los usuarios de todas las empresas. Una lista de rutas deshabilitadas dejaría abiertos los endpoints que traiga una versión futura; se bloquean por prefijo (D2).
+- El plugin Organization expone 36 endpoints de cliente (`set-active`, `update-member-role`, `leave`, `create`…), y el plugin admin 15 (`impersonate-user`, `set-role`…) que operan sobre los usuarios de todas las empresas. Una lista de rutas deshabilitadas dejaría abiertos los endpoints que traiga una versión futura; la superficie HTTP se limita con una allowlist (D2).
 - Las operaciones de admin que exigen sesión (`set-user-password`, `ban-user`, `revoke-user-sessions`) requieren el rol global `admin` de Better Auth, que vale para todas las empresas. Ningún usuario recibe ese rol; esas operaciones usan el contexto de servidor `auth.$context`.
 - El esquema generado no trae `UNIQUE (organizationId, userId)` en `member` y exige `name` y `slug` únicos en `organization`. Regenerar con el CLI sobrescribe el esquema de Prisma.
 - Prisma 7 con `prisma-client-js` en una ruta propia necesita `@prisma/client-runtime-utils` como dependencia directa bajo pnpm. Better Auth 1.7.7 admite Prisma hasta la versión 7; la etiqueta `latest` de Prisma apunta hoy a una release candidate de la 8.
@@ -92,7 +92,7 @@ ADR de desviación. Q-41 queda resuelta.
 - `emailAndPassword` con `disableSignUp: true` y las longitudes de contraseña de la configuración (D9).
 - Sesiones en base de datos con `session.cookieCache` deshabilitado, para que la revocación rija en la siguiente petición.
 - Plugins: Organization (`allowUserToCreateOrganization: false`, roles `ADMIN` y `OPERATOR`, campo adicional `status` en `member`) y admin, usado solo por `auth.api.createUser` desde el servidor.
-- Un `hooks.before` rechaza con `404` toda petición HTTP cuya ruta empiece por `/organization/` o `/admin/`, incluidas las que agreguen versiones futuras. Las llamadas de servidor (`auth.api.*`) no son peticiones HTTP y no se ven afectadas. Se prefiere a `disabledPaths` porque una lista se queda corta al actualizar.
+- Superficie HTTP denegada por defecto: solo `POST /sign-in/email`, `POST /sign-out` y `POST /change-password` llegan a Better Auth desde el cliente. Todo otro endpoint, incluidos `/get-session`, `/update-user`, `/verify-password`, `/list-sessions`, los de los plugins y los que agreguen versiones futuras, responde `404`. La cuenta y la sesión actuales se leen con `GET /api/v1/me`. La allowlist se aplica en Express (método y ruta exactos) y en un `hooks.before` sobre el endpoint resuelto; las llamadas de servidor (`auth.api.*`) no son peticiones HTTP y no se ven afectadas. Se prefiere a una lista de rutas bloqueadas porque esa lista se queda corta al actualizar. Ajustado antes del archive: la primera implementación bloqueaba solo los prefijos `/organization/` y `/admin/`.
 - Atomicidad con la auditoría: los casos de uso que combinan Better Auth y escrituras propias corren en `prisma.$transaction(tx => runWithAdapter(prismaAdapter(tx, { transaction: false })(auth.options), fn))`, de modo que Better Auth y la auditoría escriben en la misma transacción.
 - Cookies HTTP-only, Secure en producción, `SameSite=Lax`. Frontend y API comparten origen (ADR 0016), de modo que los orígenes de confianza se derivan de `BETTER_AUTH_URL` y no hace falta CORS.
 - Telemetría de Better Auth deshabilitada.
@@ -104,7 +104,7 @@ ADR de desviación. Q-41 queda resuelta.
 - Usos que no pertenecen claramente a la API pública estable y que solo pueden aparecer dentro de ese módulo: `runWithAdapter` de `@better-auth/core/context`; `auth.$context` (`internalAdapter.updatePassword`, `internalAdapter.deleteUserSessions`, `password.hash`); escrituras sobre `member` con el adapter de Better Auth (`getCurrentAdapter(...).create` y `update`).
 - Hacia el resto de la aplicación, el módulo expone un puerto de identidad con operaciones del dominio: obtener el contexto de sesión, crear identidad con membresía, cambiar rol, cambiar estado, establecer contraseña, revocar sesiones y ejecutar un caso de uso en transacción con la auditoría. Los casos de uso y el dominio dependen solo de ese puerto.
 - Una regla de ESLint (`no-restricted-imports`) prohíbe importar `better-auth` o `@better-auth/*` fuera del módulo; romperla hace fallar `pnpm verify`.
-- Tests de contrato del módulo, contra PostgreSQL real: replican los once criterios y las verificaciones adicionales de S-1 sobre el puerto y sobre la configuración (registro deshabilitado, endpoints de plugins cerrados, mensaje genérico, revocación inmediata, atomicidad con la auditoría, IP no persistida, límites de intentos).
+- Tests de contrato del módulo, contra PostgreSQL real: replican los once criterios y las verificaciones adicionales de S-1 sobre el puerto y sobre la configuración (registro deshabilitado, allowlist exacta y `404` para todo otro endpoint HTTP de la versión instalada, mensaje genérico, revocación inmediata, atomicidad con la auditoría, IP no persistida, límites de intentos).
 - Política de actualización: una actualización de Better Auth, incluido un parche, solo se acepta si los tests de contrato pasan con la nueva versión exacta y se revisaron sus notas de versión. Un test de contrato que falla bloquea la actualización; no se ajusta el test para que pase sin revisar el diseño. La política queda en `docs/architecture/authentication.md`.
 
 ### D3. Resolución del contexto de petición
@@ -318,7 +318,7 @@ recuperación.
 ## Risks / Trade-offs
 
 - [Una actualización de Better Auth cambia la semántica de hooks, `runWithAdapter` o `auth.$context`] → Versión exacta fijada, usos no públicos confinados al módulo de D2b y tests de contrato obligatorios antes de aceptar la actualización.
-- [Una versión nueva de un plugin añade endpoints de cliente] → El bloqueo por prefijo de D2 los cierra sin cambiar código; una prueba recorre las rutas de los plugins.
+- [Una versión nueva de Better Auth o de un plugin añade endpoints de cliente] → La allowlist de D2 los deja cerrados sin cambiar código; una prueba de contrato recorre todos los endpoints de la versión instalada y exige `404` fuera de la lista.
 - [Regenerar el esquema con el CLI borra restricciones propias] → Se vuelven a aplicar tras cada generación y una prueba de migración las verifica (D11).
 - [Contadores del límite en memoria] → Válidos solo con una instancia de API; escalar exige almacenamiento compartido antes del despliegue (D9).
 - [Una instalación o un comando sin versión introduce Prisma 8, que Better Auth 1.7.7 no admite] → Versiones exactas de Prisma 7.10.0, overrides en el workspace y comandos solo con `pnpm exec`.

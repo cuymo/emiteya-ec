@@ -3,7 +3,14 @@
 import { passwordPolicy, type Env } from "../../../../config/env.ts";
 import type { AuthSettings } from "./auth.ts";
 
-export { AUTH_BASE_PATH, createAuth, type Auth, type AuthSettings } from "./auth.ts";
+export {
+  AUTH_BASE_PATH,
+  CLIENT_ENDPOINTS,
+  createAuth,
+  isClientEndpoint,
+  type Auth,
+  type AuthSettings,
+} from "./auth.ts";
 export { getSessionUserId, mountAuth } from "./http.ts";
 export { createUnitOfWork } from "./unit-of-work.ts";
 

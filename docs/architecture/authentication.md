@@ -29,14 +29,23 @@ Better Auth owns:
 - Usuarios locales con usuario y contraseña (ERS RF-001); sin registro público. El administrador crea las cuentas.
 - Dos roles, `ADMIN` y `OPERATOR` (ERS RF-002), guardados en la membresía de la empresa, nunca en la petición. La matriz de permisos está en `../security/access-control.md` (Q-22).
 - La membresía vincula usuario, empresa y rol desde el primer día, aunque exista una sola empresa (ADR 0009). Validado por el spike S-1 (Q-41), se implementa con el plugin Organization de Better Auth: la empresa es una fila de `organization` y la membresía una fila de `member`, con roles `ADMIN` y `OPERATOR` y el campo adicional `status`. El plugin admin se usa solo para `auth.api.createUser` desde el servidor, y nadie recibe su rol global `admin`.
-- Ningún endpoint de cliente de los plugins Organization o admin está disponible: un hook de Better Auth rechaza por prefijo toda petición HTTP a `/organization/*` y `/admin/*`. La administración de usuarios pasa solo por la API propia, que aplica la política, el aislamiento y la auditoría.
+- La superficie HTTP de Better Auth se deniega por defecto. Solo tres operaciones llegan a Better Auth desde el cliente (`CLIENT_ENDPOINTS` del módulo de integración); cualquier otra ruta o método responde `404`, también los endpoints que traiga una versión futura:
+
+  | Endpoint | Uso |
+  | --- | --- |
+  | `POST /api/auth/sign-in/email` | Iniciar sesión. |
+  | `POST /api/auth/sign-out` | Cerrar sesión. |
+  | `POST /api/auth/change-password` | Cambiar la contraseña propia; el servidor fuerza `revokeOtherSessions` y valida la política de contraseñas. |
+
+- La cuenta y la sesión actuales se leen con `GET /api/v1/me`, que el servidor resuelve con `auth.api.getSession`; `/get-session` no está expuesto. Tampoco `/update-user` (editar el perfil está fuera de alcance), `/verify-password` (operación de servidor), `/list-sessions` (no hay gestión de sesiones), el registro, la recuperación por correo ni ningún endpoint de los plugins Organization y admin. La administración de usuarios pasa solo por la API propia, que aplica la política, el aislamiento y la auditoría.
+- La allowlist se aplica dos veces: en Express, por método y ruta exactos antes de llegar a Better Auth, y en un hook de Better Auth sobre el endpoint resuelto. Las llamadas de servidor (`auth.api.*`, `auth.$context`) no son peticiones HTTP y no se ven afectadas. Ampliarla exige una spec que necesite la operación.
 - Las operaciones que combinan Better Auth y escrituras propias corren en una transacción de Prisma con `runWithAdapter` de `@better-auth/core/context`. Detalle en el diseño de `add-user-access`.
 
 ## Integración y actualización de Better Auth
 
 - Todo el código que toca Better Auth vive en un único módulo de integración (`backend/src/modules/identity/infrastructure/better-auth/`). Solo ese módulo puede usar APIs que no pertenecen claramente a la API pública estable de Better Auth, como `runWithAdapter`, `auth.$context` o escrituras con su adapter. El resto de la aplicación usa un puerto de identidad. Una regla de lint impide importar `better-auth` o `@better-auth/*` fuera del módulo.
 - `better-auth`, `@better-auth/core` y el CLI `auth` se fijan en la versión exacta validada por el spike S-1 (`1.7.7`), sin rangos.
-- El módulo tiene tests de contrato contra PostgreSQL que replican los criterios de S-1: `backend/test/integration/better-auth-contract.test.ts` (registro, inicio y cierre de sesión, mensaje genérico, endpoints de plugins cerrados, IP no persistida, límites de intentos, sin recuperación pública), `identity-transaction.test.ts` (atomicidad con la auditoría) y `migrations.test.ts` (el esquema regenerado con el CLI conserva las restricciones propias). Se ejecutan con:
+- El módulo tiene tests de contrato contra PostgreSQL que replican los criterios de S-1: `backend/test/integration/better-auth-contract.test.ts` (registro, inicio y cierre de sesión, mensaje genérico, allowlist exacta y `404` para todo otro endpoint que exponga la versión instalada, IP no persistida, límites de intentos, sin recuperación pública), `identity-transaction.test.ts` (atomicidad con la auditoría) y `migrations.test.ts` (el esquema regenerado con el CLI conserva las restricciones propias). Se ejecutan con:
 
   ```bash
   corepack pnpm exec vitest run --project backend test/integration/better-auth-contract.test.ts test/integration/identity-transaction.test.ts test/integration/migrations.test.ts

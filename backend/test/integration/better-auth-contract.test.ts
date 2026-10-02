@@ -13,6 +13,11 @@ import {
   signIn,
   type AuthApp,
 } from "./auth-harness.ts";
+import {
+  CLIENT_ENDPOINTS,
+  getSessionUserId,
+  isClientEndpoint,
+} from "../../src/modules/identity/infrastructure/better-auth/index.ts";
 
 describe("contrato de Better Auth", () => {
   let db: MigratedSchema;
@@ -127,59 +132,122 @@ describe("contrato de Better Auth", () => {
     it("cerrar sesión invalida la sesión en el servidor aunque se reutilice la cookie", async () => {
       const c = client();
       const { cookie } = await c.signIn(emails.second, PASSWORD);
-      const active = await c.get("/api/auth/get-session", cookie);
-      expect(active.body).toMatchObject({ user: { email: emails.second } });
+      expect(await getSessionUserId(c.auth, { cookie })).toBeTruthy();
 
       const out = await c.post("/api/auth/sign-out", cookie);
       expect(out.status).toBe(200);
-      const reused = await c.get("/api/auth/get-session", cookie);
-      expect(reused.body).toBeNull();
+      expect(await getSessionUserId(c.auth, { cookie })).toBeNull();
     });
   });
 
-  describe("endpoints de los plugins cerrados", () => {
-    it("todo endpoint de cliente de Organization y admin responde 404, también con sesión de administrador", async () => {
+  describe("superficie HTTP mínima: allowlist", () => {
+    type Endpoint = { path?: string; options?: { method?: string | string[] } };
+    const endpointsOf = (auth: AuthApp["auth"]) =>
+      Object.values(auth.api as Record<string, Endpoint>)
+        .filter(
+          (endpoint): endpoint is Endpoint & { path: string } => typeof endpoint.path === "string",
+        )
+        .map(({ path, options }) => ({
+          path,
+          method: [options?.method ?? "GET"].flat()[0] ?? "GET",
+        }));
+
+    it("solo iniciar sesión, cerrar sesión y cambiar la contraseña propia están permitidos", () => {
+      expect(CLIENT_ENDPOINTS.map((e) => `${e.method} ${e.path}`)).toEqual([
+        "POST /sign-in/email",
+        "POST /sign-out",
+        "POST /change-password",
+      ]);
+    });
+
+    it("todo otro endpoint HTTP de Better Auth responde 404, también con sesión de administrador", async () => {
       const c = client();
-      const { app, auth } = c;
       const { cookie } = await c.signIn(emails.admin, PASSWORD);
-      const endpoints = Object.values(
-        auth.api as Record<string, { path?: string; options?: { method?: string | string[] } }>,
-      )
-        .filter((endpoint) => typeof endpoint.path === "string")
-        .filter(({ path }) => path!.startsWith("/organization/") || path!.startsWith("/admin/"));
-      const paths = endpoints.map((e) => e.path);
-      // Los que operan sobre usuarios de todas las empresas o sobre la membresía (S-1).
-      expect(paths).toEqual(
+      const blocked = endpointsOf(c.auth).filter((e) => !isClientEndpoint(e.method, e.path));
+      // Sesión, perfil y plugins: lo que Better Auth ofrece pero ninguna spec usa (S-1, D2).
+      expect(blocked.map((e) => e.path)).toEqual(
         expect.arrayContaining([
+          "/get-session",
+          "/update-user",
+          "/verify-password",
+          "/list-sessions",
+          "/sign-up/email",
+          "/request-password-reset",
           "/admin/set-role",
           "/admin/impersonate-user",
-          "/admin/set-user-password",
-          "/admin/ban-user",
-          "/organization/create",
-          "/organization/set-active",
           "/organization/update-member-role",
-          "/organization/remove-member",
           "/organization/leave",
         ]),
       );
-      expect(endpoints.length).toBeGreaterThanOrEqual(30);
 
-      for (const { path, options } of endpoints) {
-        const method = ([options?.method ?? "GET"].flat()[0] ?? "GET").toLowerCase();
-        const url = `/api/auth${path!.replace(/:(\w+)/g, "x")}`;
+      for (const { path, method } of blocked) {
+        const url = `/api/auth${path.replace(/:(\w+)/g, "x")}`;
         const res = await (
-          method === "get"
-            ? request(app).get(url)
-            : request(app).post(url).send({ organizationId: companyId, userId: "x", role: "ADMIN" })
+          method === "GET" ? request(c.app).get(url) : request(c.app).post(url).send({})
         )
           .set("X-Forwarded-For", c.ip)
           .set("Origin", BASE_URL)
           .set("Cookie", cookie);
-        expect(res.status, `${method.toUpperCase()} ${path}`).toBe(404);
+        expect(res.status, `${method} ${path}`).toBe(404);
       }
     });
 
-    it("las llamadas de servidor no pasan por el bloqueo: el alta del plugin admin funciona", async () => {
+    it("el hook también deniega por defecto, aunque una petición llegue a Better Auth sin pasar por Express", async () => {
+      const c = client();
+      const { cookie } = await c.signIn(emails.admin, PASSWORD);
+      const blocked = endpointsOf(c.auth).filter((e) => !isClientEndpoint(e.method, e.path));
+      for (const { path, method } of blocked) {
+        const res = await c.auth.handler(
+          new Request(`${BASE_URL}/api/auth${path.replace(/:(\w+)/g, "x")}`, {
+            method,
+            headers: { cookie, origin: BASE_URL, "content-type": "application/json" },
+            ...(method === "GET" ? {} : { body: "{}" }),
+          }),
+        );
+        expect(res.status, `${method} ${path}`).toBe(404);
+      }
+    });
+
+    it("/update-user no cambia el nombre ni la imagen, y /verify-password y /list-sessions no responden", async () => {
+      const c = client();
+      const { cookie } = await c.signIn(emails.operator, PASSWORD);
+      const update = await c
+        .post("/api/auth/update-user", cookie)
+        .send({ name: "Otro nombre", image: "x" });
+      expect(update.status).toBe(404);
+      const user = await db.database.prisma.user.findUniqueOrThrow({
+        where: { email: emails.operator },
+      });
+      expect(user).toMatchObject({ name: "Operador", image: null });
+      expect(
+        (await c.post("/api/auth/verify-password", cookie).send({ password: PASSWORD })).status,
+      ).toBe(404);
+      expect((await c.get("/api/auth/list-sessions", cookie)).status).toBe(404);
+      expect((await c.get("/api/auth/get-session", cookie)).status).toBe(404);
+    });
+
+    it("variantes de ruta o de método de los endpoints permitidos no llegan a Better Auth", async () => {
+      const c = client();
+      const { cookie } = await c.signIn(emails.operator, PASSWORD);
+      for (const [method, url] of [
+        ["get", "/api/auth/sign-in/email"],
+        ["get", "/api/auth/sign-out"],
+        ["post", "/api/auth/sign-out/"],
+        ["post", "/api/auth/SIGN-OUT"],
+        ["post", "/api/auth/sign-in%2Femail"],
+        ["post", "/api/auth//sign-out"],
+      ] as const) {
+        const agent = request(c.app);
+        const res = await agent[method](url)
+          .set("X-Forwarded-For", c.ip)
+          .set("Origin", BASE_URL)
+          .set("Cookie", cookie);
+        expect(res.status, `${method.toUpperCase()} ${url}`).toBe(404);
+      }
+      expect(await getSessionUserId(c.auth, { cookie })).toBeTruthy();
+    });
+
+    it("las llamadas de servidor no pasan por la allowlist: el alta del plugin admin funciona", async () => {
       const userId = await createMember(base.uow, companyId, {
         name: "Servidor",
         email: "servidor@contrato.ec",
