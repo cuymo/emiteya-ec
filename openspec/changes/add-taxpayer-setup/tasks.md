@@ -70,5 +70,5 @@
 
 ## 11. Verificación integral
 
-- [ ] 11.1 Prueba end-to-end: el administrador registra los datos, crea un establecimiento y un punto, Inicio muestra dos requisitos cumplidos y la firma pendiente, el operador ve el aviso de Pruebas y elige su predeterminado, el administrador pasa a Producción y el aviso desaparece para ambos, el administrador desactiva el punto y el predeterminado del operador aparece como no disponible; verificar que la prueba pasa
-- [ ] 11.2 Ejecutar `corepack pnpm verify`; verificar que formato, lint, pruebas, typecheck y build pasan
+- [x] 11.1 Prueba end-to-end: el administrador registra los datos, crea un establecimiento y un punto, Inicio muestra dos requisitos cumplidos y la firma pendiente, el operador ve el aviso de Pruebas y elige su predeterminado, el administrador pasa a Producción y el aviso desaparece para ambos, el administrador desactiva el punto y el predeterminado del operador aparece como no disponible; verificar que la prueba pasa
+- [x] 11.2 Ejecutar `corepack pnpm verify`; verificar que formato, lint, pruebas, typecheck y build pasan

@@ -102,6 +102,18 @@ punto predeterminado de Mi cuenta. Fecha: 2026-10-02.
 | Datos y lenguaje | Los puntos se nombran `001-002` dentro de su establecimiento (`001 · Dirección`); el aviso de no disponible nombra el punto. |
 | Feedback y estado | Guardado con aviso semántico; un punto que deja de estar disponible al guardar conserva la elección y muestra el motivo. |
 
+## Flujo completo (tarea 11.1)
+
+`backend/test/integration/e2e-taxpayer-setup.test.ts` recorre el flujo por HTTP contra `main.ts`
+arrancado sobre una instalación nueva. El mismo flujo se recorrió por la interfaz real, con 12
+comprobaciones correctas:
+
+1. El administrador registra los datos y crea un establecimiento con un punto.
+2. Inicio muestra dos requisitos cumplidos y la firma pendiente.
+3. El operador ve el aviso de Pruebas y elige su predeterminado.
+4. El administrador pasa a Producción y el aviso desaparece para ambos.
+5. El administrador desactiva el punto y el predeterminado del operador aparece como no disponible.
+
 ## Excepciones declaradas
 
 | Criterio | Motivo |
