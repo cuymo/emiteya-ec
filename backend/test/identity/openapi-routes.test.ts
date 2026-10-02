@@ -7,6 +7,7 @@ import type { UserAdministration } from "../../src/modules/identity/application/
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
+import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -28,6 +29,7 @@ describe("rutas documentadas", () => {
         authorizer: {} as Authorizer,
         logoMaxBytes: 1,
       }),
+      ...fiscalRouters({ prisma: {} as PrismaClient, authorizer: {} as Authorizer }),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);
@@ -35,5 +37,15 @@ describe("rutas documentadas", () => {
 
   it("ninguna ruta permite bloquear ni desbloquear la identidad tributaria", () => {
     expect(apiRoutes.filter((route) => /lock|bloque/i.test(route.path))).toEqual([]);
+  });
+
+  it("ninguna ruta reserva secuenciales (add-fiscal-numbering, design D4)", () => {
+    expect(apiRoutes.filter((route) => /reserv/i.test(route.path))).toEqual([]);
+    const writes = apiRoutes.filter(
+      (route) => route.method !== "get" && /sequence/i.test(route.path),
+    );
+    expect(writes.map((route) => `${route.method} ${route.path}`)).toEqual([
+      "put /establishments/:establishmentId/emission-points/:emissionPointId/sequences/:environment/:documentType",
+    ]);
   });
 });

@@ -41,8 +41,8 @@
 
 ## 4. Consulta, ajuste y auditoría (API)
 
-- [ ] 4.1 Implementar la consulta de D12 (todos los puntos de la empresa por seis tipos, con los contadores inexistentes en su valor inicial y el estado del punto), registrarla en `routes.ts` y regenerar el OpenAPI; verificar con pruebas HTTP: empresa sin reservas, valores tras reservar, ambientes separados, punto no disponible con su estado, contador agotado con `exhausted: true`, `nextNumber: null` y `lastReserved: 999999999`, ambiente inválido `400`, operador `403` con evento de seguridad, y sin datos de otra empresa
-- [ ] 4.2 Implementar el ajuste de D9 con la acción `fiscal_sequence.adjusted` en la misma transacción (D11), registrarlo y regenerar el OpenAPI; verificar con pruebas HTTP:
+- [x] 4.1 Implementar la consulta de D12 (todos los puntos de la empresa por seis tipos, con los contadores inexistentes en su valor inicial y el estado del punto), registrarla en `routes.ts` y regenerar el OpenAPI; verificar con pruebas HTTP: empresa sin reservas, valores tras reservar, ambientes separados, punto no disponible con su estado, contador agotado con `exhausted: true`, `nextNumber: null` y `lastReserved: 999999999`, ambiente inválido `400`, operador `403` con evento de seguridad, y sin datos de otra empresa
+- [x] 4.2 Implementar el ajuste de D9 con la acción `fiscal_sequence.adjusted` en la misma transacción (D11), registrarlo y regenerar el OpenAPI; verificar con pruebas HTTP:
   - avance con evento y números intermedios sin usar;
   - valor igual o menor que el último reservado: `409 SEQUENCE_NUMBER_RESERVED`;
   - valor fuera de rango: `400`;
@@ -55,7 +55,7 @@
   - punto de otra empresa o bajo otro establecimiento: `404` con evento de seguridad;
   - primer ajuste de un contador inexistente;
   - fallo inyectado al auditar que revierte el ajuste.
-- [ ] 4.3 Comprobar que ninguna ruta reserva secuenciales; verificar que el registro de rutas y los routers no exponen la reserva
+- [x] 4.3 Comprobar que ninguna ruta reserva secuenciales; verificar que el registro de rutas y los routers no exponen la reserva
 
 ## 5. Interfaz: Secuenciales
 

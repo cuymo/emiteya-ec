@@ -31,6 +31,12 @@ import {
   taxpayerViewSchema,
   updateTaxpayerSchema,
 } from "../taxpayer.ts";
+import {
+  adjustSequenceSchema,
+  fiscalSequenceViewSchema,
+  sequenceParamsSchema,
+  sequencesQuerySchema,
+} from "../fiscal-numbering.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -336,6 +342,46 @@ export const apiRoutes: readonly RouteDefinition[] = [
       },
       401: errors[401],
       403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/fiscal-sequences",
+    summary:
+      "Consultar los secuenciales de un ambiente: siguiente y último reservado por punto y tipo de comprobante",
+    request: { query: sequencesQuerySchema },
+    responses: {
+      200: {
+        description:
+          "Contadores de cada punto de la empresa por tipo; un contador agotado tiene nextNumber nulo.",
+        schema: successEnvelope(z.array(fiscalSequenceViewSchema)),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/establishments/:establishmentId/emission-points/:emissionPointId/sequences/:environment/:documentType",
+    summary:
+      "Ajustar el siguiente secuencial de un contador; retroceder exige un motivo y nunca vuelve a un número reservado",
+    request: { params: sequenceParamsSchema, body: adjustSequenceSchema },
+    responses: {
+      200: {
+        description: "Contador con el ajuste aplicado.",
+        schema: successEnvelope(fiscalSequenceViewSchema),
+      },
+      ...configErrors,
+      404: {
+        description: "El punto de emisión no existe en la empresa.",
+        schema: errorEnvelopeSchema,
+      },
+      409: {
+        description:
+          "El contador cambió (SEQUENCE_CHANGED), el valor no supera al último reservado (SEQUENCE_NUMBER_RESERVED) o la numeración está agotada (SEQUENCE_EXHAUSTED).",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
 ];

@@ -17,6 +17,7 @@ import {
 import { requireContext } from "./modules/identity/infrastructure/http/request-context.ts";
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
+import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import { createCompanyReader } from "./modules/identity/infrastructure/prisma-companies.ts";
 import { createMembershipReader } from "./modules/identity/infrastructure/prisma-memberships.ts";
 import { createSecurityEventLog } from "./modules/identity/infrastructure/security-event-log.ts";
@@ -89,6 +90,7 @@ apiRouter.use(
     logoMaxBytes: env.LOGO_MAX_BYTES,
   }),
 );
+apiRouter.use(...fiscalRouters({ prisma: database.prisma, authorizer }));
 
 const app = createApp({
   logger,

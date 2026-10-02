@@ -1,5 +1,5 @@
 // Arnés HTTP del módulo taxpayer: la aplicación real con Better Auth, el contexto de petición de
-// design D3 y los routers de usuarios y de taxpayer montados como en main.ts.
+// design D3 y los routers de usuarios, taxpayer y fiscal montados como en main.ts.
 import { randomInt } from "node:crypto";
 import { Router } from "express";
 import { userSchemas } from "@facturador/contracts";
@@ -7,6 +7,7 @@ import { createAuthorizer } from "../../src/modules/identity/application/authori
 import { createUserAdministration } from "../../src/modules/identity/application/user-administration.ts";
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
+import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
 import { PASSWORD, buildAuthApp, signIn, type AuthApp } from "./auth-harness.ts";
 import type { MigratedSchema } from "./database.ts";
 
@@ -30,7 +31,8 @@ export function buildTaxpayerApp(db: MigratedSchema, options: { logoMaxBytes?: n
             authorizer,
             logoMaxBytes: options.logoMaxBytes ?? TEST_LOGO_MAX_BYTES,
           }),
-        );
+        )
+        .use(...fiscalRouters({ prisma: db.database.prisma, authorizer }));
     },
   });
 }
