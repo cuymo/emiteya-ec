@@ -14,18 +14,22 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Término (UI)            | Identificador en código         | Significado                                                                                                                              |
 | ----------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Empresa / Contribuyente | `company`                       | Contribuyente emisor configurado en la instalación. Es el tenant de todos los datos privados (ADR 0009).                                 |
-| RUC                     | `ruc`                           | Registro Único de Contribuyentes, 13 dígitos.                                                                                            |
+| RUC                     | `ruc`                           | Registro Único de Contribuyentes: 13 dígitos terminados en `001` (XSD). No se rechaza por un dígito verificador local (CTX §9.1).        |
 | Razón social            | `legalName`                     | Nombre legal de la empresa o de un tercero.                                                                                              |
 | Nombre comercial        | `tradeName`                     | Nombre comercial opcional.                                                                                                               |
 | Dirección matriz        | `headOfficeAddress`             | Dirección principal registrada en el SRI.                                                                                                |
 | Atributos tributarios   | `taxProfile`                    | Obligado a llevar contabilidad, contribuyente especial, agente de retención, gran contribuyente, régimen RIMPE y demás leyendas que exija la ficha vigente (CTX §5). Los declara el administrador; nunca se infieren. |
+| Agente de retención     | `withholdingAgentResolution`    | Número de la resolución que designa al agente de retención (XSD `agenteRetencion`, hasta 8 dígitos; C-10).                               |
 | RUC proveedor           | `providerRuc`                   | RUC del proveedor del sistema de facturación, exigido por el Anexo 26 cuando el contribuyente usa un sistema de un tercero. Opcional; nunca se llena con un valor ficticio (CTX §37). |
 | Establecimiento         | `establishment`                 | Local registrado en el SRI, con código de tres dígitos.                                                                                  |
-| Punto de emisión        | `emissionPoint`                 | Punto de un establecimiento desde el que se emite, con código de tres dígitos.                                                           |
+| Punto de emisión        | `emissionPoint`                 | Punto de un establecimiento desde el que se emite, con código de tres dígitos. Disponible solo si él y su establecimiento están activos.  |
 | Secuencial              | `fiscalSequence` / `sequential` | Número de nueve dígitos por establecimiento, punto y tipo de comprobante. Su unicidad incluye el ambiente (CTX §5); si el contador también se separa por ambiente se decide en Q-02. |
 | Número de comprobante   | `documentNumber`                | `EEE-PPP-SSSSSSSSS`: establecimiento, punto de emisión y secuencial.                                                                     |
 | Ambiente                | `environment`                   | `Pruebas` (`TEST`) o `Producción` (`PRODUCTION`). Solo Producción tiene validez tributaria.                                              |
-| Preparación para emitir | `emissionReadiness`             | Verificación que habilita la emisión: datos de empresa completos, establecimiento y punto activos, certificado vigente y ambiente definido. |
+| Preparación para emitir | `emissionReadiness`             | Verificación que habilita la emisión: datos de la empresa registrados, al menos un punto de emisión disponible y certificado vigente. El ambiente siempre está definido, Pruebas por defecto. |
+| Identidad tributaria bloqueada | `taxIdentityLocked`      | Estado permanente tras el cual el RUC de la empresa ya no puede cambiar; otro RUC exige otra empresa (Q-31). El cambio de emisión fija la transición que lo activa. |
+| Versión de configuración | `companyConfigVersion`         | Fotografía inmutable y completa de los datos, atributos, ambiente y logo de la empresa; los comprobantes referencian la vigente al emitir (CTX §39). |
+| Asset de configuración  | `configurationAsset`            | Contenido inmutable de la configuración, como el logo, con tipo, tamaño y SHA-256; lo referencian las versiones de configuración (ADR 0017). |
 
 ## Comprobantes
 

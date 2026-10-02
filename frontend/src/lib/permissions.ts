@@ -9,7 +9,14 @@ export type Permission =
   | "users.create"
   | "users.changeRole"
   | "users.changeStatus"
-  | "users.setPassword";
+  | "users.setPassword"
+  | "account.setDefaultEmissionPoint"
+  | "taxpayer.read"
+  | "taxpayer.configure"
+  | "environment.change"
+  | "establishments.read"
+  | "establishments.manage"
+  | "readiness.read";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -20,8 +27,21 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "users.changeRole",
     "users.changeStatus",
     "users.setPassword",
+    "account.setDefaultEmissionPoint",
+    "taxpayer.read",
+    "taxpayer.configure",
+    "environment.change",
+    "establishments.read",
+    "establishments.manage",
+    "readiness.read",
   ]),
-  OPERATOR: new Set<Permission>(["account.read", "account.changePassword"]),
+  OPERATOR: new Set<Permission>([
+    "account.read",
+    "account.changePassword",
+    "account.setDefaultEmissionPoint",
+    "establishments.read",
+    "readiness.read",
+  ]),
 };
 
 export function canSee(role: Role | undefined, permission: Permission): boolean {

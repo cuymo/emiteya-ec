@@ -10,6 +10,13 @@ export const PERMISSIONS = [
   "users.changeRole",
   "users.changeStatus",
   "users.setPassword",
+  "account.setDefaultEmissionPoint",
+  "taxpayer.read",
+  "taxpayer.configure",
+  "environment.change",
+  "establishments.read",
+  "establishments.manage",
+  "readiness.read",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -22,8 +29,23 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "users.changeRole",
     "users.changeStatus",
     "users.setPassword",
+    "account.setDefaultEmissionPoint",
+    "taxpayer.read",
+    "taxpayer.configure",
+    "environment.change",
+    "establishments.read",
+    "establishments.manage",
+    "readiness.read",
   ]),
-  OPERATOR: new Set<Permission>(["account.read", "account.changePassword"]),
+  // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
+  // punto predeterminado, pero no ve ni cambia la configuración tributaria.
+  OPERATOR: new Set<Permission>([
+    "account.read",
+    "account.changePassword",
+    "account.setDefaultEmissionPoint",
+    "establishments.read",
+    "readiness.read",
+  ]),
 };
 
 /** true solo si el rol existe y el permiso está concedido explícitamente. */

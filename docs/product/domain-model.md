@@ -31,7 +31,7 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `company` — Empresa
 
 - Purpose: contribuyente emisor. Es el tenant de todos los datos privados (ADR 0009).
-- Key attributes: RUC, razón social, nombre comercial, dirección matriz, teléfono, correo, logo (asset inmutable referenciado por la versión de configuración, ADR 0017), ambiente activo, identidad tributaria bloqueada (`taxIdentityLocked`), anticipación de la alerta de vencimiento de firma, y atributos tributarios: obligado a llevar contabilidad, número de contribuyente especial, agente de retención, gran contribuyente, categoría RIMPE, RUC proveedor (CTX §5).
+- Key attributes: RUC, razón social, nombre comercial, dirección matriz, teléfono, correo, logo (asset inmutable referenciado por la versión de configuración, ADR 0017), ambiente activo, identidad tributaria bloqueada (`taxIdentityLocked`), anticipación de la alerta de vencimiento de firma, y atributos tributarios: obligado a llevar contabilidad, número de contribuyente especial, número de resolución de agente de retención (XSD `agenteRetencion`, no un sí o no; C-10), gran contribuyente, categoría RIMPE, RUC proveedor (CTX §5).
 - Invariants:
   - Una empresa por instalación en el MVP, sin impedir multiempresa futuro (ERS §4.1).
   - Los atributos tributarios los declara el administrador; el sistema no los infiere (ERS RF-103).
@@ -45,14 +45,14 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 
 - Purpose: local registrado en el SRI.
 - Key attributes: código, dirección, activo.
-- Invariants: código de exactamente tres dígitos, único por empresa (ERS RF-110, RF-112). Con comprobantes asociados se desactiva, no se elimina.
+- Invariants: código de exactamente tres dígitos, único por empresa e inmutable tras el alta (ERS RF-110, RF-112). Editarlo es corregir su dirección. Se desactiva, no se elimina.
 - Relationships: pertenece a una empresa; tiene puntos de emisión.
 
 ### `emission_point` — Punto de emisión
 
 - Purpose: punto desde el que se emiten comprobantes.
-- Key attributes: código, activo.
-- Invariants: código de exactamente tres dígitos, único por establecimiento (ERS RF-111, RF-112). Desactivar un punto impide emitir desde él, sin afectar sus comprobantes.
+- Key attributes: código, activo. Sin nombre ni descripción: ninguna fuente los pide.
+- Invariants: código de exactamente tres dígitos, único por establecimiento e inmutable tras el alta, como su establecimiento (ERS RF-111, RF-112). Editarlo es activarlo o desactivarlo. Está disponible para emitir solo si él y su establecimiento están activos. Desactivar un punto impide emitir desde él, sin afectar sus comprobantes.
 - Relationships: pertenece a un establecimiento; tiene una secuencia por tipo de comprobante.
 
 ### `fiscal_sequence` — Secuencia fiscal
@@ -82,7 +82,7 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `user` / `membership` — Usuario y rol
 
 - Purpose: acceso a la aplicación.
-- Key attributes: cuenta de Better Auth, rol (`ADMIN` u `OPERATOR`), establecimiento y punto predeterminados, activo.
+- Key attributes: cuenta de Better Auth, rol (`ADMIN` u `OPERATOR`), punto de emisión predeterminado (del que se deriva el establecimiento predeterminado; lo elige cada usuario y solo preselecciona, Q-23), activo.
 - Invariants:
   - El rol se lee de la membresía en el servidor, nunca de la petición (ERS SEC-005).
   - Los usuarios se desactivan, no se eliminan; sus comprobantes y auditoría persisten (ERS RF-409).

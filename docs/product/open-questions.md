@@ -69,6 +69,7 @@ Para cuestiones técnicas del SRI prevalece CTX; para el alcance del producto, e
 | C-07 | Almacenamiento de artefactos | "Almacenamiento durable", sin lock-in (§5, RNF-008).     | Object storage cifrado recomendado (§31).                               | Q-39     |
 | C-08 | Identificadores de fuentes   | `SRI-03` = manual del Facturador SRI; `SRI-04` = reglamento. | `SRI-03` = paquetes XSD; `SRI-04` = resolución de proveedores.      | Q-36     |
 | C-09 | Plazo del Anexo 26           | —                                                       | 60 días hábiles (comunicación SRI) frente a 60 días calendario (ficha) (§37.2). | Q-37 |
+| C-10 | Agente de retención          | "Agente de retención cuando corresponda", sin tipo (RF-103). | `withholdingAgent?: boolean` (§5), frente al XSD oficial: `agenteRetencion` son dígitos, hasta 8, el número de la resolución que designa al agente. | — Resuelta por la regla de precedencia de `overview.md` y CTX §0 y §1: prevalece el XSD; se guarda el número de resolución (`add-taxpayer-setup`, design D3). |
 
 ## Numeración y estados
 

@@ -121,8 +121,9 @@ Dos roles por membresía, `ADMIN` y `OPERATOR` (ERS RF-002). El rol global que a
 admin de Better Auth no concede nada. Toda celda "No" responde `403` en el servidor, y un
 usuario de otra empresa responde `404`.
 
-Permisos implementados (cambio `add-user-access`, design D4). Son las filas del mapa central
-`backend/src/modules/identity/domain/access-policy.ts`, denegado por defecto;
+Permisos implementados (cambios `add-user-access`, design D4, y `add-taxpayer-setup`, design
+D10). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
+denegado por defecto;
 `backend/test/identity/access-policy-doc.test.ts` comprueba que esta tabla coincide con él:
 
 | Permiso | Operación | `ADMIN` | `OPERATOR` |
@@ -134,6 +135,13 @@ Permisos implementados (cambio `add-user-access`, design D4). Son las filas del 
 | `users.changeRole` | Cambiar el rol de otro usuario | Sí | No |
 | `users.changeStatus` | Desactivar o reactivar a otro usuario | Sí | No |
 | `users.setPassword` | Establecer la contraseña de otro usuario | Sí | No |
+| `account.setDefaultEmissionPoint` | Definir el punto de emisión predeterminado propio | Sí | Sí |
+| `taxpayer.read` | Consultar los datos tributarios, la versión vigente, el bloqueo de la identidad y el logo | Sí | No |
+| `taxpayer.configure` | Registrar o corregir los datos y atributos, y cargar, reemplazar o eliminar el logo | Sí | No |
+| `environment.change` | Cambiar el ambiente SRI | Sí | No |
+| `establishments.read` | Consultar establecimientos y puntos de emisión | Sí | Sí |
+| `establishments.manage` | Crear establecimientos y puntos, corregir la dirección de un establecimiento, y activar y desactivar ambos | Sí | No |
+| `readiness.read` | Consultar el ambiente y la preparación para emitir | Sí | Sí |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
@@ -143,12 +151,8 @@ cambio confirma las filas de sus propias operaciones al añadirlas al mapa:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |
-| Configurar empresa, atributos tributarios y logo             | Sí      | No                |
-| Cambiar el ambiente                                          | Sí      | No                |
-| Gestionar establecimientos y puntos de emisión               | Sí      | No                |
 | Ajustar secuenciales                                         | Sí      | No                |
 | Cargar o reemplazar el certificado                           | Sí      | No                |
-| Ver el estado de preparación para emitir                     | Sí      | Sí                |
 | Ver metadatos del certificado                                | Sí      | Solo su vigencia  |
 | Gestionar usuarios y roles                                   | Sí      | No                |
 | Crear borradores y emitir los seis comprobantes              | Sí      | Sí                |

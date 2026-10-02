@@ -15,6 +15,14 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "users.changeRole": { ADMIN: true, OPERATOR: false },
   "users.changeStatus": { ADMIN: true, OPERATOR: false },
   "users.setPassword": { ADMIN: true, OPERATOR: false },
+  // add-taxpayer-setup, design D10.
+  "account.setDefaultEmissionPoint": { ADMIN: true, OPERATOR: true },
+  "taxpayer.read": { ADMIN: true, OPERATOR: false },
+  "taxpayer.configure": { ADMIN: true, OPERATOR: false },
+  "environment.change": { ADMIN: true, OPERATOR: false },
+  "establishments.read": { ADMIN: true, OPERATOR: true },
+  "establishments.manage": { ADMIN: true, OPERATOR: false },
+  "readiness.read": { ADMIN: true, OPERATOR: true },
 };
 
 describe("política de autorización central", () => {
