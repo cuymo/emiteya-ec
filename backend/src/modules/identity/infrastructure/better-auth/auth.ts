@@ -1,19 +1,21 @@
 // Better Auth configurado según design D2, D6 y D9. Todo uso de Better Auth vive en este módulo (D2b).
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import type { PrismaClient } from "../../../../generated/prisma/client.ts";
 import {
   NO_SECURITY_EVENTS,
   type SecurityEventSink,
   type SignInFailureReason,
 } from "../../application/security-events.ts";
+import { can } from "../../domain/access-policy.ts";
 import { LoginThrottle } from "./login-throttle.ts";
 import { createAdminPlugin, createOrganizationPlugin } from "./plugins.ts";
 import { CLIENT_IP_HEADER, REQUEST_ID_HEADER } from "./server-headers.ts";
 
 export const AUTH_BASE_PATH = "/api/auth";
 const SIGN_IN_PATH = "/sign-in/email";
+const CHANGE_PASSWORD_PATH = "/change-password";
 /** Endpoints de cliente de los plugins, incluidos los que agreguen versiones futuras (D2). */
 const CLOSED_PREFIXES = ["/organization/", "/admin/"];
 /** Mismo código y mensaje que una contraseña incorrecta: no revela la desactivación (D6). */
@@ -63,6 +65,15 @@ export function createAuth({
     return active ? "invalid_credentials" : "inactive_membership";
   }
 
+  /** Membresía activa con permiso para la contraseña propia: es una operación protegida (D3, D4). */
+  async function passwordChangeMembership(userId: string) {
+    const membership = await prisma.member.findFirst({
+      where: { userId, status: "ACTIVE" },
+      select: { organizationId: true, role: true },
+    });
+    return membership && can(membership.role, "account.changePassword") ? membership : null;
+  }
+
   function reportFailure(email: string, ip: string | null, correlationId: string | null) {
     setImmediate(() => {
       failureReason(email)
@@ -105,13 +116,25 @@ export function createAuth({
       ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
     },
     hooks: {
-      // Hooks síncronos: Better Auth espera una promesa y trata una excepción como respuesta de error.
-      before: createAuthMiddleware((ctx) => {
+      // Better Auth espera una promesa y trata una excepción como respuesta de error.
+      before: createAuthMiddleware(async (ctx) => {
         // Las llamadas de servidor (auth.api.*) no son peticiones HTTP y no se ven afectadas.
         if (ctx.request && CLOSED_PREFIXES.some((prefix) => ctx.path.startsWith(prefix))) {
           throw new APIError("NOT_FOUND");
         }
-        if (ctx.path !== SIGN_IN_PATH) return Promise.resolve();
+        if (ctx.path === CHANGE_PASSWORD_PATH) {
+          const session = await getSessionFromCtx(ctx);
+          if (session && !(await passwordChangeMembership(session.user.id))) {
+            throw new APIError("UNAUTHORIZED", {
+              code: "UNAUTHENTICATED",
+              message: "Unauthorized",
+            });
+          }
+          // Las demás sesiones se invalidan siempre (D6), aunque el cliente envíe otro valor.
+          const body = (ctx.body ?? {}) as Record<string, unknown>;
+          return { context: { body: { ...body, revokeOtherSessions: true } } };
+        }
+        if (ctx.path !== SIGN_IN_PATH) return;
         const key = `${bodyEmail(ctx.body)}|${ctx.headers?.get(CLIENT_IP_HEADER) ?? ""}`;
         // Capa 1 del límite (D9): por correo e IP, incluso con la contraseña correcta.
         if (throttle.isBlocked(key)) {
@@ -120,22 +143,34 @@ export function createAuth({
             message: "Too many attempts, try again later",
           });
         }
-        return Promise.resolve();
       }),
-      after: createAuthMiddleware((ctx) => {
-        if (ctx.path !== SIGN_IN_PATH) return Promise.resolve();
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === CHANGE_PASSWORD_PATH && !(ctx.context.returned instanceof APIError)) {
+          const returned = ctx.context.returned as { user?: { id?: string } } | undefined;
+          const userId = ctx.context.session?.user.id ?? returned?.user?.id;
+          const membership = userId ? await passwordChangeMembership(userId) : null;
+          if (userId && membership) {
+            securityEvents.emit({
+              type: "own_password_changed",
+              actorUserId: userId,
+              companyId: membership.organizationId,
+              correlationId: ctx.headers?.get(REQUEST_ID_HEADER) ?? null,
+            });
+          }
+          return;
+        }
+        if (ctx.path !== SIGN_IN_PATH) return;
         const email = bodyEmail(ctx.body);
         const ip = ctx.headers?.get(CLIENT_IP_HEADER) || null;
         const key = `${email}|${ip ?? ""}`;
         const returned = ctx.context.returned;
         if (returned instanceof APIError) {
-          if (returned.status === "TOO_MANY_REQUESTS") return Promise.resolve();
+          if (returned.status === "TOO_MANY_REQUESTS") return;
           throttle.recordFailure(key);
           reportFailure(email, ip, ctx.headers?.get(REQUEST_ID_HEADER) ?? null);
         } else {
           throttle.reset(key);
         }
-        return Promise.resolve();
       }),
     },
     plugins: [createAdminPlugin(), createOrganizationPlugin()],

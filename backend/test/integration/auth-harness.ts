@@ -1,9 +1,12 @@
 // Arnés de las pruebas de autenticación: la aplicación real con Better Auth montado sobre un
 // esquema aislado. Usa solo la superficie pública del módulo de integración (design D2b).
-import type { RequestHandler, Router } from "express";
+import { Router, type RequestHandler } from "express";
+import { userSchemas } from "@facturador/contracts";
 import request from "supertest";
 import { createApp } from "../../src/app.ts";
+import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
 import type { MembershipReader } from "../../src/modules/identity/application/memberships.ts";
+import { createUserAdministration } from "../../src/modules/identity/application/user-administration.ts";
 import type {
   SecurityEvent,
   SecurityEventSink,
@@ -19,6 +22,7 @@ import {
   type AuthSettings,
 } from "../../src/modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "../../src/modules/identity/infrastructure/http/request-context.ts";
+import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
 import { createMembershipReader } from "../../src/modules/identity/infrastructure/prisma-memberships.ts";
 import { createSecurityEventLog } from "../../src/modules/identity/infrastructure/security-event-log.ts";
 import { createLogger } from "../../src/platform/logging/logger.ts";
@@ -131,4 +135,30 @@ export async function eventually(condition: () => boolean, timeoutMs = 3_000): P
     if (Date.now() > deadline) throw new Error("La condición no se cumplió a tiempo");
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
+}
+
+/** La API de usuarios montada como en main.ts; `wrapUow` permite inyectar fallos en la transacción. */
+export function buildUsersApp(
+  db: MigratedSchema,
+  options: Omit<Parameters<typeof buildAuthApp>[1] & object, "apiRouter"> & {
+    wrapUow?: (uow: UnitOfWork) => UnitOfWork;
+  } = {},
+) {
+  const { wrapUow, ...rest } = options;
+  return buildAuthApp(db, {
+    ...rest,
+    apiRouter: ({ context, uow, memberships, securityEvents }) =>
+      Router()
+        .use(context)
+        .use(
+          usersRouter(
+            createUserAdministration({
+              uow: wrapUow ? wrapUow(uow) : uow,
+              memberships,
+              authorizer: createAuthorizer({ memberships, securityEvents }),
+              schemas: userSchemas(testAuthSettings(rest.settings).password),
+            }),
+          ),
+        ),
+  });
 }

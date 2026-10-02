@@ -50,8 +50,17 @@ describe("generación de OpenAPI", () => {
     ).toHaveProperty("data");
   });
 
-  it("con el registro real vacío, el documento no tiene rutas", () => {
-    expect(apiRoutes).toHaveLength(0);
-    expect(buildOpenApiDocument(apiRoutes, info).paths).toEqual({});
+  it("el registro real documenta la cuenta propia y la administración de usuarios", () => {
+    const paths = buildOpenApiDocument(apiRoutes, info).paths;
+    expect(Object.keys(paths).sort()).toEqual([
+      "/me",
+      "/users",
+      "/users/{userId}/password",
+      "/users/{userId}/role",
+      "/users/{userId}/status",
+    ]);
+    expect(Object.keys(paths["/users"] ?? {}).sort()).toEqual(["get", "post"]);
+    // Ningún cuerpo de escritura documenta companyId: los esquemas son estrictos.
+    expect(JSON.stringify(paths)).not.toContain("companyId");
   });
 });

@@ -71,3 +71,49 @@ export type ChangeRoleInput = z.infer<UserSchemas["changeRole"]>;
 export type ChangeStatusInput = z.infer<UserSchemas["changeStatus"]>;
 export type SetPasswordInput = z.infer<UserSchemas["setPassword"]>;
 export type ChangeOwnPasswordInput = z.infer<UserSchemas["changeOwnPassword"]>;
+
+// Respuestas con listas permitidas (design D10): nunca hashes, sesiones, cuentas de Better Auth ni
+// el rol global de Better Auth.
+export const meSchema = z.strictObject({ name: z.string(), email: z.string(), role: roleSchema });
+
+export const userViewSchema = z.strictObject({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  role: roleSchema,
+  status: membershipStatusSchema,
+  createdAt: z.iso.datetime(),
+});
+
+export const USERS_PAGE_SIZE_DEFAULT = 25;
+export const USERS_PAGE_SIZE_MAX = 100;
+
+/** Consulta de la lista: no es estricta, de modo que un `companyId` en la consulta se ignora. */
+export const listUsersQuerySchema = z.object({
+  search: z
+    .string()
+    .trim()
+    .max(100, "La búsqueda debe tener como máximo 100 caracteres.")
+    .optional(),
+  status: membershipStatusSchema.optional(),
+  page: z.coerce.number({ error: "La página no es válida." }).int().min(1).default(1),
+  pageSize: z.coerce
+    .number({ error: "El tamaño de página no es válido." })
+    .int()
+    .min(1, "El tamaño de página no es válido.")
+    .max(USERS_PAGE_SIZE_MAX, `El tamaño de página debe ser como máximo ${USERS_PAGE_SIZE_MAX}.`)
+    .default(USERS_PAGE_SIZE_DEFAULT),
+});
+
+export const userListMetaSchema = z.strictObject({
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  total: z.number().int(),
+});
+
+export const userIdParamsSchema = z.strictObject({ userId: z.string().min(1) });
+
+export type Me = z.infer<typeof meSchema>;
+export type UserView = z.infer<typeof userViewSchema>;
+export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
+export type UserListMeta = z.infer<typeof userListMetaSchema>;

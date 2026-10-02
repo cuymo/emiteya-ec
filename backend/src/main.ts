@@ -1,9 +1,12 @@
 // Arranque y apagado del backend. Desarrollo: node --conditions=development src/main.ts (ADR 0016).
 import { randomUUID } from "node:crypto";
+import { userSchemas } from "@facturador/contracts";
 import { Router } from "express";
 import { createApp } from "./app.ts";
-import { EnvError, loadEnv, loadInitialAdmin, type Env } from "./config/env.ts";
+import { EnvError, loadEnv, loadInitialAdmin, passwordPolicy, type Env } from "./config/env.ts";
+import { createAuthorizer } from "./modules/identity/application/authorization.ts";
 import { provisionInstallation } from "./modules/identity/application/provisioning.ts";
+import { createUserAdministration } from "./modules/identity/application/user-administration.ts";
 import {
   authSettingsFromEnv,
   createAuth,
@@ -12,6 +15,7 @@ import {
   mountAuth,
 } from "./modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "./modules/identity/infrastructure/http/request-context.ts";
+import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
 import { createCompanyReader } from "./modules/identity/infrastructure/prisma-companies.ts";
 import { createMembershipReader } from "./modules/identity/infrastructure/prisma-memberships.ts";
 import { createSecurityEventLog } from "./modules/identity/infrastructure/security-event-log.ts";
@@ -41,11 +45,13 @@ const metrics = createMetrics();
 const securityEvents = createSecurityEventLog(logger, metrics.registry);
 const authSettings = authSettingsFromEnv(env);
 const auth = createAuth({ prisma: database.prisma, settings: authSettings, securityEvents });
+const uow = createUnitOfWork(database.prisma, auth, authSettings);
+const memberships = createMembershipReader(database.prisma);
 
 // Aprovisionamiento antes de aceptar tráfico (design D7).
 try {
   const result = await provisionInstallation({
-    uow: createUnitOfWork(database.prisma, auth, authSettings),
+    uow,
     companies: createCompanyReader(database.prisma),
     initialAdmin: () => loadInitialAdmin(env),
     correlationId: `startup-${randomUUID()}`,
@@ -62,10 +68,17 @@ try {
 // Toda ruta de /api/v1 exige sesión y membresía activa; el contexto se resuelve en el servidor (D3).
 const apiRouter = Router();
 apiRouter.use(
-  requireContext({
-    getSessionUserId: (headers) => getSessionUserId(auth, headers),
-    memberships: createMembershipReader(database.prisma),
-  }),
+  requireContext({ getSessionUserId: (headers) => getSessionUserId(auth, headers), memberships }),
+);
+apiRouter.use(
+  usersRouter(
+    createUserAdministration({
+      uow,
+      memberships,
+      authorizer: createAuthorizer({ memberships, securityEvents }),
+      schemas: userSchemas(passwordPolicy(env)),
+    }),
+  ),
 );
 
 const app = createApp({
