@@ -2,10 +2,10 @@
 
 ## 1. Gates previos (bloquean los grupos 3 a 8)
 
-- [ ] 1.1 Confirmar que el cambio `bootstrap-application` está aplicado: repositorio con Express, Next.js, Prisma y una base PostgreSQL de pruebas; verificar que `corepack pnpm verify` pasa en la rama principal
+- [x] 1.1 Confirmar que el cambio `bootstrap-application` está aplicado: repositorio con Express, Next.js, Prisma y una base PostgreSQL de pruebas; verificar que `corepack pnpm verify` pasa en la rama principal
 - [x] 1.2 Ejecutar el spike S-1 en un workspace temporal descartable fuera del repositorio contra los 11 criterios y las verificaciones adicionales de `design.md` (Gate obligatorio); verificar que cada criterio tiene una prueba automatizada o evidencia reproducible con resultado pasa o falla
 - [x] 1.3 Registrar los resultados en `design.md` (Resultados de S-1) y confirmar o corregir cada decisión marcada **[S-1]**, aplicando la política ante fallos: Organization, configuración o adapter antes que una membresía propia, que exige justificación y, si afecta la arquitectura, un ADR; verificar que no queda ninguna decisión **[S-1]** sin resolver
-- [ ] 1.4 Revisión humana del diseño final tras S-1 (artefactos ya actualizados con `/opsx:update` y validados con `openspec validate add-user-access --strict`); verificar que el revisor aprueba el diseño antes de iniciar los grupos 3 a 8
+- [x] 1.4 Revisión humana del diseño final tras S-1 (artefactos ya actualizados con `/opsx:update` y validados con `openspec validate add-user-access --strict`); verificar que el revisor aprueba el diseño antes de iniciar los grupos 3 a 8
 - [x] 1.5 Marcar Q-41 como Resuelta en `docs/product/open-questions.md`, con la decisión y la referencia a los resultados de S-1; verificar que la entrada está actualizada
 
 ## 2. Política de autorización y reglas de acceso (no depende de Better Auth)
