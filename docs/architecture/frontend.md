@@ -81,6 +81,7 @@ Introducidos por `add-user-access` y `add-taxpayer-setup`; los módulos nuevos l
 | `SessionGate`, `useSession`, `QueryProvider` | `components/session.tsx` | Sesión desde `GET /api/v1/me`; un 401 lleva al inicio de sesión conservando la URL. |
 | `SegmentedControl` | `components/segmented-control.tsx` | De dos a cinco opciones visibles (Radix ToggleGroup); puede empezar sin selección cuando el dato se declara, y una opción elegida no se deselecciona. |
 | `ConfirmDialog` | `components/confirm-dialog.tsx` | Escalera de confirmación: un paso, o escribir un texto exacto antes de confirmar; foco devuelto a quien lo abrió. |
+| `Select` | `components/ui/select.tsx` | Select nativo con los tokens, para cinco a quince opciones conocidas; admite grupos con `optgroup`. Con más opciones se usa un combobox con búsqueda. |
 | `FileField` | `components/file-field.tsx` | Un archivo: tipos y límite visibles antes de elegir, archivo vigente con tipo y tamaño, reemplazar y eliminar, alerta temprana de tipo y tamaño; el servidor decide por el contenido. |
 | Ranuras `notice` y `status` de `AppShell` | `components/app-shell.tsx` | Aviso bajo la cabecera y estado junto a sus acciones; el layout compone ahí el aviso de ambiente. |
 | Navegación filtrada por permisos | `components/navigation.tsx`, `lib/permissions.ts` | Espejo de presentación de la política del servidor; la API sigue autorizando. |

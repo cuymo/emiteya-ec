@@ -83,6 +83,25 @@ punto predeterminado de Mi cuenta. Fecha: 2026-10-02.
 | Formularios y diálogos | Reglas del contrato en el cliente (tres dígitos, dirección de una línea); envío duplicado bloqueado también durante la validación; errores de código en su campo. |
 | Navegación y responsive | Destino `Establecimientos` en `Configuración` solo para administradores; en móvil, las acciones bajan a su propia fila con objetivos de 44 px. |
 
+## Punto predeterminado en Mi cuenta (tarea 10.1)
+
+16 comprobaciones contra el backend real, todas correctas:
+
+- Sin puntos disponibles, el mensaje que lo explica.
+- Solo los puntos disponibles, agrupados por establecimiento, más `Sin predeterminado`.
+- Guardar deshabilitado sin cambios y elección por teclado.
+- Predeterminado guardado; al desactivarlo un administrador, se indica como no disponible y no se ofrece como elegible.
+- Elegir otro, quitarlo, y el administrador eligiendo el suyo.
+- `Cambiar contraseña` sigue como acción principal de Mi cuenta: el guardado del punto usa la variante secundaria.
+- Móvil a 375 y 320 px, tema oscuro y barrido a 640, 768, 1024 y 1440 px.
+- Sin respuestas de error inesperadas ni errores de consola.
+
+| Sección | Resultado |
+| --- | --- |
+| Selección de componentes | Select nativo con grupos para las opciones esperadas, de cinco a quince (`component-selection.md`); conserva el selector táctil y el teclado del sistema. |
+| Datos y lenguaje | Los puntos se nombran `001-002` dentro de su establecimiento (`001 · Dirección`); el aviso de no disponible nombra el punto. |
+| Feedback y estado | Guardado con aviso semántico; un punto que deja de estar disponible al guardar conserva la elección y muestra el motivo. |
+
 ## Excepciones declaradas
 
 | Criterio | Motivo |
@@ -97,3 +116,4 @@ punto predeterminado de Mi cuenta. Fecha: 2026-10-02.
 - A 320 px el distintivo de ambiente empujaba el menú de cuenta fuera de la cabecera.
 - Un doble clic en `Guardar datos` podía enviar dos veces, porque el botón seguía activo durante la validación asíncrona del formulario.
 - Los iconos de desactivar y reactivar en Establecimientos eran dos círculos casi iguales: reactivar usa ahora una flecha de restaurar.
+- En Mi cuenta, la sección y el formulario del punto predeterminado tenían el mismo nombre accesible: el formulario ya no repite el nombre de su sección.

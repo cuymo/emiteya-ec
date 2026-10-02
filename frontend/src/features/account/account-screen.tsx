@@ -1,4 +1,5 @@
-// Mi cuenta (design D12). Usuario: cualquiera. Objetivo: ver su acceso y cambiar su contraseña.
+// Mi cuenta (design D12 de add-user-access y D14 de add-taxpayer-setup). Usuario: cualquiera.
+// Objetivo: ver su acceso, cambiar su contraseña y elegir su punto de emisión predeterminado.
 // Página completa porque no es una fila de ninguna tabla. P0: cambio de contraseña. P1: nombre,
 // correo y rol como etiquetas de solo lectura. Acción principal: Cambiar contraseña.
 "use client";
@@ -14,6 +15,7 @@ import { PasswordField } from "@/components/password-field";
 import { useSession } from "@/components/session";
 import { AuthError, changeOwnPassword } from "@/lib/auth-client";
 import { ROLE_LABELS } from "@/lib/permissions";
+import { DefaultPointSection } from "./default-point-section";
 
 // La longitud de la contraseña es configuración del despliegue: la valida el servidor, cuyo mensaje
 // indica el valor vigente. El cliente solo exige ambos campos.
@@ -106,6 +108,8 @@ export function AccountScreen() {
           </AsyncButton>
         </div>
       </form>
+
+      <DefaultPointSection />
     </section>
   );
 }

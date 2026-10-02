@@ -66,7 +66,7 @@
 
 ## 10. Interfaz: punto predeterminado en Mi cuenta
 
-- [ ] 10.1 Construir el componente compartido `Select` y la sección de punto predeterminado de `Mi cuenta` de D14, y añadir `Select` a la tabla de `frontend.md`; verificar contra el backend real para administrador y operador: elección y guardado, `Sin predeterminado`, aviso de predeterminado no disponible, mensaje sin puntos disponibles, error con valores conservados, teclado, móvil y ambos temas, y completar el checklist de frontend en la revisión de interfaz
+- [x] 10.1 Construir el componente compartido `Select` y la sección de punto predeterminado de `Mi cuenta` de D14, y añadir `Select` a la tabla de `frontend.md`; verificar contra el backend real para administrador y operador: elección y guardado, `Sin predeterminado`, aviso de predeterminado no disponible, mensaje sin puntos disponibles, error con valores conservados, teclado, móvil y ambos temas, y completar el checklist de frontend en la revisión de interfaz
 
 ## 11. Verificación integral
 
