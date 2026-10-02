@@ -58,9 +58,9 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `fiscal_sequence` — Secuencia fiscal
 
 - Purpose: contador que asigna el secuencial de cada comprobante.
-- Key attributes: punto de emisión, tipo de comprobante, siguiente valor, y ambiente si se aprueba Q-02.
+- Key attributes: ambiente, punto de emisión, tipo de comprobante, siguiente valor.
 - Invariants:
-  - Un contador independiente por establecimiento, punto y tipo (ERS RF-120, ADR 0003).
+  - Un contador independiente por ambiente, establecimiento, punto y tipo (ERS RF-120, ADR 0003, Q-02).
   - La unicidad del secuencial incluye el ambiente: `(empresa, ambiente, establecimiento, punto, tipo, secuencial)` (CTX §5).
   - Valor entre `1` y `999999999`, representado con nueve dígitos (ERS RF-124, CTX §8.2).
   - La reserva es atómica en todos los procesos e instancias (ERS RF-122, RNF-003, CTX §28).
@@ -311,7 +311,7 @@ se repiten aquí.
 
 ### Numeración
 
-- **BR-06** Hay un contador por establecimiento, punto y tipo de comprobante, y el secuencial es único también por ambiente (ERS RF-120, ADR 0003, CTX §5, Q-02).
+- **BR-06** Hay un contador por ambiente, establecimiento, punto y tipo de comprobante, y el secuencial es único también por ambiente (ERS RF-120, ADR 0003, CTX §5, Q-02).
 - **BR-07** Los borradores no consumen secuencial; la reserva ocurre al emitir, después de la validación de negocio (ERS RF-010, CTX §4).
 - **BR-08** Un secuencial reservado nunca se devuelve ni se reutiliza, y nadie retrocede el contador para reusarlo. Los huecos se toleran (ERS RF-123; CTX §27.3, §28.1).
 - **BR-09** Solo un administrador ajusta el siguiente secuencial; retroceder exige una operación explícita, con motivo y auditoría (ERS RF-121, RF-125).

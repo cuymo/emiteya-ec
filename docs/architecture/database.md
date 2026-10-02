@@ -102,7 +102,7 @@ UNIQUE (company_id, establishment_id, code)                    -- emission_point
 CHECK  (code ~ '^[0-9]{3}$')                                   -- ambos
 
 -- Numeración (ERS RF-120, RF-124; CTX §5)
-UNIQUE (company_id, emission_point_id, document_type)          -- fiscal_sequence; + environment si Q-02
+UNIQUE (company_id, environment, emission_point_id, document_type) -- fiscal_sequence (ADR 0003)
 CHECK  (next_number BETWEEN 1 AND 999999999)
 UNIQUE (company_id, environment, establishment_code, emission_point_code, document_type, sequential)
                                                                -- electronic_document (CTX §5, I-12)

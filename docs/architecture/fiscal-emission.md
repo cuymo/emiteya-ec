@@ -134,7 +134,7 @@ CTX §28:
 UPDATE fiscal_sequence
 SET next_number = next_number + 1
 WHERE company_id = $1 AND emission_point_id = $2 AND document_type = $3
-  -- AND environment = $4, si se aprueba Q-02
+  AND environment = $4  -- un contador por ambiente (ADR 0003)
 RETURNING next_number - 1 AS reserved;
 ```
 

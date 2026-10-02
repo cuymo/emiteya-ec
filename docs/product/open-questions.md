@@ -28,7 +28,7 @@ documento de arquitectura que corresponda, marca aquí el estado y no reutilices
 | -------------------------------- | ----------------------------------------------------------------------------- |
 | 1 `add-user-access`              | Ninguna. Q-41 resuelta tras el spike S-1 (2026-10-02); `/opsx:apply` requiere `bootstrap-application` aplicado |
 | 2 `add-taxpayer-setup`           | Ninguna. Q-23 y Q-31 resueltas, y Q-42 resuelta con el ADR 0017 (2026-10-02)  |
-| 3 `add-fiscal-numbering`         | Q-02 (enmienda del ADR 0003)                                                  |
+| 3 `add-fiscal-numbering`         | Ninguna. Q-02 resuelta con la enmienda del ADR 0003 (2026-10-02)              |
 | 4 `add-signing-certificate`      | Q-17, ADR 0011                                                                |
 | 5 `add-business-catalogs`        | Q-25, Q-38                                                                    |
 | 6 `add-invoice-emission`         | Q-08, Q-14, Q-29, Q-30, Q-34 (XML, XSD, firma), Q-35, Q-38, Q-39 y ADR 0010   |
@@ -48,7 +48,6 @@ El ADR 0009 se aceptó el 2026-10-02 con la alternativa A.
 
 | ADR  | Tema                                   | Tipo                  | Bloquea |
 | ---- | -------------------------------------- | --------------------- | ------- |
-| 0003 | Enmienda: contador por ambiente (Q-02) | architecture decision | 3       |
 | 0010 | Almacenamiento de artefactos (Q-39)    | architecture decision | 6       |
 | 0011 | Custodia del certificado               | architecture decision | 4       |
 | 0012 | Jobs persistidos en PostgreSQL         | architecture decision | 7       |
@@ -61,7 +60,7 @@ Para cuestiones técnicas del SRI prevalece CTX; para el alcance del producto, e
 | ID   | Tema                         | ERS                                                     | CTX                                                                    | Pregunta |
 | ---- | ---------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------- | -------- |
 | C-01 | Máquina de estados           | 12 estados; `RETURNED` corregible (§12.1).               | 16 estados (§26); `SENT` en §22.1 sin definir; `RETURNED` terminal (§26.1) y corregible (§27.1). | Q-35 |
-| C-02 | Clave del secuencial         | Empresa + establecimiento + punto + tipo (ADR-003).      | Unicidad con ambiente (§5); contador y reserva sin ambiente (§5, §28).  | Q-02     |
+| C-02 | Clave del secuencial         | Empresa + establecimiento + punto + tipo (ADR-003).      | Unicidad con ambiente (§5); contador y reserva sin ambiente (§5, §28).  | Q-02 (resuelta: contador por ambiente) |
 | C-03 | Anulación                    | Fuera de alcance; anulación completa en P1 (§2.3, §21). | Estados `CANCEL_PENDING`/`CANCELLED` y detección por consulta de validez (§36). | Q-16 |
 | C-04 | Entrega al receptor          | Correo condicional (RF-406) y en P1 (§21).              | Registrar intentos de entrega en el MVP (§46).                          | Q-24     |
 | C-05 | Rutas de la API              | `/api/invoices`… (§17).                                 | `/api/fiscal/invoices`…, más `reconcile` y `resend` (§40).              | Q-29     |
@@ -76,7 +75,7 @@ Para cuestiones técnicas del SRI prevalece CTX; para el alcance del producto, e
 | ID   | Estado    | Tipo                  | Pregunta | Por qué importa | Propuesta | Bloquea |
 | ---- | --------- | --------------------- | -------- | --------------- | --------- | ------- |
 | Q-01 | Resuelta  | —                     | ¿En qué momento se consume el secuencial (ERS RF-010)? | — | Al emitir, después de la validación de negocio y antes de generar la clave (CTX §4). | — |
-| Q-02 | Abierta   | architecture decision | La unicidad incluye el ambiente (CTX §5), pero el contador de CTX §5 y §28 y el ADR-003 del ERS no. ¿Hay un contador por ambiente? | Con un contador compartido, los números usados en Pruebas dejan un hueco al pasar a Producción. | Contador independiente por ambiente, además de la unicidad; enmendar ADR 0003. | 3 |
+| Q-02 | Resuelta  | —                     | La unicidad incluye el ambiente (CTX §5), pero el contador de CTX §5 y §28 y el ADR-003 del ERS no. ¿Hay un contador por ambiente? | — | Decidido el 2026-10-02 en la revisión de readiness de `add-fiscal-numbering` y aprobado por el dueño del producto: un contador independiente por empresa, ambiente, establecimiento, punto y tipo, además de la unicidad con el ambiente. Pruebas y Producción numeran por separado, y volver a un ambiente continúa su secuencia. Se justifica en CTX §5, §6 y §8.1 y en una razón de diseño, no en una exigencia atribuida al SRI. Enmienda del ADR 0003. | — |
 | Q-03 | Resuelta  | —                     | ¿Qué pasa con un secuencial reservado cuyo comprobante no llega a firmarse? | — | Nunca vuelve al contador; los huecos se toleran y el comprobante conserva su número (CTX §27.3, §28.1). | — |
 | Q-04 | Resuelta  | —                     | ¿Cómo se corrige un comprobante devuelto? | — | Se corrige y reenvía con la misma clave y secuencial (CTX §27.1); los campos de la clave no cambian (BR-28). | — |
 | Q-05 | Absorbida | —                     | ¿Qué estado toma un XML inválido tras reservar? | — | CTX añade `XSD_INVALID`; su salida se decide en Q-35. | — |
