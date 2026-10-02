@@ -59,9 +59,9 @@
 
 ## 5. Interfaz: Secuenciales
 
-- [ ] 5.1 Añadir el destino `Secuenciales` a `Configuración` (solo con `sequences.read`) y construir la pantalla de D14 con el selector de ambiente, la lista por punto y los seis tipos, el número completo del siguiente, el último reservado, el estado del punto y "Agotado" sin siguiente secuencial; verificar con pruebas de componente: lista, cambio de ambiente, vacío con enlace a Establecimientos, error con reintento, sin permiso y que un operador no ve el destino
-- [ ] 5.2 Construir el diálogo `Ajustar` con el aviso de números sin usar al avanzar, el motivo obligatorio que se revela al retroceder, el error de número reservado en su campo y el conflicto con `Recargar`; verificar con pruebas de componente y contra el backend real: avance, retroceso con motivo, rechazo por número reservado, conflicto con una reserva concurrente y doble envío bloqueado
-- [ ] 5.3 Recorrer `Secuenciales` en carga, vacío, error, sin permiso, éxito, móvil a 375 y 320 px con objetivos de 44 px, teclado, temas claro y oscuro, barrido a 640, 768, 1024 y 1440 px, y `docs/quality/frontend-checklist.md`; verificar que la revisión queda registrada en `ui-review.md` del cambio
+- [x] 5.1 Añadir el destino `Secuenciales` a `Configuración` (solo con `sequences.read`) y construir la pantalla de D14 con el selector de ambiente, la lista por punto y los seis tipos, el número completo del siguiente, el último reservado, el estado del punto y "Agotado" sin siguiente secuencial; verificar con pruebas de componente: lista, cambio de ambiente, vacío con enlace a Establecimientos, error con reintento, sin permiso y que un operador no ve el destino
+- [x] 5.2 Construir el diálogo `Ajustar` con el aviso de números sin usar al avanzar, el motivo obligatorio que se revela al retroceder, el error de número reservado en su campo y el conflicto con `Recargar`; verificar con pruebas de componente y contra el backend real: avance, retroceso con motivo, rechazo por número reservado, conflicto con una reserva concurrente y doble envío bloqueado
+- [x] 5.3 Recorrer `Secuenciales` en carga, vacío, error, sin permiso, éxito, móvil a 375 y 320 px con objetivos de 44 px, teclado, temas claro y oscuro, barrido a 640, 768, 1024 y 1440 px, y `docs/quality/frontend-checklist.md`; verificar que la revisión queda registrada en `ui-review.md` del cambio
 
 ## 6. Verificación integral
 
