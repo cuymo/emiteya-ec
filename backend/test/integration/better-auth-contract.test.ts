@@ -9,6 +9,7 @@ import {
   PASSWORD,
   buildAuthApp,
   createMember,
+  eventually,
   signIn,
   type AuthApp,
 } from "./auth-harness.ts";
@@ -219,8 +220,7 @@ describe("contrato de Better Auth", () => {
       expect(blocked.status).toBe(429);
       expect(blocked.cookie).toBe("");
       expect((await signIn(app, emails.second, PASSWORD)).status).toBe(200);
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      expect(events.filter((e) => e.type === "sign_in_failed")).toHaveLength(5);
+      await eventually(() => events.filter((e) => e.type === "sign_in_failed").length === 5);
       expect(events.some((e) => e.type === "rate_limited")).toBe(true);
     });
 

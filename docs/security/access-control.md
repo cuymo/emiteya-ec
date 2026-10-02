@@ -117,9 +117,29 @@ operation.
 
 ### Roles de este producto
 
-Matriz propuesta para Q-22. El ERS solo dice "permisos básicos"; la matriz no es definitiva
-hasta que se acepte en el cambio `add-user-access`. Toda celda "No" responde `403` en el
-servidor.
+Dos roles por membresía, `ADMIN` y `OPERATOR` (ERS RF-002). El rol global que añade el plugin
+admin de Better Auth no concede nada. Toda celda "No" responde `403` en el servidor, y un
+usuario de otra empresa responde `404`.
+
+Permisos implementados (cambio `add-user-access`, design D4). Son las filas del mapa central
+`backend/src/modules/identity/domain/access-policy.ts`, denegado por defecto;
+`backend/test/identity/access-policy-doc.test.ts` comprueba que esta tabla coincide con él:
+
+| Permiso | Operación | `ADMIN` | `OPERATOR` |
+| --- | --- | --- | --- |
+| `account.read` | Consultar la cuenta propia | Sí | Sí |
+| `account.changePassword` | Cambiar la contraseña propia | Sí | Sí |
+| `users.read` | Consultar los usuarios de la empresa | Sí | No |
+| `users.create` | Crear un usuario | Sí | No |
+| `users.changeRole` | Cambiar el rol de otro usuario | Sí | No |
+| `users.changeStatus` | Desactivar o reactivar a otro usuario | Sí | No |
+| `users.setPassword` | Establecer la contraseña de otro usuario | Sí | No |
+
+Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
+de administración (`409`).
+
+Matriz propuesta para los módulos futuros (Q-22). El ERS solo dice "permisos básicos"; cada
+cambio confirma las filas de sus propias operaciones al añadirlas al mapa:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |

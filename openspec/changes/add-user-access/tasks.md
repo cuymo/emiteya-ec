@@ -34,11 +34,11 @@
 
 ## 5. Contexto de petición y autorización
 
-- [ ] 5.1 Implementar el middleware de D3 (sesión, membresía `ACTIVE`, `RequestContext`) con `401` y el mismo cuerpo tanto sin sesión como sin membresía activa; verificar con pruebas de integración
-- [ ] 5.2 Implementar el helper de autorización que aplica el orden de D4 (permiso, pertenencia y validación) y emite un evento de seguridad por cada denegación; verificar que un operador recibe `403` antes de cualquier error de validación y que la denegación produce el evento de seguridad, no un evento de auditoría
-- [ ] 5.3 Probar el contexto: `companyId` en el cuerpo se rechaza, y en la consulta o en una cabecera se ignora; un `role` en el cuerpo, la consulta o una cabecera no altera el permiso; un cambio de rol rige en la siguiente petición; un usuario desactivado se rechaza en su siguiente operación aunque su sesión exista
-- [ ] 5.4 Emitir los eventos de seguridad y métricas de D13 con el logger que aporta `bootstrap-application`, tomando la IP según la configuración de proxies de confianza; verificar con pruebas que los logs de un inicio de sesión fallido y de una denegación no contienen contraseñas, tokens, cookies ni el correo en claro, y que una cabecera `X-Forwarded-For` de un cliente directo no cambia la IP registrada
-- [ ] 5.5 Actualizar `docs/security/access-control.md` (Roles de este producto) con las filas confirmadas de D4 y dejar como propuesta la matriz de módulos futuros; verificar que la tabla coincide con el mapa implementado
+- [x] 5.1 Implementar el middleware de D3 (sesión, membresía `ACTIVE`, `RequestContext`) con `401` y el mismo cuerpo tanto sin sesión como sin membresía activa; verificar con pruebas de integración
+- [x] 5.2 Implementar el helper de autorización que aplica el orden de D4 (permiso, pertenencia y validación) y emite un evento de seguridad por cada denegación; verificar que un operador recibe `403` antes de cualquier error de validación y que la denegación produce el evento de seguridad, no un evento de auditoría
+- [x] 5.3 Probar el contexto: `companyId` en el cuerpo se rechaza, y en la consulta o en una cabecera se ignora; un `role` en el cuerpo, la consulta o una cabecera no altera el permiso; un cambio de rol rige en la siguiente petición; un usuario desactivado se rechaza en su siguiente operación aunque su sesión exista
+- [x] 5.4 Emitir los eventos de seguridad y métricas de D13 con el logger que aporta `bootstrap-application`, tomando la IP según la configuración de proxies de confianza; verificar con pruebas que los logs de un inicio de sesión fallido y de una denegación no contienen contraseñas, tokens, cookies ni el correo en claro, y que una cabecera `X-Forwarded-For` de un cliente directo no cambia la IP registrada
+- [x] 5.5 Actualizar `docs/security/access-control.md` (Roles de este producto) con las filas confirmadas de D4 y dejar como propuesta la matriz de módulos futuros; verificar que la tabla coincide con el mapa implementado
 
 ## 6. API de cuenta y usuarios
 

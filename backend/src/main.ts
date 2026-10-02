@@ -1,5 +1,6 @@
 // Arranque y apagado del backend. Desarrollo: node --conditions=development src/main.ts (ADR 0016).
 import { randomUUID } from "node:crypto";
+import { Router } from "express";
 import { createApp } from "./app.ts";
 import { EnvError, loadEnv, loadInitialAdmin, type Env } from "./config/env.ts";
 import { provisionInstallation } from "./modules/identity/application/provisioning.ts";
@@ -7,9 +8,13 @@ import {
   authSettingsFromEnv,
   createAuth,
   createUnitOfWork,
+  getSessionUserId,
   mountAuth,
 } from "./modules/identity/infrastructure/better-auth/index.ts";
+import { requireContext } from "./modules/identity/infrastructure/http/request-context.ts";
 import { createCompanyReader } from "./modules/identity/infrastructure/prisma-companies.ts";
+import { createMembershipReader } from "./modules/identity/infrastructure/prisma-memberships.ts";
+import { createSecurityEventLog } from "./modules/identity/infrastructure/security-event-log.ts";
 import { createDatabase } from "./platform/db/database.ts";
 import { createShutdown, type Closer } from "./platform/lifecycle/shutdown.ts";
 import { createLogger } from "./platform/logging/logger.ts";
@@ -32,8 +37,10 @@ const logger = createLogger(env.LOG_LEVEL);
 const database = createDatabase(env.DATABASE_URL);
 const closers: Closer[] = [{ name: "database", close: database.close }];
 
+const metrics = createMetrics();
+const securityEvents = createSecurityEventLog(logger, metrics.registry);
 const authSettings = authSettingsFromEnv(env);
-const auth = createAuth({ prisma: database.prisma, settings: authSettings });
+const auth = createAuth({ prisma: database.prisma, settings: authSettings, securityEvents });
 
 // Aprovisionamiento antes de aceptar tráfico (design D7).
 try {
@@ -52,12 +59,22 @@ try {
   process.exit(1);
 }
 
+// Toda ruta de /api/v1 exige sesión y membresía activa; el contexto se resuelve en el servidor (D3).
+const apiRouter = Router();
+apiRouter.use(
+  requireContext({
+    getSessionUserId: (headers) => getSessionUserId(auth, headers),
+    memberships: createMembershipReader(database.prisma),
+  }),
+);
+
 const app = createApp({
   logger,
-  metrics: createMetrics(),
+  metrics,
   readiness: () => database.ping(),
   trustProxy: env.TRUST_PROXY,
-  mountBeforeBodyParser: (express) => mountAuth(express, auth),
+  apiRouter,
+  mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
 });
 
 const server = app.listen(env.PORT, () => {

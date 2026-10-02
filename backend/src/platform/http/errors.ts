@@ -33,3 +33,15 @@ export class ValidationError extends AppError {
     this.fields = [...new Set(error.issues.map((issue) => issue.path.join(".")))];
   }
 }
+
+export class UnauthenticatedError extends AppError {
+  constructor() {
+    super("UNAUTHENTICATED", 401, "Inicia sesión para continuar.");
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = "No tienes permiso para realizar esta acción.") {
+    super("FORBIDDEN", 403, message);
+  }
+}
