@@ -439,6 +439,63 @@ describe("API de cuenta y usuarios", () => {
     });
   });
 
+  describe("operador sobre operaciones de administrador", () => {
+    it("desactivar y reactivar responden 403 con evento de seguridad, y nada cambia", async () => {
+      const operator = await session(emails.operator);
+      api.events.length = 0;
+      expect(
+        (await call("put", `/users/${ids.target}/status`, operator).send({ status: "DEACTIVATED" }))
+          .status,
+      ).toBe(403);
+      expect(
+        (await call("put", `/users/${ids.inactive}/status`, operator).send({ status: "ACTIVE" }))
+          .status,
+      ).toBe(403);
+      expect(denials()).toEqual([
+        expect.objectContaining({ status: 403, action: "users.changeStatus" }),
+        expect.objectContaining({ status: 403, action: "users.changeStatus" }),
+      ]);
+      const target = ids.target!;
+      const inactive = ids.inactive!;
+      const statuses = await db.database.prisma.member.findMany({
+        where: { userId: { in: [target, inactive] } },
+        select: { userId: true, status: true },
+      });
+      expect(Object.fromEntries(statuses.map((m) => [m.userId, m.status]))).toEqual({
+        [target]: "ACTIVE",
+        [inactive]: "DEACTIVATED",
+      });
+    });
+  });
+
+  describe("registros de un usuario desactivado", () => {
+    it("la auditoría de sus acciones anteriores sigue atribuida a él", async () => {
+      const actorId = await createMember(api.uow, companyA, {
+        name: "Admin que se va",
+        email: "seva@a.ec",
+        role: "ADMIN",
+      });
+      const actor = await session("seva@a.ec");
+      const created = await call("post", "/users", actor).send({
+        name: "Creado por quien se va",
+        email: "creado-por-seva@a.ec",
+        password: "contrasena-inicial-1",
+        role: "OPERATOR",
+      });
+      expect(created.status).toBe(201);
+      await call("put", `/users/${actorId}/status`, await session(emails.admin)).send({
+        status: "DEACTIVATED",
+      });
+
+      const byActor = await events({ actorUserId: actorId });
+      expect(byActor.map((e) => e.action)).toEqual(["user.created"]);
+      const listed = bodyOf(
+        await call("get", "/users?search=seva%40", await session(emails.admin)),
+      ).data;
+      expect(listed.find((u) => u.email === "seva@a.ec")?.status).toBe("DEACTIVATED");
+    });
+  });
+
   describe("PUT /users/:userId/password", () => {
     const NEW = "establecida-por-admin-1";
 
