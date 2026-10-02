@@ -46,7 +46,7 @@ describe("shell autenticado", () => {
     expect(screen.getByText("Configuración")).toBeDefined();
   });
 
-  it("el administrador ve Empresa y Ambiente en Configuración; el operador no", async () => {
+  it("el administrador ve Empresa, Ambiente y Establecimientos en Configuración", async () => {
     mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
     renderShell();
     expect((await screen.findByRole("link", { name: "Empresa" })).getAttribute("href")).toBe(
@@ -54,6 +54,9 @@ describe("shell autenticado", () => {
     );
     expect(screen.getByRole("link", { name: "Ambiente" }).getAttribute("href")).toBe(
       "/configuracion/ambiente",
+    );
+    expect(screen.getByRole("link", { name: "Establecimientos" }).getAttribute("href")).toBe(
+      "/configuracion/establecimientos",
     );
   });
 
@@ -64,6 +67,7 @@ describe("shell autenticado", () => {
     expect(screen.queryByRole("link", { name: "Usuarios" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Empresa" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Ambiente" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Establecimientos" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Abrir menú" })).toBeNull();
   });
 

@@ -54,12 +54,41 @@ punto predeterminado de Mi cuenta. Fecha: 2026-10-02.
 | Rendimiento | Una consulta por pantalla. El logo se revalida con `ETag`. |
 | Tema y accesibilidad | Ambos temas revisados en página y diálogo. Contraste de texto de 5.8:1 o más, incluido el de la franja (15.9:1 en claro, 8.7:1 en oscuro). Landmarks y encabezados en orden. La franja se anuncia con `role="status"`. |
 
+## Establecimientos (tarea 9.2)
+
+25 comprobaciones contra el backend real, todas correctas:
+
+- Estado vacío como requisito pendiente.
+- Diálogo abierto por teclado, cerrado con Escape y con el foco de vuelta en el botón.
+- Código duplicado en su campo con los valores conservados.
+- Alta de puntos.
+- Corrección de la dirección con el código como etiqueta.
+- Desactivación del establecimiento con aviso sobre sus puntos y `Deshacer` que lo reactiva.
+- Puntos no disponibles por un establecimiento inactivo, con su explicación.
+- Desactivación de un punto.
+- Inicio refleja el punto disponible.
+- Operador sin destino y sin permiso por URL.
+- Móvil a 375 y 320 px sin desbordamiento, con todas las acciones de 44 px.
+- Diálogo en tema oscuro.
+- Barrido a 640, 768, 1024 y 1440 px.
+- Sin respuestas de error inesperadas ni errores de consola.
+
+| Sección | Resultado |
+| --- | --- |
+| Antes de construir | Brief de D14; lista agrupada por volumen pequeño (D7), sin fechas (P2) ni identificadores (P3). |
+| Tarea y jerarquía | `Crear establecimiento` es la única acción principal, junto al título. Las acciones de cada establecimiento y punto están en su fila, con tooltip y nombre accesible. |
+| Datos y lenguaje | `Establecimiento 001`, `Punto 001-002`, `Activo`, `Inactivo`, `Disponible` y `No disponible` con su motivo; ningún identificador interno visible. |
+| Selección de componentes | Alta y corrección en `FormDialog` (registros cortos); desactivar en un paso con `Deshacer`; iconos distintos para desactivar y reactivar. |
+| Tablas | Se declara la excepción de abajo; los estados usan `StatusBadge` con icono y texto. |
+| Formularios y diálogos | Reglas del contrato en el cliente (tres dígitos, dirección de una línea); envío duplicado bloqueado también durante la validación; errores de código en su campo. |
+| Navegación y responsive | Destino `Establecimientos` en `Configuración` solo para administradores; en móvil, las acciones bajan a su propia fila con objetivos de 44 px. |
+
 ## Excepciones declaradas
 
 | Criterio | Motivo |
 | --- | --- |
 | Contraste de 3:1 para iconos significativos | El icono de advertencia (`--warning`) mide 2.5:1 sobre la franja en tema claro (5.3:1 en oscuro). Es decorativo (`aria-hidden`), siempre acompaña a un texto que lleva el significado y es el mismo tono que ya usa `StatusBadge`. Oscurecerlo exige un token nuevo en `design-foundations.md`, fuera de este cambio. |
-| Tablas | No aplica: ninguna pantalla de este grupo es una colección. |
+| Tablas | Empresa, Ambiente e Inicio no son colecciones. Establecimientos es una lista agrupada y no `AppDataTable`, porque el MVP espera decenas de establecimientos con sus puntos anidados (D7, Q-26): búsqueda, filtros y paginación se añaden si el volumen lo pide. |
 | Editar, detalle y eliminar como registro | La configuración es un único registro vigente: se corrige en la misma página y no se elimina; el historial es P3. |
 | Atajos y vistas guardadas | Uso raro (D14); no se añaden aceleradores. |
 
@@ -67,3 +96,4 @@ punto predeterminado de Mi cuenta. Fecha: 2026-10-02.
 
 - A 320 px el distintivo de ambiente empujaba el menú de cuenta fuera de la cabecera.
 - Un doble clic en `Guardar datos` podía enviar dos veces, porque el botón seguía activo durante la validación asíncrona del formulario.
+- Los iconos de desactivar y reactivar en Establecimientos eran dos círculos casi iguales: reactivar usa ahora una flecha de restaurar.

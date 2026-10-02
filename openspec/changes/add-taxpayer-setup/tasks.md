@@ -61,8 +61,8 @@
 
 ## 9. Interfaz: Establecimientos
 
-- [ ] 9.1 Añadir el destino `Establecimientos` y construir la lista agrupada de D14 con `RowActionButton`, los diálogos de alta de establecimientos y puntos y de corrección de la dirección con `FormDialog` (código solo al crear) y la desactivación de un paso con `Deshacer`; verificar contra el backend real: primer establecimiento desde el estado vacío, código duplicado con el error en su campo, alta de puntos, corrección de la dirección, desactivación y `Deshacer` de un establecimiento con puntos, y que un operador no ve el destino
-- [ ] 9.2 Recorrer `Establecimientos` en los estados de carga, vacío, error, sin permiso, éxito, móvil con tarjetas y objetivos de 44 px, teclado, tema claro y oscuro, y el checklist de frontend; verificar que el checklist queda completo y registrado en la revisión de interfaz
+- [x] 9.1 Añadir el destino `Establecimientos` y construir la lista agrupada de D14 con `RowActionButton`, los diálogos de alta de establecimientos y puntos y de corrección de la dirección con `FormDialog` (código solo al crear) y la desactivación de un paso con `Deshacer`; verificar contra el backend real: primer establecimiento desde el estado vacío, código duplicado con el error en su campo, alta de puntos, corrección de la dirección, desactivación y `Deshacer` de un establecimiento con puntos, y que un operador no ve el destino
+- [x] 9.2 Recorrer `Establecimientos` en los estados de carga, vacío, error, sin permiso, éxito, móvil con tarjetas y objetivos de 44 px, teclado, tema claro y oscuro, y el checklist de frontend; verificar que el checklist queda completo y registrado en la revisión de interfaz
 
 ## 10. Interfaz: punto predeterminado en Mi cuenta
 
