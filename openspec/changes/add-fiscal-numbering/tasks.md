@@ -65,7 +65,7 @@
 
 ## 6. Verificación integral
 
-- [ ] 6.1 Prueba end-to-end por HTTP contra `main.ts`:
+- [x] 6.1 Prueba end-to-end por HTTP contra `main.ts`:
   1. El administrador fija en 1501 el siguiente secuencial de factura en `Producción`.
   2. Se reservan facturas en `Pruebas` (1 y 2).
   3. La empresa pasa a `Producción` y la siguiente reserva recibe 1501.
@@ -74,4 +74,4 @@
   6. El rastro de auditoría contiene el ajuste.
 
   Verificar que la prueba pasa.
-- [ ] 6.2 Ejecutar `corepack pnpm verify`; verificar que formato, lint, pruebas, typecheck y build pasan
+- [x] 6.2 Ejecutar `corepack pnpm verify`; verificar que formato, lint, pruebas, typecheck y build pasan
