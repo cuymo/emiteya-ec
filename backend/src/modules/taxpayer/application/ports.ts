@@ -90,6 +90,27 @@ export interface EstablishmentRepository {
     emissionPointId: string,
     input: { status: ActiveStatus },
   ): Promise<EmissionPointRecord>;
+  /** Un punto de la empresa por su identificador, con su establecimiento. */
+  findPointWithEstablishment(
+    companyId: string,
+    emissionPointId: string,
+  ): Promise<{ point: EmissionPointRecord; establishment: EstablishmentRecord } | null>;
+  /** true si existe al menos un punto activo de un establecimiento activo (design D9). */
+  hasAvailablePoint(companyId: string): Promise<boolean>;
+}
+
+/** Punto predeterminado de cada membresía (design D8); el establecimiento se deriva del punto. */
+export interface DefaultEmissionPointRepository {
+  find(
+    companyId: string,
+    userId: string,
+  ): Promise<{ point: EmissionPointRecord; establishment: EstablishmentRecord } | null>;
+  set(companyId: string, userId: string, emissionPointId: string | null): Promise<void>;
+}
+
+/** Requisito de firma de la preparación para emitir; add-signing-certificate lo reemplaza (design D9). */
+export interface SigningCertificateReadiness {
+  isMet(companyId: string): Promise<boolean>;
 }
 
 export type TaxpayerScope = {

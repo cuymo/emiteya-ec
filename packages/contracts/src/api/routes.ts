@@ -12,6 +12,8 @@ import {
 } from "../users.ts";
 import {
   changeEstablishmentStatusSchema,
+  defaultEmissionPointViewSchema,
+  setDefaultEmissionPointSchema,
   createEmissionPointSchema,
   createEstablishmentSchema,
   emissionPointParamsSchema,
@@ -24,6 +26,7 @@ import {
   LOGO_RESPONSE_CONTENT_TYPES,
   LOGO_UPLOAD_CONTENT_TYPES,
   changeEnvironmentSchema,
+  companyStatusSchema,
   logoQuerySchema,
   taxpayerViewSchema,
   updateTaxpayerSchema,
@@ -290,5 +293,49 @@ export const apiRoutes: readonly RouteDefinition[] = [
     summary: "Activar o desactivar un punto de emisión (estado deseado)",
     request: { params: emissionPointParamsSchema, body: changeEstablishmentStatusSchema },
     responses: { 200: emissionPointResponse, ...configErrors, 404: establishmentNotFound },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/me/default-emission-point",
+    summary: "Consultar el punto de emisión predeterminado propio y su disponibilidad",
+    responses: {
+      200: {
+        description: "Punto predeterminado con su establecimiento, o null sin predeterminado.",
+        schema: successEnvelope(defaultEmissionPointViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/me/default-emission-point",
+    summary: "Elegir o quitar el punto de emisión predeterminado propio; solo preselecciona",
+    request: { body: setDefaultEmissionPointSchema },
+    responses: {
+      200: {
+        description: "Punto predeterminado vigente, o null.",
+        schema: successEnvelope(defaultEmissionPointViewSchema),
+      },
+      ...configErrors,
+      404: { description: "El punto no existe en la empresa.", schema: errorEnvelopeSchema },
+      409: {
+        description: "El punto o su establecimiento están inactivos (EMISSION_POINT_UNAVAILABLE).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/company/status",
+    summary: "Consultar el ambiente y la preparación para emitir de la empresa",
+    responses: {
+      200: {
+        description: "Ambiente, nombre visible y requisitos de la preparación para emitir.",
+        schema: successEnvelope(companyStatusSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
   }),
 ];

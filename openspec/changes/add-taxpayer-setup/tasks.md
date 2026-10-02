@@ -42,8 +42,8 @@
 
 ## 6. Punto predeterminado y preparación para emitir (API)
 
-- [ ] 6.1 Implementar `GET` y `PUT /api/v1/me/default-emission-point` (D8), registrarlas y regenerar el OpenAPI; verificar con pruebas para administrador y operador: elección de un punto disponible con su establecimiento, punto inactivo o de establecimiento inactivo `409 EMISSION_POINT_UNAVAILABLE`, punto de otra empresa `404`, predeterminado que deja de estar disponible devuelto con `available: false`, quitar el predeterminado, que no se registra evento de auditoría y que `GET /api/v1/me` no cambia
-- [ ] 6.2 Implementar el puerto `SigningCertificateReadiness` con la respuesta `PENDING` y `GET /api/v1/company/status` (D9), registrarla y regenerar el OpenAPI; verificar con pruebas: empresa nueva con los tres requisitos pendientes y `TEST`, datos más un punto disponible con dos cumplidos y la firma pendiente sin `ready`, desactivar el último punto disponible devuelve el requisito a pendiente, operador `200`, y `displayName` con nombre comercial o razón social
+- [x] 6.1 Implementar `GET` y `PUT /api/v1/me/default-emission-point` (D8), registrarlas y regenerar el OpenAPI; verificar con pruebas para administrador y operador: elección de un punto disponible con su establecimiento, punto inactivo o de establecimiento inactivo `409 EMISSION_POINT_UNAVAILABLE`, punto de otra empresa `404`, predeterminado que deja de estar disponible devuelto con `available: false`, quitar el predeterminado, que no se registra evento de auditoría y que `GET /api/v1/me` no cambia
+- [x] 6.2 Implementar el puerto `SigningCertificateReadiness` con la respuesta `PENDING` y `GET /api/v1/company/status` (D9), registrarla y regenerar el OpenAPI; verificar con pruebas: empresa nueva con los tres requisitos pendientes y `TEST`, datos más un punto disponible con dos cumplidos y la firma pendiente sin `ready`, desactivar el último punto disponible devuelve el requisito a pendiente, operador `200`, y `displayName` con nombre comercial o razón social
 
 ## 7. Interfaz: aviso de ambiente e Inicio
 

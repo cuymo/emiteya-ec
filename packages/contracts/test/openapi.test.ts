@@ -70,12 +70,14 @@ describe("generación de OpenAPI", () => {
   it("el registro real documenta la cuenta, los usuarios y la configuración tributaria", () => {
     const paths = buildOpenApiDocument(apiRoutes, info).paths;
     expect(Object.keys(paths).sort()).toEqual([
+      "/company/status",
       "/establishments",
       "/establishments/{establishmentId}",
       "/establishments/{establishmentId}/emission-points",
       "/establishments/{establishmentId}/emission-points/{emissionPointId}/status",
       "/establishments/{establishmentId}/status",
       "/me",
+      "/me/default-emission-point",
       "/taxpayer",
       "/taxpayer/environment",
       "/taxpayer/logo",

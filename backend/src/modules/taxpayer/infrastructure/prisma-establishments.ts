@@ -103,6 +103,24 @@ export function createEstablishmentRepository(db: DbClient): EstablishmentReposi
       return toPoint(row);
     },
 
+    async findPointWithEstablishment(companyId, emissionPointId) {
+      const row = await db.emissionPoint.findFirst({
+        where: { companyId, id: emissionPointId },
+        include: { establishment: { include: withPoints } },
+      });
+      return row
+        ? { point: toPoint(row), establishment: toEstablishment(row.establishment) }
+        : null;
+    },
+
+    async hasAvailablePoint(companyId) {
+      const available = await db.emissionPoint.count({
+        where: { companyId, active: true, establishment: { active: true } },
+        take: 1,
+      });
+      return available > 0;
+    },
+
     async updatePoint(companyId, establishmentId, emissionPointId, input) {
       await db.emissionPoint.updateMany({
         where: { companyId, establishmentId, id: emissionPointId },
