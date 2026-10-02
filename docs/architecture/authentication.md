@@ -36,13 +36,21 @@ Better Auth owns:
 
 - Todo el código que toca Better Auth vive en un único módulo de integración (`backend/src/modules/identity/infrastructure/better-auth/`). Solo ese módulo puede usar APIs que no pertenecen claramente a la API pública estable de Better Auth, como `runWithAdapter`, `auth.$context` o escrituras con su adapter. El resto de la aplicación usa un puerto de identidad. Una regla de lint impide importar `better-auth` o `@better-auth/*` fuera del módulo.
 - `better-auth`, `@better-auth/core` y el CLI `auth` se fijan en la versión exacta validada por el spike S-1 (`1.7.7`), sin rangos.
-- El módulo tiene tests de contrato contra PostgreSQL que replican los criterios de S-1.
+- El módulo tiene tests de contrato contra PostgreSQL que replican los criterios de S-1: `backend/test/integration/better-auth-contract.test.ts` (registro, inicio y cierre de sesión, mensaje genérico, endpoints de plugins cerrados, IP no persistida, límites de intentos, sin recuperación pública), `identity-transaction.test.ts` (atomicidad con la auditoría) y `migrations.test.ts` (el esquema regenerado con el CLI conserva las restricciones propias). Se ejecutan con:
+
+  ```bash
+  corepack pnpm exec vitest run --project backend test/integration/better-auth-contract.test.ts test/integration/identity-transaction.test.ts test/integration/migrations.test.ts
+  ```
+
 - Una actualización de Better Auth, incluido un parche, se acepta solo si: (1) se revisaron sus notas de versión; (2) los tests de contrato pasan con la nueva versión exacta; (3) el CLI `auth` se actualiza a la misma versión y el esquema regenerado conserva las restricciones propias. Un test de contrato que falla bloquea la actualización; no se modifica el test para que pase sin revisar el diseño.
 - Los usuarios se desactivan, no se eliminan: una cuenta desactivada no inicia sesión y sus sesiones se invalidan, pero sus comprobantes y su auditoría persisten (ERS RF-409).
 - El establecimiento y el punto de emisión predeterminados son preferencias del usuario en la aplicación, no datos de autenticación (ERS RF-113).
 - Los procesos del sistema, como los jobs, actúan con un actor de sistema explícito en la auditoría, nunca con la identidad de un usuario.
 - El MVP no tiene recuperación pública de contraseña por correo. Un usuario que olvida su contraseña la recupera mediante un administrador, que le establece una nueva.
 - Si ningún administrador puede entrar, el administrador técnico usa un comando de recuperación administrativa (break-glass) en el servidor. Es una operación de emergencia: no existe ni puede existir en la API pública ni en ninguna ruta HTTP, y deja un evento de auditoría con el administrador técnico como actor.
+- El comando es `admin:recover --email <correo>`; uso, variables y aprovisionamiento inicial en `deployment.md` ("Autenticación y aprovisionamiento" y "Recuperación administrativa de emergencia").
+- El correo de inicio de sesión no distingue mayúsculas: Better Auth lo guarda en minúsculas. Es una regla técnica de identidad.
+- Better Auth lee la IP del cliente de una cabecera propia del servidor (`x-app-client-ip`) que Express escribe con `req.ip`, sobrescribiendo cualquier valor del cliente; la IP solo vive en memoria para el límite de intentos y la sesión se guarda sin ella.
 
 ## Initial Admin User
 

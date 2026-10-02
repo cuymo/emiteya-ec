@@ -29,6 +29,11 @@ jobs:
     env:
       DATABASE_URL: postgresql://facturador:facturador@127.0.0.1:5432/facturador_test
       DATABASE_URL_TEST: postgresql://facturador:facturador@127.0.0.1:5432/facturador_test
+      # Valores solo de CI para el arranque de check:dev-start; no son credenciales reales.
+      BETTER_AUTH_SECRET: ci-solo-para-verificacion-0123456789abcdef
+      BETTER_AUTH_URL: http://localhost:3000
+      INITIAL_USER_EMAIL: admin@example.com
+      INITIAL_USER_PASSWORD: ci-solo-para-verificacion
       NEXT_TELEMETRY_DISABLED: "1"
       CHECKPOINT_DISABLE: "1"
     steps:

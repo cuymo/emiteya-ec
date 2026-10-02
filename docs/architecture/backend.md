@@ -21,6 +21,7 @@ backend/src/
 ├── config/          entorno validado con Zod (env.ts)
 ├── platform/        http (correlación, errores, 404), logging, metrics, health, lifecycle, db
 ├── generated/       cliente de Prisma generado (no versionado)
+├── commands/        comandos de servidor sin ruta HTTP (admin:recover)
 └── modules/         un directorio por módulo con domain / application / infrastructure
 ```
 
@@ -31,7 +32,7 @@ Orden de middleware de `createApp` (ADR 0016):
 3. `helmet`: cabeceras de seguridad; `x-powered-by` deshabilitado.
 4. Métricas HTTP por patrón de ruta.
 5. Endpoints operacionales: `/health/live`, `/health/ready` y `/metrics`, fuera de `/api` y fuera de la API pública. Restringir su exposición corresponde al despliegue (`deployment.md`).
-6. `mountBeforeBodyParser`: punto de montaje para routers que necesitan el cuerpo sin procesar, como Better Auth.
+6. `mountBeforeBodyParser`: punto de montaje para routers que necesitan el cuerpo sin procesar. Monta Better Auth en `/api/auth/*`, precedido del middleware que escribe la IP del cliente y la correlación como cabeceras propias del servidor.
 7. `express.json` con límite de 100 KB.
 8. `/api/v1`: el router de aplicación que recibe `createApp` (ADR 0015).
 9. Manejador 404 y manejador de errores.

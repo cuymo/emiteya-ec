@@ -66,6 +66,10 @@ corepack pnpm dev
 - El frontend reenvía `/api/*` al backend; cambia el destino con `API_INTERNAL_URL` en `frontend/.env.local` (ver `frontend/.env.example`).
 - El backend corre con el soporte nativo de TypeScript de Node 24 y se reinicia al guardar. Respeta las restricciones de ADR 0016: sin `enum`, `namespace` con contenido, propiedades de parámetro ni alias de `paths`, e imports relativos con extensión `.ts`.
 
+El primer arranque del backend crea la empresa y el administrador inicial con
+`INITIAL_USER_EMAIL` e `INITIAL_USER_PASSWORD` de `backend/.env`; con ellos se inicia sesión.
+Recuperación de emergencia de un administrador: `docs/architecture/deployment.md`.
+
 ## Verificación
 
 ```bash

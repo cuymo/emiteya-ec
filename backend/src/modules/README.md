@@ -21,4 +21,7 @@ registran en `packages/contracts/src/api/routes.ts` para OpenAPI.
 
 Módulos:
 
-- `identity`: roles, política de autorización central y contexto de petición (`add-user-access`).
+- `identity`: roles, política de autorización central, contexto de petición, aprovisionamiento y
+  recuperación de emergencia (`add-user-access`). `infrastructure/better-auth/` es el único lugar
+  que importa Better Auth (regla de ESLint); el resto usa el puerto de `application/unit-of-work.ts`.
+- `audit`: rastro de auditoría de solo agregado por empresa.

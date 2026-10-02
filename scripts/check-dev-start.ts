@@ -1,6 +1,7 @@
 // Arranca el backend con el mismo comando de desarrollo (sin --watch) y espera /health/live y
 // /health/ready. Garantiza que el type stripping nativo de Node sigue pudiendo arrancarlo (ADR 0016).
-import { spawn } from "node:child_process";
+// Antes aplica las migraciones a la base que usa, porque el arranque aprovisiona la instalación.
+import { spawn, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createServer, type AddressInfo } from "node:net";
 import { join } from "node:path";
@@ -42,6 +43,17 @@ async function waitFor(url: string, until: number): Promise<boolean> {
   return false;
 }
 
+const databaseUrl = process.env.DATABASE_URL_TEST ?? process.env.DATABASE_URL ?? DEFAULT_TEST_URL;
+const migrate = spawnSync(join(backendDir, "node_modules/.bin/prisma"), ["migrate", "deploy"], {
+  cwd: backendDir,
+  env: { ...process.env, DATABASE_URL: databaseUrl, CHECKPOINT_DISABLE: "1" },
+  encoding: "utf8",
+});
+if (migrate.status !== 0) {
+  console.error(`check:dev-start: prisma migrate deploy falló\n${migrate.stdout}${migrate.stderr}`);
+  process.exit(1);
+}
+
 const port = await freePort();
 const args = devArgs();
 const child = spawn(process.execPath, args, {
@@ -49,7 +61,7 @@ const child = spawn(process.execPath, args, {
   env: {
     ...process.env,
     PORT: String(port),
-    DATABASE_URL: process.env.DATABASE_URL_TEST ?? process.env.DATABASE_URL ?? DEFAULT_TEST_URL,
+    DATABASE_URL: databaseUrl,
     LOG_LEVEL: "warn",
   },
   stdio: ["ignore", "pipe", "pipe"],
