@@ -3,10 +3,13 @@ import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import { createTaxpayerConfiguration } from "../application/taxpayer-configuration.ts";
 import { createTaxpayerLogo } from "../application/taxpayer-logo.ts";
+import { createEstablishments } from "../application/establishments.ts";
+import { establishmentsRouter } from "./http/establishments-router.ts";
 import { logoRouter } from "./http/logo-router.ts";
 import { taxpayerRouter } from "./http/taxpayer-router.ts";
 import { createCompanyConfigRepository } from "./prisma-company-config.ts";
 import { createConfigurationAssetStore } from "./prisma-configuration-assets.ts";
+import { createEstablishmentRepository } from "./prisma-establishments.ts";
 import { createTaxpayerUnitOfWork } from "./unit-of-work.ts";
 
 export type TaxpayerModuleOptions = {
@@ -34,5 +37,12 @@ export function taxpayerRouters({ prisma, authorizer, logoMaxBytes }: TaxpayerMo
       }),
       logoMaxBytes,
     }),
+    establishmentsRouter(
+      createEstablishments({
+        uow,
+        establishments: createEstablishmentRepository(prisma),
+        authorizer,
+      }),
+    ),
   ];
 }

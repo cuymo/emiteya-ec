@@ -5,6 +5,7 @@ import { createAuditLog } from "../../audit/infrastructure/prisma-audit-log.ts";
 import type { TaxpayerUnitOfWork } from "../application/ports.ts";
 import { createCompanyConfigRepository } from "./prisma-company-config.ts";
 import { createConfigurationAssetStore } from "./prisma-configuration-assets.ts";
+import { createEstablishmentRepository } from "./prisma-establishments.ts";
 
 const TRANSACTION_TIMEOUT_MS = 10_000;
 
@@ -16,6 +17,7 @@ export function createTaxpayerUnitOfWork(prisma: PrismaClient): TaxpayerUnitOfWo
           work({
             configs: createCompanyConfigRepository(tx),
             assets: createConfigurationAssetStore(tx),
+            establishments: createEstablishmentRepository(tx),
             audit: createAuditLog(tx),
             lockConfiguration: async (companyId) => {
               await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`company-config:${companyId}`}))`;

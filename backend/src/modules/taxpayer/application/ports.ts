@@ -1,6 +1,7 @@
 // Puertos del módulo taxpayer (design D1). La infraestructura los implementa con Prisma; los casos
 // de uso solo ven datos del dominio y el contexto de la petición.
 import type { AuditLog } from "../../audit/application/audit-log.ts";
+import type { ActiveStatus } from "../domain/emission-structure.ts";
 import type { LogoMimeType } from "../domain/logo.ts";
 import type { LogoRef, TaxpayerConfig } from "../domain/taxpayer-config.ts";
 
@@ -38,9 +39,63 @@ export interface ConfigurationAssetStore {
   read(companyId: string, assetId: string): Promise<(LogoRef & { content: Uint8Array }) | null>;
 }
 
+export type EmissionPointRecord = Readonly<{
+  id: string;
+  establishmentId: string;
+  code: string;
+  status: ActiveStatus;
+}>;
+
+export type EstablishmentRecord = Readonly<{
+  id: string;
+  code: string;
+  address: string;
+  status: ActiveStatus;
+  emissionPoints: readonly EmissionPointRecord[];
+}>;
+
+/** El código ya existe en su ámbito; lo detecta la restricción única (design D7). */
+export class DuplicateCodeError extends Error {
+  constructor() {
+    super("El código ya existe en su ámbito.");
+    this.name = "DuplicateCodeError";
+  }
+}
+
+/** Establecimientos y puntos (design D7). Toda consulta exige la empresa; los puntos, además, su establecimiento. */
+export interface EstablishmentRepository {
+  list(companyId: string): Promise<EstablishmentRecord[]>;
+  find(companyId: string, establishmentId: string): Promise<EstablishmentRecord | null>;
+  /** Lanza DuplicateCodeError si el código ya existe en la empresa. */
+  create(companyId: string, input: { code: string; address: string }): Promise<EstablishmentRecord>;
+  update(
+    companyId: string,
+    establishmentId: string,
+    input: { address?: string; status?: ActiveStatus },
+  ): Promise<EstablishmentRecord>;
+  findPoint(
+    companyId: string,
+    establishmentId: string,
+    emissionPointId: string,
+  ): Promise<EmissionPointRecord | null>;
+  /** Lanza DuplicateCodeError si el código ya existe en el establecimiento. */
+  createPoint(
+    companyId: string,
+    establishmentId: string,
+    input: { code: string },
+  ): Promise<EmissionPointRecord>;
+  updatePoint(
+    companyId: string,
+    establishmentId: string,
+    emissionPointId: string,
+    input: { status: ActiveStatus },
+  ): Promise<EmissionPointRecord>;
+}
+
 export type TaxpayerScope = {
   configs: CompanyConfigRepository;
   assets: ConfigurationAssetStore;
+  establishments: EstablishmentRepository;
   audit: AuditLog;
   /** Serializa las escrituras de configuración de la empresa en la transacción (design D2). */
   lockConfiguration(companyId: string): Promise<void>;

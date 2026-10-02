@@ -57,7 +57,20 @@ export function createAuthorizer({ memberships, securityEvents }: AuthorizationD
     throw new UserNotFoundError();
   }
 
-  return { requirePermission, requireMember };
+  /**
+   * Paso 2 para recursos propios de la empresa (add-taxpayer-setup, design D12): un recurso ausente
+   * o de otra empresa responde igual, con 404, y la denegación es un evento de seguridad.
+   */
+  function missingResource<E extends NotFoundError>(
+    ctx: RequestContext,
+    action: Permission,
+    error: E,
+  ): E {
+    deny(ctx, action, 404);
+    return error;
+  }
+
+  return { requirePermission, requireMember, missingResource };
 }
 
 export type Authorizer = ReturnType<typeof createAuthorizer>;

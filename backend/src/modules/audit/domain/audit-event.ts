@@ -17,6 +17,13 @@ export const AUDIT_ACTIONS = [
   "taxpayer.environment_changed",
   "taxpayer.logo_replaced",
   "taxpayer.logo_removed",
+  "establishment.created",
+  "establishment.updated",
+  "establishment.deactivated",
+  "establishment.reactivated",
+  "emission_point.created",
+  "emission_point.deactivated",
+  "emission_point.reactivated",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

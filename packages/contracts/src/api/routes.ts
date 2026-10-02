@@ -11,6 +11,16 @@ import {
   userViewSchema,
 } from "../users.ts";
 import {
+  changeEstablishmentStatusSchema,
+  createEmissionPointSchema,
+  createEstablishmentSchema,
+  emissionPointParamsSchema,
+  emissionPointViewSchema,
+  establishmentIdParamsSchema,
+  establishmentViewSchema,
+  updateEstablishmentSchema,
+} from "../establishments.ts";
+import {
   LOGO_RESPONSE_CONTENT_TYPES,
   LOGO_UPLOAD_CONTENT_TYPES,
   changeEnvironmentSchema,
@@ -37,6 +47,18 @@ const userResponse = successEnvelope(userViewSchema);
 const taxpayerResponse = {
   description: "Configuración tributaria vigente de la empresa.",
   schema: successEnvelope(taxpayerViewSchema),
+};
+const establishmentResponse = {
+  description: "Establecimiento con sus puntos de emisión.",
+  schema: successEnvelope(establishmentViewSchema),
+};
+const emissionPointResponse = {
+  description: "Punto de emisión con su disponibilidad.",
+  schema: successEnvelope(emissionPointViewSchema),
+};
+const establishmentNotFound = {
+  description: "El establecimiento o el punto no existen en la empresa.",
+  schema: errorEnvelopeSchema,
 };
 const configErrors = {
   400: errors[400],
@@ -204,5 +226,69 @@ export const apiRoutes: readonly RouteDefinition[] = [
         schema: errorEnvelopeSchema,
       },
     },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/establishments",
+    summary:
+      "Listar los establecimientos de la empresa con sus puntos de emisión y su disponibilidad",
+    responses: {
+      200: {
+        description: "Establecimientos ordenados por código.",
+        schema: successEnvelope(z.array(establishmentViewSchema)),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/establishments",
+    summary: "Crear un establecimiento con su código de tres dígitos y su dirección",
+    request: { body: createEstablishmentSchema },
+    responses: {
+      201: establishmentResponse,
+      ...configErrors,
+      409: {
+        description: "El código ya existe en la empresa (ESTABLISHMENT_CODE_TAKEN).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/establishments/:establishmentId",
+    summary: "Corregir la dirección de un establecimiento; el código no cambia",
+    request: { params: establishmentIdParamsSchema, body: updateEstablishmentSchema },
+    responses: { 200: establishmentResponse, ...configErrors, 404: establishmentNotFound },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/establishments/:establishmentId/status",
+    summary: "Activar o desactivar un establecimiento (estado deseado)",
+    request: { params: establishmentIdParamsSchema, body: changeEstablishmentStatusSchema },
+    responses: { 200: establishmentResponse, ...configErrors, 404: establishmentNotFound },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/establishments/:establishmentId/emission-points",
+    summary: "Crear un punto de emisión en un establecimiento",
+    request: { params: establishmentIdParamsSchema, body: createEmissionPointSchema },
+    responses: {
+      201: emissionPointResponse,
+      ...configErrors,
+      404: establishmentNotFound,
+      409: {
+        description: "El código ya existe en el establecimiento (EMISSION_POINT_CODE_TAKEN).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/establishments/:establishmentId/emission-points/:emissionPointId/status",
+    summary: "Activar o desactivar un punto de emisión (estado deseado)",
+    request: { params: emissionPointParamsSchema, body: changeEstablishmentStatusSchema },
+    responses: { 200: emissionPointResponse, ...configErrors, 404: establishmentNotFound },
   }),
 ];
