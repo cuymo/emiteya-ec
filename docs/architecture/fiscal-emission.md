@@ -141,6 +141,17 @@ RETURNING next_number - 1 AS reserved;
 - La restricción única del secuencial, que incluye el ambiente (CTX §5), respalda la reserva ante cualquier error de código.
 - El número reservado nunca vuelve al contador (BR-08). Un rollback de la transacción antes del commit no consume número; después del commit, el número pertenece al comprobante para siempre.
 
+## Obligaciones que deja `add-taxpayer-setup`
+
+`add-invoice-emission` debe recoger en sus tareas:
+
+- **Identidad tributaria.** Invocar `lockTaxIdentityIn` (módulo `taxpayer`) dentro de la transacción del hito que defina, como máximo al crear el primer artefacto fiscal que deba conservarse (Q-31). La operación toma el lock advisory de configuración de la empresa (`company-config:<company_id>`), es idempotente y fija el RUC vigente; después, ninguna versión nueva puede cambiarlo.
+- **Versión de configuración.** El snapshot del comprobante referencia la versión vigente de `company_config_version` leída en la misma transacción de la reserva, y el XML y el RIDE se construyen solo desde ella (CTX §11, §39).
+- **Ambiente.** El ambiente se fija en el snapshot al reservar, de modo que un cambio de ambiente posterior no afecta a una emisión en curso (CTX §6).
+- **Preparación para emitir.** La emisión consulta la misma evaluación de requisitos de `GET /api/v1/company/status` y se bloquea si la empresa no está preparada (BR-03).
+- **Punto predeterminado.** Solo se preselecciona si sigue disponible; nunca restringe desde dónde se emite (Q-23).
+- **Categoría RIMPE y anexos.** Traducir la categoría declarada a la leyenda que corresponda según Q-38; el XSD solo admite el texto fijo `CONTRIBUYENTE RÉGIMEN RIMPE`.
+
 ## Clave de acceso
 
 Composición, módulo 11 y pruebas obligatorias en CTX §8. En este proyecto:

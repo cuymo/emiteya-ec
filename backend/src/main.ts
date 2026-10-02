@@ -16,6 +16,8 @@ import {
 } from "./modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "./modules/identity/infrastructure/http/request-context.ts";
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
+import { DEFAULT_LOGO_MAX_BYTES } from "./modules/taxpayer/domain/logo.ts";
+import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { createCompanyReader } from "./modules/identity/infrastructure/prisma-companies.ts";
 import { createMembershipReader } from "./modules/identity/infrastructure/prisma-memberships.ts";
 import { createSecurityEventLog } from "./modules/identity/infrastructure/security-event-log.ts";
@@ -70,15 +72,23 @@ const apiRouter = Router();
 apiRouter.use(
   requireContext({ getSessionUserId: (headers) => getSessionUserId(auth, headers), memberships }),
 );
+const authorizer = createAuthorizer({ memberships, securityEvents });
 apiRouter.use(
   usersRouter(
     createUserAdministration({
       uow,
       memberships,
-      authorizer: createAuthorizer({ memberships, securityEvents }),
+      authorizer,
       schemas: userSchemas(passwordPolicy(env)),
     }),
   ),
+);
+apiRouter.use(
+  ...taxpayerRouters({
+    prisma: database.prisma,
+    authorizer,
+    logoMaxBytes: DEFAULT_LOGO_MAX_BYTES,
+  }),
 );
 
 const app = createApp({

@@ -50,10 +50,12 @@ describe("generación de OpenAPI", () => {
     ).toHaveProperty("data");
   });
 
-  it("el registro real documenta la cuenta propia y la administración de usuarios", () => {
+  it("el registro real documenta la cuenta, los usuarios y la configuración tributaria", () => {
     const paths = buildOpenApiDocument(apiRoutes, info).paths;
     expect(Object.keys(paths).sort()).toEqual([
       "/me",
+      "/taxpayer",
+      "/taxpayer/environment",
       "/users",
       "/users/{userId}/password",
       "/users/{userId}/role",
