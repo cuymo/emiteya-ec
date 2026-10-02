@@ -49,6 +49,9 @@ describe("API de secuenciales", () => {
     fiscalServices(db.database.prisma).reservation.reserve(reservationInput(k));
   const list = async (environment: string, who = "adminA") =>
     bodyOf(await call("get", `/fiscal-sequences?environment=${environment}`, who)).data as View[];
+  /** Eventos de ajuste registrados: un ajuste rechazado no añade ninguno. */
+  const adjustments = () =>
+    db.database.prisma.auditEvent.count({ where: { action: "fiscal_sequence.adjusted" } });
 
   beforeAll(async () => {
     db = await createMigratedSchema("fiscal_api");
@@ -170,6 +173,7 @@ describe("API de secuenciales", () => {
     });
 
     it("rechaza un valor igual o menor que el último reservado y valores fuera de rango", async () => {
+      const audited = await adjustments();
       const reserved = await call("put", adjustPath("TEST", "01"), "adminA").send({
         nextNumber: 2,
         expectedNextNumber: 3,
@@ -187,6 +191,7 @@ describe("API de secuenciales", () => {
         });
         expect(res.status, String(nextNumber)).toBe(400);
       }
+      expect(await adjustments()).toBe(audited);
     });
 
     it("el mismo valor no cambia nada ni genera evento", async () => {
@@ -202,6 +207,7 @@ describe("API de secuenciales", () => {
 
     it("un ajuste preparado sobre un valor que una reserva cambió es un conflicto", async () => {
       await reserve(keyOf("TEST", "01"));
+      const audited = await adjustments();
       const res = await call("put", adjustPath("TEST", "01"), "adminA").send({
         nextNumber: 50,
         expectedNextNumber: 3,
@@ -209,6 +215,7 @@ describe("API de secuenciales", () => {
       expect(res.status).toBe(409);
       expect(bodyOf(res).error.code).toBe("SEQUENCE_CHANGED");
       expect((await list("TEST"))[0]).toMatchObject({ nextNumber: 4, lastReserved: 3 });
+      expect(await adjustments()).toBe(audited);
     });
 
     it("retroceder exige un motivo, que queda en el evento", async () => {
@@ -250,6 +257,15 @@ describe("API de secuenciales", () => {
         nextNumber: 20,
         emissionPoint: { available: false },
       });
+      // El ajuste rige cuando el punto vuelve a estar disponible.
+      await expect(reserve(keyOf("TEST", "04", "p2", "e2"))).rejects.toMatchObject({
+        code: "EMISSION_POINT_UNAVAILABLE",
+      });
+      await db.database.prisma.establishment.update({
+        where: { id: ids.e2 },
+        data: { active: true },
+      });
+      expect((await reserve(keyOf("TEST", "04", "p2", "e2"))).sequential).toBe(20);
     });
 
     it("un contador agotado se muestra como agotado y no admite ajustes", async () => {
@@ -269,6 +285,7 @@ describe("API de secuenciales", () => {
     });
 
     it("el operador recibe 403 y otra empresa o un punto bajo otro establecimiento, 404", async () => {
+      const audited = await adjustments();
       const operator = await call("put", adjustPath("TEST", "01"), "operatorA").send({
         nextNumber: 500,
         expectedNextNumber: 101,
@@ -293,6 +310,7 @@ describe("API de secuenciales", () => {
         where: { emissionPointId: ids.pB },
       });
       expect(counterB).toEqual([]);
+      expect(await adjustments()).toBe(audited);
     });
 
     it("rechaza companyId en el cuerpo", async () => {
