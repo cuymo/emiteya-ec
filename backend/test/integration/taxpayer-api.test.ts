@@ -110,6 +110,23 @@ describe("API de la configuración tributaria", () => {
     }
   });
 
+  it("sin un dato obligatorio rechaza, indica el campo y no cambia la configuración ni audita", async () => {
+    const before = await db.database.prisma.auditEvent.count();
+    const { legalName: _omitted, ...withoutLegalName } = PROFILE;
+    const res = await call("put", "/taxpayer", "adminA").send({
+      ...withoutLegalName,
+      expectedVersion: 1,
+    });
+    expect(res.status).toBe(400);
+    expect(bodyOf(res).error.message).toBe("La razón social es obligatoria.");
+    const current = await call("get", "/taxpayer", "adminA");
+    expect(bodyOf(current).data).toMatchObject({
+      version: 1,
+      profile: { legalName: PROFILE.legalName },
+    });
+    expect(await db.database.prisma.auditEvent.count()).toBe(before);
+  });
+
   it("indica el campo inválido en el mensaje", async () => {
     const res = await call("put", "/taxpayer", "adminA").send({
       ...PROFILE,
@@ -120,7 +137,8 @@ describe("API de la configuración tributaria", () => {
     expect(bodyOf(res).error.message).toBe("El RUC debe tener 13 dígitos y terminar en 001.");
   });
 
-  it("responde 409 con una versión desactualizada", async () => {
+  it("responde 409 con una versión desactualizada, sin evento de auditoría", async () => {
+    const auditBefore = await db.database.prisma.auditEvent.count();
     const res = await call("put", "/taxpayer", "adminA").send({
       ...PROFILE,
       legalName: "Otra S.A.",
@@ -128,6 +146,7 @@ describe("API de la configuración tributaria", () => {
     });
     expect(res.status).toBe(409);
     expect(bodyOf(res).error.code).toBe("CONFIG_VERSION_CONFLICT");
+    expect(await db.database.prisma.auditEvent.count()).toBe(auditBefore);
   });
 
   it("cambia el ambiente por su propia ruta", async () => {
@@ -141,6 +160,7 @@ describe("API de la configuración tributaria", () => {
 
   it("el operador recibe 403 en las tres rutas y cada intento es un evento de seguridad", async () => {
     const before = api.events.length;
+    const auditBefore = await db.database.prisma.auditEvent.count();
     const attempts = [
       call("get", "/taxpayer", "operatorA"),
       call("put", "/taxpayer", "operatorA").send({ ...PROFILE, expectedVersion: 2 }),
@@ -155,6 +175,8 @@ describe("API de la configuración tributaria", () => {
         .slice(before)
         .filter((event) => event.type === "authorization_denied" && event.status === 403),
     ).toHaveLength(3);
+    // Un cambio rechazado por permiso no deja evento de auditoría.
+    expect(await db.database.prisma.auditEvent.count()).toBe(auditBefore);
   });
 
   it("cada empresa ve solo su configuración", async () => {

@@ -53,6 +53,20 @@ describe("perfil tributario (design D3)", () => {
     expect(result.email).toBeNull();
   });
 
+  it("exige la razón social, la dirección matriz y el RUC, e indica el campo", () => {
+    for (const [field, message] of [
+      ["legalName", "La razón social es obligatoria."],
+      ["headOfficeAddress", "La dirección matriz es obligatoria."],
+      ["ruc", "El RUC es obligatorio."],
+    ] as const) {
+      const { [field]: _omitted, ...rest } = profile;
+      expect(messages(taxpayerProfileSchema.safeParse(rest)), field).toContain(message);
+      expect(messages(parseProfile({ [field]: "   " })), field).toContain(
+        field === "ruc" ? "El RUC debe tener 13 dígitos y terminar en 001." : message,
+      );
+    }
+  });
+
   it("exige declarar si la empresa está obligada a llevar contabilidad", () => {
     const { accountingRequired: _omitted, ...withoutAccounting } = profile;
     const result = taxpayerProfileSchema.safeParse(withoutAccounting);
