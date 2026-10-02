@@ -38,6 +38,8 @@ corepack pnpm --filter @facturador/backend db:status
 - Para crear una migración a partir de cambios en `backend/prisma/schema.prisma`:
   `corepack pnpm --filter @facturador/backend db:migrate:dev --name <nombre>`.
 - El cliente de Prisma se genera en `backend/src/generated/prisma/` (no versionado) al instalar, y con `db:generate`.
+- Para regenerar los modelos de Better Auth tras cambiar sus plugins o su versión:
+  `corepack pnpm --filter @facturador/backend db:auth-schema` (ver `docs/architecture/database.md`).
 
 ### Comandos destructivos de Prisma
 

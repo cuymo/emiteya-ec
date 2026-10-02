@@ -16,11 +16,11 @@
 
 ## 3. Esquema de empresa, membresía y auditoría
 
-- [ ] 3.1 Instalar el CLI `auth` como dependencia de desarrollo en versión exacta `1.7.7` y generar con `corepack pnpm exec auth` el esquema de Prisma de Better Auth con los plugins Organization y admin, y añadir el modelo propio `audit_event` (D1, D11); verificar que `prisma validate` y la generación del cliente pasan con Prisma 7.x
-- [ ] 3.2 Crear la migración con las restricciones propias de D11 en SQL (`UNIQUE (organizationId, userId)` y `CHECK` de rol y estado en `member`, trigger de solo agregado en `audit_event`, sin ninguna restricción que limite el número de empresas) y una prueba que verifica que siguen presentes tras regenerar el esquema con el CLI; verificar que la migración se aplica sobre una base PostgreSQL limpia en CI
-- [ ] 3.3 Implementar repositorios de membresía y auditoría que exigen el contexto de empresa y no ofrecen búsqueda por identificador sin empresa ni actualización o borrado de auditoría; verificar con pruebas de integración contra PostgreSQL con dos empresas que ninguna consulta devuelve datos de la otra
-- [ ] 3.4 Probar el trigger de solo agregado; verificar con una prueba de integración que `UPDATE` y `DELETE` sobre la auditoría fallan
-- [ ] 3.5 Documentar en `docs/architecture/database.md` las tablas, restricciones, trigger e índices de este cambio, incluidas las que Prisma no expresa; verificar que el documento enumera cada restricción de la migración
+- [x] 3.1 Instalar el CLI `auth` como dependencia de desarrollo en versión exacta `1.7.7` y generar con `corepack pnpm exec auth` el esquema de Prisma de Better Auth con los plugins Organization y admin, y añadir el modelo propio `audit_event` (D1, D11); verificar que `prisma validate` y la generación del cliente pasan con Prisma 7.x
+- [x] 3.2 Crear la migración con las restricciones propias de D11 en SQL (`UNIQUE (organizationId, userId)` y `CHECK` de rol y estado en `member`, trigger de solo agregado en `audit_event`, sin ninguna restricción que limite el número de empresas) y una prueba que verifica que siguen presentes tras regenerar el esquema con el CLI; verificar que la migración se aplica sobre una base PostgreSQL limpia en CI
+- [x] 3.3 Implementar repositorios de membresía y auditoría que exigen el contexto de empresa y no ofrecen búsqueda por identificador sin empresa ni actualización o borrado de auditoría; verificar con pruebas de integración contra PostgreSQL con dos empresas que ninguna consulta devuelve datos de la otra
+- [x] 3.4 Probar el trigger de solo agregado; verificar con una prueba de integración que `UPDATE` y `DELETE` sobre la auditoría fallan
+- [x] 3.5 Documentar en `docs/architecture/database.md` las tablas, restricciones, trigger e índices de este cambio, incluidas las que Prisma no expresa; verificar que el documento enumera cada restricción de la migración
 
 ## 4. Autenticación y aprovisionamiento
 

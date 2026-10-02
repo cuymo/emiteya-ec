@@ -9,7 +9,8 @@
 ## Data Ownership
 
 Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant es
-`company_id` en todo el esquema (ADR 0009). Ninguna tabla existe todavía.
+`company_id` en todo el esquema (ADR 0009). Las tablas existentes y sus restricciones están en
+"Esquema actual"; el resto de la tabla es el modelo objetivo.
 
 | Table/Collection | Owner | Tenant scoped | Notes |
 | --- | --- | --- | --- |
@@ -126,6 +127,53 @@ UNIQUE (document_id, product_id, movement_type)
 - Las tablas de solo agregado se protegen en la base de datos: el rol de la aplicación no tiene `UPDATE` ni `DELETE` sobre ellas, o un trigger lo rechaza. La decisión entre ambos va en el cambio que las cree.
 - Las transiciones de estado son actualizaciones guardadas; la base de datos no codifica la máquina de estados completa, pero el estado es un enum cerrado.
 
+## Esquema actual
+
+Primera migración: `backend/prisma/migrations/20261002083000_add_user_access` (cambio
+`add-user-access`). Las tablas de Better Auth y de sus plugins las genera el CLI `auth`; las
+columnas de esas tablas usan los nombres que fija Better Auth (`organizationId`, `userId`).
+
+| Tabla | Origen | Contenido |
+| --- | --- | --- |
+| `user`, `session`, `account`, `verification` | Better Auth | Identidad global, sesiones, credenciales (hash) y verificaciones. |
+| `organization` | Plugin Organization | La empresa (tenant). Nombre y slug provisionales; sin datos tributarios. |
+| `member` | Plugin Organization | Membresía: `organizationId`, `userId`, `role` y `status`. |
+| `invitation` | Plugin Organization | Sin uso en el MVP: sus endpoints están cerrados. |
+| `audit_event` | Propia (`audit`) | Rastro de auditoría: `company_id`, `actor_type`, `actor_user_id`, `action`, `target_user_id`, `changes` (JSON redactado), `correlation_id`, `occurred_at`. Sin direcciones IP. |
+
+Restricciones de la migración, incluidas las que Prisma no expresa (verificadas por
+`backend/test/integration/migrations.test.ts`):
+
+| Restricción | Tabla | Regla | Dónde se declara |
+| --- | --- | --- | --- |
+| `member_organizationId_userId_key` | `member` | `UNIQUE (organizationId, userId)`: una membresía por usuario y empresa | `@@unique` en el esquema |
+| `member_role_check` | `member` | `CHECK (role IN ('ADMIN', 'OPERATOR'))` | SQL de la migración |
+| `member_status_check` | `member` | `CHECK (status IN ('ACTIVE', 'DEACTIVATED'))`; la columna es `NOT NULL` | SQL de la migración |
+| `audit_event_company_id_fkey` | `audit_event` | `company_id → organization(id)`, `ON DELETE RESTRICT` | Relación en el esquema |
+| `audit_event_actor_user_id_fkey`, `audit_event_target_user_id_fkey` | `audit_event` | Actor y usuario afectado `→ user(id)`, `ON DELETE RESTRICT` | Relación en el esquema |
+| `audit_event_actor_type_check` | `audit_event` | `CHECK (actor_type IN ('USER', 'SYSTEM', 'TECHNICAL_ADMIN'))` | SQL de la migración |
+| `audit_event_actor_user_check` | `audit_event` | Hay usuario actor si y solo si el actor es `USER` | SQL de la migración |
+| `audit_event_append_only` | `audit_event` | Trigger `BEFORE UPDATE OR DELETE` que rechaza el cambio | SQL de la migración |
+| `audit_event_no_truncate` | `audit_event` | Trigger `BEFORE TRUNCATE` que rechaza el vaciado | SQL de la migración |
+| `user_email_key`, `session_token_key`, `organization_slug_key` | Better Auth | Únicos que define el CLI | Esquema generado |
+
+- Ninguna restricción limita el número de empresas: una sola empresa es política del aprovisionamiento (ADR 0009, design de `add-user-access`).
+- El trigger se prefiere a privilegios separados porque una instalación self-hosted puede usar un solo usuario de base de datos.
+- La pertenencia del actor y del usuario afectado a la empresa del evento la garantizan los casos de uso, que los resuelven desde el contexto y la membresía. Una clave foránea compuesta `(company_id, user_id) → member` no se declara porque el actor es opcional y Prisma no admite una relación compuesta opcional con un campo obligatorio; escrita a mano, Prisma la eliminaría en la siguiente migración.
+- `member` referencia `organization` y `user` con el borrado en cascada del plugin. No tiene efecto: el producto nunca borra usuarios ni empresas, y los endpoints de borrado están cerrados.
+
+Regenerar el esquema de Better Auth:
+
+```bash
+corepack pnpm --filter @facturador/backend db:auth-schema
+```
+
+El CLI `auth` 1.7.7 fusiona con `prisma/schema.prisma`: añade lo que cambie en los modelos de
+Better Auth y conserva los modelos, relaciones y `@@unique` propios. Los `CHECK` y los triggers
+viven solo en el SQL de las migraciones, que el CLI no toca. Tras regenerar, una migración nueva
+recoge las diferencias; `migrations.test.ts` comprueba que la regeneración no cambia el esquema
+actual y que migraciones y esquema coinciden.
+
 ## Indexing
 
 - List critical queries.
@@ -144,6 +192,8 @@ UNIQUE (document_id, product_id, movement_type)
 | Productos por código principal, auxiliar y nombre (ERS RF-304)    | `(company_id, main_code)`, `(company_id, auxiliary_code)`; nombre según medición. |
 | Kárdex por producto y fechas (ERS RF-314)                         | `(company_id, product_id, occurred_at)`                        |
 | Auditoría por fecha                                               | `(company_id, occurred_at)`                                    |
+| Membresía activa del usuario de la sesión (cada petición, D3)     | `member (userId)`                                              |
+| Usuarios de la empresa                                            | `member (organizationId)` y el único `(organizationId, userId)` |
 
 Los índices de búsqueda por nombre (`pg_trgm` u otro) se añaden solo si la medición con el
 volumen de referencia (Q-26) no cumple ERS RNF-005.

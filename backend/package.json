@@ -12,6 +12,7 @@
     "test": "vitest run",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
+    "db:auth-schema": "auth generate --config src/modules/identity/infrastructure/better-auth/cli.config.ts --output prisma/schema.prisma -y && prisma format",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status"
@@ -21,6 +22,7 @@
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "@prometheus-io/client": "0.16.1",
+    "better-auth": "1.7.7",
     "express": "5.2.1",
     "helmet": "8.3.0",
     "pino": "10.3.1",
@@ -30,6 +32,7 @@
   "devDependencies": {
     "@types/express": "5.0.6",
     "@types/supertest": "7.2.1",
+    "auth": "1.7.7",
     "prisma": "7.10.0",
     "supertest": "7.3.0"
   }

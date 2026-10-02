@@ -1,0 +1,45 @@
+// Evento del rastro de auditoría del tenant (audit-trail; design D11 y D13). Solo cambios
+// exitosos de un actor conocido; nunca secretos ni direcciones IP.
+
+export type AuditActor =
+  { type: "USER"; userId: string } | { type: "SYSTEM" } | { type: "TECHNICAL_ADMIN" };
+
+export const AUDIT_ACTIONS = [
+  "company.provisioned",
+  "user.created",
+  "user.role_changed",
+  "user.deactivated",
+  "user.reactivated",
+  "user.password_set",
+  "user.recovered",
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+export type AuditChanges = Readonly<Record<string, string | number | boolean | null>>;
+
+export type AuditEventInput = Readonly<{
+  companyId: string;
+  actor: AuditActor;
+  action: AuditAction;
+  targetUserId?: string;
+  changes?: AuditChanges;
+  correlationId: string;
+}>;
+
+export type AuditEvent = AuditEventInput & Readonly<{ id: string; occurredAt: Date }>;
+
+const SECRET_KEY = /pass|hash|token|secret|session|cookie|credential/i;
+
+export class AuditSecretError extends Error {
+  constructor(key: string) {
+    super(`La auditoría no admite el campo «${key}»: podría contener un secreto.`);
+    this.name = "AuditSecretError";
+  }
+}
+
+/** Segunda defensa: rechaza cambios con nombres de campo que sugieren un secreto. */
+export function assertNoSecrets(changes: AuditChanges | undefined): void {
+  for (const key of Object.keys(changes ?? {})) {
+    if (SECRET_KEY.test(key)) throw new AuditSecretError(key);
+  }
+}

@@ -1,4 +1,7 @@
-// Esquema de la base de datos. Sin modelos hasta el primer cambio con datos (add-user-access).
+// Esquema de la base de datos. Los modelos de Better Auth y de sus plugins los genera el CLI `auth`
+// (`db:auth-schema`), que fusiona con este archivo y conserva los modelos, relaciones y `@@unique`
+// propios. Los CHECK y el trigger de solo agregado viven en el SQL de las migraciones
+// (docs/architecture/database.md).
 
 generator client {
   provider            = "prisma-client"
@@ -10,4 +13,150 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id            String       @id
+  name          String
+  email         String
+  emailVerified Boolean      @default(false)
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  role          String?
+  banned        Boolean?     @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  sessions      Session[]
+  accounts      Account[]
+  members       Member[]
+  invitations   Invitation[]
+  auditActions  AuditEvent[] @relation("AuditActor")
+  auditTargets  AuditEvent[] @relation("AuditTarget")
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id                   String   @id
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy       String?
+  activeOrganizationId String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Organization {
+  id          String       @id
+  name        String
+  slug        String
+  logo        String?
+  createdAt   DateTime
+  metadata    String?
+  members     Member[]
+  invitations Invitation[]
+
+  auditEvents AuditEvent[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime
+  status         String       @default("ACTIVE")
+
+  // Una membresía por usuario y empresa (design D11).
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("member")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitation")
+}
+
+// Rastro de auditoría del tenant (design D11). Solo de agregado: el trigger de la migración rechaza
+// UPDATE, DELETE y TRUNCATE. Solo cambios exitosos, sin secretos ni direcciones IP.
+model AuditEvent {
+  id            String       @id @default(uuid())
+  companyId     String       @map("company_id")
+  company       Organization @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  /// USER, SYSTEM o TECHNICAL_ADMIN (CHECK en la migración).
+  actorType     String       @map("actor_type")
+  /// Solo con actor USER (CHECK en la migración).
+  actorUserId   String?      @map("actor_user_id")
+  actor         User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  action        String
+  targetUserId  String?      @map("target_user_id")
+  target        User?        @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: Restrict)
+  /// Cambios redactados: nunca contraseñas, hashes ni credenciales.
+  changes       Json?
+  correlationId String       @map("correlation_id")
+  occurredAt    DateTime     @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  @@index([companyId, occurredAt])
+  @@map("audit_event")
 }

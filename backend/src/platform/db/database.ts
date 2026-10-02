@@ -1,8 +1,11 @@
 // Acceso a PostgreSQL con Prisma 7 y su adapter de PostgreSQL. Una sola instancia por proceso.
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../generated/prisma/client.ts";
+import { PrismaClient, type Prisma } from "../../generated/prisma/client.ts";
 
 export const READINESS_TIMEOUT_MS = 2_000;
+
+/** El cliente o una transacción en curso: los repositorios aceptan ambos. */
+export type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export type Database = {
   prisma: PrismaClient;
@@ -11,9 +14,21 @@ export type Database = {
   close: () => Promise<void>;
 };
 
-export function createDatabase(connectionString: string): Database {
+/** Separa el parámetro `schema` de la URL, la convención de Prisma, para pasarlo al adapter. */
+export function parseDatabaseUrl(url: string): { connectionString: string; schema?: string } {
+  const parsed = new URL(url);
+  const schema = parsed.searchParams.get("schema");
+  parsed.searchParams.delete("schema");
+  return { connectionString: parsed.toString(), ...(schema ? { schema } : {}) };
+}
+
+export function createDatabase(url: string): Database {
+  const { connectionString, schema } = parseDatabaseUrl(url);
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString, connectionTimeoutMillis: READINESS_TIMEOUT_MS }),
+    adapter: new PrismaPg(
+      { connectionString, connectionTimeoutMillis: READINESS_TIMEOUT_MS },
+      schema ? { schema } : undefined,
+    ),
   });
 
   async function ping(timeoutMs = READINESS_TIMEOUT_MS): Promise<boolean> {
