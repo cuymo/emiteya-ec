@@ -63,5 +63,5 @@
 
 ## 8. Verificación integral
 
-- [ ] 8.1 Prueba end-to-end: aprovisionamiento, el administrador inicia sesión, crea un operador, el operador inicia sesión y no accede a `Usuarios`, el administrador lo desactiva, la sesión del operador falla en su siguiente operación y el administrador lo reactiva; verificar que la prueba pasa
-- [ ] 8.2 Ejecutar `corepack pnpm verify`; verificar que formato, lint, pruebas, typecheck y build pasan
+- [x] 8.1 Prueba end-to-end: aprovisionamiento, el administrador inicia sesión, crea un operador, el operador inicia sesión y no accede a `Usuarios`, el administrador lo desactiva, la sesión del operador falla en su siguiente operación y el administrador lo reactiva; verificar que la prueba pasa
+- [x] 8.2 Ejecutar `corepack pnpm verify`; verificar que formato, lint, pruebas, typecheck y build pasan
