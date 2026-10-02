@@ -1,6 +1,7 @@
 // Configuración por entorno, validada al arrancar (docs/architecture/deployment.md).
 import { emailSchema, passwordSchema, type PasswordPolicy } from "@facturador/contracts";
 import { z } from "zod";
+import { DEFAULT_LOGO_MAX_BYTES, LOGO_MAX_BYTES_RANGE } from "../modules/taxpayer/domain/logo.ts";
 
 const trustProxy = z
   .string()
@@ -41,6 +42,10 @@ export const envSchema = z
     LOGIN_FAILURE_WINDOW_MINUTES: int(1, 1440).default(15),
     LOGIN_IP_MAX_REQUESTS: int(1, 10_000).default(30),
     LOGIN_IP_WINDOW_SECONDS: int(1, 3600).default(60),
+    // Tamaño máximo del logo (design D5); por defecto 512 KiB, entre 16 KiB y 2 MiB.
+    LOGO_MAX_BYTES: int(LOGO_MAX_BYTES_RANGE.min, LOGO_MAX_BYTES_RANGE.max).default(
+      DEFAULT_LOGO_MAX_BYTES,
+    ),
     // Solo se validan cuando la instalación aún no tiene empresa (loadInitialAdmin).
     INITIAL_USER_EMAIL: z.string().optional(),
     INITIAL_USER_PASSWORD: z.string().optional(),

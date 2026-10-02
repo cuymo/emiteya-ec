@@ -1,7 +1,8 @@
 // Puertos del módulo taxpayer (design D1). La infraestructura los implementa con Prisma; los casos
 // de uso solo ven datos del dominio y el contexto de la petición.
 import type { AuditLog } from "../../audit/application/audit-log.ts";
-import type { TaxpayerConfig } from "../domain/taxpayer-config.ts";
+import type { LogoMimeType } from "../domain/logo.ts";
+import type { LogoRef, TaxpayerConfig } from "../domain/taxpayer-config.ts";
 
 /** Configuración vigente de una empresa con su número de versión y el estado de su identidad. */
 export type StoredConfig = Readonly<{
@@ -24,8 +25,22 @@ export interface CompanyConfigRepository {
   lockTaxIdentity(companyId: string, at: Date): Promise<boolean>;
 }
 
+/**
+ * Assets inmutables de la configuración (ADR 0017, design D5): guardar y leer por identificador.
+ * El adaptador calcula el SHA-256 y reutiliza el asset de la empresa con el mismo contenido. Una
+ * migración a object storage cambia el adaptador, no este contrato.
+ */
+export interface ConfigurationAssetStore {
+  save(
+    companyId: string,
+    input: { kind: "LOGO"; mimeType: LogoMimeType; content: Uint8Array; createdBy: string },
+  ): Promise<LogoRef>;
+  read(companyId: string, assetId: string): Promise<(LogoRef & { content: Uint8Array }) | null>;
+}
+
 export type TaxpayerScope = {
   configs: CompanyConfigRepository;
+  assets: ConfigurationAssetStore;
   audit: AuditLog;
   /** Serializa las escrituras de configuración de la empresa en la transacción (design D2). */
   lockConfiguration(companyId: string): Promise<void>;

@@ -10,7 +10,14 @@ import {
   userSchemas,
   userViewSchema,
 } from "../users.ts";
-import { changeEnvironmentSchema, taxpayerViewSchema, updateTaxpayerSchema } from "../taxpayer.ts";
+import {
+  LOGO_RESPONSE_CONTENT_TYPES,
+  LOGO_UPLOAD_CONTENT_TYPES,
+  changeEnvironmentSchema,
+  logoQuerySchema,
+  taxpayerViewSchema,
+  updateTaxpayerSchema,
+} from "../taxpayer.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -133,6 +140,64 @@ export const apiRoutes: readonly RouteDefinition[] = [
     responses: {
       200: taxpayerResponse,
       ...configErrors,
+      409: {
+        description:
+          "La versión esperada no es la vigente (CONFIG_VERSION_CONFLICT) o faltan los datos de la empresa (TAXPAYER_NOT_CONFIGURED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/taxpayer/logo",
+    summary: "Descargar el logo vigente de la empresa",
+    responses: {
+      200: {
+        description: "Imagen del logo vigente.",
+        binaryContentTypes: LOGO_RESPONSE_CONTENT_TYPES,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: { description: "La empresa no tiene logo.", schema: errorEnvelopeSchema },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/taxpayer/logo",
+    summary:
+      "Cargar o reemplazar el logo con el contenido de la imagen; crea una versión nueva de la configuración",
+    request: { query: logoQuerySchema, binaryBody: { contentTypes: LOGO_UPLOAD_CONTENT_TYPES } },
+    responses: {
+      200: taxpayerResponse,
+      400: {
+        description:
+          "La imagen no es de un formato admitido, no se puede leer o es demasiado grande en píxeles.",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      409: {
+        description:
+          "La versión esperada no es la vigente (CONFIG_VERSION_CONFLICT) o faltan los datos de la empresa (TAXPAYER_NOT_CONFIGURED).",
+        schema: errorEnvelopeSchema,
+      },
+      413: { description: "La imagen supera el límite configurado.", schema: errorEnvelopeSchema },
+      415: {
+        description: "El tipo de contenido no es de una imagen admitida.",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "delete",
+    path: "/taxpayer/logo",
+    summary: "Eliminar el logo vigente; crea una versión nueva sin logo y conserva el anterior",
+    request: { query: logoQuerySchema },
+    responses: {
+      200: taxpayerResponse,
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
       409: {
         description:
           "La versión esperada no es la vigente (CONFIG_VERSION_CONFLICT) o faltan los datos de la empresa (TAXPAYER_NOT_CONFIGURED).",

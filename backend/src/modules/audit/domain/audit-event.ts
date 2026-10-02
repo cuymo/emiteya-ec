@@ -15,6 +15,8 @@ export const AUDIT_ACTIONS = [
   // add-taxpayer-setup, design D11.
   "taxpayer.configured",
   "taxpayer.environment_changed",
+  "taxpayer.logo_replaced",
+  "taxpayer.logo_removed",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

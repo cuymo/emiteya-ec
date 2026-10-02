@@ -147,6 +147,14 @@ export const changeEnvironmentSchema = strict({
 });
 export type ChangeEnvironmentInput = z.infer<typeof changeEnvironmentSchema>;
 
+/** Tipos con que se puede enviar el logo; el formato real se reconoce por el contenido. */
+export const LOGO_UPLOAD_CONTENT_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "application/octet-stream",
+] as const;
+export const LOGO_RESPONSE_CONTENT_TYPES = ["image/png", "image/jpeg"] as const;
+
 /** Consulta de PUT y DELETE /taxpayer/logo, cuyo cuerpo es la imagen o está vacío. */
 export const logoQuerySchema = z.object({
   expectedVersion: z.coerce

@@ -9,6 +9,11 @@ type Parameter = { name: string; in: "path" | "query"; required: boolean; schema
 
 const toSchema = (schema: z.ZodType): JsonSchema => z.toJSONSchema(schema, { io: "input" });
 
+const binaryContent = (contentTypes: readonly string[]) =>
+  Object.fromEntries(
+    contentTypes.map((type) => [type, { schema: { type: "string", format: "binary" } }]),
+  );
+
 function toOpenApiPath(path: string): string {
   return path.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
 }
@@ -44,6 +49,14 @@ export function buildOpenApiDocument(
             },
           }
         : {}),
+      ...(route.request?.binaryBody
+        ? {
+            requestBody: {
+              required: true,
+              content: binaryContent(route.request.binaryBody.contentTypes),
+            },
+          }
+        : {}),
       responses: Object.fromEntries(
         Object.entries(route.responses).map(([status, response]) => [
           status,
@@ -51,6 +64,9 @@ export function buildOpenApiDocument(
             description: response.description,
             ...(response.schema
               ? { content: { "application/json": { schema: toSchema(response.schema) } } }
+              : {}),
+            ...(response.binaryContentTypes
+              ? { content: binaryContent(response.binaryContentTypes) }
               : {}),
           },
         ]),

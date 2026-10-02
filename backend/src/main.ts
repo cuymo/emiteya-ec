@@ -16,7 +16,6 @@ import {
 } from "./modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "./modules/identity/infrastructure/http/request-context.ts";
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
-import { DEFAULT_LOGO_MAX_BYTES } from "./modules/taxpayer/domain/logo.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { createCompanyReader } from "./modules/identity/infrastructure/prisma-companies.ts";
 import { createMembershipReader } from "./modules/identity/infrastructure/prisma-memberships.ts";
@@ -87,7 +86,7 @@ apiRouter.use(
   ...taxpayerRouters({
     prisma: database.prisma,
     authorizer,
-    logoMaxBytes: DEFAULT_LOGO_MAX_BYTES,
+    logoMaxBytes: env.LOGO_MAX_BYTES,
   }),
 );
 

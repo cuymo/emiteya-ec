@@ -50,12 +50,30 @@ describe("generación de OpenAPI", () => {
     ).toHaveProperty("data");
   });
 
+  it("documenta cuerpos y respuestas binarios", () => {
+    const route = defineRoute({
+      method: "put",
+      path: "/files",
+      summary: "Subir un archivo",
+      request: { binaryBody: { contentTypes: ["image/png"] } },
+      responses: { 200: { description: "El archivo", binaryContentTypes: ["image/png"] } },
+    });
+    const operation = buildOpenApiDocument([route], info).paths["/files"]?.put as {
+      requestBody: { content: Record<string, unknown> };
+      responses: Record<string, { content: Record<string, unknown> }>;
+    };
+    const binary = { schema: { type: "string", format: "binary" } };
+    expect(operation.requestBody.content).toEqual({ "image/png": binary });
+    expect(operation.responses["200"]?.content).toEqual({ "image/png": binary });
+  });
+
   it("el registro real documenta la cuenta, los usuarios y la configuración tributaria", () => {
     const paths = buildOpenApiDocument(apiRoutes, info).paths;
     expect(Object.keys(paths).sort()).toEqual([
       "/me",
       "/taxpayer",
       "/taxpayer/environment",
+      "/taxpayer/logo",
       "/users",
       "/users/{userId}/password",
       "/users/{userId}/role",

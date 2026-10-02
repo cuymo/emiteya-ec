@@ -12,8 +12,13 @@ export type RouteDefinition = {
     params?: z.ZodObject;
     query?: z.ZodObject;
     body?: z.ZodType;
+    /** Cuerpo binario, como el logo (add-taxpayer-setup, design D5), con sus tipos admitidos. */
+    binaryBody?: { contentTypes: readonly string[] };
   };
-  responses: Record<number, { description: string; schema?: z.ZodType }>;
+  responses: Record<
+    number,
+    { description: string; schema?: z.ZodType; binaryContentTypes?: readonly string[] }
+  >;
 };
 
 export function defineRoute(route: RouteDefinition): RouteDefinition {

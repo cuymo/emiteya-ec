@@ -129,6 +129,20 @@ Primer arranque:
 Dos arranques simultáneos sobre una instalación vacía crean una sola empresa: el
 aprovisionamiento toma un advisory lock de PostgreSQL y vuelve a comprobar dentro de él.
 
+### Configuración de la empresa
+
+Variable que valida la API al arrancar (cambio `add-taxpayer-setup`, design D5):
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `LOGO_MAX_BYTES` | No | 524288 (512 KiB) | Tamaño máximo del logo de la empresa, entre 16384 (16 KiB) y 2097152 (2 MiB). Fuera de ese rango la API no arranca y nombra la variable sin mostrar su valor. |
+
+El logo se carga con `PUT /api/v1/taxpayer/logo` como cuerpo binario. El proxy inverso debe
+admitir cuerpos de al menos `LOGO_MAX_BYTES` en las rutas `/api`; si su límite es menor, el
+proxy rechaza la carga antes de que la API pueda responder con su mensaje (por ejemplo, en Nginx,
+`client_max_body_size 1m;` cubre el valor por defecto). Los formatos admitidos (PNG y JPEG) y el
+máximo de 4096 px por lado son valores de diseño del módulo, no configuración.
+
 ### Recuperación administrativa de emergencia
 
 Si ningún administrador puede entrar, el administrador técnico ejecuta en el servidor, con el
