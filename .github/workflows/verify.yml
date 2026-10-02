@@ -41,6 +41,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version-file: .node-version
+          # La caché automática ejecuta pnpm antes de que Corepack lo active en el paso siguiente.
+          package-manager-cache: false
       - name: Activar Corepack
         run: corepack enable
       - name: Instalar dependencias
