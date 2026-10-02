@@ -153,6 +153,16 @@ Queda escrito en `fiscal-emission.md` (tarea 3.6).
   - Variante: con fallos inyectados después de la confirmación, el resultado sigue sin duplicados.
   - Se registran la duración total y la espera máxima de una reserva, como referencia de RNF-003. La configuración y la medición finales se anotan en este diseño durante el apply.
 - La restricción única de la reserva respalda cualquier error de código: un duplicado fallaría la transacción en lugar de asignarse.
+- **Medición del apply (2026-10-02, local, PostgreSQL 17 de Compose):**
+
+  | Escenario | Duración total | Espera máxima de una reserva |
+  | --- | --- | --- |
+  | Contador nuevo (carrera A), cuatro ejecuciones aisladas | 551 a 622 ms | 549 a 620 ms |
+  | Contador existente, cuatro ejecuciones aisladas | 412 a 457 ms | 412 a 457 ms |
+  | Con 30 reversiones antes del commit | 428 a 451 ms | 426 a 450 ms |
+  | Las tres, con toda la suite del backend en paralelo | 568 a 751 ms | 566 a 749 ms |
+
+  La espera máxima incluye la espera de conexión, que cuenta en `maxWait`, y la de bloqueo, que cuenta en `timeout`; aun sumadas quedan por debajo de `maxWait` (2 s). **Configuración elegida:** los valores por defecto de Prisma, sin cambios, porque la prueba los demuestra suficientes con margen.
 
 ### D6. Límite de nueve dígitos y estado agotado
 
@@ -269,7 +279,7 @@ Destino nuevo en `Configuración`, solo para administradores (`sequences.read`).
 
 ### D15. Observabilidad
 
-Las reservas agotadas se registran como advertencia en el log, con la clave del contador y sin datos del comprobante. Las métricas HTTP existentes cubren consulta y ajuste.
+Las reservas agotadas las registrará como advertencia la emisión, que es quien reserva, con la clave del contador y sin datos del comprobante: este cambio no tiene ningún flujo que reserve en producción (obligación anotada en `fiscal-emission.md`). Las métricas HTTP existentes cubren consulta y ajuste.
 
 ### Brief de operaciones sensibles
 

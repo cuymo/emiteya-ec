@@ -12,6 +12,15 @@ export const documentTypeSchema = z.enum(DOCUMENT_TYPES, {
 });
 export type DocumentType = z.infer<typeof documentTypeSchema>;
 
+export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  "01": "Factura",
+  "03": "Liquidación de compra",
+  "04": "Nota de crédito",
+  "05": "Nota de débito",
+  "06": "Guía de remisión",
+  "07": "Comprobante de retención",
+};
+
 /** Primer y último secuencial válidos: nueve dígitos (ERS RF-124, CTX §8.2). */
 export const SEQUENTIAL_MIN = 1;
 export const SEQUENTIAL_MAX = 999_999_999;

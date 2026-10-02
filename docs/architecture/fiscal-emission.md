@@ -126,20 +126,17 @@ Reglas:
 
 ## Reserva del secuencial
 
-La reserva y la transición del comprobante ocurren en una sola transacción. Un
-`UPDATE ... RETURNING` bloquea la fila del contador igual que el `SELECT ... FOR UPDATE` de
-CTX §28:
+La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna
+`reserveSequentialIn(scope, clave)`, sin ruta HTTP. La clave es empresa, ambiente,
+establecimiento, punto y tipo (ADR 0003). Dentro de la transacción del llamador:
 
-```sql
-UPDATE fiscal_sequence
-SET next_number = next_number + 1
-WHERE company_id = $1 AND emission_point_id = $2 AND document_type = $3
-  AND environment = $4  -- un contador por ambiente (ADR 0003)
-RETURNING next_number - 1 AS reserved;
-```
+1. **Comienzo:** lee la disponibilidad del punto. Si él o su establecimiento están inactivos, la rechaza sin tocar el contador. Si estaban activos, la reserva se completa aunque una desactivación se confirme mientras está en curso.
+2. **Creación perezosa:** crea el contador con `INSERT ... ON CONFLICT DO NOTHING`. Dos primeras reservas simultáneas no producen un error de restricción: la segunda espera la confirmación de la primera.
+3. **Incremento:** un `UPDATE ... RETURNING` que avanza `next_number` y bloquea la fila del contador hasta el fin de la transacción, igual que el `SELECT ... FOR UPDATE` de CTX §28. Si el contador está agotado tras el `999999999`, falla con `SEQUENCE_EXHAUSTED`.
+4. **Registro:** actualiza `last_reserved` y registra la reserva en `fiscal_sequence_reservation`, cuya restricción única (CTX §5, con el ambiente) respalda la reserva ante cualquier error de código.
 
-- La restricción única del secuencial, que incluye el ambiente (CTX §5), respalda la reserva ante cualquier error de código.
-- El número reservado nunca vuelve al contador (BR-08). Un rollback de la transacción antes del commit no consume número; después del commit, el número pertenece al comprobante para siempre.
+- La transacción contiene solo operaciones de base de datos, sin I/O externo, y usa la configuración por defecto de Prisma (`maxWait` 2 s para adquirirla, `timeout` 5 s de duración). La prueba de ERS AC-04 mide como máximo 750 ms por reserva con 120 simultáneas en dos instancias (design D5 de `add-fiscal-numbering`).
+- El número reservado nunca vuelve al contador (BR-08) y `next_number > last_reserved` lo impone la base de datos.
 
 ## Obligaciones que deja `add-taxpayer-setup`
 
@@ -151,6 +148,16 @@ RETURNING next_number - 1 AS reserved;
 - **Preparación para emitir.** La emisión consulta la misma evaluación de requisitos de `GET /api/v1/company/status` y se bloquea si la empresa no está preparada (BR-03).
 - **Punto predeterminado.** Solo se preselecciona si sigue disponible; nunca restringe desde dónde se emite (Q-23).
 - **Categoría RIMPE y anexos.** Traducir la categoría declarada a la leyenda que corresponda según Q-38; el XSD solo admite el texto fijo `CONTRIBUYENTE RÉGIMEN RIMPE`.
+
+## Obligaciones que deja `add-fiscal-numbering`
+
+`add-invoice-emission` debe recoger en sus tareas:
+
+- **Dónde reservar.** Invocar `reserveSequentialIn` dentro de la transacción del paso 2 del pipeline, con el ambiente del snapshot y la configuración de transacción por defecto que la prueba de AC-04 respalda. La transacción no debe hacer I/O externo.
+- **Qué significa reservado.** Una reserva que se revierte antes del commit no ha reservado el número. Una vez confirmado el commit, el número no se reutiliza aunque fallen la firma, la generación del XML, el envío al SRI u otra operación posterior; el hueco se tolera.
+- **Frontera del commit.** No tratar el número como reservado fuera de la transacción hasta que la reserva se haya confirmado. Eso excluye devolverlo al cliente, registrarlo como reservado, construir, firmar o enviar el XML con él, o exponerlo de cualquier otra forma antes del commit.
+- **Referencia.** El comprobante referencia la fila de `fiscal_sequence_reservation` y repite la unicidad del secuencial como segunda defensa.
+- **Errores de la reserva.** Traducir `EMISSION_POINT_UNAVAILABLE`, `EMISSION_POINT_NOT_FOUND` y `SEQUENCE_EXHAUSTED` en el resultado de la emisión, y registrar como advertencia en el log la reserva agotada (design D15 de `add-fiscal-numbering`).
 
 ## Clave de acceso
 

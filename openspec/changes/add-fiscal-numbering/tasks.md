@@ -22,22 +22,22 @@
 
 ## 3. Reserva atómica
 
-- [ ] 3.1 Implementar la unidad de trabajo de `fiscal` (con los valores por defecto de Prisma salvo que la medición de 3.5 justifique otros, D5) y los repositorios de contadores y reservas con `companyId` obligatorio; verificar con pruebas de integración con dos empresas que ninguna operación alcanza datos de la otra
-- [ ] 3.2 Implementar `reserveSequentialIn` y `createSequentialReservation` (D4); verificar con pruebas:
+- [x] 3.1 Implementar la unidad de trabajo de `fiscal` (con los valores por defecto de Prisma salvo que la medición de 3.5 justifique otros, D5) y los repositorios de contadores y reservas con `companyId` obligatorio; verificar con pruebas de integración con dos empresas que ninguna operación alcanza datos de la otra
+- [x] 3.2 Implementar `reserveSequentialIn` y `createSequentialReservation` (D4); verificar con pruebas:
   - primera reserva 1 y creación perezosa del contador;
   - tipos, puntos y ambientes independientes;
   - vuelta a un ambiente que continúa su secuencia;
   - punto o establecimiento inactivo rechazados sin consumir número, y continuación tras reactivar;
   - fila de reserva con su clave, y `last_reserved` igual al máximo de las reservas.
-- [ ] 3.3 Probar qué significa reservado: verificar que una transacción revertida después de reservar no consume el número (la siguiente reserva lo recibe) y que una falla posterior a la confirmación deja un hueco sin reutilizar el número
-- [ ] 3.4 Probar las carreras de creación y ajuste de D3 sin que llegue ningún error de restricción al dominio; verificar con pruebas:
+- [x] 3.3 Probar qué significa reservado: verificar que una transacción revertida después de reservar no consume el número (la siguiente reserva lo recibe) y que una falla posterior a la confirmación deja un hueco sin reutilizar el número
+- [x] 3.4 Probar las carreras de creación y ajuste de D3 sin que llegue ningún error de restricción al dominio; verificar con pruebas:
   - B: primera reserva y primer ajuste sobre una clave sin contador, con orden determinista (una transacción retenida antes de confirmar) en ambos sentidos, más ejecuciones simultáneas repetidas sobre claves nuevas;
   - C: reserva y ajuste sobre un contador existente, con los mismos órdenes y repeticiones;
   - en ambas, un único contador por clave, ningún número duplicado, `next_number > last_reserved`, y solo los resultados de dominio previstos (`409 SEQUENCE_CHANGED` o el valor ajustado aplicado).
-- [ ] 3.5 Probar la desactivación concurrente de D4: verificar que una reserva retenida antes de confirmar, mientras otra conexión desactiva el punto y confirma, se completa y conserva su número, que la siguiente reserva se rechaza sin consumir, y que una reserva que comienza después de la desactivación confirmada se rechaza sin tocar el contador
-- [ ] 3.6 Probar el límite: verificar que tras fijar 999999999 la reserva lo recibe, la siguiente falla con `SEQUENCE_EXHAUSTED` sin reiniciar el contador ni exponer el valor centinela, y los demás contadores siguen reservando
-- [ ] 3.7 Prueba de ERS AC-04 (D5): 120 reservas simultáneas repartidas entre dos clientes de Prisma independientes, sobre un contador que aún no existe (carrera A) y sobre uno existente, más una variante con fallos inyectados después de la confirmación, con la configuración de transacción por defecto; verificar un único contador, números distintos y consecutivos del 1 al 120, `last_reserved = 120`, `next_number = 121` y 120 reservas, y anotar en `design.md` la duración total, la espera máxima y la configuración que la prueba demuestra suficiente
-- [ ] 3.8 Anotar en `docs/architecture/fiscal-emission.md` cómo invocará `add-invoice-emission` la reserva (dentro de la transacción del paso 2, con el ambiente del snapshot y la configuración de transacción de D5), qué significa reservado, y la obligación de no tratar el número como reservado fuera de la transacción hasta su commit (D4); verificar que el documento lo describe
+- [x] 3.5 Probar la desactivación concurrente de D4: verificar que una reserva retenida antes de confirmar, mientras otra conexión desactiva el punto y confirma, se completa y conserva su número, que la siguiente reserva se rechaza sin consumir, y que una reserva que comienza después de la desactivación confirmada se rechaza sin tocar el contador
+- [x] 3.6 Probar el límite: verificar que tras fijar 999999999 la reserva lo recibe, la siguiente falla con `SEQUENCE_EXHAUSTED` sin reiniciar el contador ni exponer el valor centinela, y los demás contadores siguen reservando
+- [x] 3.7 Prueba de ERS AC-04 (D5): 120 reservas simultáneas repartidas entre dos clientes de Prisma independientes, sobre un contador que aún no existe (carrera A) y sobre uno existente, más una variante con fallos inyectados después de la confirmación, con la configuración de transacción por defecto; verificar un único contador, números distintos y consecutivos del 1 al 120, `last_reserved = 120`, `next_number = 121` y 120 reservas, y anotar en `design.md` la duración total, la espera máxima y la configuración que la prueba demuestra suficiente
+- [x] 3.8 Anotar en `docs/architecture/fiscal-emission.md` cómo invocará `add-invoice-emission` la reserva (dentro de la transacción del paso 2, con el ambiente del snapshot y la configuración de transacción de D5), qué significa reservado, y la obligación de no tratar el número como reservado fuera de la transacción hasta su commit (D4); verificar que el documento lo describe
 
 ## 4. Consulta, ajuste y auditoría (API)
 
