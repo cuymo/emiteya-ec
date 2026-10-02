@@ -2,7 +2,7 @@
 // solo como presentación, y el mismo contenido en la barra lateral y en el cajón móvil.
 "use client";
 
-import { Users, type LucideIcon } from "lucide-react";
+import { Building2, Globe, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@facturador/contracts";
@@ -17,6 +17,18 @@ const GROUPS: Group[] = [
     label: "Configuración",
     placement: "bottom",
     destinations: [
+      {
+        href: "/configuracion/empresa",
+        label: "Empresa",
+        icon: Building2,
+        permission: "taxpayer.read",
+      },
+      {
+        href: "/configuracion/ambiente",
+        label: "Ambiente",
+        icon: Globe,
+        permission: "environment.change",
+      },
       { href: "/configuracion/usuarios", label: "Usuarios", icon: Users, permission: "users.read" },
     ],
   },

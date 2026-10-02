@@ -18,22 +18,29 @@ export class ApiError extends Error {
   }
 }
 
-type ApiFetchOptions<T> = Omit<RequestInit, "body"> & { schema?: z.ZodType<T>; json?: unknown };
+type ApiFetchOptions<T> = Omit<RequestInit, "body"> & {
+  schema?: z.ZodType<T>;
+  json?: unknown;
+  /** Cuerpo binario, como el logo; se envía como application/octet-stream. */
+  binary?: Blob;
+};
 
 /** Llama a una ruta bajo /api/v1 y devuelve `data`, o lanza ApiError con el código y el requestId. */
 export async function apiFetch<T = unknown>(
   path: string,
   options: ApiFetchOptions<T> = {},
 ): Promise<T> {
-  const { schema, headers, json, ...init } = options;
+  const { schema, headers, json, binary, ...init } = options;
   const response = await fetch(`${API_BASE_PATH}${path}`, {
     ...init,
     headers: {
       accept: "application/json",
       ...(json === undefined ? {} : { "content-type": "application/json" }),
+      ...(binary === undefined ? {} : { "content-type": "application/octet-stream" }),
       ...headers,
     },
     ...(json === undefined ? {} : { body: JSON.stringify(json) }),
+    ...(binary === undefined ? {} : { body: binary }),
   });
   if (response.status === 204) return undefined as T;
 
