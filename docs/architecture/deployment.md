@@ -169,6 +169,7 @@ node dist/commands/admin-recover.js --email admin@example.com
 
 - El MVP se despliega con **una sola instancia de API**. Las dos capas del límite de intentos de inicio de sesión (por correo e IP, y el límite nativo de Better Auth por IP) guardan su estado en memoria del proceso: con varias instancias cada una contaría por separado, y un reinicio pone los contadores a cero.
 - Desplegar más de una instancia exige, antes del despliegue, mover ese estado a un almacenamiento compartido (`secondaryStorage` de Better Auth u otro equivalente para ambas capas del límite). No bloquea el MVP.
+- La reserva de secuenciales usa la configuración de transacción por defecto de Prisma (`maxWait` 2 s, `timeout` 5 s), respaldada por la medición de ERS AC-04: 120 reservas simultáneas en dos instancias, con una espera máxima de 750 ms por reserva (design D5 de `add-fiscal-numbering`). Si la carga real difiere sustancialmente de esa medición (más instancias, más reservas simultáneas sobre un mismo contador u otro tamaño del pool de conexiones), hay que volver a medir la contención antes de cambiar esos valores.
 
 ### Respaldo y restauración
 
