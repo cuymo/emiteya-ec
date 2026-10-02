@@ -163,8 +163,8 @@ cambio confirma las filas de sus propias operaciones al añadirlas al mapa:
 | Exportar todos los datos del contribuyente                   | Sí      | No                |
 | Ver la auditoría                                             | Sí      | No                |
 
-El establecimiento y el punto predeterminados solo preseleccionan; no restringen dónde emite
-el operador (Q-23).
+El establecimiento y el punto predeterminados de la membresía solo preseleccionan; no
+restringen dónde emite el usuario ni introducen autorización por punto (Q-23, resuelta).
 
 ## Mass Assignment
 

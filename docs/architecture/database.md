@@ -16,6 +16,7 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | --- | --- | --- | --- |
 | `organization` (plugin Organization de Better Auth) | `identity` | Es el tenant | La empresa: su `id` es el `company_id` de todo recurso privado. Una por instalación en el MVP como política operativa del aprovisionamiento; ninguna restricción estructural limita el número de empresas (ADR 0009). Los datos tributarios van en una tabla propia de `taxpayer`. |
 | `company_config_version` | `taxpayer` | Yes | Inmutable; los snapshots de los comprobantes la referencian. |
+| Asset de configuración (logo) | `taxpayer` | Yes | Contenido inmutable con tipo MIME, tamaño y SHA-256; la versión de configuración lo referencia y no se duplica (ADR 0017). |
 | `establishment`, `emission_point` | `taxpayer` | Yes | Se desactivan; no se borran si tienen comprobantes. |
 | `certificate` | `taxpayer` | Yes | Metadatos y secreto cifrado; nunca se expone (ADR 0011). |
 | `member` (plugin Organization de Better Auth) | `identity` | Yes | La membresía: rol `ADMIN` u `OPERATOR` y `status`, con `UNIQUE (organizationId, userId)` y `CHECK` propios. Las cuentas son de Better Auth. |

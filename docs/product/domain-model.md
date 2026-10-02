@@ -31,13 +31,13 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `company` — Empresa
 
 - Purpose: contribuyente emisor. Es el tenant de todos los datos privados (ADR 0009).
-- Key attributes: RUC, razón social, nombre comercial, dirección matriz, teléfono, correo, logo, ambiente activo, anticipación de la alerta de vencimiento de firma, y atributos tributarios: obligado a llevar contabilidad, número de contribuyente especial, agente de retención, gran contribuyente, categoría RIMPE, RUC proveedor (CTX §5).
+- Key attributes: RUC, razón social, nombre comercial, dirección matriz, teléfono, correo, logo (asset inmutable referenciado por la versión de configuración, ADR 0017), ambiente activo, identidad tributaria bloqueada (`taxIdentityLocked`), anticipación de la alerta de vencimiento de firma, y atributos tributarios: obligado a llevar contabilidad, número de contribuyente especial, agente de retención, gran contribuyente, categoría RIMPE, RUC proveedor (CTX §5).
 - Invariants:
   - Una empresa por instalación en el MVP, sin impedir multiempresa futuro (ERS §4.1).
   - Los atributos tributarios los declara el administrador; el sistema no los infiere (ERS RF-103).
   - El RUC proveedor queda vacío salvo que la instalación lo requiera; nunca se llena con un valor ficticio (CTX §37.1, Q-37).
   - Cada cambio de configuración genera una versión nueva, que los comprobantes referencian en su snapshot (CTX §39).
-  - El RUC no cambia después del primer comprobante firmado (propuesta, Q-31).
+  - El RUC se corrige mientras la identidad tributaria no esté bloqueada; una vez bloqueada (`taxIdentityLocked`), es inmutable para esa empresa, y otro contribuyente exige otra empresa. El cambio de emisión fija la transición que bloquea, como máximo al crear el primer artefacto fiscal que deba conservarse (Q-31).
   - Todo cambio de datos tributarios o de ambiente deja auditoría con valores anteriores y nuevos (ERS RF-105, SEC-007).
 - Relationships: tiene establecimientos, certificados, membresías de usuario, terceros, productos y comprobantes.
 
@@ -385,4 +385,4 @@ se repiten aquí.
 
 - **BR-54** Existen los roles Administrador y Operador, y sus permisos se aplican en el servidor (ERS RF-002, SEC-005; Q-22).
 - **BR-55** Los usuarios se desactivan, no se eliminan (ERS RF-409).
-- **BR-56** Cada usuario puede tener un establecimiento y un punto de emisión predeterminados (ERS RF-113, Q-23).
+- **BR-56** Cada usuario puede tener, en su membresía, un establecimiento y un punto de emisión predeterminados. Solo se preseleccionan: no restringen desde dónde emite (ERS RF-113, Q-23).
