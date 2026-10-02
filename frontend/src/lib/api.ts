@@ -18,18 +18,24 @@ export class ApiError extends Error {
   }
 }
 
-type ApiFetchOptions<T> = RequestInit & { schema?: z.ZodType<T> };
+type ApiFetchOptions<T> = Omit<RequestInit, "body"> & { schema?: z.ZodType<T>; json?: unknown };
 
 /** Llama a una ruta bajo /api/v1 y devuelve `data`, o lanza ApiError con el código y el requestId. */
 export async function apiFetch<T = unknown>(
   path: string,
   options: ApiFetchOptions<T> = {},
 ): Promise<T> {
-  const { schema, headers, ...init } = options;
+  const { schema, headers, json, ...init } = options;
   const response = await fetch(`${API_BASE_PATH}${path}`, {
     ...init,
-    headers: { accept: "application/json", ...headers },
+    headers: {
+      accept: "application/json",
+      ...(json === undefined ? {} : { "content-type": "application/json" }),
+      ...headers,
+    },
+    ...(json === undefined ? {} : { body: JSON.stringify(json) }),
   });
+  if (response.status === 204) return undefined as T;
 
   let body: unknown;
   try {
@@ -64,4 +70,38 @@ export async function apiFetch<T = unknown>(
     );
   }
   return envelope.data.data as T;
+}
+
+/** Como apiFetch, pero devuelve también `meta` (listas paginadas). */
+export async function apiFetchPage<T, M>(
+  path: string,
+  options: Omit<RequestInit, "body"> & { schema: z.ZodType<T>; meta: z.ZodType<M> },
+): Promise<{ data: T; meta: M }> {
+  const { schema, meta, headers, ...init } = options;
+  const response = await fetch(`${API_BASE_PATH}${path}`, {
+    ...init,
+    headers: { accept: "application/json", ...headers },
+  });
+  const body: unknown = await response.json().catch(() => undefined);
+  if (!response.ok) {
+    const parsed = errorEnvelopeSchema.safeParse(body);
+    if (parsed.success) {
+      const { code, message, requestId } = parsed.data.error;
+      throw new ApiError(code, response.status, message, requestId);
+    }
+    throw new ApiError(
+      "UNEXPECTED_RESPONSE",
+      response.status,
+      "El servidor respondió con un error inesperado.",
+    );
+  }
+  const page = z.strictObject({ data: schema, meta }).safeParse(body);
+  if (!page.success) {
+    throw new ApiError(
+      "INVALID_RESPONSE",
+      response.status,
+      "La respuesta del servidor no es válida.",
+    );
+  }
+  return page.data as { data: T; meta: M };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
 import { useTheme } from "next-themes";
 import { useRef, useSyncExternalStore, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
@@ -50,7 +51,7 @@ export function ThemeToggle() {
       role="radiogroup"
       aria-label="Tema"
       onKeyDown={onKeyDown}
-      className="flex items-center gap-0.5 rounded-lg border border-border bg-surface-subtle p-0.5"
+      className="hidden items-center gap-0.5 rounded-lg border border-border bg-surface-subtle p-0.5 sm:flex"
     >
       {OPTIONS.map((option, index) => {
         const checked = selected === option.value;
@@ -80,5 +81,50 @@ export function ThemeToggle() {
         );
       })}
     </div>
+  );
+}
+
+/** En pantallas pequeñas, el mismo control como menú de un solo botón de 44px. */
+export function ThemeMenu() {
+  const { theme, setTheme } = useTheme();
+  const isClient = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+  const selected = isClient ? (theme ?? "system") : "system";
+  const Current = OPTIONS.find((option) => option.value === selected)?.icon ?? Monitor;
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger
+        aria-label="Tema"
+        className="inline-flex size-5.5 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-subtle hover:text-foreground sm:hidden"
+      >
+        <Current aria-hidden="true" className="size-2.5" />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="end"
+          sideOffset={4}
+          className="z-(--z-popover) min-w-20 rounded-md border border-border bg-surface p-0.5 text-sm shadow-md"
+        >
+          <DropdownMenu.RadioGroup value={selected} onValueChange={setTheme}>
+            {OPTIONS.map((option) => {
+              const Icon = option.icon;
+              return (
+                <DropdownMenu.RadioItem
+                  key={option.value}
+                  value={option.value}
+                  className="flex h-5.5 cursor-default items-center gap-1 rounded-sm px-1 outline-none data-highlighted:bg-surface-subtle data-[state=checked]:font-semibold"
+                >
+                  <Icon aria-hidden="true" className="size-2.5" />
+                  {option.label}
+                </DropdownMenu.RadioItem>
+              );
+            })}
+          </DropdownMenu.RadioGroup>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }

@@ -85,6 +85,12 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | helmet | 8.3.0 | |
 | Next.js / React | 16.3.8 / 19.3.0 | |
 | Tailwind CSS | 4.3.3 | |
+| better-auth / @better-auth/core / CLI `auth` | 1.7.7 | Versión validada por S-1; se actualiza solo con los tests de contrato (`authentication.md`). |
+| radix-ui | 1.6.7 | Primitivas accesibles de shadcn/ui (diálogo, menú, tooltip, grupo de radio, chips). |
+| react-hook-form / @hookform/resolvers | 7.89.0 / 5.9.1 | Formularios con los esquemas Zod del contrato. |
+| @tanstack/react-table | 8.21.3 | Tabla compartida. La 9, estable desde agosto de 2026, cambia la API; se adopta en su propio cambio. |
+| @tanstack/react-query | 5.104.0 | Estado de servidor: cancelación de consultas obsoletas, invalidación tras mutaciones y deduplicación, que `frontend.md` exige y que no conviene reimplementar. |
+| sonner | 2.0.8 | El sistema de avisos de shadcn/ui; un único toaster semántico. |
 
 ## Documentation
 

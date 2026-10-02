@@ -92,7 +92,7 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
 - Un paquete: `corepack pnpm exec vitest run --project backend` (o `contracts`, `frontend`, `scripts`).
 - Integración: las pruebas de `backend/test/integration/` usan PostgreSQL real, la base `facturador_test` de `compose.yaml` o `DATABASE_URL_TEST`. Levántala con `docker compose up -d --wait`. Si no está disponible, fallan con esa indicación; nunca se saltan.
 - Aislamiento: cada archivo de integración crea su propio esquema PostgreSQL dentro de `facturador_test`, le aplica las migraciones con `prisma migrate deploy` y lo elimina al terminar (`createMigratedSchema`), de modo que los archivos corren en paralelo sin compartir datos y el aprovisionamiento puede partir de una instalación vacía. Las fixtures incluyen siempre dos empresas.
-- Frontend: Vitest con jsdom y Testing Library; las consultas se hacen por rol y nombre accesible, lo que también verifica la accesibilidad básica.
+- Frontend: Vitest con jsdom y Testing Library; las consultas se hacen por rol y nombre accesible, lo que también verifica la accesibilidad básica. `frontend/test/harness.tsx` monta los proveedores reales con la navegación de Next simulada y un `fetch` que responde por método y ruta.
 - Herramientas: las reglas de capas de ESLint y `check:versions` tienen sus propias pruebas.
 
 ## Test Data

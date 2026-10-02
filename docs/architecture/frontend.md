@@ -66,6 +66,24 @@ External registries may provide a starting point, but inspect installed code, re
 demo assumptions, map colors to project tokens, verify accessibility, and align it with
 the existing component contract before use. Do not accumulate near-duplicate primitives.
 
+## Contratos compartidos implementados
+
+Introducidos por `add-user-access`; los módulos nuevos los reutilizan en lugar de crear variantes.
+
+| Contrato | Ubicación (`frontend/src/`) | Notas |
+| --- | --- | --- |
+| Primitivas (`Button`, `Input`, `Label`, `Dialog`, `Menu`, `Tooltip`) | `components/ui/` | shadcn/ui sobre `radix-ui`, adaptado a los tokens. Los diálogos devuelven el foco a quien los abrió. |
+| `AppDataTable`, `TablePagination`, `SearchInput`, `ChipGroup`, `ColumnVisibilityMenu`, `RowActionButton` | `components/data-table/` | TanStack Table con paginación de servidor; estados dentro del marco; lista de tarjetas por debajo de 768px. |
+| `FormDialog`, `FormField` | `components/form-dialog.tsx` | Foco, Escape, cuerpo con desplazamiento, `Cancelar` y una acción principal; errores asociados al campo. |
+| `AsyncButton`, `PasswordField`, `SelectionCardGroup` | `components/` | Pendiente con geometría estable; contraseña que se puede pegar y mostrar; elección en tarjetas de radio. |
+| `StatusBadge`, `EmptyState`, `ErrorState`, `Skeleton` | `components/states.tsx` | Estado con icono y texto; vacío, sin coincidencias y sin permiso. |
+| `SemanticToaster`, `useMutationFeedback` | `components/feedback.tsx` | Toda mutación pasa por aquí: pendiente, aviso, invalidación y mensajes de negocio. |
+| `SessionGate`, `useSession`, `QueryProvider` | `components/session.tsx` | Sesión desde `GET /api/v1/me`; un 401 lleva al inicio de sesión conservando la URL. |
+| Navegación filtrada por permisos | `components/navigation.tsx`, `lib/permissions.ts` | Espejo de presentación de la política del servidor; la API sigue autorizando. |
+
+Las rutas autenticadas viven en `app/(app)/` dentro de `SessionGate`; el inicio de sesión, en
+`app/(auth)/`. Los objetivos táctiles miden al menos 44px por debajo de 768px.
+
 ## Component Construction
 
 - Colocate a component with its tests, its hook, and its own types.

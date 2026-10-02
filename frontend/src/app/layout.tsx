@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { AppShell } from "@/components/app-shell";
+import { SemanticToaster } from "@/components/feedback";
+import { QueryProvider } from "@/components/session";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/menu-and-tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +16,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="es" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <AppShell>{children}</AppShell>
+          <QueryProvider>
+            <TooltipProvider delayDuration={300}>
+              {children}
+              <SemanticToaster />
+            </TooltipProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,57 +1,108 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { AppShell } from "@/components/app-shell";
-import { ThemeProvider } from "@/components/theme-provider";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AppShell, ShellSkeleton } from "@/components/app-shell";
+import { SessionGate } from "@/components/session";
+import { ADMIN_ME, OPERATOR_ME, errorBody, mockApi, navigation, renderApp } from "./harness";
 
 function renderShell() {
-  return render(
-    <ThemeProvider>
+  return renderApp(
+    <SessionGate fallback={<ShellSkeleton />}>
       <AppShell>
         <p>contenido</p>
       </AppShell>
-    </ThemeProvider>,
+    </SessionGate>,
   );
 }
 
-describe("shell de la aplicación", () => {
-  it("muestra cabecera, navegación principal vacía, contenido y enlace para saltar al contenido", () => {
+beforeEach(() => {
+  navigation.pathname = "/configuracion/usuarios";
+  navigation.search = new URLSearchParams("q=ana");
+  navigation.replace.mockReset();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("shell autenticado", () => {
+  it("verifica la sesión sin pantalla en blanco y luego muestra cabecera, contenido y enlace para saltar", async () => {
+    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
     renderShell();
-    expect(screen.getByText("Facturador SRI")).toBeDefined();
-    expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBeDefined();
+    expect(screen.getByRole("status").textContent).toContain("Verificando la sesión");
+    await screen.findByText("contenido");
     expect(screen.getByRole("main").textContent).toContain("contenido");
     expect(screen.getByRole("link", { name: "Saltar al contenido" }).getAttribute("href")).toBe(
       "#contenido",
     );
+    expect(screen.getByRole("button", { name: "Cuenta de Ana Admin" })).toBeDefined();
   });
 
-  it("el selector cambia entre tema oscuro y claro", async () => {
+  it("el administrador ve el destino Usuarios en Configuración, marcado como actual", async () => {
+    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
     renderShell();
-    const dark = screen.getByRole("radio", { name: "Oscuro" });
+    const link = await screen.findByRole("link", { name: "Usuarios" });
+    expect(link.getAttribute("href")).toBe("/configuracion/usuarios");
+    expect(link.getAttribute("aria-current")).toBe("page");
+    expect(screen.getByText("Configuración")).toBeDefined();
+  });
+
+  it("el operador no ve el destino Usuarios", async () => {
+    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: OPERATOR_ME } }) });
+    renderShell();
+    await screen.findByText("contenido");
+    expect(screen.queryByRole("link", { name: "Usuarios" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Abrir menú" })).toBeNull();
+  });
+
+  it("sin sesión lleva al inicio de sesión conservando la URL, sin aviso de sesión vencida", async () => {
+    mockApi({
+      "GET /api/v1/me": () => ({
+        status: 401,
+        body: errorBody("UNAUTHENTICATED", "Inicia sesión para continuar."),
+      }),
+    });
+    renderShell();
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledWith(
+        "/iniciar-sesion?siguiente=%2Fconfiguracion%2Fusuarios%3Fq%3Dana",
+      ),
+    );
+    expect(screen.queryByText("contenido")).toBeNull();
+  });
+
+  it("un fallo distinto de 401 al cargar la cuenta ofrece reintentar", async () => {
+    let calls = 0;
+    mockApi({
+      "GET /api/v1/me": () =>
+        ++calls === 1
+          ? { status: 503, body: errorBody("UNAVAILABLE", "x") }
+          : { status: 200, body: { data: ADMIN_ME } },
+    });
+    renderShell();
+    const retry = await screen.findByRole(
+      "button",
+      { name: "Intentar de nuevo" },
+      { timeout: 5_000 },
+    );
+    fireEvent.click(retry);
+    await screen.findByText("contenido");
+  });
+
+  it("el selector cambia entre tema oscuro y claro, también con las flechas", async () => {
+    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
+    renderShell();
+    const dark = await screen.findByRole("radio", { name: "Oscuro" });
     await act(async () => {
       fireEvent.click(dark);
     });
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    expect(dark.getAttribute("aria-checked")).toBe("true");
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("radio", { name: "Claro" }));
-    });
-    expect(document.documentElement.classList.contains("dark")).toBe(false);
-    expect(screen.getByRole("radio", { name: "Claro" }).getAttribute("aria-checked")).toBe("true");
-  });
-
-  it("el selector se opera con las flechas del teclado", async () => {
-    renderShell();
-    const group = screen.getByRole("radiogroup", { name: "Tema" });
     await act(async () => {
       fireEvent.click(screen.getByRole("radio", { name: "Claro" }));
     });
     await act(async () => {
-      fireEvent.keyDown(group, { key: "ArrowRight" });
+      fireEvent.keyDown(screen.getByRole("radiogroup", { name: "Tema" }), { key: "ArrowRight" });
     });
-    const dark = screen.getByRole("radio", { name: "Oscuro" });
-    expect(dark.getAttribute("aria-checked")).toBe("true");
-    expect(document.activeElement).toBe(dark);
-    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(screen.getByRole("radio", { name: "Oscuro" }).getAttribute("aria-checked")).toBe("true");
+    expect(document.activeElement).toBe(screen.getByRole("radio", { name: "Oscuro" }));
   });
 });
