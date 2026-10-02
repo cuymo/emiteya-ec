@@ -22,7 +22,8 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `member_default_emission_point` | `taxpayer` | Yes | Punto predeterminado de cada membresía; solo preselecciona (Q-23). |
 | `certificate` | `taxpayer` | Yes | Metadatos y secreto cifrado; nunca se expone (ADR 0011). |
 | `member` (plugin Organization de Better Auth) | `identity` | Yes | La membresía: rol `ADMIN` u `OPERATOR` y `status`, con `UNIQUE (organizationId, userId)` y `CHECK` propios. Las cuentas son de Better Auth. |
-| `fiscal_sequence` | `fiscal` | Yes | Bloqueo de fila al reservar. |
+| `fiscal_sequence` | `fiscal` | Yes | Contador por empresa, ambiente, establecimiento, punto y tipo; bloqueo de fila al reservar. |
+| `fiscal_sequence_reservation` | `fiscal` | Yes | Solo agregado: un registro por número reservado, con la unicidad de CTX §5. |
 | `party`, `product` | `catalogs` | Yes | Editables; los comprobantes guardan su copia. |
 | `fiscal_catalog_entry`, `consumer_final_policy`, `schema_registry_entry`, `special_case_support` | `catalogs` | No | Datos versionados distribuidos con cada release. La habilitación por empresa va en una tabla aparte (Q-25). |
 | `electronic_document` | `fiscal` | Yes | Nunca se borra desde `SEQUENCE_RESERVED`. |
@@ -103,7 +104,8 @@ CHECK  (code ~ '^[0-9]{3}$')                                   -- ambos
 
 -- Numeración (ERS RF-120, RF-124; CTX §5)
 UNIQUE (company_id, environment, emission_point_id, document_type) -- fiscal_sequence (ADR 0003)
-CHECK  (next_number BETWEEN 1 AND 999999999)
+CHECK  (next_number BETWEEN 1 AND 1000000000)                 -- 1000000000: agotado, valor interno
+CHECK  (next_number > COALESCE(last_reserved, 0))
 UNIQUE (company_id, environment, establishment_code, emission_point_code, document_type, sequential)
                                                                -- electronic_document (CTX §5, I-12)
 
@@ -133,7 +135,8 @@ UNIQUE (document_id, product_id, movement_type)
 ## Esquema actual
 
 Migraciones: `backend/prisma/migrations/20261002083000_add_user_access` (cambio
-`add-user-access`) y `20261002120000_add_taxpayer_setup` (cambio `add-taxpayer-setup`). Las tablas
+`add-user-access`), `20261002120000_add_taxpayer_setup` (cambio `add-taxpayer-setup`) y
+`20261002180000_add_fiscal_numbering` (cambio `add-fiscal-numbering`). Las tablas
 de Better Auth y de sus plugins las genera el CLI `auth`; las columnas de esas tablas usan los
 nombres que fija Better Auth (`organizationId`, `userId`).
 
@@ -150,6 +153,8 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `establishment` | Propia (`taxpayer`) | `code` de tres dígitos, `address`, `active`. |
 | `emission_point` | Propia (`taxpayer`) | `establishment_id`, `code` de tres dígitos y `active`; sin otros atributos. |
 | `member_default_emission_point` | Propia (`taxpayer`) | Punto predeterminado de una membresía: `company_id`, `user_id`, `emission_point_id`. |
+| `fiscal_sequence` | Propia (`fiscal`) | Contador: clave `company_id`, `environment`, `establishment_id`, `emission_point_id`, `document_type`; `next_number` (1000000000 es el valor interno de agotado) y `last_reserved`. Se crea con su primera reserva o ajuste. |
+| `fiscal_sequence_reservation` | Propia (`fiscal`) | Número reservado: la clave del contador más `sequential`, `reserved_at`, `reserved_by` opcional y `correlation_id`. |
 
 Restricciones de la migración, incluidas las que Prisma no expresa (verificadas por
 `backend/test/integration/migrations.test.ts`):
@@ -190,6 +195,20 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `company_config_version_locked_ruc` | `company_config_version` | Trigger `BEFORE INSERT`: con la identidad bloqueada, el RUC de la versión nueva debe ser `locked_ruc` | SQL de la migración |
 | `company_config_lock` | `company_config` | Trigger `BEFORE INSERT OR UPDATE`: el bloqueo no se revierte, `locked_ruc` es el RUC de la versión vigente y la empresa no cambia | SQL de la migración |
 | `establishment_identity`, `emission_point_identity` | Varias | Triggers `BEFORE UPDATE` que rechazan cambiar el código, la empresa o el establecimiento | SQL de la migración |
+| `emission_point_company_id_establishment_id_id_key` | `emission_point` | `UNIQUE (company_id, establishment_id, id)`: destino de la clave compuesta de los contadores | `@@unique` en el esquema |
+| `fiscal_sequence_company_id_environment_establishment_id_emi_key` | `fiscal_sequence` | `UNIQUE` de la clave del contador: un contador por empresa, ambiente, establecimiento, punto y tipo (ADR 0003) | `@@unique` en el esquema |
+| `fiscal_sequence_reservation_company_id_environment_establis_key` | `fiscal_sequence_reservation` | `UNIQUE` de la clave más `sequential`: la unicidad del secuencial con el ambiente (CTX §5) | `@@unique` en el esquema |
+| `fiscal_sequence_company_id_fkey` | `fiscal_sequence` | Empresa `→ organization(id)`, `ON DELETE RESTRICT` | Relación en el esquema |
+| `fiscal_sequence_company_id_establishment_id_emission_point_fkey` | `fiscal_sequence` | `(company_id, establishment_id, emission_point_id) → emission_point(company_id, establishment_id, id)`: el punto pertenece a ese establecimiento y a esa empresa | Relación en el esquema |
+| `fiscal_sequence_reservation_company_id_environment_establi_fkey` | `fiscal_sequence_reservation` | Clave de cinco columnas `→ fiscal_sequence`: toda reserva pertenece a un contador | Relación en el esquema |
+| `fiscal_sequence_reservation_reserved_by_fkey` | `fiscal_sequence_reservation` | Usuario que reservó `→ user(id)`, opcional | Relación en el esquema |
+| `fiscal_sequence_environment_check`, `fiscal_sequence_document_type_check` | `fiscal_sequence` | `TEST` o `PRODUCTION`; `01`, `03`, `04`, `05`, `06` o `07` (CTX §56) | SQL de la migración |
+| `fiscal_sequence_next_number_check`, `fiscal_sequence_last_reserved_check` | `fiscal_sequence` | Siguiente de 1 a 1000000000 (este último, agotado); último reservado de 1 a 999999999 o nulo | SQL de la migración |
+| `fiscal_sequence_next_above_reserved_check` | `fiscal_sequence` | `next_number > COALESCE(last_reserved, 0)`: ningún ajuste ni reserva vuelve a un número reservado | SQL de la migración |
+| `fiscal_sequence_reservation_sequential_check` | `fiscal_sequence_reservation` | Secuencial de 1 a 999999999 | SQL de la migración |
+| `fiscal_sequence_no_delete`, `fiscal_sequence_no_truncate` | `fiscal_sequence` | Triggers que rechazan borrar contadores | SQL de la migración |
+| `fiscal_sequence_reservation_append_only`, `fiscal_sequence_reservation_no_truncate` | `fiscal_sequence_reservation` | Triggers que rechazan `UPDATE`, `DELETE` y `TRUNCATE` | SQL de la migración |
+| `fiscal_sequence_guard` | `fiscal_sequence` | Trigger `BEFORE UPDATE`: la clave no cambia y `last_reserved` no disminuye ni vuelve a nulo | SQL de la migración |
 
 - Ninguna restricción limita el número de empresas: una sola empresa es política del aprovisionamiento (ADR 0009, design de `add-user-access`).
 - El trigger se prefiere a privilegios separados porque una instalación self-hosted puede usar un solo usuario de base de datos.

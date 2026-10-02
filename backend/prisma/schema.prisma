@@ -16,25 +16,26 @@ datasource db {
 }
 
 model User {
-  id                    String                 @id
+  id                    String                      @id
   name                  String
   email                 String
-  emailVerified         Boolean                @default(false)
+  emailVerified         Boolean                     @default(false)
   image                 String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
   role                  String?
-  banned                Boolean?               @default(false)
+  banned                Boolean?                    @default(false)
   banReason             String?
   banExpires            DateTime?
   sessions              Session[]
   accounts              Account[]
   members               Member[]
   invitations           Invitation[]
-  auditActions          AuditEvent[]           @relation("AuditActor")
-  auditTargets          AuditEvent[]           @relation("AuditTarget")
-  configVersionsCreated CompanyConfigVersion[] @relation("ConfigVersionCreator")
-  configAssetsCreated   ConfigurationAsset[]   @relation("ConfigAssetCreator")
+  auditActions          AuditEvent[]                @relation("AuditActor")
+  auditTargets          AuditEvent[]                @relation("AuditTarget")
+  configVersionsCreated CompanyConfigVersion[]      @relation("ConfigVersionCreator")
+  configAssetsCreated   ConfigurationAsset[]        @relation("ConfigAssetCreator")
+  sequenceReservations  FiscalSequenceReservation[] @relation("SequenceReserver")
 
   @@unique([email])
   @@map("user")
@@ -100,11 +101,12 @@ model Organization {
   members     Member[]
   invitations Invitation[]
 
-  auditEvents    AuditEvent[]
-  companyConfig  CompanyConfig?
-  configVersions CompanyConfigVersion[]
-  configAssets   ConfigurationAsset[]
-  establishments Establishment[]
+  auditEvents     AuditEvent[]
+  companyConfig   CompanyConfig?
+  configVersions  CompanyConfigVersion[]
+  configAssets    ConfigurationAsset[]
+  establishments  Establishment[]
+  fiscalSequences FiscalSequence[]
 
   @@unique([slug])
   @@map("organization")
@@ -269,9 +271,12 @@ model EmissionPoint {
   createdAt       DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
   defaults        MemberDefaultEmissionPoint[]
+  sequences       FiscalSequence[]
 
   @@unique([establishmentId, code])
   @@unique([companyId, id])
+  // Destino de la clave compuesta de los contadores (add-fiscal-numbering, design D2).
+  @@unique([companyId, establishmentId, id])
   @@map("emission_point")
 }
 
@@ -287,4 +292,50 @@ model MemberDefaultEmissionPoint {
   @@id([companyId, userId])
   @@index([companyId, emissionPointId])
   @@map("member_default_emission_point")
+}
+
+// Contador de secuenciales (add-fiscal-numbering, design D2 y D3): uno por empresa, ambiente,
+// establecimiento, punto y tipo (ADR 0003). Se crea con su primera reserva o ajuste. Los CHECK y
+// triggers de la migración imponen el rango, next_number > last_reserved, la clave inmutable,
+// last_reserved monótono y que no se borre.
+model FiscalSequence {
+  id              String                      @id @default(uuid())
+  companyId       String                      @map("company_id")
+  company         Organization                @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  /// TEST o PRODUCTION (CHECK en la migración).
+  environment     String
+  establishmentId String                      @map("establishment_id")
+  emissionPointId String                      @map("emission_point_id")
+  emissionPoint   EmissionPoint               @relation(fields: [companyId, establishmentId, emissionPointId], references: [companyId, establishmentId, id], onDelete: Restrict)
+  /// 01, 03, 04, 05, 06 o 07 (CHECK en la migración).
+  documentType    String                      @map("document_type") @db.Char(2)
+  /// De 1 a 1000000000; 1000000000 es el valor interno de agotado (design D6).
+  nextNumber      Int                         @map("next_number")
+  lastReserved    Int?                        @map("last_reserved")
+  createdAt       DateTime                    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  reservations    FiscalSequenceReservation[]
+
+  @@unique([companyId, environment, establishmentId, emissionPointId, documentType])
+  @@map("fiscal_sequence")
+}
+
+// Número reservado (design D2 y D4): la unicidad del secuencial con el ambiente (CTX §5) en la
+// base de datos. Solo de agregado.
+model FiscalSequenceReservation {
+  id              String         @id @default(uuid())
+  companyId       String         @map("company_id")
+  environment     String
+  establishmentId String         @map("establishment_id")
+  emissionPointId String         @map("emission_point_id")
+  documentType    String         @map("document_type") @db.Char(2)
+  sequence        FiscalSequence @relation(fields: [companyId, environment, establishmentId, emissionPointId, documentType], references: [companyId, environment, establishmentId, emissionPointId, documentType], onDelete: Restrict)
+  sequential      Int
+  reservedAt      DateTime       @default(now()) @map("reserved_at") @db.Timestamptz(3)
+  reservedById    String?        @map("reserved_by")
+  reservedBy      User?          @relation("SequenceReserver", fields: [reservedById], references: [id], onDelete: Restrict)
+  correlationId   String         @map("correlation_id")
+
+  @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
+  @@map("fiscal_sequence_reservation")
 }

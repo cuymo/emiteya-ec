@@ -119,6 +119,37 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     expect(await triggers()).toEqual(expect.arrayContaining(TAXPAYER_TRIGGERS));
   });
 
+  it("crea las restricciones y triggers de la numeración fiscal", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "fiscal_sequence_environment_check",
+        "fiscal_sequence_document_type_check",
+        "fiscal_sequence_next_number_check",
+        "fiscal_sequence_last_reserved_check",
+        "fiscal_sequence_next_above_reserved_check",
+        "fiscal_sequence_reservation_sequential_check",
+        "fiscal_sequence_company_id_establishment_id_emission_point_fkey",
+        "fiscal_sequence_reservation_company_id_environment_establi_fkey",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "fiscal_sequence_company_id_environment_establishment_id_emi_key",
+        "fiscal_sequence_reservation_company_id_environment_establis_key",
+        "emission_point_company_id_establishment_id_id_key",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "fiscal_sequence_no_delete",
+        "fiscal_sequence_no_truncate",
+        "fiscal_sequence_reservation_append_only",
+        "fiscal_sequence_reservation_no_truncate",
+        "fiscal_sequence_guard",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     const organizationConstraints = await db.database.prisma.$queryRaw<{ name: string }[]>`
       SELECT c.conname AS name
@@ -161,7 +192,13 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
 
     // Los modelos y relaciones de add-taxpayer-setup sobreviven a la fusión del CLI.
     expect(readFileSync(regenerated, "utf8")).toBe(readFileSync(SCHEMA, "utf8"));
-    for (const model of ["CompanyConfig", "CompanyConfigVersion", "MemberDefaultEmissionPoint"]) {
+    for (const model of [
+      "CompanyConfig",
+      "CompanyConfigVersion",
+      "MemberDefaultEmissionPoint",
+      "FiscalSequence",
+      "FiscalSequenceReservation",
+    ]) {
       expect(readFileSync(regenerated, "utf8")).toContain(`model ${model} {`);
     }
     const diff = runBin(

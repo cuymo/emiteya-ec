@@ -10,15 +10,15 @@
 
 ## 2. Esquema y migración
 
-- [ ] 2.1 Añadir los modelos `FiscalSequence` y `FiscalSequenceReservation`, la restricción única `(company_id, establishment_id, id)` en `emission_point` y la migración `add_fiscal_numbering`, con sus `CHECK`, claves foráneas compuestas y, en SQL, los triggers de clave inmutable, sin borrado, `last_reserved` monótono y reservas de solo agregado (D2, D13); verificar que `prisma validate`, la generación y `prisma migrate deploy` pasan, y que la regeneración con el CLI de Better Auth deja el esquema igual
-- [ ] 2.2 Probar las invariantes en PostgreSQL con dos empresas; verificar con pruebas de integración que:
+- [x] 2.1 Añadir los modelos `FiscalSequence` y `FiscalSequenceReservation`, la restricción única `(company_id, establishment_id, id)` en `emission_point` y la migración `add_fiscal_numbering`, con sus `CHECK`, claves foráneas compuestas y, en SQL, los triggers de clave inmutable, sin borrado, `last_reserved` monótono y reservas de solo agregado (D2, D13); verificar que `prisma validate`, la generación y `prisma migrate deploy` pasan, y que la regeneración con el CLI de Better Auth deja el esquema igual
+- [x] 2.2 Probar las invariantes en PostgreSQL con dos empresas; verificar con pruebas de integración que:
   - una reserva duplicada falla por la restricción única;
   - `next_number` igual o menor que `last_reserved` falla, y también fuera de rango;
   - cambiar la clave falla, borrar un contador falla, y bajar o anular `last_reserved` falla;
   - `UPDATE`, `DELETE` y `TRUNCATE` de reservas fallan;
   - las claves compuestas rechazan un punto de otra empresa o de otro establecimiento.
-- [ ] 2.3 Extender `migrations.test.ts` con las restricciones y triggers nuevos; verificar que pasa
-- [ ] 2.4 Documentar en `docs/architecture/database.md` las tablas, restricciones y triggers, y corregir el modelo objetivo de `fiscal_sequence` con el rango de D6; verificar que el documento enumera cada nombre de la migración
+- [x] 2.3 Extender `migrations.test.ts` con las restricciones y triggers nuevos; verificar que pasa
+- [x] 2.4 Documentar en `docs/architecture/database.md` las tablas, restricciones y triggers, y corregir el modelo objetivo de `fiscal_sequence` con el rango de D6; verificar que el documento enumera cada nombre de la migración
 
 ## 3. Reserva atómica
 
