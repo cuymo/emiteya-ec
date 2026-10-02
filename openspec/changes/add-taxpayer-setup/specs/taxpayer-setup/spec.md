@@ -128,20 +128,20 @@ Una vez bloqueada la identidad tributaria de una empresa, el sistema SHALL recha
 - **THEN** no existe ninguna operación que lo permita y la identidad sigue bloqueada
 
 ### Requirement: Carga y reemplazo del logo
-El sistema SHALL permitir que un administrador cargue o reemplace el logo de una empresa con datos registrados, en PNG o JPEG reconocido por su contenido y no por el nombre ni por el tipo declarado, y con un tamaño no mayor que el límite configurado. Cargar o reemplazar el logo crea una versión nueva de la configuración; las versiones anteriores conservan el logo que tenían.
+El sistema SHALL permitir que un administrador cargue o reemplace el logo de una empresa con datos registrados, en un formato de imagen admitido, reconocido por su contenido y no por el nombre ni por el tipo declarado, y dentro de los límites de tamaño configurados. Cargar o reemplazar el logo crea una versión nueva de la configuración; las versiones anteriores conservan el logo que tenían.
 
 #### Scenario: Carga de un logo válido
-- **WHEN** un administrador carga una imagen PNG dentro del límite de tamaño
+- **WHEN** un administrador carga una imagen en un formato admitido y dentro de los límites
 - **THEN** la configuración vigente pasa a una versión nueva con ese logo
 - **AND** el administrador puede ver el logo vigente
 
-#### Scenario: Contenido que no es PNG ni JPEG
-- **WHEN** un administrador carga un archivo declarado como PNG cuyo contenido no es PNG ni JPEG
+#### Scenario: Contenido que no corresponde a un formato admitido
+- **WHEN** un administrador carga un archivo declarado como una imagen admitida cuyo contenido no corresponde a ningún formato admitido
 - **THEN** el sistema rechaza el archivo e indica los formatos admitidos
 - **AND** la configuración vigente no cambia
 
 #### Scenario: Logo demasiado grande
-- **WHEN** un administrador carga una imagen mayor que el límite configurado
+- **WHEN** un administrador carga una imagen que supera un límite configurado
 - **THEN** el sistema rechaza el archivo e indica el límite
 - **AND** la configuración vigente no cambia
 
@@ -256,8 +256,8 @@ El sistema SHALL permitir que un administrador desactive y reactive un estableci
 - **WHEN** un administrador desactiva un establecimiento que ya está inactivo
 - **THEN** el estado no cambia
 
-### Requirement: Alta y edición de puntos de emisión
-El sistema SHALL permitir que un administrador cree puntos de emisión dentro de un establecimiento de su empresa, con un código de exactamente tres dígitos único dentro de ese establecimiento y una descripción opcional de hasta 100 caracteres. Después del alta, la descripción puede corregirse y el código no cambia.
+### Requirement: Alta de puntos de emisión
+El sistema SHALL permitir que un administrador cree puntos de emisión dentro de un establecimiento de su empresa, con un código de exactamente tres dígitos único dentro de ese establecimiento. Después del alta, ni el código ni el establecimiento del punto cambian.
 
 #### Scenario: Mismo código en establecimientos distintos
 - **WHEN** un administrador crea el punto `001` en el establecimiento `001` y el punto `001` en el establecimiento `002`
@@ -272,9 +272,9 @@ El sistema SHALL permitir que un administrador cree puntos de emisión dentro de
 - **WHEN** dos solicitudes crean al mismo tiempo el punto `002` en el mismo establecimiento
 - **THEN** existe un solo punto `002` en ese establecimiento
 
-#### Scenario: Corrección de la descripción
-- **WHEN** un administrador corrige la descripción de un punto de emisión
-- **THEN** el punto conserva su código y tiene la descripción nueva
+#### Scenario: Intento de cambiar el código de un punto
+- **WHEN** un administrador intenta cambiar el código de un punto de emisión existente o moverlo a otro establecimiento
+- **THEN** el sistema rechaza la solicitud y el punto no cambia
 
 ### Requirement: Activación y desactivación de puntos de emisión
 El sistema SHALL permitir que un administrador desactive y reactive un punto de emisión, sin eliminarlo. Un punto está disponible para emitir solo si él y su establecimiento están activos.

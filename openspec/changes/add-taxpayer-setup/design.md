@@ -85,9 +85,8 @@ Normalización antes de validar y comparar: Unicode NFC y recorte de espacios al
 | Correo | — | correo válido, hasta 254 caracteres, opcional | RFC 5321; `infoAdicional` admite 300. |
 | Código de establecimiento o punto | `estab`, `ptoEmi` | `^[0-9]{3}$` | XSD |
 | Dirección de establecimiento | `dirEstablecimiento` | 1 a 300 | XSD. Obligatoria por ERS RF-110, aunque el XSD la haga opcional. |
-| Descripción de punto | — | hasta 100 caracteres, opcional | Producto: etiqueta para reconocer el punto. No va al XML. |
 
-Contradicción CTX §5 frente al XSD: CTX §5 modela `withholdingAgent?: boolean`, pero el XSD oficial define `agenteRetencion` como dígitos de hasta 8, el número de la resolución que designa al agente. El orden de CTX §1 pone el XSD oficial por encima de los documentos del proyecto, así que se guarda el número. Se registra como C-10 en `open-questions.md`, para no decidirlo en silencio.
+Contradicción CTX §5 frente al XSD: CTX §5 modela `withholdingAgent?: boolean`, pero el XSD oficial define `agenteRetencion` como dígitos de hasta 8, el número de la resolución que designa al agente. La regla canónica de precedencia del proyecto (`docs/product/overview.md`: en cuestiones técnicas del SRI, las fuentes oficiales prevalecen sobre ERS y CTX en el orden de CTX §1, donde el XSD es la tercera; CTX §0: el XSD oficial es la fuente canónica de la estructura XML) resuelve la contradicción a favor del XSD, así que se guarda el número. Se registra como C-10 en `open-questions.md`, resuelta por esa regla.
 
 `tipoEmision` no se configura: es siempre `1` (off-line) y lo fija el motor fiscal. El logo nunca entra al XML (ERS RF-102).
 
@@ -119,6 +118,7 @@ Alternativa descartada: derivar el bloqueo de la existencia de comprobantes con 
   - Trigger de solo agregado: rechaza `UPDATE`, `DELETE` y `TRUNCATE`.
 - `company_config_version.logo_asset_id` es nullable, con FK compuesta `(company_id, logo_asset_id)`.
 - Puerto `ConfigurationAssetStore`: `save(companyId, bytes) → AssetRef` (calcula SHA-256 y reutiliza el asset existente con `INSERT ... ON CONFLICT DO NOTHING` y lectura posterior) y `read(companyId, assetId) → { bytes, mimeType, sizeBytes, sha256 }`. El adaptador PostgreSQL es el único; una migración a object storage cambia el adaptador, no el contrato (ADR 0017).
+- Valores de diseño y configuración, no requisitos funcionales: ninguna fuente (ERS RF-102, CTX) fija formatos, dimensiones ni tamaño, y el ADR 0017 los deja al diseño. La spec solo exige un formato admitido reconocido por su contenido y límites configurados. Los formatos y el máximo de píxeles son constantes de diseño del módulo; el tamaño máximo es configuración.
 - Validación en el borde, por contenido:
   - El formato se reconoce por la firma: PNG `89 50 4E 47 0D 0A 1A 0A` y JPEG `FF D8 FF`.
   - Las dimensiones se leen de la cabecera (`IHDR` en PNG, marcador `SOFn` en JPEG). Se rechaza una cabecera ilegible o más de 4096 px por lado, para no guardar imágenes que el renderizador del RIDE no pueda decodificar sin riesgo de memoria.
@@ -149,15 +149,15 @@ Alternativa descartada: derivar el bloqueo de la existencia de comprobantes con 
 ### D7. Establecimientos y puntos de emisión
 
 - `establishment`: `id`, `company_id` (FK `RESTRICT`), `code char(3)` con `CHECK (code ~ '^[0-9]{3}$')`, `address varchar(300)`, `active` y fechas. `UNIQUE (company_id, code)` y `UNIQUE (company_id, id)`.
-- `emission_point`: `id`, `company_id`, `establishment_id`, `code char(3)` con el mismo `CHECK`, `description varchar(100) NULL`, `active` y fechas.
+- `emission_point`: `id`, `company_id`, `establishment_id`, `code char(3)` con el mismo `CHECK`, `active` y fechas. Sin nombre ni descripción: ninguna fuente los pide (CTX §5 modela el punto como código y estado), y un cambio posterior los añadirá si aparece la necesidad.
   - FK compuesta `(company_id, establishment_id)` hacia `establishment (company_id, id)`.
   - `UNIQUE (establishment_id, code)` y `UNIQUE (company_id, id)`.
 - El código y la pertenencia son inmutables: un trigger `BEFORE UPDATE` rechaza cambiar `code`, `company_id` o `establishment_id`. Los esquemas de edición no aceptan `code`.
-  - Supuesto registrado: ERS RF-110 dice "editar" sin decir qué. Un código equivocado se corrige creando el correcto y desactivando el otro, que queda reservado.
+  - Supuesto registrado: ERS RF-110 y RF-111 dicen "editar" sin decir qué. Editar un establecimiento es corregir su dirección; editar un punto es activarlo o desactivarlo, su único atributo mutable. Un código equivocado se corrige creando el correcto y desactivando el otro, que queda reservado.
   - La alternativa de editar el código mientras no se use dependería de los cambios 3 y 6 y se olvidaría fácilmente.
 - No hay borrado; solo `active`. Un punto está disponible si él y su establecimiento están activos. Desactivar un establecimiento no cambia el `active` de sus puntos, de modo que al reactivarlo vuelven los que estaban activos.
 - El alta concurrente del mismo código la resuelve la restricción única: P2002 se traduce a `409 ESTABLISHMENT_CODE_TAKEN` o `409 EMISSION_POINT_CODE_TAKEN`.
-- Las ediciones son de estado deseado (`PUT`), idempotentes y de último en escribir, porque cada recurso tiene uno o dos campos y queda auditado.
+- Las ediciones (dirección del establecimiento y estado de ambos) son de estado deseado (`PUT`), idempotentes y de último en escribir, porque cada una toca un solo campo y queda auditada.
 - `GET /api/v1/establishments` devuelve todos los establecimientos de la empresa ordenados por código, con sus puntos anidados y el indicador `available` de cada punto, sin paginación. El techo teórico es 999 establecimientos; el MVP espera decenas (Q-26). Si una medición lo exige, se pagina sin cambiar el resto del contrato.
 - Se puede crear un punto en un establecimiento inactivo: queda no disponible hasta reactivarlo.
 
@@ -199,7 +199,7 @@ Filas nuevas en el mapa central de `identity/domain/access-policy.ts`, denegado 
 | `taxpayer.configure` | Registrar o corregir los datos y atributos, y cargar, reemplazar o eliminar el logo | Sí | No |
 | `environment.change` | Cambiar el ambiente SRI | Sí | No |
 | `establishments.read` | Consultar establecimientos y puntos de emisión | Sí | Sí |
-| `establishments.manage` | Crear, editar, activar y desactivar establecimientos y puntos | Sí | No |
+| `establishments.manage` | Crear establecimientos y puntos, corregir la dirección de un establecimiento, y activar y desactivar ambos | Sí | No |
 | `readiness.read` | Consultar el ambiente y la preparación para emitir | Sí | Sí |
 | `account.setDefaultEmissionPoint` | Definir el punto de emisión predeterminado propio | Sí | Sí |
 
@@ -214,7 +214,7 @@ Acciones nuevas en `AUDIT_ACTIONS`, sin migración porque `action` no tiene `CHE
 - `taxpayer.logo_replaced`
 - `taxpayer.logo_removed`
 - `establishment.created`, `establishment.updated`, `establishment.deactivated`, `establishment.reactivated`
-- `emission_point.created`, `emission_point.updated`, `emission_point.deactivated`, `emission_point.reactivated`
+- `emission_point.created`, `emission_point.deactivated`, `emission_point.reactivated`
 
 Formato de `changes`, plano como en `AuditChanges`:
 
@@ -243,7 +243,6 @@ Todas bajo `/api/v1/` (ADR 0015), con `requireContext`, el sobre `{ data }` o `{
 | `PUT /establishments/:establishmentId` | `establishments.manage` | `200` | `400`, `404` |
 | `PUT /establishments/:establishmentId/status` | `establishments.manage` | `200` | `404` |
 | `POST /establishments/:establishmentId/emission-points` | `establishments.manage` | `201` | `400`, `404`, `409 EMISSION_POINT_CODE_TAKEN` |
-| `PUT /establishments/:establishmentId/emission-points/:emissionPointId` | `establishments.manage` | `200` | `400`, `404` |
 | `PUT /establishments/:establishmentId/emission-points/:emissionPointId/status` | `establishments.manage` | `200` | `404` |
 | `GET /me/default-emission-point` | `account.read` | `200` (`null` sin predeterminado) | — |
 | `PUT /me/default-emission-point` | `account.setDefaultEmissionPoint` | `200` | `404`, `409 EMISSION_POINT_UNAVAILABLE` |
@@ -340,17 +339,17 @@ Componentes compartidos nuevos, añadidos a la tabla de `frontend.md`:
 | Acción principal | `Crear establecimiento`. |
 | Frecuencia y riesgo | Rara; riesgo medio: desactivar es reversible. |
 
-- Lista de establecimientos por código, cada uno con su código como `001`, dirección, `StatusBadge` y sus puntos como `001-002` más la descripción, la disponibilidad y su estado.
+- Lista de establecimientos por código, cada uno con su código como `001`, dirección, `StatusBadge` y sus puntos como `001-002` con su disponibilidad y su estado.
 - Volumen pequeño (D7): lista agrupada, no `AppDataTable` con paginación. La búsqueda se añade si el volumen lo pide.
-- Acciones por establecimiento: `Editar dirección`, `Agregar punto`, `Desactivar` o `Reactivar`. Por punto: `Editar descripción`, `Desactivar` o `Reactivar`. Todas con `RowActionButton` y tooltip.
-- Alta y edición con `FormDialog`. El código se pide solo al crear; después aparece como etiqueta.
+- Acciones por establecimiento: `Editar dirección`, `Agregar punto`, `Desactivar` o `Reactivar`. Por punto: `Desactivar` o `Reactivar`. Todas con `RowActionButton` y tooltip.
+- Alta de establecimientos y puntos, y corrección de la dirección, con `FormDialog`. El código se pide solo al crear; después aparece como etiqueta.
 - Desactivar es de un paso con `Deshacer` en el toast, que reactiva. El toast de un establecimiento con puntos avisa: "Sus puntos de emisión dejarán de estar disponibles".
 - P0: lista y `Crear establecimiento`. P1: puntos y disponibilidad. P2: fechas. P3: identificadores, fuera.
 - Estados: skeleton; vacío como requisito pendiente: "Crea tu primer establecimiento para poder emitir"; error con reintento; sin permiso; móvil con tarjetas apiladas y objetivos de 44 px.
 
 **Mi cuenta: punto de emisión predeterminado** (sección nueva, ambos roles)
 
-- `Select` de los puntos disponibles, agrupados por establecimiento (`001 · Dirección` / `001-002 · Descripción`), con la opción `Sin predeterminado`, y `Guardar`. Se esperan de cinco a quince opciones (`component-selection.md`); si una instalación necesita más, un cambio posterior lo sustituye por `ComboboxField`.
+- `Select` de los puntos disponibles, agrupados por establecimiento (`001 · Dirección` / `001-002`), con la opción `Sin predeterminado`, y `Guardar`. Se esperan de cinco a quince opciones (`component-selection.md`); si una instalación necesita más, un cambio posterior lo sustituye por `ComboboxField`.
 - Si el predeterminado no está disponible: aviso "Tu punto predeterminado no está disponible; elige otro".
 - Sin puntos disponibles: "Aún no hay puntos de emisión disponibles".
 
@@ -386,7 +385,7 @@ Responde las 12 preguntas de `backend.md` para todas las mutaciones de este camb
 ## Risks / Trade-offs
 
 - [El número de contribuyente especial se acepta con 3 a 13 caracteres, como en cinco de los seis XSD, pero la retención 2.0.0 solo admite de 3 a 5] → Se registra en el `README.md` de los XSD. `add-withholding-receipts` debe validar antes de construir el XML y bloquear con un mensaje claro. Restringir aquí a 5 rechazaría números válidos para la factura.
-- [El agente de retención se modela como número de resolución, contra el booleano de CTX §5] → El XSD oficial prevalece (CTX §1). Se registra C-10 para que la revisión normativa (CTX §53) lo vea.
+- [El agente de retención se modela como número de resolución, contra el booleano de CTX §5] → Resuelta por la regla canónica de precedencia (`overview.md`, CTX §0 y §1). C-10 queda registrada como resuelta para que la revisión normativa (CTX §53) la vea.
 - [La categoría RIMPE `NEGOCIO_POPULAR` no tiene un texto propio en el XSD] → Se guarda la categoría declarada. Cómo se expresa en el comprobante lo decide Q-38 en `add-invoice-emission`, sin cambiar este modelo.
 - [El bloqueo de la identidad no tiene todavía quién lo active en producción] → Las pruebas cubren ambos estados con la operación interna y los triggers. `fiscal-emission.md` y las tareas de `add-invoice-emission` lo deben recoger como obligación explícita.
 - [Un cambio de ambiente mientras se emite] → No hay emisión en este cambio. `add-invoice-emission` fija el ambiente en el snapshot al reservar (anotado en `fiscal-emission.md`).

@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Auditoría de los cambios de configuración tributaria
-El sistema SHALL registrar un evento de auditoría por cada cambio exitoso de la configuración tributaria: datos y atributos de la empresa, ambiente, logo, alta, edición, desactivación y reactivación de establecimientos y de puntos de emisión. Cada evento indica actor, empresa, acción, qué se cambió, los valores anteriores y nuevos de cada dato cambiado y el momento.
+El sistema SHALL registrar un evento de auditoría por cada cambio exitoso de la configuración tributaria: datos y atributos de la empresa, ambiente, logo, alta, corrección de la dirección, desactivación y reactivación de establecimientos, y alta, desactivación y reactivación de puntos de emisión. Cada evento indica actor, empresa, acción, qué se cambió, los valores anteriores y nuevos de cada dato cambiado y el momento.
 
 #### Scenario: Corrección de datos de la empresa
 - **WHEN** un administrador corrige la razón social y la dirección matriz
@@ -24,7 +24,7 @@ El sistema SHALL registrar un evento de auditoría por cada cambio exitoso de la
 - **AND** el evento no contiene el contenido de ninguna imagen
 
 #### Scenario: Cambios de establecimientos y puntos de emisión
-- **WHEN** un administrador crea, corrige, desactiva o reactiva un establecimiento o un punto de emisión
+- **WHEN** un administrador crea, desactiva o reactiva un establecimiento o un punto de emisión, o corrige la dirección de un establecimiento
 - **THEN** existe un evento que identifica el establecimiento o el punto por su código, con los valores anteriores y nuevos de lo que cambió
 
 #### Scenario: Operación sin cambio
