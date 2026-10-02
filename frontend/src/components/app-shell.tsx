@@ -95,7 +95,19 @@ function AccountMenu() {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+/**
+ * `notice` va bajo la cabecera en todas las pantallas y `status` junto a las acciones de la
+ * cabecera; el layout los compone con el aviso de ambiente (add-taxpayer-setup, design D6).
+ */
+export function AppShell({
+  children,
+  notice,
+  status,
+}: {
+  children: ReactNode;
+  notice?: ReactNode;
+  status?: ReactNode;
+}) {
   const { me } = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const hasNavigation = visibleGroups(me.role).length > 0;
@@ -119,11 +131,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Brand />
         </div>
         <div className="flex items-center gap-1">
+          {status}
           <ThemeToggle />
           <ThemeMenu />
           <AccountMenu />
         </div>
       </header>
+      {notice}
       <div className="flex flex-1">
         {hasNavigation && (
           <aside

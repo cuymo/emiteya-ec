@@ -143,7 +143,7 @@ Alternativa descartada: derivar el bloqueo de la existencia de comprobantes con 
 - CTX §6 también prohíbe cambiar de ambiente "durante la misma operación". `add-invoice-emission` lo garantiza fijando el ambiente en el snapshot al reservar. Queda anotado en `fiscal-emission.md`.
 - Aviso: el shell lee `GET /api/v1/company/status` con React Query (`refetchOnWindowFocus`) y lo invalida tras cambiar el ambiente.
   - En `TEST`: franja persistente bajo la cabecera, sin botón de cierre, con icono, texto y color de advertencia: "Ambiente de Pruebas: los comprobantes no tienen validez tributaria."
-  - En `PRODUCTION`: `StatusBadge` "Producción" en la cabecera.
+  - En `PRODUCTION`: `StatusBadge` "Producción" en la cabecera. Por debajo de 640 px la cabecera no tiene espacio para el distintivo (hallazgo del recorrido a 320 px), así que Producción se indica con una línea compacta bajo ella, y en Pruebas basta la franja.
   - Si el estado aún carga, se reserva el espacio. Si falla, el aviso muestra "Ambiente desconocido" en vez de suponer `Producción`.
 
 ### D7. Establecimientos y puntos de emisión

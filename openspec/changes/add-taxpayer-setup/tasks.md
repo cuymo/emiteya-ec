@@ -47,8 +47,8 @@
 
 ## 7. Interfaz: aviso de ambiente e Inicio
 
-- [ ] 7.1 Añadir al shell el aviso de ambiente de D6 desde `GET /api/v1/company/status`: franja persistente sin cierre en `Pruebas`, `StatusBadge` en `Producción`, espacio reservado al cargar y "Ambiente desconocido" ante error; verificar con pruebas de componente para administrador y operador en ambos ambientes, que no existe control para cerrarlo, que se actualiza al volver el foco y que se anuncia con `role="status"`
-- [ ] 7.2 Reemplazar la página técnica de Inicio por la preparación para emitir de D14; verificar contra el backend real: empresa nueva, datos más punto con la firma pendiente, enlace al primer requisito pendiente solo para el administrador, mensaje del operador, skeleton, error con reintento, móvil, teclado y temas claro y oscuro
+- [x] 7.1 Añadir al shell el aviso de ambiente de D6 desde `GET /api/v1/company/status`: franja persistente sin cierre en `Pruebas`, `StatusBadge` en `Producción`, espacio reservado al cargar y "Ambiente desconocido" ante error; verificar con pruebas de componente para administrador y operador en ambos ambientes, que no existe control para cerrarlo, que se actualiza al volver el foco y que se anuncia con `role="status"`
+- [x] 7.2 Reemplazar la página técnica de Inicio por la preparación para emitir de D14; verificar contra el backend real: empresa nueva, datos más punto con la firma pendiente, enlace al primer requisito pendiente solo para el administrador, mensaje del operador, skeleton, error con reintento, móvil, teclado y temas claro y oscuro
 
 ## 8. Interfaz: Empresa y Ambiente
 
