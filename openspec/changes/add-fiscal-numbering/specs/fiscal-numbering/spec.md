@@ -81,7 +81,7 @@ El sistema SHALL rechazar una reserva en un contador cuyo último secuencial res
 - **AND** el contador no se reinicia y los demás contadores siguen reservando
 
 ### Requirement: Reserva solo en puntos disponibles
-El sistema SHALL rechazar la reserva de un secuencial en un punto de emisión que no está disponible, porque él o su establecimiento están inactivos, sin consumir ningún número.
+El sistema SHALL rechazar la reserva de un secuencial en un punto de emisión que no está disponible, porque él o su establecimiento están inactivos, sin consumir ningún número. Una reserva comienza cuando comprueba la disponibilidad del punto: si en ese momento el punto y su establecimiento estaban activos, la reserva puede completarse aunque una desactivación se confirme mientras está en curso.
 
 #### Scenario: Punto inactivo
 - **WHEN** se intenta reservar en un punto de emisión inactivo
@@ -95,6 +95,15 @@ El sistema SHALL rechazar la reserva de un secuencial en un punto de emisión qu
 - **WHEN** el punto vuelve a estar disponible y se reserva
 - **THEN** la reserva continúa la secuencia donde quedó
 
+#### Scenario: Desactivación durante una reserva en curso
+- **WHEN** una reserva comenzó con el punto y su establecimiento activos, y una desactivación del punto se confirma antes de que la reserva termine
+- **THEN** la reserva se completa y su número queda reservado
+- **AND** la siguiente reserva en ese punto se rechaza sin consumir número
+
+#### Scenario: Reserva que comienza después de la desactivación
+- **WHEN** una reserva comienza después de que la desactivación del punto se confirmó
+- **THEN** el sistema la rechaza y el contador no cambia
+
 ### Requirement: Consulta de los secuenciales
 El sistema SHALL mostrar al administrador, para el ambiente que elija, el siguiente secuencial y el último reservado de cada tipo de comprobante en cada punto de emisión de su empresa, incluidos los puntos no disponibles con su estado.
 
@@ -105,6 +114,10 @@ El sistema SHALL mostrar al administrador, para el ambiente que elija, el siguie
 #### Scenario: Ambientes por separado
 - **WHEN** se reservaron facturas en `Pruebas` y el administrador consulta `Producción`
 - **THEN** ve los valores de `Producción`, que no cambiaron
+
+#### Scenario: Contador agotado
+- **WHEN** el último secuencial reservado de un contador es 999999999
+- **THEN** el administrador ve ese contador como agotado, con el último reservado 999999999 y sin siguiente secuencial
 
 ### Requirement: Ajuste del siguiente secuencial
 El sistema SHALL permitir que un administrador fije el siguiente secuencial de un contador con un número entero entre 1 y 999999999, mayor que el último número reservado de ese contador. Avanzar el valor deja sin usar los números intermedios. El ajuste rige para las reservas siguientes, también en un punto no disponible.
@@ -132,6 +145,10 @@ El sistema SHALL permitir que un administrador fije el siguiente secuencial de u
 #### Scenario: Punto no disponible
 - **WHEN** el administrador ajusta el siguiente secuencial de un punto inactivo
 - **THEN** el ajuste se aplica y rige cuando el punto vuelva a estar disponible
+
+#### Scenario: Contador agotado
+- **WHEN** el administrador intenta ajustar un contador agotado
+- **THEN** el sistema rechaza el ajuste e indica que la numeración se agotó
 
 ### Requirement: Retroceso explícito del siguiente secuencial
 El sistema SHALL exigir una confirmación explícita con un motivo para fijar el siguiente secuencial en un valor menor que el vigente, y SHALL rechazar siempre un valor igual o menor que el último número reservado.

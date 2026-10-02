@@ -14,7 +14,7 @@ Estado que condiciona el diseño:
 - ADR 0003, enmendado por Q-02: un contador por empresa, ambiente, establecimiento, punto y tipo; reserva atómica con bloqueo de fila; unicidad con el ambiente; nada reservado vuelve al contador.
 - `fiscal-emission.md` fija que la emisión reservará el secuencial dentro de la misma transacción que la transición desde `DRAFT` (paso 2). Un rollback antes del commit no consume número; después del commit, el número pertenece al comprobante para siempre (Q-01, Q-03).
 - Los seis códigos de comprobante (`01`, `03`, `04`, `05`, `06`, `07`) son datos estructurales estables del protocolo, que deben quedar encapsulados (CTX §56).
-- `pg` abre como máximo 10 conexiones por cliente, y `$transaction` de Prisma espera 2 s por defecto para empezar.
+- `pg` abre como máximo 10 conexiones por cliente. En `$transaction` de Prisma, `maxWait` (2 s por defecto) es el tiempo máximo para adquirir la transacción, que incluye esperar una conexión libre del pool; `timeout` (5 s por defecto) es la duración máxima de la transacción interactiva, desde que empieza hasta que confirma. La espera por un bloqueo de PostgreSQL ocurre dentro de la transacción y cuenta en `timeout`, no en `maxWait`.
 - En este proyecto, el SQL crudo con nombres de tabla no resuelve el esquema aislado de las pruebas. La reserva usa la API de Prisma, cuyo `UPDATE ... RETURNING` bloquea la fila.
 
 ## Goals / Non-Goals
@@ -73,53 +73,97 @@ Lee los establecimientos y puntos con el repositorio de `taxpayer` (`list` y `fi
 
 Alternativa descartada: solo el contador, sin registro de reservas. No dejaría la unicidad de CTX §5 en la base de datos hasta el cambio de emisión, ni la trazabilidad de qué se reservó y cuándo (CTX §28 la incluye).
 
-### D3. Creación del contador: perezosa
+### D3. Creación del contador: perezosa y segura ante la carrera
 
-Un contador no existe hasta su primera reserva o su primer ajuste. Lo crea `createMany(..., skipDuplicates)`, es decir, `INSERT ... ON CONFLICT DO NOTHING`, con `next_number = 1`.
+Un contador no existe hasta su primera reserva o su primer ajuste. Ambas operaciones empiezan
+con la misma creación: `createMany(..., skipDuplicates)`, es decir,
+`INSERT ... ON CONFLICT DO NOTHING`, con `next_number = 1`. Después actúan sobre la fila con un
+`UPDATE` que la bloquea.
+
+**Estrategia concreta: inserción idempotente más serialización por el bloqueo de la fila.** No
+hace falta upsert con reintento:
+
+- Si dos transacciones crean a la vez la misma clave, PostgreSQL deja insertar a la primera. La segunda espera en el índice único a que la primera confirme o revierta: si confirma, no hace nada; si revierte, inserta ella. Nunca se produce un error de restricción única, así que ninguno llega al dominio ni al cliente.
+- El `UPDATE` posterior de cada transacción espera el bloqueo de la fila. En READ COMMITTED vuelve a evaluar su condición sobre la versión confirmada más reciente, de modo que cada operación ve el efecto completo de la anterior.
+
+Resultados de dominio previstos para cada carrera:
+
+| Carrera | Resultado |
+| --- | --- |
+| A. Muchas primeras reservas sobre una clave sin contador | Se crea un único contador y las reservas reciben 1, 2, 3… sin duplicados. |
+| B. Primera reserva y primer ajuste sobre una clave sin contador | Si la reserva confirma antes, recibe el 1 y el ajuste (preparado viendo 1) se rechaza con `409 SEQUENCE_CHANGED`. Si el ajuste confirma antes, la reserva recibe el valor ajustado. |
+| C. Reserva y ajuste sobre un contador existente | Igual que B con el valor vigente: el ajuste solo se aplica si el siguiente sigue en el valor que el administrador vio, y la reserva recibe el siguiente vigente en ese instante. |
+
+En ningún caso se asigna un número dos veces ni se viola `next_number > last_reserved`. Las
+pruebas de 3.x cubren A, B y C con órdenes deterministas (una transacción retenida antes de
+confirmar) y con ejecuciones simultáneas repetidas.
 
 - La consulta muestra los contadores que aún no existen con su valor inicial (siguiente 1, sin reservados), combinando los puntos de la empresa con las filas existentes.
-- Dos primeras reservas simultáneas no chocan: una inserta y la otra espera su confirmación y no hace nada.
 
 Alternativa descartada: crearlos de forma ansiosa, 12 por punto (6 tipos × 2 ambientes), al crear cada punto. Acoplaría `taxpayer` a `fiscal`, exigiría rellenar los puntos existentes y crearía filas que muchos tipos nunca usan. Lo observable es igual en ambas.
 
 ### D4. Reserva atómica
 
-Operación interna `reserveSequentialIn(scope, { companyId, environment, establishmentId, emissionPointId, documentType, reservedBy, correlationId })`. Corre dentro de una transacción abierta, la de la emisión. Para las pruebas existe además `createSequentialReservation(uow).reserve(...)`, que abre la suya.
+Operación interna `reserveSequentialIn(scope, { companyId, environment, establishmentId, emissionPointId, documentType, reservedBy, correlationId })`. Corre dentro de una transacción abierta, la de la emisión. Para las pruebas existe además `createSequentialReservation(uow).reserve(...)`, que abre la suya. La transacción contiene solo operaciones de base de datos, sin I/O externo.
 
-Pasos, dentro de la transacción:
+Pasos, dentro de la transacción y en este orden:
 
-1. **Disponibilidad:** busca el punto por empresa, establecimiento e identificador.
+1. **Comienzo de la reserva:** lee el punto por empresa, establecimiento e identificador.
    - Si no existe: `404 EMISSION_POINT_NOT_FOUND`.
    - Si él o su establecimiento están inactivos: `409 EMISSION_POINT_UNAVAILABLE`, sin tocar el contador.
 2. **Creación perezosa** del contador (D3).
-3. **Incremento:** `update` con `where` sobre la clave y `next_number <= 999999999`, y `data: { nextNumber: { increment: 1 } }`. El `UPDATE ... RETURNING` toma el bloqueo de la fila hasta el fin de la transacción, y el número reservado es `nuevo − 1`. Si no hay fila que cumpla el `where`, el contador está agotado: `409 SEQUENCE_EXHAUSTED`.
+3. **Incremento:** `update` con `where` sobre la clave y `next_number <= 999999999`, y `data: { nextNumber: { increment: 1 } }`. El `UPDATE ... RETURNING` toma el bloqueo de la fila hasta el fin de la transacción, y el número reservado es `nuevo − 1`. Si ninguna fila cumple el `where` (Prisma `P2025`), el contador está agotado, porque el paso 2 garantiza que existe: se traduce a `409 SEQUENCE_EXHAUSTED`, nunca a un error interno.
 4. **Último reservado:** `update` de `last_reserved` al número reservado, sobre la fila ya bloqueada.
 5. **Registro:** `create` de la fila de reserva.
 
-**Qué significa "reservado".** Un número está reservado cuando la transacción que contiene los pasos 3 a 5 se confirma.
+**Desactivación concurrente del punto: semántica definida.**
 
-- Si esa transacción se revierte, el contador, `last_reserved` y la fila de reserva se revierten con ella, y el número se asignará en la siguiente reserva confirmada.
-- Tras la confirmación, nada lo devuelve. Ni la reserva ni el ajuste pueden bajar `next_number` a un número igual o menor que `last_reserved` (`CHECK`). Una falla posterior de la emisión deja un hueco, que se tolera (CTX §28.1, Q-03).
+- La reserva *comienza* en el paso 1, que es la primera sentencia de su transacción. En READ COMMITTED esa sentencia ve exactamente lo confirmado antes de ejecutarse.
+- Una reserva que comenzó con el punto y su establecimiento activos se completa aunque una desactivación se confirme mientras está en curso. La desactivación no espera a la reserva ni la reserva a la desactivación, porque no comparten filas que se escriban.
+- Una reserva que comienza después de confirmada la desactivación la ve y se rechaza en el paso 1, antes de tocar el contador, sin consumir número.
+- Así la regla es determinista sin bloquear la configuración. Una prueba concurrente la cubre: una reserva retenida antes de confirmar mientras otra conexión desactiva el punto y confirma.
 
-**Carrera con una desactivación.** El paso 1 lee el estado confirmado en ese instante (READ COMMITTED). Una desactivación que se confirma mientras la reserva está en curso puede no verse. El margen es de milisegundos, y la desactivación rige para la siguiente reserva. Bloquear el punto exigiría SQL crudo o escribir en una tabla de `taxpayer`, y no se justifica.
+**Qué significa "reservado".**
+
+- Un número está reservado cuando la transacción que contiene los pasos 3 a 5 se confirma.
+- Si esa transacción se revierte antes del commit, todavía no ha reservado nada: el contador, `last_reserved` y la fila de reserva se revierten, y el número se asignará en la siguiente reserva confirmada.
+- Tras el commit, nada lo devuelve. Ni la reserva ni el ajuste pueden bajar `next_number` a un número igual o menor que `last_reserved` (`CHECK`). Una falla posterior de firma, generación, envío al SRI u otra operación deja un hueco, que se tolera (CTX §28.1, Q-03).
+
+**Obligación para `add-invoice-emission`:** no debe tratar el número como reservado fuera de la transacción hasta que la reserva se haya confirmado. No puede:
+
+- devolverlo al cliente ni registrarlo como reservado;
+- construir, firmar ni enviar el XML con él;
+- exponerlo de ninguna otra forma antes del commit.
+
+Queda escrito en `fiscal-emission.md` (tarea 3.6).
 
 ### D5. Concurrencia con más de 100 reservas
 
 - Todas las reservas de un mismo contador se serializan en el bloqueo de su fila, también entre procesos e instancias, porque el bloqueo es de PostgreSQL. Contadores distintos no se bloquean entre sí.
-- La reserva standalone abre su transacción con `maxWait: 10_000` y `timeout: 10_000`. Con 10 conexiones por cliente, más de 100 reservas esperan conexión, y el `maxWait` de 2 s por defecto podría agotarse en una CI lenta. La transacción de la emisión hereda la misma configuración en su cambio.
+- **Tiempos de la transacción:**
+  - `maxWait` limita cuánto espera la reserva para adquirir su transacción (conexión del pool incluida);
+  - `timeout` limita cuánto puede durar la transacción una vez iniciada;
+  - la espera por el bloqueo de la fila ocurre dentro de la transacción y consume `timeout`.
+
+  Ninguno de estos valores es un requisito funcional.
+- **Configuración:** la reserva parte de los valores por defecto de Prisma. Solo se cambian si la prueba de AC-04 muestra que no bastan con margen, y entonces se registran el valor elegido y la medición que lo justifica. La transacción se mantiene mínima (cinco sentencias, sin I/O externo) para que el tiempo de bloqueo por reserva sea el menor posible.
 - **Prueba de ERS AC-04:**
-  - Escenario: 120 reservas simultáneas sobre el mismo contador, repartidas entre dos clientes de Prisma independientes, que simulan dos instancias con su propio pool.
-  - Debe cumplir: 120 números distintos y consecutivos del 1 al 120, `last_reserved = 120`, `next_number = 121` y 120 filas de reserva.
+  - Escenario: 120 reservas simultáneas repartidas entre dos clientes de Prisma independientes, que simulan dos instancias con su propio pool. Se ejecuta sobre un contador que aún no existe (carrera A de D3) y sobre uno existente.
+  - Debe cumplir: 120 números distintos y consecutivos del 1 al 120, un único contador, `last_reserved = 120`, `next_number = 121` y 120 filas de reserva.
   - Variante: con fallos inyectados después de la confirmación, el resultado sigue sin duplicados.
-  - Se registra la duración, como referencia de RNF-003.
+  - Se registran la duración total y la espera máxima de una reserva, como referencia de RNF-003. La configuración y la medición finales se anotan en este diseño durante el apply.
 - La restricción única de la reserva respalda cualquier error de código: un duplicado fallaría la transacción en lugar de asignarse.
 
-### D6. Límite de nueve dígitos
+### D6. Límite de nueve dígitos y estado agotado
 
-- El contador admite `next_number` hasta `1000000000`. Reservar el `999999999` deja el contador en `1000000000`, que significa agotado.
+- El último secuencial válido es `999999999`. Internamente, el contador admite `next_number = 1000000000` como valor centinela de agotado, que deja reservar el `999999999`. Ese valor nunca es un secuencial: el formato solo acepta de 1 a 999999999.
 - La siguiente reserva falla en el paso 3 con `409 SEQUENCE_EXHAUSTED`: "Se agotó la numeración de {tipo} en el punto {EEE-PPP} ({ambiente}). Crea otro punto de emisión para seguir emitiendo."
 - El contador nunca se reinicia.
-- Un ajuste no puede sacarlo de ese estado, porque tendría que superar `999999999`. La consulta muestra "Agotado".
+- **El centinela no sale del dominio:**
+  - la vista de la API devuelve `exhausted: true` y `nextNumber: null`, nunca `1000000000`, con `lastReserved: 999999999`;
+  - la pantalla muestra "Agotado";
+  - el esquema del ajuste acepta `expectedNextNumber` solo de 1 a 999999999.
+- Ajustar un contador agotado responde `409 SEQUENCE_EXHAUSTED`: no hay ningún valor válido que supere al último reservado.
 - El modelo objetivo de `database.md` (`CHECK (next_number BETWEEN 1 AND 999999999)`) se corrige a este rango.
 
 ### D7. Ambientes
@@ -140,12 +184,12 @@ Pasos, dentro de la transacción:
 
 1. **Permiso:** `sequences.adjust`. Después, la pertenencia del punto a la empresa y al establecimiento: `404` con evento de seguridad (`missingResource`).
 2. **Validación con Zod:**
-   - `nextNumber` entero de 1 a 999999999;
-   - `expectedNextNumber` entero de 1 a 1000000000;
+   - `nextNumber` y `expectedNextNumber`, enteros de 1 a 999999999;
    - `reason` de 1 a 300 caracteres de una línea;
    - si `nextNumber < expectedNextNumber`, el motivo es obligatorio: "Retroceder el secuencial exige un motivo."
 3. **Transacción:**
-   - Crea el contador de forma perezosa.
+   - Crea el contador de forma perezosa (D3).
+   - Un contador agotado responde `409 SEQUENCE_EXHAUSTED`.
    - Si `nextNumber === expectedNextNumber` y el contador sigue en ese valor, no hay cambio ni evento.
    - Si no, ejecuta un `updateMany` condicional con `where { clave, nextNumber: expectedNextNumber, OR: [lastReserved null, lastReserved < nextNumber] }`.
    - Con `count === 0` relee la fila:
@@ -153,9 +197,11 @@ Pasos, dentro de la transacción:
      - si el valor no supera al último reservado: `409 SEQUENCE_NUMBER_RESERVED`, "El último secuencial reservado es N; el siguiente debe ser mayor."
    - El evento de auditoría (D11) va en la misma transacción.
 
-**Cómo se calcula el máximo reservado.** Es `last_reserved` de la fila, que la reserva mantiene bajo el bloqueo de esa misma fila. La condición del `updateMany` y el `CHECK` de la tabla impiden un ajuste a un número reservado aun con una reserva concurrente.
+**Cómo se calcula el máximo reservado.** Es `last_reserved` de la fila, que la reserva mantiene bajo el bloqueo de esa misma fila.
 
-El ajuste es de estado deseado con valor esperado, como la configuración tributaria. No necesita bloqueo explícito: la condición es atómica.
+**Ajuste concurrente con una reserva.** Si una reserva tiene bloqueada la fila, el `updateMany` espera y luego vuelve a evaluar su condición sobre la versión confirmada (READ COMMITTED). Por eso un ajuste nunca pisa una reserva ni fija un valor ya reservado; el `CHECK` de la tabla es la última defensa. Las carreras B y C de D3 describen los resultados.
+
+El ajuste es de estado deseado con valor esperado, como la configuración tributaria, y no necesita bloqueo explícito.
 
 ### D10. Permisos
 
@@ -180,8 +226,8 @@ Rutas bajo `/api/v1/` (ADR 0015), con `requireContext`, el sobre común y regist
 
 | Ruta | Permiso | Éxito | Errores propios |
 | --- | --- | --- | --- |
-| `GET /fiscal-sequences?environment=TEST\|PRODUCTION` | `sequences.read` | `200`: por cada punto de la empresa (orden por establecimiento y punto) y cada tipo, `establishment {id, code, status}`, `emissionPoint {id, code, status, available}`, `environment`, `documentType`, `nextNumber`, `lastReserved`, `exhausted` | `400` sin ambiente válido |
-| `PUT /establishments/:establishmentId/emission-points/:emissionPointId/sequences/:environment/:documentType` | `sequences.adjust` | `200` con el contador | `400`, `404`, `409 SEQUENCE_CHANGED`, `409 SEQUENCE_NUMBER_RESERVED` |
+| `GET /fiscal-sequences?environment=TEST\|PRODUCTION` | `sequences.read` | `200`: por cada punto de la empresa (orden por establecimiento y punto) y cada tipo, `establishment {id, code, status}`, `emissionPoint {id, code, status, available}`, `environment`, `documentType`, `nextNumber` (`null` si está agotado), `lastReserved`, `exhausted` | `400` sin ambiente válido |
+| `PUT /establishments/:establishmentId/emission-points/:emissionPointId/sequences/:environment/:documentType` | `sequences.adjust` | `200` con el contador | `400`, `404`, `409 SEQUENCE_CHANGED`, `409 SEQUENCE_NUMBER_RESERVED`, `409 SEQUENCE_EXHAUSTED` |
 
 - El formato vive en `packages/contracts`, compartido por backend, frontend y la emisión: `formatSequential(n)` devuelve `000000001`, y `documentNumber(establecimiento, punto, n)` devuelve `001-002-000000001`.
 - Sin `Idempotency-Key`: el ajuste es de estado deseado con valor esperado; repetirlo no cambia nada.
@@ -244,11 +290,11 @@ Las reservas agotadas se registran como advertencia en el log, con la clave del 
 
 ## Risks / Trade-offs
 
-- [Contención en un contador muy usado] → Las reservas del mismo contador se serializan por diseño (ADR 0003). Cada transacción de reserva dura milisegundos; la prueba de D5 mide la duración con 120 reservas.
-- [`maxWait` de Prisma bajo ráfagas] → La reserva fija `maxWait` y `timeout` de 10 s (D5); si una medición real lo pide, se configura el tamaño del pool.
-- [Carrera entre una reserva y una desactivación] → Margen de milisegundos aceptado (D4); la desactivación rige para la siguiente reserva.
+- [Contención en un contador muy usado] → Las reservas del mismo contador se serializan por diseño (ADR 0003); la transacción de reserva es mínima y sin I/O externo, y la prueba de D5 mide la duración con 120 reservas.
+- [Ráfagas que agoten `maxWait` o `timeout`] → La configuración parte de los valores por defecto y solo cambia con una medición que lo justifique (D5); si una carga real lo pide, se dimensiona el pool.
+- [Reserva en curso durante una desactivación] → Semántica definida y probada (D4): lo que comenzó con el punto activo se completa, y lo que comienza después de la desactivación se rechaza.
 - [Restricción única nueva en `emission_point`] → Es aditiva y sus columnas ya son únicas por `id`; no puede fallar sobre datos existentes.
-- [El valor centinela `1000000000`] → Está documentado en D6 y `database.md`; nunca se representa como secuencial, porque el formato solo acepta de 1 a 999999999.
+- [El valor centinela `1000000000`] → Interno al dominio y a la base de datos (D6): la API devuelve `exhausted: true` con `nextNumber: null`, y el formato solo acepta de 1 a 999999999.
 
 ## Migration Plan
 
