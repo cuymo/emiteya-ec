@@ -4,12 +4,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  DEFAULT_PASSWORD_POLICY,
-  userSchemas,
-  type ChangeOwnPasswordInput,
-} from "@facturador/contracts";
+import type { ChangeOwnPasswordInput } from "@facturador/contracts";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
 import { useMutationFeedback } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
@@ -18,8 +15,12 @@ import { useSession } from "@/components/session";
 import { AuthError, changeOwnPassword } from "@/lib/auth-client";
 import { ROLE_LABELS } from "@/lib/permissions";
 
-const schema = userSchemas(DEFAULT_PASSWORD_POLICY).changeOwnPassword;
-const HINT = `Entre ${DEFAULT_PASSWORD_POLICY.minLength} y ${DEFAULT_PASSWORD_POLICY.maxLength} caracteres.`;
+// La longitud de la contraseña es configuración del despliegue: la valida el servidor, cuyo mensaje
+// indica el valor vigente. El cliente solo exige ambos campos.
+const schema = z.strictObject({
+  currentPassword: z.string().min(1, "Escribe tu contraseña actual."),
+  newPassword: z.string().min(1, "Escribe la contraseña nueva."),
+});
 
 export function AccountScreen() {
   const { me } = useSession();
@@ -40,11 +41,7 @@ export function AccountScreen() {
         return true;
       }
       if (cause instanceof AuthError && cause.kind === "password_policy") {
-        form.setError(
-          "newPassword",
-          { message: `${cause.message} ${HINT}` },
-          { shouldFocus: true },
-        );
+        form.setError("newPassword", { message: cause.message }, { shouldFocus: true });
         return true;
       }
       return false;
@@ -92,14 +89,9 @@ export function AccountScreen() {
             autoComplete="current-password"
           />
         </FormField>
-        <FormField
-          id="new-password"
-          label="Contraseña nueva"
-          hint={HINT}
-          error={errors.newPassword?.message}
-        >
+        <FormField id="new-password" label="Contraseña nueva" error={errors.newPassword?.message}>
           <PasswordField
-            {...fieldAria("new-password", errors.newPassword?.message, HINT)}
+            {...fieldAria("new-password", errors.newPassword?.message)}
             {...form.register("newPassword")}
             autoComplete="new-password"
           />

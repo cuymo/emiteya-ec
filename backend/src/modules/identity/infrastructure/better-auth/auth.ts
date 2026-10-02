@@ -1,4 +1,5 @@
 // Better Auth configurado según design D2, D6 y D9. Todo uso de Better Auth vive en este módulo (D2b).
+import { passwordSchema } from "@facturador/contracts";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
@@ -146,6 +147,15 @@ export function createAuth({
             });
           }
           const body = (ctx.body ?? {}) as Record<string, unknown>;
+          // Política de contraseñas con el valor vigente en el mensaje (spec: "indicando la longitud
+          // mínima vigente"); la interfaz no fija los valores, que son configuración.
+          const policy = passwordSchema(settings.password).safeParse(body.newPassword);
+          if (typeof body.newPassword === "string" && !policy.success) {
+            throw new APIError("BAD_REQUEST", {
+              code: "PASSWORD_POLICY",
+              message: policy.error.issues[0]?.message ?? "La contraseña no es válida.",
+            });
+          }
           // Las demás sesiones se invalidan siempre (D6), aunque el cliente envíe otro valor.
           return { context: { body: { ...body, revokeOtherSessions: true } } };
         }

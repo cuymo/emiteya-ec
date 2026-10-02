@@ -117,6 +117,30 @@ describe("cambio de la contraseña propia", () => {
     ).toBe(200);
   });
 
+  it("con otra política configurada, el mensaje indica la longitud vigente", async () => {
+    const custom = buildUsersApp(db, {
+      trustProxy: 1,
+      settings: { password: { minLength: 16, maxLength: 64 } },
+    });
+    const email = "politica@empresa.ec";
+    await createMember(custom.uow, companyId, { name: "Política", email });
+    const { cookie } = await signIn(custom.app, email, PASSWORD, { "X-Forwarded-For": ip() });
+    const res = await request(custom.app)
+      .post("/api/auth/change-password")
+      .set("Origin", BASE_URL)
+      .set("Cookie", cookie)
+      .set("X-Forwarded-For", ip())
+      .send({ currentPassword: PASSWORD, newPassword: "a".repeat(15) });
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({
+      code: "PASSWORD_POLICY",
+      message: "La contraseña debe tener al menos 16 caracteres.",
+    });
+    expect((await signIn(custom.app, email, PASSWORD, { "X-Forwarded-For": ip() })).status).toBe(
+      200,
+    );
+  });
+
   it("una sesión sin membresía activa no puede cambiar la contraseña", async () => {
     const email = "desactivada@empresa.ec";
     const userId = await newUser(email);

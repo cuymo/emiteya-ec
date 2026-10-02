@@ -69,12 +69,26 @@ describe("pantalla Mi cuenta", () => {
     expect(await screen.findByText("La contraseña actual no es correcta.")).toBeDefined();
   });
 
-  it("valida la longitud de la contraseña nueva sin llamar al servidor", async () => {
-    const calls = renderAccount(() => ({ status: 200 }));
-    await change("contrasena-actual-1", "corta");
+  it("la longitud la valida el servidor y su mensaje indica el valor vigente", async () => {
+    renderAccount(() => ({
+      status: 400,
+      body: {
+        code: "PASSWORD_POLICY",
+        message: "La contraseña debe tener al menos 16 caracteres.",
+      },
+    }));
+    await change("contrasena-actual-1", "contrasena-15ch");
     expect(
-      await screen.findByText("La contraseña debe tener al menos 12 caracteres."),
+      await screen.findByText("La contraseña debe tener al menos 16 caracteres."),
     ).toBeDefined();
+    expect(screen.queryByText(/12 y 128/)).toBeNull();
+  });
+
+  it("solo exige que los campos no estén vacíos antes de enviar", async () => {
+    const calls = renderAccount(() => ({ status: 200 }));
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Cambiar contraseña" }));
+    expect(await screen.findByText("Escribe tu contraseña actual.")).toBeDefined();
     expect(calls.some((call) => call.key.includes("change-password"))).toBe(false);
   });
 

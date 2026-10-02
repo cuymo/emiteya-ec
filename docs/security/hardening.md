@@ -46,7 +46,9 @@ job payloads, imported files, and configuration.
 ### Valores por defecto del proyecto
 
 Las specs exigen la garantía; los valores son configuración técnica. No provienen del ERS ni
-de CTX, y se cambian sin modificar las specs. El estado de ambos límites de inicio de sesión
+de CTX, y se cambian sin modificar las specs. La interfaz no fija la política de contraseñas: solo exige que el
+campo no esté vacío y muestra el mensaje del servidor, que indica la longitud vigente en el alta,
+en la contraseña establecida por un administrador y en el cambio de la propia. El estado de ambos límites de inicio de sesión
 vive en memoria y solo es válido con una instancia de API (`../architecture/deployment.md`).
 
 | Control | Default propuesto | Configurable | Origen de la garantía |

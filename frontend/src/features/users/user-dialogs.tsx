@@ -3,15 +3,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  DEFAULT_PASSWORD_POLICY,
-  userSchemas,
-  type CreateUserInput,
-  type Role,
-  type UserView,
-} from "@facturador/contracts";
+import { userSchemas, type CreateUserInput, type Role, type UserView } from "@facturador/contracts";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormDialog, FormField } from "@/components/form-dialog";
 import { PasswordField } from "@/components/password-field";
@@ -20,8 +15,15 @@ import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { useChangeRole, useCreateUser, useSetPassword } from "./users-api";
 
-const schemas = userSchemas(DEFAULT_PASSWORD_POLICY);
-const PASSWORD_HINT = `Entre ${DEFAULT_PASSWORD_POLICY.minLength} y ${DEFAULT_PASSWORD_POLICY.maxLength} caracteres.`;
+// La longitud de la contraseña es configuración del despliegue: la valida el servidor, cuyo mensaje
+// indica el valor vigente. El cliente solo exige que el campo no esté vacío.
+const schemas = userSchemas();
+const createUserForm = schemas.createUser.extend({
+  password: z.string().min(1, "Escribe la contraseña inicial."),
+});
+const setPasswordForm = schemas.setPassword.extend({
+  password: z.string().min(1, "Escribe la contraseña nueva."),
+});
 
 export const ROLE_OPTIONS: readonly SelectionCardOption<Role>[] = [
   { value: "OPERATOR", label: "Operador", description: "Emite y consulta comprobantes" },
@@ -47,7 +49,7 @@ export function CreateUserDialog({
   const roleLabel = useId();
   const [error, setError] = useState<string>();
   const form = useForm<CreateUserInput>({
-    resolver: zodResolver(schemas.createUser),
+    resolver: zodResolver(createUserForm),
     // El rol por defecto es el de menor privilegio.
     defaultValues: { name: "", email: "", password: "", role: "OPERATOR" },
   });
@@ -104,14 +106,9 @@ export function CreateUserDialog({
           spellCheck={false}
         />
       </FormField>
-      <FormField
-        id="create-password"
-        label="Contraseña inicial"
-        hint={PASSWORD_HINT}
-        error={errors.password?.message}
-      >
+      <FormField id="create-password" label="Contraseña inicial" error={errors.password?.message}>
         <PasswordField
-          {...fieldAria("create-password", errors.password?.message, PASSWORD_HINT)}
+          {...fieldAria("create-password", errors.password?.message)}
           {...form.register("password")}
           autoComplete="new-password"
         />
@@ -192,7 +189,7 @@ export function SetPasswordDialog({
 }) {
   const [error, setError] = useState<string>();
   const form = useForm<{ password: string }>({
-    resolver: zodResolver(schemas.setPassword),
+    resolver: zodResolver(setPasswordForm),
     defaultValues: { password: "" },
   });
   const { errors } = form.formState;
@@ -232,14 +229,9 @@ export function SetPasswordDialog({
         if (user) setPassword.mutate({ user, password });
       })}
     >
-      <FormField
-        id="set-password"
-        label="Contraseña nueva"
-        hint={PASSWORD_HINT}
-        error={errors.password?.message}
-      >
+      <FormField id="set-password" label="Contraseña nueva" error={errors.password?.message}>
         <PasswordField
-          {...fieldAria("set-password", errors.password?.message, PASSWORD_HINT)}
+          {...fieldAria("set-password", errors.password?.message)}
           {...form.register("password")}
           autoComplete="new-password"
         />

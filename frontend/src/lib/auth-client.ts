@@ -40,16 +40,21 @@ async function authPost(path: string, body: unknown): Promise<void> {
     throw new AuthError("unexpected", "No pudimos conectar con el servidor. Revisa tu conexión.");
   }
   if (response.ok) return;
-  const payload = (await response.json().catch(() => ({}))) as { code?: string };
+  const payload = (await response.json().catch(() => ({}))) as { code?: string; message?: string };
   const kind = classify(response.status, payload.code);
-  throw new AuthError(kind, MESSAGES[kind]);
+  // La política de contraseñas la comunica el servidor con el valor vigente.
+  const message =
+    payload.code === "PASSWORD_POLICY" && payload.message ? payload.message : MESSAGES[kind];
+  throw new AuthError(kind, message);
 }
 
 function classify(status: number, code: string | undefined): AuthErrorKind {
   if (status === 429) return "rate_limited";
   if (code === "INVALID_EMAIL_OR_PASSWORD") return "invalid_credentials";
   if (code === "INVALID_PASSWORD") return "invalid_current_password";
-  if (code === "PASSWORD_TOO_SHORT" || code === "PASSWORD_TOO_LONG") return "password_policy";
+  if (code === "PASSWORD_POLICY" || code === "PASSWORD_TOO_SHORT" || code === "PASSWORD_TOO_LONG") {
+    return "password_policy";
+  }
   if (status === 401) return "unauthenticated";
   return "unexpected";
 }
