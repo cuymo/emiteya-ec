@@ -3,3 +3,5 @@
 *.jpg binary
 *.ico binary
 *.pdf binary
+# XSD oficiales del SRI: se conservan byte a byte para que su hash coincida con el manifiesto.
+docs/product/sri-xsd/*.xsd binary
