@@ -10,9 +10,9 @@
 
 ## 2. Política de autorización y reglas de acceso (no depende de Better Auth)
 
-- [ ] 2.1 Definir en el dominio de `identity` los roles y el mapa de permisos de D4, denegado por defecto y sin dependencias de framework; verificar con pruebas unitarias que cubren cada celda de la matriz y que un permiso desconocido se deniega
-- [ ] 2.2 Implementar como funciones puras las reglas de acceso de D5: nadie cambia su propio rol ni se desactiva a sí mismo; verificar con pruebas unitarias
-- [ ] 2.3 Definir el tipo `RequestContext` y los esquemas Zod estrictos de alta, rol, estado, contraseña establecida y contraseña propia, que rechacen `companyId` y campos desconocidos, acepten `role` solo como rol asignado y apliquen la política de contraseñas configurada; verificar con pruebas de esquema para `companyId`, para `role` donde no corresponde y para longitudes en los límites mínimo y máximo configurados y una unidad fuera de cada uno
+- [x] 2.1 Definir en el dominio de `identity` los roles y el mapa de permisos de D4, denegado por defecto y sin dependencias de framework; verificar con pruebas unitarias que cubren cada celda de la matriz y que un permiso desconocido se deniega
+- [x] 2.2 Implementar como funciones puras las reglas de acceso de D5: nadie cambia su propio rol ni se desactiva a sí mismo; verificar con pruebas unitarias
+- [x] 2.3 Definir el tipo `RequestContext` y los esquemas Zod estrictos de alta, rol, estado, contraseña establecida y contraseña propia, que rechacen `companyId` y campos desconocidos, acepten `role` solo como rol asignado y apliquen la política de contraseñas configurada; verificar con pruebas de esquema para `companyId`, para `role` donde no corresponde y para longitudes en los límites mínimo y máximo configurados y una unidad fuera de cada uno
 
 ## 3. Esquema de empresa, membresía y auditoría
 

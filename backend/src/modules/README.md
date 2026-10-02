@@ -19,4 +19,6 @@ Reglas, verificadas por ESLint (`eslint.config.base.js`):
 Las rutas del módulo se montan bajo `/api/v1` a través del router que recibe `createApp`, y se
 registran en `packages/contracts/src/api/routes.ts` para OpenAPI.
 
-Todavía no hay módulos: el primero llega con `add-user-access`.
+Módulos:
+
+- `identity`: roles, política de autorización central y contexto de petición (`add-user-access`).
