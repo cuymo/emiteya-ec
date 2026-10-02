@@ -56,3 +56,36 @@ El sistema SHALL impedir que cualquier usuario, de cualquier empresa y con cualq
 #### Scenario: Eventos de otra empresa
 - **WHEN** ocurre un cambio en la empresa A
 - **THEN** su evento queda asociado a la empresa A y nunca a la empresa B
+
+### Requirement: Auditoría de los cambios de configuración tributaria
+El sistema SHALL registrar un evento de auditoría por cada cambio exitoso de la configuración tributaria: datos y atributos de la empresa, ambiente, logo, alta, corrección de la dirección, desactivación y reactivación de establecimientos, y alta, desactivación y reactivación de puntos de emisión. Cada evento indica actor, empresa, acción, qué se cambió, los valores anteriores y nuevos de cada dato cambiado y el momento.
+
+#### Scenario: Corrección de datos de la empresa
+- **WHEN** un administrador corrige la razón social y la dirección matriz
+- **THEN** existe un evento con el administrador como actor, la empresa, la acción de cambio de datos, la versión nueva de la configuración, y los valores anteriores y nuevos de la razón social y de la dirección matriz
+- **AND** el evento no incluye los datos que no cambiaron
+
+#### Scenario: Primer registro de los datos
+- **WHEN** un administrador registra por primera vez los datos de la empresa
+- **THEN** existe un evento con los valores registrados y sin valores anteriores
+
+#### Scenario: Cambio de ambiente
+- **WHEN** un administrador cambia el ambiente de `Pruebas` a `Producción`
+- **THEN** existe un evento con el ambiente anterior, el ambiente nuevo y la versión nueva de la configuración
+
+#### Scenario: Reemplazo o eliminación del logo
+- **WHEN** un administrador reemplaza o elimina el logo
+- **THEN** existe un evento que identifica el logo anterior y el nuevo, o su ausencia, por su tipo, tamaño y huella de integridad
+- **AND** el evento no contiene el contenido de ninguna imagen
+
+#### Scenario: Cambios de establecimientos y puntos de emisión
+- **WHEN** un administrador crea, desactiva o reactiva un establecimiento o un punto de emisión, o corrige la dirección de un establecimiento
+- **THEN** existe un evento que identifica el establecimiento o el punto por su código, con los valores anteriores y nuevos de lo que cambió
+
+#### Scenario: Operación sin cambio
+- **WHEN** un administrador guarda la configuración sin cambios, pide el ambiente vigente o desactiva un establecimiento ya inactivo
+- **THEN** no se registra ningún evento
+
+#### Scenario: Cambio rechazado
+- **WHEN** un cambio de la configuración se rechaza por validación, por falta de permiso, por conflicto o porque el RUC está bloqueado
+- **THEN** no existe un evento de ese cambio
