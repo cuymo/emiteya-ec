@@ -8,9 +8,13 @@
 
 ## Comprobaciones pendientes
 
-| Comprobación | Motivo | Cuándo |
-| --- | --- | --- |
-| `actions/checkout@v5` y `actions/setup-node@v5` resuelven, y `.github/workflows/verify.yml` pasa en GitHub. | Sin remoto no puede ejecutarse; sus pasos se verificaron en local contra PostgreSQL de Compose. | Primera ejecución real de CI. No bloquea el archive de `bootstrap-application`. |
+Ninguna.
+
+## Resueltas
+
+| Comprobación | Resolución |
+| --- | --- |
+| `actions/checkout@v5` y `actions/setup-node@v5` resuelven, y `.github/workflows/verify.yml` pasa en GitHub. | Resuelta el 2026-10-02: el workflow pasa en GitHub (ejecución 37026152613, commit `5c316a1`). La primera ejecución falló porque la caché automática de `setup-node` buscaba pnpm antes de que Corepack lo activara; se desactivó con `package-manager-cache: false`. |
 
 ## Rules
 
