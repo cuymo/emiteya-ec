@@ -73,12 +73,13 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `certificate` — Certificado de firma
 
 - Purpose: referencia segura a la firma electrónica del contribuyente.
-- Key attributes: titular, emisor, número de serie, vigencia (`notBefore`, `notAfter`), estado (`ACTIVE`, `REPLACED`, `EXPIRED`), referencia al secreto cifrado.
+- Key attributes: titular, emisor, número de serie, huella, vigencia (`notBefore`, `notAfter`), RUC detectado, estado (`ACTIVE`, `REPLACED`) y una referencia al secreto, que se guarda aparte (ADR 0011). La vigencia (vigente, por vencer, vencido) se calcula al leer.
 - Invariants:
   - Archivo PKCS#12 y contraseña cifrados en reposo; nunca vuelven al navegador ni aparecen en logs, respuestas o backups sin cifrar (ERS RF-131, RF-132, SEC-002; CTX §20.4; ADR 0011).
   - Como máximo un certificado activo por empresa.
-  - Antes de aceptarlo y antes de cada firma: abre con la contraseña, contiene clave privada, `notBefore <= ahora <= notAfter`, su cadena puede procesarse y su identidad corresponde al RUC cuando aplique (CTX §20.6, Q-17).
-  - Reemplazarlo conserva el historial de metadatos, no el secreto anterior.
+  - Antes de aceptarlo y antes de cada firma: abre con la contraseña, contiene clave privada, `notBefore <= ahora <= notAfter` y su cadena puede procesarse (CTX §20.6).
+  - Identidad (Q-17): sin un RUC detectable, el certificado es incompatible y no firma. Con un RUC distinto del de la empresa firma, con una advertencia preventiva de la aplicación.
+  - Reemplazarlo elimina el secreto anterior y conserva el historial de metadatos.
 - Relationships: pertenece a una empresa; firma comprobantes.
 
 ### `user` / `membership` — Usuario y rol
@@ -321,7 +322,7 @@ se repiten aquí.
 ### Firma
 
 - **BR-10** Archivo y contraseña de firma nunca salen del servidor después de cargarse (ERS RF-132, API-004; CTX §20.4).
-- **BR-11** No se firma con un certificado vencido, sin clave privada o que no corresponde al RUC cuando aplica (ERS RF-134, CTX §20.6).
+- **BR-11** No se firma con un certificado vencido, sin clave privada o sin un RUC detectable (ERS RF-134, CTX §20.6, Q-17). Un RUC distinto del de la empresa no bloquea la firma: la aplicación advierte.
 - **BR-12** Se alerta con la anticipación configurada antes del vencimiento (ERS RF-135).
 - **BR-13** La firma sigue los parámetros vigentes del SRI (XAdES-BES, enveloped, RSA-SHA1 según la ficha v2.34) y no se sustituye por un algoritmo más moderno sin un cambio formal del SRI (CTX §20, ADR 0013).
 

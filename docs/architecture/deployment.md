@@ -100,7 +100,7 @@ cambio que los introduzca:
 
 - Endpoints del SRI por ambiente y servicio; los valores por defecto están en el módulo central de endpoints (CTX §7).
 - Timeouts del cliente SRI, intervalo inicial y ventana de la consulta de autorización.
-- Clave maestra de cifrado del certificado, por variable o archivo de secreto, nunca en la base de datos (ADR 0011).
+- Clave maestra de cifrado del certificado, con su versión, por variable o archivo de secreto, nunca en la base de datos (ADR 0011). Obligatoria en producción: sin ella el backend no arranca. En desarrollo y pruebas existe un modo explícito sin firma.
 - Adaptador y ubicación del almacenamiento de artefactos.
 - Zona horaria de las fechas fiscales: `America/Guayaquil` (ERS RNF-010).
 
