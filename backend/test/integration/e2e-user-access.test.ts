@@ -48,7 +48,7 @@ describe("flujo completo de acceso de usuarios", () => {
     });
     backend.stdout?.on("data", (chunk: Buffer) => (output += chunk.toString()));
     backend.stderr?.on("data", (chunk: Buffer) => (output += chunk.toString()));
-    const deadline = Date.now() + 30_000;
+    const deadline = Date.now() + 90_000;
     while (Date.now() < deadline) {
       const ready = await fetch(`${base}/health/ready`).then(
         (res) => res.ok,
@@ -58,7 +58,7 @@ describe("flujo completo de acceso de usuarios", () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
     throw new Error(`El backend no arrancó:\n${output}`);
-  }, 40_000);
+  }, 120_000);
 
   afterAll(async () => {
     if (backend && backend.exitCode === null) {

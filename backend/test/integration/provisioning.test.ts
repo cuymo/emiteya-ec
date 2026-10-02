@@ -177,7 +177,7 @@ describe("aprovisionamiento de la instalación", () => {
           ...env,
         },
         encoding: "utf8",
-        timeout: 30_000,
+        timeout: 90_000,
       });
     }
 

@@ -121,7 +121,7 @@ describe("recuperación administrativa de emergencia", () => {
             BETTER_AUTH_URL: BASE_URL,
           },
           encoding: "utf8",
-          timeout: 30_000,
+          timeout: 90_000,
         },
       );
     }

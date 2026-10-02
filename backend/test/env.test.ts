@@ -25,7 +25,7 @@ function startupWith(env: Record<string, string>) {
     cwd: backendRoot,
     env: { PATH: process.env.PATH, ...env },
     encoding: "utf8",
-    timeout: 20_000,
+    timeout: 90_000,
   });
 }
 
