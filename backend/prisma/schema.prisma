@@ -16,23 +16,25 @@ datasource db {
 }
 
 model User {
-  id            String       @id
-  name          String
-  email         String
-  emailVerified Boolean      @default(false)
-  image         String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  role          String?
-  banned        Boolean?     @default(false)
-  banReason     String?
-  banExpires    DateTime?
-  sessions      Session[]
-  accounts      Account[]
-  members       Member[]
-  invitations   Invitation[]
-  auditActions  AuditEvent[] @relation("AuditActor")
-  auditTargets  AuditEvent[] @relation("AuditTarget")
+  id                    String                 @id
+  name                  String
+  email                 String
+  emailVerified         Boolean                @default(false)
+  image                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  role                  String?
+  banned                Boolean?               @default(false)
+  banReason             String?
+  banExpires            DateTime?
+  sessions              Session[]
+  accounts              Account[]
+  members               Member[]
+  invitations           Invitation[]
+  auditActions          AuditEvent[]           @relation("AuditActor")
+  auditTargets          AuditEvent[]           @relation("AuditTarget")
+  configVersionsCreated CompanyConfigVersion[] @relation("ConfigVersionCreator")
+  configAssetsCreated   ConfigurationAsset[]   @relation("ConfigAssetCreator")
 
   @@unique([email])
   @@map("user")
@@ -98,21 +100,26 @@ model Organization {
   members     Member[]
   invitations Invitation[]
 
-  auditEvents AuditEvent[]
+  auditEvents    AuditEvent[]
+  companyConfig  CompanyConfig?
+  configVersions CompanyConfigVersion[]
+  configAssets   ConfigurationAsset[]
+  establishments Establishment[]
 
   @@unique([slug])
   @@map("organization")
 }
 
 model Member {
-  id             String       @id
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role           String       @default("member")
-  createdAt      DateTime
-  status         String       @default("ACTIVE")
+  id                   String                      @id
+  organizationId       String
+  organization         Organization                @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId               String
+  user                 User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role                 String                      @default("member")
+  createdAt            DateTime
+  status               String                      @default("ACTIVE")
+  defaultEmissionPoint MemberDefaultEmissionPoint?
 
   // Una membresía por usuario y empresa (design D11).
   @@unique([organizationId, userId])
@@ -159,4 +166,125 @@ model AuditEvent {
 
   @@index([companyId, occurredAt])
   @@map("audit_event")
+}
+
+// Configuración tributaria de la empresa (add-taxpayer-setup, design D2 y D4): cabecera con la
+// versión vigente y el estado de la identidad tributaria. Los triggers de la migración rechazan
+// borrarla, desbloquear la identidad y cambiar el RUC bloqueado.
+model CompanyConfig {
+  companyId           String               @id @map("company_id")
+  company             Organization         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  currentVersionId    String               @map("current_version_id")
+  currentVersion      Int                  @map("current_version")
+  current             CompanyConfigVersion @relation("CurrentConfigVersion", fields: [companyId, currentVersionId], references: [companyId, id], onDelete: Restrict)
+  /// taxIdentityLocked = no nulo. Junto con locked_ruc (CHECK en la migración).
+  taxIdentityLockedAt DateTime?            @map("tax_identity_locked_at") @db.Timestamptz(3)
+  lockedRuc           String?              @map("locked_ruc") @db.Char(13)
+  updatedAt           DateTime             @map("updated_at") @db.Timestamptz(3)
+
+  @@map("company_config")
+}
+
+// Versión inmutable y completa de la configuración (design D2, CTX §39). Solo de agregado.
+model CompanyConfigVersion {
+  id                         String              @id @default(uuid())
+  companyId                  String              @map("company_id")
+  company                    Organization        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  version                    Int
+  ruc                        String              @db.Char(13)
+  legalName                  String              @map("legal_name") @db.VarChar(300)
+  tradeName                  String?             @map("trade_name") @db.VarChar(300)
+  headOfficeAddress          String              @map("head_office_address") @db.VarChar(300)
+  phone                      String?             @db.VarChar(30)
+  email                      String?             @db.VarChar(254)
+  accountingRequired         Boolean             @map("accounting_required")
+  specialTaxpayerNumber      String?             @map("special_taxpayer_number") @db.VarChar(13)
+  withholdingAgentResolution String?             @map("withholding_agent_resolution") @db.VarChar(8)
+  largeTaxpayer              Boolean             @map("large_taxpayer")
+  /// EMPRENDEDOR o NEGOCIO_POPULAR (CHECK en la migración).
+  rimpeCategory              String?             @map("rimpe_category")
+  providerRuc                String?             @map("provider_ruc") @db.Char(13)
+  /// TEST o PRODUCTION (CHECK en la migración).
+  environment                String
+  logoAssetId                String?             @map("logo_asset_id")
+  logoAsset                  ConfigurationAsset? @relation(fields: [companyId, logoAssetId], references: [companyId, id], onDelete: Restrict)
+  createdAt                  DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById                String              @map("created_by")
+  createdBy                  User                @relation("ConfigVersionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  headOf                     CompanyConfig[]     @relation("CurrentConfigVersion")
+
+  @@unique([companyId, version])
+  @@unique([companyId, id])
+  @@map("company_config_version")
+}
+
+// Asset inmutable de la configuración, como el logo (ADR 0017, design D5). Solo de agregado.
+model ConfigurationAsset {
+  id          String                 @id @default(uuid())
+  companyId   String                 @map("company_id")
+  company     Organization           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  /// LOGO (CHECK en la migración).
+  kind        String
+  /// Tipo detectado por el contenido (CHECK en la migración).
+  mimeType    String                 @map("mime_type")
+  sizeBytes   Int                    @map("size_bytes")
+  sha256      String                 @db.Char(64)
+  content     Bytes
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById String                 @map("created_by")
+  createdBy   User                   @relation("ConfigAssetCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  versions    CompanyConfigVersion[]
+
+  @@unique([companyId, sha256])
+  @@unique([companyId, id])
+  @@map("configuration_asset")
+}
+
+// Establecimiento (design D7): código de tres dígitos único por empresa e inmutable (trigger).
+model Establishment {
+  id             String          @id @default(uuid())
+  companyId      String          @map("company_id")
+  company        Organization    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  code           String          @db.Char(3)
+  address        String          @db.VarChar(300)
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  emissionPoints EmissionPoint[]
+
+  @@unique([companyId, code])
+  @@unique([companyId, id])
+  @@map("establishment")
+}
+
+// Punto de emisión (design D7): código único por establecimiento; código y establecimiento
+// inmutables (trigger). Solo tiene código y estado.
+model EmissionPoint {
+  id              String                       @id @default(uuid())
+  companyId       String                       @map("company_id")
+  establishmentId String                       @map("establishment_id")
+  establishment   Establishment                @relation(fields: [companyId, establishmentId], references: [companyId, id], onDelete: Restrict)
+  code            String                       @db.Char(3)
+  active          Boolean                      @default(true)
+  createdAt       DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  defaults        MemberDefaultEmissionPoint[]
+
+  @@unique([establishmentId, code])
+  @@unique([companyId, id])
+  @@map("emission_point")
+}
+
+// Punto de emisión predeterminado de una membresía (design D8): solo preselecciona (Q-23).
+model MemberDefaultEmissionPoint {
+  companyId       String        @map("company_id")
+  userId          String        @map("user_id")
+  member          Member        @relation(fields: [companyId, userId], references: [organizationId, userId], onDelete: Restrict)
+  emissionPointId String        @map("emission_point_id")
+  emissionPoint   EmissionPoint @relation(fields: [companyId, emissionPointId], references: [companyId, id], onDelete: Restrict)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@id([companyId, userId])
+  @@index([companyId, emissionPointId])
+  @@map("member_default_emission_point")
 }

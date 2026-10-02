@@ -67,6 +67,58 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  // add-taxpayer-setup (design D13): las restricciones y triggers que Prisma no expresa.
+  const TAXPAYER_CONSTRAINTS = [
+    "company_config_version_version_check",
+    "company_config_version_ruc_check",
+    "company_config_version_provider_ruc_check",
+    "company_config_version_special_taxpayer_check",
+    "company_config_version_withholding_check",
+    "company_config_version_environment_check",
+    "company_config_version_rimpe_check",
+    "company_config_version_texts_check",
+    "company_config_current_version_check",
+    "company_config_tax_identity_lock_check",
+    "configuration_asset_kind_check",
+    "configuration_asset_mime_type_check",
+    "configuration_asset_size_check",
+    "configuration_asset_sha256_check",
+    "establishment_code_check",
+    "establishment_address_check",
+    "emission_point_code_check",
+    "company_config_company_id_current_version_id_fkey",
+    "company_config_version_company_id_logo_asset_id_fkey",
+    "emission_point_company_id_establishment_id_fkey",
+    "member_default_emission_point_company_id_user_id_fkey",
+    "member_default_emission_point_company_id_emission_point_id_fkey",
+  ];
+  const TAXPAYER_TRIGGERS = [
+    "company_config_version_append_only",
+    "company_config_version_no_truncate",
+    "configuration_asset_append_only",
+    "configuration_asset_no_truncate",
+    "company_config_no_delete",
+    "company_config_no_truncate",
+    "company_config_version_locked_ruc",
+    "company_config_lock",
+    "establishment_identity",
+    "emission_point_identity",
+  ];
+
+  it("crea las restricciones y triggers de la configuración tributaria", async () => {
+    expect(await constraints()).toEqual(expect.arrayContaining(TAXPAYER_CONSTRAINTS));
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "company_config_version_company_id_version_key",
+        "configuration_asset_company_id_sha256_key",
+        "establishment_company_id_code_key",
+        "emission_point_establishment_id_code_key",
+        "member_default_emission_point_company_id_emission_point_id_idx",
+      ]),
+    );
+    expect(await triggers()).toEqual(expect.arrayContaining(TAXPAYER_TRIGGERS));
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     const organizationConstraints = await db.database.prisma.$queryRaw<{ name: string }[]>`
       SELECT c.conname AS name
@@ -107,7 +159,11 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     const format = runBin("prisma", ["format", "--schema", regenerated]);
     expect(format.status, `${format.stdout}${format.stderr}`).toBe(0);
 
+    // Los modelos y relaciones de add-taxpayer-setup sobreviven a la fusión del CLI.
     expect(readFileSync(regenerated, "utf8")).toBe(readFileSync(SCHEMA, "utf8"));
+    for (const model of ["CompanyConfig", "CompanyConfigVersion", "MemberDefaultEmissionPoint"]) {
+      expect(readFileSync(regenerated, "utf8")).toContain(`model ${model} {`);
+    }
     const diff = runBin(
       "prisma",
       ["migrate", "diff", "--from-config-datasource", "--to-schema", regenerated, "--exit-code"],
