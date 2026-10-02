@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Imagen fija para builds reproducibles; pasar a ubuntu-26.04 es un mantenimiento aparte
+    # (docs/quality/technical-debt.md).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
       postgres:
