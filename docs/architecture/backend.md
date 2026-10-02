@@ -12,6 +12,39 @@
 - Validation: Zod.
 - External HTTP: Axios.
 
+## Estructura del backend en este proyecto
+
+```text
+backend/src/
+├── main.ts          arranque, validación del entorno y apagado ordenado
+├── app.ts           createApp(deps): arma la aplicación HTTP
+├── config/          entorno validado con Zod (env.ts)
+├── platform/        http (correlación, errores, 404), logging, metrics, health, lifecycle, db
+├── generated/       cliente de Prisma generado (no versionado)
+└── modules/         un directorio por módulo con domain / application / infrastructure
+```
+
+Orden de middleware de `createApp` (ADR 0016):
+
+1. `requestId`: acepta un `x-request-id` entrante válido (8 a 128 caracteres `[A-Za-z0-9._-]`) o genera un UUID, y lo devuelve en la respuesta.
+2. `pino-http`: un log por petición con `req.id`, método, URL y estado. No registra cabeceras, IP ni cuerpos; la redacción de `authorization`, `cookie`, `set-cookie`, `password`, `token` y `secret` es una segunda defensa.
+3. `helmet`: cabeceras de seguridad; `x-powered-by` deshabilitado.
+4. Métricas HTTP por patrón de ruta.
+5. Endpoints operacionales: `/health/live`, `/health/ready` y `/metrics`, fuera de `/api` y fuera de la API pública. Restringir su exposición corresponde al despliegue (`deployment.md`).
+6. `mountBeforeBodyParser`: punto de montaje para routers que necesitan el cuerpo sin procesar, como Better Auth.
+7. `express.json` con límite de 100 KB.
+8. `/api/v1`: el router de aplicación que recibe `createApp` (ADR 0015).
+9. Manejador 404 y manejador de errores.
+
+Contrato de errores:
+
+- Respuesta: `{ error: { code, message, requestId } }`, con el esquema de `@facturador/contracts`.
+- `AppError` lleva un código estable, el estado HTTP y un mensaje para el usuario; `NotFoundError`, `ConflictError` y `ValidationError` (desde un `ZodError`) son sus variantes genéricas.
+- Errores del parser: `413 PAYLOAD_TOO_LARGE` y `400 INVALID_JSON`.
+- Cualquier otro error responde `500 INTERNAL_ERROR` con un mensaje genérico; el detalle y el stack quedan solo en el log, con el mismo `requestId`.
+
+Ejecución: en desarrollo, `node --watch --env-file-if-exists=.env --conditions=development src/main.ts` (type stripping nativo, sin `tsx`); en producción, `tsc -p tsconfig.build.json` y `node dist/main.js`. El código respeta las restricciones de `erasableSyntaxOnly` descritas en ADR 0016.
+
 ## Layers
 
 ### Domain

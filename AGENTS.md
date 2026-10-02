@@ -60,7 +60,7 @@ It is a TypeScript application built with:
 
 ## Required Verification
 
-Use pnpm through Corepack. Replace placeholders only when the project exposes different script names:
+Use pnpm through Corepack. These are the project's actual scripts; `verify` also runs `check:versions`, `openapi:check` and `check:dev-start`, and needs PostgreSQL running (`docker compose up -d --wait`):
 
 - Install: `corepack pnpm install`
 - Format: `corepack pnpm format`

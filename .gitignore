@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+
+# Salida de build
+dist/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Código generado
+backend/src/generated/
+
+# Entorno: solo se versionan los ejemplos
+.env
+.env.*
+!.env.example
+
+# Pruebas y cobertura
+coverage/
+.vitest/
+
+# Logs y temporales
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

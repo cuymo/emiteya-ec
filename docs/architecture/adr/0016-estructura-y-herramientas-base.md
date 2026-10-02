@@ -19,8 +19,10 @@ vertical slice necesita esas reglas antes de empezar.
 - Prisma 7 con su generador actual, `prisma-client`, con salida explícita en `backend/src/generated/prisma/` (`runtime` `nodejs`, `moduleFormat` `esm`, `importFileExtension` `ts`) y `@prisma/adapter-pg`. La prueba de compatibilidad confirmó Better Auth 1.7.7 y los mecanismos de S-1 con ese cliente, también bajo el type stripping nativo y compilado con `tsc`.
 - Paquetes del workspace con una condición `development` en `exports` (fuente TypeScript) y salida compilada por defecto.
 - Calidad: Prettier, ESLint con `typescript-eslint` y reglas de capas por `no-restricted-imports`, y Vitest; `corepack pnpm verify` las encadena.
-- Logs con pino y redacción; métricas con prom-client; cabeceras con helmet.
-- Endpoints operativos (`/health/live`, `/health/ready`, `/metrics`) fuera de `/api`: no son API de aplicación en el sentido de ADR 0015, y el proxy público no los expone.
+- Logs con pino, sin cabeceras, IP ni cuerpos en los logs de petición y con redacción como segunda defensa; métricas con `@prometheus-io/client`, el sucesor oficial de `prom-client` (deprecado); cabeceras con helmet.
+- ESLint 10 en todo el repositorio. El frontend usa `@next/eslint-plugin-next` y `eslint-plugin-react-hooks` directamente, porque `eslint-config-next` depende de `eslint-plugin-react` y `eslint-plugin-jsx-a11y`, que solo admiten ESLint 9 o anterior; la accesibilidad se cubre con pruebas por roles y nombres accesibles y con el checklist de frontend hasta que esos plugins soporten ESLint 10.
+- `pg` no es dependencia directa: llega con `@prisma/adapter-pg`.
+- Endpoints operacionales (`/health/live`, `/health/ready`, `/metrics`) fuera de `/api`: no son API de aplicación en el sentido de ADR 0015 ni forman parte de la API pública del producto. La aplicación no restringe su exposición; restringirla es una responsabilidad obligatoria del despliegue futuro (`deployment.md`).
 - Frontend y API en el mismo origen: `rewrites` de Next.js en desarrollo y enrutamiento por ruta en producción; sin CORS hasta que exista un dominio de API separado.
 - OpenAPI 3.1 generado desde un registro de rutas en `packages/contracts`, con la conversión nativa de Zod 4 a JSON Schema, en `docs/generated/openapi.json`, comprobado en CI.
 

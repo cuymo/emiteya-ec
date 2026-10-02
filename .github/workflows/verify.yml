@@ -1,0 +1,48 @@
+# Verificación completa en cada push y pull request (design de bootstrap-application, D13).
+name: verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: facturador
+          POSTGRES_PASSWORD: facturador
+          POSTGRES_DB: facturador_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U facturador -d facturador_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://facturador:facturador@127.0.0.1:5432/facturador_test
+      DATABASE_URL_TEST: postgresql://facturador:facturador@127.0.0.1:5432/facturador_test
+      NEXT_TELEMETRY_DISABLED: "1"
+      CHECKPOINT_DISABLE: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+      - name: Activar Corepack
+        run: corepack enable
+      - name: Instalar dependencias
+        run: corepack pnpm install --frozen-lockfile
+      - name: Generar el cliente de Prisma
+        run: corepack pnpm --filter @facturador/backend db:generate
+      - name: Aplicar migraciones a la base de pruebas
+        run: corepack pnpm --filter @facturador/backend db:migrate:deploy
+      - name: Verificar
+        run: corepack pnpm verify

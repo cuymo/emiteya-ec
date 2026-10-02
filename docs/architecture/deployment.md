@@ -81,6 +81,18 @@ un solo paso es P2.
 | Artefactos   | Volumen persistente o almacenamiento S3-compatible, según el adaptador elegido (ADR 0010, Q-39). |
 | Proxy        | Termina TLS. Obligatorio en producción.                                                      |
 
+### Endpoints operacionales
+
+| Ruta | Respuesta | Uso |
+| --- | --- | --- |
+| `GET /health/live` | `200` mientras el proceso atiende | Liveness del contenedor. |
+| `GET /health/ready` | `200` si PostgreSQL responde a `SELECT 1` en 2 s; si no, `503` | Readiness y healthcheck. |
+| `GET /metrics` | Formato Prometheus | Métricas de proceso y de peticiones. |
+
+- Existen en el servicio `api`, fuera de `/api` (ADR 0016), como endpoints operacionales. No pertenecen a la API pública del producto: no están bajo `/api/v1` ni en `docs/generated/openapi.json`.
+- Su exposición no está restringida por la aplicación: el backend los sirve a cualquiera que alcance el servicio. Restringirlos (red interna, reglas del proxy o autenticación) es una responsabilidad obligatoria del despliegue, que todavía está fuera de alcance; ningún despliegue puede publicarlos sin esa restricción. El diseño previsto es que el proxy público solo enrute `/` al frontend y `/api` al backend, y que el orquestador y el sistema de métricas los consulten por la red interna, pero esa garantía se implementará con el despliegue.
+- `/metrics` publica información del proceso (memoria, CPU, rutas y tiempos de respuesta); si una instalación necesita consultarla desde fuera de la red interna, debe protegerla con autenticación en el proxy.
+
 ### Configuración adicional
 
 Además de las variables de la sección Environment. Los nombres son propuestas que fija el

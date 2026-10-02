@@ -1,0 +1,89 @@
+/* Tokens semánticos de docs/architecture/design-foundations.md. Los componentes no usan valores crudos. */
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: oklch(0.985 0.002 250);
+  --surface: oklch(1 0 0);
+  --surface-subtle: oklch(0.965 0.003 250);
+  --foreground: oklch(0.21 0.01 250);
+  --foreground-muted: oklch(0.47 0.01 250);
+  --border: oklch(0.9 0.005 250);
+  --ring: oklch(0.55 0.16 255);
+  --primary: oklch(0.5 0.16 255);
+  --primary-foreground: oklch(0.99 0 0);
+  --success: oklch(0.56 0.14 150);
+  --warning: oklch(0.7 0.15 70);
+  --danger: oklch(0.56 0.2 27);
+  --info: oklch(0.58 0.13 240);
+  --neutral: oklch(0.55 0.01 250);
+
+  /* Capas de apilamiento (design-foundations.md, Radius, Elevation, And Depth). */
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-dialog: 40;
+  --z-popover: 50;
+  --z-toast: 60;
+}
+
+.dark {
+  --background: oklch(0.17 0.01 250);
+  --surface: oklch(0.21 0.01 250);
+  --surface-subtle: oklch(0.25 0.012 250);
+  --foreground: oklch(0.95 0.005 250);
+  --foreground-muted: oklch(0.72 0.01 250);
+  --border: oklch(0.32 0.012 250);
+  --ring: oklch(0.72 0.14 255);
+  --primary: oklch(0.68 0.15 255);
+  --primary-foreground: oklch(0.16 0.01 250);
+  --success: oklch(0.7 0.14 150);
+  --warning: oklch(0.8 0.14 75);
+  --danger: oklch(0.68 0.19 27);
+  --info: oklch(0.72 0.12 240);
+  --neutral: oklch(0.65 0.01 250);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-neutral: var(--neutral);
+}
+
+@theme {
+  /* Escala de espaciado de base 8: 0.5 = 4px, 1 = 8px, 2 = 16px, 3 = 24px, 4 = 32px, 6 = 48px. */
+  --spacing: 0.5rem;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}

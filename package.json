@@ -1,0 +1,34 @@
+{
+  "name": "facturadorsri-opensource",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Facturador electrónico open source y self-hosted para los comprobantes del SRI de Ecuador.",
+  "type": "module",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=24.15.0 <25"
+  },
+  "scripts": {
+    "dev": "corepack pnpm -r --parallel --filter @facturador/backend --filter @facturador/frontend dev",
+    "build": "corepack pnpm -r --if-present build",
+    "lint": "eslint . && corepack pnpm -r --if-present lint",
+    "typecheck": "tsc --noEmit -p tsconfig.json && corepack pnpm -r --if-present typecheck",
+    "test": "vitest run",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,yaml,yml,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,yaml,yml,css}\"",
+    "check:versions": "node scripts/check-versions.ts",
+    "check:dev-start": "node scripts/check-dev-start.ts",
+    "openapi:generate": "corepack pnpm --filter @facturador/contracts openapi:generate",
+    "openapi:check": "corepack pnpm --filter @facturador/contracts openapi:check",
+    "verify": "corepack pnpm format:check && corepack pnpm check:versions && corepack pnpm --filter @facturador/backend db:generate && corepack pnpm lint && corepack pnpm typecheck && corepack pnpm test && corepack pnpm openapi:check && corepack pnpm check:dev-start && corepack pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.1",
+    "eslint": "10.11.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.0.3"
+  }
+}

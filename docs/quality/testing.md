@@ -86,6 +86,14 @@ Fuentes: ERS §18.1 y CTX §19.4, §49–52, §61.
 Aunque el MVP tiene una sola empresa por instalación, los fixtures incluyen al menos dos
 empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
 
+## Cómo correr las pruebas en este proyecto
+
+- Todas: `corepack pnpm test` (Vitest con un proyecto por paquete: `backend`, `contracts`, `frontend` y `scripts`). `corepack pnpm verify` las incluye.
+- Un paquete: `corepack pnpm exec vitest run --project backend` (o `contracts`, `frontend`, `scripts`).
+- Integración: las pruebas de `backend/test/integration/` usan PostgreSQL real, la base `facturador_test` de `compose.yaml` o `DATABASE_URL_TEST`. Levántala con `docker compose up -d --wait`. Si no está disponible, fallan con esa indicación; nunca se saltan.
+- Frontend: Vitest con jsdom y Testing Library; las consultas se hacen por rol y nombre accesible, lo que también verifica la accesibilidad básica.
+- Herramientas: las reglas de capas de ESLint y `check:versions` tienen sus propias pruebas.
+
 ## Test Data
 
 - Use deterministic fixtures.

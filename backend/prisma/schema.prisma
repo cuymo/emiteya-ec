@@ -1,0 +1,13 @@
+// Esquema de la base de datos. Sin modelos hasta el primer cambio con datos (add-user-access).
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  runtime             = "nodejs"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}

@@ -57,10 +57,13 @@ No apareció ninguna incompatibilidad que obligue a mantener `prisma-client-js`.
 ├── backend/              @facturador/backend: API Express
 ├── frontend/             @facturador/frontend: Next.js
 ├── packages/contracts/   @facturador/contracts: esquemas Zod y tipos compartidos
+├── scripts/              check-versions.ts y check-dev-start.ts (TypeScript nativo de Node)
+├── docker/postgres/init/ script que crea la base facturador_test
 ├── compose.yaml          PostgreSQL de desarrollo y pruebas
 ├── pnpm-workspace.yaml   paquetes, overrides y aprobación de scripts de instalación
 ├── package.json          scripts de verificación, packageManager y engines
-├── tsconfig.base.json, eslint.config.js, configuración de Prettier, vitest.config.ts
+├── tsconfig.base.json, tsconfig.json, eslint.config.base.js (base compartida), eslint.config.js,
+│   .prettierrc.json, .prettierignore, vitest.config.ts
 ├── .node-version, .gitignore, .gitattributes, .env.example
 ├── .github/workflows/verify.yml
 └── README.md
@@ -111,7 +114,7 @@ No apareció ninguna incompatibilidad que obligue a mantener `prisma-client-js`.
 ### D4. Calidad: formato, lint, typecheck y pruebas
 
 - Prettier 3 para el formato (`format`, `format:check`).
-- ESLint 10 con configuración plana, `typescript-eslint` (reglas con información de tipos en backend y contratos) y `eslint-config-next` en el frontend.
+- ESLint 10 con configuración plana y `typescript-eslint` (reglas con información de tipos en backend y contratos). En el frontend, `@next/eslint-plugin-next` y `eslint-plugin-react-hooks` en lugar de `eslint-config-next` (ver Desviaciones).
 - Reglas de capas con `no-restricted-imports` por patrón de carpeta, sin plugins adicionales:
   - `modules/*/domain/**` no importa `express`, `@prisma/*`, código generado ni `infrastructure/`.
   - `modules/*/application/**` no importa `infrastructure/` ni `express`.
@@ -128,7 +131,7 @@ No apareció ninguna incompatibilidad que obligue a mantener `prisma-client-js`.
   1. Identificador de correlación: acepta un `x-request-id` entrante si tiene formato válido, o genera uno, y lo devuelve en la respuesta.
   2. Logs de petición (pino-http).
   3. Cabeceras de seguridad (helmet), que `hardening.md` exige.
-  4. Endpoints internos `/health/*` y `/metrics`.
+  4. Endpoints operacionales `/health/*` y `/metrics`.
   5. Punto de montaje reservado para routers que necesitan el cuerpo sin procesar, antes del parser JSON. `add-user-access` lo usará para Better Auth; el bootstrap no monta nada ahí.
   6. Parser JSON con límite de tamaño (100 KB).
   7. Router `/api/v1` vacío (ADR 0015).
@@ -137,7 +140,7 @@ No apareció ninguna incompatibilidad que obligue a mantener `prisma-client-js`.
 - `trust proxy` de Express se configura con `TRUST_PROXY` (sin proxies por defecto), para que `req.ip` sea correcto detrás de un proxy declarado.
 - Sin CORS: en desarrollo, Next.js reenvía `/api` al backend (D11); en producción, el proxy enruta por ruta en el mismo dominio (`deployment.md`). Un dominio de API separado añadirá CORS en su propio cambio.
 
-### D6. Endpoints internos de salud y métricas
+### D6. Endpoints operacionales de salud y métricas
 
 | Ruta | Respuesta | Uso |
 | --- | --- | --- |
@@ -145,14 +148,15 @@ No apareció ninguna incompatibilidad que obligue a mantener `prisma-client-js`.
 | `GET /health/ready` | `200` si PostgreSQL responde a `SELECT 1` dentro de 2 s; si no, `503` | Readiness; los cambios fiscales añadirán reloj y disponibilidad del SRI. |
 | `GET /metrics` | Formato Prometheus | Métricas de proceso y duración de peticiones. |
 
-- Viven fuera de `/api`: no son API de aplicación (ADR 0015) y el proxy público solo enruta `/api` y `/`, de modo que quedan internos. `deployment.md` lo documenta.
+- Viven fuera de `/api`: son endpoints operacionales, no API de aplicación (ADR 0015) ni API pública del producto, y no aparecen en OpenAPI.
+- Su exposición no está restringida por la aplicación: el backend los sirve a cualquiera que alcance el servicio. Restringirlos (red interna, reglas del proxy o autenticación) es una responsabilidad obligatoria del despliegue, que todavía está fuera de alcance; ningún despliegue puede publicarlos sin esa restricción. `deployment.md` lo documenta.
 - Las métricas HTTP usan el patrón de ruta, no la URL concreta, para no disparar la cardinalidad.
 - Fuente: ERS RNF-012 y `stack.md` ("Health checks should exist for API containers").
 
 ### D7. Configuración por entorno
 
 - Un esquema Zod en `backend/src/config/env.ts` valida al arrancar: `NODE_ENV`, `PORT`, `DATABASE_URL`, `LOG_LEVEL` y `TRUST_PROXY`. Si falta una variable o es inválida, el proceso termina indicando qué variable falló, sin imprimir su valor.
-- `.env.example` en la raíz y en `frontend/` con valores de ejemplo; los `.env` reales están en `.gitignore`.
+- `.env.example` en `backend/` y en `frontend/` con valores de ejemplo; los `.env` reales están en `.gitignore`. El del backend vive en `backend/` porque el comando de desarrollo carga `.env` desde ese directorio (ver Desviaciones).
 - Desarrollo: Node carga `.env` con `--env-file-if-exists`, sin `dotenv`.
 - Las variables de un cambio futuro (Better Auth, zona horaria fiscal, SRI) las añade ese cambio al mismo esquema.
 
@@ -174,14 +178,15 @@ No apareció ninguna incompatibilidad que obligue a mantener `prisma-client-js`.
   El cliente se importa desde `src/generated/prisma/client.ts`, que está ignorado por Git y se regenera con `db:generate`, incluido en `postinstall`, en `verify` y en CI.
 - `backend/prisma/migrations/` empieza vacío. Scripts: `db:generate`, `db:migrate:dev`, `db:migrate:deploy` y `db:status`, todos con `pnpm exec prisma`.
 - `@prisma/client-runtime-utils` no se añade: solo hizo falta con `prisma-client-js` en S-1. Se añadiría únicamente si la instalación real demuestra que el cliente generado no la resuelve.
-- Un único `PrismaClient` con `@prisma/adapter-pg` en `platform/db`, inyectado en `createApp` y cerrado en el apagado.
+- `createDatabase` (`platform/db`) crea un único `PrismaClient` con `@prisma/adapter-pg`. `main.ts` lo crea, inyecta en `createApp` solo la comprobación de preparación (`readiness: () => database.ping()`) y registra su cierre como recurso del apagado ordenado. `createApp` no recibe el cliente de Prisma; los módulos futuros recibirán sus dependencias a través del router de `/api/v1` que les entrega `main.ts`.
 - Comandos destructivos (`migrate reset`, `db push --accept-data-loss`): Prisma los bloquea cuando los ejecuta un agente sin consentimiento explícito del usuario. El README lo documenta, y ningún script del proyecto los usa.
 - Este cambio no crea tablas ni migraciones: ninguna estructura de datos cambia.
 
 ### D9. Logs y métricas
 
 - pino con salida JSON, nivel de `LOG_LEVEL` y redacción de `authorization`, `cookie`, `set-cookie` y de cualquier campo `password`, `token` o `secret`. Cada línea lleva el identificador de correlación. Nunca se registran cuerpos de petición.
-- prom-client con métricas de proceso por defecto y un histograma de duración de peticiones HTTP.
+- `@prometheus-io/client`, sucesor oficial de `prom-client`, con métricas de proceso por defecto y un histograma de duración de peticiones HTTP.
+- Los logs de petición solo registran identificador, método, URL y estado: ni cabeceras, ni IP, ni cuerpos.
 - Fuente: ERS RNF-012 y `docs/quality/observability.md`.
 
 ### D10. Estructura de módulos del backend
@@ -191,7 +196,7 @@ backend/src/
 ├── main.ts          arranque y apagado
 ├── app.ts           createApp
 ├── config/          entorno validado
-├── platform/        http (correlación, errores, 404), logging, metrics, health, db
+├── platform/        http (correlación, errores, 404), logging, metrics, health, lifecycle (apagado ordenado), db
 ├── generated/       cliente de Prisma (no versionado)
 └── modules/         vacío; README con la convención domain / application / infrastructure
 ```
@@ -207,6 +212,7 @@ D4 la hacen cumplir desde el primer módulo.
 - Desarrollo en el mismo origen: los `rewrites` de Next.js envían `/api/*` al backend (`API_INTERNAL_URL`).
 - Página inicial técnica de marcador: nombre del producto y un texto que indica que la aplicación está en construcción. No es una pantalla de producto: `add-user-access` la reemplaza por el inicio de sesión. Brief: usuario, quien desarrolla; objetivo, comprobar que el frontend arranca y respeta los temas; sin decisión ni acción principal. P0: nombre del producto. Sin P1 a P3.
 - Sin React Hook Form ni componentes compartidos de tablas o diálogos: llegan con el primer formulario o tabla real.
+- `next dev` genera y mantiene `frontend/AGENTS.md` y `frontend/CLAUDE.md` (`node_modules/next/dist/server/lib/generate-agent-files.js`), con instrucciones para agentes sobre la versión instalada de Next.js. Se versionan como archivos generados: `next dev` los vuelve a crear si se borran, y no se editan a mano. Complementan, no sustituyen, el `AGENTS.md` raíz.
 
 ### D12. OpenAPI desde los contratos
 
@@ -220,11 +226,21 @@ D4 la hacen cumplir desde el primer módulo.
 - `.github/workflows/verify.yml`: en cada push y pull request, Node 24 con Corepack, `pnpm install --frozen-lockfile`, servicio PostgreSQL 17, `db:generate`, `db:migrate:deploy` contra la base de pruebas y `corepack pnpm verify`, incluida la comprobación de OpenAPI.
 - No toca los prompts, skills ni instrucciones de OpenSpec generados en `.github/`.
 - Lo exigen las verificaciones "en CI" de `docs/architecture/non-functional-requirements.md`. El repositorio todavía no tiene remoto, así que el workflow se valida ejecutando sus pasos en local.
+- Comprobación pendiente para la primera ejecución real de CI: que `actions/checkout@v5` y `actions/setup-node@v5` resuelven y que el workflow completo pasa en GitHub. No puede verificarse sin remoto y no bloquea el archive; queda registrada en `docs/quality/technical-debt.md`.
 
 ### D14. Git
 
 - `git init -b main`, con `.gitignore` (dependencias, `dist/`, `.next/`, `backend/src/generated/`, `.env*` salvo `.env.example`, cobertura, logs) y `.gitattributes` con `* text=auto eol=lf`.
 - Commits por unidad (`version-control.md`), solo cuando el usuario lo pide. Antes de commitear se propone la división: primero la importación de la documentación y la planificación existentes, y después un commit por grupo de tareas.
+- Propuesta de división, sin commitear (tarea 7.3):
+  1. `docs: import product context, architecture and openspec planning` — `docs/`, `openspec/`, `AGENTS.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `.agents/`, `.claude/`, `.codex/` y los archivos de OpenSpec de `.github/`.
+  2. `chore: initialize pnpm workspace and repository hygiene` — grupo 1: `.gitignore`, `.gitattributes`, `package.json`, `pnpm-workspace.yaml`, `.node-version`, lockfile y README inicial.
+  3. `build: add shared quality tooling and version checks` — grupo 2.
+  4. `feat(contracts): add response envelopes and openapi generation` — grupo 3.
+  5. `feat(backend): add express base with config, logging, errors and metrics` — grupo 4.
+  6. `feat(backend): add postgres, prisma 7 and health endpoints` — grupo 5.
+  7. `feat(frontend): add next.js base with themes and api client` — grupo 6.
+  8. `ci: add verify workflow` y documentación final — grupo 7.
 
 ### D15. Dependencias de producción nuevas
 
@@ -232,14 +248,27 @@ D4 la hacen cumplir desde el primer módulo.
 | --- | --- |
 | `express` 5.2.1 | Stack; versión validada por S-1. |
 | `zod` 4.x | Validación del entorno y contratos; misma major que usa Better Auth. |
-| `@prisma/client`, `@prisma/adapter-pg` 7.10.0; `pg` 8.x | Stack, S-1 y prueba de compatibilidad. |
+| `@prisma/client`, `@prisma/adapter-pg` 7.10.0 | Stack, S-1 y prueba de compatibilidad; `pg` llega como dependencia del adapter. |
 | `pino`, `pino-http` | Logs estructurados con redacción (ERS RNF-012). |
-| `prom-client` | Métricas (ERS RNF-012). |
+| `@prometheus-io/client` | Métricas (ERS RNF-012); sucesor oficial de `prom-client`, deprecado. |
 | `helmet` | Cabeceras de seguridad (`hardening.md`). |
-| `next`, `react`, `react-dom`, `tailwindcss`, shadcn/ui, `lucide-react` | Stack del frontend. |
+| `next`, `react`, `react-dom`, `tailwindcss`, `lucide-react`, `clsx`, `tailwind-merge`, `zod` | Stack del frontend; `clsx` y `tailwind-merge` forman la utilidad `cn` de shadcn/ui. |
 | `next-themes` | Temas claro y oscuro sin parpadeo; `design-foundations.md` exige ambos temas. |
 
 Cada una pasa la revisión de `hardening.md` (nombre exacto, mantenimiento, licencia y vulnerabilidades conocidas) al instalarla.
+
+### Desviaciones durante la implementación
+
+| Diseño | Implementación | Motivo |
+| --- | --- | --- |
+| `prom-client` (D9, D15) | `@prometheus-io/client` 0.16.1, misma API | `prom-client` 15.1.3 está deprecado y su paquete anuncia el reemplazo oficial. |
+| `eslint-config-next` en el frontend (D4) | `@next/eslint-plugin-next` y `eslint-plugin-react-hooks` sobre ESLint 10 | `eslint-config-next` 16.3.8 depende de `eslint-plugin-react` y `eslint-plugin-jsx-a11y`, que solo admiten ESLint ≤9, y ESLint 9 ya está fuera de soporte. La accesibilidad se cubre con pruebas por rol y nombre accesible, la auditoría en navegador y el checklist. |
+| `pg` como dependencia directa (D15) | Sin dependencia directa | `@prisma/adapter-pg` ya incluye `pg`. |
+| `.env.example` en la raíz (D7) | `backend/.env.example` | El comando de desarrollo carga `.env` desde `backend/`. |
+| Componentes de shadcn/ui | Solo `components.json` y la utilidad `cn`; sin `class-variance-authority` | Ningún componente de shadcn/ui es necesario todavía; se añaden con el primer uso real. |
+| Navegación móvil | Barra lateral oculta por debajo de 768 px, sin cajón móvil | Sin destinos, un botón de menú no tendría función; el cajón llega con el primer destino. |
+| Scripts recursivos con `pnpm` | Con `corepack pnpm` | Un pnpm global de otra versión en el `PATH` rompía las invocaciones anidadas; `AGENTS.md` exige Corepack. |
+| `check:versions` sobre todo `@prisma/*` | Sobre los paquetes del núcleo de Prisma | `@prisma/dev`, `@prisma/studio-core` y `@prisma/streams-local` tienen versionado propio (major 0). |
 
 ### Validación, migraciones, observabilidad y rendimiento
 

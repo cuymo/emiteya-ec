@@ -1,0 +1,22 @@
+packages:
+  - backend
+  - frontend
+  - packages/*
+
+# Toda dependencia nueva se guarda con versión exacta.
+saveExact: true
+
+# Prisma permanece en la major 7: Better Auth 1.7.7 no admite Prisma 8 (docs/architecture/stack.md).
+overrides:
+  prisma: 7.10.0
+  "@prisma/client": 7.10.0
+  "@prisma/adapter-pg": 7.10.0
+  "@prisma/engines": 7.10.0
+
+# Scripts de instalación aprobados de forma explícita (motores de Prisma).
+allowBuilds:
+  "@prisma/engines": true
+  prisma: true
+
+minimumReleaseAgeExclude:
+  - "@types/node@24.19.1"

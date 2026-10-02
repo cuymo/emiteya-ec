@@ -1,0 +1,35 @@
+// Errores de aplicación con código estable y mensaje para el usuario.
+import type { ZodError } from "zod";
+
+export class AppError extends Error {
+  readonly code: string;
+  readonly status: number;
+
+  constructor(code: string, status: number, message: string) {
+    super(message);
+    this.name = new.target.name;
+    this.code = code;
+    this.status = status;
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(code = "NOT_FOUND", message = "El recurso solicitado no existe.") {
+    super(code, 404, message);
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(code: string, message: string) {
+    super(code, 409, message);
+  }
+}
+
+export class ValidationError extends AppError {
+  readonly fields: string[];
+
+  constructor(error: ZodError, message = "La solicitud no es válida.") {
+    super("VALIDATION_ERROR", 400, message);
+    this.fields = [...new Set(error.issues.map((issue) => issue.path.join(".")))];
+  }
+}

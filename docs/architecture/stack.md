@@ -66,6 +66,26 @@ corepack pnpm verify
 - Los binarios de Prisma y de Better Auth se ejecutan siempre desde las dependencias del repositorio (`corepack pnpm exec prisma …`, `corepack pnpm exec auth …`, o los scripts de `package.json`). Nunca con `npx prisma` ni `pnpm dlx` sin versión, que descargarían la última publicada.
 - Las dependencias se añaden con versión exacta, y el lockfile se versiona.
 
+Versiones de la base técnica (`bootstrap-application`); `check:versions` impide rangos y Prisma fuera de la major 7:
+
+| Herramienta | Versión | Nota |
+| --- | --- | --- |
+| Node.js | 24 LTS (`.node-version`: 24.15.0) | Type stripping nativo en desarrollo (ADR 0016). |
+| pnpm | 12.4.2 vía Corepack | `packageManager`; configuración en `pnpm-workspace.yaml`. |
+| TypeScript | 6.0.3 | `typescript-eslint` no admite todavía la 7. |
+| ESLint / typescript-eslint | 10.11.0 / 8.71.0 | Frontend sin `eslint-config-next` (ADR 0016). |
+| Prettier | 3.9.9 | |
+| Vitest | 5.0.3 | |
+| Express | 5.2.1 | Validada por S-1. |
+| Zod | 4.6.5 | Misma major que Better Auth. |
+| Prisma / @prisma/client / @prisma/adapter-pg | 7.10.0 | Generador `prisma-client`. |
+| PostgreSQL | 17 | Compose y CI. |
+| pino / pino-http | 10.3.1 / 11.0.0 | |
+| @prometheus-io/client | 0.16.1 | Sucesor oficial de `prom-client`. |
+| helmet | 8.3.0 | |
+| Next.js / React | 16.3.8 / 19.3.0 | |
+| Tailwind CSS | 4.3.3 | |
+
 ## Documentation
 
 When a project deviates from this stack, create an ADR in `docs/architecture/adr/`.
