@@ -1,0 +1,136 @@
+# Performance
+
+## Measure Before Optimizing
+
+Performance work without measurement is guessing, and guessing produces complexity that
+costs more than the speed it buys. Profile first, find the actual bottleneck, fix that one
+thing, measure again.
+
+Do not optimize before there is evidence of a problem. Do fix the known anti-patterns below
+on sight, because they are defects rather than optimizations.
+
+## Workflow
+
+1. **Measure** a baseline from representative data and hardware.
+2. **Identify** the actual bottleneck, not the assumed one.
+3. **Fix** that bottleneck only.
+4. **Verify** by measuring again, then keep or revert.
+5. **Guard** with a budget, a monitor, or a test so the regression cannot return silently.
+
+## Budgets
+
+Defaults until the project sets its own numbers or an ADR changes them:
+
+| Signal                             | Target        |
+| ---------------------------------- | ------------- |
+| Largest Contentful Paint           | 2.5s or less  |
+| Interaction to Next Paint          | 200ms or less |
+| Cumulative Layout Shift            | 0.1 or less   |
+| API response time, 95th percentile | under 200ms   |
+| Initial JavaScript, gzipped        | under 200KB   |
+| CSS, gzipped                       | under 50KB    |
+| Above-the-fold image               | under 200KB   |
+
+Record the project's real budgets and enforce them in CI when the pipeline supports it.
+
+## Where To Start
+
+Let the symptom choose the first measurement:
+
+| Symptom                    | Measure first                                               |
+| -------------------------- | ----------------------------------------------------------- |
+| Slow first load            | Bundle size, then the network waterfall for blocking assets |
+| Slow server response       | Time to first byte, then the query log for that route       |
+| Interaction feels sluggish | Main-thread long tasks during the interaction               |
+| Layout jumps while loading | Which elements shift, and whether they reserve space        |
+| One endpoint slow          | Its query count and plan, then its indexes                  |
+| Every endpoint slow        | Connection pool, memory, and CPU before touching any query  |
+| Intermittent slowness      | Lock contention, external dependencies, and job runners     |
+
+## Backend Anti-Patterns
+
+- **N+1 queries**: loading related records inside a loop. Fetch the relation in one query.
+- **Unbounded fetching**: every list endpoint paginates with an explicit limit and deterministic ordering.
+- **Unindexed critical queries**: every query on a hot path maps to an index. See `../architecture/database.md`.
+- **Oversized payloads**: return the fields the screen uses, not the whole record graph.
+- **Synchronous heavy work in the request path**: move it to a persisted background job.
+- **Missing cache on read-heavy, rarely-changed data**: when caching, declare the lifetime and who invalidates it.
+- **Serial external calls**: parallelize independent provider requests and set explicit timeouts.
+
+## Frontend Anti-Patterns
+
+- **Unstable prop references** recreated on every render, forcing children to re-render.
+- **Memoization everywhere**: overusing it costs as much as underusing it. Memoize what a profile shows is expensive.
+- **Images without width and height**, without lazy loading below the fold, or without a modern format.
+- **No route-level code splitting**, so a rarely used heavy feature loads on first paint.
+- **Request waterfalls**: sequential fetches that could run in parallel.
+- **Rendering large collections whole** instead of paginating or virtualizing.
+- **Blocking the page for a local refresh**. See `../architecture/feedback-and-states.md`.
+
+## Verify: Keep Or Revert
+
+A fix is a hypothesis until it is re-measured. Re-measure the same way as the baseline:
+same command, same conditions, same fixed budget of runs. Change one thing at a time; three
+optimizations shipped together produce one number that cannot be attributed to any of them.
+Compare the delta against run-to-run variance, not against the mean alone.
+
+| Result against baseline          | Action                                                |
+| -------------------------------- | ----------------------------------------------------- |
+| Beats the threshold, tests green | Keep, with the before and after numbers in the commit |
+| Inside run-to-run noise          | Revert                                                |
+| Worse                            | Revert                                                |
+| Better, but a test went red      | Revert; it is a regression wearing a win's clothing   |
+
+**Neutral is a revert, not a keep.** This is the step that gets skipped: the change is
+already written, discarding it feels wasteful, so it lands unmeasured and the codebase
+accumulates complexity that never paid for itself. Code that is kept is maintained forever.
+
+**Correctness gates the metric.** A win obtained by dropping work the product needed, such
+as skipping a validation, caching something that must be fresh, or removing an await that
+was load-bearing, is a regression.
+
+## Attempt Ledger
+
+Reverted work leaves no trace in history, which is why the same dead idea gets retried.
+Record every attempt, kept and reverted alike, in the OpenSpec change's design or a project
+performance log:
+
+| Attempt       | Baseline to result | Verdict  | Why                               |
+| ------------- | ------------------ | -------- | --------------------------------- |
+| `{{ATTEMPT}}` | `{{BEFORE→AFTER}}` | kept     | Reason the number moved.          |
+| `{{ATTEMPT}}` | `{{BEFORE→AFTER}}` | reverted | Inside noise; not the bottleneck. |
+
+Read the ledger before proposing an experiment so a failed idea is not run twice.
+
+## Rationalizations To Refuse
+
+| Claim                                                | Reality                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| "We will optimize later."                            | Anti-patterns compound. Fix those now; defer only micro-optimizations. |
+| "It is fast on my machine."                          | Profile on representative hardware and network conditions.             |
+| "This optimization is obvious."                      | If it was not measured, it is not known.                               |
+| "It did not help much, but it does not hurt."        | Neutral changes are reverts. Maintenance is paid forever.              |
+| "We already wrote it, so we may as well keep it."    | Sunk cost. The measurement does not care how long it took to write.    |
+| "The improvement is obvious, no need to re-measure." | Then re-measuring is cheap and settles it.                             |
+
+## Reject The Change When
+
+- an optimization has no profiling data behind it;
+- a list endpoint has no pagination;
+- data fetching introduces an N+1 pattern;
+- several optimizations share one measurement, so none can be attributed;
+- a "win" required a test to be changed, skipped, or deleted;
+- a neutral result was kept instead of reverted;
+- bundle size grew with no review.
+
+## Verification
+
+- [ ] Before and after measurements exist as specific numbers.
+- [ ] The result was measured the same way as the baseline.
+- [ ] The improvement exceeds run-to-run variance.
+- [ ] Results that did not beat the baseline were reverted.
+- [ ] Attempts were logged, reverted ones included.
+- [ ] The specific bottleneck is named and addressed.
+- [ ] No new N+1 pattern or unbounded query was introduced.
+- [ ] Budgets still pass.
+- [ ] The existing test suite passes.

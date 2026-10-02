@@ -1,0 +1,145 @@
+# Preguntas abiertas y contradicciones
+
+Ambigüedades, vacíos y contradicciones encontrados al analizar `ERS`
+(`project-requirements.md`) y `CTX` (`project-sri-integration.md`). Cada pregunta trae una
+propuesta por defecto para que un revisor la acepte o la corrija; una propuesta no es una
+decisión hasta que se acepta.
+
+Estado: **Abierta** (sin decidir), **Parcial** (una fuente resuelve una parte), **Resuelta**
+(una fuente o una decisión la cierra).
+
+Tipo de cada cuestión pendiente:
+
+- **product decision**: la decide el dueño del producto, a veces con apoyo normativo.
+- **architecture decision**: cambia el modelo de datos, los límites o un contrato; se registra en un ADR o en `../architecture/`.
+- **technical uncertainty**: se resuelve con evidencia, mediante un spike con criterio objetivo.
+- **deferred/non-blocking**: no bloquea el `/opsx:propose` de ningún cambio; se decide dentro de una propuesta o antes del go-live.
+
+"Bloquea" lista los cambios de `capabilities.md` cuyo `/opsx:propose` no puede hacerse sin
+la respuesta. Cuando una pregunta solo bloquea una fase posterior del cambio, como el diseño
+técnico o `/opsx:apply`, la columna lo indica.
+
+Al resolver una pregunta: registra la decisión en `domain-model.md`, en un ADR o en el
+documento de arquitectura que corresponda, marca aquí el estado y no reutilices el ID.
+
+## Bloqueantes por cambio
+
+| Cambio                           | Preguntas y ADRs que deben resolverse antes de proponerlo                     |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| 1 `add-user-access`              | Ninguna. Q-41 resuelta tras el spike S-1 (2026-10-02); `/opsx:apply` requiere `bootstrap-application` aplicado |
+| 2 `add-taxpayer-setup`           | Q-23, Q-31                                                                    |
+| 3 `add-fiscal-numbering`         | Q-02 (enmienda del ADR 0003)                                                  |
+| 4 `add-signing-certificate`      | Q-17, ADR 0011                                                                |
+| 5 `add-business-catalogs`        | Q-25, Q-38                                                                    |
+| 6 `add-invoice-emission`         | Q-08, Q-14, Q-29, Q-30, Q-34 (XML, XSD, firma), Q-35, Q-38, Q-39 y ADR 0010   |
+| 7 `add-sri-transmission`         | Q-07, Q-16, Q-34 (SOAP), ADR 0012                                             |
+| 8 `add-document-archive`         | Q-24, Q-34 (PDF)                                                              |
+| 9 `add-minimal-inventory`        | Q-18, Q-19                                                                    |
+| 10 `add-credit-notes`            | Q-10, Q-20                                                                    |
+| 11, 12, 13, 15                   | Ninguna                                                                       |
+| 14 `add-purchase-settlements`    | Q-12                                                                          |
+| 16 `add-data-portability`        | Q-28                                                                          |
+
+Antes del go-live, sin bloquear ningún cambio: Q-27, Q-33, Q-37 y Q-40.
+
+El ADR 0009 se aceptó el 2026-10-02 con la alternativa A.
+
+## ADRs pendientes
+
+| ADR  | Tema                                   | Tipo                  | Bloquea |
+| ---- | -------------------------------------- | --------------------- | ------- |
+| 0003 | Enmienda: contador por ambiente (Q-02) | architecture decision | 3       |
+| 0010 | Almacenamiento de artefactos (Q-39)    | architecture decision | 6       |
+| 0011 | Custodia del certificado               | architecture decision | 4       |
+| 0012 | Jobs persistidos en PostgreSQL         | architecture decision | 7       |
+
+## Contradicciones entre fuentes
+
+Para cuestiones técnicas del SRI prevalece CTX; para el alcance del producto, el ERS (ver
+`overview.md`). Aun así, ninguna contradicción se resuelve en silencio.
+
+| ID   | Tema                         | ERS                                                     | CTX                                                                    | Pregunta |
+| ---- | ---------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------- | -------- |
+| C-01 | Máquina de estados           | 12 estados; `RETURNED` corregible (§12.1).               | 16 estados (§26); `SENT` en §22.1 sin definir; `RETURNED` terminal (§26.1) y corregible (§27.1). | Q-35 |
+| C-02 | Clave del secuencial         | Empresa + establecimiento + punto + tipo (ADR-003).      | Unicidad con ambiente (§5); contador y reserva sin ambiente (§5, §28).  | Q-02     |
+| C-03 | Anulación                    | Fuera de alcance; anulación completa en P1 (§2.3, §21). | Estados `CANCEL_PENDING`/`CANCELLED` y detección por consulta de validez (§36). | Q-16 |
+| C-04 | Entrega al receptor          | Correo condicional (RF-406) y en P1 (§21).              | Registrar intentos de entrega en el MVP (§46).                          | Q-24     |
+| C-05 | Rutas de la API              | `/api/invoices`… (§17).                                 | `/api/fiscal/invoices`…, más `reconcile` y `resend` (§40).              | Q-29     |
+| C-06 | Alcance de la idempotencia   | `UNIQUE(idempotency_key, company)` (§13.1).             | `UNIQUE(taxpayer, idempotency_key)` (§27.4). CognitiveStack exige tenant + usuario + operación + clave. | Q-30 |
+| C-07 | Almacenamiento de artefactos | "Almacenamiento durable", sin lock-in (§5, RNF-008).     | Object storage cifrado recomendado (§31).                               | Q-39     |
+| C-08 | Identificadores de fuentes   | `SRI-03` = manual del Facturador SRI; `SRI-04` = reglamento. | `SRI-03` = paquetes XSD; `SRI-04` = resolución de proveedores.      | Q-36     |
+| C-09 | Plazo del Anexo 26           | —                                                       | 60 días hábiles (comunicación SRI) frente a 60 días calendario (ficha) (§37.2). | Q-37 |
+
+## Numeración y estados
+
+| ID   | Estado    | Tipo                  | Pregunta | Por qué importa | Propuesta | Bloquea |
+| ---- | --------- | --------------------- | -------- | --------------- | --------- | ------- |
+| Q-01 | Resuelta  | —                     | ¿En qué momento se consume el secuencial (ERS RF-010)? | — | Al emitir, después de la validación de negocio y antes de generar la clave (CTX §4). | — |
+| Q-02 | Abierta   | architecture decision | La unicidad incluye el ambiente (CTX §5), pero el contador de CTX §5 y §28 y el ADR-003 del ERS no. ¿Hay un contador por ambiente? | Con un contador compartido, los números usados en Pruebas dejan un hueco al pasar a Producción. | Contador independiente por ambiente, además de la unicidad; enmendar ADR 0003. | 3 |
+| Q-03 | Resuelta  | —                     | ¿Qué pasa con un secuencial reservado cuyo comprobante no llega a firmarse? | — | Nunca vuelve al contador; los huecos se toleran y el comprobante conserva su número (CTX §27.3, §28.1). | — |
+| Q-04 | Resuelta  | —                     | ¿Cómo se corrige un comprobante devuelto? | — | Se corrige y reenvía con la misma clave y secuencial (CTX §27.1); los campos de la clave no cambian (BR-28). | — |
+| Q-05 | Absorbida | —                     | ¿Qué estado toma un XML inválido tras reservar? | — | CTX añade `XSD_INVALID`; su salida se decide en Q-35. | — |
+| Q-06 | Parcial   | deferred/non-blocking | ¿Cuándo pasa un comprobante a revisión manual? CTX fija hasta 24 h de procesamiento, intervalo parametrizable, backoff con jitter y circuit breaker (§23.1, §33), pero no el umbral ni la política de `SEND_UNKNOWN`. | Define cuándo interviene un administrador y qué alerta se emite. | Política configurable: `MANUAL_REVIEW` y alerta al superar 24 h desde `RECIBIDA` sin respuesta terminal, o al agotar los intentos de reconciliación de `SEND_UNKNOWN`. Se fija en el diseño de 7. | — |
+| Q-07 | Abierta   | technical uncertainty | CTX §27.1 permite reenviar con la misma clave "un comprobante rechazado por inconsistencias". ¿Incluye `NO AUTORIZADO` o solo `DEVUELTA`? | Decide si `NOT_AUTHORIZED` es terminal o admite corrección con el mismo número. | Terminal hasta verificarlo; spike S-5. | 7 |
+| Q-08 | Abierta   | product decision      | ¿Se permite una fecha de emisión distinta de hoy, y con qué límite? El SRI rechaza fechas extemporáneas (error 65) y un comprobante devuelto no puede cambiar su fecha al corregirse (BR-28). | Un comprobante devuelto que se corrige días después puede volverse extemporáneo sin poder cambiar su fecha. | Fecha de hoy en America/Guayaquil, sin retroactividad en el MVP; documentar el tratamiento del devuelto extemporáneo. | 6 |
+| Q-35 | Abierta   | architecture decision | ¿Qué máquina de estados se adopta? Ver C-01. | Es contrato del dominio, de la API y de las pruebas (ERS RF-524). | Conjunto de CTX §26 sin `SENT`; `RETURNED` y `XSD_INVALID` no terminales, con corrección que vuelve a `XML_BUILT` conservando clave y secuencial; `CANCEL_PENDING` y `CANCELLED` según Q-16. Detalle en `../architecture/fiscal-emission.md`. | 6 |
+
+## Comprobantes
+
+| ID   | Estado   | Tipo                  | Pregunta | Por qué importa | Propuesta | Bloquea |
+| ---- | -------- | --------------------- | -------- | --------------- | --------- | ------- |
+| Q-09 | Resuelta | —                     | ¿Cuál es el límite de consumidor final? | — | Política versionada: USD 50 al corte, con advertencia sobre las restricciones de anulación y nota de crédito (CTX §35). | — |
+| Q-10 | Parcial  | product decision      | ¿Qué restricciones exactas tiene la nota de crédito (ERS RF-213)? CTX §13.4–13.5 lista validaciones y remite a las resoluciones NAC-DGERCGC25-00000014 y 00000017, con trato especial a las facturas a consumidor final. | Sin la regla, el sistema podría emitir una corrección que la norma prohíbe. | Política versionada: documento modificado autorizado, acumulado no mayor que su total, bloqueo para facturas a consumidor final según la resolución; validar el texto vigente antes del cambio. | 10 |
+| Q-11 | Resuelta | —                     | ¿Se pueden referenciar comprobantes emitidos fuera del sistema? | — | Sí, como referencia estructurada (tipo, número, fecha), interna o externa (CTX §13.2, §16.6). | — |
+| Q-12 | Parcial  | product decision      | ¿En qué casos procede la liquidación de compra? CTX solo fija que no admite consumidor final (§17.4). | Fuera de los casos permitidos es tributariamente incorrecta aunque el XML valide (CTX R7). | Investigar la norma vigente e implementar las condiciones como política versionada. | 14 |
+| Q-13 | Resuelta | —                     | ¿Qué versión XSD usa cada tipo? | — | 01 1.1.0, 03 1.1.0, 04 1.1.0, 05 1.0.0, 06 1.1.0, 07 2.0.0; factura 2.0.0 y 2.1.0 bloqueadas (CTX §3.1, §12.7, ADR 0008). | — |
+| Q-14 | Parcial  | technical uncertainty | ¿Qué modo y orden de redondeo? CTX fija los decimales por campo y las invariantes de totales (§10.6, §10.7), pero no el modo ni si se redondea por línea o por total. | Un redondeo distinto al del SRI produce devoluciones por totales. | Half-up por línea a la escala del XSD; los totales suman valores ya redondeados. Verificar con el spike S-3. | 6 |
+| Q-15 | Resuelta | —                     | ¿Cuándo existe el RIDE? | — | Tras la autorización, desde el comprobante autorizado y con marca de Pruebas cuando aplica (CTX §30, §45). | — |
+| Q-16 | Abierta  | product decision      | ¿Entra al MVP la observación de anulaciones? Ver C-03. | Un comprobante anulado en el SRI que sigue como Autorizado distorsiona bandeja y reportes. | Solo detección: la reconciliación periódica usa la consulta de validez y refleja `PENDIENTE DE ANULAR` y `ANULADO`; sin flujo de solicitud en el MVP. | 7 |
+| Q-17 | Parcial  | product decision      | ¿Cuándo debe la identidad del certificado corresponder al RUC? CTX §20.6 dice "cuando aplique". | Bloquear por error impide firmar con certificados válidos de representantes legales. | Advertir sin bloquear; bloquear solo si una regla oficial lo exige. | 4 |
+| Q-37 | Abierta  | deferred/non-blocking | ¿Debe una instalación declarar el RUC proveedor (Anexo 26)? Depende de si un tercero provee el sistema. Ver C-09. | Omitirlo cuando es obligatorio, o llenarlo con un RUC ficticio, es incumplimiento. | Campo opcional vacío por defecto; guía de decisión en la documentación de instalación; verificar la resolución antes de go-live. | — (go-live) |
+| Q-38 | Abierta  | product decision      | ¿Qué anexos soporta el MVP y cómo se detecta que una operación los requiere? | Sin detección, un caso especial pasa como ordinario y genera un XML válido pero incorrecto (CTX R7). | `SUPPORTED`: 1, 2, 3, 10, 14, 17 y las leyendas de 21 (agentes de retención), 22 (RIMPE) y 24 (grandes contribuyentes), que afectan a comprobantes ordinarios. `NOT_APPLICABLE`: 15. `UNDER_REVIEW`: 26 (Q-37). `BLOCKED`: el resto. La operación declara sus atributos de forma explícita; no se infieren. | 5, 6 |
+
+## Inventario
+
+| ID   | Estado  | Tipo                  | Pregunta | Por qué importa | Propuesta | Bloquea |
+| ---- | ------- | --------------------- | -------- | --------------- | --------- | ------- |
+| Q-18 | Abierta | product decision      | ¿Cuándo se descuenta el stock (ERS RF-205)? | Antes de autorizar obliga a compensar si no se autoriza; al autorizar permite vender dos veces lo mismo mientras está pendiente. | Al pasar a `AUTHORIZED`, con restricción única por factura y producto. | 9 |
+| Q-19 | Abierta | product decision      | ¿Se permite stock negativo? | Bloquear la emisión por inventario impide documentar una venta real. | Permitir con advertencia; el inventario es auxiliar al documento fiscal. | 9 |
+| Q-20 | Abierta | product decision      | ¿Qué política rige la devolución por nota de crédito (ERS RF-212)? | Evita devolver más de lo vendido. | Solo productos controlados, cantidad no mayor que la salida original pendiente de devolver, decisión explícita por línea. | 10 |
+| Q-21 | Abierta | deferred/non-blocking | ¿El movimiento `INICIAL` se registra una sola vez por producto? | Menor; evita dos saldos iniciales. | Una vez al activar el control; después, ajustes. Se fija en el diseño de 9. | — |
+
+## Usuarios, API y operación
+
+| ID   | Estado   | Tipo                  | Pregunta | Por qué importa | Propuesta | Bloquea |
+| ---- | -------- | --------------------- | -------- | --------------- | --------- | ------- |
+| Q-22 | Parcial  | deferred/non-blocking | ¿Qué puede hacer el Operador ("permisos básicos")? ERS §4 ya fija que el Administrador gestiona usuarios y configuración. | Define la política server-side de cada endpoint. | Cada cambio define en sus specs las filas de sus propias operaciones, partiendo de la matriz de `../security/access-control.md`. | — |
+| Q-23 | Abierta  | product decision      | ¿El punto de emisión predeterminado restringe o solo preselecciona? | Cambia la autorización de la emisión. | Solo preselecciona: ERS RF-113 dice "predeterminados". RF-113 se implementa con los establecimientos, en el cambio 2. | 2 |
+| Q-24 | Abierta  | product decision      | ¿Entra el correo al MVP? Ver C-04. | El correo agrega SMTP, reintentos y rebotes. | Registrar entregas por descarga e impresión; el correo queda en P1 detrás de un puerto de notificación. | 8 |
+| Q-25 | Parcial  | architecture decision | ¿Quién actualiza los catálogos fiscales? CTX exige datos versionados con vigencia y fuente, no enums (§16.4, §55). | Un código inventado por el usuario produce un XML incorrecto. | Se distribuyen con cada release como datos versionados; el administrador habilita o deshabilita entradas, no crea códigos. | 5 |
+| Q-26 | Abierta  | deferred/non-blocking | ¿Qué volumen es "razonable" para ERS RNF-005? | Sin cifra no hay presupuesto de rendimiento verificable. | 100 000 comprobantes acumulados, 10 000 productos, 10 000 terceros y 10 usuarios concurrentes. Necesaria antes de medir RNF-005. | — |
+| Q-27 | Parcial  | deferred/non-blocking | ¿Cuánto se conservan los artefactos? CTX remite a la obligación legal vigente y a la conservación de largo plazo (§31). | Determina capacidad de almacenamiento y política de respaldo. | Nunca purgar en v1; documentar el plazo legal verificado. | — (go-live) |
+| Q-28 | Abierta  | product decision      | ¿Qué formato tiene la exportación de datos del contribuyente (ERS SEC-010)? | Portabilidad real fuera del sistema. | ZIP con XML firmados y autorizados y RIDE por comprobante, más XLSX de comprobantes, terceros y productos. | 16 |
+| Q-29 | Parcial  | architecture decision | ¿Qué rutas y forma tiene la API fiscal? Ver C-05. CTX §41 ya resuelve que la emisión responde sin esperar el estado final. ¿Borrador y emisión son llamadas separadas? | Es un contrato público versionado (ERS API-001). | El prefijo de versión `/api/v1/` ya es general (ADR 0015). Propuesta: segmento `fiscal` bajo ese prefijo; borradores como recurso y emisión como acción con `Idempotency-Key`, más un atajo crear-y-emitir para integradores; solo sesión en el MVP, porque las API keys son P2. | 6 |
+| Q-30 | Abierta  | architecture decision | ¿Qué alcance tiene la clave de idempotencia? Ver C-06. | Con el alcance amplio, una clave reutilizada por otro usuario devuelve un resultado ajeno. | Alcance de CognitiveStack (`../architecture/idempotency.md`); la unicidad de secuencial y clave de acceso protege entre usuarios. | 6 |
+| Q-31 | Abierta  | product decision      | ¿Puede cambiar el RUC después de emitir? | Los históricos quedarían con otro emisor. | Bloquearlo; un RUC distinto es otro contribuyente. | 2 |
+| Q-32 | Abierta  | deferred/non-blocking | ¿Qué criterios de aceptación tienen los requisitos que ERS §19 no cubre? Ver `capabilities.md`. | Sin escenarios no hay verificación. | Los escribe la propuesta de cada cambio en sus specs. | — |
+| Q-33 | Abierta  | deferred/non-blocking | ¿Qué licencia open source? `package.json` declara ISC, el valor por defecto de `npm init`. | Lo exigen ERS API-006 y el go-live; condiciona las contribuciones y el uso por terceros. | Decidir antes del primer release público entre copyleft (AGPL-3.0) y permisiva (MIT, Apache-2.0). | — (go-live) |
+| Q-34 | Abierta  | technical uncertainty | ¿Qué librerías de Node.js para XML ordenado, validación XSD, XAdES-BES con RSA-SHA1, SOAP y PDF? | Es el principal riesgo técnico: RSA-SHA1 y los P12 con cifrado legado deben funcionar con OpenSSL 3, y las librerías XSD nativas tienen mantenimiento irregular. | Spikes S-2, S-3 y S-4; un ADR por dependencia de producción. | 6 (XML, XSD, firma), 7 (SOAP), 8 (PDF) |
+| Q-36 | Resuelta | —                     | ERS y CTX usan los mismos identificadores para fuentes distintas. Ver C-08. | — | Citar con prefijo: `ERS SRI-03`, `CTX SRI-03`. | — |
+| Q-39 | Abierta  | architecture decision | ¿Dónde se guardan y cómo se cifran los artefactos? Ver C-07. | Contienen datos personales y son prueba fiscal de largo plazo. | Puerto de almacenamiento con adaptador de sistema de archivos por defecto y S3-compatible opcional; cifrado en reposo del volumen como requisito de instalación (ADR 0010). | 6 |
+| Q-40 | Abierta  | deferred/non-blocking | ¿Dónde vive el registro de cambios normativos (CTX §53)? | Sin registro no hay trazabilidad de qué ficha soporta cada versión. | En el repositorio: `CHANGELOG`, manifiesto de XSD y catálogos versionados; no como función de la aplicación. | — (go-live) |
+| Q-41 | Resuelta | — | ¿Cómo se integra Better Auth, sin código de autenticación propio, para implementar el comportamiento ya definido de `add-user-access`? ¿La membresía usa el plugin Organization, configuración adicional o un adapter? | — | Resuelta por S-1 el 2026-10-02 (14 pruebas, 11 criterios y 3 verificaciones adicionales): Better Auth 1.7.7 con plugin Organization (empresa = `organization`, membresía = `member` con `status`), plugin admin solo para `createUser`, endpoints de cliente de ambos plugins bloqueados por prefijo, transacción común con la auditoría mediante `runWithAdapter`, IP de cliente fijada por el servidor y no persistida, y límite por correo e IP mediante hooks. Sin membresía propia ni ADR de desviación. Detalle en `openspec/changes/add-user-access/design.md`. | — |
+
+## Spikes propuestos
+
+Cada spike se hace en un workspace temporal descartable o en una rama que no se fusiona, y termina con una
+decisión registrada: un ADR o el estado de la pregunta.
+
+| Spike | Preguntas | Timebox  | Criterio de éxito (todos deben cumplirse)                                                                                                                                         | Si falla                                                                                     |
+| ----- | --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| S-1   | Q-41      | Ejecutado 2026-10-02 | Valida la integración concreta del proyecto con Better Auth, Express y PostgreSQL, no si Better Auth tiene esas funciones en general: (1) el registro público está deshabilitado; (2) un administrador crea un usuario; (3) ese usuario se autentica; (4) el usuario se asocia a Company A con un rol limitado a esa empresa; (5) el middleware obtiene empresa y rol desde estado autenticado controlado por el servidor; (6) enviar otro `companyId` o `role` desde el cliente no altera el contexto de autorización; (7) desactivar al usuario invalida sus sesiones, o las vuelve inútiles, antes de la siguiente operación protegida; (8) el usuario desactivado no puede volver a iniciar sesión; (9) el administrador establece o restablece la contraseña de otro usuario sin correo; (10) una membresía de Company A nunca autoriza recursos de Company B; (11) las operaciones de Better Auth que cambian identidad o credenciales quedan en la misma transacción que su evento de auditoría, o un mecanismo documentado garantiza que no hay acción sin evento. Detalle en `openspec/changes/add-user-access/design.md`. | No saltar a una membresía propia. Primero evaluar si el plugin Organization, configuración adicional o un adapter limpio cumplen el criterio fallido. Una implementación propia exige justificación escrita en el `design.md` del cambio y, si afecta la arquitectura, un ADR. |
+| S-2   | Q-34      | 0,5 día  | Con el XSD oficial de factura 1.1.0, en un contenedor Linux de Node LTS sin Java ni red: un XML válido pasa, cada una de las variantes inválidas de CTX §19.4 falla, y la validación tarda menos de 200 ms por comprobante. | Probar `xmllint` como binario del contenedor detrás del mismo puerto; registrar la elección en un ADR. |
+| S-3   | Q-34, Q-14 | 1,5 días | (1) Un P12 real de una entidad certificadora ecuatoriana se carga en Node LTS sin flags de proveedor legado de OpenSSL; (2) una factura firmada en XAdES-BES con RSA-SHA1 obtiene `RECIBIDA` y luego `AUTORIZADO` en Pruebas del SRI; (3) un timeout forzado se clasifica como error de transporte; (4) diez facturas con casos límite de redondeo (seis decimales, descuentos, varias tarifas de IVA, cantidades fraccionarias) obtienen 10/10 `AUTORIZADO`. | (1): evaluar un parser de PKCS#12 en JavaScript puro. (2): probar otra librería XAdES; si ninguna funciona en Node, ADR de desviación (por ejemplo, un firmador auxiliar). (4): ajustar la política de redondeo y repetir. |
+| S-4   | Q-34      | 0,5 día  | Un RIDE PDF generado desde un XML autorizado contiene la clave de acceso como código de barras Code128 que se decodifica igual a la clave, y 50 RIDE se generan con p95 menor que 1 s en el contenedor de la API. | Evaluar otra librería; si exige un navegador headless, medir el tamaño de imagen y registrar un ADR. |
+| S-5   | Q-07      | 2 h      | Se encuentra en la ficha v2.34 o en las preguntas frecuentes oficiales del SRI un texto explícito, citado con su sección, sobre reenviar un comprobante `NO AUTORIZADO` con la misma clave. | Sin texto explícito: `NOT_AUTHORIZED` queda terminal y se documenta como limitación conocida. |

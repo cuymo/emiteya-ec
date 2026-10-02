@@ -1,0 +1,73 @@
+schema: spec-driven
+githubCopilot:
+  cloudAgent: false
+
+# CognitiveStack governs engineering. OpenSpec governs change.
+# This file is injected into every OpenSpec run, so it stays short and points to the
+# documents that hold the durable rules. Agents open those only when a change needs them.
+
+context: |
+  This project follows CognitiveStack. AGENTS.md is the agent entry point and lists the
+  permanent engineering constraints.
+
+  Sources of truth:
+  - Product purpose, users, domain, and vocabulary: docs/product/.
+  - Current observable behavior: openspec/specs/.
+  - Proposed and in-progress behavior changes: openspec/changes/.
+  - Architecture and boundaries: ARCHITECTURE.md and docs/architecture/.
+  - Interface rules: docs/architecture/, starting at frontend.md.
+  - Security: docs/security/. Quality and Definition of Done: docs/quality/.
+  - Architecture decisions: docs/architecture/adr/.
+
+  Product: self-hosted Ecuadorian SRI electronic invoicing MVP for the six off-line documents.
+  Before proposing, read docs/product/capabilities.md and the questions in
+  docs/product/open-questions.md that block the change. Fiscal changes follow
+  docs/architecture/fiscal-emission.md and cite official sources; the SRI integration context
+  (docs/product/project-sri-integration.md) prevails over the requirements document on SRI
+  technical matters.
+
+  Load only the CognitiveStack documents relevant to the affected area. Reference them
+  from artifacts instead of copying their content.
+
+  Stack: TypeScript, Express REST API, Next.js, Better Auth, PostgreSQL with Prisma,
+  Tailwind CSS and shadcn/ui, React Hook Form and Zod, pnpm through Corepack.
+
+rules:
+  proposal:
+    - State the user or business problem and who has it.
+    - State explicitly what is out of scope.
+    - Name capabilities after durable product behavior, in the vocabulary of docs/product/glossary.md, never after tasks or tables.
+    - Do not prescribe implementation unless it is needed to explain the scope.
+  specs:
+    - Describe observable behavior from the user's or the system's perspective, never database tables, columns, or infrastructure.
+    - Cover success, validation, permission, and boundary scenarios where they apply.
+    - For private data, add a scenario where a user from another tenant cannot read, change, or detect the record.
+    - For a mutation whose repetition would duplicate an effect, add a scenario where repeated or concurrent requests produce one effect.
+  design:
+    - Read the relevant CognitiveStack architecture documents before deciding, and respect their boundaries and shared patterns.
+    - For each new or changed screen, answer the screen brief in docs/architecture/cognitive-architecture.md, including the P0-P3 tiering.
+    - Choose each control from the user's intent with docs/architecture/component-selection.md, and reuse the contracts in docs/architecture/component-system.md.
+    - For each sensitive operation, answer the brief in docs/architecture/backend.md, covering tenant, ownership, idempotency, constraints, audit, and leak paths.
+    - Address validation, migrations, observability, and performance when the change touches them.
+    - Record any deviation from docs/architecture/stack.md as an ADR in docs/architecture/adr/.
+  tasks:
+    - Make each task group one coherent, verifiable unit that can become its own commit, ordered schema, then API, then interface.
+    - Put tests in the same group as the behavior they cover, including access control and idempotency tests for sensitive operations.
+    - Add a migration task whenever data structures change.
+    - For interface work, cover loading, empty, error, permission, success, responsive, keyboard, light, and dark states, and the frontend checklist.
+    - Add documentation tasks when architecture, API, or durable rules change.
+    - End with the project verification command.
+
+operations:
+  apply:
+    guidance:
+      - Read AGENTS.md and only the CognitiveStack documents the current task touches before changing code.
+      - Use the specialist skill that matches the task, such as implement-operational-frontend, create-migration, harden-security, or optimize-performance.
+      - Use pnpm through Corepack only.
+      - Do not mark a task complete while its verification fails.
+      - When committing, commit each completed task group separately, as docs/quality/version-control.md requires.
+  archive:
+    guidance:
+      - Archive only when implementation, specs, tests, documentation, and the Definition of Done agree.
+      - Confirm the delta specs describe what actually shipped before merging them into openspec/specs/.
+      - Archive in its own commit.

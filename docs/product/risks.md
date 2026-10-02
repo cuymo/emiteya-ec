@@ -1,0 +1,45 @@
+# Riesgos
+
+Riesgos de producto y técnicos que deben permanecer visibles durante todo el proyecto.
+Integra los riesgos R1–R10 de CTX §64 con los derivados del ERS. Los riesgos de seguridad
+detallados están en `../security/threat-model.md`.
+
+Probabilidad e impacto: Alta, Media o Baja. Revisa esta tabla al proponer cada cambio
+OpenSpec y al preparar cada release.
+
+## Fiscales y de integración
+
+| ID   | Riesgo                                                                 | Prob. | Impacto | Mitigación                                                                                                   | Verificación                                    | Fuente       |
+| ---- | ---------------------------------------------------------------------- | ----- | ------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ------------ |
+| R-01 | XSD, ficha o catálogos desactualizados frente al SRI.                   | Alta  | Alto    | Registro de esquemas con hash, catálogos con vigencia, política de cambios normativos y checklist por release (ADR 0008). | Checklist de CTX §54 antes de cada release.     | CTX R1; ERS §22.1 |
+| R-02 | Secuencial duplicado.                                                  | Media | Alto    | Reserva transaccional, restricción única en base de datos, ningún retroceso ni reuso (ADR 0003).              | 100+ reservas concurrentes sin duplicados (AC-04). | CTX R2    |
+| R-03 | Un timeout crea un segundo comprobante.                                | Media | Alto    | `SEND_UNKNOWN`, consulta por la misma clave, reenvío del mismo XML firmado (ADR 0005).                         | Caso de recuperación A; AC-06.                  | CTX R3       |
+| R-04 | Reenviar ante el error 70.                                             | Media | Medio   | Regla explícita en el orquestador: esperar la autorización sin reenviar.                                      | Caso de recuperación B.                         | CTX R4       |
+| R-05 | Importes con coma flotante o redondeo distinto al del SRI.             | Media | Alto    | Decimal exacto, escala por campo del XSD, invariantes de totales antes del XML (Q-14).                         | Pruebas de propiedades de dinero; golden files. | CTX R5       |
+| R-06 | XML válido pero tributariamente incorrecto: nota de crédito prohibida, liquidación fuera de caso, caso especial tratado como ordinario. | Media | Alto | Reglas de dominio como políticas versionadas, catálogos con vigencia, matriz de casos especiales con bloqueo (ADR 0014; Q-10, Q-12, Q-38). | Pruebas por política; matriz de certificación. | CTX R7, R9 |
+| R-07 | El SRI cambia endpoints o certificados TLS.                            | Baja  | Alto    | Endpoints configurables por ambiente, TLS estándar sin pinning, health check del SRI.                         | Health check; verificación de WSDL antes de go-live. | CTX R8  |
+| R-08 | Indisponibilidad prolongada del SRI.                                   | Media | Medio   | Jobs persistidos, backoff con jitter, circuit breaker, estado pendiente visible y alertas; la consulta local no depende del SRI (ERS RNF-004). | Pruebas de caída de red y de respuesta ambigua. | ERS §16 |
+| R-09 | El reloj del servidor adelanta al del SRI y la firma se rechaza.        | Baja  | Medio   | NTP obligatorio en la instalación y monitoreo de la desviación (CTX §20.5).                                   | Health check de desviación del reloj.           | CTX §20.5    |
+| R-10 | Una instalación open source omite, o falsea, el RUC proveedor del Anexo 26. | Media | Medio | Campo opcional sin valor ficticio y guía de decisión en la documentación de instalación (Q-37).             | Revisión previa a producción (CTX §59).         | CTX R10      |
+| R-11 | Interpretación incorrecta de una norma por falta de asesoría tributaria. | Media | Alto  | Cada regla cita su fuente oficial; reglas dudosas quedan como preguntas abiertas y se validan antes de su cambio. | Matriz normativa revisada antes de go-live (CTX §59). | CTX §1 |
+
+## Seguridad y datos
+
+| ID   | Riesgo                                                                 | Prob. | Impacto | Mitigación                                                                                                   | Verificación                                    | Fuente       |
+| ---- | ---------------------------------------------------------------------- | ----- | ------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ------------ |
+| R-12 | Exposición del certificado o su contraseña, que permite firmar en nombre del contribuyente. | Baja | Crítico | Cifrado en reposo, uso solo en el adaptador de firma, nunca en logs, respuestas ni backups sin cifrar (ADR 0011). | Pruebas de que firma y contraseña no aparecen en logs ni API (ERS §20). | CTX R6 |
+| R-13 | Emisión accidental en Producción, o comprobantes de Pruebas tomados como reales. | Media | Alto | Ambiente explícito, aviso persistente de Pruebas, cambio solo por administrador con auditoría, endpoint ligado al ambiente del comprobante (BR-04). | Invariante I-09; pruebas del aviso.        | ERS RF-004, RF-005; CTX §6 |
+| R-14 | Pérdida de artefactos o respaldos que impide demostrar lo emitido.     | Baja  | Alto    | Artefactos inmutables con hash, respaldos de base de datos y almacenamiento, restauración probada; el SRI no es un respaldo (ADR 0010). | Restauración completa (AC-10).                  | ERS RNF-007; CTX §31 |
+| R-15 | Pérdida de la clave maestra de cifrado.                                | Baja  | Medio   | Respaldo de la clave por separado de la base de datos; recuperable volviendo a cargar el certificado.         | Procedimiento de restauración documentado.      | ADR 0011     |
+| R-16 | Datos personales del XML o del SOAP en los logs.                       | Media | Medio   | Redacción por defecto; los logs registran identificadores, estados y códigos, no contenido (ERS SEC-003; CTX §47). | Revisión de logs en pruebas de integración.     | ERS SEC-003  |
+| R-17 | Instalación self-hosted sin TLS, sin respaldos o sin NTP.              | Media | Alto    | Valores seguros por defecto, documentación de responsabilidades y ubicación de datos (ERS SEC-009), health checks. | Checklist de instalación en el README.         | ERS SEC-009  |
+
+## Técnicos y de producto
+
+| ID   | Riesgo                                                                 | Prob. | Impacto | Mitigación                                                                                                   | Verificación                                    | Fuente       |
+| ---- | ---------------------------------------------------------------------- | ----- | ------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ------------ |
+| R-18 | Las librerías de Node.js para XSD y XAdES-BES no soportan RSA-SHA1 con OpenSSL 3 o están poco mantenidas. | Media | Alto | Spike previo con un comprobante real autorizado en Pruebas; firmador y validador aislados tras puertos (Q-34, ADR 0013). | Comprobante autorizado en Pruebas durante el spike. | CTX §20.1, §43 |
+| R-19 | Doble descuento de inventario por reintentos.                          | Media | Medio   | Restricción única por comprobante, producto y tipo de movimiento.                                            | AC-08.                                          | ERS RF-206   |
+| R-20 | Rechazo de clientes válidos por una validación de RUC demasiado estricta. | Media | Medio | Validar tipo, longitud y reglas oficiales; ningún algoritmo local de rechazo (ERS RF-322, CTX §9.1).        | Pruebas con RUC que no cumplen el algoritmo clásico. | ERS RF-322 |
+| R-21 | Ampliación de alcance hacia ERP, POS o contabilidad.                   | Alta  | Medio   | Regla de admisión del ERS (cierre) y ADR 0001; cada propuesta declara su fuera de alcance.                    | Revisión de cada propuesta OpenSpec.            | ERS §2.3     |
+| R-22 | Uso del ambiente de Pruebas del SRI para pruebas de carga o en CI.      | Baja  | Medio   | Clientes SRI simulados en CI; Pruebas del SRI solo para la matriz de certificación (CTX §49).                 | Configuración de CI.                            | CTX §49      |
