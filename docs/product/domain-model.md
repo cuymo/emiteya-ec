@@ -58,15 +58,17 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `fiscal_sequence` — Secuencia fiscal
 
 - Purpose: contador que asigna el secuencial de cada comprobante.
-- Key attributes: ambiente, punto de emisión, tipo de comprobante, siguiente valor.
+- Key attributes: ambiente, establecimiento, punto de emisión, tipo de comprobante, siguiente valor y último número reservado.
 - Invariants:
-  - Un contador independiente por ambiente, establecimiento, punto y tipo (ERS RF-120, ADR 0003, Q-02).
+  - Un contador independiente por ambiente, establecimiento, punto y tipo (ERS RF-120, ADR 0003, Q-02). Cambiar de ambiente no comparte ni reinicia ninguna secuencia.
   - La unicidad del secuencial incluye el ambiente: `(empresa, ambiente, establecimiento, punto, tipo, secuencial)` (CTX §5).
-  - Valor entre `1` y `999999999`, representado con nueve dígitos (ERS RF-124, CTX §8.2).
-  - La reserva es atómica en todos los procesos e instancias (ERS RF-122, RNF-003, CTX §28).
+  - Valor entre `1` y `999999999`, representado con nueve dígitos (ERS RF-124, CTX §8.2). Tras reservar el `999999999` el contador queda agotado y no se reinicia.
+  - Mientras no existe, se comporta como un contador en `1` sin reservas; se crea con su primera reserva o su primer ajuste.
+  - La reserva es atómica en todos los procesos e instancias (ERS RF-122, RNF-003, CTX §28). Un número está reservado cuando la operación que lo reserva se confirma; si se revierte antes, no lo está.
   - Un secuencial reservado nunca vuelve al contador ni se reutiliza; los huecos se toleran, y la integridad depende de la unicidad y la trazabilidad, no de la continuidad (CTX §27.3, §28.1).
+  - El siguiente valor siempre supera al último reservado.
   - Solo un administrador ajusta el siguiente valor; retrocederlo exige una operación explícita con motivo, y todo ajuste se audita (ERS RF-121, RF-125).
-- Relationships: pertenece a un punto de emisión.
+- Relationships: pertenece a un punto de emisión; registra cada número reservado como reserva de secuencial, que referenciará el comprobante.
 
 ### `certificate` — Certificado de firma
 

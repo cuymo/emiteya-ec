@@ -121,8 +121,8 @@ Dos roles por membresía, `ADMIN` y `OPERATOR` (ERS RF-002). El rol global que a
 admin de Better Auth no concede nada. Toda celda "No" responde `403` en el servidor, y un
 usuario de otra empresa responde `404`.
 
-Permisos implementados (cambios `add-user-access`, design D4, y `add-taxpayer-setup`, design
-D10). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
+Permisos implementados (cambios `add-user-access`, design D4; `add-taxpayer-setup`, design D10;
+y `add-fiscal-numbering`, design D10). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
 denegado por defecto;
 `backend/test/identity/access-policy-doc.test.ts` comprueba que esta tabla coincide con él:
 
@@ -142,6 +142,8 @@ denegado por defecto;
 | `establishments.read` | Consultar establecimientos y puntos de emisión | Sí | Sí |
 | `establishments.manage` | Crear establecimientos y puntos, corregir la dirección de un establecimiento, y activar y desactivar ambos | Sí | No |
 | `readiness.read` | Consultar el ambiente y la preparación para emitir | Sí | Sí |
+| `sequences.read` | Consultar los secuenciales por ambiente, punto y tipo | Sí | No |
+| `sequences.adjust` | Ajustar el siguiente secuencial de un contador | Sí | No |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
@@ -151,7 +153,6 @@ cambio confirma las filas de sus propias operaciones al añadirlas al mapa:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |
-| Ajustar secuenciales                                         | Sí      | No                |
 | Cargar o reemplazar el certificado                           | Sí      | No                |
 | Ver metadatos del certificado                                | Sí      | Solo su vigencia  |
 | Gestionar usuarios y roles                                   | Sí      | No                |

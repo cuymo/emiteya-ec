@@ -16,7 +16,9 @@ export type Permission =
   | "environment.change"
   | "establishments.read"
   | "establishments.manage"
-  | "readiness.read";
+  | "readiness.read"
+  | "sequences.read"
+  | "sequences.adjust";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -34,6 +36,8 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "establishments.read",
     "establishments.manage",
     "readiness.read",
+    "sequences.read",
+    "sequences.adjust",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",

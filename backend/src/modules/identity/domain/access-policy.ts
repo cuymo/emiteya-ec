@@ -17,6 +17,8 @@ export const PERMISSIONS = [
   "establishments.read",
   "establishments.manage",
   "readiness.read",
+  "sequences.read",
+  "sequences.adjust",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -36,6 +38,8 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "establishments.read",
     "establishments.manage",
     "readiness.read",
+    "sequences.read",
+    "sequences.adjust",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
