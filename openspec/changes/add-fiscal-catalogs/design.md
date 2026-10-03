@@ -56,7 +56,7 @@ oficiales lee datos del sistema, y la de la habilitación, datos de la empresa d
 | 4 | Validación de propiedad | La habilitación siempre se lee y se escribe con la empresa de la sesión. La ruta solo identifica el catálogo y la entrada, que son datos del sistema. |
 | 5 | ¿Cambiar un ID alcanza otra cuenta? | No: no hay identificadores de empresa en la ruta, y un `companyId` en el cuerpo lo rechaza el esquema estricto. |
 | 6 | Petición repetida | Es un estado deseado: repetirla no cambia nada ni audita. |
-| 7 | Peticiones simultáneas | La fila se crea con `ON CONFLICT DO NOTHING`, se bloquea con `FOR UPDATE`, y solo se audita la transición real (D9). |
+| 7 | Peticiones simultáneas | Un advisory lock de transacción por empresa y entrada serializa los cambios; no se crea ninguna fila para poder bloquearla. Solo se escribe y se audita la transición real (D9). |
 | 8 | Idempotencia | Por estado deseado; no hace falta clave. |
 | 9 | Restricciones | Clave primaria compuesta con la empresa; clave foránea a la identidad de la entrada; un `CHECK` limita las filas a los catálogos habilitables; triggers de inmutabilidad de los datos del sistema (D14). |
 | 10 | Auditoría | Solo de la transición real, en la misma transacción (D13). |
@@ -221,24 +221,38 @@ Las tarifas no se reducen a `percentage: number`. Columnas tipadas de `fiscal_ca
   - `DEFAULT_ENABLED` para tarifas de IVA y formas de pago;
   - `DEFAULT_DISABLED` para ICE e IRBPNR.
   - Se guarda con la versión del dataset en `fiscal_catalog_dataset`. Rige la de la última versión aplicada del catálogo, y cambiarla exige una versión nueva del dataset, trazable como cualquier otra.
+- **Estado efectivo.** Se calcula a partir de tres datos:
+  1. la versión normativa resuelta para la fecha con `resolveCatalogEntry` (D5);
+  2. el valor por defecto que declara la política del dataset del catálogo;
+  3. la decisión explícita de la empresa, si existe.
+
+  Conceptualmente, `enabled = decisiónDeLaEmpresa ?? valorPorDefecto`, y una entrada es utilizable si tiene versión aplicable en la fecha y está habilitada.
 - **Decisiones de la empresa:** `company_fiscal_catalog_setting (company_id, catalog_type, entry_key, enabled, updated_at, updated_by)`, con clave primaria compuesta y clave foránea a `fiscal_catalog_key`.
-  - Una fila representa una decisión explícita de la empresa, nunca una copia del catálogo.
+  - Una fila representa una decisión explícita de la empresa. Nunca se crea una fila solo para copiar el valor por defecto.
   - Un `CHECK` admite solo los catálogos habilitables. La API responde `400 FISCAL_CATALOG_NOT_ENABLEABLE` para los demás, y `404` si la entrada no existe.
-- **Una única función de dominio:** `effectiveEnablement({ decision, policy })` devuelve la decisión de la empresa si existe, o el valor por defecto de la política. Por encima, `isUsable(entry, date, enablement)` exige que la entrada esté habilitada y que `resolveCatalogEntry` devuelva una versión en esa fecha.
+- **Funciones de dominio únicas** (`domain/enablement.ts`):
+  - `effectiveEnablement({ decision, policy })` devuelve `{ enabled, source }`:
+    - `COMPANY`: rige la decisión de la empresa;
+    - `DEFAULT`: no hay decisión, y rige el valor por defecto de la política;
+    - `NOT_ENABLEABLE`: el catálogo no admite decisiones por empresa (tipos de identificación e impuestos). No equivale a deshabilitada: la entrada está siempre disponible (`enabled: true`), y su uso depende solo de su vigencia.
+  - `isUsable(applicable, enablement)` trabaja sobre la versión ya resuelta para una fecha explícita, es decir, sobre el resultado de `resolveCatalogEntry`. Exige que esa versión exista y que la entrada esté habilitada.
   - Todo lector (API, `add-parties-and-products`, emisión) usa esas funciones, así que la ausencia de fila tiene siempre el mismo significado.
 - **Semántica determinista:**
-  - **Empresa nueva:** no tiene filas, y cada entrada toma el valor por defecto de su catálogo.
-  - **Entrada nueva de un dataset posterior:** ninguna empresa tiene decisión sobre ella, y toma el valor por defecto. No se copian filas.
-  - **Empresa sin decisión:** siempre el valor por defecto vigente del catálogo.
-  - **Entrada que vence o se retira:** la decisión se conserva como historia, pero la entrada no es utilizable, porque `resolveCatalogEntry` no devuelve versión. Una entrada habilitada nunca se vuelve utilizable por estarlo.
-  - **Habilitar una entrada sin versión vigente ni futura:** `400 FISCAL_CATALOG_ENTRY_NOT_IN_FORCE`. Deshabilitar siempre se permite.
+  - **Empresa sin decisión:** hereda el valor por defecto vigente del catálogo. Una empresa nueva no tiene filas.
+  - **Entrada nueva de un dataset posterior:** ninguna empresa tiene decisión sobre ella, y hereda el valor por defecto. No se copian filas.
+  - **Repetir el estado efectivo actual:** no crea fila ni auditoría.
+  - **Cambio real:** crea o actualiza la decisión de la empresa y audita exactamente una transición (D13).
   - **Volver al valor por defecto:** si una decisión vuelve a coincidir con el valor por defecto, la fila se conserva, porque sigue siendo una decisión de la empresa y no depende de cambios futuros de la política.
-- **La vista de la API** devuelve, por entrada, `enabled`, `enablementSource` (`DEFAULT` o `COMPANY`) y `usable` en la fecha consultada.
+  - **Entrada que vence o se retira:** la decisión se conserva como historia, pero en una fecha sin versión aplicable la entrada no es utilizable. Una decisión de la empresa nunca vuelve utilizable una entrada vencida o `WITHDRAWN`.
+  - **Habilitar una entrada sin versión vigente ni futura:** `400 FISCAL_CATALOG_ENTRY_NOT_IN_FORCE`. Deshabilitar siempre se permite.
+- **La vista de la API** devuelve, por entrada, `enablement: { enabled, source }`, con `source` `DEFAULT`, `COMPANY` o `NOT_ENABLEABLE`, y `usable` en la fecha consultada.
 - **Cambio:** `PUT …/enablement { enabled }` en una transacción:
-  1. inserta la fila con el valor por defecto (`ON CONFLICT DO NOTHING`);
-  2. la bloquea `FOR UPDATE`;
-  3. si el valor cambia, la actualiza y audita;
-  4. si no cambia, responde `200` sin auditar.
+  1. comprueba que la entrada existe y, si se habilita, que tiene una versión vigente o futura;
+  2. toma `pg_advisory_xact_lock` con una clave por empresa y entrada (`fiscal-catalog-enablement:{companyId}:{catalogType}:{entryKey}`). El lock serializa los cambios simultáneos de la misma entrada en la misma empresa y se libera al terminar la transacción;
+  3. lee la decisión y calcula el estado efectivo con `effectiveEnablement`;
+  4. si el estado efectivo cambia, guarda la decisión y audita la transición en la misma transacción;
+  5. si no cambia, responde `200` sin escribir ni auditar.
+  - **Por qué un advisory lock y no `FOR UPDATE`:** sin decisión previa no hay fila que bloquear, y crearla con el valor por defecto para poder bloquearla sería precisamente una copia del catálogo.
 - **Efecto:** la habilitación no altera datos oficiales. Su efecto en terceros, productos y comprobantes lo definen los cambios que los crean (D15).
 
 ### D10. Política decimal común
