@@ -40,6 +40,11 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "products.read": { ADMIN: true, OPERATOR: true },
   "products.manage": { ADMIN: true, OPERATOR: true },
   "products.changeStatus": { ADMIN: true, OPERATOR: false },
+  // add-invoice-emission, design D14.
+  "invoices.read": { ADMIN: true, OPERATOR: true },
+  "invoices.draft": { ADMIN: true, OPERATOR: true },
+  "invoices.emit": { ADMIN: true, OPERATOR: true },
+  "invoices.retrySigning": { ADMIN: true, OPERATOR: true },
 };
 
 describe("política de autorización central", () => {

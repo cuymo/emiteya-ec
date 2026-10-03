@@ -27,6 +27,20 @@ function served(router: Router): string[] {
   );
 }
 
+// Rutas de add-invoice-emission documentadas antes que su router (tarea 4.1). Cada tarea que monta
+// una la quita de aquí (7.2, 8.3, 9.2 y 9.3); al terminar el cambio la lista queda vacía.
+const PENDING = new Set([
+  "get /invoices/drafts",
+  "post /invoices/drafts",
+  "get /invoices/drafts/:draftId",
+  "put /invoices/drafts/:draftId",
+  "delete /invoices/drafts/:draftId",
+  "post /invoices",
+  "get /invoices",
+  "get /invoices/:invoiceId",
+  "post /invoices/:invoiceId/signing-attempts",
+]);
+
 describe("rutas documentadas", () => {
   it("el registro de OpenAPI coincide con las rutas de los routers de /api/v1", () => {
     // Los routers solo se inspeccionan: ninguna dependencia se usa al construirlos.
@@ -44,7 +58,10 @@ describe("rutas documentadas", () => {
       productsRouter({} as Products),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
-    expect(routers.flatMap(served).sort()).toEqual(documented);
+    expect(documented).toEqual(expect.arrayContaining([...PENDING]));
+    expect(routers.flatMap(served).sort()).toEqual(
+      documented.filter((route) => !PENDING.has(route)),
+    );
   });
 
   it("ninguna ruta permite bloquear ni desbloquear la identidad tributaria", () => {

@@ -5,7 +5,8 @@ import type { RouteDefinition } from "./route.ts";
 export const API_VERSION_PREFIX = "/api/v1";
 
 type JsonSchema = z.core.JSONSchema.BaseSchema;
-type Parameter = { name: string; in: "path" | "query"; required: boolean; schema: JsonSchema };
+type Location = "path" | "query" | "header";
+type Parameter = { name: string; in: Location; required: boolean; schema: JsonSchema };
 
 const toSchema = (schema: z.ZodType): JsonSchema => z.toJSONSchema(schema, { io: "input" });
 
@@ -18,7 +19,7 @@ function toOpenApiPath(path: string): string {
   return path.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
 }
 
-function parameters(location: "path" | "query", schema: z.ZodObject | undefined): Parameter[] {
+function parameters(location: Location, schema: z.ZodObject | undefined): Parameter[] {
   if (!schema) return [];
   return Object.entries(schema.shape).map(([name, field]) => ({
     name,
@@ -37,6 +38,7 @@ export function buildOpenApiDocument(
     const params = [
       ...parameters("path", route.request?.params),
       ...parameters("query", route.request?.query),
+      ...parameters("header", route.request?.headers),
     ];
     const operation: Record<string, unknown> = {
       summary: route.summary,

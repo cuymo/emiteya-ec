@@ -11,6 +11,8 @@ export type RouteDefinition = {
   request?: {
     params?: z.ZodObject;
     query?: z.ZodObject;
+    /** Cabeceras propias, como `Idempotency-Key` de la emisión (add-invoice-emission, D8). */
+    headers?: z.ZodObject;
     body?: z.ZodType;
     /** Cuerpo binario, como el logo (add-taxpayer-setup, design D5), con sus tipos admitidos. */
     binaryBody?: { contentTypes: readonly string[] };

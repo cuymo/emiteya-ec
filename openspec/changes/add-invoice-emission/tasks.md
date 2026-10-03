@@ -52,13 +52,13 @@
 
 ## 4. Contratos, permisos y acciones de auditoría
 
-- [ ] 4.1 Crear `packages/contracts/src/invoices.ts`:
+- [x] 4.1 Crear `packages/contracts/src/invoices.ts`:
   - cuerpos estrictos de borrador y de emisión (`draftId`, `expectedVersion`);
   - vistas de borrador con vista previa e `issues`, de factura con el diagnóstico y sus listas paginadas;
   - códigos de error de D6, D8 y D10.
 
   Registrar las rutas de D13 en `apiRoutes`. Verificar con pruebas de contrato: `companyId`, campos desconocidos y precio en la línea rechazados, escalas decimales como texto exacto, y OpenAPI regenerado y al día
-- [ ] 4.2 Añadir `invoices.read`, `invoices.draft`, `invoices.emit` e `invoices.retrySigning` para ambos roles al mapa central, a su espejo del frontend y a la tabla de `access-control.md` (design D14).
+- [x] 4.2 Añadir `invoices.read`, `invoices.draft`, `invoices.emit` e `invoices.retrySigning` para ambos roles al mapa central, a su espejo del frontend y a la tabla de `access-control.md` (design D14).
   - Añadir `invoice.reserved`, `invoice.signed` e `invoice.signing_retried` a las acciones de auditoría.
 
   Verificar con las pruebas del mapa de acceso y de la tabla documentada

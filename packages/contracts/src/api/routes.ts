@@ -76,6 +76,22 @@ import {
   productViewSchema,
   updateProductSchema,
 } from "../products.ts";
+import {
+  createDraftSchema,
+  draftIdParamsSchema,
+  draftListMetaSchema,
+  draftSummaryViewSchema,
+  draftViewSchema,
+  emitInvoiceHeadersSchema,
+  emitInvoiceSchema,
+  invoiceIdParamsSchema,
+  invoiceListMetaSchema,
+  invoiceSummaryViewSchema,
+  invoiceViewSchema,
+  listDraftsQuerySchema,
+  listInvoicesQuerySchema,
+  updateDraftSchema,
+} from "../invoices.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -90,6 +106,25 @@ const errors = {
 };
 
 const userResponse = successEnvelope(userViewSchema);
+
+// Borradores y facturas (add-invoice-emission, design D13).
+const draftNotFound = {
+  description: "El borrador no existe en la empresa (INVOICE_DRAFT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const invoiceNotFound = {
+  description: "La factura no existe en la empresa (INVOICE_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const draftReferenceErrors = {
+  description:
+    "Datos inválidos, más líneas que el límite de la aplicación (INVOICE_TOO_MANY_LINES) o una referencia que no existe en la empresa (EMISSION_POINT_NOT_FOUND, BUYER_NOT_FOUND, PRODUCT_NOT_FOUND, PAYMENT_METHOD_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const invoiceResponse = (description: string) => ({
+  description,
+  schema: successEnvelope(invoiceViewSchema),
+});
 
 // Configuración tributaria (add-taxpayer-setup, design D12).
 const taxpayerResponse = {
@@ -800,6 +835,165 @@ export const apiRoutes: readonly RouteDefinition[] = [
         description: "El producto no existe en la empresa (PRODUCT_NOT_FOUND).",
         schema: errorEnvelopeSchema,
       },
+    },
+  }),
+
+  // Borradores y facturas (add-invoice-emission, design D13).
+  defineRoute({
+    method: "get",
+    path: "/invoices/drafts",
+    summary: "Listar los borradores de factura pendientes, por última actualización",
+    request: { query: listDraftsQuerySchema },
+    responses: {
+      200: {
+        description: "Página de borradores `DRAFT` con su total previo y el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(draftSummaryViewSchema),
+          meta: draftListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/invoices/drafts",
+    summary:
+      "Guardar un borrador de factura; las líneas llevan producto, cantidad y descuento, sin precio",
+    request: { body: createDraftSchema },
+    responses: {
+      201: {
+        description: "Borrador guardado, con su vista previa no fiscal.",
+        schema: successEnvelope(draftViewSchema),
+      },
+      400: draftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/invoices/drafts/:draftId",
+    summary: "Consultar un borrador con su vista previa y sus problemas",
+    request: { params: draftIdParamsSchema },
+    responses: {
+      200: {
+        description:
+          "Borrador con la vista previa calculada hoy en Ecuador con los precios vigentes de los productos y los problemas que impedirían emitirlo.",
+        schema: successEnvelope(draftViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: draftNotFound,
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/invoices/drafts/:draftId",
+    summary: "Corregir un borrador a partir de la versión consultada",
+    request: { params: draftIdParamsSchema, body: updateDraftSchema },
+    responses: {
+      200: { description: "Borrador corregido.", schema: successEnvelope(draftViewSchema) },
+      400: draftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: draftNotFound,
+      409: {
+        description:
+          "El borrador cambió después de la consulta (INVOICE_DRAFT_CHANGED) o ya se emitió (INVOICE_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "delete",
+    path: "/invoices/drafts/:draftId",
+    summary: "Eliminar un borrador sin emitir",
+    request: { params: draftIdParamsSchema },
+    responses: {
+      204: { description: "Borrador eliminado, sin rastro fiscal." },
+      401: errors[401],
+      403: errors[403],
+      404: draftNotFound,
+      409: {
+        description: "El borrador ya se emitió (INVOICE_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/invoices",
+    summary:
+      "Emitir un borrador: valida, reserva el número y la clave, y firma localmente (sin el SRI)",
+    request: { headers: emitInvoiceHeadersSchema, body: emitInvoiceSchema },
+    responses: {
+      200: invoiceResponse(
+        "Repetición con la misma Idempotency-Key y la misma solicitud: la misma factura. Si seguía `RESERVED`, se intenta firmar otra vez.",
+      ),
+      201: invoiceResponse(
+        "Factura emitida: `SIGNED` con su artefacto, o `RESERVED` con el diagnóstico del intento.",
+      ),
+      400: {
+        description:
+          "Datos inválidos o falta la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: draftNotFound,
+      409: {
+        description:
+          "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo INVOICE_DRAFT_CHANGED, INVOICE_DRAFT_INCOMPLETE, DISCOUNT_EXCEEDS_SUBTOTAL, CONSUMER_FINAL_LIMIT_EXCEEDED, SPECIAL_CASE_UNSUPPORTED o SEQUENCE_EXHAUSTED), o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/invoices",
+    summary:
+      "Listar facturas por estado y buscar por número o comprador, las más recientes primero",
+    request: { query: listInvoicesQuerySchema },
+    responses: {
+      200: {
+        description: "Página de facturas con el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(invoiceSummaryViewSchema),
+          meta: invoiceListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/invoices/:invoiceId",
+    summary: "Consultar una factura desde su snapshot, con el diagnóstico del último intento",
+    request: { params: invoiceIdParamsSchema },
+    responses: {
+      200: invoiceResponse("Factura."),
+      401: errors[401],
+      403: errors[403],
+      404: invoiceNotFound,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/invoices/:invoiceId/signing-attempts",
+    summary: "Reintentar la firma de una factura reservada, con el mismo número y la misma clave",
+    request: { params: invoiceIdParamsSchema },
+    responses: {
+      200: invoiceResponse(
+        "Factura tras el intento: `SIGNED`, o `RESERVED` con el diagnóstico. Una factura ya firmada se devuelve sin cambios.",
+      ),
+      401: errors[401],
+      403: errors[403],
+      404: invoiceNotFound,
     },
   }),
 ];

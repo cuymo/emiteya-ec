@@ -122,7 +122,7 @@ admin de Better Auth no concede nada. Toda celda "No" responde `403` en el servi
 usuario de otra empresa responde `404`.
 
 Permisos implementados (cambios `add-user-access`, design D4; `add-taxpayer-setup`, design D10;
-`add-fiscal-numbering`, design D10; `add-signing-certificate`, design D10; y `add-fiscal-catalogs`, design D12). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
+`add-fiscal-numbering`, design D10; `add-signing-certificate`, design D10; `add-fiscal-catalogs`, design D12; `add-parties-and-products`, design D12; y `add-invoice-emission`, design D14). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
 denegado por defecto;
 `backend/test/identity/access-policy-doc.test.ts` comprueba que esta tabla coincide con él:
 
@@ -155,12 +155,16 @@ denegado por defecto;
 | `products.read` | Consultar y buscar productos, su estado tributario y sus recuentos | Sí | Sí |
 | `products.manage` | Registrar y corregir productos, su precio y sus impuestos | Sí | Sí |
 | `products.changeStatus` | Desactivar y reactivar productos | Sí | No |
+| `invoices.read` | Consultar y buscar facturas, con su diagnóstico | Sí | Sí |
+| `invoices.draft` | Crear, consultar, corregir y eliminar borradores de factura | Sí | Sí |
+| `invoices.emit` | Emitir una factura desde un borrador: reserva el número y la firma localmente | Sí | Sí |
+| `invoices.retrySigning` | Reintentar la firma de una factura reservada, con el mismo número y la misma clave | Sí | Sí |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
 
 Matriz propuesta para los módulos futuros (Q-22). El ERS solo dice "permisos básicos"; cada
-cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos:
+cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; resolver una revisión manual u ordenar una reconciliación sigue siendo solo del administrador y llega con el cambio 7:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |

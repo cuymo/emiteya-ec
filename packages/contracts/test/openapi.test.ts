@@ -50,6 +50,20 @@ describe("generación de OpenAPI", () => {
     ).toHaveProperty("data");
   });
 
+  it("documenta las cabeceras propias como parámetros", () => {
+    const route = defineRoute({
+      method: "post",
+      path: "/examples",
+      summary: "Crear con clave",
+      request: { headers: z.object({ "Idempotency-Key": z.string().min(1) }) },
+      responses: { 201: { description: "Creado" } },
+    });
+    const operation = buildOpenApiDocument([route], info).paths["/examples"]?.post as Operation;
+    expect(operation.parameters).toEqual([
+      expect.objectContaining({ name: "Idempotency-Key", in: "header", required: true }),
+    ]);
+  });
+
   it("documenta cuerpos y respuestas binarios", () => {
     const route = defineRoute({
       method: "put",
@@ -84,6 +98,11 @@ describe("generación de OpenAPI", () => {
       "/fiscal-catalogs/{catalogType}/entries",
       "/fiscal-catalogs/{catalogType}/entries/{entryKey}/enablement",
       "/fiscal-sequences",
+      "/invoices",
+      "/invoices/drafts",
+      "/invoices/drafts/{draftId}",
+      "/invoices/{invoiceId}",
+      "/invoices/{invoiceId}/signing-attempts",
       "/me",
       "/me/default-emission-point",
       "/parties",

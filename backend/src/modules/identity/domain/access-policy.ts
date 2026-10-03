@@ -30,6 +30,10 @@ export const PERMISSIONS = [
   "products.read",
   "products.manage",
   "products.changeStatus",
+  "invoices.read",
+  "invoices.draft",
+  "invoices.emit",
+  "invoices.retrySigning",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -65,6 +69,11 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "products.read",
     "products.manage",
     "products.changeStatus",
+    // add-invoice-emission, design D14.
+    "invoices.read",
+    "invoices.draft",
+    "invoices.emit",
+    "invoices.retrySigning",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -83,6 +92,12 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "parties.manage",
     "products.read",
     "products.manage",
+    // add-invoice-emission, design D14: crea borradores, emite y reintenta la firma, como el
+    // administrador; resolver una revisión manual o reconciliar llega con el cambio 7.
+    "invoices.read",
+    "invoices.draft",
+    "invoices.emit",
+    "invoices.retrySigning",
   ]),
 };
 

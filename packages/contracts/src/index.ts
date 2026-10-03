@@ -12,3 +12,4 @@ export * from "./fiscal-catalogs.ts";
 export * from "./pagination.ts";
 export * from "./parties.ts";
 export * from "./products.ts";
+export * from "./invoices.ts";

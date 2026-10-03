@@ -41,6 +41,10 @@ export const AUDIT_ACTIONS = [
   "product.updated",
   "product.deactivated",
   "product.reactivated",
+  // add-invoice-emission, design D14: sin XML ni bytes; los borradores no generan eventos.
+  "invoice.reserved",
+  "invoice.signed",
+  "invoice.signing_retried",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

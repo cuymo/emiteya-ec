@@ -29,7 +29,11 @@ export type Permission =
   | "parties.changeStatus"
   | "products.read"
   | "products.manage"
-  | "products.changeStatus";
+  | "products.changeStatus"
+  | "invoices.read"
+  | "invoices.draft"
+  | "invoices.emit"
+  | "invoices.retrySigning";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -60,6 +64,10 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "products.read",
     "products.manage",
     "products.changeStatus",
+    "invoices.read",
+    "invoices.draft",
+    "invoices.emit",
+    "invoices.retrySigning",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",
@@ -73,6 +81,10 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "parties.manage",
     "products.read",
     "products.manage",
+    "invoices.read",
+    "invoices.draft",
+    "invoices.emit",
+    "invoices.retrySigning",
   ]),
 };
 
