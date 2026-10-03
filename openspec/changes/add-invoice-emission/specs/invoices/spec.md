@@ -33,7 +33,7 @@ El sistema SHALL permitir guardar, corregir y eliminar borradores de factura sin
 - **THEN** el sistema rechaza la solicitud y la factura emitida no cambia
 
 ### Requirement: Contenido de la factura
-Un borrador SHALL indicar el punto de emisión, el comprador, de 1 a 100 líneas y de 1 a 10 formas de pago. El comprador es un tercero activo con rol de cliente o el consumidor final del sistema. Cada línea refiere un producto activo e indica cantidad (18 dígitos, 6 decimales), precio unitario sin impuestos (por defecto el del producto) y descuento (2 decimales, entre 0 y el subtotal). Las líneas sin producto no se admiten.
+Un borrador SHALL indicar el punto de emisión, el comprador, al menos una línea y al menos una forma de pago. El comprador es un tercero activo con rol de cliente o el consumidor final del sistema. Cada línea refiere un producto activo e indica cantidad (18 dígitos, 6 decimales) y descuento (2 decimales, entre 0 y el subtotal). El precio unitario sin impuestos es el del producto al emitir y no se edita. Las líneas sin producto no se admiten.
 
 #### Scenario: Comprador cliente
 - **WHEN** un usuario emite un borrador cuyo comprador es un tercero activo con rol de cliente
@@ -51,9 +51,21 @@ Un borrador SHALL indicar el punto de emisión, el comprador, de 1 a 100 líneas
 - **WHEN** un usuario emite un borrador con una línea cuyo descuento supera la cantidad por el precio
 - **THEN** el sistema rechaza la emisión antes de reservar e identifica la línea
 
-#### Scenario: Límites de la factura
-- **WHEN** un usuario guarda un borrador con 101 líneas o con una cantidad de 7 decimales
-- **THEN** el sistema rechaza la solicitud indicando el límite y no la redondea
+#### Scenario: Precio del producto al emitir
+- **WHEN** un administrador cambia el precio de un producto después de agregarlo a un borrador, y el borrador se emite
+- **THEN** la línea lleva el precio vigente del producto al emitir, que queda congelado en el snapshot
+
+#### Scenario: Precio enviado en la línea
+- **WHEN** un usuario envía un precio unitario en una línea del borrador
+- **THEN** el sistema rechaza la solicitud por contener un campo no permitido
+
+#### Scenario: Escala de la cantidad
+- **WHEN** un usuario guarda un borrador con una cantidad de 7 decimales
+- **THEN** el sistema rechaza la solicitud indicando el máximo de 6 decimales y no la redondea
+
+#### Scenario: Límite de líneas de la aplicación
+- **WHEN** un usuario guarda un borrador con más líneas que el límite configurado de la aplicación, 100 por defecto
+- **THEN** el sistema rechaza la solicitud indicando el límite, que es una defensa de recursos y no una regla del SRI
 
 ### Requirement: Cálculo exacto de la factura
 El sistema SHALL calcular con decimal exacto, sin redondeos intermedios. Subtotal de línea: cantidad por precio. Base imponible: subtotal menos descuento, materializada HALF_UP a 2 decimales. Impuesto de línea: porcentaje de la base ya materializada, materializado HALF_UP. Los totales por tarifa, sin impuestos, de descuento e importe total MUST sumar los valores de línea ya materializados. Es una política del producto (Q-14), no una regla textual del SRI.

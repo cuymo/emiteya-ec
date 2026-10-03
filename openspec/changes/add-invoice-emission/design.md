@@ -40,7 +40,7 @@ Ver `proposal.md` (Why). El estado actual que condiciona el diseño:
 **Non-Goals:**
 - **Transmisión:** cualquier llamada al SRI, jobs, polling o reintentos automáticos (cambio 7).
 - **Archivo:** descarga del XML, RIDE o bandeja documental (cambio 8).
-- **Comprobación del tamaño del envío:** el límite versionado de CTX §29 llega con la transmisión; aquí el tamaño queda acotado por 100 líneas.
+- **Comprobación del tamaño del envío:** el límite normativo de 320 KB (CTX §29) llega con la transmisión y su catálogo técnico; aquí el tamaño queda acotado por el límite configurable de líneas.
 - **Otros tipos:** un framework de builders para los seis comprobantes; solo existe el de la factura.
 - **Configuración:** cambiar el modelo de la configuración tributaria, los terceros o los productos.
 
@@ -76,15 +76,24 @@ Lecturas internas nuevas. Son fábricas sobre un `DbClient`, para usarlas dentro
 ### D2. Borrador separado de la factura fiscal
 
 - **El borrador** es un recurso propio, editable y eliminable, en `invoice_draft`, con líneas (`invoice_draft_line`) y formas de pago (`invoice_draft_payment`).
-  - Guarda referencias: punto de emisión, comprador y productos. Guarda también importes de entrada (cantidad, precio, descuento, importe del pago), `version`, autor y fecha de creación y del último cambio (ERS RF-008), y `status` `DRAFT` o `EMITTED`.
+  - Guarda referencias: punto de emisión, comprador y productos. Guarda también importes de entrada (cantidad, descuento, importe del pago), `version`, autor y fecha de creación y del último cambio (ERS RF-008), y `status` `DRAFT` o `EMITTED`.
+  - **Precio unitario.** Ninguna fuente autoriza de forma explícita sobrescribir el precio del producto en la línea: ERS RF-202 y RF-301, ERS §8 (la factura lleva "precios") y CTX §12.4 (`unitPrice` de la línea). "Ingreso manual permitido" (RF-202) se refiere a líneas fuera del catálogo, no a cambiar el precio de un producto del catálogo. Por eso:
+    - la línea toma el `unitPrice` del producto al emitir y queda congelado en el snapshot;
+    - el borrador no guarda precio, y un precio en la línea es un campo no permitido;
+    - la vista previa usa el precio vigente del producto;
+    - modificar el precio por línea queda como decisión futura (Q-45).
   - Un trigger impide cambiar o borrar un borrador `EMITTED`, sus líneas y sus pagos.
 - **La factura fiscal** solo existe desde `RESERVED`, en `electronic_document`, con `draft_id` único.
   - El borrador emitido se conserva como `EMITTED` para la trazabilidad, pero no es la fuente de verdad: lo es el snapshot.
   - `DRAFT` no es un estado de `electronic_document` ni de su máquina.
 - **Vista previa.** El borrador devuelve una vista previa calculada por el servidor con la fecha de hoy en Ecuador: totales e `issues` con los mismos códigos de la validación de emisión. Es informativa y no fiscal, y evita que el frontend calcule dinero.
 - **Límites de entrada:**
-  - 100 líneas y 10 formas de pago por borrador;
-  - cantidad `cantidad` (18/6), precio `precioUnitario` (18/6), descuento e importe de pago `importe` (14/2), con la regla del XSD de `decimal-policy.md`.
+  - Escalas de las especificaciones decimales, con la regla del XSD de `decimal-policy.md`: cantidad `cantidad` (18/6), descuento e importe de pago `importe` (14/2).
+  - **Líneas:** `INVOICE_MAX_LINES`, 100 por defecto (de 1 a 1 000), configurable.
+    - Es una defensa de recursos de la aplicación, no una regla del SRI ni del XSD, que admite líneas sin límite.
+    - Acota la transacción de reserva, el XML y la firma en el pool.
+    - El único límite normativo es el de 320 KB por comprobante firmado (ficha v2.34, CTX §29), que comprueba la transmisión con su catálogo técnico (cambio 7).
+  - **Formas de pago:** sin límite propio; las acota el límite de 100 KB del cuerpo JSON.
 - Alternativa descartada: una sola tabla con `DRAFT`, `RESERVED` y `SIGNED`. Es más simple de listar, pero mezcla datos editables y fiscales en la misma fila, y obliga a que las restricciones fiscales sean condicionales al estado.
 - Alternativa descartada: no guardar borradores. ERS RF-010 los exige en el MVP.
 
@@ -162,8 +171,11 @@ Dentro de la transacción de reserva y antes de llamar a `reserveSequentialIn`, 
 7. **Pagos:** cada forma utilizable en la fecha (`PAYMENT_METHOD_NOT_USABLE`) y suma igual al total (`PAYMENTS_DO_NOT_MATCH_TOTAL`).
 8. **Consumidor final:** política vigente (`CONSUMER_FINAL_POLICY_MISSING`) y total menor o igual que el máximo (`CONSUMER_FINAL_LIMIT_EXCEEDED`).
 9. **Casos especiales:**
-   - Las condiciones del emisor activan sus anexos: resolución de agente de retención (21), categoría RIMPE (22), gran contribuyente (24) y RUC proveedor (26).
-   - Cada anexo activado debe estar en la matriz como `CORE` o `CONDITIONAL_ISSUER_RULE`. El 26 es `CONDITIONAL_GO_LIVE` y su inserción no existe, así que se rechaza (`SPECIAL_CASE_UNSUPPORTED`).
+   - Las condiciones del emisor activan sus anexos: resolución de agente de retención (21), categoría RIMPE (22) y gran contribuyente (24).
+   - **Anexo 26.** Aplica cuando la configuración declara un RUC proveedor distinto del RUC de la empresa: el contribuyente usa un sistema de un tercero (CTX §37).
+     - Un RUC proveedor vacío o igual al propio no lo activa.
+     - El cómputo del plazo (C-09, Q-37) no se infiere.
+   - Cada anexo activado debe estar en la matriz como `CORE` o `CONDITIONAL_ISSUER_RULE`, con su generación soportada. El 26 es `CONDITIONAL_GO_LIVE` y su `campoAdicional` no se genera en este cambio. Una factura a la que aplica se rechaza antes de reservar (`SPECIAL_CASE_UNSUPPORTED`, anexo 26), sin implementarlo en silencio.
 10. **Esquema:** el registro tiene `01` `1.1.0` soportado, con todos sus imports (`SCHEMA_NOT_AVAILABLE`).
 
 Respuestas:
@@ -261,9 +273,11 @@ Cada fallo después del commit actualiza, en una transacción corta, las columna
   - `check:xsd-artifact`, después del build y dentro de `verify`, comprueba que cada archivo del registro está en `dist/xsd` con su SHA-256.
   - `XSD_DIRECTORY` es opcional. Por defecto, en desarrollo y pruebas es `docs/product/` (las rutas lógicas coinciden) y en el build compilado es `dist/xsd/`.
   - Nunca hay descarga ni caída a los XSD de la librería.
-- **Arranque.** Verifica los archivos de las versiones soportadas.
-  - Si falta uno o su hash no coincide, el arranque registra el error y la métrica `xsd_registry_available` vale 0. La emisión se rechaza antes de reservar (`SCHEMA_NOT_AVAILABLE`).
-  - `/health/ready` no depende de los XSD: el resto de la aplicación sigue disponible.
+- **Arranque.** Valida el paquete canónico completo: cada archivo del registro vigente, documentos e imports, presente y con su SHA-256.
+  - Válido: la comprobación queda cumplida y el validador guarda los archivos verificados.
+  - Inválido (falta un XSD o un import requerido, o un hash no coincide): el arranque registra qué archivo falla, `xsd_registry_available` vale 0 y `/health/ready` responde `503`. El backend no se declara listo para atender.
+  - `/health/ready` no valida XML: solo la integridad y la disponibilidad del paquete.
+  - Como defensa, la emisión sigue comprobando el esquema antes de reservar (`SCHEMA_NOT_AVAILABLE`). Una entrada fiscal particular no soportada sigue siendo un rechazo funcional de la emisión.
 - **Concurrencia.** `XSD_VALIDATION_CONCURRENCY` 2 (de 1 a 8), `XSD_VALIDATION_QUEUE` 16 (de 0 a 256) y `XSD_VALIDATION_TIMEOUT_MS` 10 000 (de 1 000 a 60 000).
   - Con la cola llena, `VALIDATOR_BUSY`; al vencer el plazo, `VALIDATOR_TIMEOUT`. Ambos son diagnósticos reintentables.
   - El lugar del worker sigue ocupado hasta que termina (ADR 0021).
@@ -285,7 +299,7 @@ Todo bajo `/api/v1/invoices`:
 
 | Método y ruta | Uso | Permiso |
 | --- | --- | --- |
-| `POST /invoices/drafts` | Crear borrador | `invoices.draft` |
+| `POST /invoices/drafts` | Crear borrador; las líneas llevan producto, cantidad y descuento, sin precio | `invoices.draft` |
 | `GET /invoices/drafts` | Listar borradores `DRAFT`, paginado | `invoices.draft` |
 | `GET /invoices/drafts/{draftId}` | Borrador con vista previa e `issues` | `invoices.draft` |
 | `PUT /invoices/drafts/{draftId}` | Corregir con `expectedVersion` | `invoices.draft` |
@@ -329,7 +343,7 @@ Briefs:
 
 | Pantalla | Usuario | Objetivo | Decisión | Información mínima | Acción principal |
 | --- | --- | --- | --- | --- | --- |
-| Editor | Administrador u operador, a diario | Preparar una factura correcta | Si la factura está lista para emitirse | Comprador, líneas con precio y descuento, totales del servidor, formas de pago, `issues` y ambiente | "Emitir factura" |
+| Editor | Administrador u operador, a diario | Preparar una factura correcta | Si la factura está lista para emitirse | Comprador, líneas con el precio del producto y el descuento, totales del servidor, formas de pago, `issues` y ambiente | "Emitir factura" |
 | `Borradores` | El mismo | Retomar o descartar trabajo pendiente | Qué borrador continuar | Comprador, total previo, fecha | "Nueva factura" |
 | `Facturas` | El mismo | Encontrar una factura y saber si quedó firmada | Si una factura necesita un reintento | Número, comprador, total, estado | Abrir la factura |
 | Detalle | El mismo | Entender una factura y destrabar una firma fallida | Si reintentar ahora o corregir la configuración antes | Estado, diagnóstico, número, clave, totales | "Reintentar firma", solo con `RESERVED` |
@@ -345,7 +359,10 @@ Briefs:
 - **Arranque.** Lanza `main.ts` sobre un esquema migrado de PostgreSQL 17, con la custodia habilitada y un P12 sintético cargado por la API.
 - **Datos.**
   - 100 productos, 100 terceros y una empresa preparada.
-  - 100 000 facturas previas por empresa: documentos `SIGNED`, transiciones, registros de idempotencia y artefactos sintéticos de 64 bytes. Así los índices tienen el volumen de referencia sin generar 100 000 firmas.
+  - 100 000 facturas previas por empresa: documentos `SIGNED`, transiciones, registros de idempotencia y artefactos sintéticos de 64 bytes.
+    - Así los índices tienen el volumen de referencia sin fabricar 100 000 firmas.
+    - Los artefactos sintéticos no simulan el volumen físico real de `BYTEA` y TOAST de 100 000 XML firmados; el informe lo declara.
+    - Cada factura medida usa su artefacto real producido.
   - Al final, `ANALYZE`.
 - **Carga.** 10 usuarios concurrentes. Cada uno crea un borrador de 1 a 5 líneas y lo emite: 30 de calentamiento y 300 medidas en total.
 - **Etapas.** Con `EMISSION_STAGE_TIMINGS=1`, que el esquema de entorno rechaza en producción, la respuesta lleva `Server-Timing` con estas etapas:
@@ -435,7 +452,7 @@ El envío, la interpretación de las respuestas, la autorización, la respuesta 
 - **[Riesgo] Contención del contador mientras se valida dentro de la transacción** → El lock de fila del contador solo se toma en `reserveSequentialIn`, después de validar. La validación solo lee, sin I/O externo, y el lock advisory es de la configuración, no del contador.
 - **[Riesgo] La firma tarda más que la solicitud HTTP** → Plazo del pool criptográfico y arriendo de 2 minutos. La factura queda `RESERVED` con un diagnóstico reintentable, y nunca se reserva otro número.
 - **[Riesgo] Pruebas de arquitectura frágiles ante palabras** → El código de `invoices` usa las lecturas exportadas y evita nombrar tablas ajenas, también en comentarios.
-- **[Riesgo] Crecimiento de PostgreSQL por los artefactos** → Están acotados por 100 líneas por factura. El ADR 0010 deja el puerto listo para migrar a object storage.
+- **[Riesgo] Crecimiento de PostgreSQL por los artefactos** → Están acotados por el límite configurable de líneas. El ADR 0010 deja el puerto listo para migrar a object storage.
 - **[Riesgo] Vector oficial de la clave inaccesible** → El algoritmo coincide con CTX §8.3 y tiene pruebas independientes. El vector queda como evidencia pendiente, decidida en `/opsx:verify`.
 - **[Compromiso] Errores de emisión de uno en uno** → El sobre de error no cambia. La vista previa del borrador lista todos los `issues` antes de emitir.
 - **[Compromiso] Sin reintentos automáticos** → Un fallo reintentable necesita una acción del usuario o la repetición del cliente. La cola persistida llega con el cambio 7.
@@ -446,5 +463,5 @@ El envío, la interpretación de las respuestas, la autorización, la respuesta 
   - borradores, documento, transiciones, artefacto e idempotencia, con sus CHECK, FK y triggers;
   - el registro de esquemas con imports, con el relleno de la versión 1.
 - **Datasets:** `schema-registry/2.json`, aplicado por el cargador al arrancar.
-- **Despliegue.** Migrar, desplegar el build con `dist/xsd`, comprobar que el log de arranque no informa XSD ausentes y que `xsd_registry_available` vale 1, y probar una emisión en Pruebas.
+- **Despliegue.** Migrar, desplegar el build con `dist/xsd`, comprobar que `/health/ready` responde `200` (paquete de XSD íntegro) y probar una emisión en Pruebas.
 - **Reversión.** Hacia adelante (`deployment.md`): las tablas nuevas no cambian datos existentes. Una versión anterior del binario ignora las tablas nuevas, pero no debe ejecutarse después de emitir, porque la identidad tributaria ya quedó bloqueada; eso es esperado y permanente.

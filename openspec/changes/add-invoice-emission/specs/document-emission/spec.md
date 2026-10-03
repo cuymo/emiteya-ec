@@ -82,15 +82,15 @@ La clave de acceso SHALL tener 49 dígitos compuestos desde el snapshot: fecha `
 - **THEN** el comprobante conserva su clave de acceso y su número
 
 ### Requirement: XML validado contra el esquema registrado
-El sistema SHALL construir el XML del comprobante solo desde su snapshot, con la versión de esquema registrada y soportada, y MUST validarlo contra ese XSD y todos sus imports, empaquetados con la aplicación y verificados por hash. Nunca descarga esquemas ni usa los de un tercero, y nunca firma un XML que no valida. Con la validación saturada responde ocupado.
+El sistema SHALL construir el XML del comprobante solo desde su snapshot, con la versión de esquema registrada y soportada, y MUST validarlo contra ese XSD y todos sus imports. El paquete de esquemas se empaqueta con la aplicación y se verifica completo al arrancar: si falta un archivo requerido o su hash no coincide, el sistema no se declara listo. Nunca descarga esquemas ni usa los de un tercero, y nunca firma un XML inválido.
 
 #### Scenario: XML válido
 - **WHEN** se construye el XML de un comprobante reservado
 - **THEN** el XML valida contra el XSD registrado de su tipo y versión antes de firmarse
 
-#### Scenario: Esquema alterado después de reservar
-- **WHEN** el archivo de un XSD registrado deja de coincidir con su hash después de reservar un comprobante
-- **THEN** el comprobante sigue reservado, sin firmar, con el diagnóstico de esquema no disponible
+#### Scenario: Paquete de esquemas incompleto al arrancar
+- **WHEN** al arrancar falta un XSD requerido o su import, o su hash no coincide con el registro
+- **THEN** el sistema no se declara listo para atender y registra qué archivo falla, sin descargarlo ni sustituirlo
 
 #### Scenario: Validación saturada
 - **WHEN** las validaciones simultáneas y su cola están llenas
@@ -184,6 +184,10 @@ La emisión SHALL terminar en el comprobante firmado con su artefacto persistido
 ### Requirement: Casos especiales no soportados
 El sistema SHALL rechazar antes de reservar una emisión que requiere un caso especial que la matriz vigente no soporta, ya sea por un atributo de la operación o por una condición declarada del emisor. Nunca la degrada a un comprobante ordinario.
 
-#### Scenario: Condición del emisor no implementada
-- **WHEN** la empresa declara un RUC proveedor (anexo 26) y un usuario emite un comprobante
-- **THEN** el sistema rechaza la emisión antes de reservar e identifica el caso especial no soportado
+#### Scenario: Anexo 26 aplicable y no soportado
+- **WHEN** la empresa declara un RUC proveedor distinto del suyo, porque usa un sistema de un tercero (anexo 26), y un usuario emite un comprobante
+- **THEN** el sistema rechaza la emisión antes de reservar e identifica el anexo 26 como caso especial no soportado
+
+#### Scenario: Anexo 26 que no corresponde
+- **WHEN** la empresa no declara un RUC proveedor, o declara su propio RUC
+- **THEN** el anexo 26 no aplica y la emisión no se rechaza por él

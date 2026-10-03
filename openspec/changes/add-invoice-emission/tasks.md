@@ -4,7 +4,7 @@
 
 - [ ] 1.1 Crear la migración y los modelos Prisma de `invoice_draft`, `invoice_draft_line` e `invoice_draft_payment` (design D2).
   - Columnas: `status` (`DRAFT`, `EMITTED`), `version`, autor y fecha de creación y del último cambio, `document_id` único.
-  - CHECK de dominio de cantidad (18/6), precio (18/6), descuento e importe de pago (14/2) con la regla del XSD.
+  - CHECK de dominio de cantidad (18/6), descuento e importe de pago (14/2) con la regla del XSD. La línea no guarda precio: lo toma del producto al emitir.
   - FK a punto de emisión, tercero, producto y entrada del catálogo de formas de pago.
   - Trigger que impide cambiar o borrar un borrador `EMITTED`, sus líneas y sus pagos.
 
@@ -36,9 +36,10 @@
   Verificar con la prueba de contrato del validador y con pruebas de la API de catálogos (escenarios de la spec modificada de `fiscal-catalogs`)
 - [ ] 2.3 Copiar los XSD del registro a `backend/dist/xsd/<path>` en el build del backend y añadir `check:xsd-artifact` a `verify` después del build.
   - Añadir `XSD_DIRECTORY` y los límites de concurrencia, cola y plazo de la validación al esquema de entorno.
-  - Verificar los archivos al arrancar: error en el log y métrica `xsd_registry_available`, sin afectar a `/health/ready`.
+  - Validar al arrancar el paquete canónico completo. Si es inválido: error en el log, métrica `xsd_registry_available` a 0 y `/health/ready` con `503`.
+  - Añadir `INVOICE_MAX_LINES` (100 por defecto, de 1 a 1 000) como límite configurable de la aplicación.
 
-  Verificar que el build deja los siete archivos con su hash, que `check:xsd-artifact` falla con un archivo alterado y que una prueba de arranque con un XSD ausente lo informa
+  Verificar que el build deja los siete archivos con su hash, que `check:xsd-artifact` falla con un archivo alterado y que una prueba de arranque con un XSD ausente o alterado deja `/health/ready` en `503`
 
 ## 3. Aritmética fiscal
 
@@ -56,7 +57,7 @@
   - vistas de borrador con vista previa e `issues`, de factura con el diagnóstico y sus listas paginadas;
   - códigos de error de D6, D8 y D10.
 
-  Registrar las rutas de D13 en `apiRoutes`. Verificar con pruebas de contrato: `companyId` y campos desconocidos rechazados, límites de líneas y pagos, decimales como texto exacto, y OpenAPI regenerado y al día
+  Registrar las rutas de D13 en `apiRoutes`. Verificar con pruebas de contrato: `companyId`, campos desconocidos y precio en la línea rechazados, escalas decimales como texto exacto, y OpenAPI regenerado y al día
 - [ ] 4.2 Añadir `invoices.read`, `invoices.draft`, `invoices.emit` e `invoices.retrySigning` para ambos roles al mapa central, a su espejo del frontend y a la tabla de `access-control.md` (design D14).
   - Añadir `invoice.reserved`, `invoice.signed` e `invoice.signing_retried` a las acciones de auditoría.
 
@@ -150,7 +151,7 @@
 
 - [ ] 10.1 Crear el componente compartido `EntityPickerDialog` (design D15): búsqueda, resultados paginados del backend, selección por teclado y opción rápida configurable. Documentarlo en `component-system.md`. Verificar con pruebas de componente por rol y nombre accesible
 - [ ] 10.2 Crear `Borradores` y el editor a página completa (design D15):
-  - comprador con el selector y "Consumidor final", punto de emisión, líneas con el selector de productos, cantidad, precio y descuento, y formas de pago;
+  - comprador con el selector y "Consumidor final", punto de emisión, líneas con el selector de productos, cantidad, precio del producto (solo lectura) y descuento, y formas de pago;
   - totales e `issues` de la vista previa del servidor, guardado con versión y eliminación con confirmación;
   - emisión con la confirmación de un paso, el ambiente y el aviso de consumidor final, con la `Idempotency-Key` estable para la misma solicitud.
 
@@ -172,7 +173,7 @@
 
 - [ ] 11.1 Instrumentar las etapas de la emisión: `Server-Timing` solo con `EMISSION_STAGE_TIMINGS=1`, que el entorno rechaza en producción, y el histograma `invoice_emission_stage_duration_seconds` (design D16). Verificar con una prueba de que la cabecera falta sin la variable y de que el entorno de producción la rechaza
 - [ ] 11.2 Crear `bench:emission`: PostgreSQL 17, 100 000 facturas previas por empresa, 10 usuarios concurrentes, 30 de calentamiento y 300 medidas, con P50, P95 y máximo por etapa y total, y el entorno registrado.
-  - Ejecutarlo y guardar el informe en `docs/quality/benchmarks/emission-<fecha>.md` y `.json`.
+  - Ejecutarlo y guardar el informe en `docs/quality/benchmarks/emission-<fecha>.md` y `.json`. Declarar que los artefactos sintéticos de la precarga no simulan el volumen físico de `BYTEA` y TOAST, y que cada factura medida usa su artefacto real.
   - Actualizar `performance.md` y Q-26.
 
   Verificar que el P95 total queda en 2 s o menos en el entorno registrado, o proponer la corrección con `/opsx:update` sin subir el umbral
@@ -191,6 +192,7 @@
   - `idempotency.md` y `backend.md`, alineados con Q-30;
   - `ARCHITECTURE.md`, con el módulo `invoices` y las lecturas internas;
   - `capabilities.md` y `domain-model.md`;
+  - `open-questions.md`: Q-45, la modificación del precio unitario por línea, como decisión futura;
   - el checklist de PR fiscal de CTX §65 respondido en el design.
 
   Verificar que los documentos citan las rutas, permisos y códigos implementados
