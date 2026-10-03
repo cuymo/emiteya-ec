@@ -101,14 +101,48 @@ export type SigningPipelineDependencies = {
   logger?: { error(details: object, message: string): void };
 };
 
+/** Estado actual del comprobante y si se inició un intento (no, si ya estaba firmado o en curso). */
+export type SigningAttempt = Readonly<{ document: StoredDocument; attempted: boolean }>;
+
 export function createSigningPipeline(deps: SigningPipelineDependencies) {
   const now = deps.now ?? (() => new Date());
+
+  /** Pide un intento hacia SIGNED: solo empieza si el comprobante sigue RESERVED y toma el arriendo. */
+  async function attempt(
+    ctx: RequestContext,
+    document: StoredDocument,
+    timings: StageTimings = NO_TIMINGS,
+  ): Promise<SigningAttempt> {
+    if (document.state !== "RESERVED") return { document, attempted: false };
+    const started = now();
+    const leased = await deps.documents.acquireAttemptLease(
+      ctx.companyId,
+      document.id,
+      started,
+      new Date(started.getTime() + ATTEMPT_LEASE_SECONDS * 1000),
+    );
+    // Otro intento está en curso: se devuelve el estado actual sin intentar.
+    if (!leased) {
+      const current = (await deps.documents.find(ctx.companyId, document.id)) ?? document;
+      return { document: current, attempted: false };
+    }
+    return { document: await run(ctx, document, timings), attempted: true };
+  }
 
   /** Lleva un comprobante RESERVED a SIGNED, o deja su diagnóstico. Devuelve su estado actual. */
   async function continueToSigned(
     ctx: RequestContext,
     document: StoredDocument,
     timings: StageTimings = NO_TIMINGS,
+  ): Promise<StoredDocument> {
+    return (await attempt(ctx, document, timings)).document;
+  }
+
+  /** Las etapas del intento, con el arriendo ya tomado. */
+  async function run(
+    ctx: RequestContext,
+    document: StoredDocument,
+    timings: StageTimings,
   ): Promise<StoredDocument> {
     const stage = <T>(
       name: SigningAttemptStage,
@@ -119,17 +153,6 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
       return timings.measure(TIMING_STAGE[name], work);
     };
     const { companyId } = ctx;
-    if (document.state !== "RESERVED") return document;
-    const started = now();
-    const leased = await deps.documents.acquireAttemptLease(
-      companyId,
-      document.id,
-      started,
-      new Date(started.getTime() + ATTEMPT_LEASE_SECONDS * 1000),
-    );
-    // Otro intento está en curso: se devuelve el estado actual sin intentar.
-    if (!leased) return (await deps.documents.find(companyId, document.id)) ?? document;
-
     const snapshot = document.snapshot as InvoiceSnapshotV1;
     const schema: RegisteredSchema = {
       documentType: "01",
@@ -250,7 +273,7 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
     }
   }
 
-  return { continueToSigned };
+  return { attempt, continueToSigned };
 }
 
 export type SigningPipeline = ReturnType<typeof createSigningPipeline>;

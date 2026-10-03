@@ -197,6 +197,9 @@ describe("consulta de facturas", () => {
           .send({ draftId, expectedVersion: 1 })
       ).status,
     ).toBe(401);
+    expect(
+      (await request(api.app).post(`/api/v1/invoices/${invoices[0]!.id}/signing-attempts`)).status,
+    ).toBe(401);
     expect({
       audits: await audits(),
       documents: await db.database.prisma.electronicDocument.count(),

@@ -20,9 +20,6 @@ export type InvoiceDetails = Readonly<{
   artifact: ArtifactSummary | null;
 }>;
 
-/** Resultado auditado de un reintento cuando otro intento tiene el arriendo vigente. */
-export const ATTEMPT_IN_PROGRESS = "ATTEMPT_IN_PROGRESS";
-
 export function createInvoices(deps: {
   documents: DocumentRepository;
   artifacts: ArtifactStore;
@@ -70,10 +67,10 @@ export function createInvoices(deps: {
     async retrySigning(ctx: RequestContext, invoiceId: string): Promise<InvoiceDetails> {
       authorizer.requirePermission(ctx, "invoices.retrySigning");
       const document = await find(ctx, invoiceId);
-      // Una factura firmada se devuelve sin efecto y sin auditoría.
-      if (document.state === "SIGNED") return details(document);
-      const result = await deps.pipeline.continueToSigned(ctx, document);
-      const attempted = result.state === "SIGNED" || result.attemptCount > document.attemptCount;
+      // Solo un intento que empieza se audita: una factura firmada o un intento en curso se
+      // devuelven sin efecto y sin auditoría (spec audit-trail, design D10).
+      const { document: result, attempted } = await deps.pipeline.attempt(ctx, document);
+      if (!attempted) return details(result);
       await deps.audit.append({
         companyId: ctx.companyId,
         actor: { type: "USER", userId: ctx.userId },
@@ -81,12 +78,7 @@ export function createInvoices(deps: {
         changes: {
           invoiceId: document.id,
           documentNumber: document.documentNumber,
-          result:
-            result.state === "SIGNED"
-              ? "SIGNED"
-              : attempted
-                ? (result.lastAttempt?.code ?? ATTEMPT_IN_PROGRESS)
-                : ATTEMPT_IN_PROGRESS,
+          result: result.state === "SIGNED" ? "SIGNED" : (result.lastAttempt?.code ?? "RESERVED"),
         },
         correlationId: ctx.requestId,
       });

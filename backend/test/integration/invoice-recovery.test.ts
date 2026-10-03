@@ -277,18 +277,16 @@ describe("recuperación de una factura reservada", () => {
     });
     const blocked = bodyOf(await retry(invoice.id)).data;
     expect(blocked).toMatchObject({ state: "RESERVED", diagnostic: null });
-    expect((await retriedEvents(invoice.id)).map((event) => event.changes)).toEqual([
-      {
-        invoiceId: invoice.id,
-        documentNumber: invoice.documentNumber,
-        result: "ATTEMPT_IN_PROGRESS",
-      },
-    ]);
+    // Con otro intento en curso no empieza ninguno: no hay evento del reintento.
+    expect(await retriedEvents(invoice.id)).toEqual([]);
     await prisma.electronicDocument.update({
       where: { id: invoice.id },
       data: { attemptLeaseUntil: new Date(Date.now() - 1_000) },
     });
     expect(bodyOf(await retry(invoice.id)).data.state).toBe("SIGNED");
+    expect((await retriedEvents(invoice.id)).map((event) => event.changes)).toEqual([
+      { invoiceId: invoice.id, documentNumber: invoice.documentNumber, result: "SIGNED" },
+    ]);
   });
 
   it("dos reintentos simultáneos dejan la factura firmada una sola vez, con un solo artefacto", async () => {
@@ -303,6 +301,10 @@ describe("recuperación de una factura reservada", () => {
       }),
     ).toBe(1);
     expect((await get(invoice.id)).state).toBe("SIGNED");
+    // Solo el reintento que tomó el arriendo inició un intento y se audita.
+    expect((await retriedEvents(invoice.id)).map((event) => event.changes)).toEqual([
+      { invoiceId: invoice.id, documentNumber: invoice.documentNumber, result: "SIGNED" },
+    ]);
   });
 
   it("reintentar una factura firmada no tiene efecto ni se audita", async () => {
@@ -341,5 +343,12 @@ describe("recuperación de una factura reservada", () => {
     expect(res.status).toBe(404);
     expect(bodyOf(res).error.code).toBe("INVOICE_NOT_FOUND");
     expect((await get(invoice.id)).state).toBe("RESERVED");
+    // Rechazado antes de iniciar un intento: ningún evento, en ninguna de las dos empresas.
+    expect(await retriedEvents(invoice.id)).toEqual([]);
+    expect(
+      await db.database.prisma.auditEvent.count({
+        where: { companyId: b.companyId, action: { startsWith: "invoice." } },
+      }),
+    ).toBe(0);
   });
 });
