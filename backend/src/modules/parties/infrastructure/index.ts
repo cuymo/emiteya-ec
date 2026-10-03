@@ -1,13 +1,20 @@
 // Composición del módulo de terceros para main.ts y las pruebas (add-parties-and-products).
+import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
 import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
+import type { Authorizer } from "../../identity/application/authorization.ts";
 import type { CompanyInitializer } from "../../identity/infrastructure/better-auth/index.ts";
 import {
   consumerFinalFor,
   ensureConsumerFinalParties,
   type ConsumerFinalPolicyReader,
 } from "../application/consumer-final.ts";
+import { createParties } from "../application/parties.ts";
+import type { IdentificationRules } from "../application/ports.ts";
+import { partiesRouter } from "./http/parties-router.ts";
 import { createConsumerFinalStore } from "./prisma-consumer-final.ts";
+import { createPartyRepository } from "./prisma-parties.ts";
+import { createPartiesUnitOfWork } from "./unit-of-work.ts";
 
 /**
  * Iniciador de empresa: crea su consumidor final en la transacción que crea la empresa, con la
@@ -45,4 +52,28 @@ export async function ensureConsumerFinals({
     policies,
     date: ecuadorDate(now()),
   });
+}
+
+export type PartiesModuleOptions = {
+  prisma: PrismaClient;
+  authorizer: Authorizer;
+  /** Reglas de identificación de `catalogs` (design D2). */
+  rules: IdentificationRules;
+  now?: () => Date;
+};
+
+export function partiesModule({
+  prisma,
+  authorizer,
+  rules,
+  now = () => new Date(),
+}: PartiesModuleOptions) {
+  const service = createParties({
+    parties: createPartyRepository(prisma),
+    uow: createPartiesUnitOfWork(prisma),
+    rules,
+    authorizer,
+    today: () => ecuadorDate(now()),
+  });
+  return { routers: [partiesRouter(service)], service };
 }

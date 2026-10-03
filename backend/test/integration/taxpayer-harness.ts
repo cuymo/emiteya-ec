@@ -8,7 +8,11 @@ import { createUserAdministration } from "../../src/modules/identity/application
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
-import { catalogsModule } from "../../src/modules/catalogs/infrastructure/index.ts";
+import {
+  catalogsModule,
+  fiscalCatalogQueries,
+} from "../../src/modules/catalogs/infrastructure/index.ts";
+import { partiesModule } from "../../src/modules/parties/infrastructure/index.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
 import {
   isSigningCertificateUpload,
@@ -67,6 +71,14 @@ export function buildTaxpayerApp(
           ...catalogsModule({
             prisma: db.database.prisma,
             authorizer,
+            ...(options.now ? { now: options.now } : {}),
+          }).routers,
+        )
+        .use(
+          ...partiesModule({
+            prisma: db.database.prisma,
+            authorizer,
+            rules: fiscalCatalogQueries(db.database.prisma),
             ...(options.now ? { now: options.now } : {}),
           }).routers,
         );

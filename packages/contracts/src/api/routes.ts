@@ -57,6 +57,15 @@ import {
   setEnablementSchema,
   specialCaseViewSchema,
 } from "../fiscal-catalogs.ts";
+import {
+  changePartyStatusSchema,
+  createPartySchema,
+  listPartiesQuerySchema,
+  partyIdParamsSchema,
+  partyListMetaSchema,
+  partyViewSchema,
+  updatePartySchema,
+} from "../parties.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -568,6 +577,106 @@ export const apiRoutes: readonly RouteDefinition[] = [
       404: {
         description:
           "El catálogo (FISCAL_CATALOG_NOT_FOUND) o la entrada (FISCAL_CATALOG_ENTRY_NOT_FOUND) no existen.",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+
+  // Terceros (add-parties-and-products, design D11).
+  defineRoute({
+    method: "get",
+    path: "/parties",
+    summary: "Buscar terceros por identificación o razón social, con filtros y paginación",
+    request: { query: listPartiesQuerySchema },
+    responses: {
+      200: {
+        description: "Página de terceros en orden estable, con el total en `meta`.",
+        schema: z.strictObject({ data: z.array(partyViewSchema), meta: partyListMetaSchema }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/parties",
+    summary: "Registrar un tercero",
+    request: { body: createPartySchema },
+    responses: {
+      201: { description: "Tercero registrado.", schema: successEnvelope(partyViewSchema) },
+      400: {
+        description:
+          "Datos inválidos, identificación que no cumple la regla de su tipo (PARTY_IDENTIFICATION_INVALID), tipo reservado al consumidor final (PARTY_IDENTIFICATION_RESERVED) o tipo sin versión vigente (PARTY_IDENTIFICATION_TYPE_UNAVAILABLE).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      409: {
+        description:
+          "Ya existe un tercero de la empresa con esa identificación (PARTY_IDENTIFICATION_TAKEN).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/parties/:partyId",
+    summary: "Consultar un tercero",
+    request: { params: partyIdParamsSchema },
+    responses: {
+      200: { description: "Tercero.", schema: successEnvelope(partyViewSchema) },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "El tercero no existe en la empresa (PARTY_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/parties/:partyId",
+    summary: "Corregir un tercero a partir de la versión consultada",
+    request: { params: partyIdParamsSchema, body: updatePartySchema },
+    responses: {
+      200: {
+        description: "Tercero corregido, o sin cambios.",
+        schema: successEnvelope(partyViewSchema),
+      },
+      400: {
+        description: "Datos inválidos o identificación que no cumple la regla de su tipo.",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "El tercero no existe en la empresa (PARTY_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+      409: {
+        description:
+          "El tercero cambió después de la consulta (PARTY_CHANGED), es el consumidor final (PARTY_SYSTEM_RECORD) o la identificación ya existe (PARTY_IDENTIFICATION_TAKEN).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/parties/:partyId/status",
+    summary: "Desactivar o reactivar un tercero (estado deseado)",
+    request: { params: partyIdParamsSchema, body: changePartyStatusSchema },
+    responses: {
+      200: { description: "Tercero con su estado.", schema: successEnvelope(partyViewSchema) },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "El tercero no existe en la empresa (PARTY_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+      409: {
+        description: "El consumidor final no se desactiva (PARTY_SYSTEM_RECORD).",
         schema: errorEnvelopeSchema,
       },
     },

@@ -58,7 +58,7 @@
 
 ## 4. API de terceros
 
-- [ ] 4.1 Implementar el módulo `parties` (design D3, D4, D10, D13 y D14):
+- [x] 4.1 Implementar el módulo `parties` (design D3, D4, D10, D13 y D14):
   - dominio: normalización, roles canónicos y claves de búsqueda;
   - aplicación: alta, consulta, corrección con `expectedVersion`, estado deseado, búsqueda y paginación;
   - la identificación se valida con `identificationRule`, con el `07` reservado y sin dígito verificador;
