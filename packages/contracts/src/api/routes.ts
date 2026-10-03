@@ -37,6 +37,14 @@ import {
   sequenceParamsSchema,
   sequencesQuerySchema,
 } from "../fiscal-numbering.ts";
+import {
+  certificateValidityViewSchema,
+  expiryAlertResultSchema,
+  expiryAlertSchema,
+  signingCertificateResponseSchema,
+  signingCertificateUploadResultSchema,
+  uploadSigningCertificateSchema,
+} from "../signing-certificate.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -382,6 +390,76 @@ export const apiRoutes: readonly RouteDefinition[] = [
           "El contador cambió (SEQUENCE_CHANGED), el valor no supera al último reservado (SEQUENCE_NUMBER_RESERVED) o la numeración está agotada (SEQUENCE_EXHAUSTED).",
         schema: errorEnvelopeSchema,
       },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/signing-certificate",
+    summary: "Consultar la firma electrónica vigente: metadatos, vigencia y coincidencia del RUC",
+    responses: {
+      200: {
+        description:
+          "Firma vigente, o null si la empresa no tiene, y la anticipación del aviso de vencimiento. Nunca incluye el archivo, la contraseña ni la clave privada.",
+        schema: successEnvelope(signingCertificateResponseSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/signing-certificate/validity",
+    summary: "Consultar solo la vigencia de la firma electrónica (administradores y operadores)",
+    responses: {
+      200: {
+        description: "Estado de la firma, si es utilizable y su vencimiento.",
+        schema: successEnvelope(certificateValidityViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/signing-certificate",
+    summary:
+      "Cargar o reemplazar la firma electrónica: PKCS#12 en base64, su contraseña y la firma vigente esperada",
+    request: { body: uploadSigningCertificateSchema },
+    responses: {
+      200: {
+        description:
+          "Firma vigente tras la carga; unchanged es true si el certificado ya era el vigente.",
+        schema: successEnvelope(signingCertificateUploadResultSchema),
+      },
+      400: {
+        description:
+          "Datos inválidos o firma rechazada: CERTIFICATE_TOO_LARGE, CERTIFICATE_UNREADABLE, CERTIFICATE_PASSWORD_INVALID, CERTIFICATE_KEY_UNSUPPORTED, CERTIFICATE_INCOMPATIBLE, CERTIFICATE_NOT_VALID_NOW o CERTIFICATE_RUC_NOT_FOUND.",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      409: {
+        description:
+          "La firma vigente cambió (CERTIFICATE_CHANGED) o la instalación no tiene custodia de firmas (CERTIFICATE_CUSTODY_DISABLED).",
+        schema: errorEnvelopeSchema,
+      },
+      503: {
+        description: "El procesamiento criptográfico está saturado (CRYPTO_BUSY).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/signing-certificate/expiry-alert",
+    summary: "Fijar con cuántos días de anticipación se avisa del vencimiento de la firma",
+    request: { body: expiryAlertSchema },
+    responses: {
+      200: {
+        description: "Anticipación vigente.",
+        schema: successEnvelope(expiryAlertResultSchema),
+      },
+      ...configErrors,
     },
   }),
 ];

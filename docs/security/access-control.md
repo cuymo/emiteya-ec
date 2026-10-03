@@ -144,6 +144,9 @@ denegado por defecto;
 | `readiness.read` | Consultar el ambiente y la preparación para emitir | Sí | Sí |
 | `sequences.read` | Consultar los secuenciales por ambiente, punto y tipo | Sí | No |
 | `sequences.adjust` | Ajustar el siguiente secuencial de un contador | Sí | No |
+| `certificate.read` | Consultar la firma electrónica vigente: titular, emisor, serie, vigencia y RUC | Sí | No |
+| `certificate.manage` | Cargar o reemplazar la firma electrónica y fijar la anticipación de su aviso de vencimiento | Sí | No |
+| `certificateValidity.read` | Consultar solo la vigencia de la firma (utilizable, por vencer, vencida) | Sí | Sí |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
@@ -153,8 +156,6 @@ cambio confirma las filas de sus propias operaciones al añadirlas al mapa:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |
-| Cargar o reemplazar el certificado                           | Sí      | No                |
-| Ver metadatos del certificado                                | Sí      | Solo su vigencia  |
 | Gestionar usuarios y roles                                   | Sí      | No                |
 | Crear borradores y emitir los seis comprobantes              | Sí      | Sí                |
 | Corregir un comprobante devuelto o con XML inválido          | Sí      | Sí                |

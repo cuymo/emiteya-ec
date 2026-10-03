@@ -19,6 +19,9 @@ export const PERMISSIONS = [
   "readiness.read",
   "sequences.read",
   "sequences.adjust",
+  "certificate.read",
+  "certificate.manage",
+  "certificateValidity.read",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -40,6 +43,10 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "readiness.read",
     "sequences.read",
     "sequences.adjust",
+    // add-signing-certificate, design D10.
+    "certificate.read",
+    "certificate.manage",
+    "certificateValidity.read",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -49,6 +56,8 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "account.setDefaultEmissionPoint",
     "establishments.read",
     "readiness.read",
+    // add-signing-certificate, design D10: solo la vigencia de la firma.
+    "certificateValidity.read",
   ]),
 };
 

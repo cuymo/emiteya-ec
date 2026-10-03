@@ -6,3 +6,4 @@ export * from "./users.ts";
 export * from "./taxpayer.ts";
 export * from "./establishments.ts";
 export * from "./fiscal-numbering.ts";
+export * from "./signing-certificate.ts";

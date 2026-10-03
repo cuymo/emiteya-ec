@@ -26,6 +26,10 @@ export const AUDIT_ACTIONS = [
   "emission_point.reactivated",
   // add-fiscal-numbering, design D11.
   "fiscal_sequence.adjusted",
+  // add-signing-certificate, design D11.
+  "signing_certificate.loaded",
+  "signing_certificate.replaced",
+  "signing_certificate.expiry_alert_changed",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

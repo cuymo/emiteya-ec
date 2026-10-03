@@ -2,13 +2,13 @@
 
 ## 0. Gate previo
 
-- [ ] 0.1 Confirmar que el spike S-6 (design D15) figura como ejecutado con los criterios de A (compatibilidad del firmador) y B (inspección) cumplidos, que el ADR 0019 está aceptado y que `open-questions.md` registra su resultado; verificar que, si no hubo P12 real, el requisito del go-live sigue abierto en `definition-of-done.md`. Sin esto no se empieza el grupo 1
+- [x] 0.1 Confirmar que el spike S-6 (design D15) figura como ejecutado con los criterios de A (compatibilidad del firmador) y B (inspección) cumplidos, que el ADR 0019 está aceptado y que `open-questions.md` registra su resultado; verificar que, si no hubo P12 real, el requisito del go-live sigue abierto en `definition-of-done.md`. Sin esto no se empieza el grupo 1
 
 ## 1. Contratos, permisos y reglas de dominio
 
-- [ ] 1.1 Añadir `packages/contracts/src/signing-certificate.ts`: esquema estricto de la carga (base64 de hasta 64 KiB decodificado, contraseña de 1 a 256 caracteres sin normalizar, `expectedCurrentId`), anticipación entera de 1 a 90, vistas completa y de vigencia con los estados derivados, y rutas en el registro de OpenAPI; verificar con pruebas de contrato que rechazan `companyId`, campos desconocidos, base64 inválido, tamaños y anticipaciones fuera de rango, y que ninguna vista admite campos secretos
-- [ ] 1.2 Añadir los permisos `certificate.read`, `certificate.manage` (solo `ADMIN`) y `certificateValidity.read` (`ADMIN` y `OPERATOR`) al mapa central y al frontend, y las acciones `signing_certificate.loaded`, `signing_certificate.replaced` y `signing_certificate.expiry_alert_changed` a la auditoría; verificar con las pruebas del mapa de acceso y actualizar `docs/security/access-control.md`
-- [ ] 1.3 Implementar en `modules/signing/domain` la vigencia derivada (`VALID`, `EXPIRING`, `EXPIRED`, `KEY_UNAVAILABLE`, `NONE`), los días que faltan, la condición de utilizable y la coincidencia del RUC (`MATCH`, `MISMATCH`, `PENDING`) de design D8 y D4; verificar con pruebas unitarias de los bordes (justo al vencer, el día de la anticipación, sin RUC de la empresa, custodia deshabilitada)
+- [x] 1.1 Añadir `packages/contracts/src/signing-certificate.ts`: esquema estricto de la carga (base64 con un tope absoluto de formato de 1 MiB; el límite configurable `CERTIFICATE_MAX_BYTES` lo aplica el backend sobre los bytes decodificados, contraseña de 1 a 256 caracteres sin normalizar, `expectedCurrentId`), anticipación entera de 1 a 90, vistas completa y de vigencia con los estados derivados, y rutas en el registro de OpenAPI; verificar con pruebas de contrato que rechazan `companyId`, campos desconocidos, base64 inválido, tamaños y anticipaciones fuera de rango, y que ninguna vista admite campos secretos
+- [x] 1.2 Añadir los permisos `certificate.read`, `certificate.manage` (solo `ADMIN`) y `certificateValidity.read` (`ADMIN` y `OPERATOR`) al mapa central y al frontend, y las acciones `signing_certificate.loaded`, `signing_certificate.replaced` y `signing_certificate.expiry_alert_changed` a la auditoría; verificar con las pruebas del mapa de acceso y actualizar `docs/security/access-control.md`
+- [x] 1.3 Implementar en `modules/signing/domain` la vigencia derivada (`VALID`, `EXPIRING`, `EXPIRED`, `KEY_UNAVAILABLE`, `NONE`), los días que faltan, la condición de utilizable y la coincidencia del RUC (`MATCH`, `MISMATCH`, `PENDING`) de design D8 y D4; verificar con pruebas unitarias de los bordes (justo al vencer, el día de la anticipación, sin RUC de la empresa, custodia deshabilitada)
 
 ## 2. Configuración y custodia cifrada
 

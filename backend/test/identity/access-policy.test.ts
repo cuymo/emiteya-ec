@@ -26,6 +26,10 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   // add-fiscal-numbering, design D10.
   "sequences.read": { ADMIN: true, OPERATOR: false },
   "sequences.adjust": { ADMIN: true, OPERATOR: false },
+  // add-signing-certificate, design D10.
+  "certificate.read": { ADMIN: true, OPERATOR: false },
+  "certificate.manage": { ADMIN: true, OPERATOR: false },
+  "certificateValidity.read": { ADMIN: true, OPERATOR: true },
 };
 
 describe("política de autorización central", () => {
