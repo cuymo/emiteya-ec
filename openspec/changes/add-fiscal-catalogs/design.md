@@ -16,7 +16,7 @@ Motivación y alcance en `proposal.md`; comportamiento en `specs/`. Lo que condi
     - tipos de identificación (tabla 6, con las notas sobre consumidor final y exterior);
     - impuestos (tabla 16);
     - tarifas de IVA (tabla 17, sin fechas, con la nota 3 sobre el IVA diferenciado);
-    - códigos de ICE (tabla 18): 75 filas con 71 códigos distintos. Los códigos 3041 y 3541 aparecen tres veces cada uno, con escalas distintas. Las tarifas de la tabla son de 2023, y la ficha avisa que "deberán calcularse en base a la normativa vigente";
+    - códigos de ICE (tabla 18, páginas impresas 30 a 32): 76 filas con 71 códigos distintos. Los códigos 3041 y 3541 aparecen tres veces cada uno, con escalas distintas. El 3671 aparece dos veces idéntico (páginas 31 y 32), con el mismo código, la misma denominación y las mismas tarifas. Las tarifas de la tabla son de 2023, y la ficha avisa que "deberán calcularse en base a la normativa vigente";
     - formas de pago (tabla 24, con fechas de inicio);
     - consumidor final hasta USD 50 (numeral 9.10), con la razón social `CONSUMIDOR FINAL` en sus ejemplos.
   - **Lo que no publica:** no hay tabla de IRBPNR. Su código de porcentaje `5001` solo aparece en la especificación del XML de factura, que remite por error a la tabla 18.
@@ -86,14 +86,14 @@ Módulo nuevo en `backend/src/modules/catalogs/`, con dominio, aplicación e inf
 | Tipos de identificación | Tabla 6 (página 13) y XSD | 5: `04`, `05`, `06`, `07`, `08`, con su regla de formato (D7); `07` reservado al consumidor final | No | — |
 | Impuestos | Tabla 16 (página 29) | 3: `2` IVA, `3` ICE, `5` IRBPNR | No | — |
 | Tarifas de IVA | Tabla 17 (páginas 29–30) | 9: `0` 0 %, `2` 12 %, `3` 14 %, `4` 15 %, `5` 5 %, `6` no objeto, `7` exento, `8` IVA diferenciado, `10` 13 % | Sí | Habilitadas |
-| Códigos de ICE | Tabla 18 (páginas 30–31) | 75 filas, cada una con su `entryKey` (D6), su código y su denominación, sin tarifas | Sí | Deshabilitados |
+| Códigos de ICE | Tabla 18 (páginas 30–32) | 75 entradas para las 76 filas de la fuente (D6), cada una con su `entryKey`, su código y su denominación, sin tarifas | Sí | Deshabilitados |
 | Códigos de IRBPNR | Especificación del XML de factura (código `5`, porcentaje `5001`) | 1, sin tarifa | Sí | Deshabilitado |
 | Formas de pago | Tabla 24 (página 79) | 8: `01`, `15`–`21`, con fecha de inicio | Sí | Habilitadas |
-| Política de consumidor final | Numeral 9.10 (página 29), tabla 6 y ejemplos; historial de la versión 2.22 | 1: USD 50.00, tipo `07`, `9999999999999` y `CONSUMIDOR FINAL` | No | — |
+| Política de consumidor final | Numeral 9.10 (página 29), tabla 6 (página 13) y ejemplos | 1: USD 50.00, tipo `07`, `9999999999999` y `CONSUMIDOR FINAL` | No | — |
 | Registro de esquemas | `docs/product/sri-xsd/README.md` | 6 (CTX §3.1) | No | — |
 | Matriz de casos especiales | ADR 0014 sobre el capítulo de anexos de la ficha | 26 | No | — |
 
-- **Valores por defecto:** ICE e IRBPNR empiezan deshabilitados porque pocas empresas los usan y su presencia invita a errores.
+- **Valores por defecto de la habilitación:** son datos de cada dataset (D9). ICE e IRBPNR están deshabilitados porque pocas empresas los usan y su presencia invita a errores.
 - **Fuera de estos datasets:**
   - tipos de comprobante, ambiente y tipo de emisión, que siguen siendo constantes del protocolo (CTX §56);
   - retenciones (tablas 19 y siguientes);
@@ -103,28 +103,36 @@ Módulo nuevo en `backend/src/modules/catalogs/`, con dominio, aplicación e inf
 ### D3. Formato, carga y trazabilidad de los datasets
 
 - **Archivos:** un JSON por dataset y versión en `backend/src/modules/catalogs/datasets/<catálogo>/<versión>.json`, validado con Zod. Una versión nueva añade un archivo; nunca edita el anterior.
-- **Cabecera:** catálogo, versión del dataset (entera y creciente) y fuente: documento, versión, fecha de publicación, URL y SHA-256.
+- **Cabecera:** catálogo, versión del dataset (entera y creciente), fuente (documento, versión, fecha de publicación, URL y SHA-256) y política de habilitación por empresa del catálogo (D9).
 - **Cada entrada:**
   - `entryKey` (D6) y `code`;
   - `officialLabel`, transcrita literalmente;
-  - `effectiveFrom` y `effectiveFromBasis`: `STATED` si la fuente da la fecha, o `SOURCE_VERSION_DATE` si no la da;
+  - `effectiveFrom` y `effectiveFromBasis`, con dos valores y una semántica fija:
+    - `SOURCE_STATED`: la fuente declara esa fecha de inicio, por ejemplo la tabla 24 de formas de pago;
+    - `PROJECT_BASELINE`: la fuente no declara inicio, y el proyecto usa como base la fecha de publicación de la versión de la fuente que la contiene (2026-07-27 para la ficha v2.34). No es una fecha legal de vigencia.
   - `effectiveTo`;
   - `normativeStatus`: `OFFICIAL` (código y valores de una tabla oficial), `OFFICIAL_REFERENCE` (código oficial sin valores vigentes en la fuente: ICE e IRBPNR) o `WITHDRAWN` (retirado por una versión posterior, con la vigencia cerrada);
   - `sourceRef`: tabla o numeral, y página;
   - los atributos propios del catálogo (D7 y D8).
-- **Fecha cuando la fuente no la da:** las tablas 6 y 17 no traen fechas, así que se usa la de la ficha transcrita (2026-07-27), y `effectiveFromBasis` lo deja visible. Así nunca se aplica una entrada antes de tener evidencia; el MVP no emite comprobantes anteriores a su instalación.
-- **Consumidor final:** la vigencia desde 2022-09-01 sale del historial de la ficha, versión 2.22: "actualización del monto máximo para emitir una factura a consumidor final".
+- **Base del proyecto, no historia:** las tablas 6, 16, 17 y 18, la especificación del IRBPNR y el numeral 9.10 no traen fechas de inicio. Sus entradas llevan `PROJECT_BASELINE` con 2026-07-27, y no se inventa ninguna historia anterior.
+  - La resolución por fecha (D5) usa esa base para el alcance actual del producto, que no emite comprobantes anteriores a su instalación.
+  - La API devuelve `effectiveFromBasis` con cada versión. La interfaz y la documentación la presentan como "base del proyecto: publicación de la ficha v2.34", nunca como fecha legal de vigencia.
+  - Si más adelante una fuente normativa establece la fecha real, entra como versión nueva del dataset, con `SOURCE_STATED` y su fuente.
+  - Hoy, solo las formas de pago llevan `SOURCE_STATED`.
 - **Manifiesto:** `docs/product/sri-catalogs/README.md` lista cada dataset con su versión, la fuente, su hash y las tablas transcritas.
   - Una prueba compara el manifiesto con los archivos y fija los valores críticos: códigos y porcentajes de IVA, formas de pago y sus fechas, monto e identidad del consumidor final, filas de ICE y categorías de la matriz.
   - El PDF no se commitea: quedan su URL y su hash.
-- **Carga controlada al arrancar.** `main.ts` llama a `loadFiscalCatalogs` después de las migraciones y del aprovisionamiento, antes de aceptar peticiones. En una transacción con advisory lock `fiscal-catalogs:load`:
-  1. valida todos los archivos;
-  2. compara con lo publicado;
-  3. inserta entradas y versiones nuevas;
-  4. aplica las transiciones permitidas (D4);
-  5. registra cada versión de dataset con su checksum.
-  - Con los mismos archivos no cambia nada. Cualquier alteración de lo publicado, o una superposición, aborta el arranque sin modificar nada y nombra el catálogo y la entrada.
-  - No audita por empresa. Registra en el log las versiones cargadas y el número de entradas nuevas.
+- **Carga controlada al arrancar.** `main.ts` llama a `loadFiscalCatalogs` después de las migraciones y del aprovisionamiento, antes de aceptar peticiones. La estrategia no supone que haya una sola instancia:
+  1. **Validación sin tocar la base.** Lee todos los archivos, los valida con Zod y comprueba en memoria las versiones de cada catálogo: contiguas, sin superposición y con transiciones permitidas entre versiones consecutivas (D4). Calcula el checksum SHA-256 del contenido canónico de cada archivo. Un dataset inválido aborta aquí, sin abrir ninguna transacción.
+  2. **Una sola transacción para todo.** Abre una transacción interactiva y toma `pg_advisory_xact_lock` con una clave propia del cargador. La clave se deriva de `fiscal-catalogs:loader`, es distinta del lock de las migraciones de Prisma y se libera sola al terminar la transacción.
+  3. **Comparación con lo aplicado.** Lee `fiscal_catalog_dataset`. Para cada archivo:
+     - si su versión ya está aplicada con el mismo checksum y la misma fuente, no hace nada;
+     - si está aplicada con otro checksum u otra fuente, lanza `FiscalCatalogDatasetConflict` con el catálogo y la versión, y la transacción se revierte;
+     - si no está aplicada, debe ser la siguiente de su catálogo.
+  4. **Aplicación y registro.** Aplica las versiones pendientes en orden: claves, versiones, transiciones, política, registro y matriz. Comprueba lo publicado contra el archivo, y una alteración aborta. Registra cada versión con su checksum, su fuente y su política de habilitación, y confirma la transacción. Una versión, o el conjunto de varias, se aplica entera o no se aplica: nunca queda una carga parcial.
+  5. **Instancias que pierden la carrera.** Esperan el lock y, al obtenerlo, leen lo confirmado por la ganadora (`READ COMMITTED` toma una instantánea nueva por sentencia). Reconocen las versiones ya aplicadas con el mismo checksum y siguen arrancando.
+  6. **Respaldo sin lock.** Si un despliegue alterara el lock, los únicos de `(catalog_type, version)` en `fiscal_catalog_dataset` y de `(catalog_type, entry_key, effective_from)` en las versiones hacen fallar la transacción concurrente, que se revierte entera. El cargador reintenta una vez desde el paso 2, y ahí reconoce lo aplicado.
+  - No audita por empresa. Registra en el log las versiones aplicadas, o "ya aplicadas", y el número de entradas nuevas.
 - **Por qué al arrancar y no con una migración SQL:**
   - el JSON es la única fuente;
   - la inmutabilidad se comprueba en cada arranque, no solo una vez;
@@ -153,17 +161,24 @@ Módulo nuevo en `backend/src/modules/catalogs/`, con dominio, aplicación e inf
 ### D6. Identidad de las entradas de ICE con códigos repetidos
 
 - **El problema:** en la tabla 18, `code` no identifica una fila. El 3041 aparece como cerveza industrial de gran, mediana y pequeña escala, y el 3541 como cerveza gran escala, industrial de mediana escala e industrial de pequeña escala (CAE). Cada fila tiene una denominación distinta y será una tarifa distinta cuando haya fuente legal.
-- **La regla:** `entryKey` es la identidad estable de la fila o variante normativa, y `code` sigue siendo el código fiscal visible que irá al XML.
+- **Fila repetida idéntica:** el 3671 ("ICE calefones y sistemas de calentamiento de agua a gas SRI") aparece en las páginas 31 y 32 con el mismo código, la misma denominación y las mismas tarifas. Es la misma fila normativa repetida, no una variante. Tiene una sola entrada (`entryKey` `3671`), y su `sourceRef` cita ambas páginas. Así hay 75 entradas para las 76 filas de la fuente.
+- **La regla:** `entryKey` es la identidad interna estable de la fila o variante normativa, y `code` sigue siendo el código fiscal visible que irá al XML.
   - En los catálogos sin repeticiones, `entryKey` es igual al código.
   - En las filas repetidas, el dataset fija un sufijo explícito, nunca derivado al cargar: `3041-GRAN-ESCALA`, `3041-MEDIANA-ESCALA`, `3041-PEQUENA-ESCALA`, `3541-GRAN-ESCALA-CAE`, `3541-MEDIANA-ESCALA-CAE` y `3541-PEQUENA-ESCALA-CAE`.
   - Una versión posterior conserva esas claves aunque cambien las denominaciones.
 - **En la base de datos:** el patrón de `entryKey` es `^[0-9A-Z][0-9A-Z-]{0,63}$`, y no hay ninguna restricción única sobre `(catálogo, code)`.
-- **Pruebas del dataset:**
-  - `entryKey` es único por catálogo;
-  - exactamente 3041 y 3541 se repiten, tres veces cada uno, en la versión 2.34;
-  - cada fila repetida tiene una denominación distinta;
+- **Fuente de revisión:** `docs/product/sri-catalogs/fuentes/ficha-v2.34-tabla-18.txt` es el extracto literal de la tabla 18, obtenido con `pdftotext -layout` de las páginas impresas 30 a 32. Su cabecera indica el SHA-256 del PDF y el método de extracción. La denominación de cada entrada es la de la fuente, con los espacios del maquetado reducidos a uno y las líneas de una misma celda unidas con un espacio.
+- **Pruebas sobre el extracto y el dataset:**
+  - el extracto tiene 76 filas y 71 códigos distintos;
+  - solo se repiten 3041 y 3541 (tres filas cada uno, con denominaciones distintas) y 3671 (dos filas idénticas);
+  - el dataset tiene 75 entradas, y sus códigos son los del extracto menos la repetición idéntica de 3671;
+  - cada denominación aparece, palabra por palabra y en orden, en el bloque de su fila del extracto;
+  - `entryKey` es único;
+  - cada entrada tiene tabla y página en `sourceRef`;
   - todo `code` cumple el patrón `codigoPorcentaje` del XSD (1 a 4 dígitos);
+  - el esquema estricto del dataset de ICE no admite campos de tarifa;
   - las claves de una versión anterior siguen existiendo en la siguiente.
+  - La revisión fila a fila contra el PDF se completa en la tarea del dataset, antes de cerrar el grupo.
 
 ### D7. Tipos de identificación y consumidor final
 
@@ -201,9 +216,24 @@ Las tarifas no se reducen a `percentage: number`. Columnas tipadas de `fiscal_ca
 
 ### D9. Habilitación por empresa
 
-- **Tabla:** `company_fiscal_catalog_setting (company_id, catalog_type, entry_key, enabled, updated_at, updated_by)`, con clave primaria compuesta y clave foránea a `fiscal_catalog_key`.
-  - Sin fila vale el valor por defecto del catálogo (D2).
+- **Política como dato.** Cada dataset declara la política de habilitación de su catálogo:
+  - `NOT_ENABLEABLE` para tipos de identificación e impuestos;
+  - `DEFAULT_ENABLED` para tarifas de IVA y formas de pago;
+  - `DEFAULT_DISABLED` para ICE e IRBPNR.
+  - Se guarda con la versión del dataset en `fiscal_catalog_dataset`. Rige la de la última versión aplicada del catálogo, y cambiarla exige una versión nueva del dataset, trazable como cualquier otra.
+- **Decisiones de la empresa:** `company_fiscal_catalog_setting (company_id, catalog_type, entry_key, enabled, updated_at, updated_by)`, con clave primaria compuesta y clave foránea a `fiscal_catalog_key`.
+  - Una fila representa una decisión explícita de la empresa, nunca una copia del catálogo.
   - Un `CHECK` admite solo los catálogos habilitables. La API responde `400 FISCAL_CATALOG_NOT_ENABLEABLE` para los demás, y `404` si la entrada no existe.
+- **Una única función de dominio:** `effectiveEnablement({ decision, policy })` devuelve la decisión de la empresa si existe, o el valor por defecto de la política. Por encima, `isUsable(entry, date, enablement)` exige que la entrada esté habilitada y que `resolveCatalogEntry` devuelva una versión en esa fecha.
+  - Todo lector (API, `add-parties-and-products`, emisión) usa esas funciones, así que la ausencia de fila tiene siempre el mismo significado.
+- **Semántica determinista:**
+  - **Empresa nueva:** no tiene filas, y cada entrada toma el valor por defecto de su catálogo.
+  - **Entrada nueva de un dataset posterior:** ninguna empresa tiene decisión sobre ella, y toma el valor por defecto. No se copian filas.
+  - **Empresa sin decisión:** siempre el valor por defecto vigente del catálogo.
+  - **Entrada que vence o se retira:** la decisión se conserva como historia, pero la entrada no es utilizable, porque `resolveCatalogEntry` no devuelve versión. Una entrada habilitada nunca se vuelve utilizable por estarlo.
+  - **Habilitar una entrada sin versión vigente ni futura:** `400 FISCAL_CATALOG_ENTRY_NOT_IN_FORCE`. Deshabilitar siempre se permite.
+  - **Volver al valor por defecto:** si una decisión vuelve a coincidir con el valor por defecto, la fila se conserva, porque sigue siendo una decisión de la empresa y no depende de cambios futuros de la política.
+- **La vista de la API** devuelve, por entrada, `enabled`, `enablementSource` (`DEFAULT` o `COMPANY`) y `usable` en la fecha consultada.
 - **Cambio:** `PUT …/enablement { enabled }` en una transacción:
   1. inserta la fila con el valor por defecto (`ON CONFLICT DO NOTHING`);
   2. la bloquea `FOR UPDATE`;
@@ -213,26 +243,30 @@ Las tarifas no se reducen a `percentage: number`. Columnas tipadas de `fiscal_ca
 
 ### D10. Política decimal común
 
-- **Escalas desde el XSD.** La tabla de especificaciones decimales vive en `packages/contracts/src/decimal.ts`, y backend y frontend la comparten. Cada especificación nombra su tipo XSD de origen:
+- **Representación universal y tipos.** `DecimalString` es la representación textual universal del producto: `^-?(0|[1-9][0-9]*)(\.[0-9]+)?$`, sin exponente, coma decimal, separadores, ceros a la izquierda, espacios, signo `+` ni `-0`. Admite negativos, porque una capacidad futura puede necesitarlos; algunos campos del XSD, como `totalDescuentos` o el `valor` de la guía, no tienen mínimo.
+  - Los tipos del dominio la restringen: `Percentage`, `Money`, `UnitPrice` y `Quantity`, cada uno con su especificación de dígitos, decimales y mínimo.
+  - "Sin signo" es una propiedad de esos tipos, todos no negativos, no del parser universal.
+- **Escalas desde los XSD.** La tabla de especificaciones decimales vive en `packages/contracts/src/decimal.ts`, y backend y frontend la comparten. Cada especificación nombra su tipo XSD de origen y los documentos en que es común:
 
   | Especificación | Tipo XSD de origen (1.1.0) | Dígitos totales | Decimales | Uso |
   | --- | --- | --- | --- | --- |
-  | `tarifa` | `tarifa` | 4 | 2 | Porcentaje de IVA (este cambio) |
-  | `importe` | `importeTotal`, `valor`, `baseImponible`, `totalSinImpuestos` | 14 | 2 | Monto de la política de consumidor final (este cambio); importes de la emisión |
-  | `precioUnitario` | `precioUnitario` | 18 | 6 | Precio de productos (`add-parties-and-products`) |
-  | `cantidad` | `cantidad` | 18 | 6 | Cantidades de la emisión |
+  | `tarifa` → `Percentage` | `tarifa` de factura, liquidación, nota de crédito y nota de débito | 4 | 2 | Porcentaje de IVA (este cambio) |
+  | `importe` → `Money` | `importeTotal`, `valor`, `baseImponible`, `total`: 14/2 en los seis documentos | 14 | 2 | Monto de la política de consumidor final (este cambio); importes de la emisión |
+  | `precioUnitario` → `UnitPrice` | `precioUnitario` de factura, liquidación y nota de crédito | 18 | 6 | Precio de productos (`add-parties-and-products`) |
+  | `cantidad` → `Quantity` | `cantidad` de factura, liquidación, nota de crédito y guía | 18 | 6 | Cantidades de la emisión |
 
-  - Una prueba lee los `simpleType` de `docs/product/sri-xsd/factura_V1.1.0.xsd` y comprueba que cada especificación coincide con su tipo. Así la escala es una consecuencia de la documentación oficial, no una constante elegida.
-  - Todas tienen mínimo 0, como en el XSD.
+  - Una comprobación estática recorre los seis XSD versionados, sin S-2. Una prueba lee sus `simpleType` y comprueba que cada especificación coincide con todos los tipos equivalentes de los documentos que los definen.
+  - Excepción documentada: la retención 2.0.0 define `tarifa` y `porcentajeRetener` con 3/2, así que esa escala es propia de la retención y llegará con su cambio. La prueba la fija como excepción conocida.
+  - El mínimo 0 de los cuatro tipos sale de los mismos `simpleType`. Los campos monetarios sin mínimo de algunos documentos se representarán con el `DecimalString` universal cuando se usen.
   - La regla de dominio del IVA limita además el porcentaje a 100.
 - **Dominio:** `decimal.js` 10.6.0, como dependencia directa del backend con versión exacta. Es la biblioteca que Prisma usa para `Decimal`.
-  - Se envuelve en `platform/decimal`, con una instancia propia (precisión 40) y un objeto de valor `FiscalDecimal(spec)` que valida dígitos enteros, escala y mínimo.
+  - Se envuelve en `platform/decimal`, con una instancia propia (precisión 40), un objeto de valor `FiscalDecimal(spec)` que valida dígitos enteros, escala y mínimo, y los tipos `Percentage`, `Money`, `UnitPrice` y `Quantity`.
   - Ningún importe ni tarifa pasa por `number`.
 - **PostgreSQL:** `NUMERIC(dígitos totales, decimales)` de su especificación: `NUMERIC(4,2)` para el porcentaje de IVA y `NUMERIC(14,2)` para el monto de la política, con `CHECK` de mínimo.
   - Prisma devuelve `Decimal`, y el repositorio lo convierte a `decimal.js` mediante su texto.
 - **JSON:**
   - Los decimales viajan como cadenas; un número JSON se rechaza, porque ya pasó por coma flotante.
-  - Al recibir: `^(0|[1-9][0-9]{0,N})(\.[0-9]{1,S})?$` según la especificación, sin signo, exponente, separadores, coma decimal, ceros a la izquierda ni espacios.
+  - Al recibir: primero el `DecimalString` universal, y después los dígitos, la escala y el mínimo de la especificación del campo.
   - Al devolver: la forma canónica más corta y exacta, sin exponente ni ceros finales (`15`, `12.5`).
   - El helper `decimalString(spec)` define el esquema Zod y sus mensajes.
 - **Redondeo:** nunca al recibir; más decimales de los admitidos es un error de validación. Este cambio no redondea nada, porque los datasets traen valores exactos. El redondeo de los comprobantes (Q-14) es de la emisión, que recibirá valores ya normalizados con estas especificaciones.
@@ -271,7 +305,7 @@ catálogos fiscales" a `access-control.md`.
 Una migración crea siete tablas:
 
 - **Del sistema:**
-  - `fiscal_catalog_dataset`: catálogo, versión, fuente, checksum y carga;
+  - `fiscal_catalog_dataset`: catálogo, versión (única con el catálogo), fuente, checksum, política de habilitación y carga;
   - `fiscal_catalog_key`: catálogo y `entryKey`;
   - `fiscal_catalog_entry`: versiones con las columnas de D8 y sus `CHECK`;
   - `consumer_final_policy`;
@@ -331,8 +365,9 @@ Primitiva nueva `Switch` (Radix) en `components/ui`, porque la habilitación apl
 | Frecuencia y riesgo | Rara; riesgo medio: deshabilitar una tarifa la retira de lo que la empresa podrá usar. |
 
 - **P0:** tarifas de IVA y formas de pago, cada una con su `Switch`.
-- **P1:** ICE, con un filtro de texto local sobre sus 75 filas y la variante visible en las filas repetidas, e IRBPNR; fuente y versión de cada catálogo.
+- **P1:** ICE, con un filtro de texto local sobre sus 75 entradas y la variante visible en los códigos repetidos, e IRBPNR; fuente y versión de cada catálogo.
 - **P2:** tipos de identificación con su regla, política de consumidor final con su identidad, matriz de casos especiales y registro de esquemas, en secciones de solo lectura.
+- **Fecha de inicio:** cada fecha indica su origen. "Desde 01/06/2016 (declarada por la fuente)" frente a "Base del proyecto: ficha v2.34 (27/07/2026)", nunca presentada como vigencia legal.
 - **P3:** historial de versiones de los datasets, fuera.
 - **Comportamiento:**
   - El `Switch` se deshabilita mientras guarda y confirma con un toast.
@@ -353,12 +388,22 @@ Primitiva nueva `Switch` (Radix) en `components/ui`, porque la habilitación apl
   - valores críticos fijados;
   - duplicados de ICE (D6);
   - registro contra los XSD y sus hashes.
-- **Cargador:** idempotencia, alteración y superposición abortadas sin modificar nada, transiciones permitidas, cargas simultáneas y ningún evento de auditoría.
+- **Cargador:**
+  - idempotencia;
+  - dos cargadores simultáneos sobre una base vacía, con dos clientes y conexiones distintas: los dos terminan, se aplica una sola vez y los conteos son los esperados;
+  - misma versión con otro checksum o fuente: fallo explícito sin modificar nada;
+  - dataset inválido: no se abre la transacción;
+  - fallo inyectado a mitad de la aplicación: no queda ninguna fila;
+  - alteración y superposición abortadas con la entrada nombrada;
+  - transiciones permitidas;
+  - ningún evento de auditoría.
 - **API con dos empresas:**
   - consulta de ambos roles;
   - operador `403` al habilitar;
   - catálogo no habilitable;
-  - valores por defecto;
+  - valores por defecto de una empresa nueva y de una entrada nueva, sin copiar filas;
+  - entrada habilitada que vence o se retira, no utilizable;
+  - habilitar una entrada sin vigencia actual ni futura;
   - habilitación repetida sin evento;
   - cambios simultáneos con una sola transición auditada;
   - aislamiento;
@@ -378,12 +423,12 @@ Primitiva nueva `Switch` (Radix) en `components/ui`, porque la habilitación apl
 
 ## Risks / Trade-offs
 
-- [Error de transcripción de la ficha] → Manifiesto con fuente y hash, `sourceRef` por entrada, valores críticos fijados y revisión fila a fila de la transcripción, incluidas las 75 filas de ICE.
-- [Vigencias desconocidas en las tablas 6 y 17] → `effectiveFromBasis = SOURCE_VERSION_DATE` lo hace explícito. El MVP no emite comprobantes anteriores a su instalación.
+- [Error de transcripción de la ficha] → Manifiesto con fuente y hash, `sourceRef` por entrada, valores críticos fijados y revisión fila a fila de la transcripción, incluidas las 76 filas de la tabla 18 (75 entradas).
+- [Fechas de inicio no declaradas por la fuente] → `effectiveFromBasis = PROJECT_BASELINE` con la publicación de la ficha, sin historia anterior y nunca presentado como vigencia legal. Una fuente normativa con la fecha real entra como versión nueva.
 - [Sin tarifas de ICE ni de IRBPNR] → Entradas `OFFICIAL_REFERENCE` sin columnas de valor. La capacidad que calcule debe traer antes un dataset con fuente legal (D15).
 - [Códigos repetidos en la tabla 18] → `entryKey` explícito por fila y pruebas del dataset (D6).
 - [La tarifa del 12 % sigue en la tabla 17 aunque la general es del 15 %] → El catálogo refleja la fuente: el sistema no determina obligaciones tributarias (BR-02). La empresa deshabilita lo que no usa.
-- [Carga al arrancar con varias instancias] → Advisory lock y transacción. Un dataset alterado detiene el arranque en lugar de corregir datos.
+- [Carga al arrancar con varias instancias] → Advisory lock propio y una transacción para todo, con versión, checksum y fuente por dataset, únicos de respaldo y un reintento. Lo prueban dos cargadores simultáneos. Un dataset alterado detiene el arranque en lugar de corregir datos.
 - [Especificaciones decimales que divergen del XSD] → La prueba contra los `simpleType` lo impide.
 
 ## Migration Plan

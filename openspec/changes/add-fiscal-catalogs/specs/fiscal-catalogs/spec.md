@@ -9,7 +9,7 @@ política de consumidor final, el registro de esquemas XSD y la matriz de casos 
 ## ADDED Requirements
 
 ### Requirement: Catálogos fiscales oficiales
-El sistema SHALL ofrecer a todas las empresas los catálogos fiscales oficiales de tipos de identificación, impuestos, tarifas de IVA, códigos de ICE, códigos de IRBPNR y formas de pago. Cada entrada SHALL indicar su código, su descripción oficial, su vigencia desde y, si la tiene, hasta, su documento fuente, la versión de esa fuente y su estado normativo.
+El sistema SHALL ofrecer a todas las empresas los catálogos fiscales oficiales de tipos de identificación, impuestos, tarifas de IVA, códigos de ICE, códigos de IRBPNR y formas de pago. Cada entrada SHALL indicar su código, su descripción oficial, su vigencia desde y, si la tiene, hasta, el origen de su fecha de inicio (declarada por la fuente o base del proyecto), su documento fuente, la versión de esa fuente y su estado normativo.
 
 #### Scenario: Consulta de un catálogo
 - **WHEN** un usuario consulta las formas de pago
@@ -18,6 +18,14 @@ El sistema SHALL ofrecer a todas las empresas los catálogos fiscales oficiales 
 #### Scenario: Mismas entradas para todas las empresas
 - **WHEN** usuarios de dos empresas consultan las tarifas de IVA
 - **THEN** ambos ven las mismas entradas oficiales, con los mismos códigos, descripciones y vigencias
+
+#### Scenario: Fecha de inicio declarada por la fuente
+- **WHEN** un usuario consulta una forma de pago cuya tabla oficial declara su fecha de inicio
+- **THEN** ve esa fecha identificada como declarada por la fuente
+
+#### Scenario: Entrada sin fecha en la fuente
+- **WHEN** un usuario consulta una tarifa de IVA, cuya tabla oficial no declara fecha de inicio
+- **THEN** ve como inicio la fecha base del proyecto, identificada como publicación de la versión de la ficha y no como fecha legal de vigencia, sin ninguna historia anterior
 
 #### Scenario: Funciona sin conexión con el SRI
 - **WHEN** el sistema arranca sin acceso a internet
@@ -29,6 +37,10 @@ El sistema SHALL dar a cada entrada oficial una identidad estable dentro de su c
 #### Scenario: Código repetido en la fuente
 - **WHEN** un usuario consulta los códigos de ICE
 - **THEN** el código 3041 figura en tres entradas distintas, una por cada escala de cerveza de la ficha, todas con el código 3041
+
+#### Scenario: Fila repetida idéntica en la fuente
+- **WHEN** la fuente repite una fila con el mismo código, la misma denominación y los mismos valores
+- **THEN** el catálogo tiene una sola entrada para ella, que cita ambas ubicaciones de la fuente
 
 #### Scenario: Identidad estable entre versiones
 - **WHEN** una versión nueva del producto incorpora datos de una entrada existente
@@ -98,6 +110,18 @@ El sistema SHALL incorporar las actualizaciones oficiales como entradas o versio
 - **WHEN** el sistema arranca varias veces con la misma versión de los catálogos
 - **THEN** cada entrada y cada versión existen una sola vez y nada cambia
 
+#### Scenario: Arranques simultáneos
+- **WHEN** varias instancias del sistema arrancan a la vez sobre una base sin catálogos
+- **THEN** los catálogos se aplican una sola vez, completos, y todas las instancias arrancan
+
+#### Scenario: Misma versión con contenido distinto
+- **WHEN** el sistema arranca con un dataset cuya versión ya está aplicada con otro contenido o con otra fuente
+- **THEN** no arranca e indica el catálogo y la versión, sin modificar los datos existentes
+
+#### Scenario: Dataset inválido
+- **WHEN** el sistema arranca con un dataset que no cumple su formato
+- **THEN** no arranca, indica el error y no modifica ningún dato
+
 ### Requirement: Vigencia por fecha
 El sistema SHALL determinar, con una única regla, qué versión de una entrada aplica en una fecha del calendario de Ecuador: la que empieza en esa fecha o antes y termina en esa fecha o después, o no tiene fin. Una entrada sin versión vigente en esa fecha no aplica. La versión aplicable SHALL tener un identificador estable que permita reproducirla después.
 
@@ -118,7 +142,7 @@ El sistema SHALL determinar, con una única regla, qué versión de una entrada 
 - **THEN** el sistema devuelve la misma versión que antes, con el mismo identificador y los mismos valores
 
 ### Requirement: Habilitación de entradas por empresa
-El sistema SHALL permitir que un administrador habilite o deshabilite para su empresa las tarifas de IVA, los códigos de ICE e IRBPNR y las formas de pago. Por defecto, las tarifas de IVA y las formas de pago están habilitadas, y los códigos de ICE e IRBPNR, deshabilitados. La habilitación no cambia los datos oficiales y no aplica a los demás catálogos.
+El sistema SHALL permitir que un administrador habilite o deshabilite para su empresa las tarifas de IVA, los códigos de ICE e IRBPNR y las formas de pago. Sin una decisión de la empresa rige el valor por defecto de cada catálogo: habilitadas las tarifas de IVA y las formas de pago, deshabilitados ICE e IRBPNR. Una entrada solo es utilizable si está habilitada y vigente. La habilitación no cambia los datos oficiales.
 
 #### Scenario: Deshabilitar una tarifa
 - **WHEN** un administrador deshabilita la tarifa de IVA del 14 %
@@ -131,6 +155,22 @@ El sistema SHALL permitir que un administrador habilite o deshabilite para su em
 #### Scenario: Habilitación repetida
 - **WHEN** un administrador habilita una entrada que ya está habilitada
 - **THEN** nada cambia
+
+#### Scenario: Empresa nueva
+- **WHEN** se consulta la habilitación de una empresa recién aprovisionada
+- **THEN** cada entrada tiene el valor por defecto de su catálogo, sin decisiones registradas
+
+#### Scenario: Entrada nueva de una versión posterior
+- **WHEN** una versión nueva del producto incorpora una tarifa de IVA y un código de ICE
+- **THEN** en cada empresa sin decisión sobre ellas, la tarifa figura habilitada y el código de ICE deshabilitado
+
+#### Scenario: Entrada habilitada que deja de estar vigente
+- **WHEN** una entrada que una empresa habilitó vence o se retira
+- **THEN** la decisión de la empresa se conserva, pero la entrada no es utilizable
+
+#### Scenario: Habilitar una entrada sin vigencia
+- **WHEN** un administrador intenta habilitar una entrada sin versión vigente ni futura
+- **THEN** el sistema rechaza la solicitud y nada cambia
 
 #### Scenario: Catálogo sin habilitación por empresa
 - **WHEN** un administrador intenta deshabilitar un tipo de identificación
