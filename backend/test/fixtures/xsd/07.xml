@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<comprobanteRetencion id="comprobante" version="2.0.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <nombreComercial>ANDINA</nombreComercial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0310202607179001234500110010010000000011234567814</claveAcceso>
+    <codDoc>07</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000001</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoCompRetencion>
+    <fechaEmision>03/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. Amazonas N24-03, Quito</dirEstablecimiento>
+    
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <tipoIdentificacionSujetoRetenido>04</tipoIdentificacionSujetoRetenido>
+    <parteRel>NO</parteRel>
+    <razonSocialSujetoRetenido>FERRETERIA EL PERNO CIA. LTDA.</razonSocialSujetoRetenido>
+    <identificacionSujetoRetenido>0992877878001</identificacionSujetoRetenido>
+    <periodoFiscal>10/2026</periodoFiscal>
+  </infoCompRetencion>
+  <docsSustento>
+    <docSustento>
+      <codSustento>01</codSustento>
+      <codDocSustento>01</codDocSustento>
+      <numDocSustento>001001000000001</numDocSustento>
+      <fechaEmisionDocSustento>01/10/2026</fechaEmisionDocSustento>
+      
+      <numAutDocSustento>0110202601099287787800110010010000000011234567811</numAutDocSustento>
+      <pagoLocExt>01</pagoLocExt>
+      <totalSinImpuestos>100.00</totalSinImpuestos>
+      <importeTotal>115.00</importeTotal>
+      <impuestosDocSustento>
+        <impuestoDocSustento>
+            <codImpuestoDocSustento>2</codImpuestoDocSustento>
+            <codigoPorcentaje>4</codigoPorcentaje>
+            <baseImponible>100.00</baseImponible>
+            <tarifa>15.00</tarifa>
+            <valorImpuesto>15.00</valorImpuesto>
+          </impuestoDocSustento>
+      </impuestosDocSustento>
+      <retenciones>
+        <retencion>
+            <codigo>1</codigo>
+            <codigoRetencion>312</codigoRetencion>
+            <baseImponible>100.00</baseImponible>
+            <porcentajeRetener>1.75</porcentajeRetener>
+            <valorRetenido>1.75</valorRetenido>
+          </retencion>
+      </retenciones>
+      <pagos>
+        <pago>
+            <formaPago>20</formaPago>
+            <total>113.25</total>
+          </pago>
+      </pagos>
+    </docSustento>
+  </docsSustento>
+</comprobanteRetencion>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<liquidacionCompra id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <nombreComercial>ANDINA</nombreComercial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0310202603179001234500110010010000000011234567819</claveAcceso>
+    <codDoc>03</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000001</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoLiquidacionCompra>
+    <fechaEmision>03/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. Amazonas N24-03, Quito</dirEstablecimiento>
+    
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <tipoIdentificacionProveedor>05</tipoIdentificacionProveedor>
+    <razonSocialProveedor>MARIA PEREZ</razonSocialProveedor>
+    <identificacionProveedor>1710034065</identificacionProveedor>
+    <direccionProveedor>Cayambe</direccionProveedor>
+    <totalSinImpuestos>17.50</totalSinImpuestos>
+    <totalDescuento>0.00</totalDescuento>
+    <totalConImpuestos>
+      <totalImpuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>4</codigoPorcentaje>
+        <baseImponible>17.50</baseImponible>
+        <valor>2.63</valor>
+      </totalImpuesto>
+    </totalConImpuestos>
+    <importeTotal>20.13</importeTotal>
+    <moneda>DOLAR</moneda>
+    <pagos>
+      <pago>
+        <formaPago>01</formaPago>
+        <total>20.13</total>
+        
+      </pago>
+    </pagos>
+  </infoLiquidacionCompra>
+  <detalles>
+    <detalle>
+      <codigoPrincipal>CEM-50</codigoPrincipal>
+      
+      <descripcion>Cemento 50 kg</descripcion>
+      <cantidad>2.000000</cantidad>
+      <precioUnitario>8.750000</precioUnitario>
+      <descuento>0.00</descuento>
+      <precioTotalSinImpuesto>17.50</precioTotalSinImpuesto>
+      <impuestos>
+        <impuesto>
+            <codigo>2</codigo>
+            <codigoPorcentaje>4</codigoPorcentaje>
+            <tarifa>15.00</tarifa>
+            <baseImponible>17.50</baseImponible>
+            <valor>2.63</valor>
+          </impuesto>
+      </impuestos>
+    </detalle>
+  </detalles>
+</liquidacionCompra>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notaDebito id="comprobante" version="1.0.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <nombreComercial>ANDINA</nombreComercial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0310202605179001234500110010010000000011234567811</claveAcceso>
+    <codDoc>05</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000001</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoNotaDebito>
+    <fechaEmision>03/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. Amazonas N24-03, Quito</dirEstablecimiento>
+    <tipoIdentificacionComprador>04</tipoIdentificacionComprador>
+    <razonSocialComprador>FERRETERIA EL PERNO CIA. LTDA.</razonSocialComprador>
+    <identificacionComprador>0992877878001</identificacionComprador>
+    
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <codDocModificado>01</codDocModificado>
+    <numDocModificado>001-001-000000001</numDocModificado>
+    <fechaEmisionDocSustento>01/10/2026</fechaEmisionDocSustento>
+    <totalSinImpuestos>10.00</totalSinImpuestos>
+    <impuestos>
+      <impuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>4</codigoPorcentaje>
+        <tarifa>15.00</tarifa>
+        <baseImponible>10.00</baseImponible>
+        <valor>1.50</valor>
+      </impuesto>
+    </impuestos>
+    <valorTotal>11.50</valorTotal>
+  </infoNotaDebito>
+  <motivos>
+    <motivo>
+        <razon>Intereses de mora</razon>
+        <valor>10.00</valor>
+      </motivo>
+  </motivos>
+</notaDebito>

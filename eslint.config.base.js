@@ -19,13 +19,13 @@ const betterAuthImports = {
     "Better Auth solo se usa dentro de modules/identity/infrastructure/better-auth/; el resto usa su puerto de identidad.",
 };
 
-// El motor SRI solo se importa desde su adaptador (ADR 0018) y node-forge solo desde el lector de
-// PKCS#12 (ADR 0019); el resto usa sus puertos.
+// El motor SRI y el validador XSD solo se importan desde su adaptador (ADR 0018 y 0021), y
+// node-forge solo desde el lector de PKCS#12 (ADR 0019); el resto usa sus puertos.
 const SRI_ENGINE_MODULE = "**/modules/sri-engine/infrastructure/**";
 const sriEngineImports = {
-  regex: "^(?:facturacion-electronica-ec|ec-sri-invoice-signer)(?:/.*)?$",
+  regex: "^(?:facturacion-electronica-ec|ec-sri-invoice-signer|xmllint-wasm)(?:/.*)?$",
   message:
-    "facturacion-electronica-ec y ec-sri-invoice-signer solo se usan dentro de modules/sri-engine/infrastructure/ (ADR 0018).",
+    "facturacion-electronica-ec, ec-sri-invoice-signer y xmllint-wasm solo se usan dentro de modules/sri-engine/infrastructure/ (ADR 0018 y 0021).",
 };
 // El generador de P12 sintéticos de las pruebas también usa node-forge: no es código de producto.
 const PKCS12_READER_MODULE = [

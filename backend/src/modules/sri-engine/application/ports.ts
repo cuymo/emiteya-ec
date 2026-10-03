@@ -33,3 +33,43 @@ export class XmlSignerError extends Error {
     this.code = code;
   }
 }
+
+/** Esquema del registro de esquemas (CTX §19.3, design D11 de add-fiscal-catalogs). */
+export type RegisteredSchema = Readonly<{
+  documentType: DocumentType;
+  version: string;
+  file: string;
+  sha256: string;
+}>;
+
+/** Una violación del XSD: línea del XML y mensaje de libxml2, sin rutas ni detalles del motor. */
+export type XsdViolation = Readonly<{ line: number | null; message: string }>;
+
+export type XsdValidation =
+  Readonly<{ valid: true }> | Readonly<{ valid: false; violations: readonly XsdViolation[] }>;
+
+/** Validación XSD sin red contra los esquemas versionados del producto (CTX §19, ADR 0021). */
+export interface XsdValidator {
+  /**
+   * Un XML que no cumple el esquema, o que no está bien formado, es `valid: false`. Si el esquema
+   * o uno de sus imports falta o su hash no coincide, falla cerrada con `XsdValidatorError`.
+   */
+  validate(xml: string, schema: RegisteredSchema): Promise<XsdValidation>;
+}
+
+export const XSD_VALIDATOR_ERRORS = [
+  "SCHEMA_UNAVAILABLE",
+  "SCHEMA_HASH_MISMATCH",
+  "VALIDATOR_FAILED",
+] as const;
+export type XsdValidatorErrorCode = (typeof XSD_VALIDATOR_ERRORS)[number];
+
+/** Fallo del validador traducido a un código; nunca lleva rutas, la salida de xmllint ni el XML. */
+export class XsdValidatorError extends Error {
+  readonly code: XsdValidatorErrorCode;
+  constructor(code: XsdValidatorErrorCode) {
+    super(code);
+    this.name = "XsdValidatorError";
+    this.code = code;
+  }
+}

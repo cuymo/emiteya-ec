@@ -73,6 +73,7 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | Node.js | 24 LTS (`.node-version`: 24.21.0; `engines`: `>=24.21.0 <25`) | Type stripping nativo en desarrollo (ADR 0016). `facturacion-electronica-ec` exige al menos 24.18.0. |
 | Motor SRI | `facturacion-electronica-ec` 1.0.1 y `ec-sri-invoice-signer` 1.8.2, versiones exactas | Builders XML, clave de acceso, XSD, XAdES-BES y SOAP detrás de puertos propios, importados solo desde `modules/sri-engine/infrastructure` (ADR 0018). |
 | Inspección de PKCS#12 | `node-forge` 1.4.0, versión exacta | Lee el certificado y la clave al cargar la firma, con los mismos formatos que el firmador (ADR 0019). |
+| Validación XSD | `xmllint-wasm` 5.3.0, versión exacta | libxml2 en WebAssembly, sin Java ni red, detrás del puerto `XsdValidator` del motor SRI, contra los XSD versionados del producto y sus hashes (ADR 0021). |
 | Aritmética decimal | `decimal.js` 10.6.0, versión exacta | Importes y tarifas exactos detrás de `platform/decimal`; es la biblioteca que Prisma usa para `Decimal`. Ningún importe pasa por `number` (`decimal-policy.md`). |
 | pnpm | 12.4.2 vía Corepack | `packageManager`; configuración en `pnpm-workspace.yaml`. |
 | TypeScript | 6.0.3 | `typescript-eslint` no admite todavía la 7. |

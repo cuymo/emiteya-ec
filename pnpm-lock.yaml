@@ -225,7 +225,7 @@ importers:
         version: 5.2.1(supports-color@7.2.0)
       facturacion-electronica-ec:
         specifier: 1.0.1
-        version: 1.0.1(ec-sri-invoice-signer@1.8.2)
+        version: 1.0.1(ec-sri-invoice-signer@1.8.2)(xmllint-wasm@5.3.0(@types/node@24.19.1))
       helmet:
         specifier: 8.3.0
         version: 8.3.0
@@ -238,6 +238,9 @@ importers:
       pino-http:
         specifier: 11.0.0
         version: 11.0.0
+      xmllint-wasm:
+        specifier: 5.3.0
+        version: 5.3.0(@types/node@24.19.1)
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -4452,6 +4455,12 @@ packages:
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
 
+  xmllint-wasm@5.3.0:
+    resolution: {integrity: sha512-sEgRXdf2t13eYCFCURmCE6h2hwleEOIS9VL/jOh9JJJnez2YXIooi2Ghm05/JZEPXyPawN8sMASPVZlmh8Sd6A==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      '@types/node': '>=16'
+
   xpath@0.0.33:
     resolution: {integrity: sha512-NNXnzrkDrAzalLhIUc01jO2mOzXGXh1JwPgkihcLLzw98c0WgYDmmjSh1Kl3wzaxSVWMuA+fe0WTWOBDWCBmNA==}
     engines: {node: '>=0.6.0'}
@@ -7154,10 +7163,12 @@ snapshots:
 
   exsolve@1.1.1: {}
 
-  facturacion-electronica-ec@1.0.1(ec-sri-invoice-signer@1.8.2):
+  facturacion-electronica-ec@1.0.1(ec-sri-invoice-signer@1.8.2)(xmllint-wasm@5.3.0(@types/node@24.19.1)):
     dependencies:
       ec-sri-invoice-signer: 1.8.2
       fast-xml-parser: 5.11.2
+    optionalDependencies:
+      xmllint-wasm: 5.3.0(@types/node@24.19.1)
 
   fast-check@3.23.2:
     dependencies:
@@ -8565,6 +8576,10 @@ snapshots:
   xml-naming@0.3.0: {}
 
   xmlchars@2.2.0: {}
+
+  xmllint-wasm@5.3.0(@types/node@24.19.1):
+    dependencies:
+      '@types/node': 24.19.1
 
   xpath@0.0.33: {}
 

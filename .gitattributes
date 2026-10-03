@@ -5,3 +5,5 @@
 *.pdf binary
 # XSD oficiales del SRI: se conservan byte a byte para que su hash coincida con el manifiesto.
 docs/product/sri-xsd/*.xsd binary
+# Esquema de la firma XML del W3C, importado por los XSD del SRI (spike S-2).
+docs/product/w3c-xsd/*.xsd binary
