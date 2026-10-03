@@ -381,6 +381,37 @@ describe("editor de factura", () => {
     expect(navigation.replace).toHaveBeenCalledWith("/borradores/draft-1");
   });
 
+  it("no preselecciona el punto predeterminado si dejó de estar disponible", async () => {
+    render(<DraftEditorScreen draftId={null} />, {
+      "GET /api/v1/establishments": ok([
+        {
+          id: "est-1",
+          code: "001",
+          address: "Av. Amazonas, Quito",
+          status: "ACTIVE",
+          emissionPoints: [
+            { id: "ep-1", code: "001", status: "INACTIVE", available: false },
+            { id: "ep-2", code: "002", status: "ACTIVE", available: true },
+          ],
+        },
+      ]),
+      "GET /api/v1/me/default-emission-point": ok({
+        establishment: {
+          id: "est-1",
+          code: "001",
+          address: "Av. Amazonas, Quito",
+          status: "ACTIVE",
+        },
+        emissionPoint: { id: "ep-1", code: "001", status: "INACTIVE" },
+        available: false,
+      }),
+    });
+    const select = (await screen.findByLabelText("Punto de emisión")) as HTMLSelectElement;
+    await screen.findByRole("option", { name: /001-002/ });
+    expect(select.value).toBe("");
+    expect(screen.queryByRole("option", { name: /001-001/ })).toBeNull();
+  });
+
   it("rechaza una cantidad de 7 decimales sin redondearla ni enviarla", async () => {
     const calls = render(<DraftEditorScreen draftId="draft-1" />, {
       "GET /api/v1/invoices/drafts/draft-1": ok(draft()),

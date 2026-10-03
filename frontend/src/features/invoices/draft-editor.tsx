@@ -228,9 +228,10 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   const buyer = useWatch({ control: form.control, name: "buyer" });
   const pointId = useWatch({ control: form.control, name: "emissionPointId" });
 
-  // Un borrador nuevo empieza en el punto predeterminado del usuario, si tiene uno.
+  // Un borrador nuevo empieza en el punto predeterminado del usuario, si tiene uno y sigue
+  // disponible: uno desactivado no se preselecciona (taxpayer-setup).
   useEffect(() => {
-    const point = defaultPoint.data?.emissionPoint.id;
+    const point = defaultPoint.data?.available ? defaultPoint.data.emissionPoint.id : undefined;
     if (point && !form.getValues("emissionPointId")) {
       form.setValue("emissionPointId", point, { shouldDirty: true });
     }
