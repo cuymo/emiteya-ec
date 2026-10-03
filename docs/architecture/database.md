@@ -27,7 +27,8 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `fiscal_sequence` | `fiscal` | Yes | Contador por empresa, ambiente, establecimiento, punto y tipo; bloqueo de fila al reservar. |
 | `fiscal_sequence_reservation` | `fiscal` | Yes | Solo agregado: un registro por número reservado, con la unicidad de CTX §5. |
 | `party`, `product` | `catalogs` | Yes | Editables; los comprobantes guardan su copia. |
-| `fiscal_catalog_entry`, `consumer_final_policy`, `schema_registry_entry`, `special_case_support` | `catalogs` | No | Datos versionados distribuidos con cada release (ADR 0020). La habilitación por empresa va en una tabla aparte. |
+| `fiscal_catalog_dataset`, `fiscal_catalog_key`, `fiscal_catalog_entry`, `consumer_final_policy`, `schema_registry_entry`, `special_case_support` | `catalogs` | No | Datos normativos versionados del sistema, que el cargador aplica al arrancar desde los datasets del repositorio (ADR 0020). Sin borrado; las versiones publicadas solo cierran su vigencia o se retiran. |
+| `company_fiscal_catalog_setting` | `catalogs` | Yes | Decisión explícita de una empresa sobre una entrada habilitable; sin fila rige la política por defecto del catálogo. |
 | `electronic_document` | `fiscal` | Yes | Nunca se borra desde `SEQUENCE_RESERVED`. |
 | `document_line`, `document_relation`, `tax_detail`, `payment` | `fiscal` | Yes | Inmutables desde la firma, salvo corrección de un devuelto (BR-28). |
 | `document_state_transition` | `fiscal` | Yes | Solo agregado (ERS RF-525). |
@@ -137,8 +138,10 @@ UNIQUE (document_id, product_id, movement_type)
 ## Esquema actual
 
 Migraciones: `backend/prisma/migrations/20261002083000_add_user_access` (cambio
-`add-user-access`), `20261002120000_add_taxpayer_setup` (cambio `add-taxpayer-setup`) y
-`20261002180000_add_fiscal_numbering` (cambio `add-fiscal-numbering`). Las tablas
+`add-user-access`), `20261002120000_add_taxpayer_setup` (cambio `add-taxpayer-setup`),
+`20261002180000_add_fiscal_numbering` (cambio `add-fiscal-numbering`),
+`20261002200000_add_signing_certificate` (cambio `add-signing-certificate`) y
+`20261003100000_add_fiscal_catalogs` (cambio `add-fiscal-catalogs`). Las tablas
 de Better Auth y de sus plugins las genera el CLI `auth`; las columnas de esas tablas usan los
 nombres que fija Better Auth (`organizationId`, `userId`).
 
@@ -160,6 +163,13 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `signing_certificate` | Propia (`signing`) | Metadatos de una firma: `status` (`ACTIVE` o `REPLACED`), `active_company_id` (la empresa mientras está `ACTIVE`, nulo después), titular, emisor, serie, `fingerprint_sha256`, `not_before`, `not_after`, `detected_ruc`, algoritmo y bits de la clave, `uploaded_by`, `created_at`, `replaced_at` y `replaced_by_id`. |
 | `signing_certificate_secret` | Propia (`signing`) | Secreto de la firma `ACTIVE` (formato 1 del design D5 de `add-signing-certificate`): `format_version`, `key_version`, `key_check`, la clave de datos envuelta con su nonce, y el P12 y la contraseña cifrados con AES-256-GCM, cada uno con su nonce. |
 | `signing_certificate_settings` | Propia (`signing`) | `expiry_alert_days` por empresa. |
+| `fiscal_catalog_dataset` | Propia (`catalogs`) | Versión aplicada de cada dataset normativo: `catalog_type`, `version`, fuente (documento, versión, fecha de publicación, URL y SHA-256), `enablement_policy`, `checksum` del contenido canónico y `loaded_at`. |
+| `fiscal_catalog_key` | Propia (`catalogs`) | Identidad estable de una entrada: `(catalog_type, entry_key)` y su `code` fiscal, que puede repetirse entre claves (tabla 18 de la ficha). |
+| `fiscal_catalog_entry` | Propia (`catalogs`) | Versión de una entrada: `id` estable, `official_label`, `effective_from` con `effective_from_basis` (`SOURCE_STATED` o `PROJECT_BASELINE`), `effective_to`, `normative_status`, `source_ref`, `dataset_version`, las versiones del dataset que la cerraron o retiraron, y las columnas tipadas de su catálogo (`tax_kind`, `sri_tax_code`, `rate_kind`, `percentage NUMERIC(4,2)`, `identification_pattern`, `identification_rule`, `reserved_for`). |
+| `consumer_final_policy` | Propia (`catalogs`) | Versiones de la política: `max_amount NUMERIC(14,2)`, moneda, identidad canónica (`07`, `9999999999999`, razón social), vigencia con su base, `source_ref` y versión del dataset. |
+| `schema_registry_entry` | Propia (`catalogs`) | Esquemas XSD por versión del dataset: tipo, versión, raíz, archivo, SHA-256, fuente, `downloaded_at` y `supported`. |
+| `special_case_support` | Propia (`catalogs`) | Categoría de cada anexo por versión del dataset (ADR 0014). |
+| `company_fiscal_catalog_setting` | Propia (`catalogs`) | Decisión de una empresa: `(company_id, catalog_type, entry_key)`, `enabled`, `updated_at` y `updated_by`. |
 
 Restricciones de la migración, incluidas las que Prisma no expresa (verificadas por
 `backend/test/integration/migrations.test.ts`):
@@ -225,6 +235,19 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `signing_certificate_guard` | `signing_certificate` | Trigger `BEFORE UPDATE`. Solo admite dos cambios: `ACTIVE` → `REPLACED` (con `active_company_id` nulo y `replaced_at`), y después, una vez, el enlace `replaced_by_id`. Lo demás no cambia | SQL de la migración |
 | `signing_certificate_secret_no_update` | `signing_certificate_secret` | Trigger que rechaza `UPDATE`. El borrado sí está permitido: es la destrucción intencional del secreto al reemplazar, excepción deliberada a la escritura única de los ADR 0010 y 0017 (ADR 0011) | SQL de la migración |
 | `signing_certificate_secret_active_only` | `signing_certificate_secret` | Trigger `BEFORE INSERT`: solo una firma `ACTIVE` de la misma empresa tiene secreto | SQL de la migración |
+| `fiscal_catalog_dataset_pkey`, `fiscal_catalog_entry_catalog_type_entry_key_effective_from_key`, `consumer_final_policy_effective_from_key` | Catálogos | Una versión de dataset por catálogo; una versión de entrada por fecha de inicio; una versión de la política por fecha de inicio. Son también el respaldo del cargador ante cargas simultáneas | `@@id` y `@@unique` en el esquema |
+| `fiscal_catalog_entry_catalog_type_dataset_version_fkey`, `fiscal_catalog_entry_catalog_type_entry_key_fkey`, `company_fiscal_catalog_setting_catalog_type_entry_key_fkey` | Catálogos | Toda versión pertenece a un dataset aplicado y a una clave; toda decisión de empresa, a una clave existente | Relación en el esquema |
+| `fiscal_catalog_dataset_catalog_type_check`, `fiscal_catalog_dataset_version_check`, `fiscal_catalog_dataset_hashes_check` | `fiscal_catalog_dataset` | Los nueve datasets conocidos, versión desde 1, checksum y SHA-256 de la fuente hexadecimales | SQL de la migración |
+| `fiscal_catalog_dataset_enablement_policy_check` | `fiscal_catalog_dataset` | IVA, ICE, IRBPNR y formas de pago tienen `DEFAULT_ENABLED` o `DEFAULT_DISABLED`; los demás, `NOT_ENABLEABLE` | SQL de la migración |
+| `fiscal_catalog_key_catalog_type_check`, `fiscal_catalog_key_entry_key_check`, `fiscal_catalog_key_code_check` | `fiscal_catalog_key` | Los seis catálogos de entradas; `entry_key` `^[0-9A-Z][0-9A-Z-]{0,63}$`; `code` de 1 a 4 dígitos (`codigoPorcentaje` y equivalentes). Sin único sobre el código | SQL de la migración |
+| `fiscal_catalog_entry_basis_check`, `fiscal_catalog_entry_status_check`, `fiscal_catalog_entry_range_check` | `fiscal_catalog_entry` | Base y estado conocidos; una versión `WITHDRAWN` tiene la vigencia cerrada; `effective_to >= effective_from` | SQL de la migración |
+| `fiscal_catalog_entry_attributes_check` | `fiscal_catalog_entry` | Columnas tipadas por catálogo: el porcentaje existe solo en tarifas `PERCENTAGE` de IVA (de 0 a 100); ICE es `PER_NORMATIVE` e IRBPNR `PER_UNIT`, sin valores | SQL de la migración |
+| `consumer_final_policy_values_check`, `consumer_final_policy_basis_check`, `consumer_final_policy_range_check` | `consumer_final_policy` | Monto no negativo en USD, identidad `07` y `9999999999999`, base conocida y vigencia ordenada | SQL de la migración |
+| `schema_registry_entry_values_check`, `special_case_support_values_check`, `company_fiscal_catalog_setting_catalog_type_check` | Varias | Tipos de comprobante y hash del registro; categorías del ADR 0014; solo catálogos habilitables en las decisiones de empresa | SQL de la migración |
+| `fiscal_catalog_dataset_immutable`, `fiscal_catalog_key_immutable`, `schema_registry_entry_immutable`, `special_case_support_immutable` y sus `*_no_truncate` | Datos del sistema | Triggers que rechazan `UPDATE`, `DELETE` y `TRUNCATE` | SQL de la migración |
+| `fiscal_catalog_entry_no_delete`, `consumer_final_policy_no_delete` y sus `*_no_truncate` | Versiones | Triggers que rechazan borrar versiones | SQL de la migración |
+| `fiscal_catalog_entry_guard`, `consumer_final_policy_guard` | Versiones | Trigger `BEFORE UPDATE`: una versión publicada solo cierra una vigencia abierta o pasa a `WITHDRAWN`, una vez y con la versión del dataset que lo hizo; nada más cambia (design D4 de `add-fiscal-catalogs`) | SQL de la migración |
+| `fiscal_catalog_entry_no_overlap`, `consumer_final_policy_no_overlap` | Versiones | Trigger `BEFORE INSERT OR UPDATE`: las versiones de una entrada no se superponen (`daterange` inclusivo; sin fin, abierta) | SQL de la migración |
 
 - Ninguna restricción limita el número de empresas: una sola empresa es política del aprovisionamiento (ADR 0009, design de `add-user-access`).
 - El trigger se prefiere a privilegios separados porque una instalación self-hosted puede usar un solo usuario de base de datos.
@@ -233,7 +256,8 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 - Discrepancia histórica: la premisa de la nota anterior no se sostiene con Prisma 7.10, que sí acepta una relación compuesta opcional con un campo obligatorio y otro opcional (`add-taxpayer-setup` la usa para el logo: `company_id`, `logo_asset_id`). La nota describe la decisión tal como la tomó `add-user-access` y la auditoría no cambia. Declarar esa clave compuesta, o cualquier otra modificación del modelo de auditoría, se hace con un cambio OpenSpec separado.
 - Las escrituras de la configuración tributaria toman `pg_advisory_xact_lock(hashtext('company-config:' || company_id))` al empezar la transacción, de modo que también el primer registro, sin fila que bloquear, queda serializado. Bloquear la identidad tributaria toma el mismo lock.
 - Las funciones de los triggers que leen otras tablas fijan `search_path` al esquema en que se crearon (`SET search_path FROM CURRENT`), de modo que resuelven las tablas correctas también en los esquemas aislados de las pruebas.
-- `taxpayer-schema.test.ts` prueba cada invariante con dos empresas escribiendo directamente en las tablas, sin pasar por la aplicación.
+- `taxpayer-schema.test.ts`, `signing-certificate-schema.test.ts` y `fiscal-catalogs-schema.test.ts` prueban cada invariante escribiendo directamente en las tablas, sin pasar por la aplicación.
+- El cargador de catálogos toma su propio `pg_advisory_xact_lock(hashtext('fiscal-catalogs:loader'))`, distinto del lock de las migraciones de Prisma, y aplica todos los datasets pendientes en una sola transacción (design D3 de `add-fiscal-catalogs`).
 
 Regenerar el esquema de Better Auth:
 

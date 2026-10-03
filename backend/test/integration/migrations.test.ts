@@ -183,6 +183,56 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea las restricciones y triggers de los catálogos fiscales", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "fiscal_catalog_dataset_catalog_type_check",
+        "fiscal_catalog_dataset_version_check",
+        "fiscal_catalog_dataset_hashes_check",
+        "fiscal_catalog_dataset_enablement_policy_check",
+        "fiscal_catalog_key_catalog_type_check",
+        "fiscal_catalog_key_entry_key_check",
+        "fiscal_catalog_key_code_check",
+        "fiscal_catalog_entry_basis_check",
+        "fiscal_catalog_entry_status_check",
+        "fiscal_catalog_entry_range_check",
+        "fiscal_catalog_entry_attributes_check",
+        "consumer_final_policy_values_check",
+        "consumer_final_policy_basis_check",
+        "consumer_final_policy_range_check",
+        "schema_registry_entry_values_check",
+        "special_case_support_values_check",
+        "company_fiscal_catalog_setting_catalog_type_check",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "fiscal_catalog_entry_catalog_type_entry_key_effective_from_key",
+        "consumer_final_policy_effective_from_key",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "fiscal_catalog_dataset_immutable",
+        "fiscal_catalog_dataset_no_truncate",
+        "fiscal_catalog_key_immutable",
+        "fiscal_catalog_key_no_truncate",
+        "fiscal_catalog_entry_no_delete",
+        "fiscal_catalog_entry_no_truncate",
+        "fiscal_catalog_entry_guard",
+        "fiscal_catalog_entry_no_overlap",
+        "consumer_final_policy_no_delete",
+        "consumer_final_policy_no_truncate",
+        "consumer_final_policy_guard",
+        "consumer_final_policy_no_overlap",
+        "schema_registry_entry_immutable",
+        "schema_registry_entry_no_truncate",
+        "special_case_support_immutable",
+        "special_case_support_no_truncate",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     const organizationConstraints = await db.database.prisma.$queryRaw<{ name: string }[]>`
       SELECT c.conname AS name

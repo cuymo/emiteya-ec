@@ -198,14 +198,14 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 ### `fiscal_catalog_entry` — Entrada de catálogo fiscal
 
 - Purpose: códigos oficiales del SRI con vigencia (ERS RF-234, SRI-REQ-12; CTX §18).
-- Key attributes: tipo de catálogo, código, descripción oficial, vigente desde/hasta, documento fuente, versión de la fuente, estado normativo y los atributos propios de cada catálogo (por ejemplo, la tarifa de un código de IVA). La habilitación por empresa es un dato aparte, de la empresa.
-- Invariants: son datos del sistema distribuidos con cada release, no datos de la empresa (ADR 0020). Un cambio normativo crea entradas o versiones nuevas; nunca sobrescribe lo necesario para reproducir comprobantes ni exige cambiar el código fuente (CTX §16.4, §55). El administrador solo habilita o deshabilita entradas para su empresa; no crea ni modifica códigos, descripciones, tarifas ni vigencias. Catálogos mínimos en CTX §18.
+- Key attributes: identidad estable `(catálogo, entryKey)` y código fiscal visible; por versión, descripción oficial, vigente desde/hasta con el origen de la fecha de inicio (`SOURCE_STATED`, declarada por la fuente, o `PROJECT_BASELINE`, publicación de la fuente, que no es una fecha legal), documento fuente, versión de la fuente, estado normativo (`OFFICIAL`, `OFFICIAL_REFERENCE`, `WITHDRAWN`) y los atributos propios de cada catálogo (la semántica de una tarifa de IVA, ICE o IRBPNR, la regla de formato de un tipo de identificación). La habilitación por empresa es un dato aparte, de la empresa.
+- Invariants: son datos del sistema distribuidos con cada release, no datos de la empresa (ADR 0020). Un cambio normativo crea entradas o versiones nuevas; nunca sobrescribe lo necesario para reproducir comprobantes ni exige cambiar el código fuente (CTX §16.4, §55). El administrador solo habilita o deshabilita entradas para su empresa; no crea ni modifica códigos, descripciones, tarifas ni vigencias. El código no es identidad: la ficha repite códigos con denominaciones distintas (tabla 18), y cada fila es una entrada propia. La versión aplicable en una fecha la resuelve una única operación, y tiene un identificador estable que un comprobante guarda para reproducirla. Catálogos mínimos en CTX §18; los tipos de comprobante, el ambiente y el tipo de emisión son constantes estructurales del protocolo (CTX §56), no catálogos.
 
 ### `consumer_final_policy` — Política de consumidor final
 
 - Purpose: límite vigente para facturar sin identificar al comprador (CTX §35).
-- Key attributes: monto máximo, vigente desde, fuente normativa.
-- Invariants: versionada como un catálogo; al corte vale USD 50 y debe revisarse en cada actualización normativa.
+- Key attributes: monto máximo, identidad canónica del consumidor final (tipo `07`, identificación `9999999999999`, razón social `CONSUMIDOR FINAL`), vigente desde con su base, fuente normativa.
+- Invariants: versionada como un catálogo; al corte vale USD 50 (ficha v2.34, numeral 9.10) y debe revisarse en cada actualización normativa. Es un dato de `fiscal-catalogs`; el tercero del sistema que la usa en cada empresa lo crea `add-parties-and-products`.
 
 ### `schema_registry_entry` — Esquema registrado
 

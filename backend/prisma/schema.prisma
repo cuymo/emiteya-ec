@@ -16,27 +16,28 @@ datasource db {
 }
 
 model User {
-  id                          String                      @id
+  id                          String                        @id
   name                        String
   email                       String
-  emailVerified               Boolean                     @default(false)
+  emailVerified               Boolean                       @default(false)
   image                       String?
-  createdAt                   DateTime                    @default(now())
-  updatedAt                   DateTime                    @updatedAt
+  createdAt                   DateTime                      @default(now())
+  updatedAt                   DateTime                      @updatedAt
   role                        String?
-  banned                      Boolean?                    @default(false)
+  banned                      Boolean?                      @default(false)
   banReason                   String?
   banExpires                  DateTime?
   sessions                    Session[]
   accounts                    Account[]
   members                     Member[]
   invitations                 Invitation[]
-  auditActions                AuditEvent[]                @relation("AuditActor")
-  auditTargets                AuditEvent[]                @relation("AuditTarget")
-  configVersionsCreated       CompanyConfigVersion[]      @relation("ConfigVersionCreator")
-  configAssetsCreated         ConfigurationAsset[]        @relation("ConfigAssetCreator")
-  sequenceReservations        FiscalSequenceReservation[] @relation("SequenceReserver")
-  signingCertificatesUploaded SigningCertificate[]        @relation("SigningCertificateUploader")
+  auditActions                AuditEvent[]                  @relation("AuditActor")
+  auditTargets                AuditEvent[]                  @relation("AuditTarget")
+  configVersionsCreated       CompanyConfigVersion[]        @relation("ConfigVersionCreator")
+  configAssetsCreated         ConfigurationAsset[]          @relation("ConfigAssetCreator")
+  sequenceReservations        FiscalSequenceReservation[]   @relation("SequenceReserver")
+  signingCertificatesUploaded SigningCertificate[]          @relation("SigningCertificateUploader")
+  fiscalCatalogDecisions      CompanyFiscalCatalogSetting[] @relation("FiscalCatalogDecider")
 
   @@unique([email])
   @@map("user")
@@ -110,6 +111,7 @@ model Organization {
   fiscalSequences            FiscalSequence[]
   signingCertificates        SigningCertificate[]
   signingCertificateSettings SigningCertificateSettings?
+  fiscalCatalogSettings      CompanyFiscalCatalogSetting[]
 
   @@unique([slug])
   @@map("organization")
@@ -406,4 +408,136 @@ model SigningCertificateSettings {
   updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("signing_certificate_settings")
+}
+
+// Catálogos fiscales oficiales (add-fiscal-catalogs, design D3, D4 y D14): datos normativos del
+// sistema, sin empresa, que el cargador aplica al arrancar desde datasets versionados (ADR 0020).
+// Ninguna fila se borra; las transiciones permitidas las guardan triggers de la migración.
+
+// Versión aplicada de cada dataset, con su fuente, su checksum y su política de habilitación.
+model FiscalCatalogDataset {
+  catalogType       String               @map("catalog_type")
+  version           Int
+  sourceDocument    String               @map("source_document")
+  sourceVersion     String               @map("source_version")
+  sourcePublishedOn DateTime             @map("source_published_on") @db.Date
+  sourceUrl         String               @map("source_url")
+  sourceSha256      String               @map("source_sha256") @db.Char(64)
+  /// NOT_ENABLEABLE, DEFAULT_ENABLED o DEFAULT_DISABLED (CHECK en la migración).
+  enablementPolicy  String               @map("enablement_policy")
+  checksum          String               @db.Char(64)
+  loadedAt          DateTime             @default(now()) @map("loaded_at") @db.Timestamptz(3)
+  entries           FiscalCatalogEntry[]
+
+  @@id([catalogType, version])
+  @@map("fiscal_catalog_dataset")
+}
+
+// Identidad estable de una entrada: (catálogo, entryKey). El código fiscal no es identidad
+// (la tabla 18 de la ficha repite códigos con denominaciones distintas, design D6).
+model FiscalCatalogKey {
+  catalogType String                        @map("catalog_type")
+  entryKey    String                        @map("entry_key")
+  code        String
+  versions    FiscalCatalogEntry[]
+  settings    CompanyFiscalCatalogSetting[]
+
+  @@id([catalogType, entryKey])
+  @@map("fiscal_catalog_key")
+}
+
+// Versión de una entrada: (catálogo, entryKey, effectiveFrom), sin superposición, con las columnas
+// tipadas de su catálogo (design D8).
+model FiscalCatalogEntry {
+  id                            String               @id @default(uuid())
+  catalogType                   String               @map("catalog_type")
+  entryKey                      String               @map("entry_key")
+  key                           FiscalCatalogKey     @relation(fields: [catalogType, entryKey], references: [catalogType, entryKey], onDelete: Restrict)
+  officialLabel                 String               @map("official_label")
+  effectiveFrom                 DateTime             @map("effective_from") @db.Date
+  /// SOURCE_STATED o PROJECT_BASELINE (CHECK en la migración).
+  effectiveFromBasis            String               @map("effective_from_basis")
+  effectiveTo                   DateTime?            @map("effective_to") @db.Date
+  /// OFFICIAL, OFFICIAL_REFERENCE o WITHDRAWN (CHECK en la migración).
+  normativeStatus               String               @map("normative_status")
+  sourceRef                     String               @map("source_ref")
+  datasetVersion                Int                  @map("dataset_version")
+  dataset                       FiscalCatalogDataset @relation(fields: [catalogType, datasetVersion], references: [catalogType, version], onDelete: Restrict)
+  closedInDatasetVersion        Int?                 @map("closed_in_dataset_version")
+  statusChangedInDatasetVersion Int?                 @map("status_changed_in_dataset_version")
+  taxKind                       String?              @map("tax_kind")
+  sriTaxCode                    String?              @map("sri_tax_code")
+  rateKind                      String?              @map("rate_kind")
+  percentage                    Decimal?             @db.Decimal(4, 2)
+  identificationPattern         String?              @map("identification_pattern")
+  identificationRule            String?              @map("identification_rule")
+  reservedFor                   String?              @map("reserved_for")
+
+  @@unique([catalogType, entryKey, effectiveFrom])
+  @@map("fiscal_catalog_entry")
+}
+
+// Política de consumidor final (design D7): monto máximo e identidad canónica, por vigencia.
+model ConsumerFinalPolicy {
+  id                     String    @id @default(uuid())
+  maxAmount              Decimal   @map("max_amount") @db.Decimal(14, 2)
+  currency               String    @db.Char(3)
+  identificationType     String    @map("identification_type")
+  identification         String
+  canonicalName          String    @map("canonical_name")
+  effectiveFrom          DateTime  @unique @map("effective_from") @db.Date
+  effectiveFromBasis     String    @map("effective_from_basis")
+  effectiveTo            DateTime? @map("effective_to") @db.Date
+  sourceRef              String    @map("source_ref")
+  datasetVersion         Int       @map("dataset_version")
+  closedInDatasetVersion Int?      @map("closed_in_dataset_version")
+
+  @@map("consumer_final_policy")
+}
+
+// Registro de esquemas XSD (design D2 y D14, ADR 0008): filas inmutables por versión
+// del dataset; rige la última versión aplicada.
+model SchemaRegistryEntry {
+  documentType   String   @map("document_type")
+  version        String
+  datasetVersion Int      @map("dataset_version")
+  root           String
+  file           String
+  sha256         String   @db.Char(64)
+  source         String
+  downloadedAt   DateTime @map("downloaded_at") @db.Timestamptz(3)
+  supported      Boolean
+
+  @@id([documentType, version, datasetVersion])
+  @@map("schema_registry_entry")
+}
+
+// Matriz de casos especiales (ADR 0014): filas inmutables por versión del dataset.
+model SpecialCaseSupport {
+  annex          Int
+  datasetVersion Int    @map("dataset_version")
+  topic          String
+  /// CORE, CONDITIONAL_ISSUER_RULE, CONDITIONAL_GO_LIVE, NOT_APPLICABLE u OUT_OF_MVP (CHECK).
+  category       String
+  sourceRef      String @map("source_ref")
+
+  @@id([annex, datasetVersion])
+  @@map("special_case_support")
+}
+
+// Decisión explícita de una empresa sobre una entrada habilitable (design D9). Sin fila rige la
+// política por defecto del catálogo; una fila nunca copia el catálogo.
+model CompanyFiscalCatalogSetting {
+  companyId   String           @map("company_id")
+  company     Organization     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  catalogType String           @map("catalog_type")
+  entryKey    String           @map("entry_key")
+  key         FiscalCatalogKey @relation(fields: [catalogType, entryKey], references: [catalogType, entryKey], onDelete: Restrict)
+  enabled     Boolean
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy   String           @map("updated_by")
+  updater     User             @relation("FiscalCatalogDecider", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@id([companyId, catalogType, entryKey])
+  @@map("company_fiscal_catalog_setting")
 }
