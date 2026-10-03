@@ -65,7 +65,7 @@
 
 ## 5. Lecturas internas de los otros módulos
 
-- [ ] 5.1 Exportar las fábricas sobre un `DbClient` de design D1:
+- [x] 5.1 Exportar las fábricas sobre un `DbClient` de design D1:
   - `createTaxpayerScope(tx)`, que la unidad de trabajo existente pasa a usar, y `taxpayerEmissionReads(tx)`;
   - `createFiscalScope(tx)`;
   - `partyReader(db)` y `productReader(db)`;

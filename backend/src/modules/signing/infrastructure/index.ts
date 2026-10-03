@@ -2,8 +2,10 @@
 import type { Registry } from "@prometheus-io/client";
 import type { CertificateCustodyConfig } from "../../../config/env.ts";
 import type { PrismaClient } from "../../../generated/prisma/client.ts";
+import type { DbClient } from "../../../platform/db/database.ts";
 import type { CryptoWorkerPool } from "../../../platform/workers/crypto-worker-pool.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
+import { activeCertificateReader } from "../application/active-certificate.ts";
 import { createSigningCertificates } from "../application/signing-certificate.ts";
 import { createCertificateInspector } from "./certificate-inspector.ts";
 import { createCompanyRucReader } from "./company-ruc.ts";
@@ -34,6 +36,7 @@ export function signingModule(options: SigningModuleOptions) {
         keys: new Map([[custody.keyVersion, custody.key]]),
       })
     : null;
+  const now = options.now ?? (() => new Date());
   const service = createSigningCertificates({
     uow: createSigningUnitOfWork(options.prisma),
     certificates: createCertificateRepository(options.prisma),
@@ -49,5 +52,8 @@ export function signingModule(options: SigningModuleOptions) {
     routers: [signingCertificateRouter(service, { maxBytes: options.maxBytes })],
     readiness: service.readiness,
     service,
+    /** Firma vigente sobre un cliente, también en una transacción ajena (add-invoice-emission, D1). */
+    reads: (db: DbClient) =>
+      activeCertificateReader({ certificates: createCertificateRepository(db), vault, now }),
   };
 }

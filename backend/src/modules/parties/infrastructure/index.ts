@@ -54,6 +54,12 @@ export async function ensureConsumerFinals({
   });
 }
 
+/** Lectura de un tercero de la empresa sobre un cliente, también en una transacción ajena (D1). */
+export function partyReader(db: DbClient) {
+  const parties = createPartyRepository(db);
+  return { find: (companyId: string, partyId: string) => parties.find(companyId, partyId) };
+}
+
 export type PartiesModuleOptions = {
   prisma: PrismaClient;
   authorizer: Authorizer;

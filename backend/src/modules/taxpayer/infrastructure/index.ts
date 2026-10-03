@@ -17,6 +17,10 @@ import { createConfigurationAssetStore } from "./prisma-configuration-assets.ts"
 import { createEstablishmentRepository } from "./prisma-establishments.ts";
 import { createTaxpayerUnitOfWork } from "./unit-of-work.ts";
 
+// Lecturas y lock de la identidad dentro de la transacción de la emisión (add-invoice-emission, D1).
+export { createTaxpayerScope, taxpayerEmissionReads } from "./unit-of-work.ts";
+export { lockTaxIdentityIn } from "../application/tax-identity-lock.ts";
+
 export type TaxpayerModuleOptions = {
   prisma: PrismaClient;
   authorizer: Authorizer;

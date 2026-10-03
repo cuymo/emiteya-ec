@@ -7,6 +7,10 @@ import { sequencesRouter } from "./http/sequences-router.ts";
 import { createSequenceRepository } from "./prisma-sequences.ts";
 import { createFiscalUnitOfWork } from "./unit-of-work.ts";
 
+// Reserva dentro de la transacción de la emisión (add-invoice-emission, design D1 y D7).
+export { createFiscalScope } from "./unit-of-work.ts";
+export { reserveSequentialIn } from "../application/reservation.ts";
+
 export function fiscalRouters({
   prisma,
   authorizer,
