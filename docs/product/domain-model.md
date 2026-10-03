@@ -133,7 +133,7 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 - Purpose: cabecera común de los seis tipos (ADR 0002).
 - Key attributes: tipo, ambiente, establecimiento, punto, secuencial, número, clave de acceso, código numérico, fecha de emisión, receptor o sujeto, totales, estado fiscal, usuario y fecha de creación (ERS RF-008), número y fecha de autorización, clave de idempotencia y metadatos del snapshot: versión XSD, versión del builder, versión de catálogos, versión de configuración de la empresa y versión del renderer del RIDE (CTX §39).
 - Invariants:
-  - Solo es editable en `DRAFT`. Desde la reserva, los campos que componen la clave de acceso (fecha, tipo, RUC, ambiente, serie, secuencial, código numérico) quedan fijos (CTX §8, §27.1).
+  - Nace en `RESERVED`, ya con secuencial y clave de acceso: los campos que la componen (fecha, tipo, RUC, ambiente, serie, secuencial, código numérico) quedan fijos desde ese momento (CTX §8, §27.1). Si existen borradores editables, no son un estado fiscal (ERS RF-010; lo decide `add-invoice-emission`).
   - Desde `SIGNED`, el contenido de un comprobante que llegó al SRI no se edita; las correcciones siguen el flujo documental (ERS RF-009). La única excepción es el reenvío corregido de un comprobante devuelto, con la misma clave y secuencial (BR-28).
   - Cambia de estado solo mediante la máquina de estados, y cada transición queda registrada (ERS RF-524, RF-525).
   - La clave de acceso es única y coincide con los datos del XML (CTX §61, I-01..I-08).
@@ -247,23 +247,27 @@ historial de transiciones de estado y job persistido. Ver
 | `Environment`            | Pruebas (`1`) o Producción (`2`).                                                                                | Código en el XML y la clave.                |
 | `DocumentType`           | `01`, `03`, `04`, `05`, `06`, `07`.                                                                              | Código de dos dígitos.                      |
 | `FiscalPeriod`           | Mes y año válidos.                                                                                               | `MM/AAAA`                                   |
-| `IssueDate`              | Fecha en la zona horaria de Ecuador (ERS RNF-010); límites en Q-08.                                              | `dd/mm/aaaa` en el XML, `ddmmaaaa` en la clave. |
+| `IssueDate`              | Fecha actual en la zona horaria de Ecuador, capturada una vez al comenzar la creación fiscal (ERS RNF-010, Q-08).                                              | `dd/mm/aaaa` en el XML, `ddmmaaaa` en la clave. |
 | `SriMessage`             | Identificador, mensaje, información adicional y tipo; se conserva aunque el código sea desconocido (CTX §22.2, §32). | Tal como lo entrega el SRI.             |
 
 ## Ciclo de vida del comprobante
 
-Unión de los estados del ERS §12.1 y de CTX §26. Las transiciones, sus disparadores y la
-reconciliación están en `../architecture/fiscal-emission.md`; las etiquetas de interfaz, en
-`glossary.md`. Los estados marcados como "CTX" se adoptan según Q-35 y Q-16.
+La generación local y la transmisión al SRI tienen máquinas separadas (Q-35). Las transiciones,
+sus disparadores y la reconciliación están en `../architecture/fiscal-emission.md`; las
+etiquetas de interfaz, en `glossary.md`.
+
+Estados locales, que define `add-invoice-emission`:
+
+| Estado     | Significado | Terminal |
+| ---------- | ----------- | -------- |
+| `RESERVED` | Comprobante durable con snapshot, secuencial confirmado, clave de acceso definitiva e identidad tributaria bloqueada, todo de forma atómica. Sin rollback: el número nunca se reutiliza. | No |
+| `SIGNED`   | XML construido, válido contra el XSD, firmado y persistido con sus bytes exactos y su hash; listo para envío. | No |
+
+Estados de transmisión, que diseña `add-sri-transmission` a partir de `SIGNED`. Punto de partida
+de CTX §26, que se adopta en ese cambio junto con Q-07 y Q-16:
 
 | Estado                  | Origen   | Significado                                                       | Terminal |
 | ----------------------- | -------- | ----------------------------------------------------------------- | -------- |
-| `DRAFT`                 | ERS, CTX | Editable; sin secuencial.                                         | No       |
-| `SEQUENCE_RESERVED`     | ERS, CTX | Secuencial reservado de forma atómica; contenido congelado.       | No       |
-| `XML_BUILT`             | ERS, CTX | XML y clave de acceso generados.                                  | No       |
-| `XSD_VALID`             | ERS, CTX | XML válido contra el XSD registrado.                              | No       |
-| `XSD_INVALID`           | CTX      | El XML no valida; no se firma ni se envía.                        | No       |
-| `SIGNED`                | ERS, CTX | XML firmado y persistido con su hash; listo para envío.           | No       |
 | `SEND_PENDING`          | CTX      | Envío a recepción en curso.                                       | No       |
 | `SEND_UNKNOWN`          | ERS, CTX | Resultado de transmisión ambiguo; requiere reconciliación.        | No       |
 | `RECEIVED`              | ERS, CTX | Recepción `RECIBIDA`; no significa autorizado.                    | No       |
@@ -281,11 +285,11 @@ Nombres de CTX §62, más los eventos de configuración.
 
 | Evento                       | Disparador                                             | Consumidores                                    |
 | ---------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
-| `FiscalDocumentCreated`      | Se crea un borrador.                                   | Auditoría.                                      |
+| `FiscalDocumentCreated`      | Se crea el comprobante en `RESERVED`.                  | Auditoría.                                      |
 | `FiscalSequenceReserved`     | Reserva atómica exitosa.                               | Auditoría.                                      |
 | `FiscalXmlBuilt`             | XML y clave de acceso generados.                       | Validación XSD.                                 |
 | `FiscalXmlValidated`         | XML válido contra el XSD.                              | Firma.                                          |
-| `FiscalXmlSigned`            | XML firmado persistido con su hash.                    | Job de transmisión.                             |
+| `FiscalXmlSigned`            | XML firmado persistido con su hash.                    | `add-sri-transmission`.                         |
 | `SriSendAttempted`           | Llamada a recepción iniciada.                          | Auditoría, métricas.                            |
 | `SriSendUnknown`             | Timeout, error de red o respuesta ilegible.            | Job de reconciliación.                          |
 | `SriReceived`                | Recepción `RECIBIDA`.                                  | Job de autorización.                            |
@@ -334,9 +338,9 @@ se repiten aquí.
 ### Emisión
 
 - **BR-14** Los datos obligatorios se validan antes de firmar o enviar (ERS RF-006).
-- **BR-15** Importes, bases, impuestos, descuentos y totales usan aritmética decimal exacta; los decimales los fija el XSD de cada campo, y las invariantes de totales se verifican antes de construir el XML (ERS RF-007, RF-203; CTX §10.6, §10.7; Q-14).
+- **BR-15** Importes, bases, impuestos, descuentos y totales usan aritmética decimal exacta; los decimales los fija el XSD de cada campo, y las invariantes de totales se verifican antes de construir el XML. Un campo fiscal se redondea HALF_UP solo al materializarlo, y los totales usan los valores materializados (ERS RF-007, RF-203; CTX §10.6, §10.7; Q-14).
 - **BR-16** Un comprobante que llegó al SRI no se edita; se corrige con el flujo documental permitido (ERS RF-009).
-- **BR-17** Cada emisión lleva una clave de idempotencia; repetirla devuelve el mismo comprobante y no reserva otro secuencial (ERS RF-520, RF-521, API-003; CTX §27.4; Q-30).
+- **BR-17** Cada emisión lleva una clave de idempotencia; repetirla con la misma solicitud devuelve o reanuda el mismo comprobante y no reserva otro secuencial; con una solicitud distinta, se rechaza (ERS RF-520, RF-521, API-003; CTX §27.4; Q-30).
 - **BR-18** Un timeout no es un rechazo: no genera un secuencial ni una clave nuevos, y se reconcilia por la misma clave antes de cualquier reenvío (ERS RF-522, RF-523, SRI-REQ-08, SRI-REQ-09; CTX §22.3).
 - **BR-19** `RECIBIDA` no significa autorizado. La autorización se consulta de forma asíncrona, con intervalo parametrizable, hasta 24 horas (CTX §22.1, §23.1).
 - **BR-20** Ante el error 70 (clave en procesamiento) no se reenvía ni se cambia clave o secuencial: se espera la autorización (CTX §27.2).

@@ -114,9 +114,7 @@ en `../architecture/fiscal-emission.md`.
 
 | Estado interno                                | Etiqueta en la interfaz   |
 | --------------------------------------------- | ------------------------- |
-| `DRAFT`                                       | Borrador                  |
-| `SEQUENCE_RESERVED`, `XML_BUILT`, `XSD_VALID` | Procesando                |
-| `XSD_INVALID`                                 | Requiere corrección       |
+| `RESERVED`                                    | Procesando                |
 | `SIGNED`                                      | Pendiente de envío        |
 | `SEND_PENDING`                                | Enviando al SRI           |
 | `SEND_UNKNOWN`                                | Verificando con el SRI    |
@@ -128,8 +126,9 @@ en `../architecture/fiscal-emission.md`.
 | `CANCEL_PENDING`                              | Pendiente de anulación    |
 | `CANCELLED`                                   | Anulado                   |
 
-`XSD_INVALID`, `SEND_PENDING`, `CANCEL_PENDING` y `CANCELLED` provienen de CTX §26 y no
-figuran en el ERS §12.1; su adopción se decide en Q-35 y Q-16.
+`RESERVED` es un estado local del proyecto (Q-35). `SEND_PENDING`, `CANCEL_PENDING` y
+`CANCELLED` provienen de CTX §26 y no figuran en el ERS §12.1; su adopción se decide en
+`add-sri-transmission` y en Q-16.
 
 ## Naming Rules
 
