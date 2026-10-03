@@ -44,11 +44,11 @@ solicitud ── crear ─▶│ 1 validar ─▶ 2 RESERVED ─(commit)─▶ 3
 
 | Paso | Qué ocurre | Estado resultante |
 | ---- | ---------- | ----------------- |
-| 1 | Validación de negocio sin efectos, con la fecha de emisión ya capturada: permisos, preparación para emitir, reglas del tipo, impuestos con datos de cálculo, consumidor final, casos especiales no soportados (falla cerrada) y certificado vigente. | Nada se crea si falla |
-| 2 | Una transacción, sin I/O externo: crea el snapshot, reserva el secuencial, bloquea la identidad tributaria, persiste los componentes definitivos de la clave de acceso y crea el comprobante (ver "Transacción de `RESERVED`"). | `RESERVED` |
-| 3 | Tras el commit, construye el XML desde el snapshot con el builder de la versión registrada. | `RESERVED` |
-| 4 | Valida el XML contra el XSD registrado. Falla cerrada si falta el XSD, su hash no coincide o la versión no está registrada (CTX §19.2, ADR 0021). | `RESERVED` |
-| 5 | Firma, verifica el límite de tamaño y persiste los bytes exactos del XML firmado con su hash, en la misma transacción que la transición (ADR 0004, ADR 0010). | `SIGNED` |
+| 1 | Validación de negocio sin efectos, con la fecha de emisión ya capturada. Fuera de la transacción: permiso, `Idempotency-Key`, búsqueda de una repetición y archivos del esquema con su hash. Dentro de la transacción de reserva y antes del secuencial, con lecturas coherentes: borrador, preparación para emitir, comprador, líneas, impuestos con datos de cálculo, cálculo, pagos, consumidor final, casos especiales no soportados (falla cerrada) y esquema registrado. | Nada se crea si falla |
+| 2 | La misma transacción, sin I/O externo: crea el snapshot, reserva el secuencial, bloquea la identidad tributaria, persiste los componentes definitivos de la clave de acceso y crea el comprobante (ver "Transacción de `RESERVED`"). | `RESERVED` |
+| 3 | Tras el commit, con el arriendo del intento, construye el XML desde el snapshot con el builder de la versión registrada. | `RESERVED` |
+| 4 | Valida el XML contra el XSD del snapshot. Falla cerrada si falta el XSD, su hash no coincide o la versión no está registrada (CTX §19.2, ADR 0021). | `RESERVED` |
+| 5 | Firma con la firma vigente, vuelve a validar el XML firmado contra el XSD y persiste sus bytes exactos con su hash, en la misma transacción que la transición y la auditoría (ADR 0004, ADR 0010). El límite de 320 KB lo comprueba la transmisión (BR-26, cambio 7). | `SIGNED` |
 | 6 | Recepción: envía el XML firmado persistido y persiste la respuesta original antes de clasificarla. | Cambio 7 |
 | 7 | Autorización: consulta por clave con backoff y jitter; persiste la respuesta; extrae el XML autorizado (CTX §34, §45). | Cambio 7 |
 | 8 | RIDE desde el comprobante autorizado, guardado como artefacto (CTX §30). | Cambio 8 |
@@ -87,15 +87,22 @@ Reglas:
 
 ## Transacción de `RESERVED`
 
-En la misma transacción en que nace `RESERVED`:
+En la misma transacción en que nace `RESERVED` (design D7 de `add-invoice-emission`):
 
-1. todo lo que puede fallar funcionalmente ya se validó en el paso 1;
-2. se crea el snapshot;
-3. se reserva el secuencial (`reserveSequentialIn`);
-4. se bloquea la identidad tributaria (`lockTaxIdentityIn`);
-5. se generan y persisten los componentes definitivos de la clave de acceso, con el código numérico criptográfico;
-6. se crea el comprobante en `RESERVED`;
-7. commit.
+1. se bloquea la fila del borrador, que serializa las emisiones del mismo borrador;
+2. se toma el lock advisory de la configuración y se lee la configuración vigente;
+3. se valida, con lecturas coherentes, todo lo que puede fallar funcionalmente (paso 1);
+4. se crea el snapshot, todavía sin el secuencial;
+5. se reserva el secuencial (`reserveSequentialIn`) con el ambiente del snapshot;
+6. se bloquea la identidad tributaria (`lockTaxIdentityIn`);
+7. se generan el código numérico criptográfico y la clave de acceso, que completan el snapshot;
+8. se crean el comprobante en `RESERVED` y su transición inicial, y el borrador pasa a `EMITTED`;
+9. se inserta el registro de idempotencia, cuya clave primaria es la última defensa;
+10. se registra la auditoría `invoice.reserved`;
+11. commit.
+
+El número solo existe para la respuesta después del commit; un fallo en cualquier paso revierte
+todo.
 
 Dentro de esa transacción no hay XML pesado, firma ni I/O externo. Después del commit: XML, XSD,
 firma y persistencia de los bytes firmados exactos, que llevan a `SIGNED`.
@@ -164,9 +171,10 @@ Reglas que el cambio 7 conserva:
 - `NOT_AUTHORIZED` es terminal hasta resolver Q-07; reemitir crea un comprobante nuevo.
 - La corrección de un `RETURNED` (BR-28) conserva la clave y el secuencial, genera un XML firmado nuevo y conserva los artefactos anteriores. Su diseño es del cambio 7.
 
-## Decisiones para el diseño de `add-invoice-emission`
+## Decisiones de diseño de `add-invoice-emission`
 
-Decididas el 2026-10-03; el design del cambio las concreta.
+Decididas el 2026-10-03 e implementadas por el cambio (design D2 a D12). Lo implementado se
+resume en "Implementación de `add-invoice-emission`".
 
 - **Borradores.** Un borrador no pertenece a la máquina fiscal `RESERVED` → `SIGNED`.
   - Antes de reservar puede existir un documento editable: `DRAFT`, después la acción explícita de emitir, las validaciones completas y `RESERVED`.
@@ -195,7 +203,125 @@ Decididas el 2026-10-03; el design del cambio las concreta.
   - No hay descargas en tiempo de ejecución ni caída a XSD de terceros: un archivo ausente o con otro hash falla cerrada.
   - Una prueba del artefacto de build demuestra que los esquemas están presentes (ADR 0021).
 - **Concurrencia XSD.** La validación usa concurrencia acotada, nunca un worker por solicitud sin límite. El adaptador ya acota la concurrencia, la cola y el plazo, con `VALIDATOR_BUSY` y `VALIDATOR_TIMEOUT` (ADR 0021). El design fija los valores y el comportamiento ante saturación; Q-26 dirá si hay que ajustarlos.
-- **Vector oficial de la clave de acceso.** No bloquea el proposal: el algoritmo coincide con CTX §8.3, una prueba independiente comprueba el dígito y S-3 offline la composición completa. Obtener y verificar el vector oficial de la ficha es evidencia adicional antes de cerrar el cambio, o con la parte online de S-3; no se inventa.
+- **Vector oficial de la clave de acceso.** No bloquea el proposal: el algoritmo coincide con CTX §8.3, una prueba independiente comprueba el dígito y S-3 offline la composición completa. Obtener y verificar el vector oficial de la ficha es evidencia adicional; no se inventa. El 2026-10-03 el portal del SRI no fue accesible desde el entorno del proyecto, y el vector queda como evidencia pendiente (S-3 en `open-questions.md`).
+
+## Implementación de `add-invoice-emission`
+
+Cambio 6. Código en `backend/src/modules/invoices/` y contratos en
+`packages/contracts/src/invoices.ts`.
+
+| Pieza | Dónde |
+| --- | --- |
+| Borrador y vista previa del servidor | `invoices/domain/draft.ts`, `invoices/application/drafts.ts` |
+| Evaluación pura, con todos los problemas en el orden de D6 | `invoices/domain/evaluation.ts` |
+| Aritmética fiscal exacta y materialización HALF_UP | `invoices/domain/amounts.ts`, sobre `platform/decimal` |
+| Snapshot versionado (`InvoiceSnapshotV1`) | `invoices/domain/snapshot.ts` |
+| Transacción de `RESERVED` | `invoices/application/emission.ts` y `invoices/infrastructure/emission-unit-of-work.ts` |
+| Del snapshot al artefacto firmado | `invoices/application/signing-pipeline.ts` |
+| Consultas y reintento de la firma | `invoices/application/invoices.ts` |
+| Idempotencia durable (Q-30) | `platform/idempotency` (`idempotency.md`) |
+| Clave de acceso, builder XML, validación XSD y firmador | `sri-engine` (`AccessKeys`, `InvoiceXmlBuilder`, `XsdValidator`, `ec-sri-signer.ts`) |
+| Firma con la firma vigente | `signing` (`documents.signDocument` y la tarea `sign-xml` del pool criptográfico) |
+| Comprobante, transiciones y artefacto | `fiscal` (`createDocumentRepository`, `createArtifactStore`) |
+
+### Rutas y permisos
+
+| Método y ruta | Uso | Permiso |
+| --- | --- | --- |
+| `POST /api/v1/invoices/drafts` | Crear un borrador: líneas con producto, cantidad y descuento, sin precio | `invoices.draft` |
+| `GET /api/v1/invoices/drafts` | Listar borradores `DRAFT`, paginado | `invoices.draft` |
+| `GET /api/v1/invoices/drafts/{draftId}` | Borrador con su vista previa y sus problemas | `invoices.draft` |
+| `PUT /api/v1/invoices/drafts/{draftId}` | Corregir con `expectedVersion` | `invoices.draft` |
+| `DELETE /api/v1/invoices/drafts/{draftId}` | Eliminar un borrador `DRAFT` | `invoices.draft` |
+| `POST /api/v1/invoices` | Emitir `{ draftId, expectedVersion }` con `Idempotency-Key` | `invoices.emit` |
+| `GET /api/v1/invoices` | Listar facturas por estado, número o comprador | `invoices.read` |
+| `GET /api/v1/invoices/{invoiceId}` | Detalle desde el snapshot, con el diagnóstico | `invoices.read` |
+| `POST /api/v1/invoices/{invoiceId}/signing-attempts` | Reintentar la firma | `invoices.retrySigning` |
+
+- Administrador y operador tienen los cuatro permisos (`../security/access-control.md`).
+- Un recurso inexistente o de otra empresa responde `404` (`INVOICE_DRAFT_NOT_FOUND`, `INVOICE_NOT_FOUND`), y los cuerpos son estrictos.
+- Ningún paso técnico (XML, clave, firma) es un endpoint.
+
+### Rechazos antes de reservar
+
+La emisión responde `409` con el código del primer problema y la línea o la forma de pago que lo
+causa. La vista previa del borrador muestra todos. Ninguno reserva número, crea clave ni bloquea
+la identidad tributaria.
+
+| Grupo | Códigos |
+| --- | --- |
+| Borrador | `INVOICE_DRAFT_CHANGED`, `INVOICE_DRAFT_ALREADY_EMITTED`, `INVOICE_DRAFT_INCOMPLETE`, `INVOICE_TOO_MANY_LINES` (`INVOICE_DRAFT_NOT_FOUND` es `404`) |
+| Preparación | `TAXPAYER_NOT_CONFIGURED`, `EMISSION_POINT_NOT_FOUND`, `EMISSION_POINT_UNAVAILABLE`, `SIGNING_CERTIFICATE_NOT_USABLE` |
+| Comprador | `BUYER_NOT_FOUND`, `BUYER_NOT_CUSTOMER`, `BUYER_INACTIVE`, `BUYER_IDENTIFICATION_TYPE_NOT_USABLE` |
+| Líneas | `PRODUCT_NOT_FOUND`, `PRODUCT_INACTIVE`, `DISCOUNT_EXCEEDS_SUBTOTAL` |
+| Impuestos | `TAX_REFERENCE_NOT_USABLE`, `TAX_CALCULATION_DATA_MISSING` (hoy, ICE, IRBPNR e IVA `8`) |
+| Cálculo | `AMOUNT_OUT_OF_RANGE` |
+| Pagos | `PAYMENT_METHOD_NOT_FOUND`, `PAYMENT_METHOD_NOT_USABLE`, `PAYMENTS_DO_NOT_MATCH_TOTAL` |
+| Consumidor final | `CONSUMER_FINAL_POLICY_MISSING`, `CONSUMER_FINAL_LIMIT_EXCEEDED` |
+| Casos especiales | `SPECIAL_CASE_UNSUPPORTED`: hoy, el anexo 26, cuando la configuración declara un RUC proveedor distinto del propio |
+| Esquema | `SCHEMA_NOT_AVAILABLE` |
+| Reserva | `SEQUENCE_EXHAUSTED`, que además se registra como advertencia en el log |
+
+La idempotencia añade `400 IDEMPOTENCY_KEY_REQUIRED` y `409 IDEMPOTENCY_KEY_REUSED`
+(`idempotency.md`).
+
+### Del snapshot al artefacto firmado
+
+- **Arriendo.** Cada intento toma un arriendo de 120 s con una actualización guardada. Si otro intento lo tiene, se devuelve el estado actual sin intentar. Una caída deja un arriendo que vence, y la repetición con la misma clave o un reintento lo retoman.
+- **Etapas.** `BUILD_XML`, `VALIDATE_XSD`, `SIGN`, `VALIDATE_SIGNED_XSD` y `PERSIST`. La firma la hace la tarea `sign-xml` del pool criptográfico, que comprueba la huella del certificado embebido.
+- **Diagnóstico.** Un fallo deja el comprobante `RESERVED` y guarda, aparte del estado, la etapa, el código, la clase, la fecha y el número de intentos. Para `XSD_INVALID` y `SIGNED_XML_INVALID` guarda solo la línea y el nombre del elemento. Nunca guarda secretos, el XML ni la salida de libxml2.
+
+| Clase | Códigos | Acción |
+| --- | --- | --- |
+| `RETRYABLE_OPERATIONAL` | `VALIDATOR_BUSY`, `VALIDATOR_TIMEOUT`, `CRYPTO_BUSY`, `CRYPTO_TIMEOUT`, `CRYPTO_UNAVAILABLE`, `PERSIST_FAILED` | Reintentar sin cambiar nada |
+| `DETERMINISTIC_CONFIGURATION` | `SIGNING_CERTIFICATE_NOT_USABLE`, `CUSTODY_UNAVAILABLE`, `CERTIFICATE_MISMATCH`, `SIGNER_FAILED`, `SCHEMA_UNAVAILABLE`, `SCHEMA_HASH_MISMATCH` | Corregir la configuración o la instalación y reintentar |
+| `DETERMINISTIC_VALIDATION` | `XSD_INVALID`, `SIGNED_XML_INVALID`, `INVALID_SNAPSHOT_TEXT`, `INVALID_SNAPSHOT_AMOUNT` | Error del producto: requiere soporte; reintentar da el mismo resultado |
+
+- **Reintento.** `POST /api/v1/invoices/{invoiceId}/signing-attempts` repite las etapas sobre la misma factura, con su snapshot, número y clave:
+  - sobre una factura `SIGNED`, la devuelve sin efecto;
+  - mientras otro intento tiene el arriendo, devuelve el estado actual y audita el resultado `ATTEMPT_IN_PROGRESS`.
+- **Sin bucles.** No hay reintentos automáticos ni jobs en este cambio.
+
+### Auditoría y métricas
+
+- **Auditoría**, siempre con el usuario como actor y sin XML ni bytes:
+  - `invoice.reserved`: número, clave, ambiente y total;
+  - `invoice.signed`: número y SHA-256 del artefacto;
+  - `invoice.signing_retried`: número y resultado (`SIGNED`, el código del diagnóstico o `ATTEMPT_IN_PROGRESS`).
+
+  Los borradores, las consultas y las emisiones rechazadas no generan eventos.
+- **Métricas.** Cada emisión alimenta el histograma `invoice_emission_stage_duration_seconds{stage,outcome}` con las etapas `total`, `reservation_tx`, `validation_snapshot`, `arithmetic`, `xml`, `xsd`, `sign` y `persist` (`deployment.md`).
+  - Con `EMISSION_STAGE_TIMINGS=1`, que el entorno rechaza en producción, la respuesta lleva además `Server-Timing`.
+  - `bench:emission` mide con ellas un P95 total de 884 ms en el entorno registrado (`../quality/benchmarks/emission-2026-10-03.md`).
+
+### Obligaciones cumplidas
+
+| Origen | Obligación | Cumplimiento |
+| --- | --- | --- |
+| `add-taxpayer-setup` | Identidad tributaria | `lockTaxIdentityIn` en el paso 6 de la transacción de `RESERVED`. |
+| `add-taxpayer-setup` | Versión de configuración | El snapshot copia la configuración vigente leída con el lock de configuración tomado; el XML sale solo del snapshot. |
+| `add-taxpayer-setup` | Ambiente | Se fija en el snapshot, y el secuencial se reserva con ese ambiente. |
+| `add-taxpayer-setup` | Preparación para emitir | El grupo Preparación exige configuración, punto y establecimiento activos y firma utilizable. |
+| `add-taxpayer-setup` | Punto predeterminado | El editor lo preselecciona solo si sigue disponible; no restringe el punto de emisión. |
+| `add-taxpayer-setup` | RIMPE y anexos | Los anexos 21, 22 y 24 que activa el emisor se evalúan con la matriz y se guardan en el snapshot. El builder escribe `agenteRetencion` (21) y `contribuyenteRimpe` (22, con el texto fijo del XSD) cuando corresponden. |
+| `add-taxpayer-setup` | Casos especiales no soportados | `SPECIAL_CASE_UNSUPPORTED` antes de reservar. |
+| `add-fiscal-numbering` | Dónde reservar y frontera del commit | `reserveSequentialIn` en el paso 5, sin I/O externo; el número solo sale después del commit y un fallo posterior no lo reutiliza. |
+| `add-fiscal-numbering` | Referencia | `electronic_document.reservation_id` es único, y la unicidad del secuencial se repite en el comprobante. |
+| `add-fiscal-numbering` | Errores de la reserva | `EMISSION_POINT_*` y `SEQUENCE_EXHAUSTED` llegan como rechazos; el agotamiento, además, al log. |
+| `add-signing-certificate` | Firma utilizable | `SIGNING_CERTIFICATE_NOT_USABLE` en la evaluación y en la etapa de firma. |
+| `add-signing-certificate` | Secreto solo para firmar | La custodia abre el secreto sellado solo para firmar ese documento y lo transfiere al worker, que pone los bytes a cero (design D9, ADR 0011). |
+| `add-signing-certificate` | Fuera del event loop | Tarea `sign-xml` del pool criptográfico; `CRYPTO_BUSY` y `CRYPTO_TIMEOUT` son diagnósticos reintentables. |
+| `add-signing-certificate` | Certificado embebido | Una huella distinta de la firma vigente es `CERTIFICATE_MISMATCH`. |
+| `add-signing-certificate` | Nunca en registros | Ni el diagnóstico, ni la auditoría, ni los logs llevan secretos ni XML; la prueba end-to-end lo comprueba en la auditoría. |
+| `add-fiscal-catalogs` | Resolución de vigencia y utilizable | Cada referencia se resuelve con las lecturas de `catalogs` y la fecha de emisión; solo se usa si es utilizable. |
+| `add-fiscal-catalogs` | Reproducibilidad | El snapshot guarda el identificador y los valores de cada versión aplicada y las versiones de los datasets. |
+| `add-fiscal-catalogs` | ICE, IRBPNR e IVA diferenciado | `TAX_CALCULATION_DATA_MISSING` antes de reservar. |
+| `add-fiscal-catalogs` | Consumidor final y casos especiales | Política versionada y matriz de soporte, aplicadas en la evaluación. |
+| `add-fiscal-catalogs` | Decimales y esquemas | Especificaciones de `packages/contracts/src/decimal.ts`; el registro de esquemas con imports se verifica al arrancar (`deployment.md`). |
+| `add-parties-and-products` | Fecha del documento y datos de cálculo | La emisión vuelve a resolver cada referencia del producto con la fecha de emisión y exige datos de cálculo completos. |
+| `add-parties-and-products` | Sin tarifas copiadas | Las tarifas salen de la versión resuelta y se copian al snapshot, nunca del producto. |
+| `add-parties-and-products` | Consumidor final por su marca | Se reconoce por `systemRecord: CONSUMER_FINAL`, y el límite sale de la política. |
+| `add-parties-and-products` | Precio sin impuestos | `unitPrice` es el `precioUnitario`; se congela en el snapshot y no se edita por línea (Q-45). |
 
 ## Reserva del secuencial
 
@@ -395,7 +521,7 @@ La implementa `add-sri-transmission` (cambio 7).
 
 ## API de emisión
 
-- Recursos por tipo de comprobante; la factura bajo `/api/v1/invoices` (Q-29). La empresa y el ambiente salen del contexto autenticado y de la configuración vigente, nunca de la ruta ni del cliente. Los pasos internos (XML, firma, clave, envío) no son endpoints. La descarga de XML y RIDE, la reconciliación y el reenvío llegan con sus cambios, solo cuando la política lo permite (CTX §40).
+- Recursos por tipo de comprobante; la factura bajo `/api/v1/invoices` (Q-29), con las rutas de "Implementación de `add-invoice-emission`". La empresa y el ambiente salen del contexto autenticado y de la configuración vigente, nunca de la ruta ni del cliente. Los pasos internos (XML, firma, clave, envío) no son endpoints. La descarga de XML y RIDE, la reconciliación y el reenvío llegan con sus cambios, solo cuando la política lo permite (CTX §40).
 - No existe una operación genérica para enviar XML arbitrario (CTX §40).
 - La emisión exige `Idempotency-Key` y responde sin esperar al SRI (CTX §41).
 - Contratos versionados, validación con Zod en el servidor y documentación OpenAPI (ERS API-001..005).
@@ -403,7 +529,7 @@ La implementa `add-sri-transmission` (cambio 7).
 ## Observabilidad
 
 - Los logs registran comprobante, clave de acceso, tipo, ambiente, transición, estado y código del SRI, duración, intento y correlación; nunca el P12, su contraseña, claves privadas ni el XML o SOAP sin redactar (CTX §47).
-- Métricas y alertas de CTX §48, incluidos la edad del pendiente más antiguo y los días para el vencimiento del certificado.
+- Métricas y alertas de CTX §48, incluidos la edad del pendiente más antiguo y los días para el vencimiento del certificado. La emisión local ya publica `invoice_emission_stage_duration_seconds` por etapa y resultado.
 - Las transiciones de estado y los eventos de dominio permiten diagnosticar sin leer SOAP sensible (CTX §62).
 
 ## Pruebas

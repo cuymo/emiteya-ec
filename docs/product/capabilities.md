@@ -16,9 +16,9 @@ documento no especifica comportamiento.
 | `fiscal-catalogs`      | Catálogos oficiales versionados, política de consumidor final, registro de esquemas y matriz de casos especiales. | ERS RF-234, SRI-REQ-12; CTX §3.1, §18, §19.3, §35, §38 | AC-03      | — (Q-25 y Q-38 resueltas)      |
 | `parties`              | Catálogo único de terceros con roles y búsqueda, y el consumidor final del sistema.               | ERS RF-320..323; CTX §9                                        | AC-02, AC-03  | — (Q-26 parcial: volumen de terceros medido) |
 | `products`             | Productos y servicios con precio exacto, referencias fiscales, estado tributario derivado y búsqueda. | ERS RF-301..305; CTX §12.4, §12.5                          | AC-08         | — (Q-26 parcial: volumen de productos medido) |
-| `document-emission`    | Núcleo común: emisión idempotente, snapshot, máquina local `RESERVED` → `SIGNED`, clave de acceso, XML, XSD y firma, hasta el artefacto firmado. | ERS RF-006..010, RF-520..525, SRI-REQ-02..05, SRI-REQ-11; CTX §4, §8, §10, §11, §19–21, §39, §41 | AC-02, AC-05 | — (Q-08, Q-14, Q-29, Q-30, Q-35, Q-38, Q-39 y Q-44 resueltas; de Q-34 quedan el SOAP y el PDF) |
+| `document-emission`    | Núcleo común: emisión idempotente, snapshot, máquina local `RESERVED` → `SIGNED`, clave de acceso, XML, XSD y firma, hasta el artefacto firmado. | ERS RF-006..010, RF-520..525, SRI-REQ-02..05, SRI-REQ-11; CTX §4, §8, §10, §11, §19–21, §39, §41 | AC-02, AC-05 | — (Q-08, Q-14, Q-29, Q-30, Q-35, Q-38, Q-39 y Q-44 resueltas; de Q-34 quedan el SOAP y el PDF; Q-26 parcial: emisión medida con `bench:emission`) |
 | `sri-transmission`     | Recepción, autorización asíncrona, consulta de validez, errores 43/45/70, reconciliación y revisión manual. | ERS SRI-REQ-01, SRI-REQ-06..10, RNF-004; CTX §7, §22–27, §29, §32–34, §44, §52 | AC-02, AC-06 | Q-06, Q-07, Q-16 |
-| `invoices`             | Factura con consumidor final, líneas, pagos y totales.                                            | ERS RF-201..206; CTX §12, §35                                  | AC-02, AC-08  | Q-18, Q-19                     |
+| `invoices`             | Factura con consumidor final, líneas, pagos y totales; borradores editables antes de emitir.      | ERS RF-010, RF-201..206; CTX §12, §35                          | AC-02, AC-08  | Q-18, Q-19, Q-45               |
 | `credit-notes`         | Nota de crédito desde un comprobante, con devolución de stock opcional.                           | ERS RF-210..213; CTX §13                                       | AC-03         | Q-10, Q-20                     |
 | `debit-notes`          | Nota de débito sobre un comprobante.                                                              | ERS RF-220..222; CTX §14                                       | AC-03         | —                              |
 | `withholding-receipts` | Comprobante de retención 2.0.0 con documentos sustento.                                           | ERS RF-230..234; CTX §16                                       | AC-03         | —                              |
@@ -94,7 +94,7 @@ implemente define escenarios propios en sus specs (Q-32):
 - Punto de emisión predeterminado por usuario (ERS RF-113).
 - Auditoría (ERS RF-003, RF-105, RF-525).
 - Distinción de ambientes y advertencia de Pruebas (ERS RF-004, RF-005).
-- Validación previa a la firma, decimal exacto, autoría y borradores (ERS RF-006..010).
+- Validación previa a la firma, decimal exacto, autoría y borradores (ERS RF-006..010): los escenarios de `document-emission` e `invoices` de `add-invoice-emission`.
 - Alertas de vencimiento de la firma (ERS RF-135).
 - API y OpenAPI (ERS API-001..006), cubiertos solo por "pruebas de contrato".
 

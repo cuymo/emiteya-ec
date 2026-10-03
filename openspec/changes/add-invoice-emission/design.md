@@ -424,7 +424,7 @@ Briefs:
 | 1 | Fuente oficial | XSD de factura 1.1.0 del SRI (manifiesto de `docs/product/sri-xsd/`); ficha técnica v2.34 para catálogos, consumidor final (numeral 9.10) y clave (CTX §8); W3C para `xmldsig-core-schema.xsd` |
 | 2 | Versión y fecha | Ficha v2.34 del 2026-07-27; XSD descargados el 2026-10-02; W3C revisión 1.2 (2013-04-16) |
 | 3 | ¿Afecta XSD? | Sí: registro con imports y empaquetado (D11) |
-| 4 | ¿Afecta clave de acceso? | Sí: se genera por primera vez (D7, D12) |
+| 4 | ¿Afecta clave de acceso? | Sí: se genera por primera vez (D7, D12). El vector oficial de la ficha queda como evidencia pendiente: el portal del SRI no fue accesible el 2026-10-03 (tarea 12.2) |
 | 5 | ¿Afecta firma? | Sí: primera firma de documentos con la tarea `sign-xml` (D9) |
 | 6 | ¿Afecta catálogo tributario? | Usa tarifas, formas de pago, política de consumidor final, matriz y registro; solo el registro cambia (versión 2) |
 | 7 | ¿Afecta cálculos? | Sí: aritmética fiscal de Q-14 (D5) |
@@ -432,9 +432,9 @@ Briefs:
 | 9 | ¿Afecta secuenciales? | Usa `reserveSequentialIn` sin cambiarlo |
 | 10 | ¿Afecta estados o reintentos? | Sí: máquina local `RESERVED` → `SIGNED` y reintento manual (D3, D10) |
 | 11 | ¿Incluye fixtures? | Sí: XML de referencia de S-3 y tabla dorada de cálculo |
-| 12 | ¿Incluye pruebas? | Sí (D17) |
+| 12 | ¿Incluye pruebas? | Sí (D17): unitarias, de contrato, de integración contra PostgreSQL, S-3 offline con la implementación real, end-to-end sobre `main.ts` sin llamadas de salida y `bench:emission` |
 | 13 | ¿Probado en certificación del SRI? | No: la parte online de S-3 es la compuerta de go-live |
-| 14 | ¿Cambia un caso especial? | Aplica las reglas del emisor de los anexos 21 y 22 y rechaza el 26 |
+| 14 | ¿Cambia un caso especial? | Aplica las reglas del emisor de los anexos 21, 22 y 24 y rechaza el 26 |
 | 15 | ¿Migración de datos o configuración? | Sí: tablas nuevas y el registro de esquemas con imports, con relleno de la versión 1 |
 
 De CTX §58, este cambio cubre:

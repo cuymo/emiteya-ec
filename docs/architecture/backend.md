@@ -19,7 +19,8 @@ backend/src/
 ├── main.ts          arranque, validación del entorno y apagado ordenado
 ├── app.ts           createApp(deps): arma la aplicación HTTP
 ├── config/          entorno validado con Zod (env.ts)
-├── platform/        http (correlación, errores, 404), logging, metrics, health, lifecycle, db
+├── platform/        http (correlación, errores, 404), logging, metrics (y tiempos por etapa), health,
+│                    lifecycle, db, decimal, idempotency, search y workers
 ├── generated/       cliente de Prisma generado (no versionado)
 ├── commands/        comandos de servidor sin ruta HTTP (admin:recover)
 └── modules/         un directorio por módulo con domain / application / infrastructure
@@ -97,6 +98,13 @@ Responsibilities:
 - Validation: validate request params, query, body, environment variables, and external payloads.
 - Idempotency: mutations whose repetition would duplicate an effect accept an `Idempotency-Key` header. See `idempotency.md`.
 - Status codes: `404` for any record outside the caller's tenant, `409` for state conflicts and in-flight duplicates, `422` for an idempotency key reused with a different payload.
+
+En este proyecto (Q-30, design D8 de `add-invoice-emission`):
+
+- `POST /api/v1/invoices` exige `Idempotency-Key`; sin ella, `400 IDEMPOTENCY_KEY_REQUIRED`. Es hoy la única operación con clave.
+- La clave reutilizada con otra solicitud responde `409 IDEMPOTENCY_KEY_REUSED`, no `422`.
+- El alcance es empresa, operación y clave, sin usuario. El registro es durable en PostgreSQL y no expira durante la vida fiscal útil del documento.
+- El registro se escribe en la misma transacción que el efecto, no con un reclamo previo. Detalle y diferencias con la plantilla en `idempotency.md`.
 
 ## Auth Boundary
 

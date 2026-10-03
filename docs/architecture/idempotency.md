@@ -162,6 +162,34 @@ requires.
 
 Disabling a button prevents most double clicks. Only the server guarantees a single effect.
 
+### En este proyecto: emisión de facturas (Q-30)
+
+`add-invoice-emission` (design D8) implementa la única operación con clave de idempotencia:
+`POST /api/v1/invoices`, operación `invoice.emit`. Se aparta de la plantilla anterior donde Q-30
+lo decidió:
+
+| Tema | Plantilla | Este proyecto |
+| --- | --- | --- |
+| Alcance | Tenant, usuario, operación y clave | Empresa, operación y clave, sin usuario. La empresa sale del contexto autenticado, nunca del cliente. El efecto (un número del contador de la empresa) es de la empresa: otro usuario de la misma empresa que repite la clave con la misma solicitud recibe la misma factura. |
+| Reclamo | Registro `PROCESSING` antes de ejecutar | Sin estado `PROCESSING`. El registro se inserta en la misma transacción que la reserva del número (paso 9 de la transacción de `RESERVED`), y la clave primaria `(company_id, operation, idempotency_key)` es la última defensa. |
+| Solicitud distinta con la misma clave | `422` | `409 IDEMPOTENCY_KEY_REUSED` |
+| Rechazos | Se guardan y se repiten | Un rechazo antes de reservar no tiene efecto fiscal: la transacción se revierte sin registro, y la misma clave puede reintentarse después de corregir. |
+| Duración | Ventana declarada, por ejemplo 24 horas, y purga | Sin TTL ni purga durante la vida fiscal útil del documento. `idempotency_record` es de solo agregado (trigger). |
+
+- **Cabecera.** Obligatoria, de 1 a 100 caracteres ASCII visibles. Sin ella o con otro formato, `400 IDEMPOTENCY_KEY_REQUIRED`, y la emisión no se ejecuta.
+- **Huella.** SHA-256 del JSON canónico `{ operation, draftId, expectedVersion }` (`requestFingerprint` en `platform/idempotency`). La versión del borrador identifica su contenido.
+- **Repetición.** Antes de abrir la transacción se busca la clave:
+  - misma huella: `200` con la factura; si sigue `RESERVED`, se lanza un intento hacia `SIGNED`;
+  - otra huella: `409 IDEMPOTENCY_KEY_REUSED`.
+- **Concurrencia.**
+  - Misma clave y mismo borrador: el bloqueo de fila del borrador serializa. La segunda transacción encuentra el borrador `EMITTED`, se revierte, lee el registro ya confirmado y responde como repetición.
+  - Misma clave y borradores distintos: la segunda transacción falla en el índice único al confirmarse la primera y se revierte, así que su número nunca se confirmó. Después responde `409 IDEMPOTENCY_KEY_REUSED`.
+  - Otra clave sobre un borrador ya emitido: `409 INVOICE_DRAFT_ALREADY_EMITTED`, con el id de la factura.
+- **Operaciones sin clave.**
+  - Los borradores no tienen efecto fiscal, y su edición usa `expectedVersion`.
+  - El reintento de la firma (`POST /api/v1/invoices/{id}/signing-attempts`) es idempotente por construcción: transición guardada, arriendo del intento y artefacto único por comprobante.
+- **Cliente.** El editor genera la clave al abrir la confirmación de la emisión y la repite en los reintentos de esa misma solicitud.
+
 ## Concurrency
 
 Always ask what happens when:

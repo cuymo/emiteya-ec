@@ -133,7 +133,8 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 - Purpose: cabecera común de los seis tipos (ADR 0002).
 - Key attributes: tipo, ambiente, establecimiento, punto, secuencial, número, clave de acceso, código numérico, fecha de emisión, receptor o sujeto, totales, estado fiscal, usuario y fecha de creación (ERS RF-008), número y fecha de autorización, clave de idempotencia y metadatos del snapshot: versión XSD, versión del builder, versión de catálogos, versión de configuración de la empresa y versión del renderer del RIDE (CTX §39).
 - Invariants:
-  - Nace en `RESERVED`, ya con secuencial y clave de acceso: los campos que la componen (fecha, tipo, RUC, ambiente, serie, secuencial, código numérico) quedan fijos desde ese momento (CTX §8, §27.1). Si existen borradores editables, no son un estado fiscal (ERS RF-010; lo decide `add-invoice-emission`).
+  - Nace en `RESERVED`, ya con secuencial y clave de acceso: los campos que la componen (fecha, tipo, RUC, ambiente, serie, secuencial, código numérico) quedan fijos desde ese momento (CTX §8, §27.1). El borrador (`invoice_draft`) no es un estado fiscal: vive aparte y pasa a `EMITTED` en la misma transacción que crea el comprobante (ERS RF-010, design D2 de `add-invoice-emission`).
+  - Su snapshot versionado (`snapshotVersion` 1 en la factura) guarda el emisor, el comprador, las líneas con sus impuestos, los pagos, los totales, la clave y las versiones de esquema, builder y catálogos. La factura de `add-invoice-emission` guarda ahí sus líneas, impuestos y pagos, y el documento solo copia en columnas lo que se consulta: número, clave, comprador y total.
   - Desde `SIGNED`, el contenido de un comprobante que llegó al SRI no se edita; las correcciones siguen el flujo documental (ERS RF-009). La única excepción es el reenvío corregido de un comprobante devuelto, con la misma clave y secuencial (BR-28).
   - Cambia de estado solo mediante la máquina de estados, y cada transición queda registrada (ERS RF-524, RF-525).
   - La clave de acceso es única y coincide con los datos del XML (CTX §61, I-01..I-08).
@@ -156,7 +157,7 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 
 - Purpose: bien o servicio de un comprobante.
 - Key attributes: producto (opcional), código principal, código auxiliar, descripción, cantidad, precio unitario, descuento, precio total sin impuesto, impuestos.
-- Invariants: copia los datos del producto al emitir; admite ingreso manual cuando la regla lo permite (ERS RF-202).
+- Invariants: copia los datos del producto al emitir. En la factura, el precio unitario es el del producto y se congela en el snapshot; modificarlo por línea es una decisión futura (Q-45). El ingreso manual de una línea sin producto (ERS RF-202) no está soportado todavía.
 
 ### `document_relation` — Relación documental
 
@@ -176,6 +177,16 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 - Key attributes: código de forma de pago del catálogo fiscal, total, plazo, unidad de tiempo.
 - Invariants: el código se elige del catálogo vigente; nunca se deduce de texto libre (CTX §12.6).
 
+### `invoice_draft` — Borrador de factura
+
+- Purpose: preparar una factura antes de emitirla, sin efecto fiscal (ERS RF-010).
+- Key attributes: empresa, versión, punto de emisión, comprador, líneas (producto, cantidad y descuento, sin precio), pagos (forma de pago e importe opcional), estado (`DRAFT` o `EMITTED`), comprobante emitido, autor y fechas.
+- Invariants:
+  - No consume secuencial ni clave, y puede estar incompleto: su vista previa del servidor lista todos los problemas que impedirían emitir.
+  - Cada edición exige la versión esperada; un conflicto de versión no sobrescribe.
+  - Solo se elimina en `DRAFT`. Al emitirse, un trigger lo vuelve inmutable, con sus líneas y pagos.
+  - Admite hasta `INVOICE_MAX_LINES` líneas (100 por defecto), un límite de recursos de la aplicación, no del SRI.
+
 ### `sri_attempt` — Intento SRI
 
 - Purpose: evidencia de cada llamada al SRI (ERS RF-408, CTX §32).
@@ -187,6 +198,7 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 - Purpose: archivo probatorio de un comprobante (ERS RF-404, RF-405, RF-407; CTX §31).
 - Key attributes: comprobante, tipo (XML sin firmar, XML firmado, respuesta de recepción, respuesta de autorización, XML autorizado, RIDE, logo), hash SHA-256, tamaño, referencia de almacenamiento interna.
 - Invariants: se escribe una vez y no cambia; el XML autorizado se extrae de la respuesta del SRI, nunca se reconstruye (CTX §45); nunca se borra en cascada (ERS §13.1, ADR 0010).
+- En `add-invoice-emission`: `document_artifact` con el tipo `SIGNED_XML`, los bytes UTF-8 exactos en `BYTEA`, su SHA-256 y tamaño, y metadatos con la versión y los hashes del esquema, la versión del builder y del firmador y la huella del certificado. Un comprobante `SIGNED` no existe sin su artefacto (trigger diferido).
 
 ### `delivery_attempt` — Entrega
 
@@ -226,9 +238,14 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 
 ### Entidades técnicas añadidas
 
-Las requiere la arquitectura, aunque no son conceptos de negocio: registro de idempotencia,
-historial de transiciones de estado y job persistido. Ver
-`../architecture/fiscal-emission.md` y `../architecture/database.md`.
+Las requiere la arquitectura, aunque no son conceptos de negocio:
+
+- registro de idempotencia (`idempotency_record`, Q-30): empresa, operación, clave, huella de la solicitud y comprobante; de solo agregado y sin expiración durante la vida fiscal;
+- historial de transiciones de estado (`document_state_transition`): estado anterior y nuevo, causa, actor y metadatos, en la misma transacción que la transición;
+- job persistido, que llega con `add-sri-transmission`.
+
+Ver `../architecture/fiscal-emission.md`, `../architecture/idempotency.md` y
+`../architecture/database.md`.
 
 ## Value Objects
 
@@ -263,6 +280,11 @@ Estados locales, que define `add-invoice-emission`:
 | `RESERVED` | Comprobante durable con snapshot, secuencial confirmado, clave de acceso definitiva e identidad tributaria bloqueada, todo de forma atómica. Sin rollback: el número nunca se reutiliza. | No |
 | `SIGNED`   | XML construido, válido contra el XSD, firmado y persistido con sus bytes exactos y su hash; listo para envío. | No |
 
+Si falla una etapa entre `RESERVED` y `SIGNED`, el comprobante sigue `RESERVED`: no hay estado
+fiscal de error. El diagnóstico del último intento (etapa, código, clase, fecha, número de
+intentos y, para un XSD inválido, la línea y el elemento) se guarda aparte del estado. Un
+reintento manual retoma la misma factura, con su número y su clave.
+
 Estados de transmisión, que diseña `add-sri-transmission` a partir de `SIGNED`. Punto de partida
 de CTX §26, que se adopta en ese cambio junto con Q-07 y Q-16:
 
@@ -281,7 +303,11 @@ de CTX §26, que se adopta en ese cambio junto con Q-07 y Q-16:
 
 ## Domain Events
 
-Nombres de CTX §62, más los eventos de configuración.
+Nombres de CTX §62, más los eventos de configuración. No hay bus de eventos: en
+`add-invoice-emission`, `FiscalDocumentCreated` y `FiscalSequenceReserved` se registran como la
+transición inicial y la auditoría `invoice.reserved`, y `FiscalXmlSigned` como la transición a
+`SIGNED` y la auditoría `invoice.signed`. El reintento de la firma audita
+`invoice.signing_retried`.
 
 | Evento                       | Disparador                                             | Consumidores                                    |
 | ---------------------------- | ------------------------------------------------------ | ----------------------------------------------- |

@@ -1,7 +1,9 @@
 # Architecture Map
 
-Estado: arquitectura objetivo del MVP. Todavía no existe código de aplicación; cada
-componente se construye mediante los cambios OpenSpec de `docs/product/capabilities.md`.
+Estado: arquitectura objetivo del MVP, que se construye mediante los cambios OpenSpec de
+`docs/product/capabilities.md`. El código existe hasta `add-invoice-emission` (cambio 6), con la
+emisión local de la factura hasta `SIGNED`. La transmisión al SRI, los jobs, el RIDE, el
+inventario y los reportes siguen siendo objetivo.
 
 ## System Style
 
@@ -19,11 +21,14 @@ componente se construye mediante los cambios OpenSpec de `docs/product/capabilit
 | -------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | `frontend/`          | Next.js: configuración, emisión, bandeja, catálogos, inventario y reportes. No conoce secretos.      | Todas las de interfaz                               |
 | `backend/` módulo `identity` | Usuarios, membresía en la empresa y roles sobre Better Auth.                                | `user-access`                                       |
-| `backend/` módulo `taxpayer` | Empresa y sus versiones, ambiente, establecimientos, puntos y certificado.                  | `taxpayer-setup`, `signing-certificate`             |
+| `backend/` módulo `taxpayer` | Empresa y sus versiones, ambiente, establecimientos y puntos.                               | `taxpayer-setup`                                    |
+| `backend/` módulo `signing`  | Firma electrónica: carga, custodia cifrada (ADR 0011), vigencia y firma de documentos en el pool criptográfico. | `signing-certificate`, `document-emission` |
 | `backend/` módulo `catalogs` | Conocimiento fiscal normativo: catálogos fiscales versionados, resolución de vigencia, habilitación por empresa, política de consumidor final, registro de esquemas y matriz de casos especiales. Ofrece lecturas internas sin sesión a otros módulos. | `fiscal-catalogs` |
 | `backend/` módulo `parties`  | Terceros y el consumidor final del sistema de cada empresa.                                 | `parties`                                           |
 | `backend/` módulo `products` | Productos y servicios, su precio unitario y sus referencias a entradas fiscales.            | `products`                                          |
-| `backend/` módulo `fiscal`   | Motor fiscal y orquestación SRI, con la estructura de CTX §42. Detalle en `docs/architecture/fiscal-emission.md`. | `fiscal-numbering`, `document-emission`, `sri-transmission`, los seis tipos, `document-archive` |
+| `backend/` módulo `invoices` | Borradores de factura, emisión hasta `SIGNED` (evaluación, snapshot, reserva, XML, XSD, firma y artefacto), reintento de la firma y consultas. Compone las lecturas internas de los demás módulos. Detalle en `docs/architecture/fiscal-emission.md`. | `invoices`, `document-emission` |
+| `backend/` módulo `sri-engine` | Piezas del protocolo del SRI detrás de puertos propios: clave de acceso, builder XML de la factura, validación XSD con el paquete verificado y firmador XAdES-BES (ADR 0018, ADR 0021). | `document-emission` |
+| `backend/` módulo `fiscal`   | Numeración, comprobante electrónico, transiciones y artefactos; en cambios futuros, la orquestación SRI con la estructura de CTX §42. Detalle en `docs/architecture/fiscal-emission.md`. | `fiscal-numbering`, `document-emission`, `sri-transmission`, los seis tipos, `document-archive` |
 | `backend/` módulo `inventory` | Stock opcional, movimientos y kárdex; reacciona a eventos fiscales.                        | `inventory`                                         |
 | `backend/` módulo `reports`  | Consultas filtradas y exportación XLSX.                                                     | `reports`, `data-portability`                       |
 | `backend/` módulo `audit`    | Eventos de auditoría, solo de agregado.                                                     | `audit-trail`                                       |
@@ -46,6 +51,10 @@ fiscal/
 └── persistence/     repositorios Prisma y almacenamiento de artefactos
 ```
 
+Esa estructura es el objetivo. Hoy, `fiscal` tiene la numeración, el comprobante, las
+transiciones y el puerto de artefactos; el builder, la clave y la validación XSD viven en
+`sri-engine`; la firma, en `signing`; y la orquestación de la emisión local, en `invoices`.
+
 ## Dependency Direction
 
 ```text
@@ -63,6 +72,10 @@ Rules:
 - Application logic depends on ports/interfaces, not concrete infrastructure. Los puertos del motor fiscal son los de CTX §43: clientes de recepción, autorización y consulta, validador XSD y firmador, más almacenamiento de artefactos y renderer RIDE.
 - Infrastructure implements ports and owns external tools. Los objetos de una librería SOAP o de firma nunca cruzan el puerto; se normalizan antes (CTX §44).
 - `fiscal` no importa `inventory`: el inventario reacciona a eventos fiscales, así puede desactivarse sin tocar la emisión (ADR 0006).
+- `invoices` no lee tablas de otros módulos (design D1 de `add-invoice-emission`):
+  - compone sus lecturas internas exportadas: la configuración y el punto de `taxpayer`, el tercero de `parties`, el producto de `products`, las consultas de `catalogs` y la firma vigente de `signing`;
+  - usa, dentro de su unidad de trabajo, las operaciones transaccionales exportadas: `reserveSequentialIn` y el repositorio de documentos y artefactos de `fiscal`, y `lockTaxIdentityIn` de `taxpayer`;
+  - las pruebas de arquitectura de `parties`, `products` y `catalogs` comprueban que ningún otro módulo lee sus tablas.
 - `parties` y `products` consumen `catalogs` solo por sus lecturas internas, sin leer sus tablas; `catalogs` no importa `parties` ni `products`, y estos no se importan entre sí. `identity` crea el consumidor final mediante un iniciador de empresa que registra `main.ts`, sin importar `parties` (add-parties-and-products, design D1 y D5).
 - Los seis flujos documentales dependen del núcleo común, nunca entre sí (ADR 0002, ERS RF-253).
 - UI code should not know server-side secrets. El frontend solo habla con la API; nunca recibe el certificado, su contraseña ni rutas de almacenamiento.
@@ -84,8 +97,9 @@ Rules:
 ## Flujo de emisión
 
 ```text
-borrador -> Emitir -> validación de negocio -> reserva de secuencial + snapshot -> clave de acceso
-         -> XML -> XSD -> firma -> XML firmado + hash persistidos            (petición, transacciones locales)
+borrador -> Emitir (Idempotency-Key) -> transacción: bloqueos, validación, snapshot, secuencial,
+            identidad tributaria y clave de acceso -> RESERVED            (cambio 6, implementado)
+         -> XML -> XSD -> firma -> XSD -> XML firmado + hash persistidos -> SIGNED   (petición)
          -> job: recepción -> respuesta persistida -> job: autorización con backoff
          -> XML autorizado + respuesta persistidos -> RIDE -> entrega         (jobs persistidos)
          -> reconciliación por la misma clave ante cualquier resultado ambiguo
