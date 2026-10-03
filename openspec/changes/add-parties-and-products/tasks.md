@@ -176,4 +176,4 @@
   - las demás especificaciones decimales no cambian.
 
   Actualizar `decimal-policy.md` y `database.md`
-- [ ] 9.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan
+- [x] 9.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan
