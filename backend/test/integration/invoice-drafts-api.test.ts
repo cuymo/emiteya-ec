@@ -6,12 +6,16 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { DraftSummaryView, DraftView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
-import { createSequentialReservation } from "../../src/modules/fiscal/application/reservation.ts";
-import { createFiscalUnitOfWork } from "../../src/modules/fiscal/infrastructure/unit-of-work.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
 import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker-pool.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
-import { CUSTODY, createProduct, readyCompany, type ReadyCompany } from "./emission-harness.ts";
+import {
+  CUSTODY,
+  createProduct,
+  insertReservedDocument,
+  readyCompany,
+  type ReadyCompany,
+} from "./emission-harness.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
 
 type Body = {
@@ -178,39 +182,7 @@ describe("API de borradores de factura", () => {
     it("un borrador emitido no se corrige ni se elimina, y la factura no cambia", async () => {
       const draft = await created(a);
       const prisma = db.database.prisma;
-      const reservation = await createSequentialReservation(createFiscalUnitOfWork(prisma)).reserve(
-        {
-          companyId: a.companyId,
-          environment: "TEST",
-          establishmentId: a.establishmentId,
-          emissionPointId: a.emissionPointId,
-          documentType: "01",
-          reservedBy: a.adminId,
-          correlationId: "prueba",
-        },
-      );
-      const document = await prisma.electronicDocument.create({
-        data: {
-          companyId: a.companyId,
-          documentType: "01",
-          environment: "TEST",
-          establishmentId: a.establishmentId,
-          emissionPointId: a.emissionPointId,
-          documentNumber: reservation.documentNumber,
-          sequential: reservation.sequential,
-          reservationId: reservation.reservationId,
-          accessKey: "0".repeat(48) + "1",
-          numericCode: "12345678",
-          issueDate: new Date("2026-10-03"),
-          state: "RESERVED",
-          snapshot: { snapshotVersion: 1 },
-          schemaVersion: "1.1.0",
-          buyerIdentification: "0992877878001",
-          buyerName: "EL PERNO CIA. LTDA.",
-          total: "28.75",
-          createdBy: a.adminId,
-        },
-      });
+      const document = await insertReservedDocument(db, a);
       await prisma.invoiceDraft.update({
         where: { id: draft.id },
         data: { status: "EMITTED", documentId: document.id },

@@ -2,10 +2,12 @@
 // configuración tributaria, un establecimiento con su punto, la firma sintética cargada con
 // custodia, terceros y productos. Escribe la configuración, los puntos y los terceros directamente;
 // la firma se carga por el servicio real, con su inspección en el pool criptográfico.
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
 import { createMembershipReader } from "../../src/modules/identity/infrastructure/prisma-memberships.ts";
+import { createSequentialReservation } from "../../src/modules/fiscal/application/reservation.ts";
+import { createFiscalUnitOfWork } from "../../src/modules/fiscal/infrastructure/unit-of-work.ts";
 import { createProductRepository } from "../../src/modules/products/infrastructure/prisma-products.ts";
 import { signingModule } from "../../src/modules/signing/infrastructure/index.ts";
 import type { TaxpayerProfile } from "../../src/modules/taxpayer/domain/taxpayer-config.ts";
@@ -184,4 +186,44 @@ export async function readyCompany(
     supplierId: supplier.id,
     productId,
   };
+}
+
+/** Comprobante RESERVED con un número real, escrito directamente: para pruebas de la base. */
+export async function insertReservedDocument(
+  db: MigratedSchema,
+  company: Pick<ReadyCompany, "companyId" | "adminId" | "establishmentId" | "emissionPointId">,
+) {
+  const prisma = db.database.prisma;
+  const reservation = await createSequentialReservation(createFiscalUnitOfWork(prisma)).reserve({
+    companyId: company.companyId,
+    environment: "TEST",
+    establishmentId: company.establishmentId,
+    emissionPointId: company.emissionPointId,
+    documentType: "01",
+    reservedBy: company.adminId,
+    correlationId: "prueba",
+  });
+  return prisma.electronicDocument.create({
+    data: {
+      companyId: company.companyId,
+      documentType: "01",
+      environment: "TEST",
+      establishmentId: company.establishmentId,
+      emissionPointId: company.emissionPointId,
+      documentNumber: reservation.documentNumber,
+      sequential: reservation.sequential,
+      reservationId: reservation.reservationId,
+      // Clave de prueba única, sin significado: estas pruebas no validan su composición.
+      accessKey: Array.from({ length: 49 }, () => randomInt(10)).join(""),
+      numericCode: "12345678",
+      issueDate: new Date("2026-10-03"),
+      state: "RESERVED",
+      snapshot: { snapshotVersion: 1 },
+      schemaVersion: "1.1.0",
+      buyerIdentification: "0992877878001",
+      buyerName: "EL PERNO CIA. LTDA.",
+      total: "28.75",
+      createdBy: company.adminId,
+    },
+  });
 }

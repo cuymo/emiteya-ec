@@ -106,7 +106,7 @@
 
 ## 8. Emisión hasta `RESERVED` e idempotencia
 
-- [ ] 8.1 Implementar el registro de idempotencia en `platform/idempotency`: cabecera, huella canónica, consulta y alta en la transacción (design D8). Verificar con pruebas unitarias de la huella y de la cabecera, y de integración de la colisión del índice único
+- [x] 8.1 Implementar el registro de idempotencia en `platform/idempotency`: cabecera, huella canónica, consulta y alta en la transacción (design D8). Verificar con pruebas unitarias de la huella y de la cabecera, y de integración de la colisión del índice único
 - [ ] 8.2 Implementar la validación previa a la reserva y la construcción del snapshot (design D4 y D6): fecha capturada una vez, los diez grupos de comprobaciones con sus códigos, casos especiales con la matriz y límites del esquema. Verificar con pruebas de cada código de rechazo, cada una comprobando que no se reserva número, no se crea clave, no se bloquea la identidad y no se crea documento
 - [ ] 8.3 Implementar la unidad de trabajo de emisión y la transacción de `RESERVED` en el orden de design D7, con `POST /api/v1/invoices`. Verificar con pruebas de integración:
   - reserva correcta con número, clave de 49 dígitos e identidad bloqueada;
