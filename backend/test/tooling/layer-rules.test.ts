@@ -69,6 +69,18 @@ describe("frontera del motor SRI y de node-forge (ADR 0018 y 0019)", () => {
     ).toBe(0);
   });
 
+  it("el módulo de catálogos no importa facturacion-electronica-ec en ninguna capa (ADR 0020)", async () => {
+    for (const layer of ["domain", "application", "infrastructure"]) {
+      expect(
+        await restrictedImports(
+          "imports-sri-engine.ts",
+          `test/fixtures/lint/modules/catalogs/${layer}`,
+        ),
+        layer,
+      ).toBe(1);
+    }
+  });
+
   it("node-forge solo se importa en el lector de PKCS#12", async () => {
     expect(await restrictedImports("infrastructure/imports-forge.ts")).toBe(1);
     expect(

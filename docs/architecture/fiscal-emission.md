@@ -184,6 +184,20 @@ Con fixtures sintéticos ningún proveedor figura aquí; Security Data está cub
 | --- | --- | --- | --- | --- |
 | — | Ninguno todavía | — | — | — |
 
+## Obligaciones que deja `add-fiscal-catalogs`
+
+`add-invoice-emission` debe recoger en sus tareas (design D15 de `add-fiscal-catalogs`):
+
+- **Una sola resolución de vigencia.** Cada impuesto, forma de pago o tipo de identificación se resuelve con `resolveCatalogEntry(catalogType, entryKey, fecha)` del módulo `catalogs`, con la fecha de emisión del comprobante en hora de Ecuador o, cuando la regla del documento lo pida, la del documento sustento (BR-33). Nada fuera de `catalogs` lee sus tablas, y nadie reimplementa la regla.
+- **Reproducibilidad.** El snapshot guarda el identificador estable de cada versión aplicada y copia sus valores (código, descripción oficial, tarifa, fuente) (BR-21).
+- **Utilizable.** Una entrada solo se usa si `isUsable`: habilitada para la empresa según `effectiveEnablement` y con versión aplicable en la fecha.
+- **ICE e IRBPNR.** No se calculan mientras el catálogo no tenga sus tarifas con fuente legal: la ficha v2.34 solo publica códigos (`OFFICIAL_REFERENCE`). La emisión de un producto con ICE o IRBPNR se rechaza de forma explícita hasta que una versión del dataset los traiga.
+- **IVA diferenciado.** El código 8 no tiene porcentaje fijo (nota 3 de la tabla 17): hace falta una política con fuente antes de emitir con él.
+- **Consumidor final.** La política vigente (`consumer_final_policy`, USD 50 al corte) y su identidad canónica se aplican en el paso 1, antes de reservar. El tercero del sistema que la usa lo crea `add-parties-and-products`.
+- **Casos especiales.** La matriz (`special_case_support`, ADR 0014) se aplica en el paso 1: lo no soportado se rechaza de forma explícita.
+- **Decimales.** Los importes y tarifas llegan como `DecimalString` validados con las especificaciones de `packages/contracts/src/decimal.ts`, que salen de los XSD. El redondeo de líneas y totales (Q-14) usa `roundHalfUp` de `platform/decimal`.
+- **Esquemas.** Los XSD del registro (`schema_registry_entry`) se registran en la librería al arrancar el motor (ADR 0008).
+
 ## Motor SRI (ADR 0018)
 
 `facturacion-electronica-ec` aporta las piezas del protocolo detrás de puertos propios. La

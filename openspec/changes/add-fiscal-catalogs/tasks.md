@@ -24,8 +24,8 @@
 
 ## 5. Contrato con `facturacion-electronica-ec` y obligaciones
 
-- [ ] 5.1 Añadir en `sri-engine` el adaptador de prueba que expone los catálogos de la librería y la prueba que compara los valores coincidentes con nuestros datasets, con la lista explícita de divergencias conocidas (design D16); verificar que pasa, que falla con una divergencia nueva y que `catalogs` no importa la librería (prueba de lint)
-- [ ] 5.2 Registrar las obligaciones de design D15: las de `add-invoice-emission` en `docs/architecture/fiscal-emission.md`, y las de `add-parties-and-products` en la fila 5b de `docs/product/capabilities.md`; corregir en `ARCHITECTURE.md` que el registro de esquemas es dato de `catalogs` y lo usa `fiscal/xml`, y añadir `decimal.js` a `docs/architecture/stack.md`; verificar que cada obligación nombra su origen
+- [x] 5.1 Añadir en `sri-engine` el adaptador de prueba que expone los catálogos de la librería y la prueba que compara los valores coincidentes con nuestros datasets, con la lista explícita de divergencias conocidas (design D16); verificar que pasa, que falla con una divergencia nueva y que `catalogs` no importa la librería (prueba de lint)
+- [x] 5.2 Registrar las obligaciones de design D15: las de `add-invoice-emission` en `docs/architecture/fiscal-emission.md`, y las de `add-parties-and-products` en la fila 5b de `docs/product/capabilities.md`; corregir en `ARCHITECTURE.md` que el registro de esquemas es dato de `catalogs` y lo usa `fiscal/xml`, y añadir `decimal.js` a `docs/architecture/stack.md`; verificar que cada obligación nombra su origen
 
 ## 6. Interfaz: Catálogos fiscales
 

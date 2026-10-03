@@ -63,6 +63,16 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 15  | `add-reports-export`       | `reports`                                             | 8              | AC-09         |
 | 16  | `add-data-portability`     | `data-portability`                                    | 8              | AC-10         |
 
+Obligaciones de `add-fiscal-catalogs` (5a) para `add-parties-and-products` (5b), que consume
+`fiscal-catalogs` como dependencia canónica sin duplicar datasets ni reglas de vigencia:
+
+- validar identificaciones con las reglas del dataset de tipos de identificación, con el tipo `07` reservado;
+- crear el consumidor final de cada empresa como registro del sistema, con la identidad que publica la política de consumidor final;
+- referenciar impuestos por `(catálogo, entryKey)`, resolverlos solo con `resolveCatalogEntry` y decidir si están disponibles con `effectiveEnablement` e `isUsable`;
+- usar las especificaciones decimales `precioUnitario` e `importe` y `decimalString`;
+- señalar los productos cuyo impuesto deja de estar vigente o habilitado;
+- traer el contrato común de búsqueda y paginación, la prueba de volumen de Q-26 y el aviso de `Catálogos fiscales` sobre productos afectados al deshabilitar.
+
 El cambio 5 se propuso como `add-business-catalogs` y, antes de implementarse, se dividió en 5a y 5b (2026-10-02): `catalogs` no depende de terceros ni productos, y cada parte queda revisable por separado. La propuesta original queda solo en el historial de git.
 
 Estrategia técnica (ADR 0018): los cambios 4 a 14 reutilizan `facturacion-electronica-ec`, detrás de puertos propios, para los builders XML, la clave de acceso, la validación XSD, la firma XAdES-BES y el transporte SOAP, en lugar de reimplementarlos. La orquestación, la numeración, la persistencia, los estados, la idempotencia, los reintentos y la reconciliación siguen siendo de la aplicación. Ningún cambio está implementado por adoptar la librería.

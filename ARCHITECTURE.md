@@ -37,7 +37,7 @@ Estructura interna del módulo `fiscal`, adaptada de CTX §42 a las capas de
 fiscal/
 ├── domain/          dominio puro: documents, money, sequences, states, policies, access-key, snapshots
 ├── application/     casos de uso (emitir, corregir, reconciliar) y workers de orquestación
-├── xml/             builders deterministas por tipo y versión, y el registro de esquemas
+├── xml/             builders deterministas por tipo y versión; usa el registro de esquemas de `catalogs`
 ├── signature/       adaptador XAdES-BES y custodia del certificado
 ├── sri/             clientes SOAP de recepción, autorización y consulta; parser; mapper de errores; endpoints
 ├── ride/            renderer del RIDE
