@@ -13,7 +13,7 @@
     "build": "corepack pnpm -r --if-present build",
     "lint": "eslint . && corepack pnpm -r --if-present lint",
     "typecheck": "tsc --noEmit -p tsconfig.json && corepack pnpm -r --if-present typecheck",
-    "test": "vitest run",
+    "test": "vitest run && corepack pnpm --filter @facturador/backend test:ac04",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,yaml,yml,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,yaml,yml,css}\"",
     "check:versions": "node scripts/check-versions.ts",

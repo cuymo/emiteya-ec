@@ -89,6 +89,10 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
 ## Cómo correr las pruebas en este proyecto
 
 - Todas: `corepack pnpm test` (Vitest con un proyecto por paquete: `backend`, `contracts`, `frontend` y `scripts`). `corepack pnpm verify` las incluye.
+- ERS AC-04 en ejecución aislada:
+  - `corepack pnpm test` corre primero la suite normal y después `backend/test/integration/fiscal-ac04.test.ts` sola, con `backend/vitest.ac04.config.ts` (`corepack pnpm --filter @facturador/backend test:ac04`). Si cualquiera de las dos falla, `test` y `verify` fallan.
+  - La razón: la prueba mide 120 reservas simultáneas con la configuración de transacción por defecto de Prisma. En paralelo con el resto de la suite, con la máquina saturada, el tiempo para empezar una transacción (`maxWait`, 2 s) se agotaba por la carga, igual con distintas versiones de Node, mientras que aislada se mantiene por debajo de 1 s.
+  - Separarla elimina esa interferencia; no cambia sus invariantes, su volumen ni `maxWait`.
 - Un paquete: `corepack pnpm exec vitest run --project backend` (o `contracts`, `frontend`, `scripts`).
 - Integración: las pruebas de `backend/test/integration/` usan PostgreSQL real, la base `facturador_test` de `compose.yaml` o `DATABASE_URL_TEST`. Levántala con `docker compose up -d --wait`. Si no está disponible, fallan con esa indicación; nunca se saltan.
 - Aislamiento: cada archivo de integración crea su propio esquema PostgreSQL dentro de `facturador_test`, le aplica las migraciones con `prisma migrate deploy` y lo elimina al terminar (`createMigratedSchema`), de modo que los archivos corren en paralelo sin compartir datos y el aprovisionamiento puede partir de una instalación vacía. Las fixtures incluyen siempre dos empresas.

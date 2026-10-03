@@ -1,6 +1,7 @@
 // ERS AC-04 y RNF-003 (design D5): 120 reservas simultáneas repartidas entre dos clientes de Prisma
 // independientes, que simulan dos instancias con su propio pool, con la configuración de
 // transacción por defecto de Prisma. Mide la duración total y la espera máxima de una reserva.
+// Se ejecuta aislada del resto de la suite (backend/vitest.ac04.config.ts, docs/quality/testing.md).
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { reserveSequentialIn } from "../../src/modules/fiscal/application/reservation.ts";
 import { createSequentialReservation } from "../../src/modules/fiscal/application/reservation.ts";
