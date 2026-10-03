@@ -56,4 +56,4 @@
   7. Ninguna tabla contiene el P12 ni la contraseña en claro.
 
   Verificar que la prueba pasa.
-- [ ] 7.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan
+- [x] 7.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan
