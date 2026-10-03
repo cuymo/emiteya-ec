@@ -266,7 +266,7 @@ de la política aplicable el día de su creación en Ecuador. El rol es cliente,
   - el desempate final siempre es `id`.
 - **Paginación:** por desplazamiento (`OFFSET`) con `COUNT` sobre el mismo filtro. Una página más allá de la última devuelve una lista vacía con el total.
 - **Índices:**
-  - btree con `text_pattern_ops` sobre `(company_id, clave)` para los prefijos; Prisma 7 lo declara con `ops: raw("text_pattern_ops")`;
+  - las claves de búsqueda por prefijo tienen colación `C`, y su índice btree `(company_id, clave)` resuelve `LIKE 'prefijo%'` como una condición de rango, con cualquier colación de la base. Se descartó `text_pattern_ops`: Prisma 7 lo acepta en el esquema, pero no lo conserva al comparar la base con el esquema, y cada migración futura lo borraría y lo volvería a crear;
   - btree `(company_id, status, search_name, id)` para el orden;
   - el fragmento de nombre recorre las filas de la empresa; sin `pg_trgm` salvo que el benchmark lo exija (D16).
 
@@ -338,7 +338,7 @@ correcciones sin cambios ni la creación del consumidor final.
 
 ### D15. Tablas y migración
 
-Una migración `add_parties_and_products` crea:
+La migración `add_parties_and_products` crea las tablas, y una segunda migración, que llega con el iniciador de empresa, añade el consumidor final obligatorio por empresa (así cada grupo de tareas queda verificable con toda la suite). Entre las dos crean:
 
 - **`party`:**
   - columnas de D3, más `search_name`, `search_identification`, `created_by` y `updated_by` (nulos en el registro del sistema);
@@ -391,7 +391,7 @@ fija las restricciones, los índices y los triggers.
 - **En CI normal:**
   - comportamiento de búsqueda y paginación;
   - índices esperados en `migrations.test.ts`;
-  - planes de consulta con `EXPLAIN` y `enable_seqscan = off`, para comprobar que las búsquedas por prefijo pueden usar sus índices `text_pattern_ops`.
+  - planes de consulta con `EXPLAIN`, sobre datos sembrados y analizados, para comprobar que las búsquedas por prefijo usan su índice con una condición de rango.
 - **Si no se cumple el objetivo:**
   1. se analizan los planes de consulta y se identifica la causa;
   2. si hace falta cambiar índices o la estrategia, o añadir `pg_trgm`, se propone con `/opsx:update` antes de incorporarlo.

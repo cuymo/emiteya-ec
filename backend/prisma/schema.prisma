@@ -38,6 +38,10 @@ model User {
   sequenceReservations        FiscalSequenceReservation[]   @relation("SequenceReserver")
   signingCertificatesUploaded SigningCertificate[]          @relation("SigningCertificateUploader")
   fiscalCatalogDecisions      CompanyFiscalCatalogSetting[] @relation("FiscalCatalogDecider")
+  partiesCreated              Party[]                       @relation("PartyCreator")
+  partiesUpdated              Party[]                       @relation("PartyUpdater")
+  productsCreated             Product[]                     @relation("ProductCreator")
+  productsUpdated             Product[]                     @relation("ProductUpdater")
 
   @@unique([email])
   @@map("user")
@@ -112,6 +116,8 @@ model Organization {
   signingCertificates        SigningCertificate[]
   signingCertificateSettings SigningCertificateSettings?
   fiscalCatalogSettings      CompanyFiscalCatalogSetting[]
+  parties                    Party[]
+  products                   Product[]
 
   @@unique([slug])
   @@map("organization")
@@ -436,11 +442,12 @@ model FiscalCatalogDataset {
 // Identidad estable de una entrada: (catálogo, entryKey). El código fiscal no es identidad
 // (la tabla 18 de la ficha repite códigos con denominaciones distintas, design D6).
 model FiscalCatalogKey {
-  catalogType String                        @map("catalog_type")
-  entryKey    String                        @map("entry_key")
-  code        String
-  versions    FiscalCatalogEntry[]
-  settings    CompanyFiscalCatalogSetting[]
+  catalogType  String                        @map("catalog_type")
+  entryKey     String                        @map("entry_key")
+  code         String
+  versions     FiscalCatalogEntry[]
+  settings     CompanyFiscalCatalogSetting[]
+  productTaxes ProductTax[]
 
   @@id([catalogType, entryKey])
   @@map("fiscal_catalog_key")
@@ -540,4 +547,87 @@ model CompanyFiscalCatalogSetting {
 
   @@id([companyId, catalogType, entryKey])
   @@map("company_fiscal_catalog_setting")
+}
+
+// Tercero de una empresa (add-parties-and-products, design D3 a D5): identificación única por
+// empresa, tipo y número. El consumidor final es un registro del sistema (`system_record`), uno por
+// empresa, inmutable y obligatorio; lo garantizan los CHECK y triggers de la migración.
+model Party {
+  id                   String       @id @default(uuid())
+  companyId            String       @map("company_id")
+  company              Organization @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  identificationType   String       @map("identification_type") @db.Char(2)
+  identification       String       @db.VarChar(20)
+  legalName            String       @map("legal_name") @db.VarChar(300)
+  address              String?      @db.VarChar(300)
+  email                String?      @db.VarChar(300)
+  phone                String?      @db.VarChar(50)
+  roles                String[]     @default([])
+  status               String       @default("ACTIVE")
+  systemRecord         String?      @map("system_record")
+  version              Int          @default(1)
+  searchName           String       @map("search_name")
+  /// Colación C en la migración: el índice btree sirve para LIKE 'prefijo%' (design D10).
+  searchIdentification String       @map("search_identification")
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy            String?      @map("created_by")
+  creator              User?        @relation("PartyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy            String?      @map("updated_by")
+  updater              User?        @relation("PartyUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, identificationType, identification])
+  @@index([companyId, searchIdentification])
+  @@index([companyId, status, searchName, id])
+  @@map("party")
+}
+
+// Producto o servicio de una empresa (add-parties-and-products, design D6 y D9): precio unitario
+// sin impuestos con la escala de `precioUnitario`; código principal único por empresa.
+model Product {
+  id                  String       @id @default(uuid())
+  companyId           String       @map("company_id")
+  company             Organization @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  kind                String
+  mainCode            String?      @map("main_code") @db.VarChar(25)
+  auxiliaryCode       String?      @map("auxiliary_code") @db.VarChar(25)
+  name                String       @db.VarChar(300)
+  description         String?      @db.VarChar(1000)
+  unitPrice           Decimal      @map("unit_price") @db.Decimal(18, 6)
+  stockTracked        Boolean      @default(false) @map("stock_tracked")
+  status              String       @default("ACTIVE")
+  version             Int          @default(1)
+  searchName          String       @map("search_name")
+  /// Colación C en la migración, como la identificación de los terceros (design D10).
+  searchMainCode      String?      @map("search_main_code")
+  searchAuxiliaryCode String?      @map("search_auxiliary_code")
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy           String       @map("created_by")
+  creator             User         @relation("ProductCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy           String       @map("updated_by")
+  updater             User         @relation("ProductUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  taxes               ProductTax[]
+
+  @@unique([companyId, mainCode])
+  @@unique([companyId, id])
+  @@index([companyId, searchMainCode])
+  @@index([companyId, searchAuxiliaryCode])
+  @@index([companyId, status, searchName, id])
+  @@map("product")
+}
+
+// Referencia de un producto a una entrada del catálogo fiscal (design D7): una por impuesto, por la
+// identidad de la entrada, sin copiar ninguna tarifa.
+model ProductTax {
+  productId   String           @map("product_id")
+  companyId   String           @map("company_id")
+  product     Product          @relation(fields: [companyId, productId], references: [companyId, id], onDelete: Restrict)
+  catalogType String           @map("catalog_type")
+  entryKey    String           @map("entry_key")
+  key         FiscalCatalogKey @relation(fields: [catalogType, entryKey], references: [catalogType, entryKey], onDelete: Restrict)
+
+  @@id([productId, catalogType])
+  @@index([companyId, catalogType, entryKey])
+  @@map("product_tax")
 }

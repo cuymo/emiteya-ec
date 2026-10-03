@@ -26,7 +26,8 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `member` (plugin Organization de Better Auth) | `identity` | Yes | La membresía: rol `ADMIN` u `OPERATOR` y `status`, con `UNIQUE (organizationId, userId)` y `CHECK` propios. Las cuentas son de Better Auth. |
 | `fiscal_sequence` | `fiscal` | Yes | Contador por empresa, ambiente, establecimiento, punto y tipo; bloqueo de fila al reservar. |
 | `fiscal_sequence_reservation` | `fiscal` | Yes | Solo agregado: un registro por número reservado, con la unicidad de CTX §5. |
-| `party`, `product` | `catalogs` | Yes | Editables; los comprobantes guardan su copia. |
+| `party` | `parties` | Yes | Se desactivan; nunca se borran. Los comprobantes guardan su copia. El consumidor final es un registro del sistema, uno por empresa e inmutable. |
+| `product`, `product_tax` | `products` | Yes | Se desactivan; nunca se borran. Los comprobantes guardan su copia; los impuestos refieren la identidad de una entrada fiscal, nunca una tarifa. |
 | `fiscal_catalog_dataset`, `fiscal_catalog_key`, `fiscal_catalog_entry`, `consumer_final_policy`, `schema_registry_entry`, `special_case_support` | `catalogs` | No | Datos normativos versionados del sistema, que el cargador aplica al arrancar desde los datasets del repositorio (ADR 0020). Sin borrado; las versiones publicadas solo cierran su vigencia o se retiran. |
 | `company_fiscal_catalog_setting` | `catalogs` | Yes | Decisión explícita de una empresa sobre una entrada habilitable; sin fila rige la política por defecto del catálogo. |
 | `electronic_document` | `fiscal` | Yes | Nunca se borra desde `SEQUENCE_RESERVED`. |
@@ -140,8 +141,9 @@ UNIQUE (document_id, product_id, movement_type)
 Migraciones: `backend/prisma/migrations/20261002083000_add_user_access` (cambio
 `add-user-access`), `20261002120000_add_taxpayer_setup` (cambio `add-taxpayer-setup`),
 `20261002180000_add_fiscal_numbering` (cambio `add-fiscal-numbering`),
-`20261002200000_add_signing_certificate` (cambio `add-signing-certificate`) y
-`20261003100000_add_fiscal_catalogs` (cambio `add-fiscal-catalogs`). Las tablas
+`20261002200000_add_signing_certificate` (cambio `add-signing-certificate`),
+`20261003100000_add_fiscal_catalogs` (cambio `add-fiscal-catalogs`) y
+`20261003200000_add_parties_and_products` (cambio `add-parties-and-products`). Las tablas
 de Better Auth y de sus plugins las genera el CLI `auth`; las columnas de esas tablas usan los
 nombres que fija Better Auth (`organizationId`, `userId`).
 
@@ -170,6 +172,9 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `schema_registry_entry` | Propia (`catalogs`) | Esquemas XSD por versión del dataset: tipo, versión, raíz, archivo, SHA-256, fuente, `downloaded_at` y `supported`. |
 | `special_case_support` | Propia (`catalogs`) | Categoría de cada anexo por versión del dataset (ADR 0014). |
 | `company_fiscal_catalog_setting` | Propia (`catalogs`) | Decisión de una empresa: `(company_id, catalog_type, entry_key)`, `enabled`, `updated_at` y `updated_by`. |
+| `party` | Propia (`parties`) | Tercero: `identification_type`, `identification`, `legal_name`, `address`, `email`, `phone`, `roles` (`CUSTOMER`, `SUPPLIER`, `CARRIER`), `status`, `system_record` (`CONSUMER_FINAL` o nulo), `version`, las claves de búsqueda `search_name` y `search_identification` (colación `C`), y autores y fechas (nulos en el registro del sistema). |
+| `product` | Propia (`products`) | Producto o servicio: `kind` (`GOOD`, `SERVICE`), `main_code`, `auxiliary_code`, `name`, `description`, `unit_price NUMERIC(18,6)` sin impuestos, `stock_tracked`, `status`, `version`, las claves de búsqueda `search_name`, `search_main_code` y `search_auxiliary_code` (las dos últimas con colación `C`), y autores y fechas. |
+| `product_tax` | Propia (`products`) | Referencia de un producto a una entrada fiscal: `(product_id, catalog_type)` con `company_id` y `entry_key`; `catalog_type` es `iva-rate`, `ice-rate` o `irbpnr-rate`. |
 
 Restricciones de la migración, incluidas las que Prisma no expresa (verificadas por
 `backend/test/integration/migrations.test.ts`):
@@ -248,6 +253,15 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `fiscal_catalog_entry_no_delete`, `consumer_final_policy_no_delete` y sus `*_no_truncate` | Versiones | Triggers que rechazan borrar versiones | SQL de la migración |
 | `fiscal_catalog_entry_guard`, `consumer_final_policy_guard` | Versiones | Trigger `BEFORE UPDATE`: una versión publicada solo cierra una vigencia abierta o pasa a `WITHDRAWN`, una vez y con la versión del dataset que lo hizo; nada más cambia (design D4 de `add-fiscal-catalogs`) | SQL de la migración |
 | `fiscal_catalog_entry_no_overlap`, `consumer_final_policy_no_overlap` | Versiones | Trigger `BEFORE INSERT OR UPDATE`: las versiones de una entrada no se superponen (`daterange` inclusivo; sin fin, abierta) | SQL de la migración |
+| `party_company_id_identification_type_identification_key` | `party` | `UNIQUE (company_id, identification_type, identification)`, también con terceros desactivados; con el `07` reservado, limita a uno el consumidor final por empresa | `@@unique` en el esquema |
+| `party_identification_check`, `party_text_check`, `party_status_check`, `party_roles_check`, `party_version_check` | `party` | Tipo `^[0-9]{2}$`; identificación, razón social y contactos no vacíos y sin saltos de línea; estado `ACTIVE` o `INACTIVE`; roles incluidos en `CUSTOMER`, `SUPPLIER` y `CARRIER`; versión desde 1 | SQL de la migración |
+| `party_system_record_check` | `party` | Un tercero normal no usa el tipo `07` y tiene autor; el registro del sistema es exactamente el consumidor final: `07`, `9999999999999`, `ACTIVE`, rol cliente y sin autor (design D5 de `add-parties-and-products`) | SQL de la migración |
+| `party_system_record_guard`, `party_no_truncate` | `party` | Triggers: el consumidor final no se corrige, no se desactiva ni se borra; ningún tercero cambia su marca de registro del sistema; la tabla no se trunca | SQL de la migración |
+| `product_company_id_main_code_key` | `product` | `UNIQUE (company_id, main_code)`, también con productos desactivados; los nulos no chocan | `@@unique` en el esquema |
+| `product_kind_check`, `product_status_check`, `product_text_check`, `product_unit_price_check`, `product_stock_tracked_check`, `product_version_check` | `product` | Tipo `GOOD` o `SERVICE`; estado; nombre y códigos no vacíos y sin saltos de línea; precio no negativo; control de stock solo en bienes; versión desde 1 | SQL de la migración |
+| `product_tax_pkey`, `product_tax_catalog_type_check` | `product_tax` | Como mucho una referencia por impuesto; solo `iva-rate`, `ice-rate` e `irbpnr-rate` | `@@id` en el esquema y SQL de la migración |
+| `product_tax_company_id_product_id_fkey`, `product_tax_catalog_type_entry_key_fkey` | `product_tax` | La referencia es del producto de la misma empresa y de una entrada fiscal existente (`fiscal_catalog_key`). Esta clave foránea es un objeto de `products` sobre una tabla de `catalogs`; `products` nunca lee esas tablas | Relación en el esquema |
+| `product_invariants`, `product_tax_invariants` | `product`, `product_tax` | Triggers de restricción diferidos: al confirmar, cada producto tiene exactamente un IVA y, si es un servicio, ningún IRBPNR, sin importar el orden de las sentencias | SQL de la migración |
 
 - Ninguna restricción limita el número de empresas: una sola empresa es política del aprovisionamiento (ADR 0009, design de `add-user-access`).
 - El trigger se prefiere a privilegios separados porque una instalación self-hosted puede usar un solo usuario de base de datos.
@@ -285,15 +299,17 @@ actual y que migraciones y esquema coinciden.
 | Búsqueda por número de comprobante                                | La restricción única de secuencial.                            |
 | Comprobantes por reconciliar o en espera                          | `(company_id, state, updated_at)`                              |
 | Jobs listos para ejecutar                                         | `(status, run_at)`                                             |
-| Terceros por identificación y nombre (ERS RF-323)                 | `(company_id, identification_number)`; búsqueda por nombre según medición. |
-| Productos por código principal, auxiliar y nombre (ERS RF-304)    | `(company_id, main_code)`, `(company_id, auxiliary_code)`; nombre según medición. |
+| Terceros por identificación y nombre (ERS RF-323)                 | `(company_id, search_identification)` con colación `C` para el prefijo; `(company_id, status, search_name, id)` para el orden; el fragmento de nombre, según medición. |
+| Productos por código principal, auxiliar y nombre (ERS RF-304)    | `(company_id, search_main_code)` y `(company_id, search_auxiliary_code)` con colación `C`; `(company_id, status, search_name, id)` para el orden; el fragmento de nombre, según medición. |
 | Kárdex por producto y fechas (ERS RF-314)                         | `(company_id, product_id, occurred_at)`                        |
 | Auditoría por fecha                                               | `(company_id, occurred_at)`                                    |
 | Membresía activa del usuario de la sesión (cada petición, D3)     | `member (userId)`                                              |
 | Usuarios de la empresa                                            | `member (organizationId)` y el único `(organizationId, userId)` |
 
 Los índices de búsqueda por nombre (`pg_trgm` u otro) se añaden solo si la medición con el
-volumen de referencia (Q-26) no cumple ERS RNF-005.
+volumen de referencia (Q-26) no cumple ERS RNF-005. Las claves de búsqueda por prefijo usan la
+colación `C`, para que su índice btree resuelva `LIKE 'prefijo%'` con cualquier colación de la
+base: Prisma 7 no conserva `text_pattern_ops` en un índice btree al comparar la base con el esquema.
 
 ## Auth Tables
 

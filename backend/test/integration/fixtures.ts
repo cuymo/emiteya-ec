@@ -3,17 +3,40 @@
 import { randomUUID } from "node:crypto";
 import type { DbClient } from "../../src/platform/db/database.ts";
 
+/** Empresa con su consumidor final, en una transacción, como exige la base de datos (design D5). */
 export async function insertCompany(db: DbClient, name: string): Promise<string> {
   const id = randomUUID();
-  await db.organization.create({
+  const create = async (tx: DbClient) => {
+    await tx.organization.create({
+      data: {
+        id,
+        name,
+        slug: `${name.toLowerCase().replace(/\W+/g, "-")}-${id.slice(0, 8)}`,
+        createdAt: new Date(),
+      },
+    });
+    await insertConsumerFinal(tx, id);
+  };
+  if ("$transaction" in db) await db.$transaction((tx) => create(tx));
+  else await create(db);
+  return id;
+}
+
+/** Consumidor final con la identidad canónica de la política, sin pasar por la aplicación. */
+export async function insertConsumerFinal(db: DbClient, companyId: string): Promise<string> {
+  const party = await db.party.create({
     data: {
-      id,
-      name,
-      slug: `${name.toLowerCase().replace(/\W+/g, "-")}-${id.slice(0, 8)}`,
-      createdAt: new Date(),
+      companyId,
+      identificationType: "07",
+      identification: "9999999999999",
+      legalName: "CONSUMIDOR FINAL",
+      roles: ["CUSTOMER"],
+      systemRecord: "CONSUMER_FINAL",
+      searchName: "consumidor final",
+      searchIdentification: "9999999999999",
     },
   });
-  return id;
+  return party.id;
 }
 
 export type InsertedMember = { userId: string; email: string; name: string };

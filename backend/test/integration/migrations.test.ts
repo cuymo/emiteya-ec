@@ -233,6 +233,62 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea las restricciones y triggers de terceros y productos", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "party_identification_check",
+        "party_text_check",
+        "party_status_check",
+        "party_roles_check",
+        "party_version_check",
+        "party_system_record_check",
+        "product_kind_check",
+        "product_status_check",
+        "product_text_check",
+        "product_unit_price_check",
+        "product_stock_tracked_check",
+        "product_version_check",
+        "product_tax_catalog_type_check",
+        "product_tax_company_id_product_id_fkey",
+        "product_tax_catalog_type_entry_key_fkey",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "party_company_id_identification_type_identification_key",
+        "party_company_id_search_identification_idx",
+        "party_company_id_status_search_name_id_idx",
+        "product_company_id_main_code_key",
+        "product_company_id_search_main_code_idx",
+        "product_company_id_search_auxiliary_code_idx",
+        "product_company_id_status_search_name_id_idx",
+        "product_tax_company_id_catalog_type_entry_key_idx",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "party_system_record_guard",
+        "party_no_truncate",
+        "product_invariants",
+        "product_tax_invariants",
+      ]),
+    );
+    // Las claves de búsqueda por prefijo usan la colación C, para LIKE 'prefijo%' (design D10).
+    const collations = await db.database.prisma.$queryRaw<{ column: string; collation: string }[]>`
+      SELECT a.attname AS column, co.collname AS collation
+      FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_collation co ON co.oid = a.attcollation
+      WHERE n.nspname = ${db.name} AND c.relkind = 'r'
+        AND a.attname IN ('search_identification', 'search_main_code', 'search_auxiliary_code')`;
+    expect(collations.map((row) => `${row.column}:${row.collation}`).sort()).toEqual([
+      "search_auxiliary_code:C",
+      "search_identification:C",
+      "search_main_code:C",
+    ]);
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     const organizationConstraints = await db.database.prisma.$queryRaw<{ name: string }[]>`
       SELECT c.conname AS name

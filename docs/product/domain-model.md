@@ -95,22 +95,27 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `party` — Tercero
 
 - Purpose: persona u organización reutilizable en cualquier rol (ERS RF-320).
-- Key attributes: tipo y número de identificación, razón social o nombres, dirección, correo, teléfono, roles, activo.
+- Key attributes: tipo y número de identificación, razón social o nombres, dirección, correo, teléfono, roles opcionales y combinables (`CUSTOMER`, `SUPPLIER`, `CARRIER`), estado (`ACTIVE`/`INACTIVE`), `systemRecord` y versión.
 - Invariants:
-  - Identificación única por empresa y tipo.
-  - Se valida tipo, longitud y formato cuando el XSD lo exige y las reglas expresamente oficiales; ningún RUC se rechaza por un algoritmo local único (ERS RF-322, CTX §9.1).
-  - "Consumidor final" (`07` / `9999999999999`) es un tercero del sistema, no editable.
+  - Identificación única por empresa, tipo y número, también con terceros desactivados.
+  - Se valida con la regla de formato del catálogo de tipos de identificación vigente; ningún RUC se rechaza por un algoritmo local único (ERS RF-322, CTX §9.1). El tipo `07` está reservado al consumidor final.
+  - Ningún rol es obligatorio: un tercero existe antes de recibir un uso. Los roles clasifican y filtran.
+  - Se desactiva y se reactiva; nunca se borra. Se corrige solo a partir de la versión consultada.
+  - El consumidor final (`systemRecord: CONSUMER_FINAL`, `07` / `9999999999999`, razón social de la política vigente al crearlo) existe exactamente uno por empresa: se crea con la empresa, nadie lo edita, desactiva ni borra, y se reconoce por su marca, nunca por su texto. No guarda el monto máximo, que es política fiscal.
   - Editar un tercero no altera los comprobantes emitidos (BR-21).
 - Relationships: aparece como comprador, proveedor, transportista, destinatario o sujeto retenido.
 
 ### `product` — Producto o servicio
 
 - Purpose: ítem facturable.
-- Key attributes: código principal, código auxiliar, nombre, descripción, tipo (`GOOD`/`SERVICE`), precio unitario, impuestos, control de stock, activo.
+- Key attributes: código principal, código auxiliar, nombre, descripción interna, tipo (`GOOD`/`SERVICE`), precio unitario sin impuestos, referencias fiscales, `stockTracked`, estado y versión.
 - Invariants:
-  - Código principal único por empresa cuando existe (ERS RF-301). El XSD decide si es obligatorio en cada caso (CTX §12.4).
-  - Solo los bienes llevan control de stock (propuesta derivada de ERS RF-302 y RF-303).
-  - Los impuestos referencian códigos del catálogo fiscal, nunca una tarifa fija en el código (CTX §12.5).
+  - Código principal único por empresa cuando existe (ERS RF-301), también con productos desactivados. El XSD decide si es obligatorio en cada caso (CTX §12.4).
+  - El precio unitario es un decimal exacto sin impuestos, con la escala de `precioUnitario` (`decimal-policy.md`).
+  - Refiere exactamente una tarifa de IVA, como mucho un ICE y como mucho un IRBPNR, por la identidad de la entrada (`catalogType`, `entryKey`); nunca copia una tarifa (CTX §12.5).
+  - Un servicio no lleva control de stock ni IRBPNR; el estado final de cada corrección lo cumple. `stockTracked` es solo un dato hasta el inventario (ADR 0006).
+  - Su estado tributario (`READY`, `REVIEW_REQUIRED`, `INCOMPLETE`) se deriva de sus referencias en una fecha y nunca se guarda.
+  - Se desactiva y se reactiva; nunca se borra.
 - Relationships: aparece en líneas de comprobante; tiene movimientos de inventario.
 
 ### `stock_movement` — Movimiento de inventario

@@ -89,12 +89,13 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 
 | Término (UI)                | Identificador                  | Significado                                                                                                    |
 | --------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| Tercero                     | `party`                        | Persona u organización reutilizable con uno o varios roles: cliente, proveedor, transportista, destinatario, sujeto retenido. |
+| Tercero                     | `party`                        | Persona u organización reutilizable en cualquier rol. Sus roles opcionales y combinables (cliente `CUSTOMER`, proveedor `SUPPLIER`, transportista `CARRIER`) solo clasifican; destinatario y sujeto retenido son usos en un comprobante. |
 | Tipo de identificación      | `identificationType`           | RUC (`04`), cédula (`05`), pasaporte (`06`), venta a consumidor final (`07`) o identificación del exterior (`08`), según el catálogo fiscal (CTX §9). |
-| Consumidor final            | `finalConsumer`                | Tercero del sistema con identificación `07` / `9999999999999` para ventas sin identificar al adquirente, hasta el monto vigente. No se admite en liquidación de compra, nota de crédito, nota de débito ni retención. |
+| Consumidor final            | `finalConsumer` (`systemRecord: CONSUMER_FINAL`) | Tercero del sistema, uno por empresa, con identificación `07` / `9999999999999` para ventas sin identificar al adquirente, hasta el monto vigente de la política. No se admite en liquidación de compra, nota de crédito, nota de débito ni retención. |
 | Producto / Servicio         | `product` (`GOOD` / `SERVICE`) | Ítem del catálogo con precio e impuestos.                                                                      |
 | Código principal / auxiliar | `mainCode` / `auxiliaryCode`   | Códigos del ítem; el principal es único.                                                                       |
 | Control de stock            | `stockTracked`                 | Indica que el producto lleva existencias.                                                                      |
+| Estado de la configuración tributaria | `taxConfiguration.status` | Estado derivado de las referencias fiscales de un producto en una fecha: `READY` (Listo), `REVIEW_REQUIRED` (Revisar impuestos: una referencia dejó de ser aplicable o habilitada) o `INCOMPLETE` (Incompleto: faltan datos normativos para calcular un impuesto). Nunca se guarda. |
 | Movimiento de inventario    | `stockMovement`                | `INICIAL`, `ENTRADA_MANUAL`, `SALIDA_FACTURA`, `DEVOLUCION_NC` o `AJUSTE`. Inmutable.                          |
 | Kárdex                      | `stockLedger`                  | Historial de movimientos de un producto en un rango de fechas.                                                 |
 
