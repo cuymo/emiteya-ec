@@ -203,7 +203,7 @@ resume en "Implementación de `add-invoice-emission`".
   - No hay descargas en tiempo de ejecución ni caída a XSD de terceros: un archivo ausente o con otro hash falla cerrada.
   - Una prueba del artefacto de build demuestra que los esquemas están presentes (ADR 0021).
 - **Concurrencia XSD.** La validación usa concurrencia acotada, nunca un worker por solicitud sin límite. El adaptador ya acota la concurrencia, la cola y el plazo, con `VALIDATOR_BUSY` y `VALIDATOR_TIMEOUT` (ADR 0021). El design fija los valores y el comportamiento ante saturación; Q-26 dirá si hay que ajustarlos.
-- **Vector oficial de la clave de acceso.** No bloquea el proposal: el algoritmo coincide con CTX §8.3, una prueba independiente comprueba el dígito y S-3 offline la composición completa. Obtener y verificar el vector oficial de la ficha es evidencia adicional; no se inventa. El 2026-10-03 el portal del SRI no fue accesible desde el entorno del proyecto, y el vector queda como evidencia pendiente (S-3 en `open-questions.md`).
+- **Vector oficial de la clave de acceso.** No bloquea el proposal: el algoritmo coincide con CTX §8.3, una prueba independiente comprueba el dígito y S-3 offline la composición completa. Obtener y verificar el vector oficial de la ficha es evidencia adicional; no se inventa. El 2026-10-03 el portal del SRI no fue accesible desde el entorno del proyecto. El vector queda como evidencia pendiente y como compuerta previa a la transmisión: no bloquea el archive de este cambio (S-3 en `open-questions.md`).
 
 ## Implementación de `add-invoice-emission`
 
