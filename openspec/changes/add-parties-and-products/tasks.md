@@ -121,7 +121,7 @@
 
 ## 7. Interfaz
 
-- [ ] 7.1 Añadir el grupo de navegación "Operación" y la pantalla `Terceros` según su brief de design D17:
+- [x] 7.1 Añadir el grupo de navegación "Operación" y la pantalla `Terceros` según su brief de design D17:
   - tabla con paginación de servidor y estado en la URL;
   - búsqueda, y filtros de estado y rol;
   - alta y corrección en `FormDialog`, con la regla del tipo y los roles en chips;
@@ -130,19 +130,19 @@
   - desactivar y reactivar solo para el administrador, con deshacer.
 
   Verificar con pruebas de componentes de carga, vacío, error, sin permiso, operador sin acciones de estado, éxito, conflicto de versión, `409` de identificación y teclado
-- [ ] 7.2 Construir la pantalla `Productos` según su brief de design D17:
+- [x] 7.2 Construir la pantalla `Productos` según su brief de design D17:
   - tabla con estado tributario y filtros con recuentos;
   - formulario en `FormDialog`: tipo con `SegmentedControl`; precio decimal enviado como texto; IVA e ICE en `Select` de entradas utilizables, con la variante visible; IRBPNR y control de stock solo en bienes;
   - motivos del estado tributario.
 
   Verificar con pruebas de componentes de carga, vacío, error, sin permiso, éxito, errores por campo (precio, impuesto no disponible, código en uso), formato del precio sin `number` y teclado
-- [ ] 7.3 Añadir a `Catálogos fiscales`:
+- [x] 7.3 Añadir a `Catálogos fiscales`:
   - "Usada por N productos activos" en cada entrada en uso;
   - "N productos necesitan revisión", con enlace a `Productos` filtrado;
   - el `ConfirmDialog` antes de deshabilitar una entrada en uso.
 
   Todo compuesto desde `GET /products/tax-summary`. Verificar con pruebas de componentes que confirmar deshabilita, que cancelar no cambia nada, y que una entrada sin uso se deshabilita sin confirmación
-- [ ] 7.4 Recorrer `Terceros`, `Productos` y `Catálogos fiscales` contra el backend real:
+- [x] 7.4 Recorrer `Terceros`, `Productos` y `Catálogos fiscales` contra el backend real:
   - carga, vacío, error, sin permiso y éxito;
   - móvil a 375 y 320 px con objetivos de 44 px;
   - teclado, temas claro y oscuro, y barrido a 640, 768, 1024 y 1440 px;

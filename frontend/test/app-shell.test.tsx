@@ -84,6 +84,21 @@ describe("shell autenticado", () => {
     ).toBe("/configuracion/catalogos-fiscales");
   });
 
+  it("administrador y operador ven Terceros y Productos en Operación (add-parties-and-products)", async () => {
+    for (const me of [ADMIN_ME, OPERATOR_ME]) {
+      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
+      const view = renderShell();
+      await screen.findByText("contenido");
+      expect(screen.getByText("Operación")).toBeDefined();
+      expect(screen.getByRole("link", { name: "Terceros" }).getAttribute("href")).toBe("/terceros");
+      expect(screen.getByRole("link", { name: "Productos" }).getAttribute("href")).toBe(
+        "/productos",
+      );
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("sin sesión lleva al inicio de sesión conservando la URL, sin aviso de sesión vencida", async () => {
     mockApi({
       "GET /api/v1/me": () => ({

@@ -1,5 +1,6 @@
 // Datos de la pantalla Catálogos fiscales (add-fiscal-catalogs, design D11 y D17). La habilitación
-// pasa por useMutationFeedback e invalida solo las listas de entradas: es lo único que cambia.
+// pasa por useMutationFeedback e invalida las listas de entradas y los datos de productos, cuyo
+// estado tributario deriva de la habilitación.
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -125,6 +126,7 @@ export function useSetEnablement() {
       ),
     success: (updated, { catalogType }) =>
       `${updated.enablement.enabled ? "Habilitaste" : "Deshabilitaste"} ${CATALOG_NOUNS[catalogType]} ${entryLabel(updated)} para tu empresa.`,
-    invalidate: [[...FISCAL_CATALOGS_KEY, "entries"]],
+    // El estado tributario de los productos que usan la entrada también cambia (add-parties-and-products).
+    invalidate: [[...FISCAL_CATALOGS_KEY, "entries"], ["products"]],
   });
 }

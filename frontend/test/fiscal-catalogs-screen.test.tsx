@@ -427,3 +427,83 @@ describe("Catálogos fiscales sin permiso", () => {
     vi.doUnmock("@/lib/permissions");
   });
 });
+
+describe("Catálogos fiscales con productos (add-parties-and-products, design D17)", () => {
+  const withUsage = (overrides: Record<string, Route> = {}) => ({
+    "GET /api/v1/products/tax-summary": () => ({
+      status: 200,
+      body: {
+        data: {
+          evaluatedOn: "2026-10-03",
+          byStatus: { READY: 5, REVIEW_REQUIRED: 2, INCOMPLETE: 1 },
+          byEntry: [{ catalogType: "iva-rate", entryKey: "3", activeProducts: 3 }],
+        },
+      },
+    }),
+    "PUT /api/v1/fiscal-catalogs/iva-rate/entries/3/enablement": () => ({
+      status: 200,
+      body: { data: entry("3", ivaRate("3", "14%", "14"), { enabled: false, source: "COMPANY" }) },
+    }),
+    "PUT /api/v1/fiscal-catalogs/iva-rate/entries/4/enablement": () => ({
+      status: 200,
+      body: { data: entry("4", ivaRate("4", "15%", "15"), { enabled: false, source: "COMPANY" }) },
+    }),
+    ...overrides,
+  });
+  const puts = (calls: { key: string }[]) => calls.filter((c) => c.key.startsWith("PUT "));
+
+  it("muestra cuántos productos activos usan cada entrada y cuántos necesitan revisión", async () => {
+    renderScreen(withUsage());
+    const fourteen = await row(ivaList(), "14%");
+    expect(await within(fourteen).findByText("Usada por 3 productos activos")).toBeDefined();
+    expect(await screen.findByText("2 productos necesitan revisión")).toBeDefined();
+    expect(screen.getByRole("link", { name: "Ver en Productos" }).getAttribute("href")).toBe(
+      "/productos?tributario=revisar",
+    );
+  });
+
+  it("deshabilitar una entrada en uso pide confirmación; cancelar no cambia nada", async () => {
+    const calls = renderScreen(withUsage());
+    const fourteen = await row(ivaList(), "14%");
+    await within(fourteen).findByText("Usada por 3 productos activos");
+    const user = userEvent.setup();
+    await user.click(within(fourteen).getByRole("switch", { name: "14%" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Deshabilitar 14%?" });
+    expect(
+      within(dialog).getByText(/La usan 3 productos activos: pasarán a Revisar impuestos/),
+    ).toBeDefined();
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(puts(calls)).toEqual([]);
+  });
+
+  it("confirmar deshabilita la entrada", async () => {
+    const calls = renderScreen(withUsage());
+    const fourteen = await row(ivaList(), "14%");
+    await within(fourteen).findByText("Usada por 3 productos activos");
+    const user = userEvent.setup();
+    await user.click(within(fourteen).getByRole("switch", { name: "14%" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Deshabilitar 14%?" });
+    await user.click(within(dialog).getByRole("button", { name: "Deshabilitar" }));
+    expect(
+      await screen.findByText("Deshabilitaste la tarifa de IVA 14% para tu empresa."),
+    ).toBeDefined();
+    expect(puts(calls).map((c) => c.key)).toEqual([
+      "PUT /api/v1/fiscal-catalogs/iva-rate/entries/3/enablement",
+    ]);
+  });
+
+  it("una entrada sin uso se deshabilita sin confirmación", async () => {
+    const calls = renderScreen(withUsage());
+    const fifteen = await row(ivaList(), "15%");
+    await screen.findByText("2 productos necesitan revisión");
+    await userEvent.setup().click(within(fifteen).getByRole("switch", { name: "15%" }));
+    expect(
+      await screen.findByText("Deshabilitaste la tarifa de IVA 15% para tu empresa."),
+    ).toBeDefined();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(puts(calls).map((c) => c.key)).toEqual([
+      "PUT /api/v1/fiscal-catalogs/iva-rate/entries/4/enablement",
+    ]);
+  });
+});

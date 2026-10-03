@@ -5,9 +5,11 @@
 import {
   BookOpenCheck,
   Building2,
+  Contact,
   FileKey,
   Globe,
   ListOrdered,
+  Package,
   Store,
   Users,
   type LucideIcon,
@@ -22,6 +24,15 @@ type Destination = { href: string; label: string; icon: LucideIcon; permission: 
 type Group = { label: string; destinations: Destination[]; placement: "main" | "bottom" };
 
 const GROUPS: Group[] = [
+  // add-parties-and-products, design D17.
+  {
+    label: "Operación",
+    placement: "main",
+    destinations: [
+      { href: "/terceros", label: "Terceros", icon: Contact, permission: "parties.read" },
+      { href: "/productos", label: "Productos", icon: Package, permission: "products.read" },
+    ],
+  },
   {
     label: "Configuración",
     placement: "bottom",

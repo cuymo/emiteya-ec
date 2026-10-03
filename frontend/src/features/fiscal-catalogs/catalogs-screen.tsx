@@ -12,7 +12,9 @@ import {
   type FiscalCatalogType,
   type SpecialCaseCategory,
 } from "@facturador/contracts";
+import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { errorMessage } from "@/components/feedback";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
@@ -20,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { formatPercentage, formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import { useProductTaxSummary } from "@/features/products/products-api";
 import {
   entryLabel,
   formatIsoDate,
@@ -81,14 +84,19 @@ function EntryRow({
   entry,
   sourceVersion,
   canManage,
+  usage,
 }: {
   catalogType: FiscalCatalogType;
   entry: CatalogEntryView;
   sourceVersion: string;
   canManage: boolean;
+  /** Productos activos que usan la entrada (add-parties-and-products, design D17). */
+  usage: number;
 }) {
   const labelId = useId();
   const setEnablement = useSetEnablement();
+  const [confirming, setConfirming] = useState(false);
+  const products = usage === 1 ? "1 producto activo" : `${usage} productos activos`;
   const version = entry.applicable ?? entry.versions.at(-1)!;
   const rate = rateDescription(entry);
   const enableable = entry.enablement.source !== "NOT_ENABLEABLE";
@@ -107,6 +115,7 @@ function EntryRow({
           {startDescription(version, sourceVersion)}
           {version.effectiveTo ? ` · hasta ${formatIsoDate(version.effectiveTo)}` : ""}
         </span>
+        {usage > 0 && <span className="text-xs text-foreground-muted">Usada por {products}</span>}
         {entry.applicable === null && (
           <span>
             <StatusBadge tone="warning" label="No vigente hoy" />
@@ -123,7 +132,11 @@ function EntryRow({
             disabled={!canManage || setEnablement.isPending}
             aria-labelledby={labelId}
             aria-describedby={canManage ? undefined : `${labelId}-readonly`}
-            onCheckedChange={(enabled) => setEnablement.mutate({ catalogType, entry, enabled })}
+            onCheckedChange={(enabled) => {
+              // Deshabilitar una entrada en uso deja esos productos en revisión: se confirma antes.
+              if (!enabled && usage > 0) setConfirming(true);
+              else setEnablement.mutate({ catalogType, entry, enabled });
+            }}
           />
           {!canManage && (
             <span id={`${labelId}-readonly`} className="sr-only">
@@ -132,6 +145,20 @@ function EntryRow({
           )}
         </div>
       )}
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={`¿Deshabilitar ${entryLabel(entry)}?`}
+        description={`La usan ${products}: ${usage === 1 ? "pasará" : "pasarán"} a Revisar impuestos hasta que la habilites otra vez o les asignes otra entrada.`}
+        confirmLabel="Deshabilitar"
+        pending={setEnablement.isPending}
+        onConfirm={() =>
+          setEnablement.mutate(
+            { catalogType, entry, enabled: false },
+            { onSettled: () => setConfirming(false) },
+          )
+        }
+      />
     </li>
   );
 }
@@ -143,6 +170,7 @@ function CatalogSection({
   summary,
   canManage,
   filterable = false,
+  usage,
 }: {
   catalogType: FiscalCatalogType;
   title: string;
@@ -150,6 +178,8 @@ function CatalogSection({
   summary: FiscalCatalogSummaryView | undefined;
   canManage: boolean;
   filterable?: boolean;
+  /** Productos activos por entrada; vacío si el catálogo no lo usan productos. */
+  usage: ReadonlyMap<string, number>;
 }) {
   const entries = useCatalogEntries(catalogType, true);
   const [filter, setFilter] = useState("");
@@ -198,6 +228,7 @@ function CatalogSection({
               entry={entry}
               sourceVersion={entries.data.catalog.source.version}
               canManage={canManage}
+              usage={usage.get(entry.entryKey) ?? 0}
             />
           ))}
         </ul>
@@ -326,6 +357,16 @@ export function FiscalCatalogsScreen() {
   const allowed = canSee(me.role, "fiscalCatalogs.read");
   const canManage = canSee(me.role, "fiscalCatalogs.manage");
   const summaries = useCatalogSummaries(allowed);
+  // Recuentos de productos compuestos desde su API pública: catalogs no consulta productos (D17).
+  const productSummary = useProductTaxSummary(allowed && canSee(me.role, "products.read"));
+  const usageOf = (catalogType: FiscalCatalogType): ReadonlyMap<string, number> =>
+    new Map(
+      (productSummary.data?.byEntry ?? [])
+        .filter((entry) => entry.catalogType === catalogType)
+        .map((entry) => [entry.entryKey, entry.activeProducts]),
+    );
+  const review = productSummary.data?.byStatus.REVIEW_REQUIRED ?? 0;
+  const none: ReadonlyMap<string, number> = new Map();
   const heading = (
     <h1 id="catalogos-titulo" className="text-3xl font-bold">
       Catálogos fiscales
@@ -380,6 +421,17 @@ export function FiscalCatalogsScreen() {
             ? "elige qué entradas usa tu empresa."
             : "solo un administrador elige qué entradas usa la empresa."}
         </p>
+        {review > 0 && (
+          <p role="note" className="text-sm">
+            <StatusBadge
+              tone="warning"
+              label={`${review} ${review === 1 ? "producto necesita" : "productos necesitan"} revisión`}
+            />{" "}
+            <Link href="/productos?tributario=revisar" className="text-primary underline">
+              Ver en Productos
+            </Link>
+          </p>
+        )}
       </div>
       <CatalogSection
         catalogType="iva-rate"
@@ -387,6 +439,7 @@ export function FiscalCatalogsScreen() {
         description="Las tarifas habilitadas son las que la empresa podrá asignar a sus productos."
         summary={summary("iva-rate")}
         canManage={canManage}
+        usage={usageOf("iva-rate")}
       />
       <CatalogSection
         catalogType="payment-method"
@@ -394,6 +447,7 @@ export function FiscalCatalogsScreen() {
         description="Las formas de pago habilitadas son las que se ofrecerán al emitir."
         summary={summary("payment-method")}
         canManage={canManage}
+        usage={none}
       />
       <CatalogSection
         catalogType="ice-rate"
@@ -401,6 +455,7 @@ export function FiscalCatalogsScreen() {
         description="Habilita solo los códigos de ICE que tu empresa factura. La ficha no publica sus tarifas vigentes."
         summary={summary("ice-rate")}
         canManage={canManage}
+        usage={usageOf("ice-rate")}
         filterable
       />
       <CatalogSection
@@ -409,6 +464,7 @@ export function FiscalCatalogsScreen() {
         description="Impuesto redimible a las botellas plásticas no retornables."
         summary={summary("irbpnr-rate")}
         canManage={canManage}
+        usage={usageOf("irbpnr-rate")}
       />
       <section aria-labelledby="mas-datos" className="flex flex-col gap-1">
         <h2 id="mas-datos" className="text-xl font-semibold">
