@@ -68,7 +68,7 @@ the existing component contract before use. Do not accumulate near-duplicate pri
 
 ## Contratos compartidos implementados
 
-Introducidos por `add-user-access`, `add-taxpayer-setup`, `add-signing-certificate`, `add-fiscal-catalogs` y `add-parties-and-products`; los módulos nuevos los reutilizan en lugar de crear variantes.
+Introducidos por `add-user-access`, `add-taxpayer-setup`, `add-signing-certificate`, `add-fiscal-catalogs`, `add-parties-and-products` y `add-invoice-emission`; los módulos nuevos los reutilizan en lugar de crear variantes.
 
 | Contrato | Ubicación (`frontend/src/`) | Notas |
 | --- | --- | --- |
@@ -81,6 +81,7 @@ Introducidos por `add-user-access`, `add-taxpayer-setup`, `add-signing-certifica
 | `SessionGate`, `useSession`, `QueryProvider` | `components/session.tsx` | Sesión desde `GET /api/v1/me`; un 401 lleva al inicio de sesión conservando la URL. |
 | `SegmentedControl` | `components/segmented-control.tsx` | De dos a cinco opciones visibles (Radix ToggleGroup); puede empezar sin selección cuando el dato se declara, y una opción elegida no se deselecciona. |
 | `ConfirmDialog` | `components/confirm-dialog.tsx` | Escalera de confirmación: un paso, o escribir un texto exacto antes de confirmar; foco devuelto a quien lo abrió. |
+| `EntityPickerDialog` | `components/entity-picker-dialog.tsx` | Selección de un registro relacionado: búsqueda con espera breve, resultados paginados por el servidor, combobox con selección por teclado (flechas, Inicio, Fin, Enter) y una opción rápida opcional antes de la primera página sin búsqueda. Devuelve el registro elegido; no conoce el tipo de entidad. Lo usa el editor de facturas para el comprador y los productos. |
 | `Select` | `components/ui/select.tsx` | Select nativo con los tokens, para cinco a quince opciones conocidas; admite grupos con `optgroup`. Con más opciones se usa un combobox con búsqueda. Mide 44px de alto por debajo de 768px. |
 | `ChipMultiSelect` | `components/chip-multi-select.tsx` | Chips conmutables de selección múltiple (Radix ToggleGroup `multiple`) para categorías cortas que se combinan, como los roles de un tercero; la selección vacía es válida y el orden es el de las opciones. |
 | `FileField` | `components/file-field.tsx` | Un archivo: tipos y límite visibles antes de elegir, archivo vigente con tipo y tamaño, reemplazar y eliminar, alerta temprana de tipo y tamaño; el servidor decide por el contenido. Los tipos admiten extensiones (`.p12`) cuando el sistema no informa un tipo MIME fiable. |

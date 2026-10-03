@@ -78,7 +78,7 @@ Shared components own interaction consistency, not business policy.
 
 - `AppDataTable` owns table mechanics; the module supplies typed columns, filter options, data, and valid actions.
 - `FormDialog` owns focus, dismissal, responsive geometry, and footer placement; the form owns fields and business validation.
-- `EntityPickerDialog` returns selected business records; it does not know a specific entity type.
+- `EntityPickerDialog` returns selected business records; it does not know a specific entity type. It is implemented in `frontend/src/components/entity-picker-dialog.tsx` (`add-invoice-emission`): the caller supplies a cache key, a page loader (search, page, page size), how to render and name an item, and an optional quick option shown before the first unfiltered page (for example, "Consumidor final"). The search input is a combobox over a listbox: arrows, Home, End and Enter select without leaving the keyboard; results are paginated by the server, and loading, empty, no-match and error states stay inside the dialog.
 - `SemanticToaster` owns visual variants; callers provide human-readable messages.
 - `ConfirmDialog` owns the confirmation ladder; the caller supplies the record label and the consequence.
 - `StatusBadge` owns the visual encoding of a state; the module maps its domain values onto it.

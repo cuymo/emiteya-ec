@@ -149,7 +149,7 @@
 
 ## 10. Pantallas de borradores y facturas
 
-- [ ] 10.1 Crear el componente compartido `EntityPickerDialog` (design D15): búsqueda, resultados paginados del backend, selección por teclado y opción rápida configurable. Documentarlo en `component-system.md`. Verificar con pruebas de componente por rol y nombre accesible
+- [x] 10.1 Crear el componente compartido `EntityPickerDialog` (design D15): búsqueda, resultados paginados del backend, selección por teclado y opción rápida configurable. Documentarlo en `component-system.md`. Verificar con pruebas de componente por rol y nombre accesible
 - [ ] 10.2 Crear `Borradores` y el editor a página completa (design D15):
   - comprador con el selector y "Consumidor final", punto de emisión, líneas con el selector de productos, cantidad, precio del producto (solo lectura) y descuento, y formas de pago;
   - totales e `issues` de la vista previa del servidor, guardado con versión y eliminación con confirmación;
