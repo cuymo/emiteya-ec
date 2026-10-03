@@ -12,6 +12,11 @@ import {
   createAuth,
 } from "../../src/modules/identity/infrastructure/better-auth/index.ts";
 import { createCompanyReader } from "../../src/modules/identity/infrastructure/prisma-companies.ts";
+import {
+  fiscalCatalogQueries,
+  loadInstalledFiscalCatalogs,
+} from "../../src/modules/catalogs/infrastructure/index.ts";
+import { consumerFinalInitializer } from "../../src/modules/parties/infrastructure/index.ts";
 import { createDatabase, type Database } from "../../src/platform/db/database.ts";
 import { BACKEND_DIR, createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { insertCompany } from "./fixtures.ts";
@@ -25,6 +30,8 @@ describe("aprovisionamiento de la instalación", () => {
 
   beforeEach(async () => {
     db = await createMigratedSchema("provisioning");
+    // El consumidor final de la empresa nueva sale de la política (add-parties-and-products, D5).
+    await loadInstalledFiscalCatalogs(db.database.prisma);
   });
 
   afterEach(async () => {
@@ -32,12 +39,20 @@ describe("aprovisionamiento de la instalación", () => {
     await db.drop();
   });
 
-  function provisioner(database: Database = db.database, admin = ADMIN, uowOverride?: UnitOfWork) {
+  const unitOfWork = (database: Database = db.database) => {
     const settings = testAuthSettings();
-    const auth = createAuth({ prisma: database.prisma, settings });
+    return createUnitOfWork(
+      database.prisma,
+      createAuth({ prisma: database.prisma, settings }),
+      settings,
+      [consumerFinalInitializer({ policies: fiscalCatalogQueries(database.prisma) })],
+    );
+  };
+
+  function provisioner(database: Database = db.database, admin = ADMIN, uowOverride?: UnitOfWork) {
     return () =>
       provisionInstallation({
-        uow: uowOverride ?? createUnitOfWork(database.prisma, auth, settings),
+        uow: uowOverride ?? unitOfWork(database),
         companies: createCompanyReader(database.prisma),
         initialAdmin: () => admin,
         correlationId: `prueba-${randomUUID()}`,
@@ -51,12 +66,19 @@ describe("aprovisionamiento de la instalación", () => {
       users: await prisma.user.count(),
       members: await prisma.member.count(),
       events: await prisma.auditEvent.count(),
+      consumerFinals: await prisma.party.count({ where: { systemRecord: "CONSUMER_FINAL" } }),
     };
   };
 
   it("el primer arranque crea una empresa, el administrador y su membresía activa, con evento del sistema", async () => {
     expect(await provisioner()()).toBe("provisioned");
-    expect(await counts()).toEqual({ companies: 1, users: 1, members: 1, events: 1 });
+    expect(await counts()).toEqual({
+      companies: 1,
+      users: 1,
+      members: 1,
+      events: 1,
+      consumerFinals: 1,
+    });
 
     const prisma = db.database.prisma;
     const user = await prisma.user.findUniqueOrThrow({ where: { email: ADMIN.email } });
@@ -82,7 +104,13 @@ describe("aprovisionamiento de la instalación", () => {
     await provisioner()();
     const changed = { email: "otro@instalacion.ec", password: "otra-contrasena-123" };
     expect(await provisioner(db.database, changed)()).toBe("already_provisioned");
-    expect(await counts()).toEqual({ companies: 1, users: 1, members: 1, events: 1 });
+    expect(await counts()).toEqual({
+      companies: 1,
+      users: 1,
+      members: 1,
+      events: 1,
+      consumerFinals: 1,
+    });
 
     const { app } = buildAuthApp(db);
     expect((await signIn(app, ADMIN.email, ADMIN.password)).status).toBe(200);
@@ -91,13 +119,8 @@ describe("aprovisionamiento de la instalación", () => {
 
   it("con la empresa ya aprovisionada no valida ni usa la configuración inicial", async () => {
     await provisioner()();
-    const settings = testAuthSettings();
     const result = await provisionInstallation({
-      uow: createUnitOfWork(
-        db.database.prisma,
-        createAuth({ prisma: db.database.prisma, settings }),
-        settings,
-      ),
+      uow: unitOfWork(),
       companies: createCompanyReader(db.database.prisma),
       initialAdmin: () => {
         throw new Error("no debe invocarse");
@@ -112,16 +135,17 @@ describe("aprovisionamiento de la instalación", () => {
     extra.push(second);
     const results = await Promise.all([provisioner(db.database)(), provisioner(second)()]);
     expect(results.sort()).toEqual(["already_provisioned", "provisioned"]);
-    expect(await counts()).toEqual({ companies: 1, users: 1, members: 1, events: 1 });
+    expect(await counts()).toEqual({
+      companies: 1,
+      users: 1,
+      members: 1,
+      events: 1,
+      consumerFinals: 1,
+    });
   });
 
   it("una interrupción a mitad del aprovisionamiento no deja nada, y el siguiente arranque termina sin duplicar", async () => {
-    const settings = testAuthSettings();
-    const real = createUnitOfWork(
-      db.database.prisma,
-      createAuth({ prisma: db.database.prisma, settings }),
-      settings,
-    );
+    const real = unitOfWork();
     const interrupted: UnitOfWork = {
       run: (work) =>
         real.run((scope) =>
@@ -136,10 +160,22 @@ describe("aprovisionamiento de la instalación", () => {
     await expect(provisioner(db.database, ADMIN, interrupted)()).rejects.toThrow(
       "proceso interrumpido",
     );
-    expect(await counts()).toEqual({ companies: 0, users: 0, members: 0, events: 0 });
+    expect(await counts()).toEqual({
+      companies: 0,
+      users: 0,
+      members: 0,
+      events: 0,
+      consumerFinals: 0,
+    });
 
     expect(await provisioner()()).toBe("provisioned");
-    expect(await counts()).toEqual({ companies: 1, users: 1, members: 1, events: 1 });
+    expect(await counts()).toEqual({
+      companies: 1,
+      users: 1,
+      members: 1,
+      events: 1,
+      consumerFinals: 1,
+    });
   });
 
   it("reanuda sobre una identidad que un arranque anterior dejó creada, sin duplicarla", async () => {
@@ -149,13 +185,25 @@ describe("aprovisionamiento de la instalación", () => {
       identity.createUser({ name: "Previo", ...ADMIN }),
     );
     expect(await provisioner()()).toBe("provisioned");
-    expect(await counts()).toEqual({ companies: 1, users: 1, members: 1, events: 1 });
+    expect(await counts()).toEqual({
+      companies: 1,
+      users: 1,
+      members: 1,
+      events: 1,
+      consumerFinals: 1,
+    });
   });
 
   it("con una empresa existente el aprovisionamiento no crea otra", async () => {
     await insertCompany(db.database.prisma, "Existente");
     expect(await provisioner()()).toBe("already_provisioned");
-    expect(await counts()).toEqual({ companies: 1, users: 0, members: 0, events: 0 });
+    expect(await counts()).toEqual({
+      companies: 1,
+      users: 0,
+      members: 0,
+      events: 0,
+      consumerFinals: 1,
+    });
   });
 
   it("la base acepta una segunda empresa insertada directamente: ninguna restricción impide multiempresa", async () => {
@@ -187,7 +235,13 @@ describe("aprovisionamiento de la instalación", () => {
       expect(result.status).toBe(1);
       expect(result.stderr).toContain("INITIAL_USER_EMAIL: es obligatoria");
       expect(result.stderr + result.stdout).not.toContain(ADMIN.password);
-      expect(await counts()).toEqual({ companies: 0, users: 0, members: 0, events: 0 });
+      expect(await counts()).toEqual({
+        companies: 0,
+        users: 0,
+        members: 0,
+        events: 0,
+        consumerFinals: 0,
+      });
     });
 
     it("con una contraseña inicial corta el arranque falla sin mostrarla y sin crear nada", async () => {
@@ -198,7 +252,13 @@ describe("aprovisionamiento de la instalación", () => {
         "INITIAL_USER_PASSWORD: debe tener entre 12 y 128 caracteres",
       );
       expect(result.stderr + result.stdout).not.toContain(short);
-      expect(await counts()).toEqual({ companies: 0, users: 0, members: 0, events: 0 });
+      expect(await counts()).toEqual({
+        companies: 0,
+        users: 0,
+        members: 0,
+        events: 0,
+        consumerFinals: 0,
+      });
     });
   });
 });

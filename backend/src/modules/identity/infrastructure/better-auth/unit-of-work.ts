@@ -99,7 +99,19 @@ function createIdentityWriter(auth: Auth, policy: AuthSettings["password"]): Ide
   };
 }
 
-function createScope(tx: DbClient, auth: Auth, settings: AuthSettings): TransactionScope {
+/**
+ * Iniciador de una empresa nueva, dentro de la transacción que la crea. Lo registra la raíz de
+ * composición; así `identity` no importa los módulos que lo implementan (design D5 de
+ * add-parties-and-products).
+ */
+export type CompanyInitializer = (tx: DbClient, companyId: string) => Promise<void>;
+
+function createScope(
+  tx: DbClient,
+  auth: Auth,
+  settings: AuthSettings,
+  initializers: readonly CompanyInitializer[],
+): TransactionScope {
   return {
     identity: createIdentityWriter(auth, settings.password),
     audit: createAuditLog(tx),
@@ -108,6 +120,9 @@ function createScope(tx: DbClient, auth: Auth, settings: AuthSettings): Transact
     acquireLock: async (name) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`facturador:${name}`}))`;
     },
+    initializeCompany: async (companyId) => {
+      for (const initialize of initializers) await initialize(tx, companyId);
+    },
   };
 }
 
@@ -115,6 +130,7 @@ export function createUnitOfWork(
   prisma: PrismaClient,
   auth: Auth,
   settings: AuthSettings,
+  initializers: readonly CompanyInitializer[] = [],
 ): UnitOfWork {
   return {
     run: (work) =>
@@ -123,7 +139,9 @@ export function createUnitOfWork(
           const txAdapter = prismaAdapter(tx, { provider: "postgresql", transaction: false })(
             auth.options,
           );
-          return runWithAdapter(txAdapter, () => work(createScope(tx, auth, settings)));
+          return runWithAdapter(txAdapter, () =>
+            work(createScope(tx, auth, settings, initializers)),
+          );
         },
         { timeout: TRANSACTION_TIMEOUT_MS },
       ),

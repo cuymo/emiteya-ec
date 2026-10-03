@@ -35,6 +35,12 @@ export type TransactionScope = Readonly<{
   companies: CompanyReader;
   /** Bloqueo de PostgreSQL ligado a la transacción, liberado al confirmar o revertir. */
   acquireLock(name: "provisioning"): Promise<void>;
+  /**
+   * Ejecuta, en esta transacción, los iniciadores que la raíz de composición registró para una
+   * empresa nueva: hoy, su consumidor final (add-parties-and-products, design D5). `identity` no
+   * conoce a quién pertenecen.
+   */
+  initializeCompany(companyId: string): Promise<void>;
 }>;
 
 export interface UnitOfWork {

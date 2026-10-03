@@ -271,6 +271,7 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "party_no_truncate",
         "product_invariants",
         "product_tax_invariants",
+        "organization_requires_consumer_final",
       ]),
     );
     // Las claves de búsqueda por prefijo usan la colación C, para LIKE 'prefijo%' (design D10).
@@ -290,12 +291,15 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
   });
 
   it("no limita el número de empresas con ninguna restricción", async () => {
+    // El único objeto sobre la empresa exige su consumidor final al confirmarla (trigger de
+    // restricción de add-parties-and-products, design D5); no limita cuántas empresas hay.
     const organizationConstraints = await db.database.prisma.$queryRaw<{ name: string }[]>`
       SELECT c.conname AS name
       FROM pg_constraint c
       JOIN pg_class t ON t.oid = c.conrelid
       JOIN pg_namespace n ON n.oid = t.relnamespace
-      WHERE n.nspname = ${db.name} AND t.relname = 'organization' AND c.contype NOT IN ('p')`;
+      WHERE n.nspname = ${db.name} AND t.relname = 'organization' AND c.contype NOT IN ('p')
+        AND NOT (c.contype = 't' AND c.conname = 'organization_requires_consumer_final')`;
     const organizationIndexes = await db.database.prisma.$queryRaw<{ indexname: string }[]>`
       SELECT indexname FROM pg_indexes WHERE schemaname = ${db.name} AND tablename = 'organization'`;
     expect(organizationConstraints).toEqual([]);

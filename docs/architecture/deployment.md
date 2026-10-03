@@ -140,11 +140,27 @@ La custodia de la firma (ADR 0011) y el pool criptográfico (design D18 de
 Primer arranque:
 
 1. Aplicar las migraciones: `corepack pnpm --filter @facturador/backend db:migrate:deploy` (en producción, `prisma migrate deploy` en el contenedor de la API).
-2. Arrancar la API con `INITIAL_USER_EMAIL` e `INITIAL_USER_PASSWORD`. Antes de aceptar tráfico crea, en una sola transacción, la empresa con un nombre provisional, el administrador inicial y su membresía `ADMIN`, y registra el evento de auditoría con el actor sistema. Si falta una variable o la contraseña no cumple la política, la API no arranca, nombra la variable sin mostrar su valor y no crea nada.
+2. Arrancar la API con `INITIAL_USER_EMAIL` e `INITIAL_USER_PASSWORD`. Antes de aceptar tráfico crea, en una sola transacción, la empresa con un nombre provisional, su consumidor final, el administrador inicial y su membresía `ADMIN`, y registra el evento de auditoría con el actor sistema. Si falta una variable o la contraseña no cumple la política, la API no arranca, nombra la variable sin mostrar su valor y no crea nada.
 3. Retirar `INITIAL_USER_PASSWORD` del entorno después de ese arranque. Una vez aprovisionada la empresa, las dos variables se ignoran: cambiarlas no crea otro usuario ni cambia la contraseña.
 
 Dos arranques simultáneos sobre una instalación vacía crean una sola empresa: el
 aprovisionamiento toma un advisory lock de PostgreSQL y vuelve a comprobar dentro de él.
+
+Orden de cada arranque, antes de aceptar tráfico (design D5 de `add-parties-and-products`):
+
+1. Cargar los catálogos fiscales de la versión instalada.
+2. Aprovisionar la empresa si falta. Se crea con su consumidor final, cuya identidad sale de la política de consumidor final vigente.
+3. Reponer el consumidor final de las empresas que no lo tengan, por ejemplo las anteriores a esta versión. Es idempotente.
+4. Si alguna empresa sigue sin consumidor final, la API no arranca.
+
+### Actualizaciones y reversión
+
+- **Invariante de esquema.** Desde `add-parties-and-products`, el esquema exige que cada empresa tenga exactamente un consumidor final. La migración `20261003210000_require_consumer_final` lo hace cumplir con un trigger de restricción diferido sobre `organization`.
+- **Downgrade binario.** Una vez aplicada esa migración, volver a una versión anterior de la aplicación no es compatible de forma automática, porque esa versión no conoce la invariante.
+- **Estrategia normal:** avanzar, corrigiendo con una versión nueva.
+- **Si hiciera falta volver atrás,** se sigue un runbook explícito revisado para ese caso, o se restaura una copia compatible tomada antes de migrar (ver "Respaldo y restauración").
+- **Lo que nunca se hace:** quitar una protección de integridad, como ese trigger, para seguir operando con una versión anterior.
+- Hoy no existe un sistema de reversión de migraciones.
 
 ### Configuración de la empresa
 

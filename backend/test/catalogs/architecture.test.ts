@@ -7,8 +7,11 @@ import { describe, expect, it } from "vitest";
 
 const SRC = fileURLToPath(new URL("../../src/", import.meta.url));
 const OWN = /^(modules\/catalogs\/|generated\/)/;
+// Acceso a las tablas: un delegado de Prisma seguido de una operación, o el nombre SQL de la tabla.
+// Un puerto con el mismo nombre (por ejemplo `queries.consumerFinalPolicy(fecha)`, design D2 de
+// add-parties-and-products) no es un acceso a la tabla.
 const TABLES =
-  /\b(fiscalCatalogEntry|fiscalCatalogKey|fiscalCatalogDataset|consumerFinalPolicy|schemaRegistryEntry|specialCaseSupport|companyFiscalCatalogSetting|fiscal_catalog_entry|fiscal_catalog_key|fiscal_catalog_dataset|consumer_final_policy|schema_registry_entry|special_case_support|company_fiscal_catalog_setting)\b/;
+  /\.(fiscalCatalogEntry|fiscalCatalogKey|fiscalCatalogDataset|consumerFinalPolicy|schemaRegistryEntry|specialCaseSupport|companyFiscalCatalogSetting)\.\w+\(|\b(fiscal_catalog_entry|fiscal_catalog_key|fiscal_catalog_dataset|consumer_final_policy|schema_registry_entry|special_case_support|company_fiscal_catalog_setting)\b/;
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -24,5 +27,12 @@ describe("frontera de las tablas de catálogos", () => {
       .filter((path) => !OWN.test(path))
       .filter((path) => TABLES.test(readFileSync(join(SRC, path), "utf8")));
     expect(offenders).toEqual([]);
+  });
+
+  it("detecta el acceso por Prisma o por SQL, pero no un puerto con el mismo nombre", () => {
+    expect(TABLES.test("await db.consumerFinalPolicy.findMany()")).toBe(true);
+    expect(TABLES.test("await tx.fiscalCatalogEntry.update({})")).toBe(true);
+    expect(TABLES.test('SELECT * FROM "company_fiscal_catalog_setting"')).toBe(true);
+    expect(TABLES.test("await policies.consumerFinalPolicy(date)")).toBe(false);
   });
 });

@@ -40,7 +40,7 @@
 
 ## 3. Consumidor final
 
-- [ ] 3.1 Implementar en `parties` la creación del consumidor final con la identidad de `consumerFinalPolicy(hoy en Ecuador)`, y el iniciador de empresa de design D5:
+- [x] 3.1 Implementar en `parties` la creación del consumidor final con la identidad de `consumerFinalPolicy(hoy en Ecuador)`, y el iniciador de empresa de design D5:
   - el puerto `CompanyInitializer` en la unidad de trabajo de `identity`;
   - `initializeCompany` llamado por el aprovisionamiento después de `createCompany`;
   - registro desde la raíz de composición, sin que `identity` importe `parties`.
@@ -50,11 +50,11 @@
   - **B. Empresa existente sin consumidor final:** la reposición crea exactamente uno;
   - **C. Segundo arranque:** no crea duplicados ni modifica el existente;
   - dos aprovisionamientos simultáneos y dos reposiciones simultáneas;
-  - el alta de un tercero normal con el tipo `07`, y corregir, desactivar y borrar el consumidor final, por la API y directamente en la base de datos;
+  - el alta de un tercero normal con el tipo `07`, y corregir, desactivar y borrar el consumidor final directamente en la base de datos (por la API, en la tarea 4.1);
   - sin política aplicable, el aprovisionamiento falla de forma explícita sin crear nada;
   - el arranque falla si una empresa sigue sin consumidor final;
   - las pruebas de aprovisionamiento de `user-access` siguen pasando
-- [ ] 3.2 Documentar en `docs/architecture/deployment.md` el orden de arranque y la política de reversión (design, Migration Plan): después de esta migración, un downgrade binario no es compatible automáticamente; la estrategia normal es avanzar con una corrección, y volver atrás exige un runbook explícito o restaurar una copia compatible, nunca quitar una protección de integridad. Verificar que el documento nombra la invariante y no ofrece eliminar el trigger como paso de reversión
+- [x] 3.2 Documentar en `docs/architecture/deployment.md` el orden de arranque y la política de reversión (design, Migration Plan): después de esta migración, un downgrade binario no es compatible automáticamente; la estrategia normal es avanzar con una corrección, y volver atrás exige un runbook explícito o restaurar una copia compatible, nunca quitar una protección de integridad. Verificar que el documento nombra la invariante y no ofrece eliminar el trigger como paso de reversión
 
 ## 4. API de terceros
 
@@ -68,6 +68,7 @@
   - las altas simultáneas con la misma identificación;
   - las correcciones simultáneas con la misma versión;
   - las desactivaciones simultáneas con un solo evento;
+  - el consumidor final por la API: un tercero normal con el tipo `07`, y corregir o desactivar el consumidor final, rechazados con la invariante intacta;
   - la búsqueda sin tildes;
   - el orden estable al recorrer las páginas;
   - el aislamiento entre empresas.

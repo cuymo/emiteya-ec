@@ -25,8 +25,13 @@ import { requireContext } from "./modules/identity/infrastructure/http/request-c
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
 import {
   catalogsModule,
+  fiscalCatalogQueries,
   loadInstalledFiscalCatalogs,
 } from "./modules/catalogs/infrastructure/index.ts";
+import {
+  consumerFinalInitializer,
+  ensureConsumerFinals,
+} from "./modules/parties/infrastructure/index.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import {
@@ -82,8 +87,31 @@ const metrics = createMetrics();
 const securityEvents = createSecurityEventLog(logger, metrics.registry);
 const authSettings = authSettingsFromEnv(env);
 const auth = createAuth({ prisma: database.prisma, settings: authSettings, securityEvents });
-const uow = createUnitOfWork(database.prisma, auth, authSettings);
+const catalogQueries = fiscalCatalogQueries(database.prisma);
+// Toda empresa nueva confirma con su consumidor final (add-parties-and-products, design D5).
+const uow = createUnitOfWork(database.prisma, auth, authSettings, [
+  consumerFinalInitializer({ policies: catalogQueries }),
+]);
 const memberships = createMembershipReader(database.prisma);
+
+// Catálogos fiscales oficiales de la versión instalada (add-fiscal-catalogs, design D3): se aplican
+// antes de aceptar tráfico; un dataset inválido o en conflicto impide arrancar. Van antes del
+// aprovisionamiento: el consumidor final de una empresa nueva sale de su política (design D5 de
+// add-parties-and-products), y cargarlos no depende de ninguna empresa.
+try {
+  const report = await loadInstalledFiscalCatalogs(database.prisma);
+  logger.info(
+    {
+      applied: report.applied.map((d) => `${d.catalogType}@${d.version}:+${d.newEntries}`),
+      alreadyApplied: report.alreadyApplied.length,
+    },
+    "catálogos fiscales cargados",
+  );
+} catch (error) {
+  logger.fatal({ err: error }, "no se pudieron cargar los catálogos fiscales");
+  await database.close();
+  process.exit(1);
+}
 
 // Aprovisionamiento antes de aceptar tráfico (design D7).
 try {
@@ -102,19 +130,18 @@ try {
   process.exit(1);
 }
 
-// Catálogos fiscales oficiales de la versión instalada (add-fiscal-catalogs, design D3): se aplican
-// antes de aceptar tráfico; un dataset inválido o en conflicto impide arrancar.
+// Reposición del consumidor final de las empresas que no lo tengan, por ejemplo las anteriores a
+// add-parties-and-products (design D5, casos A y C). Idempotente; si queda alguna empresa sin él,
+// el sistema no arranca.
 try {
-  const report = await loadInstalledFiscalCatalogs(database.prisma);
-  logger.info(
-    {
-      applied: report.applied.map((d) => `${d.catalogType}@${d.version}:+${d.newEntries}`),
-      alreadyApplied: report.alreadyApplied.length,
-    },
-    "catálogos fiscales cargados",
-  );
+  const { created } = await ensureConsumerFinals({
+    db: database.prisma,
+    policies: catalogQueries,
+    companyIds: () => createCompanyReader(database.prisma).listIds(),
+  });
+  if (created > 0) logger.info({ created }, "consumidores finales repuestos");
 } catch (error) {
-  logger.fatal({ err: error }, "no se pudieron cargar los catálogos fiscales");
+  logger.fatal({ err: error }, "no se pudo garantizar el consumidor final de cada empresa");
   await database.close();
   process.exit(1);
 }

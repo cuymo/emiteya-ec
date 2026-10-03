@@ -12,7 +12,7 @@ export {
   type AuthSettings,
 } from "./auth.ts";
 export { getSessionUserId, mountAuth } from "./http.ts";
-export { createUnitOfWork } from "./unit-of-work.ts";
+export { createUnitOfWork, type CompanyInitializer } from "./unit-of-work.ts";
 
 export function authSettingsFromEnv(env: Env): AuthSettings {
   return {
