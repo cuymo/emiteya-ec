@@ -34,7 +34,7 @@
 
 ## 7. Verificación integral
 
-- [ ] 7.1 Prueba end-to-end por HTTP contra `main.ts` (design D18):
+- [x] 7.1 Prueba end-to-end por HTTP contra `main.ts` (design D18):
   1. El arranque carga los datasets.
   2. El operador consulta las tarifas con su fuente.
   3. El administrador deshabilita una tarifa y habilita un ICE.
@@ -43,4 +43,4 @@
   6. Un segundo arranque no cambia nada.
 
   Verificar que la prueba pasa.
-- [ ] 7.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan
+- [x] 7.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan

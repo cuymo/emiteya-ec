@@ -12,7 +12,7 @@ export type E2eBackend = {
   base: string;
   /** Salida estándar y de errores acumulada del proceso. */
   output: () => string;
-  /** Detiene el proceso con SIGTERM y borra el esquema. */
+  /** Detiene el proceso con SIGTERM y borra el esquema si lo creó este arranque. */
   stop: () => Promise<void>;
   /** Inicio de sesión con correo y contraseña desde el origen del frontend. */
   signIn: (email: string, password: string) => Promise<{ status: number; cookie: string }>;
@@ -31,14 +31,16 @@ function freePort(): Promise<number> {
 
 /**
  * Arranca main.ts sobre un esquema nuevo, que se aprovisiona con el administrador inicial. La
- * custodia de firmas está deshabilitada salvo que `env` la configure.
+ * custodia de firmas está deshabilitada salvo que `env` la configure. Con `db`, arranca sobre un
+ * esquema existente (un segundo arranque), y `stop` no lo borra: lo borra quien lo creó.
  */
 export async function startE2eBackend(options: {
   label: string;
   admin: { email: string; password: string };
   env?: Record<string, string>;
+  db?: MigratedSchema;
 }): Promise<E2eBackend> {
-  const db = await createMigratedSchema(options.label);
+  const db = options.db ?? (await createMigratedSchema(options.label));
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   const backend = spawn(process.execPath, ["--conditions=development", "src/main.ts"], {
@@ -67,7 +69,7 @@ export async function startE2eBackend(options: {
       backend.kill("SIGTERM");
       await exited;
     }
-    await db.drop();
+    if (!options.db) await db.drop();
   };
 
   const deadline = Date.now() + 90_000;
