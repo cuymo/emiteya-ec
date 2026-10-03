@@ -49,6 +49,7 @@ export function cachedCatalogReads(catalogs: CatalogReads): CatalogReads {
     consumerFinalPolicy: (date) => once(`policy:${date}`, () => catalogs.consumerFinalPolicy(date)),
     specialCases: () => once("special-cases", () => catalogs.specialCases()),
     schemaRegistry: () => once("schema-registry", () => catalogs.schemaRegistry()),
+    datasetVersions: () => once("dataset-versions", () => catalogs.datasetVersions()),
   };
 }
 

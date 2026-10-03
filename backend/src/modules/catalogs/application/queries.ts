@@ -53,6 +53,8 @@ export type FiscalCatalogQueries = CatalogResolver & {
   schemaRegistry(): Promise<StoredSchemaEntry[]>;
   /** Matriz de casos especiales vigente (ADR 0014). */
   specialCases(): Promise<StoredSpecialCase[]>;
+  /** Última versión aplicada de cada catálogo, para el snapshot de la emisión (add-invoice-emission, D4). */
+  datasetVersions(): Promise<Record<string, number>>;
 };
 
 export function createFiscalCatalogQueries({
@@ -73,6 +75,15 @@ export function createFiscalCatalogQueries({
     schemaRegistry: () => reader.schemaEntries(),
 
     specialCases: () => reader.specialCases(),
+
+    async datasetVersions() {
+      return Object.fromEntries(
+        [...latestByType(await reader.catalogs())].map(([type, dataset]) => [
+          type,
+          dataset.version,
+        ]),
+      );
+    },
 
     async identificationRule(code, date) {
       const version = await resolver.resolveCatalogEntry("identification-type", code, date);

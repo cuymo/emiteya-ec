@@ -1,6 +1,7 @@
 // Arnés HTTP del módulo taxpayer: la aplicación real con Better Auth, el contexto de petición de
 // design D3 y los routers de usuarios, taxpayer y fiscal montados como en main.ts.
 import { randomInt } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { Router } from "express";
 import { userSchemas } from "@facturador/contracts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
@@ -15,6 +16,8 @@ import {
 import { partiesModule } from "../../src/modules/parties/infrastructure/index.ts";
 import { productsModule } from "../../src/modules/products/infrastructure/index.ts";
 import { invoicesModule } from "../../src/modules/invoices/infrastructure/index.ts";
+import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
+import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
 import {
   isSigningCertificateUpload,
@@ -37,7 +40,18 @@ export type SigningHarnessOptions = {
 export type InvoicesHarnessOptions = {
   /** `INVOICE_MAX_LINES`; 100 por defecto. */
   maxLines?: number;
+  /** Validador XSD; por defecto, sobre los XSD versionados de docs/product/. */
+  xsd?: Pick<XsdValidator, "ensureAvailable" | "validate">;
+  accessKeys?: AccessKeys;
+  /** Reloj de la emisión; por defecto, el de `now`. */
+  now?: () => Date;
 };
+
+/** Validador XSD de las pruebas: el paquete canónico versionado del producto. */
+export const testXsdValidator = () =>
+  createXmllintXsdValidator({
+    root: fileURLToPath(new URL("../../../docs/product/", import.meta.url)),
+  });
 
 export function buildTaxpayerApp(
   db: MigratedSchema,
@@ -112,7 +126,11 @@ export function buildTaxpayerApp(
             ? signing.reads
             : () => ({ activeCertificate: () => Promise.resolve(null) }),
           maxLines: options.invoices?.maxLines ?? 100,
-          ...(options.now ? { now: options.now } : {}),
+          xsd: options.invoices?.xsd ?? testXsdValidator(),
+          ...(options.invoices?.accessKeys ? { accessKeys: options.invoices.accessKeys } : {}),
+          ...((options.invoices?.now ?? options.now)
+            ? { now: options.invoices?.now ?? options.now }
+            : {}),
         }).routers,
       );
       return router;

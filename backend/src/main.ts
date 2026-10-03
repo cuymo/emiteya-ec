@@ -230,7 +230,9 @@ apiRouter.use(
     prisma: database.prisma,
     authorizer,
     signingReads: signing.reads,
+    xsd: xsdValidator,
     maxLines: env.INVOICE_MAX_LINES,
+    logger,
   }).routers,
 );
 

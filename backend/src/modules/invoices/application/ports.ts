@@ -2,6 +2,9 @@
 // implementa con Prisma y con las lecturas internas de los otros módulos; los casos de uso nunca
 // importan infraestructura ajena.
 import type { ListMeta } from "@facturador/contracts";
+import type { AuditLog } from "../../audit/application/audit-log.ts";
+import type { DocumentRepository } from "../../fiscal/application/ports.ts";
+import type { IdempotencyStore } from "../../../platform/idempotency/idempotency.ts";
 import type { SchemaRegistryEntry } from "../../sri-engine/application/schemas.ts";
 import type { DraftContent, DraftRecord } from "../domain/draft.ts";
 import type {
@@ -74,6 +77,50 @@ export type CatalogReads = {
   consumerFinalPolicy(date: string): Promise<EvaluationPolicy | null>;
   specialCases(): Promise<readonly Readonly<{ annex: number; topic: string; category: string }>[]>;
   schemaRegistry(): Promise<readonly SchemaRegistryEntry[]>;
+  /** Última versión aplicada de cada catálogo. */
+  datasetVersions(): Promise<Readonly<Record<string, number>>>;
 };
 
 export type Page<T> = { items: T[]; meta: ListMeta };
+
+export type SequentialReservation = Readonly<{
+  reservationId: string;
+  sequential: number;
+  documentNumber: string;
+}>;
+
+/**
+ * Operaciones de la transacción de `RESERVED` (design D7), todas sobre la misma transacción: sin
+ * I/O externo ni XML.
+ */
+export type EmissionScope = {
+  /** `SELECT … FOR UPDATE` del borrador de la empresa: serializa sus emisiones. */
+  lockDraft(companyId: string, draftId: string): Promise<DraftRecord | null>;
+  markDraftEmitted(
+    companyId: string,
+    draftId: string,
+    documentId: string,
+    userId: string,
+  ): Promise<void>;
+  /** Lock advisory de la configuración de la empresa. */
+  lockConfiguration(companyId: string): Promise<void>;
+  reads: EvaluationReads;
+  reserveSequential(input: {
+    companyId: string;
+    environment: "TEST" | "PRODUCTION";
+    establishmentId: string;
+    emissionPointId: string;
+    documentType: "01";
+    reservedBy: string;
+    correlationId: string;
+  }): Promise<SequentialReservation>;
+  /** Bloquea la identidad tributaria; idempotente. */
+  lockTaxIdentity(companyId: string): Promise<boolean>;
+  documents: DocumentRepository;
+  idempotency: IdempotencyStore;
+  audit: AuditLog;
+};
+
+export interface EmissionUnitOfWork {
+  run<T>(work: (scope: EmissionScope) => Promise<T>): Promise<T>;
+}

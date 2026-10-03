@@ -87,6 +87,38 @@ export async function createProduct(
   return product.id;
 }
 
+/** Carga la firma sintética `sd-utf8.modern.p12` por el servicio real de la firma. */
+export async function uploadCertificate(
+  db: MigratedSchema,
+  company: { companyId: string; adminId: string },
+  pool: CryptoWorkerPool,
+  p12Dir: string,
+): Promise<void> {
+  const prisma = db.database.prisma;
+  await signingModule({
+    prisma,
+    authorizer: createAuthorizer({
+      memberships: createMembershipReader(prisma),
+      securityEvents: { emit: () => undefined },
+    }),
+    custody: CUSTODY,
+    maxBytes: 64 * 1024,
+    pool,
+  }).service.upload(
+    {
+      userId: company.adminId,
+      companyId: company.companyId,
+      role: "ADMIN",
+      requestId: randomUUID(),
+    },
+    {
+      file: readFixture(p12Dir, "sd-utf8.modern.p12").toString("base64"),
+      password: FIXTURE_PASSWORD,
+      expectedCurrentId: null,
+    },
+  );
+}
+
 /**
  * Empresa lista para emitir. Con `pool`, carga la firma sintética `sd-utf8.modern.p12` por el
  * servicio de la firma; sin él, la empresa no tiene firma.
@@ -99,6 +131,8 @@ export async function readyCompany(
     pool?: CryptoWorkerPool;
     p12Dir?: string;
     profile?: Partial<TaxpayerProfile>;
+    /** false: sin configuración tributaria registrada. */
+    configured?: boolean;
   },
 ): Promise<ReadyCompany> {
   const prisma = db.database.prisma;
@@ -115,36 +149,21 @@ export async function readyCompany(
     email: operatorEmail,
     role: "OPERATOR",
   });
-  await createTaxpayerScope(prisma).configs.appendVersion(companyId, {
-    version: 1,
-    config: { profile: profileOf(options.profile), environment: "TEST", logo: null },
-    createdBy: adminId,
-  });
+  if (options.configured !== false) {
+    await createTaxpayerScope(prisma).configs.appendVersion(companyId, {
+      version: 1,
+      config: { profile: profileOf(options.profile), environment: "TEST", logo: null },
+      createdBy: adminId,
+    });
+  }
   const establishment = await prisma.establishment.create({
     data: { companyId, code: "001", address: "Av. 6 de Diciembre, Quito" },
   });
   const point = await prisma.emissionPoint.create({
     data: { companyId, establishmentId: establishment.id, code: "001" },
   });
-  if (options.pool) {
-    await signingModule({
-      prisma,
-      authorizer: createAuthorizer({
-        memberships: createMembershipReader(prisma),
-        securityEvents: { emit: () => undefined },
-      }),
-      custody: CUSTODY,
-      maxBytes: 64 * 1024,
-      pool: options.pool,
-    }).service.upload(
-      { userId: adminId, companyId, role: "ADMIN", requestId: randomUUID() },
-      {
-        file: readFixture(options.p12Dir!, "sd-utf8.modern.p12").toString("base64"),
-        password: FIXTURE_PASSWORD,
-        expectedCurrentId: null,
-      },
-    );
-  }
+  if (options.pool)
+    await uploadCertificate(db, { companyId, adminId }, options.pool, options.p12Dir!);
   const consumerFinal = await prisma.party.findFirstOrThrow({
     where: { companyId, systemRecord: "CONSUMER_FINAL" },
   });

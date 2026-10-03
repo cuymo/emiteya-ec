@@ -54,6 +54,7 @@ export function createEvaluationReads(db: DbClient, signingReads: SigningReads):
       consumerFinalPolicy: (date) => catalogs.consumerFinalPolicy(date),
       specialCases: () => catalogs.specialCases(),
       schemaRegistry: () => catalogs.schemaRegistry(),
+      datasetVersions: () => catalogs.datasetVersions(),
     },
   };
 }

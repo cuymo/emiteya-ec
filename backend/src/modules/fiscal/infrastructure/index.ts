@@ -10,6 +10,9 @@ import { createFiscalUnitOfWork } from "./unit-of-work.ts";
 // Reserva dentro de la transacción de la emisión (add-invoice-emission, design D1 y D7).
 export { createFiscalScope } from "./unit-of-work.ts";
 export { reserveSequentialIn } from "../application/reservation.ts";
+// Comprobantes y su historial (add-invoice-emission, design D3).
+export { createDocumentRepository } from "./prisma-documents.ts";
+export type { DocumentRepository, StoredDocument } from "../application/ports.ts";
 
 export function fiscalRouters({
   prisma,
