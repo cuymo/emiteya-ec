@@ -72,6 +72,15 @@ export const fiscalCatalogSummaryViewSchema = z.strictObject({
 });
 export type FiscalCatalogSummaryView = z.infer<typeof fiscalCatalogSummaryViewSchema>;
 
+/** Semántica de una tarifa de IVA, ICE o IRBPNR; la reutilizan las vistas de productos. */
+export const catalogRateViewSchema = z.strictObject({
+  taxKind: taxKindSchema,
+  sriTaxCode: z.string(),
+  rateKind: rateKindSchema,
+  percentage: decimalString(DECIMAL_SPECS.tarifa).nullable(),
+});
+export type CatalogRateView = z.infer<typeof catalogRateViewSchema>;
+
 export const catalogEntryVersionViewSchema = z.strictObject({
   /** Identificador estable de la versión: lo guardará un comprobante para reproducirla. */
   id: z.string(),
@@ -83,14 +92,7 @@ export const catalogEntryVersionViewSchema = z.strictObject({
   sourceRef: z.string(),
   datasetVersion: z.number().int().positive(),
   /** Tarifas de IVA, ICE e IRBPNR. `percentage` solo existe con `PERCENTAGE`. */
-  rate: z
-    .strictObject({
-      taxKind: taxKindSchema,
-      sriTaxCode: z.string(),
-      rateKind: rateKindSchema,
-      percentage: decimalString(DECIMAL_SPECS.tarifa).nullable(),
-    })
-    .nullable(),
+  rate: catalogRateViewSchema.nullable(),
   /** Impuestos: a qué impuesto corresponde el código. */
   taxKind: taxKindSchema.nullable(),
   /** Tipos de identificación: regla de formato y si el tipo está reservado. */
@@ -129,10 +131,13 @@ export const catalogEntriesQuerySchema = z.object({
   enabled: z.enum(["true", "false"]).optional(),
 });
 
+/** Identidad de una entrada dentro de su catálogo (design D6 de add-fiscal-catalogs). */
+export const ENTRY_KEY_PATTERN = /^[0-9A-Z][0-9A-Z-]{0,63}$/;
+
 export const catalogTypeParamsSchema = z.strictObject({ catalogType: fiscalCatalogTypeSchema });
 export const catalogEntryParamsSchema = z.strictObject({
   catalogType: fiscalCatalogTypeSchema,
-  entryKey: z.string().regex(/^[0-9A-Z][0-9A-Z-]{0,63}$/, "La entrada no existe."),
+  entryKey: z.string().regex(ENTRY_KEY_PATTERN, "La entrada no existe."),
 });
 
 export const setEnablementSchema = z.strictObject(

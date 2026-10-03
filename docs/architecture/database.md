@@ -130,7 +130,7 @@ UNIQUE (document_id, product_id, movement_type)
 ```
 
 - El comprobante guarda los códigos de establecimiento y punto como parte de su snapshot, además de las claves foráneas.
-- Importes, cantidades y tarifas son `NUMERIC` con escala suficiente para el campo XSD más preciso (seis decimales en la versión 1.1.0); el builder aplica la escala de cada campo (CTX §10.6). Nunca `float` ni `double`.
+- Importes, precios, cantidades y tarifas son `NUMERIC(dígitos totales, decimales)` de su especificación decimal, con un `CHECK` de su mínimo, según `decimal-policy.md`. El builder aplica la escala de cada campo (CTX §10.6). Nunca `float` ni `double`.
 - Las claves foráneas desde las tablas fiscales hacia terceros, productos, usuarios y establecimientos usan `ON DELETE RESTRICT`. Nada borra en cascada comprobantes ni artefactos (ERS §13.1).
 - Las tablas de solo agregado se protegen en la base de datos: el rol de la aplicación no tiene `UPDATE` ni `DELETE` sobre ellas, o un trigger lo rechaza. La decisión entre ambos va en el cambio que las cree.
 - Las transiciones de estado son actualizaciones guardadas; la base de datos no codifica la máquina de estados completa, pero el estado es un enum cerrado.

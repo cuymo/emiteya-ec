@@ -32,10 +32,22 @@ export const AUDIT_ACTIONS = [
   "signing_certificate.expiry_alert_changed",
   "fiscal_catalog.entry_enabled",
   "fiscal_catalog.entry_disabled",
+  // add-parties-and-products, design D13.
+  "party.created",
+  "party.updated",
+  "party.deactivated",
+  "party.reactivated",
+  "product.created",
+  "product.updated",
+  "product.deactivated",
+  "product.reactivated",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
-export type AuditChanges = Readonly<Record<string, string | number | boolean | null>>;
+/** Valores simples o listas de textos (roles, campos cambiados; add-parties-and-products, design D13). */
+export type AuditChanges = Readonly<
+  Record<string, string | number | boolean | null | readonly string[]>
+>;
 
 export type AuditEventInput = Readonly<{
   companyId: string;

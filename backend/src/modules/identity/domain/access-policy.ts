@@ -24,6 +24,12 @@ export const PERMISSIONS = [
   "certificateValidity.read",
   "fiscalCatalogs.read",
   "fiscalCatalogs.manage",
+  "parties.read",
+  "parties.manage",
+  "parties.changeStatus",
+  "products.read",
+  "products.manage",
+  "products.changeStatus",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -52,6 +58,13 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     // add-fiscal-catalogs, design D12.
     "fiscalCatalogs.read",
     "fiscalCatalogs.manage",
+    // add-parties-and-products, design D12.
+    "parties.read",
+    "parties.manage",
+    "parties.changeStatus",
+    "products.read",
+    "products.manage",
+    "products.changeStatus",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -65,6 +78,11 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "certificateValidity.read",
     // add-fiscal-catalogs, design D12: consulta los catálogos; no cambia la habilitación.
     "fiscalCatalogs.read",
+    // add-parties-and-products, design D12: consulta, registra y corrige; no desactiva.
+    "parties.read",
+    "parties.manage",
+    "products.read",
+    "products.manage",
   ]),
 };
 

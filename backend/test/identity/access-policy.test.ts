@@ -33,6 +33,13 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   // add-fiscal-catalogs, design D12.
   "fiscalCatalogs.read": { ADMIN: true, OPERATOR: true },
   "fiscalCatalogs.manage": { ADMIN: true, OPERATOR: false },
+  // add-parties-and-products, design D12.
+  "parties.read": { ADMIN: true, OPERATOR: true },
+  "parties.manage": { ADMIN: true, OPERATOR: true },
+  "parties.changeStatus": { ADMIN: true, OPERATOR: false },
+  "products.read": { ADMIN: true, OPERATOR: true },
+  "products.manage": { ADMIN: true, OPERATOR: true },
+  "products.changeStatus": { ADMIN: true, OPERATOR: false },
 };
 
 describe("política de autorización central", () => {

@@ -9,3 +9,6 @@ export * from "./fiscal-numbering.ts";
 export * from "./signing-certificate.ts";
 export * from "./decimal.ts";
 export * from "./fiscal-catalogs.ts";
+export * from "./pagination.ts";
+export * from "./parties.ts";
+export * from "./products.ts";

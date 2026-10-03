@@ -20,7 +20,9 @@ componente se construye mediante los cambios OpenSpec de `docs/product/capabilit
 | `frontend/`          | Next.js: configuración, emisión, bandeja, catálogos, inventario y reportes. No conoce secretos.      | Todas las de interfaz                               |
 | `backend/` módulo `identity` | Usuarios, membresía en la empresa y roles sobre Better Auth.                                | `user-access`                                       |
 | `backend/` módulo `taxpayer` | Empresa y sus versiones, ambiente, establecimientos, puntos y certificado.                  | `taxpayer-setup`, `signing-certificate`             |
-| `backend/` módulo `catalogs` | Terceros, productos, catálogos fiscales, política de consumidor final, registro de esquemas y matriz de casos especiales. | `parties`, `products`, `fiscal-catalogs` |
+| `backend/` módulo `catalogs` | Conocimiento fiscal normativo: catálogos fiscales versionados, resolución de vigencia, habilitación por empresa, política de consumidor final, registro de esquemas y matriz de casos especiales. Ofrece lecturas internas sin sesión a otros módulos. | `fiscal-catalogs` |
+| `backend/` módulo `parties`  | Terceros y el consumidor final del sistema de cada empresa.                                 | `parties`                                           |
+| `backend/` módulo `products` | Productos y servicios, su precio unitario y sus referencias a entradas fiscales.            | `products`                                          |
 | `backend/` módulo `fiscal`   | Motor fiscal y orquestación SRI, con la estructura de CTX §42. Detalle en `docs/architecture/fiscal-emission.md`. | `fiscal-numbering`, `document-emission`, `sri-transmission`, los seis tipos, `document-archive` |
 | `backend/` módulo `inventory` | Stock opcional, movimientos y kárdex; reacciona a eventos fiscales.                        | `inventory`                                         |
 | `backend/` módulo `reports`  | Consultas filtradas y exportación XLSX.                                                     | `reports`, `data-portability`                       |
@@ -61,6 +63,7 @@ Rules:
 - Application logic depends on ports/interfaces, not concrete infrastructure. Los puertos del motor fiscal son los de CTX §43: clientes de recepción, autorización y consulta, validador XSD y firmador, más almacenamiento de artefactos y renderer RIDE.
 - Infrastructure implements ports and owns external tools. Los objetos de una librería SOAP o de firma nunca cruzan el puerto; se normalizan antes (CTX §44).
 - `fiscal` no importa `inventory`: el inventario reacciona a eventos fiscales, así puede desactivarse sin tocar la emisión (ADR 0006).
+- `parties` y `products` consumen `catalogs` solo por sus lecturas internas, sin leer sus tablas; `catalogs` no importa `parties` ni `products`, y estos no se importan entre sí. `identity` crea el consumidor final mediante un iniciador de empresa que registra `main.ts`, sin importar `parties` (add-parties-and-products, design D1 y D5).
 - Los seis flujos documentales dependen del núcleo común, nunca entre sí (ADR 0002, ERS RF-253).
 - UI code should not know server-side secrets. El frontend solo habla con la API; nunca recibe el certificado, su contraseña ni rutas de almacenamiento.
 

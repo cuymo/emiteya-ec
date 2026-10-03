@@ -149,12 +149,18 @@ denegado por defecto;
 | `certificateValidity.read` | Consultar solo la vigencia de la firma (utilizable, por vencer, vencida) | Sí | Sí |
 | `fiscalCatalogs.read` | Consultar los catálogos fiscales oficiales, la habilitación de la empresa, la política de consumidor final, el registro de esquemas y la matriz de casos especiales | Sí | Sí |
 | `fiscalCatalogs.manage` | Habilitar o deshabilitar entradas de catálogos fiscales para la empresa | Sí | No |
+| `parties.read` | Consultar y buscar terceros, incluido el consumidor final | Sí | Sí |
+| `parties.manage` | Registrar y corregir terceros (nunca el consumidor final) | Sí | Sí |
+| `parties.changeStatus` | Desactivar y reactivar terceros (nunca el consumidor final) | Sí | No |
+| `products.read` | Consultar y buscar productos, su estado tributario y sus recuentos | Sí | Sí |
+| `products.manage` | Registrar y corregir productos, su precio y sus impuestos | Sí | Sí |
+| `products.changeStatus` | Desactivar y reactivar productos | Sí | No |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
 
 Matriz propuesta para los módulos futuros (Q-22). El ERS solo dice "permisos básicos"; cada
-cambio confirma las filas de sus propias operaciones al añadirlas al mapa:
+cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |

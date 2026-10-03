@@ -23,7 +23,13 @@ export type Permission =
   | "certificate.manage"
   | "certificateValidity.read"
   | "fiscalCatalogs.read"
-  | "fiscalCatalogs.manage";
+  | "fiscalCatalogs.manage"
+  | "parties.read"
+  | "parties.manage"
+  | "parties.changeStatus"
+  | "products.read"
+  | "products.manage"
+  | "products.changeStatus";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -48,6 +54,12 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "certificateValidity.read",
     "fiscalCatalogs.read",
     "fiscalCatalogs.manage",
+    "parties.read",
+    "parties.manage",
+    "parties.changeStatus",
+    "products.read",
+    "products.manage",
+    "products.changeStatus",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",
@@ -57,6 +69,10 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "readiness.read",
     "certificateValidity.read",
     "fiscalCatalogs.read",
+    "parties.read",
+    "parties.manage",
+    "products.read",
+    "products.manage",
   ]),
 };
 

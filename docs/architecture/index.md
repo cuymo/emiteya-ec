@@ -21,6 +21,7 @@
    - `docs/architecture/navigation-responsive.md`
 9. `docs/architecture/authentication.md`
 10. `docs/architecture/database.md`
+    - Importes, precios, cantidades y tarifas: `docs/architecture/decimal-policy.md`
 11. `docs/architecture/idempotency.md`
 12. `docs/architecture/integrations.md`
 13. `docs/architecture/deployment.md`

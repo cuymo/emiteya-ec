@@ -55,7 +55,7 @@ const source = (dataset: AppliedDataset): CatalogSourceView => ({
 });
 
 /** Última versión aplicada de cada dataset: rige su fuente y su política de habilitación. */
-function latestByType(applied: readonly AppliedDataset[]): Map<string, AppliedDataset> {
+export function latestByType(applied: readonly AppliedDataset[]): Map<string, AppliedDataset> {
   const latest = new Map<string, AppliedDataset>();
   for (const dataset of applied) {
     const current = latest.get(dataset.catalogType);

@@ -213,3 +213,6 @@ export const companyStatusSchema = z.strictObject({
   }),
 });
 export type CompanyStatus = z.infer<typeof companyStatusSchema>;
+
+/** Ayudas de texto y de cuerpo estricto compartidas con terceros y productos (add-parties-and-products). */
+export { optional as optionalText, strict as strictBody };
