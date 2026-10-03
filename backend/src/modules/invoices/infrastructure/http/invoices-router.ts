@@ -12,7 +12,7 @@ import {
 } from "@facturador/contracts";
 import type { StoredDocument } from "../../../fiscal/application/ports.ts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
-import { DIAGNOSTIC_MESSAGES, isAttemptCode } from "../../application/diagnostics.ts";
+import { diagnosticMessage, isAttemptCode } from "../../application/diagnostics.ts";
 import type { DraftDetails, Drafts } from "../../application/drafts.ts";
 import type { Emission } from "../../application/emission.ts";
 import type { InvoiceDetails, Invoices } from "../../application/invoices.ts";
@@ -138,7 +138,7 @@ function diagnosticView(document: StoredDocument): InvoiceView["diagnostic"] {
     stage: attempt.stage as NonNullable<InvoiceView["diagnostic"]>["stage"],
     code: attempt.code,
     class: attempt.class,
-    message: DIAGNOSTIC_MESSAGES[attempt.code],
+    message: diagnosticMessage(attempt.code, attempt.detail),
     at: attempt.at.toISOString(),
     attemptCount: document.attemptCount,
   };

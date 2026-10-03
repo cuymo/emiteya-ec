@@ -131,7 +131,7 @@
   - artefacto con SHA-256, tamaño, tipo y metadatos;
   - XML firmado que vuelve a validar;
   - `SIGNED` solo con artefacto
-- [ ] 9.2 Implementar el diagnóstico del último intento con sus tres clases y `POST /api/v1/invoices/{id}/signing-attempts`, con el evento `invoice.signing_retried` (design D10). Verificar con fallos inyectados en cada etapa:
+- [x] 9.2 Implementar el diagnóstico del último intento con sus tres clases y `POST /api/v1/invoices/{id}/signing-attempts`, con el evento `invoice.signing_retried` (design D10). Verificar con fallos inyectados en cada etapa:
   - validación saturada;
   - pool criptográfico ocupado;
   - firma vencida y después reemplazada;

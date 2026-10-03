@@ -39,3 +39,17 @@ export const isAttemptCode = (code: string): code is SigningAttemptCode =>
 
 export const classOf = (code: SigningAttemptCode): SigningAttemptClass =>
   SIGNING_ATTEMPT_CODES[code];
+
+/** Mensaje del diagnóstico; para XSD_INVALID añade solo la línea y el elemento, nunca su valor. */
+export function diagnosticMessage(
+  code: SigningAttemptCode,
+  detail: { line: number | null; element: string | null } | null,
+): string {
+  const where = [
+    detail?.line != null ? `línea ${detail.line}` : null,
+    detail?.element ? `elemento ${detail.element}` : null,
+  ].filter((part): part is string => part !== null);
+  return where.length > 0
+    ? `${DIAGNOSTIC_MESSAGES[code]} (${where.join(", ")})`
+    : DIAGNOSTIC_MESSAGES[code];
+}
