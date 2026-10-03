@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   CERTIFICATE_MAX_BYTES_LIMIT,
   certificateValidityViewSchema,
+  formatCertificateBytes,
+  signingCertificateResponseSchema,
   expiryAlertSchema,
   signingCertificateViewSchema,
   uploadSigningCertificateSchema,
@@ -101,5 +103,24 @@ describe("vistas sin secretos (design D9)", () => {
     expect(certificateValidityViewSchema.safeParse({ ...validity, detectedRuc: "x" }).success).toBe(
       false,
     );
+  });
+});
+
+describe("límite efectivo del archivo (design D3 y D9)", () => {
+  it("la consulta publica el límite configurado, entero y positivo", () => {
+    const response = { certificate: null, expiryAlertDays: 30, maxBytes: 131072 };
+    expect(signingCertificateResponseSchema.parse(response).maxBytes).toBe(131072);
+    for (const maxBytes of [undefined, 0, 1.5]) {
+      expect(signingCertificateResponseSchema.safeParse({ ...response, maxBytes }).success).toBe(
+        false,
+      );
+    }
+  });
+
+  it("formatea en KiB hacia abajo, igual para el backend y el selector de archivo", () => {
+    expect(formatCertificateBytes(65536)).toBe("64 KiB");
+    expect(formatCertificateBytes(65000)).toBe("63 KiB");
+    expect(formatCertificateBytes(CERTIFICATE_MAX_BYTES_LIMIT)).toBe("1024 KiB");
+    expect(formatCertificateBytes(500)).toBe("500 B");
   });
 });

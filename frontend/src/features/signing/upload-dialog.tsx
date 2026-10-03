@@ -3,7 +3,7 @@
 // contraseña se borra al cerrar. Nunca se repite la contraseña en un mensaje.
 "use client";
 
-import type { SigningCertificateView } from "@facturador/contracts";
+import { formatCertificateBytes, type SigningCertificateView } from "@facturador/contracts";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { errorMessage } from "@/components/feedback";
@@ -129,6 +129,7 @@ export function UploadCertificateDialog({
         accept={ACCEPT}
         acceptLabel="PKCS#12 (.p12 o .pfx)"
         maxBytes={maxBytes}
+        formatBytes={formatCertificateBytes}
         pending={pending}
         current={file ? { name: file.name, typeLabel: "PKCS#12", sizeBytes: file.size } : null}
         onSelect={(selected) => {

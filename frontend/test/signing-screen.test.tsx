@@ -38,12 +38,13 @@ function renderScreen(
   current: () => Record<string, unknown> | null,
   routes: Record<string, Route> = {},
   me: typeof ADMIN_ME | typeof OPERATOR_ME = ADMIN_ME,
+  maxBytes = 65536,
 ) {
   const calls = mockApi({
     "GET /api/v1/me": () => ({ status: 200, body: { data: me } }),
     "GET /api/v1/signing-certificate": () => ({
       status: 200,
-      body: { data: { certificate: current(), expiryAlertDays: 30, maxBytes: 65536 } },
+      body: { data: { certificate: current(), expiryAlertDays: 30, maxBytes } },
     }),
     ...routes,
   });
@@ -180,6 +181,33 @@ describe("Firma electrónica (design D14)", () => {
 });
 
 describe("diálogo Cargar o Reemplazar firma (design D14)", () => {
+  it.each([
+    [65536, "64 KiB", true],
+    [131072, "128 KiB", false],
+  ] as const)(
+    "con CERTIFICATE_MAX_BYTES de %i muestra y aplica %s, nunca el tope del contrato",
+    async (maxBytes, label, rejects) => {
+      const calls = renderScreen(() => null, {}, ADMIN_ME, maxBytes);
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole("button", { name: "Cargar firma" }));
+      const dialog = screen.getByRole("dialog");
+      expect(within(dialog).getByText(`PKCS#12 (.p12 o .pfx), hasta ${label}.`)).toBeDefined();
+      expect(dialog.textContent).not.toMatch(/1024|1 MiB|1 MB/);
+      // Un archivo de 100 KiB: la alerta temprana usa el mismo límite que muestra.
+      await user.upload(
+        dialog.querySelector('input[type="file"]')!,
+        new File([new Uint8Array(100 * 1024)], "grande.p12"),
+      );
+      if (rejects) {
+        expect(within(dialog).getByText(`El archivo supera el límite de ${label}.`)).toBeDefined();
+      } else {
+        expect(within(dialog).getByText("PKCS#12 · 100 KiB")).toBeDefined();
+        expect(within(dialog).queryByText(/supera el límite/)).toBeNull();
+      }
+      expect(calls.some((call) => call.key === "PUT /api/v1/signing-certificate")).toBe(false);
+    },
+  );
+
   it("primera carga: envía el archivo en base64, la contraseña exacta y ningún valor esperado", async () => {
     let current: Record<string, unknown> | null = null;
     const calls = renderScreen(() => current, {
@@ -190,7 +218,7 @@ describe("diálogo Cargar o Reemplazar firma (design D14)", () => {
     });
     await userEvent.setup().click(await screen.findByRole("button", { name: "Cargar firma" }));
     expect(
-      within(screen.getByRole("dialog")).getByText("PKCS#12 (.p12 o .pfx), hasta 64 KB."),
+      within(screen.getByRole("dialog")).getByText("PKCS#12 (.p12 o .pfx), hasta 64 KiB."),
     ).toBeDefined();
     const { dialog, user } = await fillDialog(" Clave con espacios ");
     await user.click(within(dialog).getByRole("button", { name: "Cargar firma" }));

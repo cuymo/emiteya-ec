@@ -29,6 +29,7 @@ export function FileField({
   pending,
   disabledReason,
   error,
+  formatBytes = formatSize,
 }: {
   id: string;
   label: string;
@@ -44,6 +45,8 @@ export function FileField({
   /** Si el campo no está disponible todavía, la explicación que se muestra en su lugar. */
   disabledReason?: string | undefined;
   error?: string | undefined;
+  /** Formato de tamaños, si el campo debe coincidir con el de los mensajes del servidor. */
+  formatBytes?: (bytes: number) => string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export function FileField({
       return;
     }
     if (file.size > maxBytes) {
-      setLocalError(`El archivo supera el límite de ${formatSize(maxBytes)}.`);
+      setLocalError(`El archivo supera el límite de ${formatBytes(maxBytes)}.`);
       return;
     }
     setLocalError(null);
@@ -74,7 +77,7 @@ export function FileField({
         {label}
       </span>
       <p id={hintId} className="text-xs text-foreground-muted">
-        {disabledReason ?? `${acceptLabel}, hasta ${formatSize(maxBytes)}.`}
+        {disabledReason ?? `${acceptLabel}, hasta ${formatBytes(maxBytes)}.`}
       </p>
       {current && (
         <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface p-1">
@@ -82,7 +85,7 @@ export function FileField({
           <div className="flex min-w-0 flex-col text-sm">
             <span className="font-medium break-words">{current.name}</span>
             <span className="text-foreground-muted">
-              {current.typeLabel} · {formatSize(current.sizeBytes)}
+              {current.typeLabel} · {formatBytes(current.sizeBytes)}
             </span>
           </div>
         </div>

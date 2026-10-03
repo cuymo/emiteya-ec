@@ -129,7 +129,7 @@ La custodia de la firma (ADR 0011) y el pool criptográfico (design D18 de
 | `CERTIFICATE_MASTER_KEY` o `CERTIFICATE_MASTER_KEY_FILE` | Sí, una de las dos, mientras la custodia esté habilitada | | Clave maestra de la custodia de firmas: 32 bytes en base64, en la variable o en un archivo de secreto. Nunca va a la base de datos. La de `.env.example` se rechaza en producción. Generar con `openssl rand -base64 32`. |
 | `CERTIFICATE_MASTER_KEY_VERSION` | No | `1` | Identificador de la clave maestra, que se guarda con cada secreto para poder rotarla. |
 | `CERTIFICATE_CUSTODY` | No | `enabled` | `disabled` arranca sin custodia de firmas: solo en desarrollo y pruebas, y prohibido en producción. |
-| `CERTIFICATE_MAX_BYTES` | No | 65536 | Tamaño máximo del PKCS#12 decodificado, entre 8192 y 1048576. Es configuración, no un límite del SRI: se ajusta si una firma real con su cadena completa lo necesita. |
+| `CERTIFICATE_MAX_BYTES` | No | 65536 | Tamaño máximo del PKCS#12 decodificado, entre 8192 y 1048576. Es configuración, no un límite del SRI: se ajusta si una firma real con su cadena completa lo necesita. Es el único límite que ve el usuario: la API lo publica y la carga de la firma lo muestra. |
 | `CRYPTO_WORKERS` | No | 2 | Workers del pool criptográfico (1 a 8): inspección y firma fuera del event loop. |
 | `CRYPTO_TASK_TIMEOUT_MS` | No | 30000 | Límite por tarea del pool, en milisegundos (1000 a 120000). Al agotarse, el worker se reemplaza. |
 

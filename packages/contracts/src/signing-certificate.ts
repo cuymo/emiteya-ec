@@ -4,8 +4,18 @@ import { z } from "zod";
 
 /** Límite por defecto del P12 decodificado; es configuración (CERTIFICATE_MAX_BYTES), no del SRI. */
 export const CERTIFICATE_MAX_BYTES_DEFAULT = 64 * 1024;
-/** Tope absoluto del contrato y de la configuración: el límite efectivo lo aplica el backend. */
+/**
+ * Tope absoluto del contrato y de la configuración, solo como defensa del payload: el límite
+ * efectivo lo aplica el backend y es el único que se muestra al usuario.
+ */
 export const CERTIFICATE_MAX_BYTES_LIMIT = 1024 * 1024;
+
+/**
+ * Formato único de tamaños para el usuario, el mismo en el error del backend y en el selector de
+ * archivo: 65536 -> "64 KiB". Redondea hacia abajo para no prometer de más un límite.
+ */
+export const formatCertificateBytes = (bytes: number): string =>
+  bytes < 1024 ? `${bytes} B` : `${Math.floor(bytes / 1024)} KiB`;
 export const CERTIFICATE_PASSWORD_MAX_LENGTH = 256;
 export const EXPIRY_ALERT_DAYS = { min: 1, max: 90, default: 30 } as const;
 

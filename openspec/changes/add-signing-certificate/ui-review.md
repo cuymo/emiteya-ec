@@ -34,7 +34,7 @@ disponible, todas correctas:
 - **Errores reales del backend en el diálogo:**
   - sin archivo, en su campo;
   - tipo no admitido, como alerta temprana;
-  - el límite mostrado es el efectivo del backend: "hasta 64 KB", no el tope del contrato;
+  - el límite mostrado es el efectivo del backend: "hasta 64 KiB", no el tope del contrato;
   - contraseña incorrecta, en su campo con `aria-invalid`;
   - archivo ilegible, en el campo del archivo;
   - firma vencida, en el campo del archivo con su vigencia;
@@ -103,8 +103,8 @@ disponible, todas correctas:
 
 ## Hallazgos corregidos durante la revisión
 
-- El campo del archivo anunciaba "hasta 1024 KB", el tope del contrato, aunque el backend admite por defecto 64 KiB. Ahora la consulta de la firma devuelve `maxBytes` con el `CERTIFICATE_MAX_BYTES` efectivo, y el diálogo lo muestra y lo usa en la alerta temprana. Así, subir el límite sigue sin requerir cambios en el frontend (nota en design D9).
-- La ayuda del archivo empezaba en minúscula ("un archivo .p12 o .pfx, …"); ahora dice "PKCS#12 (.p12 o .pfx), hasta 64 KB.".
+- El campo del archivo anunciaba "hasta 1024 KB", el tope del contrato, aunque el backend admite por defecto 64 KiB. Ahora la consulta de la firma devuelve `maxBytes` con el `CERTIFICATE_MAX_BYTES` efectivo, y el diálogo lo muestra y lo usa en la alerta temprana con el mismo formato en KiB que el error del backend (`formatCertificateBytes`). Así, subir el límite sigue sin requerir cambios en el frontend (nota en design D9); `signing-screen.test.tsx` lo comprueba con 64 y 128 KiB.
+- La ayuda del archivo empezaba en minúscula ("un archivo .p12 o .pfx, …"); ahora dice "PKCS#12 (.p12 o .pfx), hasta 64 KiB.".
 - `Button` (tamaños `md` y `sm`), `Input` y el botón de mostrar contraseña medían 32 o 40 px de alto en móvil. Ahora miden 44 px por debajo de 768 px, como pide `docs/architecture/frontend.md`. El arreglo es compartido; se revisó en el barrido de todas las pantallas.
 - El enlace del aviso de vencimiento medía 19 px de alto en móvil; ahora mide 44 px.
 - A 768 px, la tabla de Usuarios desbordaba la página: el encabezado oculto de la columna de acciones (`sr-only`, posición absoluta) escapaba del contenedor con desplazamiento. El contenedor de `AppDataTable` es ahora `relative`. Es un defecto previo, visible en el barrido.

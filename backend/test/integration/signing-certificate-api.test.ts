@@ -258,7 +258,10 @@ describe("API de la firma electrónica", () => {
         small.app,
       );
       expect(res.status).toBe(400);
-      expect(bodyOf(res).error.code).toBe("CERTIFICATE_TOO_LARGE");
+      expect(bodyOf(res).error).toMatchObject({
+        code: "CERTIFICATE_TOO_LARGE",
+        message: "El archivo de la firma supera el tamaño admitido (4 KiB).",
+      });
     });
 
     it("sin custodia configurada la carga es 409", async () => {

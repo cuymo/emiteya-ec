@@ -1,5 +1,6 @@
 // Errores de la firma electrónica con código estable para la API (design D3, D7 y D9). Ningún
 // mensaje incluye la contraseña ni contenido del archivo.
+import { formatCertificateBytes } from "@facturador/contracts";
 import { AppError, ConflictError } from "../../../platform/http/errors.ts";
 import type { CertificateRejection, IncompatibleReason } from "./ports.ts";
 
@@ -41,7 +42,7 @@ export const certificateTooLarge = (maxBytes: number) =>
   new AppError(
     "CERTIFICATE_TOO_LARGE",
     400,
-    `El archivo de la firma supera el tamaño admitido (${Math.floor(maxBytes / 1024)} KiB).`,
+    `El archivo de la firma supera el tamaño admitido (${formatCertificateBytes(maxBytes)}).`,
   );
 
 /** Fechas en la hora de Ecuador (ERS RNF-010), con el año completo. */
