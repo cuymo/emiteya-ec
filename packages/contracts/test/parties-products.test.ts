@@ -94,12 +94,31 @@ describe("contrato de productos", () => {
     }
   });
 
-  it("el precio es texto decimal exacto: 12 enteros y 6 decimales como máximo", () => {
+  it("el precio es texto decimal exacto: 18 dígitos en total y 6 decimales como máximo", () => {
     const price = (unitPrice: unknown) => createProductSchema.safeParse({ ...product, unitPrice });
-    for (const ok of ["999999999999.999999", "0.000001", "0", "12.5"]) {
+    for (const ok of [
+      "0",
+      "0.000001",
+      "999999999999999999",
+      "999999999999.999999",
+      "1234567890123.12345",
+      "9999999999999999.99",
+      "12.5",
+    ]) {
       expect(price(ok).success, ok).toBe(true);
     }
-    expect(messages(price("1000000000000"))).toContain("Admite como máximo 12 dígitos enteros.");
+    expect(messages(price("1000000000000000000"))).toContain(
+      "Admite como máximo 18 dígitos enteros.",
+    );
+    for (const tooLong of [
+      "1234567890123.123456",
+      "99999999999999999.99",
+      "1234567890123.123450",
+    ]) {
+      expect(messages(price(tooLong)), tooLong).toContain(
+        "Admite como máximo 18 dígitos en total.",
+      );
+    }
     expect(messages(price("0.0000001"))).toContain("Admite como máximo 6 decimales.");
     expect(messages(price("1.1234560"))).toContain("Admite como máximo 6 decimales.");
     for (const bad of [12.5, "-1", "1e3", "1,50", "01.5", " 1", "1 000"]) {

@@ -288,6 +288,14 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
       "search_identification:C",
       "search_main_code:C",
     ]);
+    // El precio no tiene precisión ni escala fijas: su dominio lo fija el CHECK (design D9).
+    const [price] = await db.database.prisma.$queryRaw<
+      { type: string; precision: number | null }[]
+    >`
+      SELECT data_type AS type, numeric_precision AS precision
+      FROM information_schema.columns
+      WHERE table_schema = ${db.name} AND table_name = 'product' AND column_name = 'unit_price'`;
+    expect(price).toEqual({ type: "numeric", precision: null });
   });
 
   it("no limita el número de empresas con ninguna restricción", async () => {

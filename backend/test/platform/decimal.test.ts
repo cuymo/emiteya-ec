@@ -45,6 +45,16 @@ describe("FiscalDecimal", () => {
     }
   });
 
+  it("el precio unitario sigue la regla del XSD: 18 dígitos en total y 6 decimales", () => {
+    for (const text of ["0", "0.000001", "999999999999999999", "999999999999.999999"]) {
+      expect(UnitPrice.parse(text).toString()).toBe(text);
+    }
+    for (const text of ["1000000000000000000", "1234567890123.123456", "0.0000001", "-1"]) {
+      expect(() => UnitPrice.parse(text), text).toThrow(DecimalValueError);
+    }
+    expect(() => Quantity.parse("1000000000000")).toThrow("Admite como máximo 12 dígitos enteros.");
+  });
+
   it("compara y detecta igualdad exacta", () => {
     expect(Money.parse("50").equals(Money.parse("50.00"))).toBe(true);
     expect(UnitPrice.parse("0.1").compare(UnitPrice.parse("0.099999"))).toBe(1);

@@ -82,7 +82,7 @@ export const productTaxesSchema = strictBody({
 });
 export type ProductTaxes = z.output<typeof productTaxesSchema>;
 
-/** Precio unitario sin impuestos: 12 dígitos enteros y 6 decimales como máximo (design D9). */
+/** Precio unitario sin impuestos: 18 dígitos en total y 6 decimales como máximo (design D9). */
 export const unitPriceSchema = decimalString(DECIMAL_SPECS.precioUnitario);
 
 export const productShape = {

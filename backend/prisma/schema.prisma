@@ -583,7 +583,8 @@ model Party {
 }
 
 // Producto o servicio de una empresa (add-parties-and-products, design D6 y D9): precio unitario
-// sin impuestos con la escala de `precioUnitario`; código principal único por empresa.
+// sin impuestos en `NUMERIC` sin escala fija, con el CHECK de dominio de `precioUnitario` (18
+// dígitos en total, 6 decimales como máximo); código principal único por empresa.
 model Product {
   id                  String       @id @default(uuid())
   companyId           String       @map("company_id")
@@ -593,7 +594,7 @@ model Product {
   auxiliaryCode       String?      @map("auxiliary_code") @db.VarChar(25)
   name                String       @db.VarChar(300)
   description         String?      @db.VarChar(1000)
-  unitPrice           Decimal      @map("unit_price") @db.Decimal(18, 6)
+  unitPrice           Decimal      @map("unit_price") @db.Decimal
   stockTracked        Boolean      @default(false) @map("stock_tracked")
   status              String       @default("ACTIVE")
   version             Int          @default(1)

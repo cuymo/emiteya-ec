@@ -131,7 +131,7 @@ UNIQUE (document_id, product_id, movement_type)
 ```
 
 - El comprobante guarda los códigos de establecimiento y punto como parte de su snapshot, además de las claves foráneas.
-- Importes, precios, cantidades y tarifas son `NUMERIC(dígitos totales, decimales)` de su especificación decimal, con un `CHECK` de su mínimo, según `decimal-policy.md`. El builder aplica la escala de cada campo (CTX §10.6). Nunca `float` ni `double`.
+- Importes, precios, cantidades y tarifas son `NUMERIC(dígitos totales, decimales)` de su especificación decimal, con un `CHECK` de su mínimo, según `decimal-policy.md`. La excepción es el precio unitario, que sigue la regla del XSD: `NUMERIC` sin escala fija con un `CHECK` de dominio. El builder aplica la escala de cada campo (CTX §10.6). Nunca `float` ni `double`.
 - Las claves foráneas desde las tablas fiscales hacia terceros, productos, usuarios y establecimientos usan `ON DELETE RESTRICT`. Nada borra en cascada comprobantes ni artefactos (ERS §13.1).
 - Las tablas de solo agregado se protegen en la base de datos: el rol de la aplicación no tiene `UPDATE` ni `DELETE` sobre ellas, o un trigger lo rechaza. La decisión entre ambos va en el cambio que las cree.
 - Las transiciones de estado son actualizaciones guardadas; la base de datos no codifica la máquina de estados completa, pero el estado es un enum cerrado.
@@ -143,7 +143,8 @@ Migraciones: `backend/prisma/migrations/20261002083000_add_user_access` (cambio
 `20261002180000_add_fiscal_numbering` (cambio `add-fiscal-numbering`),
 `20261002200000_add_signing_certificate` (cambio `add-signing-certificate`),
 `20261003100000_add_fiscal_catalogs` (cambio `add-fiscal-catalogs`) y
-`20261003200000_add_parties_and_products` (cambio `add-parties-and-products`). Las tablas
+`20261003200000_add_parties_and_products`, `20261003210000_require_consumer_final` y
+`20261003220000_unit_price_domain` (cambio `add-parties-and-products`). Las tablas
 de Better Auth y de sus plugins las genera el CLI `auth`; las columnas de esas tablas usan los
 nombres que fija Better Auth (`organizationId`, `userId`).
 
@@ -173,7 +174,7 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `special_case_support` | Propia (`catalogs`) | Categoría de cada anexo por versión del dataset (ADR 0014). |
 | `company_fiscal_catalog_setting` | Propia (`catalogs`) | Decisión de una empresa: `(company_id, catalog_type, entry_key)`, `enabled`, `updated_at` y `updated_by`. |
 | `party` | Propia (`parties`) | Tercero: `identification_type`, `identification`, `legal_name`, `address`, `email`, `phone`, `roles` (`CUSTOMER`, `SUPPLIER`, `CARRIER`), `status`, `system_record` (`CONSUMER_FINAL` o nulo), `version`, las claves de búsqueda `search_name` y `search_identification` (colación `C`), y autores y fechas (nulos en el registro del sistema). |
-| `product` | Propia (`products`) | Producto o servicio: `kind` (`GOOD`, `SERVICE`), `main_code`, `auxiliary_code`, `name`, `description`, `unit_price NUMERIC(18,6)` sin impuestos, `stock_tracked`, `status`, `version`, las claves de búsqueda `search_name`, `search_main_code` y `search_auxiliary_code` (las dos últimas con colación `C`), y autores y fechas. |
+| `product` | Propia (`products`) | Producto o servicio: `kind` (`GOOD`, `SERVICE`), `main_code`, `auxiliary_code`, `name`, `description`, `unit_price NUMERIC` sin impuestos (sin escala fija, guardado en forma canónica), `stock_tracked`, `status`, `version`, las claves de búsqueda `search_name`, `search_main_code` y `search_auxiliary_code` (las dos últimas con colación `C`), y autores y fechas. |
 | `product_tax` | Propia (`products`) | Referencia de un producto a una entrada fiscal: `(product_id, catalog_type)` con `company_id` y `entry_key`; `catalog_type` es `iva-rate`, `ice-rate` o `irbpnr-rate`. |
 
 Restricciones de la migración, incluidas las que Prisma no expresa (verificadas por
@@ -258,7 +259,7 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `party_system_record_check` | `party` | Un tercero normal no usa el tipo `07` y tiene autor; el registro del sistema es exactamente el consumidor final: `07`, `9999999999999`, `ACTIVE`, rol cliente y sin autor (design D5 de `add-parties-and-products`) | SQL de la migración |
 | `party_system_record_guard`, `party_no_truncate` | `party` | Triggers: el consumidor final no se corrige, no se desactiva ni se borra; ningún tercero cambia su marca de registro del sistema; la tabla no se trunca | SQL de la migración |
 | `product_company_id_main_code_key` | `product` | `UNIQUE (company_id, main_code)`, también con productos desactivados; los nulos no chocan | `@@unique` en el esquema |
-| `product_kind_check`, `product_status_check`, `product_text_check`, `product_unit_price_check`, `product_stock_tracked_check`, `product_version_check` | `product` | Tipo `GOOD` o `SERVICE`; estado; nombre y códigos no vacíos y sin saltos de línea; precio no negativo; control de stock solo en bienes; versión desde 1 | SQL de la migración |
+| `product_kind_check`, `product_status_check`, `product_text_check`, `product_unit_price_check`, `product_stock_tracked_check`, `product_version_check` | `product` | Tipo `GOOD` o `SERVICE`; estado; nombre y códigos no vacíos y sin saltos de línea; precio no negativo, con 6 decimales y 18 dígitos en total como máximo; control de stock solo en bienes; versión desde 1 | SQL de la migración |
 | `product_tax_pkey`, `product_tax_catalog_type_check` | `product_tax` | Como mucho una referencia por impuesto; solo `iva-rate`, `ice-rate` e `irbpnr-rate` | `@@id` en el esquema y SQL de la migración |
 | `product_tax_company_id_product_id_fkey`, `product_tax_catalog_type_entry_key_fkey` | `product_tax` | La referencia es del producto de la misma empresa y de una entrada fiscal existente (`fiscal_catalog_key`). Esta clave foránea es un objeto de `products` sobre una tabla de `catalogs`; `products` nunca lee esas tablas | Relación en el esquema |
 | `product_invariants`, `product_tax_invariants` | `product`, `product_tax` | Triggers de restricción diferidos: al confirmar, cada producto tiene exactamente un IVA y, si es un servicio, ningún IRBPNR, sin importar el orden de las sentencias | SQL de la migración |

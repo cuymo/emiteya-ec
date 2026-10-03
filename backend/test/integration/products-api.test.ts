@@ -137,16 +137,22 @@ describe("API de productos", () => {
 
     it("el precio es exacto: límites, forma canónica y rechazos sin redondear", async () => {
       for (const [unitPrice, stored] of [
+        ["0", "0"],
+        ["0.000001", "0.000001"],
         ["0.123456", "0.123456"],
+        ["999999999999999999", "999999999999999999"],
         ["999999999999.999999", "999999999999.999999"],
         ["12.50", "12.5"],
         ["10", "10"],
       ]) {
-        expect((await created("adminA", { unitPrice })).unitPrice).toBe(stored);
+        const view = await created("adminA", { unitPrice });
+        expect(view.unitPrice).toBe(stored);
+        expect((await get("adminA", view.id)).unitPrice).toBe(stored);
       }
       const message = async (unitPrice: unknown) =>
         bodyOf(await create("adminA", product({ unitPrice }))).error.message;
-      expect(await message("1000000000000")).toBe("Admite como máximo 12 dígitos enteros.");
+      expect(await message("1000000000000000000")).toBe("Admite como máximo 18 dígitos enteros.");
+      expect(await message("1234567890123.123456")).toBe("Admite como máximo 18 dígitos en total.");
       expect(await message("1.1234567")).toBe("Admite como máximo 6 decimales.");
       expect(await message("1.1234560")).toBe("Admite como máximo 6 decimales.");
       for (const bad of [12.5, "-1", "1e3", "1,50", "01.5"]) {

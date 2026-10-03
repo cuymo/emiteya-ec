@@ -165,7 +165,7 @@
 
 ## 9. Corrección del dominio del precio unitario
 
-- [ ] 9.1 Hacer que `UnitPrice` siga la regla del XSD (design D9): 18 dígitos en total y 6 decimales como máximo, no negativo y sin redondeo.
+- [x] 9.1 Hacer que `UnitPrice` siga la regla del XSD (design D9): 18 dígitos en total y 6 decimales como máximo, no negativo y sin redondeo.
   - `maxIntegerDigits: 18` en `DECIMAL_SPECS.precioUnitario`, y la comprobación del total en `decimalSpecViolation`, sin cambiar las demás especificaciones.
   - Una migración `unit_price_domain` que pasa `product.unit_price` a `NUMERIC` sin escala fija, con el `CHECK` de dominio, y normaliza los valores guardados a su forma canónica.
   - El repositorio guarda la forma canónica.

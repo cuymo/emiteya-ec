@@ -11,6 +11,12 @@ export type DecimalSpec = {
   totalDigits: number;
   /** Decimales máximos (`fractionDigits`). */
   fractionDigits: number;
+  /**
+   * Enteros máximos. Por defecto, los dígitos totales menos los decimales, la semántica de
+   * `NUMERIC(p, s)`. Un tipo que sigue la regla del XSD declara aquí sus dígitos totales: la parte
+   * entera usa los que no ocupan los decimales, y el total sigue limitado a `totalDigits`.
+   */
+  maxIntegerDigits?: number;
   /** Mínimo inclusivo (`minInclusive`); null si el tipo admite negativos. */
   min: string | null;
   /** Máximo de dominio adicional, si lo hay (por ejemplo, un porcentaje no supera 100). */
@@ -40,10 +46,14 @@ export const DECIMAL_SPECS = {
     min: "0",
     xsd: { types: ["importeTotal"], documents: ["01", "03", "07"] },
   },
-  /** Precio unitario: `precioUnitario` de factura, liquidación y nota de crédito. */
+  /**
+   * Precio unitario: `precioUnitario` de factura, liquidación y nota de crédito. Sigue la regla del
+   * XSD: 18 dígitos en total, de los cuales 6 decimales como máximo (add-parties-and-products, D9).
+   */
   precioUnitario: {
     totalDigits: 18,
     fractionDigits: 6,
+    maxIntegerDigits: 18,
     min: "0",
     xsd: { types: ["precioUnitario"], documents: ["01", "03", "04"] },
   },
@@ -108,12 +118,16 @@ export function canonicalDecimal(text: string): string {
 export function decimalSpecViolation(text: string, spec: DecimalSpec): string | null {
   if (!isDecimalString(text)) return FORMAT_MESSAGE;
   const { integer, fraction } = decimalParts(text);
-  const integerDigits = spec.totalDigits - spec.fractionDigits;
+  const integerDigits = spec.maxIntegerDigits ?? spec.totalDigits - spec.fractionDigits;
   if (fraction.length > spec.fractionDigits) {
     return `Admite como máximo ${spec.fractionDigits} decimales.`;
   }
   if (integer.length > integerDigits) {
     return `Admite como máximo ${integerDigits} dígitos enteros.`;
+  }
+  // Dígitos como se escriben; el cero de la parte entera de `0.5` no es significativo.
+  if ((integer === "0" ? 0 : integer.length) + fraction.length > spec.totalDigits) {
+    return `Admite como máximo ${spec.totalDigits} dígitos en total.`;
   }
   if (spec.min !== null && compareDecimalStrings(text, spec.min) < 0) {
     return `Debe ser mayor o igual que ${spec.min}.`;
@@ -129,7 +143,7 @@ export const decimalStringSchema = z
   .string({ error: FORMAT_MESSAGE })
   .refine(isDecimalString, FORMAT_MESSAGE);
 
-/** Esquema de un campo con su especificación: universal y después dígitos, escala y mínimo. */
+/** Esquema de un campo con su especificación: universal y después dígitos, escala y rango. */
 export function decimalString(spec: DecimalSpec) {
   return z.string({ error: FORMAT_MESSAGE }).superRefine((text, ctx) => {
     const violation = decimalSpecViolation(text, spec);

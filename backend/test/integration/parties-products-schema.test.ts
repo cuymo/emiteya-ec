@@ -218,7 +218,25 @@ describe("invariantes de terceros y productos en la base de datos", () => {
       );
       expect(await fails(createProduct({ unitPrice: "-1" }))).toMatch(/product_unit_price_check/);
       expect(await fails(createProduct({ kind: "OTRO" }))).toMatch(/product_kind_check/);
-      expect(await fails(createProduct({ unitPrice: "1000000000000" }))).toMatch(/overflow/);
+    });
+
+    it("el precio sigue el dominio, no la escala de NUMERIC: 18 dígitos y 6 decimales", async () => {
+      for (const [unitPrice, mainCode] of [
+        ["0", "P-0"],
+        ["0.000001", "P-1"],
+        ["999999999999999999", "P-2"],
+        ["999999999999.999999", "P-3"],
+      ]) {
+        const id = await createProduct({ unitPrice, mainCode });
+        const stored = await prisma.product.findUniqueOrThrow({ where: { id } });
+        expect(stored.unitPrice.toFixed()).toBe(unitPrice);
+      }
+      // Un NUMERIC sin escala los guardaría tal cual; el CHECK de dominio los rechaza, sin redondear.
+      for (const unitPrice of ["1000000000000000000", "1234567890123.123456", "0.1234567"]) {
+        expect(await fails(createProduct({ unitPrice })), unitPrice).toMatch(
+          /product_unit_price_check/,
+        );
+      }
     });
 
     it("el código principal es único por empresa; los productos sin código no chocan", async () => {

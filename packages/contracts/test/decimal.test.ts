@@ -174,4 +174,19 @@ describe("tipos no negativos con su especificación", () => {
       "Admite como máximo 6 decimales.",
     );
   });
+
+  it("solo el precio unitario sigue la regla del XSD; los demás conservan sus enteros", () => {
+    const cantidad = decimalString(DECIMAL_SPECS.cantidad);
+    expect(precio.safeParse("999999999999999999").success).toBe(true);
+    expect(precio.safeParse("1234567890123.123456").error?.issues[0]?.message).toBe(
+      "Admite como máximo 18 dígitos en total.",
+    );
+    expect(importe.safeParse("1000000000000").error?.issues[0]?.message).toBe(
+      "Admite como máximo 12 dígitos enteros.",
+    );
+    expect(cantidad.safeParse("1000000000000").error?.issues[0]?.message).toBe(
+      "Admite como máximo 12 dígitos enteros.",
+    );
+    expect(cantidad.safeParse("999999999999.999999").success).toBe(true);
+  });
 });
