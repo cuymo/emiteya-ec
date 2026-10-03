@@ -108,7 +108,7 @@ Estados:
 - `file` es el P12 en base64. El límite, `CERTIFICATE_MAX_BYTES`, es configuración y se aplica a los bytes PKCS#12 decodificados, nunca a la cadena base64.
   - Por defecto vale 64 KiB, porque todos los fixtures de S-6 caben con holgura (3,5–5,1 KB).
   - No es un límite del SRI ni una regla funcional: el gate del go-live con un P12 real comprueba que admite el archivo con su cadena completa, y subirlo no cambia la spec.
-  - La ruta de carga usa su propio parser JSON, con un límite derivado de `CERTIFICATE_MAX_BYTES` (4/3 más un margen para la contraseña y los demás campos). El parser global de 100 KB no la procesa.
+  - La ruta de carga usa su propio parser JSON, con un límite derivado de `CERTIFICATE_MAX_BYTES`: el base64 del doble del máximo, más un margen para la contraseña y los demás campos. Así un archivo algo mayor que el máximo recibe `CERTIFICATE_TOO_LARGE`, y no un 413 genérico. El parser global de 100 KB no procesa esta ruta, y la ruta solo se procesa tras autenticar.
 - `password` es una cadena de 1 a 256 caracteres, sin recortar ni normalizar: es exactamente lo que abre el archivo.
 - `expectedCurrentId` es la firma vigente que el administrador ve, o `null`.
 - El esquema es estricto.

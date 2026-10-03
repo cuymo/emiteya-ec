@@ -1,9 +1,8 @@
 // Worker del pool criptográfico para la firma electrónica (design D3 y D18). Tarea
 // `inspect-and-test-sign`: inspecciona el PKCS#12 con node-forge, firma un XML de prueba con el
-// adaptador de sri-engine, verifica esa firma con la clave pública inspeccionada y comprueba que
-// el certificado embebido es el inspeccionado. Los bytes del P12 se ponen a cero al terminar.
-import { createPublicKey } from "node:crypto";
-import { X509Certificate } from "node:crypto";
+// adaptador de sri-engine, comprueba que el certificado embebido es el inspeccionado y verifica la
+// firma con su clave pública. Los bytes del P12 se ponen a cero al terminar. Los rechazos viajan
+// como "CODIGO" o "CODIGO:CAUSA", nunca con mensajes.
 import { CryptoTaskError, serveCryptoTasks } from "../../../platform/workers/serve-crypto-tasks.ts";
 import { XmlSignerError } from "../../sri-engine/application/ports.ts";
 import { createXmlSigner } from "../../sri-engine/infrastructure/ec-sri-signer.ts";
@@ -13,10 +12,10 @@ import {
 } from "../../sri-engine/infrastructure/signature-inspection.ts";
 import type { InspectedCertificate } from "../application/ports.ts";
 import { CertificateInspectionError, inspectPkcs12 } from "./pkcs12/pkcs12-reader.ts";
+import { INSPECT_AND_TEST_SIGN } from "./certificate-task-names.ts";
 
-export const INSPECT_AND_TEST_SIGN = "inspect-and-test-sign";
 const signer = createXmlSigner();
-
+const TEST_SIGNATURE_FAILED = "CERTIFICATE_INCOMPATIBLE:TEST_SIGNATURE";
 const hex = (fingerprint256: string) => fingerprint256.replaceAll(":", "").toLowerCase();
 
 async function inspectAndTestSign(payload: {
@@ -29,7 +28,7 @@ async function inspectAndTestSign(payload: {
     try {
       certificate = inspectPkcs12(bytes, payload.password);
     } catch (error) {
-      if (error instanceof CertificateInspectionError) throw new CryptoTaskError(error.code);
+      if (error instanceof CertificateInspectionError) throw new CryptoTaskError(error.message);
       throw new CryptoTaskError("CERTIFICATE_UNREADABLE");
     }
     let signed: string;
@@ -41,27 +40,28 @@ async function inspectAndTestSign(payload: {
         password: payload.password,
       });
     } catch (error) {
-      const code =
+      throw new CryptoTaskError(
         error instanceof XmlSignerError && error.code === "PASSWORD_INVALID"
           ? "CERTIFICATE_PASSWORD_INVALID"
-          : "CERTIFICATE_INCOMPATIBLE";
-      throw new CryptoTaskError(code);
+          : TEST_SIGNATURE_FAILED,
+      );
     }
     try {
       const signature = readEnvelopedSignature(signed);
-      const embedded: X509Certificate = signature.certificate;
-      const publicKey = createPublicKey(
-        embedded.publicKey.export({ type: "spki", format: "pem" }),
-      ).export({ type: "spki", format: "pem" }) as string;
+      // Misma huella que la inspeccionada: su clave pública es la del certificado inspeccionado.
+      const publicKey = signature.certificate.publicKey.export({
+        type: "spki",
+        format: "pem",
+      }) as string;
       if (
-        hex(embedded.fingerprint256) !== certificate.fingerprint ||
+        hex(signature.certificate.fingerprint256) !== certificate.fingerprint ||
         !verifyEnvelopedSignature(signature, publicKey)
       ) {
-        throw new CryptoTaskError("CERTIFICATE_INCOMPATIBLE");
+        throw new CryptoTaskError(TEST_SIGNATURE_FAILED);
       }
     } catch (error) {
       if (error instanceof CryptoTaskError) throw error;
-      throw new CryptoTaskError("CERTIFICATE_INCOMPATIBLE");
+      throw new CryptoTaskError(TEST_SIGNATURE_FAILED);
     }
     return certificate;
   } finally {

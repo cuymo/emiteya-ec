@@ -1,6 +1,6 @@
 // Arnés de las pruebas de autenticación: la aplicación real con Better Auth montado sobre un
 // esquema aislado. Usa solo la superficie pública del módulo de integración (design D2b).
-import { Router, type RequestHandler } from "express";
+import { Router, type Request, type RequestHandler } from "express";
 import { userSchemas } from "@facturador/contracts";
 import request from "supertest";
 import { createApp } from "../../src/app.ts";
@@ -61,6 +61,7 @@ export function buildAuthApp(
     settings?: Partial<AuthSettings>;
     trustProxy?: number | false;
     apiRouter?: (deps: ApiDependencies) => Router;
+    jsonBodyExceptions?: (req: Request) => boolean;
   } = {},
 ) {
   const settings = testAuthSettings(options.settings);
@@ -88,6 +89,7 @@ export function buildAuthApp(
     readiness: () => Promise.resolve(true),
     trustProxy: options.trustProxy ?? false,
     mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
+    ...(options.jsonBodyExceptions ? { jsonBodyExceptions: options.jsonBodyExceptions } : {}),
     ...(options.apiRouter
       ? { apiRouter: options.apiRouter({ auth, uow, securityEvents, memberships, context }) }
       : {}),

@@ -8,17 +8,45 @@ import { createUserAdministration } from "../../src/modules/identity/application
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
+import type { CertificateCustodyConfig } from "../../src/config/env.ts";
+import {
+  isSigningCertificateUpload,
+  signingModule,
+} from "../../src/modules/signing/infrastructure/index.ts";
+import type { CryptoWorkerPool } from "../../src/platform/workers/crypto-worker-pool.ts";
 import { PASSWORD, buildAuthApp, signIn, type AuthApp } from "./auth-harness.ts";
 import type { MigratedSchema } from "./database.ts";
 
 export const TEST_LOGO_MAX_BYTES = 64 * 1024;
 
-export function buildTaxpayerApp(db: MigratedSchema, options: { logoMaxBytes?: number } = {}) {
+export type SigningHarnessOptions = {
+  pool: CryptoWorkerPool;
+  custody: CertificateCustodyConfig;
+  maxBytes?: number;
+  now?: () => Date;
+};
+
+/** Módulo de la firma electrónica, solo si la prueba lo pide (tiene un pool de workers). */
+export function buildTaxpayerApp(
+  db: MigratedSchema,
+  options: { logoMaxBytes?: number; signing?: SigningHarnessOptions } = {},
+) {
   return buildAuthApp(db, {
     trustProxy: 1,
+    ...(options.signing ? { jsonBodyExceptions: isSigningCertificateUpload } : {}),
     apiRouter: ({ context, memberships, securityEvents, uow }) => {
       const authorizer = createAuthorizer({ memberships, securityEvents });
-      return Router()
+      const signing = options.signing
+        ? signingModule({
+            prisma: db.database.prisma,
+            authorizer,
+            custody: options.signing.custody,
+            maxBytes: options.signing.maxBytes ?? 64 * 1024,
+            pool: options.signing.pool,
+            ...(options.signing.now ? { now: options.signing.now } : {}),
+          })
+        : null;
+      const router = Router()
         .use(context)
         .use(
           usersRouter(
@@ -30,9 +58,12 @@ export function buildTaxpayerApp(db: MigratedSchema, options: { logoMaxBytes?: n
             prisma: db.database.prisma,
             authorizer,
             logoMaxBytes: options.logoMaxBytes ?? TEST_LOGO_MAX_BYTES,
+            ...(signing ? { signingCertificate: signing.readiness } : {}),
           }),
         )
         .use(...fiscalRouters({ prisma: db.database.prisma, authorizer }));
+      if (signing) router.use(...signing.routers);
+      return router;
     },
   });
 }

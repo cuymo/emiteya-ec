@@ -1,5 +1,5 @@
 // Arma la aplicación HTTP. El orden de los middleware está documentado en docs/architecture/backend.md.
-import express, { Router, type Express } from "express";
+import express, { Router, type Express, type Request } from "express";
 import helmet from "helmet";
 import { pinoHttp } from "pino-http";
 import type { Logger } from "pino";
@@ -19,6 +19,8 @@ export type AppDependencies = {
   apiRouter?: Router;
   /** Montaje de routers que necesitan el cuerpo sin procesar (por ejemplo, Better Auth). */
   mountBeforeBodyParser?: (app: Express) => void;
+  /** Rutas que traen su propio parser JSON con otro límite (la carga de la firma electrónica). */
+  jsonBodyExceptions?: (req: Request) => boolean;
 };
 
 export function createApp(deps: AppDependencies): Express {
@@ -50,7 +52,8 @@ export function createApp(deps: AppDependencies): Express {
 
   deps.mountBeforeBodyParser?.(app);
 
-  app.use(express.json({ limit: JSON_BODY_LIMIT }));
+  const json = express.json({ limit: JSON_BODY_LIMIT });
+  app.use((req, res, next) => (deps.jsonBodyExceptions?.(req) ? next() : json(req, res, next)));
   app.use("/api/v1", deps.apiRouter ?? Router());
 
   app.use(notFound);

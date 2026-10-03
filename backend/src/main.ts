@@ -25,6 +25,11 @@ import { requireContext } from "./modules/identity/infrastructure/http/request-c
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
+import {
+  certificateTasksEntry,
+  isSigningCertificateUpload,
+  signingModule,
+} from "./modules/signing/infrastructure/index.ts";
 import { createCompanyReader } from "./modules/identity/infrastructure/prisma-companies.ts";
 import { createMembershipReader } from "./modules/identity/infrastructure/prisma-memberships.ts";
 import { createSecurityEventLog } from "./modules/identity/infrastructure/security-event-log.ts";
@@ -32,6 +37,7 @@ import { createDatabase } from "./platform/db/database.ts";
 import { createShutdown, type Closer } from "./platform/lifecycle/shutdown.ts";
 import { createLogger } from "./platform/logging/logger.ts";
 import { createMetrics } from "./platform/metrics/metrics.ts";
+import { createCryptoWorkerPool } from "./platform/workers/crypto-worker-pool.ts";
 
 function loadEnvOrExit(): Env {
   try {
@@ -98,6 +104,23 @@ apiRouter.use(
   requireContext({ getSessionUserId: (headers) => getSessionUserId(auth, headers), memberships }),
 );
 const authorizer = createAuthorizer({ memberships, securityEvents });
+// Inspección y firma fuera del event loop (add-signing-certificate, design D18). Se cierra antes que
+// la base de datos.
+const cryptoPool = createCryptoWorkerPool({
+  entry: certificateTasksEntry(),
+  size: env.CRYPTO_WORKERS,
+  timeoutMs: env.CRYPTO_TASK_TIMEOUT_MS,
+  logger,
+});
+closers.unshift({ name: "crypto-pool", close: () => cryptoPool.close() });
+const signing = signingModule({
+  prisma: database.prisma,
+  authorizer,
+  custody: certificateCustody,
+  maxBytes: env.CERTIFICATE_MAX_BYTES,
+  pool: cryptoPool,
+  metrics: metrics.registry,
+});
 apiRouter.use(
   usersRouter(
     createUserAdministration({
@@ -113,22 +136,40 @@ apiRouter.use(
     prisma: database.prisma,
     authorizer,
     logoMaxBytes: env.LOGO_MAX_BYTES,
+    signingCertificate: signing.readiness,
   }),
 );
 apiRouter.use(...fiscalRouters({ prisma: database.prisma, authorizer }));
+apiRouter.use(...signing.routers);
 
 const app = createApp({
   logger,
   metrics,
-  readiness: () => database.ping(),
+  readiness: async () => (await database.ping()) && cryptoPool.isRunning(),
   trustProxy: env.TRUST_PROXY,
   apiRouter,
   mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
+  jsonBodyExceptions: isSigningCertificateUpload,
 });
 
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, "backend escuchando");
 });
+
+// Firmas vigentes que la clave de custodia configurada no abre: figuran como no disponibles hasta
+// volver a cargarlas (design D8). Sin secretos en el registro.
+void signing.service.unopenable().then(
+  (certificates) => {
+    for (const certificate of certificates) {
+      logger.error(
+        { companyId: certificate.companyId, certificateId: certificate.id },
+        "la firma vigente no se puede abrir con la clave de custodia configurada",
+      );
+    }
+  },
+  (error: unknown) =>
+    logger.error({ err: error }, "no se pudo comprobar la custodia de las firmas"),
+);
 
 const shutdown = createShutdown({ server, closers, logger });
 for (const signal of ["SIGTERM", "SIGINT"] as const) {

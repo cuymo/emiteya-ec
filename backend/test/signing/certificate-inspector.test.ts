@@ -43,8 +43,18 @@ describe("inspect-and-test-sign en el pool", () => {
     expect(await inspect("sd-utf8.modern.nonascii.p12", FIXTURE_NONASCII_PASSWORD)).toEqual({
       ok: false,
       code: "CERTIFICATE_INCOMPATIBLE",
+      reason: "PASSWORD_ENCODING",
     });
-    expect(await inspect("ca-first.p12")).toEqual({ ok: false, code: "CERTIFICATE_INCOMPATIBLE" });
+    expect(await inspect("ca-first.p12")).toEqual({
+      ok: false,
+      code: "CERTIFICATE_INCOMPATIBLE",
+      reason: "CHAIN_ORDER",
+    });
+    expect(await inspect("sd-utf8.iter150000.p12")).toEqual({
+      ok: false,
+      code: "CERTIFICATE_INCOMPATIBLE",
+      reason: "ITERATIONS",
+    });
     expect(await inspect("mismatch.p12")).toEqual({
       ok: false,
       code: "CERTIFICATE_KEY_UNSUPPORTED",

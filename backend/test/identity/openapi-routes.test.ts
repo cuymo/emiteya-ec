@@ -8,6 +8,8 @@ import { usersRouter } from "../../src/modules/identity/infrastructure/http/user
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
+import type { SigningCertificates } from "../../src/modules/signing/application/signing-certificate.ts";
+import { signingCertificateRouter } from "../../src/modules/signing/infrastructure/http/signing-certificate-router.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -30,6 +32,7 @@ describe("rutas documentadas", () => {
         logoMaxBytes: 1,
       }),
       ...fiscalRouters({ prisma: {} as PrismaClient, authorizer: {} as Authorizer }),
+      signingCertificateRouter({} as SigningCertificates, { maxBytes: 1 }),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);
@@ -37,6 +40,19 @@ describe("rutas documentadas", () => {
 
   it("ninguna ruta permite bloquear ni desbloquear la identidad tributaria", () => {
     expect(apiRoutes.filter((route) => /lock|bloque/i.test(route.path))).toEqual([]);
+  });
+
+  it("ninguna ruta descarga la firma, su archivo ni su contraseña (ADR 0011)", () => {
+    const signing = apiRoutes.filter((route) => /certificate/i.test(route.path));
+    expect(signing.map((route) => `${route.method} ${route.path}`).sort()).toEqual([
+      "get /signing-certificate",
+      "get /signing-certificate/validity",
+      "put /signing-certificate",
+      "put /signing-certificate/expiry-alert",
+    ]);
+    expect(apiRoutes.filter((route) => /p12|pfx|password|download|file/i.test(route.path))).toEqual(
+      apiRoutes.filter((route) => /\/users\/:userId\/password/.test(route.path)),
+    );
   });
 
   it("ninguna ruta reserva secuenciales (add-fiscal-numbering, design D4)", () => {

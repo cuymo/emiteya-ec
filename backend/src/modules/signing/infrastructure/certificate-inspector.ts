@@ -1,21 +1,34 @@
 // Lado principal de la inspección (design D3 y D18): envía el P12 al pool criptográfico y traduce
 // el resultado. Transfiere una copia de los bytes, de modo que el original pueda ponerse a cero aquí.
-import type { CryptoWorkerPool } from "../../../platform/workers/crypto-worker-pool.ts";
-import { workerEntry } from "../../../platform/workers/crypto-worker-pool.ts";
+import {
+  workerEntry,
+  type CryptoWorkerPool,
+} from "../../../platform/workers/crypto-worker-pool.ts";
 import {
   CERTIFICATE_REJECTIONS,
+  INCOMPATIBLE_REASONS,
   type CertificateInspector,
   type CertificateRejection,
+  type IncompatibleReason,
   type InspectedCertificate,
+  type InspectionRejection,
 } from "../application/ports.ts";
-
-export const INSPECT_AND_TEST_SIGN = "inspect-and-test-sign";
+import { INSPECT_AND_TEST_SIGN } from "./certificate-task-names.ts";
 
 /** Módulo del worker con las tareas de la firma electrónica. */
 export const certificateTasksEntry = (): URL => workerEntry(import.meta.url, "./certificate-tasks");
 
 const isRejection = (code: string): code is CertificateRejection =>
   (CERTIFICATE_REJECTIONS as readonly string[]).includes(code);
+const isReason = (reason: string | undefined): reason is IncompatibleReason =>
+  reason !== undefined && (INCOMPATIBLE_REASONS as readonly string[]).includes(reason);
+
+/** "CODIGO" o "CODIGO:CAUSA", tal como lo devuelve el worker. */
+function rejectionOf(raw: string): InspectionRejection {
+  const [code = "", reason] = raw.split(":");
+  if (!isRejection(code)) return { code: "CERTIFICATE_UNREADABLE" };
+  return isReason(reason) ? { code, reason } : { code };
+}
 
 export function createCertificateInspector(pool: CryptoWorkerPool): CertificateInspector {
   return {
@@ -27,10 +40,7 @@ export function createCertificateInspector(pool: CryptoWorkerPool): CertificateI
         [copy],
       );
       if (outcome.ok) return { ok: true, certificate: outcome.value };
-      return {
-        ok: false,
-        code: isRejection(outcome.code) ? outcome.code : "CERTIFICATE_UNREADABLE",
-      };
+      return { ok: false, ...rejectionOf(outcome.code) };
     },
   };
 }

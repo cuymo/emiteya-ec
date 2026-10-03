@@ -4,7 +4,11 @@
 // traducen a un código.
 import { createHash } from "node:crypto";
 import forge from "node-forge";
-import type { CertificateRejection, InspectedCertificate } from "../../application/ports.ts";
+import type {
+  CertificateRejection,
+  IncompatibleReason,
+  InspectedCertificate,
+} from "../../application/ports.ts";
 import { detectRuc } from "./ruc-extractors.ts";
 
 /** Límite de iteraciones del MAC y de cada cifrado: defensa de recursos (S-6, ADR 0019). */
@@ -13,10 +17,12 @@ export const MIN_RSA_BITS = 2048;
 
 export class CertificateInspectionError extends Error {
   readonly code: CertificateRejection;
-  constructor(code: CertificateRejection) {
-    super(code);
+  readonly reason: IncompatibleReason | undefined;
+  constructor(code: CertificateRejection, reason?: IncompatibleReason) {
+    super(reason ? `${code}:${reason}` : code);
     this.name = "CertificateInspectionError";
     this.code = code;
+    this.reason = reason;
   }
 }
 
@@ -79,7 +85,7 @@ export function inspectPkcs12(p12: Buffer, password: string): InspectedCertifica
   try {
     pfx = asn1.fromDer(p12.toString("binary"));
     if (iterationCounts(pfx).some((count) => count > MAX_PKCS12_ITERATIONS)) {
-      throw new CertificateInspectionError("CERTIFICATE_INCOMPATIBLE");
+      throw new CertificateInspectionError("CERTIFICATE_INCOMPATIBLE", "ITERATIONS");
     }
   } catch (error) {
     if (error instanceof CertificateInspectionError) throw error;
@@ -97,7 +103,7 @@ export function inspectPkcs12(p12: Buffer, password: string): InspectedCertifica
     // La estructura exterior ya se leyó y el MAC verificó: el contenido no se descifra con esta
     // contraseña. Es la limitación de S-6 (PBES2 con contraseña no ASCII). El descifrado da bytes
     // basura que unas veces fallan el relleno y otras el ASN.1, así que no se decide por el mensaje.
-    throw new CertificateInspectionError("CERTIFICATE_INCOMPATIBLE");
+    throw new CertificateInspectionError("CERTIFICATE_INCOMPATIBLE", "PASSWORD_ENCODING");
   }
 
   const bags = (bagType: string): forge.pkcs12.Bag[] => store.getBags({ bagType })[bagType] ?? [];
@@ -116,7 +122,8 @@ export function inspectPkcs12(p12: Buffer, password: string): InspectedCertifica
   const keyBits = key.n.bitLength();
   if (keyBits < MIN_RSA_BITS) throw new CertificateInspectionError("CERTIFICATE_KEY_UNSUPPORTED");
   // El firmador embebe el primer certificado del P12: debe ser el del titular.
-  if (certificates[0] !== holder) throw new CertificateInspectionError("CERTIFICATE_INCOMPATIBLE");
+  if (certificates[0] !== holder)
+    throw new CertificateInspectionError("CERTIFICATE_INCOMPATIBLE", "CHAIN_ORDER");
 
   const der = Buffer.from(asn1.toDer(forge.pki.certificateToAsn1(holder)).getBytes(), "binary");
   const ruc = detectRuc(holder);

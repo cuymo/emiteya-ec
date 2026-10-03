@@ -11,6 +11,9 @@ export const REDACTED_PATHS = [
   "*.password",
   "*.token",
   "*.secret",
+  // Archivo de la firma electrónica (add-signing-certificate, design D13).
+  "file",
+  "*.file",
 ];
 
 export function createLogger(level: LevelWithSilent, destination?: DestinationStream): Logger {
