@@ -156,7 +156,7 @@
   - emisión con la confirmación de un paso, el ambiente y el aviso de consumidor final, con la `Idempotency-Key` estable para la misma solicitud.
 
   Verificar con pruebas de componente de carga, vacío, error, sin permiso, éxito, conflicto de versión y error de emisión en su campo o línea
-- [ ] 10.3 Crear `Facturas` y su detalle (design D15):
+- [x] 10.3 Crear `Facturas` y su detalle (design D15):
   - lista con estado, búsqueda y paginación;
   - detalle desde el snapshot con el diagnóstico;
   - "Reintentar firma" solo con `RESERVED` y permiso.
