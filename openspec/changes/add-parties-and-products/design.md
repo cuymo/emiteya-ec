@@ -229,13 +229,22 @@ de la política aplicable el día de su creación en Ecuador. El rol es cliente,
 ### D9. Precio y política decimal
 
 - **Contrato:** `unitPrice` es `decimalString(DECIMAL_SPECS.precioUnitario)`: cadena exacta y no negativa.
-  - Semántica de `NUMERIC(18,6)`: como máximo 6 decimales y 12 dígitos enteros, y 18 dígitos en total, nunca 18 enteros más 6 decimales. Es lo que ya aplica `decimalSpecViolation`.
+  - Regla del XSD (`totalDigits` 18, `fractionDigits` 6): como máximo 18 dígitos en total y como máximo 6 de ellos decimales; nunca 18 enteros más 6 decimales (24 dígitos). La parte entera puede tener hasta 18 dígitos cuando no hay decimales.
+  - La especificación lo declara con `maxIntegerDigits: 18`, y `decimalSpecViolation` comprueba también el total. Las demás especificaciones conservan su máximo de enteros (dígitos totales menos decimales), así que su comportamiento no cambia.
   - Los decimales se cuentan como se escriben: `1.1234560` tiene 7 y se rechaza, sin redondear.
-  - Casos límite fijados en contrato y pruebas: `999999999999.999999` y `0.000001` se aceptan; `1000000000000`, `0.0000001` y `1.1234560` se rechazan con el mensaje de su límite.
+  - Casos límite fijados en contrato y pruebas:
+    - se aceptan `0`, `0.000001`, `999999999999999999` y `999999999999.999999`;
+    - se rechazan `1000000000000000000`, `1234567890123.123456`, `0.0000001`, `1.1234560`, `-1`, el número JSON `12.5` y `1e3`, con el mensaje de su límite.
+  - El dominio, no el typmod de PostgreSQL, es la fuente de verdad: valores que un `NUMERIC` aceptaría, como `1000000000000000000` o `0.1234567`, se rechazan.
   - Un número JSON se rechaza.
   - Más decimales de los admitidos es un error, sin redondeo.
   - Se devuelve en la forma canónica más corta.
-- **Backend y base de datos:** el dominio usa `UnitPrice` de `platform/decimal`, y la base de datos, `NUMERIC(18,6)` con `CHECK >= 0`. La conversión con Prisma es por texto.
+- **Backend y base de datos:**
+  - El dominio usa `UnitPrice` de `platform/decimal`.
+  - La columna es `NUMERIC` sin precisión ni escala, que guarda exactamente el valor recibido y no redondea.
+  - Un `CHECK` de dominio garantiza la regla: `unit_price >= 0`, `scale(unit_price) <= 6` y `unit_price < 10^(18 - scale(unit_price))`, es decir, 18 dígitos en total como máximo.
+  - El repositorio guarda la forma canónica más corta, así la escala guardada es la del valor. La conversión con Prisma es por texto.
+  - Se descartó `NUMERIC(18,6)`: limita la parte entera a 12 dígitos. También se descartó `NUMERIC(24,6)`: admitiría 18 enteros más 6 decimales y redondearía en silencio un séptimo decimal.
 - **Sin impuestos:** el precio no incluye impuestos, y este cambio no calcula ninguno.
 - **Frontend:**
   - entrada con `inputMode="decimal"` que se envía como texto, validada con la misma especificación;
@@ -348,7 +357,7 @@ La migración `add_parties_and_products` crea las tablas, y una segunda migraci�
   - trigger de inmutabilidad del registro del sistema.
 - **`product`:**
   - columnas de D6, más las claves de búsqueda;
-  - `unit_price NUMERIC(18,6) CHECK (unit_price >= 0)`;
+  - `unit_price NUMERIC` sin escala fija, con el `CHECK` de dominio de D9 (no negativo, como máximo 6 decimales y 18 dígitos en total). Lo fija una tercera migración, `unit_price_domain`, porque las dos anteriores ya estaban aplicadas;
   - `CHECK (NOT stock_tracked OR kind = 'GOOD')`, longitudes y estado;
   - `UNIQUE (company_id, main_code)` y `UNIQUE (id, company_id)`, este último para la clave foránea compuesta;
   - índices de D10.

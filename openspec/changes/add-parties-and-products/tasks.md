@@ -2,7 +2,7 @@
 
 ## 1. Contratos, permisos, puertos de `fiscal-catalogs` y fronteras
 
-- [x] 1.1 Añadir el contrato común `packages/contracts/src/pagination.ts` (design D10) y los contratos `parties.ts` y `products.ts`: consultas no estrictas, cuerpos estrictos con `expectedVersion`, `unitPrice` como `decimalString(DECIMAL_SPECS.precioUnitario)`, `taxes` con su forma de tres posiciones (design D7), vistas con `systemRecord`, `taxConfiguration` y `meta`, y la vista de `tax-summary`. `users.ts` no cambia. Verificar con pruebas de contrato que se rechazan `companyId` y campos desconocidos en los cuerpos, un precio como número JSON o con exponente o coma, los casos límite de design D9 (`999999999999.999999` y `0.000001` aceptados; `1000000000000`, `0.0000001` y `1.1234560` rechazados con el mensaje de su límite), un impuesto dado por porcentaje o denominación y un arreglo de ICE, y que `pageSize` admite de 1 a 100 con 25 por defecto
+- [x] 1.1 Añadir el contrato común `packages/contracts/src/pagination.ts` (design D10) y los contratos `parties.ts` y `products.ts`: consultas no estrictas, cuerpos estrictos con `expectedVersion`, `unitPrice` como `decimalString(DECIMAL_SPECS.precioUnitario)`, `taxes` con su forma de tres posiciones (design D7), vistas con `systemRecord`, `taxConfiguration` y `meta`, y la vista de `tax-summary`. `users.ts` no cambia. Verificar con pruebas de contrato que se rechazan `companyId` y campos desconocidos en los cuerpos, un precio como número JSON o con exponente o coma, los casos límite de design D9, un impuesto dado por porcentaje o denominación y un arreglo de ICE, y que `pageSize` admite de 1 a 100 con 25 por defecto
 - [x] 1.2 Añadir `parties.read`, `parties.manage`, `parties.changeStatus`, `products.read`, `products.manage` y `products.changeStatus` al mapa central y a su espejo en el frontend (`ADMIN`, todos; `OPERATOR`, lectura y gestión, sin cambio de estado; design D12), y las acciones `party.*` y `product.*` a la auditoría (design D13). Confirmar las filas de `docs/security/access-control.md`. Verificar con las pruebas del mapa de acceso
 - [x] 1.3 Añadir a `catalogs` los puertos internos de design D2 (`consumerFinalPolicy`, `identificationRule`, `availability` y la función de dominio `calculationDataStatus`), sin HTTP ni sesión, reutilizando `resolveCatalogEntry`, `effectiveEnablement` e `isUsable`. Verificar con pruebas:
   - unitarias de `calculationDataStatus` para cada tipo de tarifa;
@@ -162,3 +162,18 @@
 
   Verificar que la prueba pasa
 - [x] 8.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan
+
+## 9. Corrección del dominio del precio unitario
+
+- [ ] 9.1 Hacer que `UnitPrice` siga la regla del XSD (design D9): 18 dígitos en total y 6 decimales como máximo, no negativo y sin redondeo.
+  - `maxIntegerDigits: 18` en `DECIMAL_SPECS.precioUnitario`, y la comprobación del total en `decimalSpecViolation`, sin cambiar las demás especificaciones.
+  - Una migración `unit_price_domain` que pasa `product.unit_price` a `NUMERIC` sin escala fija, con el `CHECK` de dominio, y normaliza los valores guardados a su forma canónica.
+  - El repositorio guarda la forma canónica.
+
+  Verificar con pruebas de contrato, de integración de esquema, HTTP y del dominio:
+  - aceptados: `0`, `0.000001`, `999999999999999999` y `999999999999.999999`;
+  - rechazados: más de 18 dígitos en total, más de 6 decimales, negativos, número JSON, exponentes, y valores que PostgreSQL aceptaría pero el dominio no (en la base de datos, con el `CHECK`);
+  - las demás especificaciones decimales no cambian.
+
+  Actualizar `decimal-policy.md` y `database.md`
+- [ ] 9.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan

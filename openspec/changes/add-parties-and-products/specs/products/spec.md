@@ -24,7 +24,7 @@ El sistema SHALL permitir registrar en la empresa ítems como bien o servicio, c
 - **THEN** el sistema rechaza la solicitud indicando el campo, y no se crea ningún producto
 
 ### Requirement: Precio unitario exacto sin impuestos
-El precio unitario SHALL ser el precio antes de impuestos, como decimal exacto en texto: no negativo, con como máximo 6 decimales y 12 dígitos enteros (18 dígitos en total, nunca 18 enteros más 6 decimales), sin exponente, coma decimal, separadores, ceros a la izquierda ni espacios. El sistema MUST rechazar un número JSON y un valor con más decimales de los admitidos, sin redondearlo, y devuelve el precio en su forma exacta más corta. Este cambio no calcula impuestos ni totales.
+El precio unitario SHALL ser el precio antes de impuestos, como decimal exacto en texto: no negativo, con como máximo 18 dígitos en total, de los cuales como máximo 6 decimales (la regla del XSD; nunca 18 enteros más 6 decimales), sin exponente, coma decimal, separadores, ceros a la izquierda ni espacios. El sistema MUST rechazar un número JSON y un valor con más decimales de los admitidos, sin redondearlo, y devuelve el precio en su forma exacta más corta. Este cambio no calcula impuestos ni totales.
 
 #### Scenario: Precio con seis decimales
 - **WHEN** un usuario registra un producto con precio `0.123456`
@@ -34,9 +34,13 @@ El precio unitario SHALL ser el precio antes de impuestos, como decimal exacto e
 - **WHEN** un usuario registra un precio `999999999999.999999`
 - **THEN** el producto conserva y devuelve exactamente ese valor
 
-#### Scenario: Trece dígitos enteros
-- **WHEN** un usuario registra un precio `1000000000000`
-- **THEN** el sistema rechaza la solicitud indicando el máximo de 12 dígitos enteros
+#### Scenario: Dieciocho dígitos enteros
+- **WHEN** un usuario registra un precio `999999999999999999`
+- **THEN** el producto conserva y devuelve exactamente ese valor
+
+#### Scenario: Más de 18 dígitos en total
+- **WHEN** un usuario registra un precio `1000000000000000000` o `1234567890123.123456`
+- **THEN** el sistema rechaza la solicitud indicando el máximo de 18 dígitos en total, y no se crea ningún producto
 
 #### Scenario: Más decimales de los admitidos
 - **WHEN** un usuario registra un precio `1.1234567` o `1.1234560`
