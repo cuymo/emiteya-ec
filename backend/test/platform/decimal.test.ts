@@ -7,9 +7,14 @@ import {
   FiscalDecimal,
   Money,
   Percentage,
+  InexactOperationError,
   Quantity,
   UnitPrice,
+  multiplyExact,
+  percentageOfExact,
   roundHalfUp,
+  subtractExact,
+  sumExact,
 } from "../../src/platform/decimal/fiscal-decimal.ts";
 
 describe("FiscalDecimal", () => {
@@ -70,9 +75,44 @@ describe("FiscalDecimal", () => {
 
   it("redondeo half-up para la emisión (Q-14), a escala fija", () => {
     expect(roundHalfUp("2.345", 2)).toBe("2.35");
+    expect(roundHalfUp("0.015", 2)).toBe("0.02");
+    expect(roundHalfUp("0.0149999999", 2)).toBe("0.01");
+    expect(roundHalfUp("26.12", 2)).toBe("26.12");
+    expect(roundHalfUp("3", 2)).toBe("3.00");
     expect(roundHalfUp("2.344", 2)).toBe("2.34");
     expect(roundHalfUp("-2.345", 2)).toBe("-2.35");
     expect(roundHalfUp("1.005", 2)).toBe("1.01");
+  });
+
+  it("aritmética exacta sin redondear: 18 dígitos por 18 dígitos y sumas largas (add-invoice-emission, D5)", () => {
+    expect(multiplyExact("999999999999.999999", "999999999999.999999")).toBe(
+      "999999999999999998000000.000000000001",
+    );
+    expect(multiplyExact("123456789012.123456", "999999.999999")).toBe(
+      "123456789011999999.210987876544",
+    );
+    expect(multiplyExact("999999999999999999", "999999999999999999")).toBe(
+      "999999999999999998000000000000000001",
+    );
+    expect(multiplyExact("0.000001", "0.000001")).toBe("0.000000000001");
+    expect(sumExact(Array.from({ length: 1000 }, () => "0.1"))).toBe("100");
+    expect(sumExact(Array.from({ length: 1000 }, () => "99999999999.99"))).toBe("99999999999990");
+    expect(sumExact([])).toBe("0");
+    expect(sumExact(["0.10", "0.20"])).toBe("0.3");
+    expect(subtractExact("26.25", "1.25")).toBe("25");
+    expect(subtractExact("0.1", "0.3")).toBe("-0.2");
+    expect(percentageOfExact("0.10", "15")).toBe("0.015");
+    expect(percentageOfExact("123456789012.12", "15")).toBe("18518518351.818");
+    expect(percentageOfExact("1.01", "0")).toBe("0");
+  });
+
+  it("una operación que no cabe en la precisión falla en vez de redondear", () => {
+    const wide = "1234567890123456789012.123456789012345678";
+    expect(() => multiplyExact(wide, wide)).toThrow(InexactOperationError);
+    expect(() => sumExact(["1000000000000000000000000000000", "0.0000000001"])).toThrow(
+      InexactOperationError,
+    );
+    expect(() => percentageOfExact(wide, "12.34")).toThrow(InexactOperationError);
   });
 
   it("el módulo no convierte importes a number", () => {

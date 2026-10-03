@@ -49,9 +49,17 @@ y cada una nombra el tipo XSD de origen. Una prueba compara cada especificación
   - Cada campo es `NUMERIC` sin precisión ni escala fijas, que guarda el valor exacto sin redondear. `NUMERIC(p, s)` no se usa: limitaría la parte entera a `p - s` dígitos y redondearía en silencio los decimales de más.
   - Un `CHECK` de dominio fija la especificación: mínimo, `scale(valor) <= fractionDigits` y `valor < 10^(totalDigits - scale(valor))`.
   - Se guarda la forma canónica (`toDatabase`), así que la escala guardada es la del valor.
-  - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`) y `consumer_final_policy.max_amount` (`importe`).
+  - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`), `consumer_final_policy.max_amount` (`importe`) y, desde `add-invoice-emission`, `invoice_draft_line.quantity` (`cantidad`), `invoice_draft_line.discount`, `invoice_draft_payment.amount` y `electronic_document.total` (`importe`).
 - **Conversión:** con el `Decimal` de Prisma siempre por texto.
-- **Aritmética fiscal:** centralizada en primitivas exactas de `platform/decimal` (suma, diferencia, producto, porcentaje y materialización) y en funciones de dominio para cada concepto de la factura: subtotal de línea, descuento, base imponible, impuesto y totales. Ningún handler ni builder opera con `decimal.js` directamente; el builder XML no calcula. Llega con `add-invoice-emission`.
+- **Aritmética fiscal** (design D5 de `add-invoice-emission`):
+  - **Primitivas exactas** de `platform/decimal`: `sumExact`, `subtractExact`, `multiplyExact` y `percentageOfExact`, sobre `DecimalString` y sin redondeo. La precisión de 40 dígitos cubre el producto de dos valores de 18 dígitos. Una operación que necesitara más dígitos lanza `InexactOperationError` en vez de redondear en silencio.
+  - **`roundHalfUp(valor, escala)`** es el único redondeo.
+  - **Funciones de dominio** en `invoices/domain/amounts.ts`, una por concepto: `lineSubtotal`, `lineDiscount`, `taxableBase`, `taxAmount`, `materializeMoney` e `invoiceTotals`. Validan cada entrada con su especificación y nunca usan `number` ni `decimal.js` directamente.
+  - **Puntos de materialización HALF_UP**, a la escala de `importe`: la base de la línea (subtotal exacto menos descuento), el impuesto de la línea (porcentaje de la base ya materializada) y los totales, que solo fijan la escala de sumas ya exactas.
+  - **Límite del esquema:** cada importe materializado se comprueba con `importe` (14/2). Un valor que no cabe es `AMOUNT_OUT_OF_RANGE`, antes de reservar.
+  - **Descuento:** importe de 2 decimales entre 0 y el subtotal exacto de la línea (`DISCOUNT_EXCEEDS_SUBTOTAL`), sin redondear.
+  - Ningún handler ni builder opera con `decimal.js`; el builder XML no calcula.
+  - Una tabla dorada (`backend/test/invoices/amounts.test.ts`) fija los casos de la spec y de S-3: empates, totales desde valores materializados, varias líneas con descuento, consumidor final y regresiones de 17 y 18 dígitos. Una prueba de fuente impide `number` y `decimal.js` en el dominio.
 - **Redondeo (Q-14):** política del producto, no regla textual del SRI.
   - Los cálculos internos son exactos, sin redondeos intermedios.
   - Un campo fiscal se redondea HALF_UP solo al materializarlo a la escala de su XSD.

@@ -9,9 +9,12 @@ import {
   type DecimalSpecName,
 } from "@facturador/contracts";
 
+// Dígitos significativos de las operaciones: cubren el producto de dos valores de 18 dígitos.
+const PRECISION = 40;
+
 /** Instancia propia: no depende de la configuración global de `decimal.js`. */
 const Exact = Decimal.clone({
-  precision: 40,
+  precision: PRECISION,
   rounding: Decimal.ROUND_HALF_UP,
   toExpNeg: -9e15,
   toExpPos: 9e15,
@@ -76,9 +79,60 @@ export class FiscalDecimal {
   }
 }
 
-/** Redondeo half-up a una escala. Lo usará la emisión (Q-14); este cambio no redondea nada. */
+/**
+ * Materializa un valor a una escala con HALF_UP (Q-14): el único redondeo de la aritmética fiscal
+ * (add-invoice-emission, design D5), y solo al materializar. Devuelve exactamente `scale`
+ * decimales.
+ */
 export function roundHalfUp(text: string, scale: number): string {
   return new Exact(text).toDecimalPlaces(scale, Decimal.ROUND_HALF_UP).toFixed(scale);
+}
+
+// Aritmética exacta sobre `DecimalString`, sin `number` ni redondeo (design D5). El resultado es la
+// forma canónica más corta. Una operación que necesitara más dígitos que la precisión falla en vez
+// de redondear en silencio.
+
+export class InexactOperationError extends Error {
+  constructor() {
+    super("La operación necesita más dígitos que la precisión exacta.");
+    this.name = "InexactOperationError";
+  }
+}
+
+const integerDigits = (value: ExactDecimal) => Math.max(value.e + 1, 1);
+
+function plus(a: ExactDecimal, b: ExactDecimal): ExactDecimal {
+  const digits =
+    Math.max(integerDigits(a), integerDigits(b)) +
+    1 +
+    Math.max(a.decimalPlaces(), b.decimalPlaces());
+  if (digits > PRECISION) throw new InexactOperationError();
+  return a.plus(b);
+}
+
+function times(a: ExactDecimal, b: ExactDecimal): ExactDecimal {
+  if (a.sd() + b.sd() > PRECISION) throw new InexactOperationError();
+  return a.times(b);
+}
+
+/** Suma exacta; la de una lista vacía es `0`. */
+export function sumExact(values: readonly string[]): string {
+  return values.reduce((sum, value) => plus(sum, new Exact(value)), new Exact(0)).toFixed();
+}
+
+/** Diferencia exacta `a - b`. */
+export function subtractExact(a: string, b: string): string {
+  return plus(new Exact(a), new Exact(b).negated()).toFixed();
+}
+
+/** Producto exacto. */
+export function multiplyExact(a: string, b: string): string {
+  return times(new Exact(a), new Exact(b)).toFixed();
+}
+
+/** Porcentaje exacto de una base, `base × porcentaje / 100`: dividir por 100 solo mueve la coma. */
+export function percentageOfExact(base: string, percentage: string): string {
+  return times(new Exact(base), new Exact(percentage)).dividedBy(100).toFixed();
 }
 
 const typed = (specName: DecimalSpecName) => ({

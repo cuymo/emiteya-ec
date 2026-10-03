@@ -43,8 +43,8 @@
 
 ## 3. Aritmética fiscal
 
-- [ ] 3.1 Añadir a `platform/decimal` las primitivas exactas `sumExact`, `subtractExact`, `multiplyExact` y `percentageOfExact`, con `roundHalfUp` como único redondeo (design D5). Verificar con pruebas de 18 por 18 dígitos exactos, sumas largas y la prueba de que el módulo no usa `number`
-- [ ] 3.2 Crear `invoices/domain/amounts.ts` con `lineSubtotal`, `lineDiscount`, `taxableBase`, `taxAmount`, `materializeMoney` e `invoiceTotals` (design D5).
+- [x] 3.1 Añadir a `platform/decimal` las primitivas exactas `sumExact`, `subtractExact`, `multiplyExact` y `percentageOfExact`, con `roundHalfUp` como único redondeo (design D5). Verificar con pruebas de 18 por 18 dígitos exactos, sumas largas y la prueba de que el módulo no usa `number`
+- [x] 3.2 Crear `invoices/domain/amounts.ts` con `lineSubtotal`, `lineDiscount`, `taxableBase`, `taxAmount`, `materializeMoney` e `invoiceTotals` (design D5).
   - Añadir una tabla dorada con los casos de S-3 y de la spec: empates HALF_UP, totales desde valores materializados, varias líneas con descuento y regresiones de 17 y 18 dígitos.
   - Actualizar `decimal-policy.md`.
 
