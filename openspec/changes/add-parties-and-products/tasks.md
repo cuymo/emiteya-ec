@@ -152,7 +152,7 @@
 
 ## 8. Verificación integral
 
-- [ ] 8.1 Prueba end-to-end por HTTP contra `main.ts` (design D18):
+- [x] 8.1 Prueba end-to-end por HTTP contra `main.ts` (design D18):
   1. El arranque crea el consumidor final.
   2. El operador registra un tercero y un producto con IVA.
   3. El administrador deshabilita esa tarifa y el producto pasa a `REVIEW_REQUIRED`.
@@ -161,4 +161,4 @@
   6. Un segundo arranque no duplica el consumidor final.
 
   Verificar que la prueba pasa
-- [ ] 8.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan
+- [x] 8.2 Ejecutar `corepack pnpm verify`; verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo y build pasan
