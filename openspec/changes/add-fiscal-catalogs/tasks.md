@@ -29,8 +29,8 @@
 
 ## 6. Interfaz: Catálogos fiscales
 
-- [ ] 6.1 Añadir la primitiva `Switch`, el formateador de cadenas decimales y el destino `Catálogos fiscales` en `Configuración`; construir la pantalla según su brief de design D17 (IVA y formas de pago con `Switch`, ICE con filtro local y variante visible, IRBPNR, fuente y versión por catálogo, y secciones de solo lectura de tipos, consumidor final, matriz y esquemas); verificar con pruebas de componentes de carga, error con reintento, sin permiso, operador en solo lectura, habilitación con toast y bloqueo mientras guarda, filtro de ICE, formateo sin `number` y el `Switch` por teclado
-- [ ] 6.2 Recorrer la pantalla contra el backend real en carga, error, sin permiso y éxito; en móvil a 375 y 320 px con objetivos de 44 px; con teclado; en temas claro y oscuro; con barrido a 640, 768, 1024 y 1440 px; y con `docs/quality/frontend-checklist.md`; verificar que la revisión queda registrada en `ui-review.md` del cambio
+- [x] 6.1 Añadir la primitiva `Switch`, el formateador de cadenas decimales y el destino `Catálogos fiscales` en `Configuración`; construir la pantalla según su brief de design D17 (IVA y formas de pago con `Switch`, ICE con filtro local y variante visible, IRBPNR, fuente y versión por catálogo, y secciones de solo lectura de tipos, consumidor final, matriz y esquemas); verificar con pruebas de componentes de carga, error con reintento, sin permiso, operador en solo lectura, habilitación con toast y bloqueo mientras guarda, filtro de ICE, formateo sin `number` y el `Switch` por teclado
+- [x] 6.2 Recorrer la pantalla contra el backend real en carga, error, sin permiso y éxito; en móvil a 375 y 320 px con objetivos de 44 px; con teclado; en temas claro y oscuro; con barrido a 640, 768, 1024 y 1440 px; y con `docs/quality/frontend-checklist.md`; verificar que la revisión queda registrada en `ui-review.md` del cambio
 
 ## 7. Verificación integral
 

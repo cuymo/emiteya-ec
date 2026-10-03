@@ -64,9 +64,12 @@ describe("shell autenticado", () => {
     expect(screen.getByRole("link", { name: "Firma electrónica" }).getAttribute("href")).toBe(
       "/configuracion/firma",
     );
+    expect(screen.getByRole("link", { name: "Catálogos fiscales" }).getAttribute("href")).toBe(
+      "/configuracion/catalogos-fiscales",
+    );
   });
 
-  it("el operador no ve el destino Usuarios", async () => {
+  it("el operador solo ve Catálogos fiscales en Configuración, que consulta (add-fiscal-catalogs)", async () => {
     mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: OPERATOR_ME } }) });
     renderShell();
     await screen.findByText("contenido");
@@ -76,7 +79,9 @@ describe("shell autenticado", () => {
     expect(screen.queryByRole("link", { name: "Establecimientos" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Secuenciales" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Firma electrónica" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Abrir menú" })).toBeNull();
+    expect(
+      (await screen.findByRole("link", { name: "Catálogos fiscales" })).getAttribute("href"),
+    ).toBe("/configuracion/catalogos-fiscales");
   });
 
   it("sin sesión lleva al inicio de sesión conservando la URL, sin aviso de sesión vencida", async () => {

@@ -3,6 +3,7 @@
 "use client";
 
 import {
+  BookOpenCheck,
   Building2,
   FileKey,
   Globe,
@@ -48,6 +49,12 @@ const GROUPS: Group[] = [
         label: "Firma electrónica",
         icon: FileKey,
         permission: "certificate.read",
+      },
+      {
+        href: "/configuracion/catalogos-fiscales",
+        label: "Catálogos fiscales",
+        icon: BookOpenCheck,
+        permission: "fiscalCatalogs.read",
       },
       {
         href: "/configuracion/secuenciales",
