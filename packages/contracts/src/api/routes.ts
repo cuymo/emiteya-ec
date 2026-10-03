@@ -887,6 +887,11 @@ export const apiRoutes: readonly RouteDefinition[] = [
       401: errors[401],
       403: errors[403],
       404: draftNotFound,
+      409: {
+        description:
+          "El borrador ya se emitió (INVOICE_DRAFT_ALREADY_EMITTED); el mensaje nombra la factura.",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
   defineRoute({

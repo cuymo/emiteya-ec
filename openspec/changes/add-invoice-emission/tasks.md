@@ -90,12 +90,12 @@
 
 ## 7. Borradores de factura
 
-- [ ] 7.1 Implementar los casos de uso y el repositorio de borradores (design D2 y D13).
+- [x] 7.1 Implementar los casos de uso y el repositorio de borradores (design D2 y D13).
   - Crear, corregir con versión, eliminar, listar borradores `DRAFT` y obtener con vista previa e `issues`, calculados con la fecha de hoy y las mismas funciones de la validación de emisión.
   - Las referencias se resuelven en la empresa.
 
   Verificar con pruebas de integración de los escenarios de "Borradores de factura" y de los límites de "Contenido de la factura"
-- [ ] 7.2 Exponer las rutas de borradores en el router de `invoices`, con permisos y aislamiento. Verificar con pruebas HTTP:
+- [x] 7.2 Exponer las rutas de borradores en el router de `invoices`, con permisos y aislamiento. Verificar con pruebas HTTP:
   - dos empresas;
   - sin sesión;
   - referencias ajenas;

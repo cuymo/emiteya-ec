@@ -16,6 +16,8 @@ import type { Parties } from "../../src/modules/parties/application/parties.ts";
 import { partiesRouter } from "../../src/modules/parties/infrastructure/http/parties-router.ts";
 import type { Products } from "../../src/modules/products/application/products.ts";
 import { productsRouter } from "../../src/modules/products/infrastructure/http/products-router.ts";
+import type { Drafts } from "../../src/modules/invoices/application/drafts.ts";
+import { invoicesRouter } from "../../src/modules/invoices/infrastructure/http/invoices-router.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -30,11 +32,6 @@ function served(router: Router): string[] {
 // Rutas de add-invoice-emission documentadas antes que su router (tarea 4.1). Cada tarea que monta
 // una la quita de aquí (7.2, 8.3, 9.2 y 9.3); al terminar el cambio la lista queda vacía.
 const PENDING = new Set([
-  "get /invoices/drafts",
-  "post /invoices/drafts",
-  "get /invoices/drafts/:draftId",
-  "put /invoices/drafts/:draftId",
-  "delete /invoices/drafts/:draftId",
   "post /invoices",
   "get /invoices",
   "get /invoices/:invoiceId",
@@ -56,6 +53,7 @@ describe("rutas documentadas", () => {
       fiscalCatalogsRouter({} as FiscalCatalogs),
       partiesRouter({} as Parties),
       productsRouter({} as Products),
+      invoicesRouter({ drafts: {} as Drafts }),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(documented).toEqual(expect.arrayContaining([...PENDING]));

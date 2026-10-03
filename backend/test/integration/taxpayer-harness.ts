@@ -14,6 +14,7 @@ import {
 } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { partiesModule } from "../../src/modules/parties/infrastructure/index.ts";
 import { productsModule } from "../../src/modules/products/infrastructure/index.ts";
+import { invoicesModule } from "../../src/modules/invoices/infrastructure/index.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
 import {
   isSigningCertificateUpload,
@@ -33,9 +34,19 @@ export type SigningHarnessOptions = {
 };
 
 /** Módulo de la firma electrónica, solo si la prueba lo pide (tiene un pool de workers). */
+export type InvoicesHarnessOptions = {
+  /** `INVOICE_MAX_LINES`; 100 por defecto. */
+  maxLines?: number;
+};
+
 export function buildTaxpayerApp(
   db: MigratedSchema,
-  options: { logoMaxBytes?: number; signing?: SigningHarnessOptions; now?: () => Date } = {},
+  options: {
+    logoMaxBytes?: number;
+    signing?: SigningHarnessOptions;
+    invoices?: InvoicesHarnessOptions;
+    now?: () => Date;
+  } = {},
 ) {
   return buildAuthApp(db, {
     trustProxy: 1,
@@ -92,6 +103,18 @@ export function buildTaxpayerApp(
           }).routers,
         );
       if (signing) router.use(...signing.routers);
+      // Borradores y facturas (add-invoice-emission); sin firma configurada, ninguna es utilizable.
+      router.use(
+        ...invoicesModule({
+          prisma: db.database.prisma,
+          authorizer,
+          signingReads: signing
+            ? signing.reads
+            : () => ({ activeCertificate: () => Promise.resolve(null) }),
+          maxLines: options.invoices?.maxLines ?? 100,
+          ...(options.now ? { now: options.now } : {}),
+        }).routers,
+      );
       return router;
     },
   });

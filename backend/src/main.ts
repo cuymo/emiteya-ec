@@ -35,6 +35,7 @@ import {
   partiesModule,
 } from "./modules/parties/infrastructure/index.ts";
 import { productsModule } from "./modules/products/infrastructure/index.ts";
+import { invoicesModule } from "./modules/invoices/infrastructure/index.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import {
@@ -222,6 +223,15 @@ apiRouter.use(
 );
 apiRouter.use(
   ...productsModule({ prisma: database.prisma, authorizer, catalogs: catalogQueries }).routers,
+);
+// Borradores y facturas (add-invoice-emission, design D1 y D13).
+apiRouter.use(
+  ...invoicesModule({
+    prisma: database.prisma,
+    authorizer,
+    signingReads: signing.reads,
+    maxLines: env.INVOICE_MAX_LINES,
+  }).routers,
 );
 
 const app = createApp({
