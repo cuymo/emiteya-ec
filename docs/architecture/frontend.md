@@ -72,7 +72,7 @@ Introducidos por `add-user-access` y `add-taxpayer-setup`; los módulos nuevos l
 
 | Contrato | Ubicación (`frontend/src/`) | Notas |
 | --- | --- | --- |
-| Primitivas (`Button`, `Input`, `Label`, `Dialog`, `Menu`, `Tooltip`) | `components/ui/` | shadcn/ui sobre `radix-ui`, adaptado a los tokens. Los diálogos devuelven el foco a quien los abrió. |
+| Primitivas (`Button`, `Input`, `Label`, `Dialog`, `Menu`, `Tooltip`) | `components/ui/` | shadcn/ui sobre `radix-ui`, adaptado a los tokens. Los diálogos devuelven el foco a quien los abrió. `Button` e `Input` miden 44px de alto por debajo de 768px. |
 | `AppDataTable`, `TablePagination`, `SearchInput`, `ChipGroup`, `ColumnVisibilityMenu`, `RowActionButton` | `components/data-table/` | TanStack Table con paginación de servidor; estados dentro del marco; lista de tarjetas por debajo de 768px. |
 | `FormDialog`, `FormField` | `components/form-dialog.tsx` | Foco, Escape, cuerpo con desplazamiento, `Cancelar` y una acción principal; errores asociados al campo. |
 | `AsyncButton`, `PasswordField`, `SelectionCardGroup` | `components/` | Pendiente con geometría estable; contraseña que se puede pegar y mostrar; elección en tarjetas de radio. |

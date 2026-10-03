@@ -78,7 +78,7 @@ export function AppDataTable<T>({
         aria-busy={loading || refreshing}
       >
         {/* Escritorio y tableta: tabla. */}
-        <div className="hidden overflow-x-auto md:block">
+        <div className="relative hidden overflow-x-auto md:block">
           <table aria-label={label} className="w-full border-collapse text-sm">
             <thead className="bg-surface-subtle text-left text-xs text-foreground-muted">
               {table.getHeaderGroups().map((group) => (

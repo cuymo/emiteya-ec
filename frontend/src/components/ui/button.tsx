@@ -12,9 +12,10 @@ const VARIANTS = {
   destructive: "bg-danger text-danger-foreground hover:bg-danger/90 active:bg-danger/80",
 } as const;
 
+// Por debajo de 768px todo objetivo táctil mide al menos 44px (frontend.md).
 const SIZES = {
-  md: "h-5 gap-1 px-2 text-sm",
-  sm: "h-4 gap-0.5 px-1.5 text-sm",
+  md: "h-5 gap-1 px-2 text-sm max-md:h-5.5",
+  sm: "h-4 gap-0.5 px-1.5 text-sm max-md:h-5.5",
   // Objetivo táctil de 44px para acciones independientes (cabecera, cierre de diálogo).
   icon: "size-5.5",
   "icon-sm": "size-5",

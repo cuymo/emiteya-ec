@@ -29,7 +29,7 @@ export function PasswordField({
         aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
         aria-pressed={visible}
         className={cn(
-          "absolute inset-y-0 right-0 inline-flex w-5 items-center justify-center rounded-r-md text-foreground-muted",
+          "absolute inset-y-0 right-0 inline-flex w-5 items-center justify-center rounded-r-md text-foreground-muted max-md:w-5.5",
           "hover:text-foreground active:text-foreground",
         )}
       >
