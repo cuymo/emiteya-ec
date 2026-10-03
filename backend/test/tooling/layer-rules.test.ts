@@ -53,3 +53,35 @@ describe("módulo único de integración con Better Auth", () => {
     ).toBe(0);
   });
 });
+
+describe("frontera del motor SRI y de node-forge (ADR 0018 y 0019)", () => {
+  it("infrastructure fuera de sri-engine no importa facturacion-electronica-ec ni ec-sri-invoice-signer", async () => {
+    expect(await restrictedImports("infrastructure/imports-sri-engine.ts")).toBe(2);
+  });
+
+  it("application no importa el motor SRI", async () => {
+    expect(await restrictedImports("application/imports-sri-engine.ts")).toBe(1);
+  });
+
+  it("el adaptador de sri-engine sí importa la librería y su firmador", async () => {
+    expect(
+      await restrictedImports("allowed.ts", "test/fixtures/lint/modules/sri-engine/infrastructure"),
+    ).toBe(0);
+  });
+
+  it("node-forge solo se importa en el lector de PKCS#12", async () => {
+    expect(await restrictedImports("infrastructure/imports-forge.ts")).toBe(1);
+    expect(
+      await restrictedImports(
+        "imports-forge.ts",
+        "test/fixtures/lint/modules/sri-engine/infrastructure",
+      ),
+    ).toBe(1);
+    expect(
+      await restrictedImports(
+        "allowed.ts",
+        "test/fixtures/lint/modules/signing/infrastructure/pkcs12",
+      ),
+    ).toBe(0);
+  });
+});

@@ -9,6 +9,8 @@ export default defineProject({
     name: "backend",
     include: ["test/**/*.test.ts"],
     exclude: ["test/fixtures/**", AC04_TEST],
+    // P12 sintéticos generados una vez por ejecución (add-signing-certificate, design D16).
+    globalSetup: ["test/support/p12-global-setup.ts"],
     // Varias pruebas lanzan procesos (main.ts, prisma migrate, el CLI auth) y crean un esquema
     // migrado por archivo; con todos los archivos en paralelo, 5 s no bastan. Los procesos lanzados
     // tienen su propio límite de 90 s.

@@ -19,6 +19,25 @@ const betterAuthImports = {
     "Better Auth solo se usa dentro de modules/identity/infrastructure/better-auth/; el resto usa su puerto de identidad.",
 };
 
+// El motor SRI solo se importa desde su adaptador (ADR 0018) y node-forge solo desde el lector de
+// PKCS#12 (ADR 0019); el resto usa sus puertos.
+const SRI_ENGINE_MODULE = "**/modules/sri-engine/infrastructure/**";
+const sriEngineImports = {
+  regex: "^(?:facturacion-electronica-ec|ec-sri-invoice-signer)(?:/.*)?$",
+  message:
+    "facturacion-electronica-ec y ec-sri-invoice-signer solo se usan dentro de modules/sri-engine/infrastructure/ (ADR 0018).",
+};
+// El generador de P12 sintéticos de las pruebas también usa node-forge: no es código de producto.
+const PKCS12_READER_MODULE = [
+  "**/modules/signing/infrastructure/pkcs12/**",
+  "**/test/support/p12-fixtures.ts",
+];
+const forgeImports = {
+  regex: "^node-forge(?:/.*)?$",
+  message:
+    "node-forge solo se usa en el lector de PKCS#12, modules/signing/infrastructure/pkcs12/ (ADR 0019).",
+};
+
 const domainRestrictions = {
   patterns: [
     { group: ["express", "express/**"], message: "El dominio no depende del framework HTTP." },
@@ -28,6 +47,8 @@ const domainRestrictions = {
     },
     infrastructureImports,
     betterAuthImports,
+    sriEngineImports,
+    forgeImports,
   ],
 };
 
@@ -36,6 +57,8 @@ const applicationRestrictions = {
     { group: ["express", "express/**"], message: "Los casos de uso no reciben objetos HTTP." },
     infrastructureImports,
     betterAuthImports,
+    sriEngineImports,
+    forgeImports,
   ],
 };
 
@@ -62,10 +85,31 @@ export function nodeConfig({ tsconfigRootDir, typedFiles = ["src/**/*.ts", "test
       languageOptions: { parserOptions: { projectService: true, tsconfigRootDir } },
     },
     {
-      // Va antes que las reglas de capas, que repiten este patrón porque sustituyen la regla.
+      // Van antes que las reglas de capas, que repiten estos patrones porque sustituyen la regla.
       files: ["**/*.ts"],
-      ignores: [BETTER_AUTH_MODULE],
-      rules: { "no-restricted-imports": ["error", { patterns: [betterAuthImports] }] },
+      ignores: [BETTER_AUTH_MODULE, SRI_ENGINE_MODULE, ...PKCS12_READER_MODULE],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          { patterns: [betterAuthImports, sriEngineImports, forgeImports] },
+        ],
+      },
+    },
+    {
+      files: [BETTER_AUTH_MODULE],
+      rules: { "no-restricted-imports": ["error", { patterns: [sriEngineImports, forgeImports] }] },
+    },
+    {
+      files: [SRI_ENGINE_MODULE],
+      rules: {
+        "no-restricted-imports": ["error", { patterns: [betterAuthImports, forgeImports] }],
+      },
+    },
+    {
+      files: PKCS12_READER_MODULE,
+      rules: {
+        "no-restricted-imports": ["error", { patterns: [betterAuthImports, sriEngineImports] }],
+      },
     },
     {
       files: ["**/modules/*/domain/**/*.ts"],

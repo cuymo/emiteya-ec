@@ -33,3 +33,38 @@ export class CustodyError extends Error {
     this.name = "CustodyError";
   }
 }
+
+/** Códigos de la inspección y la firma de prueba (design D3). */
+export const CERTIFICATE_REJECTIONS = [
+  "CERTIFICATE_UNREADABLE",
+  "CERTIFICATE_PASSWORD_INVALID",
+  "CERTIFICATE_KEY_UNSUPPORTED",
+  "CERTIFICATE_INCOMPATIBLE",
+] as const;
+export type CertificateRejection = (typeof CERTIFICATE_REJECTIONS)[number];
+
+/** Lo que la carga sabe del P12 tras inspeccionarlo y firmar con él una prueba (sin secretos). */
+export type InspectedCertificate = Readonly<{
+  subject: string;
+  issuer: string;
+  serialNumber: string;
+  /** SHA-256 del certificado DER, hexadecimal en minúsculas. */
+  fingerprint: string;
+  notBefore: string;
+  notAfter: string;
+  keyAlgorithm: "RSA";
+  keyBits: number;
+  detectedRuc: string | null;
+  rucExtractor: string | null;
+  chainLength: number;
+}>;
+
+/** Inspección y firma de prueba fuera del event loop (design D3 y D18). */
+export interface CertificateInspector {
+  inspect(
+    p12: Buffer,
+    password: string,
+  ): Promise<
+    { ok: true; certificate: InspectedCertificate } | { ok: false; code: CertificateRejection }
+  >;
+}
