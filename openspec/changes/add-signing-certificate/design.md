@@ -109,6 +109,7 @@ Estados:
   - Por defecto vale 64 KiB, porque todos los fixtures de S-6 caben con holgura (3,5–5,1 KB).
   - No es un límite del SRI ni una regla funcional: el gate del go-live con un P12 real comprueba que admite el archivo con su cadena completa, y subirlo no cambia la spec.
   - La ruta de carga usa su propio parser JSON, con un límite derivado de `CERTIFICATE_MAX_BYTES`: el base64 del doble del máximo, más un margen para la contraseña y los demás campos. Así un archivo algo mayor que el máximo recibe `CERTIFICATE_TOO_LARGE`, y no un 413 genérico. El parser global de 100 KB no procesa esta ruta, y la ruta solo se procesa tras autenticar.
+- Un archivo vacío o ausente no pasa el esquema (`400 VALIDATION_ERROR`, "Selecciona el archivo de la firma electrónica."); uno mayor que `CERTIFICATE_MAX_BYTES` recibe `400 CERTIFICATE_TOO_LARGE`, con el límite configurado en KiB. El tope de formato del contrato (1 MiB decodificado) es solo una defensa del payload y no se muestra como límite.
 - `password` es una cadena de 1 a 256 caracteres, sin recortar ni normalizar: es exactamente lo que abre el archivo.
 - `expectedCurrentId` es la firma vigente que el administrador ve, o `null`.
 - El esquema es estricto.
@@ -290,11 +291,12 @@ Destino nuevo en `Configuración`, solo para administradores (`certificate.read`
 
 **Diálogo `Cargar firma` o `Reemplazar firma`** (`FormDialog`):
 
-- campos: `FileField` para `.p12` y `.pfx`, con tamaño máximo; `PasswordField`;
+- campos: `FileField` para `.p12` y `.pfx`, con el tamaño máximo efectivo que publica `GET /signing-certificate` (`maxBytes`), en KiB y con el mismo formato que el error del backend; `PasswordField`;
 - al reemplazar, una línea con la firma que se sustituye;
 - errores:
   - contraseña incorrecta, en el campo de contraseña;
-  - archivo ilegible, clave no compatible o vigencia, en el campo de archivo;
+  - archivo sin seleccionar, demasiado grande, ilegible, clave no compatible o vigencia, en el campo de archivo;
+  - firma incompatible, con el mensaje de su causa, en el cuerpo del diálogo;
   - RUC no encontrado, en el cuerpo del diálogo, con titular y emisor;
   - conflicto, con `Recargar`.
 - Se envía una sola vez. La contraseña se borra del formulario al cerrar.

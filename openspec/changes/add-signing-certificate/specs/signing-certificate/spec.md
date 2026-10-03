@@ -8,29 +8,44 @@ custodia cifrada, decide cuándo esa firma es utilizable para emitir y avisa de 
 ## ADDED Requirements
 
 ### Requirement: Carga de la firma electrónica
-El sistema SHALL permitir que un administrador cargue la firma electrónica de su empresa como un archivo PKCS#12 con su contraseña. La firma se acepta solo si el archivo se abre con la contraseña, contiene una clave privada RSA de al menos 2048 bits que corresponde al certificado y puede firmar con el algoritmo de la ficha técnica vigente del SRI, el certificado está vigente y tiene un RUC detectable. Una firma aceptada pasa a ser la firma vigente de la empresa; una rechazada no cambia nada.
+El sistema SHALL permitir que un administrador cargue la firma electrónica de su empresa como un archivo PKCS#12 con su contraseña. La firma se acepta solo si el archivo no supera el límite de tamaño configurado en la instalación, se abre con la contraseña, contiene una clave privada RSA de al menos 2048 bits que corresponde al certificado y puede firmar con el algoritmo de la ficha técnica vigente del SRI, el certificado está vigente y tiene un RUC detectable. Una firma aceptada pasa a ser la firma vigente de la empresa; una rechazada no cambia nada. Cada rechazo SHALL indicar su causa con un error específico y accionable, distinto según la causa, sin repetir la contraseña ni el contenido del archivo. El administrador SHALL ver, antes de elegir el archivo, el límite de tamaño configurado que aplica el sistema, y ningún otro.
 
 #### Scenario: Primera carga
 - **WHEN** un administrador de una empresa sin firma carga un PKCS#12 válido y vigente, con RUC, y su contraseña correcta
 - **THEN** la firma queda como la firma vigente de la empresa
 - **AND** el administrador ve su titular, emisor, número de serie, vigencia y RUC detectado
 
+#### Scenario: Límite de tamaño visible
+- **WHEN** un administrador abre la carga de la firma
+- **THEN** ve el límite de tamaño configurado en la instalación, el mismo que aplica el sistema al recibir el archivo
+
+#### Scenario: Archivo vacío o sin seleccionar
+- **WHEN** un administrador envía la carga sin elegir un archivo, o con un archivo vacío
+- **THEN** el sistema rechaza la carga e indica que debe seleccionar el archivo de la firma electrónica
+- **AND** la firma vigente no cambia
+
+#### Scenario: Archivo mayor que el límite configurado
+- **WHEN** un administrador carga un archivo que supera el límite de tamaño configurado en la instalación
+- **THEN** el sistema rechaza la carga e indica que el archivo supera el tamaño admitido y cuál es ese límite
+- **AND** la firma vigente no cambia
+
+#### Scenario: Archivo que no es un PKCS#12 legible
+- **WHEN** un administrador carga un archivo que no es un PKCS#12 o que está dañado
+- **THEN** el sistema rechaza la carga e indica que el archivo no es una firma electrónica válida (PKCS#12)
+- **AND** la firma vigente no cambia
+
 #### Scenario: Contraseña incorrecta
 - **WHEN** un administrador carga un PKCS#12 con una contraseña que no lo abre
 - **THEN** el sistema rechaza la carga e indica que la contraseña no corresponde al archivo
 - **AND** la firma vigente no cambia
 
-#### Scenario: Archivo que no es una firma
-- **WHEN** un administrador carga un archivo que no es un PKCS#12, o uno vacío o mayor que el tamaño admitido
-- **THEN** el sistema rechaza la carga e indica que el archivo no es una firma electrónica válida
-
 #### Scenario: Sin clave privada o con una clave que no sirve
 - **WHEN** el PKCS#12 no contiene clave privada, su clave no corresponde al certificado, o la clave no es RSA de al menos 2048 bits
 - **THEN** el sistema rechaza la carga e indica que la firma no sirve para firmar comprobantes
 
-#### Scenario: Firma que no puede usarse para firmar
+#### Scenario: Certificado incompatible
 - **WHEN** el PKCS#12 se abre con su contraseña pero no puede usarse para firmar: su primer certificado no es el del titular, su contenido no puede descifrarse para firmar con esa contraseña, o su costo de cifrado supera el admitido
-- **THEN** el sistema rechaza la carga, explica el motivo y cómo obtener una firma compatible
+- **THEN** el sistema rechaza la carga como incompatible, con un mensaje propio de ese motivo que explica cómo obtener una firma compatible
 - **AND** la firma vigente no cambia
 
 #### Scenario: Certificado vencido o todavía no vigente
