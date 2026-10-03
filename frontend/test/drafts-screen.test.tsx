@@ -481,7 +481,49 @@ describe("editor de factura", () => {
     await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/facturas/inv-1"));
     expect(keys).toHaveLength(2);
     expect(keys[0]).toMatch(/^[!-~]{1,100}$/);
+    expect(keys[1]).toBe(keys[0]);
     expect(await screen.findByText("Emitiste la factura 001-001-000000001.")).toBeDefined();
+  });
+
+  it("una versión nueva del borrador emite con otra Idempotency-Key", async () => {
+    const keys: string[] = [];
+    let current = draft();
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": () => ({ status: 200, body: { data: current } }),
+      "PUT /api/v1/invoices/drafts/draft-1": () => {
+        current = draft({ version: 2 });
+        return { status: 200, body: { data: current } };
+      },
+      "POST /api/v1/invoices": (init) => {
+        keys.push(new Headers(init.headers).get("Idempotency-Key") ?? "");
+        return keys.length === 1
+          ? { status: 409, body: errorBody("PRODUCT_INACTIVE", "El producto está desactivado.") }
+          : { status: 201, body: { data: invoice() } };
+      },
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Emitir factura" }));
+    let dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
+    await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
+    expect(await screen.findByRole("alert")).toBeDefined();
+    const line = screen.getByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
+    const quantity = within(line).getByLabelText("Cantidad");
+    await user.clear(quantity);
+    await user.type(quantity, "2");
+    await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    expect(await screen.findByText("Guardaste el borrador.")).toBeDefined();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Emitir factura" })).toHaveProperty(
+        "disabled",
+        false,
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: "Emitir factura" }));
+    dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
+    await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/facturas/inv-1"));
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).not.toBe(keys[0]);
   });
 
   it("a consumidor final, la confirmación advierte de sus restricciones", async () => {

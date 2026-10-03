@@ -213,6 +213,8 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   const [pickingBuyer, setPickingBuyer] = useState(false);
   const [pickingProduct, setPickingProduct] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  // Una clave por versión del borrador (el editor se vuelve a montar con cada versión): un
+  // reintento de la misma solicitud la repite y el servidor devuelve o retoma la misma factura.
   const idempotencyKey = useRef<string>("");
   const establishments = useEstablishments();
   const paymentMethods = useCatalogEntries("payment-method", true);
@@ -585,7 +587,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                 disabled={emitBlocked}
                 aria-describedby={emitHint ? emitHintId : undefined}
                 onClick={() => {
-                  idempotencyKey.current = crypto.randomUUID();
+                  idempotencyKey.current ||= crypto.randomUUID();
                   setConfirming(true);
                 }}
               >
