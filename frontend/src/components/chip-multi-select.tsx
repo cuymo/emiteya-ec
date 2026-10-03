@@ -39,7 +39,7 @@ export function ChipMultiSelect<T extends string>({
           key={option.value}
           value={option.value}
           className={cn(
-            "h-4 rounded-full border border-border px-1.5 text-sm text-foreground max-md:h-5.5",
+            "h-4 rounded-full border border-input px-1.5 text-sm text-foreground max-md:h-5.5",
             "motion-safe:transition-colors motion-safe:duration-150",
             "hover:bg-surface-subtle data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
             "disabled:cursor-not-allowed disabled:opacity-50",

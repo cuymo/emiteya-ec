@@ -88,13 +88,12 @@ D17). Fecha: 2026-10-03.
 | Feedback y estado | Las mutaciones pasan por `useMutationFeedback`, con avisos que nombran el registro. Desactivar ofrece Deshacer. Habilitar o deshabilitar en Catálogos fiscales vuelve a pedir los datos de productos, porque su estado tributario cambia. |
 | Navegación y responsive | Grupo principal "Operación". Por debajo de 768 px: tarjetas en lugar de la tabla, objetivos de 44 px, y los filtros secundarios de Productos (estado y tipo) tras "Más filtros", con el número de filtros activos. |
 | Rendimiento | Una consulta paginada por pantalla, más los recuentos (`tax-summary`) en Productos y Catálogos fiscales. La búsqueda libre espera una pausa antes de consultar. Las opciones de impuestos solo se piden con el diálogo abierto. El volumen de referencia lo mide el benchmark (`docs/quality/benchmarks/search-2026-10-03.md`). |
-| Tema y accesibilidad | Ambos temas revisados. Texto de las insignias: 15.5:1 en claro y 12.7:1 o más en oscuro. Tipo de identificación atenuado: 6.8:1 y 7.1:1. Texto de los chips inactivos: 16.9:1 y 16.5:1; activos: 6.0:1 y 6.7:1. Un `h1` por pantalla; tablas con nombre accesible; los chips de roles anuncian `aria-pressed`; "Más filtros" anuncia `aria-expanded`. |
+| Tema y accesibilidad | Ambos temas revisados. Texto de las insignias: 15.5:1 en claro y 12.7:1 o más en oscuro. Tipo de identificación atenuado: 6.8:1 y 7.1:1. Texto de los chips inactivos: 16.9:1 y 16.5:1; activos: 6.0:1 y 6.7:1. Borde de un chip inactivo: 3.3:1 o más en claro y en oscuro. Un `h1` por pantalla; tablas con nombre accesible; los chips de roles anuncian `aria-pressed`; "Más filtros" anuncia `aria-expanded`. |
 
 ## Excepciones declaradas
 
 | Criterio | Motivo |
 | --- | --- |
-| Contraste de 3:1 del borde de un chip inactivo | Mide 1.3:1 en claro y 1.5:1 en oscuro. Es el estilo existente de `ChipGroup` (filtros de Usuarios), que `ChipMultiSelect` comparte. El chip se identifica por su texto (16.9:1), y el estado elegido, por el relleno sólido. No se cambia un token compartido en este cambio. |
 | Contraste de 3:1 para iconos significativos | El icono de advertencia de "Revisar impuestos" es decorativo (`aria-hidden="true"`); el texto lleva la información. Es la excepción ya declarada en `add-taxpayer-setup`. |
 | Estado sin permiso alcanzable | Ningún rol carece de lectura de terceros o productos. Se comprueba con pruebas de componentes y con el `403` simulado. |
 | Combobox con búsqueda para ICE | El formulario ofrece en un `Select` solo los códigos que la empresa habilitó (design D17, Riesgos). Un combobox llegará con el selector de productos de la factura. |
@@ -107,4 +106,10 @@ D17). Fecha: 2026-10-03.
 - **Encabezado del precio.** Estaba alineado a la izquierda, sobre cifras alineadas a la derecha; ahora va a la derecha.
 - **Búsqueda de Terceros.** El texto de ejemplo se cortaba; ahora es "Identificación o nombre", y la etiqueta accesible conserva "Buscar por identificación o razón social".
 - **Avisos de éxito.** Duplicaban el punto final cuando la razón social terminaba en punto ("Andina S.A.."); ahora cierran la frase sin duplicarlo.
+- **Borde de los chips inactivos.**
+  - Un chip inactivo es un control sin seleccionar, de fondo transparente: su única frontera visible es el borde.
+  - Con `border-border` medía 1.3:1 en claro y 1.5:1 en oscuro.
+  - Ahora usa `border-input`, el token de frontera de los controles (`Input`, `Select`, `SegmentedControl` y `Switch`).
+  - Mide 3.5:1 sobre el fondo de la página, 3.6:1 sobre una superficie y 3.3:1 sobre una superficie atenuada en claro; 3.9:1, 3.7:1 y 3.3:1 en oscuro. Valores calculados con los colores de los tokens de cada tema.
+  - El arreglo es compartido: `ChipGroup` (también los filtros de Usuarios) y `ChipMultiSelect`. No cambia ningún token.
 - **Contraste de las insignias.** La primera medición tomó el color del contenedor de la insignia, que solo colorea el icono, y daba 2.5:1. La medición correcta, sobre el texto, da 15.5:1 o más; `StatusBadge` no cambia.
