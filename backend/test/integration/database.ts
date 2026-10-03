@@ -57,7 +57,13 @@ export async function createMigratedSchema(label: string): Promise<MigratedSchem
   await requireTestDatabase();
   const name = `t_${label}_${randomBytes(4).toString("hex")}`;
   const url = withSchema(TEST_DATABASE_URL, name);
-  const migrate = runBin("prisma", ["migrate", "deploy"], { DATABASE_URL: url });
+  // Prisma serializa toda migración de la base con un único advisory lock. Cada esquema de prueba
+  // es nuevo y lo migra una sola vez su propio archivo, así que el lock solo encola esquemas
+  // independientes y, con la suite en paralelo, agota su espera de 10 s (P1002).
+  const migrate = runBin("prisma", ["migrate", "deploy"], {
+    DATABASE_URL: url,
+    PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK: "1",
+  });
   if (migrate.status !== 0)
     throw new Error(`prisma migrate deploy falló:\n${migrate.stdout}${migrate.stderr}`);
   const database = createDatabase(url);
