@@ -171,7 +171,22 @@ describe("consulta de facturas", () => {
     expect((await list(b)).data.map((i) => i.id)).not.toContain(invoices[0]!.id);
   });
 
-  it("sin sesión, consultar o emitir responde no autenticado", async () => {
+  it("sin sesión, consultar o emitir responde no autenticado, sin efecto ni auditoría", async () => {
+    const draft = await request(api.app)
+      .post("/api/v1/invoices/drafts")
+      .set("Cookie", a.cookies.operator)
+      .send({
+        emissionPointId: a.emissionPointId,
+        buyerPartyId: a.customerId,
+        lines: [{ productId: a.productId, quantity: "1" }],
+        payments: [{ paymentMethod: "01" }],
+      });
+    const draftId = bodyOf(draft).data.id;
+    const audits = () => db.database.prisma.auditEvent.count();
+    const before = {
+      audits: await audits(),
+      documents: await db.database.prisma.electronicDocument.count(),
+    };
     expect((await request(api.app).get("/api/v1/invoices")).status).toBe(401);
     expect((await request(api.app).get(`/api/v1/invoices/${invoices[0]!.id}`)).status).toBe(401);
     expect(
@@ -179,9 +194,16 @@ describe("consulta de facturas", () => {
         await request(api.app)
           .post("/api/v1/invoices")
           .set("Idempotency-Key", randomUUID())
-          .send({ draftId: "x", expectedVersion: 1 })
+          .send({ draftId, expectedVersion: 1 })
       ).status,
     ).toBe(401);
+    expect({
+      audits: await audits(),
+      documents: await db.database.prisma.electronicDocument.count(),
+    }).toEqual(before);
+    expect(
+      (await db.database.prisma.invoiceDraft.findUniqueOrThrow({ where: { id: draftId } })).status,
+    ).toBe("DRAFT");
   });
 
   it("rechaza un estado desconocido en el filtro", async () => {

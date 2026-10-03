@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
-import type { InvoiceView } from "@facturador/contracts";
+import type { DraftView, InvoiceView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import type { InvoiceSnapshotV1 } from "../../src/modules/invoices/domain/snapshot.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
@@ -302,6 +302,41 @@ describe("emisión de facturas hasta RESERVED", () => {
       expect(res.status).toBe(400);
       expect(bodyOf(res).error.message).toBe("La solicitud contiene campos no permitidos.");
     });
+
+    it("una solicitud con companyId se rechaza por campo no permitido, sin rastro", async () => {
+      const a = companies.a!;
+      const r = companies.r!;
+      const draft = await draftFor(a);
+      const before = await trace(a);
+      const res = await call(a.cookies.admin, "post", "/invoices")
+        .set("Idempotency-Key", randomUUID())
+        .send({ draftId: draft.id, expectedVersion: draft.version, companyId: r.companyId });
+      expect(res.status).toBe(400);
+      expect(bodyOf(res).error.message).toBe("La solicitud contiene campos no permitidos.");
+      expect(await trace(a)).toEqual(before);
+    });
+
+    it("el precio unitario es el del producto al emitir, aunque cambie después de guardar el borrador", async () => {
+      const a = companies.a!;
+      const productId = await createProduct(db, a, { unitPrice: "8.75", name: "Precio cambiante" });
+      const draft = await draftFor(a, { lines: [{ productId, quantity: "2" }] });
+      expect((draft as unknown as DraftView).preview.lines[0]?.unitPrice).toBe("8.75");
+      await db.database.prisma.product.update({
+        where: { id: productId },
+        data: { unitPrice: "9.10" },
+      });
+      const res = await emit(a, draft);
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+      const invoice = bodyOf(res).data;
+      // El precio se guarda en su forma canónica (decimal-policy.md).
+      expect(invoice.lines[0]).toMatchObject({ unitPrice: "9.1", taxableBase: "18.20" });
+      expect(invoice.totals.total).toBe("20.93");
+      const stored = await db.database.prisma.electronicDocument.findUniqueOrThrow({
+        where: { id: invoice.id },
+      });
+      const snapshot = stored.snapshot as { lines: { unitPrice: string }[] };
+      expect(snapshot.lines[0]?.unitPrice).toBe("9.1");
+    });
   });
 
   describe("rechazos antes de reservar (spec document-emission: Validación completa antes de reservar)", () => {
@@ -365,6 +400,16 @@ describe("emisión de facturas hasta RESERVED", () => {
           data: { active: true },
         });
       }
+    });
+
+    it("firma vencida en la fecha de emisión: no utilizable, sin rastro", async () => {
+      const r = companies.r!;
+      const expired = buildTaxpayerApp(db, {
+        now: () => now,
+        signing: { pool, custody: CUSTODY, now: () => new Date("2100-01-01T00:00:00Z") },
+        invoices: { signAfterReserve: false },
+      });
+      await rejected(r, await draftFor(r), "SIGNING_CERTIFICATE_NOT_USABLE", { app: expired.app });
     });
 
     it("sin firma utilizable; el siguiente comprobante recibe el número que habría recibido", async () => {
@@ -477,6 +522,14 @@ describe("emisión de facturas hasta RESERVED", () => {
         await draftFor(r, { lines: [{ productId: huge, quantity: "999999999999.999999" }] }),
         "AMOUNT_OUT_OF_RANGE",
       );
+      // La base cabe, pero el importe total con el IVA supera los 14 dígitos del XSD.
+      const large = await createProduct(db, r, { unitPrice: "900000000000", name: "Grande" });
+      const error = await rejected(
+        r,
+        await draftFor(r, { lines: [{ productId: large, quantity: "1" }] }),
+        "AMOUNT_OUT_OF_RANGE",
+      );
+      expect(error.message).toContain("14 dígitos");
     });
 
     it("forma de pago deshabilitada y pagos que no suman el total", async () => {

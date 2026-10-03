@@ -57,6 +57,9 @@ describe("idempotencia de la emisión (ERS AC-05)", () => {
     documents: await db.database.prisma.electronicDocument.count({
       where: { companyId: company.companyId },
     }),
+    audits: await db.database.prisma.auditEvent.count({
+      where: { companyId: company.companyId, action: { startsWith: "invoice." } },
+    }),
   });
   const draftStatus = async (draftId: string) =>
     (await db.database.prisma.invoiceDraft.findUniqueOrThrow({ where: { id: draftId } })).status;
@@ -146,9 +149,11 @@ describe("idempotencia de la emisión (ERS AC-05)", () => {
     const ids = new Set(responses.map((res) => bodyOf(res).data.id));
     expect(ids.size).toBe(1);
     const after = await counts(a);
+    // Una reserva y una firma auditadas, una sola vez.
     expect(after).toEqual({
       reservations: before.reservations + 1,
       documents: before.documents + 1,
+      audits: before.audits + 2,
     });
   });
 
@@ -163,6 +168,7 @@ describe("idempotencia de la emisión (ERS AC-05)", () => {
     expect(await counts(a)).toEqual({
       reservations: before.reservations + 1,
       documents: before.documents + 1,
+      audits: before.audits + 2,
     });
     // El número del perdedor nunca se confirmó: lo recibe la siguiente emisión.
     const winner = bodyOf(responses.find((res) => res.status === 201)!).data;
@@ -197,9 +203,26 @@ describe("idempotencia de la emisión (ERS AC-05)", () => {
     const fromB = await emit(b, await draftFor(b), key);
     expect(fromB.status).toBe(201);
     expect(bodyOf(fromB).data.id).not.toBe(fromA.id);
-    const res = await request(api.app)
-      .get(`/api/v1/invoices/drafts/${fromA.id}`)
-      .set("Cookie", b.cookies.admin);
+    // Ninguna ve la factura de la otra.
+    for (const [viewer, invoiceId] of [
+      [b, fromA.id],
+      [a, bodyOf(fromB).data.id],
+    ] as const) {
+      const res = await request(api.app)
+        .get(`/api/v1/invoices/${invoiceId}`)
+        .set("Cookie", viewer.cookies.admin);
+      expect(res.status).toBe(404);
+      expect(bodyOf(res).error.code).toBe("INVOICE_NOT_FOUND");
+    }
+  });
+
+  it("una empresa no emite el borrador de otra", async () => {
+    const draftOfB = await draftFor(b);
+    const before = { a: await counts(a), b: await counts(b) };
+    const res = await emit(a, draftOfB, randomUUID());
     expect(res.status).toBe(404);
+    expect(bodyOf(res).error.code).toBe("INVOICE_DRAFT_NOT_FOUND");
+    expect(await draftStatus(draftOfB.id)).toBe("DRAFT");
+    expect({ a: await counts(a), b: await counts(b) }).toEqual(before);
   });
 });

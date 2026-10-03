@@ -168,9 +168,22 @@ describe("recuperación de una factura reservada", () => {
       diagnostic: null,
     });
     expect(await reservations()).toBe(before);
-    expect((await retriedEvents(invoice.id)).map((event) => event.changes)).toEqual([
-      { invoiceId: invoice.id, documentNumber: invoice.documentNumber, result: "SIGNED" },
+    const retried = await retriedEvents(invoice.id);
+    expect(retried.map((event) => [event.actorUserId, event.changes])).toEqual([
+      [
+        a.operatorId,
+        { invoiceId: invoice.id, documentNumber: invoice.documentNumber, result: "SIGNED" },
+      ],
     ]);
+    // El reintento que completa la firma deja también el evento de firma, con el mismo actor.
+    const signed = await db.database.prisma.auditEvent.findMany({
+      where: { companyId: a.companyId, action: "invoice.signed" },
+    });
+    expect(
+      signed
+        .filter((event) => (event.changes as { invoiceId?: string }).invoiceId === invoice.id)
+        .map((event) => event.actorUserId),
+    ).toEqual([a.operatorId]);
   });
 
   it("servicio de firma ocupado: diagnóstico reintentable de la etapa de firma", async () => {
@@ -180,7 +193,13 @@ describe("recuperación de una factura reservada", () => {
       code: "CRYPTO_BUSY",
       class: "RETRYABLE_OPERATIONAL",
     });
-    expect(bodyOf(await retry(invoice.id)).data.state).toBe("SIGNED");
+    const before = await reservations();
+    expect(bodyOf(await retry(invoice.id)).data).toMatchObject({
+      state: "SIGNED",
+      documentNumber: invoice.documentNumber,
+      accessKey: invoice.accessKey,
+    });
+    expect(await reservations()).toBe(before);
   });
 
   it("firma que deja de ser utilizable: diagnóstico determinista y, tras cargar otra, el reintento firma", async () => {

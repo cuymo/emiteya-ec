@@ -59,6 +59,8 @@ describe("API de borradores de factura", () => {
     documents: await db.database.prisma.electronicDocument.count(),
     reservations: await db.database.prisma.fiscalSequenceReservation.count(),
     sequences: await db.database.prisma.fiscalSequence.count(),
+    // Los borradores no se auditan (spec audit-trail).
+    audits: await db.database.prisma.auditEvent.count(),
   });
 
   beforeAll(async () => {
@@ -99,6 +101,8 @@ describe("API de borradores de factura", () => {
         createdBy: a.adminId,
         updatedBy: a.adminId,
       });
+      expect(Date.parse(draft.createdAt)).not.toBeNaN();
+      expect(draft.updatedAt).toBe(draft.createdAt);
       expect(JSON.stringify(draft)).not.toMatch(/accessKey|documentNumber|sequential/);
       expect(await fiscalTrace()).toEqual(before);
     });
@@ -142,6 +146,7 @@ describe("API de borradores de factura", () => {
 
     it("corrige con la versión vigente y rechaza una versión desactualizada sin cambiarlo", async () => {
       const draft = await created(a);
+      const before = await fiscalTrace();
       const updated = await call(a.cookies.operator, "put", `/invoices/drafts/${draft.id}`).send(
         body(a, {
           lines: [{ productId: a.productId, quantity: "1", discount: "0" }],
@@ -163,6 +168,7 @@ describe("API de borradores de factura", () => {
         await call(a.cookies.admin, "get", `/invoices/drafts/${draft.id}`),
       ).data;
       expect(current).toMatchObject({ version: 2, lines: [{ quantity: "1" }] });
+      expect(await fiscalTrace()).toEqual(before);
     });
 
     it("elimina un borrador sin dejar rastro fiscal", async () => {
@@ -328,6 +334,15 @@ describe("API de borradores de factura", () => {
       );
       expect(res.status).toBe(400);
       expect(bodyOf(res).error.message).toBe("La solicitud contiene campos no permitidos.");
+      const draft = await created(a);
+      const update = await call(a.cookies.admin, "put", `/invoices/drafts/${draft.id}`).send(
+        body(a, { expectedVersion: draft.version, companyId: b.companyId }),
+      );
+      expect(update.status).toBe(400);
+      expect(bodyOf(update).error.message).toBe("La solicitud contiene campos no permitidos.");
+      expect(
+        bodyOf(await call(a.cookies.admin, "get", `/invoices/drafts/${draft.id}`)).data.version,
+      ).toBe(draft.version);
     });
 
     it("lista los borradores pendientes por última actualización, con su total previo", async () => {
