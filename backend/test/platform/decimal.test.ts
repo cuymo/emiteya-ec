@@ -26,8 +26,9 @@ describe("FiscalDecimal", () => {
     expect(String(Number("123456789012.123456"))).not.toBe("123456789012.123456");
   });
 
-  it("convierte hacia y desde la base de datos por texto, con la escala del campo", () => {
-    expect(Percentage.parse("12").toDatabase()).toBe("12.00");
+  it("convierte hacia y desde la base de datos por texto, en forma canónica", () => {
+    expect(Percentage.parse("12.00").toDatabase()).toBe("12");
+    expect(UnitPrice.parse("999999999999.999990").toDatabase()).toBe("999999999999.99999");
     expect(Money.fromDatabase({ toFixed: () => "50.00" }).toString()).toBe("50");
     expect(Quantity.fromDatabase("0.000001").toString()).toBe("0.000001");
   });
@@ -45,14 +46,18 @@ describe("FiscalDecimal", () => {
     }
   });
 
-  it("el precio unitario sigue la regla del XSD: 18 dígitos en total y 6 decimales", () => {
+  it("los tipos siguen la regla del XSD: total y decimales, sin el límite de NUMERIC(p, s)", () => {
     for (const text of ["0", "0.000001", "999999999999999999", "999999999999.999999"]) {
       expect(UnitPrice.parse(text).toString()).toBe(text);
     }
     for (const text of ["1000000000000000000", "1234567890123.123456", "0.0000001", "-1"]) {
       expect(() => UnitPrice.parse(text), text).toThrow(DecimalValueError);
     }
-    expect(() => Quantity.parse("1000000000000")).toThrow("Admite como máximo 12 dígitos enteros.");
+    expect(Percentage.parse("300").toString()).toBe("300");
+    expect(Money.parse("99999999999999").toString()).toBe("99999999999999");
+    expect(Quantity.parse("999999999999999999").toString()).toBe("999999999999999999");
+    expect(() => Percentage.parse("100.55")).toThrow("Admite como máximo 4 dígitos en total.");
+    expect(() => Money.parse("100000000000000")).toThrow("Admite como máximo 14 dígitos en total.");
   });
 
   it("compara y detecta igualdad exacta", () => {

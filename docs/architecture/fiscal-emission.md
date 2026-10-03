@@ -195,7 +195,7 @@ Con fixtures sintéticos ningún proveedor figura aquí; Security Data está cub
 - **IVA diferenciado.** El código 8 no tiene porcentaje fijo (nota 3 de la tabla 17): hace falta una política con fuente antes de emitir con él.
 - **Consumidor final.** La política vigente (`consumer_final_policy`, USD 50 al corte) y su identidad canónica se aplican en el paso 1, antes de reservar. El tercero del sistema que la usa lo crea `add-parties-and-products` (ver sus obligaciones).
 - **Casos especiales.** La matriz (`special_case_support`, ADR 0014) se aplica en el paso 1: lo no soportado se rechaza de forma explícita.
-- **Decimales.** Los importes y tarifas llegan como `DecimalString` validados con las especificaciones de `packages/contracts/src/decimal.ts`, que salen de los XSD (`decimal-policy.md`). El redondeo de líneas y totales (Q-14) usa `roundHalfUp` de `platform/decimal`. Antes de implementar el cálculo tributario se resuelve Q-43: hoy `tarifa` declara un máximo de 100 que su representación no admite.
+- **Decimales.** Los importes y tarifas llegan como `DecimalString` validados con las especificaciones de `packages/contracts/src/decimal.ts`, que salen de los XSD (`decimal-policy.md`). El redondeo de líneas y totales (Q-14) usa `roundHalfUp` de `platform/decimal`. Las especificaciones siguen la regla del XSD (Q-43): `tarifa` es un porcentaje de 4/2 sin máximo de 100, y los límites normativos de cada impuesto son de su catálogo.
 - **Esquemas.** Los XSD del registro (`schema_registry_entry`) se registran en la librería al arrancar el motor (ADR 0008).
 
 ## Obligaciones que deja `add-parties-and-products`

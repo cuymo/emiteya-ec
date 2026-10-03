@@ -246,6 +246,38 @@ describe("invariantes de los catálogos fiscales en la base de datos", () => {
       expect(differentiated.percentage).toBeNull();
     });
 
+    it("el porcentaje sigue la regla del XSD (4 dígitos, 2 decimales), sin máximo de 100", async () => {
+      // Cada valor en su propia vigencia de la entrada 8, para no superponer versiones.
+      const at = (year: number, percentage: string) =>
+        prisma.fiscalCatalogEntry.create({
+          data: iva({
+            entryKey: "8",
+            officialLabel: `Prueba ${percentage}`,
+            effectiveFrom: new Date(`${year}-01-01`),
+            effectiveTo: new Date(`${year}-12-31`),
+            percentage,
+          }),
+        });
+      for (const [year, percentage] of [
+        [2001, "100"],
+        [2002, "300"],
+        [2003, "99.99"],
+        [2004, "0"],
+      ] as const) {
+        expect((await at(year, percentage)).percentage?.toFixed(), percentage).toBe(percentage);
+      }
+      for (const [year, percentage] of [
+        [2011, "10000"],
+        [2012, "100.55"],
+        [2013, "1.005"],
+        [2014, "-1"],
+      ] as const) {
+        expect(await fails(at(year, percentage)), percentage).toContain(
+          "fiscal_catalog_entry_percentage_check",
+        );
+      }
+    });
+
     it("una versión retirada tiene la vigencia cerrada", async () => {
       expect(
         await fails(
@@ -353,6 +385,39 @@ describe("invariantes de los catálogos fiscales en la base de datos", () => {
           prisma.$executeRawUnsafe(`UPDATE ${table("consumer_final_policy")} SET max_amount = 60`),
         ),
       ).toContain("solo se cierra una vigencia abierta");
+    });
+
+    it("el monto máximo sigue la regla del XSD de importe: 14 dígitos y 2 decimales", async () => {
+      const at = (year: number, maxAmount: string) =>
+        prisma.consumerFinalPolicy.create({
+          data: {
+            maxAmount,
+            currency: "USD",
+            identificationType: "07",
+            identification: "9999999999999",
+            canonicalName: "CONSUMIDOR FINAL",
+            effectiveFrom: new Date(`${year}-01-01`),
+            effectiveTo: new Date(`${year}-12-31`),
+            effectiveFromBasis: "PROJECT_BASELINE",
+            sourceRef: "Numeral 9.10, página 29",
+            datasetVersion: 1,
+          },
+        });
+      for (const [year, maxAmount] of [
+        [2001, "99999999999999"],
+        [2002, "999999999999.99"],
+      ] as const) {
+        expect((await at(year, maxAmount)).maxAmount.toFixed(), maxAmount).toBe(maxAmount);
+      }
+      for (const [year, maxAmount] of [
+        [2011, "100000000000000"],
+        [2012, "1234567890123.45"],
+        [2013, "50.005"],
+      ] as const) {
+        expect(await fails(at(year, maxAmount)), maxAmount).toContain(
+          "consumer_final_policy_max_amount_check",
+        );
+      }
     });
 
     it("el registro y la matriz son inmutables", async () => {

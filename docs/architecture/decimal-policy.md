@@ -18,13 +18,17 @@ Viven en `packages/contracts/src/decimal.ts` (`DECIMAL_SPECS`), las comparten ba
 y cada una nombra el tipo XSD de origen. Una prueba compara cada especificación con los
 `simpleType` de los seis XSD soportados.
 
-| Especificación | Tipo del dominio | Dígitos totales | Decimales | Enteros como máximo | Mínimo | Uso |
+| Especificación | Tipo del dominio | Dígitos totales | Decimales | Mínimo | Ejemplos válidos en el límite | Uso |
 | --- | --- | --- | --- | --- | --- | --- |
-| `tarifa` | `Percentage` | 4 | 2 | 2 | 0 | Porcentaje de IVA |
-| `importe` | `Money` | 14 | 2 | 12 | 0 | Monto de la política de consumidor final; importes de la emisión |
-| `precioUnitario` | `UnitPrice` | 18 | 6 | 18, sin decimales | 0 | Precio unitario de productos, sin impuestos |
-| `cantidad` | `Quantity` | 18 | 6 | 12 | 0 | Cantidades de la emisión |
+| `tarifa` | `Percentage` | 4 | 2 | 0 | `9999`, `99.99`, `100`, `300` | Porcentaje de una tarifa |
+| `importe` | `Money` | 14 | 2 | 0 | `99999999999999`, `999999999999.99` | Monto de la política de consumidor final; importes de la emisión |
+| `precioUnitario` | `UnitPrice` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Precio unitario de productos, sin impuestos |
+| `cantidad` | `Quantity` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Cantidades de la emisión |
 
+- **Regla del XSD (Q-43):** la parte entera usa los dígitos que no ocupan los decimales; nunca `totalDigits` enteros más `fractionDigits` decimales. La semántica de `NUMERIC(p, s)`, que limitaría la parte entera a `p - s`, no es la regla.
+- **Primitivos compartidos:** una especificación no lleva límites normativos de un impuesto o de un código.
+  - `tarifa` no tiene un máximo de 100: la ficha v2.34 publica tarifas de ICE superiores.
+  - Un límite así pertenece al catálogo del impuesto, con su fuente.
 - **Excepción conocida:** la retención 2.0.0 define `tarifa` y `porcentajeRetener` con 3 dígitos y 2 decimales. Esa escala llegará con su cambio.
 
 ## Validación al recibir
@@ -32,25 +36,20 @@ y cada una nombra el tipo XSD de origen. Una prueba compara cada especificación
 1. Se valida primero el `DecimalString` universal.
 2. Después, la especificación (`decimalSpecViolation`):
    - **Decimales:** como máximo `fractionDigits`, contados como se escriben. `1.1234560` tiene 7 decimales y se rechaza.
-   - **Enteros:** por defecto, como máximo `totalDigits - fractionDigits`, la semántica de `NUMERIC(p, s)` de PostgreSQL. Así funcionan `tarifa`, `importe` y `cantidad`.
-   - **Regla del XSD:** una especificación puede declarar `maxIntegerDigits`.
-     - `precioUnitario` declara 18: la parte entera usa los dígitos que no ocupan los decimales.
-     - `999999999999999999` y `999999999999.999999` son válidos; nunca 18 enteros más 6 decimales.
    - **Total:** como máximo `totalDigits`, contados como se escriben y sin el cero entero de `0.5`.
-     - `1234567890123.123456` (19 dígitos) se rechaza.
+     - `1234567890123.123456` (19 dígitos) se rechaza como precio unitario.
      - `1234567890123.123450` también se rechaza, porque su cero final cuenta.
-   - **Rango:** el mínimo, y el máximo de dominio si lo hay.
+   - **Mínimo:** el de la especificación.
 3. Nunca se redondea al recibir: un valor fuera de la especificación es un error de validación con el mensaje de su límite.
 
 ## Dominio y base de datos
 
 - **Dominio:** `decimal.js` 10.6.0, envuelto en `platform/decimal` con una instancia propia (precisión 40), detrás de `FiscalDecimal(spec)` y sus tipos.
 - **Base de datos:**
-  - Por defecto, cada campo es `NUMERIC(totalDigits, fractionDigits)` de su especificación, con un `CHECK` de su mínimo.
-  - **Regla del XSD:** un campo con `maxIntegerDigits` usa `NUMERIC` sin escala fija, porque `NUMERIC(p, s)` limitaría su parte entera a `p - s` dígitos.
-    - Un `CHECK` de dominio fija el mínimo, la escala y el total.
-    - El repositorio guarda la forma canónica, así que la escala guardada es la del valor.
-    - Es el caso de `product.unit_price`: `unit_price >= 0`, `scale(unit_price) <= 6` y `unit_price < 10^(18 - scale(unit_price))`.
+  - Cada campo es `NUMERIC` sin precisión ni escala fijas, que guarda el valor exacto sin redondear. `NUMERIC(p, s)` no se usa: limitaría la parte entera a `p - s` dígitos y redondearía en silencio los decimales de más.
+  - Un `CHECK` de dominio fija la especificación: mínimo, `scale(valor) <= fractionDigits` y `valor < 10^(totalDigits - scale(valor))`.
+  - Se guarda la forma canónica (`toDatabase`), así que la escala guardada es la del valor.
+  - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`) y `consumer_final_policy.max_amount` (`importe`).
 - **Conversión:** con el `Decimal` de Prisma siempre por texto.
 - **Redondeo:** solo el de la emisión (Q-14), con `roundHalfUp` y la escala del campo.
 

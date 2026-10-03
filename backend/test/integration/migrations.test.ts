@@ -288,14 +288,31 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
       "search_identification:C",
       "search_main_code:C",
     ]);
-    // El precio no tiene precisión ni escala fijas: su dominio lo fija el CHECK (design D9).
-    const [price] = await db.database.prisma.$queryRaw<
-      { type: string; precision: number | null }[]
+  });
+
+  it("los decimales no tienen precisión ni escala fijas: su dominio lo fija un CHECK (Q-43)", async () => {
+    const columns = await db.database.prisma.$queryRaw<
+      { column: string; type: string; precision: number | null; scale: number | null }[]
     >`
-      SELECT data_type AS type, numeric_precision AS precision
+      SELECT table_name || '.' || column_name AS column, data_type AS type,
+        numeric_precision AS precision, numeric_scale AS scale
       FROM information_schema.columns
-      WHERE table_schema = ${db.name} AND table_name = 'product' AND column_name = 'unit_price'`;
-    expect(price).toEqual({ type: "numeric", precision: null });
+      WHERE table_schema = ${db.name} AND data_type = 'numeric'
+      ORDER BY 1`;
+    expect(columns).toEqual(
+      [
+        "consumer_final_policy.max_amount",
+        "fiscal_catalog_entry.percentage",
+        "product.unit_price",
+      ].map((column) => ({ column, type: "numeric", precision: null, scale: null })),
+    );
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "product_unit_price_check",
+        "fiscal_catalog_entry_percentage_check",
+        "consumer_final_policy_max_amount_check",
+      ]),
+    );
   });
 
   it("no limita el número de empresas con ninguna restricción", async () => {

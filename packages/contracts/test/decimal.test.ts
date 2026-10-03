@@ -148,45 +148,48 @@ describe("DecimalString universal", () => {
   });
 });
 
-describe("tipos no negativos con su especificación", () => {
-  const tarifa = decimalString(DECIMAL_SPECS.tarifa);
-  const importe = decimalString(DECIMAL_SPECS.importe);
-  const precio = decimalString(DECIMAL_SPECS.precioUnitario);
+describe("tipos no negativos con su especificación (regla del XSD, Q-43)", () => {
+  const specs = {
+    tarifa: decimalString(DECIMAL_SPECS.tarifa),
+    importe: decimalString(DECIMAL_SPECS.importe),
+    precioUnitario: decimalString(DECIMAL_SPECS.precioUnitario),
+    cantidad: decimalString(DECIMAL_SPECS.cantidad),
+  };
+  const message = (name: keyof typeof specs, text: string) =>
+    specs[name].safeParse(text).error?.issues[0]?.message;
 
-  it("aceptan valores dentro de sus dígitos, su escala y su rango", () => {
-    expect(tarifa.safeParse("15").success).toBe(true);
-    expect(tarifa.safeParse("99.99").success).toBe(true);
-    expect(importe.safeParse("50.00").success).toBe(true);
-    expect(importe.safeParse("999999999999.99").success).toBe(true);
-    expect(precio.safeParse("123456789012.123456").success).toBe(true);
+  it("la parte entera usa los dígitos que no ocupan los decimales", () => {
+    for (const [name, values] of [
+      ["tarifa", ["0", "15", "99.99", "100", "100.5", "300", "9999"]],
+      ["importe", ["0", "50.00", "999999999999.99", "99999999999999", "1234567890123.4"]],
+      ["precioUnitario", ["0", "0.000001", "999999999999999999", "999999999999.999999"]],
+      ["cantidad", ["0", "0.000001", "999999999999999999", "999999999999.999999"]],
+    ] as const) {
+      for (const text of values) expect(message(name, text), `${name} ${text}`).toBeUndefined();
+    }
   });
 
-  it("rechazan negativos, escala de más sin redondear y dígitos de más", () => {
-    expect(tarifa.safeParse("-1").error?.issues[0]?.message).toBe("Debe ser mayor o igual que 0.");
-    expect(tarifa.safeParse("12.345").error?.issues[0]?.message).toBe(
-      "Admite como máximo 2 decimales.",
-    );
-    expect(tarifa.safeParse("100.5").error?.issues[0]?.message).toBe(
-      "Admite como máximo 2 dígitos enteros.",
-    );
-    expect(importe.safeParse("1000000000000").success).toBe(false);
-    expect(precio.safeParse("1.0000001").error?.issues[0]?.message).toBe(
-      "Admite como máximo 6 decimales.",
-    );
+  it("rechazan el total de más, los decimales de más y los negativos, sin redondear", () => {
+    for (const [name, text, expected] of [
+      ["tarifa", "10000", "Admite como máximo 4 dígitos en total."],
+      ["tarifa", "100.55", "Admite como máximo 4 dígitos en total."],
+      ["tarifa", "12.345", "Admite como máximo 2 decimales."],
+      ["tarifa", "-1", "Debe ser mayor o igual que 0."],
+      ["importe", "100000000000000", "Admite como máximo 14 dígitos en total."],
+      ["importe", "1234567890123.45", "Admite como máximo 14 dígitos en total."],
+      ["importe", "1.005", "Admite como máximo 2 decimales."],
+      ["precioUnitario", "1234567890123.123456", "Admite como máximo 18 dígitos en total."],
+      ["precioUnitario", "1.0000001", "Admite como máximo 6 decimales."],
+      ["cantidad", "1000000000000000000", "Admite como máximo 18 dígitos en total."],
+      ["cantidad", "-0.5", "Debe ser mayor o igual que 0."],
+    ] as const) {
+      expect(message(name, text), `${name} ${text}`).toBe(expected);
+    }
   });
 
-  it("solo el precio unitario sigue la regla del XSD; los demás conservan sus enteros", () => {
-    const cantidad = decimalString(DECIMAL_SPECS.cantidad);
-    expect(precio.safeParse("999999999999999999").success).toBe(true);
-    expect(precio.safeParse("1234567890123.123456").error?.issues[0]?.message).toBe(
-      "Admite como máximo 18 dígitos en total.",
-    );
-    expect(importe.safeParse("1000000000000").error?.issues[0]?.message).toBe(
-      "Admite como máximo 12 dígitos enteros.",
-    );
-    expect(cantidad.safeParse("1000000000000").error?.issues[0]?.message).toBe(
-      "Admite como máximo 12 dígitos enteros.",
-    );
-    expect(cantidad.safeParse("999999999999.999999").success).toBe(true);
+  it("los decimales y el total se cuentan como se escriben", () => {
+    expect(message("tarifa", "15.000")).toBe("Admite como máximo 2 decimales.");
+    expect(message("tarifa", "100.50")).toBe("Admite como máximo 4 dígitos en total.");
+    expect(message("importe", "0.50")).toBeUndefined();
   });
 });

@@ -38,7 +38,7 @@ export class FiscalDecimal {
     this.value = value;
   }
 
-  /** Desde un `DecimalString`: valida formato, dígitos, escala y rango, sin redondear. */
+  /** Desde un `DecimalString`: valida formato, decimales, total y mínimo, sin redondear. */
   static parse(specName: DecimalSpecName, text: string): FiscalDecimal {
     const spec: DecimalSpec = DECIMAL_SPECS[specName];
     const violation = decimalSpecViolation(text, spec);
@@ -59,9 +59,12 @@ export class FiscalDecimal {
     return this.value.toFixed();
   }
 
-  /** Valor para Prisma: texto, que Prisma convierte a `NUMERIC` sin pasar por `number`. */
+  /**
+   * Valor para Prisma: texto, que Prisma convierte a `NUMERIC` sin pasar por `number`. Forma
+   * canónica: las columnas no tienen escala fija y su `CHECK` de dominio cuenta la escala guardada.
+   */
   toDatabase(): string {
-    return this.value.toFixed(DECIMAL_SPECS[this.specName].fractionDigits);
+    return this.value.toFixed();
   }
 
   equals(other: FiscalDecimal): boolean {
@@ -84,7 +87,7 @@ const typed = (specName: DecimalSpecName) => ({
     FiscalDecimal.fromDatabase(specName, stored),
 });
 
-/** Porcentaje de IVA (`tarifa`, 4/2, de 0 a 100). */
+/** Porcentaje no negativo (`tarifa`, 4/2); los límites de cada impuesto son de su catálogo. */
 export const Percentage = typed("tarifa");
 /** Importe monetario no negativo (`importeTotal`, 14/2). */
 export const Money = typed("importe");

@@ -131,7 +131,7 @@ UNIQUE (document_id, product_id, movement_type)
 ```
 
 - El comprobante guarda los códigos de establecimiento y punto como parte de su snapshot, además de las claves foráneas.
-- Importes, precios, cantidades y tarifas son `NUMERIC(dígitos totales, decimales)` de su especificación decimal, con un `CHECK` de su mínimo, según `decimal-policy.md`. La excepción es el precio unitario, que sigue la regla del XSD: `NUMERIC` sin escala fija con un `CHECK` de dominio. El builder aplica la escala de cada campo (CTX §10.6). Nunca `float` ni `double`.
+- Importes, precios, cantidades y tarifas son `NUMERIC` sin escala fija, con un `CHECK` de dominio que fija la regla del XSD de su especificación decimal (mínimo, decimales y dígitos totales), según `decimal-policy.md`. Nunca `NUMERIC(p, s)`, que limita la parte entera (Q-43). El builder aplica la escala de cada campo (CTX §10.6). Nunca `float` ni `double`.
 - Las claves foráneas desde las tablas fiscales hacia terceros, productos, usuarios y establecimientos usan `ON DELETE RESTRICT`. Nada borra en cascada comprobantes ni artefactos (ERS §13.1).
 - Las tablas de solo agregado se protegen en la base de datos: el rol de la aplicación no tiene `UPDATE` ni `DELETE` sobre ellas, o un trigger lo rechaza. La decisión entre ambos va en el cambio que las cree.
 - Las transiciones de estado son actualizaciones guardadas; la base de datos no codifica la máquina de estados completa, pero el estado es un enum cerrado.
@@ -144,7 +144,8 @@ Migraciones: `backend/prisma/migrations/20261002083000_add_user_access` (cambio
 `20261002200000_add_signing_certificate` (cambio `add-signing-certificate`),
 `20261003100000_add_fiscal_catalogs` (cambio `add-fiscal-catalogs`) y
 `20261003200000_add_parties_and_products`, `20261003210000_require_consumer_final` y
-`20261003220000_unit_price_domain` (cambio `add-parties-and-products`). Las tablas
+`20261003220000_unit_price_domain` (cambio `add-parties-and-products`), y
+`20261003230000_xsd_decimal_domains` (mantenimiento de Q-43). Las tablas
 de Better Auth y de sus plugins las genera el CLI `auth`; las columnas de esas tablas usan los
 nombres que fija Better Auth (`organizationId`, `userId`).
 
@@ -168,8 +169,8 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `signing_certificate_settings` | Propia (`signing`) | `expiry_alert_days` por empresa. |
 | `fiscal_catalog_dataset` | Propia (`catalogs`) | Versión aplicada de cada dataset normativo: `catalog_type`, `version`, fuente (documento, versión, fecha de publicación, URL y SHA-256), `enablement_policy`, `checksum` del contenido canónico y `loaded_at`. |
 | `fiscal_catalog_key` | Propia (`catalogs`) | Identidad estable de una entrada: `(catalog_type, entry_key)` y su `code` fiscal, que puede repetirse entre claves (tabla 18 de la ficha). |
-| `fiscal_catalog_entry` | Propia (`catalogs`) | Versión de una entrada: `id` estable, `official_label`, `effective_from` con `effective_from_basis` (`SOURCE_STATED` o `PROJECT_BASELINE`), `effective_to`, `normative_status`, `source_ref`, `dataset_version`, las versiones del dataset que la cerraron o retiraron, y las columnas tipadas de su catálogo (`tax_kind`, `sri_tax_code`, `rate_kind`, `percentage NUMERIC(4,2)`, `identification_pattern`, `identification_rule`, `reserved_for`). |
-| `consumer_final_policy` | Propia (`catalogs`) | Versiones de la política: `max_amount NUMERIC(14,2)`, moneda, identidad canónica (`07`, `9999999999999`, razón social), vigencia con su base, `source_ref` y versión del dataset. |
+| `fiscal_catalog_entry` | Propia (`catalogs`) | Versión de una entrada: `id` estable, `official_label`, `effective_from` con `effective_from_basis` (`SOURCE_STATED` o `PROJECT_BASELINE`), `effective_to`, `normative_status`, `source_ref`, `dataset_version`, las versiones del dataset que la cerraron o retiraron, y las columnas tipadas de su catálogo (`tax_kind`, `sri_tax_code`, `rate_kind`, `percentage NUMERIC`, `identification_pattern`, `identification_rule`, `reserved_for`). |
+| `consumer_final_policy` | Propia (`catalogs`) | Versiones de la política: `max_amount NUMERIC`, moneda, identidad canónica (`07`, `9999999999999`, razón social), vigencia con su base, `source_ref` y versión del dataset. |
 | `schema_registry_entry` | Propia (`catalogs`) | Esquemas XSD por versión del dataset: tipo, versión, raíz, archivo, SHA-256, fuente, `downloaded_at` y `supported`. |
 | `special_case_support` | Propia (`catalogs`) | Categoría de cada anexo por versión del dataset (ADR 0014). |
 | `company_fiscal_catalog_setting` | Propia (`catalogs`) | Decisión de una empresa: `(company_id, catalog_type, entry_key)`, `enabled`, `updated_at` y `updated_by`. |
@@ -247,8 +248,9 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `fiscal_catalog_dataset_enablement_policy_check` | `fiscal_catalog_dataset` | IVA, ICE, IRBPNR y formas de pago tienen `DEFAULT_ENABLED` o `DEFAULT_DISABLED`; los demás, `NOT_ENABLEABLE` | SQL de la migración |
 | `fiscal_catalog_key_catalog_type_check`, `fiscal_catalog_key_entry_key_check`, `fiscal_catalog_key_code_check` | `fiscal_catalog_key` | Los seis catálogos de entradas; `entry_key` `^[0-9A-Z][0-9A-Z-]{0,63}$`; `code` de 1 a 4 dígitos (`codigoPorcentaje` y equivalentes). Sin único sobre el código | SQL de la migración |
 | `fiscal_catalog_entry_basis_check`, `fiscal_catalog_entry_status_check`, `fiscal_catalog_entry_range_check` | `fiscal_catalog_entry` | Base y estado conocidos; una versión `WITHDRAWN` tiene la vigencia cerrada; `effective_to >= effective_from` | SQL de la migración |
-| `fiscal_catalog_entry_attributes_check` | `fiscal_catalog_entry` | Columnas tipadas por catálogo: el porcentaje existe solo en tarifas `PERCENTAGE` de IVA (de 0 a 100); ICE es `PER_NORMATIVE` e IRBPNR `PER_UNIT`, sin valores | SQL de la migración |
+| `fiscal_catalog_entry_attributes_check` | `fiscal_catalog_entry` | Columnas tipadas por catálogo: el porcentaje existe solo en tarifas `PERCENTAGE` de IVA; ICE es `PER_NORMATIVE` e IRBPNR `PER_UNIT`, sin valores | SQL de la migración |
 | `consumer_final_policy_values_check`, `consumer_final_policy_basis_check`, `consumer_final_policy_range_check` | `consumer_final_policy` | Monto no negativo en USD, identidad `07` y `9999999999999`, base conocida y vigencia ordenada | SQL de la migración |
+| `fiscal_catalog_entry_percentage_check`, `consumer_final_policy_max_amount_check` | `fiscal_catalog_entry`, `consumer_final_policy` | Regla del XSD: porcentaje no negativo con 2 decimales y 4 dígitos en total como máximo, sin máximo de 100; monto con 2 decimales y 14 dígitos en total como máximo (Q-43) | SQL de la migración |
 | `schema_registry_entry_values_check`, `special_case_support_values_check`, `company_fiscal_catalog_setting_catalog_type_check` | Varias | Tipos de comprobante y hash del registro; categorías del ADR 0014; solo catálogos habilitables en las decisiones de empresa | SQL de la migración |
 | `fiscal_catalog_dataset_immutable`, `fiscal_catalog_key_immutable`, `schema_registry_entry_immutable`, `special_case_support_immutable` y sus `*_no_truncate` | Datos del sistema | Triggers que rechazan `UPDATE`, `DELETE` y `TRUNCATE` | SQL de la migración |
 | `fiscal_catalog_entry_no_delete`, `consumer_final_policy_no_delete` y sus `*_no_truncate` | Versiones | Triggers que rechazan borrar versiones | SQL de la migración |

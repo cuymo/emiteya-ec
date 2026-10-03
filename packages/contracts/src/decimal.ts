@@ -1,26 +1,22 @@
 // Política decimal común del producto (add-fiscal-catalogs, design D10). Un decimal viaja siempre
 // como texto (`DecimalString`), nunca como número JSON, que ya pasó por coma flotante. Los tipos
-// del dominio restringen esa representación universal con las escalas y el mínimo de su tipo XSD.
+// del dominio restringen esa representación universal con la regla de su tipo XSD: dígitos totales,
+// decimales y mínimo. La regla del XSD manda, no la semántica de `NUMERIC(p, s)` (Q-43).
 import { z } from "zod";
 
 /** Representación textual universal: signo opcional, punto decimal, sin exponente ni separadores. */
 export const DECIMAL_STRING_PATTERN = /^-?(0|[1-9][0-9]*)(\.[0-9]+)?$/;
 
 export type DecimalSpec = {
-  /** Dígitos totales del `xsd:decimal` de origen (`totalDigits`). */
+  /**
+   * Dígitos totales del `xsd:decimal` de origen (`totalDigits`). La parte entera usa los que no
+   * ocupan los decimales: con 18/6 valen `999999999999999999` y `999999999999.999999`.
+   */
   totalDigits: number;
   /** Decimales máximos (`fractionDigits`). */
   fractionDigits: number;
-  /**
-   * Enteros máximos. Por defecto, los dígitos totales menos los decimales, la semántica de
-   * `NUMERIC(p, s)`. Un tipo que sigue la regla del XSD declara aquí sus dígitos totales: la parte
-   * entera usa los que no ocupan los decimales, y el total sigue limitado a `totalDigits`.
-   */
-  maxIntegerDigits?: number;
   /** Mínimo inclusivo (`minInclusive`); null si el tipo admite negativos. */
   min: string | null;
-  /** Máximo de dominio adicional, si lo hay (por ejemplo, un porcentaje no supera 100). */
-  max?: string;
   /** Tipos XSD de los que sale la escala y documentos en que es común (`codDoc`). */
   xsd: { types: readonly string[]; documents: readonly string[] };
 };
@@ -29,14 +25,19 @@ export type DecimalSpec = {
  * Especificaciones de los campos del producto. La escala no es una elección: es la del tipo XSD
  * equivalente en todos los documentos que lo definen, y una prueba lo comprueba contra los seis
  * XSD versionados. Excepción conocida: la retención 2.0.0 define `tarifa` con 3/2.
+ *
+ * Son primitivos compartidos: los límites normativos de un impuesto o de un código (por ejemplo,
+ * el porcentaje de una tarifa de IVA) pertenecen a su catálogo, no a la especificación (Q-43).
  */
 export const DECIMAL_SPECS = {
-  /** Porcentaje de IVA: `tarifa` de factura, liquidación, nota de crédito y nota de débito. */
+  /**
+   * Porcentaje: `tarifa` de factura, liquidación, nota de crédito y nota de débito. Sin máximo de
+   * 100: la ficha v2.34 publica tarifas de ICE superiores.
+   */
   tarifa: {
     totalDigits: 4,
     fractionDigits: 2,
     min: "0",
-    max: "100",
     xsd: { types: ["tarifa"], documents: ["01", "03", "04", "05"] },
   },
   /** Importes monetarios no negativos: `importeTotal` y equivalentes, 14/2 en los seis XSD. */
@@ -46,14 +47,10 @@ export const DECIMAL_SPECS = {
     min: "0",
     xsd: { types: ["importeTotal"], documents: ["01", "03", "07"] },
   },
-  /**
-   * Precio unitario: `precioUnitario` de factura, liquidación y nota de crédito. Sigue la regla del
-   * XSD: 18 dígitos en total, de los cuales 6 decimales como máximo (add-parties-and-products, D9).
-   */
+  /** Precio unitario: `precioUnitario` de factura, liquidación y nota de crédito. */
   precioUnitario: {
     totalDigits: 18,
     fractionDigits: 6,
-    maxIntegerDigits: 18,
     min: "0",
     xsd: { types: ["precioUnitario"], documents: ["01", "03", "04"] },
   },
@@ -118,13 +115,8 @@ export function canonicalDecimal(text: string): string {
 export function decimalSpecViolation(text: string, spec: DecimalSpec): string | null {
   if (!isDecimalString(text)) return FORMAT_MESSAGE;
   const { integer, fraction } = decimalParts(text);
-  const integerDigits = spec.maxIntegerDigits ?? spec.totalDigits - spec.fractionDigits;
   if (fraction.length > spec.fractionDigits) {
     return `Admite como máximo ${spec.fractionDigits} decimales.`;
-  }
-  // Con la regla del XSD los enteros solo están limitados por el total, que es lo que se informa.
-  if (integerDigits < spec.totalDigits && integer.length > integerDigits) {
-    return `Admite como máximo ${integerDigits} dígitos enteros.`;
   }
   // Dígitos como se escriben; el cero de la parte entera de `0.5` no es significativo.
   if ((integer === "0" ? 0 : integer.length) + fraction.length > spec.totalDigits) {
@@ -132,9 +124,6 @@ export function decimalSpecViolation(text: string, spec: DecimalSpec): string | 
   }
   if (spec.min !== null && compareDecimalStrings(text, spec.min) < 0) {
     return `Debe ser mayor o igual que ${spec.min}.`;
-  }
-  if (spec.max !== undefined && compareDecimalStrings(text, spec.max) > 0) {
-    return `Debe ser menor o igual que ${spec.max}.`;
   }
   return null;
 }
@@ -144,7 +133,7 @@ export const decimalStringSchema = z
   .string({ error: FORMAT_MESSAGE })
   .refine(isDecimalString, FORMAT_MESSAGE);
 
-/** Esquema de un campo con su especificación: universal y después dígitos, escala y rango. */
+/** Esquema de un campo con su especificación: universal y después decimales, total y mínimo. */
 export function decimalString(spec: DecimalSpec) {
   return z.string({ error: FORMAT_MESSAGE }).superRefine((text, ctx) => {
     const violation = decimalSpecViolation(text, spec);

@@ -87,8 +87,7 @@ function columns(data: Parameters<ProductRepository["create"]>[1]) {
     auxiliaryCode: data.auxiliaryCode,
     name: data.name,
     description: data.description,
-    // Forma canónica: la columna no tiene escala fija y su CHECK cuenta la escala guardada (D9).
-    unitPrice: UnitPrice.parse(data.unitPrice).toString(),
+    unitPrice: UnitPrice.parse(data.unitPrice).toDatabase(),
     stockTracked: data.stockTracked,
     ...productSearchKeys(data),
   };
