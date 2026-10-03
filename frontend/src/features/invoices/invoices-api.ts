@@ -120,7 +120,9 @@ export function useEmitInvoice(options: {
       }),
     success: (invoice) =>
       invoiceFeedback(invoice, `Emitiste la factura ${invoice.documentNumber}.`),
-    invalidate: [DRAFTS_KEY, INVOICES_KEY],
+    // Solo la lista: el detalle del borrador emitido ya no existe como borrador, y el editor que lo
+    // muestra navega a la factura.
+    invalidate: [[...DRAFTS_KEY, "list"], INVOICES_KEY],
     onSuccess: options.onSuccess,
     onError: options.onError,
   });
@@ -175,7 +177,10 @@ export function useRetrySigning() {
   });
 }
 
-/** Compradores para el selector: terceros activos con rol de cliente. */
+/**
+ * Compradores para el selector: terceros activos con rol de cliente. El consumidor final del sistema
+ * no se repite entre los resultados: el selector lo ofrece como opción rápida.
+ */
 export async function fetchCustomers({
   search,
   page,
@@ -194,7 +199,8 @@ export async function fetchCustomers({
     meta: partyListMetaSchema,
     signal,
   });
-  return { items: data, total: meta.total };
+  const items = data.filter((party) => party.systemRecord !== "CONSUMER_FINAL");
+  return { items, total: meta.total - (data.length - items.length) };
 }
 
 /** El consumidor final de la empresa, el registro del sistema con la identidad de la política. */

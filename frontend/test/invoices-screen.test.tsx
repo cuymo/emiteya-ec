@@ -233,7 +233,7 @@ describe("detalle de una factura", () => {
     expect(status.textContent).toContain("No se completó la firma: Firma.");
     expect(status.textContent).toContain("El servicio de firma está saturado");
     expect(status.textContent).toContain("Puedes reintentar ahora.");
-    expect(status.textContent).toContain("Intentos: 1.");
+    expect(status.textContent).toContain("Intentos: 1 · último intento:");
     await userEvent.setup().click(screen.getByRole("button", { name: "Reintentar firma" }));
     expect(await screen.findByText("Firmaste la factura 001-001-000000001.")).toBeDefined();
     expect(calls.some((call) => call.key === "POST /api/v1/invoices/inv-1/signing-attempts")).toBe(

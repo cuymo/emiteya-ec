@@ -131,8 +131,8 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
               </p>
               <p>{data.diagnostic.message}</p>
               <p className="text-foreground-muted">
-                {CLASS_LABELS[data.diagnostic.class]} Intentos: {data.diagnostic.attemptCount}.
-                Último: {formatDateTime(data.diagnostic.at)}.
+                {CLASS_LABELS[data.diagnostic.class]} Intentos: {data.diagnostic.attemptCount} ·
+                último intento: {formatDateTime(data.diagnostic.at)}
               </p>
             </>
           ) : (
@@ -172,7 +172,9 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
                       {line.taxes.map((tax) => ` · IVA ${formatPercentage(tax.percentage)}`)}
                     </span>
                   </span>
-                  <span className="tabular-nums">{formatUsd(line.taxableBase)}</span>
+                  <span className="whitespace-nowrap tabular-nums">
+                    {formatUsd(line.taxableBase)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -182,7 +184,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
               {data.payments.map((payment, index) => (
                 <li key={index} className="flex justify-between gap-1 tabular-nums">
                   <span className="break-words">{methodLabel(payment.code)}</span>
-                  <span>{formatUsd(payment.amount)}</span>
+                  <span className="whitespace-nowrap">{formatUsd(payment.amount)}</span>
                 </li>
               ))}
             </ul>

@@ -285,7 +285,8 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   const paymentIssues = (position: number) => issues.filter((issue) => issue.payment === position);
   const generalIssues = issues.filter((issue) => issue.line === null && issue.payment === null);
   const environment = status.data ? ENVIRONMENT_LABELS[status.data.environment] : null;
-  const emitBlocked = !draft || isDirty || issues.length > 0;
+  // Mientras se guarda, la emisión espera: el guardado vuelve a montar el editor con la versión nueva.
+  const emitBlocked = !draft || isDirty || issues.length > 0 || save.isPending;
   const emitHintId = useId();
   const emitHint = !draft
     ? "Guarda el borrador para emitirlo."

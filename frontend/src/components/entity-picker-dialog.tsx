@@ -92,8 +92,9 @@ export function EntityPickerDialog<T>({
   const items = results.data?.items ?? [];
   const total = results.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / pageSize));
-  // La opción rápida solo acompaña a la primera página sin búsqueda.
-  const showQuick = quickOption !== undefined && search === "" && page === 1;
+  // La opción rápida solo acompaña a la primera página sin búsqueda, ni escrita ni aplicada.
+  const pending = draft.trim() !== search;
+  const showQuick = quickOption !== undefined && search === "" && !pending && page === 1;
   const options: { key: string; label: string; select: () => void; content: ReactNode }[] = [
     ...(showQuick
       ? [
@@ -139,6 +140,19 @@ export function EntityPickerDialog<T>({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      // Con una búsqueda escrita y aún sin aplicar, Enter la aplica en lugar de elegir un
+      // resultado anterior a ella.
+      if (pending) {
+        setSearch(draft.trim());
+        setPage(1);
+        setActive(0);
+        return;
+      }
+      choose(activeIndex);
+      return;
+    }
     if (options.length === 0) return;
     const move = (index: number) => {
       event.preventDefault();
@@ -149,10 +163,6 @@ export function EntityPickerDialog<T>({
     else if (event.key === "ArrowUp") move((activeIndex - 1 + options.length) % options.length);
     else if (event.key === "Home") move(0);
     else if (event.key === "End") move(options.length - 1);
-    else if (event.key === "Enter") {
-      event.preventDefault();
-      choose(activeIndex);
-    }
   }
 
   const goTo = (next: number) => {

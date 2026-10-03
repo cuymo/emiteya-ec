@@ -128,6 +128,21 @@ describe("EntityPickerDialog", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
+  it("Enter con una búsqueda aún sin aplicar la aplica en lugar de elegir un resultado anterior", async () => {
+    const onSelect = vi.fn();
+    const onQuick = vi.fn();
+    renderApp(<Picker fetchPage={serve()} onSelect={onSelect} onQuick={onQuick} />);
+    const user = userEvent.setup();
+    const input = await screen.findByRole("combobox", { name: "Buscar por código o nombre" });
+    await screen.findByRole("option", { name: "Consumidor final" });
+    await user.type(input, "C-12{Enter}");
+    expect(onQuick).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
+    await screen.findByRole("option", { name: "Producto 12, C-12" });
+    await user.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenCalledWith(ITEMS[11]);
+  });
+
   it("la opción rápida se elige con un clic y cierra el diálogo", async () => {
     const onQuick = vi.fn();
     const onSelect = vi.fn();
