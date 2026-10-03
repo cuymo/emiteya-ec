@@ -292,7 +292,7 @@ La idempotencia añade `400 IDEMPOTENCY_KEY_REQUIRED` y `409 IDEMPOTENCY_KEY_REU
   Los borradores, las consultas y las emisiones rechazadas no generan eventos.
 - **Métricas.** Cada emisión alimenta el histograma `invoice_emission_stage_duration_seconds{stage,outcome}` con las etapas `total`, `reservation_tx`, `validation_snapshot`, `arithmetic`, `xml`, `xsd`, `sign` y `persist` (`deployment.md`).
   - Con `EMISSION_STAGE_TIMINGS=1`, que el entorno rechaza en producción, la respuesta lleva además `Server-Timing`.
-  - `bench:emission` mide con ellas un P95 total de 884 ms en el entorno registrado (`../quality/benchmarks/emission-2026-10-03.md`).
+  - `bench:emission` mide con ellas un P95 total de 1630 ms en el entorno registrado (884 ms en una ejecución anterior sobre el mismo código; `../quality/performance.md`).
 
 ### Obligaciones cumplidas
 

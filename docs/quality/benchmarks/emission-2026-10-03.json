@@ -31,8 +31,8 @@
     "users": 10,
     "warmup": 30,
     "samples": 300,
-    "averageLines": 3.15,
-    "throughputPerSecond": 13.7
+    "averageLines": 3.16,
+    "throughputPerSecond": 12.6
   },
   "budgetMs": 2000,
   "environment": {
@@ -47,58 +47,58 @@
     "os": "Linux 7.1.6-1-cachyos",
     "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
     "memory": "16 GiB",
-    "commit": "726c488",
+    "commit": "eb185e2",
     "backend": "main.ts con Node --conditions=development; XSD_VALIDATION_CONCURRENCY=2, XSD_VALIDATION_QUEUE=16, CRYPTO_WORKERS=2 (valores por defecto)"
   },
   "stages": {
     "validation_snapshot": {
-      "p50": 19.1,
-      "p95": 28.1,
-      "max": 51.3
+      "p50": 16.7,
+      "p95": 24.1,
+      "max": 34.6
     },
     "arithmetic": {
       "p50": 0.2,
       "p95": 0.3,
-      "max": 0.8
+      "max": 0.5
     },
     "reservation_tx": {
-      "p50": 41.3,
-      "p95": 465.4,
-      "max": 773.5
+      "p50": 38.1,
+      "p95": 883,
+      "max": 2225.9
     },
     "xml": {
       "p50": 0.1,
       "p95": 0.2,
-      "max": 1.1
+      "max": 0.4
     },
     "xsd": {
-      "p50": 508.3,
-      "p95": 542.6,
-      "max": 572.9
+      "p50": 479.4,
+      "p95": 510.3,
+      "max": 529.3
     },
     "sign": {
-      "p50": 62.8,
-      "p95": 72.2,
-      "max": 111.6
+      "p50": 61,
+      "p95": 70.1,
+      "max": 87.2
     },
     "persist": {
-      "p50": 9.7,
-      "p95": 88.1,
-      "max": 447
+      "p50": 8.9,
+      "p95": 136.7,
+      "max": 1923.1
     },
     "total": {
-      "p50": 634.6,
-      "p95": 883.7,
-      "max": 1403.8
+      "p50": 603,
+      "p95": 1629.7,
+      "max": 2572.6
     }
   },
   "client": {
-    "p50": 639.6,
-    "p95": 891.4,
-    "max": 1408.8
+    "p50": 607.2,
+    "p95": 1633.6,
+    "max": 2578.4
   },
   "measuredArtifactBytes": {
-    "p50": 8343,
+    "p50": 8344,
     "p95": 9463,
     "max": 9482
   },
