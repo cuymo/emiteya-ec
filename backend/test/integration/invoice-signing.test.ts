@@ -1,8 +1,9 @@
 // Del snapshot al artefacto firmado (add-invoice-emission, tarea 9.1, design D9) contra PostgreSQL
 // y el pool criptográfico reales: el artefacto exacto con su SHA-256, tamaño, tipo y metadatos, el
-// XML firmado que vuelve a validar y verifica, SIGNED solo con su artefacto, y el XML construido
-// solo desde el snapshot aunque cambien el producto o la empresa.
+// XML firmado que vuelve a validar y verifica, SIGNED solo con su artefacto, el XML construido
+// solo desde el snapshot aunque cambien el producto o la empresa, y las etapas medidas (design D16).
 import { createHash, randomUUID } from "node:crypto";
+import { Registry } from "@prometheus-io/client";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { InvoiceView } from "@facturador/contracts";
@@ -39,6 +40,8 @@ describe("firma de la factura hasta SIGNED con su artefacto exacto", () => {
   let db: MigratedSchema;
   let api: ReturnType<typeof buildTaxpayerApp>;
   let crashing: ReturnType<typeof buildTaxpayerApp>;
+  let timed: ReturnType<typeof buildTaxpayerApp>;
+  const registry = new Registry();
   let a: ReadyCompany;
   const pool = createCryptoWorkerPool({
     entry: certificateTasksEntry(),
@@ -81,6 +84,10 @@ describe("firma de la factura hasta SIGNED con su artefacto exacto", () => {
     crashing = buildTaxpayerApp(db, {
       signing: { pool, custody: CUSTODY },
       invoices: { signAfterReserve: false },
+    });
+    timed = buildTaxpayerApp(db, {
+      signing: { pool, custody: CUSTODY },
+      invoices: { stageTimings: true, metrics: registry },
     });
     a = await readyCompany(api, db, { slug: "a", pool, p12Dir: inject("p12FixturesDir") });
   }, 180_000);
@@ -214,5 +221,52 @@ describe("firma de la factura hasta SIGNED con su artefacto exacto", () => {
     });
     expect(document.state).toBe("RESERVED");
     expect(await prisma.documentArtifact.count({ where: { documentId: reserved.id } })).toBe(0);
+  });
+
+  it("solo con EMISSION_STAGE_TIMINGS devuelve Server-Timing; el histograma recibe cada etapa", async () => {
+    const plain = await emit(await draftFor(a));
+    expect(plain.status).toBe(201);
+    expect(plain.headers["server-timing"]).toBeUndefined();
+
+    const res = await emit(await draftFor(a), timed.app);
+    expect(res.status).toBe(201);
+    const header = String(res.headers["server-timing"]);
+    expect(header).toMatch(/^(\w+;dur=\d+\.\d)(, \w+;dur=\d+\.\d)*$/);
+    const stages = [
+      "total",
+      "reservation_tx",
+      "validation_snapshot",
+      "arithmetic",
+      "xml",
+      "xsd",
+      "sign",
+      "persist",
+    ];
+    expect(header.split(", ").map((entry) => entry.split(";")[0])).toEqual(stages);
+
+    const draft = await draftFor(a);
+    const rejected = await emit({ id: draft.id, version: draft.version + 1 }, timed.app);
+    expect(rejected.status).toBe(409);
+    // La versión se compara con el borrador bloqueado, dentro de la transacción.
+    expect(String(rejected.headers["server-timing"])).toMatch(
+      /^total;dur=\d+\.\d, reservation_tx;dur=\d+\.\d$/,
+    );
+
+    const exposition = await registry.getSingleMetricAsString(
+      "invoice_emission_stage_duration_seconds",
+    );
+    const counts = [...exposition.matchAll(/^\w+_count\{([^}]*)\} (\d+)$/gm)].map(
+      ([, labels, n]) => {
+        const label = new Map([...labels!.matchAll(/(\w+)="([^"]*)"/g)].map(([, k, v]) => [k, v]));
+        return `${label.get("stage")}:${label.get("outcome")}=${n}`;
+      },
+    );
+    expect(counts.sort()).toEqual(
+      [
+        ...stages.map((stage) => `${stage}:signed=1`),
+        "total:rejected=1",
+        "reservation_tx:rejected=1",
+      ].sort(),
+    );
   });
 });

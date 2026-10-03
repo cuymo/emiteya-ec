@@ -233,6 +233,8 @@ apiRouter.use(
     xsd: xsdValidator,
     signer: signing.documents,
     maxLines: env.INVOICE_MAX_LINES,
+    metrics: metrics.registry,
+    stageTimings: env.EMISSION_STAGE_TIMINGS,
     logger,
   }).routers,
 );

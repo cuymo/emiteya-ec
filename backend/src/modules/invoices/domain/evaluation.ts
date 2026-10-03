@@ -216,7 +216,17 @@ export function issuerSpecialCases(
   ];
 }
 
-export function evaluateInvoice(input: EvaluationInput): Evaluation {
+/** Mide un tramo síncrono; la identidad por defecto. */
+export type MeasureSync = <T>(work: () => T) => T;
+
+/**
+ * `measureArithmetic` envuelve el cálculo de importes (grupo 6) para la etapa `arithmetic` del
+ * benchmark (design D16); no cambia el resultado.
+ */
+export function evaluateInvoice(
+  input: EvaluationInput,
+  measureArithmetic: MeasureSync = (work) => work(),
+): Evaluation {
   const issues: InvoiceIssue[] = [];
   const { draft } = input;
 
@@ -403,57 +413,60 @@ export function evaluateInvoice(input: EvaluationInput): Evaluation {
   });
 
   // 6. Cálculo y límites del esquema.
-  const lines: EvaluatedLine[] = [];
-  draft.lines.forEach((line, index) => {
-    const position = index + 1;
-    const product = input.products.get(line.productId);
-    const subtotal = subtotals.get(position);
-    if (!product || subtotal === undefined || lineIssues.has(position)) return;
-    try {
-      const discount = lineDiscount(line.discount, subtotal);
-      const base = taxableBase(subtotal, discount);
-      lines.push({
-        position,
-        productId: product.id,
-        mainCode: product.mainCode,
-        auxiliaryCode: product.auxiliaryCode,
-        description: product.name,
-        quantity: line.quantity,
-        unitPrice: product.unitPrice,
-        discount,
-        subtotal,
-        taxableBase: base,
-        taxes: (rates.get(position) ?? []).map((rate) => ({
-          ...rate,
-          base,
-          amount: taxAmount(base, rate.percentage),
-        })),
-      });
-    } catch (error) {
-      if (!(error instanceof InvoiceAmountError)) throw error;
-      issues.push(
-        issue(
-          "AMOUNT_OUT_OF_RANGE",
-          `Línea ${position}: un importe calculado supera los 14 dígitos que admite el XSD.`,
-          { line: position },
-        ),
-      );
+  const { lines, totals } = measureArithmetic(() => {
+    const lines: EvaluatedLine[] = [];
+    draft.lines.forEach((line, index) => {
+      const position = index + 1;
+      const product = input.products.get(line.productId);
+      const subtotal = subtotals.get(position);
+      if (!product || subtotal === undefined || lineIssues.has(position)) return;
+      try {
+        const discount = lineDiscount(line.discount, subtotal);
+        const base = taxableBase(subtotal, discount);
+        lines.push({
+          position,
+          productId: product.id,
+          mainCode: product.mainCode,
+          auxiliaryCode: product.auxiliaryCode,
+          description: product.name,
+          quantity: line.quantity,
+          unitPrice: product.unitPrice,
+          discount,
+          subtotal,
+          taxableBase: base,
+          taxes: (rates.get(position) ?? []).map((rate) => ({
+            ...rate,
+            base,
+            amount: taxAmount(base, rate.percentage),
+          })),
+        });
+      } catch (error) {
+        if (!(error instanceof InvoiceAmountError)) throw error;
+        issues.push(
+          issue(
+            "AMOUNT_OUT_OF_RANGE",
+            `Línea ${position}: un importe calculado supera los 14 dígitos que admite el XSD.`,
+            { line: position },
+          ),
+        );
+      }
+    });
+    let totals: InvoiceTotals | null = null;
+    if (draft.lines.length > 0 && lines.length === draft.lines.length) {
+      try {
+        totals = invoiceTotals(lines);
+      } catch (error) {
+        if (!(error instanceof InvoiceAmountError)) throw error;
+        issues.push(
+          issue(
+            "AMOUNT_OUT_OF_RANGE",
+            "Un total de la factura supera los 14 dígitos y 2 decimales que admite el XSD.",
+          ),
+        );
+      }
     }
+    return { lines, totals };
   });
-  let totals: InvoiceTotals | null = null;
-  if (draft.lines.length > 0 && lines.length === draft.lines.length) {
-    try {
-      totals = invoiceTotals(lines);
-    } catch (error) {
-      if (!(error instanceof InvoiceAmountError)) throw error;
-      issues.push(
-        issue(
-          "AMOUNT_OUT_OF_RANGE",
-          "Un total de la factura supera los 14 dígitos y 2 decimales que admite el XSD.",
-        ),
-      );
-    }
-  }
 
   // 7. Formas de pago utilizables y que suman el importe total.
   const methods: EvaluatedPayment[] = [];

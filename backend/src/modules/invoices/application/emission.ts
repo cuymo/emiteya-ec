@@ -2,7 +2,9 @@
 // transacción: permiso, cabecera Idempotency-Key, repetición en el registro y archivos del esquema.
 // Dentro, en el orden de D7: borrador bloqueado, configuración bloqueada, evaluación, snapshot,
 // secuencial, identidad bloqueada, código numérico y clave, comprobante RESERVED con su transición,
-// borrador EMITTED, registro de idempotencia y auditoría. Después del commit, la firma (D9).
+// borrador EMITTED, registro de idempotencia y auditoría. Después del commit, la firma (D9). Las
+// etapas `reservation_tx`, `validation_snapshot` y `arithmetic` se miden para el benchmark y el
+// histograma de la emisión (D16).
 import { emitInvoiceSchema } from "@facturador/contracts";
 import {
   idempotencyKeyReused,
@@ -11,6 +13,7 @@ import {
   IdempotencyCollisionError,
   type IdempotencyStore,
 } from "../../../platform/idempotency/idempotency.ts";
+import { NO_TIMINGS, type StageTimings } from "../../../platform/metrics/stage-timings.ts";
 import type { DocumentRepository, StoredDocument } from "../../fiscal/application/ports.ts";
 import { parseInput, type Authorizer } from "../../identity/application/authorization.ts";
 import type { RequestContext } from "../../identity/application/request-context.ts";
@@ -44,6 +47,7 @@ export type EmissionResult = Readonly<{ document: StoredDocument; replayed: bool
 export type ContinueToSigned = (
   ctx: RequestContext,
   document: StoredDocument,
+  timings?: StageTimings,
 ) => Promise<StoredDocument>;
 
 export type EmissionDependencies = {
@@ -76,12 +80,16 @@ export function createEmission(deps: EmissionDependencies) {
   const continueToSigned: ContinueToSigned =
     deps.continueToSigned ?? ((_ctx, document) => Promise.resolve(document));
 
-  async function replay(ctx: RequestContext, documentId: string): Promise<EmissionResult> {
+  async function replay(
+    ctx: RequestContext,
+    documentId: string,
+    timings: StageTimings,
+  ): Promise<EmissionResult> {
     const document = await deps.documents.find(ctx.companyId, documentId);
     if (!document)
       throw new Error("El registro de idempotencia apunta a un comprobante inexistente.");
     const current =
-      document.state === "RESERVED" ? await continueToSigned(ctx, document) : document;
+      document.state === "RESERVED" ? await continueToSigned(ctx, document, timings) : document;
     return { document: current, replayed: true };
   }
 
@@ -90,11 +98,12 @@ export function createEmission(deps: EmissionDependencies) {
     ctx: RequestContext,
     key: string,
     fingerprint: string,
+    timings: StageTimings,
   ): Promise<EmissionResult | null> {
     const record = await deps.idempotency.find(ctx.companyId, EMIT_OPERATION, key);
     if (!record) return null;
     if (record.fingerprint !== fingerprint) throw idempotencyKeyReused();
-    return replay(ctx, record.documentId);
+    return replay(ctx, record.documentId, timings);
   }
 
   /** Archivos del esquema disponibles con su hash, antes de abrir la transacción (design D6). */
@@ -119,6 +128,7 @@ export function createEmission(deps: EmissionDependencies) {
     key: string,
     fingerprint: string,
     issueDate: string,
+    timings: StageTimings,
   ): Promise<StoredDocument> {
     return deps.uow.run(async (scope) => {
       // 1. Borrador bloqueado.
@@ -128,32 +138,32 @@ export function createEmission(deps: EmissionDependencies) {
       if (draft.version !== input.expectedVersion) throw draftChanged();
       // 2. Configuración bloqueada; 3. evaluación con lecturas coherentes.
       await scope.lockConfiguration(ctx.companyId);
-      const context = await readEvaluation(
-        scope.reads,
-        ctx.companyId,
-        draft,
-        issueDate,
-        deps.maxLines,
+      const context = await timings.measure("validation_snapshot", () =>
+        readEvaluation(scope.reads, ctx.companyId, draft, issueDate, deps.maxLines),
       );
-      const evaluation = evaluateInvoice(context.input);
+      const evaluation = timings.measureSync("validation_snapshot", () =>
+        evaluateInvoice(context.input, (work) => timings.measureSync("arithmetic", work)),
+      );
       const first = evaluation.issues[0];
       if (first) throw new EmissionRejectedError(first);
       const { config, schema, input: evaluated } = context;
       if (!config || !schema || !evaluated.point) throw new Error("Evaluación incompleta.");
       // 4. Snapshot sin el secuencial.
-      const draftSnapshot = buildSnapshot({
-        input: evaluated,
-        evaluation,
-        schema: {
-          documentType: "01",
-          version: schema.version,
-          path: schema.path,
-          sha256: schema.sha256,
-          imports: schema.imports.map(({ path, sha256 }) => ({ path, sha256 })),
-        },
-        builderVersion: deps.builderVersion,
-        datasetVersions: await scope.reads.catalogs.datasetVersions(),
-      });
+      const draftSnapshot = await timings.measure("validation_snapshot", async () =>
+        buildSnapshot({
+          input: evaluated,
+          evaluation,
+          schema: {
+            documentType: "01",
+            version: schema.version,
+            path: schema.path,
+            sha256: schema.sha256,
+            imports: schema.imports.map(({ path, sha256 }) => ({ path, sha256 })),
+          },
+          builderVersion: deps.builderVersion,
+          datasetVersions: await scope.reads.catalogs.datasetVersions(),
+        }),
+      );
       // 5. Secuencial con el ambiente del snapshot.
       const reservation = await scope.reserveSequential({
         companyId: ctx.companyId,
@@ -248,26 +258,29 @@ export function createEmission(deps: EmissionDependencies) {
       ctx: RequestContext,
       idempotencyKey: string | readonly string[] | undefined,
       body: unknown,
+      timings: StageTimings = NO_TIMINGS,
     ): Promise<EmissionResult> {
       deps.authorizer.requirePermission(ctx, "invoices.emit");
       const key = readIdempotencyKey(idempotencyKey);
       const input = parseInput(emitInvoiceSchema, body);
       const fingerprint = requestFingerprint(EMIT_OPERATION, input);
-      const existing = await resolveExisting(ctx, key, fingerprint);
+      const existing = await resolveExisting(ctx, key, fingerprint, timings);
       if (existing) return existing;
       // La fecha de emisión se captura una sola vez y viaja como argumento (design D6).
       const issueDate = deps.today();
       await ensureSchema();
       let document: StoredDocument;
       try {
-        document = await reserve(ctx, input, key, fingerprint, issueDate);
+        document = await timings.envelope("reservation_tx", () =>
+          reserve(ctx, input, key, fingerprint, issueDate, timings),
+        );
       } catch (error) {
         if (error instanceof IdempotencyCollisionError) {
-          const resolved = await resolveExisting(ctx, key, fingerprint);
+          const resolved = await resolveExisting(ctx, key, fingerprint, timings);
           if (resolved) return resolved;
         }
         if (error instanceof DraftEmittedSignal) {
-          const resolved = await resolveExisting(ctx, key, fingerprint);
+          const resolved = await resolveExisting(ctx, key, fingerprint, timings);
           if (resolved) return resolved;
           throw new DraftAlreadyEmittedError(error.documentId);
         }
@@ -279,7 +292,7 @@ export function createEmission(deps: EmissionDependencies) {
         }
         throw error;
       }
-      return { document: await continueToSigned(ctx, document), replayed: false };
+      return { document: await continueToSigned(ctx, document, timings), replayed: false };
     },
   };
 }

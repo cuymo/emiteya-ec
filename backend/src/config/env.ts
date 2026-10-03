@@ -81,6 +81,12 @@ export const envSchema = z
     XSD_VALIDATION_TIMEOUT_MS: int(1_000, 60_000).default(10_000),
     // Líneas por factura (design D2): defensa de recursos de la aplicación, no un límite del SRI.
     INVOICE_MAX_LINES: int(1, 1_000).default(100),
+    // Cabecera `Server-Timing` con las etapas de la emisión (design D16): solo para el benchmark y
+    // el diagnóstico local; prohibida en producción.
+    EMISSION_STAGE_TIMINGS: z
+      .enum(["0", "1"])
+      .default("0")
+      .transform((value) => value === "1"),
     // Solo se validan cuando la instalación aún no tiene empresa (loadInitialAdmin).
     INITIAL_USER_EMAIL: z.string().optional(),
     INITIAL_USER_PASSWORD: z.string().optional(),
@@ -98,6 +104,9 @@ export const envSchema = z
     }
     if (env.NODE_ENV === "production" && env.CERTIFICATE_CUSTODY === "disabled") {
       ctx.addIssue({ code: "custom", path: ["CERTIFICATE_CUSTODY"], message: "disabled" });
+    }
+    if (env.NODE_ENV === "production" && env.EMISSION_STAGE_TIMINGS) {
+      ctx.addIssue({ code: "custom", path: ["EMISSION_STAGE_TIMINGS"], message: "en producción" });
     }
   });
 

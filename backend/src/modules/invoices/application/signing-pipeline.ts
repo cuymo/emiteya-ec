@@ -2,8 +2,10 @@
 // la reserva y fuera de toda transacción larga: arriendo del intento, XML desde el snapshot, XSD,
 // firma con la firma vigente, XSD del XML firmado y, en una transacción, el artefacto exacto con el
 // paso a SIGNED, su transición y la auditoría. Un fallo deja el comprobante RESERVED con el
-// diagnóstico del último intento; nunca reintenta por su cuenta.
+// diagnóstico del último intento; nunca reintenta por su cuenta. Las etapas se miden como `xml`,
+// `xsd` (antes y después de firmar), `sign` y `persist` (design D16).
 import type { SigningAttemptCode, SigningAttemptStage } from "@facturador/contracts";
+import { NO_TIMINGS, type StageTimings } from "../../../platform/metrics/stage-timings.ts";
 import type { DocumentRepository, StoredDocument } from "../../fiscal/application/ports.ts";
 import type { AttemptDetail } from "../../fiscal/domain/document.ts";
 import type { RequestContext } from "../../identity/application/request-context.ts";
@@ -30,6 +32,15 @@ export type DocumentSigner = {
     xml: string,
     documentType: "01",
   ): Promise<{ xml: string; certificateFingerprint: string; certificateId: string }>;
+};
+
+/** Etapa del benchmark y del histograma de la emisión para cada etapa del intento. */
+const TIMING_STAGE: Record<SigningAttemptStage, string> = {
+  BUILD_XML: "xml",
+  VALIDATE_XSD: "xsd",
+  SIGN: "sign",
+  VALIDATE_SIGNED_XSD: "xsd",
+  PERSIST: "persist",
 };
 
 /** Fallo tipado de una etapa del intento. */
@@ -93,20 +104,20 @@ export type SigningPipelineDependencies = {
 export function createSigningPipeline(deps: SigningPipelineDependencies) {
   const now = deps.now ?? (() => new Date());
 
-  async function stage<T>(
-    name: SigningAttemptStage,
-    current: { stage: SigningAttemptStage },
-    work: () => Promise<T>,
-  ): Promise<T> {
-    current.stage = name;
-    return work();
-  }
-
   /** Lleva un comprobante RESERVED a SIGNED, o deja su diagnóstico. Devuelve su estado actual. */
   async function continueToSigned(
     ctx: RequestContext,
     document: StoredDocument,
+    timings: StageTimings = NO_TIMINGS,
   ): Promise<StoredDocument> {
+    const stage = <T>(
+      name: SigningAttemptStage,
+      current: { stage: SigningAttemptStage },
+      work: () => Promise<T>,
+    ): Promise<T> => {
+      current.stage = name;
+      return timings.measure(TIMING_STAGE[name], work);
+    };
     const { companyId } = ctx;
     if (document.state !== "RESERVED") return document;
     const started = now();

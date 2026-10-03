@@ -2,6 +2,7 @@
 // design D3 y los routers de usuarios, taxpayer y fiscal montados como en main.ts.
 import { randomInt } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import type { Registry } from "@prometheus-io/client";
 import { Router } from "express";
 import { userSchemas } from "@facturador/contracts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
@@ -50,6 +51,10 @@ export type InvoicesHarnessOptions = {
   signAfterReserve?: boolean;
   /** Reloj de la emisión; por defecto, el de `now`. */
   now?: () => Date;
+  /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión. */
+  stageTimings?: boolean;
+  /** Registro del histograma de las etapas de la emisión. */
+  metrics?: Registry;
 };
 
 /** Sin firma configurada: ningún comprobante se puede firmar. */
@@ -143,6 +148,8 @@ export function buildTaxpayerApp(
           signer: options.invoices?.signer ?? signing?.documents ?? NO_SIGNER,
           ...(options.invoices?.signAfterReserve === false ? { signAfterReserve: false } : {}),
           ...(options.invoices?.accessKeys ? { accessKeys: options.invoices.accessKeys } : {}),
+          ...(options.invoices?.stageTimings ? { stageTimings: true } : {}),
+          ...(options.invoices?.metrics ? { metrics: options.invoices.metrics } : {}),
           ...((options.invoices?.now ?? options.now)
             ? { now: options.invoices?.now ?? options.now }
             : {}),

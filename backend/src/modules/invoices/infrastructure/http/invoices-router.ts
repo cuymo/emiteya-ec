@@ -1,5 +1,6 @@
 // Rutas de borradores y facturas bajo /api/v1 (add-invoice-emission, design D13). La empresa, el
-// rol y el autor salen del contexto de la sesión; un recurso de otra empresa es `404`.
+// rol y el autor salen del contexto de la sesión; un recurso de otra empresa es `404`. La emisión
+// mide sus etapas (design D16) y solo con EMISSION_STAGE_TIMINGS=1 las devuelve en `Server-Timing`.
 import { Router, type Response } from "express";
 import {
   IDEMPOTENCY_KEY_HEADER,
@@ -10,6 +11,11 @@ import {
   type InvoiceView,
   type ListMeta,
 } from "@facturador/contracts";
+import { AppError } from "../../../../platform/http/errors.ts";
+import {
+  createStageTimings,
+  serverTimingHeader,
+} from "../../../../platform/metrics/stage-timings.ts";
 import type { StoredDocument } from "../../../fiscal/application/ports.ts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
 import { diagnosticMessage, isAttemptCode } from "../../application/diagnostics.ts";
@@ -18,6 +24,7 @@ import type { Emission } from "../../application/emission.ts";
 import type { InvoiceDetails, Invoices } from "../../application/invoices.ts";
 import type { InvoiceTotals } from "../../domain/amounts.ts";
 import type { InvoiceSnapshotV1 } from "../../domain/snapshot.ts";
+import type { EmissionObserver, EmissionOutcome } from "../metrics.ts";
 
 function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
   res.status(status).json(meta ? { data, meta } : { data });
@@ -236,11 +243,21 @@ export type InvoicesRouterDependencies = {
   drafts: Drafts;
   emission: Emission;
   invoices: Invoices;
+  /** Histograma de las etapas de la emisión, si hay registro de métricas. */
+  observeEmission?: EmissionObserver;
+  /** EMISSION_STAGE_TIMINGS: cabecera `Server-Timing` en la emisión. */
+  serverTiming?: boolean;
 };
 
 const invoiceOf = ({ document, artifact }: InvoiceDetails) => toInvoiceView(document, artifact);
 
-export function invoicesRouter({ drafts, emission, invoices }: InvoicesRouterDependencies): Router {
+export function invoicesRouter({
+  drafts,
+  emission,
+  invoices,
+  observeEmission,
+  serverTiming,
+}: InvoicesRouterDependencies): Router {
   const router = Router();
 
   router.get("/invoices/drafts", async (req, res) => {
@@ -267,12 +284,32 @@ export function invoicesRouter({ drafts, emission, invoices }: InvoicesRouterDep
   });
 
   router.post("/invoices", async (req, res) => {
-    const { document, replayed } = await emission.emit(
-      contextOf(res),
-      req.header(IDEMPOTENCY_KEY_HEADER),
-      req.body,
-    );
-    send(res, replayed ? 200 : 201, invoiceOf(await invoices.details(document)));
+    const timings = createStageTimings();
+    let outcome: EmissionOutcome = "error";
+    let result: { view: InvoiceView; replayed: boolean };
+    try {
+      result = await timings.envelope("total", async () => {
+        const { document, replayed } = await emission.emit(
+          contextOf(res),
+          req.header(IDEMPOTENCY_KEY_HEADER),
+          req.body,
+          timings,
+        );
+        return { view: invoiceOf(await invoices.details(document)), replayed };
+      });
+      outcome = result.replayed
+        ? "replayed"
+        : result.view.state === "SIGNED"
+          ? "signed"
+          : "reserved";
+    } catch (error) {
+      outcome = error instanceof AppError && error.status < 500 ? "rejected" : "error";
+      throw error;
+    } finally {
+      observeEmission?.(timings.entries(), outcome);
+      if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
+    }
+    send(res, result.replayed ? 200 : 201, result.view);
   });
 
   router.get("/invoices", async (req, res) => {

@@ -1,4 +1,5 @@
 // Composición del módulo invoices para main.ts y las pruebas (add-invoice-emission, design D1).
+import type { Registry } from "@prometheus-io/client";
 import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import { createIdempotencyStore } from "../../../platform/idempotency/prisma-idempotency-store.ts";
 import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
@@ -19,6 +20,7 @@ import { createSignedUnitOfWork } from "./signed-unit-of-work.ts";
 import { createEmissionUnitOfWork } from "./emission-unit-of-work.ts";
 import { createEvaluationReads, type SigningReads } from "./evaluation-reads.ts";
 import { invoicesRouter } from "./http/invoices-router.ts";
+import { registerEmissionMetrics } from "./metrics.ts";
 import { createDraftRepository } from "./prisma-drafts.ts";
 import { createDraftsUnitOfWork } from "./unit-of-work.ts";
 
@@ -39,6 +41,10 @@ export type InvoicesModuleOptions = {
    */
   signAfterReserve?: boolean;
   accessKeys?: AccessKeys;
+  /** Registro de métricas: histograma de las etapas de la emisión (design D16). */
+  metrics?: Registry;
+  /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión; nunca en producción. */
+  stageTimings?: boolean;
   logger?: {
     warn(details: object, message: string): void;
     error(details: object, message: string): void;
@@ -91,7 +97,15 @@ export function invoicesModule(options: InvoicesModuleOptions) {
     ...(options.logger ? { logger: options.logger } : {}),
   });
   return {
-    routers: [invoicesRouter({ drafts, emission, invoices })],
+    routers: [
+      invoicesRouter({
+        drafts,
+        emission,
+        invoices,
+        serverTiming: options.stageTimings ?? false,
+        ...(options.metrics ? { observeEmission: registerEmissionMetrics(options.metrics) } : {}),
+      }),
+    ],
     drafts,
     emission,
     invoices,

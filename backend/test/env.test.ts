@@ -280,4 +280,21 @@ describe("emisión de facturas (add-invoice-emission, design D2 y D11)", () => {
       XSD_VALIDATION_QUEUE: 0,
     });
   });
+
+  it("solo activa los tiempos por etapa de la emisión con EMISSION_STAGE_TIMINGS=1 (design D16)", () => {
+    expect(loadEnv(valid).EMISSION_STAGE_TIMINGS).toBe(false);
+    expect(loadEnv({ ...valid, EMISSION_STAGE_TIMINGS: "0" }).EMISSION_STAGE_TIMINGS).toBe(false);
+    expect(loadEnv({ ...valid, EMISSION_STAGE_TIMINGS: "1" }).EMISSION_STAGE_TIMINGS).toBe(true);
+    expect(envError({ ...valid, EMISSION_STAGE_TIMINGS: "true" })?.variables).toEqual([
+      "EMISSION_STAGE_TIMINGS",
+    ]);
+  });
+
+  it("rechaza EMISSION_STAGE_TIMINGS=1 en producción", () => {
+    const production = { ...valid, NODE_ENV: "production" };
+    expect(envError({ ...production, EMISSION_STAGE_TIMINGS: "1" })?.variables).toEqual([
+      "EMISSION_STAGE_TIMINGS",
+    ]);
+    expect(envError({ ...production, EMISSION_STAGE_TIMINGS: "0" })).toBeUndefined();
+  });
 });
