@@ -186,7 +186,7 @@
   - consulta, eventos de auditoría exactos y ninguna llamada al SRI.
 
   Verificar que la prueba pasa
-- [ ] 12.2 Buscar el vector oficial de la clave de acceso en la ficha v2.34 por su fuente oficial y, si se obtiene, añadirlo a la prueba de contrato de `AccessKeys` con su cita. Si sigue inaccesible, registrarlo como evidencia pendiente en `open-questions.md`, sin inventarlo. Verificar el resultado en `/opsx:verify`, que decide si bloquea el archive o pasa a compuerta previa a la transmisión
+- [x] 12.2 Buscar el vector oficial de la clave de acceso en la ficha v2.34 por su fuente oficial y, si se obtiene, añadirlo a la prueba de contrato de `AccessKeys` con su cita. Si sigue inaccesible, registrarlo como evidencia pendiente en `open-questions.md`, sin inventarlo. Verificar el resultado en `/opsx:verify`, que decide si bloquea el archive o pasa a compuerta previa a la transmisión
 - [ ] 12.3 Actualizar la documentación:
   - `fiscal-emission.md`: implementación, códigos y obligaciones cumplidas;
   - `idempotency.md` y `backend.md`, alineados con Q-30;

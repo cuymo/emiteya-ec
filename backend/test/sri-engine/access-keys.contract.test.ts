@@ -1,7 +1,8 @@
 // Contrato del adaptador AccessKeys (add-invoice-emission, tarea 6.1, design D12): 49 dígitos con
 // la estructura de CTX §8.1 y el dígito verificador de la implementación de referencia de CTX §8.3,
 // calculado aquí de forma independiente. Debe pasar antes de aceptar cualquier actualización de
-// facturacion-electronica-ec. El vector oficial de la ficha v2.34 está pendiente (tarea 12.2).
+// facturacion-electronica-ec. El vector oficial de la ficha v2.34 sigue pendiente: el portal del SRI
+// no fue accesible el 2026-10-03 (tarea 12.2; S-3 en open-questions.md) y no se inventa.
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
