@@ -75,7 +75,7 @@
 
 ## 6. Motor SRI: clave, builder y firma de XML
 
-- [ ] 6.1 Implementar el adaptador `AccessKeys` sobre `generateClaveAcceso`, con el código numérico de `crypto.randomInt` (design D12). Verificar con su prueba de contrato contra la implementación de referencia de CTX §8.3: secuenciales 1, 9, 10 y 999999999, 500 códigos aleatorios, longitudes y caracteres inválidos, y sin `Math.random`
+- [x] 6.1 Implementar el adaptador `AccessKeys` sobre `generateClaveAcceso`, con el código numérico de `crypto.randomInt` (design D12). Verificar con su prueba de contrato contra la implementación de referencia de CTX §8.3: secuenciales 1, 9, 10 y 999999999, 500 códigos aleatorios, longitudes y caracteres inválidos, y sin `Math.random`
 - [ ] 6.2 Implementar el escritor XML y el `InvoiceXmlBuilder` de la factura 1.1.0 validados en S-3, con el puerto `InvoiceSnapshot` (design D4 y D12).
   - El builder es puro, determinista y en el orden del XSD.
   - Escapa el texto, rechaza caracteres no admitidos en XML 1.0 y escribe solo los opcionales que corresponden, incluidos `agenteRetencion` y `contribuyenteRimpe`.

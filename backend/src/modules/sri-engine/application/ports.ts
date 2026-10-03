@@ -34,7 +34,6 @@ export class XmlSignerError extends Error {
   }
 }
 
-/** Esquema del registro de esquemas (CTX §19.3, design D11 de add-fiscal-catalogs). */
 /** Archivo del paquete de XSD por su ruta lógica (`sri-xsd/…`, `w3c-xsd/…`) y su hash. */
 export type SchemaFile = Readonly<{ path: string; sha256: string }>;
 
@@ -88,5 +87,37 @@ export class XsdValidatorError extends Error {
     super(code);
     this.name = "XsdValidatorError";
     this.code = code;
+  }
+}
+
+/** Datos de la clave de acceso (CTX §8.1); la fecha es la de emisión en Ecuador (Q-08). */
+export type AccessKeyInput = Readonly<{
+  /** `YYYY-MM-DD`, capturada una vez al comenzar la emisión. */
+  issueDate: string;
+  documentType: DocumentType;
+  ruc: string;
+  /** `1` Pruebas, `2` Producción (CTX §6). */
+  environment: "1" | "2";
+  establishment: string;
+  emissionPoint: string;
+  /** Nueve dígitos. */
+  sequential: string;
+  /** Ocho dígitos de `numericCode`. */
+  numericCode: string;
+}>;
+
+/** Clave de acceso de 49 dígitos, tipo de emisión normal y dígito verificador módulo 11 (CTX §8). */
+export interface AccessKeys {
+  /** Ocho dígitos de un generador criptográfico, nunca `Math.random` (CTX §8.4). */
+  numericCode(): string;
+  /** Lanza `AccessKeyInputError` si un dato no tiene su longitud o no es numérico. */
+  compose(input: AccessKeyInput): string;
+}
+
+/** Datos de la clave inválidos; nunca repite los valores. */
+export class AccessKeyInputError extends Error {
+  constructor() {
+    super("ACCESS_KEY_INVALID_INPUT");
+    this.name = "AccessKeyInputError";
   }
 }
