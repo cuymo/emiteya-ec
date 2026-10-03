@@ -86,8 +86,8 @@ un solo paso es P2.
 | Ruta | Respuesta | Uso |
 | --- | --- | --- |
 | `GET /health/live` | `200` mientras el proceso atiende | Liveness del contenedor. |
-| `GET /health/ready` | `200` si PostgreSQL responde a `SELECT 1` en 2 s; si no, `503` | Readiness y healthcheck. |
-| `GET /metrics` | Formato Prometheus | Métricas de proceso y de peticiones. |
+| `GET /health/ready` | `200` si el paquete de XSD se verificó al arrancar, PostgreSQL responde a `SELECT 1` en 2 s y el pool criptográfico funciona; si no, `503` | Readiness y healthcheck. |
+| `GET /metrics` | Formato Prometheus | Métricas de proceso y de peticiones, `xsd_registry_available` y las de la firma. |
 
 - Existen en el servicio `api`, fuera de `/api` (ADR 0016), como endpoints operacionales. No pertenecen a la API pública del producto: no están bajo `/api/v1` ni en `docs/generated/openapi.json`.
 - Su exposición no está restringida por la aplicación: el backend los sirve a cualquiera que alcance el servicio. Restringirlos (red interna, reglas del proxy o autenticación) es una responsabilidad obligatoria del despliegue, que todavía está fuera de alcance; ningún despliegue puede publicarlos sin esa restricción. El diseño previsto es que el proxy público solo enrute `/` al frontend y `/api` al backend, y que el orquestador y el sistema de métricas los consulten por la red interna, pero esa garantía se implementará con el despliegue.
@@ -137,6 +137,21 @@ La custodia de la firma (ADR 0011) y el pool criptográfico (design D18 de
 - La clave se respalda aparte de la base de datos (ver Respaldo y restauración).
 - Perderla o cambiarla deja las firmas cargadas como no disponibles hasta volver a cargarlas (riesgo R-15). La rotación verificada es requisito del go-live (ADR 0011).
 
+### Emisión de facturas
+
+Variables de `add-invoice-emission` (design D2 y D11):
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `XSD_DIRECTORY` | No | `dist/xsd/` en el build; `docs/product/` en desarrollo | Raíz del paquete de XSD del registro de esquemas. Las rutas lógicas del registro (`sri-xsd/…`, `w3c-xsd/…`) se resuelven bajo ella. |
+| `XSD_VALIDATION_CONCURRENCY` | No | 2 | Validaciones XSD simultáneas (1 a 8), cada una con su worker de WebAssembly. |
+| `XSD_VALIDATION_QUEUE` | No | 16 | Validaciones en espera (0 a 256). Con la cola llena, la etapa falla con `VALIDATOR_BUSY`, reintentable. |
+| `XSD_VALIDATION_TIMEOUT_MS` | No | 10000 | Duración máxima de una validación, en milisegundos (1000 a 60000). Al vencer, `VALIDATOR_TIMEOUT`, reintentable. |
+| `INVOICE_MAX_LINES` | No | 100 | Líneas por factura (1 a 1000). Es una defensa de recursos de la aplicación, no un límite del SRI ni del XSD. |
+
+- El build del backend copia los XSD del registro a `dist/xsd/` y `check:xsd-artifact` comprueba cada archivo con su SHA-256.
+- Al arrancar, la API verifica el paquete completo: cada XSD e import del registro vigente, presente y con su SHA-256. Si falta alguno o un hash no coincide, registra qué archivo falla, `xsd_registry_available` vale 0 y `/health/ready` responde `503`: la instalación no se declara lista. Nunca descarga esquemas ni usa otros como sustitutos.
+
 Primer arranque:
 
 1. Aplicar las migraciones: `corepack pnpm --filter @facturador/backend db:migrate:deploy` (en producción, `prisma migrate deploy` en el contenedor de la API).
@@ -152,6 +167,7 @@ Orden de cada arranque, antes de aceptar tráfico (design D5 de `add-parties-and
 2. Aprovisionar la empresa si falta. Se crea con su consumidor final, cuya identidad sale de la política de consumidor final vigente.
 3. Reponer el consumidor final de las empresas que no lo tengan, por ejemplo las anteriores a esta versión. Es idempotente.
 4. Si alguna empresa sigue sin consumidor final, la API no arranca.
+5. Verificar el paquete de XSD del registro de esquemas (`add-invoice-emission`, design D11). Si es inválido, la API arranca pero `/health/ready` responde `503`.
 
 ### Actualizaciones y reversión
 

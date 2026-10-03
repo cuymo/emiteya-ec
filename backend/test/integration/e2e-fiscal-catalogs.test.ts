@@ -13,7 +13,7 @@ const OPERATOR = {
   password: "contrasena-operador-e2e-1",
 };
 // 5 tipos de identificación + 3 impuestos + 9 IVA + 75 ICE + 1 IRBPNR + 8 formas de pago.
-const LOADED = { datasets: 9, keys: 101, entries: 101, policy: 1, schemas: 6, cases: 26 };
+const LOADED = { datasets: 10, keys: 101, entries: 101, policy: 1, schemas: 13, cases: 26 };
 
 /** Registro de arranque de la carga de catálogos (main.ts con LOG_LEVEL=info). */
 function loadReport(output: string): { applied: string[]; alreadyApplied: number } {
@@ -89,9 +89,9 @@ describe("flujo completo de los catálogos fiscales", () => {
   };
 
   it("carga al arrancar, consulta, habilita con auditoría y un segundo arranque no cambia nada", async () => {
-    // 1. El arranque carga los nueve datasets, sin auditoría por la carga.
+    // 1. El arranque carga los diez datasets, sin auditoría por la carga.
     expect(loadReport(backend.output())).toMatchObject({ alreadyApplied: 0 });
-    expect(loadReport(backend.output()).applied).toHaveLength(9);
+    expect(loadReport(backend.output()).applied).toHaveLength(10);
     expect(await counts()).toEqual(LOADED);
     const admin = await signIn(ADMIN.email, ADMIN.password);
     expect((await api("POST", "/users", admin, { ...OPERATOR, role: "OPERATOR" })).status).toBe(
@@ -173,7 +173,7 @@ describe("flujo completo de los catálogos fiscales", () => {
     const before = await snapshot();
     await backend.stop();
     backend = await start();
-    expect(loadReport(backend.output())).toEqual({ applied: [], alreadyApplied: 9 });
+    expect(loadReport(backend.output())).toEqual({ applied: [], alreadyApplied: LOADED.datasets });
     expect(await snapshot()).toEqual(before);
     const again = await signIn(ADMIN.email, ADMIN.password);
     expect(

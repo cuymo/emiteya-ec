@@ -5,32 +5,24 @@
 // un worker de WebAssembly: la concurrencia y la cola están acotadas.
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { validateXML, type XMLValidationError } from "xmllint-wasm";
 import {
   XsdValidatorError,
   type RegisteredSchema,
+  type SchemaBundleFailure,
+  type SchemaFile,
   type XsdValidation,
   type XsdValidator,
   type XsdViolation,
 } from "../application/ports.ts";
 
-/** Un XSD por nombre de archivo y hash. */
-export type XsdFile = Readonly<{ file: string; sha256: string }>;
-
-/** XSD de la firma XML del W3C que importan los seis esquemas del SRI (`docs/product/w3c-xsd/`). */
-export const XMLDSIG_SCHEMA: XsdFile = {
-  file: "xmldsig-core-schema.xsd",
-  sha256: "d102ad3df7664c307e0c2c776ba4a90513b1969974d8a940bae1a77f9f21e15d",
-};
-
 export type XmllintXsdValidatorOptions = Readonly<{
-  /** Directorio de los XSD del registro de esquemas. */
-  schemaDirectory: string;
-  /** Directorio de los XSD que esos esquemas importan. */
-  importDirectory: string;
-  /** XSD importados; por defecto, el de la firma XML. */
-  imports?: readonly XsdFile[];
+  /**
+   * Raíz del paquete de XSD: las rutas lógicas del registro (`sri-xsd/…`, `w3c-xsd/…`) se
+   * resuelven bajo ella. En el build es `dist/xsd/`; en desarrollo, `docs/product/` (design D11).
+   */
+  root: string;
   /** Lectura de archivos; se inyecta en las pruebas. */
   readFile?: (path: string) => Promise<Uint8Array>;
   /** Validaciones simultáneas, cada una con su worker; por defecto 2. */
@@ -49,8 +41,8 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 
 // Nombre del XML dentro del sistema de archivos en memoria de xmllint.
 const XML_FILE = "comprobante.xml";
-// Solo un nombre de archivo, sin rutas: el registro nunca debe salir de su directorio.
-const SCHEMA_FILE_NAME = /^[A-Za-z0-9_.-]+\.xsd$/;
+// Ruta lógica de un directorio y un archivo: el registro nunca sale de la raíz del paquete.
+const SCHEMA_PATH = /^[a-z0-9-]+\/[A-Za-z0-9_.-]+\.xsd$/;
 
 const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
@@ -100,7 +92,6 @@ function createLimiter(concurrency: number, maxQueue: number, timeoutMs: number)
 
 export function createXmllintXsdValidator(options: XmllintXsdValidatorOptions): XsdValidator {
   const read = options.readFile ?? ((path: string) => readFile(path));
-  const imports = options.imports ?? [XMLDSIG_SCHEMA];
   const engine = options.engine ?? validateXML;
   const limited = createLimiter(
     Math.max(1, options.concurrency ?? DEFAULT_CONCURRENCY),
@@ -110,19 +101,19 @@ export function createXmllintXsdValidator(options: XmllintXsdValidatorOptions): 
   // Contenido verificado, por instancia y no global: cada XSD se lee y se comprueba una vez.
   const verified = new Map<string, Promise<Uint8Array>>();
 
-  function load(directory: string, schema: XsdFile): Promise<Uint8Array> {
-    const key = `${directory}\0${schema.file}\0${schema.sha256}`;
+  function load(file: SchemaFile): Promise<Uint8Array> {
+    const key = `${file.path}\0${file.sha256}`;
     const cached = verified.get(key);
     if (cached) return cached;
     const pending = (async () => {
-      if (!SCHEMA_FILE_NAME.test(schema.file)) throw new XsdValidatorError("SCHEMA_UNAVAILABLE");
+      if (!SCHEMA_PATH.test(file.path)) throw new XsdValidatorError("SCHEMA_UNAVAILABLE");
       let bytes: Uint8Array;
       try {
-        bytes = await read(join(directory, schema.file));
+        bytes = await read(join(options.root, file.path));
       } catch {
         throw new XsdValidatorError("SCHEMA_UNAVAILABLE");
       }
-      if (sha256(bytes) !== schema.sha256) throw new XsdValidatorError("SCHEMA_HASH_MISMATCH");
+      if (sha256(bytes) !== file.sha256) throw new XsdValidatorError("SCHEMA_HASH_MISMATCH");
       return bytes;
     })();
     // Un fallo no se recuerda: el siguiente intento vuelve a leer y comprobar el archivo.
@@ -131,19 +122,40 @@ export function createXmllintXsdValidator(options: XmllintXsdValidatorOptions): 
     return pending;
   }
 
+  const loadAll = (schema: RegisteredSchema) =>
+    Promise.all([load(schema), ...schema.imports.map((file) => load(file))]);
+
   return {
+    async ensureAvailable(schema: RegisteredSchema): Promise<void> {
+      await loadAll(schema);
+    },
+
+    async verifyBundle(files: readonly SchemaFile[]): Promise<readonly SchemaBundleFailure[]> {
+      const failures: SchemaBundleFailure[] = [];
+      for (const file of files) {
+        if (!SCHEMA_PATH.test(file.path)) {
+          failures.push({ path: file.path, reason: "INVALID_PATH" });
+          continue;
+        }
+        await load(file).catch((error: unknown) => {
+          const mismatch =
+            error instanceof XsdValidatorError && error.code === "SCHEMA_HASH_MISMATCH";
+          failures.push({ path: file.path, reason: mismatch ? "HASH_MISMATCH" : "MISSING" });
+        });
+      }
+      return failures;
+    },
+
     async validate(xml: string, schema: RegisteredSchema): Promise<XsdValidation> {
-      const [main, ...imported] = await Promise.all([
-        load(options.schemaDirectory, schema),
-        ...imports.map((file) => load(options.importDirectory, file)),
-      ]);
+      const [main, ...imported] = await loadAll(schema);
       try {
         const result = await limited(() =>
           engine({
             xml: { fileName: XML_FILE, contents: xml },
-            schema: { fileName: schema.file, contents: main },
-            preload: imports.map((file, index) => ({
-              fileName: file.file,
+            // El nombre del import es el de su `schemaLocation` relativo dentro del XSD.
+            schema: { fileName: basename(schema.path), contents: main },
+            preload: schema.imports.map((file, index) => ({
+              fileName: basename(file.path),
               contents: imported[index]!,
             })),
           }),

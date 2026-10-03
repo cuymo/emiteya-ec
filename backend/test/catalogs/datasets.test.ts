@@ -21,7 +21,7 @@ const entries = (type: string) =>
   >[];
 
 describe("datasets de la versión instalada", () => {
-  it("los nueve datasets validan y coinciden con el manifiesto", () => {
+  it("los diez datasets validan y coinciden con el manifiesto", () => {
     const manifest = readFileSync(new URL("sri-catalogs/README.md", DOCS), "utf8");
     const rows = [
       ...manifest.matchAll(/^\| `([a-z-]+)` \| (\d+) \| [^|]+ \| (\d+) \| `([0-9a-f]{64})` \|$/gm),
@@ -41,7 +41,7 @@ describe("datasets de la versión instalada", () => {
         }))
         .sort((a, b) => a.type.localeCompare(b.type)),
     ).toEqual(rows.sort((a, b) => a.type!.localeCompare(b.type!)));
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(10);
   });
 
   it("citan la ficha v2.34 por su hash, y el registro, el manifiesto de los XSD", () => {
@@ -186,6 +186,56 @@ describe("datasets de la versión instalada", () => {
     expect(
       entries("schema-registry").map((e) => `${String(e.documentType)}@${String(e.version)}`),
     ).toEqual(["01@1.1.0", "03@1.1.0", "04@1.1.0", "05@1.0.0", "06@1.1.0", "07@2.0.0"]);
+  });
+
+  it("el registro 2 incluye todos los archivos de una validación, con su ruta lógica y su hash", () => {
+    const registry = datasets.find(
+      (dataset) => dataset.catalogType === "schema-registry" && dataset.version === 2,
+    ) as Extract<(typeof datasets)[number], { catalogType: "schema-registry" }>;
+    const byPath = new Map(
+      registry.entries.map((entry) => ["path" in entry ? entry.path : "", entry]),
+    );
+    for (const [path, entry] of byPath) {
+      const file = readFileSync(new URL(path, DOCS));
+      expect(createHash("sha256").update(file).digest("hex"), path).toBe(entry.sha256);
+    }
+    expect([...byPath.keys()].sort()).toEqual([
+      "sri-xsd/ComprobanteRetencion_V2.0.0.xsd",
+      "sri-xsd/GuiaRemision_V1.1.0.xsd",
+      "sri-xsd/LiquidacionCompra_V1.1.0.xsd",
+      "sri-xsd/NotaCredito_V1.1.0.xsd",
+      "sri-xsd/NotaDebito_V1.0.0.xsd",
+      "sri-xsd/factura_V1.1.0.xsd",
+      "w3c-xsd/xmldsig-core-schema.xsd",
+    ]);
+    const xmldsig = byPath.get("w3c-xsd/xmldsig-core-schema.xsd");
+    expect(xmldsig).toMatchObject({ kind: "IMPORT", revision: "1.2 (2013-04-16)" });
+    for (const entry of registry.entries) {
+      if ("kind" in entry && entry.kind === "DOCUMENT") {
+        expect(entry.imports, entry.path).toEqual(["w3c-xsd/xmldsig-core-schema.xsd"]);
+      }
+    }
+  });
+
+  it("un documento que importa un archivo no registrado no valida", () => {
+    const registry = structuredClone(
+      DATASET_FILES.find(
+        (file) =>
+          (file as { catalogType: string; version: number }).catalogType === "schema-registry" &&
+          (file as { version: number }).version === 2,
+      ),
+    ) as { entries: { kind: string; imports?: string[] }[] };
+    registry.entries = registry.entries.filter((entry) => entry.kind === "DOCUMENT");
+    expect(() =>
+      validateDatasets(
+        DATASET_FILES.map((file) =>
+          (file as { catalogType: string; version: number }).catalogType === "schema-registry" &&
+          (file as { version: number }).version === 2
+            ? registry
+            : file,
+        ),
+      ),
+    ).toThrow(/importa w3c-xsd\/xmldsig-core-schema.xsd, no registrado/);
   });
 });
 

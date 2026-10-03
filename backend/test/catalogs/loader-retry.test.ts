@@ -53,7 +53,7 @@ describe("reintento ante una violación de unicidad", () => {
     const report = await loadFiscalCatalogs({ uow, datasets });
     expect(attempts).toBe(2);
     expect(report.applied).toEqual([]);
-    expect(report.alreadyApplied).toHaveLength(9);
+    expect(report.alreadyApplied).toHaveLength(10);
   });
 
   it("otro error no se reintenta", async () => {

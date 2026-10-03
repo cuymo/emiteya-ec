@@ -26,6 +26,7 @@ niega a arrancar si un dataset altera lo ya publicado.
 | `payment-method` | 1 | Tabla 24 (página 79) | 8 | `8e82e8816ea745ad0c4170cc69e5d611d0824b388e0f4254e9a5ead64610173c` |
 | `consumer-final-policy` | 1 | Numeral 9.10 (página 29), tabla 6 (página 13) y ejemplos del XML | 1 | `09a4d951d918e8c6dfd8462f803b1b82fe70445cf5030e954fd7629df078c8d6` |
 | `schema-registry` | 1 | `docs/product/sri-xsd/README.md` | 6 | `55b7962770a7b6e614580e06681eb978909872874a6f0ca3ccb1acca598ab9c2` |
+| `schema-registry` | 2 | `docs/product/sri-xsd/README.md` y `docs/product/w3c-xsd/README.md`: los seis XSD con su ruta lógica y sus imports, y el import `xmldsig-core-schema.xsd` | 7 | `0dcfcaabcf155098b5d650f25399cd3b3d5a1a8a8e9189762f42f89cc174841b` |
 | `special-case-matrix` | 1 | Índice de anexos de la ficha (páginas 2 y 3); categorías del ADR 0014 | 26 | `508b57aee92202e4e7071126c240de481c3effdf9ce588bf209ebd8e5eca5da2` |
 
 `backend/test/catalogs/datasets.test.ts` comprueba que esta tabla coincide con los archivos.

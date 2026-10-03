@@ -516,17 +516,25 @@ model ConsumerFinalPolicy {
 // Registro de esquemas XSD (design D2 y D14, ADR 0008): filas inmutables por versión
 // del dataset; rige la última versión aplicada.
 model SchemaRegistryEntry {
-  documentType   String   @map("document_type")
-  version        String
+  /// Ruta lógica del archivo dentro del paquete de XSD (add-invoice-emission, design D11).
+  path           String
   datasetVersion Int      @map("dataset_version")
-  root           String
+  /// DOCUMENT o IMPORT (CHECK en la migración).
+  kind           String   @default("DOCUMENT")
+  documentType   String?  @map("document_type")
+  version        String?
+  root           String?
   file           String
   sha256         String   @db.Char(64)
   source         String
+  /// Revisión de un esquema importado, como la del W3C.
+  revision       String?
+  /// Rutas lógicas de los esquemas que importa un esquema de documento.
+  imports        String[] @default([])
   downloadedAt   DateTime @map("downloaded_at") @db.Timestamptz(3)
   supported      Boolean
 
-  @@id([documentType, version, datasetVersion])
+  @@id([path, datasetVersion])
   @@map("schema_registry_entry")
 }
 

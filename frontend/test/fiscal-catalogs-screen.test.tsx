@@ -191,13 +191,31 @@ function routes(overrides: Record<string, Route> = {}): Record<string, Route> {
       body: {
         data: [
           {
+            kind: "DOCUMENT",
+            path: "sri-xsd/factura_V1.1.0.xsd",
             documentType: "01",
             root: "factura",
             version: "1.1.0",
             file: "factura_V1.1.0.xsd",
             sha256: "b".repeat(64),
             source: "SRI",
+            revision: null,
+            imports: ["w3c-xsd/xmldsig-core-schema.xsd"],
             downloadedAt: "2026-10-02T15:38:05.000Z",
+            supported: true,
+          },
+          {
+            kind: "IMPORT",
+            path: "w3c-xsd/xmldsig-core-schema.xsd",
+            documentType: null,
+            root: null,
+            version: null,
+            file: "xmldsig-core-schema.xsd",
+            sha256: "c".repeat(64),
+            source: "W3C",
+            revision: "1.2 (2013-04-16)",
+            imports: [],
+            downloadedAt: "2026-10-03T10:31:13.000Z",
             supported: true,
           },
         ],
@@ -404,6 +422,8 @@ describe("Catálogos fiscales (design D17)", () => {
     expect(await screen.findByText(/Condición del go-live/)).toBeDefined();
     await user.click(screen.getByText("Esquemas XSD"));
     expect(await screen.findByText(/factura_V1.1.0.xsd · soportado/)).toBeDefined();
+    expect(screen.getByText("Esquema importado, revisión 1.2 (2013-04-16)")).toBeDefined();
+    expect(screen.getByText(/xmldsig-core-schema.xsd · soportado/)).toBeDefined();
   });
 });
 

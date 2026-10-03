@@ -35,11 +35,21 @@ export class XmlSignerError extends Error {
 }
 
 /** Esquema del registro de esquemas (CTX §19.3, design D11 de add-fiscal-catalogs). */
-export type RegisteredSchema = Readonly<{
-  documentType: DocumentType;
-  version: string;
-  file: string;
-  sha256: string;
+/** Archivo del paquete de XSD por su ruta lógica (`sri-xsd/…`, `w3c-xsd/…`) y su hash. */
+export type SchemaFile = Readonly<{ path: string; sha256: string }>;
+
+/** Esquema de un comprobante con los archivos que importa, tal como los registra el registro. */
+export type RegisteredSchema = SchemaFile &
+  Readonly<{
+    documentType: DocumentType;
+    version: string;
+    imports: readonly SchemaFile[];
+  }>;
+
+/** Archivo del paquete que falta, sale de su directorio o no coincide con su hash. */
+export type SchemaBundleFailure = Readonly<{
+  path: string;
+  reason: "MISSING" | "INVALID_PATH" | "HASH_MISMATCH";
 }>;
 
 /** Una violación del XSD: línea del XML y mensaje de libxml2, sin rutas ni detalles del motor. */
@@ -56,6 +66,10 @@ export interface XsdValidator {
    * concurrencia y la cola llenas es `VALIDATOR_BUSY`, y si tarda demasiado, `VALIDATOR_TIMEOUT`.
    */
   validate(xml: string, schema: RegisteredSchema): Promise<XsdValidation>;
+  /** Comprueba, antes de reservar, que el esquema y sus imports están disponibles con su hash. */
+  ensureAvailable(schema: RegisteredSchema): Promise<void>;
+  /** Verifica el paquete completo (al arrancar): devuelve los archivos que fallan, sin lanzar. */
+  verifyBundle(files: readonly SchemaFile[]): Promise<readonly SchemaBundleFailure[]>;
 }
 
 export const XSD_VALIDATOR_ERRORS = [

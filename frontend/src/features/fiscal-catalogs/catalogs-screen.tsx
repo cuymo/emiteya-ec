@@ -337,10 +337,11 @@ function Schemas() {
   return (
     <ul aria-label="Esquemas XSD registrados" className="flex flex-col gap-0.5">
       {schemas.data.map((schema) => (
-        <li key={`${schema.documentType}-${schema.version}`}>
+        <li key={schema.path}>
           <span className="font-medium">
-            {DOCUMENT_TYPE_LABELS[schema.documentType as keyof typeof DOCUMENT_TYPE_LABELS]}{" "}
-            {schema.version}
+            {schema.kind === "IMPORT"
+              ? `Esquema importado, revisión ${schema.revision ?? ""}`
+              : `${DOCUMENT_TYPE_LABELS[schema.documentType as keyof typeof DOCUMENT_TYPE_LABELS]} ${schema.version ?? ""}`}
           </span>
           <span className="text-foreground-muted">
             {" "}

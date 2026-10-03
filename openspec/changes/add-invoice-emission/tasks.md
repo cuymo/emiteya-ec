@@ -25,16 +25,16 @@
 
 ## 2. Registro de esquemas completo y XSD empaquetados
 
-- [ ] 2.1 Ampliar `schema_registry_entry` y su dataset con `kind`, `path` lógico, `revision` e `imports`, con CHECK por `kind` y clave primaria `(path, dataset_version)` (design D11).
+- [x] 2.1 Ampliar `schema_registry_entry` y su dataset con `kind`, `path` lógico, `revision` e `imports`, con CHECK por `kind` y clave primaria `(path, dataset_version)` (design D11).
   - La migración rellena la versión 1 con el trigger de inmutabilidad desactivado solo dentro de ella.
   - Crear `schema-registry/2.json` con los seis documentos y el import `xmldsig-core-schema.xsd`, y su fila en `docs/product/sri-catalogs/README.md`.
 
   Verificar con pruebas de datasets y del cargador: versión 2 aplicada, versión 1 intacta y archivos con su hash
-- [ ] 2.2 Exponer `schemaRegistry()` y `specialCases()` en `fiscalCatalogQueries`, y mostrar los imports en la vista del registro (`GET /fiscal-catalogs/schemas`, contrato y pantalla `Catálogos fiscales`).
+- [x] 2.2 Exponer `schemaRegistry()` y `specialCases()` en `fiscalCatalogQueries`, y mostrar los imports en la vista del registro (`GET /fiscal-catalogs/schemas`, contrato y pantalla `Catálogos fiscales`).
   - Que el adaptador `XsdValidator` tome los imports y sus hashes del registro, y añadir `ensureAvailable(schema)`.
 
   Verificar con la prueba de contrato del validador y con pruebas de la API de catálogos (escenarios de la spec modificada de `fiscal-catalogs`)
-- [ ] 2.3 Copiar los XSD del registro a `backend/dist/xsd/<path>` en el build del backend y añadir `check:xsd-artifact` a `verify` después del build.
+- [x] 2.3 Copiar los XSD del registro a `backend/dist/xsd/<path>` en el build del backend y añadir `check:xsd-artifact` a `verify` después del build.
   - Añadir `XSD_DIRECTORY` y los límites de concurrencia, cola y plazo de la validación al esquema de entorno.
   - Validar al arrancar el paquete canónico completo. Si es inválido: error en el log, métrica `xsd_registry_available` a 0 y `/health/ready` con `503`.
   - Añadir `INVOICE_MAX_LINES` (100 por defecto, de 1 a 1 000) como límite configurable de la aplicación.

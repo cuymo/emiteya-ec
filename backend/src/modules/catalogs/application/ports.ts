@@ -59,13 +59,18 @@ export type StoredPolicyVersion = {
   datasetVersion: number;
 };
 
+/** Archivo del registro de esquemas: un esquema de documento o uno que este importa. */
 export type StoredSchemaEntry = {
-  documentType: string;
-  version: string;
-  root: string;
+  kind: "DOCUMENT" | "IMPORT";
+  path: string;
+  documentType: string | null;
+  version: string | null;
+  root: string | null;
   file: string;
   sha256: string;
   source: string;
+  revision: string | null;
+  imports: string[];
   downloadedAt: Date;
   supported: boolean;
 };

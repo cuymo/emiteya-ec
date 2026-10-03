@@ -41,6 +41,7 @@ export type {
   FiscalCatalogQueries,
   IdentificationRule,
 } from "../application/queries.ts";
+export type { StoredSchemaEntry, StoredSpecialCase } from "../application/ports.ts";
 export type { CalculationData } from "../domain/calculation-data.ts";
 export type { IsoDate } from "../domain/validity.ts";
 export { ecuadorDate } from "../domain/validity.ts";

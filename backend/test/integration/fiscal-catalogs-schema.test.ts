@@ -423,6 +423,7 @@ describe("invariantes de los catálogos fiscales en la base de datos", () => {
     it("el registro y la matriz son inmutables", async () => {
       await prisma.schemaRegistryEntry.create({
         data: {
+          path: "sri-xsd/factura_V1.1.0.xsd",
           documentType: "01",
           version: "1.1.0",
           datasetVersion: 1,

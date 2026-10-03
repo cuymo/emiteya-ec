@@ -245,3 +245,39 @@ describe("custodia de la firma electrónica (design D6)", () => {
     expect(result.stderr).toContain("CERTIFICATE_MASTER_KEY: es obligatoria");
   });
 });
+
+describe("emisión de facturas (add-invoice-emission, design D2 y D11)", () => {
+  it("aplica los valores por defecto de la validación XSD y del límite de líneas", () => {
+    const env = loadEnv(valid);
+    expect(env).toMatchObject({
+      XSD_VALIDATION_CONCURRENCY: 2,
+      XSD_VALIDATION_QUEUE: 16,
+      XSD_VALIDATION_TIMEOUT_MS: 10000,
+      INVOICE_MAX_LINES: 100,
+    });
+    expect(env.XSD_DIRECTORY).toBeUndefined();
+  });
+
+  it("rechaza valores fuera de rango sin mostrarlos", () => {
+    const error = envError({
+      ...valid,
+      XSD_VALIDATION_CONCURRENCY: "9",
+      XSD_VALIDATION_QUEUE: "257",
+      XSD_VALIDATION_TIMEOUT_MS: "999",
+      INVOICE_MAX_LINES: "1001",
+      XSD_DIRECTORY: "",
+    });
+    expect(error?.variables).toEqual([
+      "XSD_DIRECTORY",
+      "XSD_VALIDATION_CONCURRENCY",
+      "XSD_VALIDATION_QUEUE",
+      "XSD_VALIDATION_TIMEOUT_MS",
+      "INVOICE_MAX_LINES",
+    ]);
+    expect(error?.message).not.toContain("1001");
+    expect(loadEnv({ ...valid, INVOICE_MAX_LINES: "1", XSD_VALIDATION_QUEUE: "0" })).toMatchObject({
+      INVOICE_MAX_LINES: 1,
+      XSD_VALIDATION_QUEUE: 0,
+    });
+  });
+});

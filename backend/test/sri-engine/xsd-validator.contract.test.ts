@@ -14,36 +14,38 @@ import {
   type XsdValidation,
 } from "../../src/modules/sri-engine/application/ports.ts";
 import {
-  XMLDSIG_SCHEMA,
-  createXmllintXsdValidator,
-} from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
+  registeredSchema,
+  registryFiles,
+  type SchemaRegistryEntry,
+} from "../../src/modules/sri-engine/application/schemas.ts";
+import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
 
 const path = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
-const SCHEMA_DIR = path("../../../docs/product/sri-xsd/");
-const IMPORT_DIR = path("../../../docs/product/w3c-xsd/");
+// Raíz del paquete de XSD en desarrollo: las rutas lógicas `sri-xsd/…` y `w3c-xsd/…`.
+const ROOT = path("../../../docs/product/");
 const FIXTURES = path("../fixtures/xsd/");
 
-// Los esquemas tal como los registra el dataset del registro de esquemas de fiscal-catalogs.
-const registry = (
+// Los archivos tal como los registra la versión 2 del registro de esquemas de fiscal-catalogs.
+const entries = (
   JSON.parse(
-    readFileSync(path("../../src/modules/catalogs/datasets/schema-registry/1.json"), "utf8"),
-  ) as { entries: RegisteredSchema[] }
-).entries.map(({ documentType, version, file, sha256 }) => ({
-  documentType,
-  version,
-  file,
-  sha256,
+    readFileSync(path("../../src/modules/catalogs/datasets/schema-registry/2.json"), "utf8"),
+  ) as { entries: (SchemaRegistryEntry & { documentType?: string; version?: string })[] }
+).entries.map((entry) => ({
+  ...entry,
+  documentType: entry.documentType ?? null,
+  version: entry.version ?? null,
+  imports: entry.imports ?? [],
 }));
-const schemaOf = (documentType: DocumentType) =>
-  registry.find((entry) => entry.documentType === documentType)!;
+const registry = entries.filter((entry) => entry.kind === "DOCUMENT");
+const schemaOf = (documentType: DocumentType): RegisteredSchema => {
+  const document = registry.find((entry) => entry.documentType === documentType)!;
+  return registeredSchema(entries, documentType, document.version)!;
+};
 const fixture = (documentType: DocumentType) =>
   readFileSync(join(FIXTURES, `${documentType}.xml`), "utf8");
 const factura = fixture("01");
 
-const validator = createXmllintXsdValidator({
-  schemaDirectory: SCHEMA_DIR,
-  importDirectory: IMPORT_DIR,
-});
+const validator = createXmllintXsdValidator({ root: ROOT });
 const validate = (xml: string, schema = schemaOf("01")) => validator.validate(xml, schema);
 const codeOf = (promise: Promise<unknown>) =>
   promise.then(
@@ -60,7 +62,10 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
     rmSync(scratch, { recursive: true, force: true });
   });
 
-  it("el registro tiene los seis esquemas versionados", () => {
+  it("el registro tiene los seis esquemas versionados, cada uno con el import de la firma", () => {
+    const imports = schemaOf("01").imports;
+    expect(imports.map((file) => file.path)).toEqual(["w3c-xsd/xmldsig-core-schema.xsd"]);
+    expect(imports[0]?.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(registry.map((entry) => `${entry.documentType}@${entry.version}`)).toEqual([
       "01@1.1.0",
       "03@1.1.0",
@@ -156,47 +161,68 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
 
   describe("esquemas del registro e imports", () => {
     it("sin el import de la firma falla cerrada: no lo busca en la red ni en la librería", async () => {
-      const noImport = createXmllintXsdValidator({
-        schemaDirectory: SCHEMA_DIR,
-        importDirectory: IMPORT_DIR,
-        imports: [],
-      });
-      expect(await codeOf(noImport.validate(factura, schemaOf("01")))).toBe("VALIDATOR_FAILED");
+      expect(await codeOf(validate(factura, { ...schemaOf("01"), imports: [] }))).toBe(
+        "VALIDATOR_FAILED",
+      );
     });
 
     it("un archivo del registro que no existe o sale de su directorio no está disponible", async () => {
-      for (const file of [
-        "factura_V9.9.9.xsd",
+      for (const path of [
+        "sri-xsd/factura_V9.9.9.xsd",
         "../w3c-xsd/xmldsig-core-schema.xsd",
-        "factura.xml",
+        "sri-xsd/factura.xml",
+        "factura_V1.1.0.xsd",
       ]) {
-        expect(await codeOf(validate(factura, { ...schemaOf("01"), file })), file).toBe(
+        expect(await codeOf(validate(factura, { ...schemaOf("01"), path })), path).toBe(
+          "SCHEMA_UNAVAILABLE",
+        );
+        expect(await codeOf(validator.ensureAvailable({ ...schemaOf("01"), path })), path).toBe(
           "SCHEMA_UNAVAILABLE",
         );
       }
+      expect(await codeOf(validator.ensureAvailable(schemaOf("01")))).toBeNull();
     });
 
     it("un esquema o un import alterado falla cerrada por su hash, en cada intento", async () => {
-      const dir = join(scratch, "sri-xsd");
-      cpSync(SCHEMA_DIR, dir, { recursive: true });
-      const target = join(dir, "factura_V1.1.0.xsd");
+      const root = join(scratch, "alterado");
+      cpSync(ROOT, root, { recursive: true });
+      const target = join(root, "sri-xsd/factura_V1.1.0.xsd");
       const bytes = readFileSync(target);
       bytes[200] = (bytes[200] ?? 0) ^ 0x01;
       writeFileSync(target, bytes);
-      const tampered = createXmllintXsdValidator({
-        schemaDirectory: dir,
-        importDirectory: IMPORT_DIR,
-      });
+      const tampered = createXmllintXsdValidator({ root });
       expect(await codeOf(tampered.validate(factura, schemaOf("01")))).toBe("SCHEMA_HASH_MISMATCH");
       expect(await codeOf(tampered.validate(factura, schemaOf("01")))).toBe("SCHEMA_HASH_MISMATCH");
-      const wrongImport = createXmllintXsdValidator({
-        schemaDirectory: SCHEMA_DIR,
-        importDirectory: IMPORT_DIR,
-        imports: [{ ...XMLDSIG_SCHEMA, sha256: "0".repeat(64) }],
-      });
-      expect(await codeOf(wrongImport.validate(factura, schemaOf("01")))).toBe(
-        "SCHEMA_HASH_MISMATCH",
-      );
+      const wrongImport = {
+        ...schemaOf("01"),
+        imports: [{ path: "w3c-xsd/xmldsig-core-schema.xsd", sha256: "0".repeat(64) }],
+      };
+      expect(await codeOf(validate(factura, wrongImport))).toBe("SCHEMA_HASH_MISMATCH");
+    });
+  });
+
+  describe("verificación del paquete completo", () => {
+    it("el paquete del registro está completo y con sus hashes", async () => {
+      expect(await validator.verifyBundle(registryFiles(entries))).toEqual([]);
+    });
+
+    it("informa los archivos que faltan, salen de la raíz o no coinciden, sin lanzar", async () => {
+      const root = join(scratch, "incompleto");
+      cpSync(ROOT, root, { recursive: true });
+      rmSync(join(root, "w3c-xsd/xmldsig-core-schema.xsd"));
+      const target = join(root, "sri-xsd/NotaDebito_V1.0.0.xsd");
+      const bytes = readFileSync(target);
+      bytes[10] = (bytes[10] ?? 0) ^ 0x01;
+      writeFileSync(target, bytes);
+      const failures = await createXmllintXsdValidator({ root }).verifyBundle([
+        ...registryFiles(entries),
+        { path: "../fuera.xsd", sha256: "0".repeat(64) },
+      ]);
+      expect(failures).toEqual([
+        { path: "sri-xsd/NotaDebito_V1.0.0.xsd", reason: "HASH_MISMATCH" },
+        { path: "w3c-xsd/xmldsig-core-schema.xsd", reason: "MISSING" },
+        { path: "../fuera.xsd", reason: "INVALID_PATH" },
+      ]);
     });
   });
 
@@ -205,8 +231,7 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
       const reads: string[] = [];
       const counting = (dir: string) =>
         createXmllintXsdValidator({
-          schemaDirectory: SCHEMA_DIR,
-          importDirectory: IMPORT_DIR,
+          root: ROOT,
           readFile: (file) => {
             reads.push(file.slice(dir.length));
             return readFile(file);
@@ -231,8 +256,7 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
     it("un fallo de lectura no se recuerda: el siguiente intento vuelve a leer", async () => {
       let attempts = 0;
       const flaky = createXmllintXsdValidator({
-        schemaDirectory: SCHEMA_DIR,
-        importDirectory: IMPORT_DIR,
+        root: ROOT,
         readFile: (file) => {
           if (file.endsWith("factura_V1.1.0.xsd") && attempts++ === 0) {
             return Promise.reject(new Error("EIO /ruta/interna"));
@@ -273,8 +297,7 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
       options: { concurrency: number; maxQueue: number; timeoutMs?: number },
     ) =>
       createXmllintXsdValidator({
-        schemaDirectory: SCHEMA_DIR,
-        importDirectory: IMPORT_DIR,
+        root: ROOT,
         engine: engine as Parameters<typeof createXmllintXsdValidator>[0]["engine"],
         ...options,
       });
@@ -323,9 +346,10 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
   });
 
   it("los errores son códigos, sin rutas, salida de xmllint ni contenido del XML", async () => {
-    const error = await validate(factura, { ...schemaOf("01"), file: "factura_V9.9.9.xsd" }).catch(
-      (caught: unknown) => caught,
-    );
+    const error = await validate(factura, {
+      ...schemaOf("01"),
+      path: "sri-xsd/factura_V9.9.9.xsd",
+    }).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(XsdValidatorError);
     expect((error as Error).message).toBe("SCHEMA_UNAVAILABLE");
     const result = await validate(factura.replace(/<importeTotal>[^<]+</, "<importeTotal>20.135<"));

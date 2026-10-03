@@ -121,9 +121,12 @@ export function createCatalogReader(db: Db): CatalogReader {
       if (version === null) return [];
       const rows = await db.schemaRegistryEntry.findMany({
         where: { datasetVersion: version },
-        orderBy: [{ documentType: "asc" }, { version: "asc" }],
+        orderBy: [{ kind: "asc" }, { documentType: "asc" }, { version: "asc" }, { path: "asc" }],
       });
-      return rows.map(({ datasetVersion: _v, ...row }) => row);
+      return rows.map(({ datasetVersion: _v, ...row }) => ({
+        ...row,
+        kind: row.kind as StoredSchemaEntry["kind"],
+      }));
     },
     async specialCases(): Promise<StoredSpecialCase[]> {
       const version = await latestVersion(db, "special-case-matrix");

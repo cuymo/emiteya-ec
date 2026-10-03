@@ -1,5 +1,6 @@
 // Arranque y apagado del backend. Desarrollo: node --conditions=development src/main.ts (ADR 0016).
 import { randomUUID } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { userSchemas } from "@facturador/contracts";
 import { Router } from "express";
 import { createApp } from "./app.ts";
@@ -36,6 +37,10 @@ import {
 import { productsModule } from "./modules/products/infrastructure/index.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
+import {
+  createXmllintXsdValidator,
+  verifySchemaBundle,
+} from "./modules/sri-engine/infrastructure/index.ts";
 import {
   certificateTasksEntry,
   isSigningCertificateUpload,
@@ -148,6 +153,26 @@ try {
   process.exit(1);
 }
 
+// Paquete de XSD del registro de esquemas (add-invoice-emission, design D11): en el build,
+// `dist/xsd/`; en desarrollo y pruebas, `docs/product/`, donde las rutas lógicas coinciden. Si al
+// arrancar falta un XSD o un import, o un hash no coincide, el backend no se declara listo.
+const xsdValidator = createXmllintXsdValidator({
+  root:
+    env.XSD_DIRECTORY ??
+    fileURLToPath(
+      new URL(import.meta.url.endsWith(".ts") ? "../../docs/product/" : "./xsd/", import.meta.url),
+    ),
+  concurrency: env.XSD_VALIDATION_CONCURRENCY,
+  maxQueue: env.XSD_VALIDATION_QUEUE,
+  timeoutMs: env.XSD_VALIDATION_TIMEOUT_MS,
+});
+const xsdBundleAvailable = await verifySchemaBundle({
+  validator: xsdValidator,
+  registry: () => catalogQueries.schemaRegistry(),
+  metrics: metrics.registry,
+  logger,
+});
+
 // Toda ruta de /api/v1 exige sesión y membresía activa; el contexto se resuelve en el servidor (D3).
 const apiRouter = Router();
 apiRouter.use(
@@ -202,7 +227,7 @@ apiRouter.use(
 const app = createApp({
   logger,
   metrics,
-  readiness: async () => (await database.ping()) && cryptoPool.isRunning(),
+  readiness: async () => xsdBundleAvailable && (await database.ping()) && cryptoPool.isRunning(),
   trustProxy: env.TRUST_PROXY,
   apiRouter,
   mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),

@@ -10,6 +10,7 @@ import {
   canonicalJson,
   isEntriesDataset,
   type DatasetEntry,
+  type SchemaRegistryDataset,
   type ValidatedDataset,
 } from "../domain/datasets.ts";
 import { isFiscalCatalogType } from "../domain/catalog-types.ts";
@@ -19,7 +20,25 @@ import type {
   NewEntryVersion,
   StoredEntryVersion,
   StoredPolicyVersion,
+  StoredSchemaEntry,
 } from "./ports.ts";
+
+/** Fila del registro. La versión 1 no declaraba clase ni ruta: su ruta lógica es `sri-xsd/<archivo>`. */
+function toStoredSchemaEntry(entry: SchemaRegistryDataset["entries"][number]): StoredSchemaEntry {
+  const downloadedAt = new Date(entry.downloadedAt);
+  if (!("kind" in entry)) {
+    return {
+      ...entry,
+      kind: "DOCUMENT",
+      path: `sri-xsd/${entry.file}`,
+      revision: null,
+      imports: [],
+      downloadedAt,
+    };
+  }
+  if (entry.kind === "DOCUMENT") return { ...entry, revision: null, downloadedAt };
+  return { ...entry, documentType: null, version: null, root: null, imports: [], downloadedAt };
+}
 
 export class FiscalCatalogDatasetConflict extends Error {
   constructor(message: string) {
@@ -229,10 +248,7 @@ async function applyDataset(store: DatasetStore, dataset: ValidatedDataset): Pro
     enablementPolicy: dataset.enablementPolicy,
   });
   if (dataset.catalogType === "schema-registry") {
-    await store.insertSchemaEntries(
-      dataset.version,
-      dataset.entries.map((entry) => ({ ...entry, downloadedAt: new Date(entry.downloadedAt) })),
-    );
+    await store.insertSchemaEntries(dataset.version, dataset.entries.map(toStoredSchemaEntry));
     return dataset.entries.length;
   }
   if (dataset.catalogType === "special-case-matrix") {

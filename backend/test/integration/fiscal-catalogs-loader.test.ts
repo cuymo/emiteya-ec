@@ -33,7 +33,15 @@ const counts = async (db: MigratedSchema) => {
   };
 };
 // 5 tipos de identificación + 3 impuestos + 9 IVA + 75 ICE + 1 IRBPNR + 8 formas de pago.
-const LOADED = { datasets: 9, keys: 101, entries: 101, policy: 1, schemas: 6, cases: 26, audit: 0 };
+const LOADED = {
+  datasets: 10,
+  keys: 101,
+  entries: 101,
+  policy: 1,
+  schemas: 13,
+  cases: 26,
+  audit: 0,
+};
 
 const validated = (file: DatasetFile): ValidatedDataset => ({
   ...file,
@@ -53,9 +61,9 @@ describe("cargador de catálogos fiscales", () => {
       await db.drop();
     });
 
-    it("aplica los nueve datasets en una base vacía, sin auditoría", async () => {
+    it("aplica los diez datasets en una base vacía, sin auditoría", async () => {
       const report = await loadInstalledFiscalCatalogs(db.database.prisma);
-      expect(report.applied).toHaveLength(9);
+      expect(report.applied).toHaveLength(10);
       expect(report.alreadyApplied).toEqual([]);
       expect(await counts(db)).toEqual(LOADED);
     });
@@ -66,7 +74,7 @@ describe("cargador de catálogos fiscales", () => {
       });
       const report = await loadInstalledFiscalCatalogs(db.database.prisma);
       expect(report.applied).toEqual([]);
-      expect(report.alreadyApplied).toHaveLength(9);
+      expect(report.alreadyApplied).toHaveLength(10);
       expect(await counts(db)).toEqual(LOADED);
       expect(
         await db.database.prisma.fiscalCatalogDataset.findMany({ orderBy: { catalogType: "asc" } }),
@@ -174,8 +182,8 @@ describe("cargador de catálogos fiscales", () => {
         loadFiscalCatalogs({ uow: createDatasetUnitOfWork(db.database.prisma), datasets }),
         loadFiscalCatalogs({ uow: createDatasetUnitOfWork(second.prisma), datasets }),
       ]);
-      expect([a.applied.length, b.applied.length].sort()).toEqual([0, 9]);
-      expect([a.alreadyApplied.length, b.alreadyApplied.length].sort()).toEqual([0, 9]);
+      expect([a.applied.length, b.applied.length].sort()).toEqual([0, 10]);
+      expect([a.alreadyApplied.length, b.alreadyApplied.length].sort()).toEqual([0, 10]);
       expect(await counts(db)).toEqual(LOADED);
     } finally {
       await second.close();

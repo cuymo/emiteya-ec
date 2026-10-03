@@ -13,6 +13,8 @@ import type {
   EnablementRepository,
   StoredEntryVersion,
   StoredPolicyVersion,
+  StoredSchemaEntry,
+  StoredSpecialCase,
 } from "./ports.ts";
 import { createCatalogResolver, type CatalogResolver } from "./resolver.ts";
 
@@ -47,6 +49,10 @@ export type FiscalCatalogQueries = CatalogResolver & {
     catalogType: FiscalCatalogType,
     date: IsoDate,
   ): Promise<Map<string, EntryAvailability>>;
+  /** Archivos del registro de esquemas vigente: documentos e imports (add-invoice-emission, D11). */
+  schemaRegistry(): Promise<StoredSchemaEntry[]>;
+  /** Matriz de casos especiales vigente (ADR 0014). */
+  specialCases(): Promise<StoredSpecialCase[]>;
 };
 
 export function createFiscalCatalogQueries({
@@ -63,6 +69,10 @@ export function createFiscalCatalogQueries({
     async consumerFinalPolicy(date) {
       return resolveCatalogEntry(await reader.policyVersions(), date);
     },
+
+    schemaRegistry: () => reader.schemaEntries(),
+
+    specialCases: () => reader.specialCases(),
 
     async identificationRule(code, date) {
       const version = await resolver.resolveCatalogEntry("identification-type", code, date);

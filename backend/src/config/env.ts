@@ -72,6 +72,15 @@ export const envSchema = z
     // Pool criptográfico fuera del event loop (design D18).
     CRYPTO_WORKERS: int(1, 8).default(2),
     CRYPTO_TASK_TIMEOUT_MS: int(1_000, 120_000).default(30_000),
+    // Paquete de XSD del registro de esquemas (add-invoice-emission, design D11). Sin valor:
+    // `dist/xsd/` en el build y `docs/product/` en desarrollo y pruebas.
+    XSD_DIRECTORY: z.string().min(1).optional(),
+    // Validaciones XSD simultáneas (un worker cada una), en espera y su duración máxima.
+    XSD_VALIDATION_CONCURRENCY: int(1, 8).default(2),
+    XSD_VALIDATION_QUEUE: int(0, 256).default(16),
+    XSD_VALIDATION_TIMEOUT_MS: int(1_000, 60_000).default(10_000),
+    // Líneas por factura (design D2): defensa de recursos de la aplicación, no un límite del SRI.
+    INVOICE_MAX_LINES: int(1, 1_000).default(100),
     // Solo se validan cuando la instalación aún no tiene empresa (loadInitialAdmin).
     INITIAL_USER_EMAIL: z.string().optional(),
     INITIAL_USER_PASSWORD: z.string().optional(),

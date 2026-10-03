@@ -8163,14 +8163,33 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "documentType": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "DOCUMENT",
+                              "IMPORT"
+                            ]
+                          },
+                          "path": {
                             "type": "string"
+                          },
+                          "documentType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "root": {
-                            "type": "string"
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "version": {
-                            "type": "string"
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "file": {
                             "type": "string"
@@ -8182,6 +8201,18 @@
                           "source": {
                             "type": "string"
                           },
+                          "revision": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "imports": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
                           "downloadedAt": {
                             "type": "string",
                             "format": "date-time",
@@ -8192,12 +8223,16 @@
                           }
                         },
                         "required": [
+                          "kind",
+                          "path",
                           "documentType",
                           "root",
                           "version",
                           "file",
                           "sha256",
                           "source",
+                          "revision",
+                          "imports",
                           "downloadedAt",
                           "supported"
                         ],

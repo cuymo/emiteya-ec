@@ -172,13 +172,18 @@ export const consumerFinalPolicyViewSchema = z.strictObject({
 });
 export type ConsumerFinalPolicyView = z.infer<typeof consumerFinalPolicyViewSchema>;
 
+/** Archivo del registro de esquemas: un XSD de comprobante o un esquema que este importa. */
 export const schemaRegistryEntryViewSchema = z.strictObject({
-  documentType: z.string(),
-  root: z.string(),
-  version: z.string(),
+  kind: z.enum(["DOCUMENT", "IMPORT"]),
+  path: z.string(),
+  documentType: z.string().nullable(),
+  root: z.string().nullable(),
+  version: z.string().nullable(),
   file: z.string(),
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
   source: z.string(),
+  revision: z.string().nullable(),
+  imports: z.array(z.string()),
   downloadedAt: z.iso.datetime(),
   supported: z.boolean(),
 });

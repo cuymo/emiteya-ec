@@ -32,13 +32,15 @@ function freePort(): Promise<number> {
 /**
  * Arranca main.ts sobre un esquema nuevo, que se aprovisiona con el administrador inicial. La
  * custodia de firmas está deshabilitada salvo que `env` la configure. Con `db`, arranca sobre un
- * esquema existente (un segundo arranque), y `stop` no lo borra: lo borra quien lo creó.
+ * esquema existente (un segundo arranque), y `stop` no lo borra: lo borra quien lo creó. Con
+ * `waitFor: "live"`, espera a /health/live: para probar un arranque que no queda listo.
  */
 export async function startE2eBackend(options: {
   label: string;
   admin: { email: string; password: string };
   env?: Record<string, string>;
   db?: MigratedSchema;
+  waitFor?: "ready" | "live";
 }): Promise<E2eBackend> {
   const db = options.db ?? (await createMigratedSchema(options.label));
   const port = await freePort();
@@ -75,7 +77,7 @@ export async function startE2eBackend(options: {
   const deadline = Date.now() + 90_000;
   let ready = false;
   while (!ready && Date.now() < deadline && backend.exitCode === null) {
-    ready = await fetch(`${base}/health/ready`).then(
+    ready = await fetch(`${base}/health/${options.waitFor ?? "ready"}`).then(
       (res) => res.ok,
       () => false,
     );

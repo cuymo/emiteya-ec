@@ -56,6 +56,38 @@ const ivaEntry = z
 // ICE, IRBPNR y formas de pago no tienen atributos propios: el esquema estricto no admite tarifas.
 const plainEntry = z.strictObject(versionFields);
 
+// Registro de esquemas. La versión 1 publicó solo documentos, sin ruta ni imports: su forma se
+// conserva tal cual para que su checksum no cambie. Desde la versión 2 cada entrada declara su
+// clase y su ruta lógica en el paquete de XSD (add-invoice-emission, design D11).
+const schemaDocumentFields = {
+  documentType: z.enum(["01", "03", "04", "05", "06", "07"]),
+  root: text,
+  version: z.string().regex(/^[0-9]+\.[0-9]+\.[0-9]+$/),
+  file: text,
+  sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  source: text,
+  downloadedAt: z.iso.datetime(),
+  supported: z.boolean(),
+};
+const schemaPath = z.string().regex(/^[a-z0-9-]+\/[A-Za-z0-9_.-]+\.xsd$/);
+const legacySchemaEntry = z.strictObject(schemaDocumentFields);
+const documentSchemaEntry = z.strictObject({
+  kind: z.literal("DOCUMENT"),
+  path: schemaPath,
+  ...schemaDocumentFields,
+  imports: z.array(schemaPath),
+});
+const importSchemaEntry = z.strictObject({
+  kind: z.literal("IMPORT"),
+  path: schemaPath,
+  file: text,
+  sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  source: text,
+  revision: text,
+  downloadedAt: z.iso.datetime(),
+  supported: z.boolean(),
+});
+
 const header = {
   version: z.number().int().min(1),
   source: sourceSchema,
@@ -98,20 +130,7 @@ export const datasetFileSchema = z.discriminatedUnion("catalogType", [
   z.strictObject({
     catalogType: z.literal("schema-registry"),
     ...header,
-    entries: z
-      .array(
-        z.strictObject({
-          documentType: z.enum(["01", "03", "04", "05", "06", "07"]),
-          root: text,
-          version: z.string().regex(/^[0-9]+\.[0-9]+\.[0-9]+$/),
-          file: text,
-          sha256: z.string().regex(/^[0-9a-f]{64}$/),
-          source: text,
-          downloadedAt: z.iso.datetime(),
-          supported: z.boolean(),
-        }),
-      )
-      .min(1),
+    entries: z.array(z.union([legacySchemaEntry, documentSchemaEntry, importSchemaEntry])).min(1),
   }),
   z.strictObject({
     catalogType: z.literal("special-case-matrix"),
@@ -190,6 +209,39 @@ function checkVersions(label: string, versions: readonly VersionedEntry[]): void
   }
 }
 
+/**
+ * Registro de esquemas desde la versión 2: rutas únicas que terminan en su archivo, y cada import
+ * declarado por un documento está registrado en el mismo archivo.
+ */
+function checkSchemaRegistry(label: string, dataset: SchemaRegistryDataset): void {
+  if (dataset.version === 1) return;
+  const paths = new Set<string>();
+  const imports = new Set<string>();
+  for (const entry of dataset.entries) {
+    if (!("kind" in entry)) {
+      throw new DatasetValidationError(`${label}: ${entry.file} sin clase ni ruta lógica`);
+    }
+    if (paths.has(entry.path) || !entry.path.endsWith(`/${entry.file}`)) {
+      throw new DatasetValidationError(
+        `${label}: ruta repetida o ajena a su archivo ${entry.path}`,
+      );
+    }
+    paths.add(entry.path);
+    if (entry.kind === "IMPORT") imports.add(entry.path);
+  }
+  for (const entry of dataset.entries) {
+    if ("kind" in entry && entry.kind === "DOCUMENT") {
+      for (const path of entry.imports) {
+        if (!imports.has(path)) {
+          throw new DatasetValidationError(
+            `${label}: ${entry.path} importa ${path}, no registrado`,
+          );
+        }
+      }
+    }
+  }
+}
+
 /** Reglas dentro de un archivo: política coherente, claves únicas por fecha, sin superposición. */
 function checkFile(dataset: DatasetFile): void {
   const label = `${dataset.catalogType} v${dataset.version}`;
@@ -217,6 +269,7 @@ function checkFile(dataset: DatasetFile): void {
     }
     checkVersions(label, dataset.entries);
   }
+  if (dataset.catalogType === "schema-registry") checkSchemaRegistry(label, dataset);
   if (dataset.catalogType === "consumer-final-policy") {
     checkVersions(
       label,
