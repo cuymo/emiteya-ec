@@ -42,6 +42,11 @@ model User {
   partiesUpdated              Party[]                       @relation("PartyUpdater")
   productsCreated             Product[]                     @relation("ProductCreator")
   productsUpdated             Product[]                     @relation("ProductUpdater")
+  invoiceDraftsCreated        InvoiceDraft[]                @relation("InvoiceDraftCreator")
+  invoiceDraftsUpdated        InvoiceDraft[]                @relation("InvoiceDraftUpdater")
+  documentsCreated            ElectronicDocument[]          @relation("DocumentCreator")
+  documentTransitions         DocumentStateTransition[]     @relation("DocumentTransitionActor")
+  idempotencyRecords          IdempotencyRecord[]           @relation("IdempotencyCreator")
 
   @@unique([email])
   @@map("user")
@@ -118,6 +123,9 @@ model Organization {
   fiscalCatalogSettings      CompanyFiscalCatalogSetting[]
   parties                    Party[]
   products                   Product[]
+  invoiceDrafts              InvoiceDraft[]
+  documents                  ElectronicDocument[]
+  idempotencyRecords         IdempotencyRecord[]
 
   @@unique([slug])
   @@map("organization")
@@ -283,6 +291,7 @@ model EmissionPoint {
   updatedAt       DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
   defaults        MemberDefaultEmissionPoint[]
   sequences       FiscalSequence[]
+  invoiceDrafts   InvoiceDraft[]
 
   @@unique([establishmentId, code])
   @@unique([companyId, id])
@@ -334,18 +343,19 @@ model FiscalSequence {
 // Número reservado (design D2 y D4): la unicidad del secuencial con el ambiente (CTX §5) en la
 // base de datos. Solo de agregado.
 model FiscalSequenceReservation {
-  id              String         @id @default(uuid())
-  companyId       String         @map("company_id")
+  id              String              @id @default(uuid())
+  companyId       String              @map("company_id")
   environment     String
-  establishmentId String         @map("establishment_id")
-  emissionPointId String         @map("emission_point_id")
-  documentType    String         @map("document_type") @db.Char(2)
-  sequence        FiscalSequence @relation(fields: [companyId, environment, establishmentId, emissionPointId, documentType], references: [companyId, environment, establishmentId, emissionPointId, documentType], onDelete: Restrict)
+  establishmentId String              @map("establishment_id")
+  emissionPointId String              @map("emission_point_id")
+  documentType    String              @map("document_type") @db.Char(2)
+  sequence        FiscalSequence      @relation(fields: [companyId, environment, establishmentId, emissionPointId, documentType], references: [companyId, environment, establishmentId, emissionPointId, documentType], onDelete: Restrict)
   sequential      Int
-  reservedAt      DateTime       @default(now()) @map("reserved_at") @db.Timestamptz(3)
-  reservedById    String?        @map("reserved_by")
-  reservedBy      User?          @relation("SequenceReserver", fields: [reservedById], references: [id], onDelete: Restrict)
-  correlationId   String         @map("correlation_id")
+  reservedAt      DateTime            @default(now()) @map("reserved_at") @db.Timestamptz(3)
+  reservedById    String?             @map("reserved_by")
+  reservedBy      User?               @relation("SequenceReserver", fields: [reservedById], references: [id], onDelete: Restrict)
+  correlationId   String              @map("correlation_id")
+  document        ElectronicDocument?
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@map("fiscal_sequence_reservation")
@@ -442,12 +452,13 @@ model FiscalCatalogDataset {
 // Identidad estable de una entrada: (catálogo, entryKey). El código fiscal no es identidad
 // (la tabla 18 de la ficha repite códigos con denominaciones distintas, design D6).
 model FiscalCatalogKey {
-  catalogType  String                        @map("catalog_type")
-  entryKey     String                        @map("entry_key")
-  code         String
-  versions     FiscalCatalogEntry[]
-  settings     CompanyFiscalCatalogSetting[]
-  productTaxes ProductTax[]
+  catalogType     String                        @map("catalog_type")
+  entryKey        String                        @map("entry_key")
+  code            String
+  versions        FiscalCatalogEntry[]
+  settings        CompanyFiscalCatalogSetting[]
+  productTaxes    ProductTax[]
+  invoicePayments InvoiceDraftPayment[]
 
   @@id([catalogType, entryKey])
   @@map("fiscal_catalog_key")
@@ -553,30 +564,33 @@ model CompanyFiscalCatalogSetting {
 // empresa, tipo y número. El consumidor final es un registro del sistema (`system_record`), uno por
 // empresa, inmutable y obligatorio; lo garantizan los CHECK y triggers de la migración.
 model Party {
-  id                   String       @id @default(uuid())
-  companyId            String       @map("company_id")
-  company              Organization @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  identificationType   String       @map("identification_type") @db.Char(2)
-  identification       String       @db.VarChar(20)
-  legalName            String       @map("legal_name") @db.VarChar(300)
-  address              String?      @db.VarChar(300)
-  email                String?      @db.VarChar(300)
-  phone                String?      @db.VarChar(50)
-  roles                String[]     @default([])
-  status               String       @default("ACTIVE")
-  systemRecord         String?      @map("system_record")
-  version              Int          @default(1)
-  searchName           String       @map("search_name")
+  id                   String         @id @default(uuid())
+  companyId            String         @map("company_id")
+  company              Organization   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  identificationType   String         @map("identification_type") @db.Char(2)
+  identification       String         @db.VarChar(20)
+  legalName            String         @map("legal_name") @db.VarChar(300)
+  address              String?        @db.VarChar(300)
+  email                String?        @db.VarChar(300)
+  phone                String?        @db.VarChar(50)
+  roles                String[]       @default([])
+  status               String         @default("ACTIVE")
+  systemRecord         String?        @map("system_record")
+  version              Int            @default(1)
+  searchName           String         @map("search_name")
   /// Colación C en la migración: el índice btree sirve para LIKE 'prefijo%' (design D10).
-  searchIdentification String       @map("search_identification")
-  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  createdBy            String?      @map("created_by")
-  creator              User?        @relation("PartyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  updatedBy            String?      @map("updated_by")
-  updater              User?        @relation("PartyUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  searchIdentification String         @map("search_identification")
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy            String?        @map("created_by")
+  creator              User?          @relation("PartyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy            String?        @map("updated_by")
+  updater              User?          @relation("PartyUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  invoiceDrafts        InvoiceDraft[]
 
   @@unique([companyId, identificationType, identification])
+  // Destino de la referencia del comprador de un borrador, en la misma empresa (add-invoice-emission).
+  @@unique([companyId, id])
   @@index([companyId, searchIdentification])
   @@index([companyId, status, searchName, id])
   @@map("party")
@@ -586,29 +600,30 @@ model Party {
 // sin impuestos en `NUMERIC` sin escala fija, con el CHECK de dominio de `precioUnitario` (18
 // dígitos en total, 6 decimales como máximo); código principal único por empresa.
 model Product {
-  id                  String       @id @default(uuid())
-  companyId           String       @map("company_id")
-  company             Organization @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  id                  String             @id @default(uuid())
+  companyId           String             @map("company_id")
+  company             Organization       @relation(fields: [companyId], references: [id], onDelete: Restrict)
   kind                String
-  mainCode            String?      @map("main_code") @db.VarChar(25)
-  auxiliaryCode       String?      @map("auxiliary_code") @db.VarChar(25)
-  name                String       @db.VarChar(300)
-  description         String?      @db.VarChar(1000)
-  unitPrice           Decimal      @map("unit_price") @db.Decimal
-  stockTracked        Boolean      @default(false) @map("stock_tracked")
-  status              String       @default("ACTIVE")
-  version             Int          @default(1)
-  searchName          String       @map("search_name")
+  mainCode            String?            @map("main_code") @db.VarChar(25)
+  auxiliaryCode       String?            @map("auxiliary_code") @db.VarChar(25)
+  name                String             @db.VarChar(300)
+  description         String?            @db.VarChar(1000)
+  unitPrice           Decimal            @map("unit_price") @db.Decimal
+  stockTracked        Boolean            @default(false) @map("stock_tracked")
+  status              String             @default("ACTIVE")
+  version             Int                @default(1)
+  searchName          String             @map("search_name")
   /// Colación C en la migración, como la identificación de los terceros (design D10).
-  searchMainCode      String?      @map("search_main_code")
-  searchAuxiliaryCode String?      @map("search_auxiliary_code")
-  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  createdBy           String       @map("created_by")
-  creator             User         @relation("ProductCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  updatedBy           String       @map("updated_by")
-  updater             User         @relation("ProductUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  searchMainCode      String?            @map("search_main_code")
+  searchAuxiliaryCode String?            @map("search_auxiliary_code")
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy           String             @map("created_by")
+  creator             User               @relation("ProductCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy           String             @map("updated_by")
+  updater             User               @relation("ProductUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
   taxes               ProductTax[]
+  invoiceLines        InvoiceDraftLine[]
 
   @@unique([companyId, mainCode])
   @@unique([companyId, id])
@@ -631,4 +646,173 @@ model ProductTax {
   @@id([productId, catalogType])
   @@index([companyId, catalogType, entryKey])
   @@map("product_tax")
+}
+
+// Borrador de factura (add-invoice-emission, design D2): recurso editable previo a la emisión, sin
+// secuencial ni datos fiscales. Las referencias son de la misma empresa (FK compuestas). Emitido,
+// queda EMITTED con su documento y un trigger impide cambiarlo o borrarlo.
+model InvoiceDraft {
+  id              String                @id @default(uuid())
+  companyId       String                @map("company_id")
+  company         Organization          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  emissionPointId String?               @map("emission_point_id")
+  emissionPoint   EmissionPoint?        @relation(fields: [companyId, emissionPointId], references: [companyId, id], onDelete: Restrict)
+  buyerPartyId    String?               @map("buyer_party_id")
+  buyer           Party?                @relation(fields: [companyId, buyerPartyId], references: [companyId, id], onDelete: Restrict)
+  /// DRAFT o EMITTED (CHECK en la migración).
+  status          String                @default("DRAFT")
+  documentId      String?               @unique @map("document_id")
+  document        ElectronicDocument?   @relation("DraftDocument", fields: [documentId], references: [id], onDelete: Restrict)
+  version         Int                   @default(1)
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy       String                @map("created_by")
+  creator         User                  @relation("InvoiceDraftCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt       DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy       String                @map("updated_by")
+  updater         User                  @relation("InvoiceDraftUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  lines           InvoiceDraftLine[]
+  payments        InvoiceDraftPayment[]
+
+  @@unique([companyId, id])
+  @@index([companyId, status, updatedAt])
+  @@map("invoice_draft")
+}
+
+// Línea de un borrador: producto, cantidad y descuento. El precio no se guarda: la emisión toma el
+// del producto y lo congela en el snapshot (design D2).
+model InvoiceDraftLine {
+  draftId   String       @map("draft_id")
+  companyId String       @map("company_id")
+  draft     InvoiceDraft @relation(fields: [companyId, draftId], references: [companyId, id], onDelete: Cascade)
+  position  Int
+  productId String       @map("product_id")
+  product   Product      @relation(fields: [companyId, productId], references: [companyId, id], onDelete: Restrict)
+  quantity  Decimal      @db.Decimal
+  discount  Decimal      @db.Decimal
+
+  @@id([draftId, position])
+  @@map("invoice_draft_line")
+}
+
+// Forma de pago de un borrador, por la identidad de su entrada del catálogo; sin importe cubre el
+// importe total si es la única (design D2).
+model InvoiceDraftPayment {
+  draftId     String           @map("draft_id")
+  companyId   String           @map("company_id")
+  draft       InvoiceDraft     @relation(fields: [companyId, draftId], references: [companyId, id], onDelete: Cascade)
+  position    Int
+  catalogType String           @default("payment-method") @map("catalog_type")
+  entryKey    String           @map("entry_key")
+  method      FiscalCatalogKey @relation(fields: [catalogType, entryKey], references: [catalogType, entryKey], onDelete: Restrict)
+  amount      Decimal?         @db.Decimal
+
+  @@id([draftId, position])
+  @@map("invoice_draft_payment")
+}
+
+// Comprobante electrónico (design D3; ADR 0002): existe desde RESERVED, con su snapshot inmutable,
+// su secuencial confirmado y su clave de acceso. Solo pasa de RESERVED a SIGNED, y SIGNED exige su
+// artefacto firmado (trigger diferido). No se borra.
+model ElectronicDocument {
+  id                  String                    @id @default(uuid())
+  companyId           String                    @map("company_id")
+  company             Organization              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  documentType        String                    @map("document_type") @db.Char(2)
+  environment         String
+  establishmentId     String                    @map("establishment_id")
+  emissionPointId     String                    @map("emission_point_id")
+  documentNumber      String                    @map("document_number") @db.Char(17)
+  sequential          Int
+  reservationId       String                    @unique @map("reservation_id")
+  reservation         FiscalSequenceReservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  accessKey           String                    @unique @map("access_key") @db.Char(49)
+  numericCode         String                    @map("numeric_code") @db.Char(8)
+  issueDate           DateTime                  @map("issue_date") @db.Date
+  /// RESERVED o SIGNED (CHECK en la migración).
+  state               String
+  snapshot            Json
+  schemaVersion       String                    @map("schema_version")
+  buyerIdentification String                    @map("buyer_identification")
+  buyerName           String                    @map("buyer_name")
+  /// Copia del importe total del snapshot, con el CHECK de `importe`.
+  total               Decimal                   @db.Decimal
+  createdAt           DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy           String                    @map("created_by")
+  creator             User                      @relation("DocumentCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  signedAt            DateTime?                 @map("signed_at") @db.Timestamptz(3)
+  /// Diagnóstico del último intento, separado del estado fiscal (design D10).
+  lastAttemptStage    String?                   @map("last_attempt_stage")
+  lastAttemptCode     String?                   @map("last_attempt_code")
+  lastAttemptClass    String?                   @map("last_attempt_class")
+  lastAttemptAt       DateTime?                 @map("last_attempt_at") @db.Timestamptz(3)
+  attemptCount        Int                       @default(0) @map("attempt_count")
+  attemptLeaseUntil   DateTime?                 @map("attempt_lease_until") @db.Timestamptz(3)
+  draft               InvoiceDraft?             @relation("DraftDocument")
+  transitions         DocumentStateTransition[]
+  artifacts           DocumentArtifact[]
+  idempotency         IdempotencyRecord[]
+
+  @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
+  @@unique([companyId, id])
+  @@index([companyId, documentType, createdAt, id])
+  @@index([companyId, documentNumber])
+  @@map("electronic_document")
+}
+
+// Historial de transiciones de un comprobante (ERS RF-525): solo de agregado.
+model DocumentStateTransition {
+  id          String             @id @default(uuid())
+  companyId   String             @map("company_id")
+  documentId  String             @map("document_id")
+  document    ElectronicDocument @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  fromState   String?            @map("from_state")
+  toState     String             @map("to_state")
+  cause       String
+  /// USER o SYSTEM (CHECK en la migración).
+  actorType   String             @map("actor_type")
+  actorUserId String?            @map("actor_user_id")
+  actor       User?              @relation("DocumentTransitionActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  metadata    Json?
+  occurredAt  DateTime           @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  @@index([companyId, documentId, occurredAt])
+  @@map("document_state_transition")
+}
+
+// Artefacto fiscal de un comprobante (ADR 0010): bytes exactos, inmutables, con su hash. Solo de
+// agregado; un comprobante tiene a lo sumo un artefacto de cada tipo.
+model DocumentArtifact {
+  id         String             @id @default(uuid())
+  companyId  String             @map("company_id")
+  documentId String             @map("document_id")
+  document   ElectronicDocument @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  /// SIGNED_XML en este cambio (CHECK en la migración).
+  kind       String
+  mediaType  String             @map("media_type")
+  content    Bytes
+  sizeBytes  Int                @map("size_bytes")
+  sha256     String             @db.Char(64)
+  metadata   Json
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([documentId, kind])
+  @@map("document_artifact")
+}
+
+// Registro de idempotencia de la emisión (Q-30, design D8): empresa, operación y clave, con la huella
+// canónica de la solicitud. Solo de agregado: no expira durante la vida fiscal del comprobante.
+model IdempotencyRecord {
+  companyId          String             @map("company_id")
+  company            Organization       @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  operation          String
+  idempotencyKey     String             @map("idempotency_key") @db.VarChar(100)
+  requestFingerprint String             @map("request_fingerprint") @db.Char(64)
+  documentId         String             @map("document_id")
+  document           ElectronicDocument @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy          String             @map("created_by")
+  creator            User               @relation("IdempotencyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@id([companyId, operation, idempotencyKey])
+  @@map("idempotency_record")
 }

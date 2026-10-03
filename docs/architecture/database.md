@@ -30,14 +30,15 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `product`, `product_tax` | `products` | Yes | Se desactivan; nunca se borran. Los comprobantes guardan su copia; los impuestos refieren la identidad de una entrada fiscal, nunca una tarifa. |
 | `fiscal_catalog_dataset`, `fiscal_catalog_key`, `fiscal_catalog_entry`, `consumer_final_policy`, `schema_registry_entry`, `special_case_support` | `catalogs` | No | Datos normativos versionados del sistema, que el cargador aplica al arrancar desde los datasets del repositorio (ADR 0020). Sin borrado; las versiones publicadas solo cierran su vigencia o se retiran. |
 | `company_fiscal_catalog_setting` | `catalogs` | Yes | Decisión explícita de una empresa sobre una entrada habilitable; sin fila rige la política por defecto del catálogo. |
-| `electronic_document` | `fiscal` | Yes | Nace en `RESERVED` y nunca se borra (Q-35). |
+| `invoice_draft`, `invoice_draft_line`, `invoice_draft_payment` | `invoices` | Yes | Borrador editable previo a la emisión, sin datos fiscales; emitido, queda inmutable con su comprobante. |
+| `electronic_document` | `fiscal` | Yes | Nace en `RESERVED` con su snapshot inmutable, su secuencial confirmado y su clave de acceso; solo pasa a `SIGNED` con su artefacto y nunca se borra (Q-35). |
 | `document_line`, `document_relation`, `tax_detail`, `payment` | `fiscal` | Yes | Inmutables desde la firma, salvo corrección de un devuelto (BR-28). |
 | `document_state_transition` | `fiscal` | Yes | Solo agregado (ERS RF-525). |
 | `sri_attempt` | `fiscal` | Yes | Solo agregado. |
-| `artifact` | `fiscal` | Yes | Solo agregado: metadatos y hash; el contenido vive en el almacenamiento (ADR 0010). |
+| `document_artifact` | `fiscal` | Yes | Solo agregado: bytes exactos en `bytea`, con hash y metadatos, detrás de un puerto de almacenamiento (ADR 0010). |
 | `delivery_attempt` | `fiscal` | Yes | Solo agregado. |
 | `stock_movement` | `inventory` | Yes | Solo agregado (ERS RF-313). |
-| `idempotency_record` | `platform` | Yes | Purga por ventana declarada. |
+| `idempotency_record` | `platform` | Yes | Solo agregado: empresa, operación, clave y huella de la solicitud. Sin purga mientras dure la vida fiscal del comprobante (Q-30). |
 | `job` | `platform` | Yes | Cola persistida (ADR 0012). |
 | `audit_event` | `audit` | Yes | Solo agregado. |
 | `report_export` | `reports` | Yes | Opcional (ERS §13). |
@@ -146,7 +147,8 @@ Migraciones: `backend/prisma/migrations/20261002083000_add_user_access` (cambio
 `20261003100000_add_fiscal_catalogs` (cambio `add-fiscal-catalogs`) y
 `20261003200000_add_parties_and_products`, `20261003210000_require_consumer_final` y
 `20261003220000_unit_price_domain` (cambio `add-parties-and-products`), y
-`20261003230000_xsd_decimal_domains` (mantenimiento de Q-43). Las tablas
+`20261003230000_xsd_decimal_domains` (mantenimiento de Q-43), y
+`20261004100000_add_invoice_emission` (cambio `add-invoice-emission`). Las tablas
 de Better Auth y de sus plugins las genera el CLI `auth`; las columnas de esas tablas usan los
 nombres que fija Better Auth (`organizationId`, `userId`).
 
@@ -178,6 +180,13 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `party` | Propia (`parties`) | Tercero: `identification_type`, `identification`, `legal_name`, `address`, `email`, `phone`, `roles` (`CUSTOMER`, `SUPPLIER`, `CARRIER`), `status`, `system_record` (`CONSUMER_FINAL` o nulo), `version`, las claves de búsqueda `search_name` y `search_identification` (colación `C`), y autores y fechas (nulos en el registro del sistema). |
 | `product` | Propia (`products`) | Producto o servicio: `kind` (`GOOD`, `SERVICE`), `main_code`, `auxiliary_code`, `name`, `description`, `unit_price NUMERIC` sin impuestos (sin escala fija, guardado en forma canónica), `stock_tracked`, `status`, `version`, las claves de búsqueda `search_name`, `search_main_code` y `search_auxiliary_code` (las dos últimas con colación `C`), y autores y fechas. |
 | `product_tax` | Propia (`products`) | Referencia de un producto a una entrada fiscal: `(product_id, catalog_type)` con `company_id` y `entry_key`; `catalog_type` es `iva-rate`, `ice-rate` o `irbpnr-rate`. |
+| `invoice_draft` | Propia (`invoices`) | Borrador de factura: punto de emisión y comprador opcionales mientras se edita (FK compuestas a la misma empresa), `status` (`DRAFT`, `EMITTED`), `document_id` único al emitir, `version`, y autores y fechas (ERS RF-008). |
+| `invoice_draft_line` | Propia (`invoices`) | Línea del borrador: producto de la misma empresa, `quantity` y `discount` (`NUMERIC` con la regla del XSD), sin precio: la emisión toma el del producto. |
+| `invoice_draft_payment` | Propia (`invoices`) | Forma de pago del borrador por su entrada del catálogo `payment-method`, con `amount` opcional. |
+| `electronic_document` | Propia (`fiscal`) | Comprobante desde `RESERVED`: tipo, ambiente, establecimiento, punto, número, secuencial, reserva (única), clave de acceso (única), código numérico, fecha de emisión, `state` (`RESERVED`, `SIGNED`), `snapshot` JSON, versión del esquema, copias del comprador y del total para listar, autor, fecha de firma y diagnóstico del último intento. |
+| `document_state_transition` | Propia (`fiscal`) | Historial de transiciones: estado anterior y nuevo, causa, actor y metadatos no sensibles (ERS RF-525). |
+| `document_artifact` | Propia (`fiscal`) | Artefacto exacto de un comprobante: `kind` (`SIGNED_XML`), tipo de medio, `content` (`bytea`), tamaño, SHA-256 y metadatos (ADR 0010). |
+| `idempotency_record` | Propia (`platform`) | Clave de idempotencia de la emisión con su huella y su comprobante (Q-30). |
 
 Restricciones de la migración, incluidas las que Prisma no expresa (verificadas por
 `backend/test/integration/migrations.test.ts`):
@@ -266,6 +275,14 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `product_tax_pkey`, `product_tax_catalog_type_check` | `product_tax` | Como mucho una referencia por impuesto; solo `iva-rate`, `ice-rate` e `irbpnr-rate` | `@@id` en el esquema y SQL de la migración |
 | `product_tax_company_id_product_id_fkey`, `product_tax_catalog_type_entry_key_fkey` | `product_tax` | La referencia es del producto de la misma empresa y de una entrada fiscal existente (`fiscal_catalog_key`). Esta clave foránea es un objeto de `products` sobre una tabla de `catalogs`; `products` nunca lee esas tablas | Relación en el esquema |
 | `product_invariants`, `product_tax_invariants` | `product`, `product_tax` | Triggers de restricción diferidos: al confirmar, cada producto tiene exactamente un IVA y, si es un servicio, ningún IRBPNR, sin importar el orden de las sentencias | SQL de la migración |
+| `invoice_draft_values_check`, `invoice_draft_line_values_check`, `invoice_draft_payment_values_check` | `invoice_draft`, `invoice_draft_line`, `invoice_draft_payment` | Estado `DRAFT` o `EMITTED`, este con su comprobante; cantidad 18/6 y descuento e importe 14/2 no negativos (regla del XSD); forma de pago del catálogo `payment-method` | SQL de la migración |
+| `invoice_draft_company_id_emission_point_id_fkey`, `invoice_draft_company_id_buyer_party_id_fkey`, `invoice_draft_line_company_id_product_id_fkey` | `invoice_draft`, `invoice_draft_line` | Punto, comprador y producto de la misma empresa (FK compuestas; `party_company_id_id_key` es su destino) | `@relation` en el esquema |
+| `invoice_draft_guard`, `invoice_draft_line_guard`, `invoice_draft_payment_guard` | `invoice_draft`, `invoice_draft_line`, `invoice_draft_payment` | Triggers: un borrador emitido, sus líneas y sus pagos no cambian ni se borran; la empresa y el autor no cambian | SQL de la migración |
+| `electronic_document_values_check`, `electronic_document_access_key_key`, `electronic_document_reservation_id_key`, `electronic_document_company_id_environment_establishment_id_key` | `electronic_document` | Tipo, ambiente, estado con su fecha de firma, clave de 49 dígitos, código de 8, número `EEE-PPP-SSSSSSSSS`, secuencial y total (regla del XSD de `importe`); clave, reserva y número únicos | SQL de la migración y `@@unique` |
+| `electronic_document_guard`, `electronic_document_no_truncate` | `electronic_document` | Triggers: solo cambian `RESERVED` → `SIGNED`, la fecha de firma y el diagnóstico del intento; sin borrado ni truncado | SQL de la migración |
+| `electronic_document_requires_artifact` | `electronic_document` | Trigger de restricción diferido: un comprobante `SIGNED` tiene su artefacto `SIGNED_XML` al confirmar | SQL de la migración |
+| `document_state_transition_values_check`, `document_artifact_values_check`, `document_artifact_document_id_kind_key`, `idempotency_record_values_check` | `document_state_transition`, `document_artifact`, `idempotency_record` | Estados y actor; artefacto `SIGNED_XML` con tamaño igual a sus bytes y SHA-256 hex, uno por tipo; operación `invoice.emit`, clave ASCII visible de 1 a 100 y huella hex | SQL de la migración y `@@unique` |
+| `document_state_transition_append_only`, `document_artifact_append_only`, `idempotency_record_append_only` y sus `*_no_truncate` | `document_state_transition`, `document_artifact`, `idempotency_record` | Triggers: solo de agregado | SQL de la migración |
 
 - Ninguna restricción limita el número de empresas: una sola empresa es política del aprovisionamiento (ADR 0009, design de `add-user-access`).
 - El trigger se prefiere a privilegios separados porque una instalación self-hosted puede usar un solo usuario de base de datos.

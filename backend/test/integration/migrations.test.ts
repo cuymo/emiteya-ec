@@ -302,7 +302,11 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     expect(columns).toEqual(
       [
         "consumer_final_policy.max_amount",
+        "electronic_document.total",
         "fiscal_catalog_entry.percentage",
+        "invoice_draft_line.discount",
+        "invoice_draft_line.quantity",
+        "invoice_draft_payment.amount",
         "product.unit_price",
       ].map((column) => ({ column, type: "numeric", precision: null, scale: null })),
     );
@@ -311,6 +315,49 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "product_unit_price_check",
         "fiscal_catalog_entry_percentage_check",
         "consumer_final_policy_max_amount_check",
+        "invoice_draft_line_values_check",
+        "invoice_draft_payment_values_check",
+        "electronic_document_values_check",
+      ]),
+    );
+  });
+
+  it("crea las restricciones y triggers de la emisión de facturas", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "invoice_draft_values_check",
+        "invoice_draft_company_id_emission_point_id_fkey",
+        "invoice_draft_company_id_buyer_party_id_fkey",
+        "invoice_draft_line_company_id_product_id_fkey",
+        "invoice_draft_payment_catalog_type_entry_key_fkey",
+        "electronic_document_reservation_id_fkey",
+        "document_state_transition_values_check",
+        "document_artifact_values_check",
+        "idempotency_record_values_check",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "invoice_draft_document_id_key",
+        "electronic_document_access_key_key",
+        "electronic_document_reservation_id_key",
+        "electronic_document_company_id_environment_establishment_id_key",
+        "document_artifact_document_id_kind_key",
+        "idempotency_record_pkey",
+        "party_company_id_id_key",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "invoice_draft_guard",
+        "invoice_draft_line_guard",
+        "invoice_draft_payment_guard",
+        "electronic_document_guard",
+        "electronic_document_requires_artifact",
+        "electronic_document_no_truncate",
+        "document_state_transition_append_only",
+        "document_artifact_append_only",
+        "idempotency_record_append_only",
       ]),
     );
   });

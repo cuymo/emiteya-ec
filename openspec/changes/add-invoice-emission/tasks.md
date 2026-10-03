@@ -2,14 +2,14 @@
 
 ## 1. Esquema de documentos, borradores e idempotencia
 
-- [ ] 1.1 Crear la migración y los modelos Prisma de `invoice_draft`, `invoice_draft_line` e `invoice_draft_payment` (design D2).
+- [x] 1.1 Crear la migración y los modelos Prisma de `invoice_draft`, `invoice_draft_line` e `invoice_draft_payment` (design D2).
   - Columnas: `status` (`DRAFT`, `EMITTED`), `version`, autor y fecha de creación y del último cambio, `document_id` único.
   - CHECK de dominio de cantidad (18/6), descuento e importe de pago (14/2) con la regla del XSD. La línea no guarda precio: lo toma del producto al emitir.
   - FK a punto de emisión, tercero, producto y entrada del catálogo de formas de pago.
   - Trigger que impide cambiar o borrar un borrador `EMITTED`, sus líneas y sus pagos.
 
   Verificar con pruebas de integración del esquema: escalas fuera del dominio rechazadas por su CHECK y borrador emitido inmutable
-- [ ] 1.2 Crear `electronic_document` y `document_state_transition` (design D3):
+- [x] 1.2 Crear `electronic_document` y `document_state_transition` (design D3):
   - unicidades de reserva, clave de acceso, número por ambiente, establecimiento, punto y tipo, y borrador;
   - CHECK de estado, clave, tipo y `total`;
   - trigger que solo permite `RESERVED` → `SIGNED`, `signed_at` y las columnas del intento;
@@ -17,11 +17,11 @@
   - transiciones de solo agregado.
 
   Verificar con pruebas de integración: snapshot, número y clave inmutables, transición inversa rechazada y borrado rechazado
-- [ ] 1.3 Crear `document_artifact` (bytes, `size_bytes = octet_length`, SHA-256 hex, `UNIQUE (document_id, kind)`, de solo agregado) y el trigger de restricción diferido que exige el artefacto `SIGNED_XML` a un documento `SIGNED` (design D3 y D9).
+- [x] 1.3 Crear `document_artifact` (bytes, `size_bytes = octet_length`, SHA-256 hex, `UNIQUE (document_id, kind)`, de solo agregado) y el trigger de restricción diferido que exige el artefacto `SIGNED_XML` a un documento `SIGNED` (design D3 y D9).
   - Crear `idempotency_record`, de solo agregado, con `UNIQUE (company_id, operation, idempotency_key)` (design D8).
 
   Verificar con pruebas de integración: `SIGNED` sin artefacto rechazado al confirmar, artefacto inmutable, segundo artefacto rechazado y clave duplicada rechazada
-- [ ] 1.4 Añadir el bloque de las tablas nuevas a `migrations.test.ts`, con la lista exacta de columnas `numeric`, y documentar tablas, CHECK y triggers en `database.md`. Verificar que `migrations.test.ts` pasa, incluida la ausencia de deriva entre migraciones y esquema
+- [x] 1.4 Añadir el bloque de las tablas nuevas a `migrations.test.ts`, con la lista exacta de columnas `numeric`, y documentar tablas, CHECK y triggers en `database.md`. Verificar que `migrations.test.ts` pasa, incluida la ausencia de deriva entre migraciones y esquema
 
 ## 2. Registro de esquemas completo y XSD empaquetados
 
