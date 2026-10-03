@@ -48,19 +48,21 @@ describe("Inicio: preparación para emitir (design D9 y D14)", () => {
     expect(await screen.findByText("Aún no puede emitir")).toBeDefined();
     const primary = screen.getByRole("link", { name: "Registrar los datos de la empresa" });
     expect(primary.getAttribute("href")).toBe("/configuracion/empresa");
-    expect(screen.getByRole("link", { name: "Configurar" }).getAttribute("href")).toBe(
-      "/configuracion/establecimientos",
-    );
-    expect(screen.getByText("Disponible próximamente.")).toBeDefined();
+    expect(
+      screen.getAllByRole("link", { name: "Configurar" }).map((link) => link.getAttribute("href")),
+    ).toEqual(["/configuracion/establecimientos", "/configuracion/firma"]);
+    expect(screen.getByText("Carga una firma electrónica vigente con RUC.")).toBeDefined();
     expect(screen.getByText("Ambiente vigente: Pruebas")).toBeDefined();
   });
 
-  it("con la configuración mínima solo falta la firma, sin acción para resolverla", async () => {
+  it("con la configuración mínima solo falta la firma y la acción lleva a cargarla", async () => {
     renderScreen(ADMIN_ME, respond(MINIMUM));
     await screen.findByText("Aún no puede emitir");
     expect(screen.getByText("Registrados.")).toBeDefined();
     expect(screen.getByText("Hay al menos un punto de emisión disponible.")).toBeDefined();
-    expect(screen.queryByRole("link")).toBeNull();
+    expect(
+      screen.getByRole("link", { name: "Cargar la firma electrónica" }).getAttribute("href"),
+    ).toBe("/configuracion/firma");
   });
 
   it("el operador ve los requisitos sin enlaces y a quién pedírselo", async () => {

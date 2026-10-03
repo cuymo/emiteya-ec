@@ -32,7 +32,7 @@ export function FileField({
 }: {
   id: string;
   label: string;
-  /** Tipos MIME admitidos, para el selector y la alerta temprana. */
+  /** Tipos MIME o extensiones (".p12") admitidos, para el selector y la alerta temprana. */
   accept: readonly string[];
   /** Tipos en lenguaje del usuario, por ejemplo "PNG o JPEG". */
   acceptLabel: string;
@@ -54,7 +54,9 @@ export function FileField({
 
   function choose(file: File | undefined) {
     if (!file) return;
-    if (!accept.includes(file.type)) {
+    const name = file.name.toLowerCase();
+    // Algunos sistemas informan un tipo vacío o distinto para extensiones como .p12.
+    if (!accept.some((type) => (type.startsWith(".") ? name.endsWith(type) : type === file.type))) {
       setLocalError(`El archivo debe ser ${acceptLabel}.`);
       return;
     }

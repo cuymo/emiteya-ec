@@ -6,37 +6,9 @@
 "use client";
 
 import { CircleCheck, TriangleAlert } from "lucide-react";
+import { NoticeStrip as Strip } from "@/components/notice-strip";
 import { Skeleton, StatusBadge } from "@/components/states";
-import { cn } from "@/lib/utils";
 import { useCompanyStatus } from "./company-api";
-
-function Strip({
-  tone,
-  className,
-  children,
-}: {
-  tone: "warning" | "success";
-  className?: string;
-  children: string;
-}) {
-  const Icon = tone === "warning" ? TriangleAlert : CircleCheck;
-  return (
-    <div
-      role="status"
-      className={cn(
-        "flex items-center gap-1 border-b px-1 py-0.5 text-sm md:px-2",
-        tone === "warning" ? "border-warning/40 bg-warning/10" : "border-border bg-surface",
-        className,
-      )}
-    >
-      <Icon
-        aria-hidden="true"
-        className={cn("size-2 shrink-0", tone === "warning" ? "text-warning" : "text-success")}
-      />
-      <p>{children}</p>
-    </div>
-  );
-}
 
 export function EnvironmentNotice() {
   const status = useCompanyStatus();

@@ -57,7 +57,11 @@ export function signingCertificateRouter(
   router.get("/signing-certificate", async (_req, res) => {
     const { entry, expiryAlertDays } = await service.get(contextOf(res));
     res.status(200).json({
-      data: { certificate: entry ? toSigningCertificateView(entry) : null, expiryAlertDays },
+      data: {
+        certificate: entry ? toSigningCertificateView(entry) : null,
+        expiryAlertDays,
+        maxBytes: options.maxBytes,
+      },
     });
   });
 

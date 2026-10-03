@@ -61,6 +61,9 @@ describe("shell autenticado", () => {
     expect(screen.getByRole("link", { name: "Secuenciales" }).getAttribute("href")).toBe(
       "/configuracion/secuenciales",
     );
+    expect(screen.getByRole("link", { name: "Firma electrónica" }).getAttribute("href")).toBe(
+      "/configuracion/firma",
+    );
   });
 
   it("el operador no ve el destino Usuarios", async () => {
@@ -72,6 +75,7 @@ describe("shell autenticado", () => {
     expect(screen.queryByRole("link", { name: "Ambiente" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Establecimientos" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Secuenciales" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Firma electrónica" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Abrir menú" })).toBeNull();
   });
 

@@ -88,6 +88,8 @@ export type SigningCertificateView = z.infer<typeof signingCertificateViewSchema
 export const signingCertificateResponseSchema = z.strictObject({
   certificate: signingCertificateViewSchema.nullable(),
   expiryAlertDays: z.number().int(),
+  /** Límite efectivo del P12 decodificado (CERTIFICATE_MAX_BYTES), para el selector de archivo. */
+  maxBytes: z.number().int().positive(),
 });
 export type SigningCertificateResponse = z.infer<typeof signingCertificateResponseSchema>;
 

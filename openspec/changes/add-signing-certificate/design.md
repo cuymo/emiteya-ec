@@ -226,7 +226,7 @@ puede abrirse con la clave configurada, se registra un error sin secretos.
 
 | Ruta | Permiso | Respuesta |
 | --- | --- | --- |
-| `GET /api/v1/signing-certificate` | `certificate.read` | `{ certificate, expiryAlertDays }`. `certificate` es `null` o lleva: titular, emisor, serie, huella, vigencia, RUC detectado, coincidencia de RUC con el RUC de la empresa, estado derivado, días que faltan, utilizable y fecha de carga. |
+| `GET /api/v1/signing-certificate` | `certificate.read` | `{ certificate, expiryAlertDays, maxBytes }`. `certificate` es `null` o lleva: titular, emisor, serie, huella, vigencia, RUC detectado, coincidencia de RUC con el RUC de la empresa, estado derivado, días que faltan, utilizable y fecha de carga. `maxBytes` es el `CERTIFICATE_MAX_BYTES` efectivo, para que el `FileField` del diálogo muestre y anticipe el límite real (nota de apply: añadido al recorrer la interfaz; el tope del contrato, 1 MiB, inducía a error). |
 | `GET /api/v1/signing-certificate/validity` | `certificateValidity.read` | `{ state, usable, notAfter, daysToExpiry }`, con `state = NONE` sin firma. |
 | `PUT /api/v1/signing-certificate` | `certificate.manage` | `{ certificate, unchanged }`. |
 | `PUT /api/v1/signing-certificate/expiry-alert` | `certificate.manage` | `{ expiryAlertDays }`; el cuerpo es `{ days }`. |

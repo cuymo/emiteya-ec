@@ -86,10 +86,11 @@ describe("API de la firma electrónica", () => {
   });
 
   describe("carga y reemplazo (design D3 y D7)", () => {
-    it("sin firma: la consulta lo indica, con la anticipación por defecto", async () => {
+    it("sin firma: la consulta lo indica, con la anticipación por defecto y el límite efectivo", async () => {
       expect(bodyOf(await call("adminA", "get", "/signing-certificate")).data).toEqual({
         certificate: null,
         expiryAlertDays: 30,
+        maxBytes: 64 * 1024,
       });
       expect(bodyOf(await call("operatorA", "get", "/signing-certificate/validity")).data).toEqual({
         state: "NONE",
@@ -247,6 +248,8 @@ describe("API de la firma electrónica", () => {
         signing: { pool, custody: custody(7), maxBytes: 4 * 1024 },
       });
       cookies.smallAdmin = await sessionCookie(small.app, "admin@a.ec");
+      const current = await call("smallAdmin", "get", "/signing-certificate", small.app);
+      expect(bodyOf(current).data.maxBytes).toBe(4 * 1024);
       const res = await upload(
         "smallAdmin",
         "rsa4096.modern.p12",

@@ -2,7 +2,15 @@
 // solo como presentación, y el mismo contenido en la barra lateral y en el cajón móvil.
 "use client";
 
-import { Building2, Globe, ListOrdered, Store, Users, type LucideIcon } from "lucide-react";
+import {
+  Building2,
+  FileKey,
+  Globe,
+  ListOrdered,
+  Store,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@facturador/contracts";
@@ -34,6 +42,12 @@ const GROUPS: Group[] = [
         label: "Establecimientos",
         icon: Store,
         permission: "establishments.manage",
+      },
+      {
+        href: "/configuracion/firma",
+        label: "Firma electrónica",
+        icon: FileKey,
+        permission: "certificate.read",
       },
       {
         href: "/configuracion/secuenciales",

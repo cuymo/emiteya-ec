@@ -47,7 +47,7 @@ export type ReadinessCopy = {
   title: string;
   met: string;
   pending: string;
-  /** Destino y acción para resolverlo; la firma aún no tiene pantalla. */
+  /** Destino y acción para resolverlo. */
   action?: { href: string; label: string };
 };
 
@@ -67,7 +67,8 @@ export const READINESS_COPY: Record<ReadinessCheck, ReadinessCopy> = {
   SIGNING_CERTIFICATE: {
     title: "Firma electrónica",
     met: "Vigente.",
-    pending: "Disponible próximamente.",
+    pending: "Carga una firma electrónica vigente con RUC.",
+    action: { href: "/configuracion/firma", label: "Cargar la firma electrónica" },
   },
 };
 
