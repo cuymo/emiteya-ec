@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted el 2026-10-02.
+Accepted el 2026-10-02. Enmendado el 2026-10-03 con los spikes S-2 y S-3 offline: la validación XSD no usa el envoltorio de la librería (ADR 0021), y el builder de la factura queda pendiente de Q-44.
 
 ## Context
 
@@ -79,7 +79,7 @@ siguiente.
 - **Se usa solo la API de bajo nivel:**
   - los builders, con el `schemaRegistry` configurado desde nuestro registro (ADR 0008);
   - `generateClaveAcceso`, con un código numérico generado por nosotros con `crypto.randomInt`;
-  - `validateXmlAgainstXsd`, con nuestros XSD registrados con `registerXsdSearchPath` al arrancar;
+  - para el XSD, `xmllint-wasm` directo detrás de `XsdValidator`, no `validateXmlAgainstXsd` (ADR 0021 y enmienda abajo);
   - `EcSriSigner`, a través de `XmlSigner`;
   - `SriClient`, solo como transporte, con un `fetch` inyectado que captura la respuesta original para persistirla. La clasificación se hace sobre esa respuesta, con nuestro parser.
 
@@ -100,7 +100,7 @@ siguiente.
 - **Versiones exactas:**
   - `facturacion-electronica-ec` 1.0.1;
   - `ec-sri-invoice-signer` 1.8.2: la última del rango admitido, que mantiene el import privado;
-  - `xmllint-wasm`, con la versión que valide S-2;
+  - `xmllint-wasm` 5.3.0, la que validó S-2 (ADR 0021);
   - Node `>=24.18.0`: la base del proyecto pasa a 24.21.0.
 
 - **Política de actualización.** Ninguna se actualiza sin pasar antes las pruebas de contrato del adaptador:
@@ -132,3 +132,22 @@ siguiente.
   - captura y clasifica la respuesta original;
   - comprueba que el certificado embebido es el inspeccionado.
 - La liquidación de compra depende de un import privado: necesita su prueba de contrato antes de soportarse (`add-purchase-settlements`).
+
+## Enmienda del 2026-10-03: spikes S-2 y S-3 offline
+
+- **Validación XSD (S-2).** `validateXmlAgainstXsd` no se usa:
+  - busca los XSD en rutas globales del proceso;
+  - si falta uno, cae en silencio a los XSD empaquetados en la librería;
+  - no comprueba hashes.
+
+  El puerto `XsdValidator` usa `xmllint-wasm` directamente, con los XSD del registro y el import de la firma del W3C, verificados por hash (ADR 0021).
+- **Clave de acceso (S-3).** `generateClaveAcceso` funciona detrás del puerto `AccessKeys`:
+  - el código numérico es nuestro, con `crypto.randomInt`;
+  - el dígito verificador coincide con la implementación de referencia de CTX §8.3.
+- **Firma (S-3).** El XML firmado con `XmlSigner` vuelve a validar contra el XSD y su firma verifica con el certificado embebido.
+- **Builder de la factura (S-3).** `buildFacturaXml` produce XML válido y determinista para los casos de frontera del MVP, pero tiene dos incompatibilidades que cambian comportamiento:
+  - **Importes como `number`.** Recibe los importes como `number` y los escribe con `toFixed`. Un valor válido de 17 o 18 dígitos de `cantidad` o `precioUnitario` no sobrevive el viaje: `123456789012.123456` se escribe como `123456789012.123459`. El adaptador de evaluación falla cerrada (`AMOUNT_NOT_REPRESENTABLE`), lo que rechazaría documentos válidos según el XSD y la política decimal (Q-43). Por eso, "el adaptador formatea importes ya redondeados" no basta para todo el dominio.
+  - **Campos del emisor.** `infoTributaria` no puede llevar `agenteRetencion` ni `contribuyenteRimpe`, que el XSD define. Las reglas del emisor de los anexos 21 y 22 (ADR 0014) no se pueden expresar.
+
+  La estrategia del builder queda en Q-44; las demás piezas de este ADR no cambian.
+

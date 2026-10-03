@@ -78,7 +78,7 @@ un solo paso es P2.
 | `api`        | Express: API, casos de uso y runner de jobs.                                                 |
 | `frontend`   | Next.js.                                                                                     |
 | PostgreSQL   | Remoto, o un contenedor con volumen nombrado persistente. Ningún redeploy borra sus datos.   |
-| Artefactos   | Volumen persistente o almacenamiento S3-compatible, según el adaptador elegido (ADR 0010, Q-39). |
+| Artefactos   | En PostgreSQL al inicio, detrás de un puerto de almacenamiento: el respaldo de la base de datos los cubre (ADR 0010, Q-39). |
 | Proxy        | Termina TLS. Obligatorio en producción.                                                      |
 
 ### Endpoints operacionales
@@ -196,7 +196,7 @@ node dist/commands/admin-recover.js --email admin@example.com
 
 - Reloj sincronizado por NTP; la salud informa la desviación, porque el SRI rechaza firmas con fecha futura (CTX §20.5).
 - Salida HTTPS hacia los hosts del SRI.
-- Cifrado en reposo del volumen de artefactos y de la base de datos, o del disco que los aloja (Q-39).
+- Cifrado en reposo del volumen de la base de datos, que guarda también los artefactos, o del disco que lo aloja (ADR 0010, Q-39).
 
 ### Número de instancias
 

@@ -51,7 +51,11 @@ y cada una nombra el tipo XSD de origen. Una prueba compara cada especificación
   - Se guarda la forma canónica (`toDatabase`), así que la escala guardada es la del valor.
   - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`) y `consumer_final_policy.max_amount` (`importe`).
 - **Conversión:** con el `Decimal` de Prisma siempre por texto.
-- **Redondeo:** solo el de la emisión (Q-14), con `roundHalfUp` y la escala del campo.
+- **Redondeo (Q-14):** política del producto, no regla textual del SRI.
+  - Los cálculos internos son exactos, sin redondeos intermedios.
+  - Un campo fiscal se redondea HALF_UP solo al materializarlo a la escala de su XSD.
+  - Los totales se construyen con los valores ya materializados.
+  - La validó la parte offline de S-3. La autorización en Pruebas del SRI (parte online) es la compuerta de go-live, y una contradicción abre `/opsx:update`.
 
 ## Salida y frontend
 

@@ -38,6 +38,7 @@ Presupuestos propios del proyecto:
 | Señal | Objetivo | Medición |
 | --- | --- | --- |
 | Búsquedas de terceros y productos con el volumen de referencia de Q-26 (10 000 de cada uno por empresa) | P95 de 300 ms o menos en el entorno registrado; no es una garantía independiente del hardware | `corepack pnpm --filter @facturador/backend bench:search`, gate dedicado fuera de `verify` (design D16 de `add-parties-and-products`). Resultado del 2026-10-03: P95 máximo de 26 ms (`benchmarks/search-2026-10-03.md`). |
+| Emisión local de una factura hasta `SIGNED`, con el volumen de referencia provisional de Q-26 (100 000 facturas por empresa, 10 usuarios concurrentes) | Por definir en `add-invoice-emission`, ligado a un entorno reproducible y registrado; no es una promesa universal de hardware | Benchmark dedicado fuera de `verify`, que mide por separado el snapshot y el cálculo, el XML, el XSD, la firma y la persistencia. Se mide localmente, nunca contra Pruebas del SRI. Referencia de S-2: la validación XSD tarda 85 ms de p95 por factura en secuencia. |
 
 Si el benchmark supera el objetivo, se analizan los planes de consulta y la corrección (índices, estrategia o `pg_trgm`) se propone con `/opsx:update`; nunca se sube el umbral.
 

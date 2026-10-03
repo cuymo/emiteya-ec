@@ -30,7 +30,7 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `product`, `product_tax` | `products` | Yes | Se desactivan; nunca se borran. Los comprobantes guardan su copia; los impuestos refieren la identidad de una entrada fiscal, nunca una tarifa. |
 | `fiscal_catalog_dataset`, `fiscal_catalog_key`, `fiscal_catalog_entry`, `consumer_final_policy`, `schema_registry_entry`, `special_case_support` | `catalogs` | No | Datos normativos versionados del sistema, que el cargador aplica al arrancar desde los datasets del repositorio (ADR 0020). Sin borrado; las versiones publicadas solo cierran su vigencia o se retiran. |
 | `company_fiscal_catalog_setting` | `catalogs` | Yes | Decisión explícita de una empresa sobre una entrada habilitable; sin fila rige la política por defecto del catálogo. |
-| `electronic_document` | `fiscal` | Yes | Nunca se borra desde `SEQUENCE_RESERVED`. |
+| `electronic_document` | `fiscal` | Yes | Nace en `RESERVED` y nunca se borra (Q-35). |
 | `document_line`, `document_relation`, `tax_detail`, `payment` | `fiscal` | Yes | Inmutables desde la firma, salvo corrección de un devuelto (BR-28). |
 | `document_state_transition` | `fiscal` | Yes | Solo agregado (ERS RF-525). |
 | `sri_attempt` | `fiscal` | Yes | Solo agregado. |
@@ -117,8 +117,9 @@ UNIQUE (company_id, environment, establishment_code, emission_point_code, docume
 UNIQUE (access_key) WHERE access_key IS NOT NULL
 CHECK  (access_key ~ '^[0-9]{49}$')
 
--- Idempotencia de la emisión (Q-30)
-UNIQUE (company_id, user_id, operation, idempotency_key)       -- ERS y CTX proponen (company_id, idempotency_key)
+-- Idempotencia de la emisión (Q-30): empresa del contexto autenticado, con la huella canónica
+-- de la solicitud; durable mientras dure la vida fiscal útil del documento
+UNIQUE (company_id, operation, idempotency_key)
 
 -- Catálogos
 UNIQUE (company_id, identification_type, identification_number) -- party

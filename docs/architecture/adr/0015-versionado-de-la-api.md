@@ -26,11 +26,11 @@ Alternativas consideradas:
 - Un cambio incompatible en un contrato publicado crea `/api/v2/` para los recursos afectados; `/api/v1/` se mantiene durante un periodo de transición declarado en el `CHANGELOG`.
 - Antes del primer release público, `/api/v1/` puede cambiar sin crear `/api/v2/`, porque no tiene consumidores externos.
 
-Este ADR no decide los nombres de los recursos fiscales ni si borrador y emisión son llamadas
-separadas: eso sigue en Q-29.
+Este ADR no decide los nombres de los recursos fiscales. Q-29 los resolvió el 2026-10-03: el
+recurso canónico de la factura es `/api/v1/invoices`, sin segmento `fiscal`.
 
 ## Consequences
 
 - Una sola convención para toda la API y su especificación OpenAPI (ERS API-005).
-- Las rutas propuestas en ERS §17 y CTX §40 se leen con el prefijo, por ejemplo `/api/v1/fiscal/invoices` si Q-29 adopta el segmento `fiscal`.
+- Las rutas propuestas en ERS §17 y CTX §40 se leen con el prefijo; la factura queda en `/api/v1/invoices` (Q-29).
 - La política de deprecación queda definida antes del primer integrador.

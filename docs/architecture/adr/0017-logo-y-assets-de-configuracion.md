@@ -12,7 +12,7 @@ política de snapshots (CTX §39, ADR 0008) exige que cada comprobante conserve 
 emisor con que se emitió, de modo que un RIDE histórico debe poder mostrar el logo vigente en
 ese momento aunque después se reemplace o se elimine.
 
-El ADR 0010 (Proposed, Q-39) decidirá el almacenamiento general de artefactos fiscales con
+El ADR 0010 (entonces Proposed; aceptado el 2026-10-03 con PostgreSQL) decidirá el almacenamiento general de artefactos fiscales con
 el cambio de emisión. Adelantarlo completo solo por el logo ampliaría `add-taxpayer-setup` con
 una decisión que todavía no tiene todos sus insumos. El logo es pequeño, pertenece a la
 configuración de la empresa y cambia rara vez.

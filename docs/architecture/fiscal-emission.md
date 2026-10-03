@@ -32,52 +32,101 @@ remite a las secciones de `docs/product/project-sri-integration.md` (CTX). Lo ma
 ## Pipeline
 
 ```text
-                     ┌──────────────── petición HTTP ─────────────────┐
-borrador ── Emitir ─▶│ 1 validar ─▶ 2 reservar ─▶ 3 XML ─▶ 4 XSD ─▶ 5 firmar │─▶ respuesta
-                     └────────────────────────────────────────────────┘
-                                                    │ job encolado en la misma transacción
-                     ┌──────────────── jobs persistidos ───────────────┐
-                     │ 6 recepción ─▶ 7 autorización ─▶ 8 RIDE ─▶ 9 entrega │
-                     │ 10 reconciliación     11 recuperación     12 validez │
-                     └────────────────────────────────────────────────┘
+                     ┌──────────── add-invoice-emission (cambio 6), local ────────────┐
+solicitud ── crear ─▶│ 1 validar ─▶ 2 RESERVED ─(commit)─▶ 3 XML ─▶ 4 XSD ─▶ 5 SIGNED │─▶ respuesta
+                     └────────────────────────────────────────────────────────────────┘
+                                                    │ artefacto firmado persistido
+                     ┌──────────── add-sri-transmission (cambio 7) y siguientes ───────┐
+                     │ 6 recepción ─▶ 7 autorización ─▶ 8 RIDE ─▶ 9 entrega            │
+                     │ 10 reconciliación     11 recuperación     12 validez            │
+                     └────────────────────────────────────────────────────────────────┘
 ```
 
-| Paso | Qué ocurre                                                                                                                       | Estado resultante                    |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| 1    | Validación de negocio sin efectos: permisos, preparación para emitir, reglas del tipo, consumidor final, casos especiales no soportados (falla cerrada), certificado vigente. | `DRAFT` sin cambios si falla |
-| 2    | Una transacción: reclama la clave de idempotencia, transición guardada desde `DRAFT`, reserva el secuencial, congela el snapshot, genera el código numérico y calcula la clave de acceso. | `SEQUENCE_RESERVED` |
-| 3    | Construye el XML desde el snapshot con el builder de la versión registrada; guarda el hash del XML sin firmar.                     | `XML_BUILT`                          |
-| 4    | Valida contra el XSD registrado. Falla cerrada si falta el XSD, su hash no coincide o la versión no está registrada (CTX §19.2).   | `XSD_VALID` o `XSD_INVALID`          |
-| 5    | Valida el certificado, firma, verifica el límite de tamaño y persiste el XML firmado con su hash; en la misma transacción encola la transmisión. | `SIGNED`                    |
-| 6    | Job de recepción: envía el XML firmado persistido y persiste la respuesta original antes de clasificarla.                        | Ver clasificación                    |
-| 7    | Job de autorización: consulta por clave con backoff y jitter; persiste la respuesta; extrae el XML autorizado (CTX §34, §45).      | `AUTHORIZED`, `NOT_AUTHORIZED`, o sigue pendiente |
-| 8    | Job de RIDE: lo genera desde el comprobante autorizado y lo guarda como artefacto (CTX §30).                                      | Sin cambio de estado                 |
-| 9    | Entrega: registra la descarga, la impresión o el correo (CTX §46, Q-24).                                                          | Sin cambio de estado                 |
-| 10   | Job de reconciliación: consulta por la misma clave para resolver `SEND_UNKNOWN` y los errores 43 y 45.                            | Ver máquina de estados               |
-| 11   | Job de recuperación: reanuda comprobantes detenidos en estados locales tras una caída y pasa a `SEND_UNKNOWN` los que quedaron en `SEND_PENDING`. | Ver máquina de estados   |
-| 12   | Job de validez: consulta periódica de comprobantes autorizados para detectar anulaciones (Q-16).                                  | `CANCEL_PENDING`, `CANCELLED`        |
+| Paso | Qué ocurre | Estado resultante |
+| ---- | ---------- | ----------------- |
+| 1 | Validación de negocio sin efectos, con la fecha de emisión ya capturada: permisos, preparación para emitir, reglas del tipo, impuestos con datos de cálculo, consumidor final, casos especiales no soportados (falla cerrada) y certificado vigente. | Nada se crea si falla |
+| 2 | Una transacción, sin I/O externo: crea el snapshot, reserva el secuencial, bloquea la identidad tributaria, persiste los componentes definitivos de la clave de acceso y crea el comprobante (ver "Transacción de `RESERVED`"). | `RESERVED` |
+| 3 | Tras el commit, construye el XML desde el snapshot con el builder de la versión registrada. | `RESERVED` |
+| 4 | Valida el XML contra el XSD registrado. Falla cerrada si falta el XSD, su hash no coincide o la versión no está registrada (CTX §19.2, ADR 0021). | `RESERVED` |
+| 5 | Firma, verifica el límite de tamaño y persiste los bytes exactos del XML firmado con su hash, en la misma transacción que la transición (ADR 0004, ADR 0010). | `SIGNED` |
+| 6 | Recepción: envía el XML firmado persistido y persiste la respuesta original antes de clasificarla. | Cambio 7 |
+| 7 | Autorización: consulta por clave con backoff y jitter; persiste la respuesta; extrae el XML autorizado (CTX §34, §45). | Cambio 7 |
+| 8 | RIDE desde el comprobante autorizado, guardado como artefacto (CTX §30). | Cambio 8 |
+| 9 | Entrega: registra la descarga, la impresión o el correo (CTX §46, Q-24). | Cambio 8 |
+| 10 | Reconciliación por la misma clave para resolver respuestas ambiguas y los errores 43 y 45. | Cambio 7 |
+| 11 | Recuperación de comprobantes detenidos tras una caída. | Cambio 7 |
+| 12 | Consulta periódica de validez para detectar anulaciones (Q-16). | Cambio 7 |
 
 Reglas:
 
 - El orden es invariante: nunca se firma sin XSD válido ni se llama a la red sin el XML firmado persistido (ERS SRI-REQ-03, SRI-REQ-05; CTX §19.1, §21).
-- Cada estado persistido es un punto de reanudación. Si el proceso muere, el job de recuperación continúa desde el último estado sin repetir efectos.
-- La respuesta de emisión no espera al SRI: devuelve comprobante, clave de acceso, secuencial y estado, y el cliente sigue el avance (CTX §41).
-- La transmisión se encola en la misma transacción que deja el comprobante en `SIGNED`, para que ninguna caída lo deje firmado sin job.
-- Un borrador se puede eliminar; desde `SEQUENCE_RESERVED` el comprobante nunca se borra.
+- Cada estado persistido es un punto de reanudación: los pasos 3 a 5 se repiten desde el snapshot sin repetir efectos.
+- La respuesta de creación no espera al SRI: devuelve comprobante, clave de acceso, secuencial y estado (CTX §41).
+- Desde `RESERVED` el comprobante nunca se borra.
 
-## Máquina de estados
+## Frontera entre los cambios 6 y 7
 
-Propuesta para Q-35: el conjunto de CTX §26 sin el estado `SENT` de CTX §22.1, con
-`RETURNED` y `XSD_INVALID` no terminales. Las transiciones de anulación dependen de Q-16.
+- **`add-invoice-emission` termina en `SIGNED`.** No llama al SRI, no tiene jobs ni polling, no reintenta el transporte ni consulta la autorización, y es comprobable por completo offline.
+- **`add-sri-transmission` empieza en el artefacto `SIGNED` persistido.** Es dueño del envío, la recepción, los estados del SRI, la autorización, la incertidumbre de red, la reconciliación, los reintentos, los jobs (ADR 0012) y las respuestas originales del SRI. Envía siempre los mismos bytes firmados, nunca un XML regenerado.
+
+## Reglas de la emisión local
+
+- **Fecha de emisión (Q-08).** Es la fecha actual en America/Guayaquil, como restricción de producto del MVP; el SRI no prohíbe toda emisión retroactiva. Se captura una vez al comenzar la creación fiscal y forma parte del snapshot. La misma fecha resuelve vigencias de catálogos y tarifas, la política de consumidor final, la clave de acceso y el XML; el proceso nunca vuelve a leer el día.
+- **Cálculo y redondeo (Q-14).** Es una política decimal del producto, no una regla textual del SRI:
+  - los cálculos internos son exactos, sin `number` ni redondeos intermedios;
+  - un campo fiscal se redondea HALF_UP al materializarlo a la escala de su XSD;
+  - los totales se construyen con los valores fiscales ya materializados, para que el XML sea consistente.
+
+  Lo validó la parte offline de S-3. La parte online, con facturas autorizadas en Pruebas del SRI, es la compuerta previa a declarar la emisión lista para go-live o transmisión real. Si la contradice, se abre `/opsx:update`.
+- **Impuestos sin datos de cálculo.** Una factura que necesita ICE o IRBPNR sin datos normativos de cálculo, o IVA diferenciado (código 8) sin una tarifa aplicable, se rechaza con un error funcional explícito. El rechazo llega antes de reservar el secuencial, bloquear la identidad tributaria o crear la clave, nunca con un valor por defecto. El producto puede seguir existiendo en `INCOMPLETE`. Las tarifas de ICE se calculan según la normativa vigente: no se copian las históricas de la ficha ni las de `facturacion-electronica-ec`.
+- **Consumidor final.**
+  - Se permite cuando `importeTotal` es menor o igual que el monto máximo de la política vigente en la fecha del documento: USD 50.00 al corte.
+  - Por encima, la factura exige un adquirente identificado y se rechaza antes de reservar.
+  - `importeTotal` es la correspondencia explícita del proyecto entre el "valor de la factura" del numeral 9.10 de la ficha y el campo total del XML.
+  - El monto sale de la política versionada de `fiscal-catalogs`, nunca de una constante. Con USD 50.00: `49.99` y `50.00` se permiten y `50.01` se rechaza.
+
+## Transacción de `RESERVED`
+
+En la misma transacción en que nace `RESERVED`:
+
+1. todo lo que puede fallar funcionalmente ya se validó en el paso 1;
+2. se crea el snapshot;
+3. se reserva el secuencial (`reserveSequentialIn`);
+4. se bloquea la identidad tributaria (`lockTaxIdentityIn`);
+5. se generan y persisten los componentes definitivos de la clave de acceso, con el código numérico criptográfico;
+6. se crea el comprobante en `RESERVED`;
+7. commit.
+
+Dentro de esa transacción no hay XML pesado, firma ni I/O externo. Después del commit: XML, XSD,
+firma y persistencia de los bytes firmados exactos, que llevan a `SIGNED`.
+
+## Máquina de estados local (cambio 6, Q-35)
 
 ```text
-Camino feliz
-  DRAFT → SEQUENCE_RESERVED → XML_BUILT → XSD_VALID → SIGNED → SEND_PENDING
-        → RECEIVED → PENDING_AUTHORIZATION → AUTHORIZED
+RESERVED ──▶ SIGNED
+```
+
+| Estado | Significado |
+| --- | --- |
+| `RESERVED` | Existen, de forma atómica, el comprobante durable, su snapshot, el secuencial confirmado, la clave de acceso definitiva y el bloqueo de la identidad tributaria. El número nunca se reutiliza. No hay rollback de `RESERVED`. |
+| `SIGNED` | XML construido, validado contra el XSD, firmado y persistido con sus bytes exactos y su hash. |
+
+Reglas:
+
+- **Reanudación.** Si el proceso cae después de `RESERVED` y antes de `SIGNED`, el comprobante sigue en `RESERVED`. Un reintento con la misma operación y clave de idempotencia reanuda ese comprobante, con su snapshot, secuencial y clave; nunca crea otro.
+- **Transiciones guardadas.** La transición es una actualización guardada (`WHERE state = :esperado`) que verifica las filas afectadas; cero filas significa que otro proceso ganó (`idempotency.md`). Cada transición registra en la misma transacción el estado anterior y el nuevo, la causa, el actor y metadatos técnicos no sensibles (ERS RF-525).
+- **Sin cola.** El cambio 6 no necesita jobs: la reanudación es el reintento idempotente.
+
+## Estados de transmisión (cambio 7)
+
+`add-sri-transmission` diseña sus estados a partir de `SIGNED`. Punto de partida, desde CTX §26
+sin el estado `SENT` de CTX §22.1:
+
+```text
+SIGNED → SEND_PENDING → RECEIVED → PENDING_AUTHORIZATION → AUTHORIZED
 
 Ramas
-  XML_BUILT             → XSD_INVALID → (corrección) → XML_BUILT
-  SEND_PENDING          → RETURNED    → (corrección) → XML_BUILT
+  SEND_PENDING          → RETURNED                                    (corrección, BR-28)
   SEND_PENDING          → PENDING_AUTHORIZATION                       (error 70)
   SEND_PENDING          → SEND_UNKNOWN → (reconciliación) → PENDING_AUTHORIZATION
                                                            | AUTHORIZED | NOT_AUTHORIZED
@@ -87,42 +136,33 @@ Ramas
   AUTHORIZED            → CANCEL_PENDING → CANCELLED                  (Q-16)
 ```
 
-| Desde                              | Hacia                   | Disparador                                                                 | Actor                |
-| ---------------------------------- | ----------------------- | -------------------------------------------------------------------------- | -------------------- |
-| `DRAFT`                            | `SEQUENCE_RESERVED`     | Emitir, con validación de negocio aprobada.                                | Usuario              |
-| `SEQUENCE_RESERVED`                | `XML_BUILT`             | XML generado desde el snapshot.                                            | Sistema              |
-| `XML_BUILT`                        | `XSD_VALID`             | XML válido.                                                                | Sistema              |
-| `XML_BUILT`                        | `XSD_INVALID`           | XML inválido o esquema no registrado.                                      | Sistema              |
-| `XSD_INVALID`, `RETURNED`          | `XML_BUILT`             | Corrección de datos que no componen la clave; misma clave y secuencial (BR-28). | Usuario autorizado |
-| `XSD_VALID`                        | `SIGNED`                | XML firmado y persistido con su hash.                                      | Sistema              |
-| `SIGNED`                           | `SEND_PENDING`          | El job toma el envío.                                                      | Sistema              |
-| `SEND_PENDING`                     | `RECEIVED`              | `RECIBIDA`.                                                                | Sistema              |
-| `SEND_PENDING`                     | `RETURNED`              | `DEVUELTA` por inconsistencia corregible.                                  | Sistema              |
-| `SEND_PENDING`                     | `PENDING_AUTHORIZATION` | Error 70: clave en procesamiento (CTX §27.2).                              | Sistema              |
-| `SEND_PENDING`                     | `SEND_UNKNOWN`          | Timeout, error de red o de proxy, SOAP ilegible, caída del proceso, error 43 o 45. | Sistema      |
-| `SEND_UNKNOWN`                     | `PENDING_AUTHORIZATION` | La consulta indica que el SRI procesa la clave.                            | Sistema              |
-| `SEND_UNKNOWN`                     | `AUTHORIZED`            | La consulta devuelve `AUTORIZADO`.                                         | Sistema              |
-| `SEND_UNKNOWN`                     | `NOT_AUTHORIZED`        | La consulta devuelve `NO AUTORIZADO`.                                      | Sistema              |
-| `SEND_UNKNOWN`                     | `SIGNED`                | El SRI no conoce la clave: se reenvía el mismo XML firmado (caso A, CTX §52). | Sistema           |
-| `SEND_UNKNOWN`                     | `MANUAL_REVIEW`         | Intentos agotados o inconsistencia, como un secuencial registrado con otra clave. | Sistema        |
-| `RECEIVED`                         | `PENDING_AUTHORIZATION` | Primera consulta tras el intervalo configurado.                            | Sistema              |
-| `PENDING_AUTHORIZATION`            | `AUTHORIZED`            | `AUTORIZADO`.                                                              | Sistema              |
-| `PENDING_AUTHORIZATION`            | `NOT_AUTHORIZED`        | `NO AUTORIZADO`.                                                           | Sistema              |
-| `PENDING_AUTHORIZATION`            | `PENDING_AUTHORIZATION` | En procesamiento: nuevo intento con backoff.                               | Sistema              |
-| `PENDING_AUTHORIZATION`            | `MANUAL_REVIEW`         | Ventana agotada (Q-06) o respuesta sin el bloque esperado (CTX §34).       | Sistema              |
-| `MANUAL_REVIEW`                    | `SEND_UNKNOWN`          | El administrador ordena reconciliar.                                       | Administrador        |
-| `MANUAL_REVIEW`                    | `XML_BUILT`             | El administrador corrige, solo si el SRI no tiene la clave.                | Administrador        |
-| `AUTHORIZED`                       | `CANCEL_PENDING`        | La consulta de validez devuelve `PENDIENTE DE ANULAR` (Q-16).              | Sistema              |
-| `AUTHORIZED`, `CANCEL_PENDING`     | `CANCELLED`             | La consulta de validez devuelve `ANULADO` (Q-16).                          | Sistema              |
-| `CANCEL_PENDING`                   | `AUTHORIZED`            | La consulta de validez vuelve a `AUTORIZADO`.                              | Sistema              |
+| Desde | Hacia | Disparador | Actor |
+| --- | --- | --- | --- |
+| `SIGNED` | `SEND_PENDING` | El job toma el envío. | Sistema |
+| `SEND_PENDING` | `RECEIVED` | `RECIBIDA`. | Sistema |
+| `SEND_PENDING` | `RETURNED` | `DEVUELTA` por inconsistencia corregible. | Sistema |
+| `SEND_PENDING` | `PENDING_AUTHORIZATION` | Error 70: clave en procesamiento (CTX §27.2). | Sistema |
+| `SEND_PENDING` | `SEND_UNKNOWN` | Timeout, error de red o de proxy, SOAP ilegible, caída del proceso, error 43 o 45. | Sistema |
+| `SEND_UNKNOWN` | `PENDING_AUTHORIZATION` | La consulta indica que el SRI procesa la clave. | Sistema |
+| `SEND_UNKNOWN` | `AUTHORIZED` | La consulta devuelve `AUTORIZADO`. | Sistema |
+| `SEND_UNKNOWN` | `NOT_AUTHORIZED` | La consulta devuelve `NO AUTORIZADO`. | Sistema |
+| `SEND_UNKNOWN` | `SIGNED` | El SRI no conoce la clave: se reenvía el mismo XML firmado (caso A, CTX §52). | Sistema |
+| `SEND_UNKNOWN` | `MANUAL_REVIEW` | Intentos agotados o inconsistencia, como un secuencial registrado con otra clave. | Sistema |
+| `RECEIVED` | `PENDING_AUTHORIZATION` | Primera consulta tras el intervalo configurado. | Sistema |
+| `PENDING_AUTHORIZATION` | `AUTHORIZED` | `AUTORIZADO`. | Sistema |
+| `PENDING_AUTHORIZATION` | `NOT_AUTHORIZED` | `NO AUTORIZADO`. | Sistema |
+| `PENDING_AUTHORIZATION` | `PENDING_AUTHORIZATION` | En procesamiento: nuevo intento con backoff. | Sistema |
+| `PENDING_AUTHORIZATION` | `MANUAL_REVIEW` | Ventana agotada (Q-06) o respuesta sin el bloque esperado (CTX §34). | Sistema |
+| `MANUAL_REVIEW` | `SEND_UNKNOWN` | El administrador ordena reconciliar. | Administrador |
+| `AUTHORIZED` | `CANCEL_PENDING` | La consulta de validez devuelve `PENDIENTE DE ANULAR` (Q-16). | Sistema |
+| `AUTHORIZED`, `CANCEL_PENDING` | `CANCELLED` | La consulta de validez devuelve `ANULADO` (Q-16). | Sistema |
+| `CANCEL_PENDING` | `AUTHORIZED` | La consulta de validez vuelve a `AUTORIZADO`. | Sistema |
 
-Reglas:
+Reglas que el cambio 7 conserva:
 
-- Toda transición es una actualización guardada (`WHERE state = :esperado`) que verifica las filas afectadas; cero filas significa que otro proceso ganó y la operación no informa éxito (`idempotency.md`).
-- Cada transición registra en la misma transacción el estado anterior y el nuevo, la causa, el actor y metadatos técnicos no sensibles (ERS RF-525).
 - `SEND_UNKNOWN` nunca es terminal. `RECIBIDA` nunca lleva a `AUTHORIZED`, y un timeout nunca lleva a `NOT_AUTHORIZED` (CTX I-15, I-16).
-- `NOT_AUTHORIZED` es terminal hasta resolver Q-07; reemitir crea un borrador nuevo.
-- Una corrección genera un XML firmado nuevo; los artefactos anteriores se conservan.
+- `NOT_AUTHORIZED` es terminal hasta resolver Q-07; reemitir crea un comprobante nuevo.
+- La corrección de un `RETURNED` (BR-28) conserva la clave y el secuencial, genera un XML firmado nuevo y conserva los artefactos anteriores. Su diseño es del cambio 7.
 
 ## Reserva del secuencial
 
@@ -142,7 +182,7 @@ establecimiento, punto y tipo (ADR 0003). Dentro de la transacción del llamador
 
 `add-invoice-emission` debe recoger en sus tareas:
 
-- **Identidad tributaria.** Invocar `lockTaxIdentityIn` (módulo `taxpayer`) dentro de la transacción del hito que defina, como máximo al crear el primer artefacto fiscal que deba conservarse (Q-31). La operación toma el lock advisory de configuración de la empresa (`company-config:<company_id>`), es idempotente y fija el RUC vigente; después, ninguna versión nueva puede cambiarlo.
+- **Identidad tributaria.** Invocar `lockTaxIdentityIn` (módulo `taxpayer`) dentro de la transacción de `RESERVED`, donde nace la clave de acceso que contiene el RUC: el primer artefacto fiscal que debe conservarse (Q-31, "Transacción de `RESERVED`"). La operación toma el lock advisory de configuración de la empresa (`company-config:<company_id>`), es idempotente y fija el RUC vigente; después, ninguna versión nueva puede cambiarlo.
 - **Versión de configuración.** El snapshot del comprobante referencia la versión vigente de `company_config_version` leída en la misma transacción de la reserva, y el XML y el RIDE se construyen solo desde ella (CTX §11, §39).
 - **Ambiente.** El ambiente se fija en el snapshot al reservar, de modo que un cambio de ambiente posterior no afecta a una emisión en curso (CTX §6).
 - **Preparación para emitir.** La emisión consulta la misma evaluación de requisitos de `GET /api/v1/company/status` y se bloquea si la empresa no está preparada (BR-03).
@@ -191,11 +231,11 @@ Con fixtures sintéticos ningún proveedor figura aquí; Security Data está cub
 - **Una sola resolución de vigencia.** Cada impuesto, forma de pago o tipo de identificación se resuelve con `resolveCatalogEntry(catalogType, entryKey, fecha)` del módulo `catalogs`, con la fecha de emisión del comprobante en hora de Ecuador o, cuando la regla del documento lo pida, la del documento sustento (BR-33). Nada fuera de `catalogs` lee sus tablas, y nadie reimplementa la regla.
 - **Reproducibilidad.** El snapshot guarda el identificador estable de cada versión aplicada y copia sus valores (código, descripción oficial, tarifa, fuente) (BR-21).
 - **Utilizable.** Una entrada solo se usa si `isUsable`: habilitada para la empresa según `effectiveEnablement` y con versión aplicable en la fecha.
-- **ICE e IRBPNR.** No se calculan mientras el catálogo no tenga sus tarifas con fuente legal: la ficha v2.34 solo publica códigos (`OFFICIAL_REFERENCE`). La emisión de un producto con ICE o IRBPNR se rechaza de forma explícita hasta que una versión del dataset los traiga.
-- **IVA diferenciado.** El código 8 no tiene porcentaje fijo (nota 3 de la tabla 17): hace falta una política con fuente antes de emitir con él.
+- **ICE e IRBPNR.** No se calculan mientras el catálogo no tenga sus tarifas con fuente legal: la ficha v2.34 solo publica códigos (`OFFICIAL_REFERENCE`). La emisión de un producto con ICE o IRBPNR se rechaza de forma explícita, antes de reservar, bloquear la identidad tributaria o crear la clave, hasta que una versión del dataset traiga sus datos de cálculo con fuente legal.
+- **IVA diferenciado.** El código 8 no tiene porcentaje fijo (nota 3 de la tabla 17): sin una política o tarifa aplicable con fuente, se rechaza igual que ICE e IRBPNR.
 - **Consumidor final.** La política vigente (`consumer_final_policy`, USD 50 al corte) y su identidad canónica se aplican en el paso 1, antes de reservar. El tercero del sistema que la usa lo crea `add-parties-and-products` (ver sus obligaciones).
 - **Casos especiales.** La matriz (`special_case_support`, ADR 0014) se aplica en el paso 1: lo no soportado se rechaza de forma explícita.
-- **Decimales.** Los importes y tarifas llegan como `DecimalString` validados con las especificaciones de `packages/contracts/src/decimal.ts`, que salen de los XSD (`decimal-policy.md`). El redondeo de líneas y totales (Q-14) usa `roundHalfUp` de `platform/decimal`. Las especificaciones siguen la regla del XSD (Q-43): `tarifa` es un porcentaje de 4/2 sin máximo de 100, y los límites normativos de cada impuesto son de su catálogo.
+- **Decimales.** Los importes y tarifas llegan como `DecimalString` validados con las especificaciones de `packages/contracts/src/decimal.ts`, que salen de los XSD (`decimal-policy.md`). El cálculo y el redondeo siguen Q-14 ("Reglas de la emisión local"). Las especificaciones siguen la regla del XSD (Q-43): `tarifa` es un porcentaje de 4/2 sin máximo de 100, y los límites normativos de cada impuesto son de su catálogo.
 - **Esquemas.** Los XSD del registro (`schema_registry_entry`) se registran en la librería al arrancar el motor (ADR 0008).
 
 ## Obligaciones que deja `add-parties-and-products`
@@ -207,7 +247,7 @@ Con fixtures sintéticos ningún proveedor figura aquí; Security Data está cub
 - **Datos de cálculo completos.** Un comprobante no puede continuar si necesita calcular un impuesto cuya referencia esté en `INCOMPLETE` en la fecha del documento (`calculationData: MISSING`): hoy, ICE sin tarifa legal, IRBPNR sin valor legal e IVA diferenciado sin política de cálculo. Que la entrada exista no basta.
 - **Sin tarifas copiadas.** El producto solo guarda referencias; las tarifas y valores se toman de la versión resuelta y se copian al snapshot (BR-21), nunca del producto ni de `facturacion-electronica-ec`.
 - **Consumidor final por su marca.** El comprador consumidor final se reconoce por `systemRecord: CONSUMER_FINAL`, nunca comparando su identificación o su razón social. Su identidad es la del tercero del sistema de la empresa.
-- **Límite de consumidor final en la emisión.** El monto máximo (USD 50 al corte) sigue en la política versionada y se aplica en el paso 1 con la fecha del documento; el tercero no lo guarda.
+- **Límite de consumidor final en la emisión.** El monto máximo (USD 50 al corte) sigue en la política versionada y se aplica en el paso 1 con la fecha del documento, sobre `importeTotal` ("Reglas de la emisión local"); el tercero no lo guarda.
 - **Precio sin impuestos.** `unitPrice` es el `precioUnitario` del XSD, antes de impuestos y con la escala de `decimal-policy.md`; los subtotales, impuestos y totales los calcula la emisión (Q-14).
 
 ## Motor SRI (ADR 0018)
@@ -215,13 +255,13 @@ Con fixtures sintéticos ningún proveedor figura aquí; Security Data está cub
 `facturacion-electronica-ec` aporta las piezas del protocolo detrás de puertos propios. La
 orquestación de este documento sigue siendo de la aplicación.
 
-- **Qué se usa:** sus builders, `generateClaveAcceso`, `validateXmlAgainstXsd`, `EcSriSigner` y `SriClient`, este último como transporte.
+- **Qué se usa:** `generateClaveAcceso` detrás de `AccessKeys`, `EcSriSigner` detrás de `XmlSigner` y `SriClient` como transporte. El builder de la factura está pendiente de Q-44. La validación XSD usa `xmllint-wasm` directamente detrás de `XsdValidator`, no `validateXmlAgainstXsd` (ADR 0021).
 - **Qué no se usa:** `emitir*`, `ISequenceProvider` ni `EmissionHooks`.
 - **Secuencial.** Lo reserva siempre `reserveSequentialIn` en el paso 2. Ningún adaptador implementa `rollback` ni pide otro secuencial:
   - un `DEVUELTA` nunca devuelve el número al contador (BR-08);
   - el error 70 se trata con la misma clave, nunca con un secuencial nuevo.
 - **Código numérico.** Lo genera la aplicación con `crypto.randomInt`, porque `generateCodigoNumerico` de la librería usa `Math.random` en ESM.
-- **Importes.** El motor decimal redondea y la librería solo formatea; las pruebas de contrato comparan el XML con los importes esperados.
+- **Importes.** El motor decimal calcula y materializa; el builder solo escribe. El de la librería escribe desde `number` y no conserva valores válidos de 17 o 18 dígitos (S-3, Q-44). Las pruebas de contrato comparan el XML con los importes esperados y con los XML de referencia de S-3.
 - **Respuestas del SRI.** El `fetch` inyectado en `SriClient` captura la respuesta original, que se persiste antes de actuar. La clasificación de la tabla de abajo se hace sobre esa respuesta, porque `SriClient`:
   - toma una recepción sin estado como `DEVUELTA`;
   - toma una autorización sin bloque como `NO AUTORIZADO`;
@@ -245,8 +285,8 @@ Composición, módulo 11 y pruebas obligatorias en CTX §8. En este proyecto:
 
 | Capa | Mecanismo                                                                                   | Protege contra                                       |
 | ---- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| 1    | `Idempotency-Key` reclamada antes de ejecutar; el alcance se decide en Q-30.                 | Doble clic, reintentos HTTP, reenvíos del cliente.   |
-| 2    | Transición guardada desde `DRAFT`.                                                           | Dos emisiones del mismo borrador con claves distintas. |
+| 1    | `Idempotency-Key` durable en PostgreSQL, con alcance empresa + operación + clave y la huella canónica de la solicitud (Q-30). Misma clave y solicitud: devuelve o reanuda el mismo comprobante. Solicitud distinta: `409 IDEMPOTENCY_KEY_REUSED`. No expira durante la vida fiscal útil del documento. | Doble clic, reintentos HTTP, reenvíos del cliente. |
+| 2    | Reanudación del comprobante `RESERVED` de esa clave y transición guardada `RESERVED` → `SIGNED`. | Un segundo número o una segunda clave tras una caída. |
 | 3    | Unicidad del secuencial y de la clave de acceso.                                             | Cualquier camino de código que intente duplicar.     |
 | 4    | Todo envío usa el XML firmado persistido; nunca se reconstruye para reintentar.             | Nuevas claves o secuenciales tras un timeout.        |
 | 5    | Clave de deduplicación por comprobante y paso en cada job, más verificación del estado.      | Jobs ejecutados dos veces.                           |
@@ -255,6 +295,8 @@ Composición, módulo 11 y pruebas obligatorias en CTX §8. En este proyecto:
 Reglas generales en `idempotency.md`.
 
 ## Clasificación de respuestas del SRI
+
+La implementa `add-sri-transmission` (cambio 7).
 
 | Respuesta                                                       | Tratamiento                                                                 | Estado                  |
 | --------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------- |
@@ -275,6 +317,8 @@ fase, incluidos los códigos desconocidos (CTX §32). Los errores se clasifican 
 recepción devuelta, autorización, validación y consulta, siempre con el payload original.
 
 ## Resiliencia
+
+La implementa `add-sri-transmission` (cambio 7).
 
 - Timeouts: de conexión corto y de petición controlado, ambos configurables (CTX §33).
 - Las consultas se reintentan; el envío nunca se reintenta a ciegas: primero se reconcilia.
@@ -311,14 +355,14 @@ recepción devuelta, autorización, validación y consulta, siempre con el paylo
 
 ## Artefactos, RIDE y entrega
 
-- Conjunto probatorio por comprobante según CTX §31, guardado mediante el puerto de almacenamiento (ADR 0010). Cada artefacto se escribe una vez y guarda su hash; la descarga recalcula el hash y alerta si no coincide (ERS RF-407).
+- Conjunto probatorio por comprobante según CTX §31, guardado mediante el puerto de almacenamiento, en PostgreSQL al inicio (ADR 0010). El XML firmado lo guarda el cambio 6 con sus bytes exactos y metadatos; las respuestas del SRI y el XML autorizado, el cambio 7. Cada artefacto se escribe una vez y guarda su hash; la descarga recalcula el hash y alerta si no coincide (ERS RF-407).
 - El XML autorizado se extrae de la respuesta del SRI, nunca se reconstruye (CTX §45).
 - El RIDE se genera tras la autorización, desde el comprobante autorizado, con la marca de Pruebas cuando aplica, y registra la versión del renderer.
 - Cada entrega queda registrada; un fallo de entrega no cambia el estado fiscal (CTX §46).
 
 ## API de emisión
 
-- Endpoints por tipo de comprobante, más detalle, descarga de XML y RIDE, reconciliación y reenvío solo cuando la política lo permite (CTX §40). Rutas y forma en Q-29.
+- Recursos por tipo de comprobante; la factura bajo `/api/v1/invoices` (Q-29). La empresa y el ambiente salen del contexto autenticado y de la configuración vigente, nunca de la ruta ni del cliente. Los pasos internos (XML, firma, clave, envío) no son endpoints. La descarga de XML y RIDE, la reconciliación y el reenvío llegan con sus cambios, solo cuando la política lo permite (CTX §40).
 - No existe una operación genérica para enviar XML arbitrario (CTX §40).
 - La emisión exige `Idempotency-Key` y responde sin esperar al SRI (CTX §41).
 - Contratos versionados, validación con Zod en el servidor y documentación OpenAPI (ERS API-001..005).
