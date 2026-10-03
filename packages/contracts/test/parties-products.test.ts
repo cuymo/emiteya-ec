@@ -107,10 +107,8 @@ describe("contrato de productos", () => {
     ]) {
       expect(price(ok).success, ok).toBe(true);
     }
-    expect(messages(price("1000000000000000000"))).toContain(
-      "Admite como máximo 18 dígitos enteros.",
-    );
     for (const tooLong of [
+      "1000000000000000000",
       "1234567890123.123456",
       "99999999999999999.99",
       "1234567890123.123450",

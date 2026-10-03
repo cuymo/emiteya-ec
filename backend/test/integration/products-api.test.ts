@@ -151,8 +151,13 @@ describe("API de productos", () => {
       }
       const message = async (unitPrice: unknown) =>
         bodyOf(await create("adminA", product({ unitPrice }))).error.message;
-      expect(await message("1000000000000000000")).toBe("Admite como máximo 18 dígitos enteros.");
-      expect(await message("1234567890123.123456")).toBe("Admite como máximo 18 dígitos en total.");
+      const before = await db.database.prisma.product.count({ where: { companyId: companyA } });
+      for (const tooLong of ["1000000000000000000", "1234567890123.123456"]) {
+        expect(await message(tooLong), tooLong).toBe("Admite como máximo 18 dígitos en total.");
+      }
+      expect(await db.database.prisma.product.count({ where: { companyId: companyA } })).toBe(
+        before,
+      );
       expect(await message("1.1234567")).toBe("Admite como máximo 6 decimales.");
       expect(await message("1.1234560")).toBe("Admite como máximo 6 decimales.");
       for (const bad of [12.5, "-1", "1e3", "1,50", "01.5"]) {

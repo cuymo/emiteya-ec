@@ -122,7 +122,8 @@ export function decimalSpecViolation(text: string, spec: DecimalSpec): string | 
   if (fraction.length > spec.fractionDigits) {
     return `Admite como máximo ${spec.fractionDigits} decimales.`;
   }
-  if (integer.length > integerDigits) {
+  // Con la regla del XSD los enteros solo están limitados por el total, que es lo que se informa.
+  if (integerDigits < spec.totalDigits && integer.length > integerDigits) {
     return `Admite como máximo ${integerDigits} dígitos enteros.`;
   }
   // Dígitos como se escriben; el cero de la parte entera de `0.5` no es significativo.
