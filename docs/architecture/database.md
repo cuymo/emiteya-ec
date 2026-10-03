@@ -148,7 +148,7 @@ Migraciones: `backend/prisma/migrations/20261002083000_add_user_access` (cambio
 `20261003200000_add_parties_and_products`, `20261003210000_require_consumer_final` y
 `20261003220000_unit_price_domain` (cambio `add-parties-and-products`), y
 `20261003230000_xsd_decimal_domains` (mantenimiento de Q-43), y
-`20261004100000_add_invoice_emission` y `20261004100100_schema_registry_imports` (cambio
+`20261004100000_add_invoice_emission`, `20261004100100_schema_registry_imports` y `20261004100200_document_attempt_detail` (cambio
 `add-invoice-emission`). Las tablas
 de Better Auth y de sus plugins las genera el CLI `auth`; las columnas de esas tablas usan los
 nombres que fija Better Auth (`organizationId`, `userId`).
@@ -184,7 +184,7 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `invoice_draft` | Propia (`invoices`) | Borrador de factura: punto de emisión y comprador opcionales mientras se edita (FK compuestas a la misma empresa), `status` (`DRAFT`, `EMITTED`), `document_id` único al emitir, `version`, y autores y fechas (ERS RF-008). |
 | `invoice_draft_line` | Propia (`invoices`) | Línea del borrador: producto de la misma empresa, `quantity` y `discount` (`NUMERIC` con la regla del XSD), sin precio: la emisión toma el del producto. |
 | `invoice_draft_payment` | Propia (`invoices`) | Forma de pago del borrador por su entrada del catálogo `payment-method`, con `amount` opcional. |
-| `electronic_document` | Propia (`fiscal`) | Comprobante desde `RESERVED`: tipo, ambiente, establecimiento, punto, número, secuencial, reserva (única), clave de acceso (única), código numérico, fecha de emisión, `state` (`RESERVED`, `SIGNED`), `snapshot` JSON, versión del esquema, copias del comprador y del total para listar, autor, fecha de firma y diagnóstico del último intento. |
+| `electronic_document` | Propia (`fiscal`) | Comprobante desde `RESERVED`: tipo, ambiente, establecimiento, punto, número, secuencial, reserva (única), clave de acceso (única), código numérico, fecha de emisión, `state` (`RESERVED`, `SIGNED`), `snapshot` JSON, versión del esquema, copias del comprador y del total para listar, autor, fecha de firma y diagnóstico del último intento (etapa, código, clase, fecha, intentos, arriendo y, para `XSD_INVALID`, solo la línea y el elemento en `last_attempt_detail`). |
 | `document_state_transition` | Propia (`fiscal`) | Historial de transiciones: estado anterior y nuevo, causa, actor y metadatos no sensibles (ERS RF-525). |
 | `document_artifact` | Propia (`fiscal`) | Artefacto exacto de un comprobante: `kind` (`SIGNED_XML`), tipo de medio, `content` (`bytea`), tamaño, SHA-256 y metadatos (ADR 0010). |
 | `idempotency_record` | Propia (`platform`) | Clave de idempotencia de la emisión con su huella y su comprobante (Q-30). |
@@ -282,6 +282,7 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `electronic_document_values_check`, `electronic_document_access_key_key`, `electronic_document_reservation_id_key`, `electronic_document_company_id_environment_establishment_id_key` | `electronic_document` | Tipo, ambiente, estado con su fecha de firma, clave de 49 dígitos, código de 8, número `EEE-PPP-SSSSSSSSS`, secuencial y total (regla del XSD de `importe`); clave, reserva y número únicos | SQL de la migración y `@@unique` |
 | `electronic_document_guard`, `electronic_document_no_truncate` | `electronic_document` | Triggers: solo cambian `RESERVED` → `SIGNED`, la fecha de firma y el diagnóstico del intento; sin borrado ni truncado | SQL de la migración |
 | `electronic_document_requires_artifact` | `electronic_document` | Trigger de restricción diferido: un comprobante `SIGNED` tiene su artefacto `SIGNED_XML` al confirmar | SQL de la migración |
+| `electronic_document_attempt_detail_check` | `electronic_document` | El detalle del intento es un objeto JSON | SQL de la migración |
 | `document_state_transition_values_check`, `document_artifact_values_check`, `document_artifact_document_id_kind_key`, `idempotency_record_values_check` | `document_state_transition`, `document_artifact`, `idempotency_record` | Estados y actor; artefacto `SIGNED_XML` con tamaño igual a sus bytes y SHA-256 hex, uno por tipo; operación `invoice.emit`, clave ASCII visible de 1 a 100 y huella hex | SQL de la migración y `@@unique` |
 | `document_state_transition_append_only`, `document_artifact_append_only`, `idempotency_record_append_only` y sus `*_no_truncate` | `document_state_transition`, `document_artifact`, `idempotency_record` | Triggers: solo de agregado | SQL de la migración |
 

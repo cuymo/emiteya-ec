@@ -20,10 +20,17 @@ export type TransitionActor =
 export type AttemptClass =
   "RETRYABLE_OPERATIONAL" | "DETERMINISTIC_CONFIGURATION" | "DETERMINISTIC_VALIDATION";
 
+/** Para XSD_INVALID: la línea y el nombre del elemento, nunca su valor (design D10). */
+export type AttemptDetail = Readonly<{ line: number | null; element: string | null }>;
+
 /** Diagnóstico del último intento fallido: etapa, código tipado, clase y fecha, sin secretos. */
 export type AttemptDiagnostic = Readonly<{
   stage: string;
   code: string;
   class: AttemptClass;
   at: Date;
+  detail: AttemptDetail | null;
 }>;
+
+export const ARTIFACT_KINDS = ["SIGNED_XML"] as const;
+export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];

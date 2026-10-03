@@ -231,6 +231,7 @@ apiRouter.use(
     authorizer,
     signingReads: signing.reads,
     xsd: xsdValidator,
+    signer: signing.documents,
     maxLines: env.INVOICE_MAX_LINES,
     logger,
   }).routers,

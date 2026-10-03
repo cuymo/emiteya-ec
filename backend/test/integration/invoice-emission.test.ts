@@ -115,6 +115,8 @@ describe("emisión de facturas hasta RESERVED", () => {
       now: () => now,
       signing: { pool, custody: CUSTODY },
       invoices: {
+        // Estas pruebas cubren la transacción de RESERVED; la firma tiene las suyas (tarea 9.1).
+        signAfterReserve: false,
         accessKeys: {
           numericCode: () => accessKeys.numericCode(),
           compose: (input) => {

@@ -7,8 +7,15 @@ import type { Authorizer } from "../../identity/application/authorization.ts";
 import type { AccessKeys, XsdValidator } from "../../sri-engine/application/ports.ts";
 import { createAccessKeys } from "../../sri-engine/infrastructure/access-keys.ts";
 import { INVOICE_XML_BUILDER_VERSION } from "../../sri-engine/infrastructure/invoice-xml-builder.ts";
+import { createAuditLog } from "../../audit/infrastructure/prisma-audit-log.ts";
+import { createArtifactStore } from "../../fiscal/infrastructure/index.ts";
+import { XML_SIGNER_VERSION } from "../../sri-engine/infrastructure/ec-sri-signer.ts";
+import { createInvoiceXmlBuilder } from "../../sri-engine/infrastructure/invoice-xml-builder.ts";
 import { createDrafts } from "../application/drafts.ts";
 import { createEmission } from "../application/emission.ts";
+import { createInvoices } from "../application/invoices.ts";
+import { createSigningPipeline, type DocumentSigner } from "../application/signing-pipeline.ts";
+import { createSignedUnitOfWork } from "./signed-unit-of-work.ts";
 import { createEmissionUnitOfWork } from "./emission-unit-of-work.ts";
 import { createEvaluationReads, type SigningReads } from "./evaluation-reads.ts";
 import { invoicesRouter } from "./http/invoices-router.ts";
@@ -22,10 +29,20 @@ export type InvoicesModuleOptions = {
   signingReads: SigningReads;
   /** Validador XSD con el paquete verificado al arrancar. */
   xsd: Pick<XsdValidator, "ensureAvailable" | "validate">;
+  /** Firma de comprobantes con la firma vigente (`signingModule(...).documents`). */
+  signer: DocumentSigner;
   /** `INVOICE_MAX_LINES`. */
   maxLines: number;
+  /**
+   * false: la emisión se detiene en RESERVED, como si el proceso cayera después del commit. Solo
+   * para las pruebas de recuperación.
+   */
+  signAfterReserve?: boolean;
   accessKeys?: AccessKeys;
-  logger?: { warn(details: object, message: string): void };
+  logger?: {
+    warn(details: object, message: string): void;
+    error(details: object, message: string): void;
+  };
   now?: () => Date;
 };
 
@@ -41,19 +58,42 @@ export function invoicesModule(options: InvoicesModuleOptions) {
     today,
     maxLines: options.maxLines,
   });
+  const documents = createDocumentRepository(options.prisma);
+  const pipeline = createSigningPipeline({
+    documents,
+    persist: createSignedUnitOfWork(options.prisma),
+    builder: createInvoiceXmlBuilder(),
+    xsd: options.xsd,
+    signer: options.signer,
+    signerVersion: XML_SIGNER_VERSION,
+    now,
+    ...(options.logger ? { logger: options.logger } : {}),
+  });
+  const invoices = createInvoices({
+    documents,
+    artifacts: createArtifactStore(options.prisma),
+    pipeline,
+    audit: createAuditLog(options.prisma),
+    authorizer: options.authorizer,
+  });
   const emission = createEmission({
     uow: createEmissionUnitOfWork(options.prisma, options.signingReads),
     reads,
     idempotency: createIdempotencyStore(options.prisma),
-    documents: createDocumentRepository(options.prisma),
+    documents,
     accessKeys: options.accessKeys ?? createAccessKeys(),
     xsd: options.xsd,
     builderVersion: INVOICE_XML_BUILDER_VERSION,
     authorizer: options.authorizer,
     today,
     maxLines: options.maxLines,
+    ...(options.signAfterReserve === false ? {} : { continueToSigned: pipeline.continueToSigned }),
     ...(options.logger ? { logger: options.logger } : {}),
   });
-  const artifactOf = () => Promise.resolve(null);
-  return { routers: [invoicesRouter({ drafts, emission, artifactOf })], drafts, emission };
+  return {
+    routers: [invoicesRouter({ drafts, emission, invoices })],
+    drafts,
+    emission,
+    invoices,
+  };
 }

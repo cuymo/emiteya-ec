@@ -4,7 +4,12 @@ import type { AuditLog } from "../../audit/application/audit-log.ts";
 import type { EstablishmentRepository } from "../../taxpayer/application/ports.ts";
 import type { Environment } from "../../taxpayer/domain/taxpayer-config.ts";
 import type { CounterState, DocumentType } from "../domain/numbering.ts";
-import type { AttemptDiagnostic, DocumentState, TransitionActor } from "../domain/document.ts";
+import type {
+  ArtifactKind,
+  AttemptDiagnostic,
+  DocumentState,
+  TransitionActor,
+} from "../domain/document.ts";
 
 /** Clave del contador: empresa, ambiente, establecimiento, punto y tipo (ADR 0003). */
 export type SequenceKey = Readonly<{
@@ -126,4 +131,46 @@ export interface DocumentRepository {
   ): Promise<void>;
   /** `RESERVED` → `SIGNED`, con un intento más y el arriendo liberado; true si cambió. */
   markSigned(companyId: string, documentId: string, signedAt: Date): Promise<boolean>;
+}
+
+/** Metadatos no sensibles del artefacto: esquema, hashes, versiones y huella del certificado. */
+export type ArtifactMetadata = Readonly<
+  Record<string, string | number | boolean | null | readonly unknown[]>
+>;
+
+export type NewArtifact = Readonly<{
+  companyId: string;
+  documentId: string;
+  kind: ArtifactKind;
+  mediaType: "application/xml";
+  /** Bytes exactos: lo que se firmó es lo que se guarda y lo que se enviará (cambio 7). */
+  content: Buffer;
+  metadata: ArtifactMetadata;
+}>;
+
+export type ArtifactSummary = Readonly<{
+  id: string;
+  kind: ArtifactKind;
+  mediaType: string;
+  sha256: string;
+  sizeBytes: number;
+  metadata: ArtifactMetadata;
+  createdAt: Date;
+}>;
+
+export type StoredArtifact = ArtifactSummary & Readonly<{ content: Buffer }>;
+
+/**
+ * Artefactos de los comprobantes (ADR 0010): de solo agregado, en PostgreSQL detrás de este puerto.
+ * El adaptador calcula el SHA-256 y el tamaño de los bytes exactos.
+ */
+export interface ArtifactStore {
+  save(artifact: NewArtifact): Promise<ArtifactSummary>;
+  summary(
+    companyId: string,
+    documentId: string,
+    kind: ArtifactKind,
+  ): Promise<ArtifactSummary | null>;
+  /** Bytes exactos del artefacto, para el envío al SRI (cambio 7). */
+  read(companyId: string, documentId: string, kind: ArtifactKind): Promise<StoredArtifact | null>;
 }

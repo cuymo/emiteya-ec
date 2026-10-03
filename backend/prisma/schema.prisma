@@ -753,6 +753,8 @@ model ElectronicDocument {
   lastAttemptCode     String?                   @map("last_attempt_code")
   lastAttemptClass    String?                   @map("last_attempt_class")
   lastAttemptAt       DateTime?                 @map("last_attempt_at") @db.Timestamptz(3)
+  /// Para XSD_INVALID, la línea y el elemento (design D10); nunca el valor ni el XML.
+  lastAttemptDetail   Json?                     @map("last_attempt_detail")
   attemptCount        Int                       @default(0) @map("attempt_count")
   attemptLeaseUntil   DateTime?                 @map("attempt_lease_until") @db.Timestamptz(3)
   draft               InvoiceDraft?             @relation("DraftDocument")

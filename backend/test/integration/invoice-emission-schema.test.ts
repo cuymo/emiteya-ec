@@ -296,7 +296,7 @@ describe("invariantes de la emisión de facturas en la base de datos", () => {
         await fails(
           prisma.electronicDocument.create({
             data: {
-              ...(({ id: _id, ...rest }) => rest)(first),
+              ...(({ id: _id, lastAttemptDetail: _detail, ...rest }) => rest)(first),
               snapshot: { snapshotVersion: 1 },
               total: "11.50",
               accessKey: "2".repeat(49),

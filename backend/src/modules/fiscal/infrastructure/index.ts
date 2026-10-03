@@ -12,7 +12,14 @@ export { createFiscalScope } from "./unit-of-work.ts";
 export { reserveSequentialIn } from "../application/reservation.ts";
 // Comprobantes y su historial (add-invoice-emission, design D3).
 export { createDocumentRepository } from "./prisma-documents.ts";
-export type { DocumentRepository, StoredDocument } from "../application/ports.ts";
+export { createArtifactStore } from "./prisma-artifacts.ts";
+export type {
+  ArtifactStore,
+  ArtifactSummary,
+  DocumentRepository,
+  StoredArtifact,
+  StoredDocument,
+} from "../application/ports.ts";
 
 export function fiscalRouters({
   prisma,

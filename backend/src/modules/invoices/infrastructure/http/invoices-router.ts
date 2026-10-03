@@ -15,6 +15,7 @@ import { contextOf } from "../../../identity/infrastructure/http/request-context
 import { DIAGNOSTIC_MESSAGES, isAttemptCode } from "../../application/diagnostics.ts";
 import type { DraftDetails, Drafts } from "../../application/drafts.ts";
 import type { Emission } from "../../application/emission.ts";
+import type { InvoiceDetails, Invoices } from "../../application/invoices.ts";
 import type { InvoiceTotals } from "../../domain/amounts.ts";
 import type { InvoiceSnapshotV1 } from "../../domain/snapshot.ts";
 
@@ -234,15 +235,12 @@ const param = (value: unknown) => String(value);
 export type InvoicesRouterDependencies = {
   drafts: Drafts;
   emission: Emission;
-  /** Resumen del artefacto firmado de una factura, si existe. */
-  artifactOf: (companyId: string, documentId: string) => Promise<ArtifactSummary | null>;
+  invoices: Invoices;
 };
 
-export function invoicesRouter({
-  drafts,
-  emission,
-  artifactOf,
-}: InvoicesRouterDependencies): Router {
+const invoiceOf = ({ document, artifact }: InvoiceDetails) => toInvoiceView(document, artifact);
+
+export function invoicesRouter({ drafts, emission, invoices }: InvoicesRouterDependencies): Router {
   const router = Router();
 
   router.get("/invoices/drafts", async (req, res) => {
@@ -269,15 +267,26 @@ export function invoicesRouter({
   });
 
   router.post("/invoices", async (req, res) => {
-    const ctx = contextOf(res);
     const { document, replayed } = await emission.emit(
-      ctx,
+      contextOf(res),
       req.header(IDEMPOTENCY_KEY_HEADER),
       req.body,
     );
-    const artifact =
-      document.state === "SIGNED" ? await artifactOf(ctx.companyId, document.id) : null;
-    send(res, replayed ? 200 : 201, toInvoiceView(document, artifact));
+    send(res, replayed ? 200 : 201, invoiceOf(await invoices.details(document)));
+  });
+
+  router.get("/invoices", async (req, res) => {
+    const { items, meta } = await invoices.list(contextOf(res), req.query);
+    send(res, 200, items.map(toInvoiceSummaryView), meta);
+  });
+
+  router.get("/invoices/:invoiceId", async (req, res) => {
+    send(res, 200, invoiceOf(await invoices.get(contextOf(res), param(req.params.invoiceId))));
+  });
+
+  router.post("/invoices/:invoiceId/signing-attempts", async (req, res) => {
+    const details = await invoices.retrySigning(contextOf(res), param(req.params.invoiceId));
+    send(res, 200, invoiceOf(details));
   });
 
   return router;

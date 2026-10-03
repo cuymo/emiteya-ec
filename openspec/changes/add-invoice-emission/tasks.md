@@ -127,7 +127,7 @@
 
 ## 9. Firma, artefacto, recuperación y consulta
 
-- [ ] 9.1 Implementar el puerto de artefactos y su adaptador PostgreSQL, el arriendo del intento y el procedimiento XML, XSD, firma, XSD del firmado y persistencia con `SIGNED` en una transacción, con su transición y el evento `invoice.signed` (design D9). Verificar con pruebas de integración:
+- [x] 9.1 Implementar el puerto de artefactos y su adaptador PostgreSQL, el arriendo del intento y el procedimiento XML, XSD, firma, XSD del firmado y persistencia con `SIGNED` en una transacción, con su transición y el evento `invoice.signed` (design D9). Verificar con pruebas de integración:
   - artefacto con SHA-256, tamaño, tipo y metadatos;
   - XML firmado que vuelve a validar;
   - `SIGNED` solo con artefacto

@@ -3,7 +3,7 @@
 // importan infraestructura ajena.
 import type { ListMeta } from "@facturador/contracts";
 import type { AuditLog } from "../../audit/application/audit-log.ts";
-import type { DocumentRepository } from "../../fiscal/application/ports.ts";
+import type { ArtifactStore, DocumentRepository } from "../../fiscal/application/ports.ts";
 import type { IdempotencyStore } from "../../../platform/idempotency/idempotency.ts";
 import type { SchemaRegistryEntry } from "../../sri-engine/application/schemas.ts";
 import type { DraftContent, DraftRecord } from "../domain/draft.ts";
@@ -123,4 +123,15 @@ export type EmissionScope = {
 
 export interface EmissionUnitOfWork {
   run<T>(work: (scope: EmissionScope) => Promise<T>): Promise<T>;
+}
+
+/** Persistencia del artefacto y del paso a `SIGNED` en una transacción (design D9, paso 6). */
+export type SignedScope = {
+  artifacts: ArtifactStore;
+  documents: DocumentRepository;
+  audit: AuditLog;
+};
+
+export interface SignedUnitOfWork {
+  run<T>(work: (scope: SignedScope) => Promise<T>): Promise<T>;
 }

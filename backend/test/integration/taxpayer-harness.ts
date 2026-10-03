@@ -16,6 +16,7 @@ import {
 import { partiesModule } from "../../src/modules/parties/infrastructure/index.ts";
 import { productsModule } from "../../src/modules/products/infrastructure/index.ts";
 import { invoicesModule } from "../../src/modules/invoices/infrastructure/index.ts";
+import type { DocumentSigner } from "../../src/modules/invoices/application/signing-pipeline.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
 import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
@@ -43,8 +44,20 @@ export type InvoicesHarnessOptions = {
   /** Validador XSD; por defecto, sobre los XSD versionados de docs/product/. */
   xsd?: Pick<XsdValidator, "ensureAvailable" | "validate">;
   accessKeys?: AccessKeys;
+  /** Firma de comprobantes; por defecto, la del módulo de firma configurado. */
+  signer?: DocumentSigner;
+  /** false: la emisión se detiene en RESERVED (caída simulada después del commit). */
+  signAfterReserve?: boolean;
   /** Reloj de la emisión; por defecto, el de `now`. */
   now?: () => Date;
+};
+
+/** Sin firma configurada: ningún comprobante se puede firmar. */
+const NO_SIGNER: DocumentSigner = {
+  signDocument: () =>
+    Promise.reject(
+      Object.assign(new Error("sin firma"), { code: "SIGNING_CERTIFICATE_NOT_USABLE" }),
+    ),
 };
 
 /** Validador XSD de las pruebas: el paquete canónico versionado del producto. */
@@ -127,6 +140,8 @@ export function buildTaxpayerApp(
             : () => ({ activeCertificate: () => Promise.resolve(null) }),
           maxLines: options.invoices?.maxLines ?? 100,
           xsd: options.invoices?.xsd ?? testXsdValidator(),
+          signer: options.invoices?.signer ?? signing?.documents ?? NO_SIGNER,
+          ...(options.invoices?.signAfterReserve === false ? { signAfterReserve: false } : {}),
           ...(options.invoices?.accessKeys ? { accessKeys: options.invoices.accessKeys } : {}),
           ...((options.invoices?.now ?? options.now)
             ? { now: options.invoices?.now ?? options.now }

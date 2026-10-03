@@ -1,10 +1,11 @@
 // Comprobantes electrónicos y su historial sobre Prisma (add-invoice-emission, design D3, D9 y D10).
 // Los triggers de la base de datos impiden cambiar los datos fiscales, volver de SIGNED, borrar o
 // dejar un SIGNED sin artefacto; este repositorio solo escribe lo que la máquina local permite.
+import { Prisma } from "../../../generated/prisma/client.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
 import { FiscalDecimal } from "../../../platform/decimal/fiscal-decimal.ts";
 import type { DocumentRepository, StoredDocument } from "../application/ports.ts";
-import type { AttemptClass, DocumentState } from "../domain/document.ts";
+import type { AttemptClass, AttemptDetail, DocumentState } from "../domain/document.ts";
 import type { DocumentType } from "../domain/numbering.ts";
 
 type Row = {
@@ -33,6 +34,7 @@ type Row = {
   lastAttemptCode: string | null;
   lastAttemptClass: string | null;
   lastAttemptAt: Date | null;
+  lastAttemptDetail: unknown;
   attemptCount: number;
   attemptLeaseUntil: Date | null;
 };
@@ -66,6 +68,7 @@ const toStored = (row: Row): StoredDocument => ({
           code: row.lastAttemptCode,
           class: row.lastAttemptClass as AttemptClass,
           at: row.lastAttemptAt,
+          detail: (row.lastAttemptDetail as AttemptDetail | null) ?? null,
         }
       : null,
   attemptCount: row.attemptCount,
@@ -169,6 +172,7 @@ export function createDocumentRepository(db: DbClient): DocumentRepository {
           lastAttemptCode: diagnostic.code,
           lastAttemptClass: diagnostic.class,
           lastAttemptAt: diagnostic.at,
+          lastAttemptDetail: diagnostic.detail ?? Prisma.DbNull,
           attemptCount: { increment: 1 },
           attemptLeaseUntil: null,
         },
