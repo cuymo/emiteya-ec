@@ -11,11 +11,16 @@ Estado que condiciona el diseño:
   - ADR 0011 fija la custodia: metadatos y secreto por separado, cifrado envolvente, versión de la clave maestra, arranque fallido en producción sin clave y destrucción del secreto al reemplazar.
   - Q-17 fija la identidad: sin RUC detectable no se firma; un RUC distinto solo advierte.
   - ADR 0013 fija los parámetros de firma de la ficha (RSA-SHA1, clave de 2048 bits, PKCS#12).
+  - ADR 0018 adopta `facturacion-electronica-ec` como motor SRI detrás de puertos propios: su `EcSriSigner` (sobre `ec-sri-invoice-signer` y `node-forge`) es el firmador.
 - **Lo que dejó `add-taxpayer-setup`:**
   - la preparación para emitir ya consulta un puerto de firma, `SigningCertificateReadiness.isMet(companyId)`, que hoy siempre responde pendiente;
   - el RUC vigente de la empresa está en la versión vigente de su configuración (`configs.findCurrent`).
 - **Cuerpo de las peticiones.** Express parsea JSON con un límite global de 100 KB antes del router de la API. `pino-http` no registra cuerpos ni cabeceras, y `pino` redacta `password`, `token` y `secret`.
-- **Lectura de PKCS#12.** Node.js no trae un lector de PKCS#12. OpenSSL 3 rechaza sin el proveedor legado los P12 cifrados con RC2 o 3DES, habituales en entidades certificadoras. La librería se elige en el spike S-6 (D15), que es el gate previo a `/opsx:apply`.
+- **Lectura de PKCS#12.**
+  - `EcSriSigner` firma, pero su API pública no expone los metadatos del certificado.
+  - El firmador usa el primer certificado y la primera clave del P12, sin comprobar que se correspondan.
+  - Node.js no trae un lector de PKCS#12, y OpenSSL 3 rechaza sin el proveedor legado los P12 cifrados con RC2 o 3DES.
+  - La inspección al cargar necesita su propia dependencia, que elige el spike S-6 (D15, gate previo a `/opsx:apply`).
 
 ## Goals / Non-Goals
 
@@ -59,6 +64,10 @@ Módulo nuevo en `backend/src/modules/signing/`, con dominio, aplicación e infr
 
 - **Usa de otros módulos:** el `Authorizer` de `identity`, la auditoría de `audit` y la lectura del RUC vigente de `taxpayer`.
 - **Ofrece a `taxpayer`:** la implementación de `SigningCertificateReadiness`, que `main.ts` inyecta en `taxpayerRouters`.
+- **Puertos:**
+  - `CertificateReader` (inspección), implementado con la dependencia que elija el spike;
+  - `XmlSigner` (firma), implementado en el módulo de infraestructura `sri-engine`. Es el único que importa `facturacion-electronica-ec`; una regla `no-restricted-imports` lo impone (ADR 0018).
+- Este cambio crea `sri-engine` solo con el adaptador de firma.
 
 ### D2. Modelo e invariantes
 
@@ -109,7 +118,11 @@ Pasos de la validación, antes de abrir la transacción porque es trabajo de CPU
 1. Decodificar y abrir con la contraseña, con el puerto `CertificateReader` cuya implementación elige el spike. Errores posibles:
    - `400 CERTIFICATE_UNREADABLE` si no es un PKCS#12;
    - `400 CERTIFICATE_PASSWORD_INVALID` si la contraseña no lo abre (falla el MAC o el descifrado).
-2. Comprobar la clave: debe haber una clave privada RSA de al menos 2048 bits que corresponda al certificado. La prueba es una firma con RSA-SHA1, el algoritmo de la ficha (ADR 0013), verificada con la clave pública del certificado. Si falla: `400 CERTIFICATE_KEY_UNSUPPORTED`.
+2. Comprobar la clave, en dos partes:
+   - la inspección exige una clave privada RSA de al menos 2048 bits que corresponda al certificado;
+   - una firma de prueba con `XmlSigner` (`EcSriSigner`) sobre un XML fijo debe verificarse, con RSA-SHA1 (ADR 0013), y el certificado que embebe debe ser el inspeccionado (misma huella). Así se detecta un P12 cuyo primer certificado no es el del titular.
+
+   Si falla: `400 CERTIFICATE_KEY_UNSUPPORTED`.
 3. Comprobar la vigencia con el reloj del servidor, `notBefore <= ahora <= notAfter`. Si falla: `400 CERTIFICATE_NOT_VALID_NOW`, con las fechas.
 4. Detectar el RUC (D4). Si no se detecta: `400 CERTIFICATE_RUC_NOT_FOUND`, con titular y emisor.
 5. Cadena: los certificados adicionales del P12 deben poder leerse (CTX §20.6). No se valida la confianza.
@@ -289,49 +302,68 @@ Destino nuevo en `Configuración`, solo para administradores (`certificate.read`
 
 Toda mutación pasa por `useMutationFeedback`.
 
-### D15. Spike S-6: compatibilidad PKCS#12 y custodia (gate previo a `/opsx:apply`)
+### D15. Spike S-6: compatibilidad del firmador e inspección del certificado (gate previo a `/opsx:apply`)
 
-Es el gate previo a `/opsx:apply`: se hace en un workspace temporal o en una rama que no se
-fusiona, con timebox de 1 día, y termina con un ADR de dependencia y el estado de S-6 en
-`open-questions.md`.
+Dos preguntas independientes, en un workspace temporal o en una rama que no se fusiona. El
+entorno es Node 24.21.0, sin flags del proveedor legado de OpenSSL y sin red, con las versiones
+exactas del ADR 0018. El timebox es de 1 día, y termina con el ADR de la dependencia de
+inspección y el estado de S-6 en `open-questions.md`.
 
-- **Candidatos:**
-  - un parser en JavaScript puro (por ejemplo, `node-forge`);
-  - uno sobre WebCrypto (`pkijs`);
-  - el binario `openssl` del contenedor detrás del mismo puerto.
-- **Entorno:** Node LTS, sin flags del proveedor legado de OpenSSL y sin red.
-- **Fixtures sintéticos,** generados por un script con `openssl` o la propia librería, nunca certificados reales:
-  1. P12 moderno: PBES2 con AES-256-CBC, PBKDF2 y MAC SHA-256 (el formato por defecto de OpenSSL 3).
-  2. P12 legado: `pbeWithSHAAnd3-KeyTripleDES-CBC` para la clave, RC2-40 para los certificados y MAC SHA-1.
-  3. Contraseña correcta e incorrecta, incluida una con caracteres no ASCII.
-  4. Certificado vigente, vencido y todavía no vigente.
-  5. Certificados con el RUC en las ubicaciones documentadas por las entidades que se decidan soportar, otro sin RUC y otro con trece dígitos inválidos.
-  6. P12 sin clave privada, con una clave que no corresponde, con una clave EC y con RSA de 1024 bits.
+**Fixtures sintéticos,** generados por un script, nunca certificados reales:
 
-**Criterios de éxito**, todos con cada fixture:
+- P12 moderno: PBES2, AES-256-CBC, PBKDF2 y MAC SHA-256.
+- P12 legado: 3DES para la clave, RC2-40 para los certificados y MAC SHA-1.
+- Contraseña ASCII, no ASCII e incorrecta.
+- Certificado vigente, vencido y todavía no vigente.
+- RUC en las ubicaciones documentadas por las entidades soportadas, sin RUC y con RUC inválido.
+- Sin clave privada, con una clave que no corresponde, con clave EC y con RSA de 1024 bits.
+- Con la cadena incluida y el certificado de la CA antes que el del titular.
 
-1. Abre los formatos moderno y legado, y falla con una contraseña incorrecta sin revelarla.
-2. Extrae el X.509, la clave privada y los metadatos de D2; distingue vigente, vencido y no vigente; y firma con RSA-SHA1 verificable con el certificado.
-3. Extrae el RUC donde está documentado y detecta su ausencia y los inválidos.
-4. Recorre el ciclo completo de D5 sobre PostgreSQL con `key_version`: cifrar, persistir, descifrar y reemplazar, con la eliminación del secreto anterior. Falla al descifrar con otra clave o con el AAD de otra empresa.
-5. Con el logger en `trace`, ninguna salida de log, error ni evento contiene la contraseña, el base64, bytes del P12 ni marcadores PEM.
+**A. Compatibilidad del firmador.** ¿Firma `EcSriSigner` de `facturacion-electronica-ec`, a
+través de su API pública, los P12 que queremos soportar?
 
-**Si falla un criterio:** se prueba el siguiente candidato. Si ninguno abre el formato legado sin
-el proveedor legado, se escribe un ADR de desviación.
+1. Firma una factura generada con los builders de la librería con los P12 moderno y legado, y con contraseñas ASCII y no ASCII. Con una contraseña incorrecta falla con un error cuyo mensaje no la contiene.
+2. El XML firmado es XAdES-BES enveloped con `rsa-sha1`, incluye el X.509 en `KeyInfo` y firma `SignedProperties`. Una herramienta independiente verifica la firma, y el XML firmado sigue validando contra el XSD.
+3. Se documenta qué certificado embebe el firmador con la cadena en otro orden, y se comprueba que la inspección de B lo detecta.
+4. Se documenta la hora de firma (reloj del servidor), y que la liquidación de compra depende del import privado.
+5. Ningún log ni error contiene secretos.
 
-**P12 reales:** un P12 sintético prueba la compatibilidad de formato, no la de certificados reales
-ecuatorianos. Si el dueño del producto aporta uno:
+**B. Inspección del certificado.** Una dependencia independiente, sin imports privados de
+`facturacion-electronica-ec` ni de `ec-sri-invoice-signer`, debe permitir:
+
+1. abrir el P12 con la contraseña y distinguir una contraseña incorrecta de un archivo ilegible;
+2. leer titular, emisor, serie, huella SHA-256, vigencia, tipo y tamaño de clave;
+3. comprobar que la clave corresponde al certificado, y que ese par es el que usará el firmador de A;
+4. extraer el RUC de las ubicaciones documentadas y detectar su ausencia o invalidez;
+5. no dejar secretos en logs ni errores.
+
+Candidatos: `node-forge` directo, que es la misma familia de parser que usa el firmador, y PKIjs.
+
+**Si falla:**
+
+- A: compatibilidad limitada a los formatos que funcionen, o un `ISigner` propio detrás del mismo puerto, con un ADR de desviación.
+- B: el siguiente candidato.
+
+**P12 reales:** el sintético no sustituye a uno real ecuatoriano. Si se aporta uno:
 
 - se usa solo como fixture local y temporal;
 - nunca se commitea ni se copia a OpenSpec o a la documentación;
 - su contraseña no se registra;
-- se documentan la entidad, sus características técnicas (algoritmos, ubicación del RUC) y el resultado.
+- se documentan la entidad, sus características técnicas y el resultado.
 
-Sin ese P12 real, la validación queda como requisito del go-live (`definition-of-done.md`).
+Sin él, queda como requisito del go-live (`definition-of-done.md`).
+
+La custodia (cifrar, persistir, descifrar y reemplazar) no es una incertidumbre técnica:
+la verifican las pruebas de los grupos 2 y 5.
 
 ### D16. Pruebas
 
 - **Fixtures:** las pruebas generan los P12 sintéticos al ejecutarse con el script del spike. No se commitean claves privadas, aunque sean de prueba.
+- **Contratos del adaptador** (ADR 0018), antes de aceptar cualquier actualización de la librería o del firmador:
+  - firma de cada fixture verificable;
+  - certificado embebido igual al inspeccionado;
+  - error de contraseña sin la contraseña;
+  - frontera de imports.
 - **Sin fugas:** una prueba de integración busca la contraseña y el base64 de cada fixture en las respuestas, los errores, el logger capturado, la tabla de auditoría y los volcados en claro de las tablas, y confirma que el secreto guardado no contiene ninguno de los dos.
 
 ### D17. Datos y migración
@@ -343,7 +375,9 @@ Sin ese P12 real, la validación queda como requisito del go-live (`definition-o
 
 ## Risks / Trade-offs
 
-- [Ningún lector abre los P12 legados sin el proveedor legado] → El spike S-6 es el gate. Si falla, el binario `openssl` o un ADR de desviación.
+- [`EcSriSigner` no firma algún P12 soportado, o embebe un certificado que no es el del titular] → S-6 A es el gate. La firma de prueba al cargar compara el certificado embebido con el inspeccionado. Si falla, se limitan los formatos o se usa un `ISigner` propio detrás de `XmlSigner`.
+- [La inspección y el firmador leen el P12 de forma distinta] → S-6 B prefiere la misma familia de parser (`node-forge`). La firma de prueba es la comprobación final.
+- [Cambio incompatible en `facturacion-electronica-ec` o `ec-sri-invoice-signer`] → Versiones exactas y contratos del adaptador antes de actualizar (ADR 0018).
 - [Falsos negativos de RUC con entidades no contempladas] → Ubicaciones documentadas por entidad, mensaje explícito con titular y emisor, una fila más por entidad y el P12 real como requisito del go-live.
 - [Pérdida o cambio de la clave maestra] → `key_check` lo detecta sin descifrar, la firma figura como no disponible, se pide volver a cargarla y se registra al arrancar (R-15).
 - [Reloj del servidor desviado] → La vigencia usa el reloj del servidor. NTP y su vigilancia son requisito de instalación (CTX §20.5, `deployment.md`).

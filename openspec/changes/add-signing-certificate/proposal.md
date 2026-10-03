@@ -51,7 +51,8 @@ Fuera de alcance:
 ## Impact
 
 - Backend:
-  - módulo nuevo de firma con la carga, la consulta, la custodia cifrada y el puerto de lectura de PKCS#12 que elija el spike;
+  - módulo nuevo de firma con la carga, la consulta, la custodia cifrada y el puerto de inspección de PKCS#12 que elija el spike;
+  - módulo `sri-engine` de infraestructura, el único que importa `facturacion-electronica-ec` (ADR 0018), con el adaptador de firma que usa la firma de prueba al cargar;
   - rutas bajo `/api/v1/` (ADR 0015);
   - implementación del puerto de firma que ya consulta la preparación para emitir;
   - configuración de la clave maestra validada al arrancar;
@@ -61,6 +62,9 @@ Fuera de alcance:
   - destino `Firma electrónica` en `Configuración`;
   - aviso de vencimiento en el shell;
   - acción del requisito de firma en Inicio.
-- Dependencias: una dependencia de producción para leer PKCS#12, elegida por el spike S-6 y registrada en un ADR.
+- Dependencias:
+  - la de inspección de PKCS#12, elegida por el spike S-6 y registrada en un ADR;
+  - `facturacion-electronica-ec` 1.0.1 y `ec-sri-invoice-signer` 1.8.2, en versiones exactas (ADR 0018);
+  - Node 24.21.0, que ya es la base del proyecto.
 - Documentación: `access-control.md`, `database.md`, `deployment.md` (variables de la clave maestra), `fiscal-emission.md` (obligaciones para la emisión), `threat-model.md` y `domain-model.md`.
 - Requiere `add-taxpayer-setup` archivado (empresa, RUC, preparación para emitir). Lo usará `add-invoice-emission`.

@@ -2,7 +2,7 @@
 
 ## 0. Gate previo
 
-- [ ] 0.1 Confirmar que el spike S-6 (design D15) se ejecutó con todos sus criterios cumplidos, que su ADR de dependencia está aceptado y que `open-questions.md` registra su resultado y la tabla de ubicaciones del RUC por entidad; verificar que, si no hubo P12 real, el requisito del go-live sigue abierto en `definition-of-done.md`. Sin esto no se empieza el grupo 1
+- [ ] 0.1 Confirmar que el spike S-6 (design D15) se ejecutó con los criterios de A (compatibilidad del firmador) y B (inspección) cumplidos, que el ADR de la dependencia de inspección está aceptado y que `open-questions.md` registra su resultado y la tabla de ubicaciones del RUC por entidad; verificar que, si no hubo P12 real, el requisito del go-live sigue abierto en `definition-of-done.md`. Sin esto no se empieza el grupo 1
 
 ## 1. Contratos, permisos y reglas de dominio
 
@@ -23,8 +23,9 @@
 
 ## 4. Lectura de PKCS#12 y RUC
 
-- [ ] 4.1 Añadir la dependencia que eligió el ADR del spike y el script que genera los P12 sintéticos de las pruebas (design D15 y D16), sin commitear claves privadas; verificar que `check:versions` pasa con la versión exacta y que el script genera todos los fixtures en CI
-- [ ] 4.2 Implementar `CertificateReader` (abrir con la contraseña, extraer certificado, clave y metadatos, firma de prueba RSA-SHA1 verificada, cadena legible) y la detección del RUC con la tabla de ubicaciones del spike (design D3 y D4); verificar con los fixtures: moderno y legado, contraseña correcta, incorrecta y no ASCII, vigente, vencido y no vigente, sin clave, clave que no corresponde, EC, RSA de 1024, RUC en cada ubicación, sin RUC y con RUC inválido, cada uno con su código de error y sin la contraseña en ningún mensaje
+- [ ] 4.1 Añadir en versión exacta la dependencia de inspección que eligió el ADR del spike, `facturacion-electronica-ec` 1.0.1 y `ec-sri-invoice-signer` 1.8.2, y el script que genera los P12 sintéticos de las pruebas (design D15 y D16), sin commitear claves privadas; verificar que la instalación respeta `engines` con Node 24.21.0, que `check:versions` pasa y que el script genera todos los fixtures en CI
+- [ ] 4.2 Crear el módulo de infraestructura `sri-engine` con el adaptador `XmlSigner` sobre `EcSriSigner` y la regla `no-restricted-imports` que impide importar `facturacion-electronica-ec` y `ec-sri-invoice-signer` fuera de él (ADR 0018); verificar con pruebas de contrato que firma cada fixture compatible con una firma verificable y `rsa-sha1`, que expone el certificado embebido, que el error de contraseña no la contiene, y con una prueba de lint que un import fuera del módulo falla
+- [ ] 4.3 Implementar `CertificateReader` (abrir con la contraseña, extraer certificado, clave y metadatos, cadena legible) y la firma de prueba al cargar con `XmlSigner`, que compara el certificado embebido con el inspeccionado y la detección del RUC con la tabla de ubicaciones del spike (design D3 y D4); verificar con los fixtures: moderno y legado, contraseña correcta, incorrecta y no ASCII, vigente, vencido y no vigente, sin clave, clave que no corresponde, EC, RSA de 1024, cadena con la CA primero, RUC en cada ubicación, sin RUC y con RUC inválido, cada uno con su código de error y sin la contraseña en ningún mensaje
 
 ## 5. Carga, reemplazo, consulta y preparación para emitir
 
