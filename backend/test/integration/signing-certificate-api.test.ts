@@ -243,6 +243,19 @@ describe("API de la firma electrónica", () => {
       expect((await rejection("sd-utf8.iter150000.p12")).code).toBe("CERTIFICATE_INCOMPATIBLE");
     });
 
+    it("un archivo vacío pide seleccionar el archivo", async () => {
+      const res = await call("adminA", "put", "/signing-certificate").send({
+        file: "",
+        password: FIXTURE_PASSWORD,
+        expectedCurrentId: null,
+      });
+      expect(res.status).toBe(400);
+      expect(bodyOf(res).error).toMatchObject({
+        code: "VALIDATION_ERROR",
+        message: "Selecciona el archivo de la firma electrónica.",
+      });
+    });
+
     it("un archivo mayor que CERTIFICATE_MAX_BYTES se rechaza por sus bytes decodificados", async () => {
       const small = buildTaxpayerApp(db, {
         signing: { pool, custody: custody(7), maxBytes: 4 * 1024 },

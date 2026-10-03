@@ -234,6 +234,19 @@ describe("diálogo Cargar o Reemplazar firma (design D14)", () => {
     expect(await screen.findByText("Utilizable")).toBeDefined();
   });
 
+  it("sin archivo elegido pide seleccionarlo y no envía nada", async () => {
+    const calls = renderScreen(() => null);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Cargar firma" }));
+    const dialog = screen.getByRole("dialog");
+    await user.type(within(dialog).getByLabelText("Contraseña de la firma"), "Clave-Prueba-2026");
+    await user.click(within(dialog).getByRole("button", { name: "Cargar firma" }));
+    expect(
+      await within(dialog).findByText("Selecciona el archivo de la firma electrónica."),
+    ).toBeDefined();
+    expect(calls.some((call) => call.key === "PUT /api/v1/signing-certificate")).toBe(false);
+  });
+
   it("reemplazo: indica qué firma sustituye y envía su identificador", async () => {
     const calls = renderScreen(() => certificate(), {
       "PUT /api/v1/signing-certificate": () => ({
