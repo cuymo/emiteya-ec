@@ -8,6 +8,7 @@ import { createUserAdministration } from "../../src/modules/identity/application
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
+import { catalogsModule } from "../../src/modules/catalogs/infrastructure/index.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
 import {
   isSigningCertificateUpload,
@@ -29,7 +30,7 @@ export type SigningHarnessOptions = {
 /** Módulo de la firma electrónica, solo si la prueba lo pide (tiene un pool de workers). */
 export function buildTaxpayerApp(
   db: MigratedSchema,
-  options: { logoMaxBytes?: number; signing?: SigningHarnessOptions } = {},
+  options: { logoMaxBytes?: number; signing?: SigningHarnessOptions; now?: () => Date } = {},
 ) {
   return buildAuthApp(db, {
     trustProxy: 1,
@@ -61,7 +62,14 @@ export function buildTaxpayerApp(
             ...(signing ? { signingCertificate: signing.readiness } : {}),
           }),
         )
-        .use(...fiscalRouters({ prisma: db.database.prisma, authorizer }));
+        .use(...fiscalRouters({ prisma: db.database.prisma, authorizer }))
+        .use(
+          ...catalogsModule({
+            prisma: db.database.prisma,
+            authorizer,
+            ...(options.now ? { now: options.now } : {}),
+          }).routers,
+        );
       if (signing) router.use(...signing.routers);
       return router;
     },

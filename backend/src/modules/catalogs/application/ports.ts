@@ -117,17 +117,16 @@ export interface CatalogReader {
   specialCases(): Promise<StoredSpecialCase[]>;
 }
 
-/** Decisiones de habilitación de una empresa (design D9). */
+/** Decisiones de habilitación de una empresa (design D9). Una fila es una decisión explícita. */
 export interface EnablementRepository {
   decisions(companyId: string, catalogType: FiscalCatalogType): Promise<Map<string, boolean>>;
-  /** Crea la fila con el valor por defecto si no existe y la bloquea; devuelve la decisión previa. */
-  lockDecision(
+  /** Serializa los cambios de una misma entrada de una empresa hasta el fin de la transacción. */
+  lockEntry(companyId: string, catalogType: FiscalCatalogType, entryKey: string): Promise<void>;
+  decision(
     companyId: string,
     catalogType: FiscalCatalogType,
     entryKey: string,
-    defaultEnabled: boolean,
-    userId: string,
-  ): Promise<{ enabled: boolean; existed: boolean }>;
+  ): Promise<boolean | undefined>;
   saveDecision(
     companyId: string,
     catalogType: FiscalCatalogType,

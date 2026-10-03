@@ -260,22 +260,21 @@ export function createEnablementRepository(db: Db): EnablementRepository {
       });
       return new Map(rows.map((row) => [row.entryKey, row.enabled]));
     },
-    async lockDecision(companyId, catalogType, entryKey, defaultEnabled, userId) {
-      const inserted = await db.$executeRaw`
-        INSERT INTO "company_fiscal_catalog_setting"
-          ("company_id", "catalog_type", "entry_key", "enabled", "updated_at", "updated_by")
-        VALUES (${companyId}, ${catalogType}, ${entryKey}, ${defaultEnabled}, now(), ${userId})
-        ON CONFLICT DO NOTHING`;
-      const [row] = await db.$queryRaw<{ enabled: boolean }[]>`
-        SELECT "enabled" FROM "company_fiscal_catalog_setting"
-        WHERE "company_id" = ${companyId} AND "catalog_type" = ${catalogType} AND "entry_key" = ${entryKey}
-        FOR UPDATE`;
-      return { enabled: row!.enabled, existed: inserted === 0 };
+    async lockEntry(companyId, catalogType, entryKey) {
+      await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`fiscal-catalog-enablement:${companyId}:${catalogType}:${entryKey}`}))`;
+    },
+    async decision(companyId, catalogType, entryKey) {
+      const row = await db.companyFiscalCatalogSetting.findUnique({
+        where: { companyId_catalogType_entryKey: { companyId, catalogType, entryKey } },
+        select: { enabled: true },
+      });
+      return row?.enabled;
     },
     async saveDecision(companyId, catalogType, entryKey, enabled, userId) {
-      await db.companyFiscalCatalogSetting.update({
+      await db.companyFiscalCatalogSetting.upsert({
         where: { companyId_catalogType_entryKey: { companyId, catalogType, entryKey } },
-        data: { enabled, updatedBy: userId },
+        create: { companyId, catalogType, entryKey, enabled, updatedBy: userId },
+        update: { enabled, updatedBy: userId },
       });
     },
   };

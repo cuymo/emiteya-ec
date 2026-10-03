@@ -10,6 +10,8 @@ import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index
 import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
 import type { SigningCertificates } from "../../src/modules/signing/application/signing-certificate.ts";
 import { signingCertificateRouter } from "../../src/modules/signing/infrastructure/http/signing-certificate-router.ts";
+import type { FiscalCatalogs } from "../../src/modules/catalogs/application/fiscal-catalogs.ts";
+import { fiscalCatalogsRouter } from "../../src/modules/catalogs/infrastructure/http/fiscal-catalogs-router.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -33,6 +35,7 @@ describe("rutas documentadas", () => {
       }),
       ...fiscalRouters({ prisma: {} as PrismaClient, authorizer: {} as Authorizer }),
       signingCertificateRouter({} as SigningCertificates, { maxBytes: 1 }),
+      fiscalCatalogsRouter({} as FiscalCatalogs),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);

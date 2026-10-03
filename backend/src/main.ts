@@ -23,7 +23,10 @@ import {
 } from "./modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "./modules/identity/infrastructure/http/request-context.ts";
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
-import { loadInstalledFiscalCatalogs } from "./modules/catalogs/infrastructure/index.ts";
+import {
+  catalogsModule,
+  loadInstalledFiscalCatalogs,
+} from "./modules/catalogs/infrastructure/index.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import {
@@ -159,6 +162,7 @@ apiRouter.use(
 );
 apiRouter.use(...fiscalRouters({ prisma: database.prisma, authorizer }));
 apiRouter.use(...signing.routers);
+apiRouter.use(...catalogsModule({ prisma: database.prisma, authorizer }).routers);
 
 const app = createApp({
   logger,

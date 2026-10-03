@@ -45,6 +45,18 @@ import {
   signingCertificateUploadResultSchema,
   uploadSigningCertificateSchema,
 } from "../signing-certificate.ts";
+import {
+  catalogEntriesQuerySchema,
+  catalogEntriesViewSchema,
+  catalogEntryParamsSchema,
+  catalogEntryViewSchema,
+  catalogTypeParamsSchema,
+  consumerFinalPolicyViewSchema,
+  fiscalCatalogSummaryViewSchema,
+  schemaRegistryEntryViewSchema,
+  setEnablementSchema,
+  specialCaseViewSchema,
+} from "../fiscal-catalogs.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -460,6 +472,104 @@ export const apiRoutes: readonly RouteDefinition[] = [
         schema: successEnvelope(expiryAlertResultSchema),
       },
       ...configErrors,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/fiscal-catalogs",
+    summary:
+      "Consultar los catálogos fiscales oficiales: versión del dataset, fuente y habilitación",
+    responses: {
+      200: {
+        description:
+          "Catálogos fiscales con la versión aplicada de su dataset y su fuente oficial.",
+        schema: successEnvelope(z.array(fiscalCatalogSummaryViewSchema)),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/fiscal-catalogs/consumer-final-policy",
+    summary: "Consultar la política de consumidor final: monto máximo, identidad canónica y fuente",
+    request: { query: catalogEntriesQuerySchema.pick({ at: true }) },
+    responses: {
+      200: {
+        description:
+          "Versiones de la política y la aplicable en la fecha `at` (hoy en Ecuador por defecto).",
+        schema: successEnvelope(consumerFinalPolicyViewSchema),
+      },
+      ...configErrors,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/fiscal-catalogs/schemas",
+    summary: "Consultar el registro de esquemas XSD oficiales",
+    responses: {
+      200: {
+        description: "Esquemas registrados con su hash, su fuente y si la aplicación los soporta.",
+        schema: successEnvelope(z.array(schemaRegistryEntryViewSchema)),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/fiscal-catalogs/special-cases",
+    summary: "Consultar la matriz de casos especiales: categoría de soporte de cada anexo",
+    responses: {
+      200: {
+        description: "Los anexos de la ficha técnica con su tema y su categoría (ADR 0014).",
+        schema: successEnvelope(z.array(specialCaseViewSchema)),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/fiscal-catalogs/:catalogType/entries",
+    summary:
+      "Consultar las entradas de un catálogo fiscal: versiones, versión aplicable en una fecha y habilitación de la empresa",
+    request: { params: catalogTypeParamsSchema, query: catalogEntriesQuerySchema },
+    responses: {
+      200: {
+        description:
+          "Entradas con sus versiones, la aplicable en la fecha `at` (hoy en Ecuador por defecto), su habilitación y si son utilizables.",
+        schema: successEnvelope(catalogEntriesViewSchema),
+      },
+      ...configErrors,
+      404: {
+        description: "El catálogo no existe (FISCAL_CATALOG_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/fiscal-catalogs/:catalogType/entries/:entryKey/enablement",
+    summary: "Habilitar o deshabilitar una entrada del catálogo fiscal para la empresa",
+    request: { params: catalogEntryParamsSchema, body: setEnablementSchema },
+    responses: {
+      200: {
+        description: "Entrada con la habilitación vigente de la empresa.",
+        schema: successEnvelope(catalogEntryViewSchema),
+      },
+      400: {
+        description:
+          "Datos inválidos, catálogo sin habilitación por empresa (FISCAL_CATALOG_NOT_ENABLEABLE) o entrada sin vigencia actual ni futura (FISCAL_CATALOG_ENTRY_NOT_IN_FORCE).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description:
+          "El catálogo (FISCAL_CATALOG_NOT_FOUND) o la entrada (FISCAL_CATALOG_ENTRY_NOT_FOUND) no existen.",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
 ];
