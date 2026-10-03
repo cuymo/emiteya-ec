@@ -471,6 +471,25 @@ describe("API de terceros", () => {
         party({ identification: "1784444444001", legalName: "Otra", expectedVersion: 9 }),
       );
       await call("operatorA", "put", `/parties/${view.id}/status`).send({ status: "INACTIVE" });
+      // Rechazada por validación y por identificación repetida.
+      expect(
+        (
+          await call("adminA", "put", `/parties/${view.id}`).send(
+            party({ identification: "1784444444001", email: "no-es-correo", expectedVersion: 1 }),
+          )
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await call("adminA", "put", `/parties/${view.id}`).send(
+            party({
+              identification: "1790012345001",
+              legalName: "Quieta S.A.",
+              expectedVersion: 1,
+            }),
+          )
+        ).status,
+      ).toBe(409);
       expect(await count()).toBe(before);
       await call("adminA", "put", `/parties/${view.id}/status`).send({ status: "INACTIVE" });
       await call("adminA", "put", `/parties/${view.id}/status`).send({ status: "INACTIVE" });

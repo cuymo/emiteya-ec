@@ -17,106 +17,106 @@
     "os": "Linux 7.1.6-1-cachyos",
     "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
     "memory": "16 GiB",
-    "commit": "a5b716f"
+    "commit": "0bdb829"
   },
   "results": [
     {
       "name": "Terceros: prefijo de identificación",
       "path": "/parties?search=17000012",
       "results": 56,
-      "p50": 9.9,
+      "p50": 9.6,
       "p95": 12.1,
-      "max": 17.9,
+      "max": 15.7,
       "withinBudget": true
     },
     {
       "name": "Terceros: fragmento de nombre",
       "path": "/parties?search=garcia",
       "results": 658,
-      "p50": 11.2,
-      "p95": 14.6,
-      "max": 20.5,
+      "p50": 11.1,
+      "p95": 13.7,
+      "max": 16.6,
       "withinBudget": true
     },
     {
       "name": "Terceros: primera página",
       "path": "/parties",
       "results": 8966,
-      "p50": 9.2,
-      "p95": 11.6,
-      "max": 15.8,
+      "p50": 9.3,
+      "p95": 11.8,
+      "max": 16.1,
       "withinBudget": true
     },
     {
       "name": "Terceros: última página",
       "path": "/parties?page=359",
       "results": 8966,
-      "p50": 8.7,
-      "p95": 12.1,
-      "max": 16.2,
+      "p50": 9,
+      "p95": 11.7,
+      "max": 15.2,
       "withinBudget": true
     },
     {
       "name": "Terceros: filtro por rol",
       "path": "/parties?role=CARRIER",
       "results": 3582,
-      "p50": 11.5,
-      "p95": 13.7,
-      "max": 20.5,
+      "p50": 9.7,
+      "p95": 13.3,
+      "max": 21,
       "withinBudget": true
     },
     {
       "name": "Productos: prefijo de código principal",
       "path": "/products?search=p0012",
       "results": 94,
-      "p50": 11.4,
-      "p95": 15.3,
-      "max": 21.3,
+      "p50": 11.3,
+      "p95": 15.4,
+      "max": 20.2,
       "withinBudget": true
     },
     {
       "name": "Productos: prefijo de código auxiliar",
       "path": "/products?search=a-123",
       "results": 8,
-      "p50": 11.5,
-      "p95": 16.3,
-      "max": 20.5,
+      "p50": 11.7,
+      "p95": 16.4,
+      "max": 24.9,
       "withinBudget": true
     },
     {
       "name": "Productos: fragmento de nombre",
       "path": "/products?search=cafe",
       "results": 594,
-      "p50": 10.4,
-      "p95": 15.2,
-      "max": 23,
+      "p50": 10.7,
+      "p95": 15.1,
+      "max": 21.1,
       "withinBudget": true
     },
     {
       "name": "Productos: última página",
       "path": "/products?page=361",
       "results": 9019,
-      "p50": 11.9,
-      "p95": 15.8,
-      "max": 23.3,
+      "p50": 10.6,
+      "p95": 14.9,
+      "max": 25.9,
       "withinBudget": true
     },
     {
       "name": "Productos: estado REVIEW_REQUIRED",
       "path": "/products?taxStatus=REVIEW_REQUIRED",
       "results": 929,
-      "p50": 17.6,
-      "p95": 26.3,
-      "max": 31.2,
+      "p50": 17.4,
+      "p95": 26,
+      "max": 31.1,
       "withinBudget": true
     },
     {
       "name": "Productos: recuentos tributarios",
       "path": "/products/tax-summary",
       "results": null,
-      "p50": 19.2,
-      "p95": 22.2,
-      "max": 24.3,
+      "p50": 19.9,
+      "p95": 22.9,
+      "max": 41.7,
       "withinBudget": true
     }
   ]

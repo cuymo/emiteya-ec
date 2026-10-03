@@ -136,7 +136,7 @@ de la política aplicable el día de su creación en Ecuador. El rol es cliente,
   - la unidad de trabajo de `identity` acepta iniciadores de empresa (`CompanyInitializer`, un puerto de `identity`);
   - `TransactionScope.initializeCompany(companyId)` los ejecuta con el cliente de la transacción, justo después de `createCompany`;
   - la raíz de composición registra el iniciador de `parties`;
-  - la identidad se resuelve antes de abrir la transacción. Sin política aplicable, el aprovisionamiento falla de forma explícita y no crea nada;
+  - el iniciador resuelve la identidad con la política vigente, leída con el cliente principal porque es un dato inmutable del sistema. Sin política aplicable falla de forma explícita, y la transacción del aprovisionamiento se revierte entera sin crear nada;
   - toda vía futura de creación de empresas usará la misma unidad de trabajo.
 - **C. Reparación:** el mismo `ensureConsumerFinalParties()` del caso A, en cada arranque. No es la única garantía.
 - **Orden de arranque:** cargar catálogos → aprovisionar → reponer consumidores finales → escuchar. Cargar los catálogos no depende de ninguna empresa.
