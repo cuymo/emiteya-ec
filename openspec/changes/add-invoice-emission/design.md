@@ -81,7 +81,8 @@ Lecturas internas nuevas. Son fábricas sobre un `DbClient`, para usarlas dentro
     - la línea toma el `unitPrice` del producto al emitir y queda congelado en el snapshot;
     - el borrador no guarda precio, y un precio en la línea es un campo no permitido;
     - la vista previa usa el precio vigente del producto;
-    - modificar el precio por línea queda como decisión futura (Q-45).
+    - modificar el precio por línea queda como decisión futura (Q-45);
+    - la línea manual fuera del catálogo (RF-202) queda diferida como requisito fuente pendiente (Q-46): este cambio no la implementa.
   - Un trigger impide cambiar o borrar un borrador `EMITTED`, sus líneas y sus pagos.
 - **La factura fiscal** solo existe desde `RESERVED`, en `electronic_document`, con `draft_id` único.
   - El borrador emitido se conserva como `EMITTED` para la trazabilidad, pero no es la fuente de verdad: lo es el snapshot.
@@ -186,7 +187,7 @@ Respuestas:
 
 Una transacción de la unidad de trabajo de emisión, con el `timeout` por defecto de Prisma y sin I/O externo ni XML:
 
-1. `SELECT … FOR UPDATE` del borrador: serializa las emisiones del mismo borrador.
+1. Bloqueo de la fila del borrador con una actualización guardada, que la retiene hasta el final de la transacción como un `SELECT … FOR UPDATE`; el adaptador de Prisma no cualifica el esquema en SQL crudo. Serializa las emisiones del mismo borrador.
 2. `lockConfiguration(companyId)` (lock advisory de la configuración) y lectura de la configuración vigente.
 3. La validación de D6.
 4. La construcción del snapshot sin el secuencial.
@@ -208,7 +209,7 @@ El número solo existe para la respuesta después del commit. Un fallo en cualqu
 - **Repetición** (consulta previa, o tras una colisión):
   - Misma clave y misma huella devuelve el documento (`200`). Si sigue `RESERVED`, lanza un intento hacia `SIGNED` (D9).
   - Misma clave y otra huella es `409 IDEMPOTENCY_KEY_REUSED`.
-- **Concurrencia, misma clave y mismo borrador.** El `FOR UPDATE` del borrador serializa: la segunda transacción encuentra el borrador `EMITTED`, se revierte, lee el registro ya confirmado y responde como repetición.
+- **Concurrencia, misma clave y mismo borrador.** El bloqueo de fila del borrador serializa: la segunda transacción encuentra el borrador `EMITTED`, se revierte, lee el registro ya confirmado y responde como repetición.
 - **Concurrencia, misma clave y borradores distintos.** La segunda transacción espera en el índice único, falla al confirmar la primera, se revierte (su número se libera porque nunca se confirmó) y responde `409 IDEMPOTENCY_KEY_REUSED`.
 - **Otra clave sobre un borrador ya emitido.** `409 INVOICE_DRAFT_ALREADY_EMITTED`, con el id de la factura.
 - **Documentación.** `idempotency.md` y `backend.md` se alinean con Q-30: alcance sin usuario, `409` y duración fiscal. El borrador no exige clave: no tiene efecto fiscal y su edición usa versión.
@@ -256,6 +257,7 @@ Cada fallo después del commit actualiza, en una transacción corta, las columna
 - **Reintento.** `POST /api/v1/invoices/{id}/signing-attempts`, con permiso `invoices.retrySigning`.
   - Ejecuta D9 sobre la misma factura, con su snapshot, número y clave.
   - Sobre una factura `SIGNED` devuelve la factura sin efecto y sin auditoría.
+  - Mientras otro intento tiene el arriendo, devuelve el estado actual sin intentar y sin auditoría.
   - Su idempotencia es natural: la transición guardada, el arriendo y el artefacto único.
 - **Sin bucles.** No hay reintentos automáticos ni jobs.
 - **Caída del proceso.** Deja `RESERVED` con un arriendo que vence. La repetición con la misma clave o un reintento lo retoman.
@@ -317,9 +319,11 @@ Todo bajo `/api/v1/invoices`:
 ### D14. Permisos, auditoría y transiciones
 
 - **Permisos nuevos:** `invoices.read`, `invoices.draft`, `invoices.emit` e `invoices.retrySigning`, en `access-policy.ts`, en el espejo del frontend y en la tabla de `access-control.md`.
+  - Cada caso de uso exige su permiso antes de leer o escribir datos. Como la matriz vigente da los cuatro a ambos roles, el rechazo por permiso se prueba en la guardia de cada caso de uso, no con un rol inexistente.
   - La matriz propuesta da a ambos roles "Crear borradores y emitir" y "Corregir un comprobante con XML inválido". El reintento continúa la misma emisión, sin decisiones nuevas, así que también es de ambos roles.
   - Resolver la revisión manual u ordenar una reconciliación es solo del administrador, pero llega en el cambio 7.
 - **Auditoría:** `invoice.reserved` (número, clave, ambiente y total), `invoice.signed` (número y SHA-256 del artefacto) e `invoice.signing_retried` (número, y el resultado `SIGNED` o el código del diagnóstico).
+  - `invoice.signing_retried` solo se registra cuando comienza un intento sobre una factura `RESERVED`. No se registra para una factura ya firmada, un reintento mientras otro intento tiene el arriendo ni una solicitud rechazada por sesión, permiso o validación.
   - Todas con el usuario como actor.
   - Ni los borradores, ni las consultas, ni las emisiones rechazadas generan eventos.
   - Nunca hay XML ni bytes en el payload.
@@ -373,13 +377,15 @@ Briefs:
 - **Objetivo.** P95 total de 2 s o menos en ese entorno, no como promesa universal. Si se supera, el script termina con código 1 y la corrección se propone con `/opsx:update`; nunca se sube el umbral.
 - **Pruebas del SRI.** Nunca se usan para medir rendimiento.
 - **Métricas de producción.** Las mismas etapas alimentan `invoice_emission_stage_duration_seconds{stage,outcome}` en el registro de métricas existente.
+- **Resultado del 2026-10-03.** Dos ejecuciones sobre el mismo código del backend dieron un P95 total de 884 ms y de 1630 ms, dentro del objetivo. La variación está sobre todo en la espera de la base de datos y de la confirmación (`reservation_tx` y `persist`). Es un dato de seguimiento, no un bloqueo; los artefactos precargados de 64 bytes no simulan el volumen físico de `BYTEA` y TOAST.
 
 ### D17. Pruebas y compuertas de evidencia
 
 - **Unitarias:**
   - aritmética, con la tabla dorada;
   - builder: escape, caracteres XML 1.0, opcionales, orden, versión, pureza y prueba de fuente;
-  - escritor XML, máquina local, huella de idempotencia, clasificación de diagnósticos y snapshot.
+  - escritor XML, máquina local, huella de idempotencia, clasificación de diagnósticos y snapshot;
+  - guardia de permisos de cada caso de uso de facturas.
 - **Contrato:**
   - `AccessKeys` contra la implementación de referencia de CTX §8.3: secuenciales 1, 9, 10 y 999999999, longitudes y caracteres inválidos;
   - `XsdValidator`, ya en `main`, con el registro 2;
@@ -397,8 +403,8 @@ Briefs:
 - **Compuertas antes del archive:**
   - S-2 integrado, con el validador conectado a la emisión;
   - S-3 offline reproducido con la implementación real;
-  - el vector oficial de la clave de acceso de la ficha, si puede obtenerse de la fuente oficial. Si sigue inaccesible, no se inventa: queda como evidencia pendiente y `/opsx:verify` decide, con las fuentes disponibles, si bloquea el archive o pasa a ser compuerta previa a la transmisión.
-  - La parte online de S-3 queda fuera de este cambio (go-live).
+  - el vector oficial de la clave de acceso de la ficha, si puede obtenerse de la fuente oficial. Si sigue inaccesible, no se inventa: queda como evidencia pendiente y `/opsx:verify` decide, con las fuentes disponibles, si bloquea el archive o pasa a ser compuerta previa a la transmisión. Decidido en `/opsx:verify` (2026-10-03): el portal del SRI no fue accesible, y el vector pasa a compuerta previa a la transmisión.
+- **Compuertas del cambio 7, previas a la transmisión:** el vector oficial de la clave de acceso, la parte online de S-3, un P12 ecuatoriano real y un RUC habilitado en el ambiente de Pruebas del SRI. No bloquean el archive de este cambio, que no transmite al SRI.
 
 ### D18. Briefs de las operaciones sensibles
 
@@ -407,10 +413,10 @@ Briefs:
 | 1. Quién ejecuta | `invoices.draft`, ambos roles | `invoices.emit`, ambos roles | `invoices.retrySigning`, ambos roles |
 | 2. Empresa del llamador | `res.locals.context.companyId` | Igual | Igual |
 | 3. Empresa del recurso | `invoice_draft.company_id` | Borrador y referencias leídos con `companyId` | `electronic_document.company_id` |
-| 4. Propiedad | Consultas con `companyId`; las referencias (punto, tercero, producto, forma de pago) se resuelven en la empresa | Ídem, y el `FOR UPDATE` del borrador en la empresa | Consulta con `companyId` |
+| 4. Propiedad | Consultas con `companyId`; las referencias (punto, tercero, producto, forma de pago) se resuelven en la empresa | Ídem, y el bloqueo de fila del borrador en la empresa | Consulta con `companyId` |
 | 5. Cambiar un id | Da `404` o referencia inexistente | `404` | `404` |
 | 6. Dos veces | Crear: dos borradores, sin efecto fiscal. Corregir: versión. Eliminar: `404` la segunda vez | Registro de idempotencia: la misma factura | Natural: transición guardada y artefacto único |
-| 7. A la vez | Versión y actualización guardada | `FOR UPDATE` del borrador e índice único de la clave | Arriendo del intento, transición guardada y `UNIQUE (document_id, kind)` |
+| 7. A la vez | Versión y actualización guardada | Bloqueo de fila del borrador e índice único de la clave | Arriendo del intento, transición guardada y `UNIQUE (document_id, kind)` |
 | 8. Idempotencia | Versión (natural) | `Idempotency-Key` durable (D8) | Natural |
 | 9. Restricciones | CHECK de escalas, FK de referencias y trigger de borrador emitido | Unicidades de reserva, clave, número, borrador e idempotencia; triggers de inmutabilidad; `SIGNED` con artefacto | Las mismas |
 | 10. Auditoría | No; autor y fecha en el borrador | `invoice.reserved` e `invoice.signed` | `invoice.signing_retried` e `invoice.signed` |

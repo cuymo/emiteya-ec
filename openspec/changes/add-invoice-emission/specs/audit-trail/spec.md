@@ -1,18 +1,22 @@
 ## ADDED Requirements
 
 ### Requirement: Auditoría de la emisión de facturas
-El sistema SHALL registrar un evento cuando una emisión deja una factura reservada, cuando la factura queda firmada y cuando un usuario pide un reintento de firma. Cada evento lleva actor, empresa, factura, número, clave de acceso y, al firmar, el SHA-256 del artefacto, nunca el XML ni secretos. Los borradores, las consultas y las emisiones rechazadas no generan eventos; el borrador conserva su autor y su fecha.
+El sistema SHALL registrar un evento cuando una emisión deja una factura reservada, cuando la factura queda firmada y cuando comienza un intento de firma válido que un usuario pide sobre una factura reservada. Todos llevan actor, empresa y factura. El de reserva lleva además el número, la clave de acceso, el ambiente y el total; el de firma, el número y el SHA-256 del artefacto; el del reintento, el número y su resultado. Ninguno lleva el XML ni secretos. No generan eventos los borradores, las consultas, las solicitudes rechazadas antes de iniciar una operación fiscal ni los reintentos que no inician un intento, porque la factura ya está firmada u otro intento está en curso. El borrador conserva su autor y su fecha.
 
 #### Scenario: Emisión firmada
 - **WHEN** un usuario emite una factura que llega a firmada
 - **THEN** existen un evento de reserva con su número y su clave de acceso y un evento de firma con el SHA-256 del artefacto, ambos con el usuario como actor
 
 #### Scenario: Reintento de firma
-- **WHEN** un usuario reintenta la firma de una factura reservada
-- **THEN** existe un evento del reintento con el usuario como actor, y un evento de firma si el reintento la completa
+- **WHEN** un usuario reintenta la firma de una factura reservada y el intento comienza
+- **THEN** existe un evento del reintento con el usuario como actor y su resultado, y un evento de firma si el intento la completa
 
-#### Scenario: Emisión rechazada
-- **WHEN** una emisión se rechaza por validación, permiso, idempotencia o conflicto antes de reservar
+#### Scenario: Reintento que no inicia un intento
+- **WHEN** un usuario reintenta la firma de una factura ya firmada, o mientras otro intento de esa factura está en curso
+- **THEN** no se registra ningún evento del reintento
+
+#### Scenario: Solicitud rechazada antes de iniciar una operación fiscal
+- **WHEN** una emisión o un reintento se rechaza antes de iniciar una operación fiscal: sin sesión, con un borrador o una factura inexistente o de otra empresa, con un campo no permitido, sin clave de idempotencia o con una clave reutilizada, por validación o por conflicto
 - **THEN** no se registra ningún evento
 
 #### Scenario: Borradores y consultas

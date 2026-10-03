@@ -157,7 +157,7 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 
 - Purpose: bien o servicio de un comprobante.
 - Key attributes: producto (opcional), código principal, código auxiliar, descripción, cantidad, precio unitario, descuento, precio total sin impuesto, impuestos.
-- Invariants: copia los datos del producto al emitir. En la factura, el precio unitario es el del producto y se congela en el snapshot; modificarlo por línea es una decisión futura (Q-45). El ingreso manual de una línea sin producto (ERS RF-202) no está soportado todavía.
+- Invariants: copia los datos del producto al emitir. En la factura, el precio unitario es el del producto y se congela en el snapshot; modificarlo por línea es una decisión futura (Q-45). El ingreso manual de una línea sin producto (ERS RF-202) no está soportado: es un requisito fuente diferido (Q-46, `capabilities.md`).
 
 ### `document_relation` — Relación documental
 

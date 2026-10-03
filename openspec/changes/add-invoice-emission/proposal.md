@@ -48,10 +48,10 @@ Fuera de alcance:
 - **Inventario:** descuento de stock (ERS RF-205, RF-206, cambio 9).
 - **Contenido de la factura no admitido:**
   - ICE, IRBPNR e IVA diferenciado mientras sus datos de cálculo sigan incompletos;
-  - líneas sin producto del catálogo;
+  - la línea manual sin producto del catálogo (ERS RF-202): requisito fuente diferido, cuyas reglas no están definidas (Q-46); es distinta de modificar el precio de un producto (Q-45);
   - `infoAdicional`, porque no hay requisito fuente;
   - reembolsos, exportación, propina, plazo de pago y factura 2.0.0 o 2.1.0.
-- **Evidencia de go-live:** la parte online de S-3.
+- **Compuertas del cambio 7, previas a la transmisión:** el vector oficial de la clave de acceso, la parte online de S-3, un P12 ecuatoriano real y un RUC habilitado en el ambiente de Pruebas del SRI. No bloquean este cambio, que no transmite.
 
 ## Capabilities
 
@@ -71,7 +71,7 @@ Fuera de alcance:
 ### Modified Capabilities
 
 - `fiscal-catalogs`: el registro de esquemas XSD incluye todos los archivos necesarios para resolver una validación, también el import `xmldsig-core-schema.xsd`, con su fuente, revisión, hash y ruta lógica.
-- `audit-trail`: auditoría de la emisión de facturas: reserva, firma y reintento manual.
+- `audit-trail`: auditoría de la emisión de facturas: reserva, firma y cada intento de firma que un usuario inicia sobre una factura reservada.
 
 ## Impact
 

@@ -279,7 +279,7 @@ La idempotencia añade `400 IDEMPOTENCY_KEY_REQUIRED` y `409 IDEMPOTENCY_KEY_REU
 
 - **Reintento.** `POST /api/v1/invoices/{invoiceId}/signing-attempts` repite las etapas sobre la misma factura, con su snapshot, número y clave:
   - sobre una factura `SIGNED`, la devuelve sin efecto;
-  - mientras otro intento tiene el arriendo, devuelve el estado actual y audita el resultado `ATTEMPT_IN_PROGRESS`.
+  - mientras otro intento tiene el arriendo, devuelve el estado actual sin intentar y sin auditoría.
 - **Sin bucles.** No hay reintentos automáticos ni jobs en este cambio.
 
 ### Auditoría y métricas
@@ -287,9 +287,9 @@ La idempotencia añade `400 IDEMPOTENCY_KEY_REQUIRED` y `409 IDEMPOTENCY_KEY_REU
 - **Auditoría**, siempre con el usuario como actor y sin XML ni bytes:
   - `invoice.reserved`: número, clave, ambiente y total;
   - `invoice.signed`: número y SHA-256 del artefacto;
-  - `invoice.signing_retried`: número y resultado (`SIGNED`, el código del diagnóstico o `ATTEMPT_IN_PROGRESS`).
+  - `invoice.signing_retried`: número y resultado (`SIGNED` o el código del diagnóstico), solo cuando comienza un intento sobre una factura `RESERVED`.
 
-  Los borradores, las consultas y las emisiones rechazadas no generan eventos.
+  Los borradores, las consultas, las solicitudes rechazadas antes de iniciar una operación fiscal y los reintentos que no inician un intento no generan eventos.
 - **Métricas.** Cada emisión alimenta el histograma `invoice_emission_stage_duration_seconds{stage,outcome}` con las etapas `total`, `reservation_tx`, `validation_snapshot`, `arithmetic`, `xml`, `xsd`, `sign` y `persist` (`deployment.md`).
   - Con `EMISSION_STAGE_TIMINGS=1`, que el entorno rechaza en producción, la respuesta lleva además `Server-Timing`.
   - `bench:emission` mide con ellas un P95 total de 1630 ms en el entorno registrado (884 ms en una ejecución anterior sobre el mismo código; `../quality/performance.md`).

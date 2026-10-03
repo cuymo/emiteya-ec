@@ -33,7 +33,7 @@ El sistema SHALL permitir guardar, corregir y eliminar borradores de factura sin
 - **THEN** el sistema rechaza la solicitud y la factura emitida no cambia
 
 ### Requirement: Contenido de la factura
-Un borrador SHALL indicar el punto de emisión, el comprador, al menos una línea y al menos una forma de pago. El comprador es un tercero activo con rol de cliente o el consumidor final del sistema. Cada línea refiere un producto activo e indica cantidad (18 dígitos, 6 decimales) y descuento (2 decimales, entre 0 y el subtotal). El precio unitario sin impuestos es el del producto al emitir y no se edita. Las líneas sin producto no se admiten.
+Un borrador SHALL indicar el punto de emisión, el comprador, al menos una línea y al menos una forma de pago. El comprador es un tercero activo con rol de cliente o el consumidor final del sistema. Cada línea refiere un producto activo e indica cantidad (18 dígitos, 6 decimales) y descuento (2 decimales, entre 0 y el subtotal). El precio unitario sin impuestos es el del producto al emitir y no se edita.
 
 #### Scenario: Comprador cliente
 - **WHEN** un usuario emite un borrador cuyo comprador es un tercero activo con rol de cliente
@@ -181,7 +181,7 @@ El sistema SHALL listar las facturas emitidas de la empresa con paginación, fil
 - **THEN** el resultado contiene solo esa factura de su empresa
 
 ### Requirement: Reintento de firma de una factura
-Un usuario con permiso SHALL poder reintentar llevar a firmada una factura reservada. El reintento reutiliza la factura, su snapshot, su número y su clave de acceso, y nunca reserva otro número. Sobre una factura ya firmada no tiene efecto.
+Un usuario con permiso SHALL poder reintentar llevar a firmada una factura reservada. El reintento reutiliza la factura, su snapshot, su número y su clave de acceso, y nunca reserva otro número. Sobre una factura ya firmada no tiene efecto. Mientras otro intento de esa factura está en curso, devuelve el estado actual sin iniciar otro.
 
 #### Scenario: Reintento exitoso
 - **WHEN** un usuario reintenta una factura reservada cuyo fallo anterior fue reintentable
@@ -192,7 +192,15 @@ Un usuario con permiso SHALL poder reintentar llevar a firmada una factura reser
 - **THEN** el sistema devuelve la factura sin cambios y no crea otro artefacto
 
 ### Requirement: Permisos de facturas
-Administradores y operadores SHALL poder consultar facturas, gestionar borradores, emitir y reintentar la firma de facturas reservadas, conforme a la matriz de acceso: crear borradores y emitir corresponde a ambos roles. Sin permiso, el sistema responde prohibido; sin sesión, no autenticado. La empresa y el rol salen siempre de la sesión.
+Cada operación de facturas SHALL exigir su permiso antes de leer o escribir datos: consultar facturas (`invoices.read`), gestionar borradores (`invoices.draft`), emitir (`invoices.emit`) y reintentar la firma (`invoices.retrySigning`). Sin sesión, el sistema responde no autenticado; si la política de acceso no concede el permiso, responde prohibido, sin efecto. La empresa y el rol salen siempre de la sesión. Con la matriz de acceso vigente, administradores y operadores tienen los cuatro permisos: crear borradores, emitir y corregir un comprobante con XML inválido corresponde a ambos roles.
+
+#### Scenario: Permiso exigido por cada operación
+- **WHEN** se consulta una factura, se guarda o elimina un borrador, se emite o se reintenta la firma, y la política de acceso no concede el permiso de esa operación
+- **THEN** el sistema responde prohibido antes de leer o escribir datos
+
+#### Scenario: Matriz vigente
+- **WHEN** se consulta la política de acceso
+- **THEN** administradores y operadores tienen los cuatro permisos de facturas
 
 #### Scenario: Operador emite
 - **WHEN** un operador emite un borrador válido

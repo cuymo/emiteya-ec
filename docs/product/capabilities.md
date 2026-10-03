@@ -18,7 +18,7 @@ documento no especifica comportamiento.
 | `products`             | Productos y servicios con precio exacto, referencias fiscales, estado tributario derivado y búsqueda. | ERS RF-301..305; CTX §12.4, §12.5                          | AC-08         | — (Q-26 parcial: volumen de productos medido) |
 | `document-emission`    | Núcleo común: emisión idempotente, snapshot, máquina local `RESERVED` → `SIGNED`, clave de acceso, XML, XSD y firma, hasta el artefacto firmado. | ERS RF-006..010, RF-520..525, SRI-REQ-02..05, SRI-REQ-11; CTX §4, §8, §10, §11, §19–21, §39, §41 | AC-02, AC-05 | — (Q-08, Q-14, Q-29, Q-30, Q-35, Q-38, Q-39 y Q-44 resueltas; de Q-34 quedan el SOAP y el PDF; Q-26 parcial: emisión medida con `bench:emission`) |
 | `sri-transmission`     | Recepción, autorización asíncrona, consulta de validez, errores 43/45/70, reconciliación y revisión manual. | ERS SRI-REQ-01, SRI-REQ-06..10, RNF-004; CTX §7, §22–27, §29, §32–34, §44, §52 | AC-02, AC-06 | Q-06, Q-07, Q-16 |
-| `invoices`             | Factura con consumidor final, líneas, pagos y totales; borradores editables antes de emitir.      | ERS RF-010, RF-201..206; CTX §12, §35                          | AC-02, AC-08  | Q-18, Q-19, Q-45               |
+| `invoices`             | Factura con consumidor final, líneas, pagos y totales; borradores editables antes de emitir.      | ERS RF-010, RF-201..206; CTX §12, §35                          | AC-02, AC-08  | Q-18, Q-19, Q-45, Q-46         |
 | `credit-notes`         | Nota de crédito desde un comprobante, con devolución de stock opcional.                           | ERS RF-210..213; CTX §13                                       | AC-03         | Q-10, Q-20                     |
 | `debit-notes`          | Nota de débito sobre un comprobante.                                                              | ERS RF-220..222; CTX §14                                       | AC-03         | —                              |
 | `withholding-receipts` | Comprobante de retención 2.0.0 con documentos sustento.                                           | ERS RF-230..234; CTX §16                                       | AC-03         | —                              |
@@ -84,6 +84,15 @@ el producto con un contribuyente real.
 Cada cambio que implemente un tipo de comprobante cumple la Definition of Done del motor
 fiscal (CTX §58). El release v1.0 exige además los no negociables de
 `../quality/definition-of-done.md` (sección Go-Live v1.0).
+
+## Requisitos fuente diferidos
+
+Requisitos del ERS que el cambio de su capacidad no implementó. Siguen pendientes y no forman
+parte del spec actual de esa capacidad hasta que otro cambio los implemente.
+
+| Requisito | Capacidad | Qué falta | Estado |
+| --- | --- | --- | --- |
+| ERS RF-202, "ingreso manual permitido" | `invoices` | Líneas de factura sin producto del catálogo. `add-invoice-emission` (cambio 6) solo admite líneas que refieren un producto activo. | Diferido; sus reglas son Q-46. No es Q-45, que trata de modificar el precio de un producto del catálogo. |
 
 ## Huecos de trazabilidad
 
