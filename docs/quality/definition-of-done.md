@@ -76,7 +76,7 @@ de integración SRI de CTX §59:
 - La validación XSD está activa y no puede desactivarse en Producción.
 - El dinero se calcula con decimal exacto.
 - La firma y su contraseña no aparecen en logs ni respuestas de la API.
-- Al menos un proveedor validado: un P12 real de una entidad certificadora ecuatoriana, preferentemente la del primer cliente piloto, se carga, se valida, firma un comprobante autorizado en Pruebas y se le extrae el RUC (spike S-6). Un P12 sintético no sustituye esta prueba, y un proveedor no figura como validado sin ella.
+- Al menos un proveedor validado: un P12 real de una entidad certificadora ecuatoriana, preferentemente la del primer cliente piloto, se carga, se valida, firma un comprobante autorizado en Pruebas y se le extrae el RUC, y el `CERTIFICATE_MAX_BYTES` configurado admite el archivo con su cadena completa (spike S-6). Un P12 sintético no sustituye esta prueba, y un proveedor no figura como validado sin ella.
 - Los certificados custodiados pueden rotarse o volver a cifrarse con una clave maestra nueva, o existe un procedimiento operativo documentado y probado para sustituirlos de forma segura (ADR 0011).
 - Los comprobantes firmados y autorizados tienen archivo durable con hash.
 - Un respaldo completo se restaura con éxito.

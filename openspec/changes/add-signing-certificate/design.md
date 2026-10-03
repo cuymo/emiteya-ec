@@ -104,7 +104,10 @@ Estados:
 
 `PUT /api/v1/signing-certificate` recibe JSON `{ file, password, expectedCurrentId }`:
 
-- `file` es el P12 en base64, de 1 B a 64 KiB decodificado. Cabe en el límite global de 100 KB.
+- `file` es el P12 en base64. El límite, `CERTIFICATE_MAX_BYTES`, es configuración y se aplica a los bytes PKCS#12 decodificados, nunca a la cadena base64.
+  - Por defecto vale 64 KiB, porque todos los fixtures de S-6 caben con holgura (3,5–5,1 KB).
+  - No es un límite del SRI ni una regla funcional: el gate del go-live con un P12 real comprueba que admite el archivo con su cadena completa, y subirlo no cambia la spec.
+  - La ruta de carga usa su propio parser JSON, con un límite derivado de `CERTIFICATE_MAX_BYTES` (4/3 más un margen para la contraseña y los demás campos). El parser global de 100 KB no la procesa.
 - `password` es una cadena de 1 a 256 caracteres, sin recortar ni normalizar: es exactamente lo que abre el archivo.
 - `expectedCurrentId` es la firma vigente que el administrador ve, o `null`.
 - El esquema es estricto.
@@ -118,7 +121,7 @@ certificado es **compatible** si los supera todos:
 2. **Abrir con la contraseña.**
    - Falla el MAC: `400 CERTIFICATE_PASSWORD_INVALID`.
    - Falla el ASN.1: `400 CERTIFICATE_UNREADABLE`.
-   - El MAC verifica pero el contenido no se descifra (un P12 moderno con contraseña no ASCII, que el firmador tampoco abre): `400 CERTIFICATE_INCOMPATIBLE`. El mensaje sugiere exportar la firma con una contraseña sin caracteres especiales.
+   - El MAC verifica pero el contenido no se descifra: `400 CERTIFICATE_INCOMPATIBLE`. La limitación detectada en S-6 es concreta: un P12 con cifrado PBES2 (AES con PBKDF2) y una contraseña con caracteres fuera de ASCII. `node-forge`, y por tanto el firmador, no la descifra, mientras que con los formatos legados las contraseñas no ASCII funcionan y la puntuación ASCII nunca es un problema. El mensaje es: "Este archivo PKCS#12 utiliza una combinación de formato y contraseña que no podemos procesar. Intenta exportarlo nuevamente usando una contraseña con caracteres ASCII.", sin revelar ni repetir la contraseña. Sigue siendo una limitación conocida hasta validarla con certificados reales.
 3. **Clave y certificado.**
    - Falta la clave, no es RSA, tiene menos de 2048 bits o ningún certificado le corresponde: `400 CERTIFICATE_KEY_UNSUPPORTED`.
    - El certificado del titular no es el primero del P12, que es el que embebe el firmador: `400 CERTIFICATE_INCOMPATIBLE`.
@@ -129,6 +132,10 @@ certificado es **compatible** si los supera todos:
 
 Los mensajes nunca incluyen la contraseña ni contenido del archivo. El error de la librería se
 traduce a uno de estos códigos y su texto original no sale del adaptador.
+
+Los pasos 1 a 3, 5, 6 y 7 se ejecutan en el pool criptográfico (D18), nunca en el event loop
+principal: el handler espera el resultado sin bloquear. El orden de la cadena no se normaliza ni
+se reescribe el P12. Si los P12 reales muestran que la CA primero es frecuente, se evaluará aparte.
 
 ### D4. Detección del RUC y compatibilidad por capacidades
 
@@ -349,7 +356,7 @@ La firma la verificó `signxml` (Python), independiente de `xml-crypto` y `xmldo
   - 100 000: unos 1,3 s cada operación;
   - 600 000: unos 8 s.
 - **Límites finales:**
-  - hasta 64 KiB;
+  - `CERTIFICATE_MAX_BYTES`, configurable y de 64 KiB por defecto, sobre los bytes decodificados;
   - hasta 100 000 iteraciones;
   - RSA de 2048 bits o más;
   - certificado del titular primero;
@@ -366,6 +373,32 @@ La firma la verificó `signxml` (Python), independiente de `xml-crypto` y `xmldo
 - se documentan la entidad, sus características técnicas y el resultado, y el proveedor pasa a validado.
 
 Sin él, sigue como requisito del go-live (`definition-of-done.md`).
+
+### D18. Pool criptográfico fuera del event loop
+
+S-6 midió que abrir un P12, derivar sus claves, comprobar la correspondencia entre clave y
+certificado y firmar son CPU síncrona: de decenas de milisegundos a más de un segundo. En este
+cambio, no solo en la emisión, ese trabajo corre en `worker_threads`.
+
+- **Abstracción reutilizable.** `CryptoWorkerPool`, en `backend/src/platform/workers/`, ejecuta tareas con nombre registradas en un módulo de worker. Esta es la que deja este cambio:
+  - `inspect-and-test-sign`: inspección de D3 y firma de prueba.
+
+  `add-invoice-emission` añadirá la firma de XML como otra tarea del mismo pool.
+- **Concurrencia acotada.**
+  - Un número fijo de workers (`CRYPTO_WORKERS`, 2 por defecto, entre 1 y 8), creados al arrancar y reutilizados, nunca uno por petición.
+  - Una cola limitada (16 tareas). Con la cola llena, `503 CRYPTO_BUSY`.
+- **Timeout.**
+  - Cada tarea tiene un límite (`CRYPTO_TASK_TIMEOUT_MS`, 30 s por defecto). Al agotarse, el worker se termina y se reemplaza, y la tarea falla con un error tipado de timeout.
+  - El límite de 100 000 iteraciones mantiene el trabajo legítimo muy por debajo.
+- **Errores tipados.** El worker devuelve `{ ok: true, value }` o `{ ok: false, code }`, con un código de D3. Nunca serializa el error original de la librería, que podría citar datos. Un fallo inesperado se traduce a `CERTIFICATE_UNREADABLE` o a un error interno sin detalles.
+- **Sin fugas.**
+  - Los bytes del P12 se transfieren como `ArrayBuffer`: quedan separados del hilo principal y se sobrescriben con ceros al terminar.
+  - La contraseña viaja en el mensaje y no se guarda en el worker después de la tarea.
+  - Ni el pool ni el worker registran los mensajes. Los logs solo llevan el nombre de la tarea, la duración y el código.
+- **Ciclo de vida.**
+  - El pool se crea en `main.ts`, entra en la readiness como dependencia y se cierra en el apagado ordenado (`shutdown`), esperando las tareas en curso hasta el timeout y terminando los workers.
+  - En pruebas, cada arnés lo cierra.
+- **Configuración:** `CRYPTO_WORKERS` y `CRYPTO_TASK_TIMEOUT_MS`, validadas en `config/env.ts`.
 
 ### D16. Pruebas
 
@@ -386,9 +419,9 @@ Sin él, sigue como requisito del go-live (`definition-of-done.md`).
 
 ## Risks / Trade-offs
 
-- [Firma síncrona en el event loop: de 42 ms a 1,3 s por comprobante según las iteraciones] → Límite de 100 000 iteraciones, y la emisión firma sin bloquear el event loop de la API (obligación en `fiscal-emission.md`).
+- [Firma síncrona: de 42 ms a 1,3 s por operación según las iteraciones] → Pool de workers acotado con timeout (D18) desde este cambio, límite de 100 000 iteraciones, y la emisión reutiliza el mismo pool (obligación en `fiscal-emission.md`).
 - [Codificación real del OID de Security Data distinta de las probadas] → Extractor tolerante a los tres tipos de cadena, rechazo explícito si no hay valor fiable, y P12 real como requisito del go-live.
-- [Rechazos que afectan a usuarios reales: P12 moderno con contraseña no ASCII o cadena con la CA primero] → Mensaje que explica cómo exportar de nuevo la firma. La alternativa de normalizar el P12 al cargarlo queda fuera de este diseño.
+- [Rechazos que afectan a usuarios reales: P12 con cifrado PBES2 y contraseña no ASCII, o cadena con la CA primero] → Mensaje que explica exactamente la limitación y cómo exportar de nuevo la firma. Normalizar el P12 al cargarlo queda fuera de este diseño hasta ver P12 reales.
 - [`EcSriSigner` no firma algún P12 soportado, o embebe un certificado que no es el del titular] → S-6 A es el gate. La firma de prueba al cargar compara el certificado embebido con el inspeccionado. Si falla, se limitan los formatos o se usa un `ISigner` propio detrás de `XmlSigner`.
 - [La inspección y el firmador leen el P12 de forma distinta] → S-6 B prefiere la misma familia de parser (`node-forge`). La firma de prueba es la comprobación final.
 - [Cambio incompatible en `facturacion-electronica-ec` o `ec-sri-invoice-signer`] → Versiones exactas y contratos del adaptador antes de actualizar (ADR 0018).

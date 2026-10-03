@@ -48,7 +48,7 @@ legado de OpenSSL y con P12 sintéticos:
 
 - Los formatos legados, habituales en entidades certificadoras, se aceptan sin habilitar el proveedor legado de OpenSSL.
 - **Rechazos:**
-  - un P12 moderno con contraseña no ASCII. El firmador tampoco puede usarlo, y el mensaje sugiere exportarlo con una contraseña sin caracteres especiales;
+  - un P12 con cifrado PBES2 (AES con PBKDF2) y contraseña con caracteres fuera de ASCII. El firmador tampoco puede usarlo. Con los formatos legados las contraseñas no ASCII funcionan, y la puntuación ASCII nunca es un problema. El mensaje es: "Este archivo PKCS#12 utiliza una combinación de formato y contraseña que no podemos procesar. Intenta exportarlo nuevamente usando una contraseña con caracteres ASCII.". Es una limitación conocida hasta validarla con certificados reales;
   - una cadena con el certificado de la CA primero.
-- **Coste de CPU.** La inspección y la firma son JavaScript síncrono: de 18 a 120 ms con 2048 iteraciones, y unos 1,3 s con 100 000. La emisión debe firmar sin bloquear el event loop de la API.
+- **Coste de CPU.** La inspección y la firma son JavaScript síncrono: de 18 a 120 ms con 2048 iteraciones, y unos 1,3 s con 100 000. Por eso la inspección y la firma corren en un pool de `worker_threads` acotado y con timeout (design D18 de `add-signing-certificate`), que la emisión reutilizará.
 - La compatibilidad con P12 reales de cada proveedor sigue requiriendo un P12 real (requisito del go-live).
