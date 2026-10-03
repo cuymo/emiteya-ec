@@ -133,6 +133,7 @@ export async function readyCompany(
     profile?: Partial<TaxpayerProfile>;
     /** false: sin configuración tributaria registrada. */
     configured?: boolean;
+    establishmentAddress?: string;
   },
 ): Promise<ReadyCompany> {
   const prisma = db.database.prisma;
@@ -157,7 +158,11 @@ export async function readyCompany(
     });
   }
   const establishment = await prisma.establishment.create({
-    data: { companyId, code: "001", address: "Av. 6 de Diciembre, Quito" },
+    data: {
+      companyId,
+      code: "001",
+      address: options.establishmentAddress ?? "Av. 6 de Diciembre, Quito",
+    },
   });
   const point = await prisma.emissionPoint.create({
     data: { companyId, establishmentId: establishment.id, code: "001" },

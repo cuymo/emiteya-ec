@@ -141,7 +141,7 @@
   - reintento de una factura firmada sin efecto;
   - diagnóstico sin secretos ni XML
 - [x] 9.3 Implementar `GET /api/v1/invoices` (paginación, estado, búsqueda por número o comprador) y `GET /api/v1/invoices/{id}` desde el snapshot, con el diagnóstico. Verificar con pruebas HTTP de los escenarios de "Consulta de facturas", el aislamiento por empresa y los permisos
-- [ ] 9.4 Reproducir S-3 offline con la implementación real (design D17): del borrador a `SIGNED` por el caso de uso, con reloj y código numérico inyectados.
+- [x] 9.4 Reproducir S-3 offline con la implementación real (design D17): del borrador a `SIGNED` por el caso de uso, con reloj y código numérico inyectados.
   - El XML sin firmar se compara con XML de referencia revisados a mano: consumidor final `49.99` y `50.00`, `50.01` rechazado, varias líneas, valores grandes, regresiones `123456789012.123456` y `99999999999.999999` como precio y como cantidad, y emisor con agente de retención y RIMPE.
   - El XML firmado vuelve a validar.
 

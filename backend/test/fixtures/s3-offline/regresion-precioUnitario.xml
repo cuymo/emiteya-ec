@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<factura id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <nombreComercial>ANDINA</nombreComercial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0310202601179001234500110010010000000011234567816</claveAcceso>
+    <codDoc>01</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000001</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoFactura>
+    <fechaEmision>03/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. Amazonas N24-03, Quito</dirEstablecimiento>
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <tipoIdentificacionComprador>04</tipoIdentificacionComprador>
+    <razonSocialComprador>FERRETERIA EL PERNO CIA. LTDA.</razonSocialComprador>
+    <identificacionComprador>0992877878001</identificacionComprador>
+    <direccionComprador>Guayaquil</direccionComprador>
+    <totalSinImpuestos>223456789012.12</totalSinImpuestos>
+    <totalDescuento>0.00</totalDescuento>
+    <totalConImpuestos>
+      <totalImpuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>4</codigoPorcentaje>
+        <baseImponible>223456789012.12</baseImponible>
+        <valor>33518518351.82</valor>
+      </totalImpuesto>
+    </totalConImpuestos>
+    <importeTotal>256975307363.94</importeTotal>
+    <moneda>DOLAR</moneda>
+    <pagos>
+      <pago>
+        <formaPago>01</formaPago>
+        <total>256975307363.94</total>
+      </pago>
+    </pagos>
+  </infoFactura>
+  <detalles>
+    <detalle>
+      <codigoPrincipal>REG-1</codigoPrincipal>
+      <descripcion>Regresión 123456789012.123456</descripcion>
+      <cantidad>1</cantidad>
+      <precioUnitario>123456789012.123456</precioUnitario>
+      <descuento>0.00</descuento>
+      <precioTotalSinImpuesto>123456789012.12</precioTotalSinImpuesto>
+      <impuestos>
+        <impuesto>
+          <codigo>2</codigo>
+          <codigoPorcentaje>4</codigoPorcentaje>
+          <tarifa>15</tarifa>
+          <baseImponible>123456789012.12</baseImponible>
+          <valor>18518518351.82</valor>
+        </impuesto>
+      </impuestos>
+    </detalle>
+    <detalle>
+      <codigoPrincipal>REG-2</codigoPrincipal>
+      <descripcion>Regresión 99999999999.999999</descripcion>
+      <cantidad>1</cantidad>
+      <precioUnitario>99999999999.999999</precioUnitario>
+      <descuento>0.00</descuento>
+      <precioTotalSinImpuesto>100000000000.00</precioTotalSinImpuesto>
+      <impuestos>
+        <impuesto>
+          <codigo>2</codigo>
+          <codigoPorcentaje>4</codigoPorcentaje>
+          <tarifa>15</tarifa>
+          <baseImponible>100000000000.00</baseImponible>
+          <valor>15000000000.00</valor>
+        </impuesto>
+      </impuestos>
+    </detalle>
+  </detalles>
+</factura>
