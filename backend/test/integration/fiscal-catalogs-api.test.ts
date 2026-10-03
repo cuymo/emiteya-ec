@@ -169,6 +169,9 @@ describe("API de los catálogos fiscales", () => {
         kind: string;
         documentType: string | null;
         path: string;
+        sha256: string;
+        source: string;
+        supported: boolean;
       }[];
       expect(schemas.map((s) => s.documentType)).toEqual([
         "01",
@@ -182,7 +185,14 @@ describe("API de los catálogos fiscales", () => {
       expect(schemas.at(-1)).toMatchObject({
         kind: "IMPORT",
         path: "w3c-xsd/xmldsig-core-schema.xsd",
+        revision: "1.2 (2013-04-16)",
+        source: expect.stringMatching(/^W3C/) as unknown,
       });
+      for (const schema of schemas) {
+        expect(schema.sha256).toMatch(/^[0-9a-f]{64}$/);
+        expect(schema.source).not.toBe("");
+        expect(schema.supported).toBe(true);
+      }
       const cases = bodyOf(await call("operatorA", "get", "/fiscal-catalogs/special-cases"))
         .data as unknown as { annex: number; category: string }[];
       expect(cases).toHaveLength(26);

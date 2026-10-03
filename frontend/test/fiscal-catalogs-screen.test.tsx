@@ -424,6 +424,11 @@ describe("Catálogos fiscales (design D17)", () => {
     expect(await screen.findByText(/factura_V1.1.0.xsd · soportado/)).toBeDefined();
     expect(screen.getByText("Esquema importado, revisión 1.2 (2013-04-16)")).toBeDefined();
     expect(screen.getByText(/xmldsig-core-schema.xsd · soportado/)).toBeDefined();
+    // Cada esquema con su fuente y su hash, también el importado de la firma XML.
+    expect(screen.getByText("Fuente: SRI")).toBeDefined();
+    expect(screen.getByText(`SHA-256 ${"b".repeat(64)}`)).toBeDefined();
+    expect(screen.getByText("Fuente: W3C")).toBeDefined();
+    expect(screen.getByText(`SHA-256 ${"c".repeat(64)}`)).toBeDefined();
   });
 });
 

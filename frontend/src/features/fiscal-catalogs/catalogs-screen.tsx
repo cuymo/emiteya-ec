@@ -335,18 +335,24 @@ function Schemas() {
       <ErrorState message={errorMessage(schemas.error)} onRetry={() => void schemas.refetch()} />
     );
   return (
-    <ul aria-label="Esquemas XSD registrados" className="flex flex-col gap-0.5">
+    <ul aria-label="Esquemas XSD registrados" className="flex flex-col gap-2">
       {schemas.data.map((schema) => (
-        <li key={schema.path}>
-          <span className="font-medium">
-            {schema.kind === "IMPORT"
-              ? `Esquema importado, revisión ${schema.revision ?? ""}`
-              : `${DOCUMENT_TYPE_LABELS[schema.documentType as keyof typeof DOCUMENT_TYPE_LABELS]} ${schema.version ?? ""}`}
-          </span>
-          <span className="text-foreground-muted">
-            {" "}
-            · {schema.file} · {schema.supported ? "soportado" : "no soportado"}
-          </span>
+        <li key={schema.path} className="flex flex-col">
+          <p>
+            <span className="font-medium">
+              {schema.kind === "IMPORT"
+                ? `Esquema importado, revisión ${schema.revision ?? ""}`
+                : `${DOCUMENT_TYPE_LABELS[schema.documentType as keyof typeof DOCUMENT_TYPE_LABELS]} ${schema.version ?? ""}`}
+            </span>
+            <span className="text-foreground-muted">
+              {" "}
+              · {schema.file} · {schema.supported ? "soportado" : "no soportado"}
+            </span>
+          </p>
+          <p className="text-foreground-muted">Fuente: {schema.source}</p>
+          <p className="break-all font-mono text-xs text-foreground-muted">
+            SHA-256 {schema.sha256}
+          </p>
         </li>
       ))}
     </ul>

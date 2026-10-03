@@ -108,3 +108,12 @@ detalle de una factura (`/facturas/{id}`), y para el componente compartido `Enti
 - **Consulta repetida tras emitir.** La emisión invalidaba también el detalle del borrador emitido, que el editor volvía a pedir (`409`) antes de navegar. Ahora solo invalida la lista de borradores y las facturas.
 - **Puntuación del diagnóstico.** La fecha del último intento terminaba en "p. m." y se le añadía otro punto; ahora se escribe "Intentos: 1 · último intento: …".
 - **Importes partidos en móvil.** A 375 px, el importe de una forma de pago se partía en "USD" y "10,06"; los importes del detalle ya no se parten.
+
+## Corrección posterior a la revisión
+
+`/opsx:verify` encontró que la vista del registro de esquemas de `Catálogos fiscales` no mostraba
+el hash ni la fuente que pide el escenario "Consulta del registro" (spec `fiscal-catalogs`). Cada
+esquema, también el importado de la firma XML, muestra ahora su fuente y su SHA-256, con el hash
+partido en cualquier carácter para no desbordar en móvil. Lo cubren la prueba de componente de
+`fiscal-catalogs-screen.test.tsx` y la de integración de la API. Esta adición no se repitió en el
+recorrido con Chrome.
