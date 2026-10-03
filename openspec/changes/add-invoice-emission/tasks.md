@@ -115,7 +115,7 @@
   - fecha de Ecuador frente a UTC;
   - transición registrada;
   - evento `invoice.reserved`
-- [ ] 8.4 Probar la idempotencia de la emisión (ERS AC-05, design D8):
+- [x] 8.4 Probar la idempotencia de la emisión (ERS AC-05, design D8):
   - repetición firmada y reservada;
   - misma clave con otro borrador (`409 IDEMPOTENCY_KEY_REUSED`);
   - dos solicitudes simultáneas con la misma clave, con un solo documento y un solo número;
