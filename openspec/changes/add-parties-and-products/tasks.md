@@ -109,8 +109,8 @@
 
 ## 6. Búsqueda y rendimiento (Q-26)
 
-- [ ] 6.1 Añadir pruebas de planes de consulta con `EXPLAIN`, sobre datos sembrados y analizados, que comprueban que las búsquedas por prefijo de identificación, código principal y código auxiliar usan su índice con una condición de rango (colación C), y que el orden usa su índice (design D10). Verificar que pasan en CI
-- [ ] 6.2 Implementar el benchmark dedicado `bench:search` de design D16:
+- [x] 6.1 Añadir pruebas de planes de consulta con `EXPLAIN`, sobre datos sembrados y analizados, que comprueban que las búsquedas por prefijo de identificación, código principal y código auxiliar usan su índice con una condición de rango (colación C), y que el orden usa su índice (design D10). Verificar que pasan en CI
+- [x] 6.2 Implementar el benchmark dedicado `bench:search` de design D16:
   - esquema aislado y `main.ts`;
   - dataset determinista de 10 000 terceros y 10 000 productos en una empresa;
   - calentamiento, 300 mediciones por consulta, y P50, P95 y máximo;

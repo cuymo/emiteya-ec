@@ -4,6 +4,6 @@
     "customConditions": ["development"],
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "*.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts", "*.ts"],
   "exclude": ["test/fixtures/**", "dist", "src/generated/**"]
 }

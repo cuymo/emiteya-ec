@@ -33,6 +33,14 @@ Defaults until the project sets its own numbers or an ADR changes them:
 
 Record the project's real budgets and enforce them in CI when the pipeline supports it.
 
+Presupuestos propios del proyecto:
+
+| Señal | Objetivo | Medición |
+| --- | --- | --- |
+| Búsquedas de terceros y productos con el volumen de referencia de Q-26 (10 000 de cada uno por empresa) | P95 de 300 ms o menos en el entorno registrado; no es una garantía independiente del hardware | `corepack pnpm --filter @facturador/backend bench:search`, gate dedicado fuera de `verify` (design D16 de `add-parties-and-products`). Resultado del 2026-10-03: P95 máximo de 26.6 ms (`benchmarks/search-2026-10-03.md`). |
+
+Si el benchmark supera el objetivo, se analizan los planes de consulta y la corrección (índices, estrategia o `pg_trgm`) se propone con `/opsx:update`; nunca se sube el umbral.
+
 ## Where To Start
 
 Let the symptom choose the first measurement:

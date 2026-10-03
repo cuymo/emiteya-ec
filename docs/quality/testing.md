@@ -98,6 +98,7 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
 - Aislamiento: cada archivo de integración crea su propio esquema PostgreSQL dentro de `facturador_test`, le aplica las migraciones con `prisma migrate deploy` sin el advisory lock global de Prisma (`PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK`: cada esquema es nuevo y lo migra un solo archivo, y el lock solo encolaba esquemas independientes hasta agotar su espera) y lo elimina al terminar (`createMigratedSchema`), de modo que los archivos corren en paralelo sin compartir datos y el aprovisionamiento puede partir de una instalación vacía. Las fixtures incluyen siempre dos empresas.
 - Frontend: Vitest con jsdom y Testing Library; las consultas se hacen por rol y nombre accesible, lo que también verifica la accesibilidad básica. `frontend/test/harness.tsx` monta los proveedores reales con la navegación de Next simulada y un `fetch` que responde por método y ruta.
 - Herramientas: las reglas de capas de ESLint y `check:versions` tienen sus propias pruebas.
+- Rendimiento de la búsqueda: `corepack pnpm --filter @facturador/backend bench:search` es un gate dedicado, fuera de `test` y de `verify`, para que la carga de un runner compartido no lo vuelva inestable. Se ejecuta sobre una PostgreSQL 17 sin carga ajena y escribe el entorno, los tiempos y los planes de consulta en `docs/quality/benchmarks/` (`performance.md`). La suite normal comprueba el comportamiento, los índices (`migrations.test.ts`) y los planes de las búsquedas por prefijo (`search-plans.test.ts`).
 
 ## Test Data
 
