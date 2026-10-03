@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-03",
+  "volume": {
+    "priorInvoices": 100000,
+    "products": 100,
+    "parties": 100,
+    "tables": {
+      "electronic_document": {
+        "rows": 100001,
+        "totalSize": "374 MB"
+      },
+      "document_state_transition": {
+        "rows": 200002,
+        "totalSize": "103 MB"
+      },
+      "document_artifact": {
+        "rows": 100001,
+        "totalSize": "103 MB"
+      },
+      "idempotency_record": {
+        "rows": 100001,
+        "totalSize": "38 MB"
+      },
+      "fiscal_sequence_reservation": {
+        "rows": 100001,
+        "totalSize": "46 MB"
+      }
+    }
+  },
+  "load": {
+    "users": 10,
+    "warmup": 30,
+    "samples": 300,
+    "averageLines": 3.15,
+    "throughputPerSecond": 13.7
+  },
+  "budgetMs": 2000,
+  "environment": {
+    "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "shared_buffers": "128MB",
+    "work_mem": "4MB",
+    "effective_cache_size": "4GB",
+    "synchronous_commit": "on",
+    "max_connections": "100",
+    "jit": "on",
+    "node": "v24.21.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
+    "memory": "16 GiB",
+    "commit": "726c488",
+    "backend": "main.ts con Node --conditions=development; XSD_VALIDATION_CONCURRENCY=2, XSD_VALIDATION_QUEUE=16, CRYPTO_WORKERS=2 (valores por defecto)"
+  },
+  "stages": {
+    "validation_snapshot": {
+      "p50": 19.1,
+      "p95": 28.1,
+      "max": 51.3
+    },
+    "arithmetic": {
+      "p50": 0.2,
+      "p95": 0.3,
+      "max": 0.8
+    },
+    "reservation_tx": {
+      "p50": 41.3,
+      "p95": 465.4,
+      "max": 773.5
+    },
+    "xml": {
+      "p50": 0.1,
+      "p95": 0.2,
+      "max": 1.1
+    },
+    "xsd": {
+      "p50": 508.3,
+      "p95": 542.6,
+      "max": 572.9
+    },
+    "sign": {
+      "p50": 62.8,
+      "p95": 72.2,
+      "max": 111.6
+    },
+    "persist": {
+      "p50": 9.7,
+      "p95": 88.1,
+      "max": 447
+    },
+    "total": {
+      "p50": 634.6,
+      "p95": 883.7,
+      "max": 1403.8
+    }
+  },
+  "client": {
+    "p50": 639.6,
+    "p95": 891.4,
+    "max": 1408.8
+  },
+  "measuredArtifactBytes": {
+    "p50": 8343,
+    "p95": 9463,
+    "max": 9482
+  },
+  "failures": [],
+  "missingStages": 0,
+  "passed": true
+}

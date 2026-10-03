@@ -172,7 +172,7 @@
 ## 11. Benchmark de la emisión (Q-26)
 
 - [x] 11.1 Instrumentar las etapas de la emisión: `Server-Timing` solo con `EMISSION_STAGE_TIMINGS=1`, que el entorno rechaza en producción, y el histograma `invoice_emission_stage_duration_seconds` (design D16). Verificar con una prueba de que la cabecera falta sin la variable y de que el entorno de producción la rechaza
-- [ ] 11.2 Crear `bench:emission`: PostgreSQL 17, 100 000 facturas previas por empresa, 10 usuarios concurrentes, 30 de calentamiento y 300 medidas, con P50, P95 y máximo por etapa y total, y el entorno registrado.
+- [x] 11.2 Crear `bench:emission`: PostgreSQL 17, 100 000 facturas previas por empresa, 10 usuarios concurrentes, 30 de calentamiento y 300 medidas, con P50, P95 y máximo por etapa y total, y el entorno registrado.
   - Ejecutarlo y guardar el informe en `docs/quality/benchmarks/emission-<fecha>.md` y `.json`. Declarar que los artefactos sintéticos de la precarga no simulan el volumen físico de `BYTEA` y TOAST, y que cada factura medida usa su artefacto real.
   - Actualizar `performance.md` y Q-26.
 

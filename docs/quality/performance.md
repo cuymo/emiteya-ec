@@ -38,9 +38,15 @@ Presupuestos propios del proyecto:
 | Señal | Objetivo | Medición |
 | --- | --- | --- |
 | Búsquedas de terceros y productos con el volumen de referencia de Q-26 (10 000 de cada uno por empresa) | P95 de 300 ms o menos en el entorno registrado; no es una garantía independiente del hardware | `corepack pnpm --filter @facturador/backend bench:search`, gate dedicado fuera de `verify` (design D16 de `add-parties-and-products`). Resultado del 2026-10-03: P95 máximo de 26 ms (`benchmarks/search-2026-10-03.md`). |
-| Emisión local de una factura hasta `SIGNED`, con el volumen de referencia provisional de Q-26 (100 000 facturas por empresa, 10 usuarios concurrentes) | Por definir en `add-invoice-emission`, ligado a un entorno reproducible y registrado; no es una promesa universal de hardware | Benchmark dedicado fuera de `verify`, que mide por separado el snapshot y el cálculo, el XML, el XSD, la firma y la persistencia. Se mide localmente, nunca contra Pruebas del SRI. Referencia de S-2: la validación XSD tarda 85 ms de p95 por factura en secuencia. |
+| Emisión local de una factura hasta `SIGNED`, con el volumen de referencia provisional de Q-26 (100 000 facturas por empresa, 10 usuarios concurrentes) | P95 del total de 2 s o menos en el entorno registrado; no es una promesa universal de hardware | `corepack pnpm --filter @facturador/backend bench:emission`, gate dedicado fuera de `verify` (design D16 de `add-invoice-emission`). Mide por separado, con `Server-Timing`, las lecturas y el snapshot, el cálculo, la transacción de la reserva, el XML, el XSD, la firma y la persistencia. Se mide localmente, nunca contra Pruebas del SRI. Resultado del 2026-10-03: P95 del total de 884 ms (`benchmarks/emission-2026-10-03.md`). |
 
-Si el benchmark supera el objetivo, se analizan los planes de consulta y la corrección (índices, estrategia o `pg_trgm`) se propone con `/opsx:update`; nunca se sube el umbral.
+Si un benchmark supera el objetivo, se analiza la causa (en las búsquedas, los planes de consulta; en la emisión, sus etapas) y la corrección se propone con `/opsx:update`; nunca se sube el umbral.
+
+Lectura del benchmark de la emisión del 2026-10-03:
+
+- La validación XSD domina: 508 ms de mediana por las dos validaciones. Con 10 usuarios y `XSD_VALIDATION_CONCURRENCY=2`, la mayor parte es espera en la cola; S-2 midió 85 ms de p95 por validación en secuencia.
+- `reservation_tx` sube de 41 ms de mediana a 465 ms de P95 porque las emisiones de una empresa se serializan en el bloqueo de la configuración y del contador del punto (design D7). Es el precio buscado de una numeración sin huecos ni duplicados.
+- Los artefactos previos son sintéticos de 64 bytes: el benchmark no mide el efecto del volumen real de `BYTEA` y TOAST de 100 000 XML firmados.
 
 ## Where To Start
 
