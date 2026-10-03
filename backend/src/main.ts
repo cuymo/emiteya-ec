@@ -33,6 +33,7 @@ import {
   ensureConsumerFinals,
   partiesModule,
 } from "./modules/parties/infrastructure/index.ts";
+import { productsModule } from "./modules/products/infrastructure/index.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import {
@@ -193,6 +194,9 @@ apiRouter.use(...signing.routers);
 apiRouter.use(...catalogsModule({ prisma: database.prisma, authorizer }).routers);
 apiRouter.use(
   ...partiesModule({ prisma: database.prisma, authorizer, rules: catalogQueries }).routers,
+);
+apiRouter.use(
+  ...productsModule({ prisma: database.prisma, authorizer, catalogs: catalogQueries }).routers,
 );
 
 const app = createApp({

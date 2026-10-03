@@ -13,6 +13,7 @@ import {
   fiscalCatalogQueries,
 } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { partiesModule } from "../../src/modules/parties/infrastructure/index.ts";
+import { productsModule } from "../../src/modules/products/infrastructure/index.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
 import {
   isSigningCertificateUpload,
@@ -79,6 +80,14 @@ export function buildTaxpayerApp(
             prisma: db.database.prisma,
             authorizer,
             rules: fiscalCatalogQueries(db.database.prisma),
+            ...(options.now ? { now: options.now } : {}),
+          }).routers,
+        )
+        .use(
+          ...productsModule({
+            prisma: db.database.prisma,
+            authorizer,
+            catalogs: fiscalCatalogQueries(db.database.prisma),
             ...(options.now ? { now: options.now } : {}),
           }).routers,
         );

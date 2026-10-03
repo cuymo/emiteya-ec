@@ -14,6 +14,8 @@ import type { FiscalCatalogs } from "../../src/modules/catalogs/application/fisc
 import { fiscalCatalogsRouter } from "../../src/modules/catalogs/infrastructure/http/fiscal-catalogs-router.ts";
 import type { Parties } from "../../src/modules/parties/application/parties.ts";
 import { partiesRouter } from "../../src/modules/parties/infrastructure/http/parties-router.ts";
+import type { Products } from "../../src/modules/products/application/products.ts";
+import { productsRouter } from "../../src/modules/products/infrastructure/http/products-router.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -39,6 +41,7 @@ describe("rutas documentadas", () => {
       signingCertificateRouter({} as SigningCertificates, { maxBytes: 1 }),
       fiscalCatalogsRouter({} as FiscalCatalogs),
       partiesRouter({} as Parties),
+      productsRouter({} as Products),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);

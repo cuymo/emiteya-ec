@@ -114,7 +114,7 @@ HTTP y sin sesión. Quien llama autoriza su propia operación y aporta la empres
 - **Validación:** `identificationRule(tipo, hoy en Ecuador)`.
   - Sin versión aplicable: `400 PARTY_IDENTIFICATION_TYPE_UNAVAILABLE`.
   - Con `reservedFor`, es decir el `07`: `400 PARTY_IDENTIFICATION_RESERVED`.
-  - Si no cumple el patrón: error de validación en el campo, con la descripción de la regla.
+  - Si no cumple el patrón: `400 PARTY_IDENTIFICATION_INVALID`, con la descripción de la regla. El sobre de error no lleva campos; el frontend lo asocia a la identificación por su código.
 - **Sin dígito verificador:** no hay algoritmo de dígito verificador (ERS RF-322, CTX §9.1).
 - **Unicidad:** comparación exacta, después de NFC y del recorte; no se pliegan mayúsculas (D14).
 - **En la base de datos:** solo se comprueba la forma del tipo (`^[0-9]{2}$`). Los tipos válidos son dato del catálogo, y un `CHECK` con la lista bloquearía una versión futura del dataset.
@@ -203,7 +203,7 @@ de la política aplicable el día de su creación en Ecuador. El rol es cliente,
   - `DISABLED`: no es utilizable para la empresa.
 
   Cada una responde `400 PRODUCT_TAX_UNAVAILABLE`, con el impuesto y la razón. Las referencias que no cambian no se validan otra vez, para que corregir el precio de un producto en revisión sea posible.
-- **IRBPNR:** solo en bienes; un servicio con IRBPNR responde `400 PRODUCT_IRBPNR_GOODS_ONLY`. Al corregir, se evalúa sobre el estado final, junto con las demás invariantes del tipo (D6); la disponibilidad de una referencia que no cambia no se vuelve a validar.
+- **IRBPNR:** solo en bienes; un servicio con IRBPNR responde `400 PRODUCT_GOODS_ONLY`, el mismo código que el control de stock en un servicio, con un mensaje que dice qué quitar. Al corregir, se evalúa sobre el estado final, junto con las demás invariantes del tipo (D6); la disponibilidad de una referencia que no cambia no se vuelve a validar.
 - **Respaldo en la base de datos:**
   - clave primaria `(product_id, catalog_type)`: como mucho una por impuesto;
   - `CHECK` de los tres catálogos;
@@ -278,12 +278,12 @@ consultas no son estrictas (un `companyId` se ignora); los cuerpos sí lo son.
 | Ruta | Permiso | Notas |
 | --- | --- | --- |
 | `GET /parties` | `parties.read` | `search`, `status`, `role`, `sort`, `direction`, `page`, `pageSize`; `{ data, meta }`. |
-| `POST /parties` | `parties.manage` | `201`. Errores: `409 PARTY_IDENTIFICATION_TAKEN`, `400 PARTY_IDENTIFICATION_RESERVED` y `400 PARTY_IDENTIFICATION_TYPE_UNAVAILABLE`. |
+| `POST /parties` | `parties.manage` | `201`. Errores: `409 PARTY_IDENTIFICATION_TAKEN`, `400 PARTY_IDENTIFICATION_INVALID`, `400 PARTY_IDENTIFICATION_RESERVED` y `400 PARTY_IDENTIFICATION_TYPE_UNAVAILABLE`. |
 | `GET /parties/{partyId}` | `parties.read` | `404 PARTY_NOT_FOUND` fuera de la empresa. |
 | `PUT /parties/{partyId}` | `parties.manage` | Con `expectedVersion`. Errores: `409 PARTY_CHANGED`, `409 PARTY_SYSTEM_RECORD` y `409 PARTY_IDENTIFICATION_TAKEN`. |
 | `PUT /parties/{partyId}/status` | `parties.changeStatus` | Estado deseado; `409 PARTY_SYSTEM_RECORD`. |
 | `GET /products` | `products.read` | `search`, `status`, `kind`, `taxStatus`, `sort`, `direction`, `page`, `pageSize`; `{ data, meta }`. |
-| `POST /products` | `products.manage` | `201`. Errores: `409 PRODUCT_MAIN_CODE_TAKEN`, `400 PRODUCT_TAX_UNAVAILABLE`, `400 PRODUCT_IRBPNR_GOODS_ONLY` y `400 PRODUCT_GOODS_ONLY`. |
+| `POST /products` | `products.manage` | `201`. Errores: `409 PRODUCT_MAIN_CODE_TAKEN`, `400 PRODUCT_TAX_UNAVAILABLE` y `400 PRODUCT_GOODS_ONLY` (servicio con IRBPNR o con control de stock). |
 | `GET /products/{productId}` | `products.read` | `404 PRODUCT_NOT_FOUND` fuera de la empresa. |
 | `PUT /products/{productId}` | `products.manage` | Con `expectedVersion`; `409 PRODUCT_CHANGED` y los errores del alta. |
 | `PUT /products/{productId}/status` | `products.changeStatus` | Estado deseado. |

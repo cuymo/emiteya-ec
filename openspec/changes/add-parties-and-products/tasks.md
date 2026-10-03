@@ -77,12 +77,12 @@
 
 ## 5. API de productos
 
-- [ ] 5.1 Implementar el dominio de `products` (design D6 a D9): precio con `UnitPrice`, reglas de tipo, control de stock e IRBPNR, la forma de los impuestos y la función pura del estado tributario. Verificar con pruebas unitarias:
+- [x] 5.1 Implementar el dominio de `products` (design D6 a D9): precio con `UnitPrice`, reglas de tipo, control de stock e IRBPNR, la forma de los impuestos y la función pura del estado tributario. Verificar con pruebas unitarias:
   - cada motivo (`NOT_IN_FORCE`, `WITHDRAWN`, `DISABLED` y `NO_CALCULATION_DATA`), con ICE, IRBPNR e IVA diferenciado en `INCOMPLETE`;
   - la precedencia `REVIEW_REQUIRED` > `INCOMPLETE` > `READY`;
   - las invariantes del tipo sobre el estado final: de bien a servicio con IRBPNR, de bien a servicio con control de stock, y el cambio simultáneo que deja un estado válido;
   - que el precio nunca pasa por `number`
-- [ ] 5.2 Implementar la aplicación y el repositorio de `products`:
+- [x] 5.2 Implementar la aplicación y el repositorio de `products`:
   - alta, consulta, corrección con `expectedVersion` y estado deseado;
   - validación con `availability` solo de las referencias nuevas o cambiadas;
   - `409 PRODUCT_MAIN_CODE_TAKEN` desde la restricción única;
@@ -99,7 +99,7 @@
   - altas y correcciones simultáneas;
   - recuentos aislados por empresa;
   - `openapi:check` en verde
-- [ ] 5.3 Registrar en `docs/architecture/fiscal-emission.md` las obligaciones para `add-invoice-emission`:
+- [x] 5.3 Registrar en `docs/architecture/fiscal-emission.md` las obligaciones para `add-invoice-emission`:
   - volver a resolver cada referencia con la fecha del documento, sin fiarse del estado mostrado;
   - un comprobante no puede continuar si necesita calcular un impuesto cuya referencia esté en `INCOMPLETE` en la fecha del documento;
   - reconocer el consumidor final por `systemRecord`;

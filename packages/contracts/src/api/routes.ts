@@ -66,6 +66,16 @@ import {
   partyViewSchema,
   updatePartySchema,
 } from "../parties.ts";
+import {
+  changeProductStatusSchema,
+  createProductSchema,
+  listProductsQuerySchema,
+  productIdParamsSchema,
+  productListMetaSchema,
+  productTaxSummaryViewSchema,
+  productViewSchema,
+  updateProductSchema,
+} from "../products.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -677,6 +687,117 @@ export const apiRoutes: readonly RouteDefinition[] = [
       },
       409: {
         description: "El consumidor final no se desactiva (PARTY_SYSTEM_RECORD).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+
+  // Productos y servicios (add-parties-and-products, design D11).
+  defineRoute({
+    method: "get",
+    path: "/products",
+    summary:
+      "Buscar productos por código o nombre, con filtros (incluido el estado tributario) y paginación",
+    request: { query: listProductsQuerySchema },
+    responses: {
+      200: {
+        description:
+          "Página de productos en orden estable, con su estado tributario evaluado hoy en Ecuador y el total en `meta`.",
+        schema: z.strictObject({ data: z.array(productViewSchema), meta: productListMetaSchema }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/products",
+    summary: "Registrar un producto o servicio con su precio sin impuestos y sus impuestos",
+    request: { body: createProductSchema },
+    responses: {
+      201: { description: "Producto registrado.", schema: successEnvelope(productViewSchema) },
+      400: {
+        description:
+          "Datos inválidos, impuesto no disponible para la empresa (PRODUCT_TAX_UNAVAILABLE) o servicio con IRBPNR o control de stock (PRODUCT_GOODS_ONLY).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      409: {
+        description: "El código principal ya está en uso en la empresa (PRODUCT_MAIN_CODE_TAKEN).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/products/tax-summary",
+    summary: "Recuentos de productos activos por estado tributario y por entrada fiscal referida",
+    responses: {
+      200: {
+        description: "Recuentos de la empresa, evaluados hoy en Ecuador.",
+        schema: successEnvelope(productTaxSummaryViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/products/:productId",
+    summary: "Consultar un producto con su estado tributario",
+    request: { params: productIdParamsSchema },
+    responses: {
+      200: { description: "Producto.", schema: successEnvelope(productViewSchema) },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "El producto no existe en la empresa (PRODUCT_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/products/:productId",
+    summary: "Corregir un producto a partir de la versión consultada",
+    request: { params: productIdParamsSchema, body: updateProductSchema },
+    responses: {
+      200: {
+        description: "Producto corregido, o sin cambios.",
+        schema: successEnvelope(productViewSchema),
+      },
+      400: {
+        description:
+          "Datos inválidos, impuesto nuevo no disponible (PRODUCT_TAX_UNAVAILABLE) o servicio con IRBPNR o control de stock (PRODUCT_GOODS_ONLY).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "El producto no existe en la empresa (PRODUCT_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+      409: {
+        description:
+          "El producto cambió después de la consulta (PRODUCT_CHANGED) o el código principal está en uso (PRODUCT_MAIN_CODE_TAKEN).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/products/:productId/status",
+    summary: "Desactivar o reactivar un producto (estado deseado)",
+    request: { params: productIdParamsSchema, body: changeProductStatusSchema },
+    responses: {
+      200: { description: "Producto con su estado.", schema: successEnvelope(productViewSchema) },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "El producto no existe en la empresa (PRODUCT_NOT_FOUND).",
         schema: errorEnvelopeSchema,
       },
     },
