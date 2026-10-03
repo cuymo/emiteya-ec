@@ -162,7 +162,7 @@
   - "Reintentar firma" solo con `RESERVED` y permiso.
 
   Añadir ambos destinos al grupo `Operación`. Verificar con pruebas de componente de los mismos estados y de la navegación
-- [ ] 10.4 Revisar las pantallas con `frontend-checklist.md`, contra el backend real:
+- [x] 10.4 Revisar las pantallas con `frontend-checklist.md`, contra el backend real:
   - escritorio, 375 y 320 px;
   - tema claro y oscuro, teclado y contraste;
   - consola y red.
