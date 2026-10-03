@@ -28,6 +28,11 @@ El sistema SHALL permitir que un administrador cargue la firma electrónica de s
 - **WHEN** el PKCS#12 no contiene clave privada, su clave no corresponde al certificado, o la clave no es RSA de al menos 2048 bits
 - **THEN** el sistema rechaza la carga e indica que la firma no sirve para firmar comprobantes
 
+#### Scenario: Firma que no puede usarse para firmar
+- **WHEN** el PKCS#12 se abre con su contraseña pero no puede usarse para firmar: su primer certificado no es el del titular, su contenido no puede descifrarse para firmar con esa contraseña, o su costo de cifrado supera el admitido
+- **THEN** el sistema rechaza la carga, explica el motivo y cómo obtener una firma compatible
+- **AND** la firma vigente no cambia
+
 #### Scenario: Certificado vencido o todavía no vigente
 - **WHEN** el certificado del PKCS#12 ya venció o su vigencia aún no empieza
 - **THEN** el sistema rechaza la carga e indica las fechas de vigencia del certificado
