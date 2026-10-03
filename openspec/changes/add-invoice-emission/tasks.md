@@ -180,7 +180,7 @@
 
 ## 12. Prueba end-to-end, evidencia y documentación
 
-- [ ] 12.1 Añadir la prueba end-to-end sobre `main.ts`:
+- [x] 12.1 Añadir la prueba end-to-end sobre `main.ts`:
   - configuración, punto, firma sintética con custodia, tercero y producto;
   - borrador, emisión hasta `SIGNED`, repetición con la misma clave y rearranque;
   - consulta, eventos de auditoría exactos y ninguna llamada al SRI.
