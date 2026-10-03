@@ -1,0 +1,74 @@
+{
+  "catalogType": "schema-registry",
+  "version": 1,
+  "source": {
+    "document": "Manifiesto de los XSD oficiales del SRI (docs/product/sri-xsd/README.md)",
+    "version": "2026-10-02",
+    "publishedOn": "2026-10-02",
+    "url": "https://www.sri.gob.ec/facturacion-electronica",
+    "sha256": "860d23826ba90b69b8671830bdaa22e9b325a2560476dab7698a82a080dc3ee2"
+  },
+  "enablementPolicy": "NOT_ENABLEABLE",
+  "entries": [
+    {
+      "documentType": "01",
+      "root": "factura",
+      "version": "1.1.0",
+      "file": "factura_V1.1.0.xsd",
+      "sha256": "62db9bf0ecceb00ef2b7ed136e59224815e5e5e33c77efc6a0552001e052eb8b",
+      "source": "SRI, portal de facturación electrónica (paquete oficial XML y XSD)",
+      "downloadedAt": "2026-10-02T15:38:05Z",
+      "supported": true
+    },
+    {
+      "documentType": "03",
+      "root": "liquidacionCompra",
+      "version": "1.1.0",
+      "file": "LiquidacionCompra_V1.1.0.xsd",
+      "sha256": "58c9cd96edf93d92ef6692cd028e689080257c9ba2941fe04fe1d426ebc4b5b6",
+      "source": "SRI, portal de facturación electrónica (paquete oficial XML y XSD)",
+      "downloadedAt": "2026-10-02T15:38:05Z",
+      "supported": true
+    },
+    {
+      "documentType": "04",
+      "root": "notaCredito",
+      "version": "1.1.0",
+      "file": "NotaCredito_V1.1.0.xsd",
+      "sha256": "379e9f270d71ab4578f130a736c9abe5eb1d7969375ecdef55d2973583ec5ab0",
+      "source": "SRI, portal de facturación electrónica (paquete oficial XML y XSD)",
+      "downloadedAt": "2026-10-02T15:38:05Z",
+      "supported": true
+    },
+    {
+      "documentType": "05",
+      "root": "notaDebito",
+      "version": "1.0.0",
+      "file": "NotaDebito_V1.0.0.xsd",
+      "sha256": "f40323adef667a2d95de75a611272a78b73a7f82711201bd7a7a52d3bb353fd6",
+      "source": "SRI, portal de facturación electrónica (paquete oficial XML y XSD)",
+      "downloadedAt": "2026-10-02T15:38:05Z",
+      "supported": true
+    },
+    {
+      "documentType": "06",
+      "root": "guiaRemision",
+      "version": "1.1.0",
+      "file": "GuiaRemision_V1.1.0.xsd",
+      "sha256": "4777fd94b5f7b108da3db0dd3d2c71d1539ced221cba246ebeaa40fb17f3dee1",
+      "source": "SRI, portal de facturación electrónica (paquete oficial XML y XSD)",
+      "downloadedAt": "2026-10-02T15:38:05Z",
+      "supported": true
+    },
+    {
+      "documentType": "07",
+      "root": "comprobanteRetencion",
+      "version": "2.0.0",
+      "file": "ComprobanteRetencion_V2.0.0.xsd",
+      "sha256": "1e006d6d16c791c8f5b23d1f3e006cd066ccba2bfb797a3cb9098bd09c793cb7",
+      "source": "SRI, portal de facturación electrónica (paquete oficial XML y XSD)",
+      "downloadedAt": "2026-10-02T15:38:05Z",
+      "supported": true
+    }
+  ]
+}

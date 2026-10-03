@@ -23,6 +23,7 @@ import {
 } from "./modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "./modules/identity/infrastructure/http/request-context.ts";
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
+import { loadInstalledFiscalCatalogs } from "./modules/catalogs/infrastructure/index.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import {
@@ -94,6 +95,23 @@ try {
 } catch (error) {
   if (error instanceof EnvError) console.error(error.message);
   else logger.fatal({ err: error }, "el aprovisionamiento falló");
+  await database.close();
+  process.exit(1);
+}
+
+// Catálogos fiscales oficiales de la versión instalada (add-fiscal-catalogs, design D3): se aplican
+// antes de aceptar tráfico; un dataset inválido o en conflicto impide arrancar.
+try {
+  const report = await loadInstalledFiscalCatalogs(database.prisma);
+  logger.info(
+    {
+      applied: report.applied.map((d) => `${d.catalogType}@${d.version}:+${d.newEntries}`),
+      alreadyApplied: report.alreadyApplied.length,
+    },
+    "catálogos fiscales cargados",
+  );
+} catch (error) {
+  logger.fatal({ err: error }, "no se pudieron cargar los catálogos fiscales");
   await database.close();
   process.exit(1);
 }

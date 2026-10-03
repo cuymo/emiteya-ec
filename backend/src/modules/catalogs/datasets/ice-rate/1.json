@@ -1,0 +1,764 @@
+{
+  "catalogType": "ice-rate",
+  "version": 1,
+  "source": {
+    "document": "Ficha técnica: Manual de usuario, catálogo y especificaciones técnicas. Emisión de Comprobantes Electrónicos. Método de autorización Off-line",
+    "version": "2.34",
+    "publishedOn": "2026-07-27",
+    "url": "https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf",
+    "sha256": "7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9"
+  },
+  "enablementPolicy": "DEFAULT_DISABLED",
+  "entries": [
+    {
+      "entryKey": "3011",
+      "code": "3011",
+      "officialLabel": "ICE Cigarrillos Rubios",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3021",
+      "code": "3021",
+      "officialLabel": "ICE Cigarrillos Negros",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3023",
+      "code": "3023",
+      "officialLabel": "ICE Productos del Tabaco y Sucedáneos del Tabaco excepto Cigarrillos",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3031",
+      "code": "3031",
+      "officialLabel": "ICE Bebidas Alcohólicas",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3041-GRAN-ESCALA",
+      "code": "3041",
+      "officialLabel": "ICE Cerveza Industrial Gran Escala",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3041-MEDIANA-ESCALA",
+      "code": "3041",
+      "officialLabel": "ICE Cerveza Industrial Mediana Escala",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3041-PEQUENA-ESCALA",
+      "code": "3041",
+      "officialLabel": "ICE Cerveza Industrial Pequeña Escala",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3073",
+      "code": "3073",
+      "officialLabel": "ICE Vehículos Motorizados cuyo PVP sea hasta de 20000 USD",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3075",
+      "code": "3075",
+      "officialLabel": "ICE Vehículos Motorizados PVP entre 30000 y 40000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3077",
+      "code": "3077",
+      "officialLabel": "ICE Vehículos Motorizados cuyo PVP superior USD 40.000 hasta 50.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3078",
+      "code": "3078",
+      "officialLabel": "ICE Vehículos Motorizados cuyo PVP superior USD 50.000 hasta 60.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3079",
+      "code": "3079",
+      "officialLabel": "ICE Vehículos Motorizados cuyo PVP superior USD 60.000 hasta 70.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3080",
+      "code": "3080",
+      "officialLabel": "ICE Vehículos Motorizados cuyo PVP superior USD 70.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3081",
+      "code": "3081",
+      "officialLabel": "ICE Aviones, Tricars, yates, Barcos de Recreo",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3092",
+      "code": "3092",
+      "officialLabel": "ICE Servicios de Televisión Prepagada",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3610",
+      "code": "3610",
+      "officialLabel": "ICE Perfumes y Aguas de Tocador",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3620",
+      "code": "3620",
+      "officialLabel": "ICE Videojuegos",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3630",
+      "code": "3630",
+      "officialLabel": "ICE Armas de Fuego, Armas deportivas y Municiones",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3640",
+      "code": "3640",
+      "officialLabel": "ICE Focos Incandescentes",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3660",
+      "code": "3660",
+      "officialLabel": "ICE Cuotas Membresías Afiliaciones Acciones",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 30"
+    },
+    {
+      "entryKey": "3093",
+      "code": "3093",
+      "officialLabel": "ICE Servicios Telefonía Sociedades",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3101",
+      "code": "3101",
+      "officialLabel": "ICE Bebidas Energizantes",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3053",
+      "code": "3053",
+      "officialLabel": "ICE Bebidas Gaseosas con Alto Contenido de Azúcar",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3054",
+      "code": "3054",
+      "officialLabel": "ICE Bebidas Gaseosas con Bajo Contenido de Azúcar",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3111",
+      "code": "3111",
+      "officialLabel": "ICE Bebidas No Alcohólicas",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3043",
+      "code": "3043",
+      "officialLabel": "ICE Cerveza Artesanal",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3033",
+      "code": "3033",
+      "officialLabel": "ICE Alcohol",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3671",
+      "code": "3671",
+      "officialLabel": "ICE calefones y sistemas de calentamiento de agua a gas SRI",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, páginas 31 y 32 (la fuente repite la fila idéntica)"
+    },
+    {
+      "entryKey": "3684",
+      "code": "3684",
+      "officialLabel": "ICE vehículos motorizados camionetas y de rescate cuyo PVP sea hasta DE 30.000 USD",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3686",
+      "code": "3686",
+      "officialLabel": "ICE vehículos motorizados excepto camionetas y de rescate cuyo PVP sea superior USD 20.000 hasta DE 30.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3688",
+      "code": "3688",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP sea de hasta USD. 35.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3691",
+      "code": "3691",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior USD. 35.000 hasta 40.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3692",
+      "code": "3692",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior USD. 40.000 hasta 50.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3695",
+      "code": "3695",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior USD. 50.000 hasta 60.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3696",
+      "code": "3696",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior USD. 60.000 hasta 70.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3698",
+      "code": "3698",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior a USD 70.000",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3682",
+      "code": "3682",
+      "officialLabel": "ICE consumibles tabaco calentado y líquidos con nicotina SRI",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3681",
+      "code": "3681",
+      "officialLabel": "ICE servicios de telefonía móvil personas naturales",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3680",
+      "code": "3680",
+      "officialLabel": "ICE fundas plásticas",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3533",
+      "code": "3533",
+      "officialLabel": "ICE Import. Bebidas Alcohólicas",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3541-GRAN-ESCALA-CAE",
+      "code": "3541",
+      "officialLabel": "ICE Cerveza Gran Escala CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3541-MEDIANA-ESCALA-CAE",
+      "code": "3541",
+      "officialLabel": "ICE Cerveza Industrial de Mediana Escala CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3541-PEQUENA-ESCALA-CAE",
+      "code": "3541",
+      "officialLabel": "ICE Cerveza Industrial de Pequeña Escala CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3542",
+      "code": "3542",
+      "officialLabel": "ICE Cigarrillos Rubios CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3543",
+      "code": "3543",
+      "officialLabel": "ICE Cigarrillos Negros CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3544",
+      "code": "3544",
+      "officialLabel": "ICE Productos del Tabaco y Sucedáneos del Tabaco Excepto Cigarrillos CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3581",
+      "code": "3581",
+      "officialLabel": "ICE Aeronaves CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3582",
+      "code": "3582",
+      "officialLabel": "ICE Aviones, Avionetas y Helicópteros Exct. Aquellos destinados Al Trans. CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3710",
+      "code": "3710",
+      "officialLabel": "ICE Perfumes Aguas de Tocador Cae",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3720",
+      "code": "3720",
+      "officialLabel": "ICE Video Juegos CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3730",
+      "code": "3730",
+      "officialLabel": "ICE Importaciones Armas de Fuego, Armas deportivas y Municiones CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3740",
+      "code": "3740",
+      "officialLabel": "ICE Focos Incandescentes CAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3871",
+      "code": "3871",
+      "officialLabel": "ICE-vehículos motorizados cuyo PVP SEA hasta de 20000 USD SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3873",
+      "code": "3873",
+      "officialLabel": "ICE-vehículos motorizados PVP entre 30000 Y 40000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3874",
+      "code": "3874",
+      "officialLabel": "ICE-vehículos motorizados cuyo PVP superior USD 40.000 hasta 50.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 31"
+    },
+    {
+      "entryKey": "3875",
+      "code": "3875",
+      "officialLabel": "ICE-vehículos motorizados cuyo PVP superior USD 50.000 hasta 60.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3876",
+      "code": "3876",
+      "officialLabel": "ICE-vehículos motorizados cuyo PVP superior USD 60.000 hasta 70.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3877",
+      "code": "3877",
+      "officialLabel": "ICE-vehículos motorizados cuyo PVP superior USD 70.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3878",
+      "code": "3878",
+      "officialLabel": "ICE-Aviones, Tricars, Yates, Barcos de Rec SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3601",
+      "code": "3601",
+      "officialLabel": "ICE Bebidas Energizantes SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3552",
+      "code": "3552",
+      "officialLabel": "ICE bebidas gaseosas con alto contenido de azúcar SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3553",
+      "code": "3553",
+      "officialLabel": "ICE bebidas gaseosas con bajo contenido de azúcar SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3602",
+      "code": "3602",
+      "officialLabel": "ICE bebidas no alcohólicas SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3545",
+      "code": "3545",
+      "officialLabel": "ICE cerveza artesanal SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3532",
+      "code": "3532",
+      "officialLabel": "ICE Import. alcohol SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3771",
+      "code": "3771",
+      "officialLabel": "ICE calefones y sistemas de calentamiento de agua a gas SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3685",
+      "code": "3685",
+      "officialLabel": "ICE vehículos motorizados camionetas y de rescate PVP sea hasta DE 30.000 USD SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3687",
+      "code": "3687",
+      "officialLabel": "ICE vehículos motorizados excepto camionetas y de rescate cuyo PVP sea superior USD 20.000 hasta de 30.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3689",
+      "code": "3689",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP sea de hasta USD. 35.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3690",
+      "code": "3690",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior USD. 35.000 hasta 40.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3693",
+      "code": "3693",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior USD. 40.000 hasta 50.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3694",
+      "code": "3694",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior USD. 50.000 hasta 60.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3697",
+      "code": "3697",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior USD. 60.000 hasta 70.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3699",
+      "code": "3699",
+      "officialLabel": "ICE vehículos híbridos cuyo PVP superior a USD 70.000 SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    },
+    {
+      "entryKey": "3683",
+      "code": "3683",
+      "officialLabel": "ICE consumibles tabaco calentado y líquidos con nicotina SENAE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL_REFERENCE",
+      "sourceRef": "Tabla 18, página 32"
+    }
+  ]
+}

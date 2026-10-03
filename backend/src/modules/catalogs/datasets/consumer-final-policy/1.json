@@ -1,0 +1,25 @@
+{
+  "catalogType": "consumer-final-policy",
+  "version": 1,
+  "source": {
+    "document": "Ficha técnica: Manual de usuario, catálogo y especificaciones técnicas. Emisión de Comprobantes Electrónicos. Método de autorización Off-line",
+    "version": "2.34",
+    "publishedOn": "2026-07-27",
+    "url": "https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf",
+    "sha256": "7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9"
+  },
+  "enablementPolicy": "NOT_ENABLEABLE",
+  "versions": [
+    {
+      "maxAmount": "50.00",
+      "currency": "USD",
+      "identificationType": "07",
+      "identification": "9999999999999",
+      "canonicalName": "CONSUMIDOR FINAL",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "sourceRef": "Numeral 9.10, página 29 (monto); tabla 6 y su nota, página 13 (identificación); ejemplos del XML con razonSocialComprador (razón social)"
+    }
+  ]
+}

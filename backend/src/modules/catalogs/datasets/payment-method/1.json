@@ -1,0 +1,94 @@
+{
+  "catalogType": "payment-method",
+  "version": 1,
+  "source": {
+    "document": "Ficha técnica: Manual de usuario, catálogo y especificaciones técnicas. Emisión de Comprobantes Electrónicos. Método de autorización Off-line",
+    "version": "2.34",
+    "publishedOn": "2026-07-27",
+    "url": "https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf",
+    "sha256": "7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9"
+  },
+  "enablementPolicy": "DEFAULT_ENABLED",
+  "entries": [
+    {
+      "entryKey": "01",
+      "code": "01",
+      "officialLabel": "SIN UTILIZACION DEL SISTEMA FINANCIERO",
+      "effectiveFrom": "2013-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 24, página 79"
+    },
+    {
+      "entryKey": "15",
+      "code": "15",
+      "officialLabel": "COMPENSACIÓN DE DEUDAS",
+      "effectiveFrom": "2013-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 24, página 79"
+    },
+    {
+      "entryKey": "16",
+      "code": "16",
+      "officialLabel": "TARJETA DE DÉBITO",
+      "effectiveFrom": "2016-06-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 24, página 79"
+    },
+    {
+      "entryKey": "17",
+      "code": "17",
+      "officialLabel": "DINERO ELECTRÓNICO",
+      "effectiveFrom": "2016-06-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 24, página 79"
+    },
+    {
+      "entryKey": "18",
+      "code": "18",
+      "officialLabel": "TARJETA PREPAGO",
+      "effectiveFrom": "2016-06-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 24, página 79"
+    },
+    {
+      "entryKey": "19",
+      "code": "19",
+      "officialLabel": "TARJETA DE CRÉDITO",
+      "effectiveFrom": "2016-06-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 24, página 79"
+    },
+    {
+      "entryKey": "20",
+      "code": "20",
+      "officialLabel": "OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO",
+      "effectiveFrom": "2016-06-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 24, página 79"
+    },
+    {
+      "entryKey": "21",
+      "code": "21",
+      "officialLabel": "ENDOSO DE TÍTULOS",
+      "effectiveFrom": "2016-06-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 24, página 79"
+    }
+  ]
+}

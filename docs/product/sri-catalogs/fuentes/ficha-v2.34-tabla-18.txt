@@ -1,0 +1,214 @@
+# Extracto literal de la tabla 18 (tarifa del ICE) de la ficha técnica v2.34 del SRI.
+# Fuente: https://www.sri.gob.ec/facturacion-electronica (ficha técnica, esquema offline, versión 2.34, 27/07/2026).
+# SHA-256 del PDF: 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9
+# Método: pdftotext -layout (Poppler) de las páginas impresas 30 a 32; sin editar. Las tarifas del
+# extracto son las de 2023 que publica la ficha: el dataset no las transcribe (design D8).
+# Revisión fila a fila: backend/test/catalogs/ice-dataset-review.test.ts.
+
+# ---- Página 30 ----
+TABLA 18: TARIFA DEL ICE:
+
+A continuación, se detalla el listado de códigos del Impuesto a los Consumos
+Especiales, las tarifas deberán calcularse en base a la normativa vigente.
+
+                                                                                                           Tarifa Ad            Tarifa
+                                                                     Tarifa Ad          Tarifa              Valorem         específica de
+  Código                       Descripción                           Valorem         específica de         febrero a          febrero a
+                                                                    enero 2023        enero 2023           diciembre         diciembre
+                                                                                                              2023              2023
+   3011       ICE Cigarrillos Rubios                                      -                 0,17                -                 0,16
+   3021       ICE Cigarrillos Negros                                      -                 0,17                -                 0,16
+              ICE Productos del Tabaco y Sucedáneos
+   3023                                                                150%                   -              150%                   -
+              del Tabaco excepto Cigarrillos
+   3031       ICE Bebidas Alcohólicas                                   75%                 10,36             75%                10,00
+   3041       ICE Cerveza Industrial Gran Escala                        75%                   -               75%                   -
+   3041       ICE Cerveza Industrial Mediana Escala                     75%                   -               75%                   -
+   3041       ICE Cerveza Industrial Pequeña Escala                     75%                   -               75%                   -
+              ICE Vehículos Motorizados cuyo PVP sea
+   3073                                                                  5%                   -                5%                   -
+              hasta de 20000 USD
+              ICE Vehículos Motorizados PVP entre
+   3075                                                                 15%                   -               15%                   -
+              30000 y 40000
+              ICE Vehículos Motorizados cuyo PVP
+   3077                                                                 20%                   -               20%                   -
+              superior USD 40.000 hasta 50.000
+              ICE Vehículos Motorizados cuyo PVP
+   3078                                                                 25%                   -               25%                   -
+              superior USD 50.000 hasta 60.000
+              ICE Vehículos Motorizados cuyo PVP
+   3079                                                                 30%                   -               30%                   -
+              superior USD 60.000 hasta 70.000
+              ICE Vehículos Motorizados cuyo PVP
+   3080                                                                 35%                   -               35%                   -
+              superior USD 70.000
+              ICE Aviones, Tricars, yates, Barcos de
+   3081                                                                 15%                   -               10%                   -
+              Recreo
+   3092       ICE Servicios de Televisión Prepagada                      0%                   -                0%                   -
+   3610       ICE Perfumes y Aguas de Tocador                           20%                   -               20%                   -
+   3620       ICE Videojuegos                                            0%                   -                0%                   -
+              ICE Armas de Fuego, Armas deportivas y
+   3630                                                                300%                   -               30%                   -
+              Municiones
+   3640       ICE Focos Incandescentes                                 100%                   -              100%                   -
+              ICE Cuotas         Membresías        Afiliaciones
+   3660                                                                 35%                   -               35%                   -
+              Acciones
+
+# ---- Página 31 ----
+                                                                                    Tarifa Ad       Tarifa
+                                                        Tarifa Ad      Tarifa        Valorem    específica de
+Código                  Descripción                     Valorem     específica de   febrero a     febrero a
+                                                       enero 2023    enero 2023     diciembre    diciembre
+                                                                                       2023         2023
+ 3093    ICE Servicios Telefonía Sociedades               15%             -           15%             -
+ 3101    ICE Bebidas Energizantes                         10%             -           10%             -
+                                                                    0,19 por 100                0,18 por 100
+         ICE Bebidas Gaseosas con Alto Contenido
+ 3053                                                      -         gramos de          -        gramos de
+         de Azúcar
+                                                                       azúcar                      azúcar
+         ICE Bebidas Gaseosas con Bajo Contenido
+ 3054                                                     10%             -           10%             -
+         de Azúcar
+                                                                    0,19 por 100                0,18 por 100
+ 3111    ICE Bebidas No Alcohólicas                        -         gramos de          -        gramos de
+                                                                       azúcar                      azúcar
+ 3043    ICE Cerveza Artesanal                             -            1,55            -           1,50
+ 3033    ICE Alcohol                                      75%          10,36          75%          10,00
+         ICE calefones y sistemas de calentamiento
+ 3671                                                    100%             -           100%            -
+         de agua a gas SRI
+         ICE vehículos motorizados camionetas y de
+ 3684    rescate cuyo PVP sea hasta DE 30.000             5%              -            5%             -
+         USD
+         ICE     vehículos    motorizados  excepto
+ 3686    camionetas y de rescate cuyo PVP sea             10%             -           10%             -
+         superior USD 20.000 hasta DE 30.000
+         ICE vehículos híbridos cuyo PVP sea de
+ 3688                                                     0%                           0%
+         hasta USD. 35.000
+         ICE vehículos híbridos cuyo PVP superior
+ 3691                                                     8%                           8%
+         USD. 35.000 hasta 40.000
+         ICE vehículos híbridos cuyo PVP superior
+ 3692                                                     14%                         14%
+         USD. 40.000 hasta 50.000
+         ICE vehículos híbridos cuyo PVP superior
+ 3695                                                     20%                         20%
+         USD. 50.000 hasta 60.000
+         ICE vehículos híbridos cuyo PVP superior
+ 3696                                                     26%                         26%
+         USD. 60.000 hasta 70.000
+         ICE vehículos híbridos cuyo PVP superior a
+ 3698                                                     32%             -           32%             -
+         USD 70.000
+         ICE consumibles tabaco calentado y
+ 3682                                                    150%             -           150%            -
+         líquidos con nicotina SRI
+         ICE servicios de telefonía móvil personas
+ 3681                                                     0%              -            0%             -
+         naturales
+ 3680    ICE fundas plásticas                              -            0,10            -           0,08
+ 3533    ICE Import. Bebidas Alcohólicas                  75%             -           75%             -
+ 3541    ICE Cerveza Gran Escala CAE                      75%             -           75%             -
+         ICE Cerveza Industrial de Mediana Escala
+ 3541                                                     75%             -           75%             -
+         CAE
+         ICE Cerveza Industrial de Pequeña Escala
+ 3541                                                     75%             -           75%             -
+         CAE
+ 3542    ICE Cigarrillos Rubios CAE                        -              -             -             -
+ 3543    ICE Cigarrillos Negros CAE                        -              -             -             -
+         ICE Productos del Tabaco y Sucedáneos
+ 3544                                                    150%             -           150%            -
+         del Tabaco Excepto Cigarrillos CAE
+ 3581    ICE Aeronaves CAE                                15%             -           10%             -
+         ICE Aviones, Avionetas y Helicópteros Exct.
+ 3582                                                     15%             -           10%             -
+         Aquellos destinados Al Trans. CAE
+ 3710    ICE Perfumes Aguas de Tocador Cae                20%             -           20%             -
+ 3720    ICE Video Juegos CAE                             35%             -           35%             -
+         ICE Importaciones Armas de Fuego, Armas
+ 3730                                                    300%             -           30%             -
+         deportivas y Municiones CAE
+ 3740    ICE Focos Incandescentes CAE                    100%             -           100%            -
+         ICE-vehículos motorizados cuyo PVP SEA
+ 3871                                                     5%              -            5%             -
+         hasta de 20000 USD SENAE
+         ICE-vehículos motorizados PVP entre
+ 3873                                                     15%             -           15%             -
+         30000 Y 40000 SENAE
+         ICE-vehículos motorizados cuyo PVP
+ 3874                                                     20%             -           20%             -
+         superior USD 40.000 hasta 50.000 SENAE
+
+# ---- Página 32 ----
+                                                                                     Tarifa Ad       Tarifa
+                                                         Tarifa Ad      Tarifa        Valorem    específica de
+ Código                  Descripción                     Valorem     específica de   febrero a     febrero a
+                                                        enero 2023    enero 2023     diciembre    diciembre
+                                                                                        2023         2023
+           ICE-vehículos motorizados cuyo PVP
+  3875                                                     25%               -         25%             -
+           superior USD 50.000 hasta 60.000 SENAE
+           ICE-vehículos motorizados cuyo PVP
+  3876                                                     30%               -         30%             -
+           superior USD 60.000 hasta 70.000 SENAE
+           ICE-vehículos motorizados cuyo PVP
+  3877                                                     35%               -         35%             -
+           superior USD 70.000 SENAE
+           ICE-Aviones, Tricars, Yates, Barcos de Rec
+  3878                                                     15%               -         10%             -
+           SENAE
+  3601     ICE Bebidas Energizantes SENAE                  10%               -         10%             -
+                                                                      0,19 por 100               0,18 por 100
+           ICE bebidas gaseosas con alto contenido
+  3552                                                      -          gramos de         -        gramos de
+           de azúcar SENAE
+                                                                         azúcar                     azúcar
+           ICE bebidas gaseosas con bajo contenido
+  3553                                                     10%               -         10%             -
+           de azúcar SENAE
+                                                                      0,19 por 100               0,18 por 100
+  3602     ICE bebidas no alcohólicas SENAE                 -          gramos de         -        gramos de
+                                                                         azúcar                     azúcar
+  3545     ICE cerveza artesanal SENAE                     75%             1,55        75%            1,5
+  3532     ICE Import. alcohol SENAE                       75%             10,36       75%            10
+           ICE calefones y sistemas de calentamiento
+  3671                                                    100%               -         100%            -
+           de agua a gas SRI
+           ICE calefones y sistemas de calentamiento
+  3771                                                    100%               -         100%            -
+           de agua a gas SENAE
+           ICE vehículos motorizados camionetas y de
+  3685     rescate PVP sea hasta DE 30.000 USD             5%                -          5%             -
+           SENAE
+           ICE     vehículos    motorizados  excepto
+           camionetas y de rescate cuyo PVP sea
+  3687                                                     10%               -         10%             -
+           superior USD 20.000 hasta de 30.000
+           SENAE
+           ICE vehículos híbridos cuyo PVP sea de
+  3689                                                     0%                -          0%             -
+           hasta USD. 35.000 SENAE
+           ICE vehículos híbridos cuyo PVP superior
+  3690                                                     8%                -          8%             -
+           USD. 35.000 hasta 40.000 SENAE
+           ICE vehículos híbridos cuyo PVP superior
+  3693                                                     14%               -         14%             -
+           USD. 40.000 hasta 50.000 SENAE
+           ICE vehículos híbridos cuyo PVP superior
+  3694                                                     20%               -         20%             -
+           USD. 50.000 hasta 60.000 SENAE
+           ICE vehículos híbridos cuyo PVP superior
+  3697                                                     26%               -         26%             -
+           USD. 60.000 hasta 70.000 SENAE
+           ICE vehículos híbridos cuyo PVP superior a
+  3699                                                     32%               -         32%             -
+           USD 70.000 SENAE
+           ICE consumibles tabaco calentado y
+  3683                                                    150%                         50%
+           líquidos con nicotina SENAE

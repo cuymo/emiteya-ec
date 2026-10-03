@@ -1,0 +1,79 @@
+{
+  "catalogType": "identification-type",
+  "version": 1,
+  "source": {
+    "document": "Ficha técnica: Manual de usuario, catálogo y especificaciones técnicas. Emisión de Comprobantes Electrónicos. Método de autorización Off-line",
+    "version": "2.34",
+    "publishedOn": "2026-07-27",
+    "url": "https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf",
+    "sha256": "7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9"
+  },
+  "enablementPolicy": "NOT_ENABLEABLE",
+  "entries": [
+    {
+      "entryKey": "04",
+      "code": "04",
+      "officialLabel": "RUC",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 6, página 13; formato: tabla 5, página 13, y tipo ruc del XSD",
+      "identificationPattern": "^[0-9]{10}001$",
+      "identificationRule": "13 dígitos terminados en 001",
+      "reservedFor": null
+    },
+    {
+      "entryKey": "05",
+      "code": "05",
+      "officialLabel": "CÉDULA",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 6, página 13; formato: tabla 5, página 13",
+      "identificationPattern": "^[0-9]{10}$",
+      "identificationRule": "10 dígitos",
+      "reservedFor": null
+    },
+    {
+      "entryKey": "06",
+      "code": "06",
+      "officialLabel": "PASAPORTE",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 6, página 13; formato: tipo identificacionComprador del XSD",
+      "identificationPattern": "^[^\\r\\n]{1,20}$",
+      "identificationRule": "1 a 20 caracteres sin saltos de línea",
+      "reservedFor": null
+    },
+    {
+      "entryKey": "07",
+      "code": "07",
+      "officialLabel": "VENTA A CONSUMIDOR FINAL",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 6 y su nota, página 13",
+      "identificationPattern": "^9{13}$",
+      "identificationRule": "Reservado al consumidor final del sistema: 13 dígitos de nueve",
+      "reservedFor": "CONSUMER_FINAL"
+    },
+    {
+      "entryKey": "08",
+      "code": "08",
+      "officialLabel": "IDENTIFICACIÓN DEL EXTERIOR",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 6 y su nota, página 13; formato: tipo identificacionComprador del XSD",
+      "identificationPattern": "^[^\\r\\n]{1,20}$",
+      "identificationRule": "1 a 20 caracteres sin saltos de línea",
+      "reservedFor": null
+    }
+  ]
+}
