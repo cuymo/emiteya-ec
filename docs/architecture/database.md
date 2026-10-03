@@ -27,7 +27,7 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `fiscal_sequence` | `fiscal` | Yes | Contador por empresa, ambiente, establecimiento, punto y tipo; bloqueo de fila al reservar. |
 | `fiscal_sequence_reservation` | `fiscal` | Yes | Solo agregado: un registro por número reservado, con la unicidad de CTX §5. |
 | `party`, `product` | `catalogs` | Yes | Editables; los comprobantes guardan su copia. |
-| `fiscal_catalog_entry`, `consumer_final_policy`, `schema_registry_entry`, `special_case_support` | `catalogs` | No | Datos versionados distribuidos con cada release. La habilitación por empresa va en una tabla aparte (Q-25). |
+| `fiscal_catalog_entry`, `consumer_final_policy`, `schema_registry_entry`, `special_case_support` | `catalogs` | No | Datos versionados distribuidos con cada release (ADR 0020). La habilitación por empresa va en una tabla aparte. |
 | `electronic_document` | `fiscal` | Yes | Nunca se borra desde `SEQUENCE_RESERVED`. |
 | `document_line`, `document_relation`, `tax_detail`, `payment` | `fiscal` | Yes | Inmutables desde la firma, salvo corrección de un devuelto (BR-28). |
 | `document_state_transition` | `fiscal` | Yes | Solo agregado (ERS RF-525). |

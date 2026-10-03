@@ -198,8 +198,8 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 ### `fiscal_catalog_entry` — Entrada de catálogo fiscal
 
 - Purpose: códigos oficiales del SRI con vigencia (ERS RF-234, SRI-REQ-12; CTX §18).
-- Key attributes: catálogo, código, descripción, porcentaje cuando aplica, vigente desde/hasta, documento fuente, versión de la fuente, habilitado.
-- Invariants: un cambio normativo crea entradas nuevas con vigencia; nunca altera comprobantes históricos ni exige cambiar el código fuente (CTX §16.4, §55). Catálogos mínimos en CTX §18.
+- Key attributes: tipo de catálogo, código, descripción oficial, vigente desde/hasta, documento fuente, versión de la fuente, estado normativo y los atributos propios de cada catálogo (por ejemplo, la tarifa de un código de IVA). La habilitación por empresa es un dato aparte, de la empresa.
+- Invariants: son datos del sistema distribuidos con cada release, no datos de la empresa (ADR 0020). Un cambio normativo crea entradas o versiones nuevas; nunca sobrescribe lo necesario para reproducir comprobantes ni exige cambiar el código fuente (CTX §16.4, §55). El administrador solo habilita o deshabilita entradas para su empresa; no crea ni modifica códigos, descripciones, tarifas ni vigencias. Catálogos mínimos en CTX §18.
 
 ### `consumer_final_policy` — Política de consumidor final
 
@@ -216,8 +216,8 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 ### `special_case_support` — Soporte de caso especial
 
 - Purpose: declarar qué anexos de la ficha soporta la versión instalada (CTX §38).
-- Key attributes: anexo, tema, soporte (`SUPPORTED`, `BLOCKED`, `NOT_APPLICABLE`, `UNDER_REVIEW`).
-- Invariants: una operación que requiere un caso no soportado falla antes de emitir con un mensaje funcional (CTX §38.1, §57). La matriz inicial está en Q-38.
+- Key attributes: anexo, tema, categoría (`CORE`, `CONDITIONAL_ISSUER_RULE`, `CONDITIONAL_GO_LIVE`, `NOT_APPLICABLE`, `OUT_OF_MVP`).
+- Invariants: una operación que requiere un caso no soportado se rechaza de forma explícita antes de emitir, con un mensaje funcional, y nunca se degrada a un comprobante ordinario (CTX §38.1, §57). Las condiciones del emisor se declaran, no se infieren. Matriz inicial en el ADR 0014 (Q-38).
 
 ### Entidades técnicas añadidas
 
@@ -341,7 +341,7 @@ se repiten aquí.
 - **BR-24** Cada comprobante registra la versión XSD y técnica usada; actualizar catálogos o XSD no altera los históricos (ERS SRI-REQ-11, SRI-REQ-12; CTX §53).
 - **BR-25** Ningún tag, orden de nodos ni flujo se inventa: el contrato es el XSD oficial de la versión, y la tabla conceptual del ERS §8 no lo reemplaza (CTX §1.1).
 - **BR-26** Un XML firmado que supera el límite individual del SRI (320 KB en la ficha v2.34, parámetro versionado) no se envía. El MVP envía comprobantes de uno en uno, sin lotes (CTX §29).
-- **BR-27** Una operación que requiere un caso especial no soportado se bloquea antes de emitir con un mensaje funcional; nunca se aproxima (CTX §38.1, §57, ADR 0014).
+- **BR-27** Una operación que requiere un caso especial no soportado se rechaza de forma explícita antes de emitir, con un mensaje funcional; nunca se aproxima ni se degrada en silencio a un comprobante ordinario (CTX §38.1, §57, ADR 0014).
 
 ### Corrección y anulación
 
@@ -363,7 +363,7 @@ se repiten aquí.
 ### Catálogos
 
 - **BR-39** Un único catálogo de terceros sirve para todos los roles (ERS RF-320).
-- **BR-40** Impuestos, retenciones, formas de pago y límites son datos versionados con vigencia y fuente, nunca constantes del código (CTX §12.5, §16.4, §55).
+- **BR-40** Impuestos, retenciones, formas de pago y límites son datos versionados con vigencia y fuente, nunca constantes del código; los distribuye el producto y una empresa solo habilita o deshabilita entradas (CTX §12.5, §16.4, §55; ADR 0020).
 - **BR-41** El código principal del producto es único; el control de stock se activa por producto (ERS RF-301, RF-302).
 
 ### Inventario
