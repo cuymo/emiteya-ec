@@ -70,7 +70,7 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 
 | Herramienta | Versión | Nota |
 | --- | --- | --- |
-| Node.js | 24 LTS (`.node-version`: 24.15.0) | Type stripping nativo en desarrollo (ADR 0016). |
+| Node.js | 24 LTS (`.node-version`: 24.21.0; `engines`: `>=24.21.0 <25`) | Type stripping nativo en desarrollo (ADR 0016). `facturacion-electronica-ec` exige al menos 24.18.0. |
 | pnpm | 12.4.2 vía Corepack | `packageManager`; configuración en `pnpm-workspace.yaml`. |
 | TypeScript | 6.0.3 | `typescript-eslint` no admite todavía la 7. |
 | ESLint / typescript-eslint | 10.11.0 / 8.71.0 | Frontend sin `eslint-config-next` (ADR 0016). |
