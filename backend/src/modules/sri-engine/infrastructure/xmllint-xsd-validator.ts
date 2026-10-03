@@ -1,7 +1,8 @@
 // Adaptador XsdValidator sobre xmllint-wasm, libxml2 en WebAssembly (ADR 0021). Valida contra los
 // XSD versionados del producto, nunca contra los empaquetados en facturacion-electronica-ec: no usa
 // validateXmlAgainstXsd ni registerXsdSearchPath, que buscan en rutas globales del proceso y, si
-// falta un archivo, caen en silencio a los XSD de la librería (spike S-2).
+// falta un archivo, caen en silencio a los XSD de la librería (spike S-2). Cada validación arranca
+// un worker de WebAssembly: la concurrencia y la cola están acotadas.
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -32,7 +33,19 @@ export type XmllintXsdValidatorOptions = Readonly<{
   imports?: readonly XsdFile[];
   /** Lectura de archivos; se inyecta en las pruebas. */
   readFile?: (path: string) => Promise<Uint8Array>;
+  /** Validaciones simultáneas, cada una con su worker; por defecto 2. */
+  concurrency?: number;
+  /** Validaciones en espera; con la cola llena, `VALIDATOR_BUSY`. Por defecto 16. */
+  maxQueue?: number;
+  /** Duración máxima de una validación en curso; por defecto 10 s. */
+  timeoutMs?: number;
+  /** Motor de validación; se inyecta en las pruebas. */
+  engine?: typeof validateXML;
 }>;
+
+const DEFAULT_CONCURRENCY = 2;
+const DEFAULT_MAX_QUEUE = 16;
+const DEFAULT_TIMEOUT_MS = 10_000;
 
 // Nombre del XML dentro del sistema de archivos en memoria de xmllint.
 const XML_FILE = "comprobante.xml";
@@ -52,9 +65,48 @@ function violationsOf(errors: readonly XMLValidationError[]): XsdViolation[] {
   return errors.filter((error) => error.loc?.fileName === XML_FILE).map(violation);
 }
 
+/**
+ * Ejecuta como máximo `concurrency` tareas a la vez y deja esperar hasta `maxQueue`. El tiempo
+ * cuenta desde que la tarea empieza. xmllint-wasm no permite cancelar su worker: al vencer el
+ * plazo, quien espera recibe `VALIDATOR_TIMEOUT`, pero el lugar sigue ocupado hasta que el worker
+ * termina, para que el límite de workers simultáneos se cumpla siempre.
+ */
+function createLimiter(concurrency: number, maxQueue: number, timeoutMs: number) {
+  let active = 0;
+  const waiting: (() => void)[] = [];
+  const release = () => {
+    const next = waiting.shift();
+    if (next) next();
+    else active--;
+  };
+  return async function run<T>(task: () => Promise<T>): Promise<T> {
+    if (active < concurrency) active++;
+    else if (waiting.length < maxQueue) await new Promise<void>((resolve) => waiting.push(resolve));
+    else throw new XsdValidatorError("VALIDATOR_BUSY");
+    const work = task().finally(release);
+    let timer: NodeJS.Timeout | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new XsdValidatorError("VALIDATOR_TIMEOUT")), timeoutMs);
+    });
+    // El que pierde la carrera no debe quedar como rechazo sin manejar.
+    work.catch(() => undefined);
+    try {
+      return await Promise.race([work, timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+}
+
 export function createXmllintXsdValidator(options: XmllintXsdValidatorOptions): XsdValidator {
   const read = options.readFile ?? ((path: string) => readFile(path));
   const imports = options.imports ?? [XMLDSIG_SCHEMA];
+  const engine = options.engine ?? validateXML;
+  const limited = createLimiter(
+    Math.max(1, options.concurrency ?? DEFAULT_CONCURRENCY),
+    Math.max(0, options.maxQueue ?? DEFAULT_MAX_QUEUE),
+    options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+  );
   // Contenido verificado, por instancia y no global: cada XSD se lee y se comprueba una vez.
   const verified = new Map<string, Promise<Uint8Array>>();
 
@@ -86,14 +138,16 @@ export function createXmllintXsdValidator(options: XmllintXsdValidatorOptions): 
         ...imports.map((file) => load(options.importDirectory, file)),
       ]);
       try {
-        const result = await validateXML({
-          xml: { fileName: XML_FILE, contents: xml },
-          schema: { fileName: schema.file, contents: main },
-          preload: imports.map((file, index) => ({
-            fileName: file.file,
-            contents: imported[index]!,
-          })),
-        });
+        const result = await limited(() =>
+          engine({
+            xml: { fileName: XML_FILE, contents: xml },
+            schema: { fileName: schema.file, contents: main },
+            preload: imports.map((file, index) => ({
+              fileName: file.file,
+              contents: imported[index]!,
+            })),
+          }),
+        );
         if (result.valid) return { valid: true };
         const violations = violationsOf(result.errors);
         // Sin errores del XML, el problema es del esquema o del motor: no se informa como válido.

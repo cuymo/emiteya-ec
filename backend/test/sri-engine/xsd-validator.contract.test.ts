@@ -245,6 +245,83 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
     });
   });
 
+  describe("concurrencia acotada", () => {
+    const VALID = { valid: true, errors: [], rawOutput: "", normalized: "" } as const;
+    // Motor controlado: cuenta las validaciones en curso y termina cuando la prueba lo pide.
+    function controlledEngine() {
+      const pending: (() => void)[] = [];
+      const state = { active: 0, maxActive: 0, started: 0 };
+      const engine = () =>
+        new Promise<typeof VALID>((resolve) => {
+          state.started++;
+          state.maxActive = Math.max(state.maxActive, ++state.active);
+          pending.push(() => {
+            state.active--;
+            resolve(VALID);
+          });
+        });
+      const finishAll = async () => {
+        while (pending.length > 0) {
+          pending.shift()!();
+          await new Promise((resolve) => setImmediate(resolve));
+        }
+      };
+      return { engine, state, finishAll };
+    }
+    const bounded = (
+      engine: unknown,
+      options: { concurrency: number; maxQueue: number; timeoutMs?: number },
+    ) =>
+      createXmllintXsdValidator({
+        schemaDirectory: SCHEMA_DIR,
+        importDirectory: IMPORT_DIR,
+        engine: engine as Parameters<typeof createXmllintXsdValidator>[0]["engine"],
+        ...options,
+      });
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+    it("100 validaciones simultáneas nunca tienen más de `concurrency` workers en curso", async () => {
+      const { engine, state, finishAll } = controlledEngine();
+      const limited = bounded(engine, { concurrency: 2, maxQueue: 200 });
+      const all = Promise.all(
+        Array.from({ length: 100 }, () => limited.validate(factura, schemaOf("01"))),
+      );
+      await settle();
+      expect(state.active).toBe(2);
+      await finishAll();
+      expect(await all).toHaveLength(100);
+      expect(state.maxActive).toBe(2);
+      expect(state.started).toBe(100);
+    });
+
+    it("con la concurrencia y la cola llenas responde VALIDATOR_BUSY sin arrancar otro worker", async () => {
+      const { engine, state, finishAll } = controlledEngine();
+      const limited = bounded(engine, { concurrency: 1, maxQueue: 1 });
+      const first = limited.validate(factura, schemaOf("01"));
+      const second = limited.validate(factura, schemaOf("01"));
+      await settle();
+      expect(await codeOf(limited.validate(factura, schemaOf("01")))).toBe("VALIDATOR_BUSY");
+      expect(state.started).toBe(1);
+      await finishAll();
+      expect(await first).toEqual({ valid: true });
+      expect(await second).toEqual({ valid: true });
+    });
+
+    it("al vencer el plazo responde VALIDATOR_TIMEOUT y el lugar sigue ocupado hasta que el worker termina", async () => {
+      const { engine, state, finishAll } = controlledEngine();
+      const limited = bounded(engine, { concurrency: 1, maxQueue: 4, timeoutMs: 30 });
+      const slow = codeOf(limited.validate(factura, schemaOf("01")));
+      await settle();
+      const queued = limited.validate(factura, schemaOf("01"));
+      expect(await slow).toBe("VALIDATOR_TIMEOUT");
+      await settle();
+      expect(state.started).toBe(1);
+      await finishAll();
+      expect(await queued).toEqual({ valid: true });
+      expect(state.maxActive).toBe(1);
+    });
+  });
+
   it("los errores son códigos, sin rutas, salida de xmllint ni contenido del XML", async () => {
     const error = await validate(factura, { ...schemaOf("01"), file: "factura_V9.9.9.xsd" }).catch(
       (caught: unknown) => caught,

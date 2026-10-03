@@ -52,7 +52,8 @@ export type XsdValidation =
 export interface XsdValidator {
   /**
    * Un XML que no cumple el esquema, o que no está bien formado, es `valid: false`. Si el esquema
-   * o uno de sus imports falta o su hash no coincide, falla cerrada con `XsdValidatorError`.
+   * o uno de sus imports falta o su hash no coincide, falla cerrada con `XsdValidatorError`. Con la
+   * concurrencia y la cola llenas es `VALIDATOR_BUSY`, y si tarda demasiado, `VALIDATOR_TIMEOUT`.
    */
   validate(xml: string, schema: RegisteredSchema): Promise<XsdValidation>;
 }
@@ -61,6 +62,8 @@ export const XSD_VALIDATOR_ERRORS = [
   "SCHEMA_UNAVAILABLE",
   "SCHEMA_HASH_MISMATCH",
   "VALIDATOR_FAILED",
+  "VALIDATOR_BUSY",
+  "VALIDATOR_TIMEOUT",
 ] as const;
 export type XsdValidatorErrorCode = (typeof XSD_VALIDATOR_ERRORS)[number];
 

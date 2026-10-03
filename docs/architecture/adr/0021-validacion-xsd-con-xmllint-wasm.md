@@ -37,11 +37,18 @@ El spike S-2 se ejecutó con `xmllint-wasm` 5.3.0, libxml2 en WebAssembly, sobre
 - **Resultado y errores.**
   - Un XML inválido o mal formado devuelve sus violaciones: línea y mensaje de libxml2, sin rutas.
   - Un esquema ausente, alterado o que no compila es un `XsdValidatorError` tipado (`SCHEMA_UNAVAILABLE`, `SCHEMA_HASH_MISMATCH` o `VALIDATOR_FAILED`), sin la salida de xmllint.
+- **Concurrencia acotada.** Cada validación arranca un worker de WebAssembly, así que el adaptador nunca los crea sin límite:
+  - como máximo `concurrency` validaciones en curso, 2 por defecto;
+  - hasta `maxQueue` en espera, 16 por defecto; con la cola llena responde `VALIDATOR_BUSY` sin arrancar otro worker;
+  - un plazo desde que empieza, 10 s por defecto, tras el cual responde `VALIDATOR_TIMEOUT`;
+  - xmllint-wasm no permite cancelar su worker, así que el lugar sigue ocupado hasta que termina y el límite se cumple siempre.
+
+  Los tres valores son configurables. El design de `add-invoice-emission` los fija, y Q-26 dirá si hay que ajustarlos.
 - **Contrato.** `backend/test/sri-engine/xsd-validator.contract.test.ts` es la prueba que debe pasar antes de aceptar cualquier actualización de `xmllint-wasm`.
 
 ## Consequences
 
 - No hay dependencias nativas, Java ni red en tiempo de ejecución.
-- Cada validación arranca un worker y una instancia de WebAssembly, sin estado compartido. La emisión debe acotar cuántas validaciones corren a la vez, como hace con la firma (`CryptoWorkerPool`).
+- Cada validación arranca un worker y una instancia de WebAssembly, sin estado compartido. No se reutiliza `CryptoWorkerPool`, porque xmllint-wasm arranca su propio worker y no expone cómo terminarlo; el límite vive en el adaptador.
 - Los XSD deben empaquetarse con la aplicación. Hoy viven en `docs/product/`; el cambio de emisión decide su ubicación en la imagen y cómo se configura el directorio.
 - El registro de esquemas no registra todavía el import de la firma: su hash vive en el adaptador y en el manifiesto de `docs/product/w3c-xsd/`. El cambio de emisión decide si el registro lo incorpora con una versión nueva del dataset.
