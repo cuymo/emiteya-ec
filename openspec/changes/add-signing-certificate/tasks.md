@@ -46,7 +46,7 @@
 
 ## 7. Verificación integral
 
-- [ ] 7.1 Prueba end-to-end por HTTP contra `main.ts` con fixtures sintéticos:
+- [x] 7.1 Prueba end-to-end por HTTP contra `main.ts` con fixtures sintéticos:
   1. La empresa configurada sin firma no está preparada.
   2. El administrador carga una firma con RUC distinto: la empresa queda preparada y la advertencia figura.
   3. La reemplaza por otra con el RUC de la empresa y desaparece la advertencia.
