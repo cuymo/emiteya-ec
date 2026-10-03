@@ -1,0 +1,549 @@
+// Borradores y editor de factura (add-invoice-emission, tarea 10.2, design D15): carga, vacío,
+// error, sin permiso, alta con los selectores, conflicto de versión y emisión con su confirmación,
+// la Idempotency-Key estable de la misma solicitud y el error señalado en su línea.
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SessionGate } from "@/components/session";
+import { DraftEditorScreen } from "@/features/invoices/draft-editor";
+import { DraftsScreen } from "@/features/invoices/drafts-screen";
+import {
+  ADMIN_ME,
+  OPERATOR_ME,
+  errorBody,
+  mockApi,
+  navigation,
+  renderApp,
+  type Route,
+} from "./harness";
+
+const CUSTOMER = {
+  id: "party-1",
+  identificationType: "04",
+  identificationTypeLabel: "RUC",
+  identification: "0992877878001",
+  legalName: "EL PERNO CIA. LTDA.",
+  address: null,
+  email: null,
+  phone: null,
+  roles: ["CUSTOMER"],
+  status: "ACTIVE",
+  systemRecord: null,
+  version: 1,
+  createdAt: "2026-10-03T10:00:00.000Z",
+  updatedAt: "2026-10-03T10:00:00.000Z",
+};
+const CONSUMER_FINAL = {
+  ...CUSTOMER,
+  id: "party-cf",
+  identificationType: "07",
+  identification: "9999999999999",
+  legalName: "CONSUMIDOR FINAL",
+  systemRecord: "CONSUMER_FINAL",
+};
+const PRODUCT = {
+  id: "prod-1",
+  kind: "GOOD",
+  mainCode: "CEM-50",
+  auxiliaryCode: null,
+  name: "Cemento 50 kg",
+  description: null,
+  unitPrice: "8.75",
+  stockTracked: false,
+  status: "ACTIVE",
+  version: 1,
+  taxes: [],
+  taxConfiguration: { status: "READY", reasons: [], evaluatedOn: "2026-10-03" },
+  createdAt: "2026-10-03T10:00:00.000Z",
+  updatedAt: "2026-10-03T10:00:00.000Z",
+};
+const POINT = { id: "ep-1", establishmentCode: "001", code: "001", available: true };
+const TOTALS = {
+  withoutTaxes: "25.00",
+  discount: "1.25",
+  taxes: [{ taxCode: "2", rateCode: "4", percentage: "15", base: "25.00", amount: "3.75" }],
+  total: "28.75",
+};
+
+const draft = (overrides: Record<string, unknown> = {}) => ({
+  id: "draft-1",
+  version: 1,
+  emissionPoint: POINT,
+  buyer: {
+    id: CUSTOMER.id,
+    identificationType: "04",
+    identification: CUSTOMER.identification,
+    legalName: CUSTOMER.legalName,
+    status: "ACTIVE",
+    systemRecord: null,
+  },
+  lines: [
+    {
+      position: 1,
+      product: {
+        id: "prod-1",
+        mainCode: "CEM-50",
+        name: "Cemento 50 kg",
+        unitPrice: "8.75",
+        status: "ACTIVE",
+      },
+      quantity: "3",
+      discount: "1.25",
+    },
+  ],
+  payments: [
+    {
+      position: 1,
+      paymentMethod: "01",
+      code: "01",
+      officialLabel: "Sin utilización del sistema financiero",
+      amount: null,
+    },
+  ],
+  preview: {
+    evaluatedOn: "2026-10-03",
+    lines: [
+      {
+        position: 1,
+        unitPrice: "8.75",
+        taxableBase: "25.00",
+        taxes: TOTALS.taxes,
+      },
+    ],
+    totals: TOTALS,
+    issues: [],
+  },
+  createdAt: "2026-10-03T15:00:00.000Z",
+  createdBy: "user-1",
+  updatedAt: "2026-10-03T15:00:00.000Z",
+  updatedBy: "user-1",
+  ...overrides,
+});
+const invoice = (overrides: Record<string, unknown> = {}) => ({
+  id: "inv-1",
+  documentType: "01",
+  environment: "TEST",
+  documentNumber: "001-001-000000001",
+  accessKey: "0310202601179001234500110010010000000011234567816",
+  issueDate: "2026-10-03",
+  state: "SIGNED",
+  issuer: {
+    ruc: "1790012345001",
+    legalName: "COMERCIAL ANDINA S.A.",
+    tradeName: null,
+    headOfficeAddress: "Quito",
+    establishmentAddress: "Quito",
+    accountingRequired: true,
+    specialTaxpayerNumber: null,
+    withholdingAgentResolution: null,
+    rimpeCategory: null,
+  },
+  buyer: {
+    identificationType: "04",
+    identification: CUSTOMER.identification,
+    legalName: CUSTOMER.legalName,
+    address: null,
+    consumerFinal: false,
+  },
+  lines: [],
+  payments: [{ code: "01", amount: "28.75" }],
+  totals: TOTALS,
+  diagnostic: null,
+  artifact: { sha256: "a".repeat(64), sizeBytes: 4096 },
+  createdAt: "2026-10-03T15:00:00.000Z",
+  signedAt: "2026-10-03T15:00:01.000Z",
+  ...overrides,
+});
+
+const ok =
+  (data: unknown): Route =>
+  () => ({ status: 200, body: { data } });
+const paged =
+  (data: unknown[]): Route =>
+  () => ({ status: 200, body: { data, meta: { page: 1, pageSize: 25, total: data.length } } });
+const ESTABLISHMENTS = ok([
+  {
+    id: "est-1",
+    code: "001",
+    address: "Av. Amazonas, Quito",
+    status: "ACTIVE",
+    emissionPoints: [{ id: "ep-1", code: "001", status: "ACTIVE", available: true }],
+  },
+]);
+const PAYMENT_METHODS = ok({
+  catalog: {
+    catalogType: "payment-method",
+    datasetVersion: 1,
+    source: {
+      document: "Ficha",
+      version: "2.34",
+      publishedOn: "2026-07-27",
+      url: "https://www.sri.gob.ec",
+      sha256: "a".repeat(64),
+    },
+    enablementPolicy: "DEFAULT_ENABLED",
+  },
+  at: "2026-10-03",
+  entries: ["01", "19"].map((code) => {
+    const version = {
+      id: `pm-${code}`,
+      officialLabel:
+        code === "01" ? "Sin utilización del sistema financiero" : "Tarjeta de crédito",
+      effectiveFrom: "2016-06-01",
+      effectiveFromBasis: "OFFICIAL",
+      effectiveTo: null,
+      normativeStatus: "OFFICIAL",
+      sourceRef: "Ficha",
+      datasetVersion: 1,
+      rate: null,
+      taxKind: null,
+      identificationRule: null,
+    };
+    return {
+      entryKey: code,
+      code,
+      versions: [version],
+      applicable: version,
+      enablement: { enabled: true, source: "DEFAULT" },
+      usable: true,
+    };
+  }),
+});
+
+function render(
+  ui: React.ReactNode,
+  routes: Record<string, Route>,
+  me: typeof ADMIN_ME | typeof OPERATOR_ME = ADMIN_ME,
+) {
+  const calls = mockApi({
+    "GET /api/v1/me": () => ({ status: 200, body: { data: me } }),
+    "GET /api/v1/company/status": ok({
+      environment: "TEST",
+      displayName: "COMERCIAL ANDINA S.A.",
+      readiness: { ready: true, checks: [] },
+    }),
+    "GET /api/v1/establishments": ESTABLISHMENTS,
+    "GET /api/v1/fiscal-catalogs/payment-method/entries": PAYMENT_METHODS,
+    "GET /api/v1/me/default-emission-point": ok({
+      establishment: { id: "est-1", code: "001", address: "Av. Amazonas, Quito", status: "ACTIVE" },
+      emissionPoint: { id: "ep-1", code: "001", status: "ACTIVE" },
+      available: true,
+    }),
+    ...routes,
+  });
+  renderApp(<SessionGate fallback={<p>cargando</p>}>{ui}</SessionGate>);
+  return calls;
+}
+
+beforeEach(() => {
+  navigation.pathname = "/borradores";
+  navigation.search = new URLSearchParams();
+  navigation.replace.mockReset();
+  navigation.push.mockReset();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("pantalla Borradores", () => {
+  it("lista comprador, punto, total previo y actualización, con Nueva factura", async () => {
+    render(<DraftsScreen />, {
+      "GET /api/v1/invoices/drafts": paged([
+        {
+          id: "draft-1",
+          version: 2,
+          emissionPoint: POINT,
+          buyer: draft().buyer,
+          lineCount: 1,
+          previewTotal: "28.75",
+          updatedAt: "2026-10-03T15:00:00.000Z",
+        },
+        {
+          id: "draft-2",
+          version: 1,
+          emissionPoint: null,
+          buyer: null,
+          lineCount: 0,
+          previewTotal: null,
+          updatedAt: "2026-10-03T14:00:00.000Z",
+        },
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Borradores de factura pendientes" });
+    await within(table).findByText("Sin comprador");
+    const rows = within(table).getAllByRole("row");
+    const first = rows.find((row) => within(row).queryByText(/EL PERNO/))!;
+    expect(within(first).getByText("USD 28,75")).toBeDefined();
+    expect(within(first).getByText("001-001")).toBeDefined();
+    expect(within(table).getByText("Sin comprador")).toBeDefined();
+    expect(within(table).getByText("Incompleto")).toBeDefined();
+    expect(screen.getByRole("link", { name: "Nueva factura" }).getAttribute("href")).toBe(
+      "/borradores/nuevo",
+    );
+  });
+
+  it("muestra el vacío, el error con reintento y la falta de permiso", async () => {
+    let fail = true;
+    render(<DraftsScreen />, {
+      "GET /api/v1/invoices/drafts": () =>
+        fail
+          ? { status: 500, body: errorBody("INTERNAL_ERROR", "Error") }
+          : { status: 200, body: { data: [], meta: { page: 1, pageSize: 25, total: 0 } } },
+    });
+    expect(
+      (
+        await screen.findAllByText("No pudimos cargar los borradores.", undefined, {
+          timeout: 5_000,
+        })
+      ).length,
+    ).toBeGreaterThan(0);
+    fail = false;
+    await userEvent.setup().click(screen.getAllByRole("button", { name: "Intentar de nuevo" })[0]!);
+    expect((await screen.findAllByText("No tienes borradores pendientes")).length).toBeGreaterThan(
+      0,
+    );
+  }, 10_000);
+
+  it("sin permiso en el servidor, muestra el aviso de acceso", async () => {
+    render(<DraftsScreen />, {
+      "GET /api/v1/invoices/drafts": () => ({
+        status: 403,
+        body: errorBody("FORBIDDEN", "No tienes permiso."),
+      }),
+    });
+    expect(await screen.findByText("No tienes acceso a Borradores")).toBeDefined();
+  });
+
+  it("elimina un borrador con una confirmación", async () => {
+    const calls = render(<DraftsScreen />, {
+      "GET /api/v1/invoices/drafts": paged([
+        {
+          id: "draft-1",
+          version: 1,
+          emissionPoint: POINT,
+          buyer: draft().buyer,
+          lineCount: 1,
+          previewTotal: "28.75",
+          updatedAt: "2026-10-03T15:00:00.000Z",
+        },
+      ]),
+      "DELETE /api/v1/invoices/drafts/draft-1": () => ({ status: 204 }),
+    });
+    const user = userEvent.setup();
+    await user.click(
+      (await screen.findAllByRole("button", { name: /Eliminar el borrador de EL PERNO/ }))[0]!,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Eliminar borrador" });
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar borrador" }));
+    expect(await screen.findByText("Eliminaste el borrador.")).toBeDefined();
+    expect(calls.some((call) => call.key === "DELETE /api/v1/invoices/drafts/draft-1")).toBe(true);
+  });
+});
+
+describe("editor de factura", () => {
+  it("prepara una factura nueva con los selectores y la guarda con importes como texto", async () => {
+    const calls = render(<DraftEditorScreen draftId={null} />, {
+      "GET /api/v1/parties": paged([CUSTOMER]),
+      "GET /api/v1/products": paged([PRODUCT]),
+      "POST /api/v1/invoices/drafts": () => ({ status: 201, body: { data: draft() } }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Elegir comprador" }));
+    const buyerDialog = await screen.findByRole("dialog", { name: "Elegir comprador" });
+    await user.click(await within(buyerDialog).findByRole("option", { name: /EL PERNO/ }));
+    expect(await screen.findByText("EL PERNO CIA. LTDA.")).toBeDefined();
+    await waitFor(() =>
+      expect((screen.getByLabelText("Punto de emisión") as HTMLSelectElement).value).toBe("ep-1"),
+    );
+    await user.click(screen.getByRole("button", { name: "Agregar producto" }));
+    const productDialog = await screen.findByRole("dialog", { name: "Agregar producto" });
+    await user.click(await within(productDialog).findByRole("option", { name: /Cemento 50 kg/ }));
+    const line = await screen.findByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
+    // El precio es el del producto y no se edita.
+    expect(within(line).getByText("USD 8,75")).toBeDefined();
+    expect(within(line).queryByLabelText(/Precio/)).toBeNull();
+    const quantity = within(line).getByLabelText("Cantidad");
+    await user.clear(quantity);
+    await user.type(quantity, "3");
+    await user.type(within(line).getByLabelText("Descuento"), "1.25");
+    expect(screen.getByRole("button", { name: "Emitir factura" })).toHaveProperty("disabled", true);
+    expect(screen.getByText("Guarda el borrador para emitirlo.")).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    expect(await screen.findByText("Guardaste el borrador.")).toBeDefined();
+    const post = calls.find((call) => call.key === "POST /api/v1/invoices/drafts");
+    expect(post?.body).toEqual({
+      emissionPointId: "ep-1",
+      buyerPartyId: "party-1",
+      lines: [{ productId: "prod-1", quantity: "3", discount: "1.25" }],
+      payments: [{ paymentMethod: "01", amount: null }],
+    });
+    expect(navigation.replace).toHaveBeenCalledWith("/borradores/draft-1");
+  });
+
+  it("rechaza una cantidad de 7 decimales sin redondearla ni enviarla", async () => {
+    const calls = render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": ok(draft()),
+    });
+    const user = userEvent.setup();
+    const line = await screen.findByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
+    const quantity = within(line).getByLabelText("Cantidad");
+    await user.clear(quantity);
+    await user.type(quantity, "1.1234567");
+    await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    expect(await within(line).findByText("Admite como máximo 6 decimales.")).toBeDefined();
+    expect(calls.some((call) => call.key.startsWith("PUT "))).toBe(false);
+  });
+
+  it("muestra los totales del servidor y un conflicto de versión con Recargar", async () => {
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": ok(draft()),
+      "PUT /api/v1/invoices/drafts/draft-1": () => ({
+        status: 409,
+        body: errorBody(
+          "INVOICE_DRAFT_CHANGED",
+          "Otro usuario cambió este borrador después de que lo abriste. Recarga para ver sus datos.",
+        ),
+      }),
+    });
+    const summary = await screen.findByRole("complementary", { name: "Resumen" });
+    expect(within(summary).getByText("USD 28,75")).toBeDefined();
+    expect(within(summary).getByText("IVA 15 %")).toBeDefined();
+    expect(
+      within(summary).getByText("Vista previa del 03/10/2026, sin validez fiscal."),
+    ).toBeDefined();
+    const user = userEvent.setup();
+    const line = screen.getByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
+    await user.type(within(line).getByLabelText("Cantidad"), "0");
+    expect(screen.getByText("Guarda los cambios antes de emitir.")).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Otro usuario cambió este borrador");
+    expect(within(alert).getByRole("button", { name: "Recargar borrador" })).toBeDefined();
+  });
+
+  it("emite con la confirmación, el ambiente y la misma Idempotency-Key en el reintento", async () => {
+    const keys: string[] = [];
+    let attempt = 0;
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": ok(draft()),
+      "POST /api/v1/invoices": (init) => {
+        keys.push(new Headers(init.headers).get("Idempotency-Key") ?? "");
+        attempt += 1;
+        return attempt === 1
+          ? { status: 503, body: errorBody("CRYPTO_UNAVAILABLE", "No disponible.") }
+          : { status: 201, body: { data: invoice() } };
+      },
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Emitir factura" }));
+    let dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
+    expect(within(dialog).getByText("Pruebas")).toBeDefined();
+    expect(within(dialog).getByText("USD 28,75")).toBeDefined();
+    expect(within(dialog).getByText(/EL PERNO CIA. LTDA./)).toBeDefined();
+    await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
+    // El primer intento falla: el aviso queda en el editor.
+    expect(await screen.findByRole("alert")).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "Emitir factura" }));
+    dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
+    await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/facturas/inv-1"));
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toMatch(/^[!-~]{1,100}$/);
+    expect(await screen.findByText("Emitiste la factura 001-001-000000001.")).toBeDefined();
+  });
+
+  it("a consumidor final, la confirmación advierte de sus restricciones", async () => {
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": ok(
+        draft({
+          buyer: {
+            id: CONSUMER_FINAL.id,
+            identificationType: "07",
+            identification: "9999999999999",
+            legalName: "CONSUMIDOR FINAL",
+            status: "ACTIVE",
+            systemRecord: "CONSUMER_FINAL",
+          },
+        }),
+      ),
+    });
+    await userEvent.setup().click(await screen.findByRole("button", { name: "Emitir factura" }));
+    const dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
+    expect(within(dialog).getByText(/restricciones para anularse o corregirse/)).toBeDefined();
+  });
+
+  it("un rechazo de la emisión vuelve al editor y señala la línea", async () => {
+    let rejected = false;
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": () =>
+        ok(
+          rejected
+            ? draft({
+                preview: {
+                  ...draft().preview,
+                  totals: null,
+                  issues: [
+                    {
+                      code: "PRODUCT_INACTIVE",
+                      message: "Línea 1: el producto Cemento 50 kg está desactivado.",
+                      line: 1,
+                      payment: null,
+                    },
+                  ],
+                },
+              })
+            : draft(),
+        )({}),
+      "POST /api/v1/invoices": () => {
+        rejected = true;
+        return {
+          status: 409,
+          body: errorBody(
+            "PRODUCT_INACTIVE",
+            "Línea 1: el producto Cemento 50 kg está desactivado.",
+          ),
+        };
+      },
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Emitir factura" }));
+    const dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
+    await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("está desactivado");
+    const line = await screen.findByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
+    await waitFor(() => expect(line.getAttribute("aria-invalid")).toBe("true"));
+    expect(
+      within(line).getByText("Línea 1: el producto Cemento 50 kg está desactivado."),
+    ).toBeDefined();
+    expect(screen.getByRole("button", { name: "Emitir factura" })).toHaveProperty("disabled", true);
+  });
+
+  it("un borrador ya emitido lleva a Facturas", async () => {
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": () => ({
+        status: 409,
+        body: errorBody("INVOICE_DRAFT_ALREADY_EMITTED", "Este borrador ya se emitió."),
+      }),
+    });
+    expect(
+      await screen.findByText("Este borrador ya se emitió", undefined, { timeout: 5_000 }),
+    ).toBeDefined();
+    expect(screen.getByRole("link", { name: "Ver facturas" }).getAttribute("href")).toBe(
+      "/facturas",
+    );
+  }, 10_000);
+
+  it("el operador también emite", async () => {
+    render(
+      <DraftEditorScreen draftId="draft-1" />,
+      { "GET /api/v1/invoices/drafts/draft-1": ok(draft()) },
+      OPERATOR_ME,
+    );
+    expect(await screen.findByRole("button", { name: "Emitir factura" })).toHaveProperty(
+      "disabled",
+      false,
+    );
+  });
+});

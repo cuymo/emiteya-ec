@@ -7,6 +7,8 @@ import {
   Building2,
   Contact,
   FileKey,
+  FilePenLine,
+  FileText,
   Globe,
   ListOrdered,
   Package,
@@ -24,11 +26,13 @@ type Destination = { href: string; label: string; icon: LucideIcon; permission: 
 type Group = { label: string; destinations: Destination[]; placement: "main" | "bottom" };
 
 const GROUPS: Group[] = [
-  // add-parties-and-products, design D17.
+  // add-parties-and-products, design D17; add-invoice-emission, design D15.
   {
     label: "Operación",
     placement: "main",
     destinations: [
+      { href: "/facturas", label: "Facturas", icon: FileText, permission: "invoices.read" },
+      { href: "/borradores", label: "Borradores", icon: FilePenLine, permission: "invoices.draft" },
       { href: "/terceros", label: "Terceros", icon: Contact, permission: "parties.read" },
       { href: "/productos", label: "Productos", icon: Package, permission: "products.read" },
     ],

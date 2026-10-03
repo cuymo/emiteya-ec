@@ -29,7 +29,13 @@ export function SemanticToaster() {
 export { toast };
 
 export type SuccessFeedback =
-  string | { message: string; action?: { label: string; onClick: () => void } };
+  | string
+  | {
+      message: string;
+      action?: { label: string; onClick: () => void };
+      /** Una operación completada cuyo resultado pide atención, como una factura aún procesando. */
+      tone?: "success" | "warning";
+    };
 
 const GENERIC_ERROR = "No pudimos completar la operación. Intenta de nuevo.";
 
@@ -73,9 +79,11 @@ export function useMutationFeedback<TVariables, TResult>({
     onSuccess: async (result, variables) => {
       await Promise.all(invalidate.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
       const feedback = success(result, variables);
-      const { message, action } =
-        typeof feedback === "string" ? { message: feedback, action: undefined } : feedback;
-      toast.success(message, {
+      const { message, action, tone } =
+        typeof feedback === "string"
+          ? { message: feedback, action: undefined, tone: "success" as const }
+          : feedback;
+      (tone === "warning" ? toast.warning : toast.success)(message, {
         id: message,
         ...(action ? { action, duration: 10_000 } : {}),
       });

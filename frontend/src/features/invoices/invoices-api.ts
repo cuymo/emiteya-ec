@@ -1,0 +1,228 @@
+// Datos de Borradores y Facturas (add-invoice-emission, design D13 y D15): borradores con su vista
+// previa del servidor, emisión con una Idempotency-Key estable por solicitud, facturas desde su
+// snapshot y reintento de la firma. Toda mutación pasa por useMutationFeedback.
+"use client";
+
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import {
+  IDEMPOTENCY_KEY_HEADER,
+  draftListMetaSchema,
+  draftSummaryViewSchema,
+  draftViewSchema,
+  invoiceListMetaSchema,
+  invoiceSummaryViewSchema,
+  invoiceViewSchema,
+  partyListMetaSchema,
+  partyViewSchema,
+  productListMetaSchema,
+  productViewSchema,
+  type CreateDraftInput,
+  type DraftView,
+  type InvoiceState,
+  type InvoiceView,
+  type PartyView,
+  type ProductView,
+  type UpdateDraftInput,
+} from "@facturador/contracts";
+import { z } from "zod";
+import type { EntityPage, EntityPickerQuery } from "@/components/entity-picker-dialog";
+import { useMutationFeedback, type SuccessFeedback } from "@/components/feedback";
+import { apiFetch, apiFetchPage } from "@/lib/api";
+
+export const DRAFTS_KEY = ["invoice-drafts"] as const;
+export const INVOICES_KEY = ["invoices"] as const;
+
+const draftPath = (id: string) => `/invoices/drafts/${encodeURIComponent(id)}`;
+const invoicePath = (id: string) => `/invoices/${encodeURIComponent(id)}`;
+
+export function useDrafts(query: { page: number; pageSize: number }, enabled: boolean) {
+  return useQuery({
+    queryKey: [...DRAFTS_KEY, "list", query],
+    enabled,
+    placeholderData: keepPreviousData,
+    queryFn: ({ signal }) =>
+      apiFetchPage(`/invoices/drafts?page=${query.page}&pageSize=${query.pageSize}`, {
+        schema: z.array(draftSummaryViewSchema),
+        meta: draftListMetaSchema,
+        signal,
+      }),
+  });
+}
+
+export function useDraft(id: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: [...DRAFTS_KEY, "detail", id],
+    enabled: enabled && id !== null,
+    queryFn: ({ signal }) => apiFetch(draftPath(id!), { schema: draftViewSchema, signal }),
+  });
+}
+
+export function useSaveDraft(options: {
+  onSuccess: (draft: DraftView) => void;
+  onError: (error: unknown) => boolean;
+}) {
+  return useMutationFeedback({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string | null;
+      input: CreateDraftInput | UpdateDraftInput;
+    }) =>
+      id
+        ? apiFetch(draftPath(id), { method: "PUT", json: input, schema: draftViewSchema })
+        : apiFetch("/invoices/drafts", { method: "POST", json: input, schema: draftViewSchema }),
+    success: () => "Guardaste el borrador.",
+    invalidate: [DRAFTS_KEY],
+    onSuccess: options.onSuccess,
+    onError: options.onError,
+  });
+}
+
+export function useDeleteDraft(options: { onSuccess?: () => void } = {}) {
+  return useMutationFeedback({
+    mutationFn: (id: string) => apiFetch(draftPath(id), { method: "DELETE" }),
+    success: () => "Eliminaste el borrador.",
+    invalidate: [DRAFTS_KEY],
+    ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
+  });
+}
+
+/** Aviso de una factura tras emitirla o reintentar su firma. */
+function invoiceFeedback(invoice: InvoiceView, signedMessage: string): SuccessFeedback {
+  if (invoice.state === "SIGNED") return signedMessage;
+  return {
+    tone: "warning",
+    message: invoice.diagnostic
+      ? `La factura ${invoice.documentNumber} quedó procesando: ${invoice.diagnostic.message}`
+      : `La factura ${invoice.documentNumber} quedó procesando.`,
+  };
+}
+
+/** Emitir: la Idempotency-Key la genera la confirmación y se repite en los reintentos (design D8). */
+export function useEmitInvoice(options: {
+  onSuccess: (invoice: InvoiceView) => void;
+  onError: (error: unknown) => boolean;
+}) {
+  return useMutationFeedback({
+    mutationFn: ({
+      draft,
+      idempotencyKey,
+    }: {
+      draft: { id: string; version: number };
+      idempotencyKey: string;
+    }) =>
+      apiFetch("/invoices", {
+        method: "POST",
+        headers: { [IDEMPOTENCY_KEY_HEADER]: idempotencyKey },
+        json: { draftId: draft.id, expectedVersion: draft.version },
+        schema: invoiceViewSchema,
+      }),
+    success: (invoice) =>
+      invoiceFeedback(invoice, `Emitiste la factura ${invoice.documentNumber}.`),
+    invalidate: [DRAFTS_KEY, INVOICES_KEY],
+    onSuccess: options.onSuccess,
+    onError: options.onError,
+  });
+}
+
+export type InvoicesQuery = {
+  search: string;
+  state: InvoiceState | undefined;
+  page: number;
+  pageSize: number;
+};
+
+export function useInvoices(query: InvoicesQuery, enabled: boolean) {
+  return useQuery({
+    queryKey: [...INVOICES_KEY, "list", query],
+    enabled,
+    placeholderData: keepPreviousData,
+    queryFn: ({ signal }) => {
+      const params = new URLSearchParams({
+        page: String(query.page),
+        pageSize: String(query.pageSize),
+      });
+      if (query.search) params.set("search", query.search);
+      if (query.state) params.set("state", query.state);
+      return apiFetchPage(`/invoices?${params.toString()}`, {
+        schema: z.array(invoiceSummaryViewSchema),
+        meta: invoiceListMetaSchema,
+        signal,
+      });
+    },
+  });
+}
+
+export function useInvoice(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...INVOICES_KEY, "detail", id],
+    enabled,
+    queryFn: ({ signal }) => apiFetch(invoicePath(id), { schema: invoiceViewSchema, signal }),
+  });
+}
+
+export function useRetrySigning() {
+  return useMutationFeedback({
+    mutationFn: (id: string) =>
+      apiFetch(`${invoicePath(id)}/signing-attempts`, {
+        method: "POST",
+        schema: invoiceViewSchema,
+      }),
+    success: (invoice) =>
+      invoiceFeedback(invoice, `Firmaste la factura ${invoice.documentNumber}.`),
+    invalidate: [INVOICES_KEY],
+  });
+}
+
+/** Compradores para el selector: terceros activos con rol de cliente. */
+export async function fetchCustomers({
+  search,
+  page,
+  pageSize,
+  signal,
+}: EntityPickerQuery): Promise<EntityPage<PartyView>> {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+    status: "ACTIVE",
+    role: "CUSTOMER",
+  });
+  if (search) params.set("search", search);
+  const { data, meta } = await apiFetchPage(`/parties?${params.toString()}`, {
+    schema: z.array(partyViewSchema),
+    meta: partyListMetaSchema,
+    signal,
+  });
+  return { items: data, total: meta.total };
+}
+
+/** El consumidor final de la empresa, el registro del sistema con la identidad de la política. */
+export async function fetchConsumerFinal(): Promise<PartyView | null> {
+  const { data } = await apiFetchPage("/parties?search=9999999999999&status=ACTIVE&pageSize=10", {
+    schema: z.array(partyViewSchema),
+    meta: partyListMetaSchema,
+  });
+  return data.find((party) => party.systemRecord === "CONSUMER_FINAL") ?? null;
+}
+
+/** Productos activos para el selector, por código o nombre. */
+export async function fetchProducts({
+  search,
+  page,
+  pageSize,
+  signal,
+}: EntityPickerQuery): Promise<EntityPage<ProductView>> {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+    status: "ACTIVE",
+  });
+  if (search) params.set("search", search);
+  const { data, meta } = await apiFetchPage(`/products?${params.toString()}`, {
+    schema: z.array(productViewSchema),
+    meta: productListMetaSchema,
+    signal,
+  });
+  return { items: data, total: meta.total };
+}
