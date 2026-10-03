@@ -71,6 +71,24 @@ export function createCertificateRepository(db: DbClient): CertificateRepository
       return row ? toStored(row) : null;
     },
 
+    async findSealedSecret(companyId, certificateId) {
+      const row = await db.signingCertificateSecret.findFirst({
+        where: { companyId, certificateId },
+      });
+      if (!row) return null;
+      return {
+        formatVersion: row.formatVersion,
+        keyVersion: row.keyVersion,
+        keyCheck: Buffer.from(row.keyCheck),
+        wrappedKey: Buffer.from(row.wrappedKey),
+        wrappedKeyNonce: Buffer.from(row.wrappedKeyNonce),
+        p12Ciphertext: Buffer.from(row.p12Ciphertext),
+        p12Nonce: Buffer.from(row.p12Nonce),
+        passwordCiphertext: Buffer.from(row.passwordCiphertext),
+        passwordNonce: Buffer.from(row.passwordNonce),
+      };
+    },
+
     async listActive() {
       const rows = await db.signingCertificate.findMany({
         where: { status: "ACTIVE" },

@@ -6,6 +6,7 @@ import type { DbClient } from "../../../platform/db/database.ts";
 import type { CryptoWorkerPool } from "../../../platform/workers/crypto-worker-pool.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import { activeCertificateReader } from "../application/active-certificate.ts";
+import { createDocumentSigning } from "../application/document-signing.ts";
 import { createSigningCertificates } from "../application/signing-certificate.ts";
 import { createCertificateInspector } from "./certificate-inspector.ts";
 import { createCompanyRucReader } from "./company-ruc.ts";
@@ -14,6 +15,7 @@ import { signingCertificateRouter } from "./http/signing-certificate-router.ts";
 import { registerSigningMetrics } from "./metrics.ts";
 import { createCertificateRepository } from "./prisma-certificates.ts";
 import { createSigningUnitOfWork } from "./unit-of-work.ts";
+import { createXmlSigningTask } from "./xml-signing-task.ts";
 
 export { certificateTasksEntry } from "./certificate-inspector.ts";
 export { isSigningCertificateUpload } from "./http/signing-certificate-router.ts";
@@ -52,6 +54,13 @@ export function signingModule(options: SigningModuleOptions) {
     routers: [signingCertificateRouter(service, { maxBytes: options.maxBytes })],
     readiness: service.readiness,
     service,
+    /** Firma de comprobantes con la firma vigente (add-invoice-emission, design D9). */
+    documents: createDocumentSigning({
+      certificates: createCertificateRepository(options.prisma),
+      vault,
+      task: createXmlSigningTask(options.pool),
+      now,
+    }),
     /** Firma vigente sobre un cliente, también en una transacción ajena (add-invoice-emission, D1). */
     reads: (db: DbClient) =>
       activeCertificateReader({ certificates: createCertificateRepository(db), vault, now }),

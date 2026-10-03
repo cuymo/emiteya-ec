@@ -1,5 +1,6 @@
 // Puertos de la firma electrónica (add-signing-certificate, design D1, D2 y D5). La infraestructura
 // los implementa; los casos de uso solo ven datos del dominio y material secreto opaco.
+import type { DocumentType } from "@facturador/contracts";
 import type { AuditLog } from "../../audit/application/audit-log.ts";
 import type { SigningMaterial } from "../domain/secret.ts";
 
@@ -106,6 +107,8 @@ export interface CertificateRepository {
   /** Lock advisory de la firma de la empresa hasta el fin de la transacción (design D7). */
   lock(companyId: string): Promise<void>;
   findActive(companyId: string): Promise<StoredCertificate | null>;
+  /** Secreto sellado completo de una firma de la empresa; solo lo lee la firma de comprobantes. */
+  findSealedSecret(companyId: string, certificateId: string): Promise<SealedSecret | null>;
   /** Firmas vigentes de todas las empresas, para métricas y la comprobación al arrancar. */
   listActive(): Promise<StoredCertificate[]>;
   insert(certificate: NewCertificate): Promise<void>;
@@ -127,4 +130,19 @@ export type SigningScope = { certificates: CertificateRepository; audit: AuditLo
 
 export interface SigningUnitOfWork {
   run<T>(work: (scope: SigningScope) => Promise<T>): Promise<T>;
+}
+
+/** Resultado de la tarea `sign-xml`: el XML firmado o un código, nunca un mensaje. */
+export type XmlSigningOutcome = { ok: true; xml: string } | { ok: false; code: string };
+
+/** Firma de un comprobante en el pool criptográfico (add-invoice-emission, design D9). */
+export interface XmlSigningTask {
+  sign(input: {
+    xml: string;
+    documentType: DocumentType;
+    /** Se transfiere al worker: el llamador pierde el acceso a estos bytes. */
+    p12: Buffer;
+    password: string;
+    fingerprint: string;
+  }): Promise<XmlSigningOutcome>;
 }

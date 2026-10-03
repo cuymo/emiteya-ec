@@ -10,6 +10,12 @@ import {
 } from "facturacion-electronica-ec";
 import { XmlSignerError, type XmlSigner, type XmlSignerErrorCode } from "../application/ports.ts";
 
+/**
+ * Versiones del firmador que registra el artefacto firmado (add-invoice-emission, design D9). Una
+ * prueba las compara con las dependencias exactas de backend/package.json.
+ */
+export const XML_SIGNER_VERSION = "facturacion-electronica-ec@1.0.1 (ec-sri-invoice-signer@1.8.2)";
+
 /** Traduce el error del firmador a un código; el mensaje original nunca sale del adaptador. */
 function classify(error: unknown): XmlSignerErrorCode {
   const name = error instanceof Error ? error.name : "";

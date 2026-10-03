@@ -81,7 +81,7 @@
   - Escapa el texto, rechaza caracteres no admitidos en XML 1.0 y escribe solo los opcionales que corresponden, incluidos `agenteRetencion` y `contribuyenteRimpe`.
 
   Verificar con sus pruebas: escape, caracteres inválidos, opcionales, versión no soportada, snapshot congelado y prueba de fuente sin `number`, reloj, entorno, archivos, base de datos ni la librería, con el XML validado contra el XSD
-- [ ] 6.3 Añadir al pool criptográfico la tarea `sign-xml` y el servicio de firma de documentos de `signing` (design D9).
+- [x] 6.3 Añadir al pool criptográfico la tarea `sign-xml` y el servicio de firma de documentos de `signing` (design D9).
   - Lee el certificado activo utilizable y su secreto sellado, abre la custodia y transfiere los bytes.
   - En el worker, firma y comprueba la huella del certificado embebido; después pone los bytes a cero.
   - Traduce los errores a los códigos de D10.
