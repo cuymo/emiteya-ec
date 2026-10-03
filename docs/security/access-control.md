@@ -122,7 +122,7 @@ admin de Better Auth no concede nada. Toda celda "No" responde `403` en el servi
 usuario de otra empresa responde `404`.
 
 Permisos implementados (cambios `add-user-access`, design D4; `add-taxpayer-setup`, design D10;
-y `add-fiscal-numbering`, design D10). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
+`add-fiscal-numbering`, design D10; `add-signing-certificate`, design D10; y `add-fiscal-catalogs`, design D12). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
 denegado por defecto;
 `backend/test/identity/access-policy-doc.test.ts` comprueba que esta tabla coincide con él:
 
@@ -147,6 +147,8 @@ denegado por defecto;
 | `certificate.read` | Consultar la firma electrónica vigente: titular, emisor, serie, vigencia y RUC | Sí | No |
 | `certificate.manage` | Cargar o reemplazar la firma electrónica y fijar la anticipación de su aviso de vencimiento | Sí | No |
 | `certificateValidity.read` | Consultar solo la vigencia de la firma (utilizable, por vencer, vencida) | Sí | Sí |
+| `fiscalCatalogs.read` | Consultar los catálogos fiscales oficiales, la habilitación de la empresa, la política de consumidor final, el registro de esquemas y la matriz de casos especiales | Sí | Sí |
+| `fiscalCatalogs.manage` | Habilitar o deshabilitar entradas de catálogos fiscales para la empresa | Sí | No |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).

@@ -21,7 +21,9 @@ export type Permission =
   | "sequences.adjust"
   | "certificate.read"
   | "certificate.manage"
-  | "certificateValidity.read";
+  | "certificateValidity.read"
+  | "fiscalCatalogs.read"
+  | "fiscalCatalogs.manage";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -44,6 +46,8 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "certificate.read",
     "certificate.manage",
     "certificateValidity.read",
+    "fiscalCatalogs.read",
+    "fiscalCatalogs.manage",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",
@@ -52,6 +56,7 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "establishments.read",
     "readiness.read",
     "certificateValidity.read",
+    "fiscalCatalogs.read",
   ]),
 };
 

@@ -30,6 +30,8 @@ export const AUDIT_ACTIONS = [
   "signing_certificate.loaded",
   "signing_certificate.replaced",
   "signing_certificate.expiry_alert_changed",
+  "fiscal_catalog.entry_enabled",
+  "fiscal_catalog.entry_disabled",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

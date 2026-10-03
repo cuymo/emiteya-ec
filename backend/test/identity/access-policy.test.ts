@@ -30,6 +30,9 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "certificate.read": { ADMIN: true, OPERATOR: false },
   "certificate.manage": { ADMIN: true, OPERATOR: false },
   "certificateValidity.read": { ADMIN: true, OPERATOR: true },
+  // add-fiscal-catalogs, design D12.
+  "fiscalCatalogs.read": { ADMIN: true, OPERATOR: true },
+  "fiscalCatalogs.manage": { ADMIN: true, OPERATOR: false },
 };
 
 describe("política de autorización central", () => {

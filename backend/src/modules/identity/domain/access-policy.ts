@@ -22,6 +22,8 @@ export const PERMISSIONS = [
   "certificate.read",
   "certificate.manage",
   "certificateValidity.read",
+  "fiscalCatalogs.read",
+  "fiscalCatalogs.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -47,6 +49,9 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "certificate.read",
     "certificate.manage",
     "certificateValidity.read",
+    // add-fiscal-catalogs, design D12.
+    "fiscalCatalogs.read",
+    "fiscalCatalogs.manage",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -58,6 +63,8 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "readiness.read",
     // add-signing-certificate, design D10: solo la vigencia de la firma.
     "certificateValidity.read",
+    // add-fiscal-catalogs, design D12: consulta los catálogos; no cambia la habilitación.
+    "fiscalCatalogs.read",
   ]),
 };
 
