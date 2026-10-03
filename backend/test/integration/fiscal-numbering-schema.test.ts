@@ -148,7 +148,7 @@ describe("invariantes de la numeración fiscal en la base de datos", () => {
     for (const statement of [
       `UPDATE ${table("fiscal_sequence_reservation")} SET "sequential" = 9`,
       `DELETE FROM ${table("fiscal_sequence_reservation")}`,
-      `TRUNCATE ${table("fiscal_sequence_reservation")}`,
+      `TRUNCATE ${table("fiscal_sequence_reservation")} CASCADE`,
     ]) {
       await expect(prisma.$executeRawUnsafe(statement), statement).rejects.toThrow(/no admite/);
     }
