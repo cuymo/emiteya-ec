@@ -48,9 +48,10 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 2   | `add-taxpayer-setup`       | `taxpayer-setup`                                      | 1              | AC-01 parcial |
 | 3   | `add-fiscal-numbering`     | `fiscal-numbering`                                    | 2              | AC-04         |
 | 4   | `add-signing-certificate`  | `signing-certificate`                                 | 2              | AC-01         |
-| 5   | `add-business-catalogs`    | `fiscal-catalogs`, `parties`, `products`              | 1              | —             |
+| 5a  | `add-fiscal-catalogs`      | `fiscal-catalogs`: catálogos oficiales versionados, política decimal común, política de consumidor final, registro de esquemas y matriz de casos especiales | 1 | —  |
+| 5b  | `add-parties-and-products` | `parties`, `products`: consumen `fiscal-catalogs` como dependencia canónica | 5a | — |
 | —   | Spikes técnicos, sin OpenSpec | Validación de `facturacion-electronica-ec` para XSD (S-2), firma y SOAP con autorización en Pruebas (S-3), y PDF (S-4) (Q-34, ADR 0018) | 0 | ADRs de dependencias |
-| 6   | `add-invoice-emission`     | `document-emission`, `invoices`                       | 3, 4, 5, spike | AC-05         |
+| 6   | `add-invoice-emission`     | `document-emission`, `invoices`                       | 3, 4, 5a, 5b, spike | AC-05    |
 | 7   | `add-sri-transmission`     | `sri-transmission`                                    | 6              | AC-02, AC-06  |
 | 8   | `add-document-archive`     | `document-archive`                                    | 7              | AC-07         |
 | 9   | `add-minimal-inventory`    | `inventory`                                           | 7              | AC-08         |
@@ -61,6 +62,8 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 14  | `add-purchase-settlements` | `purchase-settlements`                                | 7              | AC-03         |
 | 15  | `add-reports-export`       | `reports`                                             | 8              | AC-09         |
 | 16  | `add-data-portability`     | `data-portability`                                    | 8              | AC-10         |
+
+El cambio 5 se propuso como `add-business-catalogs` y, antes de implementarse, se dividió en 5a y 5b (2026-10-02): `catalogs` no depende de terceros ni productos, y cada parte queda revisable por separado. La propuesta original queda solo en el historial de git.
 
 Estrategia técnica (ADR 0018): los cambios 4 a 14 reutilizan `facturacion-electronica-ec`, detrás de puertos propios, para los builders XML, la clave de acceso, la validación XSD, la firma XAdES-BES y el transporte SOAP, en lugar de reimplementarlos. La orquestación, la numeración, la persistencia, los estados, la idempotencia, los reintentos y la reconciliación siguen siendo de la aplicación. Ningún cambio está implementado por adoptar la librería.
 

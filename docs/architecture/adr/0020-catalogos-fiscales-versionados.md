@@ -28,4 +28,4 @@ vigencia y fuente; faltaba decidir quién los mantiene y qué puede hacer cada e
 - Una actualización normativa es un cambio de datos con su fuente, pruebas y release, no una edición en producción ni una reescritura de código.
 - Una instalación no puede corregir por sí misma un catálogo desactualizado: necesita una versión nueva del producto. Es el precio de no permitir códigos inventados.
 - Cada dataset necesita una fuente oficial citable; transcribirla y revisarla es trabajo de cada release (CTX §54).
-- El cambio `add-business-catalogs` define el formato de los datasets, el mecanismo de carga, el modelo de vigencia y qué entradas admiten habilitación por empresa.
+- El cambio `add-fiscal-catalogs` define el formato de los datasets, el mecanismo de carga, el modelo de vigencia y qué entradas admiten habilitación por empresa.

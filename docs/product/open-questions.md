@@ -30,7 +30,8 @@ documento de arquitectura que corresponda, marca aquí el estado y no reutilices
 | 2 `add-taxpayer-setup`           | Ninguna. Q-23 y Q-31 resueltas, y Q-42 resuelta con el ADR 0017 (2026-10-02)  |
 | 3 `add-fiscal-numbering`         | Ninguna. Q-02 resuelta con la enmienda del ADR 0003 (2026-10-02)              |
 | 4 `add-signing-certificate`      | Ninguna. Q-17 resuelta y ADR 0011 aceptado (2026-10-02); `/opsx:apply` requiere el spike S-6 |
-| 5 `add-business-catalogs`        | Ninguna. Q-25 resuelta con el ADR 0020 y Q-38 con la enmienda del ADR 0014 (2026-10-02) |
+| 5a `add-fiscal-catalogs`         | Ninguna. Q-25 resuelta con el ADR 0020 y Q-38 con la enmienda del ADR 0014 (2026-10-02) |
+| 5b `add-parties-and-products`    | Ninguna; requiere `add-fiscal-catalogs` aplicado                              |
 | 6 `add-invoice-emission`         | Q-08, Q-14, Q-29, Q-30, Q-34 (XML, XSD, firma), Q-35, Q-39 y ADR 0010          |
 | 7 `add-sri-transmission`         | Q-07, Q-16, Q-34 (SOAP), ADR 0012                                             |
 | 8 `add-document-archive`         | Q-24, Q-34 (PDF)                                                              |

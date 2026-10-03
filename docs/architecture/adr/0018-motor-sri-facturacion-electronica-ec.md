@@ -93,7 +93,7 @@ siguiente.
 
 - **Sin `rollback`.** Si alguna vez hiciera falta un `ISequenceProvider`, no implementará `rollback`: una prueba de contrato lo comprueba. Además, devolverá el secuencial ya reservado por nuestra transacción, sin reservar otro.
 
-- **Fuente normativa.** Es el material oficial versionado por el proyecto: los XSD en `docs/product/sri-xsd` y los catálogos de `add-business-catalogs`. Una prueba compara los hashes de los XSD que trae la librería con los nuestros y falla si divergen. Hoy coinciden los seis.
+- **Fuente normativa.** Es el material oficial versionado por el proyecto: los XSD en `docs/product/sri-xsd` y los catálogos de `add-fiscal-catalogs` (ADR 0020). Una prueba compara los hashes de los XSD que trae la librería con los nuestros y falla si divergen. Hoy coinciden los seis.
 
 - **Custodia.** La librería nunca recibe el secreto cifrado. La custodia lo descifra solo para la operación; el `Buffer` y la contraseña viven en memoria durante `sign` y se liberan después. No hay persistencia adicional ni hooks o logs con XML o secretos.
 
