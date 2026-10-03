@@ -164,6 +164,39 @@ Reglas que el cambio 7 conserva:
 - `NOT_AUTHORIZED` es terminal hasta resolver Q-07; reemitir crea un comprobante nuevo.
 - La corrección de un `RETURNED` (BR-28) conserva la clave y el secuencial, genera un XML firmado nuevo y conserva los artefactos anteriores. Su diseño es del cambio 7.
 
+## Decisiones para el diseño de `add-invoice-emission`
+
+Decididas el 2026-10-03; el design del cambio las concreta.
+
+- **Borradores.** Un borrador no pertenece a la máquina fiscal `RESERVED` → `SIGNED`.
+  - Antes de reservar puede existir un documento editable: `DRAFT`, después la acción explícita de emitir, las validaciones completas y `RESERVED`.
+  - `RESERVED` nunca es editable.
+  - Si ERS RF-010 exige borradores en el MVP, el proposal los incluye como recurso editable previo a la emisión. Si eso hace crecer demasiado el cambio, se separan del alcance de forma explícita.
+- **Fallo entre `RESERVED` y `SIGNED`.** No hay estado fiscal `ERROR`: si fallan el XML, el XSD o la firma, el comprobante sigue en `RESERVED`.
+  - Se guarda aparte del estado fiscal la información operativa del último intento: etapa, código de error, fecha y número de intentos cuando corresponda. Nunca secretos ni el XML inválido, salvo lo imprescindible.
+  - Un reintento autorizado reutiliza el comprobante, el snapshot, el secuencial y la clave de acceso, y vuelve a intentar llegar a `SIGNED`. Nunca crea otra factura ni reserva otro número.
+  - Un fallo determinista que persiste es visible y accionable, y no provoca un bucle automático de reintentos.
+- **Builder de la factura (Q-44).** Es específico de la factura, no un framework para los seis comprobantes:
+  - recibe solo el snapshot fiscal inmutable, con los decimales ya materializados como texto exacto;
+  - escribe el orden del XSD con escape seguro y solo los opcionales que corresponden, incluidos `agenteRetencion` y `contribuyenteRimpe`;
+  - produce XML UTF-8 determinista, sin datos ajenos al comprobante y sin leer base de datos, reloj, empresa, catálogos ni configuración.
+
+  El snapshot pasa por el builder, el XML exacto por el validador XSD y después por el firmador.
+- **Aritmética fiscal.** Se centraliza en primitivas exactas de `platform/decimal` y en funciones de dominio explícitas y probadas para cada concepto:
+  - subtotal de línea;
+  - descuento;
+  - base imponible;
+  - impuesto;
+  - totales;
+  - materialización HALF_UP.
+
+  Ningún handler ni builder opera con `decimal.js` directamente, y el builder no calcula importes.
+- **XSD en el despliegue.** Los XSD canónicos forman parte de la imagen, y el registro incluye todos los archivos necesarios, también `xmldsig-core-schema.xsd`, con fuente, revisión, SHA-256 y ruta lógica.
+  - No hay descargas en tiempo de ejecución ni caída a XSD de terceros: un archivo ausente o con otro hash falla cerrada.
+  - Una prueba del artefacto de build demuestra que los esquemas están presentes (ADR 0021).
+- **Concurrencia XSD.** La validación usa concurrencia acotada, nunca un worker por solicitud sin límite. El adaptador ya acota la concurrencia, la cola y el plazo, con `VALIDATOR_BUSY` y `VALIDATOR_TIMEOUT` (ADR 0021). El design fija los valores y el comportamiento ante saturación; Q-26 dirá si hay que ajustarlos.
+- **Vector oficial de la clave de acceso.** No bloquea el proposal: el algoritmo coincide con CTX §8.3, una prueba independiente comprueba el dígito y S-3 offline la composición completa. Obtener y verificar el vector oficial de la ficha es evidencia adicional antes de cerrar el cambio, o con la parte online de S-3; no se inventa.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna
@@ -255,13 +288,13 @@ Con fixtures sintéticos ningún proveedor figura aquí; Security Data está cub
 `facturacion-electronica-ec` aporta las piezas del protocolo detrás de puertos propios. La
 orquestación de este documento sigue siendo de la aplicación.
 
-- **Qué se usa:** `generateClaveAcceso` detrás de `AccessKeys`, `EcSriSigner` detrás de `XmlSigner` y `SriClient` como transporte. El builder de la factura está pendiente de Q-44. La validación XSD usa `xmllint-wasm` directamente detrás de `XsdValidator`, no `validateXmlAgainstXsd` (ADR 0021).
+- **Qué se usa:** `generateClaveAcceso` detrás de `AccessKeys`, `EcSriSigner` detrás de `XmlSigner` y `SriClient` como transporte, cada uno tras su prueba de contrato. El XML de la factura lo escribe un builder propio (Q-44), y la validación XSD usa `xmllint-wasm` directamente detrás de `XsdValidator`, no `validateXmlAgainstXsd` (ADR 0021). La lista completa de lo propio, lo reutilizado y lo que no se usa está en el ADR 0018.
 - **Qué no se usa:** `emitir*`, `ISequenceProvider` ni `EmissionHooks`.
 - **Secuencial.** Lo reserva siempre `reserveSequentialIn` en el paso 2. Ningún adaptador implementa `rollback` ni pide otro secuencial:
   - un `DEVUELTA` nunca devuelve el número al contador (BR-08);
   - el error 70 se trata con la misma clave, nunca con un secuencial nuevo.
 - **Código numérico.** Lo genera la aplicación con `crypto.randomInt`, porque `generateCodigoNumerico` de la librería usa `Math.random` en ESM.
-- **Importes.** El motor decimal calcula y materializa; el builder solo escribe. El de la librería escribe desde `number` y no conserva valores válidos de 17 o 18 dígitos (S-3, Q-44). Las pruebas de contrato comparan el XML con los importes esperados y con los XML de referencia de S-3.
+- **Importes.** La aritmética fiscal calcula y materializa; el builder propio solo escribe el texto exacto del snapshot, sin `number`. El de la librería escribe desde `number` y no conserva valores válidos de 17 o 18 dígitos (S-3, Q-44). Las pruebas comparan el XML con los importes esperados y con los XML de referencia de S-3.
 - **Respuestas del SRI.** El `fetch` inyectado en `SriClient` captura la respuesta original, que se persiste antes de actuar. La clasificación de la tabla de abajo se hace sobre esa respuesta, porque `SriClient`:
   - toma una recepción sin estado como `DEVUELTA`;
   - toma una autorización sin bloque como `NO AUTORIZADO`;

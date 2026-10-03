@@ -51,6 +51,7 @@ y cada una nombra el tipo XSD de origen. Una prueba compara cada especificación
   - Se guarda la forma canónica (`toDatabase`), así que la escala guardada es la del valor.
   - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`) y `consumer_final_policy.max_amount` (`importe`).
 - **Conversión:** con el `Decimal` de Prisma siempre por texto.
+- **Aritmética fiscal:** centralizada en primitivas exactas de `platform/decimal` (suma, diferencia, producto, porcentaje y materialización) y en funciones de dominio para cada concepto de la factura: subtotal de línea, descuento, base imponible, impuesto y totales. Ningún handler ni builder opera con `decimal.js` directamente; el builder XML no calcula. Llega con `add-invoice-emission`.
 - **Redondeo (Q-14):** política del producto, no regla textual del SRI.
   - Los cálculos internos son exactos, sin redondeos intermedios.
   - Un campo fiscal se redondea HALF_UP solo al materializarlo a la escala de su XSD.

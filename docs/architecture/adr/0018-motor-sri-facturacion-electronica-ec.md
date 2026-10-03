@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted el 2026-10-02. Enmendado el 2026-10-03 con los spikes S-2 y S-3 offline: la validación XSD no usa el envoltorio de la librería (ADR 0021), y el builder de la factura queda pendiente de Q-44.
+Accepted el 2026-10-02. Enmendado el 2026-10-03 con los spikes S-2 y S-3 offline: la validación XSD no usa el envoltorio de la librería (ADR 0021), y la factura usa un builder propio (Q-44). El resto del ADR sigue vigente.
 
 ## Context
 
@@ -77,7 +77,7 @@ siguiente.
   - la clasificación de las respuestas del SRI (`fiscal-emission.md`).
 
 - **Se usa solo la API de bajo nivel:**
-  - los builders, con el `schemaRegistry` configurado desde nuestro registro (ADR 0008);
+  - los builders, con el `schemaRegistry` configurado desde nuestro registro (ADR 0008); para la factura, sustituido por el builder propio (Q-44, enmienda abajo);
   - `generateClaveAcceso`, con un código numérico generado por nosotros con `crypto.randomInt`;
   - para el XSD, `xmllint-wasm` directo detrás de `XsdValidator`, no `validateXmlAgainstXsd` (ADR 0021 y enmienda abajo);
   - `EcSriSigner`, a través de `XmlSigner`;
@@ -149,5 +149,30 @@ siguiente.
   - **Importes como `number`.** Recibe los importes como `number` y los escribe con `toFixed`. Un valor válido de 17 o 18 dígitos de `cantidad` o `precioUnitario` no sobrevive el viaje: `123456789012.123456` se escribe como `123456789012.123459`. El adaptador de evaluación falla cerrada (`AMOUNT_NOT_REPRESENTABLE`), lo que rechazaría documentos válidos según el XSD y la política decimal (Q-43). Por eso, "el adaptador formatea importes ya redondeados" no basta para todo el dominio.
   - **Campos del emisor.** `infoTributaria` no puede llevar `agenteRetencion` ni `contribuyenteRimpe`, que el XSD define. Las reglas del emisor de los anexos 21 y 22 (ADR 0014) no se pueden expresar.
 
-  La estrategia del builder queda en Q-44; las demás piezas de este ADR no cambian.
+  Q-44 lo resolvió con un builder propio (enmienda siguiente).
+
+## Enmienda del 2026-10-03: builder propio de la factura (Q-44)
+
+`add-invoice-emission` implementa su propio `InvoiceXmlBuilder` detrás del puerto definido. Para la
+factura, cada capacidad queda así:
+
+- **Propio:**
+  - el snapshot fiscal inmutable;
+  - la aritmética fiscal y la materialización decimal HALF_UP (Q-14);
+  - el builder XML, específico de la factura y función pura del snapshot;
+  - la validación XSD (ADR 0021).
+- **Se reutiliza tras pasar su prueba de contrato:**
+  - `generateClaveAcceso`, mientras siga compatible detrás de `AccessKeys`;
+  - `EcSriSigner`, detrás de `XmlSigner`;
+  - `SriClient` como transporte en `add-sri-transmission`, con las compensaciones de este ADR.
+- **No se usa:**
+  - `FacturacionElectronicaEC` ni los métodos `emitir*`;
+  - `buildFacturaXml` de la versión 1.0.1;
+  - `generateCodigoNumerico`;
+  - `validateXmlAgainstXsd` ni `registerXsdSearchPath`;
+  - `ISequenceProvider` ni ningún `rollback` del secuencial.
+
+No se hace fork de la librería como dependencia del producto. Una versión que acepte importes como
+texto decimal y escriba los campos del emisor sería una oportunidad de reevaluar el builder con las
+pruebas de contrato y los XML de referencia de S-3, no una dependencia para continuar.
 
