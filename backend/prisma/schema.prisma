@@ -16,26 +16,27 @@ datasource db {
 }
 
 model User {
-  id                    String                      @id
-  name                  String
-  email                 String
-  emailVerified         Boolean                     @default(false)
-  image                 String?
-  createdAt             DateTime                    @default(now())
-  updatedAt             DateTime                    @updatedAt
-  role                  String?
-  banned                Boolean?                    @default(false)
-  banReason             String?
-  banExpires            DateTime?
-  sessions              Session[]
-  accounts              Account[]
-  members               Member[]
-  invitations           Invitation[]
-  auditActions          AuditEvent[]                @relation("AuditActor")
-  auditTargets          AuditEvent[]                @relation("AuditTarget")
-  configVersionsCreated CompanyConfigVersion[]      @relation("ConfigVersionCreator")
-  configAssetsCreated   ConfigurationAsset[]        @relation("ConfigAssetCreator")
-  sequenceReservations  FiscalSequenceReservation[] @relation("SequenceReserver")
+  id                          String                      @id
+  name                        String
+  email                       String
+  emailVerified               Boolean                     @default(false)
+  image                       String?
+  createdAt                   DateTime                    @default(now())
+  updatedAt                   DateTime                    @updatedAt
+  role                        String?
+  banned                      Boolean?                    @default(false)
+  banReason                   String?
+  banExpires                  DateTime?
+  sessions                    Session[]
+  accounts                    Account[]
+  members                     Member[]
+  invitations                 Invitation[]
+  auditActions                AuditEvent[]                @relation("AuditActor")
+  auditTargets                AuditEvent[]                @relation("AuditTarget")
+  configVersionsCreated       CompanyConfigVersion[]      @relation("ConfigVersionCreator")
+  configAssetsCreated         ConfigurationAsset[]        @relation("ConfigAssetCreator")
+  sequenceReservations        FiscalSequenceReservation[] @relation("SequenceReserver")
+  signingCertificatesUploaded SigningCertificate[]        @relation("SigningCertificateUploader")
 
   @@unique([email])
   @@map("user")
@@ -101,12 +102,14 @@ model Organization {
   members     Member[]
   invitations Invitation[]
 
-  auditEvents     AuditEvent[]
-  companyConfig   CompanyConfig?
-  configVersions  CompanyConfigVersion[]
-  configAssets    ConfigurationAsset[]
-  establishments  Establishment[]
-  fiscalSequences FiscalSequence[]
+  auditEvents                AuditEvent[]
+  companyConfig              CompanyConfig?
+  configVersions             CompanyConfigVersion[]
+  configAssets               ConfigurationAsset[]
+  establishments             Establishment[]
+  fiscalSequences            FiscalSequence[]
+  signingCertificates        SigningCertificate[]
+  signingCertificateSettings SigningCertificateSettings?
 
   @@unique([slug])
   @@map("organization")
@@ -338,4 +341,69 @@ model FiscalSequenceReservation {
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@map("fiscal_sequence_reservation")
+}
+
+// Firma electrónica (add-signing-certificate, design D2; ADR 0011). Metadatos, sin secretos: el
+// P12 y su contraseña cifrados viven en signing_certificate_secret. A lo sumo una firma ACTIVE por
+// empresa: active_company_id vale company_id mientras está ACTIVE y NULL al reemplazarse (UNIQUE y
+// CHECK en la migración). Sin borrado: solo la transición ACTIVE -> REPLACED (trigger).
+model SigningCertificate {
+  id                String                    @id @default(uuid())
+  companyId         String                    @map("company_id")
+  company           Organization              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  /// ACTIVE o REPLACED (CHECK en la migración).
+  status            String
+  activeCompanyId   String?                   @unique @map("active_company_id")
+  subject           String
+  issuer            String
+  serialNumber      String                    @map("serial_number")
+  fingerprintSha256 String                    @map("fingerprint_sha256") @db.Char(64)
+  notBefore         DateTime                  @map("not_before") @db.Timestamptz(3)
+  notAfter          DateTime                  @map("not_after") @db.Timestamptz(3)
+  detectedRuc       String                    @map("detected_ruc") @db.Char(13)
+  keyAlgorithm      String                    @map("key_algorithm")
+  keyBits           Int                       @map("key_bits")
+  uploadedBy        String                    @map("uploaded_by")
+  uploader          User                      @relation("SigningCertificateUploader", fields: [uploadedBy], references: [id], onDelete: Restrict)
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  replacedAt        DateTime?                 @map("replaced_at") @db.Timestamptz(3)
+  replacedById      String?                   @map("replaced_by_id")
+  replacedBy        SigningCertificate?       @relation("SigningCertificateReplacement", fields: [companyId, replacedById], references: [companyId, id], onDelete: Restrict)
+  replaces          SigningCertificate[]      @relation("SigningCertificateReplacement")
+  secret            SigningCertificateSecret?
+
+  @@unique([companyId, id])
+  @@map("signing_certificate")
+}
+
+// Secreto cifrado de la firma vigente (formato 1 de design D5). Sin actualización: reemplazar es
+// borrarlo e insertar el de la firma nueva. El borrado es la destrucción intencional del ADR 0011.
+model SigningCertificateSecret {
+  certificateId      String             @id @map("certificate_id")
+  companyId          String             @map("company_id")
+  certificate        SigningCertificate @relation(fields: [companyId, certificateId], references: [companyId, id], onDelete: Restrict)
+  formatVersion      Int                @map("format_version") @db.SmallInt
+  keyVersion         String             @map("key_version")
+  keyCheck           Bytes              @map("key_check")
+  wrappedKey         Bytes              @map("wrapped_key")
+  wrappedKeyNonce    Bytes              @map("wrapped_key_nonce")
+  p12Ciphertext      Bytes              @map("p12_ciphertext")
+  p12Nonce           Bytes              @map("p12_nonce")
+  passwordCiphertext Bytes              @map("password_ciphertext")
+  passwordNonce      Bytes              @map("password_nonce")
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([companyId, certificateId])
+  @@map("signing_certificate_secret")
+}
+
+// Anticipación del aviso de vencimiento por empresa (design D8): sin fila, 30 días.
+model SigningCertificateSettings {
+  companyId       String       @id @map("company_id")
+  company         Organization @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  /// Entre 1 y 90 (CHECK en la migración).
+  expiryAlertDays Int          @map("expiry_alert_days")
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("signing_certificate_settings")
 }

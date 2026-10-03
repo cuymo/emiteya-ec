@@ -18,8 +18,8 @@
 
 ## 3. Esquema de datos
 
-- [ ] 3.1 Añadir a Prisma y a una migración `signing_certificate`, `signing_certificate_secret` y `signing_certificate_settings` con el índice único parcial de una firma `ACTIVE` por empresa, las claves compuestas por empresa, el `CHECK` de la anticipación y los triggers de design D2; verificar con `migrations.test.ts` y con pruebas de integración que rechazan una segunda firma `ACTIVE`, un secreto o metadatos de otra empresa, cambiar metadatos salvo `ACTIVE` → `REPLACED`, borrar metadatos y actualizar un secreto, y que permiten borrar un secreto
-- [ ] 3.2 Documentar las tablas, sus restricciones y la excepción de destrucción del secreto en `docs/architecture/database.md` y la ubicación de la anticipación en `docs/product/domain-model.md`; verificar que nombran cada restricción de la migración
+- [x] 3.1 Añadir a Prisma y a una migración `signing_certificate`, `signing_certificate_secret` y `signing_certificate_settings` con el índice único parcial de una firma `ACTIVE` por empresa, las claves compuestas por empresa, el `CHECK` de la anticipación y los triggers de design D2; verificar con `migrations.test.ts` y con pruebas de integración que rechazan una segunda firma `ACTIVE`, un secreto o metadatos de otra empresa, cambiar metadatos salvo `ACTIVE` → `REPLACED`, borrar metadatos y actualizar un secreto, y que permiten borrar un secreto
+- [x] 3.2 Documentar las tablas, sus restricciones y la excepción de destrucción del secreto en `docs/architecture/database.md` y la ubicación de la anticipación en `docs/product/domain-model.md`; verificar que nombran cada restricción de la migración
 
 ## 4. Lectura de PKCS#12 y RUC
 

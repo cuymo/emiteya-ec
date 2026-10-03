@@ -76,9 +76,9 @@ Tres tablas:
   - certificado: `subject` (titular), `issuer`, `serial_number`, `fingerprint_sha256`, `not_before`, `not_after`, `detected_ruc`, `key_algorithm`, `key_bits`;
   - historia: `uploaded_by`, `created_at`, `replaced_at`, `replaced_by_id`.
   - Restricciones:
-    - índice único parcial `(company_id) WHERE status = 'ACTIVE'`;
+    - a lo sumo una `ACTIVE` por empresa. Se implementa con `active_company_id`, que es `company_id` mientras está `ACTIVE` y nulo después, con `UNIQUE` y un `CHECK` de coherencia. Equivale al índice parcial `(company_id) WHERE status = 'ACTIVE'`, que el esquema de Prisma 7.10 no expresa sin una función en preview;
     - `UNIQUE (company_id, id)` como destino de la clave compuesta;
-    - un trigger impide borrar e impide cambiar nada salvo la transición `ACTIVE` → `REPLACED` con `replaced_at` y `replaced_by_id`.
+    - un trigger impide borrar e impide cambiar nada salvo dos pasos: la transición `ACTIVE` → `REPLACED` con `replaced_at`, y después, una vez, el enlace `replaced_by_id` a la firma nueva, que solo puede existir cuando la anterior ya no es `ACTIVE`.
 - **`signing_certificate_secret` (secreto):**
   - `certificate_id` (PK), `company_id`, `format_version`, `key_version`, `key_check`;
   - la clave de datos envuelta con su nonce;
@@ -87,6 +87,7 @@ Tres tablas:
   - Restricciones:
     - clave foránea compuesta `(company_id, certificate_id)` a los metadatos;
     - un trigger impide `UPDATE`: reemplazar es borrar el secreto anterior e insertar el nuevo;
+    - otro trigger solo admite el secreto de una firma `ACTIVE` de la misma empresa;
     - el borrado está permitido: es la destrucción intencional del ADR 0011, como excepción a la escritura única de los ADR 0010 y 0017.
 - **`signing_certificate_settings`:** `company_id` (PK), `expiry_alert_days` con `CHECK BETWEEN 1 AND 90`. Sin fila, vale 30.
 

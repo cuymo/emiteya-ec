@@ -150,6 +150,39 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea las restricciones y triggers de la firma electrónica", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "signing_certificate_status_check",
+        "signing_certificate_active_state_check",
+        "signing_certificate_key_check",
+        "signing_certificate_ruc_check",
+        "signing_certificate_validity_check",
+        "signing_certificate_fingerprint_check",
+        "signing_certificate_secret_format_check",
+        "signing_certificate_secret_sizes_check",
+        "signing_certificate_settings_expiry_alert_days_check",
+        "signing_certificate_company_id_replaced_by_id_fkey",
+        "signing_certificate_secret_company_id_certificate_id_fkey",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "signing_certificate_active_company_id_key",
+        "signing_certificate_company_id_id_key",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "signing_certificate_no_delete",
+        "signing_certificate_no_truncate",
+        "signing_certificate_guard",
+        "signing_certificate_secret_no_update",
+        "signing_certificate_secret_active_only",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     const organizationConstraints = await db.database.prisma.$queryRaw<{ name: string }[]>`
       SELECT c.conname AS name

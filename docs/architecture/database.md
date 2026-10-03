@@ -20,7 +20,9 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `configuration_asset` | `taxpayer` | Yes | Logo y demás contenido inmutable con tipo MIME, tamaño y SHA-256; la versión de configuración lo referencia y no se duplica (ADR 0017). |
 | `establishment`, `emission_point` | `taxpayer` | Yes | Se desactivan; nunca se borran. Código inmutable. |
 | `member_default_emission_point` | `taxpayer` | Yes | Punto predeterminado de cada membresía; solo preselecciona (Q-23). |
-| `certificate` | `taxpayer` | Yes | Metadatos y secreto cifrado; nunca se expone (ADR 0011). |
+| `signing_certificate` | `signing` | Yes | Metadatos de la firma electrónica; a lo sumo una `ACTIVE` por empresa; sin borrado, solo `ACTIVE` → `REPLACED` (ADR 0011). |
+| `signing_certificate_secret` | `signing` | Yes | P12 y contraseña cifrados de la firma `ACTIVE`; nunca se exponen; se destruyen al reemplazar (ADR 0011). |
+| `signing_certificate_settings` | `signing` | Yes | Anticipación del aviso de vencimiento por empresa; sin fila, 30 días. |
 | `member` (plugin Organization de Better Auth) | `identity` | Yes | La membresía: rol `ADMIN` u `OPERATOR` y `status`, con `UNIQUE (organizationId, userId)` y `CHECK` propios. Las cuentas son de Better Auth. |
 | `fiscal_sequence` | `fiscal` | Yes | Contador por empresa, ambiente, establecimiento, punto y tipo; bloqueo de fila al reservar. |
 | `fiscal_sequence_reservation` | `fiscal` | Yes | Solo agregado: un registro por número reservado, con la unicidad de CTX §5. |
@@ -119,7 +121,7 @@ UNIQUE (company_id, user_id, operation, idempotency_key)       -- ERS y CTX prop
 -- Catálogos
 UNIQUE (company_id, identification_type, identification_number) -- party
 UNIQUE (company_id, main_code) WHERE main_code IS NOT NULL     -- product
-UNIQUE (company_id) WHERE status = 'ACTIVE'                    -- certificate: uno activo
+UNIQUE (active_company_id)                                     -- signing_certificate: una ACTIVE por empresa
 
 -- Inventario (ERS RF-206, AC-08)
 UNIQUE (document_id, product_id, movement_type)
@@ -155,6 +157,9 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `member_default_emission_point` | Propia (`taxpayer`) | Punto predeterminado de una membresía: `company_id`, `user_id`, `emission_point_id`. |
 | `fiscal_sequence` | Propia (`fiscal`) | Contador: clave `company_id`, `environment`, `establishment_id`, `emission_point_id`, `document_type`; `next_number` (1000000000 es el valor interno de agotado) y `last_reserved`. Se crea con su primera reserva o ajuste. |
 | `fiscal_sequence_reservation` | Propia (`fiscal`) | Número reservado: la clave del contador más `sequential`, `reserved_at`, `reserved_by` opcional y `correlation_id`. |
+| `signing_certificate` | Propia (`signing`) | Metadatos de una firma: `status` (`ACTIVE` o `REPLACED`), `active_company_id` (la empresa mientras está `ACTIVE`, nulo después), titular, emisor, serie, `fingerprint_sha256`, `not_before`, `not_after`, `detected_ruc`, algoritmo y bits de la clave, `uploaded_by`, `created_at`, `replaced_at` y `replaced_by_id`. |
+| `signing_certificate_secret` | Propia (`signing`) | Secreto de la firma `ACTIVE` (formato 1 del design D5 de `add-signing-certificate`): `format_version`, `key_version`, `key_check`, la clave de datos envuelta con su nonce, y el P12 y la contraseña cifrados con AES-256-GCM, cada uno con su nonce. |
+| `signing_certificate_settings` | Propia (`signing`) | `expiry_alert_days` por empresa. |
 
 Restricciones de la migración, incluidas las que Prisma no expresa (verificadas por
 `backend/test/integration/migrations.test.ts`):
@@ -209,6 +214,17 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `fiscal_sequence_no_delete`, `fiscal_sequence_no_truncate` | `fiscal_sequence` | Triggers que rechazan borrar contadores | SQL de la migración |
 | `fiscal_sequence_reservation_append_only`, `fiscal_sequence_reservation_no_truncate` | `fiscal_sequence_reservation` | Triggers que rechazan `UPDATE`, `DELETE` y `TRUNCATE` | SQL de la migración |
 | `fiscal_sequence_guard` | `fiscal_sequence` | Trigger `BEFORE UPDATE`: la clave no cambia y `last_reserved` no disminuye ni vuelve a nulo | SQL de la migración |
+| `signing_certificate_active_company_id_key` | `signing_certificate` | `UNIQUE (active_company_id)`: a lo sumo una firma `ACTIVE` por empresa. Los `NULL` de las reemplazadas no cuentan. Sustituye al índice parcial `UNIQUE (company_id) WHERE status = 'ACTIVE'`, que el esquema de Prisma 7.10 no expresa sin una función en preview | `@unique` en el esquema |
+| `signing_certificate_company_id_id_key`, `signing_certificate_secret_company_id_certificate_id_key` | ambas | Destinos de las claves compuestas por empresa | `@@unique` en el esquema |
+| `signing_certificate_company_id_replaced_by_id_fkey`, `signing_certificate_secret_company_id_certificate_id_fkey` | ambas | `(company_id, …) → signing_certificate(company_id, id)`: el reemplazo y el secreto son de la misma empresa | Relación en el esquema |
+| `signing_certificate_status_check`, `signing_certificate_active_state_check` | `signing_certificate` | `ACTIVE` exige `active_company_id = company_id` (no nulo) y sin fecha ni enlace de reemplazo; `REPLACED` exige `active_company_id` nulo y `replaced_at` | SQL de la migración |
+| `signing_certificate_key_check`, `signing_certificate_ruc_check`, `signing_certificate_validity_check`, `signing_certificate_fingerprint_check` | `signing_certificate` | Clave RSA de 2048 bits o más; RUC de 13 dígitos terminado en 001; `not_after > not_before`; huella hexadecimal de 64 caracteres | SQL de la migración |
+| `signing_certificate_secret_format_check`, `signing_certificate_secret_sizes_check` | `signing_certificate_secret` | Formato 1 o posterior; `key_check` de 32 bytes y nonces de 12 | SQL de la migración |
+| `signing_certificate_settings_expiry_alert_days_check` | `signing_certificate_settings` | Anticipación de 1 a 90 días | SQL de la migración |
+| `signing_certificate_no_delete`, `signing_certificate_no_truncate` | `signing_certificate` | Triggers que rechazan borrar metadatos: conservan la historia | SQL de la migración |
+| `signing_certificate_guard` | `signing_certificate` | Trigger `BEFORE UPDATE`. Solo admite dos cambios: `ACTIVE` → `REPLACED` (con `active_company_id` nulo y `replaced_at`), y después, una vez, el enlace `replaced_by_id`. Lo demás no cambia | SQL de la migración |
+| `signing_certificate_secret_no_update` | `signing_certificate_secret` | Trigger que rechaza `UPDATE`. El borrado sí está permitido: es la destrucción intencional del secreto al reemplazar, excepción deliberada a la escritura única de los ADR 0010 y 0017 (ADR 0011) | SQL de la migración |
+| `signing_certificate_secret_active_only` | `signing_certificate_secret` | Trigger `BEFORE INSERT`: solo una firma `ACTIVE` de la misma empresa tiene secreto | SQL de la migración |
 
 - Ninguna restricción limita el número de empresas: una sola empresa es política del aprovisionamiento (ADR 0009, design de `add-user-access`).
 - El trigger se prefiere a privilegios separados porque una instalación self-hosted puede usar un solo usuario de base de datos.

@@ -31,7 +31,7 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `company` — Empresa
 
 - Purpose: contribuyente emisor. Es el tenant de todos los datos privados (ADR 0009).
-- Key attributes: RUC, razón social, nombre comercial, dirección matriz, teléfono, correo, logo (asset inmutable referenciado por la versión de configuración, ADR 0017), ambiente activo, identidad tributaria bloqueada (`taxIdentityLocked`), anticipación de la alerta de vencimiento de firma, y atributos tributarios: obligado a llevar contabilidad, número de contribuyente especial, número de resolución de agente de retención (XSD `agenteRetencion`, no un sí o no; C-10), gran contribuyente, categoría RIMPE, RUC proveedor (CTX §5).
+- Key attributes: RUC, razón social, nombre comercial, dirección matriz, teléfono, correo, logo (asset inmutable referenciado por la versión de configuración, ADR 0017), ambiente activo, identidad tributaria bloqueada (`taxIdentityLocked`), anticipación de la alerta de vencimiento de firma (guardada con la firma en `signing_certificate_settings`, 30 días por defecto), y atributos tributarios: obligado a llevar contabilidad, número de contribuyente especial, número de resolución de agente de retención (XSD `agenteRetencion`, no un sí o no; C-10), gran contribuyente, categoría RIMPE, RUC proveedor (CTX §5).
 - Invariants:
   - Una empresa por instalación en el MVP, sin impedir multiempresa futuro (ERS §4.1).
   - Los atributos tributarios los declara el administrador; el sistema no los infiere (ERS RF-103).
