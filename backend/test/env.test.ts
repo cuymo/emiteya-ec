@@ -1,7 +1,14 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { EXAMPLE_AUTH_SECRET, EnvError, loadEnv, loadInitialAdmin } from "../src/config/env.ts";
+import {
+  EXAMPLE_AUTH_SECRET,
+  EXAMPLE_CERTIFICATE_MASTER_KEY,
+  EnvError,
+  loadCertificateCustody,
+  loadEnv,
+  loadInitialAdmin,
+} from "../src/config/env.ts";
 
 const backendRoot = fileURLToPath(new URL("..", import.meta.url));
 const SECRET = "valor-secreto-que-no-debe-aparecer";
@@ -150,5 +157,91 @@ describe("configuración por entorno", () => {
     expect(invalidPort.status).toBe(1);
     expect(invalidPort.stderr).toContain("PORT: valor inválido");
     expect(invalidPort.stderr).not.toContain(SECRET);
+  });
+});
+
+describe("custodia de la firma electrónica (design D6)", () => {
+  const KEY = Buffer.alloc(32, 9).toString("base64");
+  const custody = (extra: Record<string, string>, readFile?: (path: string) => string) =>
+    loadCertificateCustody(loadEnv({ ...valid, ...extra }), readFile);
+  const custodyError = (extra: Record<string, string>, readFile?: (path: string) => string) => {
+    try {
+      custody(extra, readFile);
+    } catch (error) {
+      return error as EnvError;
+    }
+    return undefined;
+  };
+
+  it("aplica los valores por defecto del límite del P12 y del pool criptográfico", () => {
+    expect(loadEnv(valid)).toMatchObject({
+      CERTIFICATE_CUSTODY: "enabled",
+      CERTIFICATE_MASTER_KEY_VERSION: "1",
+      CERTIFICATE_MAX_BYTES: 65536,
+      CRYPTO_WORKERS: 2,
+      CRYPTO_TASK_TIMEOUT_MS: 30000,
+    });
+    expect(envError({ ...valid, CERTIFICATE_MAX_BYTES: "1048577" })?.variables).toEqual([
+      "CERTIFICATE_MAX_BYTES",
+    ]);
+  });
+
+  it("lee la clave en línea o desde un archivo, con su versión", () => {
+    const inline = custody({
+      CERTIFICATE_MASTER_KEY: KEY,
+      CERTIFICATE_MASTER_KEY_VERSION: "2026-10",
+    });
+    expect(inline).toMatchObject({ enabled: true, keyVersion: "2026-10" });
+    expect(inline.enabled && inline.key.length).toBe(32);
+    const fromFile = custody(
+      { CERTIFICATE_MASTER_KEY_FILE: "/run/secrets/clave" },
+      () => `${KEY}\n`,
+    );
+    expect(fromFile.enabled && fromFile.key.equals(Buffer.alloc(32, 9))).toBe(true);
+  });
+
+  it("deshabilitada solo de forma expresa y nunca en producción", () => {
+    expect(custody({ CERTIFICATE_CUSTODY: "disabled" })).toEqual({ enabled: false });
+    const error = envError({ ...valid, NODE_ENV: "production", CERTIFICATE_CUSTODY: "disabled" });
+    expect(error?.variables).toEqual(["CERTIFICATE_CUSTODY"]);
+  });
+
+  it("rechaza la ausencia de clave, las dos variantes, una clave inválida y un archivo ilegible, sin valores", () => {
+    expect(custodyError({})?.message).toContain("CERTIFICATE_MASTER_KEY: es obligatoria");
+    expect(
+      custodyError({ CERTIFICATE_MASTER_KEY: KEY, CERTIFICATE_MASTER_KEY_FILE: "/ruta/secreta" })
+        ?.message,
+    ).toContain("usa solo una");
+    for (const invalid of [SECRET, Buffer.alloc(16).toString("base64"), `${KEY}x`]) {
+      const error = custodyError({ CERTIFICATE_MASTER_KEY: invalid });
+      expect(error?.message).toContain("CERTIFICATE_MASTER_KEY: debe contener 32 bytes en base64");
+      expect(error?.message).not.toContain(invalid);
+    }
+    const unreadable = custodyError(
+      { CERTIFICATE_MASTER_KEY_FILE: "/ruta/secreta-que-no-existe" },
+      () => {
+        throw new Error("ENOENT /ruta/secreta-que-no-existe");
+      },
+    );
+    expect(unreadable?.message).toContain(
+      "CERTIFICATE_MASTER_KEY_FILE: no se puede leer el archivo",
+    );
+    expect(unreadable?.message).not.toContain("/ruta/secreta");
+  });
+
+  it("rechaza la clave de ejemplo en producción y la admite en desarrollo", () => {
+    expect(custody({ CERTIFICATE_MASTER_KEY: EXAMPLE_CERTIFICATE_MASTER_KEY }).enabled).toBe(true);
+    const error = custodyError({
+      NODE_ENV: "production",
+      CERTIFICATE_MASTER_KEY: EXAMPLE_CERTIFICATE_MASTER_KEY,
+    });
+    expect(error?.message).toContain("CERTIFICATE_MASTER_KEY: es la de ejemplo");
+    expect(error?.message).not.toContain(EXAMPLE_CERTIFICATE_MASTER_KEY);
+  });
+
+  it("la API no arranca en producción sin clave de custodia", () => {
+    const result = startupWith({ ...valid, NODE_ENV: "production" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("CERTIFICATE_MASTER_KEY: es obligatoria");
   });
 });

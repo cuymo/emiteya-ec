@@ -3,7 +3,14 @@ import { randomUUID } from "node:crypto";
 import { userSchemas } from "@facturador/contracts";
 import { Router } from "express";
 import { createApp } from "./app.ts";
-import { EnvError, loadEnv, loadInitialAdmin, passwordPolicy, type Env } from "./config/env.ts";
+import {
+  EnvError,
+  loadCertificateCustody,
+  loadEnv,
+  loadInitialAdmin,
+  passwordPolicy,
+  type Env,
+} from "./config/env.ts";
 import { createAuthorizer } from "./modules/identity/application/authorization.ts";
 import { provisionInstallation } from "./modules/identity/application/provisioning.ts";
 import { createUserAdministration } from "./modules/identity/application/user-administration.ts";
@@ -39,7 +46,25 @@ function loadEnvOrExit(): Env {
 }
 
 const env = loadEnvOrExit();
+// Sin la clave maestra de la custodia, la API no arranca (ADR 0011, design D6).
+const certificateCustody = (() => {
+  try {
+    return loadCertificateCustody(env);
+  } catch (error) {
+    if (error instanceof EnvError) {
+      console.error(error.message);
+      process.exit(1);
+    }
+    throw error;
+  }
+})();
 const logger = createLogger(env.LOG_LEVEL);
+logger.info(
+  certificateCustody.enabled
+    ? { certificateCustody: "enabled", keyVersion: certificateCustody.keyVersion }
+    : { certificateCustody: "disabled" },
+  "custodia de firmas",
+);
 const database = createDatabase(env.DATABASE_URL);
 const closers: Closer[] = [{ name: "database", close: database.close }];
 

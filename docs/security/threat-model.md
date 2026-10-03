@@ -59,7 +59,9 @@ Límites de confianza adicionales:
 
 | Threat | Impact | Mitigation |
 | --- | --- | --- |
-| Exfiltración del certificado o su contraseña | Suplantación tributaria del contribuyente | Cifrado envolvente, descifrado solo en el adaptador de firma, sin endpoint de lectura ni logs (ADR 0011). |
+| Exfiltración del certificado o su contraseña | Suplantación tributaria del contribuyente | Cifrado envolvente con AES-256-GCM, clave de datos por certificado y AAD ligado a empresa y registro; clave maestra fuera de la base de datos; descifrado solo en el adaptador de firma; sin endpoint de lectura; ni logs, ni errores, ni auditoría con el material; el secreto anterior se destruye al reemplazar (ADR 0011). |
+| Pérdida o cambio de la clave maestra | Firmas inutilizables | Comprobación de la clave sin descifrar (`key_check`): la firma figura como no disponible y se pide volver a cargarla; respaldo de la clave aparte (R-15). |
+| P12 malicioso con un coste de derivación enorme | CPU agotada | Límite de 100 000 iteraciones leído antes de descifrar, tamaño máximo configurable y pool de workers acotado con timeout (ADR 0019). |
 | Cambio de ambiente malicioso o accidental | Comprobantes con validez tributaria no deseada | Solo administrador, auditado, con aviso persistente de Pruebas; cada comprobante se envía al endpoint de su ambiente (CTX I-09). |
 | Retroceso del secuencial para reutilizar números | Comprobantes duplicados ante el SRI | Solo administrador con motivo y auditoría; unicidad en base de datos; nunca se reutiliza un número (ADR 0003). |
 | Alteración de artefactos archivados | Pérdida de valor probatorio | Escritura única, hash SHA-256 verificado en cada lectura (ADR 0010). |

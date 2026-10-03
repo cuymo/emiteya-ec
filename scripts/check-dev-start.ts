@@ -54,6 +54,15 @@ if (migrate.status !== 0) {
   process.exit(1);
 }
 
+/** La clave maestra de ejemplo que declara backend/.env.example (solo desarrollo). */
+function exampleMasterKey(): string {
+  const example = readFileSync(join(backendDir, ".env.example"), "utf8");
+  const key = /^CERTIFICATE_MASTER_KEY=(.+)$/m.exec(example)?.[1];
+  if (!key)
+    throw new Error("check:dev-start: backend/.env.example no declara CERTIFICATE_MASTER_KEY");
+  return key.trim();
+}
+
 const port = await freePort();
 const args = devArgs();
 const child = spawn(process.execPath, args, {
@@ -63,6 +72,8 @@ const child = spawn(process.execPath, args, {
     PORT: String(port),
     DATABASE_URL: databaseUrl,
     LOG_LEVEL: "warn",
+    // La API exige la clave de custodia; sin una en el entorno, la de ejemplo de desarrollo.
+    CERTIFICATE_MASTER_KEY: process.env.CERTIFICATE_MASTER_KEY ?? exampleMasterKey(),
   },
   stdio: ["ignore", "pipe", "pipe"],
 });

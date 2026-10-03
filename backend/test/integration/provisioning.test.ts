@@ -174,6 +174,7 @@ describe("aprovisionamiento de la instalación", () => {
           BETTER_AUTH_SECRET: "secreto-de-pruebas-0123456789abcdef0123",
           BETTER_AUTH_URL: "http://localhost:3000",
           LOG_LEVEL: "silent",
+          CERTIFICATE_CUSTODY: "disabled",
           ...env,
         },
         encoding: "utf8",

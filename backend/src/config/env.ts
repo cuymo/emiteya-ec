@@ -1,5 +1,12 @@
 // Configuración por entorno, validada al arrancar (docs/architecture/deployment.md).
-import { emailSchema, passwordSchema, type PasswordPolicy } from "@facturador/contracts";
+import { readFileSync } from "node:fs";
+import {
+  CERTIFICATE_MAX_BYTES_DEFAULT,
+  CERTIFICATE_MAX_BYTES_LIMIT,
+  emailSchema,
+  passwordSchema,
+  type PasswordPolicy,
+} from "@facturador/contracts";
 import { z } from "zod";
 import { DEFAULT_LOGO_MAX_BYTES, LOGO_MAX_BYTES_RANGE } from "../modules/taxpayer/domain/logo.ts";
 
@@ -21,6 +28,9 @@ const trustProxy = z
 
 /** Secreto de `backend/.env.example`: sirve para desarrollo y se rechaza en producción. */
 export const EXAMPLE_AUTH_SECRET = "desarrollo-local-solo-para-pruebas-no-usar-en-produccion";
+
+/** Clave maestra de ejemplo de `backend/.env.example` (32 bytes): solo desarrollo, rechazada en producción. */
+export const EXAMPLE_CERTIFICATE_MASTER_KEY = "ZGVzYXJyb2xsby1sb2NhbC1uby11c2FyLWVuLXByb2Q=";
 
 const int = (min: number, max: number) => z.coerce.number().int().min(min).max(max);
 
@@ -46,6 +56,22 @@ export const envSchema = z
     LOGO_MAX_BYTES: int(LOGO_MAX_BYTES_RANGE.min, LOGO_MAX_BYTES_RANGE.max).default(
       DEFAULT_LOGO_MAX_BYTES,
     ),
+    // Custodia de la firma electrónica (add-signing-certificate, design D6). La clave se valida al
+    // arrancar la API (loadCertificateCustody); nunca se guarda en la base de datos (ADR 0011).
+    CERTIFICATE_CUSTODY: z.enum(["enabled", "disabled"]).default("enabled"),
+    CERTIFICATE_MASTER_KEY: z.string().optional(),
+    CERTIFICATE_MASTER_KEY_FILE: z.string().optional(),
+    CERTIFICATE_MASTER_KEY_VERSION: z
+      .string()
+      .regex(/^[A-Za-z0-9._-]{1,32}$/)
+      .default("1"),
+    // Tamaño máximo del PKCS#12 decodificado (design D3): configuración, no un límite del SRI.
+    CERTIFICATE_MAX_BYTES: int(8 * 1024, CERTIFICATE_MAX_BYTES_LIMIT).default(
+      CERTIFICATE_MAX_BYTES_DEFAULT,
+    ),
+    // Pool criptográfico fuera del event loop (design D18).
+    CRYPTO_WORKERS: int(1, 8).default(2),
+    CRYPTO_TASK_TIMEOUT_MS: int(1_000, 120_000).default(30_000),
     // Solo se validan cuando la instalación aún no tiene empresa (loadInitialAdmin).
     INITIAL_USER_EMAIL: z.string().optional(),
     INITIAL_USER_PASSWORD: z.string().optional(),
@@ -60,6 +86,9 @@ export const envSchema = z
     }
     if (env.NODE_ENV === "production" && env.BETTER_AUTH_SECRET === EXAMPLE_AUTH_SECRET) {
       ctx.addIssue({ code: "custom", path: ["BETTER_AUTH_SECRET"], message: "es el de ejemplo" });
+    }
+    if (env.NODE_ENV === "production" && env.CERTIFICATE_CUSTODY === "disabled") {
+      ctx.addIssue({ code: "custom", path: ["CERTIFICATE_CUSTODY"], message: "disabled" });
     }
   });
 
@@ -123,4 +152,57 @@ export function loadInitialAdmin(env: Env): InitialAdmin {
       : `${name}: valor inválido`;
   });
   throw new EnvError(variables, details);
+}
+
+export type CertificateCustodyConfig =
+  Readonly<{ enabled: false }> | Readonly<{ enabled: true; keyVersion: string; key: Buffer }>;
+
+function decodeMasterKey(value: string): Buffer | null {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return null;
+  const key = Buffer.from(value, "base64");
+  return key.length === 32 && key.toString("base64") === value ? key : null;
+}
+
+/**
+ * Clave maestra de la custodia de firmas (ADR 0011, design D6). La API la exige al arrancar
+ * mientras la custodia esté habilitada; los mensajes nombran la variable, nunca su valor ni la
+ * ruta del archivo.
+ */
+export function loadCertificateCustody(
+  env: Env,
+  readFile: (path: string) => string = (path) => readFileSync(path, "utf8"),
+): CertificateCustodyConfig {
+  if (env.CERTIFICATE_CUSTODY === "disabled") return { enabled: false };
+  const inline = env.CERTIFICATE_MASTER_KEY;
+  const file = env.CERTIFICATE_MASTER_KEY_FILE;
+  if (inline !== undefined && file !== undefined) {
+    throw new EnvError(
+      ["CERTIFICATE_MASTER_KEY", "CERTIFICATE_MASTER_KEY_FILE"],
+      [
+        "CERTIFICATE_MASTER_KEY: usa solo una de CERTIFICATE_MASTER_KEY o CERTIFICATE_MASTER_KEY_FILE",
+      ],
+    );
+  }
+  if (inline === undefined && file === undefined) {
+    throw new EnvError(
+      ["CERTIFICATE_MASTER_KEY"],
+      [
+        "CERTIFICATE_MASTER_KEY: es obligatoria (o CERTIFICATE_MASTER_KEY_FILE) mientras la custodia de firmas esté habilitada",
+      ],
+    );
+  }
+  const name = inline !== undefined ? "CERTIFICATE_MASTER_KEY" : "CERTIFICATE_MASTER_KEY_FILE";
+  let raw: string;
+  try {
+    raw = (inline ?? readFile(file!)).trim();
+  } catch {
+    throw new EnvError([name], [`${name}: no se puede leer el archivo`]);
+  }
+  const key = decodeMasterKey(raw);
+  if (!key) throw new EnvError([name], [`${name}: debe contener 32 bytes en base64`]);
+  if (env.NODE_ENV === "production" && raw === EXAMPLE_CERTIFICATE_MASTER_KEY) {
+    key.fill(0);
+    throw new EnvError([name], [`${name}: es la de ejemplo`]);
+  }
+  return { enabled: true, keyVersion: env.CERTIFICATE_MASTER_KEY_VERSION, key };
 }

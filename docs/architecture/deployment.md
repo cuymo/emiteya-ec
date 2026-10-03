@@ -100,7 +100,6 @@ cambio que los introduzca:
 
 - Endpoints del SRI por ambiente y servicio; los valores por defecto están en el módulo central de endpoints (CTX §7).
 - Timeouts del cliente SRI, intervalo inicial y ventana de la consulta de autorización.
-- Clave maestra de cifrado del certificado, con su versión, por variable o archivo de secreto, nunca en la base de datos (ADR 0011). Obligatoria en producción: sin ella el backend no arranca. En desarrollo y pruebas existe un modo explícito sin firma.
 - Adaptador y ubicación del almacenamiento de artefactos.
 - Zona horaria de las fechas fiscales: `America/Guayaquil` (ERS RNF-010).
 
@@ -119,6 +118,24 @@ API comparten origen (ADR 0016).
 | `LOGIN_MAX_FAILURES`, `LOGIN_FAILURE_WINDOW_MINUTES` | No | 5, 15 | Límite de inicios fallidos por correo e IP. |
 | `LOGIN_IP_MAX_REQUESTS`, `LOGIN_IP_WINDOW_SECONDS` | No | 30, 60 | Límite de inicios de sesión por IP, contra ráfagas. |
 | `TRUST_PROXY` | No | `false` | Número de proxies de confianza o sus direcciones. Detrás del proxy público, declararlo para que la IP del cliente sea la real; sin él, se usa la IP del socket. |
+
+### Firma electrónica
+
+La custodia de la firma (ADR 0011) y el pool criptográfico (design D18 de
+`add-signing-certificate`) se validan al arrancar.
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `CERTIFICATE_MASTER_KEY` o `CERTIFICATE_MASTER_KEY_FILE` | Sí, una de las dos, mientras la custodia esté habilitada | | Clave maestra de la custodia de firmas: 32 bytes en base64, en la variable o en un archivo de secreto. Nunca va a la base de datos. La de `.env.example` se rechaza en producción. Generar con `openssl rand -base64 32`. |
+| `CERTIFICATE_MASTER_KEY_VERSION` | No | `1` | Identificador de la clave maestra, que se guarda con cada secreto para poder rotarla. |
+| `CERTIFICATE_CUSTODY` | No | `enabled` | `disabled` arranca sin custodia de firmas: solo en desarrollo y pruebas, y prohibido en producción. |
+| `CERTIFICATE_MAX_BYTES` | No | 65536 | Tamaño máximo del PKCS#12 decodificado, entre 8192 y 1048576. Es configuración, no un límite del SRI: se ajusta si una firma real con su cadena completa lo necesita. |
+| `CRYPTO_WORKERS` | No | 2 | Workers del pool criptográfico (1 a 8): inspección y firma fuera del event loop. |
+| `CRYPTO_TASK_TIMEOUT_MS` | No | 30000 | Límite por tarea del pool, en milisegundos (1000 a 120000). Al agotarse, el worker se reemplaza. |
+
+- Sin clave válida, la API no arranca: el error nombra la variable sin mostrar su valor ni la ruta del archivo.
+- La clave se respalda aparte de la base de datos (ver Respaldo y restauración).
+- Perderla o cambiarla deja las firmas cargadas como no disponibles hasta volver a cargarlas (riesgo R-15). La rotación verificada es requisito del go-live (ADR 0011).
 
 Primer arranque:
 
@@ -178,7 +195,7 @@ AC-10):
 
 1. Volcado de PostgreSQL.
 2. Almacenamiento de artefactos.
-3. Clave maestra de cifrado, guardada por separado de las dos anteriores.
+3. Clave maestra de la custodia de firmas (`CERTIFICATE_MASTER_KEY`, con su versión), guardada por separado de las dos anteriores. El volcado de PostgreSQL solo contiene la firma cifrada.
 
 - Los respaldos se cifran (ERS SEC-008) y nunca incluyen el P12 sin cifrar (CTX §20.4).
 - El procedimiento de restauración se prueba antes de cada release (ERS §20).

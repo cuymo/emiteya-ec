@@ -43,6 +43,7 @@ describe("flujo completo de acceso de usuarios", () => {
         INITIAL_USER_EMAIL: ADMIN.email,
         INITIAL_USER_PASSWORD: ADMIN.password,
         LOG_LEVEL: "warn",
+        CERTIFICATE_CUSTODY: "disabled",
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
