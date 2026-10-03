@@ -20,4 +20,5 @@ punto de vista criptográfico, pero sigue siendo el algoritmo documentado.
 
 - Compatibilidad con el SRI.
 - Dependencia de un algoritmo legado que el runtime podría restringir en el futuro.
-- Pendiente: Q-34 y la vigilancia de cambios de la ficha.
+- La implementación es `EcSriSigner` de `facturacion-electronica-ec`, sobre `ec-sri-invoice-signer`, detrás del puerto `XmlSigner` (ADR 0018). Su compatibilidad con los P12 soportados la valida el spike S-6.
+- Pendiente: la vigilancia de cambios de la ficha.

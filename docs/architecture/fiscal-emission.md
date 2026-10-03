@@ -159,6 +159,28 @@ establecimiento, punto y tipo (ADR 0003). Dentro de la transacción del llamador
 - **Referencia.** El comprobante referencia la fila de `fiscal_sequence_reservation` y repite la unicidad del secuencial como segunda defensa.
 - **Errores de la reserva.** Traducir `EMISSION_POINT_UNAVAILABLE`, `EMISSION_POINT_NOT_FOUND` y `SEQUENCE_EXHAUSTED` en el resultado de la emisión, y registrar como advertencia en el log la reserva agotada (design D15 de `add-fiscal-numbering`).
 
+## Motor SRI (ADR 0018)
+
+`facturacion-electronica-ec` aporta las piezas del protocolo detrás de puertos propios. La
+orquestación de este documento sigue siendo de la aplicación.
+
+- **Qué se usa:** sus builders, `generateClaveAcceso`, `validateXmlAgainstXsd`, `EcSriSigner` y `SriClient`, este último como transporte.
+- **Qué no se usa:** `emitir*`, `ISequenceProvider` ni `EmissionHooks`.
+- **Secuencial.** Lo reserva siempre `reserveSequentialIn` en el paso 2. Ningún adaptador implementa `rollback` ni pide otro secuencial:
+  - un `DEVUELTA` nunca devuelve el número al contador (BR-08);
+  - el error 70 se trata con la misma clave, nunca con un secuencial nuevo.
+- **Código numérico.** Lo genera la aplicación con `crypto.randomInt`, porque `generateCodigoNumerico` de la librería usa `Math.random` en ESM.
+- **Importes.** El motor decimal redondea y la librería solo formatea; las pruebas de contrato comparan el XML con los importes esperados.
+- **Respuestas del SRI.** El `fetch` inyectado en `SriClient` captura la respuesta original, que se persiste antes de actuar. La clasificación de la tabla de abajo se hace sobre esa respuesta, porque `SriClient`:
+  - toma una recepción sin estado como `DEVUELTA`;
+  - toma una autorización sin bloque como `NO AUTORIZADO`;
+  - devuelve solo la primera de varias autorizaciones.
+- **Firma.**
+  - La custodia descifra el P12 solo para `sign`.
+  - La librería nunca recibe el secreto cifrado.
+  - No hay logs ni hooks con XML o secretos.
+  - Antes de firmar se comprueba que el certificado embebido es el inspeccionado al cargarlo.
+
 ## Clave de acceso
 
 Composición, módulo 11 y pruebas obligatorias en CTX §8. En este proyecto:

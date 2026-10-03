@@ -49,7 +49,7 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 3   | `add-fiscal-numbering`     | `fiscal-numbering`                                    | 2              | AC-04         |
 | 4   | `add-signing-certificate`  | `signing-certificate`                                 | 2              | AC-01         |
 | 5   | `add-business-catalogs`    | `fiscal-catalogs`, `parties`, `products`              | 1              | —             |
-| —   | Spike técnico, sin OpenSpec | XML ordenado, XSD, XAdES-BES con RSA-SHA1, SOAP y PDF en Node.js (Q-34) | 0 | ADRs de dependencias |
+| —   | Spikes técnicos, sin OpenSpec | Validación de `facturacion-electronica-ec` para XSD (S-2), firma y SOAP con autorización en Pruebas (S-3), y PDF (S-4) (Q-34, ADR 0018) | 0 | ADRs de dependencias |
 | 6   | `add-invoice-emission`     | `document-emission`, `invoices`                       | 3, 4, 5, spike | AC-05         |
 | 7   | `add-sri-transmission`     | `sri-transmission`                                    | 6              | AC-02, AC-06  |
 | 8   | `add-document-archive`     | `document-archive`                                    | 7              | AC-07         |
@@ -61,6 +61,8 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 14  | `add-purchase-settlements` | `purchase-settlements`                                | 7              | AC-03         |
 | 15  | `add-reports-export`       | `reports`                                             | 8              | AC-09         |
 | 16  | `add-data-portability`     | `data-portability`                                    | 8              | AC-10         |
+
+Estrategia técnica (ADR 0018): los cambios 4 a 14 reutilizan `facturacion-electronica-ec`, detrás de puertos propios, para los builders XML, la clave de acceso, la validación XSD, la firma XAdES-BES y el transporte SOAP, en lugar de reimplementarlos. La orquestación, la numeración, la persistencia, los estados, la idempotencia, los reintentos y la reconciliación siguen siendo de la aplicación. Ningún cambio está implementado por adoptar la librería.
 
 Al terminar el cambio 8 existe una porción vertical completa: una factura configurada,
 emitida, autorizada en Pruebas, con RIDE y descargable. Ese es el primer punto para validar

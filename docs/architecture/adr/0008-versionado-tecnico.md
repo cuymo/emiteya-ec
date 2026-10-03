@@ -16,6 +16,7 @@ deben seguir siendo reproducibles con la versión con que se emitieron.
 - Catálogos, políticas y límites son datos con vigencia y fuente, no constantes del código.
 - Cada comprobante registra en su snapshot las versiones de XSD, builder, catálogos, configuración y renderer.
 - Los XSD antiguos se conservan.
+- Con `facturacion-electronica-ec` (ADR 0018), nuestro registro es la fuente de verdad: los XSD versionados del proyecto se registran en la librería al arrancar (`registerXsdSearchPath`) y sus versiones en su `schemaRegistry`. Una prueba de contrato falla si los XSD que trae la librería divergen de los nuestros.
 - Versiones iniciales, decisión de proyecto de CTX §3.1: factura 1.1.0, liquidación de compra 1.1.0, nota de crédito 1.1.0, nota de débito 1.0.0, guía de remisión 1.1.0 y retención 2.0.0. Las versiones 2.0.0 y 2.1.0 de factura se habilitan solo cuando su caso especial esté implementado y probado.
 
 ## Consequences
