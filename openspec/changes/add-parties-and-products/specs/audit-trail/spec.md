@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Auditoría de terceros
-El sistema SHALL registrar un evento por cada alta, corrección que cambia algo, desactivación y reactivación exitosas de un tercero, con actor, empresa, tercero y momento. Un cambio de identificación, razón social o roles guarda su valor anterior y el nuevo; un cambio de dirección, correo o teléfono guarda solo qué campos cambiaron, sin sus valores. Ni las consultas, ni las búsquedas, ni la creación del consumidor final por el sistema generan eventos.
+El sistema SHALL registrar un evento por cada alta, corrección que cambia algo, desactivación y reactivación exitosas de un tercero, con actor, empresa, tercero y momento. Un cambio de identificación, razón social o roles guarda su valor anterior y el nuevo; un cambio de dirección, correo o teléfono guarda solo los nombres de los campos cambiados, nunca sus valores anteriores ni nuevos. Ni las consultas, ni las búsquedas, ni la creación del consumidor final por el sistema generan eventos.
 
 #### Scenario: Alta de un tercero
 - **WHEN** un usuario registra un tercero
@@ -14,8 +14,8 @@ El sistema SHALL registrar un evento por cada alta, corrección que cambia algo,
 - **THEN** existe un evento con la identificación anterior y la nueva
 
 #### Scenario: Cambio de datos de contacto
-- **WHEN** un usuario corrige solo el correo de un tercero
-- **THEN** existe un evento que indica que cambió el correo, sin el correo anterior ni el nuevo
+- **WHEN** un usuario corrige el correo y el teléfono de un tercero
+- **THEN** existe un evento que indica que cambiaron el correo y el teléfono, sin ninguno de sus valores anteriores ni nuevos
 
 #### Scenario: Corrección sin cambios o rechazada
 - **WHEN** una corrección no cambia ningún dato, o se rechaza por validación, permiso, identificación repetida o versión desactualizada

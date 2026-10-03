@@ -2,7 +2,7 @@
 
 ## 1. Contratos, permisos, puertos de `fiscal-catalogs` y fronteras
 
-- [ ] 1.1 Añadir el contrato común `packages/contracts/src/pagination.ts` (design D10) y los contratos `parties.ts` y `products.ts`: consultas no estrictas, cuerpos estrictos con `expectedVersion`, `unitPrice` como `decimalString(DECIMAL_SPECS.precioUnitario)`, `taxes` con su forma de tres posiciones (design D7), vistas con `systemRecord`, `taxConfiguration` y `meta`, y la vista de `tax-summary`. `users.ts` no cambia. Verificar con pruebas de contrato que se rechazan `companyId` y campos desconocidos en los cuerpos, un precio como número JSON, con exponente, coma o más de 6 decimales, un impuesto dado por porcentaje o denominación y un arreglo de ICE, y que `pageSize` admite de 1 a 100 con 25 por defecto
+- [ ] 1.1 Añadir el contrato común `packages/contracts/src/pagination.ts` (design D10) y los contratos `parties.ts` y `products.ts`: consultas no estrictas, cuerpos estrictos con `expectedVersion`, `unitPrice` como `decimalString(DECIMAL_SPECS.precioUnitario)`, `taxes` con su forma de tres posiciones (design D7), vistas con `systemRecord`, `taxConfiguration` y `meta`, y la vista de `tax-summary`. `users.ts` no cambia. Verificar con pruebas de contrato que se rechazan `companyId` y campos desconocidos en los cuerpos, un precio como número JSON o con exponente o coma, los casos límite de design D9 (`999999999999.999999` y `0.000001` aceptados; `1000000000000`, `0.0000001` y `1.1234560` rechazados con el mensaje de su límite), un impuesto dado por porcentaje o denominación y un arreglo de ICE, y que `pageSize` admite de 1 a 100 con 25 por defecto
 - [ ] 1.2 Añadir `parties.read`, `parties.manage`, `parties.changeStatus`, `products.read`, `products.manage` y `products.changeStatus` al mapa central y a su espejo en el frontend (`ADMIN`, todos; `OPERATOR`, lectura y gestión, sin cambio de estado; design D12), y las acciones `party.*` y `product.*` a la auditoría (design D13). Confirmar las filas de `docs/security/access-control.md`. Verificar con las pruebas del mapa de acceso
 - [ ] 1.3 Añadir a `catalogs` los puertos internos de design D2 (`consumerFinalPolicy`, `identificationRule`, `availability` y la función de dominio `calculationDataStatus`), sin HTTP ni sesión, reutilizando `resolveCatalogEntry`, `effectiveEnablement` e `isUsable`. Verificar con pruebas:
   - unitarias de `calculationDataStatus` para cada tipo de tarifa;
@@ -23,7 +23,7 @@
   - unicidades de design D14;
   - índices `text_pattern_ops` y de orden de design D10;
   - claves foráneas a la empresa, al producto y a `fiscal_catalog_key`;
-  - triggers: inmutabilidad del consumidor final, consumidor final obligatorio por empresa (diferido, sobre `organization`), IVA obligatorio por producto (diferido) e IRBPNR solo en bienes.
+  - triggers: inmutabilidad del consumidor final, consumidor final obligatorio por empresa (diferido, sobre `organization`), IVA obligatorio por producto (diferido) e IRBPNR solo en bienes (diferido).
 
   Hacer que `insertCompany` de las pruebas cree también el consumidor final. Verificar con `migrations.test.ts` (restricciones, índices y triggers) y con pruebas de integración que rechazan cada violación:
   - dos consumidores finales;
@@ -31,7 +31,7 @@
   - corregir, desactivar o borrar el consumidor final;
   - confirmar una empresa sin consumidor final;
   - un producto sin IVA al confirmar, o con dos IVA;
-  - IRBPNR en un servicio, o pasar a servicio un bien con IRBPNR;
+  - IRBPNR en un servicio, o pasar a servicio un bien que conserva su IRBPNR; en cambio, quitar el IRBPNR y pasar a servicio en la misma transacción se acepta, en cualquier orden;
   - control de stock en un servicio;
   - código principal repetido, con los nulos sin choque;
   - referencia a una entrada inexistente.
@@ -46,14 +46,16 @@
   - `initializeCompany` llamado por el aprovisionamiento después de `createCompany`;
   - registro desde la raíz de composición, sin que `identity` importe `parties`.
 
-  Cambiar el orden de `main.ts` (cargar catálogos → aprovisionar → `ensureConsumerFinalParties()` → escuchar), con fallo fatal si queda una empresa sin consumidor final. Verificar con pruebas de integración:
-  - el aprovisionamiento crea la empresa y su consumidor final en la misma transacción;
-  - un fallo después de `createCompany` no deja ni la empresa ni el consumidor final;
+  Cambiar el orden de `main.ts` (cargar catálogos → aprovisionar → `ensureConsumerFinalParties()` → escuchar), con fallo fatal si queda una empresa sin consumidor final. Verificar con pruebas de integración, cada una terminando con exactamente un consumidor final por empresa y su identidad intacta:
+  - **A. Empresa nueva:** la empresa y su consumidor final quedan garantizados antes de confirmar, y un fallo después de `createCompany` no deja ninguno de los dos;
+  - **B. Empresa existente sin consumidor final:** la reposición crea exactamente uno;
+  - **C. Segundo arranque:** no crea duplicados ni modifica el existente;
+  - dos aprovisionamientos simultáneos y dos reposiciones simultáneas;
+  - el alta de un tercero normal con el tipo `07`, y corregir, desactivar y borrar el consumidor final, por la API y directamente en la base de datos;
   - sin política aplicable, el aprovisionamiento falla de forma explícita sin crear nada;
-  - la reposición crea el que falta en una empresa existente, es idempotente y es segura con dos ejecuciones simultáneas;
   - el arranque falla si una empresa sigue sin consumidor final;
   - las pruebas de aprovisionamiento de `user-access` siguen pasando
-- [ ] 3.2 Documentar en `docs/architecture/deployment.md` el orden de arranque y la sentencia para eliminar el trigger diferido si se vuelve atrás antes del primer aprovisionamiento (design, Migration Plan). Verificar que la sentencia nombra el trigger de la migración
+- [ ] 3.2 Documentar en `docs/architecture/deployment.md` el orden de arranque y la política de reversión (design, Migration Plan): después de esta migración, un downgrade binario no es compatible automáticamente; la estrategia normal es avanzar con una corrección, y volver atrás exige un runbook explícito o restaurar una copia compatible, nunca quitar una protección de integridad. Verificar que el documento nombra la invariante y no ofrece eliminar el trigger como paso de reversión
 
 ## 4. API de terceros
 
@@ -75,7 +77,11 @@
 
 ## 5. API de productos
 
-- [ ] 5.1 Implementar el dominio de `products` (design D6 a D9): precio con `UnitPrice`, reglas de tipo, control de stock e IRBPNR, la forma de los impuestos y la función pura del estado tributario. Verificar con pruebas unitarias cada motivo (`NOT_IN_FORCE`, `WITHDRAWN`, `DISABLED` y `NO_CALCULATION_DATA`), la precedencia `REVIEW_REQUIRED` > `INCOMPLETE` > `READY`, y que el precio nunca pasa por `number`
+- [ ] 5.1 Implementar el dominio de `products` (design D6 a D9): precio con `UnitPrice`, reglas de tipo, control de stock e IRBPNR, la forma de los impuestos y la función pura del estado tributario. Verificar con pruebas unitarias:
+  - cada motivo (`NOT_IN_FORCE`, `WITHDRAWN`, `DISABLED` y `NO_CALCULATION_DATA`), con ICE, IRBPNR e IVA diferenciado en `INCOMPLETE`;
+  - la precedencia `REVIEW_REQUIRED` > `INCOMPLETE` > `READY`;
+  - las invariantes del tipo sobre el estado final: de bien a servicio con IRBPNR, de bien a servicio con control de stock, y el cambio simultáneo que deja un estado válido;
+  - que el precio nunca pasa por `number`
 - [ ] 5.2 Implementar la aplicación y el repositorio de `products`:
   - alta, consulta, corrección con `expectedVersion` y estado deseado;
   - validación con `availability` solo de las referencias nuevas o cambiadas;
@@ -89,12 +95,13 @@
   - cierre de vigencia en una versión posterior del dataset, con una fecha inyectada;
   - ICE sin tarifa en `INCOMPLETE`;
   - corrección del precio en revisión;
+  - de bien a servicio con IRBPNR y con control de stock, con rechazo estable, y la corrección simultánea que se acepta;
   - altas y correcciones simultáneas;
   - recuentos aislados por empresa;
   - `openapi:check` en verde
 - [ ] 5.3 Registrar en `docs/architecture/fiscal-emission.md` las obligaciones para `add-invoice-emission`:
   - volver a resolver cada referencia con la fecha del documento, sin fiarse del estado mostrado;
-  - exigir datos de cálculo completos para cada impuesto que deba calcular;
+  - un comprobante no puede continuar si necesita calcular un impuesto cuya referencia esté en `INCOMPLETE` en la fecha del documento;
   - reconocer el consumidor final por `systemRecord`;
   - aplicar el límite de la política en la emisión.
 
@@ -110,7 +117,7 @@
   - registro del entorno;
   - JSON y tabla en `docs/quality/benchmarks/`.
 
-  Ejecutarlo sobre PostgreSQL 17 sin carga ajena y registrar el resultado. Pasar Q-26 a parcial en `docs/product/open-questions.md` y actualizar `capabilities.md`. Verificar que el informe existe con su entorno y que el P95 de cada consulta es de 300 ms o menos. Si alguna lo supera, documentar la evidencia y detener el apply para proponer `pg_trgm` con `/opsx:update`
+  Ejecutarlo sobre PostgreSQL 17 sin carga ajena y registrar el resultado. Pasar Q-26 a parcial en `docs/product/open-questions.md` y actualizar `capabilities.md`. Verificar que el informe existe con su entorno y que el P95 de cada consulta es de 300 ms o menos. Si alguna lo supera: analizar sus planes de consulta, identificar la causa y detener el apply para proponer con `/opsx:update` el cambio de índices, de estrategia o `pg_trgm`. Nunca subir el umbral
 
 ## 7. Interfaz
 

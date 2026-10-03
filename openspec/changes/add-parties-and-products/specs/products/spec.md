@@ -24,14 +24,22 @@ El sistema SHALL permitir registrar en la empresa ítems como bien o servicio, c
 - **THEN** el sistema rechaza la solicitud indicando el campo, y no se crea ningún producto
 
 ### Requirement: Precio unitario exacto sin impuestos
-El precio unitario SHALL ser el precio antes de impuestos, como decimal exacto en texto: no negativo, con hasta 18 dígitos en total y como máximo 6 decimales, sin exponente, coma decimal, separadores, ceros a la izquierda ni espacios. El sistema MUST rechazar un número JSON y un valor con más decimales de los admitidos, sin redondearlo, y devuelve el precio en su forma exacta más corta. Este cambio no calcula impuestos ni totales.
+El precio unitario SHALL ser el precio antes de impuestos, como decimal exacto en texto: no negativo, con como máximo 6 decimales y 12 dígitos enteros (18 dígitos en total, nunca 18 enteros más 6 decimales), sin exponente, coma decimal, separadores, ceros a la izquierda ni espacios. El sistema MUST rechazar un número JSON y un valor con más decimales de los admitidos, sin redondearlo, y devuelve el precio en su forma exacta más corta. Este cambio no calcula impuestos ni totales.
 
 #### Scenario: Precio con seis decimales
 - **WHEN** un usuario registra un producto con precio `0.123456`
 - **THEN** el producto conserva y devuelve exactamente `0.123456`
 
+#### Scenario: Límite superior exacto
+- **WHEN** un usuario registra un precio `999999999999.999999`
+- **THEN** el producto conserva y devuelve exactamente ese valor
+
+#### Scenario: Trece dígitos enteros
+- **WHEN** un usuario registra un precio `1000000000000`
+- **THEN** el sistema rechaza la solicitud indicando el máximo de 12 dígitos enteros
+
 #### Scenario: Más decimales de los admitidos
-- **WHEN** un usuario registra un precio `1.1234567`
+- **WHEN** un usuario registra un precio `1.1234567` o `1.1234560`
 - **THEN** el sistema rechaza la solicitud indicando el máximo de 6 decimales, y no redondea el valor
 
 #### Scenario: Precio como número JSON
@@ -104,6 +112,10 @@ El sistema SHALL mostrar con cada producto un estado derivado de sus referencias
 - **WHEN** un usuario consulta un producto con un código de ICE habilitado, cuya tarifa el catálogo no publica
 - **THEN** su estado es `INCOMPLETE`, con el motivo de que faltan los datos para calcular el ICE, y no `REVIEW_REQUIRED`
 
+#### Scenario: Código de IRBPNR sin valor transcrito
+- **WHEN** un usuario consulta un bien con el código de IRBPNR habilitado, cuyo valor el catálogo no publica
+- **THEN** su estado es `INCOMPLETE`, con el motivo de que faltan los datos para calcular el IRBPNR
+
 #### Scenario: IVA diferenciado
 - **WHEN** un usuario consulta un producto con la tarifa de IVA diferenciado, que no tiene porcentaje en el catálogo
 - **THEN** su estado es `INCOMPLETE`
@@ -127,9 +139,20 @@ El sistema SHALL permitir marcar un bien como controlado en stock, nunca un serv
 - **WHEN** un usuario marca un servicio como controlado en stock
 - **THEN** el sistema rechaza la solicitud indicando que solo los bienes llevan control de stock
 
-#### Scenario: Bien que pasa a servicio
-- **WHEN** un usuario corrige a servicio un bien controlado en stock o con IRBPNR
-- **THEN** el sistema rechaza la solicitud indicando qué debe quitar antes
+### Requirement: Coherencia entre el tipo, el control de stock y el IRBPNR
+Un servicio MUST NOT llevar control de stock ni IRBPNR. Cada alta y cada corrección SHALL validarse con el estado final que resulta de la solicitud, aunque solo cambie el tipo: un bien pasa a servicio solo si la misma solicitud deja su IRBPNR vacío y su control de stock desactivado.
+
+#### Scenario: Bien con IRBPNR que pasa a servicio
+- **WHEN** un usuario corrige a servicio un bien con IRBPNR y conserva el IRBPNR
+- **THEN** el sistema rechaza la solicitud indicando que debe quitar el IRBPNR, y el producto no cambia
+
+#### Scenario: Bien controlado en stock que pasa a servicio
+- **WHEN** un usuario corrige a servicio un bien controlado en stock y conserva el control de stock
+- **THEN** el sistema rechaza la solicitud indicando que debe quitar el control de stock, y el producto no cambia
+
+#### Scenario: Paso a servicio corregido en la misma solicitud
+- **WHEN** un usuario corrige a servicio un bien con IRBPNR y control de stock, y en la misma solicitud quita el IRBPNR y desactiva el control de stock
+- **THEN** la corrección se acepta y el producto queda como servicio sin IRBPNR ni control de stock
 
 ### Requirement: Código principal único por empresa
 El sistema SHALL impedir que dos productos de una misma empresa tengan el mismo código principal, también cuando uno está desactivado. La comparación es exacta, después de quitar los espacios de los extremos. Los productos sin código principal no chocan entre sí, y el mismo código puede existir en otra empresa.

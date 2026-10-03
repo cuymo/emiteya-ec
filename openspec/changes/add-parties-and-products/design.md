@@ -160,7 +160,17 @@ de la política aplicable el día de su creación en Ecuador. El rol es cliente,
 
 **Auditoría:** no se audita, porque es un dato del sistema creado con la empresa; el aprovisionamiento ya registra `company.provisioned`.
 
-**Si la política cambia:** una versión posterior con otra razón social no actualiza el tercero, porque el trigger lo impide. Hará falta un cambio explícito; el tipo y la identificación los fija ya la política de 5a.
+**Si la política cambia:** una versión posterior con otra identidad canónica no actualiza el tercero, porque el trigger lo impide, y este diseño no la migra en silencio. Será un cambio explícito de datos y de invariante; el tipo y la identificación los fija ya la política de 5a.
+
+**Pruebas explícitas.** Cada una termina con la invariante intacta: exactamente un consumidor final por empresa, con su identidad.
+
+- **A. Empresa nueva:** el aprovisionamiento crea la empresa y su consumidor final antes de confirmar, y un fallo después de `createCompany` no deja ninguno de los dos.
+- **B. Empresa existente sin consumidor final:** la reposición al arrancar crea exactamente uno.
+- **C. Segundo arranque:** no crea duplicados ni modifica el existente.
+- **Concurrencia y protecciones:**
+  - dos aprovisionamientos simultáneos;
+  - alta de un tercero normal con el tipo `07`;
+  - corregir, desactivar y borrar el consumidor final.
 
 ### D6. Modelo de producto
 
@@ -174,7 +184,11 @@ de la política aplicable el día de su creación en Ecuador. El rol es cliente,
   - estado, versión, y fechas y autores de creación y modificación.
 - **Normalización:** como en terceros.
 - **Control de stock:** `stockTracked` es solo un dato. No genera existencias, movimientos ni bloqueos (ADR 0006); el comportamiento es del cambio 9.
-- **Cambio a servicio:** pasar a `SERVICE` un bien con `stockTracked` o con IRBPNR responde `400 PRODUCT_GOODS_ONLY`, indicando qué quitar. Un `CHECK` y un trigger lo respaldan.
+- **Coherencia del tipo:** cada alta y cada corrección validan el estado final que resulta de la solicitud, no solo los campos que cambian.
+  - Un servicio no lleva `stockTracked` ni IRBPNR.
+  - Pasar a `SERVICE` un bien que conserva su IRBPNR o su `stockTracked` responde `400 PRODUCT_GOODS_ONLY`, indicando qué quitar.
+  - La misma solicitud puede pasar a `SERVICE`, dejar el IRBPNR vacío y desactivar el control de stock: el estado final es válido.
+  - Lo respaldan un `CHECK` sobre el control de stock y un trigger de restricción diferido sobre el IRBPNR. El trigger es diferido para que el resultado no dependa del orden de las sentencias dentro de la transacción.
 
 ### D7. Referencias a IVA, ICE e IRBPNR
 
@@ -189,32 +203,35 @@ de la política aplicable el día de su creación en Ecuador. El rol es cliente,
   - `DISABLED`: no es utilizable para la empresa.
 
   Cada una responde `400 PRODUCT_TAX_UNAVAILABLE`, con el impuesto y la razón. Las referencias que no cambian no se validan otra vez, para que corregir el precio de un producto en revisión sea posible.
-- **IRBPNR:** solo en bienes; si no, `400 PRODUCT_IRBPNR_GOODS_ONLY`.
+- **IRBPNR:** solo en bienes; un servicio con IRBPNR responde `400 PRODUCT_IRBPNR_GOODS_ONLY`. Al corregir, se evalúa sobre el estado final, junto con las demás invariantes del tipo (D6); la disponibilidad de una referencia que no cambia no se vuelve a validar.
 - **Respaldo en la base de datos:**
   - clave primaria `(product_id, catalog_type)`: como mucho una por impuesto;
   - `CHECK` de los tres catálogos;
   - clave foránea a `fiscal_catalog_key`;
   - un trigger de restricción diferido exige exactamente un IVA por producto al confirmar;
-  - un trigger rechaza el IRBPNR en servicios.
+  - un trigger de restricción diferido rechaza, al confirmar, el IRBPNR en un servicio.
 - **Vista:** por impuesto se muestran el catálogo, `entryKey`, el código, la denominación y la semántica de la tarifa de la versión aplicable hoy (o de la última, si no hay aplicable), y su disponibilidad.
 
 ### D8. Estado derivado de la configuración tributaria
 
 - **Cálculo:** `taxConfiguration = { status, reasons[], evaluatedOn }`, con `availability` en la fecha de hoy en Ecuador.
   - `REVIEW_REQUIRED` si una referencia no tiene versión aplicable (`NOT_IN_FORCE`), su última versión está retirada (`WITHDRAWN`) o no es utilizable para la empresa (`DISABLED`).
-  - Si no, `INCOMPLETE` si alguna tiene `calculationData: MISSING` (motivo `NO_CALCULATION_DATA`).
+  - Si no, `INCOMPLETE` si alguna tiene `calculationData: MISSING` (motivo `NO_CALCULATION_DATA`). Hoy pasa con ICE sin tarifa legal, IRBPNR sin valor legal e IVA diferenciado sin política de cálculo. No impide guardar el producto.
   - Si no, `READY`.
 - **Nunca se guarda:** no hay columna `needsTaxReview`. Cada consulta lo vuelve a calcular, y nada cambia las referencias.
 - **Filtro y recuentos sin SQL cruzado:**
   - `products` pide `availability` de los tres catálogos (como mucho 85 entradas) y construye los conjuntos de claves no utilizables y sin datos de cálculo;
   - la consulta filtra con `EXISTS` sobre `product_tax`, usando esas claves como parámetros.
   - Así se resuelven el filtro `taxStatus` y `GET /products/tax-summary`.
-- **Emisión:** el estado mostrado es orientativo. `add-invoice-emission` volverá a resolver cada referencia con la fecha del documento y exigirá datos de cálculo completos para cada impuesto que deba calcular (obligación registrada en `fiscal-emission.md`).
+- **Emisión:** el estado mostrado es orientativo. `add-invoice-emission` volverá a resolver cada referencia con la fecha del documento, y un comprobante no podrá continuar si necesita calcular un impuesto cuya referencia esté en `INCOMPLETE` en esa fecha. La obligación se registra en `fiscal-emission.md`.
 - **Alternativa descartada:** un booleano persistido que un job recalcula. Queda obsoleto entre ejecuciones, duplica la regla de vigencia y no sirve para otra fecha.
 
 ### D9. Precio y política decimal
 
-- **Contrato:** `unitPrice` es `decimalString(DECIMAL_SPECS.precioUnitario)`: cadena exacta, no negativa, de 18 dígitos y 6 decimales como máximo.
+- **Contrato:** `unitPrice` es `decimalString(DECIMAL_SPECS.precioUnitario)`: cadena exacta y no negativa.
+  - Semántica de `NUMERIC(18,6)`: como máximo 6 decimales y 12 dígitos enteros, y 18 dígitos en total, nunca 18 enteros más 6 decimales. Es lo que ya aplica `decimalSpecViolation`.
+  - Los decimales se cuentan como se escriben: `1.1234560` tiene 7 y se rechaza, sin redondear.
+  - Casos límite fijados en contrato y pruebas: `999999999999.999999` y `0.000001` se aceptan; `1000000000000`, `0.0000001` y `1.1234560` se rechazan con el mensaje de su límite.
   - Un número JSON se rechaza.
   - Más decimales de los admitidos es un error, sin redondeo.
   - Se devuelve en la forma canónica más corta.
@@ -293,7 +310,7 @@ Las acciones nuevas se escriben en la misma transacción que el cambio:
 | Acción | Cuándo | `changes` |
 | --- | --- | --- |
 | `party.created` | Alta | Tipo e identificación, razón social y roles. |
-| `party.updated` | Corrección que cambia algo | `*.from` y `*.to` de tipo, identificación, razón social y roles; `contactFieldsChanged` con los nombres de los campos de contacto cambiados, sin sus valores. |
+| `party.updated` | Corrección que cambia algo | `*.from` y `*.to` de tipo, identificación, razón social y roles. `changedFields`, con los nombres de los campos de contacto cambiados (`address`, `email` y `phone`), nunca sus valores anteriores ni nuevos. |
 | `party.deactivated`, `party.reactivated` | Transición real | Tipo e identificación. |
 | `product.created` | Alta | Códigos, nombre, tipo, precio e impuestos (catálogo y `entryKey`). |
 | `product.updated` | Solo si cambian el precio o algún impuesto | `unitPrice.from`/`unitPrice.to` y `taxes.<impuesto>.from`/`.to`. |
@@ -343,7 +360,7 @@ Una migración `add_parties_and_products` crea:
 - **Triggers de restricción diferidos:**
   - consumidor final obligatorio por empresa (sobre `organization`);
   - IVA obligatorio por producto (sobre `product` y `product_tax`).
-- **Trigger de IRBPNR solo en bienes** (sobre `product_tax`, y sobre `product` al cambiar el tipo).
+- **Trigger de restricción diferido de IRBPNR solo en bienes** (sobre `product_tax`, y sobre `product` al cambiar el tipo).
 - **Datos:** las tablas empiezan vacías. Los consumidores finales los crea el arranque (D5). Revertir la versión deja las tablas sin uso.
 
 `database.md` documenta las tablas, su propietario y que los triggers sobre `organization` y las
@@ -375,7 +392,10 @@ fija las restricciones, los índices y los triggers.
   - comportamiento de búsqueda y paginación;
   - índices esperados en `migrations.test.ts`;
   - planes de consulta con `EXPLAIN` y `enable_seqscan = off`, para comprobar que las búsquedas por prefijo pueden usar sus índices `text_pattern_ops`.
-- **Si no se cumple el objetivo:** se documenta la evidencia, y la incorporación de `pg_trgm` se propone con `/opsx:update`. No se añade de forma preventiva.
+- **Si no se cumple el objetivo:**
+  1. se analizan los planes de consulta y se identifica la causa;
+  2. si hace falta cambiar índices o la estrategia, o añadir `pg_trgm`, se propone con `/opsx:update` antes de incorporarlo.
+  - Nunca se sube el umbral para hacer pasar el benchmark, y `pg_trgm` no se añade de forma preventiva.
 
 ### D17. Interfaz
 
@@ -446,7 +466,8 @@ fija las restricciones, los índices y los triggers.
   - estado tributario derivado con cada motivo y su precedencia;
   - `calculationDataStatus`;
   - validación de identificación con las reglas del catálogo;
-  - contrato de precio.
+  - contrato de precio con los casos límite de D9;
+  - invariantes del tipo sobre el estado final (D6).
 - **Contratos:** cuerpos estrictos, `companyId` rechazado, precio como texto, `taxes` con su forma, y paginación con sus límites.
 - **Integración de esquema:**
   - cada `CHECK`, unicidad y trigger;
@@ -454,8 +475,7 @@ fija las restricciones, los índices y los triggers.
   - el IVA obligatorio al confirmar y el IRBPNR en servicios.
 - **HTTP con dos empresas:** cada escenario de las specs de `parties`, `products` y `audit-trail`, incluidos los concurrentes.
 - **Arranque:**
-  - el aprovisionamiento crea el consumidor final de forma atómica, y un fallo deja todo revertido;
-  - la reposición es idempotente y segura con dos arranques simultáneos;
+  - los caminos A, B y C del consumidor final, y sus pruebas de concurrencia y protección (D5);
   - el arranque falla si queda una empresa sin consumidor final.
 - **Arquitectura:** las fronteras de tablas e importaciones de D1.
 - **End-to-end contra `main.ts`:**
@@ -489,14 +509,17 @@ Se actualizan:
 - [El fragmento de nombre recorre las filas de la empresa] → Con 10 000 filas cuesta milisegundos; el benchmark lo mide y `pg_trgm` solo entra con evidencia.
 - [`Select` para ICE si una empresa habilita muchos códigos] → Solo lista los habilitados, que son pocos en la práctica. El combobox con búsqueda llegará con el selector de productos de la factura.
 - [El estado tributario cambia sin que nadie toque el producto] → Es el comportamiento pedido: se deriva de los catálogos vigentes. La interfaz explica el motivo, y la emisión vuelve a validar con la fecha del documento.
-- [La razón social del consumidor final no sigue a una política posterior] → Lo impide el trigger de inmutabilidad; un cambio así exigirá un cambio explícito con su migración.
+- [La identidad del consumidor final no sigue a una política posterior] → Lo impide el trigger de inmutabilidad; un cambio así exigirá un cambio explícito de datos y de invariante.
+- [Downgrade binario después de migrar] → La invariante "una empresa, exactamente un consumidor final" no la conoce la versión anterior, así que el downgrade no es compatible automáticamente. La estrategia normal es avanzar con una corrección (Migration Plan).
 
 ## Migration Plan
 
 1. Desplegar la versión. La migración crea las tablas, las restricciones y los triggers.
 2. Al arrancar: cargar catálogos → aprovisionar si falta la empresa (con su consumidor final) → reponer los consumidores finales que falten → atender peticiones.
 3. Sin pasos manuales ni configuración nueva.
-4. Marcha atrás: volver a la versión anterior.
-   - Las tablas nuevas quedan sin uso.
-   - El trigger diferido sobre `organization` sigue activo; la versión anterior no crea empresas después del aprovisionamiento inicial.
-   - **Caso límite:** si se vuelve atrás sobre una base que ya tiene la migración pero aún no tiene empresa, el aprovisionamiento de la versión anterior fallaría por el trigger. `deployment.md` documenta la sentencia que lo elimina para ese caso.
+4. **Marcha atrás.** Esta migración introduce la invariante "cada empresa tiene exactamente un consumidor final", que una versión anterior de la aplicación no conoce.
+   - Una vez aplicada, un downgrade binario a una versión anterior no es compatible automáticamente.
+   - La estrategia normal es avanzar: corregir con una versión nueva.
+   - Si alguna vez hiciera falta volver atrás, se sigue un runbook explícito o se restaura una copia compatible tomada antes de migrar.
+   - Nunca se recomienda quitar una protección de integridad y continuar.
+   - `deployment.md` lo documenta. No se construye ahora un sistema de reversión de migraciones.
