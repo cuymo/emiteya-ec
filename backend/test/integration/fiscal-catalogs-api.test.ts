@@ -249,6 +249,28 @@ describe("API de los catálogos fiscales", () => {
         source: "DEFAULT",
       });
       expect(await audits(companyB)).toEqual([]);
+
+      // Las dos empresas ven las mismas entradas y versiones normativas; solo difieren sus decisiones.
+      expect((await setEnablement("adminB", "ice-rate", "3011", true)).status).toBe(200);
+      for (const catalog of ["iva-rate", "ice-rate"]) {
+        const normative = async (who: string) =>
+          (await entries(who, catalog)).map(({ entryKey, code, versions, applicable }) => ({
+            entryKey,
+            code,
+            versions,
+            applicable,
+          }));
+        expect(await normative("adminB")).toEqual(await normative("adminA"));
+      }
+      expect((await entry("adminA", "iva-rate", "2")).enablement.source).toBe("COMPANY");
+      expect((await entry("adminA", "ice-rate", "3011")).enablement).toEqual({
+        enabled: false,
+        source: "DEFAULT",
+      });
+      expect((await entry("adminB", "ice-rate", "3011")).enablement).toEqual({
+        enabled: true,
+        source: "COMPANY",
+      });
     });
 
     it("habilitar un código de ICE lo hace utilizable para la empresa", async () => {
