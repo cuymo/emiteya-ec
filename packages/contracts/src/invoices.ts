@@ -258,6 +258,20 @@ export type InvoiceTotalsView = z.infer<typeof invoiceTotalsViewSchema>;
  * Vista previa calculada por el servidor con la fecha de hoy en Ecuador y los precios vigentes de
  * los productos. Es informativa, no fiscal: los importes de la factura salen de la emisión.
  */
+/**
+ * Avisos de existencias de la vista previa (add-minimal-inventory, design D9): informativos, nunca
+ * bloquean la emisión ni garantizan disponibilidad. `requested` suma las líneas del producto.
+ */
+export const STOCK_WARNING_CODES = ["STOCK_BELOW_REQUESTED", "STOCK_NOT_INITIALIZED"] as const;
+export const stockWarningSchema = z.strictObject({
+  code: z.enum(STOCK_WARNING_CODES),
+  productId: z.string(),
+  requested: decimalString(DECIMAL_SPECS.existencia),
+  /** Saldo vigente; `null` sin inventario inicializado, nunca cero. */
+  balance: decimalString(DECIMAL_SPECS.existencia).nullable(),
+});
+export type StockWarning = z.infer<typeof stockWarningSchema>;
+
 export const draftPreviewViewSchema = z.strictObject({
   evaluatedOn: isoDate,
   lines: z.array(
@@ -271,6 +285,8 @@ export const draftPreviewViewSchema = z.strictObject({
   /** `null` mientras alguna línea no pueda calcularse. */
   totals: invoiceTotalsViewSchema.nullable(),
   issues: z.array(invoiceIssueSchema),
+  /** Aparte de `issues`: no bloquean la emisión. */
+  stockWarnings: z.array(stockWarningSchema),
 });
 export type DraftPreviewView = z.infer<typeof draftPreviewViewSchema>;
 

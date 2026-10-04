@@ -14,3 +14,4 @@ export * from "./parties.ts";
 export * from "./products.ts";
 export * from "./invoices.ts";
 export * from "./archive.ts";
+export * from "./inventory.ts";

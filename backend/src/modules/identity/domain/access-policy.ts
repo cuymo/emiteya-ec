@@ -38,6 +38,11 @@ export const PERMISSIONS = [
   "archive.read",
   "archive.download",
   "archive.retryRide",
+  "inventory.read",
+  "inventory.entry",
+  "inventory.adjust",
+  "inventory.initialize",
+  "inventory.configure",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -84,6 +89,13 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "archive.read",
     "archive.download",
     "archive.retryRide",
+    // add-minimal-inventory, design D11: consultar, entradas, ajustes, inicializar y el control de
+    // stock de un producto con inventario inicializado.
+    "inventory.read",
+    "inventory.entry",
+    "inventory.adjust",
+    "inventory.initialize",
+    "inventory.configure",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -114,6 +126,10 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "archive.read",
     "archive.download",
     "archive.retryRide",
+    // add-minimal-inventory, design D11: consulta el inventario y registra entradas manuales; no
+    // inicializa, no ajusta ni cambia el control de un producto con inventario.
+    "inventory.read",
+    "inventory.entry",
   ]),
 };
 

@@ -128,6 +128,7 @@ describe("API de borradores de factura", () => {
           total: "28.75",
         },
         issues: [],
+        stockWarnings: [],
       });
     });
 

@@ -15577,13 +15577,48 @@
                                 ],
                                 "additionalProperties": false
                               }
+                            },
+                            "stockWarnings": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "STOCK_BELOW_REQUESTED",
+                                      "STOCK_NOT_INITIALIZED"
+                                    ]
+                                  },
+                                  "productId": {
+                                    "type": "string"
+                                  },
+                                  "requested": {
+                                    "type": "string"
+                                  },
+                                  "balance": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "productId",
+                                  "requested",
+                                  "balance"
+                                ],
+                                "additionalProperties": false
+                              }
                             }
                           },
                           "required": [
                             "evaluatedOn",
                             "lines",
                             "totals",
-                            "issues"
+                            "issues",
+                            "stockWarnings"
                           ],
                           "additionalProperties": false
                         },
@@ -16179,13 +16214,48 @@
                                 ],
                                 "additionalProperties": false
                               }
+                            },
+                            "stockWarnings": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "STOCK_BELOW_REQUESTED",
+                                      "STOCK_NOT_INITIALIZED"
+                                    ]
+                                  },
+                                  "productId": {
+                                    "type": "string"
+                                  },
+                                  "requested": {
+                                    "type": "string"
+                                  },
+                                  "balance": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "productId",
+                                  "requested",
+                                  "balance"
+                                ],
+                                "additionalProperties": false
+                              }
                             }
                           },
                           "required": [
                             "evaluatedOn",
                             "lines",
                             "totals",
-                            "issues"
+                            "issues",
+                            "stockWarnings"
                           ],
                           "additionalProperties": false
                         },
@@ -16911,13 +16981,48 @@
                                 ],
                                 "additionalProperties": false
                               }
+                            },
+                            "stockWarnings": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "STOCK_BELOW_REQUESTED",
+                                      "STOCK_NOT_INITIALIZED"
+                                    ]
+                                  },
+                                  "productId": {
+                                    "type": "string"
+                                  },
+                                  "requested": {
+                                    "type": "string"
+                                  },
+                                  "balance": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "productId",
+                                  "requested",
+                                  "balance"
+                                ],
+                                "additionalProperties": false
+                              }
                             }
                           },
                           "required": [
                             "evaluatedOn",
                             "lines",
                             "totals",
-                            "issues"
+                            "issues",
+                            "stockWarnings"
                           ],
                           "additionalProperties": false
                         },

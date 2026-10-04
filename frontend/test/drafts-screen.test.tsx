@@ -112,6 +112,7 @@ const draft = (overrides: Record<string, unknown> = {}) => ({
     ],
     totals: TOTALS,
     issues: [],
+    stockWarnings: [],
   },
   createdAt: "2026-10-03T15:00:00.000Z",
   createdBy: "user-1",

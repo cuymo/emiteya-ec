@@ -19,15 +19,15 @@
 
 ## 2. Contratos y permisos
 
-- [ ] 2.1 Crear `packages/contracts/src/inventory.ts` (design D10):
+- [x] 2.1 Crear `packages/contracts/src/inventory.ts` (design D10):
   - estados derivados `NOT_TRACKED`, `TRACKED_NOT_INITIALIZED`, `TRACKED_INITIALIZED` y `DISABLED_INITIALIZED`, y el filtro `NEGATIVE`;
   - tipos de movimiento y vistas de lista, detalle y kárdex, con `balance: null` sin inicializar;
   - solicitudes estrictas sin `companyId`: inicialización `>= 0`, entrada `> 0`, ajuste `<> 0` con motivo, y control `{ tracked }`;
   - el filtro del kárdex con `from <= to` y los códigos de error;
-  - las rutas en `apiRoutes`.
+  - las rutas en `apiRoutes`, cada una junto con su router en los grupos 6 a 8, para que la prueba que compara las rutas documentadas con las servidas siga pasando en cada grupo.
 
   Ampliar `draftPreviewViewSchema` con `stockWarnings` (design D9). Verificar con pruebas de contratos: cantidad como número JSON, negativa en la inicialización, cero en la entrada y en el ajuste, ajuste sin motivo, rango invertido y `companyId` en el cuerpo rechazados
-- [ ] 2.2 Añadir `inventory.read` e `inventory.entry` para ADMIN y OPERATOR, e `inventory.adjust`, `inventory.initialize` e `inventory.configure` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D11). En `access-control.md`, confirmar las dos filas de inventario existentes, añadir las tres nuevas y registrar que la corrección del producto ya no cambia la marca de un producto inicializado. Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
+- [x] 2.2 Añadir `inventory.read` e `inventory.entry` para ADMIN y OPERATOR, e `inventory.adjust`, `inventory.initialize` e `inventory.configure` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D11). En `access-control.md`, confirmar las dos filas de inventario existentes, añadir las tres nuevas y registrar que la corrección del producto ya no cambia la marca de un producto inicializado. Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
 
 ## 3. Núcleo del inventario
 

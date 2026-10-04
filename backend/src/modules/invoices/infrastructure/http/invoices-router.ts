@@ -124,6 +124,7 @@ export function toDraftView(details: DraftDetails): DraftView {
       })),
       totals: evaluation.totals ? totalsView(evaluation.totals) : null,
       issues: [...evaluation.issues],
+      stockWarnings: [],
     },
     createdAt: draft.createdAt.toISOString(),
     createdBy: draft.createdBy,

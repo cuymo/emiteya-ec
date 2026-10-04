@@ -50,6 +50,13 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "archive.read": { ADMIN: true, OPERATOR: true },
   "archive.download": { ADMIN: true, OPERATOR: true },
   "archive.retryRide": { ADMIN: true, OPERATOR: true },
+  // add-minimal-inventory, design D11: el operador consulta y registra entradas; el resto es del
+  // administrador.
+  "inventory.read": { ADMIN: true, OPERATOR: true },
+  "inventory.entry": { ADMIN: true, OPERATOR: true },
+  "inventory.adjust": { ADMIN: true, OPERATOR: false },
+  "inventory.initialize": { ADMIN: true, OPERATOR: false },
+  "inventory.configure": { ADMIN: true, OPERATOR: false },
 };
 
 describe("política de autorización central", () => {

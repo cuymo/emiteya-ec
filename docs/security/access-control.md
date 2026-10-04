@@ -163,12 +163,17 @@ denegado por defecto;
 | `archive.read` | Consultar la bandeja de comprobantes, los documentos disponibles de cada uno y su historial de entregas | Sí | Sí |
 | `archive.download` | Descargar el RIDE, el XML autorizado y el XML firmado guardados, y solicitar la impresión del RIDE | Sí | Sí |
 | `archive.retryRide` | Reintentar la generación detenida del RIDE de un comprobante autorizado que todavía no lo tiene | Sí | Sí |
+| `inventory.read` | Consultar la lista de inventario, el detalle de un producto y su kárdex | Sí | Sí |
+| `inventory.entry` | Registrar una entrada manual de existencias | Sí | Sí |
+| `inventory.adjust` | Registrar un ajuste de existencias, positivo o negativo, con motivo | Sí | No |
+| `inventory.initialize` | Inicializar el inventario de un producto con su movimiento `INICIAL` | Sí | No |
+| `inventory.configure` | Activar o desactivar el control de stock de un producto con inventario inicializado | Sí | No |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
 
 Matriz propuesta para los módulos futuros (Q-22). El ERS solo dice "permisos básicos"; cada
-cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; `add-sri-transmission` confirmó "Resolver revisión manual u ordenar una reconciliación" solo para el administrador (`invoices.reconcile`); `add-document-archive` confirmó "Consultar la bandeja y descargar XML y RIDE" para ambos roles (`archive.read` y `archive.download`), y bajo esa misma fila el reintento de una generación detenida del RIDE (`archive.retryRide`): solo vuelve a programar el mismo documento que el usuario ya puede descargar, sin efecto fiscal, sin reemplazar un RIDE y sin dejar dos generaciones activas:
+cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; `add-sri-transmission` confirmó "Resolver revisión manual u ordenar una reconciliación" solo para el administrador (`invoices.reconcile`); `add-document-archive` confirmó "Consultar la bandeja y descargar XML y RIDE" para ambos roles (`archive.read` y `archive.download`), y bajo esa misma fila el reintento de una generación detenida del RIDE (`archive.retryRide`): solo vuelve a programar el mismo documento que el usuario ya puede descargar, sin efecto fiscal, sin reemplazar un RIDE y sin dejar dos generaciones activas; `add-minimal-inventory` confirmó "Registrar entradas manuales de inventario" (ambos roles) y "Registrar ajustes de inventario" (administrador), y añadió las tres filas del inventario de abajo:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |
@@ -181,9 +186,19 @@ cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add
 | Desactivar terceros y productos                              | Sí      | No                |
 | Registrar entradas manuales de inventario                    | Sí      | Sí                |
 | Registrar ajustes de inventario                              | Sí      | No                |
+| Consultar el inventario y el kárdex                          | Sí      | Sí                |
+| Inicializar el inventario de un producto                     | Sí      | No                |
+| Activar o desactivar el control de stock de un producto con inventario | Sí | No       |
 | Ver reportes y exportar XLSX                                 | Sí      | Sí                |
 | Exportar todos los datos del contribuyente                   | Sí      | No                |
 | Ver la auditoría                                             | Sí      | No                |
+
+La marca de control de stock de un producto (`stockTracked`) tiene dueño explícito (design D11 de
+`add-minimal-inventory`): mientras el inventario del producto no está inicializado, la cambian el
+administrador y el operador con la corrección del producto ("Crear y editar terceros y
+productos"). Con el inventario inicializado, solo el administrador, desde el inventario
+(`inventory.configure`); la corrección del producto la rechaza con
+`409 STOCK_TRACKING_MANAGED_BY_INVENTORY`. El servidor lo aplica en las dos rutas.
 
 El establecimiento y el punto predeterminados de la membresía solo preseleccionan; no
 restringen dónde emite el usuario ni introducen autorización por punto (Q-23, resuelta).
