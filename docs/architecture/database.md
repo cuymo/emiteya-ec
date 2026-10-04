@@ -36,7 +36,7 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `document_state_transition` | `fiscal` | Yes | Solo agregado (ERS RF-525). |
 | `sri_attempt`, `sri_response`, `sri_attempt_result` | `fiscal` | Yes | Solo agregado: un intento por interacción con el SRI, su respuesta original confirmada antes de clasificarla y, aparte, su clasificación (design D5 de `add-sri-transmission`). |
 | `document_artifact` | `fiscal` | Yes | Solo agregado: bytes exactos en `bytea`, con hash y metadatos, detrás de un puerto de almacenamiento (ADR 0010). |
-| `delivery_attempt` | `fiscal` | Yes | Solo agregado. |
+| `delivery_event` | `fiscal` | Yes | Solo agregado: eventos de entrega observables (`DOWNLOAD`, `PRINT_REQUESTED`), sin el contenido del documento (Q-24). |
 | `stock_movement` | `inventory` | Yes | Solo agregado (ERS RF-313). |
 | `idempotency_record` | `platform` | Yes | Solo agregado: empresa, operación, clave y huella de la solicitud. Sin purga mientras dure la vida fiscal del comprobante (Q-30). |
 | `job` | `platform` | Yes | Cola durable propia con deduplicación, arriendo e intentos (ADR 0012, aceptado). Sus estados no son estados fiscales. |

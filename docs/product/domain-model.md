@@ -207,11 +207,17 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 - El XML autorizado (lo recibido) nunca reemplaza al XML firmado (lo enviado). Los dos se verifican por hash, y la autorización guarda de forma inmutable su número, su fecha y el ambiente confirmado.
 - En `add-invoice-emission`: `document_artifact` con el tipo `SIGNED_XML`, los bytes UTF-8 exactos en `BYTEA`, su SHA-256 y tamaño, y metadatos con la versión y los hashes del esquema, la versión del builder y del firmador y la huella del certificado. Un comprobante `SIGNED` no existe sin su artefacto (trigger diferido).
 
-### `delivery_attempt` — Entrega
+### `delivery_event` — Entrega
 
-- Purpose: rastro de la entrega del comprobante autorizado al receptor (CTX §46).
-- Key attributes: comprobante, canal (`DOWNLOAD`, `PRINT`, `EMAIL`), destinatario, estado (`PENDING`, `DELIVERED`, `FAILED`), momento, error.
-- Invariants: una entrega fallida no cambia el estado fiscal. El canal `EMAIL` depende de Q-24.
+- Purpose: rastro de las acciones de entrega del comprobante autorizado que el sistema puede observar (CTX §46; Q-24, resuelta el 2026-10-04).
+- Key attributes: comprobante, evento, actor, momento, canal y el artefacto entregado (tipo y SHA-256), nunca su contenido.
+- Eventos del MVP:
+  - `DOWNLOAD`: el usuario autenticado pidió y recibió la descarga desde la API;
+  - `PRINT_REQUESTED`: la interfaz inició la impresión.
+- Invariants:
+  - nunca se registra `PRINTED` ni `DELIVERED_TO_RECIPIENT`: el sistema no puede demostrar que una impresora terminó ni que un tercero recibió el documento. Esto reemplaza el estado `DELIVERED` del modelo de CTX §46;
+  - un fallo de entrega no cambia el estado fiscal;
+  - el correo es P1, fuera del MVP. Cuando llegue, sus eventos reflejarán la evidencia real del proveedor (por ejemplo `EMAIL_SUBMITTED`, `EMAIL_ACCEPTED` o `EMAIL_BOUNCED`), detrás de un puerto de notificación.
 
 ### `audit_event` — Evento de auditoría
 
