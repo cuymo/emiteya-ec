@@ -26,7 +26,7 @@
 
 ## 2. Cola durable de jobs (ADR 0012)
 
-- [ ] 2.1 Implementar el repositorio de `platform/jobs` (design D5):
+- [x] 2.1 Implementar el repositorio de `platform/jobs` (design D5):
   - encolar con deduplicación (`ON CONFLICT DO NOTHING`);
   - seleccionar con `UPDATE … FOR UPDATE SKIP LOCKED`, en SQL crudo calificado con el esquema configurado, tomando los `PENDING` vencidos y los `LEASED` con el arriendo vencido;
   - completar guardado por `lease_owner` y `status`;
@@ -38,7 +38,7 @@
   - un arriendo vencido que otro worker retoma;
   - una finalización con el arriendo perdido que no tiene efecto;
   - backoff dentro de los límites y detención al agotar
-- [ ] 2.2 Implementar el runner (design D5):
+- [x] 2.2 Implementar el runner (design D5):
   - workers configurables y sondeo con jitter;
   - interruptor por prefijo de tipo, para `SRI_TRANSMISSION_ENABLED`: deshabilitada, los jobs `sri.*` no se toman, no consumen intentos ni reintentos y no hacen llamadas, mientras el encolado y el barrido siguen creándolos;
   - apagado ordenado registrado en `platform/lifecycle`: deja de tomar trabajo, espera hasta el plazo de gracia y libera los arriendos pendientes.
@@ -47,7 +47,7 @@
   - apagado con un job en curso que termina, o que se libera y se retoma;
   - con el interruptor apagado: ningún job `sri.*` tomado, ningún intento consumido y ninguna llamada; al encenderlo, los jobs existentes avanzan;
   - sin bucles calientes cuando la cola está vacía o todo falla
-- [ ] 2.3 Añadir las variables de la cola y del SRI de design D22 a `env.ts`, validando que el arriendo supera los plazos del transporte, y documentarlas en `deployment.md` (design D5 y D22).
+- [x] 2.3 Añadir las variables de la cola y del SRI de design D22 a `env.ts`, validando que el arriendo supera los plazos del transporte, y documentarlas en `deployment.md` (design D5 y D22).
   - Con la transmisión deshabilitada: detalle `sriTransmission: "disabled"` en `/health/ready`, métrica `sri_transmission_enabled` y log de arranque sin secretos.
   - Con la transmisión habilitada, la readiness exige sus precondiciones: endpoints válidos, política de tamaño vigente, al menos un worker y la base de datos. Si falta una, `503` con el motivo en el log.
 

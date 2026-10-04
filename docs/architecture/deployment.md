@@ -86,8 +86,8 @@ un solo paso es P2.
 | Ruta | Respuesta | Uso |
 | --- | --- | --- |
 | `GET /health/live` | `200` mientras el proceso atiende | Liveness del contenedor. |
-| `GET /health/ready` | `200` si el paquete de XSD se verificó al arrancar, PostgreSQL responde a `SELECT 1` en 2 s y el pool criptográfico funciona; si no, `503` | Readiness y healthcheck. |
-| `GET /metrics` | Formato Prometheus | Métricas de proceso y de peticiones, `xsd_registry_available`, las de la firma y `invoice_emission_stage_duration_seconds`. |
+| `GET /health/ready` | `200` si el paquete de XSD se verificó al arrancar, PostgreSQL responde a `SELECT 1` en 2 s, el pool criptográfico funciona y, con la transmisión al SRI habilitada, se cumplen sus precondiciones; si no, `503`. El cuerpo añade `sriTransmission` (`disabled` o `enabled`) | Readiness y healthcheck. |
+| `GET /metrics` | Formato Prometheus | Métricas de proceso y de peticiones, `xsd_registry_available`, las de la firma, `invoice_emission_stage_duration_seconds` y `sri_transmission_enabled`. |
 
 - Existen en el servicio `api`, fuera de `/api` (ADR 0016), como endpoints operacionales. No pertenecen a la API pública del producto: no están bajo `/api/v1` ni en `docs/generated/openapi.json`.
 - Su exposición no está restringida por la aplicación: el backend los sirve a cualquiera que alcance el servicio. Restringirlos (red interna, reglas del proxy o autenticación) es una responsabilidad obligatoria del despliegue, que todavía está fuera de alcance; ningún despliegue puede publicarlos sin esa restricción. El diseño previsto es que el proxy público solo enrute `/` al frontend y `/api` al backend, y que el orquestador y el sistema de métricas los consulten por la red interna, pero esa garantía se implementará con el despliegue.
@@ -98,8 +98,6 @@ un solo paso es P2.
 Además de las variables de la sección Environment. Los nombres son propuestas que fija el
 cambio que los introduzca:
 
-- Endpoints del SRI por ambiente y servicio; los valores por defecto están en el módulo central de endpoints (CTX §7).
-- Timeouts del cliente SRI, intervalo inicial y ventana de la consulta de autorización.
 - Adaptador y ubicación del almacenamiento de artefactos.
 - Zona horaria de las fechas fiscales: `America/Guayaquil` (ERS RNF-010).
 
@@ -173,6 +171,34 @@ Orden de cada arranque, antes de aceptar tráfico (design D5 de `add-parties-and
 3. Reponer el consumidor final de las empresas que no lo tengan, por ejemplo las anteriores a esta versión. Es idempotente.
 4. Si alguna empresa sigue sin consumidor final, la API no arranca.
 5. Verificar el paquete de XSD del registro de esquemas (`add-invoice-emission`, design D11). Si es inválido, la API arranca pero `/health/ready` responde `503`.
+
+### Transmisión al SRI
+
+Variables de `add-sri-transmission` (design D5 y D22). Son configuración operativa, no reglas
+normativas:
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `SRI_TRANSMISSION_ENABLED` | No | 0 | `1` habilita la transmisión. Nace apagada: un despliegue nunca transmite por accidente. |
+| `SRI_JOB_WORKERS` | No | 2 | Workers de la cola en el proceso de la API (0 a 8; 0 los desactiva). |
+| `SRI_JOB_LEASE_SECONDS` | No | 120 | Duración del arriendo de un job (30 a 3600). Debe superar el presupuesto del transporte (10 s de conexión, más los plazos de cabeceras y cuerpo) con 10 s de margen; si no, la API no arranca. |
+| `SRI_JOB_POLL_INTERVAL_MS` | No | 2000 | Sondeo de la cola sin trabajo (100 a 60000), con jitter de ±50 %. |
+| `SRI_REQUEST_TIMEOUT_MS` | No | 30000 | Plazo hasta recibir las cabeceras, desde el inicio de la llamada (1000 a 300000). |
+| `SRI_BODY_TIMEOUT_MS` | No | 30000 | Plazo de lectura del cuerpo de la respuesta (1000 a 300000). |
+| `SRI_RESPONSE_MAX_BYTES` | No | 5242880 | Tamaño máximo de una respuesta, 5 MiB (64 KiB a 50 MiB). Una mayor se corta y el intento queda incierto. |
+| `SRI_AUTHORIZATION_FIRST_DELAY_SECONDS` | No | 5 | Espera tras `RECIBIDA` antes de la primera consulta de autorización (0 a 3600; CTX §23.1). |
+| `SRI_POLL_BACKOFF_BASE_SECONDS`, `SRI_POLL_BACKOFF_CAP_SECONDS` | No | 10 y 1800 | Base y tope del backoff exponencial con jitter completo de las consultas y de los reintentos del envío. El tope no puede ser menor que la base. |
+| `SRI_CONCLUSION_WINDOW_HOURS` | No | 24 | Ventana de conclusión desde la primera evidencia de recepción (1 a 168; CTX §23.1). |
+| `SRI_ERROR70_DELAY_SECONDS` | No | 120 | Espera tras el error 70 antes de reconciliar (0 a 86400). |
+| `SRI_TRANSMIT_MAX_ATTEMPTS`, `SRI_TRANSMIT_DEADLINE_HOURS` | No | 10 y 24 | Límites del envío: al agotarlos, el job queda detenido sin cambiar el estado fiscal. |
+| `SRI_SWEEP_INTERVAL_SECONDS` | No | 300 | Intervalo del barrido que encola los firmados sin job (10 a 86400). |
+| `SRI_BREAKER_FAILURES`, `SRI_BREAKER_COOLDOWN_SECONDS` | No | 5 y 60 | Fallos de transporte seguidos que abren el circuit breaker por servicio y ambiente, y su pausa. |
+| `SRI_ENDPOINT_{TEST,PRODUCTION}_{RECEPTION,AUTHORIZATION,VALIDITY}` | No | Módulo central de endpoints (CTX §7) | Sobrescriben un endpoint. En producción exigen `https`. |
+
+- **Deshabilitada** (por defecto): el runner no toma jobs `sri.*`, que siguen `PENDING` sin arriendo, sin consumir intentos y sin ninguna llamada de red. La firma y el barrido siguen creándolos, de modo que al habilitarla avanzan los existentes. La instalación puede estar lista, y lo deja ver: `/health/ready` responde `sriTransmission: "disabled"`, la métrica `sri_transmission_enabled` vale 0 y el arranque registra el estado sin secretos ni URLs.
+- **Habilitada:** exige sus precondiciones técnicas, endpoints válidos, una política de tamaño vigente (Q-47), al menos un worker y la base de datos. Si falta una, `/health/ready` responde `503`, el log nombra la precondición que falta y los jobs `sri.*` siguen pausados. El interruptor nunca salta una invariante fiscal: la integridad, el tamaño y la evidencia previa se comprueban en cada envío.
+- **Apagado:** el runner deja de tomar trabajo, espera hasta 8 s a los jobs en curso y vence los arriendos de los que no terminaron, para que otra instancia los retome. El plazo de parada del orquestador debe cubrirlo.
+- **Habilitación:** solo después de las compuertas previas a la transmisión real (S-3 online con un P12 real y un RUC de Pruebas, vector oficial de la clave y Q-47), y primero en Pruebas.
 
 ### Actualizaciones y reversión
 

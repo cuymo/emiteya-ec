@@ -33,6 +33,31 @@ export const EXAMPLE_AUTH_SECRET = "desarrollo-local-solo-para-pruebas-no-usar-e
 export const EXAMPLE_CERTIFICATE_MASTER_KEY = "ZGVzYXJyb2xsby1sb2NhbC1uby11c2FyLWVuLXByb2Q=";
 
 const int = (min: number, max: number) => z.coerce.number().int().min(min).max(max);
+const endpoint = z.url({ protocol: /^https?$/ }).optional();
+
+export const SRI_ENDPOINT_VARIABLES = [
+  "SRI_ENDPOINT_TEST_RECEPTION",
+  "SRI_ENDPOINT_TEST_AUTHORIZATION",
+  "SRI_ENDPOINT_TEST_VALIDITY",
+  "SRI_ENDPOINT_PRODUCTION_RECEPTION",
+  "SRI_ENDPOINT_PRODUCTION_AUTHORIZATION",
+  "SRI_ENDPOINT_PRODUCTION_VALIDITY",
+] as const;
+
+/**
+ * Plazo interno de conexión de `fetch` (undici, 10 s): es el que da un error demostrable de
+ * conexión, por eso no se configura uno propio (design D10).
+ */
+export const SRI_CONNECT_TIMEOUT_MS = 10_000;
+/** Margen del arriendo sobre el presupuesto completo del transporte (design D5). */
+export const SRI_LEASE_MARGIN_MS = 10_000;
+
+/** Presupuesto de una llamada al SRI: conexión, cabeceras y cuerpo. */
+export function sriTransportBudgetMs(
+  env: Pick<Env, "SRI_REQUEST_TIMEOUT_MS" | "SRI_BODY_TIMEOUT_MS">,
+) {
+  return SRI_CONNECT_TIMEOUT_MS + env.SRI_REQUEST_TIMEOUT_MS + env.SRI_BODY_TIMEOUT_MS;
+}
 
 // Defaults de docs/security/hardening.md; son configuración, no contrato.
 export const envSchema = z
@@ -87,6 +112,35 @@ export const envSchema = z
       .enum(["0", "1"])
       .default("0")
       .transform((value) => value === "1"),
+    // Transmisión al SRI (add-sri-transmission, design D5 y D22): configuración operativa, no
+    // normativa. Nace apagada: habilitarla es una decisión de despliegue tras las compuertas.
+    SRI_TRANSMISSION_ENABLED: z
+      .enum(["0", "1"])
+      .default("0")
+      .transform((value) => value === "1"),
+    SRI_JOB_WORKERS: int(0, 8).default(2),
+    SRI_JOB_LEASE_SECONDS: int(30, 3_600).default(120),
+    SRI_JOB_POLL_INTERVAL_MS: int(100, 60_000).default(2_000),
+    SRI_REQUEST_TIMEOUT_MS: int(1_000, 300_000).default(30_000),
+    SRI_BODY_TIMEOUT_MS: int(1_000, 300_000).default(30_000),
+    SRI_RESPONSE_MAX_BYTES: int(64 * 1024, 50 * 1024 * 1024).default(5 * 1024 * 1024),
+    SRI_AUTHORIZATION_FIRST_DELAY_SECONDS: int(0, 3_600).default(5),
+    SRI_POLL_BACKOFF_BASE_SECONDS: int(1, 3_600).default(10),
+    SRI_POLL_BACKOFF_CAP_SECONDS: int(1, 86_400).default(1_800),
+    SRI_CONCLUSION_WINDOW_HOURS: int(1, 168).default(24),
+    SRI_ERROR70_DELAY_SECONDS: int(0, 86_400).default(120),
+    SRI_TRANSMIT_MAX_ATTEMPTS: int(1, 100).default(10),
+    SRI_TRANSMIT_DEADLINE_HOURS: int(1, 720).default(24),
+    SRI_SWEEP_INTERVAL_SECONDS: int(10, 86_400).default(300),
+    SRI_BREAKER_FAILURES: int(1, 100).default(5),
+    SRI_BREAKER_COOLDOWN_SECONDS: int(1, 3_600).default(60),
+    // Endpoints opcionales; sin valor rigen los del módulo central de sri-engine (design D10).
+    SRI_ENDPOINT_TEST_RECEPTION: endpoint,
+    SRI_ENDPOINT_TEST_AUTHORIZATION: endpoint,
+    SRI_ENDPOINT_TEST_VALIDITY: endpoint,
+    SRI_ENDPOINT_PRODUCTION_RECEPTION: endpoint,
+    SRI_ENDPOINT_PRODUCTION_AUTHORIZATION: endpoint,
+    SRI_ENDPOINT_PRODUCTION_VALIDITY: endpoint,
     // Solo se validan cuando la instalación aún no tiene empresa (loadInitialAdmin).
     INITIAL_USER_EMAIL: z.string().optional(),
     INITIAL_USER_PASSWORD: z.string().optional(),
@@ -107,6 +161,28 @@ export const envSchema = z
     }
     if (env.NODE_ENV === "production" && env.EMISSION_STAGE_TIMINGS) {
       ctx.addIssue({ code: "custom", path: ["EMISSION_STAGE_TIMINGS"], message: "en producción" });
+    }
+    // Un arriendo nunca vence con una llamada en curso (design D5): no hay latido.
+    if (env.SRI_JOB_LEASE_SECONDS * 1_000 < sriTransportBudgetMs(env) + SRI_LEASE_MARGIN_MS) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["SRI_JOB_LEASE_SECONDS"],
+        message: "no cubre los plazos del transporte",
+      });
+    }
+    if (env.SRI_POLL_BACKOFF_CAP_SECONDS < env.SRI_POLL_BACKOFF_BASE_SECONDS) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["SRI_POLL_BACKOFF_CAP_SECONDS"],
+        message: "menor que la base",
+      });
+    }
+    if (env.NODE_ENV === "production") {
+      for (const name of SRI_ENDPOINT_VARIABLES) {
+        if (env[name]?.startsWith("http:")) {
+          ctx.addIssue({ code: "custom", path: [name], message: "sin TLS en producción" });
+        }
+      }
     }
   });
 

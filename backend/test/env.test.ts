@@ -8,6 +8,8 @@ import {
   loadCertificateCustody,
   loadEnv,
   loadInitialAdmin,
+  SRI_ENDPOINT_VARIABLES,
+  sriTransportBudgetMs,
 } from "../src/config/env.ts";
 
 const backendRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -296,5 +298,100 @@ describe("emisión de facturas (add-invoice-emission, design D2 y D11)", () => {
       "EMISSION_STAGE_TIMINGS",
     ]);
     expect(envError({ ...production, EMISSION_STAGE_TIMINGS: "0" })).toBeUndefined();
+  });
+});
+
+describe("transmisión al SRI (add-sri-transmission, design D5 y D22)", () => {
+  it("nace deshabilitada y aplica los valores por defecto", () => {
+    expect(loadEnv(valid)).toMatchObject({
+      SRI_TRANSMISSION_ENABLED: false,
+      SRI_JOB_WORKERS: 2,
+      SRI_JOB_LEASE_SECONDS: 120,
+      SRI_JOB_POLL_INTERVAL_MS: 2_000,
+      SRI_REQUEST_TIMEOUT_MS: 30_000,
+      SRI_BODY_TIMEOUT_MS: 30_000,
+      SRI_RESPONSE_MAX_BYTES: 5 * 1024 * 1024,
+      SRI_AUTHORIZATION_FIRST_DELAY_SECONDS: 5,
+      SRI_POLL_BACKOFF_BASE_SECONDS: 10,
+      SRI_POLL_BACKOFF_CAP_SECONDS: 1_800,
+      SRI_CONCLUSION_WINDOW_HOURS: 24,
+      SRI_ERROR70_DELAY_SECONDS: 120,
+      SRI_TRANSMIT_MAX_ATTEMPTS: 10,
+      SRI_TRANSMIT_DEADLINE_HOURS: 24,
+      SRI_SWEEP_INTERVAL_SECONDS: 300,
+      SRI_BREAKER_FAILURES: 5,
+      SRI_BREAKER_COOLDOWN_SECONDS: 60,
+    });
+    for (const name of SRI_ENDPOINT_VARIABLES) expect(loadEnv(valid)[name]).toBeUndefined();
+  });
+
+  it("solo se habilita con SRI_TRANSMISSION_ENABLED=1", () => {
+    expect(loadEnv({ ...valid, SRI_TRANSMISSION_ENABLED: "1" }).SRI_TRANSMISSION_ENABLED).toBe(
+      true,
+    );
+    expect(envError({ ...valid, SRI_TRANSMISSION_ENABLED: "true" })?.variables).toEqual([
+      "SRI_TRANSMISSION_ENABLED",
+    ]);
+  });
+
+  it("rechaza valores fuera de rango sin mostrarlos", () => {
+    const error = envError({
+      ...valid,
+      SRI_JOB_WORKERS: "9",
+      SRI_JOB_POLL_INTERVAL_MS: "99",
+      SRI_RESPONSE_MAX_BYTES: "999999999",
+      SRI_CONCLUSION_WINDOW_HOURS: "0",
+      SRI_ENDPOINT_TEST_RECEPTION: "ftp://sri.example/recepcion",
+    });
+    expect(error?.variables).toEqual([
+      "SRI_JOB_WORKERS",
+      "SRI_JOB_POLL_INTERVAL_MS",
+      "SRI_RESPONSE_MAX_BYTES",
+      "SRI_CONCLUSION_WINDOW_HOURS",
+      "SRI_ENDPOINT_TEST_RECEPTION",
+    ]);
+    expect(error?.message).not.toContain("999999999");
+    expect(error?.message).not.toContain("sri.example");
+    expect(loadEnv({ ...valid, SRI_JOB_WORKERS: "0" }).SRI_JOB_WORKERS).toBe(0);
+  });
+
+  it("rechaza un arriendo que no cubre los plazos del transporte", () => {
+    expect(sriTransportBudgetMs(loadEnv(valid))).toBe(70_000);
+    expect(
+      envError({ ...valid, SRI_JOB_LEASE_SECONDS: "60", SRI_REQUEST_TIMEOUT_MS: "30000" })
+        ?.variables,
+    ).toEqual(["SRI_JOB_LEASE_SECONDS"]);
+    expect(envError({ ...valid, SRI_BODY_TIMEOUT_MS: "90000" })?.variables).toEqual([
+      "SRI_JOB_LEASE_SECONDS",
+    ]);
+    expect(
+      loadEnv({ ...valid, SRI_JOB_LEASE_SECONDS: "80", SRI_BODY_TIMEOUT_MS: "30000" })
+        .SRI_JOB_LEASE_SECONDS,
+    ).toBe(80);
+  });
+
+  it("rechaza un tope del backoff menor que la base", () => {
+    expect(
+      envError({
+        ...valid,
+        SRI_POLL_BACKOFF_BASE_SECONDS: "60",
+        SRI_POLL_BACKOFF_CAP_SECONDS: "30",
+      })?.variables,
+    ).toEqual(["SRI_POLL_BACKOFF_CAP_SECONDS"]);
+  });
+
+  it("los endpoints sobrescritos exigen https en producción", () => {
+    const production = { ...valid, NODE_ENV: "production" };
+    expect(
+      envError({ ...production, SRI_ENDPOINT_PRODUCTION_RECEPTION: "http://127.0.0.1:9/r" })
+        ?.variables,
+    ).toEqual(["SRI_ENDPOINT_PRODUCTION_RECEPTION"]);
+    expect(
+      envError({ ...production, SRI_ENDPOINT_PRODUCTION_RECEPTION: "https://sri.example/r" }),
+    ).toBeUndefined();
+    expect(
+      loadEnv({ ...valid, SRI_ENDPOINT_TEST_RECEPTION: "http://127.0.0.1:9/r" })
+        .SRI_ENDPOINT_TEST_RECEPTION,
+    ).toBe("http://127.0.0.1:9/r");
   });
 });

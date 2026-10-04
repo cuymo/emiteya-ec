@@ -10,6 +10,7 @@ import {
   loadEnv,
   loadInitialAdmin,
   passwordPolicy,
+  SRI_ENDPOINT_VARIABLES,
   type Env,
 } from "./config/env.ts";
 import { createAuthorizer } from "./modules/identity/application/authorization.ts";
@@ -38,6 +39,7 @@ import { productsModule } from "./modules/products/infrastructure/index.ts";
 import { invoicesModule } from "./modules/invoices/infrastructure/index.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
+import { createTransmissionGate } from "./modules/fiscal/infrastructure/transmission-gate.ts";
 import {
   createXmllintXsdValidator,
   verifySchemaBundle,
@@ -50,7 +52,9 @@ import {
 import { createCompanyReader } from "./modules/identity/infrastructure/prisma-companies.ts";
 import { createMembershipReader } from "./modules/identity/infrastructure/prisma-memberships.ts";
 import { createSecurityEventLog } from "./modules/identity/infrastructure/security-event-log.ts";
-import { createDatabase } from "./platform/db/database.ts";
+import { createDatabase, parseDatabaseUrl } from "./platform/db/database.ts";
+import { createPrismaJobStore } from "./platform/jobs/prisma-job-store.ts";
+import { createJobRunner } from "./platform/jobs/runner.ts";
 import { createShutdown, type Closer } from "./platform/lifecycle/shutdown.ts";
 import { createLogger } from "./platform/logging/logger.ts";
 import { createMetrics } from "./platform/metrics/metrics.ts";
@@ -239,10 +243,56 @@ apiRouter.use(
   }).routers,
 );
 
+// Transmisión al SRI (add-sri-transmission, design D5): nace deshabilitada. El estado se registra
+// sin secretos ni URLs; habilitada, la readiness exige sus precondiciones.
+const transmissionGate = createTransmissionGate(
+  {
+    enabled: env.SRI_TRANSMISSION_ENABLED,
+    workers: env.SRI_JOB_WORKERS,
+    endpointsValid: () => true,
+    sizePolicyAvailable: () => Promise.resolve(false),
+  },
+  { logger, registry: metrics.registry },
+);
+logger.info(
+  {
+    sriTransmission: env.SRI_TRANSMISSION_ENABLED ? "enabled" : "disabled",
+    workers: env.SRI_JOB_WORKERS,
+    endpointOverrides: SRI_ENDPOINT_VARIABLES.filter((name) => env[name] !== undefined).length,
+  },
+  "transmisión al SRI",
+);
+await transmissionGate.refresh();
+setInterval(() => void transmissionGate.refresh(), 30_000).unref();
+
+// Cola durable de jobs (ADR 0012): los workers corren en el proceso de la API y se cierran antes
+// que el pool criptográfico y la base de datos.
+const jobRunner = createJobRunner({
+  store: createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATABASE_URL).schema),
+  db: database.prisma,
+  handlers: {},
+  workers: env.SRI_JOB_WORKERS,
+  pollIntervalMs: env.SRI_JOB_POLL_INTERVAL_MS,
+  leaseMs: env.SRI_JOB_LEASE_SECONDS * 1_000,
+  pausedPrefixes: transmissionGate.pausedPrefixes,
+  logger,
+});
+closers.unshift({ name: "jobs", close: jobRunner.close });
+
 const app = createApp({
   logger,
   metrics,
-  readiness: async () => xsdBundleAvailable && (await database.ping()) && cryptoPool.isRunning(),
+  readiness: async () => {
+    const transmission = await transmissionGate.refresh();
+    return {
+      ready:
+        xsdBundleAvailable &&
+        (await database.ping()) &&
+        cryptoPool.isRunning() &&
+        transmission.ready,
+      details: { sriTransmission: transmission.enabled ? "enabled" : "disabled" },
+    };
+  },
   trustProxy: env.TRUST_PROXY,
   apiRouter,
   mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
@@ -252,6 +302,7 @@ const app = createApp({
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, "backend escuchando");
 });
+jobRunner.start();
 
 // Firmas vigentes que la clave de custodia configurada no abre: figuran como no disponibles hasta
 // volver a cargarlas (design D8). Sin secretos en el registro.

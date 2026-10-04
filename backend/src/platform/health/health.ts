@@ -1,7 +1,10 @@
 // Endpoints internos de salud: liveness y readiness (fuera de /api; ADR 0016).
 import { Router } from "express";
 
-export type ReadinessCheck = () => Promise<boolean>;
+/** Resultado de la readiness con detalles seguros para el cuerpo, sin secretos ni configuración. */
+export type Readiness = Readonly<{ ready: boolean; details?: Readonly<Record<string, string>> }>;
+
+export type ReadinessCheck = () => Promise<boolean | Readiness>;
 
 export function healthRouter(readiness: ReadinessCheck): Router {
   const router = Router();
@@ -9,8 +12,9 @@ export function healthRouter(readiness: ReadinessCheck): Router {
     res.json({ status: "ok" });
   });
   router.get("/ready", async (_req, res) => {
-    const ready = await readiness().catch(() => false);
-    res.status(ready ? 200 : 503).json({ status: ready ? "ready" : "unavailable" });
+    const result = await readiness().catch(() => false);
+    const { ready, details } = typeof result === "boolean" ? { ready: result } : result;
+    res.status(ready ? 200 : 503).json({ status: ready ? "ready" : "unavailable", ...details });
   });
   return router;
 }

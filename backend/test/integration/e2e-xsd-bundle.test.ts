@@ -37,8 +37,9 @@ describe("paquete de XSD al arrancar", () => {
     });
     try {
       const ready = await fetch(`${backend.base}/health/ready`);
+      const body = (await ready.json()) as Record<string, unknown>;
       const metrics = await (await fetch(`${backend.base}/metrics`)).text();
-      return { ready: ready.status, metrics, output: backend.output() };
+      return { ready: ready.status, body, metrics, output: backend.output() };
     } finally {
       await backend.stop();
     }
@@ -54,9 +55,23 @@ describe("paquete de XSD al arrancar", () => {
   });
 
   it("con el paquete completo queda listo", async () => {
-    const result = await startWith({});
+    const result = await startWith({ LOG_LEVEL: "info" });
     expect(result.ready).toBe(200);
     expect(result.metrics).toMatch(/^xsd_registry_available 1$/m);
+    // La transmisión al SRI nace deshabilitada y lo deja ver (add-sri-transmission, design D5).
+    expect(result.body).toEqual({ status: "ready", sriTransmission: "disabled" });
+    expect(result.metrics).toMatch(/^sri_transmission_enabled 0$/m);
+    expect(result.output).toContain('"sriTransmission":"disabled"');
+    expect(result.output).not.toMatch(/celcer|sri\.gob\.ec|postgres(ql)?:\/\//);
+  }, 120_000);
+
+  it("con la transmisión habilitada sin política de tamaño no se declara listo", async () => {
+    const result = await startWith({ SRI_TRANSMISSION_ENABLED: "1" });
+    expect(result.ready).toBe(503);
+    expect(result.body).toEqual({ status: "unavailable", sriTransmission: "enabled" });
+    expect(result.metrics).toMatch(/^sri_transmission_enabled 1$/m);
+    expect(result.output).toContain("transmisión al SRI habilitada sin sus precondiciones");
+    expect(result.output).toContain('"missing":["size-policy"]');
   }, 120_000);
 
   it("con un XSD alterado no se declara listo", async () => {
