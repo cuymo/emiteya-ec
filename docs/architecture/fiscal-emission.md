@@ -466,6 +466,44 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Decisiones del cambio 7 | API orientada a la factura | Historial y reconciliación del administrador; ninguna ruta de envío ni de SOAP. |
 | `add-invoice-emission` | Envía siempre los mismos bytes | El envío y el reenvío usan el `SIGNED_XML` persistido; nunca se regenera. |
 
+## Implementación de `add-document-archive`
+
+Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ride/` (ADR 0022).
+
+| Pieza | Dónde |
+| --- | --- |
+| Puertos `RideSourceReader` y `RideRenderer`, y los motivos de rechazo | `sri-engine/application/ride.ts` |
+| Lectura del XML de origen | `sri-engine/infrastructure/ride/ride-source.ts` |
+| Renderer (pdfmake, bwip-js y fontkit) | `sri-engine/infrastructure/ride/ride-renderer.ts` |
+| Fuentes, licencia y manifiesto, con sus hashes | `backend/assets/fonts/noto-sans/` y `ride-assets.ts` |
+| Worker del RIDE y su pool | `ride/serve-ride-tasks.ts`, `ride/pooled-ride-renderer.ts` y `platform/workers/ride-worker-pool.ts` |
+
+### RIDE
+
+- **Solo lo que el sistema emite.** El lector admite la factura 1.1.0 (`codDoc` 01), la única que escribe el builder, con exactamente sus elementos y la firma. Todo impuesto es IVA, porque ICE e IRBPNR no tienen datos de cálculo y la emisión los rechaza.
+- **Rechazos deterministas.** La generación se detiene con uno de estos motivos, y un detalle seguro (nombres de elementos o puntos de código, nunca contenido):
+
+  | Motivo | Cuándo |
+  | --- | --- |
+  | `RIDE_SOURCE_INVALID` | XML con `<!DOCTYPE>` o entidades, de más de 2 MiB, con más de 24 niveles, mal formado, no UTF-8, o que no es una factura 1.1.0. |
+  | `RIDE_SOURCE_UNSUPPORTED` | Un elemento que el sistema no emite (propina, información adicional, guía de remisión, plazos de pago…) o un impuesto que no es IVA. Nunca se omite en silencio. |
+  | `RIDE_AUTHORIZATION_MISMATCH` | La clave del XML no es la del comprobante o la del número de autorización, o el ambiente no coincide. |
+  | `RIDE_GLYPH_MISSING` | Un carácter sin glifo en Noto Sans Regular o Bold, con sus puntos de código. |
+  | `RIDE_LOGO_INVALID` | El logo no es un PNG o un JPEG. |
+  | `RIDE_FONTS_UNAVAILABLE` | Las fuentes del worker faltan o no coinciden con su manifiesto. |
+
+- **Contenido** del anexo 2 de la ficha v2.34 (página 60):
+  - cabecera con RUC, "FACTURA", número, autorización con su fecha en hora de Ecuador, ambiente y emisión (tablas 4 y 2), y la clave como texto y como Code128;
+  - emisor con sus leyendas (contribuyente especial, contabilidad, agente de retención y RIMPE del anexo 22), comprador, detalle (códigos solo si alguna línea los tiene), formas de pago con su denominación del snapshot;
+  - subtotales llenados: por tarifa de IVA de menor a mayor, 0 %, no objeto y exento; sin impuestos, descuento, IVA por tarifa y valor total.
+- **Importes:** el texto exacto del XML, sin separadores, conversión, recálculo ni redondeo.
+- **Code128:** vectorial, con zona de silencio de 10 módulos. Ocupa la columna de la autorización, con unos 0.33 mm por módulo (nunca menos de 0.25) y un alto de al menos el 15 % del ancho y 6.35 mm. Las pruebas lo rasterizan y lo leen con zxing (y con zbar si está instalado).
+- **Paginación:** A4; desde la segunda página, número, RUC y clave arriba; encabezado del detalle repetido; "Página X de Y"; filas sin partir; pagos y totales juntos; autorización y código enteros en la primera página.
+- **Fuentes:** Noto Sans 2.015 Regular y Bold (OFL 1.1), embebidas como subconjunto desde memoria. Nunca fuentes del sistema.
+- **Sin recursos externos:** pdfmake niega toda URL y todo archivo local; el texto se dibuja literal, sin enlaces, acciones, scripts ni archivos embebidos.
+- **Determinismo por versión.** La fecha de creación del PDF es la de autorización: con las mismas versiones y la misma entrada salen los mismos bytes, también en otro proceso. El RIDE informa `rendererVersion` (`1`), las versiones exactas de pdfmake, pdfkit, bwip-js y fontkit, y el nombre, la versión y el SHA-256 de cada fuente. Un cambio de versión no reescribe los RIDE guardados.
+- **Fuera del hilo HTTP.** Solo el worker del RIDE carga el renderer: una prueba de arquitectura lo comprueba sobre los imports de `src/`.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna

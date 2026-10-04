@@ -44,7 +44,7 @@
 
 ## 4. Renderer del RIDE
 
-- [ ] 4.1 Implementar el puerto `RideRenderer` y su adaptador sobre pdfmake con el contenido, el formato y la paginación de design D7:
+- [x] 4.1 Implementar el puerto `RideRenderer` y su adaptador sobre pdfmake con el contenido, el formato y la paginación de design D7:
   - cabecera, emisor con sus leyendas (RIMPE del anexo 22), comprador, detalle con las columnas condicionales, formas de pago con su denominación del snapshot y subtotales de IVA llenados en el orden del anexo 2, en secciones independientes;
   - importes y cantidades con el texto exacto del XML;
   - A4, encabezado repetido desde la segunda página, encabezado del detalle repetido, "Página X de Y", filas sin partir y totales indivisibles; la autorización y el código de barras completos en la primera página;
@@ -57,11 +57,11 @@
   - importes exactos sin redondear;
   - una página con pocas líneas, y varias páginas con el encabezado, la numeración, ninguna fila partida y los totales completos en la siguiente página;
   - el mismo comprobante dibujado dos veces, también en procesos distintos, da los mismos bytes
-- [ ] 4.2 Dibujar la clave de acceso como Code128 con bwip-js en rectángulos vectoriales (módulo de 0.329 mm, zona de silencio de 10 módulos y alto de al menos el 15 % del ancho y 6.35 mm) y como texto completo debajo (design D7). Verificar con una prueba que dibuja el RIDE de varios comprobantes con claves distintas, lo rasteriza con pdf.js y @napi-rs/canvas a 300 ppp y comprueba con zxing que cada lectura devuelve exactamente su clave, y que el texto extraído contiene la clave completa
-- [ ] 4.3 Comprobar con fontkit que cada carácter dibujado tiene glifo en Regular y en Bold, y detener con `RIDE_GLYPH_MISSING` y los códigos de los caracteres si no (design D7). Verificar con pruebas: tildes, eñes, diéresis y comillas tipográficas presentes en el texto extraído; un carácter sin glifo que da `RIDE_GLYPH_MISSING` con su código; y un render en un proceso sin fuentes del sistema
-- [ ] 4.4 Verificar la seguridad del PDF con pruebas (design D3 y D7): campos con marcado, `javascript:`, URL y rutas de archivo dibujados como texto; el PDF sin `/URI`, `/Launch`, `/JavaScript`, `/JS`, `/OpenAction`, `/AA`, `/EmbeddedFile` ni `/RichMedia`; y ningún acceso a la red ni a archivos fuera de los propios durante el render
+- [x] 4.2 Dibujar la clave de acceso como Code128 con bwip-js en rectángulos vectoriales (módulo de 0.329 mm, zona de silencio de 10 módulos y alto de al menos el 15 % del ancho y 6.35 mm) y como texto completo debajo (design D7). Verificar con una prueba que dibuja el RIDE de varios comprobantes con claves distintas, lo rasteriza con pdf.js y @napi-rs/canvas a 300 ppp y comprueba con zxing que cada lectura devuelve exactamente su clave, y que el texto extraído contiene la clave completa
+- [x] 4.3 Comprobar con fontkit que cada carácter dibujado tiene glifo en Regular y en Bold, y detener con `RIDE_GLYPH_MISSING` y los códigos de los caracteres si no (design D7). Verificar con pruebas: tildes, eñes, diéresis y comillas tipográficas presentes en el texto extraído; un carácter sin glifo que da `RIDE_GLYPH_MISSING` con su código; y un render en un proceso sin fuentes del sistema
+- [x] 4.4 Verificar la seguridad del PDF con pruebas (design D3 y D7): campos con marcado, `javascript:`, URL y rutas de archivo dibujados como texto; el PDF sin `/URI`, `/Launch`, `/JavaScript`, `/JS`, `/OpenAction`, `/AA`, `/EmbeddedFile` ni `/RichMedia`; y ningún acceso a la red ni a archivos fuera de los propios durante el render
 - [ ] 4.5 Crear la entrada `serve-ride-tasks.ts` y `RideWorkerPool`, instancia independiente de la primitiva con `RIDE_WORKERS`, `RIDE_QUEUE` y `RIDE_TASK_TIMEOUT_MS`; los workers cargan pdfmake y las fuentes una vez (design D6). Añadir la prueba de arquitectura que limita pdfmake, bwip-js y fontkit a la infraestructura del RIDE que solo carga la entrada del worker. Verificar con pruebas del pool del RIDE: render correcto en un worker, cola llena que responde ocupado, plazo vencido que reemplaza el worker y falla la tarea, `RIDE_GLYPH_MISSING` que llega como código determinista, y varios renders concurrentes mientras el hilo principal atiende peticiones HTTP con un retraso máximo del event loop muy por debajo de un render
-- [ ] 4.6 Documentar el renderer, las fuentes, el formato numérico y el determinismo por versión en `fiscal-emission.md`. Verificar que el documento cita los códigos de error, las versiones y la ruta de las fuentes implementados
+- [x] 4.6 Documentar el renderer, las fuentes, el formato numérico y el determinismo por versión en `fiscal-emission.md`. Verificar que el documento cita los códigos de error, las versiones y la ruta de las fuentes implementados
 
 ## 5. Generación del RIDE como job
 
