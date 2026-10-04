@@ -20,6 +20,7 @@ import type { Drafts } from "../../src/modules/invoices/application/drafts.ts";
 import type { Emission } from "../../src/modules/invoices/application/emission.ts";
 import type { Invoices } from "../../src/modules/invoices/application/invoices.ts";
 import { invoicesRouter } from "../../src/modules/invoices/infrastructure/http/invoices-router.ts";
+import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -47,6 +48,7 @@ describe("rutas documentadas", () => {
       partiesRouter({} as Parties),
       productsRouter({} as Products),
       invoicesRouter({ drafts: {} as Drafts, emission: {} as Emission, invoices: {} as Invoices }),
+      ...archiveRouters({ prisma: {} as PrismaClient, authorizer: {} as Authorizer }),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);

@@ -104,7 +104,7 @@
 
 ## 7. API de la bandeja
 
-- [ ] 7.1 Implementar `GET /api/v1/documents` con los filtros, el orden y las disponibilidades de design D2, en una consulta paginada sin N+1, y `GET /api/v1/documents/{documentId}` con los artefactos (tipo, SHA-256, tamaño, fecha y procedencia del RIDE) y la generación con su motivo. Registrar las rutas en OpenAPI. Verificar con pruebas HTTP:
+- [x] 7.1 Implementar `GET /api/v1/documents` con los filtros, el orden y las disponibilidades de design D2, en una consulta paginada sin N+1, y `GET /api/v1/documents/{documentId}` con los artefactos (tipo, SHA-256, tamaño, fecha y procedencia del RIDE) y la generación con su motivo. Registrar las rutas en OpenAPI. Verificar con pruebas HTTP:
   - comprobantes en todos los estados con su estado visible, sin borradores, y la bandeja vacía;
   - el rango de fechas inclusivo, el establecimiento con el punto y el estado, la identificación y el número;
   - un filtro inválido rechazado antes de consultar;

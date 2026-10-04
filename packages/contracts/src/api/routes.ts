@@ -95,6 +95,13 @@ import {
   listInvoicesQuerySchema,
   updateDraftSchema,
 } from "../invoices.ts";
+import {
+  documentIdParamsSchema,
+  documentListItemSchema,
+  documentListMetaSchema,
+  documentSummaryViewSchema,
+  listDocumentsQuerySchema,
+} from "../archive.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -150,6 +157,11 @@ const configErrors = {
   400: errors[400],
   401: errors[401],
   403: errors[403],
+};
+
+const documentNotFound = {
+  description: "El comprobante no existe en la empresa (DOCUMENT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
 };
 
 export const apiRoutes: readonly RouteDefinition[] = [
@@ -1055,6 +1067,42 @@ export const apiRoutes: readonly RouteDefinition[] = [
       401: errors[401],
       403: errors[403],
       404: invoiceNotFound,
+    },
+  }),
+  // Bandeja de comprobantes y sus documentos (add-document-archive, design D2 y D10).
+  defineRoute({
+    method: "get",
+    path: "/documents",
+    summary:
+      "Listar los comprobantes fiscales de la empresa desde que se reservan, con filtros y los documentos disponibles, los más recientes primero",
+    request: { query: listDocumentsQuerySchema },
+    responses: {
+      200: {
+        description: "Página de comprobantes con el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(documentListItemSchema),
+          meta: documentListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/documents/:documentId",
+    summary:
+      "Consultar los documentos de un comprobante: disponibilidad, artefactos y generación del RIDE",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      200: {
+        description: "Resumen de los documentos del comprobante.",
+        schema: successEnvelope(documentSummaryViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotFound,
     },
   }),
 ];

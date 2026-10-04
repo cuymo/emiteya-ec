@@ -481,6 +481,15 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 | Job `document.render_ride`: seguidor de la autorización, handler y barrido | `fiscal/application/archive/` (`ride-jobs.ts`, `ride-handler.ts`) y `fiscal/infrastructure/archive/` (`ride-sweeper.ts`, `ride-unit-of-work.ts`, `ride-metrics.ts`) |
 | Logo de una versión de la configuración | `taxpayer/infrastructure/prisma-configuration-assets.ts` (`createConfigurationLogoReader`), compuesto en `main.ts` |
 
+### Rutas y permisos
+
+| Método y ruta | Uso | Permiso |
+| --- | --- | --- |
+| `GET /api/v1/documents` | Bandeja: comprobantes desde `RESERVED`, nunca borradores, con filtros de fecha de emisión (`from`, `to`, inclusivos), tipo, estado, identificación del receptor, búsqueda por número o receptor, establecimiento y punto; de la fecha más reciente a la más antigua, con los documentos disponibles (`ride`: `AVAILABLE`, `PENDING`, `STOPPED` o `NOT_APPLICABLE`; `authorizedXml` y `signedXml`) | `archive.read` |
+| `GET /api/v1/documents/{documentId}` | Resumen: lo mismo que la bandeja, los artefactos con su tipo, SHA-256, tamaño, fecha y la procedencia del RIDE, y la generación del RIDE con su motivo si está detenida | `archive.read` |
+
+- La empresa sale de la sesión; un comprobante de otra empresa es `404 DOCUMENT_NOT_FOUND`. El detalle de la factura y su historial de transmisión siguen en `/invoices`.
+
 ### RIDE
 
 - **Solo lo que el sistema emite.** El lector admite la factura 1.1.0 (`codDoc` 01), la única que escribe el builder, con exactamente sus elementos y la firma. Todo impuesto es IVA, porque ICE e IRBPNR no tienen datos de cálculo y la emisión los rechaza.

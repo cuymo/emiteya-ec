@@ -24,11 +24,19 @@ export async function insertDocument(
   prisma: PrismaClient,
   company: FiscalCompany,
   state: string,
-  options: { environment?: "TEST" | "PRODUCTION"; signedXml?: (accessKey: string) => Buffer } = {},
+  options: {
+    environment?: "TEST" | "PRODUCTION";
+    signedXml?: (accessKey: string) => Buffer;
+    /** Para la bandeja: fecha de emisión, receptor y punto (por defecto el primero). */
+    issueDate?: string;
+    buyer?: { identification: string; name: string };
+    point?: number;
+  } = {},
 ) {
   const reservation = await createSequentialReservation(createFiscalUnitOfWork(prisma)).reserve(
-    reservationInput(key(company)),
+    reservationInput(key(company, options.point ?? 0)),
   );
+  const point = company.points[options.point ?? 0]!;
   const accessKey = randomAccessKey();
   const environment = options.environment ?? "TEST";
   return prisma.$transaction(async (tx) => {
@@ -37,19 +45,19 @@ export async function insertDocument(
         companyId: company.companyId,
         documentType: "01",
         environment,
-        establishmentId: company.points[0]!.establishmentId,
-        emissionPointId: company.points[0]!.emissionPointId,
-        documentNumber: `001-001-${String(reservation.sequential).padStart(9, "0")}`,
+        establishmentId: point.establishmentId,
+        emissionPointId: point.emissionPointId,
+        documentNumber: `${point.code}-001-${String(reservation.sequential).padStart(9, "0")}`,
         sequential: reservation.sequential,
         reservationId: reservation.reservationId,
         accessKey,
         numericCode: "12345678",
-        issueDate: new Date("2026-10-04"),
+        issueDate: new Date(options.issueDate ?? "2026-10-04"),
         state,
         snapshot: { snapshotVersion: 1, key: { accessKey } },
         schemaVersion: "1.1.0",
-        buyerIdentification: "9999999999999",
-        buyerName: "CONSUMIDOR FINAL",
+        buyerIdentification: options.buyer?.identification ?? "9999999999999",
+        buyerName: options.buyer?.name ?? "CONSUMIDOR FINAL",
         total: "11.50",
         createdBy: company.adminId,
         signedAt: state === "RESERVED" ? null : new Date("2026-10-04T14:00:00Z"),
