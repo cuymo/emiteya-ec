@@ -122,6 +122,7 @@ describe("evidencia antes de la clasificación", () => {
     uow,
     jobs: store,
     logger,
+    followers: [],
   });
 
   async function signedWithJob(owner?: string) {

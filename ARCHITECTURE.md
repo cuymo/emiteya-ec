@@ -54,9 +54,11 @@ fiscal/
 
 Esa estructura es el objetivo. Hoy, `fiscal` tiene la numeración, el comprobante, las
 transiciones, el puerto de artefactos y la orquestación de la transmisión (handlers de los jobs,
-evidencia y reconciliación); el builder, la clave, la validación XSD, el transporte SOAP y los
-parsers viven en `sri-engine`; la firma, en `signing`; la cola de jobs, en `platform/jobs`; y la
-orquestación de la emisión local, en `invoices`.
+evidencia y reconciliación), y en sus carpetas `archive/` el archivo documental: el job del RIDE,
+su barrido, la bandeja, las descargas y las entregas. El builder, la clave, la validación XSD, el
+transporte SOAP, los parsers y el renderer del RIDE viven en `sri-engine`; la firma, en `signing`;
+la cola de jobs, en `platform/jobs`; la primitiva de los pools de workers (criptográfico y del RIDE),
+en `platform/workers`; y la orquestación de la emisión local, en `invoices`.
 
 ## Dependency Direction
 
@@ -75,6 +77,10 @@ Rules:
 - Application logic depends on ports/interfaces, not concrete infrastructure. Los puertos del motor fiscal son los de CTX §43: clientes de recepción, autorización y consulta, validador XSD y firmador, más almacenamiento de artefactos y renderer RIDE.
 - Infrastructure implements ports and owns external tools. Los objetos de una librería SOAP o de firma nunca cruzan el puerto; se normalizan antes (CTX §44).
 - `fiscal` no importa `inventory`: el inventario reacciona a eventos fiscales, así puede desactivarse sin tocar la emisión (ADR 0006).
+- El archivo documental depende de la transmisión, nunca al revés (design D1 y D5 de `add-document-archive`):
+  - la transmisión solo conoce el puerto genérico de seguidores de las transiciones (`fiscal/application/document-transitions.ts`) y los invoca en la misma transacción que guarda cada transición;
+  - el seguidor del archivo encola `document.render_ride` al llegar a `AUTHORIZED`, y `main.ts` lo compone al arrancar;
+  - las pruebas de arquitectura comprueban que ningún archivo fuera de `archive/` y de la composición importa el archivo, y que solo el worker del RIDE carga pdfmake.
 - `invoices` no lee tablas de otros módulos (design D1 de `add-invoice-emission`):
   - compone sus lecturas internas exportadas: la configuración y el punto de `taxpayer`, el tercero de `parties`, el producto de `products`, las consultas de `catalogs` y la firma vigente de `signing`;
   - usa, dentro de su unidad de trabajo, las operaciones transaccionales exportadas: `reserveSequentialIn` y el repositorio de documentos y artefactos de `fiscal`, y `lockTaxIdentityIn` de `taxpayer`;
@@ -106,7 +112,8 @@ borrador -> Emitir (Idempotency-Key) -> transacción: bloqueos, validación, sna
          -> job: recepción -> respuesta persistida -> job: autorización con backoff
          -> XML autorizado + respuesta persistidos -> AUTHORIZED   (cambio 7, implementado)
          -> reconciliación por la misma clave ante cualquier resultado ambiguo
-         -> RIDE -> entrega                                           (cambio 8, objetivo)
+         -> job del RIDE en la misma transacción que AUTHORIZED -> RIDE_PDF guardado una vez
+         -> bandeja, descargas verificadas e impresión, con su historial  (cambio 8)
 ```
 
 Estados, transiciones y reglas de reintento en `docs/architecture/fiscal-emission.md`.

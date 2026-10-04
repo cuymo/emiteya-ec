@@ -20,6 +20,8 @@ import { createTaxpayerUnitOfWork } from "./unit-of-work.ts";
 // Lecturas y lock de la identidad dentro de la transacción de la emisión (add-invoice-emission, D1).
 export { createTaxpayerScope, taxpayerEmissionReads } from "./unit-of-work.ts";
 export { lockTaxIdentityIn } from "../application/tax-identity-lock.ts";
+// Logo de una versión de la configuración, para el RIDE (add-document-archive, design D3).
+export { createConfigurationLogoReader } from "./prisma-configuration-assets.ts";
 
 export type TaxpayerModuleOptions = {
   prisma: PrismaClient;

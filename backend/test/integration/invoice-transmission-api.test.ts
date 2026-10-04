@@ -607,6 +607,7 @@ describe("transmisión de facturas sobre HTTP", () => {
         uow: createTransmissionUnitOfWork(prisma as PrismaClient),
         jobs: createPrismaJobStore(prisma as PrismaClient, db.name),
         logger: { info: () => {}, warn: () => {} },
+        followers: [],
         documents: createDocumentRepository(prisma),
         inquiry: {
           queryAuthorization: (environment) => exchange("AUTHORIZATION", environment),

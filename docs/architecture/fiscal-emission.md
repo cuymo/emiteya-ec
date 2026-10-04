@@ -477,6 +477,9 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 | Renderer (pdfmake, bwip-js y fontkit) | `sri-engine/infrastructure/ride/ride-renderer.ts` |
 | Fuentes, licencia y manifiesto, con sus hashes | `backend/assets/fonts/noto-sans/` y `ride-assets.ts` |
 | Worker del RIDE y su pool | `ride/serve-ride-tasks.ts`, `ride/pooled-ride-renderer.ts` y `platform/workers/ride-worker-pool.ts` |
+| Seguidores de las transiciones (puerto genérico) | `fiscal/application/document-transitions.ts`, invocados por `transmission-step.ts` |
+| Job `document.render_ride`: seguidor de la autorización, handler y barrido | `fiscal/application/archive/` (`ride-jobs.ts`, `ride-handler.ts`) y `fiscal/infrastructure/archive/` (`ride-sweeper.ts`, `ride-unit-of-work.ts`, `ride-metrics.ts`) |
+| Logo de una versión de la configuración | `taxpayer/infrastructure/prisma-configuration-assets.ts` (`createConfigurationLogoReader`), compuesto en `main.ts` |
 
 ### RIDE
 
@@ -503,6 +506,13 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 - **Sin recursos externos:** pdfmake niega toda URL y todo archivo local; el texto se dibuja literal, sin enlaces, acciones, scripts ni archivos embebidos.
 - **Determinismo por versión.** La fecha de creación del PDF es la de autorización: con las mismas versiones y la misma entrada salen los mismos bytes, también en otro proceso. El RIDE informa `rendererVersion` (`1`), las versiones exactas de pdfmake, pdfkit, bwip-js y fontkit, y el nombre, la versión y el SHA-256 de cada fuente. Un cambio de versión no reescribe los RIDE guardados.
 - **Fuera del hilo HTTP.** Solo el worker del RIDE carga el renderer: una prueba de arquitectura lo comprueba sobre los imports de `src/`.
+
+### Job del RIDE
+
+- **Programación.** `document.render_ride` nace en la transacción que guarda la transición a `AUTHORIZED` (autorización, reconciliación automática o manual), por el seguidor que compone `main.ts`. Una caída antes del commit no deja ni la autorización ni el job.
+- **Fuente.** El `AUTHORIZED_XML`, o el `SIGNED_XML` transmitido si el SRI autorizó sin devolver el comprobante, siempre con su SHA-256 y su tamaño comprobados. La procedencia (`AUTHORIZED_XML` o `SIGNED_XML_FALLBACK`) queda en el artefacto. Las denominaciones de pago salen del snapshot y el logo, de la versión de configuración del snapshot con su hash.
+- **Artefacto.** `RIDE_PDF` con `application/pdf`, sus bytes, SHA-256 y tamaño, y en los metadatos las versiones, las páginas, el origen (`kind`, `sha256`, `provenance`), el hash del logo, el número de autorización y el job. Un segundo RIDE choca con `UNIQUE (document_id, kind)` y el job termina sin error.
+- **Detenciones propias de `fiscal`:** `RIDE_SOURCE_INTEGRITY` (origen ausente o alterado), `RIDE_LOGO_INTEGRITY`, `RIDE_DOCUMENT_NOT_AUTHORIZED`, `RIDE_DOCUMENT_NOT_FOUND`, además de los rechazos del renderer.
 
 ## Reserva del secuencial
 

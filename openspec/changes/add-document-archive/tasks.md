@@ -65,7 +65,7 @@
 
 ## 5. Generación del RIDE como job
 
-- [ ] 5.1 Programar el RIDE al autorizar sin invertir la dependencia (design D1 y D5):
+- [x] 5.1 Programar el RIDE al autorizar sin invertir la dependencia (design D1 y D5):
   - el puerto genérico `DocumentTransitionFollower` en `fiscal/application/document-transitions.ts`;
   - `applyDecision` recibe los seguidores como dependencia obligatoria y llama a cada uno, con el cliente de la TX B, después de guardar cada transición y su artefacto;
   - el seguidor `fiscal/application/archive/ride-follower.ts` encola `document.render_ride` con la clave `document.render_ride:{documentId}` cuando la transición llega a `AUTHORIZED`;
@@ -77,8 +77,8 @@
   - una caída simulada antes del commit, o un seguidor que falla, no deja ni la autorización ni el job;
   - ningún otro estado lo encola;
   - la prueba de arquitectura pasa sobre el código y detecta cada violación en archivos de ejemplo
-- [ ] 5.2 Implementar el barrido idempotente `archive/ride-sweeper.ts`, defensa secundaria al arrancar y cada `RIDE_SWEEP_INTERVAL_SECONDS` (design D5). Verificar con pruebas de integración: los autorizados sin `RIDE_PDF` ni job reciben exactamente uno; el barrido repetido y dos barridos a la vez no crean duplicados; un autorizado con RIDE no recibe job; un job `STOPPED` no se reactiva
-- [ ] 5.3 Implementar el handler `fiscal/application/archive/ride-handler.ts` con los pasos y la clasificación de fallos de design D5:
+- [x] 5.2 Implementar el barrido idempotente `archive/ride-sweeper.ts`, defensa secundaria al arrancar y cada `RIDE_SWEEP_INTERVAL_SECONDS` (design D5). Verificar con pruebas de integración: los autorizados sin `RIDE_PDF` ni job reciben exactamente uno; el barrido repetido y dos barridos a la vez no crean duplicados; un autorizado con RIDE no recibe job; un job `STOPPED` no se reactiva
+- [x] 5.3 Implementar el handler `fiscal/application/archive/ride-handler.ts` con los pasos y la clasificación de fallos de design D5:
   - comprobante inexistente o no autorizado: detención determinista;
   - con `RIDE_PDF`: completa sin generar;
   - fuente `AUTHORIZED_XML` o, sin él, `SIGNED_XML_FALLBACK`, con la asociación, el SHA-256 y el tamaño verificados (`RIDE_SOURCE_INTEGRITY`) y el logo de la versión de configuración del snapshot con su hash (`RIDE_LOGO_INTEGRITY`);
@@ -93,9 +93,9 @@
   - generación repetida y dos generaciones simultáneas dejan un solo RIDE;
   - el comprobante sigue `AUTHORIZED` en cada fallo, y un fallo transitorio que agota `RIDE_JOB_MAX_ATTEMPTS` queda `STOPPED`;
   - ninguna lectura de `parties`, `products`, `taxpayer` ni `catalogs`
-- [ ] 5.4 Arrancar una segunda instancia del runner para los jobs `document.*` con `RIDE_WORKERS` lazos, fuera del interruptor de la transmisión y pausada mientras las fuentes del RIDE no estén verificadas, con el barrido y el apagado ordenado compartido: deja de tomar trabajo, espera el render en curso hasta el plazo de gracia, vence los arriendos y cierra el pool (design D6 y D7). Verificar con pruebas: con la transmisión deshabilitada el RIDE se genera; el runner de la transmisión no toma jobs `document.*` ni el del RIDE toma `sri.*`; con las fuentes alteradas no se toma ningún job del RIDE; un apagado con un render en curso que termina, o que se libera y se retoma
-- [ ] 5.5 Añadir las métricas `ride_render_duration_seconds`, `ride_job_wait_seconds`, `ride_render_failures_total{code}` y `documents_authorized_without_ride` (design D14), y documentarlas en `observability.md` con las alertas de autorizados sin RIDE y de fallos deterministas. Verificar con una prueba de que aparecen en `/metrics` con códigos acotados, sin bytes, XML, claves completas, datos del comprador ni identificadores de empresa
-- [ ] 5.6 Documentar el job, el seguidor de las transiciones y la dirección de las dependencias, el barrido, el runner del RIDE y la primitiva del pool en `backend.md` y `ARCHITECTURE.md`. Verificar que los documentos citan el tipo de job, la clave de deduplicación, las variables y los módulos implementados
+- [x] 5.4 Arrancar una segunda instancia del runner para los jobs `document.*` con `RIDE_WORKERS` lazos, fuera del interruptor de la transmisión y pausada mientras las fuentes del RIDE no estén verificadas, con el barrido y el apagado ordenado compartido: deja de tomar trabajo, espera el render en curso hasta el plazo de gracia, vence los arriendos y cierra el pool (design D6 y D7). Verificar con pruebas: con la transmisión deshabilitada el RIDE se genera; el runner de la transmisión no toma jobs `document.*` ni el del RIDE toma `sri.*`; con las fuentes alteradas no se toma ningún job del RIDE; un apagado con un render en curso que termina, o que se libera y se retoma
+- [x] 5.5 Añadir las métricas `ride_render_duration_seconds`, `ride_job_wait_seconds`, `ride_render_failures_total{code}` y `documents_authorized_without_ride` (design D14), y documentarlas en `observability.md` con las alertas de autorizados sin RIDE y de fallos deterministas. Verificar con una prueba de que aparecen en `/metrics` con códigos acotados, sin bytes, XML, claves completas, datos del comprador ni identificadores de empresa
+- [x] 5.6 Documentar el job, el seguidor de las transiciones y la dirección de las dependencias, el barrido, el runner del RIDE y la primitiva del pool en `backend.md` y `ARCHITECTURE.md`. Verificar que los documentos citan el tipo de job, la clave de deduplicación, las variables y los módulos implementados
 
 ## 6. Contratos y permisos
 

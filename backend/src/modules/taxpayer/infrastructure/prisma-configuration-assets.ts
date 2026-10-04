@@ -44,3 +44,19 @@ export function createConfigurationAssetStore(db: DbClient): ConfigurationAssetS
     },
   };
 }
+
+/**
+ * Logo de una versión inmutable de la configuración (add-document-archive, design D3): lo usa el
+ * RIDE, que nunca lee la configuración vigente. Solo de lectura y siempre por empresa.
+ */
+export function createConfigurationLogoReader(db: DbClient) {
+  return async (companyId: string, configVersionId: string) => {
+    const version = await db.companyConfigVersion.findFirst({
+      where: { companyId, id: configVersionId },
+      select: {
+        logoAsset: { select: { content: true, mimeType: true, sha256: true, sizeBytes: true } },
+      },
+    });
+    return version?.logoAsset ?? null;
+  };
+}

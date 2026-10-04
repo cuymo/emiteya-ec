@@ -3,7 +3,13 @@
 // ambiente y número distintos, varias autorizaciones, ventana agotada, SRI caído y los casos C y D
 // de CTX §52. Respuestas SINTÉTICAS con la estructura oficial.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  RIDE_BACKOFF,
+  RIDE_JOB_TYPE,
+  rideFollower,
+} from "../../src/modules/fiscal/application/archive/ride-jobs.ts";
 import { createAuthorizeHandler } from "../../src/modules/fiscal/application/authorize-handler.ts";
+import type { DocumentTransitionFollower } from "../../src/modules/fiscal/application/document-transitions.ts";
 import { createTransmitHandler } from "../../src/modules/fiscal/application/transmit-handler.ts";
 import { DEFAULT_TRANSMISSION_SETTINGS } from "../../src/modules/fiscal/application/transmission-settings.ts";
 import type { TransmissionUnitOfWork } from "../../src/modules/fiscal/application/transmission-step.ts";
@@ -79,6 +85,7 @@ describe("handler sri.authorize", () => {
     uow,
     jobs: store,
     logger: { info: () => {}, warn: () => {} },
+    followers: [],
     documents: createDocumentRepository(prisma),
     gateway: gateway(),
     classifiers: sriClassifiers,
@@ -207,6 +214,65 @@ describe("handler sri.authorize", () => {
     });
     expect((await jobOf(job.id)).status).toBe("DONE");
     expect(calls).toEqual(["AUTHORIZATION"]);
+  });
+
+  // add-document-archive (design D5): el job del RIDE nace con la autorización, por el seguidor de
+  // las transiciones que compone el arranque; la transmisión no lo conoce.
+  describe("con el seguidor del RIDE compuesto", () => {
+    // El repositorio de jobs se crea en beforeAll: el seguidor se compone al usarlo.
+    const ride: DocumentTransitionFollower = (db, event) =>
+      rideFollower({ jobs: store, settings: { maxAttempts: 5, backoff: RIDE_BACKOFF } })(db, event);
+    const withFollowers = (followers: DocumentTransitionFollower[], uow?: TransmissionUnitOfWork) =>
+      createAuthorizeHandler({ ...base(uow), followers, random: () => 0.5 });
+    const rideJobs = (documentId: string) =>
+      prisma.job.findMany({ where: { documentId, type: RIDE_JOB_TYPE } });
+
+    it("la autorización encola el RIDE en su transacción; una caída antes del commit no deja ninguno", async () => {
+      const { document, job } = await receivedWithJob();
+      reply(document, [authorized(document)]);
+      const crashing = crashOnce();
+      await expect(withFollowers([ride], crashing).run(job, context())).rejects.toThrow(
+        "caída simulada",
+      );
+      expect((await documentOf(document.id)).state).toBe("RECEIVED");
+      expect(await rideJobs(document.id)).toEqual([]);
+      // Al retomar se clasifica la respuesta guardada: autorizado y con su RIDE programado.
+      await withFollowers([ride], crashing).run(job, context());
+      expect((await documentOf(document.id)).state).toBe("AUTHORIZED");
+      expect(await rideJobs(document.id)).toMatchObject([
+        {
+          status: "PENDING",
+          dedupeKey: `document.render_ride:${document.id}`,
+          activeDedupeKey: `document.render_ride:${document.id}`,
+          origin: "AUTOMATIC",
+          maxAttempts: 5,
+        },
+      ]);
+    });
+
+    it("un seguidor que falla revierte la autorización entera", async () => {
+      const { document, job } = await receivedWithJob();
+      reply(document, [authorized(document)]);
+      const failing: DocumentTransitionFollower = () => Promise.reject(new Error("seguidor caído"));
+      await expect(withFollowers([ride, failing]).run(job, context())).rejects.toThrow(
+        "seguidor caído",
+      );
+      expect((await documentOf(document.id)).state).toBe("RECEIVED");
+      expect(
+        await prisma.documentArtifact.count({
+          where: { documentId: document.id, kind: "AUTHORIZED_XML" },
+        }),
+      ).toBe(0);
+      expect(await rideJobs(document.id)).toEqual([]);
+    });
+
+    it("una transición que no llega a autorizado no encola el RIDE", async () => {
+      const { document, job } = await receivedWithJob();
+      reply(document, [authorized(document, { estado: "NO AUTORIZADO", comprobante: undefined })]);
+      await withFollowers([ride]).run(job, context());
+      expect((await documentOf(document.id)).state).toBe("NOT_AUTHORIZED");
+      expect(await rideJobs(document.id)).toEqual([]);
+    });
   });
 
   it("una autorización sin XML es válida y no crea artefacto", async () => {

@@ -168,14 +168,18 @@ export interface DocumentRepository {
 
 /** Metadatos no sensibles del artefacto: esquema, hashes, versiones y huella del certificado. */
 export type ArtifactMetadata = Readonly<
-  Record<string, string | number | boolean | null | readonly unknown[]>
+  Record<
+    string,
+    string | number | boolean | null | readonly unknown[] | Readonly<Record<string, unknown>>
+  >
 >;
 
 export type NewArtifact = Readonly<{
   companyId: string;
   documentId: string;
   kind: ArtifactKind;
-  mediaType: "application/xml";
+  /** Los XML con `application/xml` y el RIDE con `application/pdf` (CHECK de la base). */
+  mediaType: "application/xml" | "application/pdf";
   /** Bytes exactos: lo que se firmó es lo que se guarda y lo que se enviará (cambio 7). */
   content: Buffer;
   metadata: ArtifactMetadata;

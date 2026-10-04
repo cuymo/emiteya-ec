@@ -20,7 +20,8 @@ backend/src/
 ├── app.ts           createApp(deps): arma la aplicación HTTP
 ├── config/          entorno validado con Zod (env.ts)
 ├── platform/        http (correlación, errores, 404), logging, metrics (y tiempos por etapa), health,
-│                    lifecycle, db, decimal, idempotency, search, workers y jobs (cola durable)
+│                    lifecycle, db, decimal, idempotency, search, workers (primitiva de pool y sus
+│                    instancias criptográfica y del RIDE) y jobs (cola durable)
 ├── generated/       cliente de Prisma generado (no versionado)
 ├── commands/        comandos de servidor sin ruta HTTP (admin:recover)
 └── modules/         un directorio por módulo con domain / application / infrastructure
@@ -133,6 +134,12 @@ En este proyecto (Q-30, design D8 de `add-invoice-emission`):
 - Job ownership: el módulo `fiscal` es dueño de los jobs de recepción, autorización y reconciliación (`sri.transmit`, `sri.authorize` y `sri.reconcile`, implementados en `add-sri-transmission`), de la recuperación y del RIDE; `taxpayer`, del aviso de vencimiento del certificado; `reports`, de las exportaciones grandes si la medición las exige. La consulta de validez para observar anulaciones es una capacidad futura (Q-16). Detalle en `fiscal-emission.md`.
 - Persistence: cola durable propia en PostgreSQL, en la misma base de datos que los comprobantes, sin librería de jobs (ADR 0012, aceptado el 2026-10-03), en `platform/jobs`. Tiene deduplicación, exclusión por comprobante, `scheduledAt` y `nextAttemptAt`, intentos, arriendo con expiración, selección con `FOR UPDATE SKIP LOCKED`, último error tipado, workers configurables (`SRI_JOB_WORKERS`) en el proceso de la API y apagado ordenado. Los estados del job (`PENDING`, `LEASED`, `DONE`, `STOPPED`) no son estados fiscales.
 - Retry policy: backoff exponencial con jitter, configurable por tipo de job, con un máximo de intentos o una ventana, sin reintentos infinitos ni bucles calientes. Las consultas al SRI se reintentan; el envío a recepción solo se reintenta si el fallo demuestra que la solicitud no salió, y en otro caso se reconcilia antes (CTX §33). La autorización se consulta dentro de la ventana de conclusión, 24 horas por defecto.
+- RIDE (`add-document-archive`, design D5 y D6):
+  - `document.render_ride`, deduplicado por comprobante (`document.render_ride:{documentId}`), nace en la misma transacción que la transición a `AUTHORIZED` por un seguidor de las transiciones que compone `main.ts`; un barrido idempotente (`RIDE_SWEEP_INTERVAL_SECONDS`) es el backfill y la defensa secundaria, y nunca reactiva un job detenido;
+  - lo toma un segundo runner con `RIDE_WORKERS` lazos, que el interruptor de la transmisión no pausa y que no toma nada mientras las fuentes del RIDE no estén verificadas; su arriendo cubre la cola y el plazo del pool;
+  - el render corre en `RideWorkerPool`, una instancia de la primitiva `platform/workers/worker-pool.ts` independiente del pool criptográfico;
+  - un pool ocupado o un apagado reprograman sin gastar el intento; un plazo vencido, un worker caído o un error inesperado reintentan con backoff hasta `RIDE_JOB_MAX_ATTEMPTS`; un rechazo determinista detiene el job con su motivo. El comprobante sigue `AUTHORIZED`;
+  - un usuario con `archive.retryRide` reintenta una generación detenida.
 - Cancellation: los jobs fiscales no se cancelan, porque el comprobante ya tiene efectos ante el SRI; un administrador puede ordenar una reconciliación manual, que también reactiva un envío detenido. `MANUAL_REVIEW` es un estado fiscal y solo sale con esa reconciliación (Q-06, resuelta en `add-sri-transmission`). Los jobs de exportación sí se cancelan.
 - Progress reporting: el estado fiscal del comprobante es el progreso visible; las exportaciones informan su avance.
 

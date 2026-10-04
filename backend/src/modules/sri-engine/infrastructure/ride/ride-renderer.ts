@@ -498,6 +498,7 @@ export function createInProcessRideRenderer(fonts: RideFonts): RideRenderer {
 
   return {
     async render(input: RideRenderInput): Promise<RideRenderOutcome> {
+      const started = performance.now();
       try {
         const ride = readRideSource(input);
         assertLogo(input.logo);
@@ -510,7 +511,13 @@ export function createInProcessRideRenderer(fonts: RideFonts): RideRenderer {
             }),
           )
           .getBuffer();
-        return { status: "RENDERED", pdf: new Uint8Array(pdf), pages, versions: RIDE_VERSIONS };
+        return {
+          status: "RENDERED",
+          pdf: new Uint8Array(pdf),
+          pages,
+          versions: RIDE_VERSIONS,
+          renderMs: performance.now() - started,
+        };
       } catch (error) {
         if (error instanceof RideRejectedError) {
           return { status: "REJECTED", code: error.code, detail: error.detail };

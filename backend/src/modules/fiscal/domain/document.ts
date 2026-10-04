@@ -68,6 +68,9 @@ export type AttemptDiagnostic = Readonly<{
   detail: AttemptDetail | null;
 }>;
 
-/** Lo enviado (`SIGNED_XML`) y lo recibido del SRI (`AUTHORIZED_XML`, design D16). */
-export const ARTIFACT_KINDS = ["SIGNED_XML", "AUTHORIZED_XML"] as const;
+/**
+ * Lo enviado (`SIGNED_XML`), lo recibido del SRI (`AUTHORIZED_XML`, design D16 de
+ * add-sri-transmission) y el RIDE generado una vez (`RIDE_PDF`, design D4 de add-document-archive).
+ */
+export const ARTIFACT_KINDS = ["SIGNED_XML", "AUTHORIZED_XML", "RIDE_PDF"] as const;
 export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];

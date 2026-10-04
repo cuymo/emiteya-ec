@@ -131,7 +131,14 @@ export type RideVersions = Readonly<{
 }>;
 
 export type RideRenderOutcome =
-  | Readonly<{ status: "RENDERED"; pdf: Uint8Array; pages: number; versions: RideVersions }>
+  | Readonly<{
+      status: "RENDERED";
+      pdf: Uint8Array;
+      pages: number;
+      versions: RideVersions;
+      /** Duración del render donde ocurrió (el worker), sin la espera de la cola. */
+      renderMs: number;
+    }>
   | Readonly<{ status: "REJECTED"; code: RideRejectionCode; detail: readonly string[] }>;
 
 /**

@@ -3,6 +3,11 @@
 // el reenvío de los mismos bytes, ningún número nuevo y ningún proceso automático sobre una revisión
 // manual. Respuestas SINTÉTICAS con la estructura oficial.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  RIDE_BACKOFF,
+  RIDE_JOB_TYPE,
+  rideFollower,
+} from "../../src/modules/fiscal/application/archive/ride-jobs.ts";
 import { createReconcileHandler } from "../../src/modules/fiscal/application/reconcile-handler.ts";
 import { createTransmitHandler } from "../../src/modules/fiscal/application/transmit-handler.ts";
 import { DEFAULT_TRANSMISSION_SETTINGS } from "../../src/modules/fiscal/application/transmission-settings.ts";
@@ -79,6 +84,7 @@ describe("reconciliación por clave", () => {
     uow,
     jobs: store,
     logger: { info: () => {}, warn: () => {} },
+    followers: [],
     documents: createDocumentRepository(prisma),
     classifiers: sriClassifiers,
     settings: DEFAULT_TRANSMISSION_SETTINGS,
@@ -193,6 +199,50 @@ describe("reconciliación por clave", () => {
 
   afterAll(async () => {
     await db.drop();
+  });
+
+  // add-document-archive (design D5): la reconciliación automática y la manual que concluyen en
+  // autorizado encolan el RIDE en la misma transacción, por el seguidor compuesto al arrancar.
+  it("la reconciliación automática y la manual que autorizan encolan el RIDE", async () => {
+    const withRide = () =>
+      createReconcileHandler({
+        ...base(),
+        followers: [
+          rideFollower({ jobs: store, settings: { maxAttempts: 5, backoff: RIDE_BACKOFF } }),
+        ],
+        inquiry: gateway,
+        random: () => 0.5,
+      }).handler;
+    // Otra empresa: su auditoría no se mezcla con la de las demás pruebas.
+    const other = await insertFiscalCompany(prisma, "Empresa RIDE", 1);
+    const reconcileJob = (document: TestDocument, overrides: Partial<NewJob> = {}) =>
+      leasedJob(store, prisma, {
+        companyId: other.companyId,
+        type: "sri.reconcile",
+        dedupeKey: `sri.reconcile:${document.id}`,
+        documentId: document.id,
+        runAt: new Date(),
+        maxAttempts: 1_000,
+        deadlineAt: new Date(Date.now() + 24 * 3_600_000),
+        ...overrides,
+      });
+    const automatic = await insertDocument(prisma, other, "SEND_UNKNOWN");
+    replies.push(authorizedReply(automatic));
+    await withRide().run(await reconcileJob(automatic), context());
+    const manual = await insertDocument(prisma, other, "MANUAL_REVIEW");
+    replies.push(authorizedReply(manual));
+    await withRide().run(
+      await reconcileJob(manual, { origin: "MANUAL", requestedBy: other.adminId, reason: "x" }),
+      context(),
+    );
+    for (const document of [automatic, manual]) {
+      expect(await stateOf(document.id)).toBe("AUTHORIZED");
+      expect(
+        (await jobsOf(document.id))
+          .filter((row) => row.type === RIDE_JOB_TYPE)
+          .map((row) => [row.status, row.origin]),
+      ).toEqual([["PENDING", "AUTOMATIC"]]);
+    }
   });
 
   describe("caso A: timeout al enviar", () => {

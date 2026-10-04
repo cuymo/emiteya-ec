@@ -3,7 +3,8 @@
 //   transporte ─▶ TX A: intento + respuesta original ─▶ COMMIT
 //              ─▶ clasificar (puro)
 //              ─▶ TX B: resultado + transición guardada + autorización y artefacto
-//                       + job actual DONE + siguiente job + auditoría ─▶ COMMIT
+//                       + seguidores de la transición + job actual DONE + siguiente job
+//                       + auditoría ─▶ COMMIT
 //
 // Ningún resultado existe sin su intento confirmado antes, y ninguna transición sin su resultado.
 // Al retomar un job se clasifica primero el intento que quedó sin resultado, sin llamar al SRI. Si
@@ -28,6 +29,7 @@ import {
 } from "../../sri-engine/application/transport.ts";
 import type { DocumentState, TransitionActor, TransitionCause } from "../domain/document.ts";
 import type { SriMessage, SriOperation, SriOutcome } from "../domain/transmission.ts";
+import type { DocumentTransitionFollower } from "./document-transitions.ts";
 import type { ArtifactStore, DocumentRepository, StoredDocument } from "./ports.ts";
 import type {
   NewSriAttemptResult,
@@ -128,6 +130,12 @@ export type StepDependencies = Readonly<{
   observer?: TransmissionObserver;
   /** Fuente del jitter del backoff, también al fallar el job; inyectable en las pruebas. */
   random?: (() => number) | undefined;
+  /**
+   * Seguidores de las transiciones, compuestos al arrancar (add-document-archive, design D5): cada
+   * uno corre en la TX B, con la transición. Obligatorio: la transmisión no conoce a sus seguidores,
+   * pero nunca se compone sin decidirlos.
+   */
+  followers: readonly DocumentTransitionFollower[];
 }>;
 
 export const UNPARSEABLE_VERSION = "unparseable/1";
@@ -144,7 +152,7 @@ export type StepResult = "DECIDED" | "BREAKER_OPEN" | "SHUTTING_DOWN";
 
 /** Aplica la decisión en la TX B. El job actual termina antes de que nazca el siguiente. */
 export async function applyDecision(
-  deps: Pick<StepDependencies, "uow" | "jobs" | "random">,
+  deps: Pick<StepDependencies, "uow" | "jobs" | "random" | "followers">,
   input: Readonly<{
     job: Job;
     document: StoredDocument;
@@ -194,6 +202,16 @@ export async function applyDecision(
             authorizationNumber: authorization.number,
             authorizationDate: authorization.dateText,
           },
+        });
+      }
+      for (const follower of deps.followers) {
+        await follower(scope.db, {
+          companyId: document.companyId,
+          documentId: document.id,
+          from: state,
+          to,
+          cause,
+          at: now,
         });
       }
       state = to;

@@ -423,6 +423,7 @@ describe("flujo completo de la transmisión al SRI", () => {
     expect(await (await fetch(`${backend.base}/health/ready`)).json()).toEqual({
       status: "ready",
       sriTransmission: "enabled",
+      rideAssets: "available",
     });
     expect(await metric("sri_transmission_enabled")).toBe("sri_transmission_enabled 1");
     await waitForState(first.id, "AUTHORIZED", 30_000);

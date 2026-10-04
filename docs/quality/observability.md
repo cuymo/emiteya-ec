@@ -71,6 +71,30 @@ Los logs de cada intento llevan el comprobante, la clave, la operación, el inte
 la duración y la correlación; nunca el XML, el SOAP, secretos ni contraseñas (CTX §47). Las
 respuestas originales viven en `sri_response`, no en los logs ni en la auditoría.
 
+## RIDE y archivo documental
+
+Señales de `add-document-archive` (design D14), en `/metrics` y sin la empresa en las etiquetas.
+Los jobs del RIDE salen además en `fiscal_jobs{type="document.render_ride",status}` y en
+`fiscal_jobs_oldest_pending_age_seconds{type="document.render_ride"}`.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `ride_render_duration_seconds` | Histograma | Duración del render en su worker, sin la espera de la cola |
+| `ride_job_wait_seconds` | Histograma | Del momento en que el job debía correr al inicio del render |
+| `ride_render_failures_total{code}` | Counter | Fallos por código acotado: los rechazos (`RIDE_GLYPH_MISSING`, `RIDE_SOURCE_INVALID`…), las detenciones de `fiscal` (`RIDE_SOURCE_INTEGRITY`, `RIDE_LOGO_INTEGRITY`…), los fallos del pool (`BUSY`, `TIMEOUT`, `WORKER`, `CLOSED`, `INTERNAL`) u `OTHER` |
+| `documents_authorized_without_ride` | Gauge | Comprobantes autorizados que todavía no tienen su RIDE |
+| `ride_assets_available` | Gauge | 1 si las fuentes del RIDE, su licencia y su manifiesto están íntegros |
+
+Alertas propuestas:
+
+- autorizados sin RIDE durante más de 15 minutos: `documents_authorized_without_ride > 0` sostenido, o `fiscal_jobs_oldest_pending_age_seconds{type="document.render_ride"} > 900`;
+- fallos deterministas del render: cualquier aumento de `ride_render_failures_total` con un código `RIDE_*`, o `fiscal_jobs{type="document.render_ride",status="STOPPED"} > 0`;
+- fuentes del RIDE no disponibles: `ride_assets_available == 0`.
+
+Ninguna métrica lleva bytes, XML, claves de acceso completas, datos del comprador ni identificadores
+de empresa. Los logs del RIDE llevan el job, el comprobante, la procedencia, las páginas y la
+duración; nunca el contenido.
+
 ## Logging Rules
 
 - Do not log secrets.

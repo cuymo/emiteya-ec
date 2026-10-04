@@ -53,6 +53,7 @@ describe("handler sri.transmit", () => {
       uow: createTransmissionUnitOfWork(prisma),
       jobs: store,
       logger: { info: () => {}, warn: () => {} },
+      followers: [],
       documents: createDocumentRepository(prisma),
       artifacts: createArtifactStore(prisma),
       sizePolicy: () => Promise.resolve(policy),

@@ -38,7 +38,10 @@ import {
 } from "./modules/parties/infrastructure/index.ts";
 import { productsModule } from "./modules/products/infrastructure/index.ts";
 import { invoicesModule } from "./modules/invoices/infrastructure/index.ts";
-import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
+import {
+  createConfigurationLogoReader,
+  taxpayerRouters,
+} from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
@@ -53,15 +56,27 @@ import {
   registerTransmissionMetrics,
 } from "./modules/fiscal/infrastructure/index.ts";
 import { createTransmissionGate } from "./modules/fiscal/infrastructure/transmission-gate.ts";
+import {
+  DOCUMENT_JOB_PREFIX,
+  RIDE_JOB_TYPE,
+  createRideHandler,
+  createRideSweeper,
+  createRideUnitOfWork,
+  registerRideMetrics,
+  rideFollower,
+} from "./modules/fiscal/infrastructure/archive/index.ts";
+import { rideSettingsFromEnv } from "./config/archive.ts";
 import { transmissionSettingsFromEnv } from "./config/transmission.ts";
 import {
   createCircuitBreaker,
+  createPooledRideRenderer,
   createSoapTransport,
   createSriGateway,
   createXmllintXsdValidator,
   defaultRideFontsDirectory,
   endpointsValid,
   resolveSriEndpoints,
+  rideTasksEntry,
   sriClassifiers,
   verifyRideAssets,
   verifySchemaBundle,
@@ -81,6 +96,7 @@ import { createShutdown, type Closer } from "./platform/lifecycle/shutdown.ts";
 import { createLogger } from "./platform/logging/logger.ts";
 import { createMetrics } from "./platform/metrics/metrics.ts";
 import { createCryptoWorkerPool } from "./platform/workers/crypto-worker-pool.ts";
+import { createRideWorkerPool } from "./platform/workers/ride-worker-pool.ts";
 
 function loadEnvOrExit(): Env {
   try {
@@ -263,6 +279,7 @@ apiRouter.use(
 // Cola durable de jobs (ADR 0012): la usan los workers, la firma y la reconciliación manual.
 const jobStore = createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATABASE_URL).schema);
 const transmissionSettings = transmissionSettingsFromEnv(env);
+const rideSettings = rideSettingsFromEnv(env);
 
 // Borradores y facturas (add-invoice-emission, design D1 y D13).
 apiRouter.use(
@@ -328,6 +345,9 @@ const stepDependencies = {
   uow: createTransmissionUnitOfWork(database.prisma),
   jobs: jobStore,
   logger,
+  // Seguidores de las transiciones (add-document-archive, design D5): al autorizar, el job del
+  // RIDE nace en la misma transacción. La transmisión no conoce el archivo documental.
+  followers: [rideFollower({ jobs: jobStore, settings: rideSettings.job })],
   observer: registerTransmissionMetrics(metrics.registry, {
     prisma: database.prisma,
     breakerState: (environment, service) => sriBreaker.state(environment, service),
@@ -385,6 +405,49 @@ const jobRunner = createJobRunner({
 });
 closers.unshift({ name: "jobs", close: jobRunner.close });
 
+// RIDE (add-document-archive, design D5 y D6): su pool de workers, su handler, su barrido y su
+// propio runner para los jobs `document.*`. El interruptor de la transmisión no lo pausa; sin las
+// fuentes verificadas no toma jobs. Se cierra antes que su pool, y este antes que la base.
+const ridePool = createRideWorkerPool({
+  entry: rideTasksEntry(),
+  size: rideSettings.workers,
+  maxQueue: rideSettings.queue,
+  timeoutMs: rideSettings.taskTimeoutMs,
+  fontsDirectory: rideFontsDirectory,
+  logger,
+});
+closers.unshift({ name: "ride-pool", close: () => ridePool.close() });
+const rideHandler = createRideHandler({
+  db: database.prisma,
+  documents: createDocumentRepository(database.prisma),
+  artifacts: createArtifactStore(database.prisma),
+  logos: createConfigurationLogoReader(database.prisma),
+  renderer: createPooledRideRenderer(ridePool),
+  uow: createRideUnitOfWork(database.prisma),
+  jobs: jobStore,
+  settings: rideSettings.job,
+  observer: registerRideMetrics(metrics.registry, { prisma: database.prisma }),
+  logger,
+});
+const rideSweeper = createRideSweeper({
+  prisma: database.prisma,
+  jobs: jobStore,
+  settings: rideSettings.job,
+  logger,
+});
+closers.unshift({ name: "ride-sweeper", close: () => rideSweeper.close() });
+const rideRunner = createJobRunner({
+  store: jobStore,
+  db: database.prisma,
+  handlers: { [RIDE_JOB_TYPE]: rideHandler },
+  workers: rideSettings.workers,
+  pollIntervalMs: rideSettings.pollIntervalMs,
+  leaseMs: rideSettings.leaseMs,
+  pausedPrefixes: () => (rideAssetsAvailable ? [] : [DOCUMENT_JOB_PREFIX]),
+  logger,
+});
+closers.unshift({ name: "ride-jobs", close: rideRunner.close });
+
 const app = createApp({
   logger,
   metrics,
@@ -396,6 +459,7 @@ const app = createApp({
         rideAssetsAvailable &&
         (await database.ping()) &&
         cryptoPool.isRunning() &&
+        ridePool.isRunning() &&
         transmission.ready,
       details: {
         sriTransmission: transmission.enabled ? "enabled" : "disabled",
@@ -420,6 +484,14 @@ void transmissionSweeper.sweep().then(
   (error: unknown) => logger.error({ err: error }, "el barrido de la transmisión falló"),
 );
 transmissionSweeper.start(env.SRI_SWEEP_INTERVAL_SECONDS * 1_000);
+rideRunner.start();
+void rideSweeper.sweep().then(
+  (created) => {
+    if (created > 0) logger.info({ created }, "barrido del RIDE al arrancar");
+  },
+  (error: unknown) => logger.error({ err: error }, "el barrido del RIDE falló"),
+);
+rideSweeper.start(rideSettings.sweepIntervalMs);
 
 // Firmas vigentes que la clave de custodia configurada no abre: figuran como no disponibles hasta
 // volver a cargarlas (design D8). Sin secretos en el registro.
