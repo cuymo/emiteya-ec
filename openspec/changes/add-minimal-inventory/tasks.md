@@ -5,7 +5,7 @@
 - [ ] 1.1 Añadir el dominio decimal `existencia` (con signo, hasta 6 decimales y menos de 10²⁴ en valor absoluto) a `DECIMAL_SPECS` y a `decimal-policy.md` (design D3). Verificar con pruebas de contratos y de `fiscal-decimal`: bordes aceptados, más decimales y fuera de rango rechazados, signo negativo admitido y ninguna conversión a `number`
 - [ ] 1.2 Crear la migración aditiva de design D2:
   - `stock_balance`: FK compuesta al producto, `balance`, `last_position`, `initialized_at` e `initialized_by`, con triggers contra `DELETE` y `TRUNCATE` y contra el cambio de empresa, producto o inicialización;
-  - `stock_movement`, de solo agregado: FK a `stock_balance`, FK compuesta al comprobante, actor con `RESTRICT`, `CHECK` de signo por tipo, de coherencia y de dominio, y unicidades del `INICIAL`, de la salida por comprobante y producto, de la clave de idempotencia y de la posición;
+  - `stock_movement`, de solo agregado: FK a `stock_balance`, FK compuesta al comprobante, actor con `RESTRICT`, `CHECK` de signo por tipo, de coherencia y de dominio, y unicidades del `INICIAL`, de la salida por comprobante y producto, de la idempotencia `(company_id, idempotency_operation, idempotency_key)` y de la posición;
   - el trigger de restricción diferido que exige el `INICIAL` de cada saldo al confirmar;
   - los índices `(company_id, product_id, occurred_at)` y `(company_id, balance)`.
 
@@ -20,7 +20,7 @@
 ## 2. Contratos y permisos
 
 - [ ] 2.1 Crear `packages/contracts/src/inventory.ts` (design D10):
-  - estados `NOT_INITIALIZED`, `ACTIVE`, `DISABLED` y el filtro `NEGATIVE`;
+  - estados derivados `NOT_TRACKED`, `TRACKED_NOT_INITIALIZED`, `TRACKED_INITIALIZED` y `DISABLED_INITIALIZED`, y el filtro `NEGATIVE`;
   - tipos de movimiento y vistas de lista, detalle y kárdex, con `balance: null` sin inicializar;
   - solicitudes estrictas sin `companyId`: inicialización `>= 0`, entrada `> 0`, ajuste `<> 0` con motivo, y control `{ tracked }`;
   - el filtro del kárdex con `from <= to` y los códigos de error;
@@ -37,7 +37,12 @@
   - insertar un movimiento con `position = last_position + 1` y `balance_after`, y actualizar el saldo en la misma transacción;
   - leer saldos por lista de productos (design D2 y D5).
 
-  Verificar con pruebas unitarias del dominio (signos, estado derivado, agrupación de `1.5` y `2.25` en `3.75`, suma cero descartada, sin `number`) y con pruebas de integración del repositorio: el saldo coincide con `SUM(delta)` y con el `balance_after` del último movimiento después de una serie mixta de movimientos
+  Añadir la reconciliación diagnóstica interna de design D2, que compara el saldo materializado con `SUM(delta)` y con el último `balance_after`, sin endpoint.
+
+  Verificar con pruebas unitarias del dominio (signos, estado derivado, agrupación de `1.5` y `2.25` en `3.75`, suma cero descartada, sin `number`) y con pruebas de integración del repositorio:
+  - después de una secuencia mixta (`INICIAL`, entradas, salidas, ajustes positivos y negativos, cruzando cero), cada `balance_after` es el saldo anterior más su `delta`;
+  - el saldo vigente es igual a `SUM(delta)`;
+  - la reconciliación no informa diferencias, e informa la de un saldo alterado a propósito en la prueba
 
 ## 4. Snapshot versión 2
 
@@ -49,7 +54,7 @@
   Verificar con pruebas de integración de la emisión:
   - línea de un producto activo con `true`; servicio, producto sin marca y producto marcado sin inicializar con `false`;
   - la decisión no cambia al cambiar después el producto o su inventario;
-  - un snapshot versión 1 se sigue leyendo y `stockLinesOf` lo devuelve sin líneas que afecten al inventario;
+  - lectura compatible de las dos versiones: un snapshot versión 1 se sigue leyendo en la consulta, la firma y `stockLinesOf` (sin líneas que afecten al inventario), y uno versión 2 se lee con su decisión;
   - el XML firmado es idéntico byte a byte al de la misma factura sin el campo nuevo
 
 ## 5. Salida de la factura al autorizar
@@ -62,9 +67,16 @@
   - el saldo de 2 con una salida de 5 queda en -3 y la factura autorizada;
   - repetir la decisión no crea otra salida;
   - un seguidor que falla revierte la autorización, el XML autorizado, el job del RIDE y todas las salidas de la factura;
+  - un fallo provocado después de insertar la salida de un producto y antes del commit no deja ningún movimiento ni ningún saldo cambiado;
+  - el seguidor nunca lee el producto: cambiar la marca del producto después de emitir no altera la salida;
   - la prueba de arquitectura pasa sobre el código y detecta cada violación en archivos de ejemplo
 - [ ] 5.2 Cubrir la recuperación de design D6 con una prueba de integración: el SRI simulado responde `AUTORIZADO`, la respuesta queda guardada, el seguidor de inventario falla una vez y la factura sigue `RECEIVED`. Al reintentar el job, el intento se clasifica desde la respuesta guardada sin otra llamada al SRI simulado, la factura queda `AUTHORIZED` y existe una sola salida por producto. Verificar que la prueba pasa y cuenta cero llamadas nuevas al SRI
-- [ ] 5.3 Probar la concurrencia de design D5: dos autorizaciones simultáneas del mismo producto (saldo final exacto, cruzando cero), varias facturas concurrentes con productos en orden inverso (sin deadlocks y todas autorizadas) y una entrada simultánea con una salida. Al final, comparar cada saldo con `SUM(delta)`. Verificar que las pruebas pasan repetidas veces sin fallos intermitentes
+- [ ] 5.3 Probar con PostgreSQL real la concurrencia de las autorizaciones (design D5):
+  - dos autorizaciones simultáneas del mismo producto, con el saldo final exacto cruzando cero;
+  - varias facturas concurrentes con productos en orden inverso, sin deadlocks y todas autorizadas;
+  - la repetición de la misma autorización.
+
+  Al final, la reconciliación diagnóstica no informa diferencias. Verificar que las pruebas pasan repetidas veces sin fallos intermitentes
 
 ## 6. Inicialización y control del inventario
 
@@ -74,7 +86,17 @@
   - segunda inicialización y dos simultáneas: una sola, la otra `409 INVENTORY_ALREADY_INITIALIZED`;
   - cantidad negativa rechazada;
   - sin sesión `401`, operador `403` y producto de otra empresa `404`, sin evento de auditoría en ningún rechazo
-- [ ] 6.2 Implementar `PUT /api/v1/inventory/items/{productId}/tracking` (design D7): desactivar solo con saldo cero (`409 STOCK_TRACKING_HAS_BALANCE` con saldo positivo o negativo), reactivar sin otro `INICIAL`, repetir el estado sin cambios ni auditoría, `409 INVENTORY_NOT_INITIALIZED` para un producto sin inicializar, y la auditoría `inventory.tracking_disabled` y `inventory.tracking_enabled`. Verificar con pruebas HTTP, también que una factura emitida con el control desactivado y autorizada después de reactivarlo no genera salida
+- [ ] 6.2 Implementar `PUT /api/v1/inventory/items/{productId}/tracking` (design D7):
+  - desactivar solo con saldo cero (`409 STOCK_TRACKING_HAS_BALANCE` con saldo positivo o negativo);
+  - reactivar sin otro `INICIAL`;
+  - repetir el estado sin cambios ni auditoría;
+  - `409 INVENTORY_NOT_INITIALIZED` para un producto sin inicializar;
+  - la auditoría `inventory.tracking_disabled` y `inventory.tracking_enabled`.
+
+  Verificar con pruebas HTTP y de integración, también la semántica no retroactiva:
+  - A: emitida con control activo y saldo 0, control desactivado en cero, autorizada después: registra su salida y el saldo queda negativo;
+  - B: control desactivado, emitida (decisión `false`), control reactivado, autorizada: no registra salida;
+  - C: emitida con control activo, desactivado y reactivado antes de autorizar, autorizada: exactamente una salida
 - [ ] 6.3 Inyectar en `products` el puerto `InventoryInitialization` y aplicar en la corrección del producto, después de bloquear su fila:
   - `409 STOCK_TRACKING_MANAGED_BY_INVENTORY` si cambia la marca de un producto inicializado;
   - la auditoría del cambio de la marca en `product.updated` (design D7 y D12).
@@ -90,12 +112,20 @@
 - [ ] 7.1 Implementar `POST /api/v1/inventory/items/{productId}/entries` y `/adjustments` con `Idempotency-Key`, la huella canónica y la unicidad de design D7. Añadir la métrica `inventory_movements_total{type}`. Verificar con pruebas HTTP:
   - entrada de 10 que suma al saldo, y ajuste de -4 con motivo que deja el saldo negativo;
   - entrada de cero o negativa, y ajuste sin motivo o de cero, rechazados;
-  - doble envío secuencial y simultáneo: un solo movimiento, con la repetición que devuelve el mismo;
-  - clave reutilizada con otra cantidad: `409 IDEMPOTENCY_KEY_REUSED`; sin clave: `400`;
+  - doble envío secuencial y simultáneo: un solo movimiento, con la repetición que devuelve el mismo, también con `10` y `10.00`;
+  - clave reutilizada con otra cantidad, otra nota o, en el ajuste, otro motivo: `409 IDEMPOTENCY_KEY_REUSED`; sin clave: `400 IDEMPOTENCY_KEY_REQUIRED`;
+  - la misma clave en una entrada y en un ajuste, y en otra empresa: movimientos independientes;
   - producto sin inicializar o con el control desactivado rechazado;
   - operador en ajuste `403`, sin sesión `401` y otra empresa `404`;
   - ningún evento de auditoría por las entradas ni por los ajustes;
   - movimientos sin rutas para editarlos ni borrarlos
+
+- [ ] 7.2 Probar con PostgreSQL real la concurrencia de las operaciones manuales:
+  - autorización y entrada simultáneas, y autorización y ajuste simultáneos, sobre el mismo producto;
+  - inicializaciones simultáneas;
+  - la misma `Idempotency-Key` en solicitudes simultáneas.
+
+  Todas terminan sin actualizaciones perdidas, y la reconciliación diagnóstica no informa diferencias. Verificar que las pruebas pasan repetidas veces sin fallos intermitentes
 
 ## 8. Lista, detalle y kárdex
 
@@ -118,7 +148,7 @@
 - [ ] 10.2 Implementar el detalle `/inventario/{productId}` (design D13):
   - estado, saldo y acción principal según el estado y el rol;
   - diálogos de inicialización, entrada y ajuste con su validación, el motivo obligatorio en el ajuste y la clave de idempotencia reutilizada en los reintentos;
-  - `ConfirmDialog` para desactivar, con la explicación del saldo distinto de cero;
+  - `ConfirmDialog` para desactivar, que explica que las facturas ya emitidas aún pueden descontar, y la explicación del saldo distinto de cero;
   - kárdex paginado con `DatePickerField`.
 
   Verificar con pruebas de componente:
@@ -131,7 +161,15 @@
 
 ## 11. Rendimiento y prueba end-to-end
 
-- [ ] 11.1 Añadir `bench:inventory` en `backend/scripts/` (design D15). Debe sembrar 10 000 productos inicializados y un volumen de movimientos equivalente a 100 000 facturas, y medir la lista (con y sin filtro), el kárdex de un producto con muchos movimientos y la salida de una factura de varias líneas. Registrar el resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 en el entorno registrado
+- [ ] 11.1 Añadir `bench:inventory` en `backend/scripts/` (design D15). Debe sembrar 10 000 productos inicializados y un volumen de movimientos equivalente a 100 000 facturas, y medir por separado:
+  - la lista, con y sin filtro;
+  - el detalle;
+  - la primera página del kárdex;
+  - el kárdex filtrado por fechas;
+  - una entrada manual;
+  - la salida automática de una factura de varias líneas.
+
+  Debe terminar con la reconciliación sin diferencias. Registrar el resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 en el entorno registrado
 - [ ] 11.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado:
   - marcar e inicializar un producto y registrar una entrada;
   - emitir una factura con dos líneas del producto y ver el aviso en el borrador;

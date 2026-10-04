@@ -70,7 +70,7 @@ invoices ◀── lecturas inyectadas de saldo e inicialización ─── inve
   - identidad: `id`, `company_id`, `product_id` y `position` (ordinal del movimiento en el kárdex del producto);
   - valores: `movement_type`, `delta` con signo y `balance_after`;
   - referencias: `document_id` (FK compuesta al comprobante), `document_number`, `origin` (`USER` o `SYSTEM`), `actor_user_id` (FK con `RESTRICT`) y `reason`;
-  - idempotencia: `idempotency_key` y `request_fingerprint`;
+  - idempotencia: `idempotency_operation` (`inventory.entry` o `inventory.adjust`), `idempotency_key` y `request_hash` (D7);
   - `occurred_at`.
 - **FK a `stock_balance (company_id, product_id)`:** ningún movimiento existe sin inventario inicializado.
 - **Restricciones de la base:**
@@ -79,14 +79,16 @@ invoices ◀── lecturas inyectadas de saldo e inicialización ─── inve
   | --- | --- |
   | `UNIQUE (company_id, product_id) WHERE movement_type = 'INICIAL'` | A lo sumo un `INICIAL` en la vida del inventario (Q-21) |
   | `UNIQUE (company_id, document_id, product_id, movement_type) WHERE movement_type IN ('SALIDA_FACTURA', 'DEVOLUCION_NC')` | Una sola salida por factura y producto (ERS RF-206, AC-08) |
-  | `UNIQUE (company_id, movement_type, idempotency_key) WHERE idempotency_key IS NOT NULL` | Una sola entrada o un solo ajuste por clave |
+  | `UNIQUE (company_id, idempotency_operation, idempotency_key) WHERE idempotency_key IS NOT NULL` | Una sola entrada o un solo ajuste por empresa, operación y clave |
   | `UNIQUE (company_id, product_id, position)` | Orden total y estable del kárdex |
   | `CHECK` del signo por tipo | `INICIAL >= 0`, `ENTRADA_MANUAL > 0`, `SALIDA_FACTURA < 0`, `DEVOLUCION_NC > 0`, `AJUSTE <> 0` |
-  | `CHECK` de coherencia | Comprobante y número solo y siempre en `SALIDA_FACTURA` y `DEVOLUCION_NC`. Actor solo y siempre con origen `USER`. Motivo obligatorio en `AJUSTE`. Clave y huella juntas, obligatorias en `ENTRADA_MANUAL` y `AJUSTE`. |
+  | `CHECK` de coherencia | Comprobante y número solo y siempre en `SALIDA_FACTURA` y `DEVOLUCION_NC`. Actor solo y siempre con origen `USER`. Motivo obligatorio en `AJUSTE`. Operación, clave y huella juntas, obligatorias en `ENTRADA_MANUAL` (`inventory.entry`) y `AJUSTE` (`inventory.adjust`) y ausentes en los demás tipos. |
   | `CHECK` de dominio decimal | `delta`, `balance_after` y `balance` en el dominio `existencia` (D3) |
   | Trigger de restricción diferido en `stock_balance` | Al confirmar, cada saldo tiene su `INICIAL`, con `position = 1` y `balance_after = delta`. Junto con la FK, no puede existir un saldo sin `INICIAL` ni al revés. |
 
 - **Variación con signo canónica:** un solo modelo, `delta`. El saldo es `SUM(delta)`; `balance_after` y `stock_balance.balance` son su materialización.
+  - Invariantes: el `balance_after` de cada movimiento es el saldo anterior más su `delta`, y el saldo vigente es igual a `SUM(delta)` y al `balance_after` del último movimiento.
+  - **Reconciliación diagnóstica:** una función interna de `inventory/infrastructure` compara, por empresa y producto, el saldo materializado con `SUM(delta)` y con el último `balance_after`, y devuelve las diferencias. La usan las pruebas y `bench:inventory`. No es un endpoint ni corrige nada.
 - **Alternativa descartada:** cantidad sin signo más dirección. Duplica la regla del signo y complica la reconciliación.
 
 ### D3. Dominio decimal `existencia` y cantidades
@@ -126,6 +128,7 @@ invoices ◀── lecturas inyectadas de saldo e inicialización ─── inve
 5. Si falta el saldo de un producto marcado en el snapshot, lanza un error: la TX B entera se revierte.
 
 Detalles:
+- **Única fuente de la decisión:** el seguidor usa solo los campos inmutables de la línea (`productId`, `quantity` e `inventoryAffectsStock`) y el número de la factura. Nunca lee el producto ni su marca vigente para decidir la salida.
 - **Saldo insuficiente:** el seguidor nunca falla por él. El saldo puede quedar negativo (Q-19).
 - **Bloqueos en orden estable:** dos facturas con productos en orden inverso no se bloquean entre sí. La prueba lo comprueba con varias facturas concurrentes.
 - **Composición:** `main.ts` añade el seguidor a `stepDependencies.followers` junto al del RIDE. Un error de cualquiera revierte la autorización.
@@ -156,25 +159,37 @@ Detalles:
   - Sin inicializar, la marca cambia como hoy y su cambio se audita en `product.updated`.
   - La inicialización y la corrección bloquean la misma fila del producto, así que no pueden cruzarse.
 - **Entradas y ajustes** (`POST /items/{productId}/entries` con `inventory.entry`, y `POST /items/{productId}/adjustments` con `inventory.adjust`).
-  - `Idempotency-Key` obligatoria. Huella canónica de `{ productId, tipo, cantidad o variación, nota o motivo }`.
-  - En una transacción: busca un movimiento con la misma empresa, tipo y clave.
+  - **Contrato de idempotencia, tan fuerte como el de la emisión:**
+    - `Idempotency-Key` obligatoria (`400 IDEMPOTENCY_KEY_REQUIRED` sin ella), con el formato de `platform/idempotency`.
+    - Alcance: empresa + operación (`inventory.entry` o `inventory.adjust`) + clave.
+    - Huella `request_hash`: SHA-256 del JSON canónico `{ operation, productId, quantity | delta, note | reason }`. Los decimales van en su forma exacta más corta, así que `10` y `10.00` son la misma solicitud.
+    - La misma clave sirve en otra empresa, y entre una entrada y un ajuste, porque la operación forma parte del alcance.
+    - Sin caducidad: no hay una razón de producto para limitarla.
+    - La unicidad de la base es la última defensa.
+  - En una transacción: busca un movimiento con la misma empresa, operación y clave.
     - Con la misma huella devuelve ese movimiento (`200`, repetición). Con otra, `409 IDEMPOTENCY_KEY_REUSED`.
     - Si no existe, exige inventario inicializado y control activo (`409 INVENTORY_NOT_INITIALIZED` o `409 STOCK_TRACKING_DISABLED`), bloquea el saldo, inserta el movimiento y actualiza el saldo (`201`).
   - Un choque de la unicidad de la clave entre dos solicitudes simultáneas se resuelve releyendo el movimiento ganador.
   - Se reutilizan la cabecera y la huella de `platform/idempotency`, y su tipo de operación se amplía con `inventory.entry` e `inventory.adjust`, sin escribir en `idempotency_record`.
-- **Sin entradas ni ajustes con el control desactivado.** Para corregir, el administrador lo reactiva. La salida de facturas emitidas antes de desactivar sí llega, porque su decisión quedó congelada.
+- **Desactivar no es retroactivo.** Desactivar solo hace que las emisiones nuevas congelen `inventoryAffectsStock = false`.
+  - Una factura emitida con el control activo y autorizada después de desactivarlo registra su salida, aunque el saldo pase de 0 a negativo. El kárdex histórico sigue siendo válido.
+  - Una factura emitida con el control desactivado nunca descuenta, ni siquiera si se reactiva antes de autorizarla.
+  - No se buscan ni se bloquean facturas pendientes al desactivar: eso convertiría el inventario en un sistema de compromisos, fuera de alcance.
+  - El diálogo de desactivación explica esta consecuencia.
+- **Sin entradas ni ajustes con el control desactivado.** Para corregir, el administrador lo reactiva.
 
 ### D8. Lista, detalle y kárdex
 
 - **Lista (`GET /items`)**, paginada con el contrato común:
-  - filtros: `search` (código o nombre, con la clave de búsqueda de `products`) y `state` (`NOT_INITIALIZED`, `ACTIVE`, `DISABLED` o `NEGATIVE`);
+  - filtros: `search` (código o nombre, con la clave de búsqueda de `products`) y `state` (`TRACKED_NOT_INITIALIZED`, `TRACKED_INITIALIZED`, `DISABLED_INITIALIZED` o `NEGATIVE`);
   - la pagina la lectura exportada de `products` con un filtro `{ stockTracked?, onlyIds?, excludeIds? }`, con los identificadores inicializados (o con saldo negativo) que aporta el inventario, y después se completa con los saldos de la página en una sola consulta;
   - sin N+1 y sin leer tablas ajenas. `bench:inventory` mide el caso de 10 000 productos inicializados.
-- **Estado derivado:**
-  - `NOT_INITIALIZED`: marcado y sin saldo;
-  - `ACTIVE`: marcado y con saldo;
-  - `DISABLED`: sin marca y con saldo;
-  - `negative`: con saldo menor que cero.
+- **Estado derivado, nunca persistido:**
+  - `NOT_TRACKED`: sin marca y sin inventario; solo aparece en el detalle;
+  - `TRACKED_NOT_INITIALIZED`: marcado y sin saldo;
+  - `TRACKED_INITIALIZED`: marcado y con saldo;
+  - `DISABLED_INITIALIZED`: sin marca y con saldo;
+  - `negative`: un indicador aparte, con saldo menor que cero.
   - Un producto sin inicializar devuelve `balance: null`, nunca `"0"`.
 - **Detalle (`GET /items/{productId}`):** producto, estado, saldo, inicialización (fecha y actor) y último movimiento.
 - **Kárdex (`GET /items/{productId}/movements`)**, con `from` y `to` en fechas de Ecuador inclusivas (`from <= to`) y paginado:
@@ -217,7 +232,11 @@ Detalles:
   - "Consultar el inventario y el kárdex" (ambos roles);
   - "Inicializar el inventario de un producto" (administrador);
   - "Activar o desactivar el control de stock de un producto con inventario" (administrador).
-- **Modificación del requisito de productos.** "Crear y editar terceros y productos" ya no incluye la marca de un producto con inventario inicializado. El servidor lo aplica en la corrección del producto (D7), no solo la interfaz.
+- **Quién cambia la marca `stockTracked`** (política explícita, sin contradicción entre `products` e `inventory`):
+  - sin inventario inicializado: administrador y operador, con la corrección del producto (`products.manage`), y queda auditado;
+  - con inventario inicializado: solo el administrador, con `PUT /inventory/items/{productId}/tracking` (`inventory.configure`). La corrección del producto la rechaza con `409 STOCK_TRACKING_MANAGED_BY_INVENTORY`.
+  - El servidor lo aplica en ambas rutas (D7), no solo la interfaz.
+- **Modificación del requisito de productos.** "Crear y editar terceros y productos" ya no incluye la marca de un producto con inventario inicializado.
 
 ### D12. Auditoría
 
@@ -275,10 +294,15 @@ Detalles:
 
 ### D15. Rendimiento
 
-- `bench:inventory` es un gate dedicado fuera de `verify`, como `bench:search`. Siembra en un esquema aislado 10 000 productos inicializados y un volumen de movimientos equivalente a 100 000 facturas, y mide:
-  - la lista con y sin filtro;
-  - el kárdex de un producto con muchos movimientos;
-  - la aplicación de la salida de una factura de varias líneas dentro de su transacción.
+- `bench:inventory` es un gate dedicado fuera de `verify`, como `bench:search`. Siembra en un esquema aislado 10 000 productos inicializados y un volumen de movimientos equivalente a 100 000 facturas, y mide por separado:
+  - la lista, con y sin filtro de estado;
+  - el detalle;
+  - la primera página del kárdex de un producto con muchos movimientos;
+  - el kárdex filtrado por fechas;
+  - una entrada manual;
+  - la salida automática de una factura de varias líneas dentro de su transacción.
+- Termina con la reconciliación diagnóstica (D2) sin diferencias.
+- El riesgo de pasar los identificadores inicializados a la lectura de productos se resuelve con esta medición, no se da por supuesto.
 - Objetivo: ERS RNF-005, P95 menor que 2 s. Se registra el resultado medido; el objetivo no se sube.
 
 ### D16. Briefs de las operaciones sensibles

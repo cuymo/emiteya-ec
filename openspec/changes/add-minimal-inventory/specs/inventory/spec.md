@@ -84,11 +84,19 @@ Un producto marcado como controlado sin `INICIAL` SHALL quedar configurado pero 
 - **THEN** esos productos quedan sin inicializar y ninguna de esas facturas genera movimientos
 
 ### Requirement: Decisión de inventario congelada al emitir
-Cada línea de una factura SHALL llevar, desde su reserva, la decisión de si afecta al inventario: sí solo si su producto estaba marcado como controlado y con inventario inicializado en ese momento. La salida usa esa decisión, nunca el producto ni el inventario vigentes al autorizar. Las facturas emitidas antes de que existiera esa decisión no afectan al inventario.
+Cada línea de una factura SHALL llevar, desde su reserva, la decisión de si afecta al inventario: sí solo si su producto estaba marcado como controlado y con inventario inicializado en ese momento. Esa decisión es la única fuente de la salida: nunca se consultan el producto ni el inventario vigentes al autorizar. Las facturas emitidas antes de que existiera esa decisión no afectan al inventario.
 
-#### Scenario: Control desactivado después de emitir
-- **WHEN** se emite una factura de un producto con inventario activo, el administrador desactiva después su control y la factura se autoriza
-- **THEN** la factura registra su salida
+#### Scenario: Control desactivado entre la emisión y la autorización
+- **WHEN** se emite una factura de 3 unidades de un producto con inventario activo y saldo 0, el administrador desactiva su control con saldo 0 y la factura se autoriza después
+- **THEN** la factura registra su salida aunque el control esté desactivado, y el saldo queda en -3
+
+#### Scenario: Factura emitida con el control desactivado
+- **WHEN** se emite una factura de un producto con el control desactivado, el administrador lo reactiva y la factura se autoriza después
+- **THEN** la decisión de la línea es que no afecta al inventario, y la factura no registra salida
+
+#### Scenario: Control desactivado y reactivado antes de autorizar
+- **WHEN** se emite una factura de un producto con inventario activo, el administrador desactiva su control con saldo 0, lo reactiva y la factura se autoriza después
+- **THEN** la factura registra exactamente una salida
 
 #### Scenario: Inventario inicializado después de emitir
 - **WHEN** se emite una factura de un producto marcado sin inicializar, el administrador lo inicializa y la factura se autoriza después
@@ -149,7 +157,7 @@ El inventario MUST NOT bloquear guardar un borrador, emitir, reservar el secuenc
 - **THEN** el producto aparece con saldo -3, indicado como saldo negativo
 
 ### Requirement: Entradas manuales de existencias
-Un usuario con permiso SHALL registrar una entrada manual en un producto con inventario inicializado y control activo, con una cantidad mayor que cero en el dominio de las cantidades y una nota opcional. La entrada suma su cantidad al saldo y guarda su actor y su momento. Cada solicitud lleva una clave de idempotencia.
+Un usuario con permiso SHALL registrar una entrada manual en un producto con inventario inicializado y control activo, con una cantidad mayor que cero en el dominio de las cantidades y una nota opcional. La entrada suma su cantidad al saldo y guarda su actor, su nota y su momento.
 
 #### Scenario: Entrada
 - **WHEN** un operador registra una entrada de 10 unidades en un producto con saldo 4
@@ -159,24 +167,12 @@ Un usuario con permiso SHALL registrar una entrada manual en un producto con inv
 - **WHEN** un usuario registra una entrada de 0 o de -2
 - **THEN** el sistema rechaza la solicitud y el saldo no cambia
 
-#### Scenario: Doble envío
-- **WHEN** la misma entrada con la misma clave de idempotencia llega dos veces, también a la vez
-- **THEN** se registra un solo movimiento, y la repetición responde con ese mismo movimiento
-
-#### Scenario: Clave reutilizada con otra solicitud
-- **WHEN** un usuario reutiliza una clave de idempotencia con otra cantidad
-- **THEN** el sistema rechaza la solicitud indicando que la clave ya se usó, y el saldo no cambia
-
-#### Scenario: Sin clave de idempotencia
-- **WHEN** un usuario registra una entrada sin clave de idempotencia
-- **THEN** el sistema rechaza la solicitud y no registra nada
-
 #### Scenario: Producto sin inventario activo
 - **WHEN** un usuario registra una entrada en un producto sin inicializar o con el control desactivado
 - **THEN** el sistema rechaza la solicitud indicando el estado del producto
 
 ### Requirement: Ajustes de existencias
-Un administrador SHALL registrar un ajuste positivo o negativo, distinto de cero, con un motivo obligatorio, en un producto con inventario inicializado y control activo. El ajuste suma su variación al saldo aunque quede negativo, y guarda su actor, su motivo y su momento. Cada solicitud lleva una clave de idempotencia.
+Un administrador SHALL registrar un ajuste positivo o negativo, distinto de cero, con un motivo obligatorio, en un producto con inventario inicializado y control activo. El ajuste suma su variación al saldo aunque quede negativo, y guarda su actor, su motivo y su momento.
 
 #### Scenario: Ajuste negativo
 - **WHEN** un administrador registra un ajuste de -4 con el motivo "Merma por rotura" en un producto con saldo 3
@@ -186,9 +182,32 @@ Un administrador SHALL registrar un ajuste positivo o negativo, distinto de cero
 - **WHEN** un administrador registra un ajuste sin motivo, o de cero
 - **THEN** el sistema rechaza la solicitud y el saldo no cambia
 
-#### Scenario: Doble envío del ajuste
-- **WHEN** el mismo ajuste con la misma clave de idempotencia llega dos veces, también a la vez
-- **THEN** se registra un solo ajuste
+### Requirement: Idempotencia de las entradas y los ajustes
+Cada entrada y cada ajuste SHALL llevar una clave de idempotencia, con alcance empresa, operación (entrada o ajuste) y clave, y el sistema guarda la huella canónica de la solicitud: producto, cantidad o variación exacta, y nota o motivo. La misma clave con la misma huella devuelve el mismo movimiento; con otra huella se rechaza. La clave no caduca.
+
+#### Scenario: Doble envío
+- **WHEN** la misma entrada, o el mismo ajuste, con la misma clave llega dos veces, también a la vez
+- **THEN** se registra un solo movimiento, y la repetición responde con ese mismo movimiento
+
+#### Scenario: Clave reutilizada con otra solicitud
+- **WHEN** un usuario reutiliza la clave de una entrada con otra cantidad, o la de un ajuste con otro motivo
+- **THEN** el sistema rechaza la solicitud indicando que la clave ya se usó con otra solicitud, y el saldo no cambia
+
+#### Scenario: Misma cantidad escrita de otra forma
+- **WHEN** una entrada de `10` y su repetición de `10.00` llegan con la misma clave
+- **THEN** se tratan como la misma solicitud y se registra un solo movimiento
+
+#### Scenario: Misma clave en una entrada y en un ajuste
+- **WHEN** un administrador usa la misma clave en una entrada y después en un ajuste
+- **THEN** se registran los dos movimientos, porque la operación forma parte del alcance de la clave
+
+#### Scenario: Misma clave en otra empresa
+- **WHEN** un usuario de la empresa B usa una clave que ya usó la empresa A
+- **THEN** la entrada de la empresa B se registra, sin relación con la de A
+
+#### Scenario: Sin clave de idempotencia
+- **WHEN** un usuario registra una entrada o un ajuste sin clave de idempotencia
+- **THEN** el sistema rechaza la solicitud y no registra nada
 
 ### Requirement: Movimientos inmutables
 Los movimientos MUST NOT editarse ni borrarse, y una corrección SHALL registrarse con otro movimiento. No existe ninguna operación para fijar ni recalcular el saldo fuera de los movimientos.
@@ -217,7 +236,7 @@ El sistema SHALL aplicar cada movimiento al saldo de forma atómica: operaciones
 - **THEN** el saldo queda en 6 y el kárdex muestra ambos movimientos
 
 ### Requirement: Desactivación y reactivación del control
-Solo un administrador SHALL desactivar o reactivar el control de stock de un producto con inventario inicializado, y solo desactivarlo con saldo cero. Ambas operaciones conservan el kárdex y el saldo; reactivar continúa el mismo kárdex, sin otro `INICIAL`. Las facturas emitidas con el control desactivado no generan salida, tampoco después de reactivarlo.
+Solo un administrador SHALL desactivar o reactivar el control de stock de un producto con inventario inicializado, y solo desactivarlo con saldo cero. Desactivar solo hace que las emisiones nuevas no afecten al inventario: no cancela las salidas ya congeladas en facturas emitidas antes. Ambas operaciones conservan el kárdex y el saldo; reactivar continúa el mismo kárdex, sin otro `INICIAL`.
 
 #### Scenario: Desactivar con saldo cero
 - **WHEN** un administrador desactiva el control de un producto inicializado con saldo 0
@@ -230,10 +249,6 @@ Solo un administrador SHALL desactivar o reactivar el control de stock de un pro
 #### Scenario: Reactivar
 - **WHEN** un administrador reactiva el control de un producto desactivado
 - **THEN** el producto continúa con el mismo saldo y el mismo kárdex, sin un nuevo `INICIAL`
-
-#### Scenario: Factura emitida con el control desactivado
-- **WHEN** se emite una factura de un producto con el control desactivado, el administrador lo reactiva y la factura se autoriza
-- **THEN** la factura no registra salida
 
 #### Scenario: Repetir el estado actual
 - **WHEN** un administrador desactiva el control de un producto que ya lo tiene desactivado
@@ -255,7 +270,7 @@ El sistema SHALL mostrar el kárdex de un producto con inventario: sus movimient
 - **THEN** el sistema rechaza la consulta sin buscar movimientos
 
 ### Requirement: Lista de inventario
-El sistema SHALL listar, paginados, los productos marcados como controlados y los que tienen inventario, con su estado (sin inicializar, activo o desactivado), su saldo si está inicializado y si es negativo, con búsqueda por código o nombre y filtro por estado. Un producto sin inicializar nunca se muestra con saldo cero.
+El sistema SHALL listar, paginados, los productos marcados como controlados y los que tienen inventario, con su estado (marcado sin inicializar, inicializado con control activo o inicializado con control desactivado), su saldo si está inicializado y si es negativo, con búsqueda por código o nombre y filtro por estado. Un producto sin inicializar nunca se muestra con saldo cero.
 
 #### Scenario: Estados de la lista
 - **WHEN** una empresa tiene un producto marcado sin inicializar, uno activo con saldo 8, uno activo con saldo -1 y uno con el control desactivado
