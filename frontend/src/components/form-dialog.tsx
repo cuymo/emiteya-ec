@@ -23,6 +23,7 @@ export function FormDialog({
   onSubmit,
   children,
   error,
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -34,6 +35,8 @@ export function FormDialog({
   children: ReactNode;
   /** Error de la operación (no de un campo): se muestra en el cuerpo y conserva los valores. */
   error?: string | undefined;
+  /** Foco al cerrar: con `preventDefault`, el llamador decide dónde va en lugar de quien lo abrió. */
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   return (
     <Dialog
@@ -43,7 +46,10 @@ export function FormDialog({
         if (!pending) onOpenChange(next);
       }}
     >
-      <DialogContent {...(description ? {} : { "aria-describedby": undefined })}>
+      <DialogContent
+        {...(description ? {} : { "aria-describedby": undefined })}
+        {...(onCloseAutoFocus ? { onCloseAutoFocus } : {})}
+      >
         <form onSubmit={onSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="flex flex-col gap-0.5 px-3 pt-3 pr-7">
             <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>

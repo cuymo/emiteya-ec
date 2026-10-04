@@ -339,6 +339,66 @@ describe("pantalla Productos", () => {
     ).toBeDefined();
   });
 
+  it("con el inventario inicializado, la marca se gestiona en Inventario (add-minimal-inventory)", async () => {
+    const stockItem = (state: string) => ({
+      status: 200,
+      body: {
+        data: {
+          productId: "prod-1",
+          mainCode: "CEM-50",
+          auxiliaryCode: null,
+          name: "Cemento 50 kg",
+          productStatus: "ACTIVE",
+          state,
+          balance: state === "TRACKED_NOT_INITIALIZED" ? null : "4",
+          negative: false,
+          lastMovementAt: null,
+          initializedAt: null,
+          initializedByName: null,
+        },
+      },
+    });
+    let state = "TRACKED_INITIALIZED";
+    const calls = renderProducts({
+      "GET /api/v1/products": page([product({ stockTracked: true })]),
+      "GET /api/v1/inventory/items/prod-1": () => stockItem(state),
+      "PUT /api/v1/products/prod-1": () => ({ status: 200, body: { data: product() } }),
+    });
+    const user = userEvent.setup();
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Corregir Cemento 50 kg" }))[0]!,
+    );
+    let dialog = await screen.findByRole("dialog", { name: "Corregir producto" });
+    expect(await within(dialog).findByText(/El control se gestiona en Inventario/)).toBeDefined();
+    const checkbox = within(dialog).getByLabelText("Controlar stock de este bien");
+    expect(checkbox).toHaveProperty("disabled", true);
+    expect(checkbox).toHaveProperty("checked", true);
+    expect(
+      within(dialog)
+        .getByRole("link", { name: "Ir al inventario del producto" })
+        .getAttribute("href"),
+    ).toBe("/inventario/prod-1");
+    await user.click(within(dialog).getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() =>
+      expect(calls.find((call) => call.key === "PUT /api/v1/products/prod-1")?.body).toMatchObject({
+        stockTracked: true,
+      }),
+    );
+
+    state = "TRACKED_NOT_INITIALIZED";
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Corregir Cemento 50 kg" }))[0]!,
+    );
+    dialog = await screen.findByRole("dialog", { name: "Corregir producto" });
+    await waitFor(() =>
+      expect(within(dialog).getByLabelText("Controlar stock de este bien")).toHaveProperty(
+        "disabled",
+        false,
+      ),
+    );
+    expect(within(dialog).queryByText(/El control se gestiona en Inventario/)).toBeNull();
+  });
+
   it("al corregir un producto en revisión explica el motivo y conserva su tarifa actual", async () => {
     renderProducts({ "GET /api/v1/products": page([REVIEW]) });
     const user = userEvent.setup();

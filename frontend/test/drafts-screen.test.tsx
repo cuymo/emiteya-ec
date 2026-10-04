@@ -462,6 +462,49 @@ describe("editor de factura", () => {
     expect(within(alert).getByRole("button", { name: "Recargar borrador" })).toBeDefined();
   });
 
+  it("muestra los avisos de existencias junto a la última línea del producto, sin bloquear la emisión (add-minimal-inventory)", async () => {
+    const line = (position: number, id: string, name: string, quantity: string) => ({
+      position,
+      product: { id, mainCode: null, name, unitPrice: "8.75", status: "ACTIVE" },
+      quantity,
+      discount: "0",
+    });
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": ok(
+        draft({
+          lines: [
+            line(1, "prod-1", "Cemento 50 kg", "3"),
+            line(2, "prod-2", "Arena fina", "1"),
+            line(3, "prod-1", "Cemento 50 kg", "4"),
+          ],
+          preview: {
+            ...draft().preview,
+            lines: [],
+            stockWarnings: [
+              { code: "STOCK_BELOW_REQUESTED", productId: "prod-1", requested: "7", balance: "5" },
+              { code: "STOCK_NOT_INITIALIZED", productId: "prod-2", requested: "1", balance: null },
+            ],
+          },
+        }),
+      ),
+    });
+    const third = await screen.findByRole("listitem", { name: "Línea 3: Cemento 50 kg" });
+    expect(within(third).getByRole("note").textContent).toBe(
+      "Aviso de existencias: pides 7 y el saldo contabilizado es 5. Es orientativo y no impide emitir.",
+    );
+    const first = screen.getByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
+    expect(within(first).queryByRole("note")).toBeNull();
+    const second = screen.getByRole("listitem", { name: "Línea 2: Arena fina" });
+    expect(within(second).getByRole("note").textContent).toContain(
+      "este producto todavía no tiene inventario inicializado",
+    );
+    expect(third.getAttribute("aria-invalid")).toBeNull();
+    expect(screen.getByRole("button", { name: "Emitir factura" })).toHaveProperty(
+      "disabled",
+      false,
+    );
+  });
+
   it("emite con la confirmación, el ambiente y la misma Idempotency-Key en el reintento", async () => {
     const keys: string[] = [];
     let attempt = 0;

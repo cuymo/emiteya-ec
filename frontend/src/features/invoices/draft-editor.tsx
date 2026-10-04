@@ -16,8 +16,9 @@ import {
   type InvoiceIssue,
   type PartyView,
   type ProductView,
+  type StockWarning,
 } from "@facturador/contracts";
-import { ArrowLeft, Plus, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, Info, Plus, Trash2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -35,7 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import {
@@ -182,6 +183,27 @@ function IssueList({ issues }: { issues: readonly InvoiceIssue[] }) {
   );
 }
 
+/**
+ * Aviso de existencias de un producto (add-minimal-inventory, design D9 y D13): orientativo, junto a
+ * su última línea, sin bloquear la emisión ni garantizar disponibilidad.
+ */
+function StockWarningNote({ warning }: { warning: StockWarning }) {
+  return (
+    <p
+      role="note"
+      className="flex items-start gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-sm"
+    >
+      <Info aria-hidden="true" className="mt-0.5 size-2 shrink-0 text-warning" />
+      <span>
+        {warning.code === "STOCK_BELOW_REQUESTED"
+          ? `Aviso de existencias: pides ${formatDecimal(warning.requested)} y el saldo contabilizado es ${formatDecimal(warning.balance ?? "0")}.`
+          : "Aviso de existencias: este producto todavía no tiene inventario inicializado."}{" "}
+        Es orientativo y no impide emitir.
+      </span>
+    </p>
+  );
+}
+
 /** Alerta de la operación con una acción de recuperación opcional. */
 function OperationAlert({
   message,
@@ -287,6 +309,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   const lineIssues = (position: number) => issues.filter((issue) => issue.line === position);
   const paymentIssues = (position: number) => issues.filter((issue) => issue.payment === position);
   const generalIssues = issues.filter((issue) => issue.line === null && issue.payment === null);
+  const stockWarnings = preview?.stockWarnings ?? [];
   const environment = status.data ? ENVIRONMENT_LABELS[status.data.environment] : null;
   // Mientras se guarda, la emisión espera: el guardado vuelve a montar el editor con la versión nueva.
   const emitBlocked = !draft || isDirty || issues.length > 0 || save.isPending;
@@ -394,6 +417,14 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                   const position = index + 1;
                   const lineError = errors.lines?.[index];
                   const problems = draft && !isDirty ? lineIssues(position) : [];
+                  // El aviso suma todas las líneas del producto: se muestra junto a la última.
+                  const lastOfProduct = !lines.fields
+                    .slice(index + 1)
+                    .some((other) => other.productId === field.productId);
+                  const warning =
+                    draft && !isDirty && lastOfProduct
+                      ? stockWarnings.find((candidate) => candidate.productId === field.productId)
+                      : undefined;
                   return (
                     <li
                       key={field.id}
@@ -446,6 +477,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                         </FormField>
                       </div>
                       <IssueList issues={problems} />
+                      {warning && <StockWarningNote warning={warning} />}
                     </li>
                   );
                 })}

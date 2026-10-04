@@ -99,6 +99,19 @@ describe("shell autenticado", () => {
     }
   });
 
+  it("administrador y operador ven Inventario en Operación (add-minimal-inventory)", async () => {
+    for (const me of [ADMIN_ME, OPERATOR_ME]) {
+      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
+      const view = renderShell();
+      await screen.findByText("contenido");
+      expect(screen.getByRole("link", { name: "Inventario" }).getAttribute("href")).toBe(
+        "/inventario",
+      );
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("administrador y operador ven Facturas y Borradores en Operación (add-invoice-emission)", async () => {
     for (const me of [ADMIN_ME, OPERATOR_ME]) {
       mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });

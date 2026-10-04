@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
+import { useStockItem } from "@/features/inventory/inventory-api";
 import { useSaveProduct, useTaxOptions, type TaxOption } from "./products-api";
 
 type FormInput = {
@@ -122,6 +123,19 @@ export function ProductDialog({
     if (open) form.reset(toForm(product));
   }, [open, product, form]);
   const kind = useWatch({ control: form.control, name: "kind" });
+  // add-minimal-inventory, design D11: con el inventario inicializado, la marca la cambia el
+  // inventario. Mientras se consulta, la marca tampoco se puede cambiar.
+  const inventory = useStockItem(
+    product?.id ?? "",
+    open && product !== null && product.kind === "GOOD" && canSee(me.role, "inventory.read"),
+  );
+  const stockManaged =
+    inventory.isPending && inventory.fetchStatus === "fetching"
+      ? "checking"
+      : inventory.data?.state === "TRACKED_INITIALIZED" ||
+          inventory.data?.state === "DISABLED_INITIALIZED"
+        ? "inventory"
+        : null;
 
   const close = () => {
     setError(undefined);
@@ -303,14 +317,42 @@ export function ProductDialog({
               ))}
             </Select>
           </FormField>
-          <label className="flex min-h-5.5 items-center gap-1 text-sm">
-            <input
-              type="checkbox"
-              className="size-2.5 accent-primary"
-              {...form.register("stockTracked")}
-            />
-            Controlar stock de este bien
-          </label>
+          {stockManaged && product ? (
+            // Sin registrar: la marca conserva su valor y no se envía cambiada.
+            <div className="flex flex-col gap-0.5">
+              <label className="flex min-h-5.5 items-center gap-1 text-sm text-foreground-muted">
+                <input
+                  type="checkbox"
+                  className="size-2.5 accent-primary"
+                  checked={product.stockTracked}
+                  disabled
+                  readOnly
+                  aria-describedby="product-stock-managed"
+                />
+                Controlar stock de este bien
+              </label>
+              {stockManaged === "inventory" && (
+                <p id="product-stock-managed" className="text-xs text-foreground-muted">
+                  El control se gestiona en Inventario.{" "}
+                  <Link
+                    href={`/inventario/${encodeURIComponent(product.id)}`}
+                    className="text-primary underline"
+                  >
+                    Ir al inventario del producto
+                  </Link>
+                </p>
+              )}
+            </div>
+          ) : (
+            <label className="flex min-h-5.5 items-center gap-1 text-sm">
+              <input
+                type="checkbox"
+                className="size-2.5 accent-primary"
+                {...form.register("stockTracked")}
+              />
+              Controlar stock de este bien
+            </label>
+          )}
         </>
       ) : (
         <p className="text-xs text-foreground-muted">

@@ -144,8 +144,8 @@
 
 ## 10. Pantallas
 
-- [ ] 10.1 Implementar la pantalla `Inventario` en `/inventario` dentro de "Operación" (design D13): `AppDataTable` con paginación del servidor, búsqueda y `ChipGroup` del estado en la URL, saldo negativo con icono y texto, sin inicializar sin cifra y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso, los cuatro estados y filtros en la URL
-- [ ] 10.2 Implementar el detalle `/inventario/{productId}` (design D13):
+- [x] 10.1 Implementar la pantalla `Inventario` en `/inventario` dentro de "Operación" (design D13): `AppDataTable` con paginación del servidor, búsqueda y `ChipGroup` del estado en la URL, saldo negativo con icono y texto, sin inicializar sin cifra y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso, los cuatro estados y filtros en la URL
+- [x] 10.2 Implementar el detalle `/inventario/{productId}` (design D13):
   - estado, saldo y acción principal según el estado y el rol;
   - diálogos de inicialización, entrada y ajuste con su validación, el motivo obligatorio en el ajuste y la clave de idempotencia reutilizada en los reintentos;
   - `ConfirmDialog` para desactivar, que explica que las facturas ya emitidas aún pueden descontar, y la explicación del saldo distinto de cero;
@@ -156,7 +156,7 @@
   - el administrador con las cuatro acciones;
   - el doble clic que envía una sola solicitud;
   - los `409` explicados, el foco tras cada acción, y el rango inválido
-- [ ] 10.3 En el diálogo del producto, deshabilitar la marca de un producto inicializado con "El control se gestiona en Inventario" y un enlace; en el editor del borrador, mostrar los avisos de existencias junto a su línea como aviso informativo que no bloquea la emisión (design D13). Verificar con pruebas de componente de ambos
+- [x] 10.3 En el diálogo del producto, deshabilitar la marca de un producto inicializado con "El control se gestiona en Inventario" y un enlace; en el editor del borrador, mostrar los avisos de existencias junto a su línea como aviso informativo que no bloquea la emisión (design D13). Verificar con pruebas de componente de ambos
 - [ ] 10.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-minimal-inventory/ui-review.md`. Verificar que la revisión no deja hallazgos abiertos
 
 ## 11. Rendimiento y prueba end-to-end

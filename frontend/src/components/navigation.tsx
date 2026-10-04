@@ -15,6 +15,7 @@ import {
   Package,
   Store,
   Users,
+  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -43,6 +44,13 @@ const GROUPS: Group[] = [
       { href: "/borradores", label: "Borradores", icon: FilePenLine, permission: "invoices.draft" },
       { href: "/terceros", label: "Terceros", icon: Contact, permission: "parties.read" },
       { href: "/productos", label: "Productos", icon: Package, permission: "products.read" },
+      // add-minimal-inventory, design D13: el stock contabilizado de los productos controlados.
+      {
+        href: "/inventario",
+        label: "Inventario",
+        icon: Warehouse,
+        permission: "inventory.read",
+      },
     ],
   },
   {

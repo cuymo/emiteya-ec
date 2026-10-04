@@ -27,6 +27,7 @@ export function ConfirmDialog({
   tone = "primary",
   typedConfirmation,
   requiredText,
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,6 +51,8 @@ export function ConfirmDialog({
     /** Mensaje del error, o null si el texto es válido. */
     validate: (text: string) => string | null;
   };
+  /** Foco al cerrar: con `preventDefault`, el llamador decide dónde va en lugar de quien lo abrió. */
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   const inputId = useId();
   const textId = useId();
@@ -72,7 +75,7 @@ export function ConfirmDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent>
+      <DialogContent {...(onCloseAutoFocus ? { onCloseAutoFocus } : {})}>
         <form
           noValidate
           onSubmit={(event) => {
