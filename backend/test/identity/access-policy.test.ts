@@ -46,6 +46,10 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "invoices.emit": { ADMIN: true, OPERATOR: true },
   "invoices.retrySigning": { ADMIN: true, OPERATOR: true },
   "invoices.reconcile": { ADMIN: true, OPERATOR: false },
+  // add-document-archive, design D11: "Consultar la bandeja y descargar XML y RIDE".
+  "archive.read": { ADMIN: true, OPERATOR: true },
+  "archive.download": { ADMIN: true, OPERATOR: true },
+  "archive.retryRide": { ADMIN: true, OPERATOR: true },
 };
 
 describe("política de autorización central", () => {

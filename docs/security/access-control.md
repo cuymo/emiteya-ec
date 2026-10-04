@@ -160,12 +160,15 @@ denegado por defecto;
 | `invoices.emit` | Emitir una factura desde un borrador: reserva el número y la firma localmente | Sí | Sí |
 | `invoices.retrySigning` | Reintentar la firma de una factura reservada, con el mismo número y la misma clave | Sí | Sí |
 | `invoices.reconcile` | Pedir la reconciliación de una factura con el SRI: resolver una revisión manual o reactivar una transmisión detenida, con motivo | Sí | No |
+| `archive.read` | Consultar la bandeja de comprobantes, los documentos disponibles de cada uno y su historial de entregas | Sí | Sí |
+| `archive.download` | Descargar el RIDE, el XML autorizado y el XML firmado guardados, y solicitar la impresión del RIDE | Sí | Sí |
+| `archive.retryRide` | Reintentar la generación detenida del RIDE de un comprobante autorizado que todavía no lo tiene | Sí | Sí |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
 
 Matriz propuesta para los módulos futuros (Q-22). El ERS solo dice "permisos básicos"; cada
-cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; `add-sri-transmission` confirmó "Resolver revisión manual u ordenar una reconciliación" solo para el administrador (`invoices.reconcile`):
+cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; `add-sri-transmission` confirmó "Resolver revisión manual u ordenar una reconciliación" solo para el administrador (`invoices.reconcile`); `add-document-archive` confirmó "Consultar la bandeja y descargar XML y RIDE" para ambos roles (`archive.read` y `archive.download`), y bajo esa misma fila el reintento de una generación detenida del RIDE (`archive.retryRide`): solo vuelve a programar el mismo documento que el usuario ya puede descargar, sin efecto fiscal, sin reemplazar un RIDE y sin dejar dos generaciones activas:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |

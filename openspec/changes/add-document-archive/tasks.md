@@ -99,8 +99,8 @@
 
 ## 6. Contratos y permisos
 
-- [ ] 6.1 Crear `packages/contracts/src/archive.ts` (design D10): filtros de la bandeja validados con Zod (fechas ISO con `from <= to`, tipo, estado, identificación, búsqueda, establecimiento, punto y paginación), elemento y resumen, estados `AVAILABLE`, `PENDING`, `STOPPED` y `NOT_APPLICABLE`, eventos de entrega, códigos `DOCUMENT_NOT_AVAILABLE`, `ARTIFACT_INTEGRITY_FAILED`, `RIDE_ALREADY_AVAILABLE`, `RIDE_GENERATION_IN_PROGRESS` y `DOCUMENT_NOT_AUTHORIZED`, y rutas en `apiRoutes`. Verificar con pruebas de contratos: fecha mal formada, rango invertido y estado desconocido rechazados
-- [ ] 6.2 Añadir `archive.read`, `archive.download` y `archive.retryRide` a `access-policy.ts` para `ADMIN` y `OPERATOR`, a su espejo del frontend y a la tabla de `access-control.md`, registrando que este cambio confirma la fila "Consultar la bandeja y descargar XML y RIDE" y el reintento bajo ella (design D11). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
+- [x] 6.1 Crear `packages/contracts/src/archive.ts` (design D10): filtros de la bandeja validados con Zod (fechas ISO con `from <= to`, tipo, estado, identificación, búsqueda, establecimiento, punto y paginación), elemento y resumen, estados `AVAILABLE`, `PENDING`, `STOPPED` y `NOT_APPLICABLE`, eventos de entrega, códigos `DOCUMENT_NOT_AVAILABLE`, `ARTIFACT_INTEGRITY_FAILED`, `RIDE_ALREADY_AVAILABLE`, `RIDE_GENERATION_IN_PROGRESS` y `DOCUMENT_NOT_AUTHORIZED`, y rutas en `apiRoutes`. Verificar con pruebas de contratos: fecha mal formada, rango invertido y estado desconocido rechazados
+- [x] 6.2 Añadir `archive.read`, `archive.download` y `archive.retryRide` a `access-policy.ts` para `ADMIN` y `OPERATOR`, a su espejo del frontend y a la tabla de `access-control.md`, registrando que este cambio confirma la fila "Consultar la bandeja y descargar XML y RIDE" y el reintento bajo ella (design D11). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
 
 ## 7. API de la bandeja
 

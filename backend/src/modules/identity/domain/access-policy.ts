@@ -35,6 +35,9 @@ export const PERMISSIONS = [
   "invoices.emit",
   "invoices.retrySigning",
   "invoices.reconcile",
+  "archive.read",
+  "archive.download",
+  "archive.retryRide",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -77,6 +80,10 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "invoices.retrySigning",
     // add-sri-transmission, design D18: resolver una revisión manual u ordenar una reconciliación.
     "invoices.reconcile",
+    // add-document-archive, design D11: "Consultar la bandeja y descargar XML y RIDE".
+    "archive.read",
+    "archive.download",
+    "archive.retryRide",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -102,6 +109,11 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "invoices.draft",
     "invoices.emit",
     "invoices.retrySigning",
+    // add-document-archive, design D11: la bandeja, las descargas, la impresión y el reintento de
+    // una generación detenida del RIDE, como el administrador.
+    "archive.read",
+    "archive.download",
+    "archive.retryRide",
   ]),
 };
 

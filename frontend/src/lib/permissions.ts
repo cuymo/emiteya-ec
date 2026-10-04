@@ -34,7 +34,10 @@ export type Permission =
   | "invoices.draft"
   | "invoices.emit"
   | "invoices.retrySigning"
-  | "invoices.reconcile";
+  | "invoices.reconcile"
+  | "archive.read"
+  | "archive.download"
+  | "archive.retryRide";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -70,6 +73,9 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "invoices.emit",
     "invoices.retrySigning",
     "invoices.reconcile",
+    "archive.read",
+    "archive.download",
+    "archive.retryRide",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",
@@ -87,6 +93,9 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "invoices.draft",
     "invoices.emit",
     "invoices.retrySigning",
+    "archive.read",
+    "archive.download",
+    "archive.retryRide",
   ]),
 };
 
