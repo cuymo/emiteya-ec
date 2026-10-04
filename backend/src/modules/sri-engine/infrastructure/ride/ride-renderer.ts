@@ -137,10 +137,19 @@ export function totalRows(ride: RideInvoice): [string, string][] {
 
 const paymentText = (payment: RideInvoice["payments"][number]) =>
   payment.label === null ? payment.method : `${payment.method} - ${payment.label}`;
+const documentNumber = (ride: RideInvoice) =>
+  `${ride.establishment}-${ride.emissionPoint}-${ride.sequential}`;
+const environmentText = (ride: RideInvoice) => ENVIRONMENTS[ride.environment] ?? ride.environment;
+const emissionText = (ride: RideInvoice) => EMISSION_TYPES[ride.emissionType] ?? ride.emissionType;
 
 /** Textos del comprobante que se dibujan, para comprobar los glifos antes de maquetar. */
 export function drawnStrings(ride: RideInvoice): string[] {
   return [
+    documentNumber(ride),
+    ride.authorization.number,
+    environmentText(ride),
+    emissionText(ride),
+    ride.accessKey,
     ride.legalName,
     ride.tradeName ?? "",
     ride.headOfficeAddress,
@@ -236,8 +245,8 @@ function authorizationSection(ride: RideInvoice, number: string): Content {
       ecuadorDateTime(ride.authorization.authorizedAt),
       [0, 6, 0, 0],
     ),
-    row(110, "AMBIENTE:", ENVIRONMENTS[ride.environment] ?? ride.environment, [0, 4, 0, 0]),
-    row(110, "EMISIÓN:", EMISSION_TYPES[ride.emissionType] ?? ride.emissionType, [0, 4, 0, 0]),
+    row(110, "AMBIENTE:", environmentText(ride), [0, 4, 0, 0]),
+    row(110, "EMISIÓN:", emissionText(ride), [0, 4, 0, 0]),
     { text: "CLAVE DE ACCESO", style: "label", margin: [0, 6, 0, 0] },
     barcode(ride.accessKey),
     { text: ride.accessKey, style: "key", alignment: "center" },
@@ -345,7 +354,7 @@ export function rideDocument(
   logo: RideLogo | null,
   onPageCount: (pages: number) => void = () => {},
 ): DocumentDefinition {
-  const number = `${ride.establishment}-${ride.emissionPoint}-${ride.sequential}`;
+  const number = documentNumber(ride);
   return {
     pageSize: "A4",
     pageMargins: [PAGE_MARGIN_PT, 40, PAGE_MARGIN_PT, 36],

@@ -24,7 +24,9 @@ import {
   RIDE_LIBRARY_VERSIONS,
   RIDE_VERSIONS,
   createInProcessRideRenderer,
+  drawnStrings,
 } from "../../../src/modules/sri-engine/infrastructure/ride/ride-renderer.ts";
+import { readRideSource } from "../../../src/modules/sri-engine/infrastructure/ride/ride-source.ts";
 import { pageTexts } from "../../support/pdf-inspection.ts";
 import {
   INVOICE_CASES,
@@ -292,6 +294,19 @@ describe("caracteres y fuentes", () => {
       code: "RIDE_GLYPH_MISSING",
       detail: ["U+6F22", "U+5B57", "U+1D518"],
     } satisfies RideRenderOutcome);
+  });
+
+  it("la comprobación de glifos incluye la cabecera: número, autorización, ambiente, emisión y clave", () => {
+    const ride = readRideSource(invoices.get("oneLine")!.input);
+    expect(drawnStrings(ride)).toEqual(
+      expect.arrayContaining([
+        `${ride.establishment}-${ride.emissionPoint}-${ride.sequential}`,
+        ride.authorization.number,
+        "PRUEBAS",
+        "NORMAL",
+        ride.accessKey,
+      ]),
+    );
   });
 
   it("un logo que no es PNG ni JPEG se rechaza", async () => {
