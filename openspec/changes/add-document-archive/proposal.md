@@ -33,10 +33,11 @@ correo no entra.
   - La procedencia queda registrada como `AUTHORIZED_XML` o `SIGNED_XML_FALLBACK`.
   - Nunca se leen terceros, productos, configuración tributaria ni catálogos vigentes.
   - Lo que el XML no trae (denominación de la forma de pago, logo) sale solo del snapshot o de la configuración inmutable ya asociados al comprobante.
-- **Contenido** del anexo 2 de la ficha v2.34 (ADR 0022):
+- **Contenido** del anexo 2 de la ficha v2.34 (ADR 0022), para la factura 1.1.0 que el sistema emite, con IVA:
   - la clave de acceso como texto y como Code128 que se decodifica exactamente igual;
   - fuentes embebidas, sin sustitución silenciosa de caracteres;
   - importes tomados del texto exacto del XML, sin convertirlos ni recalcularlos.
+  - Un comprobante con contenido que el sistema no emite (ICE, IRBPNR, propina, información adicional) no recibe RIDE, en lugar de perder ese contenido. El RIDE no amplía lo que la emisión soporta.
 - **Descargas verificadas.**
   - Qué se puede descargar:
     - el RIDE, solo autorizado y con RIDE generado;
@@ -44,9 +45,9 @@ correo no entra.
     - el XML firmado, siempre presentado como XML firmado, nunca como autorizado.
   - Antes de servir, se comprueban la empresa, la asociación con el comprobante, el hash y el tamaño.
   - Se sirven los bytes guardados, con un nombre de archivo determinista y seguro.
-- **Impresión** del mismo RIDE guardado, sin versión propia. Registra la solicitud de impresión, nunca que se imprimió.
+- **Impresión** del mismo RIDE guardado, sin versión propia. La solicitud es una acción explícita, distinta de la lectura del RIDE: registra que se pidió, nunca que se imprimió, y ninguna lectura la registra.
 - **Historial de entregas observables**, de solo agregado y separado de la auditoría.
-  - Eventos: `DOWNLOAD` (la aplicación sirvió una descarga autorizada) y `PRINT_REQUESTED` (la aplicación inició la impresión).
+  - Eventos: `DOWNLOAD` (la aplicación inició una respuesta autorizada con el documento, no que el cliente lo guardó) y `PRINT_REQUESTED` (un usuario pidió imprimir).
   - Cada evento guarda el comprobante, el tipo y el hash del artefacto, el actor y el momento, nunca sus bytes.
   - Ningún evento significa que el receptor recibió el documento.
 - **Permisos** para consultar la bandeja, descargar e imprimir, y reintentar una generación detenida. Siguen la matriz vigente ("Consultar la bandeja y descargar XML y RIDE"): administrador y operador.
@@ -88,13 +89,15 @@ reutilizan sin cambiar sus requisitos. La generación del RIDE al autorizar es u
 - **Backend:**
   - `sri-engine`: la lectura del XML para el RIDE y el renderer (pdfmake, bwip-js), con las fuentes y sus hashes (ADR 0022);
   - `fiscal`: el trabajo `document.render_ride`, su programación al autorizar, el barrido, el artefacto `RIDE_PDF`, la bandeja, las descargas y el historial de entregas;
-  - `platform/workers`: un pool genérico del que salen el criptográfico existente y el del RIDE.
+  - la programación al autorizar entra por un seguidor genérico de las transiciones, compuesto al arrancar: la transmisión no depende del archivo;
+  - `platform/workers`: una primitiva de pool genérica con dos instancias independientes, la criptográfica existente y la del RIDE.
+- **Comprobaciones del artefacto de ejecución:** `check:ride-assets` (fuentes y manifiesto), separado de `check:xsd-artifact`, y readiness propia del RIDE.
 - **Base de datos:**
   - el tipo de artefacto `RIDE_PDF` con su tipo de medio;
   - una tabla de entregas de solo agregado;
   - el tipo de trabajo nuevo;
   - índices para los filtros de la bandeja.
-- **API** bajo `/api/v1/documents`: la bandeja, el resumen de documentos de un comprobante, las descargas del RIDE y de los XML, el historial de entregas y el reintento de una generación detenida. Sin endpoints técnicos de generación.
+- **API** bajo `/api/v1/documents`: la bandeja, el resumen de documentos de un comprobante, las descargas del RIDE y de los XML, la solicitud de impresión, el historial de entregas y el reintento de una generación detenida. Sin endpoints técnicos de generación.
 - **Permisos:** `archive.read`, `archive.download` y `archive.retryRide`.
 - **Configuración:** workers, cola y plazo del render, e intentos y espera de su trabajo. Es configuración operativa.
 - **Frontend:**

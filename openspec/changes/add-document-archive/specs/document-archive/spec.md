@@ -131,7 +131,7 @@ El RIDE SHALL salir del XML autorizado y de los datos inmutables de la autorizac
 - **THEN** no se genera el RIDE y la generación se detiene con su motivo
 
 ### Requirement: Contenido del RIDE
-El RIDE SHALL presentar el contenido del formato oficial de la factura: emisor y sus leyendas tributarias, número, autorización, ambiente, emisión, clave, receptor, detalle, información adicional, formas de pago y totales, mostrando solo los subtotales que el comprobante llenó. Los importes y cantidades SHALL salir del texto exacto del comprobante, sin recalcularlos, redondearlos ni convertirlos.
+El RIDE SHALL presentar, en el formato oficial, la factura 1.1.0 que el sistema emite: emisor y sus leyendas, número, autorización, ambiente, emisión, clave, receptor, detalle, formas de pago y totales de IVA, solo con los subtotales llenados. Importes y cantidades SHALL salir del texto exacto del comprobante, sin recalcular, redondear ni convertir. Si el comprobante trae contenido que el sistema no emite, el RIDE no se genera: nunca se omite en silencio.
 
 #### Scenario: Factura completa
 - **WHEN** se genera el RIDE de una factura con varias líneas, descuentos, varias tarifas de IVA y varias formas de pago
@@ -152,6 +152,10 @@ El RIDE SHALL presentar el contenido del formato oficial de la factura: emisor y
 #### Scenario: Ambiente de pruebas
 - **WHEN** el comprobante es del ambiente de pruebas
 - **THEN** el RIDE indica el ambiente de pruebas
+
+#### Scenario: Contenido que el sistema no emite
+- **WHEN** el comprobante de origen trae ICE, IRBPNR, propina, información adicional u otro elemento que el sistema no emite
+- **THEN** no se genera el RIDE y la generación se detiene indicando los elementos
 
 ### Requirement: Clave de acceso legible por máquina
 El RIDE SHALL mostrar la clave de acceso completa como texto y como un código de barras Code128 que, leído, devuelve exactamente la misma clave, con un tamaño legible en la práctica.
@@ -178,6 +182,10 @@ El RIDE SHALL representar cada carácter del comprobante con fuentes propias emb
 #### Scenario: Equipo sin fuentes
 - **WHEN** la instalación no tiene fuentes del sistema
 - **THEN** el RIDE se genera igual
+
+#### Scenario: Fuentes de la instalación alteradas
+- **WHEN** faltan las fuentes del RIDE o su manifiesto, o un hash no coincide
+- **THEN** la instalación no se declara lista y no se genera ningún RIDE
 
 ### Requirement: Paginación del RIDE
 Un RIDE de varias páginas SHALL repetir la identificación del comprobante y el encabezado del detalle en cada página, numerar las páginas, no partir ninguna fila del detalle y mantener juntos los totales. La autorización y el código de barras SHALL quedar completos en la primera página.
@@ -206,7 +214,7 @@ El RIDE SHALL dibujar el contenido del comprobante como texto literal, sin enlac
 - **THEN** no se accede a la red ni a archivos fuera de los propios de la generación
 
 #### Scenario: Documento de origen peligroso
-- **WHEN** el documento de origen trae definiciones de tipo, entidades, un tamaño o un anidamiento excesivos, o no es una factura
+- **WHEN** el documento de origen trae definiciones de tipo, entidades, un tamaño o un anidamiento excesivos, o no es una factura 1.1.0
 - **THEN** no se genera el RIDE y la generación se detiene con su motivo
 
 #### Scenario: Logo alterado
@@ -241,7 +249,7 @@ Un fallo al generar el RIDE SHALL ser un estado operativo, nunca un cambio del e
 - **THEN** se programa una sola
 
 ### Requirement: Descargas verificadas
-El sistema SHALL servir el RIDE, el XML autorizado y el XML firmado de un comprobante con los bytes exactos guardados, solo cuando están disponibles. Antes de servirlos SHALL comprobar la empresa, la asociación con el comprobante, el hash y el tamaño; si no coinciden, no sirve nada. El nombre del archivo SHALL ser determinista y no depender de texto del usuario.
+El sistema SHALL servir el RIDE, el XML autorizado y el XML firmado de un comprobante con los bytes exactos guardados, solo cuando están disponibles. Antes de servirlos SHALL comprobar la empresa, el permiso, la asociación con el comprobante, el hash y el tamaño; si no coinciden, no sirve nada. El nombre del archivo SHALL ser determinista y no depender de texto del usuario.
 
 #### Scenario: Descarga del RIDE
 - **WHEN** un usuario con permiso descarga el RIDE de un comprobante autorizado que lo tiene
@@ -260,18 +268,26 @@ El sistema SHALL servir el RIDE, el XML autorizado y el XML firmado de un compro
 - **THEN** no se sirve ningún byte, el usuario recibe un error y se registra el problema
 
 ### Requirement: Impresión del RIDE
-La impresión SHALL usar el mismo RIDE guardado, sin una versión propia, y registrar que se solicitó. Nunca SHALL registrar ni afirmar que la impresión terminó.
+La solicitud de impresión SHALL ser una acción explícita, distinta de la lectura del RIDE: comprueba que el RIDE guardado existe y está íntegro, registra la solicitud, y la interfaz imprime los mismos bytes de la descarga, sin una versión propia. Leer el RIDE nunca registra una solicitud de impresión. Nunca SHALL registrar ni afirmar que la impresión terminó.
 
 #### Scenario: Imprimir
-- **WHEN** un usuario con permiso imprime el RIDE de un comprobante autorizado
-- **THEN** se abren los bytes del RIDE guardado y queda registrada una solicitud de impresión
+- **WHEN** un usuario con permiso pide imprimir el RIDE de un comprobante autorizado
+- **THEN** queda registrada una solicitud de impresión y se imprimen los bytes del RIDE guardado
 
 #### Scenario: Imprimir sin RIDE
 - **WHEN** el comprobante no tiene RIDE
 - **THEN** no se ofrece la impresión y una solicitud responde que el documento no está disponible
 
+#### Scenario: Imprimir un RIDE alterado
+- **WHEN** el hash o el tamaño del RIDE guardado no coinciden con sus datos
+- **THEN** no se registra la solicitud y el usuario recibe un error
+
+#### Scenario: Lecturas del RIDE
+- **WHEN** el RIDE se lee una o varias veces, también por una precarga, una caché o una repetición automática
+- **THEN** no se registra ninguna solicitud de impresión
+
 ### Requirement: Historial de entregas
-El sistema SHALL registrar en un historial de solo agregado cada descarga servida y cada solicitud de impresión, con el comprobante, el tipo y el hash del documento, el actor y el momento, nunca sus bytes. Una descarga significa que la aplicación la sirvió y una solicitud de impresión, que la inició; ninguno significa que el receptor lo recibió. El historial no se duplica en la auditoría.
+El sistema SHALL registrar en un historial de solo agregado cada descarga servida y cada solicitud de impresión, con el comprobante, el tipo y el hash del documento, el actor y el momento, nunca sus bytes. Una descarga significa que la aplicación inició una respuesta autorizada con el documento, no que el cliente lo guardó; una solicitud de impresión, que un usuario la pidió. Ninguna significa que el receptor lo recibió. El historial no se duplica en la auditoría.
 
 #### Scenario: Descarga registrada
 - **WHEN** se sirve una descarga del RIDE o de un XML
@@ -280,6 +296,10 @@ El sistema SHALL registrar en un historial de solo agregado cada descarga servid
 #### Scenario: Solicitud de impresión registrada
 - **WHEN** se solicita la impresión del RIDE
 - **THEN** queda una entrega de solicitud de impresión con los mismos datos
+
+#### Scenario: Bytes para imprimir
+- **WHEN** después de la solicitud la interfaz obtiene el RIDE para imprimirlo
+- **THEN** queda además una descarga, porque la aplicación sirvió los bytes
 
 #### Scenario: Descarga no servida
 - **WHEN** una descarga se rechaza por permiso, disponibilidad o integridad

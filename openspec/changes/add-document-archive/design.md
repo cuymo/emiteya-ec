@@ -46,11 +46,16 @@ Estado de partida, tras `add-sri-transmission`:
 | --- | --- | --- |
 | Lectura del XML para el RIDE (modelo de la factura) | `sri-engine/infrastructure` | Es el único lugar del parser XML (regla de ESLint del motor SRI). |
 | Renderer del RIDE (pdfmake, bwip-js, fontkit) y sus fuentes | `sri-engine/infrastructure`, detrás de los puertos `RideSourceReader` y `RideRenderer` de `sri-engine/application` | La ficha define el formato: es una pieza del protocolo, como el builder XML y el firmador. Una regla de ESLint limita pdfmake, bwip-js y fontkit a esa carpeta. |
-| Job `document.render_ride`, programación al autorizar, barrido, artefacto `RIDE_PDF`, bandeja, descargas, entregas y reintento | `fiscal` | ARCHITECTURE.md asigna `document-archive` y los jobs del RIDE a `fiscal`. |
+| Job `document.render_ride`, su seguidor de la autorización, barrido, artefacto `RIDE_PDF`, bandeja, descargas, entregas y reintento | `fiscal/application/archive/` y `fiscal/infrastructure/archive/` | ARCHITECTURE.md asigna `document-archive` y los jobs del RIDE a `fiscal`. Las carpetas propias hacen verificable la dirección de las dependencias. |
+| Seguidores de las transiciones del comprobante (puerto genérico) | `fiscal/application/document-transitions.ts` | Lo conocen la transmisión y el archivo; no conoce a ninguno de los dos. |
 | Pool de workers genérico | `platform/workers` | El criptográfico y el del RIDE comparten el mecanismo, no la instancia. |
 | Pantalla `Comprobantes` y sección de documentos | `frontend/src/features/archive/` | La sección se monta en el detalle de la factura, que no duplica su contenido. |
 
 - **Sin dependencias nuevas entre módulos de negocio.** `fiscal` lee el snapshot del comprobante que ya guarda, nunca `parties`, `products`, `taxpayer` ni `catalogs`. Para el logo usa una lectura interna del asset por identificador de versión, de solo lectura y sobre tablas de solo agregado.
+- **Dirección de las dependencias.** El archivo depende de la transmisión, nunca al revés.
+  - `sri-transmission` (handlers, `transmission-step.ts`, sus puertos y su infraestructura) no importa nada de `archive/` ni nombra el tipo `document.render_ride`.
+  - El único punto que une los dos es la composición al arrancar (`main.ts`), que entrega al paso de la transmisión los seguidores registrados (D5).
+  - Una prueba de arquitectura lo impide: ningún archivo de `src/` fuera de `archive/` y de `main.ts` importa de `archive/`, y ningún archivo de la transmisión contiene `document.render_ride`. Detecta cada violación en archivos de ejemplo, como las pruebas de fronteras existentes.
 
 ### D2. Bandeja de comprobantes
 
@@ -92,11 +97,20 @@ comprobante AUTHORIZED
   - La procedencia se guarda en el artefacto y se muestra en el resumen.
   - El XML firmado nunca se ofrece ni se nombra como XML autorizado.
 - **Verificaciones antes de dibujar** (código determinista, la generación se detiene):
-  - el SHA-256 y el tamaño del artefacto de origen coinciden con los guardados: `RIDE_SOURCE_INTEGRITY`;
-  - la clave del XML coincide con el número de autorización, y su ambiente con el de la autorización: `RIDE_AUTHORIZATION_MISMATCH`;
-  - el documento es una factura de versión 1.0.0 o 1.1.0;
+  - el artefacto de origen pertenece al comprobante y a su empresa, y su SHA-256 y su tamaño coinciden con los guardados: `RIDE_SOURCE_INTEGRITY`;
+  - la clave del XML coincide con la del comprobante y con el número de autorización, y su ambiente con el de la autorización: `RIDE_AUTHORIZATION_MISMATCH`;
   - el XML no trae `<!DOCTYPE` ni entidades, mide 2 MiB o menos y anida 24 niveles o menos: `RIDE_SOURCE_INVALID`;
+  - el documento es una factura (`codDoc` 01) de versión 1.1.0: `RIDE_SOURCE_INVALID`;
+  - solo trae el contenido que el sistema emite (lista abajo): `RIDE_SOURCE_UNSUPPORTED`, con los nombres de los elementos;
   - el SHA-256 del logo coincide con el de su asset: `RIDE_LOGO_INTEGRITY`.
+- **Solo la factura 1.1.0.** Es la única versión que escribe el builder de `add-invoice-emission` (`INVOICE_SCHEMA_VERSION`), y el sistema no importa comprobantes externos: ningún `electronic_document` puede tener otra. Leer la 1.0.0 sería comportamiento sin fuente.
+- **Solo el contenido que el sistema emite.** El lector conoce exactamente los elementos que escribe el builder, más la firma:
+  - `infoTributaria` completa, con `nombreComercial`, `agenteRetencion` y `contribuyenteRimpe` opcionales;
+  - `infoFactura` con `dirEstablecimiento`, `contribuyenteEspecial` y `direccionComprador` opcionales, `totalConImpuestos` y `pagos` con `formaPago` y `total`;
+  - `detalle` con `codigoPrincipal` y `codigoAuxiliar` opcionales, e `impuestos`.
+  - Todo impuesto es IVA (código 2): la emisión rechaza ICE e IRBPNR, que no tienen datos de cálculo en los catálogos.
+  - Cualquier otro elemento (ICE, IRBPNR, propina, `infoAdicional`, guía de remisión, `detallesAdicionales`, plazos de pago, reembolsos, retenciones…) detiene la generación con `RIDE_SOURCE_UNSUPPORTED`. Nunca se omite en silencio, y el spec no afirma un soporte que la emisión no tiene.
+  - Cuando la emisión añada uno de ellos, su cambio amplía el lector y el renderer con sus pruebas.
 - **Textos e importes** salen del texto exacto del XML, nunca convertidos a `number` (S-4).
 
 ### D4. Artefacto `RIDE_PDF`
@@ -117,7 +131,23 @@ comprobante AUTHORIZED
 - **Tipo y deduplicación:** `document.render_ride`, clave `document.render_ride:{documentId}`.
   - Usa la clave activa de la cola, así que hay a lo sumo uno activo por comprobante.
   - No usa la exclusión `sri.`: puede convivir con una transmisión, aunque no la hay tras `AUTHORIZED`.
-- **Programación al autorizar.** En `applyDecision`, cuando una transición llega a `AUTHORIZED`, se encola el job en la misma transacción que la transición y el `AUTHORIZED_XML`. Así, una caída antes del commit no deja ni la autorización ni el job (el mismo patrón que `sri.transmit` al firmar).
+- **Programación al autorizar, sin invertir la dependencia.**
+
+  ```text
+  fiscal/application/document-transitions.ts   (puerto genérico, no conoce a nadie)
+      DocumentTransitionFollower(db, { companyId, documentId, from, to, cause, at })
+            ▲                                   ▲
+            │ lo invoca                         │ lo implementa
+  transmission-step.ts (applyDecision)    archive/ride-follower.ts
+            │                                   │ to === "AUTHORIZED" → enqueueIn(db, document.render_ride)
+            └──────────── main.ts los compone al arrancar ─────────┘
+  ```
+
+  - `applyDecision` recibe la lista de seguidores en sus dependencias y llama a cada uno después de guardar cada transición y su artefacto, con el cliente de la misma transacción (TX B).
+  - El seguidor del archivo encola `document.render_ride` cuando la transición llega a `AUTHORIZED`. Si ya hay un job activo con la clave, la garantía ya se cumple. Un error del seguidor revierte la transacción entera.
+  - Así, el commit de `AUTHORIZED` y el job durable del RIDE son la misma operación: una caída antes del commit no deja ni la autorización ni el job (el mismo patrón que `sri.transmit` al firmar). Vale para la autorización, la reconciliación automática y la manual, que pasan todas por `applyDecision`.
+  - La lista de seguidores es una dependencia obligatoria del paso: olvidarla al componer es un error de tipos. La prueba end-to-end sobre `main.ts` comprueba que un comprobante recién autorizado tiene su job sin esperar al barrido.
+  - El barrido sigue siendo la defensa secundaria, nunca el camino normal.
 - **Barrido idempotente** (`ride-sweeper.ts`), al arrancar y cada `RIDE_SWEEP_INTERVAL_SECONDS`.
   - Inserta un job para cada `AUTHORIZED` sin `RIDE_PDF` que no tenga ningún job del tipo activo ni detenido.
   - Usa `INSERT … SELECT … ON CONFLICT DO NOTHING` sobre la clave activa.
@@ -137,7 +167,7 @@ comprobante AUTHORIZED
   | `RIDE_GLYPH_MISSING`, `RIDE_SOURCE_*`, `RIDE_AUTHORIZATION_MISMATCH`, `RIDE_LOGO_INTEGRITY`, `RIDE_FONTS_UNAVAILABLE` | `STOP` determinista: reintentar da lo mismo |
 
   Los límites son `RIDE_JOB_MAX_ATTEMPTS` y el backoff de la cola. El comprobante sigue `AUTHORIZED`: el fallo es estado del job.
-- **Reintento manual.** `POST /documents/{id}/ride-attempts`, con el permiso `archive.retryRide`. Se admite si el comprobante está `AUTHORIZED`, no tiene `RIDE_PDF` y su generación está `STOPPED`.
+- **Reintento manual.** `POST /documents/{id}/ride-attempts`, con el permiso `archive.retryRide`, en el patrón de `POST /invoices/{id}/signing-attempts`. Se admite si el comprobante está `AUTHORIZED`, no tiene `RIDE_PDF` y su generación está `STOPPED`. Nunca reemplaza un RIDE, nunca deja dos jobs activos y nunca cambia el estado fiscal.
   - Encola un job `MANUAL` con `requested_by`.
   - Las solicitudes simultáneas chocan en la clave activa y solo una se programa.
   - Responde `409 RIDE_ALREADY_AVAILABLE` si ya existe el RIDE, y `409 RIDE_GENERATION_IN_PROGRESS` si hay un job activo.
@@ -145,10 +175,11 @@ comprobante AUTHORIZED
 
 ### D6. Pool de workers del RIDE
 
-- **Extracción.** El pool genérico sale de `crypto-worker-pool.ts` a `platform/workers/worker-pool.ts`: workers fijos, cola acotada, plazo que termina y reemplaza el worker, resultados tipados y cierre ordenado.
-  - El pool criptográfico pasa a ser una instancia, con los mismos errores HTTP de hoy.
-  - El del RIDE es otra instancia, con su entrada `serve-ride-tasks.ts` y su ciclo de vida.
-  - No se mezclan las cargas: un render de 100–200 ms y 25–60 KB no debe competir con las firmas, y sus workers cargan pdfmake y las fuentes una vez.
+- **Extracción conservadora.** La primitiva genérica sale de `crypto-worker-pool.ts` a `platform/workers/worker-pool.ts`: workers fijos, cola acotada, plazo que termina y reemplaza el worker, resultados tipados y cierre ordenado.
+  - Antes de mover código se fija la semántica del pool criptográfico con pruebas de caracterización: cola, ocupado, plazo, reemplazo del worker y cierre ordenado. Esas pruebas y las de la firma pasan igual antes y después del refactor, sin cambiar sus aserciones.
+  - `CryptoWorkerPool` y `RideWorkerPool` son instancias independientes de la primitiva, cada una con sus errores, su entrada, su tamaño y su ciclo de vida. El criptográfico conserva sus errores HTTP de hoy.
+  - El del RIDE usa la entrada `serve-ride-tasks.ts`, y sus workers cargan pdfmake y las fuentes una vez.
+  - No se mezclan las cargas: un render de 100–200 ms y 25–60 KB no debe competir con las firmas.
 - **Configuración** (`env.ts`, validada con Zod):
 
   | Variable | Defecto | Rango |
@@ -159,7 +190,7 @@ comprobante AUTHORIZED
   | `RIDE_JOB_MAX_ATTEMPTS` | 5 | 1 a 50 |
   | `RIDE_SWEEP_INTERVAL_SECONDS` | 300 | 10 a 86400 |
 
-  El defecto de 2 sale del benchmark de S-4: P95 de 182–191 ms por documento con menos memoria que 4 workers.
+  El defecto de 2 sale del benchmark de S-4: P95 de 182–191 ms por documento con menos memoria que 4 workers. Que 4 terminen antes un lote no justifica más hilos.
 - **Runner propio.** Los jobs `document.*` los toma una segunda instancia del runner, con `RIDE_WORKERS` lazos, así que la concurrencia del job coincide con la del pool y la cola del pool casi nunca se usa.
   - El interruptor de la transmisión (prefijo `sri.`) no la pausa.
   - Comparte el apagado ordenado: deja de tomar trabajo, espera el render en curso hasta el plazo de gracia, vence los arriendos y cierra el pool.
@@ -171,20 +202,22 @@ comprobante AUTHORIZED
 
 ### D7. Contenido, formato y fuentes
 
-- **Contenido.** El del prototipo de S-4 (ADR 0022) y el anexo 2 de la ficha, sin datos inventados:
+- **Contenido.** El del anexo 2 de la ficha para lo que la factura 1.1.0 del sistema trae (D3), sin datos inventados:
   - **cabecera:** RUC, "FACTURA", número, número y fecha de autorización (en hora de Ecuador), ambiente y emisión (tablas 4 y 2), clave y Code128;
   - **emisor:** razón social, nombre comercial, direcciones de la matriz y del establecimiento, contribuyente especial, obligado a llevar contabilidad, agente de retención y leyenda RIMPE (anexo 22);
-  - **comprador:** razón social, identificación, fecha de emisión, dirección y guía de remisión si existe;
-  - **detalle:** código principal, código auxiliar y detalle adicional solo si alguna línea los tiene; cantidad, descripción, precio unitario, descuento y precio total;
-  - **información adicional y formas de pago**, con su denominación y plazo;
-  - **subtotales llenados**, en el orden del anexo 2: por tarifa de menor a mayor, 0 %, no objeto y exento; después sin impuestos, descuento, ICE, IVA por tarifa, IRBPNR, propina y valor total.
+  - **comprador:** razón social, identificación, fecha de emisión y dirección si existe;
+  - **detalle:** código principal y código auxiliar solo si alguna línea los tiene; cantidad, descripción, precio unitario, descuento y precio total;
+  - **formas de pago**, con su denominación del snapshot y su valor;
+  - **subtotales llenados**, en el orden del anexo 2: por tarifa de IVA de menor a mayor, 0 %, no objeto y exento; después sin impuestos, descuento, IVA por tarifa y valor total.
+- **Composición interna.** El renderer arma secciones independientes, de modo que añadir una (información adicional, ICE, propina) sea un cambio local. Hoy no existe ninguna sección para contenido que el sistema no emite: el lector lo rechaza antes (D3).
 - **Formato numérico: el texto exacto del XML,** sin separador de miles ni coma decimal. El anexo 2 no exige un formato.
   - Una transformación léxica sería posible, pero añadiría una regla por campo (cantidad y precio con hasta 6 decimales, importes con 2) sin un requisito que la pida.
   - Se descarta por simplicidad, y nunca se convierte, recalcula ni redondea.
 - **Fuentes.**
-  - Noto Sans 2.015, Regular y Bold (OFL 1.1), en `backend/assets/fonts/noto-sans/` con `OFL.txt` y un manifiesto con nombre, versión y SHA-256.
-  - El build las copia junto a los XSD, y `check:xsd-artifact` pasa a comprobar también su presencia y su hash.
-  - Al arrancar, el renderer verifica los hashes: si faltan o no coinciden, `/health/ready` no se declara listo, como con el paquete XSD.
+  - Noto Sans 2.015, Regular y Bold (OFL 1.1), en `backend/assets/fonts/noto-sans/` con `OFL.txt` y un manifiesto (`manifest.json`) con nombre, versión, licencia, archivo y SHA-256.
+  - El manifiesto es parte del artefacto de ejecución: el build copia las fuentes, la licencia y el manifiesto a `dist/assets/fonts/noto-sans/`.
+  - **Comprobaciones separadas por responsabilidad.** `check:xsd-artifact` sigue comprobando solo los esquemas. Un script nuevo, `check:ride-assets`, comprueba en el artefacto construido el manifiesto, las fuentes, la licencia y cada hash. `verify` ejecuta los dos.
+  - **Readiness por responsabilidad.** Un XSD faltante o alterado deja no lista la emisión (como hoy). Unas fuentes o un manifiesto faltantes o alterados dejan no listo el RIDE: `/health/ready` responde no listo con el motivo en el log, y el runner del RIDE no toma jobs. Son dos comprobaciones distintas, cada una con su detalle.
   - Se embeben con subconjunto y solo dentro del PDF; no se sirven por otra ruta.
   - Cada carácter dibujado debe tener glifo en ambas; si no, `RIDE_GLYPH_MISSING` con los códigos.
 - **Code128.**
@@ -201,26 +234,31 @@ comprobante AUTHORIZED
 ### D8. Descargas, impresión y nombres de archivo
 
 - **Rutas** (D10):
-  - `GET /documents/{id}/ride?intent=download|print`;
+  - `GET /documents/{id}/ride`;
   - `GET /documents/{id}/authorized-xml`;
-  - `GET /documents/{id}/signed-xml`.
+  - `GET /documents/{id}/signed-xml`;
+  - `POST /documents/{id}/print-requests`.
 
   No hay rutas con nombres o rutas de archivo del cliente.
-- **Antes de servir:**
-  1. Se comprueban la empresa de la sesión y el comprobante: si es de otra empresa o no existe, `404`.
+- **Antes de servir** (los tres `GET`):
+  1. Se comprueban la sesión y el permiso (`401` y `403`), y después la empresa de la sesión y el comprobante: si es de otra empresa o no existe, `404`.
   2. Se comprueba la disponibilidad (D2): si no hay documento, `404 DOCUMENT_NOT_AVAILABLE`.
-  3. Se leen los bytes y se recalculan el SHA-256 y el tamaño. Si no coinciden, `500 ARTIFACT_INTEGRITY_FAILED`, sin servir nada, con un log de error y una métrica.
-  4. Se registra la entrega (D9).
+  3. Se leen los bytes del artefacto por `(company_id, document_id, kind)` y se recalculan el SHA-256 y el tamaño. Si no coinciden, `500 ARTIFACT_INTEGRITY_FAILED`, sin servir nada, con un log de error y una métrica.
+  4. Determinado que se responde con el artefacto, se registra `DOWNLOAD` (D9).
   5. Se sirven los bytes.
+- **`DOWNLOAD`** significa que la aplicación inició una respuesta autorizada de descarga con el artefacto. No significa que el cliente terminó de recibir o guardar el archivo.
 - **Cabeceras:**
   - `Content-Type` (`application/pdf` o `application/xml`) y `Content-Length`;
-  - `Content-Disposition` `attachment` para la descarga e `inline` para imprimir;
+  - `Content-Disposition: attachment` con el nombre de archivo;
   - `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` y `ETag` con el SHA-256.
 - **Nombre de archivo:** `{tipo}-{número}.{pdf|xml}`, con sufijo `-autorizado` o `-firmado` en los XML. Ejemplo: `factura-001-001-000000001-autorizado.xml`. El tipo sale de una tabla fija y el número, del comprobante, con el patrón `\d{3}-\d{3}-\d{9}` comprobado. Nunca se usa texto del cliente.
-- **Impresión.** La interfaz pide el RIDE con `intent=print`, lo abre como blob en un `iframe` oculto y llama a `print()`. El servidor registra `PRINT_REQUESTED` en vez de `DOWNLOAD`.
-  - No hay una versión "imprimible": son los mismos bytes.
-  - Un solo endpoint de servido evita dos registros por una impresión.
-  - Que un `GET` registre un evento es como un registro de acceso: la respuesta no se cachea (`no-store`) y la interfaz la pide con `fetch`, sin prefetch del navegador.
+- **Impresión como acción explícita.** Un `GET` nunca registra una solicitud de impresión, así que una precarga, una caché, un rastreador o una repetición automática no crean `PRINT_REQUESTED` falsos.
+  1. La interfaz llama a `POST /documents/{id}/print-requests` (permiso `archive.download`).
+  2. El servidor comprueba lo mismo que una descarga (pasos 1 a 3), registra `PRINT_REQUESTED` y responde `201` con el evento (identificador y momento), sin bytes.
+  3. La interfaz pide los bytes con el mismo `GET /documents/{id}/ride`, que registra su `DOWNLOAD` porque la aplicación sí sirvió el artefacto.
+  4. Los abre como blob en un `iframe` oculto y llama a `print()`.
+
+  No hay una versión "imprimible" ni otro artefacto: son los mismos bytes del `RIDE_PDF`. Una impresión deja, por tanto, un `PRINT_REQUESTED` y un `DOWNLOAD`, y cada uno dice exactamente lo que la aplicación hizo.
 
 ### D9. Historial de entregas
 
@@ -241,9 +279,10 @@ comprobante AUTHORIZED
 | --- | --- | --- |
 | `GET /api/v1/documents` | Bandeja con filtros y paginación (D2) | `archive.read` |
 | `GET /api/v1/documents/{documentId}` | Resumen: documentos disponibles, artefactos y generación del RIDE | `archive.read` |
-| `GET /api/v1/documents/{documentId}/ride?intent=download\|print` | RIDE guardado; registra `DOWNLOAD` o `PRINT_REQUESTED` | `archive.download` |
+| `GET /api/v1/documents/{documentId}/ride` | RIDE guardado; registra `DOWNLOAD` | `archive.download` |
 | `GET /api/v1/documents/{documentId}/authorized-xml` | XML autorizado guardado; registra `DOWNLOAD` | `archive.download` |
 | `GET /api/v1/documents/{documentId}/signed-xml` | XML firmado guardado; registra `DOWNLOAD` | `archive.download` |
+| `POST /api/v1/documents/{documentId}/print-requests` | Solicitud de impresión del RIDE guardado (`201`, sin bytes); registra `PRINT_REQUESTED` | `archive.download` |
 | `GET /api/v1/documents/{documentId}/deliveries` | Historial de entregas | `archive.read` |
 | `POST /api/v1/documents/{documentId}/ride-attempts` | Reintentar una generación detenida (`202`) | `archive.retryRide` |
 
@@ -258,8 +297,12 @@ comprobante AUTHORIZED
   - `archive.download` para descargar e imprimir;
   - `archive.retryRide` para reintentar una generación detenida.
 
-  Los tres son de `ADMIN` y `OPERATOR`, según la fila "Consultar la bandeja y descargar XML y RIDE".
-- **El reintento** es una recuperación operativa sin efecto fiscal, como `invoices.retrySigning`, que también tienen ambos roles. No se inventa una separación de roles.
+  Los tres son de `ADMIN` y `OPERATOR`.
+- **Fila de la matriz.** `archive.read` y `archive.download` son literalmente la fila "Consultar la bandeja y descargar XML y RIDE" (ambos roles).
+- **El reintento** no tiene fila propia. Este cambio lo confirma bajo esa misma fila, como `add-invoice-emission` confirmó `invoices.retrySigning` bajo "Corregir un comprobante con XML inválido", y lo registra así en `access-control.md`:
+  - solo vuelve a programar la producción del mismo documento que el usuario ya tiene derecho a descargar;
+  - no cambia datos fiscales, no reemplaza un RIDE y no deja dos jobs activos;
+  - darlo solo al administrador sería una separación de roles sin fuente en la matriz.
 - Se actualizan `access-policy.ts`, su espejo del frontend (la prueba de espejo del cambio 7 lo comprueba) y `access-control.md`, cuya prueba de documentación también lo comprueba.
 
 ### D12. Auditoría
@@ -297,6 +340,8 @@ comprobante AUTHORIZED
   - **información mínima:** si el RIDE está disponible, en preparación o detenido;
   - **acción principal:** "Descargar RIDE".
 - **Niveles:** P0 el estado del RIDE y la acción; P1 "Imprimir", "XML autorizado" y "XML firmado" (este último rotulado como firmado); P2 el historial de entregas plegable; P3 (hashes, versiones del renderer y procedencia) no se muestra.
+- **"Imprimir"** llama primero a `POST /print-requests` y, si responde `201`, pide el RIDE con el mismo `GET` de la descarga y abre el diálogo de impresión (D8). Un error del `POST` se explica y no abre el diálogo.
+- **Rótulos:** "XML autorizado" solo para el `AUTHORIZED_XML` que devolvió el SRI. El RIDE generado desde el respaldo nunca se rotula como salido de un XML autorizado.
 - **Estados:**
   - autorizado con RIDE;
   - RIDE en preparación, con refresco cada 5 s mientras está pendiente;
@@ -330,7 +375,11 @@ comprobante AUTHORIZED
 ### D15. Rendimiento
 
 - Objetivo de S-4: P95 del render menor que 1 s por documento en el entorno registrado, sin la espera de cola.
-- `bench:ride` (gate dedicado fuera de `verify`, como `bench:emission`) mide 50 RIDE representativos con calentamiento aparte. Informa por separado el render (P50, P95 y máximo) y la espera de cola, con el comprobante autorizado desde el XML del builder real.
+- `bench:ride` (gate dedicado fuera de `verify`, como `bench:emission`) mide 50 RIDE representativos con calentamiento aparte, con el código real: el job, el lector, el pool del RIDE y la persistencia. Informa por separado el render (P50, P95 y máximo) y la espera de cola, con el comprobante autorizado desde el XML del builder real.
+- **El event loop HTTP nunca ejecuta pdfmake.**
+  - Una prueba de arquitectura limita pdfmake, bwip-js y fontkit a la infraestructura del RIDE que solo carga la entrada del worker.
+  - Una prueba concurrente genera varios RIDE a la vez por el pool mientras mide el retraso del event loop del hilo principal y atiende peticiones HTTP: el retraso máximo queda muy por debajo de un render (100–220 ms en el hilo, S-4).
+  - `bench:ride` informa también ese retraso.
 - Los 200 ms del spike no son una promesa universal de hardware.
 
 ### D16. Briefs de las operaciones sensibles
@@ -342,7 +391,7 @@ comprobante AUTHORIZED
 | Empresa del recurso | `electronic_document.company_id` | Igual | Igual |
 | Propiedad | Lectura por `(company_id, id)`; artefacto por `(company_id, document_id, kind)` | Igual | Filtro por empresa en toda consulta |
 | ¿Otro ID llega a otra empresa? | No: `404` sin datos | No: `404` | No |
-| Dos veces | Dos entregas, porque son dos descargas servidas | La segunda choca con el job activo: `409` | Sin efecto |
+| Dos veces | Dos entregas, porque son dos descargas servidas o dos solicitudes explícitas; un `GET` nunca registra una impresión | La segunda choca con el job activo: `409` | Sin efecto |
 | A la vez | Dos entregas independientes | Una sola se programa (clave activa) | Sin efecto |
 | Idempotencia | No aplica a una lectura | La clave activa del job | No aplica |
 | Restricciones de la base | Artefacto inmutable y único por tipo; entrega de solo agregado con FK compuesta | Clave activa única; `RIDE_PDF` único | — |
@@ -374,7 +423,8 @@ comprobante AUTHORIZED
 - **[Compromiso] El RIDE ocupa 25–60 KB por factura en PostgreSQL** → Entra en el mismo almacenamiento que los XML (ADR 0010). El puerto permite migrar a almacenamiento de objetos.
 - **[Riesgo] Una dependencia nueva cambia los bytes en una actualización** → Los RIDE guardados no se regeneran, y las pruebas fijan el determinismo por versión. Los metadatos permiten diagnosticar con qué versión se generó cada uno.
 - **[Riesgo] `@types/pdfmake` mete los tipos del navegador** → Declaraciones locales mínimas (ADR 0022).
-- **[Compromiso] Un `GET` que registra una entrega** → Es un registro de acceso, no un cambio de estado. `no-store` y peticiones con `fetch` evitan registros por caché o prefetch.
+- **[Compromiso] Un `GET` que registra `DOWNLOAD`** → Es un registro de acceso de una respuesta que sí se sirvió, no un comando de negocio: `DOWNLOAD` no afirma que el cliente guardó el archivo. La impresión, que sí es una intención del usuario, va por `POST` (D8).
+- **[Riesgo] Una factura futura con contenido nuevo no tiene RIDE** → El lector la detiene con `RIDE_SOURCE_UNSUPPORTED` en vez de omitir contenido. El cambio que amplíe la emisión amplía el lector y el renderer.
 - **[Riesgo] El fallback al XML firmado podría confundirse con un XML autorizado** → La procedencia queda guardada y visible para soporte. La interfaz nunca rotula el XML firmado como autorizado y la ruta del XML autorizado responde no disponible.
 
 ## Migration Plan
