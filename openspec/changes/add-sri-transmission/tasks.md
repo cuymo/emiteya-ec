@@ -98,7 +98,7 @@
 
 ## 6. Parsers y clasificación
 
-- [ ] 6.1 Añadir el parser XML como dependencia directa con versión exacta, configurado para rechazar DTD, e implementar la clasificación pura de la recepción con la tabla de design D11:
+- [x] 6.1 Añadir el parser XML como dependencia directa con versión exacta, configurado para rechazar DTD, e implementar la clasificación pura de la recepción con la tabla de design D11:
   - `RECIBIDA`;
   - `DEVUELTA` concluyente;
   - 70, 43 y 45;
@@ -106,7 +106,7 @@
   - clave distinta.
 
   Guardar los mensajes estructurados en orden. Verificar con pruebas unitarias sobre respuestas sintéticas con la estructura oficial, marcadas como sintéticas, que cubren cada fila, varios mensajes y un código desconocido; `check:versions` pasa
-- [ ] 6.2 Implementar la clasificación pura de la autorización (design D12):
+- [x] 6.2 Implementar la clasificación pura de la autorización (design D12):
   - clave desconocida;
   - una autorización `AUTORIZADO`, `NO AUTORIZADO`, `RECHAZADO` (el no autorizado del ejemplo oficial) u otro estado;
   - validación de la clave, el número, la fecha (ISO 8601 o `dd/MM/yyyy HH:mm:ss` con su texto original), el ambiente normalizado y la `claveAcceso` del comprobante;
@@ -114,7 +114,7 @@
   - extracción del `comprobante` exacto.
 
   Verificar con pruebas unitarias de cada caso, incluidas una fecha ilegible, un ambiente distinto y un número distinto de la clave, que dan `INCONSISTENT`, y un estado desconocido que da `NO_CONCLUSION`
-- [ ] 6.3 Implementar la clasificación pura de la respuesta de validez (design D15): un estado `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO` para la clave del comprobante da `KEY_KNOWN` con su estado; `estadoConsulta` `RECHAZADA`, el error 99 o una respuesta desconocida dan `NO_EVIDENCE`. Verificar con pruebas unitarias sobre respuestas sintéticas con la estructura del WSDL oficial y de los ejemplos de la ficha v2.34, §8.2.3
+- [x] 6.3 Implementar la clasificación pura de la respuesta de validez (design D15): un estado `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO` para la clave del comprobante da `KEY_KNOWN` con su estado; `estadoConsulta` `RECHAZADA`, el error 99 o una respuesta desconocida dan `NO_EVIDENCE`. Verificar con pruebas unitarias sobre respuestas sintéticas con la estructura del WSDL oficial y de los ejemplos de la ficha v2.34, §8.2.3
 
 ## 7. Evidencia y máquina de transmisión
 

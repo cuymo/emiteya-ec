@@ -33,6 +33,7 @@
     "ec-sri-invoice-signer": "1.8.2",
     "express": "5.2.1",
     "facturacion-electronica-ec": "1.0.1",
+    "fast-xml-parser": "5.11.2",
     "helmet": "8.3.0",
     "node-forge": "1.4.0",
     "pino": "10.3.1",

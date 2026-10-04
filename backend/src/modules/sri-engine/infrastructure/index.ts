@@ -6,3 +6,10 @@ export { createSoapTransport } from "./soap-transport.ts";
 export { endpointsValid, resolveSriEndpoints, type SriEndpoints } from "./endpoints.ts";
 export { createCircuitBreaker, type CircuitBreaker } from "./circuit-breaker.ts";
 export { createSriGateway } from "./sri-gateway.ts";
+// Clasificación de las respuestas del SRI (add-sri-transmission, design D11, D12 y D15).
+export { RECEPTION_CLASSIFIER_VERSION, classifyReception } from "./reception-classifier.ts";
+export {
+  AUTHORIZATION_CLASSIFIER_VERSION,
+  classifyAuthorization,
+} from "./authorization-classifier.ts";
+export { VALIDITY_CLASSIFIER_VERSION, classifyValidity } from "./validity-classifier.ts";
