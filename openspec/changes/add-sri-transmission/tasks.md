@@ -238,8 +238,8 @@
 
 ## 13. Pantallas de la transmisión
 
-- [ ] 13.1 Ampliar `Facturas` con los estados nuevos (icono y texto del glosario) y el filtro "requiere atención" (design D20). Verificar con pruebas de componente: carga, vacío, error, sin permiso y filtros en la URL
-- [ ] 13.2 Añadir al detalle de la factura la sección "Transmisión al SRI" y la acción "Reconciliar con el SRI" con su diálogo de motivo, solo para el administrador y en un estado admitido (design D20):
+- [x] 13.1 Ampliar `Facturas` con los estados nuevos (icono y texto del glosario) y el filtro "requiere atención" (design D20). Verificar con pruebas de componente: carga, vacío, error, sin permiso y filtros en la URL
+- [x] 13.2 Añadir al detalle de la factura la sección "Transmisión al SRI" y la acción "Reconciliar con el SRI" con su diálogo de motivo, solo para el administrador y en un estado admitido (design D20):
   - estado, aviso de transmisión detenida, datos de autorización, mensajes del SRI e historial plegable;
   - componentes locales `SriMessageList` y `TransmissionHistory`.
 
@@ -248,7 +248,7 @@
   - el operador sin la acción;
   - el diálogo con el motivo obligatorio y el foco;
   - el aviso de éxito y el error `409` explicado
-- [ ] 13.3 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real con un SRI simulado (escritorio, 375 y 320 px, tema oscuro, contraste y teclado), y registrar la revisión en `openspec/changes/add-sri-transmission/ui-review.md`. Verificar que la revisión no deja hallazgos abiertos
+- [x] 13.3 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real con un SRI simulado (escritorio, 375 y 320 px, tema oscuro, contraste y teclado), y registrar la revisión en `openspec/changes/add-sri-transmission/ui-review.md`. Verificar que la revisión no deja hallazgos abiertos
 
 ## 14. Prueba end-to-end, compuertas y documentación
 

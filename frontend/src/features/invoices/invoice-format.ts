@@ -6,6 +6,8 @@ import {
   type InvoiceState,
   type SigningAttemptClass,
   type SigningAttemptStage,
+  type SriOperation,
+  type SriResultOutcome,
 } from "@facturador/contracts";
 import {
   BadgeCheck,
@@ -73,3 +75,38 @@ export function formatIssueDate(date: string): string {
 /** Comprador en una línea: razón social e identificación. */
 export const buyerLabel = (buyer: { legalName: string; identification: string }) =>
   `${buyer.legalName} · ${buyer.identification}`;
+
+/** Operaciones con el SRI en lenguaje de negocio (add-sri-transmission, design D20). */
+export const OPERATION_LABELS: Record<SriOperation, string> = {
+  RECEPTION: "Envío al SRI",
+  AUTHORIZATION: "Consulta de autorización",
+  VALIDITY: "Consulta de validez",
+};
+
+/** Resultado de cada intento con el SRI, sin términos técnicos. */
+export const OUTCOME_LABELS: Record<SriResultOutcome, string> = {
+  RECEIVED: "Recibida",
+  RETURNED: "Devuelta",
+  KEY_IN_PROCESS: "Clave en procesamiento (error 70)",
+  KEY_REGISTERED: "Clave ya registrada (error 43)",
+  SEQUENTIAL_REGISTERED: "Secuencial ya registrado (error 45)",
+  UNKNOWN: "Sin respuesta concluyente",
+  INCONSISTENT: "Respuesta inconsistente",
+  AUTHORIZED: "Autorizada",
+  NOT_AUTHORIZED: "No autorizada",
+  NO_CONCLUSION: "En procesamiento",
+  KEY_UNKNOWN: "El SRI aún no registra la clave",
+  KEY_KNOWN: "El SRI registra la clave",
+  NO_EVIDENCE: "Sin datos del SRI",
+  NOT_SENT: "No se pudo enviar",
+  UNPARSEABLE: "Respuesta ilegible",
+};
+
+/** Causa de cada cambio de estado del historial. */
+export const CAUSE_LABELS: Record<string, string> = {
+  EMISSION: "Emisión",
+  SIGNING: "Firma",
+  TRANSMISSION: "Transmisión",
+  AUTHORIZATION: "Autorización",
+  RECONCILIATION: "Reconciliación",
+};

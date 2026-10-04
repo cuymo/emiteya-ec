@@ -1,6 +1,7 @@
-// Datos de Borradores y Facturas (add-invoice-emission, design D13 y D15): borradores con su vista
-// previa del servidor, emisión con una Idempotency-Key estable por solicitud, facturas desde su
-// snapshot y reintento de la firma. Toda mutación pasa por useMutationFeedback.
+// Datos de Borradores y Facturas (add-invoice-emission, design D13 y D15; add-sri-transmission,
+// design D18 y D20): borradores con su vista previa del servidor, emisión con una Idempotency-Key
+// estable por solicitud, facturas desde su snapshot, reintento de la firma, historial de la
+// transmisión y reconciliación con el SRI. Toda mutación pasa por useMutationFeedback.
 "use client";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import {
   draftViewSchema,
   invoiceListMetaSchema,
   invoiceSummaryViewSchema,
+  invoiceTransmissionViewSchema,
   invoiceViewSchema,
   partyListMetaSchema,
   partyViewSchema,
@@ -131,6 +133,8 @@ export function useEmitInvoice(options: {
 export type InvoicesQuery = {
   search: string;
   state: InvoiceState | undefined;
+  /** "Requiere atención": resultado incierto, revisión manual o transmisión detenida. */
+  attention?: boolean;
   page: number;
   pageSize: number;
 };
@@ -147,6 +151,7 @@ export function useInvoices(query: InvoicesQuery, enabled: boolean) {
       });
       if (query.search) params.set("search", query.search);
       if (query.state) params.set("state", query.state);
+      if (query.attention) params.set("attention", "true");
       return apiFetchPage(`/invoices?${params.toString()}`, {
         schema: z.array(invoiceSummaryViewSchema),
         meta: invoiceListMetaSchema,
@@ -156,11 +161,52 @@ export function useInvoices(query: InvoicesQuery, enabled: boolean) {
   });
 }
 
+/** Cada cuánto se refresca una factura con una interacción con el SRI en curso. */
+export const TRANSMISSION_REFRESH_MS = 5_000;
+
 export function useInvoice(id: string, enabled: boolean) {
   return useQuery({
     queryKey: [...INVOICES_KEY, "detail", id],
     enabled,
     queryFn: ({ signal }) => apiFetch(invoicePath(id), { schema: invoiceViewSchema, signal }),
+    // Mientras el SRI procesa, el estado se actualiza solo (design D20).
+    refetchInterval: (query) =>
+      query.state.data?.transmission.inProgress ? TRANSMISSION_REFRESH_MS : false,
+  });
+}
+
+/** Historial de la transmisión: se pide al abrirlo (design D18 y D20). */
+export function useInvoiceTransmission(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...INVOICES_KEY, "transmission", id],
+    enabled,
+    queryFn: ({ signal }) =>
+      apiFetch(`${invoicePath(id)}/transmission`, {
+        schema: invoiceTransmissionViewSchema,
+        signal,
+      }),
+  });
+}
+
+/** Reconciliación manual con el SRI, con motivo; solo el administrador (design D15). */
+export function useRequestReconciliation(options: { onSuccess?: () => void } = {}) {
+  return useMutationFeedback({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      apiFetch(`${invoicePath(id)}/reconciliations`, {
+        method: "POST",
+        json: { reason },
+        schema: invoiceViewSchema,
+      }),
+    success: (invoice) =>
+      `Pediste la reconciliación de la factura ${invoice.documentNumber}. El estado se actualizará cuando el SRI responda.`,
+    invalidate: [INVOICES_KEY],
+    errorMessages: {
+      SRI_INTERACTION_IN_PROGRESS:
+        "La factura ya tiene una interacción con el SRI en curso. Espera a que termine y vuelve a intentarlo.",
+      INVOICE_NOT_RECONCILABLE:
+        "El estado de la factura cambió y ya no admite una reconciliación. Recarga para ver su estado.",
+    },
+    ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }
 

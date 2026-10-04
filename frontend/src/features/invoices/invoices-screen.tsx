@@ -1,7 +1,8 @@
-// Facturas (add-invoice-emission, design D15). Usuario: administrador u operador, a diario.
-// Objetivo: encontrar una factura y saber si quedó firmada. Decisión: si una factura necesita un
-// reintento. Información mínima: número, comprador, total, fecha y estado. Acción principal: abrir la
-// factura. P1: búsqueda y estado; P2: fecha; P3 (clave, versiones): en el detalle o fuera.
+// Facturas (add-invoice-emission, design D15; add-sri-transmission, design D20). Usuario:
+// administrador u operador, a diario. Objetivo: encontrar una factura y saber si quedó autorizada.
+// Decisión: qué factura necesita atención. Información mínima: número, comprador, total, fecha y
+// estado. Acción principal: abrir la factura. P1: búsqueda y estado; P2: fecha; P3 (clave,
+// versiones): en el detalle o fuera.
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -22,28 +23,39 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import { CirclePause } from "lucide-react";
 import { INVOICE_STATE_BADGES, formatIssueDate } from "./invoice-format";
 import { useInvoices } from "./invoices-api";
 
-type StateFilter = "todas" | "procesando" | "firmadas";
+type StateFilter =
+  "todas" | "atencion" | "procesando" | "firmadas" | "autorizadas" | "devueltas" | "no-autorizadas";
 const STATE_FILTERS: readonly { value: StateFilter; label: string }[] = [
   { value: "todas", label: "Todas" },
+  { value: "atencion", label: "Requiere atención" },
   { value: "procesando", label: "Procesando" },
   { value: "firmadas", label: "Pendientes de envío" },
+  { value: "autorizadas", label: "Autorizadas" },
+  { value: "devueltas", label: "Devueltas" },
+  { value: "no-autorizadas", label: "No autorizadas" },
 ];
 const FILTER_TO_STATE: Record<StateFilter, InvoiceState | undefined> = {
   todas: undefined,
+  atencion: undefined,
   procesando: "RESERVED",
   firmadas: "SIGNED",
+  autorizadas: "AUTHORIZED",
+  devueltas: "RETURNED",
+  "no-autorizadas": "NOT_AUTHORIZED",
 };
+const isStateFilter = (value: string | null): value is StateFilter =>
+  STATE_FILTERS.some((filter) => filter.value === value);
 
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const stateParam = params.get("estado");
-  const filter: StateFilter =
-    stateParam === "procesando" || stateParam === "firmadas" ? stateParam : "todas";
+  const filter: StateFilter = isStateFilter(stateParam) ? stateParam : "todas";
   const page = Math.max(1, Number.parseInt(params.get("pagina") ?? "1", 10) || 1);
   const sizeParam = Number.parseInt(params.get("filas") ?? "", 10);
   const pageSize = sizeParam >= 1 && sizeParam <= PAGE_SIZE_MAX ? sizeParam : PAGE_SIZE_DEFAULT;
@@ -61,9 +73,21 @@ function useUrlState() {
   return { filter, page, pageSize, search, update };
 }
 
-export function StateCell({ state }: { state: InvoiceState }) {
+export function StateCell({
+  state,
+  stopped = false,
+}: {
+  state: InvoiceState;
+  /** La transmisión se detuvo y espera una decisión del administrador (design D20). */
+  stopped?: boolean;
+}) {
   const badge = INVOICE_STATE_BADGES[state];
-  return <StatusBadge tone={badge.tone} label={badge.label} icon={badge.icon} />;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-0.5">
+      <StatusBadge tone={badge.tone} label={badge.label} icon={badge.icon} />
+      {stopped && <StatusBadge tone="warning" label="Transmisión detenida" icon={CirclePause} />}
+    </span>
+  );
 }
 
 export function InvoicesScreen() {
@@ -83,6 +107,7 @@ export function InvoicesScreen() {
     {
       search: url.search,
       state: FILTER_TO_STATE[url.filter],
+      attention: url.filter === "atencion",
       page: url.page,
       pageSize: url.pageSize,
     },
@@ -134,7 +159,9 @@ export function InvoicesScreen() {
       {
         id: "state",
         header: "Estado",
-        cell: ({ row }) => <StateCell state={row.original.state} />,
+        cell: ({ row }) => (
+          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
+        ),
       },
     ],
     [],
@@ -237,7 +264,7 @@ export function InvoicesScreen() {
             <span className="text-sm break-words">{invoice.buyerName}</span>
             <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted tabular-nums">
               {formatUsd(invoice.total)} · {formatIssueDate(invoice.issueDate)}
-              <StateCell state={invoice.state} />
+              <StateCell state={invoice.state} stopped={invoice.transmissionStopped} />
             </span>
           </div>
         )}

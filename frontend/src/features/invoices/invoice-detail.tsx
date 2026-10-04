@@ -1,8 +1,10 @@
-// Detalle de una factura (add-invoice-emission, design D15). Usuario: administrador u operador.
-// Objetivo: entender una factura y destrabar una firma fallida. Decisión: si reintentar ahora o
-// corregir la configuración antes. Información mínima: estado, diagnóstico, número, clave y totales.
-// Acción principal: Reintentar firma, solo con RESERVED y permiso. P0: estado y acción; P1: totales
-// y comprador; P2: líneas y pagos; P3 (versiones y metadatos técnicos): no se muestran.
+// Detalle de una factura (add-invoice-emission, design D15; add-sri-transmission, design D20).
+// Usuario: administrador u operador. Objetivo: entender una factura, saber si quedó autorizada y
+// destrabarla. Decisión: si reintentar la firma, si la factura está lista para entregarse o si
+// necesita una reconciliación. Información mínima: estado, diagnóstico o transmisión, número, clave
+// y totales. Acciones: Reintentar firma (RESERVED) y Reconciliar con el SRI (administrador, estado
+// admitido). P0: estado y acción; P1: mensajes del SRI, autorización, totales y comprador; P2:
+// historial, líneas y pagos; P3 (versiones y metadatos técnicos): no se muestran.
 "use client";
 
 import { ArrowLeft, RotateCw } from "lucide-react";
@@ -19,6 +21,7 @@ import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
 import { CLASS_LABELS, STAGE_LABELS, formatDateTime, formatIssueDate } from "./invoice-format";
 import { useInvoice, useRetrySigning } from "./invoices-api";
 import { StateCell } from "./invoices-screen";
+import { TransmissionSection } from "./transmission-section";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -107,7 +110,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
             Factura {data.documentNumber}
           </h1>
           <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted">
-            <StateCell state={data.state} />
+            <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]}
           </span>
         </div>
@@ -146,6 +149,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-3">
+          {!reserved && <TransmissionSection invoice={data} />}
           <Section title="Comprador">
             <p className="flex flex-col text-sm">
               <span className="font-medium break-words">{data.buyer.legalName}</span>

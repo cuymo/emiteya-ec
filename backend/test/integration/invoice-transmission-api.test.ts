@@ -290,8 +290,7 @@ describe("transmisión de facturas sobre HTTP", () => {
       const view = bodyOf(await get(`/invoices/${stopped.id}`, a.cookies.admin)).data;
       expect(view.transmission.stopped).toEqual({
         code: "SRI_UNAVAILABLE",
-        message:
-          "El SRI no respondió durante los reintentos. Reconcilia cuando el servicio esté disponible.",
+        message: "El SRI no respondió durante los reintentos.",
         at: "2026-10-04T16:00:00.000Z",
       });
       const list = bodyOf(await get("/invoices", a.cookies.admin)).data;
