@@ -261,10 +261,65 @@ describe("reconciliación por clave", () => {
       });
       await reconcile().run(await jobFor(document, "sri.reconcile"), context());
       expect(await stateOf(document.id)).toBe("MANUAL_REVIEW");
+      expect((await jobsOf(document.id)).map((row) => [row.type, row.status])).toEqual([
+        ["sri.reconcile", "DONE"],
+      ]);
+    });
+
+    it("NO AUTORIZADO informado por la validez no reenvía; PENDIENTE DE ANULAR va a revisión manual", async () => {
+      for (const [estado, state, jobs] of [
+        ["NO AUTORIZADO", "RECEIVED", ["sri.reconcile", "sri.authorize"]],
+        ["PENDIENTE DE ANULAR", "MANUAL_REVIEW", ["sri.reconcile"]],
+      ] as const) {
+        const document = await insertDocument(prisma, company, "SEND_UNKNOWN");
+        replies.push(keyUnknown(document), {
+          service: "VALIDITY",
+          outcome: response(
+            validityResponse({ accessKey: document.accessKey, estadoAutorizacion: estado }),
+          ),
+        });
+        await reconcile().run(await jobFor(document, "sri.reconcile"), context());
+        expect(await stateOf(document.id), estado).toBe(state);
+        expect(
+          (await jobsOf(document.id)).map((row) => row.type),
+          estado,
+        ).toEqual([...jobs]);
+      }
+    });
+
+    it("una validez que responde por otra clave es inconsistente: revisión manual, sin reenvío", async () => {
+      const document = await insertDocument(prisma, company, "SEND_UNKNOWN");
+      const other = `${document.accessKey.slice(0, 40)}${document.accessKey[40] === "9" ? "0" : "9"}${document.accessKey.slice(41)}`;
+      replies.push(keyUnknown(document), {
+        service: "VALIDITY",
+        outcome: response(validityResponse({ accessKey: other, estadoAutorizacion: "AUTORIZADO" })),
+      });
+      await reconcile().run(await jobFor(document, "sri.reconcile"), context());
+      expect(await stateOf(document.id)).toBe("MANUAL_REVIEW");
+      expect(calls.map((call) => call.service)).toEqual(["AUTHORIZATION", "VALIDITY"]);
+      expect((await jobsOf(document.id)).map((row) => [row.type, row.status])).toEqual([
+        ["sri.reconcile", "DONE"],
+      ]);
+      const results = await prisma.sriAttemptResult.findMany({
+        where: { attempt: { documentId: document.id, operation: "VALIDITY" } },
+      });
+      expect(results.map((row) => [row.outcome, row.classifierVersion])).toEqual([
+        ["INCONSISTENT", "validity/2"],
+      ]);
     });
   });
 
   describe("caso B y caso E: evidencia de recepción", () => {
+    it("error 70: si la clave aparece autorizada, concluye sin reenviar", async () => {
+      const document = await insertDocument(prisma, company, "SEND_UNKNOWN");
+      await receptionEvidence(document, "KEY_IN_PROCESS");
+      replies.push(authorizedReply(document));
+      await reconcile().run(await jobFor(document, "sri.reconcile"), context());
+      expect(await stateOf(document.id)).toBe("AUTHORIZED");
+      expect(calls.map((call) => call.service)).toEqual(["AUTHORIZATION"]);
+      expect((await jobsOf(document.id)).map((row) => row.type)).toEqual(["sri.reconcile"]);
+    });
+
     it("error 70: con la clave desconocida no reenvía y vuelve a consultar dentro de la ventana", async () => {
       const document = await insertDocument(prisma, company, "SEND_UNKNOWN");
       await receptionEvidence(document, "KEY_IN_PROCESS");

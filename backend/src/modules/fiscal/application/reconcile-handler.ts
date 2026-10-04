@@ -233,6 +233,8 @@ export function decideAfterValidity(
   validity: ValidityClassification | null,
   context: Context,
 ): StepDecision {
+  // Una respuesta por otra clave es inconsistente con el comprobante (design D4).
+  if (validity?.outcome === "INCONSISTENT") return toManualReview(context, "INCONSISTENT");
   if (validity?.outcome === "KEY_KNOWN") {
     // Un estado informado impide reenviar. Una anulación es un estado que este cambio no modela.
     if (validity.state === "PENDIENTE DE ANULAR" || validity.state === "ANULADO") {

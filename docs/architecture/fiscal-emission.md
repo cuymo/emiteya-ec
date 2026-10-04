@@ -435,7 +435,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 
 ### Reconciliación
 
-- **Estrategia.** Primero la autorización por clave, que trae la decisión y el XML autorizado. Si el SRI no conoce la clave, la consulta de validez es una guarda: un estado informado impide el reenvío, y nunca lo autoriza.
+- **Estrategia.** Primero la autorización por clave, que trae la decisión y el XML autorizado. Si el SRI no conoce la clave, la consulta de validez es una guarda: un estado informado impide el reenvío, y nunca lo autoriza. Una respuesta de cualquiera de las dos consultas por otra clave es inconsistente y lleva a `MANUAL_REVIEW`.
 - **Reenvío.** Solo desde `SEND_UNKNOWN`, o desde `SIGNED` con el envío detenido, cuando ni la autorización ni la validez conocen la clave y no hay evidencia de recepción (`RECIBIDA`, 70 o 43) en los resultados guardados. Encola `sri.transmit` con los mismos bytes firmados: así el administrador reactiva un envío detenido sin una operación de envío.
 - **Revisión manual.** Desde `MANUAL_REVIEW`, una clave desconocida deja el comprobante en revisión: no existe una acción "reenviar de todas formas".
 - **Historial.** Los intentos guardan el origen (`AUTOMATIC` o `MANUAL`) y quién los pidió; las transiciones, el actor (`SYSTEM` o el administrador) y la causa `RECONCILIATION`.

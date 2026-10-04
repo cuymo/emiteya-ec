@@ -80,7 +80,7 @@ export const VALIDITY_STATES = [
 export type ValidityState = (typeof VALIDITY_STATES)[number];
 
 export type ValidityClassification = Readonly<{
-  outcome: "KEY_KNOWN" | "NO_EVIDENCE";
+  outcome: "KEY_KNOWN" | "NO_EVIDENCE" | "INCONSISTENT";
   /** Solo en `KEY_KNOWN`. */
   state: ValidityState | null;
   messages: readonly SriResponseMessage[];

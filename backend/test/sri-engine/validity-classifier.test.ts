@@ -64,7 +64,29 @@ describe("clasificación de la consulta de validez", () => {
     ).toBe("ERROR_99");
   });
 
-  it("un estado desconocido, otra clave o una respuesta técnica no aportan evidencia", () => {
+  it("una respuesta por otra clave es inconsistente, aunque informe un estado o el error 99", () => {
+    const other = KEY.replace("21112024", "21112025");
+    for (const body of [
+      validityResponse({ accessKey: other, estadoAutorizacion: "AUTORIZADO" }),
+      validityResponse({
+        accessKey: other,
+        estadoConsulta: "RECHAZADA",
+        messages: [{ identifier: "99", message: "x" }],
+      }),
+    ]) {
+      const result = classifyValidity(response(body), KEY);
+      expect([result.outcome, result.state, result.parsed.reason]).toEqual([
+        "INCONSISTENT",
+        null,
+        "ACCESS_KEY_MISMATCH",
+      ]);
+    }
+    expect(
+      classifyValidity(response(validityResponse({ estadoAutorizacion: "AUTORIZADO" })), KEY),
+    ).toMatchObject({ outcome: "NO_EVIDENCE", parsed: { reason: "MISSING_ACCESS_KEY" } });
+  });
+
+  it("un estado desconocido o una respuesta técnica no aportan evidencia", () => {
     const reason = (outcome: Parameters<typeof classifyValidity>[0]) => {
       const result = classifyValidity(outcome, KEY);
       expect(result.outcome).toBe("NO_EVIDENCE");
@@ -73,16 +95,6 @@ describe("clasificación de la consulta de validez", () => {
     expect(
       reason(response(validityResponse({ accessKey: KEY, estadoAutorizacion: "EN TRÁMITE" }))),
     ).toBe("UNKNOWN_STATE");
-    expect(
-      reason(
-        response(
-          validityResponse({
-            accessKey: KEY.replace("21112024", "21112025"),
-            estadoAutorizacion: "AUTORIZADO",
-          }),
-        ),
-      ),
-    ).toBe("ACCESS_KEY_MISMATCH");
     expect(reason(response(soapFault()))).toBe("SOAP_FAULT");
     expect(reason(response("<html/>"))).toBe("NOT_SOAP");
     expect(reason(failure("CONNECTION_LOST"))).toBe("CONNECTION_LOST");
