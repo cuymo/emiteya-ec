@@ -7,23 +7,11 @@
 // salida pasa por un proxy que solo admite el host del SRI simulado y rechaza cualquier otro.
 import { execFile } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
-import {
-  createServer as createHttpServer,
-  request as httpRequest,
-  type IncomingMessage,
-  type Server,
-  type ServerResponse,
-} from "node:http";
-import { connect, type AddressInfo } from "node:net";
 import { promisify } from "node:util";
 import type { DraftView, InvoiceSummaryView, InvoiceView } from "@facturador/contracts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { FIXTURE_PASSWORD, FIXTURE_RUC, readFixture } from "../support/p12-fixtures.ts";
-import {
-  authorizationResponse,
-  receptionResponse,
-  validityResponse,
-} from "../support/sri-responses.ts";
+import { SRI_HOST, listen, outboundProxy, simulatedSri } from "../support/simulated-sri.ts";
 import {
   installSyntheticSizePolicy,
   syntheticSizePolicy,
@@ -35,164 +23,6 @@ const ADMIN = { email: "admin@e2e-sri.ec", password: "contrasena-admin-e2e-1" };
 const OPERATOR = { email: "operador@e2e-sri.ec", password: "contrasena-operador-e2e-1" };
 const dir = inject("p12FixturesDir");
 const execFileAsync = promisify(execFile);
-
-/** Host del SRI simulado: no resuelve por DNS, así que solo se alcanza a través del proxy. */
-const SRI_HOST = "sri-simulado.test";
-const FOREIGN_KEY = "1".repeat(49);
-
-type SriCall = { operation: "RECEPTION" | "AUTHORIZATION" | "VALIDITY"; key: string };
-type ReceptionBehavior = "RECEIVED" | "HOLD" | "FOREIGN_KEY";
-
-const sequentialOf = (key: string) => Number(key.slice(30, 39));
-
-/**
- * SRI simulado: recepción, autorización y validez con respuestas SINTÉTICAS. Recuerda los bytes
- * que recibió cada clave y solo autoriza lo que recibió, con ese mismo XML en el comprobante.
- */
-function simulatedSri() {
-  const calls: SriCall[] = [];
-  const received = new Map<string, Buffer>();
-  const behaviors = new Map<number, ReceptionBehavior>();
-  const held: ServerResponse[] = [];
-  let onHold: ((key: string) => void) | null = null;
-  // Caído: corta cada conexión sin responder.
-  let down = false;
-
-  const respond = (res: ServerResponse, body: string) => {
-    res.writeHead(200, { "content-type": "text/xml; charset=utf-8" });
-    res.end(body);
-  };
-
-  const handle = (req: IncomingMessage, res: ServerResponse, body: string) => {
-    if (req.url?.endsWith("/RecepcionComprobantesOffline")) {
-      const signed = Buffer.from(/<xml>([^<]+)<\/xml>/.exec(body)?.[1] ?? "", "base64");
-      const key = /<claveAcceso>(\d{49})<\/claveAcceso>/.exec(signed.toString("utf8"))?.[1] ?? "";
-      calls.push({ operation: "RECEPTION", key });
-      received.set(key, signed);
-      const behavior = behaviors.get(sequentialOf(key)) ?? "RECEIVED";
-      if (behavior === "HOLD") {
-        held.push(res);
-        onHold?.(key);
-        return;
-      }
-      if (behavior === "FOREIGN_KEY")
-        return respond(
-          res,
-          receptionResponse("DEVUELTA", [
-            {
-              accessKey: FOREIGN_KEY,
-              messages: [{ identifier: "35", message: "CLAVE AJENA (sintético)", type: "ERROR" }],
-            },
-          ]),
-        );
-      return respond(res, receptionResponse("RECIBIDA"));
-    }
-    if (req.url?.endsWith("/AutorizacionComprobantesOffline")) {
-      const key = /<claveAccesoComprobante>(\d{49})</.exec(body)?.[1] ?? "";
-      calls.push({ operation: "AUTHORIZATION", key });
-      const signed = received.get(key);
-      return respond(
-        res,
-        signed
-          ? authorizationResponse(key, [
-              {
-                estado: "AUTORIZADO",
-                numeroAutorizacion: key,
-                fechaAutorizacion: new Date().toISOString(),
-                ambiente: "PRUEBAS",
-                comprobante: `<![CDATA[${signed.toString("utf8")}]]>`,
-                messages: [
-                  {
-                    identifier: "60",
-                    message: "ESTE PROCESO FUE REALIZADO EN EL AMBIENTE DE PRUEBAS",
-                    type: "ADVERTENCIA",
-                  },
-                ],
-              },
-            ])
-          : authorizationResponse(key, [], "0"),
-      );
-    }
-    if (req.url?.endsWith("/ConsultaComprobante")) {
-      const key = /<claveAcceso>(\d{49})</.exec(body)?.[1] ?? "";
-      calls.push({ operation: "VALIDITY", key });
-      return respond(
-        res,
-        validityResponse({
-          estadoConsulta: "RECHAZADA",
-          accessKey: key,
-          messages: [{ identifier: "99", message: "ERROR AL CONSULTAR DATOS", type: "ERROR" }],
-        }),
-      );
-    }
-    res.writeHead(404).end();
-  };
-
-  const server = createHttpServer((req, res) => {
-    let body = "";
-    req.on("data", (chunk: Buffer) => (body += chunk.toString("utf8")));
-    req.on("end", () => (down ? req.socket.destroy() : handle(req, res, body)));
-  });
-  return {
-    server,
-    calls,
-    received,
-    behaviors,
-    /** Resuelve con la clave cuando una recepción queda retenida sin respuesta. */
-    nextHold: () => new Promise<string>((resolve) => (onHold = resolve)),
-    releaseHeld: () => held.splice(0).forEach((res) => res.destroy()),
-    setDown: (value: boolean) => (down = value),
-  };
-}
-
-/**
- * Proxy de salida del backend: registra cada destino y solo admite el host del SRI simulado, al
- * que reenvía; cualquier otro destino recibe 403 y no llega a ninguna parte.
- */
-function outboundProxy(sriPort: number) {
-  const destinations: string[] = [];
-  const server = createHttpServer((req, res) => {
-    const target = new URL(req.url ?? "/", "http://invalido");
-    destinations.push(target.host);
-    if (target.host !== SRI_HOST) return res.writeHead(403).end();
-    const forward = httpRequest(
-      {
-        host: "127.0.0.1",
-        port: sriPort,
-        method: req.method,
-        path: target.pathname,
-        headers: req.headers,
-      },
-      (upstream) => {
-        res.writeHead(upstream.statusCode ?? 502, upstream.headers);
-        upstream.pipe(res);
-      },
-    );
-    forward.on("error", () => res.destroy());
-    req.pipe(forward);
-  });
-  server.on("connect", (req: IncomingMessage, socket) => {
-    socket.on("error", () => undefined);
-    const target = req.url ?? "";
-    destinations.push(target);
-    if (target !== `${SRI_HOST}:80`) {
-      socket.end("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
-      return;
-    }
-    const upstream = connect(sriPort, "127.0.0.1", () => {
-      socket.write("HTTP/1.1 200 Connection Established\r\n\r\n");
-      upstream.pipe(socket);
-      socket.pipe(upstream);
-    });
-    upstream.on("error", () => socket.destroy());
-  });
-  return { server, destinations };
-}
-
-const listen = (server: Server) =>
-  new Promise<number>((resolve) =>
-    server.listen(0, "127.0.0.1", () => resolve((server.address() as AddressInfo).port)),
-  );
 
 describe("flujo completo de la transmisión al SRI", () => {
   let db: MigratedSchema;
