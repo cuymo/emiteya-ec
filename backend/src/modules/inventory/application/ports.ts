@@ -172,7 +172,16 @@ export type StockDetail = Readonly<{
   lastMovementAt: Date | null;
 }>;
 
+/** Movimiento con el nombre de su actor, para la API (design D8). */
+export type MovementView = StoredMovement & Readonly<{ actorName: string | null }>;
+
 /** Lecturas del inventario para la API (design D8). */
 export interface StockReads {
   detail(companyId: string, productId: string): Promise<StockDetail | null>;
+  movement(companyId: string, movementId: string): Promise<MovementView | null>;
 }
+
+/** Métricas del inventario (design D14): cada movimiento registrado, por tipo. */
+export type InventoryObserver = Readonly<{
+  movement(type: StockMovementType): void;
+}>;

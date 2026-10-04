@@ -6,7 +6,7 @@ import type { DbClient } from "../../../platform/db/database.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import { productStockTracking } from "../../products/infrastructure/index.ts";
 import { createInventory } from "../application/inventory.ts";
-import type { InventoryProducts } from "../application/ports.ts";
+import type { InventoryObserver, InventoryProducts } from "../application/ports.ts";
 import { inventoryRouter } from "./http/inventory-router.ts";
 import { createStockRepository } from "./prisma-stock.ts";
 import { createStockReads } from "./prisma-stock-reads.ts";
@@ -19,6 +19,7 @@ export {
 } from "../application/invoice-outflow.ts";
 export { createInventoryUnitOfWork, lockStockTrackingIn } from "./unit-of-work.ts";
 export { createStockReads } from "./prisma-stock-reads.ts";
+export { registerInventoryMetrics } from "./metrics.ts";
 export { reconcileStock, type StockDifference } from "./reconciliation.ts";
 
 /**
@@ -76,21 +77,26 @@ const inventoryProducts: InventoryProducts = (db) => {
 export type InventoryModuleOptions = {
   prisma: PrismaClient;
   authorizer: Authorizer;
+  /** Métricas del inventario, registradas una vez en el arranque (design D14). */
+  observer?: InventoryObserver;
   now?: () => Date;
 };
 
 export function inventoryModule({
   prisma,
   authorizer,
+  observer,
   now = () => new Date(),
 }: InventoryModuleOptions) {
   const service = createInventory({
     uow: createInventoryUnitOfWork(prisma),
     products: inventoryProducts,
+    stock: createStockRepository,
     reads: createStockReads,
     db: prisma,
     authorizer,
     now,
+    ...(observer ? { observer } : {}),
   });
   return { routers: [inventoryRouter(service)], service };
 }

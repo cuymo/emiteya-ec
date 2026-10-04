@@ -109,7 +109,7 @@
 
 ## 7. Entradas manuales y ajustes
 
-- [ ] 7.1 Implementar `POST /api/v1/inventory/items/{productId}/entries` y `/adjustments` con `Idempotency-Key`, la huella canónica y la unicidad de design D7. Añadir la métrica `inventory_movements_total{type}`. Verificar con pruebas HTTP:
+- [x] 7.1 Implementar `POST /api/v1/inventory/items/{productId}/entries` y `/adjustments` con `Idempotency-Key`, la huella canónica y la unicidad de design D7. Añadir la métrica `inventory_movements_total{type}`. Verificar con pruebas HTTP:
   - entrada de 10 que suma al saldo, y ajuste de -4 con motivo que deja el saldo negativo;
   - entrada de cero o negativa, y ajuste sin motivo o de cero, rechazados;
   - doble envío secuencial y simultáneo: un solo movimiento, con la repetición que devuelve el mismo, también con `10` y `10.00`;
@@ -120,7 +120,7 @@
   - ningún evento de auditoría por las entradas ni por los ajustes;
   - movimientos sin rutas para editarlos ni borrarlos
 
-- [ ] 7.2 Probar con PostgreSQL real la concurrencia de las operaciones manuales:
+- [x] 7.2 Probar con PostgreSQL real la concurrencia de las operaciones manuales:
   - autorización y entrada simultáneas, y autorización y ajuste simultáneos, sobre el mismo producto;
   - inicializaciones simultáneas;
   - la misma `Idempotency-Key` en solicitudes simultáneas.

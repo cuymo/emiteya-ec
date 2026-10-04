@@ -1,9 +1,16 @@
 // Rutas del inventario bajo /api/v1 (add-minimal-inventory, design D10). No hay rutas para
 // recalcular ni fijar el saldo: solo cambia con movimientos.
 import { Router, type Response } from "express";
-import type { ListMeta, StockItemDetailView, StockItemView } from "@facturador/contracts";
+import {
+  IDEMPOTENCY_KEY_HEADER,
+  type ListMeta,
+  type StockItemDetailView,
+  type StockItemView,
+  type StockMovementView,
+} from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
 import type { Inventory, StockItem } from "../../application/inventory.ts";
+import type { MovementView } from "../../application/ports.ts";
 import { isNegative, trackingState } from "../../domain/stock.ts";
 
 export function toStockItemView(item: StockItem): StockItemView {
@@ -30,6 +37,22 @@ export function toStockItemDetailView(item: StockItem): StockItemDetailView {
   };
 }
 
+export function toStockMovementView(movement: MovementView): StockMovementView {
+  return {
+    id: movement.id,
+    position: movement.position,
+    type: movement.type,
+    delta: movement.delta,
+    balanceAfter: movement.balanceAfter,
+    occurredAt: movement.occurredAt.toISOString(),
+    origin: movement.origin,
+    actorName: movement.actorName,
+    documentId: movement.documentId,
+    documentNumber: movement.documentNumber,
+    reason: movement.reason,
+  };
+}
+
 function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
   res.status(status).json(meta ? { data, meta } : { data });
 }
@@ -40,6 +63,26 @@ export function inventoryRouter(inventory: Inventory): Router {
   router.post("/inventory/items/:productId/initialization", async (req, res) => {
     const item = await inventory.initialize(contextOf(res), req.params.productId, req.body);
     send(res, 201, toStockItemDetailView(item));
+  });
+
+  router.post("/inventory/items/:productId/entries", async (req, res) => {
+    const { movement, replayed } = await inventory.entry(
+      contextOf(res),
+      req.params.productId,
+      req.header(IDEMPOTENCY_KEY_HEADER),
+      req.body,
+    );
+    send(res, replayed ? 200 : 201, toStockMovementView(movement));
+  });
+
+  router.post("/inventory/items/:productId/adjustments", async (req, res) => {
+    const { movement, replayed } = await inventory.adjust(
+      contextOf(res),
+      req.params.productId,
+      req.header(IDEMPOTENCY_KEY_HEADER),
+      req.body,
+    );
+    send(res, replayed ? 200 : 201, toStockMovementView(movement));
   });
 
   router.put("/inventory/items/:productId/tracking", async (req, res) => {

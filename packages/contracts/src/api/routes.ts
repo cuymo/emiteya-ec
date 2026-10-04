@@ -108,8 +108,12 @@ import {
 } from "../archive.ts";
 import {
   initializeStockSchema,
+  stockAdjustmentSchema,
+  stockEntrySchema,
   stockItemDetailViewSchema,
   stockItemParamsSchema,
+  stockMovementHeadersSchema,
+  stockMovementViewSchema,
   stockTrackingSchema,
 } from "../inventory.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
@@ -173,6 +177,23 @@ const stockProductNotFound = {
   description: "El producto no existe en la empresa (PRODUCT_NOT_FOUND).",
   schema: errorEnvelopeSchema,
 };
+const stockMovementBadRequest = {
+  description: "Datos inválidos o falta la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+  schema: errorEnvelopeSchema,
+};
+const stockMovementConflict = {
+  description:
+    "El inventario no está inicializado (INVENTORY_NOT_INITIALIZED), el control está desactivado (STOCK_TRACKING_DISABLED) o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+  schema: errorEnvelopeSchema,
+};
+const stockMovementResponses = (created: string) => ({
+  200: {
+    description:
+      "Repetición con la misma Idempotency-Key y la misma solicitud: el mismo movimiento.",
+    schema: successEnvelope(stockMovementViewSchema),
+  },
+  201: { description: created, schema: successEnvelope(stockMovementViewSchema) },
+});
 const documentNotFound = {
   description: "El comprobante no existe en la empresa (DOCUMENT_NOT_FOUND).",
   schema: errorEnvelopeSchema,
@@ -1246,6 +1267,43 @@ export const apiRoutes: readonly RouteDefinition[] = [
           "El inventario ya está inicializado (INVENTORY_ALREADY_INITIALIZED) o el producto no está marcado como controlado (STOCK_TRACKING_REQUIRED).",
         schema: errorEnvelopeSchema,
       },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/inventory/items/:productId/entries",
+    summary: "Registrar una entrada manual de existencias, con su clave de idempotencia",
+    request: {
+      params: stockItemParamsSchema,
+      headers: stockMovementHeadersSchema,
+      body: stockEntrySchema,
+    },
+    responses: {
+      ...stockMovementResponses("Entrada registrada."),
+      400: stockMovementBadRequest,
+      401: errors[401],
+      403: errors[403],
+      404: stockProductNotFound,
+      409: stockMovementConflict,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/inventory/items/:productId/adjustments",
+    summary:
+      "Registrar un ajuste de existencias, positivo o negativo y con motivo, con su clave de idempotencia",
+    request: {
+      params: stockItemParamsSchema,
+      headers: stockMovementHeadersSchema,
+      body: stockAdjustmentSchema,
+    },
+    responses: {
+      ...stockMovementResponses("Ajuste registrado."),
+      400: stockMovementBadRequest,
+      401: errors[401],
+      403: errors[403],
+      404: stockProductNotFound,
+      409: stockMovementConflict,
     },
   }),
   defineRoute({

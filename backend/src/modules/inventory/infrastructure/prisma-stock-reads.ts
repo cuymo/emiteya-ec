@@ -3,7 +3,7 @@
 // de su relación, como en el historial de entregas.
 import type { DbClient } from "../../../platform/db/database.ts";
 import type { StockReads } from "../application/ports.ts";
-import { createStockRepository } from "./prisma-stock.ts";
+import { createStockRepository, toMovement } from "./prisma-stock.ts";
 
 export function createStockReads(db: DbClient): StockReads {
   const stock = createStockRepository(db);
@@ -26,6 +26,14 @@ export function createStockReads(db: DbClient): StockReads {
         initializedByName: initializer?.name ?? "",
         lastMovementAt: last?.occurredAt ?? null,
       };
+    },
+
+    async movement(companyId, movementId) {
+      const row = await db.stockMovement.findFirst({
+        where: { id: movementId, companyId },
+        include: { actor: { select: { name: true } } },
+      });
+      return row ? { ...toMovement(row), actorName: row.actor?.name ?? null } : null;
     },
   };
 }

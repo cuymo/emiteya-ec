@@ -43,6 +43,7 @@ import {
   inventoryModule,
   inventoryOutflowFollower,
   inventoryStockReads,
+  registerInventoryMetrics,
 } from "./modules/inventory/infrastructure/index.ts";
 import { invoiceStockLines, invoicesModule } from "./modules/invoices/infrastructure/index.ts";
 import {
@@ -290,8 +291,12 @@ apiRouter.use(
     inventoryInitialization,
   }).routers,
 );
-// Inventario contabilizado por hechos fiscales autorizados (add-minimal-inventory, design D10).
-apiRouter.use(...inventoryModule({ prisma: database.prisma, authorizer }).routers);
+// Inventario contabilizado por hechos fiscales autorizados (add-minimal-inventory, design D10). Sus
+// métricas se registran una vez: las comparten las operaciones del inventario y la salida al autorizar.
+const inventoryMetrics = registerInventoryMetrics(metrics.registry);
+apiRouter.use(
+  ...inventoryModule({ prisma: database.prisma, authorizer, observer: inventoryMetrics }).routers,
+);
 // Cola durable de jobs (ADR 0012): la usan los workers, la firma y la reconciliación manual.
 const jobStore = createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATABASE_URL).schema);
 const transmissionSettings = transmissionSettingsFromEnv(env);
@@ -380,7 +385,11 @@ const stepDependencies = {
   // transmisión no conoce el archivo documental ni el inventario.
   followers: [
     rideFollower({ jobs: jobStore, settings: rideSettings.job }),
-    inventoryOutflowFollower({ invoices: invoiceStockLines, stock: createStockRepository }),
+    inventoryOutflowFollower({
+      invoices: invoiceStockLines,
+      stock: createStockRepository,
+      onOutflow: () => inventoryMetrics.movement("SALIDA_FACTURA"),
+    }),
   ],
   observer: registerTransmissionMetrics(metrics.registry, {
     prisma: database.prisma,
