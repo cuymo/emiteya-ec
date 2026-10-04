@@ -40,6 +40,37 @@ El proyecto separa dos conceptos que la plantilla agrupa:
 - Los eventos de seguridad pueden incluir la IP del cliente para limitar intentos y detectar abusos. Detrás de un proxy, la IP se toma de `X-Forwarded-For` solo si viene de un proxy declarado de confianza; si no, se usa la del socket. Nunca se confía en la cabecera de un cliente directo.
 - Si en el futuro una IP debe persistirse fuera de los logs, se documentan antes su propósito, ubicación, retención y base legal.
 
+## Transmisión al SRI
+
+Señales de `add-sri-transmission` (design D21; CTX §48), en `/metrics` y sin la empresa en las
+etiquetas: hay una sola por instancia.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `fiscal_jobs{type,status}` | Gauge | Jobs pendientes, en arriendo y detenidos de cada tipo |
+| `fiscal_jobs_oldest_pending_age_seconds{type}` | Gauge | Antigüedad del job pendiente más viejo |
+| `sri_attempts_total{operation,outcome}` | Counter | Intentos con el SRI por operación y resultado |
+| `sri_request_duration_seconds{operation}` | Histograma | Duración de las llamadas al SRI |
+| `sri_error_code_total{code}` | Counter | Mensajes del SRI con los identificadores `70`, `43`, `45` u `other` |
+| `fiscal_documents{state}` | Gauge | Comprobantes por estado, incluidos `SEND_UNKNOWN` y `MANUAL_REVIEW` |
+| `invoice_authorization_latency_seconds` | Histograma | Tiempo de `SIGNED` a `AUTHORIZED` |
+| `sri_circuit_open{service,environment}` | Gauge | 1 con el circuit breaker abierto o en prueba |
+| `sri_transmission_enabled` | Gauge | 1 si la transmisión está habilitada |
+
+Alertas propuestas (el despliegue las configura en su sistema de métricas):
+
+- backlog alto o envejecido: `fiscal_jobs{status="PENDING"}` o `fiscal_jobs_oldest_pending_age_seconds` por encima de lo habitual, con la transmisión habilitada;
+- comprobantes `RECEIVED` cerca de agotar la ventana de conclusión;
+- aumento de devoluciones: `sri_attempts_total{outcome="RETURNED"}`;
+- cualquier job `STOPPED`: `fiscal_jobs{status="STOPPED"} > 0`;
+- cualquier `INTEGRITY_FAILED` o `SIZE_POLICY_MISSING`, que el log registra como error;
+- comprobantes en `SEND_UNKNOWN` o `MANUAL_REVIEW` que no bajan;
+- circuit breaker abierto de forma prolongada: `sri_circuit_open == 1` durante varios minutos.
+
+Los logs de cada intento llevan el comprobante, la clave, la operación, el intento, el resultado,
+la duración y la correlación; nunca el XML, el SOAP, secretos ni contraseñas (CTX §47). Las
+respuestas originales viven en `sri_response`, no en los logs ni en la auditoría.
+
 ## Logging Rules
 
 - Do not log secrets.

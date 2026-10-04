@@ -50,6 +50,7 @@ import {
   createTransmissionSweeper,
   createTransmissionUnitOfWork,
   createTransmitHandler,
+  registerTransmissionMetrics,
 } from "./modules/fiscal/infrastructure/index.ts";
 import { createTransmissionGate } from "./modules/fiscal/infrastructure/transmission-gate.ts";
 import { transmissionSettingsFromEnv } from "./config/transmission.ts";
@@ -296,6 +297,10 @@ setInterval(() => void transmissionGate.refresh(), 30_000).unref();
 
 // Transporte SOAP propio y handlers de la transmisión (add-sri-transmission, design D6 a D17). El
 // único camino al SRI; con la transmisión deshabilitada sus jobs no se toman.
+const sriBreaker = createCircuitBreaker({
+  failures: env.SRI_BREAKER_FAILURES,
+  cooldownMs: env.SRI_BREAKER_COOLDOWN_SECONDS * 1_000,
+});
 const sriGateway = createSriGateway({
   transport: createSoapTransport({
     endpoints: sriEndpoints,
@@ -303,10 +308,7 @@ const sriGateway = createSriGateway({
     bodyTimeoutMs: env.SRI_BODY_TIMEOUT_MS,
     maxResponseBytes: env.SRI_RESPONSE_MAX_BYTES,
   }),
-  breaker: createCircuitBreaker({
-    failures: env.SRI_BREAKER_FAILURES,
-    cooldownMs: env.SRI_BREAKER_COOLDOWN_SECONDS * 1_000,
-  }),
+  breaker: sriBreaker,
 });
 const stepDependencies = {
   db: database.prisma,
@@ -314,6 +316,10 @@ const stepDependencies = {
   uow: createTransmissionUnitOfWork(database.prisma),
   jobs: jobStore,
   logger,
+  observer: registerTransmissionMetrics(metrics.registry, {
+    prisma: database.prisma,
+    breakerState: (environment, service) => sriBreaker.state(environment, service),
+  }),
 };
 const transmitHandler = createTransmitHandler({
   ...stepDependencies,

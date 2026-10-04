@@ -103,6 +103,18 @@ export interface TransmissionUnitOfWork {
   run<T>(work: (scope: TransmissionScope) => Promise<T>): Promise<T>;
 }
 
+/** Observador de las métricas de la transmisión (design D21); sin datos de la empresa. */
+export type TransmissionObserver = Readonly<{
+  attempt(
+    operation: SriOperation,
+    outcome: SriOutcome,
+    seconds: number,
+    messages: readonly SriMessage[],
+  ): void;
+  /** De `SIGNED` a `AUTHORIZED`. */
+  authorized(seconds: number): void;
+}>;
+
 export type StepDependencies = Readonly<{
   /** Cliente raíz: reprograma el job cuando no hubo llamada. */
   db: DbClient;
@@ -113,6 +125,7 @@ export type StepDependencies = Readonly<{
     info(details: object, message: string): void;
     warn(details: object, message: string): void;
   }>;
+  observer?: TransmissionObserver;
 }>;
 
 export const UNPARSEABLE_VERSION = "unparseable/1";
@@ -284,6 +297,16 @@ export async function executeSriStep<C>(
     decision,
     now,
   });
+  const outcome = classified?.outcome ?? "UNPARSEABLE";
+  const seconds =
+    (attempt.outcome.completedAt.getTime() - attempt.outcome.startedAt.getTime()) / 1_000;
+  deps.observer?.attempt(step.operation, outcome, seconds, classified?.messages ?? []);
+  if (
+    decision.transitions.some((transition) => transition.to === "AUTHORIZED") &&
+    document.signedAt
+  ) {
+    deps.observer?.authorized((now.getTime() - document.signedAt.getTime()) / 1_000);
+  }
   deps.logger.info(
     {
       jobId: job.id,
@@ -292,9 +315,9 @@ export async function executeSriStep<C>(
       operation: step.operation,
       attemptId: attempt.id,
       transport: attempt.outcome.kind,
-      outcome: classified?.outcome ?? "UNPARSEABLE",
+      outcome,
       to: decision.transitions.at(-1)?.to ?? null,
-      durationMs: attempt.outcome.completedAt.getTime() - attempt.outcome.startedAt.getTime(),
+      durationMs: Math.round(seconds * 1_000),
     },
     "intento con el SRI clasificado",
   );

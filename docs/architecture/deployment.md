@@ -87,7 +87,7 @@ un solo paso es P2.
 | --- | --- | --- |
 | `GET /health/live` | `200` mientras el proceso atiende | Liveness del contenedor. |
 | `GET /health/ready` | `200` si el paquete de XSD se verificó al arrancar, PostgreSQL responde a `SELECT 1` en 2 s, el pool criptográfico funciona y, con la transmisión al SRI habilitada, se cumplen sus precondiciones; si no, `503`. El cuerpo añade `sriTransmission` (`disabled` o `enabled`) | Readiness y healthcheck. |
-| `GET /metrics` | Formato Prometheus | Métricas de proceso y de peticiones, `xsd_registry_available`, las de la firma, `invoice_emission_stage_duration_seconds` y `sri_transmission_enabled`. |
+| `GET /metrics` | Formato Prometheus | Métricas de proceso y de peticiones, `xsd_registry_available`, las de la firma, `invoice_emission_stage_duration_seconds`, `sri_transmission_enabled` y las de la transmisión al SRI (`../quality/observability.md`). |
 
 - Existen en el servicio `api`, fuera de `/api` (ADR 0016), como endpoints operacionales. No pertenecen a la API pública del producto: no están bajo `/api/v1` ni en `docs/generated/openapi.json`.
 - Su exposición no está restringida por la aplicación: el backend los sirve a cualquiera que alcance el servicio. Restringirlos (red interna, reglas del proxy o autenticación) es una responsabilidad obligatoria del despliegue, que todavía está fuera de alcance; ningún despliegue puede publicarlos sin esa restricción. El diseño previsto es que el proxy público solo enrute `/` al frontend y `/api` al backend, y que el orquestador y el sistema de métricas los consulten por la red interna, pero esa garantía se implementará con el despliegue.

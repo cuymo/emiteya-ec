@@ -226,7 +226,7 @@
 
 ## 12. Observabilidad
 
-- [ ] 12.1 Añadir las métricas de design D21 al registro existente:
+- [x] 12.1 Añadir las métricas de design D21 al registro existente:
   - jobs por tipo y estado, y antigüedad del pendiente más viejo;
   - intentos por operación y resultado, y duración;
   - códigos 70, 43 y 45;
