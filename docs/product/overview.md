@@ -55,7 +55,7 @@ fuera de alcance.
 | Configuración         | Empresa, RUC, razón social, nombre comercial, dirección, logo, datos tributarios, contacto. | `taxpayer-setup`                       |
 | Estructura de emisión | Establecimientos, puntos de emisión, secuenciales por tipo de comprobante.                 | `taxpayer-setup`, `fiscal-numbering`   |
 | Firma                 | Carga del certificado, validación de vigencia, uso solo en el servidor.                    | `signing-certificate`                  |
-| SRI                   | Ambientes, XML, XSD, firma, recepción, autorización, consulta de validez y reconciliación. | `document-emission`, `sri-transmission` |
+| SRI                   | Ambientes, XML, XSD, firma, recepción, autorización y reconciliación por clave. La consulta de validez para observar anulaciones es una capacidad futura (Q-16). | `document-emission`, `sri-transmission` |
 | Comprobantes          | Factura, nota de crédito, nota de débito, retención, guía de remisión, liquidación de compra. | Una capacidad por tipo               |
 | Terceros y catálogo   | Catálogo único de terceros; productos y servicios.                                         | `parties`, `products`, `fiscal-catalogs` |
 | Inventario            | Stock opcional, entradas manuales, salidas por factura, ajustes, historial básico.         | `inventory`                            |

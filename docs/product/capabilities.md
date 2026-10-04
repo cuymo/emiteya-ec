@@ -17,7 +17,9 @@ documento no especifica comportamiento.
 | `parties`              | Catálogo único de terceros con roles y búsqueda, y el consumidor final del sistema.               | ERS RF-320..323; CTX §9                                        | AC-02, AC-03  | — (Q-26 parcial: volumen de terceros medido) |
 | `products`             | Productos y servicios con precio exacto, referencias fiscales, estado tributario derivado y búsqueda. | ERS RF-301..305; CTX §12.4, §12.5                          | AC-08         | — (Q-26 parcial: volumen de productos medido) |
 | `document-emission`    | Núcleo común: emisión idempotente, snapshot, máquina local `RESERVED` → `SIGNED`, clave de acceso, XML, XSD y firma, hasta el artefacto firmado. | ERS RF-006..010, RF-520..525, SRI-REQ-02..05, SRI-REQ-11; CTX §4, §8, §10, §11, §19–21, §39, §41 | AC-02, AC-05 | — (Q-08, Q-14, Q-29, Q-30, Q-35, Q-38, Q-39 y Q-44 resueltas; de Q-34 quedan el SOAP y el PDF; Q-26 parcial: emisión medida con `bench:emission`) |
-| `sri-transmission`     | Recepción, autorización asíncrona, consulta de validez, errores 43/45/70, reconciliación y revisión manual. | ERS SRI-REQ-01, SRI-REQ-06..10, RNF-004; CTX §7, §22–27, §29, §32–34, §44, §52 | AC-02, AC-06 | Q-06, Q-07, Q-16 |
+| `sri-transmission`     | Transmisión con jobs desde `SIGNED`: recepción, autorización asíncrona, errores 43/45/70, reconciliación por clave de los resultados inciertos y respuestas originales inmutables. Sin observación de anulaciones (Q-16) ni corrección de devueltos (BR-28). | ERS SRI-REQ-01, SRI-REQ-06..10, RNF-004; CTX §7, §22–27, §29, §32–34, §44, §52 | AC-02, AC-06 | Q-06, Q-47 (Q-07 resuelta, Q-16 diferida, Q-34 SOAP resuelta) |
+| `correct-returned-document` | Corregir un comprobante `DEVUELTA` (BR-28) con revisión o versionado de solo agregado, si la norma permite conservar la misma identidad. Capacidad futura, separada de `sri-transmission`. | ERS §12.1 (`RETURNED` corregible); CTX §26.1, §27.1 | — | Q-08 (fecha), Q-07 (resuelta) |
+| `cancellation-observation` | Detectar anulaciones de comprobantes autorizados con la consulta de validez (`PENDIENTE DE ANULAR`, `ANULADO`). Capacidad futura, fuera de `sri-transmission`. | CTX §24, §36 | — | Q-16 |
 | `invoices`             | Factura con consumidor final, líneas, pagos y totales; borradores editables antes de emitir.      | ERS RF-010, RF-201..206; CTX §12, §35                          | AC-02, AC-08  | Q-18, Q-19, Q-45, Q-46         |
 | `credit-notes`         | Nota de crédito desde un comprobante, con devolución de stock opcional.                           | ERS RF-210..213; CTX §13                                       | AC-03         | Q-10, Q-20                     |
 | `debit-notes`          | Nota de débito sobre un comprobante.                                                              | ERS RF-220..222; CTX §14                                       | AC-03         | —                              |
@@ -52,8 +54,8 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 5b  | `add-parties-and-products` | `parties`, `products`: consumen `fiscal-catalogs` como dependencia canónica | 5a | — |
 | —   | Spikes técnicos, sin OpenSpec | Validación de `facturacion-electronica-ec`: XSD (S-2, ejecutado, ADR 0021), factura offline (S-3 offline, ejecutado con el builder propio de Q-44), autorización en Pruebas (S-3 online, compuerta de go-live) y PDF (S-4) (Q-34, ADR 0018) | 0 | ADRs de dependencias |
 | 6   | `add-invoice-emission`     | `document-emission`, `invoices`                       | 3, 4, 5a, 5b, spike | AC-05    |
-| 7   | `add-sri-transmission`     | `sri-transmission`                                    | 6              | AC-02, AC-06  |
-| 8   | `add-document-archive`     | `document-archive`                                    | 7              | AC-07         |
+| 7   | `add-sri-transmission`     | `sri-transmission`                                    | 6              | AC-06; AC-02 parcial (el RIDE llega con el cambio 8 y la autorización real con S-3 online) |
+| 8   | `add-document-archive`     | `document-archive`                                    | 7              | AC-07; completa AC-02 con S-3 online |
 | 9   | `add-minimal-inventory`    | `inventory`                                           | 7              | AC-08         |
 | 10  | `add-credit-notes`         | `credit-notes`                                        | 7, 9           | AC-03 parcial |
 | 11  | `add-debit-notes`          | `debit-notes`                                         | 7              | AC-03 parcial |
@@ -62,6 +64,10 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 14  | `add-purchase-settlements` | `purchase-settlements`                                | 7              | AC-03         |
 | 15  | `add-reports-export`       | `reports`                                             | 8              | AC-09         |
 | 16  | `add-data-portability`     | `data-portability`                                    | 8              | AC-10         |
+
+Capacidades futuras sin número en la secuencia, decididas en la revisión de readiness del cambio 7
+(2026-10-03): `correct-returned-document` (corrección de un devuelto, BR-28) y
+`cancellation-observation` (observación de anulaciones, Q-16). Ninguna amplía `add-sri-transmission`.
 
 Obligaciones de `add-fiscal-catalogs` (5a) para `add-parties-and-products` (5b), que consume
 `fiscal-catalogs` como dependencia canónica sin duplicar datasets ni reglas de vigencia:

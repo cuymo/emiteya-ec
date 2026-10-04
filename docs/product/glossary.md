@@ -68,7 +68,7 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Recepción                       | `reception`            | Servicio del SRI que acepta (`RECIBIDA`) o devuelve (`DEVUELTA`) el comprobante, con mensajes identificados por código.                     |
 | Autorización                    | `authorization`        | Servicio del SRI consultado por clave de acceso: en procesamiento (`PPR`), `AUTORIZADO` (`AUT`) o `NO AUTORIZADO` (`NAT`). Puede tardar hasta 24 horas desde `RECIBIDA`. |
 | Número de autorización          | `authorizationNumber`  | En el esquema off-line coincide con la clave de acceso del comprobante autorizado.                                                          |
-| Consulta de validez             | `documentQuery`        | Servicio `ConsultaComprobante` del SRI: `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO`. Sirve para reconciliar y detectar anulaciones (CTX §24). |
+| Consulta de validez             | `documentQuery`        | Servicio `ConsultaComprobante` del SRI: `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO`. Detecta anulaciones (CTX §24), una capacidad futura (Q-16). `add-sri-transmission` reconcilia con la consulta de autorización por clave, y solo usa este servicio si su design lo justifica. |
 | Reconciliación                  | `reconciliation`       | Consulta por la misma clave de acceso para resolver un resultado ambiguo antes de cualquier reenvío.                                         |
 | Anulación                       | `cancellation`         | Proceso del SRI en línea para dejar sin efecto un comprobante autorizado. No es una nota de crédito, no tiene Web Service público y el sistema no lo inventa (CTX §36). |
 | RIDE                            | `ride`                 | Representación Impresa del Documento Electrónico, en PDF. Se genera desde el comprobante autorizado.                                        |
@@ -116,19 +116,22 @@ en `../architecture/fiscal-emission.md`.
 | --------------------------------------------- | ------------------------- |
 | `RESERVED`                                    | Procesando                |
 | `SIGNED`                                      | Pendiente de envío        |
-| `SEND_PENDING`                                | Enviando al SRI           |
+| Job de envío en curso (no es estado fiscal)   | Enviando al SRI           |
 | `SEND_UNKNOWN`                                | Verificando con el SRI    |
-| `RECEIVED`, `PENDING_AUTHORIZATION`           | Pendiente de autorización |
+| `RECEIVED`                                    | Pendiente de autorización |
 | `AUTHORIZED`                                  | Autorizado                |
 | `RETURNED`                                    | Devuelto                  |
 | `NOT_AUTHORIZED`                              | No autorizado             |
-| `MANUAL_REVIEW`                               | Requiere revisión         |
-| `CANCEL_PENDING`                              | Pendiente de anulación    |
-| `CANCELLED`                                   | Anulado                   |
+| `MANUAL_REVIEW`, si el design lo adopta (Q-06) | Requiere revisión        |
+| `CANCEL_PENDING` (capacidad futura, Q-16)     | Pendiente de anulación    |
+| `CANCELLED` (capacidad futura, Q-16)          | Anulado                   |
 
-`RESERVED` es un estado local del proyecto (Q-35). `SEND_PENDING`, `CANCEL_PENDING` y
-`CANCELLED` provienen de CTX §26 y no figuran en el ERS §12.1; su adopción se decide en
-`add-sri-transmission` y en Q-16.
+`RESERVED` es un estado local del proyecto (Q-35). La máquina de transmisión se decidió el
+2026-10-03:
+- `SEND_PENDING` de CTX §26 no se adopta: el envío en curso es un estado del job.
+- `RECEIVED` agrupa el `PENDING_AUTHORIZATION` de ERS §12.1.
+- `MANUAL_REVIEW` lo decide el design de `add-sri-transmission` (Q-06).
+- `CANCEL_PENDING` y `CANCELLED` pertenecen a la capacidad futura de anulaciones (Q-16).
 
 ## Naming Rules
 

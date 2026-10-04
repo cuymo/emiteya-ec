@@ -17,7 +17,7 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 | ------------------------ | -------- | --------------------------------------------------------------------------------- | ----------------------------------------- |
 | Emisión de comprobantes  | Núcleo   | Borradores, emisión, ciclo de vida fiscal y los seis flujos documentales.         | ERS RF-006..010, RF-201..253; CTX §12–17  |
 | Motor fiscal             | Núcleo   | Mapper fiscal, XML por tipo y versión, clave de acceso, XSD, firma y RIDE.         | ERS SRI-REQ-02..05; CTX §8, §10, §19, §20 |
-| Orquestación SRI         | Núcleo   | Recepción, autorización, consulta de validez, reintentos y reconciliación.        | ERS SRI-REQ-06..10; CTX §22–27, §33, §34  |
+| Orquestación SRI         | Núcleo   | Recepción, autorización, reintentos y reconciliación por clave; la consulta de validez para anulaciones es futura (Q-16). | ERS SRI-REQ-06..10; CTX §22–27, §33, §34  |
 | Numeración fiscal        | Núcleo   | Secuenciales atómicos y únicos.                                                   | ERS RF-120..125; CTX §5, §28              |
 | Configuración tributaria | Soporte  | Empresa, ambiente, establecimientos, puntos y certificado.                        | ERS RF-101..135; CTX §5, §6, §20          |
 | Catálogos                | Soporte  | Terceros, productos y catálogos fiscales versionados.                             | ERS RF-301..323; CTX §9, §18              |
@@ -190,14 +190,21 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 ### `sri_attempt` — Intento SRI
 
 - Purpose: evidencia de cada llamada al SRI (ERS RF-408, CTX §32).
-- Key attributes: comprobante, fase (`RECEPCION`, `AUTORIZACION`, `CONSULTA`), momento, duración, resultado normalizado, todos los mensajes del SRI (identificador, mensaje, información adicional, tipo), respuesta original conservada como artefacto.
-- Invariants: solo se agrega; conserva todos los mensajes, incluidos los códigos desconocidos; no contiene secretos.
+- Key attributes: identificador, comprobante, operación (recepción, autorización o consulta por clave para reconciliar), número de intento, inicio, fin, resultado normalizado, metadatos HTTP y de error seguros, todos los mensajes del SRI (identificador, mensaje, información adicional, tipo) y la respuesta original asociada al intento.
+- Invariants:
+  - solo se agrega;
+  - la respuesta original se persiste antes de clasificarla, y la transición de estado va después;
+  - conserva todos los mensajes, incluidos los códigos desconocidos;
+  - no contiene secretos;
+  - el SOAP original nunca va a los logs ni a la auditoría;
+  - no usa `document_artifact`, que admite un solo artefacto por tipo (decisión del 2026-10-03 para `add-sri-transmission`).
 
 ### `artifact` — Artefacto
 
 - Purpose: archivo probatorio de un comprobante (ERS RF-404, RF-405, RF-407; CTX §31).
-- Key attributes: comprobante, tipo (XML sin firmar, XML firmado, respuesta de recepción, respuesta de autorización, XML autorizado, RIDE, logo), hash SHA-256, tamaño, referencia de almacenamiento interna.
+- Key attributes: comprobante, tipo (XML firmado, XML autorizado, RIDE, logo), hash SHA-256, tamaño, referencia de almacenamiento interna. Las respuestas originales del SRI pertenecen a su intento (`sri_attempt`).
 - Invariants: se escribe una vez y no cambia; el XML autorizado se extrae de la respuesta del SRI, nunca se reconstruye (CTX §45); nunca se borra en cascada (ERS §13.1, ADR 0010).
+- El XML autorizado (lo recibido) nunca reemplaza al XML firmado (lo enviado). Los dos se verifican por hash, y la autorización guarda de forma inmutable su número, su fecha y el ambiente confirmado.
 - En `add-invoice-emission`: `document_artifact` con el tipo `SIGNED_XML`, los bytes UTF-8 exactos en `BYTEA`, su SHA-256 y tamaño, y metadatos con la versión y los hashes del esquema, la versión del builder y del firmador y la huella del certificado. Un comprobante `SIGNED` no existe sin su artefacto (trigger diferido).
 
 ### `delivery_attempt` — Entrega
@@ -285,21 +292,21 @@ fiscal de error. El diagnóstico del último intento (etapa, código, clase, fec
 intentos y, para un XSD inválido, la línea y el elemento) se guarda aparte del estado. Un
 reintento manual retoma la misma factura, con su número y su clave.
 
-Estados de transmisión, que diseña `add-sri-transmission` a partir de `SIGNED`. Punto de partida
-de CTX §26, que se adopta en ese cambio junto con Q-07 y Q-16:
+Estados de transmisión de `add-sri-transmission`, decididos el 2026-10-03
+(`../architecture/fiscal-emission.md`). Son una máquina fiscal separada de los jobs: el envío en
+curso y el arriendo son estados del job.
 
-| Estado                  | Origen   | Significado                                                       | Terminal |
-| ----------------------- | -------- | ----------------------------------------------------------------- | -------- |
-| `SEND_PENDING`          | CTX      | Envío a recepción en curso.                                       | No       |
-| `SEND_UNKNOWN`          | ERS, CTX | Resultado de transmisión ambiguo; requiere reconciliación.        | No       |
-| `RECEIVED`              | ERS, CTX | Recepción `RECIBIDA`; no significa autorizado.                    | No       |
-| `PENDING_AUTHORIZATION` | ERS, CTX | En consulta de autorización.                                      | No       |
-| `AUTHORIZED`            | ERS, CTX | Autorizado.                                                       | Sí, salvo anulación posterior |
-| `RETURNED`              | ERS, CTX | Recepción `DEVUELTA`; corregible con la misma clave y secuencial. | No       |
-| `NOT_AUTHORIZED`        | ERS, CTX | El SRI lo determinó no autorizado.                                | Sí (Q-07) |
-| `MANUAL_REVIEW`         | ERS, CTX | Requiere intervención de un administrador.                        | No       |
-| `CANCEL_PENDING`        | CTX      | Anulación solicitada en el SRI, pendiente.                        | No       |
-| `CANCELLED`             | CTX      | Anulado en el SRI.                                                | Sí       |
+| Estado           | Origen   | Significado                                                       | Terminal |
+| ---------------- | -------- | ----------------------------------------------------------------- | -------- |
+| `SEND_UNKNOWN`   | ERS, CTX | No se sabe si el SRI recibió el XML, o la respuesta exige reconciliar (43, 45, 70). | Nunca |
+| `RECEIVED`       | ERS, CTX | `RECIBIDA`, o el SRI procesa la clave: pendiente de autorización. Agrupa el `PENDING_AUTHORIZATION` de ERS §12.1. | No |
+| `AUTHORIZED`     | ERS, CTX | Autorizado, con número, fecha y ambiente guardados.               | Sí |
+| `RETURNED`       | ERS, CTX | `DEVUELTA` concluyente. Conserva el comprobante y su número.       | Sin salida en el cambio 7; su corrección es la capacidad futura `correct-returned-document` |
+| `NOT_AUTHORIZED` | ERS, CTX | `NO AUTORIZADO` concluyente.                                       | Sí (Q-07) |
+
+- `MANUAL_REVIEW` (ERS §12.1): el design del cambio 7 decide si es un estado fiscal o una condición operativa (Q-06).
+- `CANCEL_PENDING` y `CANCELLED` (CTX §26): pertenecen a la capacidad futura de anulaciones (Q-16).
+- `SEND_PENDING` (CTX) no se adopta: el envío en curso es un estado del job.
 
 ## Domain Events
 
@@ -369,7 +376,7 @@ se repiten aquí.
 - **BR-17** Cada emisión lleva una clave de idempotencia; repetirla con la misma solicitud devuelve o reanuda el mismo comprobante y no reserva otro secuencial; con una solicitud distinta, se rechaza (ERS RF-520, RF-521, API-003; CTX §27.4; Q-30).
 - **BR-18** Un timeout no es un rechazo: no genera un secuencial ni una clave nuevos, y se reconcilia por la misma clave antes de cualquier reenvío (ERS RF-522, RF-523, SRI-REQ-08, SRI-REQ-09; CTX §22.3).
 - **BR-19** `RECIBIDA` no significa autorizado. La autorización se consulta de forma asíncrona, con intervalo parametrizable, hasta 24 horas (CTX §22.1, §23.1).
-- **BR-20** Ante el error 70 (clave en procesamiento) no se reenvía ni se cambia clave o secuencial: se espera la autorización (CTX §27.2).
+- **BR-20** Ante el error 70 (clave en procesamiento) no se cambia la clave ni el secuencial, ni se genera otro comprobante. Se reconcilia por clave, y solo si la reconciliación lo determina se reenvían exactamente los mismos bytes firmados (CTX §27.2).
 - **BR-21** Al reservar, el comprobante copia los datos de empresa, establecimiento, receptor, productos, impuestos y catálogos; el XML y el RIDE se generan solo desde ese snapshot, y nada histórico se recalcula con la configuración actual (CTX §11, §39).
 - **BR-22** El XML firmado se persiste antes de llamar a la red, y cada respuesta del SRI antes de actuar sobre ella (ERS SRI-REQ-05, SRI-REQ-06; CTX §21).
 - **BR-23** La validación XSD precede a la firma, falla cerrada y no puede desactivarse en Producción (ERS SRI-REQ-03, CTX §19).
@@ -380,7 +387,7 @@ se repiten aquí.
 
 ### Corrección y anulación
 
-- **BR-28** Un comprobante devuelto por inconsistencias se corrige y se reenvía con la misma clave de acceso y el mismo secuencial; por eso la corrección no puede cambiar los campos que componen la clave (CTX §27.1, §8).
+- **BR-28** Un comprobante devuelto por inconsistencias se corrige y se reenvía con la misma clave de acceso y el mismo secuencial; por eso la corrección no puede cambiar los campos que componen la clave (CTX §27.1, §8). La corrección es la capacidad futura `correct-returned-document`. `add-sri-transmission` conserva `RETURNED` con su respuesta y sus mensajes, sin volver mutables el snapshot, la clave ni el artefacto firmado. Retransmitir los mismos bytes por un resultado incierto no es corregir.
 - **BR-29** Ante los errores 43 (clave registrada) o 45 (secuencial registrado) no se genera un comprobante nuevo: se consulta por la clave, se reconcilia y se escala si hay inconsistencia (CTX §27.3).
 - **BR-30** La anulación no es una nota de crédito ni una eliminación: se tramita en el SRI en línea, y el sistema solo la observa mediante la consulta de validez (CTX §36, Q-16).
 

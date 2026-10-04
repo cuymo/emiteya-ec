@@ -50,12 +50,12 @@ solicitud ── crear ─▶│ 1 validar ─▶ 2 RESERVED ─(commit)─▶ 3
 | 4 | Valida el XML contra el XSD del snapshot. Falla cerrada si falta el XSD, su hash no coincide o la versión no está registrada (CTX §19.2, ADR 0021). | `RESERVED` |
 | 5 | Firma con la firma vigente, vuelve a validar el XML firmado contra el XSD y persiste sus bytes exactos con su hash, en la misma transacción que la transición y la auditoría (ADR 0004, ADR 0010). El límite de 320 KB lo comprueba la transmisión (BR-26, cambio 7). | `SIGNED` |
 | 6 | Recepción: envía el XML firmado persistido y persiste la respuesta original antes de clasificarla. | Cambio 7 |
-| 7 | Autorización: consulta por clave con backoff y jitter; persiste la respuesta; extrae el XML autorizado (CTX §34, §45). | Cambio 7 |
+| 7 | Autorización: consulta por clave con backoff y jitter; persiste la respuesta original antes de clasificarla; guarda número, fecha, ambiente y XML autorizado (CTX §34, §45). | Cambio 7 |
 | 8 | RIDE desde el comprobante autorizado, guardado como artefacto (CTX §30). | Cambio 8 |
 | 9 | Entrega: registra la descarga, la impresión o el correo (CTX §46, Q-24). | Cambio 8 |
-| 10 | Reconciliación por la misma clave para resolver respuestas ambiguas y los errores 43 y 45. | Cambio 7 |
+| 10 | Reconciliación por la misma clave para resolver resultados inciertos y los errores 43, 45 y 70. | Cambio 7 |
 | 11 | Recuperación de comprobantes detenidos tras una caída. | Cambio 7 |
-| 12 | Consulta periódica de validez para detectar anulaciones (Q-16). | Cambio 7 |
+| 12 | Consulta periódica de validez para detectar anulaciones. | Capacidad futura (Q-16), fuera del cambio 7 |
 
 Reglas:
 
@@ -126,50 +126,95 @@ Reglas:
 
 ## Estados de transmisión (cambio 7)
 
-`add-sri-transmission` diseña sus estados a partir de `SIGNED`. Punto de partida, desde CTX §26
-sin el estado `SENT` de CTX §22.1:
+Decididos el 2026-10-03, antes de proponer `add-sri-transmission`. La máquina fiscal es
+independiente de los jobs: el envío en curso, el arriendo y la espera del siguiente intento son
+estados del job (ADR 0012), no del comprobante.
 
 ```text
-SIGNED → SEND_PENDING → RECEIVED → PENDING_AUTHORIZATION → AUTHORIZED
-
-Ramas
-  SEND_PENDING          → RETURNED                                    (corrección, BR-28)
-  SEND_PENDING          → PENDING_AUTHORIZATION                       (error 70)
-  SEND_PENDING          → SEND_UNKNOWN → (reconciliación) → PENDING_AUTHORIZATION
-                                                           | AUTHORIZED | NOT_AUTHORIZED
-                                                           | SIGNED (reenviar el mismo XML)
-                                                           | MANUAL_REVIEW
-  PENDING_AUTHORIZATION → NOT_AUTHORIZED | MANUAL_REVIEW
-  AUTHORIZED            → CANCEL_PENDING → CANCELLED                  (Q-16)
+SIGNED ──(envío)──▶ RECEIVED ──▶ AUTHORIZED
+  │                    │
+  │                    └──────▶ NOT_AUTHORIZED
+  ├──▶ RETURNED
+  └──▶ SEND_UNKNOWN ──(reconciliación por clave)──▶ RECEIVED | AUTHORIZED | NOT_AUTHORIZED | RETURNED
+                     └──(el SRI no conoce la clave)──▶ reenvío de los mismos bytes firmados
 ```
 
-| Desde | Hacia | Disparador | Actor |
-| --- | --- | --- | --- |
-| `SIGNED` | `SEND_PENDING` | El job toma el envío. | Sistema |
-| `SEND_PENDING` | `RECEIVED` | `RECIBIDA`. | Sistema |
-| `SEND_PENDING` | `RETURNED` | `DEVUELTA` por inconsistencia corregible. | Sistema |
-| `SEND_PENDING` | `PENDING_AUTHORIZATION` | Error 70: clave en procesamiento (CTX §27.2). | Sistema |
-| `SEND_PENDING` | `SEND_UNKNOWN` | Timeout, error de red o de proxy, SOAP ilegible, caída del proceso, error 43 o 45. | Sistema |
-| `SEND_UNKNOWN` | `PENDING_AUTHORIZATION` | La consulta indica que el SRI procesa la clave. | Sistema |
-| `SEND_UNKNOWN` | `AUTHORIZED` | La consulta devuelve `AUTORIZADO`. | Sistema |
-| `SEND_UNKNOWN` | `NOT_AUTHORIZED` | La consulta devuelve `NO AUTORIZADO`. | Sistema |
-| `SEND_UNKNOWN` | `SIGNED` | El SRI no conoce la clave: se reenvía el mismo XML firmado (caso A, CTX §52). | Sistema |
-| `SEND_UNKNOWN` | `MANUAL_REVIEW` | Intentos agotados o inconsistencia, como un secuencial registrado con otra clave. | Sistema |
-| `RECEIVED` | `PENDING_AUTHORIZATION` | Primera consulta tras el intervalo configurado. | Sistema |
-| `PENDING_AUTHORIZATION` | `AUTHORIZED` | `AUTORIZADO`. | Sistema |
-| `PENDING_AUTHORIZATION` | `NOT_AUTHORIZED` | `NO AUTORIZADO`. | Sistema |
-| `PENDING_AUTHORIZATION` | `PENDING_AUTHORIZATION` | En procesamiento: nuevo intento con backoff. | Sistema |
-| `PENDING_AUTHORIZATION` | `MANUAL_REVIEW` | Ventana agotada (Q-06) o respuesta sin el bloque esperado (CTX §34). | Sistema |
-| `MANUAL_REVIEW` | `SEND_UNKNOWN` | El administrador ordena reconciliar. | Administrador |
-| `AUTHORIZED` | `CANCEL_PENDING` | La consulta de validez devuelve `PENDIENTE DE ANULAR` (Q-16). | Sistema |
-| `AUTHORIZED`, `CANCEL_PENDING` | `CANCELLED` | La consulta de validez devuelve `ANULADO` (Q-16). | Sistema |
-| `CANCEL_PENDING` | `AUTHORIZED` | La consulta de validez vuelve a `AUTORIZADO`. | Sistema |
+| Estado | Significado | Terminal |
+| --- | --- | --- |
+| `SIGNED` | Firmado, con su artefacto exacto; espera el envío. | No |
+| `RECEIVED` | Recepción `RECIBIDA`, o la consulta indica que el SRI procesa la clave. Pendiente de autorización: agrupa el `PENDING_AUTHORIZATION` de ERS §12.1. | No |
+| `SEND_UNKNOWN` | No se sabe si el SRI recibió el XML, o la respuesta exige reconciliar (43, 45, 70). | Nunca |
+| `RETURNED` | Recepción `DEVUELTA` concluyente. Conserva el comprobante, su número, su clave y sus artefactos; no libera el secuencial. | Sin salida en el cambio 7: su corrección es una capacidad futura (BR-28) |
+| `AUTHORIZED` | `AUTORIZADO`, con número, fecha, ambiente y respuesta original guardados. | Sí |
+| `NOT_AUTHORIZED` | `NO AUTORIZADO` concluyente (Q-07). | Sí |
 
-Reglas que el cambio 7 conserva:
+Reglas:
 
-- `SEND_UNKNOWN` nunca es terminal. `RECIBIDA` nunca lleva a `AUTHORIZED`, y un timeout nunca lleva a `NOT_AUTHORIZED` (CTX I-15, I-16).
-- `NOT_AUTHORIZED` es terminal hasta resolver Q-07; reemitir crea un comprobante nuevo.
-- La corrección de un `RETURNED` (BR-28) conserva la clave y el secuencial, genera un XML firmado nuevo y conserva los artefactos anteriores. Su diseño es del cambio 7.
+- **UNKNOWN no es REJECTED.** Un resultado incierto nunca lleva a `RETURNED` ni a `NOT_AUTHORIZED` sin una respuesta concluyente, y `SEND_UNKNOWN` nunca es terminal (CTX I-15, I-16).
+- `RECIBIDA` nunca lleva directamente a `AUTHORIZED`: hace falta la autorización.
+- Ningún estado posterior a `SIGNED` libera o reutiliza el secuencial, genera otra clave o regenera el XML firmado.
+- **Revisión manual.** ERS §12.1 lista `MANUAL_REVIEW` como estado mínimo, y esta máquina no lo dibuja. El design del cambio 7 decide, con Q-06, si la intervención por inconsistencia o por intentos agotados es un estado fiscal o una condición operativa visible y alertada. En ambos casos, la salida es una reconciliación manual del administrador.
+- `CANCEL_PENDING` y `CANCELLED` pertenecen a la capacidad futura de anulaciones (Q-16).
+
+## Decisiones para el diseño de `add-sri-transmission`
+
+Decididas el 2026-10-03 en la revisión de readiness del cambio 7; el design del cambio las concreta.
+
+- **Jobs (ADR 0012, aceptado).** Cola durable propia en PostgreSQL, sin librería ni infraestructura adicional.
+  - El job inicial de un comprobante nuevo se crea en la misma transacción que su paso a `SIGNED`, o con una estrategia equivalente que no pueda perder un comprobante firmado sin job.
+  - Un backfill idempotente crea los jobs de los `SIGNED` que existan al desplegar.
+  - La deduplicación por comprobante y fase impide dos transmisiones simultáneas.
+  - No hay reintentos infinitos ni bucles calientes.
+- **Transporte (ADR 0018, enmienda del transporte).** Adaptador SOAP propio sobre el `fetch` nativo, en la infraestructura de `sri-engine`. Captura la respuesta original y tiene su propio parser, su clasificación y su consulta por clave. Los timeouts son configuración operativa.
+- **Intentos y respuestas originales.** Cada interacción con el SRI es un intento durable y de solo agregado, por ejemplo `sri_attempt`:
+  - identificador, comprobante y operación;
+  - número de intento, inicio y fin;
+  - resultado;
+  - metadatos HTTP y de error seguros.
+
+  La respuesta original queda asociada a su intento.
+  - **Orden obligatorio:** bytes de la respuesta → persistir la respuesta original → clasificar → transición. Nunca se clasifica antes de conservar la evidencia.
+  - El SOAP original nunca va a los logs ni a la auditoría.
+  - No se reutiliza `document_artifact`, cuyo `UNIQUE(document_id, kind)` impide guardar varias respuestas.
+- **`NO AUTORIZADO` (Q-07).** Es terminal: se persiste la respuesta original, se clasifica, se guardan los mensajes estructurados y el comprobante pasa a `NOT_AUTHORIZED`. Nunca hay reintento automático ni reenvío, ni otra clave, ni otro número, ni reutilización del secuencial.
+- **`DEVUELTA`.** El comprobante pasa a `RETURNED` con su respuesta y sus mensajes, sin reutilizar el número. Un reintento nunca cambia el contenido. La corrección (BR-28) es la capacidad futura `correct-returned-document`.
+  - Retransmitir los mismos bytes por un resultado incierto y corregir el contenido después de un `DEVUELTA` son casos distintos.
+- **Error 70.** Se conservan el comprobante, la clave, el secuencial y el `SIGNED_XML`; nunca se genera otro comprobante.
+  - Antes de cualquier reenvío se reconcilia por clave. Solo si la reconciliación determina que procede, se reenvían exactamente los mismos bytes persistidos.
+  - La espera es configuración operativa mientras no haya una fuente normativa.
+- **Verificación antes de cada envío.** Del artefacto `SIGNED_XML` se comprueban el SHA-256, el tamaño, la relación con el comprobante y la clave de acceso. Nunca se regenera el XML.
+- **43, 45 y resultados inciertos.** No implican `DEVUELTA`: primero se reconcilia. Lo mismo aplica a:
+  - un timeout después de transmitir;
+  - una conexión cortada, DNS o una interrupción;
+  - HTTP 200 con HTML;
+  - un SOAP Fault ambiguo;
+  - un cuerpo vacío o malformado;
+  - cualquier caso en que no se sepa si el SRI recibió el XML.
+
+  Nunca se reenvía a ciegas.
+- **Reconciliación.** Es una operación interna de consulta por clave, automática desde el job o manual del administrador; el historial distingue las dos. No hay un endpoint público de bajo nivel para consultar el SOAP: la API sigue orientada a la factura.
+- **Autorización.** Al autorizar se guardan de forma inmutable:
+  - el número y la fecha de autorización;
+  - el ambiente confirmado;
+  - la respuesta original;
+  - el XML autorizado exacto, si viene en la respuesta.
+
+  El `SIGNED_XML` (lo enviado) no se reemplaza. El XML autorizado (lo recibido) es otro artefacto, y ambos se verifican por hash.
+- **Límite de tamaño.** Es una política versionada de `fiscal-catalogs`, con el texto fuente, la sección, la unidad y la interpretación exacta en bytes.
+  - Entre 320 000 y 327 680 bytes no se decide sin la fuente oficial (Q-47), y la cifra no se inventa ni se copia de la librería.
+  - No bloquea proponer. Puede bloquear apply si el flujo necesita imponer la cifra exacta.
+- **API.** No hay `POST /send`, `/soap`, `/reception` ni `/authorization`: el sistema transmite con jobs. La API de facturas expone el estado, los mensajes de negocio y el historial útil. Si el design la justifica, añade una acción de reconciliación solo para el administrador.
+- **Compuertas externas.** No bloquean proponer ni apply; sí bloquean la transmisión real y el go-live:
+  - el vector oficial de la clave de acceso, que bloquea la transmisión real y S-3 online;
+  - S-3 online con nuestro `SIGNED_XML` persistido, nuestro adaptador, nuestra clave, nuestros parsers y nuestras transiciones;
+  - un P12 ecuatoriano real;
+  - un RUC habilitado en Pruebas del SRI.
+
+  Nada sensible va al repositorio ni a la CI pública.
+- **Fuera del cambio 7:**
+  - la observación de anulaciones (Q-16);
+  - la corrección de un devuelto (BR-28, `correct-returned-document`);
+  - el RIDE y la entrega (cambio 8).
 
 ## Decisiones de diseño de `add-invoice-emission`
 
@@ -414,17 +459,24 @@ Con fixtures sintéticos ningún proveedor figura aquí; Security Data está cub
 `facturacion-electronica-ec` aporta las piezas del protocolo detrás de puertos propios. La
 orquestación de este documento sigue siendo de la aplicación.
 
-- **Qué se usa:** `generateClaveAcceso` detrás de `AccessKeys`, `EcSriSigner` detrás de `XmlSigner` y `SriClient` como transporte, cada uno tras su prueba de contrato. El XML de la factura lo escribe un builder propio (Q-44), y la validación XSD usa `xmllint-wasm` directamente detrás de `XsdValidator`, no `validateXmlAgainstXsd` (ADR 0021). La lista completa de lo propio, lo reutilizado y lo que no se usa está en el ADR 0018.
-- **Qué no se usa:** `emitir*`, `ISequenceProvider` ni `EmissionHooks`.
+- **Qué se usa:** `generateClaveAcceso` detrás de `AccessKeys` y `EcSriSigner` detrás de `XmlSigner`, cada uno tras su prueba de contrato.
+  - El XML de la factura lo escribe un builder propio (Q-44).
+  - La validación XSD usa `xmllint-wasm` directamente detrás de `XsdValidator`, no `validateXmlAgainstXsd` (ADR 0021).
+  - El transporte SOAP es un adaptador propio sobre el `fetch` nativo, detrás de `SriTransport` (enmienda del transporte, Q-34).
+
+  La lista completa de lo propio, lo reutilizado y lo que no se usa está en el ADR 0018.
+- **Qué no se usa:** `SriClient` como dueño del protocolo, `emitir*`, `ISequenceProvider` ni `EmissionHooks`.
 - **Secuencial.** Lo reserva siempre `reserveSequentialIn` en el paso 2. Ningún adaptador implementa `rollback` ni pide otro secuencial:
   - un `DEVUELTA` nunca devuelve el número al contador (BR-08);
   - el error 70 se trata con la misma clave, nunca con un secuencial nuevo.
 - **Código numérico.** Lo genera la aplicación con `crypto.randomInt`, porque `generateCodigoNumerico` de la librería usa `Math.random` en ESM.
 - **Importes.** La aritmética fiscal calcula y materializa; el builder propio solo escribe el texto exacto del snapshot, sin `number`. El de la librería escribe desde `number` y no conserva valores válidos de 17 o 18 dígitos (S-3, Q-44). Las pruebas comparan el XML con los importes esperados y con los XML de referencia de S-3.
-- **Respuestas del SRI.** El `fetch` inyectado en `SriClient` captura la respuesta original, que se persiste antes de actuar. La clasificación de la tabla de abajo se hace sobre esa respuesta, porque `SriClient`:
+- **Respuestas del SRI.** El adaptador propio captura la respuesta original, que se persiste antes de clasificarla con nuestro parser. Se descartó `SriClient` porque:
   - toma una recepción sin estado como `DEVUELTA`;
   - toma una autorización sin bloque como `NO AUTORIZADO`;
-  - devuelve solo la primera de varias autorizaciones.
+  - devuelve solo la primera de varias autorizaciones;
+  - no devuelve la respuesta original;
+  - no consulta por clave.
 - **Firma.**
   - La custodia descifra el P12 solo para `sign`.
   - La librería nunca recibe el secreto cifrado.
@@ -455,21 +507,20 @@ Reglas generales en `idempotency.md`.
 
 ## Clasificación de respuestas del SRI
 
-La implementa `add-sri-transmission` (cambio 7).
+La implementa `add-sri-transmission` (cambio 7). Toda respuesta se persiste antes de clasificarla.
 
-| Respuesta                                                       | Tratamiento                                                                 | Estado                  |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------- |
-| Recepción `RECIBIDA`                                            | Programar la consulta de autorización tras el intervalo configurado.        | `RECEIVED`              |
-| Recepción `DEVUELTA` por inconsistencia                          | Persistir todos los mensajes; el usuario corrige.                           | `RETURNED`              |
-| Error 70: clave en procesamiento                                | No reenviar ni cambiar clave o secuencial; consultar la autorización.       | `PENDING_AUTHORIZATION` |
-| Error 43: clave registrada                                      | Consultar por la clave y reconciliar.                                       | `SEND_UNKNOWN`          |
-| Error 45: secuencial registrado                                 | Bloquear el reuso, reconciliar y escalar si no coincide.                    | `SEND_UNKNOWN`          |
-| Timeout, conexión reiniciada, error de proxy, SOAP ilegible     | No es un rechazo; reconciliar por la misma clave.                           | `SEND_UNKNOWN`          |
-| Autorización `AUTORIZADO`                                       | Guardar la respuesta original, extraer el XML autorizado, calcular su hash, registrar número y fecha. | `AUTHORIZED` |
-| Autorización `NO AUTORIZADO`                                    | Persistir los mensajes.                                                     | `NOT_AUTHORIZED`        |
-| Autorización en procesamiento                                   | Reprogramar con backoff y jitter dentro de la ventana.                      | `PENDING_AUTHORIZATION` |
-| Respuesta sin el bloque esperado                                | No equivale a `NO AUTORIZADO`.                                              | `MANUAL_REVIEW`         |
-| Consulta de validez con error 99                                | Fuera de rango o sin datos; registrar sin concluir.                         | Sin cambio              |
+| Respuesta | Tratamiento | Estado |
+| --- | --- | --- |
+| Recepción `RECIBIDA` | Programar la consulta de autorización tras el intervalo configurado. | `RECEIVED` |
+| Recepción `DEVUELTA` concluyente | Persistir la respuesta y todos los mensajes. La corrección es una capacidad futura (BR-28). | `RETURNED` |
+| Error 70: clave en procesamiento | No reenviar ni cambiar la clave o el secuencial. Reconciliar por clave, y reenviar los mismos bytes solo si la reconciliación lo determina. | `SEND_UNKNOWN` |
+| Error 43: clave registrada | Reconciliar por la clave. | `SEND_UNKNOWN` |
+| Error 45: secuencial registrado | Reconciliar por la clave, sin reutilizar el secuencial. Escalar si está registrado con otra clave (Q-06). | `SEND_UNKNOWN` |
+| Timeout después de transmitir, conexión cortada, DNS o interrupción, HTTP 200 con HTML, SOAP Fault ambiguo, cuerpo vacío o malformado | No es un rechazo: reconciliar por la misma clave. | `SEND_UNKNOWN` |
+| Autorización `AUTORIZADO` | Guardar la respuesta original, el número, la fecha, el ambiente confirmado y el XML autorizado exacto con su hash. | `AUTHORIZED` |
+| Autorización `NO AUTORIZADO` | Persistir la respuesta y los mensajes estructurados, sin reintento ni reenvío (Q-07). | `NOT_AUTHORIZED` |
+| Autorización en procesamiento | Reprogramar con backoff y jitter dentro de la ventana (Q-06). | `RECEIVED` |
+| Autorización sin el bloque esperado | No equivale a `NO AUTORIZADO`. Reconciliar; la intervención la define el design (Q-06). | Sin conclusión |
 
 Todo mensaje se conserva completo: identificador, mensaje, información adicional, tipo y
 fase, incluidos los códigos desconocidos (CTX §32). Los errores se clasifican en transporte,
@@ -483,13 +534,13 @@ La implementa `add-sri-transmission` (cambio 7).
 - Las consultas se reintentan; el envío nunca se reintenta a ciegas: primero se reconcilia.
 - Circuit breaker por servicio y ambiente del SRI; mientras está abierto, los jobs se reprograman sin llamar y la salud informa al SRI no disponible.
 - La autorización puede tardar hasta 24 horas desde `RECIBIDA` (CTX §23.1); el umbral de revisión manual es Q-06.
-- Un comprobante por envío, sin lotes, y nunca uno que supere el límite de tamaño versionado (CTX §29).
+- Un comprobante por envío, sin lotes, y nunca uno que supere el límite de tamaño versionado (CTX §29); su cifra exacta en bytes espera la fuente oficial (Q-47).
 - La caída del SRI no afecta la consulta local ni la emisión hasta `SIGNED` (ERS RNF-004).
 
 | Caso de recuperación (CTX §52)                       | Mecanismo                                                                    |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------- |
 | A — timeout al enviar                                | `SEND_UNKNOWN`, consulta por clave, reenvío del mismo XML solo si el SRI no la conoce. |
-| B — error 70                                         | `PENDING_AUTHORIZATION` sin reenvío.                                         |
+| B — error 70                                         | `SEND_UNKNOWN` y reconciliación por clave; reenvío de los mismos bytes solo si la reconciliación lo determina. |
 | C — el proceso muere tras `RECIBIDA`                 | El job de autorización persistido continúa tras el reinicio.                 |
 | D — el proceso muere tras autorizar y antes de guardar | La reconciliación consulta, encuentra `AUTORIZADO` y guarda los artefactos. |
 | E — clave registrada                                 | Error 43 a `SEND_UNKNOWN` y reconciliación.                                  |
@@ -514,14 +565,14 @@ La implementa `add-sri-transmission` (cambio 7).
 
 ## Artefactos, RIDE y entrega
 
-- Conjunto probatorio por comprobante según CTX §31, guardado mediante el puerto de almacenamiento, en PostgreSQL al inicio (ADR 0010). El XML firmado lo guarda el cambio 6 con sus bytes exactos y metadatos; las respuestas del SRI y el XML autorizado, el cambio 7. Cada artefacto se escribe una vez y guarda su hash; la descarga recalcula el hash y alerta si no coincide (ERS RF-407).
+- Conjunto probatorio por comprobante según CTX §31, guardado mediante el puerto de almacenamiento, en PostgreSQL al inicio (ADR 0010). El XML firmado lo guarda el cambio 6 con sus bytes exactos y metadatos. En el cambio 7, cada respuesta original del SRI queda asociada a su intento, y el XML autorizado es un artefacto propio que nunca reemplaza al firmado. Cada artefacto se escribe una vez y guarda su hash. Antes de enviar o descargar se recalcula el hash, y si no coincide se alerta (ERS RF-407).
 - El XML autorizado se extrae de la respuesta del SRI, nunca se reconstruye (CTX §45).
 - El RIDE se genera tras la autorización, desde el comprobante autorizado, con la marca de Pruebas cuando aplica, y registra la versión del renderer.
 - Cada entrega queda registrada; un fallo de entrega no cambia el estado fiscal (CTX §46).
 
 ## API de emisión
 
-- Recursos por tipo de comprobante; la factura bajo `/api/v1/invoices` (Q-29), con las rutas de "Implementación de `add-invoice-emission`". La empresa y el ambiente salen del contexto autenticado y de la configuración vigente, nunca de la ruta ni del cliente. Los pasos internos (XML, firma, clave, envío) no son endpoints. La descarga de XML y RIDE, la reconciliación y el reenvío llegan con sus cambios, solo cuando la política lo permite (CTX §40).
+- Recursos por tipo de comprobante; la factura bajo `/api/v1/invoices` (Q-29), con las rutas de "Implementación de `add-invoice-emission`". La empresa y el ambiente salen del contexto autenticado y de la configuración vigente, nunca de la ruta ni del cliente. Los pasos internos (XML, firma, clave, envío) no son endpoints. La descarga de XML y RIDE llega con su cambio. El cambio 7 transmite con jobs y no expone endpoints de envío ni de SOAP; solo añade una acción de reconciliación del administrador si su design la justifica (CTX §40).
 - No existe una operación genérica para enviar XML arbitrario (CTX §40).
 - La emisión exige `Idempotency-Key` y responde sin esperar al SRI (CTX §41).
 - Contratos versionados, validación con Zod en el servidor y documentación OpenAPI (ERS API-001..005).

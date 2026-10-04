@@ -32,14 +32,14 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `company_fiscal_catalog_setting` | `catalogs` | Yes | Decisión explícita de una empresa sobre una entrada habilitable; sin fila rige la política por defecto del catálogo. |
 | `invoice_draft`, `invoice_draft_line`, `invoice_draft_payment` | `invoices` | Yes | Borrador editable previo a la emisión, sin datos fiscales; emitido, queda inmutable con su comprobante. |
 | `electronic_document` | `fiscal` | Yes | Nace en `RESERVED` con su snapshot inmutable, su secuencial confirmado y su clave de acceso; solo pasa a `SIGNED` con su artefacto y nunca se borra (Q-35). |
-| `document_line`, `document_relation`, `tax_detail`, `payment` | `fiscal` | Yes | Inmutables desde la firma, salvo corrección de un devuelto (BR-28). |
+| `document_line`, `document_relation`, `tax_detail`, `payment` | `fiscal` | Yes | Inmutables desde la firma. La corrección de un devuelto (BR-28) es una capacidad futura (`correct-returned-document`). |
 | `document_state_transition` | `fiscal` | Yes | Solo agregado (ERS RF-525). |
-| `sri_attempt` | `fiscal` | Yes | Solo agregado. |
+| `sri_attempt` | `fiscal` | Yes | Solo agregado: un intento por interacción con el SRI, con la respuesta original persistida antes de clasificarla (planeado para `add-sri-transmission`). |
 | `document_artifact` | `fiscal` | Yes | Solo agregado: bytes exactos en `bytea`, con hash y metadatos, detrás de un puerto de almacenamiento (ADR 0010). |
 | `delivery_attempt` | `fiscal` | Yes | Solo agregado. |
 | `stock_movement` | `inventory` | Yes | Solo agregado (ERS RF-313). |
 | `idempotency_record` | `platform` | Yes | Solo agregado: empresa, operación, clave y huella de la solicitud. Sin purga mientras dure la vida fiscal del comprobante (Q-30). |
-| `job` | `platform` | Yes | Cola persistida (ADR 0012). |
+| `job` | `platform` | Yes | Cola durable propia con deduplicación, arriendo e intentos (ADR 0012, aceptado). Sus estados no son estados fiscales. |
 | `audit_event` | `audit` | Yes | Solo agregado. |
 | `report_export` | `reports` | Yes | Opcional (ERS §13). |
 
