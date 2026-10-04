@@ -62,7 +62,9 @@ describe("rutas documentadas", () => {
       )
       .map((route) => `${route.method} ${route.path}`)
       .sort();
+    // La descarga del XML autorizado lee un artefacto guardado: no habla con el SRI.
     expect(sri).toEqual([
+      "get /documents/:documentId/authorized-xml",
       "get /fiscal-catalogs/sri-transmission-policy",
       "get /invoices/:invoiceId/transmission",
       "post /invoices/:invoiceId/reconciliations",

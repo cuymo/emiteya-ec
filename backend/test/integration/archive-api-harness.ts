@@ -1,5 +1,6 @@
 // Arnés HTTP del archivo documental (add-document-archive): la aplicación real con Better Auth, el
 // contexto de petición y los routers de la bandeja, con dos empresas y usuarios que inician sesión.
+import { Registry } from "@prometheus-io/client";
 import { Router } from "express";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
@@ -9,15 +10,25 @@ import { insertFiscalCompany, type FiscalCompany } from "./fiscal-harness.ts";
 import { sessionCookie } from "./taxpayer-harness.ts";
 
 export function buildArchiveApp(db: MigratedSchema) {
-  return buildAuthApp(db, {
+  const archiveMetrics = new Registry();
+  const errors: { details: object; message: string }[] = [];
+  const app = buildAuthApp(db, {
     trustProxy: 1,
     apiRouter: ({ context, memberships, securityEvents }) => {
       const authorizer = createAuthorizer({ memberships, securityEvents });
       return Router()
         .use(context)
-        .use(...archiveRouters({ prisma: db.database.prisma, authorizer }));
+        .use(
+          ...archiveRouters({
+            prisma: db.database.prisma,
+            authorizer,
+            metrics: archiveMetrics,
+            logger: { error: (details, message) => void errors.push({ details, message }) },
+          }),
+        );
     },
   });
+  return { ...app, archiveMetrics, errors };
 }
 
 export type ArchiveCompany = FiscalCompany &

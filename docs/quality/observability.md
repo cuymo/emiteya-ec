@@ -84,12 +84,15 @@ Los jobs del RIDE salen además en `fiscal_jobs{type="document.render_ride",stat
 | `ride_render_failures_total{code}` | Counter | Fallos por código acotado: los rechazos (`RIDE_GLYPH_MISSING`, `RIDE_SOURCE_INVALID`…), las detenciones de `fiscal` (`RIDE_SOURCE_INTEGRITY`, `RIDE_LOGO_INTEGRITY`…), los fallos del pool (`BUSY`, `TIMEOUT`, `WORKER`, `CLOSED`, `INTERNAL`) u `OTHER` |
 | `documents_authorized_without_ride` | Gauge | Comprobantes autorizados que todavía no tienen su RIDE |
 | `ride_assets_available` | Gauge | 1 si las fuentes del RIDE, su licencia y su manifiesto están íntegros |
+| `document_deliveries_total{event}` | Counter | Descargas servidas (`DOWNLOAD`) y solicitudes de impresión (`PRINT_REQUESTED`) |
+| `artifact_integrity_failures_total{kind}` | Counter | Descargas o solicitudes de impresión rechazadas porque los bytes guardados no coinciden con su hash o su tamaño |
 
 Alertas propuestas:
 
 - autorizados sin RIDE durante más de 15 minutos: `documents_authorized_without_ride > 0` sostenido, o `fiscal_jobs_oldest_pending_age_seconds{type="document.render_ride"} > 900`;
 - fallos deterministas del render: cualquier aumento de `ride_render_failures_total` con un código `RIDE_*`, o `fiscal_jobs{type="document.render_ride",status="STOPPED"} > 0`;
-- fuentes del RIDE no disponibles: `ride_assets_available == 0`.
+- fuentes del RIDE no disponibles: `ride_assets_available == 0`;
+- cualquier fallo de integridad de un artefacto: `artifact_integrity_failures_total` aumenta, y el log registra el comprobante y el tipo como error.
 
 Ninguna métrica lleva bytes, XML, claves de acceso completas, datos del comprador ni identificadores
 de empresa. Los logs del RIDE llevan el job, el comprobante, la procedencia, las páginas y la

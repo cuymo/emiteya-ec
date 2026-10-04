@@ -487,8 +487,17 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 | --- | --- | --- |
 | `GET /api/v1/documents` | Bandeja: comprobantes desde `RESERVED`, nunca borradores, con filtros de fecha de emisión (`from`, `to`, inclusivos), tipo, estado, identificación del receptor, búsqueda por número o receptor, establecimiento y punto; de la fecha más reciente a la más antigua, con los documentos disponibles (`ride`: `AVAILABLE`, `PENDING`, `STOPPED` o `NOT_APPLICABLE`; `authorizedXml` y `signedXml`) | `archive.read` |
 | `GET /api/v1/documents/{documentId}` | Resumen: lo mismo que la bandeja, los artefactos con su tipo, SHA-256, tamaño, fecha y la procedencia del RIDE, y la generación del RIDE con su motivo si está detenida | `archive.read` |
+| `GET /api/v1/documents/{documentId}/ride` | RIDE guardado; registra `DOWNLOAD` | `archive.download` |
+| `GET /api/v1/documents/{documentId}/authorized-xml` | XML autorizado que devolvió el SRI; registra `DOWNLOAD` | `archive.download` |
+| `GET /api/v1/documents/{documentId}/signed-xml` | XML firmado transmitido; registra `DOWNLOAD` | `archive.download` |
+| `POST /api/v1/documents/{documentId}/print-requests` | Solicitud de impresión del RIDE guardado (`201`, sin bytes); registra `PRINT_REQUESTED` | `archive.download` |
+| `GET /api/v1/documents/{documentId}/deliveries` | Historial de entregas: las 100 más recientes y el total, sin hashes | `archive.read` |
 
 - La empresa sale de la sesión; un comprobante de otra empresa es `404 DOCUMENT_NOT_FOUND`. El detalle de la factura y su historial de transmisión siguen en `/invoices`.
+- **Antes de servir:** permiso, empresa y comprobante, disponibilidad (`404 DOCUMENT_NOT_AVAILABLE`) y el SHA-256 y el tamaño recalculados; si no coinciden, `500 ARTIFACT_INTEGRITY_FAILED`, sin ningún byte ni entrega.
+- **Cabeceras:** `Content-Type`, `Content-Length`, `Content-Disposition: attachment` con `{tipo}-{número}.pdf` o `-autorizado.xml` y `-firmado.xml` (sin texto del cliente), `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` y el SHA-256 como `ETag`.
+- **Impresión:** una acción explícita; ningún `GET` registra una solicitud de impresión. La interfaz pide después el mismo RIDE, que registra su `DOWNLOAD`.
+- **Entregas:** `document_delivery_event`, de solo agregado y sin auditoría duplicada. `DocumentNotificationPort` (`fiscal/application/ports.ts`) es el punto de extensión del correo en P1, sin implementación.
 
 ### RIDE
 

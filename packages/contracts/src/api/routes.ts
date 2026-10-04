@@ -96,11 +96,15 @@ import {
   updateDraftSchema,
 } from "../invoices.ts";
 import {
+  RIDE_CONTENT_TYPES,
+  XML_CONTENT_TYPES,
+  documentDeliveriesViewSchema,
   documentIdParamsSchema,
   documentListItemSchema,
   documentListMetaSchema,
   documentSummaryViewSchema,
   listDocumentsQuerySchema,
+  printRequestViewSchema,
 } from "../archive.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
@@ -161,6 +165,16 @@ const configErrors = {
 
 const documentNotFound = {
   description: "El comprobante no existe en la empresa (DOCUMENT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const documentNotAvailable = {
+  description:
+    "El comprobante no existe en la empresa (DOCUMENT_NOT_FOUND), o el documento no está disponible para él (DOCUMENT_NOT_AVAILABLE).",
+  schema: errorEnvelopeSchema,
+};
+const artifactIntegrity = {
+  description:
+    "Los bytes guardados no coinciden con su hash o su tamaño (ARTIFACT_INTEGRITY_FAILED): no se sirve nada.",
   schema: errorEnvelopeSchema,
 };
 
@@ -1099,6 +1113,81 @@ export const apiRoutes: readonly RouteDefinition[] = [
       200: {
         description: "Resumen de los documentos del comprobante.",
         schema: successEnvelope(documentSummaryViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/documents/:documentId/ride",
+    summary: "Descargar el RIDE guardado, con sus bytes exactos verificados; registra la descarga",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      200: { description: "El RIDE en PDF.", binaryContentTypes: RIDE_CONTENT_TYPES },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotAvailable,
+      500: artifactIntegrity,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/documents/:documentId/authorized-xml",
+    summary:
+      "Descargar el XML autorizado que devolvió el SRI, con sus bytes exactos verificados; registra la descarga",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      200: { description: "El XML autorizado.", binaryContentTypes: XML_CONTENT_TYPES },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotAvailable,
+      500: artifactIntegrity,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/documents/:documentId/signed-xml",
+    summary:
+      "Descargar el XML firmado transmitido, con sus bytes exactos verificados; registra la descarga",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      200: { description: "El XML firmado.", binaryContentTypes: XML_CONTENT_TYPES },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotAvailable,
+      500: artifactIntegrity,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/documents/:documentId/print-requests",
+    summary:
+      "Solicitar la impresión del RIDE guardado: comprueba su integridad y registra la solicitud, sin bytes",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      201: {
+        description:
+          "Solicitud registrada. La interfaz pide después el mismo RIDE para imprimirlo.",
+        schema: successEnvelope(printRequestViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotAvailable,
+      500: artifactIntegrity,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/documents/:documentId/deliveries",
+    summary:
+      "Consultar el historial de entregas observables: descargas servidas y solicitudes de impresión",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      200: {
+        description: "Las 100 entregas más recientes y el total.",
+        schema: successEnvelope(documentDeliveriesViewSchema),
       },
       401: errors[401],
       403: errors[403],

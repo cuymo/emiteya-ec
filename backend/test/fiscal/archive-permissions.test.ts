@@ -4,6 +4,7 @@
 // que no los concede, sin inventar un rol. Las dependencias registran cualquier uso.
 import { describe, expect, it } from "vitest";
 import { createArchive } from "../../src/modules/fiscal/application/archive/archive.ts";
+import { createDownloads } from "../../src/modules/fiscal/application/archive/downloads.ts";
 import type { Authorizer } from "../../src/modules/identity/application/authorization.ts";
 import type { RequestContext } from "../../src/modules/identity/application/request-context.ts";
 import { can, type Permission } from "../../src/modules/identity/domain/access-policy.ts";
@@ -45,7 +46,12 @@ function setup() {
         key === "authorizer" ? authorizer : untouchable(touched, `deps.${String(key)}`),
     },
   ) as never;
-  return { touched, requested, archive: createArchive(deps) };
+  return {
+    touched,
+    requested,
+    archive: createArchive(deps),
+    downloads: createDownloads(deps),
+  };
 }
 
 describe("guardia de permisos del archivo documental", () => {
@@ -56,6 +62,19 @@ describe("guardia de permisos del archivo documental", () => {
       "archive.read",
       (s) => s.archive.summary(CTX, "d-1"),
     ],
+    ["descargar el RIDE", "archive.download", (s) => s.downloads.download(CTX, "d-1", "RIDE_PDF")],
+    [
+      "descargar el XML autorizado",
+      "archive.download",
+      (s) => s.downloads.download(CTX, "d-1", "AUTHORIZED_XML"),
+    ],
+    [
+      "descargar el XML firmado",
+      "archive.download",
+      (s) => s.downloads.download(CTX, "d-1", "SIGNED_XML"),
+    ],
+    ["solicitar la impresión", "archive.download", (s) => s.downloads.requestPrint(CTX, "d-1")],
+    ["consultar las entregas", "archive.read", (s) => s.downloads.deliveries(CTX, "d-1")],
   ];
 
   for (const [name, permission, run] of operations) {

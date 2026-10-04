@@ -202,21 +202,24 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 ### `artifact` — Artefacto
 
 - Purpose: archivo probatorio de un comprobante (ERS RF-404, RF-405, RF-407; CTX §31).
-- Key attributes: comprobante, tipo (`SIGNED_XML`, `AUTHORIZED_XML` y, en cambios futuros, RIDE y logo), hash SHA-256, tamaño, referencia de almacenamiento interna. El `AUTHORIZED_XML` es el XML que devolvió el SRI y nunca reemplaza al `SIGNED_XML`. Las respuestas originales del SRI pertenecen a su intento (`sri_attempt`).
+- Key attributes: comprobante, tipo (`SIGNED_XML`, `AUTHORIZED_XML` y `RIDE_PDF`), hash SHA-256, tamaño, referencia de almacenamiento interna. El `AUTHORIZED_XML` es el XML que devolvió el SRI y nunca reemplaza al `SIGNED_XML`. Las respuestas originales del SRI pertenecen a su intento (`sri_attempt`).
 - Invariants: se escribe una vez y no cambia; el XML autorizado se extrae de la respuesta del SRI, nunca se reconstruye (CTX §45); nunca se borra en cascada (ERS §13.1, ADR 0010).
 - El XML autorizado (lo recibido) nunca reemplaza al XML firmado (lo enviado). Los dos se verifican por hash, y la autorización guarda de forma inmutable su número, su fecha y el ambiente confirmado.
+- El RIDE (`RIDE_PDF`, `add-document-archive`) se genera una sola vez después de la autorización, desde el `AUTHORIZED_XML` o, si el SRI autorizó sin devolverlo, desde el `SIGNED_XML` transmitido; su procedencia (`AUTHORIZED_XML` o `SIGNED_XML_FALLBACK`) y las versiones con que se generó quedan en sus metadatos. Nunca se regenera.
 - En `add-invoice-emission`: `document_artifact` con el tipo `SIGNED_XML`, los bytes UTF-8 exactos en `BYTEA`, su SHA-256 y tamaño, y metadatos con la versión y los hashes del esquema, la versión del builder y del firmador y la huella del certificado. Un comprobante `SIGNED` no existe sin su artefacto (trigger diferido).
 
-### `delivery_event` — Entrega
+### `document_delivery_event` — Entrega
 
-- Purpose: rastro de las acciones de entrega del comprobante autorizado que el sistema puede observar (CTX §46; Q-24, resuelta el 2026-10-04).
-- Key attributes: comprobante, evento, actor, momento, canal y el artefacto entregado (tipo y SHA-256), nunca su contenido.
+- Purpose: rastro de las acciones de entrega de los documentos de un comprobante que el sistema puede observar (CTX §46; Q-24, resuelta el 2026-10-04). Es su única fuente de verdad: no se duplica en la auditoría.
+- Key attributes: comprobante, evento, actor, momento, correlación de la petición y el artefacto (tipo y SHA-256), nunca su contenido. El evento identifica también el canal: la aplicación.
 - Eventos del MVP:
-  - `DOWNLOAD`: el usuario autenticado pidió y recibió la descarga desde la API;
-  - `PRINT_REQUESTED`: la interfaz inició la impresión.
+  - `DOWNLOAD`: la aplicación inició una respuesta autorizada de descarga con el artefacto, después de verificar su integridad. No significa que el cliente terminó de recibirlo o de guardarlo;
+  - `PRINT_REQUESTED`: un usuario pidió imprimir el RIDE, con una acción explícita (`POST /documents/{id}/print-requests`); ninguna lectura del RIDE la registra. Para imprimir, la interfaz pide después el mismo RIDE, que deja además su `DOWNLOAD`.
 - Invariants:
   - nunca se registra `PRINTED` ni `DELIVERED_TO_RECIPIENT`: el sistema no puede demostrar que una impresora terminó ni que un tercero recibió el documento. Esto reemplaza el estado `DELIVERED` del modelo de CTX §46;
   - un fallo de entrega no cambia el estado fiscal;
+  - una solicitud rechazada por sesión, permiso, empresa, disponibilidad o integridad no deja entrega;
+  - es de solo agregado, y el actor no se puede borrar mientras tenga entregas (ERS RF-409);
   - el correo es P1, fuera del MVP. Cuando llegue, sus eventos reflejarán la evidencia real del proveedor (por ejemplo `EMAIL_SUBMITTED`, `EMAIL_ACCEPTED` o `EMAIL_BOUNCED`), detrás de un puerto de notificación.
 
 ### `audit_event` — Evento de auditoría

@@ -114,7 +114,7 @@
 
 ## 8. Descargas, impresión y entregas
 
-- [ ] 8.1 Implementar el repositorio de entregas, `GET /api/v1/documents/{documentId}/ride`, `/authorized-xml` y `/signed-xml`, y `POST /api/v1/documents/{documentId}/print-requests`, con los pasos, las cabeceras y el nombre de archivo de design D8 y D9:
+- [x] 8.1 Implementar el repositorio de entregas, `GET /api/v1/documents/{documentId}/ride`, `/authorized-xml` y `/signed-xml`, y `POST /api/v1/documents/{documentId}/print-requests`, con los pasos, las cabeceras y el nombre de archivo de design D8 y D9:
   - sesión y permiso, empresa y comprobante (`404`), disponibilidad (`404 DOCUMENT_NOT_AVAILABLE`), SHA-256 y tamaño recalculados (`500 ARTIFACT_INTEGRITY_FAILED` sin servir nada, con log de error);
   - los `GET` registran `DOWNLOAD` una vez determinado que responden con el artefacto, y sirven los bytes con `Content-Disposition: attachment`;
   - el `POST` comprueba lo mismo sobre el `RIDE_PDF`, registra `PRINT_REQUESTED` y responde `201` sin bytes;
@@ -129,8 +129,8 @@
   - una entrega por descarga y una por solicitud de impresión con el comprobante, el tipo, el hash, el actor, el momento y el `request_id`;
   - varios `GET` del RIDE no registran ningún `PRINT_REQUESTED`;
   - ninguna entrega ni evento de auditoría en los rechazos por sesión, permiso, otra empresa, disponibilidad o integridad, y ningún evento de auditoría por una entrega servida
-- [ ] 8.2 Implementar `GET /api/v1/documents/{documentId}/deliveries` (las 100 más recientes y el total, sin hashes) y declarar `DocumentNotificationPort` en `fiscal/application/ports.ts` sin implementación ni cableado (design D9). Verificar con pruebas HTTP: orden de la más reciente a la más antigua, sin bytes ni hashes, sin eventos de correo ni de recepción, sin permiso `403` y otra empresa `404`
-- [ ] 8.3 Documentar las entregas observables en `domain-model.md` y `glossary.md` (`DOWNLOAD`, `PRINT_REQUESTED`, sin "entregado"). Verificar que los términos coinciden con los eventos implementados
+- [x] 8.2 Implementar `GET /api/v1/documents/{documentId}/deliveries` (las 100 más recientes y el total, sin hashes) y declarar `DocumentNotificationPort` en `fiscal/application/ports.ts` sin implementación ni cableado (design D9). Verificar con pruebas HTTP: orden de la más reciente a la más antigua, sin bytes ni hashes, sin eventos de correo ni de recepción, sin permiso `403` y otra empresa `404`
+- [x] 8.3 Documentar las entregas observables en `domain-model.md` y `glossary.md` (`DOWNLOAD`, `PRINT_REQUESTED`, sin "entregado"). Verificar que los términos coinciden con los eventos implementados
 
 ## 9. Reintento de una generación detenida
 

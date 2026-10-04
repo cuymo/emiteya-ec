@@ -301,7 +301,9 @@ apiRouter.use(
 );
 
 // Bandeja de comprobantes y sus documentos (add-document-archive, design D2 y D10).
-apiRouter.use(...archiveRouters({ prisma: database.prisma, authorizer }));
+apiRouter.use(
+  ...archiveRouters({ prisma: database.prisma, authorizer, metrics: metrics.registry, logger }),
+);
 
 // Transmisión al SRI (add-sri-transmission, design D5): nace deshabilitada. El estado se registra
 // sin secretos ni URLs; habilitada, la readiness exige sus precondiciones.
