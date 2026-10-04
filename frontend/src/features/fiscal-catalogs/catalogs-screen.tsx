@@ -320,6 +320,12 @@ function SriTransmissionPolicy() {
           ? `Desde ${formatIsoDate(applicable.effectiveFrom)} (declarada por la fuente)`
           : `Base del proyecto: ficha v${policy.data.source.version} (${formatIsoDate(applicable.effectiveFrom)})`}
       </dd>
+      <dt className="text-foreground-muted">Fin</dt>
+      <dd>
+        {applicable.effectiveTo
+          ? `Hasta ${formatIsoDate(applicable.effectiveTo)}`
+          : "Sin fecha de fin"}
+      </dd>
     </dl>
   );
 }

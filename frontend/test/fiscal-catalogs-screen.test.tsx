@@ -478,6 +478,34 @@ describe("Límite de tamaño del envío al SRI (add-sri-transmission, design D17
     expect(screen.getByText("bytes (sintético)")).toBeDefined();
     expect(screen.getByText("Interpretación sintética")).toBeDefined();
     expect(screen.getByText("Desde 27/07/2026 (declarada por la fuente)")).toBeDefined();
+    expect(screen.getByText("Sin fecha de fin")).toBeDefined();
+  });
+
+  it("una versión con fin de vigencia muestra hasta cuándo rige", async () => {
+    // Política sintética de la prueba: no es la cifra oficial (Q-47).
+    const version = {
+      id: "s1",
+      maxSignedDocumentBytes: 4096,
+      sourceText: "Texto sintético",
+      sourceSection: "Sección sintética",
+      literalUnit: "bytes (sintético)",
+      interpretation: "Interpretación sintética",
+      effectiveFrom: "2026-07-27",
+      effectiveFromBasis: "SOURCE_STATED",
+      effectiveTo: "2026-12-31",
+      datasetVersion: 1,
+    };
+    renderScreen({
+      "GET /api/v1/fiscal-catalogs/sri-transmission-policy": () => ({
+        status: 200,
+        body: {
+          data: { source: SOURCE, at: "2026-10-03", applicable: version, versions: [version] },
+        },
+      }),
+    });
+    await userEvent.setup().click(await screen.findByText("Límite de tamaño del envío al SRI"));
+    expect(await screen.findByText("Hasta 31/12/2026")).toBeDefined();
+    expect(screen.queryByText("Sin fecha de fin")).toBeNull();
   });
 
   it("un error al consultarla se puede reintentar", async () => {
