@@ -117,6 +117,11 @@ export function documentsRouter(deps: { archive: Archive; downloads: Downloads }
     send(res, 201, { id: recorded.id, occurredAt: recorded.occurredAt.toISOString() });
   });
 
+  router.post("/documents/:documentId/ride-attempts", async (req, res) => {
+    const document = await archive.retryRide(contextOf(res), param(req.params.documentId));
+    send(res, 202, toDocumentSummaryView(document));
+  });
+
   router.get("/documents/:documentId/deliveries", async (req, res) => {
     const { items, total } = await downloads.deliveries(
       contextOf(res),

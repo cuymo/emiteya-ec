@@ -75,6 +75,11 @@ describe("guardia de permisos del archivo documental", () => {
     ],
     ["solicitar la impresión", "archive.download", (s) => s.downloads.requestPrint(CTX, "d-1")],
     ["consultar las entregas", "archive.read", (s) => s.downloads.deliveries(CTX, "d-1")],
+    [
+      "reintentar una generación detenida",
+      "archive.retryRide",
+      (s) => s.archive.retryRide(CTX, "d-1"),
+    ],
   ];
 
   for (const [name, permission, run] of operations) {

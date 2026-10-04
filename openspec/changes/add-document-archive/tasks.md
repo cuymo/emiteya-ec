@@ -134,7 +134,7 @@
 
 ## 9. Reintento de una generación detenida
 
-- [ ] 9.1 Implementar `POST /api/v1/documents/{documentId}/ride-attempts` con el permiso `archive.retryRide` (design D5): `202` con un job `MANUAL` y `requested_by`; `409 RIDE_ALREADY_AVAILABLE`, `409 RIDE_GENERATION_IN_PROGRESS` y `409 DOCUMENT_NOT_AUTHORIZED`. Verificar con pruebas HTTP: generación detenida que se programa y genera el RIDE; RIDE existente rechazado sin cambiarlo; job activo rechazado sin programar otro; comprobante no autorizado; dos solicitudes simultáneas de las que solo una se programa; sin sesión, sin permiso y otra empresa sin efecto; ningún evento de auditoría
+- [x] 9.1 Implementar `POST /api/v1/documents/{documentId}/ride-attempts` con el permiso `archive.retryRide` (design D5): `202` con un job `MANUAL` y `requested_by`; `409 RIDE_ALREADY_AVAILABLE`, `409 RIDE_GENERATION_IN_PROGRESS` y `409 DOCUMENT_NOT_AUTHORIZED`. Verificar con pruebas HTTP: generación detenida que se programa y genera el RIDE; RIDE existente rechazado sin cambiarlo; job activo rechazado sin programar otro; comprobante no autorizado; dos solicitudes simultáneas de las que solo una se programa; sin sesión, sin permiso y otra empresa sin efecto; ningún evento de auditoría
 
 ## 10. Pantallas
 

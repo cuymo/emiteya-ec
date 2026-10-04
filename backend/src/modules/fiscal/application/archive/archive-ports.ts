@@ -1,5 +1,6 @@
 // Modelo de lectura de la bandeja de comprobantes (add-document-archive, design D2): comprobantes
 // de una empresa con sus artefactos, la generación de su RIDE y su transmisión, sin bytes.
+import type { NewJob } from "../../../../platform/jobs/jobs.ts";
 import type { DocumentType } from "../../domain/numbering.ts";
 import type { ArtifactKind, DocumentState } from "../../domain/document.ts";
 
@@ -53,4 +54,21 @@ export interface ArchiveReads {
     filters: ArchiveFilters,
   ): Promise<{ items: ArchiveDocument[]; total: number }>;
   find(companyId: string, documentId: string): Promise<ArchiveDocument | null>;
+}
+
+/** Transacción del reintento: bloquea el comprobante y encola el job manual juntos. */
+export type RideRetryScope = Readonly<{
+  /** Bloquea la fila del comprobante y lo devuelve, o null si no es de la empresa. */
+  lockDocument(
+    companyId: string,
+    documentId: string,
+  ): Promise<Readonly<{ id: string; companyId: string; state: DocumentState }> | null>;
+  hasRide(companyId: string, documentId: string): Promise<boolean>;
+  latestRideJob(companyId: string, documentId: string): Promise<ArchiveRideJob | null>;
+  /** Encola el job; false si ya hay uno activo con su clave. */
+  enqueue(job: NewJob): Promise<boolean>;
+}>;
+
+export interface RideRetryUnitOfWork {
+  run<T>(work: (scope: RideRetryScope) => Promise<T>): Promise<T>;
 }

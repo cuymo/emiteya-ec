@@ -282,6 +282,18 @@ const jobStore = createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATA
 const transmissionSettings = transmissionSettingsFromEnv(env);
 const rideSettings = rideSettingsFromEnv(env);
 
+// Bandeja de comprobantes y sus documentos (add-document-archive, design D2, D5, D8 a D10).
+apiRouter.use(
+  ...archiveRouters({
+    prisma: database.prisma,
+    authorizer,
+    jobs: jobStore,
+    rideSettings: rideSettings.job,
+    metrics: metrics.registry,
+    logger,
+  }),
+);
+
 // Borradores y facturas (add-invoice-emission, design D1 y D13).
 apiRouter.use(
   ...invoicesModule({
@@ -298,11 +310,6 @@ apiRouter.use(
     conclusionWindowMs: transmissionSettings.poll.windowMs,
     transmission: transmissionSettings,
   }).routers,
-);
-
-// Bandeja de comprobantes y sus documentos (add-document-archive, design D2 y D10).
-apiRouter.use(
-  ...archiveRouters({ prisma: database.prisma, authorizer, metrics: metrics.registry, logger }),
 );
 
 // Transmisión al SRI (add-sri-transmission, design D5): nace deshabilitada. El estado se registra

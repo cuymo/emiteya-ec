@@ -21,6 +21,7 @@ import type { Emission } from "../../src/modules/invoices/application/emission.t
 import type { Invoices } from "../../src/modules/invoices/application/invoices.ts";
 import { invoicesRouter } from "../../src/modules/invoices/infrastructure/http/invoices-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
+import type { JobStore } from "../../src/platform/jobs/jobs.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -48,7 +49,12 @@ describe("rutas documentadas", () => {
       partiesRouter({} as Parties),
       productsRouter({} as Products),
       invoicesRouter({ drafts: {} as Drafts, emission: {} as Emission, invoices: {} as Invoices }),
-      ...archiveRouters({ prisma: {} as PrismaClient, authorizer: {} as Authorizer }),
+      ...archiveRouters({
+        prisma: {} as PrismaClient,
+        authorizer: {} as Authorizer,
+        jobs: {} as JobStore,
+        rideSettings: { maxAttempts: 1, backoff: { baseMs: 1, capMs: 1, minMs: 1 } },
+      }),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);

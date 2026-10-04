@@ -2,7 +2,11 @@
 // contexto de petición y los routers de la bandeja, con dos empresas y usuarios que inician sesión.
 import { Registry } from "@prometheus-io/client";
 import { Router } from "express";
-import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
+import {
+  RIDE_BACKOFF,
+  archiveRouters,
+} from "../../src/modules/fiscal/infrastructure/archive/index.ts";
+import { createPrismaJobStore } from "../../src/platform/jobs/prisma-job-store.ts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
 import { buildAuthApp, createMember } from "./auth-harness.ts";
 import type { MigratedSchema } from "./database.ts";
@@ -22,6 +26,8 @@ export function buildArchiveApp(db: MigratedSchema) {
           ...archiveRouters({
             prisma: db.database.prisma,
             authorizer,
+            jobs: createPrismaJobStore(db.database.prisma, db.name),
+            rideSettings: { maxAttempts: 5, backoff: RIDE_BACKOFF },
             metrics: archiveMetrics,
             logger: { error: (details, message) => void errors.push({ details, message }) },
           }),

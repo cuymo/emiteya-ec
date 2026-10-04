@@ -23861,6 +23861,394 @@
           }
         }
       }
+    },
+    "/documents/{documentId}/ride-attempts": {
+      "post": {
+        "summary": "Reintentar la generación detenida del RIDE de un comprobante autorizado sin RIDE",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Generación programada. El resumen de los documentos del comprobante.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "documentType": {
+                          "type": "string",
+                          "enum": [
+                            "01",
+                            "03",
+                            "04",
+                            "05",
+                            "06",
+                            "07"
+                          ]
+                        },
+                        "number": {
+                          "type": "string"
+                        },
+                        "issueDate": {
+                          "type": "string"
+                        },
+                        "buyer": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "identification": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "identification"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "total": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RESERVED",
+                            "SIGNED",
+                            "SEND_UNKNOWN",
+                            "RECEIVED",
+                            "RETURNED",
+                            "AUTHORIZED",
+                            "NOT_AUTHORIZED",
+                            "MANUAL_REVIEW"
+                          ]
+                        },
+                        "transmissionStopped": {
+                          "type": "boolean"
+                        },
+                        "documents": {
+                          "type": "object",
+                          "properties": {
+                            "ride": {
+                              "type": "string",
+                              "enum": [
+                                "AVAILABLE",
+                                "PENDING",
+                                "STOPPED",
+                                "NOT_APPLICABLE"
+                              ]
+                            },
+                            "authorizedXml": {
+                              "type": "boolean"
+                            },
+                            "signedXml": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ride",
+                            "authorizedXml",
+                            "signedXml"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "artifacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "SIGNED_XML",
+                                  "AUTHORIZED_XML",
+                                  "RIDE_PDF"
+                                ]
+                              },
+                              "sha256": {
+                                "type": "string"
+                              },
+                              "sizeBytes": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "provenance": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "AUTHORIZED_XML",
+                                      "SIGNED_XML_FALLBACK"
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "sha256",
+                              "sizeBytes",
+                              "createdAt",
+                              "provenance"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "rideGeneration": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "AVAILABLE",
+                                "PENDING",
+                                "STOPPED",
+                                "NOT_APPLICABLE"
+                              ]
+                            },
+                            "reason": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "stoppedAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "retryable": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "reason",
+                            "stoppedAt",
+                            "retryable"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "documentType",
+                        "number",
+                        "issueDate",
+                        "buyer",
+                        "total",
+                        "state",
+                        "transmissionStopped",
+                        "documents",
+                        "artifacts",
+                        "rideGeneration"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El comprobante no existe en la empresa (DOCUMENT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El RIDE ya existe (RIDE_ALREADY_AVAILABLE), su generación está programada o en curso (RIDE_GENERATION_IN_PROGRESS) o el comprobante no está autorizado (DOCUMENT_NOT_AUTHORIZED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

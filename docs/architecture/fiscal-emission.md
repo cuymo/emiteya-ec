@@ -492,6 +492,7 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 | `GET /api/v1/documents/{documentId}/signed-xml` | XML firmado transmitido; registra `DOWNLOAD` | `archive.download` |
 | `POST /api/v1/documents/{documentId}/print-requests` | Solicitud de impresión del RIDE guardado (`201`, sin bytes); registra `PRINT_REQUESTED` | `archive.download` |
 | `GET /api/v1/documents/{documentId}/deliveries` | Historial de entregas: las 100 más recientes y el total, sin hashes | `archive.read` |
+| `POST /api/v1/documents/{documentId}/ride-attempts` | Reintentar una generación detenida del RIDE (`202` con el resumen): autorizado, sin RIDE y con su último job detenido. Encola un job `MANUAL` con quien lo pidió; `409 RIDE_ALREADY_AVAILABLE`, `409 RIDE_GENERATION_IN_PROGRESS` (también si dos solicitudes chocan en la clave activa) o `409 DOCUMENT_NOT_AUTHORIZED`. Sin auditoría: el job guarda quién lo pidió | `archive.retryRide` |
 
 - La empresa sale de la sesión; un comprobante de otra empresa es `404 DOCUMENT_NOT_FOUND`. El detalle de la factura y su historial de transmisión siguen en `/invoices`.
 - **Antes de servir:** permiso, empresa y comprobante, disponibilidad (`404 DOCUMENT_NOT_AVAILABLE`) y el SHA-256 y el tamaño recalculados; si no coinciden, `500 ARTIFACT_INTEGRITY_FAILED`, sin ningún byte ni entrega.

@@ -1194,4 +1194,24 @@ export const apiRoutes: readonly RouteDefinition[] = [
       404: documentNotFound,
     },
   }),
+  defineRoute({
+    method: "post",
+    path: "/documents/:documentId/ride-attempts",
+    summary: "Reintentar la generación detenida del RIDE de un comprobante autorizado sin RIDE",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      202: {
+        description: "Generación programada. El resumen de los documentos del comprobante.",
+        schema: successEnvelope(documentSummaryViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotFound,
+      409: {
+        description:
+          "El RIDE ya existe (RIDE_ALREADY_AVAILABLE), su generación está programada o en curso (RIDE_GENERATION_IN_PROGRESS) o el comprobante no está autorizado (DOCUMENT_NOT_AUTHORIZED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
 ];
