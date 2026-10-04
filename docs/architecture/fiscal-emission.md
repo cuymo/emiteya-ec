@@ -204,7 +204,7 @@ Decididas el 2026-10-03 en la revisión de readiness del cambio 7; el design del
   El `SIGNED_XML` (lo enviado) no se reemplaza. El XML autorizado (lo recibido) es otro artefacto, y ambos se verifican por hash.
 - **Límite de tamaño.** Es una política versionada de `fiscal-catalogs`, con el texto fuente, la sección, la unidad y la interpretación exacta en bytes.
   - Entre 320 000 y 327 680 bytes no se decide sin la fuente oficial (Q-47), y la cifra no se inventa ni se copia de la librería.
-  - No bloquea proponer. Puede bloquear apply si el flujo necesita imponer la cifra exacta.
+  - Resuelto en el cambio 7 (2026-10-04): Q-47 es una compuerta previa a la transmisión real. La política existe y falla cerrada; su cifra se publicará en un cambio pequeño cuando haya evidencia oficial.
 - **API.** No hay `POST /send`, `/soap`, `/reception` ni `/authorization`: el sistema transmite con jobs. La API de facturas expone el estado, los mensajes de negocio y el historial útil. Si el design la justifica, añade una acción de reconciliación solo para el administrador.
 - **Compuertas externas.** No bloquean proponer ni apply; sí bloquean la transmisión real y el go-live:
   - el vector oficial de la clave de acceso: cumplido el 2026-10-04 (ficha v2.34, secciones 5.2 y 7.2.3, en la prueba de contrato de `AccessKeys`);
@@ -402,7 +402,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | `POST /api/v1/invoices/{invoiceId}/reconciliations` | Reconciliación manual `{ reason }` (de 1 a 500 caracteres); responde `202` con el estado actual | `invoices.reconcile` |
 
 - `invoices.reconcile` es solo del administrador (`../security/access-control.md`).
-- La reconciliación se admite en `MANUAL_REVIEW`, `SEND_UNKNOWN`, y en `SIGNED` o `RECEIVED` sin un job `sri.*` activo. Responde `409 SRI_INTERACTION_IN_PROGRESS` si hay un job activo (dos solicitudes simultáneas chocan en el índice único y solo una se programa) y `409 INVOICE_NOT_RECONCILABLE` en `RESERVED`, `RETURNED`, `AUTHORIZED` y `NOT_AUTHORIZED`. Una factura de otra empresa es `404`.
+- La reconciliación se admite en `MANUAL_REVIEW`, `SEND_UNKNOWN`, y en `SIGNED` o `RECEIVED` sin un job `sri.*` activo: con el envío o la consulta detenidos, o una firmada que el barrido aún no encoló. Responde `409 SRI_INTERACTION_IN_PROGRESS` si hay un job activo (dos solicitudes simultáneas chocan en el índice único y solo una se programa) y `409 INVOICE_NOT_RECONCILABLE` en `RESERVED`, `RETURNED`, `AUTHORIZED` y `NOT_AUTHORIZED`. Una factura de otra empresa es `404`.
 - No hay ninguna ruta de envío, recepción, autorización ni SOAP.
 
 ### Jobs
@@ -410,7 +410,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Tipo | Lo encola | Reintenta | Límite |
 | --- | --- | --- | --- |
 | `sri.transmit` | La transacción que firma, el barrido y la reconciliación que decide reenviar | Solo fallos demostrablemente anteriores al envío y pausas del circuit breaker; si la solicitud pudo salir, clasifica | `SRI_TRANSMIT_MAX_ATTEMPTS` y `SRI_TRANSMIT_DEADLINE_HOURS` |
-| `sri.authorize` | La transición a `RECEIVED` | Consulta con backoff y jitter, la primera tras `SRI_AUTHORIZATION_FIRST_DELAY_SECONDS` | Ventana de conclusión: sin conclusión, `MANUAL_REVIEW`; con fallos de transporte, `STOPPED` |
+| `sri.authorize` | La transición a `RECEIVED` | Consulta con backoff y jitter, la primera tras `SRI_AUTHORIZATION_FIRST_DELAY_SECONDS` | Ventana de conclusión: sin conclusión, `MANUAL_REVIEW`; con fallos de transporte, `STOPPED`. Decide la última consulta: si falla por transporte, el job se detiene aunque las anteriores no concluyeran |
 | `sri.reconcile` | La transición a `SEND_UNKNOWN` (tras `SRI_ERROR70_DELAY_SECONDS` para el 70) y la reconciliación manual | Igual que `sri.authorize` | Igual que `sri.authorize` |
 
 - **Un job `sri.*` activo por comprobante.** La deduplicación (`sri.{fase}:{documentId}`) y la exclusión por comprobante son columnas únicas que solo ocupan los jobs activos. Cada job se encola en la transacción que termina el anterior, así que nunca hay una ventana sin job ni dos jobs activos.
@@ -435,7 +435,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 
 ### Reconciliación
 
-- **Estrategia.** Primero la autorización por clave, que trae la decisión y el XML autorizado. Si el SRI no conoce la clave, la consulta de validez es una guarda: un estado informado impide el reenvío, y nunca lo autoriza. Una respuesta de cualquiera de las dos consultas por otra clave es inconsistente y lleva a `MANUAL_REVIEW`.
+- **Estrategia.** Primero la autorización por clave, que trae la decisión y el XML autorizado; si falla por transporte, se reintenta sin cambiar el estado. Si el SRI no conoce la clave, la consulta de validez es una guarda: un estado informado impide el reenvío, y nunca lo autoriza; su error 99, una respuesta sin estado reconocido o un fallo de transporte no aportan evidencia (design D15). Una respuesta de cualquiera de las dos consultas por otra clave es inconsistente y lleva a `MANUAL_REVIEW`.
 - **Reenvío.** Solo desde `SEND_UNKNOWN`, o desde `SIGNED` con el envío detenido, cuando ni la autorización ni la validez conocen la clave y no hay evidencia de recepción (`RECIBIDA`, 70 o 43) en los resultados guardados. Encola `sri.transmit` con los mismos bytes firmados: así el administrador reactiva un envío detenido sin una operación de envío.
 - **Revisión manual.** Desde `MANUAL_REVIEW`, una clave desconocida deja el comprobante en revisión: no existe una acción "reenviar de todas formas".
 - **Historial.** Los intentos guardan el origen (`AUTOMATIC` o `MANUAL`) y quién los pidió; las transiciones, el actor (`SYSTEM` o el administrador) y la causa `RECONCILIATION`.
@@ -444,7 +444,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 
 - **Auditoría**, sin respuestas del SRI ni XML:
   - `invoice.reconciliation_requested`: número, estado al pedirla y motivo, con el administrador como actor;
-  - `invoice.reconciliation_completed`: número, resultado y estado final, con el administrador que la pidió como actor y la correlación de la solicitud.
+  - `invoice.reconciliation_completed`: número, resultado y estado final, con el administrador que la pidió como actor y la correlación de la solicitud. Se registra solo cuando la reconciliación concluye por su propia decisión, también al detenerse por la ventana agotada. Si el job se detiene por fallos inesperados del handler (`HANDLER_ERROR`), la reconciliación no terminó y no hay evento: la factura muestra la transmisión detenida (`../quality/technical-debt.md`).
 
   Las transmisiones, consultas, reintentos y reconciliaciones automáticas no se auditan: su evidencia son `sri_attempt` y `document_state_transition`.
 - **Métricas** (`../quality/observability.md`): `fiscal_jobs`, `fiscal_jobs_oldest_pending_age_seconds`, `fiscal_documents`, `sri_attempts_total`, `sri_request_duration_seconds`, `sri_error_code_total`, `invoice_authorization_latency_seconds`, `sri_circuit_open` y `sri_transmission_enabled`.
@@ -462,7 +462,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Decisiones del cambio 7 | Errores 70, 43 y 45 | `SEND_UNKNOWN` y reconciliación; nunca `RETURNED` ni otro secuencial; el 45 sin la clave conocida es `MANUAL_REVIEW`. |
 | Decisiones del cambio 7 | Verificación antes de cada envío | Hash, tamaño, comprobante y clave del `SIGNED_XML`. |
 | Decisiones del cambio 7 | Autorización inmutable | Número, fecha y ambiente guardados una vez; `AUTHORIZED_XML` aparte del firmado. |
-| Decisiones del cambio 7 | Límite de tamaño versionado | Dataset `sri-transmission-policy`; sin política vigente no se envía. La cifra oficial espera Q-47. |
+| Decisiones del cambio 7 | Límite de tamaño versionado | Dataset `sri-transmission-policy`; sin política vigente no se envía. La cifra oficial en bytes es una compuerta previa a la transmisión real (Q-47). |
 | Decisiones del cambio 7 | API orientada a la factura | Historial y reconciliación del administrador; ninguna ruta de envío ni de SOAP. |
 | `add-invoice-emission` | Envía siempre los mismos bytes | El envío y el reenvío usan el `SIGNED_XML` persistido; nunca se regenera. |
 
@@ -618,7 +618,7 @@ La implementa `add-sri-transmission` (cambio 7). Toda respuesta se persiste ante
 | Autorización `AUTORIZADO` | Guardar la respuesta original, el número, la fecha, el ambiente confirmado y el XML autorizado exacto con su hash. | `AUTHORIZED` |
 | Autorización `NO AUTORIZADO` o `RECHAZADO` | Persistir la respuesta y los mensajes estructurados, sin reintento ni reenvío (Q-07). | `NOT_AUTHORIZED` |
 | Autorización en procesamiento | Reprogramar con backoff y jitter dentro de la ventana de conclusión; al agotarla, `MANUAL_REVIEW`. | `RECEIVED` |
-| Autorización sin el bloque esperado | No equivale a `NO AUTORIZADO`. Sin la clave consultada, o con una respuesta ilegible, es un fallo técnico que reintenta. Con la clave y sin autorizaciones, el SRI no la conoce todavía: desde `RECEIVED` se vuelve a consultar dentro de la ventana, y desde `SEND_UNKNOWN` decide la reconciliación. | Sin conclusión |
+| Autorización sin el bloque esperado | No equivale a `NO AUTORIZADO`. Una respuesta ilegible es un fallo técnico que reintenta. Sin autorizaciones, con la clave consultada y `numeroComprobantes` en 0, el SRI no conoce la clave: desde `RECEIVED` se vuelve a consultar dentro de la ventana, y desde `SEND_UNKNOWN` decide la reconciliación. Sin autorizaciones y sin esa confirmación, se vuelve a consultar dentro de la ventana. Con autorizaciones pero sin la clave consultada no se pueden atribuir al comprobante: `MANUAL_REVIEW`. | Sin conclusión |
 
 Todo mensaje se conserva completo: identificador, mensaje, información adicional, tipo y
 fase, incluidos los códigos desconocidos (CTX §32). Los errores se clasifican en transporte,
@@ -632,7 +632,7 @@ La implementa `add-sri-transmission` (cambio 7).
 - Las consultas se reintentan; el envío nunca se reintenta a ciegas: primero se reconcilia.
 - Circuit breaker por servicio y ambiente del SRI; mientras está abierto, los jobs se reprograman sin llamar ni consumir intentos, y la métrica `sri_circuit_open` lo muestra.
 - La autorización puede tardar hasta 24 horas desde `RECIBIDA` (CTX §23.1): es la ventana de conclusión por defecto (`SRI_CONCLUSION_WINDOW_HOURS`), y al agotarla sin conclusión el comprobante pasa a `MANUAL_REVIEW` (design D4).
-- Un comprobante por envío, sin lotes, y nunca uno que supere el límite de tamaño versionado (CTX §29); su cifra exacta en bytes espera la fuente oficial (Q-47).
+- Un comprobante por envío, sin lotes, y nunca uno que supere el límite de tamaño versionado (CTX §29); su cifra exacta en bytes espera la fuente oficial (Q-47, compuerta previa a la transmisión real) y, mientras tanto, ningún envío sale.
 - La caída del SRI no afecta la consulta local ni la emisión hasta `SIGNED` (ERS RNF-004).
 
 | Caso de recuperación (CTX §52)                       | Mecanismo                                                                    |

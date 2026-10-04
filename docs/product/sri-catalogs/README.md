@@ -34,9 +34,10 @@ niega a arrancar si un dataset altera lo ya publicado.
 **Pendiente: `sri-transmission-policy`** (`add-sri-transmission`, design D17). El límite de tamaño
 del comprobante firmado para su envío individual al SRI se publica como dataset propio, con la cita
 literal, la sección, la unidad literal y la interpretación exacta en bytes con su justificación.
-No se publica mientras la cifra exacta no se verifique en la ficha oficial (Q-47): CTX §29 dice
-"320 KB", que admite dos lecturas en bytes, y no se elige ninguna ni se toma de una librería. Sin
-una versión vigente, ningún comprobante se transmite. Las pruebas usan una política sintética del
+No se publica mientras la cifra exacta no se verifique en la ficha oficial (Q-47): la ficha v2.34
+dice "320 Kb", que admite varias lecturas en bytes, y no se elige ninguna ni se toma de una
+librería. Q-47 es una compuerta previa a la transmisión real: sin una versión vigente, ningún
+comprobante se transmite, y la cifra se publicará en un cambio OpenSpec pequeño. Las pruebas usan una política sintética del
 arnés (`backend/test/support/synthetic-size-policy.ts`), marcada como tal.
 
 ## Reglas de transcripción

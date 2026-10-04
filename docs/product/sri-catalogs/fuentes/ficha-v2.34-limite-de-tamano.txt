@@ -31,5 +31,9 @@ Observaciones (2026-10-03):
 - La misma página da dos cifras distintas para el mismo límite del lote ("500 kb" y "512 kb"), y
   "Kbps" se usa para kilobits por segundo. El texto no permite fijar si "Kb" son kilobytes o
   kilobits, ni si un kilo vale 1000 o 1024.
-- Por eso la conversión exacta a bytes no se puede determinar con esta fuente: Q-47 sigue abierta
-  y el dataset sri-transmission-policy no se publica.
+- Por eso la conversión exacta a bytes no se puede determinar con esta fuente: el dataset
+  sri-transmission-policy no se publica.
+
+Decisión del 2026-10-04: Q-47 queda resuelta como compuerta previa a la transmisión real. Texto
+normativo "320 Kb"; cifra exacta en bytes desconocida; sin conversión inferida ni valor
+provisional. Se publicará en un cambio OpenSpec pequeño cuando haya evidencia oficial.

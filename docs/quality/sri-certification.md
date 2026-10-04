@@ -11,8 +11,8 @@ aplicación tal como se despliega.
 | Compuerta | Estado | Evidencia |
 | --- | --- | --- |
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, sección 5.2 (ejemplo de verificación) y sección 7.2.3 (clave del ejemplo de recepción), en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
-| Cifra del límite de tamaño (Q-47) | Abierta | Sin una política vigente, la transmisión habilitada no queda lista (design D17) |
-| P12 ecuatoriano real | Pendiente | Lo aporta el operador; nunca entra al repositorio |
+| Interpretación exacta en bytes del límite de tamaño (Q-47) | Pendiente | La ficha v2.34 dice "320 Kb" sin fijar la conversión. La política versionada existe y falla cerrada: sin una versión vigente, la transmisión habilitada no queda lista y ningún envío sale (design D17). Se publica en un cambio pequeño cuando haya evidencia oficial |
+| P12 ecuatoriano real validado | Pendiente | Lo aporta el operador; nunca entra al repositorio |
 | RUC habilitado en Pruebas | Pendiente | Lo aporta el operador; nunca entra al repositorio |
 | S-3 online | Pendiente | Este procedimiento |
 
@@ -25,7 +25,7 @@ compuertas (`docs/architecture/deployment.md`).
   - un P12 ecuatoriano real y vigente, y su contraseña;
   - un RUC habilitado por el SRI para el ambiente de Pruebas de comprobantes electrónicos;
   - la clave maestra de la custodia de firmas (`CERTIFICATE_MASTER_KEY`).
-- **Política de tamaño vigente.** El dataset oficial `sri-transmission-policy` cargado, con la cifra de Q-47 ya resuelta. La política sintética de las pruebas no sirve: no es una cifra oficial.
+- **Política de tamaño vigente.** El dataset oficial `sri-transmission-policy` publicado con la cifra exacta en bytes de Q-47, en su propio cambio OpenSpec. La política sintética de las pruebas no sirve: no es una cifra oficial.
 - **Instalación nueva** sobre una base aislada, con la misma versión que se va a desplegar. Se anota el commit.
 
 ## Preparación

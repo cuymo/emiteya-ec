@@ -62,7 +62,7 @@
   - la política visible en `Catálogos fiscales`.
 
   Verificar con pruebas del cargador y de la resolución sobre una política de prueba del arnés, marcada como tal, y con pruebas de componente de la pantalla
-- [ ] 3.2 Dejar la política de tamaño lista para la cifra oficial y la transmisión cerrada mientras no exista (design D17). Q-47 es una compuerta previa a la transmisión real, no de este cambio: la ficha v2.34 dice "320 Kb" sin fijar la conversión a bytes. Verificar:
+- [x] 3.2 Dejar la política de tamaño lista para la cifra oficial y la transmisión cerrada mientras no exista (design D17). Q-47 es una compuerta previa a la transmisión real, no de este cambio: la ficha v2.34 dice "320 Kb" sin fijar la conversión a bytes. Verificar:
   - el modelo versionado de la política, con la fuente, el texto, la sección y la unidad literal trazables;
   - que `maxSignedDocumentBytes` es obligatorio para transmitir: sin una política vigente con la cifra resuelta, ningún envío sale (`SIZE_POLICY_MISSING`);
   - los bordes con una política de prueba marcada como tal: el límite exacto se envía y un byte más no;
