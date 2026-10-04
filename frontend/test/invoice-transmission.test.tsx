@@ -264,8 +264,12 @@ describe("sección de la transmisión en el detalle (tarea 13.2)", () => {
       const section = await screen.findByRole("region", { name: "Transmisión al SRI" });
       expect(within(section).getByText(text)).toBeDefined();
       const list = within(section).getByRole("list", { name: "Mensajes del SRI" });
+      const [first, second] = within(list).getAllByRole("listitem");
       expect(within(list).getAllByRole("listitem")).toHaveLength(2);
-      expect(within(list).getByText("Detalle del error")).toBeDefined();
+      // Código, texto, tipo e información adicional, en el orden del SRI.
+      expect(first!.textContent).toContain("Código 35 · DOCUMENTO INVÁLIDO · ERROR");
+      expect(within(first!).getByText("Detalle del error")).toBeDefined();
+      expect(second!.textContent).toBe("Código 999 · OTRO");
       vi.unstubAllGlobals();
       document.body.innerHTML = "";
     }

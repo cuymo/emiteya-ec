@@ -488,4 +488,224 @@ describe("reconciliación por clave", () => {
       ]);
     });
   });
+
+  describe("escenarios precisados en el verify", () => {
+    const broken = () =>
+      createReconcileHandler({
+        ...base(),
+        classifiers: {
+          ...sriClassifiers,
+          authorization: () => {
+            throw new Error("parser roto");
+          },
+        },
+        inquiry: gateway,
+        random: () => 0.5,
+      }).handler;
+
+    it("error 45 con evidencia contradictoria (inconsistente): revisión manual sin reenvío ni otro número", async () => {
+      // La autorización responde por otra clave, y la validez por otra clave.
+      for (const contradiction of ["AUTHORIZATION", "VALIDITY"] as const) {
+        const document = await insertDocument(prisma, company, "SEND_UNKNOWN");
+        await receptionEvidence(document, "SEQUENTIAL_REGISTERED");
+        const other = `${document.accessKey.slice(0, 40)}${document.accessKey[40] === "9" ? "0" : "9"}${document.accessKey.slice(41)}`;
+        if (contradiction === "AUTHORIZATION") {
+          replies.push({
+            service: "AUTHORIZATION",
+            outcome: response(
+              authorizationResponse(other, [
+                {
+                  estado: "AUTORIZADO",
+                  numeroAutorizacion: other,
+                  fechaAutorizacion: "2026-10-04T10:15:30-05:00",
+                  ambiente: "PRUEBAS",
+                },
+              ]),
+            ),
+          });
+        } else {
+          replies.push(keyUnknown(document), {
+            service: "VALIDITY",
+            outcome: response(
+              validityResponse({ accessKey: other, estadoAutorizacion: "AUTORIZADO" }),
+            ),
+          });
+        }
+        const before = await counters();
+        await reconcile().run(await jobFor(document, "sri.reconcile"), context());
+        expect(await stateOf(document.id), contradiction).toBe("MANUAL_REVIEW");
+        expect(
+          (await jobsOf(document.id)).map((row) => row.type),
+          contradiction,
+        ).toEqual(["sri.reconcile"]);
+        expect(calls.filter((call) => call.service === "RECEPTION")).toEqual([]);
+        expect(await counters()).toBe(before);
+        expect(
+          await prisma.electronicDocument.findUniqueOrThrow({ where: { id: document.id } }),
+        ).toMatchObject({ documentNumber: document.documentNumber, accessKey: document.accessKey });
+      }
+    });
+
+    it("RECIBIDA o 43 como evidencia: con la clave desconocida no reenvía y vuelve a consultar dentro de la ventana", async () => {
+      for (const evidence of ["RECEIVED", "KEY_REGISTERED"]) {
+        const document = await insertDocument(prisma, company, "SEND_UNKNOWN");
+        await receptionEvidence(document, evidence);
+        replies.push(keyUnknown(document), validityNoData(document));
+        const job = await jobFor(document, "sri.reconcile");
+        await reconcile().run(job, context());
+        expect(await stateOf(document.id), evidence).toBe("SEND_UNKNOWN");
+        const [after] = await jobsOf(document.id);
+        expect([after!.type, after!.status], evidence).toEqual(["sri.reconcile", "PENDING"]);
+        expect(after!.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
+        expect(after!.nextAttemptAt.getTime()).toBeLessThanOrEqual(job.deadlineAt!.getTime());
+      }
+      expect(calls.filter((call) => call.service === "RECEPTION")).toEqual([]);
+    });
+
+    it("un fallo de transporte dentro de la ventana reintenta con espera, sin cambiar el estado ni reenviar", async () => {
+      for (const state of ["SEND_UNKNOWN", "MANUAL_REVIEW"]) {
+        const document = await insertDocument(prisma, company, state);
+        const manual = state === "MANUAL_REVIEW";
+        const job = await jobFor(
+          document,
+          "sri.reconcile",
+          manual ? { origin: "MANUAL", requestedBy: company.adminId, reason: "x" } : {},
+        );
+        replies.push({ service: "AUTHORIZATION", outcome: failure("CONNECTION_LOST") });
+        await reconcile().run(job, context());
+        expect(await stateOf(document.id), state).toBe(state);
+        const [after] = await jobsOf(document.id);
+        expect(after, state).toMatchObject({ status: "PENDING", lastErrorCode: "SRI_UNAVAILABLE" });
+        expect(after!.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
+      }
+      expect(calls.map((call) => call.service)).toEqual(["AUTHORIZATION", "AUTHORIZATION"]);
+    });
+
+    it("una respuesta que el parser no interpreta deja la evidencia sin conclusión y no cambia el estado", async () => {
+      for (const state of ["SEND_UNKNOWN", "MANUAL_REVIEW"]) {
+        const document = await insertDocument(prisma, company, state);
+        replies.push(authorizedReply(document));
+        const job = await jobFor(
+          document,
+          "sri.reconcile",
+          state === "MANUAL_REVIEW"
+            ? { origin: "MANUAL", requestedBy: company.adminId, reason: "x" }
+            : {},
+        );
+        await broken().run(job, context());
+        expect(await stateOf(document.id), state).toBe(state);
+        const [attempt] = await prisma.sriAttempt.findMany({
+          where: { documentId: document.id },
+          include: { response: true, result: true },
+        });
+        expect(attempt!.response).not.toBeNull();
+        expect(attempt!.result!.outcome, state).toBe("UNPARSEABLE");
+        const [after] = await jobsOf(document.id);
+        expect(after, state).toMatchObject({ status: "PENDING" });
+        expect(after!.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
+        expect(after!.nextAttemptAt.getTime()).toBeLessThanOrEqual(job.deadlineAt!.getTime());
+      }
+    });
+
+    it("una consulta de validez que no se puede interpretar no aporta evidencia y decide D15, sin transición", async () => {
+      const brokenValidity = () =>
+        createReconcileHandler({
+          ...base(),
+          classifiers: {
+            ...sriClassifiers,
+            validity: () => {
+              throw new Error("parser roto");
+            },
+          },
+          inquiry: gateway,
+          random: () => 0.5,
+        }).handler;
+      const cases = [
+        // [estado, evidencia previa, handler, respuesta de validez, jobs esperados]
+        ["SEND_UNKNOWN", null, brokenValidity, validityNoData, ["sri.reconcile", "sri.transmit"]],
+        [
+          "SEND_UNKNOWN",
+          null,
+          reconcile,
+          (_document: TestDocument) => ({
+            service: "VALIDITY" as const,
+            outcome: response("<html><body>ilegible</body></html>"),
+          }),
+          ["sri.reconcile", "sri.transmit"],
+        ],
+        ["SEND_UNKNOWN", "RECEIVED", brokenValidity, validityNoData, ["sri.reconcile"]],
+        ["MANUAL_REVIEW", null, brokenValidity, validityNoData, ["sri.reconcile"]],
+      ] as const;
+      for (const [state, evidence, handler, validity, jobs] of cases) {
+        const document = await insertDocument(prisma, company, state);
+        if (evidence) await receptionEvidence(document, evidence);
+        replies.push(keyUnknown(document), validity(document));
+        const job = await jobFor(
+          document,
+          "sri.reconcile",
+          state === "MANUAL_REVIEW"
+            ? { origin: "MANUAL", requestedBy: company.adminId, reason: "x" }
+            : {},
+        );
+        await handler().run(job, context());
+        const label = `${state} ${evidence ?? "sin evidencia"}`;
+        expect(await stateOf(document.id), label).toBe(state);
+        expect(
+          (await jobsOf(document.id)).map((row) => row.type),
+          label,
+        ).toEqual([...jobs]);
+        const [validityAttempt] = await prisma.sriAttempt.findMany({
+          where: { documentId: document.id, operation: "VALIDITY" },
+          include: { response: true, result: true },
+        });
+        expect(validityAttempt!.response, label).not.toBeNull();
+        expect(["UNPARSEABLE", "NO_EVIDENCE"], label).toContain(validityAttempt!.result!.outcome);
+      }
+      expect(calls.filter((call) => call.service === "RECEPTION")).toEqual([]);
+    });
+
+    it("una consulta de validez que falla por transporte no aporta evidencia: sin evidencia de recepción, reenvía (D15)", async () => {
+      const document = await insertDocument(prisma, company, "SEND_UNKNOWN");
+      replies.push(keyUnknown(document), {
+        service: "VALIDITY",
+        outcome: failure("CONNECTION_LOST"),
+      });
+      await reconcile().run(await jobFor(document, "sri.reconcile"), context());
+      expect(await stateOf(document.id)).toBe("SEND_UNKNOWN");
+      expect((await jobsOf(document.id)).map((row) => [row.type, row.status])).toEqual([
+        ["sri.reconcile", "DONE"],
+        ["sri.transmit", "PENDING"],
+      ]);
+    });
+
+    it("el reenvío conserva el número, la clave y el contador", async () => {
+      const document = await insertDocument(prisma, company, "SEND_UNKNOWN");
+      replies.push(keyUnknown(document), validityNoData(document));
+      const before = await counters();
+      await reconcile().run(await jobFor(document, "sri.reconcile"), context());
+      expect((await jobsOf(document.id)).map((row) => row.type)).toEqual([
+        "sri.reconcile",
+        "sri.transmit",
+      ]);
+      expect(await counters()).toBe(before);
+      expect(
+        await prisma.electronicDocument.findUniqueOrThrow({ where: { id: document.id } }),
+      ).toMatchObject({ documentNumber: document.documentNumber, accessKey: document.accessKey });
+    });
+
+    it("un comprobante en estado terminal o devuelto no se consulta ni se reenvía", async () => {
+      for (const state of ["RETURNED", "AUTHORIZED", "NOT_AUTHORIZED"]) {
+        const document = await insertDocument(prisma, company, state);
+        replies.push(authorizedReply(document));
+        const before = await counters();
+        await reconcile().run(await jobFor(document, "sri.reconcile"), context());
+        // El job anterior terminó: el envío puede encolarse, y aun así no envía nada.
+        await transmit().run(await jobFor(document, "sri.transmit"), context());
+        expect(await stateOf(document.id), state).toBe(state);
+        expect(await counters()).toBe(before);
+      }
+      expect(calls).toEqual([]);
+      replies.length = 0;
+    });
+  });
 });

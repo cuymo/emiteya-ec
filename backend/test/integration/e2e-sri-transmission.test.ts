@@ -55,6 +55,8 @@ function simulatedSri() {
   const behaviors = new Map<number, ReceptionBehavior>();
   const held: ServerResponse[] = [];
   let onHold: ((key: string) => void) | null = null;
+  // Caído: corta cada conexión sin responder.
+  let down = false;
 
   const respond = (res: ServerResponse, body: string) => {
     res.writeHead(200, { "content-type": "text/xml; charset=utf-8" });
@@ -129,7 +131,7 @@ function simulatedSri() {
   const server = createHttpServer((req, res) => {
     let body = "";
     req.on("data", (chunk: Buffer) => (body += chunk.toString("utf8")));
-    req.on("end", () => handle(req, res, body));
+    req.on("end", () => (down ? req.socket.destroy() : handle(req, res, body)));
   });
   return {
     server,
@@ -139,6 +141,7 @@ function simulatedSri() {
     /** Resuelve con la clave cuando una recepción queda retenida sin respuesta. */
     nextHold: () => new Promise<string>((resolve) => (onHold = resolve)),
     releaseHeld: () => held.splice(0).forEach((res) => res.destroy()),
+    setDown: (value: boolean) => (down = value),
   };
 }
 
@@ -570,5 +573,22 @@ describe("flujo completo de la transmisión al SRI", () => {
     expect(proxy.destinations.length).toBeGreaterThan(0);
     expect(proxy.destinations.filter((d) => !d.startsWith(SRI_HOST))).toEqual([]);
     expect(sri.calls.every((call) => call.operation !== "VALIDITY")).toBe(true);
+
+    // 9. Con la transmisión habilitada y el SRI caído, la emisión hasta firmado y las consultas
+    //    siguen funcionando; el resultado del envío queda incierto, nunca devuelto ni rechazado.
+    sri.setDown(true);
+    const whileDown = await emit(operatorEnabled, draftBody);
+    await waitForState(whileDown.id, "SEND_UNKNOWN", 30_000);
+    const [failed] = await db.database.prisma.sriAttempt.findMany({
+      where: { documentId: whileDown.id },
+    });
+    expect(failed!.transportOutcome).toBe("CONNECTION_LOST");
+    const listDown = await api<InvoiceSummaryView[]>("GET", "/invoices", operatorEnabled);
+    expect(listDown.status).toBe(200);
+    expect(listDown.data.map((invoice) => invoice.documentNumber)[0]).toBe("001-001-000000004");
+    const detailDown = await api<InvoiceView>("GET", `/invoices/${whileDown.id}`, operatorEnabled);
+    expect(detailDown.status).toBe(200);
+    expect(detailDown.data.state).toBe("SEND_UNKNOWN");
+    expect(proxy.destinations.filter((d) => !d.startsWith(SRI_HOST))).toEqual([]);
   }, 240_000);
 });

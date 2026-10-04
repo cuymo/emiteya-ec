@@ -192,6 +192,19 @@ describe("handler sri.authorize", () => {
       authorizationDate: "2026-10-04T10:15:30-05:00",
     });
     expect(signedXml!.id).not.toBe(authorizedXml!.id);
+    // La transición guarda la causa, el actor y el intento que la decidió.
+    const [attempt] = await prisma.sriAttempt.findMany({ where: { documentId: document.id } });
+    expect(
+      await prisma.documentStateTransition.findFirstOrThrow({
+        where: { documentId: document.id, toState: "AUTHORIZED" },
+      }),
+    ).toMatchObject({
+      fromState: "RECEIVED",
+      cause: "AUTHORIZATION",
+      actorType: "SYSTEM",
+      actorUserId: null,
+      metadata: { sriAttemptId: attempt!.id, jobId: job.id },
+    });
     expect((await jobOf(job.id)).status).toBe("DONE");
     expect(calls).toEqual(["AUTHORIZATION"]);
   });
@@ -244,6 +257,32 @@ describe("handler sri.authorize", () => {
     }
   });
 
+  it("una respuesta que el parser no interpreta deja la evidencia sin conclusión y no cambia el estado", async () => {
+    const { document, job } = await receivedWithJob();
+    reply(document, [authorized(document)]);
+    await createAuthorizeHandler({
+      ...base(),
+      classifiers: {
+        ...sriClassifiers,
+        authorization: () => {
+          throw new Error("parser roto");
+        },
+      },
+      random: () => 0.5,
+    }).run(job, context());
+    expect((await documentOf(document.id)).state).toBe("RECEIVED");
+    const after = await jobOf(job.id);
+    expect(after.status).toBe("PENDING");
+    expect(after.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
+    expect(after.nextAttemptAt.getTime()).toBeLessThanOrEqual(job.deadlineAt!.getTime());
+    const [attempt] = await prisma.sriAttempt.findMany({
+      where: { documentId: document.id },
+      include: { response: true, result: true },
+    });
+    expect(attempt!.response).not.toBeNull();
+    expect(attempt!.result!.outcome).toBe("UNPARSEABLE");
+  });
+
   it("un fallo de transporte dentro de la ventana reintenta con espera, sin cambiar el estado", async () => {
     const { document, job } = await receivedWithJob();
     replies.push(failure("CONNECTION_LOST"));
@@ -292,6 +331,18 @@ describe("handler sri.authorize", () => {
     reply(two.document, [authorized(two.document), authorized(two.document)]);
     await authorize().run(two.job, context());
     expect((await documentOf(two.document.id)).state).toBe("MANUAL_REVIEW");
+    // Varias respuestas no autorizadas distintas, sin ninguna autorizada, tampoco concluyen.
+    const notAuthorized = await receivedWithJob();
+    reply(notAuthorized.document, [
+      {
+        estado: "NO AUTORIZADO",
+        ambiente: "PRUEBAS",
+        messages: [{ identifier: "46", message: "a" }],
+      },
+      { estado: "RECHAZADO", ambiente: "PRUEBAS", messages: [{ identifier: "52", message: "b" }] },
+    ]);
+    await authorize().run(notAuthorized.job, context());
+    expect((await documentOf(notAuthorized.document.id)).state).toBe("MANUAL_REVIEW");
   });
 
   it("agotada la ventana con respuestas sin conclusión, revisión manual", async () => {

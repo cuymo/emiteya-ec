@@ -3,7 +3,7 @@
 // decisión de la recepción con su traspaso atómico al siguiente job, dos workers sobre la misma
 // factura, el barrido y el contador del punto intacto. Las respuestas son SINTÉTICAS con la
 // estructura oficial y la política de tamaño es la SINTÉTICA del arnés.
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createTransmitHandler,
   integrityProblem,
@@ -46,7 +46,7 @@ describe("handler sri.transmit", () => {
   const alerts: string[] = [];
   let policy: { maxSignedDocumentBytes: number } | null;
 
-  const handler = () =>
+  const handler = (classifiers = sriClassifiers) =>
     createTransmitHandler({
       db: prisma,
       evidence: createSriEvidenceRepository(prisma),
@@ -70,7 +70,7 @@ describe("handler sri.transmit", () => {
           return Promise.resolve(exchange);
         },
       },
-      classifiers: sriClassifiers,
+      classifiers,
       settings: DEFAULT_TRANSMISSION_SETTINGS,
       today: () => "2026-10-04",
       alert: (_details, message) => void alerts.push(message),
@@ -126,6 +126,10 @@ describe("handler sri.transmit", () => {
     replies.length = 0;
     alerts.length = 0;
     policy = { maxSignedDocumentBytes: SYNTHETIC_POLICY_BYTES };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   afterAll(async () => {
@@ -188,6 +192,7 @@ describe("handler sri.transmit", () => {
       expect(await stateOf(document.id)).toBe("SIGNED");
       expect(sent).toEqual([]);
       expect(alerts.filter((a) => a.includes("integridad"))).toHaveLength(3);
+      expect(alerts.join(" ")).not.toMatch(/<|soap|claveAcceso/i);
     });
 
     it("un tamaño guardado que no corresponde a los bytes es un fallo de integridad", async () => {
@@ -310,7 +315,10 @@ describe("handler sri.transmit", () => {
         where: { attempt: { documentId: document.id } },
       });
       expect(result.outcome).toBe("RETURNED");
-      expect(result.messages).toHaveLength(2);
+      expect((result.messages as { identifier: string }[]).map((m) => m.identifier)).toEqual([
+        "35",
+        "999",
+      ]);
       expect(
         await prisma.electronicDocument.findUniqueOrThrow({ where: { id: document.id } }),
       ).toMatchObject({
@@ -327,6 +335,8 @@ describe("handler sri.transmit", () => {
         failure("CONNECTION_LOST"),
         response("<html><body>Error</body></html>"),
         response(soapFault(), 500),
+        response(soapFault()),
+        response("<soap:Envelope><soap:Body><mal"),
         response(""),
       ]) {
         const { document, job } = await signedWithJob();
@@ -378,6 +388,28 @@ describe("handler sri.transmit", () => {
       }
     });
 
+    it("una respuesta que el parser no interpreta deja la evidencia sin conclusión y pasa a SEND_UNKNOWN con su reconciliación", async () => {
+      const { document, job } = await signedWithJob();
+      replies.push(response(receptionResponse("RECIBIDA")));
+      await handler({
+        ...sriClassifiers,
+        reception: () => {
+          throw new Error("parser roto");
+        },
+      }).run(job, { signal: new AbortController().signal, now: () => new Date() });
+      expect(await stateOf(document.id)).toBe("SEND_UNKNOWN");
+      expect((await jobsOf(document.id)).map((row) => [row.type, row.status])).toEqual([
+        ["sri.transmit", "DONE"],
+        ["sri.reconcile", "PENDING"],
+      ]);
+      const [attempt] = await prisma.sriAttempt.findMany({
+        where: { documentId: document.id },
+        include: { response: true, result: true },
+      });
+      expect(attempt!.response).not.toBeNull();
+      expect(attempt!.result!.outcome).toBe("UNPARSEABLE");
+    });
+
     it("una clave distinta en la respuesta va a revisión manual pasando por SEND_UNKNOWN", async () => {
       const { document, job } = await signedWithJob();
       replies.push(
@@ -395,10 +427,19 @@ describe("handler sri.transmit", () => {
       ]);
     });
 
-    it("NOT_SENT no cambia el estado y reprograma; al agotar los intentos queda detenido", async () => {
+    it("NOT_SENT no cambia el estado y reprograma con espera creciente; al agotar los intentos queda detenido", async () => {
+      // Jitter fijo cerca del techo: cada espera refleja el techo exponencial del backoff.
+      vi.spyOn(Math, "random").mockReturnValue(0.999);
+      const waits: number[] = [];
+      const waitAfter = async (startedAt: number) => {
+        const [row] = await jobsOf(document.id);
+        if (row!.status === "PENDING") waits.push(row!.nextAttemptAt.getTime() - startedAt);
+      };
       const { document, job } = await signedWithJob();
       replies.push(failure("NOT_SENT"));
+      const first = Date.now();
       await run(job);
+      await waitAfter(first);
       expect(await stateOf(document.id)).toBe("SIGNED");
       // Sin reconciliar: el único job sigue siendo el envío.
       expect((await jobsOf(document.id)).map((row) => row.type)).toEqual(["sri.transmit"]);
@@ -421,7 +462,9 @@ describe("handler sri.transmit", () => {
         });
         expect(claimed?.documentId).toBe(document.id);
         replies.push(failure("NOT_SENT"));
+        const startedAt = Date.now();
         await run(claimed!);
+        await waitAfter(startedAt);
         await prisma.job.updateMany({
           where: { documentId: document.id, status: "PENDING" },
           data: { nextAttemptAt: new Date(0) },
@@ -433,6 +476,10 @@ describe("handler sri.transmit", () => {
         lastErrorDetail: { exhaustedLimit: "ATTEMPTS", transport: "ECONNREFUSED" },
       });
       expect(await stateOf(document.id)).toBe("SIGNED");
+      // Dos reprogramaciones antes de detenerse, la segunda con una espera mayor.
+      expect(waits).toHaveLength(2);
+      expect(waits[0]).toBeGreaterThan(0);
+      expect(waits[1]).toBeGreaterThan(waits[0]! * 1.5);
     });
 
     it("un reenvío desde SEND_UNKNOWN usa el mismo procedimiento y los mismos bytes", async () => {

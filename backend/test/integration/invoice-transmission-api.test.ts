@@ -101,13 +101,18 @@ describe("transmisión de facturas sobre HTTP", () => {
     }
   }
 
-  async function attempt(invoice: InvoiceView, outcome: string, messages: unknown[]) {
+  async function attempt(
+    invoice: InvoiceView,
+    outcome: string,
+    messages: unknown[],
+    operation = "RECEPTION",
+  ) {
     const created = await prisma.sriAttempt.create({
       data: {
         companyId: a.companyId,
         documentId: invoice.id,
         attemptNumber: (await prisma.sriAttempt.count({ where: { documentId: invoice.id } })) + 1,
-        operation: "RECEPTION",
+        operation,
         environment: invoice.environment,
         endpoint: "https://sri-simulado.invalid/recepcion",
         origin: "AUTOMATIC",
@@ -189,6 +194,9 @@ describe("transmisión de facturas sobre HTTP", () => {
   let foreign: InvoiceView;
   let returned: InvoiceView;
   let ambiguous: InvoiceView;
+  let notAuthorized: InvoiceView;
+  let uncertain: InvoiceView;
+  let stoppedQuery: InvoiceView;
 
   beforeAll(async () => {
     db = await createMigratedSchema("invoice_transmission_api");
@@ -215,6 +223,9 @@ describe("transmisión de facturas sobre HTTP", () => {
     foreign = await emit(b);
     returned = await emit(a);
     ambiguous = await emit(a);
+    notAuthorized = await emit(a);
+    uncertain = await emit(a);
+    stoppedQuery = await emit(a);
 
     await finishTransmit(stopped, "STOPPED", "SRI_UNAVAILABLE");
     await finishTransmit(review, "DONE");
@@ -237,6 +248,48 @@ describe("transmisión de facturas sobre HTTP", () => {
     ]);
     await advance(returned, ["RETURNED"]);
     await advance(ambiguous, ["SEND_UNKNOWN", "MANUAL_REVIEW"]);
+    await finishTransmit(notAuthorized, "DONE");
+    await attempt(notAuthorized, "RECEIVED", []);
+    await advance(notAuthorized, ["RECEIVED"]);
+    await attempt(
+      notAuthorized,
+      "NOT_AUTHORIZED",
+      [
+        {
+          identifier: "46",
+          message: "RUC NO EXISTE",
+          additionalInformation: "Respuesta sintética",
+          type: "ERROR",
+        },
+      ],
+      "AUTHORIZATION",
+    );
+    await advance(notAuthorized, ["NOT_AUTHORIZED"], "AUTHORIZATION");
+    await finishTransmit(uncertain, "DONE");
+    await attempt(uncertain, "UNKNOWN", []);
+    await advance(uncertain, ["SEND_UNKNOWN"]);
+    // Una consulta de autorización detenida: los intentos se agotaron con el SRI caído.
+    await finishTransmit(stoppedQuery, "DONE");
+    await attempt(stoppedQuery, "RECEIVED", []);
+    await advance(stoppedQuery, ["RECEIVED"]);
+    await prisma.job.create({
+      data: {
+        companyId: a.companyId,
+        type: "sri.authorize",
+        dedupeKey: `sri.authorize:${stoppedQuery.id}`,
+        documentId: stoppedQuery.id,
+        status: "STOPPED",
+        origin: "AUTOMATIC",
+        scheduledAt: new Date("2026-10-04T15:00:00Z"),
+        nextAttemptAt: new Date("2026-10-04T15:00:00Z"),
+        attemptCount: 1000,
+        maxAttempts: 1000,
+        lastErrorCode: "SRI_UNAVAILABLE",
+        lastErrorClass: "RETRYABLE",
+        lastErrorAt: new Date("2026-10-05T15:00:00Z"),
+        completedAt: new Date("2026-10-05T15:00:00Z"),
+      },
+    });
     await attempt(review, "UNKNOWN", []);
     await advance(review, ["SEND_UNKNOWN"]);
     await attempt(review, "SEQUENTIAL_REGISTERED", [
@@ -302,6 +355,9 @@ describe("transmisión de facturas sobre HTTP", () => {
         [reserved.id]: false,
         [returned.id]: false,
         [ambiguous.id]: false,
+        [notAuthorized.id]: false,
+        [uncertain.id]: false,
+        [stoppedQuery.id]: true,
       });
     });
 
@@ -382,8 +438,10 @@ describe("transmisión de facturas sobre HTTP", () => {
       expect((await ids("?state=MANUAL_REVIEW")).sort()).toEqual([review.id, ambiguous.id].sort());
       expect(await ids("?state=RETURNED")).toEqual([returned.id]);
       expect(await ids("?state=AUTHORIZED")).toEqual([authorized.id]);
+      expect(await ids("?state=NOT_AUTHORIZED")).toEqual([notAuthorized.id]);
+      expect(await ids("?state=SEND_UNKNOWN")).toEqual([uncertain.id]);
       expect((await ids("?attention=true")).sort()).toEqual(
-        [stopped.id, review.id, ambiguous.id].sort(),
+        [stopped.id, review.id, ambiguous.id, uncertain.id, stoppedQuery.id].sort(),
       );
       const other = bodyOf(await get("/invoices?attention=true", b.cookies.admin)).data;
       expect(other).toEqual([]);
@@ -405,6 +463,35 @@ describe("transmisión de facturas sobre HTTP", () => {
           message: "CÓDIGO NUEVO",
           additionalInformation: null,
           type: "ADVERTENCIA",
+        },
+      ]);
+    });
+
+    it("una consulta de autorización detenida también se ve como transmisión detenida", async () => {
+      const view = bodyOf(await get(`/invoices/${stoppedQuery.id}`, a.cookies.operator)).data;
+      expect(view.state).toBe("RECEIVED");
+      expect(view.transmission).toMatchObject({
+        inProgress: false,
+        reconcilable: true,
+        stopped: {
+          code: "SRI_UNAVAILABLE",
+          message: "El SRI no respondió durante los reintentos.",
+          at: "2026-10-05T15:00:00.000Z",
+        },
+      });
+    });
+
+    it("la no autorizada muestra sus mensajes del SRI y no admite reconciliación", async () => {
+      const view = bodyOf(await get(`/invoices/${notAuthorized.id}`, a.cookies.operator)).data;
+      expect(view.state).toBe("NOT_AUTHORIZED");
+      expect(view.transmission.reconcilable).toBe(false);
+      expect(view.transmission.authorization).toBeNull();
+      expect(view.transmission.lastResult?.messages).toEqual([
+        {
+          identifier: "46",
+          message: "RUC NO EXISTE",
+          additionalInformation: "Respuesta sintética",
+          type: "ERROR",
         },
       ]);
     });
@@ -434,7 +521,7 @@ describe("transmisión de facturas sobre HTTP", () => {
       expect(await reconciliations(foreign)).toEqual([]);
       const empty = await reconcile(review, a.cookies.admin, " ");
       expect(empty.status).toBe(400);
-      for (const invoice of [authorized, reserved, returned]) {
+      for (const invoice of [authorized, reserved, returned, notAuthorized]) {
         const res = await reconcile(invoice, a.cookies.admin);
         expect(res.status).toBe(409);
         expect(bodyOf(res).error.code).toBe("INVOICE_NOT_RECONCILABLE");

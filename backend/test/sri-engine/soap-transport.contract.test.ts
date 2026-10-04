@@ -181,6 +181,36 @@ describe("NOT_SENT: solo lo que prueba que la solicitud no salió", () => {
     });
     expect(classifyRequestFailure(reset).kind).toBe("CONNECTION_LOST");
   });
+
+  it("solo la verificación del certificado TLS es NOT_SENT; otro fallo de TLS o del handshake es incierto (D10)", () => {
+    const failing = (code: string) =>
+      classifyRequestFailure(
+        Object.assign(new TypeError("fetch failed"), {
+          cause: Object.assign(new Error("tls"), { code }),
+        }),
+      ).kind;
+    for (const code of [
+      "CERT_HAS_EXPIRED",
+      "DEPTH_ZERO_SELF_SIGNED_CERT",
+      "SELF_SIGNED_CERT_IN_CHAIN",
+      "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+      "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+      "ERR_TLS_CERT_ALTNAME_INVALID",
+      "HOSTNAME_MISMATCH",
+    ]) {
+      expect(failing(code), code).toBe("NOT_SENT");
+    }
+    // Sin comodín ERR_TLS_*: pueden ocurrir con la conexión ya abierta.
+    for (const code of [
+      "ERR_TLS_RENEGOTIATION_DISABLED",
+      "ERR_TLS_HANDSHAKE_TIMEOUT",
+      "ERR_SSL_WRONG_VERSION_NUMBER",
+      "EPROTO",
+      "ECONNRESET",
+    ]) {
+      expect(failing(code), code).toBe("CONNECTION_LOST");
+    }
+  });
 });
 
 describe("inciertos: la solicitud pudo salir", () => {

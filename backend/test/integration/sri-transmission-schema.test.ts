@@ -365,9 +365,17 @@ describe("invariantes de la transmisión al SRI en la base de datos", () => {
           where: { attemptId: created.id },
           data: { outcome: "RETURNED" },
         }),
+        // La respuesta original y su resultado tampoco se borran ni se vacían.
+        prisma.sriResponse.delete({ where: { attemptId: created.id } }),
+        prisma.sriAttemptResult.delete({ where: { attemptId: created.id } }),
+        prisma.$executeRawUnsafe(`TRUNCATE "${db.name}"."sri_response" CASCADE`),
+        prisma.$executeRawUnsafe(`TRUNCATE "${db.name}"."sri_attempt_result" CASCADE`),
+        prisma.$executeRawUnsafe(`TRUNCATE "${db.name}"."sri_attempt" CASCADE`),
       ]) {
         expect(await fails(change)).toContain("no admite");
       }
+      expect(await prisma.sriResponse.count({ where: { attemptId: created.id } })).toBe(1);
+      expect(await prisma.sriAttemptResult.count({ where: { attemptId: created.id } })).toBe(1);
     });
 
     it("cada intento tiene a lo sumo una respuesta y un resultado", async () => {
