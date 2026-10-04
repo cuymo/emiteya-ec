@@ -279,4 +279,4 @@
 
 ## 15. Verificación
 
-- [ ] 15.1 Ejecutar `corepack pnpm verify` y verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo, build y `check:xsd-artifact` pasan
+- [x] 15.1 Ejecutar `corepack pnpm verify` y verificar que formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo, build y `check:xsd-artifact` pasan
