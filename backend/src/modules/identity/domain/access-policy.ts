@@ -34,6 +34,7 @@ export const PERMISSIONS = [
   "invoices.draft",
   "invoices.emit",
   "invoices.retrySigning",
+  "invoices.reconcile",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -74,6 +75,8 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "invoices.draft",
     "invoices.emit",
     "invoices.retrySigning",
+    // add-sri-transmission, design D18: resolver una revisión manual u ordenar una reconciliación.
+    "invoices.reconcile",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -93,7 +96,8 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "products.read",
     "products.manage",
     // add-invoice-emission, design D14: crea borradores, emite y reintenta la firma, como el
-    // administrador; resolver una revisión manual o reconciliar llega con el cambio 7.
+    // administrador. Resolver una revisión manual o reconciliar es solo del administrador
+    // (add-sri-transmission, design D18).
     "invoices.read",
     "invoices.draft",
     "invoices.emit",

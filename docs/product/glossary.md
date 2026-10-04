@@ -122,7 +122,7 @@ en `../architecture/fiscal-emission.md`.
 | `AUTHORIZED`                                  | Autorizado                |
 | `RETURNED`                                    | Devuelto                  |
 | `NOT_AUTHORIZED`                              | No autorizado             |
-| `MANUAL_REVIEW`, si el design lo adopta (Q-06) | Requiere revisión        |
+| `MANUAL_REVIEW` (Q-06)                        | Requiere revisión         |
 | `CANCEL_PENDING` (capacidad futura, Q-16)     | Pendiente de anulación    |
 | `CANCELLED` (capacidad futura, Q-16)          | Anulado                   |
 
@@ -130,7 +130,7 @@ en `../architecture/fiscal-emission.md`.
 2026-10-03:
 - `SEND_PENDING` de CTX §26 no se adopta: el envío en curso es un estado del job.
 - `RECEIVED` agrupa el `PENDING_AUTHORIZATION` de ERS §12.1.
-- `MANUAL_REVIEW` lo decide el design de `add-sri-transmission` (Q-06).
+- `MANUAL_REVIEW` es un estado fiscal: lo adoptó el design D4 de `add-sri-transmission` (Q-06).
 - `CANCEL_PENDING` y `CANCELLED` pertenecen a la capacidad futura de anulaciones (Q-16).
 
 ## Naming Rules

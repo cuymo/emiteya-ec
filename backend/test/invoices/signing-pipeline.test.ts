@@ -135,6 +135,7 @@ function reserved(snapshot: InvoiceSnapshotV1 = SNAPSHOT): StoredDocument {
     lastAttempt: null,
     attemptCount: 0,
     attemptLeaseUntil: null,
+    authorization: null,
   };
 }
 
@@ -146,6 +147,7 @@ function memoryDocuments(initial: StoredDocument) {
     insertReserved: () => Promise.reject(new Error("no se usa")),
     recordTransition: () => Promise.resolve(),
     find: () => Promise.resolve(document),
+    lock: () => Promise.reject(new Error("no se usa")),
     list: () => Promise.reject(new Error("no se usa")),
     acquireAttemptLease(_c, _d, now, until) {
       if (document.state !== "RESERVED") return Promise.resolve(false);

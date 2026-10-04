@@ -1,7 +1,8 @@
 // Guardia de permisos de los casos de uso de facturas (add-invoice-emission, spec invoices "Permisos
-// de facturas", design D14): cada operación exige su permiso antes de leer o escribir datos. La
-// matriz vigente da los cuatro permisos a administradores y operadores, así que el rechazo se prueba
-// con una política que no los concede, sin inventar un rol. Las dependencias registran cualquier uso.
+// de facturas", design D14; add-sri-transmission, design D18): cada operación exige su permiso antes
+// de leer o escribir datos. La matriz vigente da los cuatro primeros permisos a administradores y
+// operadores, así que el rechazo se prueba con una política que no los concede, sin inventar un rol.
+// Las dependencias registran cualquier uso.
 import { describe, expect, it } from "vitest";
 import type { Authorizer } from "../../src/modules/identity/application/authorization.ts";
 import type { RequestContext } from "../../src/modules/identity/application/request-context.ts";
@@ -63,7 +64,7 @@ function setup() {
     requested,
     drafts: createDrafts(deps({ maxLines: 100 })),
     emission: createEmission(deps({ maxLines: 100, builderVersion: "1" })),
-    invoices: createInvoices(deps({})),
+    invoices: createInvoices(deps({ conclusionWindowMs: 1 })),
   };
 }
 
@@ -85,6 +86,17 @@ describe("guardia de permisos de facturas (spec invoices: Permisos de facturas)"
       "reintentar la firma",
       "invoices.retrySigning",
       (s) => s.invoices.retrySigning(CTX, "invoice-1"),
+    ],
+    // add-sri-transmission, design D18.
+    [
+      "consultar el historial de la transmisión",
+      "invoices.read",
+      (s) => s.invoices.transmission(CTX, "invoice-1"),
+    ],
+    [
+      "pedir una reconciliación",
+      "invoices.reconcile",
+      (s) => s.invoices.requestReconciliation(CTX, "invoice-1", { reason: "x" }),
     ],
   ];
 
@@ -112,5 +124,12 @@ describe("guardia de permisos de facturas (spec invoices: Permisos de facturas)"
     ] as const) {
       expect([can("ADMIN", permission), can("OPERATOR", permission)]).toEqual([true, true]);
     }
+  });
+
+  it("solo los administradores pueden reconciliar (add-sri-transmission, design D18)", () => {
+    expect([can("ADMIN", "invoices.reconcile"), can("OPERATOR", "invoices.reconcile")]).toEqual([
+      true,
+      false,
+    ]);
   });
 });

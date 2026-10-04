@@ -1,6 +1,7 @@
-// Rutas de borradores y facturas bajo /api/v1 (add-invoice-emission, design D13). La empresa, el
-// rol y el autor salen del contexto de la sesión; un recurso de otra empresa es `404`. La emisión
-// mide sus etapas (design D16) y solo con EMISSION_STAGE_TIMINGS=1 las devuelve en `Server-Timing`.
+// Rutas de borradores y facturas bajo /api/v1 (add-invoice-emission, design D13; add-sri-transmission,
+// design D18). La empresa, el rol y el autor salen del contexto de la sesión; un recurso de otra
+// empresa es `404`. La emisión mide sus etapas (design D16) y solo con EMISSION_STAGE_TIMINGS=1 las
+// devuelve en `Server-Timing`. Ninguna ruta envía al SRI ni expone XML o respuestas originales.
 import { Router, type Response } from "express";
 import {
   IDEMPOTENCY_KEY_HEADER,
@@ -8,8 +9,10 @@ import {
   type DraftView,
   type InvoiceSummaryView,
   type InvoiceTotalsView,
+  type InvoiceTransmissionView,
   type InvoiceView,
   type ListMeta,
+  type SriMessageView,
 } from "@facturador/contracts";
 import { AppError } from "../../../../platform/http/errors.ts";
 import {
@@ -21,7 +24,13 @@ import { contextOf } from "../../../identity/infrastructure/http/request-context
 import { diagnosticMessage, isAttemptCode } from "../../application/diagnostics.ts";
 import type { DraftDetails, Drafts } from "../../application/drafts.ts";
 import type { Emission } from "../../application/emission.ts";
-import type { InvoiceDetails, Invoices } from "../../application/invoices.ts";
+import type {
+  InvoiceDetails,
+  InvoiceListItem,
+  InvoiceTransmission,
+  Invoices,
+} from "../../application/invoices.ts";
+import { stopMessage } from "../../application/transmission-messages.ts";
 import type { InvoiceTotals } from "../../domain/amounts.ts";
 import type { InvoiceSnapshotV1 } from "../../domain/snapshot.ts";
 import type { EmissionObserver, EmissionOutcome } from "../metrics.ts";
@@ -151,11 +160,47 @@ function diagnosticView(document: StoredDocument): InvoiceView["diagnostic"] {
   };
 }
 
+const messagesView = (messages: readonly SriMessageView[]): SriMessageView[] =>
+  messages.map(({ identifier, message, additionalInformation, type }) => ({
+    identifier,
+    message,
+    additionalInformation,
+    type,
+  }));
+
+/** Resumen de la transmisión (design D18): sin respuestas originales, XML ni datos técnicos. */
+function transmissionView({ document, transmission }: InvoiceDetails): InvoiceView["transmission"] {
+  return {
+    inProgress: transmission.inProgress,
+    stopped: transmission.stopped
+      ? {
+          code: transmission.stopped.code,
+          message: stopMessage(transmission.stopped.code),
+          at: transmission.stopped.at.toISOString(),
+        }
+      : null,
+    reconcilable: transmission.reconcilable,
+    authorization: document.authorization
+      ? {
+          number: document.authorization.number,
+          authorizedAt: document.authorization.date.toISOString(),
+          environment: document.authorization.environment,
+        }
+      : null,
+    lastResult: transmission.lastResult
+      ? {
+          operation: transmission.lastResult.operation,
+          outcome: transmission.lastResult.outcome,
+          at: transmission.lastResult.at.toISOString(),
+          messages: messagesView(transmission.lastResult.messages),
+        }
+      : null,
+  };
+}
+
 /** Factura desde su snapshot: lo que se emitió, aunque después cambien productos o configuración. */
-export function toInvoiceView(
-  document: StoredDocument,
-  artifact: ArtifactSummary | null,
-): InvoiceView {
+export function toInvoiceView(details: InvoiceDetails): InvoiceView {
+  const { document, artifact, authorizedArtifact } = details;
   const snapshot = document.snapshot as InvoiceSnapshotV1;
   const { issuer, buyer } = snapshot;
   return {
@@ -216,12 +261,19 @@ export function toInvoiceView(
     },
     diagnostic: diagnosticView(document),
     artifact: artifact ? { sha256: artifact.sha256, sizeBytes: artifact.sizeBytes } : null,
+    authorizedArtifact: authorizedArtifact
+      ? { sha256: authorizedArtifact.sha256, sizeBytes: authorizedArtifact.sizeBytes }
+      : null,
+    transmission: transmissionView(details),
     createdAt: document.createdAt.toISOString(),
     signedAt: document.signedAt?.toISOString() ?? null,
   };
 }
 
-export function toInvoiceSummaryView(document: StoredDocument): InvoiceSummaryView {
+export function toInvoiceSummaryView({
+  document,
+  transmissionStopped,
+}: InvoiceListItem): InvoiceSummaryView {
   const diagnostic = diagnosticView(document);
   return {
     id: document.id,
@@ -233,7 +285,41 @@ export function toInvoiceSummaryView(document: StoredDocument): InvoiceSummaryVi
     total: document.total,
     state: document.state,
     diagnosticCode: diagnostic?.code ?? null,
+    transmissionStopped,
     createdAt: document.createdAt.toISOString(),
+  };
+}
+
+/** Historial de la transmisión: transiciones e intentos resumidos (design D18). */
+export function toTransmissionView({
+  document,
+  events,
+  total,
+}: InvoiceTransmission): InvoiceTransmissionView {
+  return {
+    invoiceId: document.id,
+    state: document.state,
+    events: events.map((event) =>
+      event.kind === "TRANSITION"
+        ? {
+            kind: "TRANSITION",
+            at: event.at.toISOString(),
+            fromState: event.from,
+            toState: event.to,
+            cause: event.cause,
+            actor: event.actor,
+            actorName: event.actorName,
+          }
+        : {
+            kind: "ATTEMPT",
+            at: event.at.toISOString(),
+            operation: event.operation,
+            origin: event.origin,
+            outcome: event.outcome,
+            messages: messagesView(event.messages),
+          },
+    ),
+    total,
   };
 }
 
@@ -249,7 +335,7 @@ export type InvoicesRouterDependencies = {
   serverTiming?: boolean;
 };
 
-const invoiceOf = ({ document, artifact }: InvoiceDetails) => toInvoiceView(document, artifact);
+const invoiceOf = (details: InvoiceDetails) => toInvoiceView(details);
 
 export function invoicesRouter({
   drafts,
@@ -324,6 +410,20 @@ export function invoicesRouter({
   router.post("/invoices/:invoiceId/signing-attempts", async (req, res) => {
     const details = await invoices.retrySigning(contextOf(res), param(req.params.invoiceId));
     send(res, 200, invoiceOf(details));
+  });
+
+  router.get("/invoices/:invoiceId/transmission", async (req, res) => {
+    const view = await invoices.transmission(contextOf(res), param(req.params.invoiceId));
+    send(res, 200, toTransmissionView(view));
+  });
+
+  router.post("/invoices/:invoiceId/reconciliations", async (req, res) => {
+    const details = await invoices.requestReconciliation(
+      contextOf(res),
+      param(req.params.invoiceId),
+      req.body,
+    );
+    send(res, 202, invoiceOf(details));
   });
 
   return router;

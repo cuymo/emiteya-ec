@@ -3,7 +3,13 @@ import type { Registry } from "@prometheus-io/client";
 import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import { createIdempotencyStore } from "../../../platform/idempotency/prisma-idempotency-store.ts";
 import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
-import { createDocumentRepository } from "../../fiscal/infrastructure/index.ts";
+import {
+  createDocumentRepository,
+  createReconciliationRequestUnitOfWork,
+  createTransmissionReader,
+} from "../../fiscal/infrastructure/index.ts";
+import type { JobStore } from "../../../platform/jobs/jobs.ts";
+import { createPrismaJobStore } from "../../../platform/jobs/prisma-job-store.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import type { AccessKeys, XsdValidator } from "../../sri-engine/application/ports.ts";
 import { createAccessKeys } from "../../sri-engine/infrastructure/access-keys.ts";
@@ -49,8 +55,14 @@ export type InvoicesModuleOptions = {
     warn(details: object, message: string): void;
     error(details: object, message: string): void;
   };
+  /** Cola durable: la reconciliación manual encola su job (add-sri-transmission, design D15). */
+  jobs?: Pick<JobStore, "enqueueIn">;
+  /** `SRI_CONCLUSION_WINDOW_HOURS` en milisegundos; 24 horas por defecto. */
+  conclusionWindowMs?: number;
   now?: () => Date;
 };
+
+const DEFAULT_CONCLUSION_WINDOW_MS = 24 * 3_600_000;
 
 export function invoicesModule(options: InvoicesModuleOptions) {
   const now = options.now ?? (() => new Date());
@@ -81,6 +93,13 @@ export function invoicesModule(options: InvoicesModuleOptions) {
     pipeline,
     audit: createAuditLog(options.prisma),
     authorizer: options.authorizer,
+    transmission: createTransmissionReader(options.prisma),
+    reconciliations: createReconciliationRequestUnitOfWork(
+      options.prisma,
+      options.jobs ?? createPrismaJobStore(options.prisma),
+    ),
+    conclusionWindowMs: options.conclusionWindowMs ?? DEFAULT_CONCLUSION_WINDOW_MS,
+    now,
   });
   const emission = createEmission({
     uow: createEmissionUnitOfWork(options.prisma, options.signingReads),

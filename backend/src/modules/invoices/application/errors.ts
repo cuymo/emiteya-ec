@@ -54,3 +54,16 @@ export class EmissionRejectedError extends ConflictError {
     this.issue = issue;
   }
 }
+
+/** Reconciliación manual (add-sri-transmission, design D15). */
+export const sriInteractionInProgress = () =>
+  new ConflictError(
+    "SRI_INTERACTION_IN_PROGRESS",
+    "La factura ya tiene una interacción con el SRI en curso. Espera a que termine.",
+  );
+
+export const invoiceNotReconcilable = () =>
+  new ConflictError(
+    "INVOICE_NOT_RECONCILABLE",
+    "El estado de la factura no admite una reconciliación con el SRI.",
+  );

@@ -3,9 +3,8 @@
 import { hostname } from "node:os";
 import { randomUUID } from "node:crypto";
 import type { Logger } from "pino";
-import { LeaseLostError, type BackoffPolicy, type Job } from "./jobs.ts";
+import { LeaseLostError, type BackoffPolicy, type Job, type JobStore } from "./jobs.ts";
 import type { DbClient } from "../db/database.ts";
-import type { JobStore } from "./prisma-job-store.ts";
 
 export type JobContext = Readonly<{
   /** Se aborta al pedir el apagado: el handler no empieza una llamada externa nueva. */

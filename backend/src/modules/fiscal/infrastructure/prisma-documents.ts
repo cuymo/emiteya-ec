@@ -37,6 +37,9 @@ type Row = {
   lastAttemptDetail: unknown;
   attemptCount: number;
   attemptLeaseUntil: Date | null;
+  authorizationNumber: string | null;
+  authorizationDate: Date | null;
+  authorizationEnvironment: string | null;
 };
 
 const toStored = (row: Row): StoredDocument => ({
@@ -73,6 +76,14 @@ const toStored = (row: Row): StoredDocument => ({
       : null,
   attemptCount: row.attemptCount,
   attemptLeaseUntil: row.attemptLeaseUntil,
+  authorization:
+    row.authorizationNumber && row.authorizationDate && row.authorizationEnvironment
+      ? {
+          number: row.authorizationNumber,
+          date: row.authorizationDate,
+          environment: row.authorizationEnvironment as StoredDocument["environment"],
+        }
+      : null,
 });
 
 export function createDocumentRepository(db: DbClient): DocumentRepository {
@@ -123,21 +134,46 @@ export function createDocumentRepository(db: DbClient): DocumentRepository {
       return row ? toStored(row) : null;
     },
 
+    async lock(companyId, documentId) {
+      // Un UPDATE sin cambios toma el mismo bloqueo de fila que SELECT … FOR UPDATE, con las
+      // consultas del modelo: el adapter no califica el SQL crudo con el esquema.
+      await db.electronicDocument.updateMany({
+        where: { id: documentId, companyId },
+        data: { companyId },
+      });
+      const row = await db.electronicDocument.findFirst({ where: { id: documentId, companyId } });
+      return row ? toStored(row) : null;
+    },
+
     async list(companyId, query) {
       const search = query.search?.trim();
       const where = {
         companyId,
         documentType: query.documentType,
         ...(query.state ? { state: query.state } : {}),
-        ...(search
-          ? {
-              OR: [
-                { documentNumber: { contains: search } },
-                { buyerIdentification: { contains: search } },
-                { buyerName: { contains: search, mode: "insensitive" as const } },
-              ],
-            }
-          : {}),
+        AND: [
+          ...(search
+            ? [
+                {
+                  OR: [
+                    { documentNumber: { contains: search } },
+                    { buyerIdentification: { contains: search } },
+                    { buyerName: { contains: search, mode: "insensitive" as const } },
+                  ],
+                },
+              ]
+            : []),
+          ...(query.attention
+            ? [
+                {
+                  OR: [
+                    { state: { in: [...query.attention.states] } },
+                    { id: { in: [...query.attention.documentIds] } },
+                  ],
+                },
+              ]
+            : []),
+        ],
       };
       const [rows, total] = await Promise.all([
         db.electronicDocument.findMany({

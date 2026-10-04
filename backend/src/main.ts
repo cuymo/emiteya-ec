@@ -229,6 +229,9 @@ apiRouter.use(
 apiRouter.use(
   ...productsModule({ prisma: database.prisma, authorizer, catalogs: catalogQueries }).routers,
 );
+// Cola durable de jobs (ADR 0012): la usan los workers y la reconciliación manual.
+const jobStore = createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATABASE_URL).schema);
+
 // Borradores y facturas (add-invoice-emission, design D1 y D13).
 apiRouter.use(
   ...invoicesModule({
@@ -241,6 +244,8 @@ apiRouter.use(
     metrics: metrics.registry,
     stageTimings: env.EMISSION_STAGE_TIMINGS,
     logger,
+    jobs: jobStore,
+    conclusionWindowMs: env.SRI_CONCLUSION_WINDOW_HOURS * 3_600_000,
   }).routers,
 );
 
@@ -271,7 +276,7 @@ setInterval(() => void transmissionGate.refresh(), 30_000).unref();
 // Cola durable de jobs (ADR 0012): los workers corren en el proceso de la API y se cierran antes
 // que el pool criptográfico y la base de datos.
 const jobRunner = createJobRunner({
-  store: createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATABASE_URL).schema),
+  store: jobStore,
   db: database.prisma,
   handlers: {},
   workers: env.SRI_JOB_WORKERS,

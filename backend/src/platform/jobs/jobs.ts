@@ -1,5 +1,7 @@
 // Cola durable propia en PostgreSQL (ADR 0012, design D5 de add-sri-transmission): tipos del job,
-// del error tipado y el backoff exponencial con jitter completo. No conoce el SRI ni ningún módulo.
+// del error tipado, el puerto del repositorio y el backoff exponencial con jitter completo. No
+// conoce el SRI ni ningún módulo.
+import type { DbClient } from "../db/database.ts";
 
 export type JobStatus = "PENDING" | "LEASED" | "DONE" | "STOPPED";
 export type JobErrorClass = "RETRYABLE" | "DETERMINISTIC" | "INTEGRITY";
@@ -65,6 +67,50 @@ export function backoffDelayMs(
   const ceiling = Math.min(policy.capMs, policy.baseMs * 2 ** Math.max(0, attempt - 1));
   return Math.min(policy.capMs, Math.max(policy.minMs, Math.floor(random() * ceiling)));
 }
+
+export type ClaimRequest = Readonly<{
+  owner: string;
+  /** Tipos que este worker sabe ejecutar y no están pausados. */
+  types: readonly string[];
+  limit: number;
+  leaseMs: number;
+  now: Date;
+}>;
+
+export type JobStore = {
+  /**
+   * Inserta el job salvo que ya haya uno activo con su clave o, en los tipos exclusivos por
+   * comprobante, otro activo del mismo comprobante. Devuelve si lo insertó.
+   */
+  enqueueIn(db: DbClient, job: NewJob): Promise<boolean>;
+  /** Toma los `PENDING` vencidos y los `LEASED` con el arriendo vencido; incrementa los intentos. */
+  claim(request: ClaimRequest): Promise<Job[]>;
+  /** `DONE`. Sin el arriendo, lanza `LeaseLostError` y la transacción se revierte. */
+  complete(db: DbClient, job: Job, now: Date): Promise<void>;
+  /**
+   * Vuelve a `PENDING` para `at`. Sin `consumeAttempt`, devuelve el intento tomado: una pausa
+   * del circuit breaker o un apagado antes de llamar no gastan intentos. El plazo sigue corriendo.
+   */
+  reschedule(
+    db: DbClient,
+    job: Job,
+    options: Readonly<{ at: Date; now: Date; consumeAttempt: boolean; error?: JobError }>,
+  ): Promise<JobStatus>;
+  /**
+   * Fallo tipado: reintenta con backoff, o se detiene si el error no es reintentable o se agotan
+   * los intentos o el plazo. Devuelve el estado resultante.
+   */
+  fail(
+    db: DbClient,
+    job: Job,
+    error: JobError,
+    options: Readonly<{ backoff: BackoffPolicy; now: Date; random?: () => number }>,
+  ): Promise<JobStatus>;
+  /** `STOPPED` con su motivo: queda visible hasta una decisión humana. */
+  stop(db: DbClient, job: Job, error: JobError, now: Date): Promise<void>;
+  /** Vence los arriendos de un worker para que otro los retome (apagado ordenado). */
+  release(owner: string, now: Date): Promise<number>;
+};
 
 /** El arriendo ya no es de este worker: su decisión no se confirma. */
 export class LeaseLostError extends Error {

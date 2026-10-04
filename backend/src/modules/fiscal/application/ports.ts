@@ -79,17 +79,37 @@ export type StoredDocument = Readonly<{
   lastAttempt: AttemptDiagnostic | null;
   attemptCount: number;
   attemptLeaseUntil: Date | null;
+  /** Solo en `AUTHORIZED`: el número es la clave y el ambiente, el del comprobante (design D16). */
+  authorization: DocumentAuthorization | null;
+}>;
+
+export type DocumentAuthorization = Readonly<{
+  number: string;
+  date: Date;
+  environment: Environment;
 }>;
 
 export type NewReservedDocument = Omit<
   StoredDocument,
-  "id" | "state" | "createdAt" | "signedAt" | "lastAttempt" | "attemptCount" | "attemptLeaseUntil"
+  | "id"
+  | "state"
+  | "createdAt"
+  | "signedAt"
+  | "lastAttempt"
+  | "attemptCount"
+  | "attemptLeaseUntil"
+  | "authorization"
 >;
 
 export type DocumentListQuery = Readonly<{
   documentType: DocumentType;
   search?: string | undefined;
   state?: DocumentState | undefined;
+  /**
+   * "Requiere atención" (add-sri-transmission, design D20): estos estados, o uno de estos
+   * comprobantes con la transmisión detenida.
+   */
+  attention?: Readonly<{ states: readonly DocumentState[]; documentIds: readonly string[] }>;
   page: number;
   pageSize: number;
 }>;
@@ -108,6 +128,8 @@ export interface DocumentRepository {
     metadata?: Record<string, string | number | boolean | null>;
   }): Promise<void>;
   find(companyId: string, documentId: string): Promise<StoredDocument | null>;
+  /** Bloquea la fila del comprobante hasta el fin de la transacción y lo devuelve. */
+  lock(companyId: string, documentId: string): Promise<StoredDocument | null>;
   /** Por número o comprador, del más reciente al más antiguo. */
   list(
     companyId: string,

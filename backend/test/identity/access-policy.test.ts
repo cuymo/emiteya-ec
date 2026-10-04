@@ -45,6 +45,7 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "invoices.draft": { ADMIN: true, OPERATOR: true },
   "invoices.emit": { ADMIN: true, OPERATOR: true },
   "invoices.retrySigning": { ADMIN: true, OPERATOR: true },
+  "invoices.reconcile": { ADMIN: true, OPERATOR: false },
 };
 
 describe("política de autorización central", () => {

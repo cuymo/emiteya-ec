@@ -45,6 +45,9 @@ export const AUDIT_ACTIONS = [
   "invoice.reserved",
   "invoice.signed",
   "invoice.signing_retried",
+  // add-sri-transmission, design D19: solo la reconciliación manual, sin respuestas del SRI ni XML.
+  "invoice.reconciliation_requested",
+  "invoice.reconciliation_completed",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

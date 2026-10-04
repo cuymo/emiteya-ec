@@ -66,7 +66,7 @@
 
 ## 4. Contratos, permisos y auditoría
 
-- [ ] 4.1 Ampliar `packages/contracts/src/invoices.ts` (design D18):
+- [x] 4.1 Ampliar `packages/contracts/src/invoices.ts` (design D18):
   - estados nuevos con las etiquetas del glosario;
   - resumen de la transmisión en el detalle;
   - vista de `GET /invoices/{id}/transmission`;
@@ -75,7 +75,7 @@
   - rutas en `apiRoutes`.
 
   Verificar con pruebas de contratos y con `openapi-routes.test.ts`
-- [ ] 4.2 Añadir `invoices.reconcile` a `access-policy.ts` (solo `ADMIN`), a su espejo del frontend y a la tabla de `access-control.md`, junto con las acciones de auditoría `invoice.reconciliation_requested` e `invoice.reconciliation_completed` (design D18 y D19). Verificar con `access-policy.test.ts`: el administrador tiene el permiso y el operador no
+- [x] 4.2 Añadir `invoices.reconcile` a `access-policy.ts` (solo `ADMIN`), a su espejo del frontend y a la tabla de `access-control.md`, junto con las acciones de auditoría `invoice.reconciliation_requested` e `invoice.reconciliation_completed` (design D18 y D19). Verificar con `access-policy.test.ts`: el administrador tiene el permiso y el operador no
 
 ## 5. Transporte SOAP propio (`SriTransport`)
 

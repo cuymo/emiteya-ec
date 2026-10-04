@@ -27,6 +27,7 @@ const summary = (overrides: Record<string, unknown> = {}) => ({
   total: "28.75",
   state: "SIGNED",
   diagnosticCode: null,
+  transmissionStopped: false,
   createdAt: "2026-10-03T15:00:00.000Z",
   ...overrides,
 });
@@ -79,6 +80,14 @@ const detail = (overrides: Record<string, unknown> = {}) => ({
   totals: TOTALS,
   diagnostic: null,
   artifact: { sha256: "a".repeat(64), sizeBytes: 4096 },
+  authorizedArtifact: null,
+  transmission: {
+    inProgress: true,
+    stopped: null,
+    reconcilable: false,
+    authorization: null,
+    lastResult: null,
+  },
   createdAt: "2026-10-03T15:00:00.000Z",
   signedAt: "2026-10-03T15:00:01.000Z",
   ...overrides,

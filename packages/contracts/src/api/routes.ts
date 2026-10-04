@@ -86,6 +86,8 @@ import {
   emitInvoiceHeadersSchema,
   emitInvoiceSchema,
   invoiceIdParamsSchema,
+  invoiceTransmissionViewSchema,
+  requestReconciliationSchema,
   invoiceListMetaSchema,
   invoiceSummaryViewSchema,
   invoiceViewSchema,
@@ -994,13 +996,51 @@ export const apiRoutes: readonly RouteDefinition[] = [
   defineRoute({
     method: "get",
     path: "/invoices/:invoiceId",
-    summary: "Consultar una factura desde su snapshot, con el diagnóstico del último intento",
+    summary:
+      "Consultar una factura desde su snapshot, con el diagnóstico del último intento y el resumen de su transmisión al SRI",
     request: { params: invoiceIdParamsSchema },
     responses: {
       200: invoiceResponse("Factura."),
       401: errors[401],
       403: errors[403],
       404: invoiceNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/invoices/:invoiceId/transmission",
+    summary:
+      "Consultar el historial de la transmisión al SRI: transiciones e intentos resumidos, sin respuestas originales ni XML",
+    request: { params: invoiceIdParamsSchema },
+    responses: {
+      200: {
+        description: "Las 100 entradas más recientes del historial y el total.",
+        schema: successEnvelope(invoiceTransmissionViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: invoiceNotFound,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/invoices/:invoiceId/reconciliations",
+    summary:
+      "Pedir la reconciliación de una factura con el SRI, con motivo (solo el administrador)",
+    request: { params: invoiceIdParamsSchema, body: requestReconciliationSchema },
+    responses: {
+      202: invoiceResponse(
+        "Reconciliación programada: un job consulta al SRI por la clave y aplica las reglas de la transmisión. La factura con su estado actual.",
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: invoiceNotFound,
+      409: {
+        description:
+          "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (INVOICE_NOT_RECONCILABLE).",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
   defineRoute({

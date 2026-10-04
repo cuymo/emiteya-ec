@@ -159,12 +159,13 @@ denegado por defecto;
 | `invoices.draft` | Crear, consultar, corregir y eliminar borradores de factura | Sí | Sí |
 | `invoices.emit` | Emitir una factura desde un borrador: reserva el número y la firma localmente | Sí | Sí |
 | `invoices.retrySigning` | Reintentar la firma de una factura reservada, con el mismo número y la misma clave | Sí | Sí |
+| `invoices.reconcile` | Pedir la reconciliación de una factura con el SRI: resolver una revisión manual o reactivar una transmisión detenida, con motivo | Sí | No |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
 
 Matriz propuesta para los módulos futuros (Q-22). El ERS solo dice "permisos básicos"; cada
-cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; resolver una revisión manual u ordenar una reconciliación sigue siendo solo del administrador y llega con el cambio 7:
+cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; `add-sri-transmission` confirmó "Resolver revisión manual u ordenar una reconciliación" solo para el administrador (`invoices.reconcile`):
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |

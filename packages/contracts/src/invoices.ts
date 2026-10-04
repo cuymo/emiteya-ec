@@ -95,14 +95,40 @@ export const emitInvoiceHeadersSchema = z.object({
     .regex(IDEMPOTENCY_KEY_PATTERN, "La cabecera Idempotency-Key no es válida."),
 });
 
-export const INVOICE_STATES = ["RESERVED", "SIGNED"] as const;
+/**
+ * Estados fiscales de la factura: los locales (`RESERVED`, `SIGNED`) y los de la transmisión al SRI
+ * (add-sri-transmission, design D3). El envío en curso es un estado del job, no fiscal.
+ */
+export const INVOICE_STATES = [
+  "RESERVED",
+  "SIGNED",
+  "SEND_UNKNOWN",
+  "RECEIVED",
+  "RETURNED",
+  "AUTHORIZED",
+  "NOT_AUTHORIZED",
+  "MANUAL_REVIEW",
+] as const;
 export const invoiceStateSchema = z.enum(INVOICE_STATES, { error: "El estado no es válido." });
 export type InvoiceState = z.infer<typeof invoiceStateSchema>;
-/** Estados locales: la factura todavía no se envía al SRI (cambio 7). */
+/** Etiquetas del glosario (`docs/product/glossary.md`); la interfaz nunca muestra el código. */
 export const INVOICE_STATE_LABELS: Record<InvoiceState, string> = {
   RESERVED: "Procesando",
   SIGNED: "Pendiente de envío",
+  SEND_UNKNOWN: "Verificando con el SRI",
+  RECEIVED: "Pendiente de autorización",
+  RETURNED: "Devuelto",
+  AUTHORIZED: "Autorizado",
+  NOT_AUTHORIZED: "No autorizado",
+  MANUAL_REVIEW: "Requiere revisión",
 };
+/** Estados que piden atención (design D20), además de una transmisión detenida. */
+export const INVOICE_ATTENTION_STATES = ["SEND_UNKNOWN", "MANUAL_REVIEW"] as const;
+/**
+ * Estados en que se admite una reconciliación manual (design D15): `SIGNED` y `RECEIVED` solo con
+ * su transmisión detenida, es decir, sin una interacción activa con el SRI.
+ */
+export const RECONCILABLE_STATES = ["SIGNED", "SEND_UNKNOWN", "RECEIVED", "MANUAL_REVIEW"] as const;
 
 export const invoiceIdParamsSchema = z.strictObject({ invoiceId: z.string().min(1) });
 
@@ -110,6 +136,8 @@ export const invoiceIdParamsSchema = z.strictObject({ invoiceId: z.string().min(
 export const listInvoicesQuerySchema = z.object({
   search: searchParam,
   state: invoiceStateSchema.optional(),
+  /** "Requiere atención": `SEND_UNKNOWN`, `MANUAL_REVIEW` o transmisión detenida (design D20). */
+  attention: z.enum(["true"], { error: "El filtro no es válido." }).optional(),
   ...pageParams,
 });
 export type ListInvoicesQuery = z.output<typeof listInvoicesQuerySchema>;
@@ -150,6 +178,9 @@ export const INVOICE_ERROR_CODES = [
   "SPECIAL_CASE_UNSUPPORTED",
   "SCHEMA_NOT_AVAILABLE",
   "SEQUENCE_EXHAUSTED",
+  // Reconciliación manual (add-sri-transmission, design D15): `409`.
+  "SRI_INTERACTION_IN_PROGRESS",
+  "INVOICE_NOT_RECONCILABLE",
 ] as const;
 export type InvoiceErrorCode = (typeof INVOICE_ERROR_CODES)[number];
 
@@ -320,6 +351,117 @@ export const signingDiagnosticViewSchema = z.strictObject({
 });
 export type SigningDiagnosticView = z.infer<typeof signingDiagnosticViewSchema>;
 
+/** Operaciones con el SRI de un intento (design D7). */
+export const SRI_OPERATIONS = ["RECEPTION", "AUTHORIZATION", "VALIDITY"] as const;
+export type SriOperation = (typeof SRI_OPERATIONS)[number];
+
+/** Resultados de la clasificación de un intento (design D11, D12 y D15). */
+export const SRI_RESULT_OUTCOMES = [
+  "RECEIVED",
+  "RETURNED",
+  "KEY_IN_PROCESS",
+  "KEY_REGISTERED",
+  "SEQUENTIAL_REGISTERED",
+  "UNKNOWN",
+  "INCONSISTENT",
+  "AUTHORIZED",
+  "NOT_AUTHORIZED",
+  "NO_CONCLUSION",
+  "KEY_UNKNOWN",
+  "KEY_KNOWN",
+  "NO_EVIDENCE",
+  "NOT_SENT",
+  "UNPARSEABLE",
+] as const;
+export type SriResultOutcome = (typeof SRI_RESULT_OUTCOMES)[number];
+
+/** Mensaje del SRI tal como llegó: todos, en orden, también los códigos desconocidos (CTX §22.2). */
+export const sriMessageViewSchema = z.strictObject({
+  identifier: z.string().nullable(),
+  message: z.string().nullable(),
+  additionalInformation: z.string().nullable(),
+  type: z.string().nullable(),
+});
+export type SriMessageView = z.infer<typeof sriMessageViewSchema>;
+
+/** Solicitud de reconciliación manual (design D15): el motivo es obligatorio. */
+export const RECONCILIATION_REASON_MAX = 500;
+export const requestReconciliationSchema = strictBody({
+  reason: z
+    .string({ error: "Indica el motivo de la reconciliación." })
+    .trim()
+    .min(1, "Indica el motivo de la reconciliación.")
+    .max(
+      RECONCILIATION_REASON_MAX,
+      `El motivo admite como máximo ${RECONCILIATION_REASON_MAX} caracteres.`,
+    ),
+});
+export type RequestReconciliationInput = z.input<typeof requestReconciliationSchema>;
+
+/**
+ * Resumen de la transmisión en el detalle (design D18): si hay una interacción en curso, si se
+ * detuvo y por qué, si admite una reconciliación, la autorización y el último resultado del SRI.
+ */
+export const invoiceTransmissionSummarySchema = z.strictObject({
+  inProgress: z.boolean(),
+  stopped: z
+    .strictObject({ code: z.string(), message: z.string(), at: z.iso.datetime() })
+    .nullable(),
+  reconcilable: z.boolean(),
+  authorization: z
+    .strictObject({
+      number: z.string(),
+      authorizedAt: z.iso.datetime(),
+      environment: environmentSchema,
+    })
+    .nullable(),
+  lastResult: z
+    .strictObject({
+      operation: z.enum(SRI_OPERATIONS),
+      outcome: z.enum(SRI_RESULT_OUTCOMES),
+      at: z.iso.datetime(),
+      messages: z.array(sriMessageViewSchema),
+    })
+    .nullable(),
+});
+export type InvoiceTransmissionSummary = z.infer<typeof invoiceTransmissionSummarySchema>;
+
+/** Una entrada del historial de la transmisión: una transición o un intento resumido. */
+export const transmissionEventViewSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    kind: z.literal("TRANSITION"),
+    at: z.iso.datetime(),
+    fromState: invoiceStateSchema.nullable(),
+    toState: invoiceStateSchema,
+    cause: z.string(),
+    actor: z.enum(["SYSTEM", "USER"]),
+    actorName: z.string().nullable(),
+  }),
+  z.strictObject({
+    kind: z.literal("ATTEMPT"),
+    at: z.iso.datetime(),
+    operation: z.enum(SRI_OPERATIONS),
+    origin: z.enum(["AUTOMATIC", "MANUAL"]),
+    /** Null mientras el intento espera su clasificación. */
+    outcome: z.enum(SRI_RESULT_OUTCOMES).nullable(),
+    messages: z.array(sriMessageViewSchema),
+  }),
+]);
+export type TransmissionEventView = z.infer<typeof transmissionEventViewSchema>;
+
+/**
+ * Historial de la transmisión (design D18): las 100 entradas más recientes y el total, sin
+ * respuestas originales, XML ni datos técnicos del transporte.
+ */
+export const INVOICE_TRANSMISSION_HISTORY_LIMIT = 100;
+export const invoiceTransmissionViewSchema = z.strictObject({
+  invoiceId: z.string(),
+  state: invoiceStateSchema,
+  events: z.array(transmissionEventViewSchema),
+  total: z.number().int().nonnegative(),
+});
+export type InvoiceTransmissionView = z.infer<typeof invoiceTransmissionViewSchema>;
+
 /** Factura desde su snapshot: lo que se emitió, aunque después cambien productos o configuración. */
 export const invoiceViewSchema = z.strictObject({
   id: z.string(),
@@ -365,6 +507,11 @@ export const invoiceViewSchema = z.strictObject({
   /** Último intento fallido mientras sigue `RESERVED`; `null` sin fallos o ya firmada. */
   diagnostic: signingDiagnosticViewSchema.nullable(),
   artifact: z.strictObject({ sha256: z.string(), sizeBytes: z.number().int() }).nullable(),
+  /** XML autorizado recibido del SRI: solo su hash y su tamaño, distinto del firmado (D16). */
+  authorizedArtifact: z
+    .strictObject({ sha256: z.string(), sizeBytes: z.number().int() })
+    .nullable(),
+  transmission: invoiceTransmissionSummarySchema,
   createdAt: z.iso.datetime(),
   signedAt: z.iso.datetime().nullable(),
 });
@@ -383,6 +530,8 @@ export const invoiceSummaryViewSchema = z.strictObject({
   diagnosticCode: z
     .enum(SIGNING_ATTEMPT_CODE_LIST as [SigningAttemptCode, ...SigningAttemptCode[]])
     .nullable(),
+  /** La transmisión se detuvo y espera una decisión humana (design D20). */
+  transmissionStopped: z.boolean(),
   createdAt: z.iso.datetime(),
 });
 export type InvoiceSummaryView = z.infer<typeof invoiceSummaryViewSchema>;

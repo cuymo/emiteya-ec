@@ -1,9 +1,16 @@
 // Contratos de borradores y facturas (add-invoice-emission, tarea 4.1, design D2, D8 y D13).
 import { describe, expect, it } from "vitest";
 import {
+  INVOICE_ERROR_CODES,
   INVOICE_LINES_MAX,
+  INVOICE_STATES,
+  INVOICE_STATE_LABELS,
+  RECONCILABLE_STATES,
   SIGNING_ATTEMPT_CODES,
   apiRoutes,
+  invoiceTransmissionSummarySchema,
+  invoiceTransmissionViewSchema,
+  requestReconciliationSchema,
   createDraftSchema,
   emitInvoiceHeadersSchema,
   emitInvoiceSchema,
@@ -141,7 +148,7 @@ describe("contrato de la emisión", () => {
     );
   });
 
-  it("las rutas de design D13 están registradas", () => {
+  it("las rutas de design D13 y de la transmisión (add-sri-transmission, D18) están registradas", () => {
     const invoiceRoutes = apiRoutes
       .filter((route) => route.path.startsWith("/invoices"))
       .map((route) => `${route.method.toUpperCase()} ${route.path}`);
@@ -154,7 +161,127 @@ describe("contrato de la emisión", () => {
       "POST /invoices",
       "GET /invoices",
       "GET /invoices/:invoiceId",
+      "GET /invoices/:invoiceId/transmission",
+      "POST /invoices/:invoiceId/reconciliations",
       "POST /invoices/:invoiceId/signing-attempts",
     ]);
+  });
+});
+
+describe("contrato de la transmisión (add-sri-transmission, tarea 4.1, design D18)", () => {
+  it("los estados de la transmisión llevan las etiquetas del glosario", () => {
+    expect(INVOICE_STATES).toEqual([
+      "RESERVED",
+      "SIGNED",
+      "SEND_UNKNOWN",
+      "RECEIVED",
+      "RETURNED",
+      "AUTHORIZED",
+      "NOT_AUTHORIZED",
+      "MANUAL_REVIEW",
+    ]);
+    expect(INVOICE_STATE_LABELS).toEqual({
+      RESERVED: "Procesando",
+      SIGNED: "Pendiente de envío",
+      SEND_UNKNOWN: "Verificando con el SRI",
+      RECEIVED: "Pendiente de autorización",
+      RETURNED: "Devuelto",
+      AUTHORIZED: "Autorizado",
+      NOT_AUTHORIZED: "No autorizado",
+      MANUAL_REVIEW: "Requiere revisión",
+    });
+    expect(RECONCILABLE_STATES).toEqual(["SIGNED", "SEND_UNKNOWN", "RECEIVED", "MANUAL_REVIEW"]);
+  });
+
+  it('el listado filtra por un estado de la transmisión y por "requiere atención"', () => {
+    expect(
+      listInvoicesQuerySchema.parse({ state: "MANUAL_REVIEW", attention: "true" }),
+    ).toMatchObject({ state: "MANUAL_REVIEW", attention: "true", page: 1 });
+    expect(listInvoicesQuerySchema.safeParse({ attention: "false" }).success).toBe(false);
+    expect(listInvoicesQuerySchema.safeParse({ state: "SEND_PENDING" }).success).toBe(false);
+  });
+
+  it("la reconciliación exige un motivo de 1 a 500 caracteres y ningún otro campo", () => {
+    expect(requestReconciliationSchema.parse({ reason: "  El SRI ya respondió.  " })).toEqual({
+      reason: "El SRI ya respondió.",
+    });
+    expect(messages(requestReconciliationSchema.safeParse({}))).toEqual([
+      "Indica el motivo de la reconciliación.",
+    ]);
+    expect(messages(requestReconciliationSchema.safeParse({ reason: "   " }))).toEqual([
+      "Indica el motivo de la reconciliación.",
+    ]);
+    expect(requestReconciliationSchema.safeParse({ reason: "x".repeat(500) }).success).toBe(true);
+    expect(messages(requestReconciliationSchema.safeParse({ reason: "x".repeat(501) }))).toEqual([
+      "El motivo admite como máximo 500 caracteres.",
+    ]);
+    expect(requestReconciliationSchema.safeParse({ reason: "x", force: true }).success).toBe(false);
+  });
+
+  it("los códigos de la reconciliación son estables", () => {
+    expect(INVOICE_ERROR_CODES).toEqual(
+      expect.arrayContaining(["SRI_INTERACTION_IN_PROGRESS", "INVOICE_NOT_RECONCILABLE"]),
+    );
+  });
+
+  it("el resumen y el historial no admiten respuestas originales ni XML", () => {
+    const summary = {
+      inProgress: false,
+      stopped: null,
+      reconcilable: false,
+      authorization: {
+        number: "1".repeat(49),
+        authorizedAt: "2026-10-04T15:00:00.000Z",
+        environment: "TEST",
+      },
+      lastResult: {
+        operation: "AUTHORIZATION",
+        outcome: "AUTHORIZED",
+        at: "2026-10-04T15:00:01.000Z",
+        messages: [
+          {
+            identifier: "60",
+            message: "AMBIENTE",
+            additionalInformation: null,
+            type: "ADVERTENCIA",
+          },
+        ],
+      },
+    };
+    expect(invoiceTransmissionSummarySchema.parse(summary)).toEqual(summary);
+    expect(
+      invoiceTransmissionSummarySchema.safeParse({ ...summary, responseBody: "<soap/>" }).success,
+    ).toBe(false);
+    const view = {
+      invoiceId: "inv-1",
+      state: "AUTHORIZED",
+      events: [
+        {
+          kind: "ATTEMPT",
+          at: "2026-10-04T15:00:01.000Z",
+          operation: "RECEPTION",
+          origin: "AUTOMATIC",
+          outcome: "RECEIVED",
+          messages: [],
+        },
+        {
+          kind: "TRANSITION",
+          at: "2026-10-04T15:00:00.000Z",
+          fromState: "SIGNED",
+          toState: "RECEIVED",
+          cause: "TRANSMISSION",
+          actor: "SYSTEM",
+          actorName: null,
+        },
+      ],
+      total: 2,
+    };
+    expect(invoiceTransmissionViewSchema.parse(view)).toEqual(view);
+    expect(
+      invoiceTransmissionViewSchema.safeParse({
+        ...view,
+        events: [{ ...view.events[0], xml: "<factura/>" }],
+      }).success,
+    ).toBe(false);
   });
 });
