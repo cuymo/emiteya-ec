@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { DocumentType } from "@facturador/contracts";
 import {
   XsdValidatorError,
@@ -302,6 +302,10 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
         ...options,
       });
     const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+    // Cada validación lee antes los XSD del disco: se espera a que arranquen los workers esperados,
+    // no un plazo fijo, y después `settle` deja ver si arrancaría alguno de más.
+    const started = (state: { started: number }, count: number) =>
+      vi.waitFor(() => expect(state.started).toBe(count), { timeout: 10_000 });
 
     it("100 validaciones simultáneas nunca tienen más de `concurrency` workers en curso", async () => {
       const { engine, state, finishAll } = controlledEngine();
@@ -309,6 +313,7 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
       const all = Promise.all(
         Array.from({ length: 100 }, () => limited.validate(factura, schemaOf("01"))),
       );
+      await started(state, 2);
       await settle();
       expect(state.active).toBe(2);
       await finishAll();
@@ -322,6 +327,7 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
       const limited = bounded(engine, { concurrency: 1, maxQueue: 1 });
       const first = limited.validate(factura, schemaOf("01"));
       const second = limited.validate(factura, schemaOf("01"));
+      await started(state, 1);
       await settle();
       expect(await codeOf(limited.validate(factura, schemaOf("01")))).toBe("VALIDATOR_BUSY");
       expect(state.started).toBe(1);
@@ -334,7 +340,7 @@ describe("contrato de XsdValidator sobre xmllint-wasm (spike S-2, ADR 0021)", ()
       const { engine, state, finishAll } = controlledEngine();
       const limited = bounded(engine, { concurrency: 1, maxQueue: 4, timeoutMs: 30 });
       const slow = codeOf(limited.validate(factura, schemaOf("01")));
-      await settle();
+      await started(state, 1);
       const queued = limited.validate(factura, schemaOf("01"));
       expect(await slow).toBe("VALIDATOR_TIMEOUT");
       await settle();
