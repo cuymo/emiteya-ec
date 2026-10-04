@@ -1,10 +1,11 @@
 # Architecture Map
 
 Estado: arquitectura objetivo del MVP, que se construye mediante los cambios OpenSpec de
-`docs/product/capabilities.md`. El código existe hasta `add-sri-transmission` (cambio 7): la
-emisión local de la factura hasta `SIGNED` y su transmisión al SRI con jobs persistidos hasta
-`AUTHORIZED`, con la transmisión apagada por defecto. El RIDE, la entrega, el inventario y los
-reportes siguen siendo objetivo.
+`docs/product/capabilities.md`. El código existe hasta `add-document-archive` (cambio 8): la
+emisión local de la factura hasta `SIGNED`, su transmisión al SRI con jobs persistidos hasta
+`AUTHORIZED`, con la transmisión apagada por defecto, y el archivo documental: el RIDE generado una
+vez, la bandeja, las descargas verificadas y el historial de entregas. El correo, el inventario y
+los reportes siguen siendo objetivo.
 
 ## System Style
 
