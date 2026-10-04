@@ -12,5 +12,5 @@ El sistema SHALL mantener como política versionada el límite de tamaño de un 
 - **THEN** se publica una versión nueva de la política con su vigencia, y la anterior se conserva
 
 #### Scenario: Fuente sin verificar
-- **WHEN** la cifra exacta no puede verificarse en la fuente oficial
-- **THEN** la política no se publica
+- **WHEN** la cifra exacta en bytes no puede verificarse en la fuente oficial
+- **THEN** la política no se publica, no se usa ningún valor provisional y ningún comprobante se envía al SRI

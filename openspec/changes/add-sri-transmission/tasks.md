@@ -62,7 +62,13 @@
   - la política visible en `Catálogos fiscales`.
 
   Verificar con pruebas del cargador y de la resolución sobre una política de prueba del arnés, marcada como tal, y con pruebas de componente de la pantalla
-- [ ] 3.2 Obtener la cifra oficial exacta del límite individual en la ficha v2.34 o su fuente oficial, y publicar `sri-transmission-policy/1.json` con la cita, la sección, la unidad literal y la interpretación en bytes, más una prueba de borde: el límite exacto se envía y un byte más no. Si la fuente sigue inaccesible, Q-47 sigue abierta y esta tarea no se marca: no se inventa la cifra ni se toma de una librería. Verificar que el dataset cita la fuente y que las pruebas de borde pasan. Bloquea el cierre de `/opsx:apply` (design D17)
+- [ ] 3.2 Dejar la política de tamaño lista para la cifra oficial y la transmisión cerrada mientras no exista (design D17). Q-47 es una compuerta previa a la transmisión real, no de este cambio: la ficha v2.34 dice "320 Kb" sin fijar la conversión a bytes. Verificar:
+  - el modelo versionado de la política, con la fuente, el texto, la sección y la unidad literal trazables;
+  - que `maxSignedDocumentBytes` es obligatorio para transmitir: sin una política vigente con la cifra resuelta, ningún envío sale (`SIZE_POLICY_MISSING`);
+  - los bordes con una política de prueba marcada como tal: el límite exacto se envía y un byte más no;
+  - que habilitada sin política la instalación no se declara lista, y que deshabilitada no hace ninguna llamada.
+
+  La publicación de la cifra oficial pasa a las compuertas externas: no se infiere la conversión ni se copia de terceros, y no se publica ningún valor provisional. Cuando exista evidencia oficial, un cambio OpenSpec pequeño publicará la versión del dataset
 
 ## 4. Contratos, permisos y auditoría
 
@@ -273,7 +279,7 @@
   - `backend.md`, `ARCHITECTURE.md` y `database.md`;
   - `domain-model.md` y `glossary.md`;
   - `capabilities.md`;
-  - `open-questions.md`: Q-06 resuelta, Q-47 según la tarea 3.2 y Q-48 resuelta.
+  - `open-questions.md`: Q-06 resuelta, Q-47 como compuerta previa a la transmisión real y Q-48 resuelta.
 
   Verificar que los documentos citan las rutas, permisos, estados, tipos de job y códigos implementados
 

@@ -109,9 +109,17 @@ Cada interacción con el SRI SHALL dejar un intento de solo agregado con su oper
 - **WHEN** llega una respuesta del SRI
 - **THEN** el intento y su respuesta original quedan guardados antes de que cambie el estado del comprobante
 
-#### Scenario: Respuesta que no se puede interpretar
-- **WHEN** la respuesta no puede interpretarse
-- **THEN** el intento y la respuesta original permanecen, no se inventa un resultado y el comprobante queda pendiente de reconciliación
+#### Scenario: Respuesta que no se puede interpretar al enviar
+- **WHEN** la respuesta de la recepción de un comprobante firmado no puede interpretarse
+- **THEN** el intento y la respuesta original permanecen, el resultado queda sin conclusión y el comprobante pasa a resultado incierto con su reconciliación programada
+
+#### Scenario: Respuesta que no se puede interpretar en una consulta
+- **WHEN** la respuesta de la consulta de autorización no puede interpretarse y el comprobante está recibido, en resultado incierto o en revisión manual
+- **THEN** el intento y la respuesta original permanecen, el resultado queda sin conclusión, el estado no cambia por el fallo del parser y la consulta se reintenta dentro de sus límites
+
+#### Scenario: Consulta de validez que no se puede interpretar
+- **WHEN** la respuesta de la consulta de validez no puede interpretarse
+- **THEN** el intento y la respuesta original permanecen y la respuesta no aporta evidencia: como con el error 99, deciden la consulta de autorización y la evidencia de recepción, sin una transición por el fallo del parser
 
 #### Scenario: Caída entre la evidencia y la decisión
 - **WHEN** el proceso cae después de guardar la respuesta y antes de clasificarla
@@ -190,11 +198,11 @@ Cuando no se puede demostrar que la solicitud no llegó al SRI, el sistema SHALL
 - **THEN** el comprobante pasa a resultado incierto
 
 #### Scenario: Fallo demostrable antes de enviar
-- **WHEN** la dirección no se resolvió, la conexión fue rechazada antes de establecerse, venció antes de conectar o el TLS falló antes de que empezara la solicitud HTTP
+- **WHEN** la dirección no se resolvió, la conexión fue rechazada antes de establecerse, venció antes de conectar o falló la verificación del certificado TLS antes de que empezara la solicitud HTTP
 - **THEN** el comprobante sigue firmado y el envío se reintenta con espera creciente, sin reconciliar
 
 #### Scenario: Ambigüedad después de empezar
-- **WHEN** vence un plazo genérico o el de las cabeceras, se corta la conexión, se aborta la solicitud en curso o vence la lectura del cuerpo
+- **WHEN** vence un plazo genérico o el de las cabeceras, se corta la conexión, se aborta la solicitud en curso, vence la lectura del cuerpo o el TLS falla por una causa distinta de la verificación del certificado
 - **THEN** el comprobante pasa a resultado incierto, aunque la causa pudiera haber ocurrido antes del envío
 
 ### Requirement: Consulta de autorización

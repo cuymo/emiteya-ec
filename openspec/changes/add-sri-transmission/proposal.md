@@ -29,7 +29,7 @@ Q-07, Q-16 y Q-34).
   - La reconciliación es automática desde los jobs, o manual por el administrador sobre la factura; ambas usan el mismo caso de uso.
 - **Revisión manual (`MANUAL_REVIEW`, ERS §12.1, Q-06).** Es un estado fiscal para lo que no puede resolverse automáticamente de forma segura. Solo sale con una reconciliación explícita del administrador, y no recoge errores técnicos recuperables.
 - **Autorización registrada:** número, fecha, ambiente confirmado, respuesta original y XML autorizado exacto si viene, como artefacto distinto del `SIGNED_XML`, inmutables y verificables por hash.
-- **Límite de tamaño del envío:** política versionada de `fiscal-catalogs` con la cifra oficial exacta en bytes (Q-47), comprobada antes de llamar al SRI.
+- **Límite de tamaño del envío:** política versionada de `fiscal-catalogs`, comprobada antes de llamar al SRI, con falla cerrada sin versión vigente. La cifra oficial exacta en bytes (Q-47: la ficha dice "320 Kb" sin fijar la conversión) no se publica en este cambio: es una compuerta previa a la transmisión real.
 - **Consulta y pantallas.** La factura muestra su estado de transmisión, los mensajes del SRI, los datos de autorización y su historial, sin XML ni SOAP. El administrador tiene una acción de reconciliación con motivo.
 - **Observabilidad segura:** backlog y antigüedad de los jobs, intentos por resultado, comprobantes en `SEND_UNKNOWN` y en revisión manual, y latencia de autorización.
 
@@ -39,7 +39,7 @@ Fuera de alcance:
 - **Corrección de un comprobante devuelto** (BR-28, capacidad futura `correct-returned-document`): `RETURNED` no tiene salida en este cambio.
 - **Los otros cinco comprobantes.** La transmisión se diseña sobre el comprobante genérico, pero solo la factura llega a `SIGNED` hoy.
 - **Reconstrucción del XML**, una clave o un secuencial nuevos, y cualquier lógica del borrador o del cálculo de la factura.
-- **Evidencia externa:** S-3 online, un P12 ecuatoriano real, un RUC habilitado en Pruebas y el vector oficial de la clave. Son compuertas previas a la transmisión real, no partes de este cambio, que solo trae el procedimiento de prueba.
+- **Evidencia externa:** la interpretación exacta en bytes del límite de tamaño (Q-47), S-3 online, un P12 ecuatoriano real y un RUC habilitado en Pruebas. Son compuertas previas a la transmisión real, no partes de este cambio, que solo trae el procedimiento de prueba. El vector oficial de la clave se verificó durante el apply.
 
 ## Capabilities
 

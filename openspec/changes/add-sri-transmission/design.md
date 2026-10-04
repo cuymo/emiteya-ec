@@ -230,7 +230,9 @@ transporte ─▶ TX A: sri_attempt + sri_response ─▶ COMMIT
 ```
 
 - Ninguna fila de `sri_attempt_result` existe sin su intento confirmado antes, y ninguna transición de la transmisión existe sin su resultado.
-- **Si el clasificador falla** con una excepción o un XML ilegible, la TX B guarda un resultado `UNPARSEABLE`, sin conclusión, y el comprobante va a `SEND_UNKNOWN` desde `SIGNED`, o no cambia desde otros estados. El intento y la respuesta permanecen.
+- **Si el clasificador falla** con una excepción o un XML ilegible, la TX B guarda un resultado `UNPARSEABLE`, sin conclusión. El intento y la respuesta permanecen, y la transición depende del estado:
+  - desde `SIGNED`, el comprobante va a `SEND_UNKNOWN` con su reconciliación;
+  - desde `RECEIVED`, `SEND_UNKNOWN` o `MANUAL_REVIEW` no hay ninguna transición por un fallo del parser. Si falla la consulta de autorización, el job la reintenta como un fallo técnico, dentro de sus límites. Si falla la de validez, la respuesta no aporta evidencia y decide la tabla de D15, como con el error 99.
 - **Caída entre A y B.** Al retomar el job, el handler busca primero el último intento de ese job sin resultado y lo clasifica desde la respuesta guardada, sin llamar al SRI. Es la generalización del caso D de CTX §52.
 - **Pérdida del arriendo.** Si se pierde entre A y B, la TX B se revierte. El intento queda como evidencia, y el job lo clasifica al retomarse.
 - **Caída durante la llamada** (precisión de apply, CTX §22.3 "proceso cae"). El intento se inserta una sola vez con el resultado del transporte (D7), así que un arriendo de `sri.transmit` que empezó a llamar y no dejó intento se detecta al retomar: los arriendos del job (`attempt_count`) superan a sus intentos registrados. La solicitud pudo salir, así que no se reenvía: el comprobante pasa de `SIGNED` a `SEND_UNKNOWN` (transición ya prevista para un resultado incierto) con su reconciliación. Para que la cuenta sea exacta, un fallo antes de llamar, el breaker abierto y el apagado reprograman el job sin consumir el intento.
@@ -259,8 +261,8 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
 
   | Clase | Cuándo | Efecto |
   | --- | --- | --- |
-  | `PROVABLY_NOT_SENT` | El error de `fetch` tiene como causa un fallo anterior a la conexión: DNS (`ENOTFOUND`, `EAI_AGAIN`), conexión rechazada (`ECONNREFUSED`), plazo de conexión interno de Node (`UND_ERR_CONNECT_TIMEOUT`) o un fallo de verificación TLS (códigos `CERT_*`, `*_SELF_SIGNED_*`, `ERR_TLS_*`). En `fetch` la solicitud HTTP solo se escribe después de conectar y completar el TLS | El comprobante sigue `SIGNED` y el envío se reintenta, sin reconciliar |
-  | `MAY_HAVE_BEEN_SENT` | Todo lo demás: plazo propio (`AbortController`) hasta las cabeceras, abort durante la solicitud, socket cortado (`UND_ERR_SOCKET`, `ECONNRESET`), plazo de lectura del cuerpo, cualquier causa desconocida o ausente | `SEND_UNKNOWN`, evidencia guardada y reconciliación antes de cualquier reenvío |
+  | `PROVABLY_NOT_SENT` | El error de `fetch` tiene como causa un fallo anterior a la conexión: DNS (`ENOTFOUND`, `EAI_AGAIN`), conexión rechazada (`ECONNREFUSED`), plazo de conexión interno de Node (`UND_ERR_CONNECT_TIMEOUT`) o un fallo de verificación del certificado TLS, que ocurre en el handshake antes de la petición. La lista es cerrada: `CERT_*`, `*SELF_SIGNED*`, `DEPTH_ZERO_*`, `UNABLE_TO_GET_ISSUER_CERT`, `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `UNABLE_TO_DECRYPT_CERT_SIGNATURE`, `ERR_TLS_CERT_ALTNAME_INVALID` y `HOSTNAME_MISMATCH`, sin comodín `ERR_TLS_*`. En `fetch` la solicitud HTTP solo se escribe después de conectar y completar el TLS | El comprobante sigue `SIGNED` y el envío se reintenta, sin reconciliar |
+  | `MAY_HAVE_BEEN_SENT` | Todo lo demás: plazo propio (`AbortController`) hasta las cabeceras, abort durante la solicitud, socket cortado (`UND_ERR_SOCKET`, `ECONNRESET`), plazo de lectura del cuerpo, cualquier otro fallo de TLS o del handshake (puede ocurrir con la conexión ya abierta), y cualquier causa desconocida o ausente | `SEND_UNKNOWN`, evidencia guardada y reconciliación antes de cualquier reenvío |
 
   Un plazo propio es siempre ambiguo, porque `fetch` no expone si ya conectó. Por eso no se configura un plazo de conexión propio: el de conexión es el interno de Node, que da un error demostrable. Los plazos configurables son el de las cabeceras (`SRI_REQUEST_TIMEOUT_MS`, desde el inicio) y el de lectura del cuerpo (`SRI_BODY_TIMEOUT_MS`).
 - **Resultado de transporte:** `NOT_SENT`, solo `PROVABLY_NOT_SENT`; `REQUEST_TIMEOUT`, `BODY_TIMEOUT` y `CONNECTION_LOST`, todos `MAY_HAVE_BEEN_SENT`; o `RESPONSE`, con el estado HTTP, las cabeceras seguras, el cuerpo exacto y los tiempos de inicio, cabeceras y fin.
@@ -281,7 +283,7 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
   - puerto cerrado y nombre `.invalid`: `NOT_SENT`;
   - TLS con un certificado no confiable: `NOT_SENT`;
   - servidor que acepta y no responde, socket cortado tras leer la solicitud, abort durante la subida, cabeceras sin cuerpo: `MAY_HAVE_BEEN_SENT`;
-  - el mapeo de `UND_ERR_CONNECT_TIMEOUT` y de una causa desconocida, con pruebas unitarias.
+  - el mapeo de `UND_ERR_CONNECT_TIMEOUT`, de los códigos de verificación del certificado, de otro error TLS y de una causa desconocida, con pruebas unitarias.
 
 ### D11. Recepción: parser y clasificación
 
@@ -418,12 +420,13 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
   - vigencia y fuente.
 - **Uso.** El límite se resuelve con la fecha del envío, porque es una regla del servicio de recepción, y se compara con el tamaño exacto del `SIGNED_XML`.
 - **Falla cerrada.** Sin una versión vigente, ningún envío sale: el job se detiene con `SIZE_POLICY_MISSING`, determinista y alertado.
-- **Estado de Q-47.**
-  - El 2026-10-03 el portal del SRI devolvió otra vez la página del balanceador, y la fuente no se pudo verificar.
-  - 320 000 y 327 680 bytes no se eligen, ni se copia la cifra de una librería.
-  - Decisión, con la preferencia del revisor: la comprobación es obligatoria antes de llamar al SRI, así que **Q-47 debe resolverse antes de cerrar `/opsx:apply`**.
-  - Las partes independientes se implementan antes. Las pruebas usan una política de prueba insertada por el arnés, marcada como tal.
-  - La tarea del dataset oficial es la única que espera la fuente.
+- **Estado de Q-47: compuerta previa a la transmisión real** (decidido el 2026-10-04, tras una búsqueda razonable en fuentes oficiales).
+  - Fuente: ficha v2.34 (SHA-256 `7333aebf…`), página 20, sección 7.5. Texto normativo: "320 Kb". Cifra exacta en bytes: desconocida, porque la ficha no define la unidad.
+  - No se infiere la conversión (320 000 o 327 680 bytes), ni se copia de una librería o de terceros, ni se publica un valor provisional.
+  - Este cambio entrega el modelo, la carga, la resolución por fecha y la falla cerrada, sin ninguna versión publicada. Q-47 no bloquea implementarlo ni archivarlo.
+  - Q-47 sí bloquea `SRI_TRANSMISSION_ENABLED=1` en un entorno real, S-3 online y la transmisión productiva: habilitada sin política vigente, la instalación no se declara lista y ningún envío sale.
+  - Cuando haya evidencia oficial suficiente, un cambio OpenSpec pequeño publica `sri-transmission-policy/1.json` con la cita, la sección, la unidad literal y la interpretación en bytes.
+  - Las pruebas usan una política de prueba insertada por el arnés, marcada como tal.
 
 ### D18. API, permisos y contratos
 
@@ -550,11 +553,12 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 
   No existe ninguna ruta especial de prueba.
 - **Compuertas previas a la transmisión real:**
-  - el vector oficial de la clave (si aparece, se añade a la prueba de contrato de `AccessKeys` con su cita; el algoritmo nunca se cambia para coincidir con una fuente no oficial);
+  - Q-47: la interpretación exacta en bytes del límite y la publicación de su política;
   - S-3 online;
-  - un P12 real;
-  - un RUC de Pruebas;
-  - Q-47.
+  - un P12 ecuatoriano real validado;
+  - un RUC habilitado en Pruebas del SRI.
+
+  El vector oficial de la clave se cumplió el 2026-10-04: el ejemplo de verificación de la ficha v2.34, §5.2, y la clave del ejemplo de §7.2.3 están en la prueba de contrato de `AccessKeys` con su cita, sin cambiar el algoritmo.
 
 ### D24. Briefs de las operaciones sensibles
 
@@ -578,9 +582,9 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 | # | Pregunta | Respuesta |
 | --- | --- | --- |
 | 1 | Fuente oficial | Ficha v2.34 (CTX §7, §21–§29, §32–§34, §44–§45, §52; §7.2.3, §8.2.3 y §8.4 del PDF verificado) y los WSDL oficiales de recepción, autorización y `ConsultaComprobante` (`docs/product/sri-wsdl/`) |
-| 2 | Versión y fecha | Ficha v2.34 del 2026-07-27. La cifra exacta del límite de tamaño está pendiente (Q-47) |
+| 2 | Versión y fecha | Ficha v2.34 del 2026-07-27. La cifra exacta en bytes del límite de tamaño no se publica: Q-47 es una compuerta previa a la transmisión real |
 | 3 | ¿Afecta XSD? | No |
-| 4 | ¿Afecta clave de acceso? | No se genera. Se usa la persistida, y el vector oficial sigue siendo una compuerta |
+| 4 | ¿Afecta clave de acceso? | No se genera. Se usa la persistida; el vector oficial se comprobó el 2026-10-04 (D23) |
 | 5 | ¿Afecta firma? | No. Se envían los bytes firmados persistidos |
 | 6 | ¿Afecta catálogo tributario? | Sí: la política de tamaño del envío (D17) |
 | 7 | ¿Afecta cálculos? | No |
@@ -602,7 +606,7 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 - **[Compromiso] El XML autorizado se guarda dos veces,** dentro de la respuesta y como artefacto → Lo exige CTX §45, y separar la evidencia del documento fiscal simplifica el cambio 8.
 - **[Compromiso] La transmisión nace deshabilitada** → Evita transmitir por accidente al desplegar. El despliegue documenta cómo habilitarla tras las compuertas.
 - **[Riesgo] El circuit breaker vive en la memoria de cada proceso** → Basta con una instancia por empresa; varios procesos solo hacen más intentos durante una caída.
-- **[Riesgo] Q-47 sigue abierta y bloquea el cierre de apply** → Las partes independientes avanzan, y la transmisión real ya está bloqueada además por las otras compuertas.
+- **[Riesgo] Q-47 sin la cifra exacta en bytes** → La transmisión falla cerrada sin política vigente, así que la transmisión real queda bloqueada hasta publicar la cifra oficial en un cambio pequeño. No bloquea el archive.
 - **[Riesgo] Los contratos SOAP salen de los WSDL y de los ejemplos de la ficha, no de respuestas reales** → Los sobres siguen los WSDL oficiales y las respuestas sintéticas su estructura; S-3 online graba respuestas reales que pasan a ser fixtures, y una diferencia sería un `/opsx:update`.
 - **[Riesgo] Una respuesta gigante o maliciosa** → Hay límite de bytes, el parser rechaza DTD y los plazos son por fase.
 
@@ -616,11 +620,11 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 
    Es aditiva: los datos existentes (`RESERVED` y `SIGNED`) siguen válidos.
 2. **Despliegue con `SRI_TRANSMISSION_ENABLED=0`.** El barrido crea los `sri.transmit` pendientes de los `SIGNED` existentes, sin llamar al SRI.
-3. **Habilitación.** Solo tras las compuertas (S-3 online con un P12 real, vector oficial y Q-47), primero en Pruebas.
+3. **Habilitación.** Solo tras las compuertas (Q-47 con su política publicada, y S-3 online con un P12 real y un RUC de Pruebas), primero en Pruebas.
 4. **Reversión.** Hacia adelante. Apagar el interruptor detiene toda llamada al SRI. Una versión anterior del binario no conoce los estados nuevos y no debe ejecutarse después de transmitir.
 
 ## Open Questions
 
-- **Q-47:** la cifra exacta del límite de tamaño. No cambia el enfoque: el dataset espera la fuente oficial y bloquea el cierre de apply (D17).
+- **Q-47:** la cifra exacta en bytes del límite de tamaño. Es una compuerta previa a la transmisión real, no del apply ni del archive: el dataset espera la fuente oficial y, mientras tanto, la transmisión falla cerrada (D17).
 - **Q-48:** resuelta el 2026-10-04 con el WSDL oficial de `ConsultaComprobante` y la ficha v2.34, §8.2.3 (D10, D15).
 - **Formatos reales de la respuesta del SRI:** el texto del estado en procesamiento, el formato de la fecha y si el `comprobante` llega en CDATA o escapado. No cambian el enfoque, porque el parser no concluye ante lo desconocido, y S-3 online los confirma.
