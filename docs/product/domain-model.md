@@ -21,7 +21,7 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 | Numeración fiscal        | Núcleo   | Secuenciales atómicos y únicos.                                                   | ERS RF-120..125; CTX §5, §28              |
 | Configuración tributaria | Soporte  | Empresa, ambiente, establecimientos, puntos y certificado.                        | ERS RF-101..135; CTX §5, §6, §20          |
 | Catálogos                | Soporte  | Terceros, productos y catálogos fiscales versionados.                             | ERS RF-301..323; CTX §9, §18              |
-| Inventario mínimo        | Soporte  | Stock opcional, movimientos y kárdex.                                             | ERS RF-205, RF-206, RF-212, RF-310..315   |
+| Inventario mínimo        | Soporte  | Stock opcional contabilizado por hechos fiscales autorizados (no reserva de disponibilidad), movimientos y kárdex. | ERS RF-205, RF-206, RF-212, RF-310..315   |
 | Archivo y entrega        | Soporte  | Bandeja, artefactos inmutables con hash, entrega al receptor.                     | ERS RF-401..409; CTX §31, §45, §46        |
 | Reportes                 | Soporte  | Listados filtrables y exportación XLSX.                                           | ERS RF-501..505                           |
 | Identidad y auditoría    | Genérico | Usuarios, roles y rastro de auditoría.                                            | ERS RF-001..003, SEC-001, SEC-007         |
@@ -341,7 +341,7 @@ auditorías `invoice.reconciliation_requested` e `invoice.reconciliation_complet
 | `SriReceived`                | Recepción `RECIBIDA`.                                  | Job de autorización.                            |
 | `SriReturned`                | Recepción `DEVUELTA`.                                  | Bandeja, métricas.                              |
 | `SriAuthorizationPending`    | Autorización en procesamiento.                         | Job de autorización con backoff.                |
-| `SriAuthorized`              | Autorización `AUTORIZADO`.                             | RIDE, inventario (Q-18), entrega, auditoría.    |
+| `SriAuthorized`              | Autorización `AUTORIZADO`.                             | RIDE, salida de inventario (Q-18), entrega, auditoría. |
 | `SriNotAuthorized`           | Autorización `NO AUTORIZADO`.                          | Bandeja, auditoría.                             |
 | `SriMessageRecorded`         | Mensaje del SRI persistido.                            | Bandeja.                                        |
 | `FiscalRideGenerated`        | RIDE generado desde el comprobante autorizado.         | Entrega.                                        |
@@ -424,10 +424,12 @@ se repiten aquí.
 ### Inventario
 
 - **BR-42** Solo los productos con control de stock generan movimientos (ERS RF-205, RF-310).
-- **BR-43** Una factura genera una sola salida por producto; reintentos y reconciliaciones no la duplican (ERS RF-206, AC-08). El momento del descuento está en Q-18.
+- **BR-43** Una factura genera una sola salida por producto, y solo cuando entra de forma concluyente en `AUTHORIZED`, en la misma transacción que esa transición. La cantidad es la suma exacta de sus líneas de ese producto. Repeticiones, reintentos y reconciliaciones no la duplican (ERS RF-205, RF-206, AC-08; Q-18). `RESERVED`, `SIGNED`, `RECEIVED`, `SEND_UNKNOWN`, `MANUAL_REVIEW`, `RETURNED` y `NOT_AUTHORIZED` no modifican el stock, así que ninguno necesita compensación; con la transmisión apagada, las facturas pendientes no descuentan.
 - **BR-44** Los movimientos no se borran; se corrigen con ajustes compensatorios (ERS RF-313).
 - **BR-45** Una nota de crédito devuelve stock solo si el usuario indica retorno físico (ERS RF-212, Q-20).
 - **BR-46** Sin costo promedio, valorización contable ni multibodega (ERS RF-315).
+- **BR-57** El inventario nunca bloquea guardar un borrador, emitir, reservar el secuencial, firmar, transmitir ni autorizar. La salida se registra aunque el saldo quede negativo, y el saldo negativo se muestra tal cual: no se trunca a cero, no se rechaza el movimiento ni se compensa con un ajuste (Q-19, ADR 0006). Significa que las salidas fiscales registradas superan las existencias registradas, y no altera el comprobante.
+- **BR-58** El stock es el contabilizado por hechos fiscales autorizados, no una reserva de disponibilidad: no existe stock reservado ni comprometido, ni disponible para prometer. El borrador puede advertir, sin bloquear, que el saldo vigente de un producto controlado es menor que la cantidad pedida (sumada por producto); la advertencia es orientativa y no garantiza existencias, porque otra operación puede cambiar el saldo antes de la autorización (Q-19). Impedir la sobreventa antes de autorizar sería una capacidad separada de reserva o disponibilidad.
 
 ### Archivo, entrega, reportes y auditoría
 

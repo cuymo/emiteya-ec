@@ -101,6 +101,7 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Estado de la configuración tributaria | `taxConfiguration.status` | Estado derivado de las referencias fiscales de un producto en una fecha: `READY` (Listo), `REVIEW_REQUIRED` (Revisar impuestos: una referencia dejó de ser aplicable o habilitada) o `INCOMPLETE` (Incompleto: faltan datos normativos para calcular un impuesto). Nunca se guarda. |
 | Movimiento de inventario    | `stockMovement`                | `INICIAL`, `ENTRADA_MANUAL`, `SALIDA_FACTURA`, `DEVOLUCION_NC` o `AJUSTE`. Inmutable.                          |
 | Kárdex                      | `stockLedger`                  | Historial de movimientos de un producto en un rango de fechas.                                                 |
+| Saldo de stock              | `stockBalance`                 | Existencias contabilizadas de un producto controlado: el resultado de sus movimientos, con la salida de cada factura al entrar en `AUTHORIZED`. Puede ser negativo y se muestra tal cual. No es una reserva ni la disponibilidad para prometer (Q-18, Q-19). |
 
 ## Usuarios
 
