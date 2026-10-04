@@ -375,7 +375,7 @@ describe("invariantes de la emisión de facturas en la base de datos", () => {
             data: { state: "RESERVED" },
           }),
         ),
-      ).toMatch(/solo pasa de RESERVED a SIGNED/);
+      ).toMatch(/transición de estado no permitida: SIGNED → RESERVED/);
     });
 
     it("el artefacto es inmutable, único por tipo y con su tamaño y hash", async () => {

@@ -362,6 +362,42 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea las restricciones y triggers de la transmisión al SRI", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "electronic_document_authorization_check",
+        "job_values_check",
+        "job_document_id_fkey",
+        "sri_attempt_values_check",
+        "sri_attempt_company_id_document_id_fkey",
+        "sri_response_values_check",
+        "sri_response_company_id_attempt_id_fkey",
+        "sri_attempt_result_values_check",
+        "sri_attempt_result_company_id_attempt_id_fkey",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "job_active_dedupe_key_key",
+        "job_active_sri_document_id_key",
+        "job_status_next_attempt_at_idx",
+        "sri_attempt_document_id_attempt_number_key",
+        "sri_response_pkey",
+        "sri_attempt_result_pkey",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "sri_attempt_append_only",
+        "sri_attempt_no_truncate",
+        "sri_response_append_only",
+        "sri_response_no_truncate",
+        "sri_attempt_result_append_only",
+        "sri_attempt_result_no_truncate",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     // El único objeto sobre la empresa exige su consumidor final al confirmarla (trigger de
     // restricción de add-parties-and-products, design D5); no limita cuántas empresas hay.

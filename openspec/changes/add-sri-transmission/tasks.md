@@ -2,7 +2,7 @@
 
 ## 1. Esquema de la transmisión
 
-- [ ] 1.1 Ampliar `electronic_document` (design D3 y D16).
+- [x] 1.1 Ampliar `electronic_document` (design D3 y D16).
   - Añadir los estados `SEND_UNKNOWN`, `RECEIVED`, `RETURNED`, `AUTHORIZED`, `NOT_AUTHORIZED` y `MANUAL_REVIEW`.
   - `signed_at` obligatorio en todo estado posterior a `RESERVED`.
   - Columnas `authorization_number`, `authorization_date` y `authorization_environment`, obligatorias en `AUTHORIZED` y prohibidas fuera de él.
@@ -10,19 +10,19 @@
   - Ampliar los CHECK de `document_state_transition`: estados y causas `TRANSMISSION`, `AUTHORIZATION` y `RECONCILIATION`.
 
   Verificar con pruebas de integración del esquema: cada transición permitida, el rechazo de las demás, los terminales inmutables, la autorización inmutable y los datos `RESERVED` y `SIGNED` existentes válidos tras la migración
-- [ ] 1.2 Ampliar el CHECK de `document_artifact.kind` con `AUTHORIZED_XML`, y crear `sri_attempt`, `sri_response` y `sri_attempt_result` (design D7).
+- [x] 1.2 Ampliar el CHECK de `document_artifact.kind` con `AUTHORIZED_XML`, y crear `sri_attempt`, `sri_response` y `sri_attempt_result` (design D7).
   - FK compuestas `(company_id, document_id)` y triggers de solo agregado, sin borrado ni `TRUNCATE`.
   - A lo sumo una respuesta y un resultado por intento.
 
   Verificar con pruebas de integración: evidencia inmutable, respuesta y resultado únicos por intento, referencias de otra empresa rechazadas, y `SIGNED_XML` y `AUTHORIZED_XML` coexistiendo en un comprobante
-- [ ] 1.3 Crear la tabla `job` (design D5).
+- [x] 1.3 Crear la tabla `job` (design D5).
   - Estados `PENDING`, `LEASED`, `DONE` y `STOPPED`.
-  - Índice único parcial de la clave de deduplicación entre los jobs activos.
-  - Índice único parcial de un job `sri.*` activo por comprobante.
+  - Unicidad de la clave de deduplicación entre los jobs activos.
+  - Unicidad de un job `sri.*` activo por comprobante.
   - Índice de selección.
 
   Verificar con pruebas de integración: dos jobs activos con la misma clave rechazados, dos jobs `sri.*` activos del mismo comprobante rechazados, y jobs terminados que no bloquean
-- [ ] 1.4 Añadir las tablas a `migrations.test.ts` y documentar tablas, CHECK, triggers e índices en `database.md`. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
+- [x] 1.4 Añadir las tablas a `migrations.test.ts` y documentar tablas, CHECK, triggers e índices en `database.md`. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
 
 ## 2. Cola durable de jobs (ADR 0012)
 
@@ -137,7 +137,7 @@
 
 - [ ] 8.1 Exportar `enqueueTransmissionIn(scope, document)` desde `fiscal` y llamarlo en la transacción que firma (`invoices/application/signing-pipeline.ts`), e implementar el barrido idempotente al arrancar y periódico (design D6). Verificar con pruebas de integración:
   - una factura firmada tiene su `sri.transmit` en la misma transacción;
-  - el traspaso atómico entre fases: `sri.transmit` `DONE` y `sri.authorize` `PENDING` en una transacción, y lo mismo al pasar a `SEND_UNKNOWN` con `sri.reconcile`, sin ventana sin job ni choque con el índice parcial;
+  - el traspaso atómico entre fases: `sri.transmit` `DONE` y `sri.authorize` `PENDING` en una transacción, y lo mismo al pasar a `SEND_UNKNOWN` con `sri.reconcile`, sin ventana sin job ni choque con la unicidad de los jobs activos;
   - dos workers que intentan avanzar la misma factura: solo uno confirma;
   - una caída simulada justo después de firmar conserva el job;
   - el barrido ejecutado varias veces crea exactamente un job por cada `SIGNED` sin job, y no reactiva jobs `STOPPED`

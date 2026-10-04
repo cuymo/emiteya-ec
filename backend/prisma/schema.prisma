@@ -47,6 +47,8 @@ model User {
   documentsCreated            ElectronicDocument[]          @relation("DocumentCreator")
   documentTransitions         DocumentStateTransition[]     @relation("DocumentTransitionActor")
   idempotencyRecords          IdempotencyRecord[]           @relation("IdempotencyCreator")
+  jobsRequested               Job[]                         @relation("JobRequester")
+  sriAttemptsInitiated        SriAttempt[]                  @relation("SriAttemptInitiator")
 
   @@unique([email])
   @@map("user")
@@ -126,6 +128,7 @@ model Organization {
   invoiceDrafts              InvoiceDraft[]
   documents                  ElectronicDocument[]
   idempotencyRecords         IdempotencyRecord[]
+  jobs                       Job[]
 
   @@unique([slug])
   @@map("organization")
@@ -722,45 +725,51 @@ model InvoiceDraftPayment {
 // su secuencial confirmado y su clave de acceso. Solo pasa de RESERVED a SIGNED, y SIGNED exige su
 // artefacto firmado (trigger diferido). No se borra.
 model ElectronicDocument {
-  id                  String                    @id @default(uuid())
-  companyId           String                    @map("company_id")
-  company             Organization              @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  documentType        String                    @map("document_type") @db.Char(2)
-  environment         String
-  establishmentId     String                    @map("establishment_id")
-  emissionPointId     String                    @map("emission_point_id")
-  documentNumber      String                    @map("document_number") @db.Char(17)
-  sequential          Int
-  reservationId       String                    @unique @map("reservation_id")
-  reservation         FiscalSequenceReservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
-  accessKey           String                    @unique @map("access_key") @db.Char(49)
-  numericCode         String                    @map("numeric_code") @db.Char(8)
-  issueDate           DateTime                  @map("issue_date") @db.Date
+  id                       String                    @id @default(uuid())
+  companyId                String                    @map("company_id")
+  company                  Organization              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  documentType             String                    @map("document_type") @db.Char(2)
+  environment              String
+  establishmentId          String                    @map("establishment_id")
+  emissionPointId          String                    @map("emission_point_id")
+  documentNumber           String                    @map("document_number") @db.Char(17)
+  sequential               Int
+  reservationId            String                    @unique @map("reservation_id")
+  reservation              FiscalSequenceReservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  accessKey                String                    @unique @map("access_key") @db.Char(49)
+  numericCode              String                    @map("numeric_code") @db.Char(8)
+  issueDate                DateTime                  @map("issue_date") @db.Date
   /// RESERVED o SIGNED (CHECK en la migración).
-  state               String
-  snapshot            Json
-  schemaVersion       String                    @map("schema_version")
-  buyerIdentification String                    @map("buyer_identification")
-  buyerName           String                    @map("buyer_name")
+  state                    String
+  snapshot                 Json
+  schemaVersion            String                    @map("schema_version")
+  buyerIdentification      String                    @map("buyer_identification")
+  buyerName                String                    @map("buyer_name")
   /// Copia del importe total del snapshot, con el CHECK de `importe`.
-  total               Decimal                   @db.Decimal
-  createdAt           DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
-  createdBy           String                    @map("created_by")
-  creator             User                      @relation("DocumentCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  signedAt            DateTime?                 @map("signed_at") @db.Timestamptz(3)
+  total                    Decimal                   @db.Decimal
+  createdAt                DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy                String                    @map("created_by")
+  creator                  User                      @relation("DocumentCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  signedAt                 DateTime?                 @map("signed_at") @db.Timestamptz(3)
   /// Diagnóstico del último intento, separado del estado fiscal (design D10).
-  lastAttemptStage    String?                   @map("last_attempt_stage")
-  lastAttemptCode     String?                   @map("last_attempt_code")
-  lastAttemptClass    String?                   @map("last_attempt_class")
-  lastAttemptAt       DateTime?                 @map("last_attempt_at") @db.Timestamptz(3)
+  lastAttemptStage         String?                   @map("last_attempt_stage")
+  lastAttemptCode          String?                   @map("last_attempt_code")
+  lastAttemptClass         String?                   @map("last_attempt_class")
+  lastAttemptAt            DateTime?                 @map("last_attempt_at") @db.Timestamptz(3)
   /// Para XSD_INVALID, la línea y el elemento (design D10); nunca el valor ni el XML.
-  lastAttemptDetail   Json?                     @map("last_attempt_detail")
-  attemptCount        Int                       @default(0) @map("attempt_count")
-  attemptLeaseUntil   DateTime?                 @map("attempt_lease_until") @db.Timestamptz(3)
-  draft               InvoiceDraft?             @relation("DraftDocument")
-  transitions         DocumentStateTransition[]
-  artifacts           DocumentArtifact[]
-  idempotency         IdempotencyRecord[]
+  lastAttemptDetail        Json?                     @map("last_attempt_detail")
+  /// Autorización del SRI (add-sri-transmission, design D16): solo en AUTHORIZED e inmutable.
+  authorizationNumber      String?                   @map("authorization_number") @db.Char(49)
+  authorizationDate        DateTime?                 @map("authorization_date") @db.Timestamptz(3)
+  authorizationEnvironment String?                   @map("authorization_environment")
+  attemptCount             Int                       @default(0) @map("attempt_count")
+  attemptLeaseUntil        DateTime?                 @map("attempt_lease_until") @db.Timestamptz(3)
+  draft                    InvoiceDraft?             @relation("DraftDocument")
+  sriAttempts              SriAttempt[]
+  jobs                     Job[]
+  transitions              DocumentStateTransition[]
+  artifacts                DocumentArtifact[]
+  idempotency              IdempotencyRecord[]
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@unique([companyId, id])
@@ -825,4 +834,119 @@ model IdempotencyRecord {
 
   @@id([companyId, operation, idempotencyKey])
   @@map("idempotency_record")
+}
+
+// Cola durable de trabajos (ADR 0012; add-sri-transmission, design D5). Los estados del job no son
+// estados fiscales. active_dedupe_key y active_sri_document_id valen su clave mientras el job está
+// activo (PENDING o LEASED) y NULL al terminar: sus UNIQUE impiden dos jobs activos equivalentes y
+// dos interacciones activas con el SRI por comprobante (CHECK en la migración). document_id lleva
+// una FK simple: la empresa la fijan las consultas, que siempre filtran por company_id.
+model Job {
+  id                  String              @id @default(uuid())
+  companyId           String              @map("company_id")
+  company             Organization        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  type                String
+  dedupeKey           String              @map("dedupe_key")
+  activeDedupeKey     String?             @unique @map("active_dedupe_key")
+  documentId          String?             @map("document_id")
+  document            ElectronicDocument? @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  activeSriDocumentId String?             @unique @map("active_sri_document_id")
+  payload             Json                @default("{}")
+  /// PENDING, LEASED, DONE o STOPPED (CHECK en la migración).
+  status              String
+  scheduledAt         DateTime            @map("scheduled_at") @db.Timestamptz(3)
+  nextAttemptAt       DateTime            @map("next_attempt_at") @db.Timestamptz(3)
+  attemptCount        Int                 @default(0) @map("attempt_count")
+  maxAttempts         Int                 @map("max_attempts")
+  deadlineAt          DateTime?           @map("deadline_at") @db.Timestamptz(3)
+  leaseOwner          String?             @map("lease_owner")
+  leaseExpiresAt      DateTime?           @map("lease_expires_at") @db.Timestamptz(3)
+  lastErrorCode       String?             @map("last_error_code")
+  /// RETRYABLE, DETERMINISTIC o INTEGRITY (CHECK en la migración).
+  lastErrorClass      String?             @map("last_error_class")
+  lastErrorAt         DateTime?           @map("last_error_at") @db.Timestamptz(3)
+  lastErrorDetail     Json?               @map("last_error_detail")
+  /// AUTOMATIC o MANUAL; MANUAL exige quien lo pidió (CHECK en la migración).
+  origin              String
+  requestedBy         String?             @map("requested_by")
+  requester           User?               @relation("JobRequester", fields: [requestedBy], references: [id], onDelete: Restrict)
+  reason              String?
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  completedAt         DateTime?           @map("completed_at") @db.Timestamptz(3)
+  attempts            SriAttempt[]
+
+  @@index([status, nextAttemptAt])
+  @@index([companyId, documentId])
+  @@map("job")
+}
+
+// Intento con el SRI (add-sri-transmission, design D7): la evidencia de una interacción concreta,
+// de solo agregado. Nunca se usa como máquina de estados.
+model SriAttempt {
+  id                 String             @id @default(uuid())
+  companyId          String             @map("company_id")
+  documentId         String             @map("document_id")
+  document           ElectronicDocument @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  jobId              String?            @map("job_id")
+  job                Job?               @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  attemptNumber      Int                @map("attempt_number")
+  /// RECEPTION, AUTHORIZATION o VALIDITY (CHECK en la migración).
+  operation          String
+  environment        String
+  endpoint           String
+  origin             String
+  initiatedBy        String?            @map("initiated_by")
+  initiator          User?              @relation("SriAttemptInitiator", fields: [initiatedBy], references: [id], onDelete: Restrict)
+  startedAt          DateTime           @map("started_at") @db.Timestamptz(3)
+  headersAt          DateTime?          @map("headers_at") @db.Timestamptz(3)
+  completedAt        DateTime           @map("completed_at") @db.Timestamptz(3)
+  /// NOT_SENT, REQUEST_TIMEOUT, BODY_TIMEOUT, CONNECTION_LOST o RESPONSE (CHECK en la migración).
+  transportOutcome   String             @map("transport_outcome")
+  httpStatus         Int?               @map("http_status")
+  responseHeaders    Json?              @map("response_headers")
+  transportErrorCode String?            @map("transport_error_code")
+  envelopeSha256     String             @map("envelope_sha256") @db.Char(64)
+  envelopeSize       Int                @map("envelope_size")
+  sentArtifactSha256 String?            @map("sent_artifact_sha256") @db.Char(64)
+  sentArtifactSize   Int?               @map("sent_artifact_size")
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  response           SriResponse?
+  result             SriAttemptResult?
+
+  @@unique([documentId, attemptNumber])
+  @@unique([companyId, id])
+  @@index([companyId, documentId, startedAt])
+  @@map("sri_attempt")
+}
+
+// Respuesta original exacta de un intento (design D7): bytes, hash y tamaño, de solo agregado.
+model SriResponse {
+  attemptId   String     @id @map("attempt_id")
+  companyId   String     @map("company_id")
+  attempt     SriAttempt @relation(fields: [companyId, attemptId], references: [companyId, id], onDelete: Restrict)
+  body        Bytes
+  sizeBytes   Int        @map("size_bytes")
+  sha256      String     @db.Char(64)
+  contentType String?    @map("content_type")
+  truncated   Boolean    @default(false)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([companyId, attemptId])
+  @@map("sri_response")
+}
+
+// Clasificación de un intento (design D7 y D8): resultado y mensajes estructurados, de solo agregado.
+model SriAttemptResult {
+  attemptId         String     @id @map("attempt_id")
+  companyId         String     @map("company_id")
+  attempt           SriAttempt @relation(fields: [companyId, attemptId], references: [companyId, id], onDelete: Restrict)
+  outcome           String
+  messages          Json
+  parsed            Json?
+  classifierVersion String     @map("classifier_version")
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([companyId, attemptId])
+  @@map("sri_attempt_result")
 }

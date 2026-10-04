@@ -126,9 +126,11 @@ MANUAL_REVIEW ──(solo reconciliación manual)──▶ RECEIVED | AUTHORIZED
 - `origin` (`AUTOMATIC` o `MANUAL`), `requested_by` y `reason`;
 - `created_at`, `updated_at` y `completed_at`.
 
-**Índices:**
-- único parcial `(dedupe_key) WHERE status IN ('PENDING','LEASED')`: no hay dos jobs activos equivalentes;
-- único parcial `(document_id) WHERE status IN ('PENDING','LEASED') AND type LIKE 'sri.%'`: como máximo una interacción activa con el SRI por comprobante, en cualquier fase;
+**Índices.** Prisma no expresa índices parciales, así que cada unicidad entre jobs activos es una
+columna única que solo tiene valor mientras el job está `PENDING` o `LEASED`, y un CHECK la ata a su
+origen (el precedente es `signing_certificate.active_company_id`):
+- `active_dedupe_key` única, igual a `dedupe_key` mientras el job está activo: no hay dos jobs activos equivalentes;
+- `active_sri_document_id` única, igual a `document_id` mientras un job `sri.*` está activo: como máximo una interacción activa con el SRI por comprobante, en cualquier fase;
 - de selección `(status, next_attempt_at)`.
 
 **Selección.** Un `UPDATE … WHERE id IN (SELECT … FOR UPDATE SKIP LOCKED LIMIT n) RETURNING *` toma:
@@ -188,7 +190,7 @@ Si falta una, `/health/ready` responde `503` con el motivo en el log y no se env
 - **Exclusión entre fases y traspaso atómico.**
   - El índice por comprobante (D5) impide dos jobs `sri.*` activos a la vez.
   - Cada job se encola solo en la transacción que termina el anterior. Por ejemplo, `sri.transmit` pasa a `DONE` y `sri.authorize` nace `PENDING`, o al pasar a `SEND_UNKNOWN`, `sri.transmit` pasa a `DONE` y nace `sri.reconcile`.
-  - Dentro de esa transacción, el job actual se actualiza a `DONE` antes de insertar el siguiente. El índice parcial se comprueba por sentencia, así que la inserción ya no choca con el job saliente. Nunca hay una ventana sin job ni dos jobs activos.
+  - Dentro de esa transacción, el job actual se actualiza a `DONE` antes de insertar el siguiente. Al terminar, el job saliente vacía sus columnas activas, y la unicidad se comprueba por sentencia, así que la inserción ya no choca con él. Nunca hay una ventana sin job ni dos jobs activos.
   - Si dos workers intentan avanzar el mismo comprobante, solo el dueño del arriendo confirma: la guarda de `lease_owner` y la transición guardada revierten al otro.
   - Una reconciliación manual sobre un comprobante con un job activo se rechaza.
 - **Barrido idempotente.** Al arrancar y cada `SRI_SWEEP_INTERVAL_SECONDS`, inserta un `sri.transmit` para cada `SIGNED` sin ningún job, con `INSERT … ON CONFLICT DO NOTHING` sobre la clave.
@@ -564,7 +566,7 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 | 6. Dos veces | Deduplicación y transición guardada | El índice de un job `sri.*` activo: la segunda es `409` |
 | 7. A la vez | `SKIP LOCKED`, arriendo, índice por comprobante y transición guardada | El índice único: solo una se programa |
 | 8. Idempotencia | Natural: clave de acceso, mismos bytes, estado | Natural: el job activo único |
-| 9. Restricciones | CHECK de estados y de autorización, trigger de transiciones, triggers de solo agregado, `UNIQUE (document_id, kind)`, índices parciales de la cola | Las mismas |
+| 9. Restricciones | CHECK de estados y de autorización, trigger de transiciones, triggers de solo agregado, `UNIQUE (document_id, kind)`, unicidades de los jobs activos | Las mismas |
 | 10. Auditoría | No (D19) | `invoice.reconciliation_requested` y `invoice.reconciliation_completed` |
 | 11. Pruebas de autorización | Dos empresas: los handlers nunca cruzan empresas | Dos empresas, operador, sin sesión, factura ajena, estado no admitido, simultaneidad |
 | 12. Fugas | Logs y métricas sin XML, SOAP ni datos de otras empresas; las respuestas originales nunca salen por la API | La vista de la transmisión no expone respuestas originales ni XML |
