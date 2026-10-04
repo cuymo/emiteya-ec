@@ -142,6 +142,9 @@ export const envSchema = z
     RIDE_TASK_TIMEOUT_MS: int(5_000, 120_000).default(30_000),
     RIDE_JOB_MAX_ATTEMPTS: int(1, 50).default(5),
     RIDE_SWEEP_INTERVAL_SECONDS: int(10, 86_400).default(300),
+    // Directorio de las fuentes del RIDE y su manifiesto. Sin valor: `dist/assets/fonts/noto-sans/`
+    // en el build y `assets/fonts/noto-sans/` en desarrollo y pruebas.
+    RIDE_FONTS_DIRECTORY: z.string().min(1).optional(),
     // Endpoints opcionales; sin valor rigen los del módulo central de sri-engine (design D10).
     SRI_ENDPOINT_TEST_RECEPTION: endpoint,
     SRI_ENDPOINT_TEST_AUTHORIZATION: endpoint,

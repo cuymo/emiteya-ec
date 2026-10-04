@@ -28,7 +28,7 @@
 ## 3. Dependencias, fuentes y fuente canónica del RIDE
 
 - [x] 3.1 Añadir pdfmake 0.3.11, bwip-js 4.11.4 y fontkit 2.0.4 en runtime, y pdfjs-dist 6.3.289, @napi-rs/canvas 1.0.10 y zxing-wasm 3.1.4 en pruebas, con versión exacta y sin excepciones de antigüedad de publicación (ADR 0022). Declarar tipos locales mínimos en lugar de `@types/pdfmake`, y añadir la regla de ESLint que limita pdfmake, bwip-js y fontkit a `sri-engine/infrastructure` (design D1). Actualizar `stack.md`. Verificar que `check:versions`, `lint` y `typecheck` pasan, y que la regla rechaza un import de pdfmake fuera de esa carpeta
-- [ ] 3.2 Guardar Noto Sans 2.015 Regular y Bold con `OFL.txt` y `manifest.json` (nombre, versión, licencia, archivo y SHA-256) en `backend/assets/fonts/noto-sans/` (design D7):
+- [x] 3.2 Guardar Noto Sans 2.015 Regular y Bold con `OFL.txt` y `manifest.json` (nombre, versión, licencia, archivo y SHA-256) en `backend/assets/fonts/noto-sans/` (design D7):
   - el build copia fuentes, licencia y manifiesto a `dist/assets/fonts/noto-sans/`;
   - `check:ride-assets`, separado de `check:xsd-artifact`, comprueba en el artefacto construido el manifiesto, las fuentes, la licencia y cada hash; `verify` ejecuta los dos;
   - al arrancar, el RIDE verifica sus fuentes y, si faltan o no coinciden, `/health/ready` no se declara listo, con un detalle propio distinto del de los XSD, el motivo en el log y sin rutas absolutas.

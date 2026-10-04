@@ -59,9 +59,11 @@ import {
   createSoapTransport,
   createSriGateway,
   createXmllintXsdValidator,
+  defaultRideFontsDirectory,
   endpointsValid,
   resolveSriEndpoints,
   sriClassifiers,
+  verifyRideAssets,
   verifySchemaBundle,
 } from "./modules/sri-engine/infrastructure/index.ts";
 import {
@@ -194,6 +196,16 @@ const xsdValidator = createXmllintXsdValidator({
 const xsdBundleAvailable = await verifySchemaBundle({
   validator: xsdValidator,
   registry: () => catalogQueries.schemaRegistry(),
+  metrics: metrics.registry,
+  logger,
+});
+
+// Fuentes del RIDE (add-document-archive, design D7): en el build, `dist/assets/fonts/noto-sans/`;
+// en desarrollo y pruebas, `assets/fonts/noto-sans/`. Si falta un archivo o un hash no coincide,
+// el RIDE no está listo: /health/ready responde 503 con su propio detalle, distinto del de los XSD.
+const rideFontsDirectory = env.RIDE_FONTS_DIRECTORY ?? defaultRideFontsDirectory();
+const rideAssetsAvailable = verifyRideAssets({
+  directory: rideFontsDirectory,
   metrics: metrics.registry,
   logger,
 });
@@ -381,10 +393,14 @@ const app = createApp({
     return {
       ready:
         xsdBundleAvailable &&
+        rideAssetsAvailable &&
         (await database.ping()) &&
         cryptoPool.isRunning() &&
         transmission.ready,
-      details: { sriTransmission: transmission.enabled ? "enabled" : "disabled" },
+      details: {
+        sriTransmission: transmission.enabled ? "enabled" : "disabled",
+        rideAssets: rideAssetsAvailable ? "available" : "unavailable",
+      },
     };
   },
   trustProxy: env.TRUST_PROXY,

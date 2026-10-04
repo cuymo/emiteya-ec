@@ -1,0 +1,22 @@
+{
+  "family": "Noto Sans",
+  "version": "2.015",
+  "license": "OFL-1.1",
+  "source": "https://github.com/notofonts/latin-greek-cyrillic",
+  "licenseFile": {
+    "file": "OFL.txt",
+    "sha256": "087020faf4dbe0483fb7363a47e1a1bcb90667f89090b942a9b9aeb25bf81363"
+  },
+  "fonts": {
+    "regular": {
+      "file": "NotoSans-Regular.ttf",
+      "sha256": "478c558ea716033cd60c03438f628dfa75694dcf6b5f6d505a2f05fd2b4f3823",
+      "sizeBytes": 621572
+    },
+    "bold": {
+      "file": "NotoSans-Bold.ttf",
+      "sha256": "1df075a380fc7cb898acf64c1f7b3b4dd780de3caa860178bf929de35817a913",
+      "sizeBytes": 631484
+    }
+  }
+}

@@ -9,3 +9,6 @@ docs/product/sri-xsd/*.xsd binary
 docs/product/w3c-xsd/*.xsd binary
 # WSDL oficiales del SRI (add-sri-transmission, design D10): byte a byte, como su manifiesto.
 docs/product/sri-wsdl/*.wsdl binary
+# Fuentes del RIDE y su licencia (ADR 0022): byte a byte, como su manifiesto.
+backend/assets/fonts/noto-sans/*.ttf binary
+backend/assets/fonts/noto-sans/OFL.txt binary

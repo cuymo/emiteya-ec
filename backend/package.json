@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env --conditions=development src/main.ts",
-    "build": "tsc -p tsconfig.build.json && node --conditions=development scripts/copy-xsd.ts",
+    "build": "tsc -p tsconfig.build.json && node --conditions=development scripts/copy-xsd.ts && node --conditions=development scripts/copy-ride-assets.ts",
     "check:xsd-artifact": "node --conditions=development scripts/check-xsd-artifact.ts",
+    "check:ride-assets": "node --conditions=development scripts/check-ride-assets.ts",
     "start": "node dist/main.js",
     "admin:recover": "node --env-file-if-exists=.env --conditions=development src/commands/admin-recover.ts",
     "lint": "eslint .",

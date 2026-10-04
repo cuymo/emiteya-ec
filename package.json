@@ -18,10 +18,11 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,yaml,yml,css}\"",
     "check:versions": "node scripts/check-versions.ts",
     "check:xsd-artifact": "corepack pnpm --filter @facturador/backend check:xsd-artifact",
+    "check:ride-assets": "corepack pnpm --filter @facturador/backend check:ride-assets",
     "check:dev-start": "node scripts/check-dev-start.ts",
     "openapi:generate": "corepack pnpm --filter @facturador/contracts openapi:generate",
     "openapi:check": "corepack pnpm --filter @facturador/contracts openapi:check",
-    "verify": "corepack pnpm format:check && corepack pnpm check:versions && corepack pnpm --filter @facturador/backend db:generate && corepack pnpm lint && corepack pnpm typecheck && corepack pnpm test && corepack pnpm openapi:check && corepack pnpm check:dev-start && corepack pnpm build && corepack pnpm check:xsd-artifact"
+    "verify": "corepack pnpm format:check && corepack pnpm check:versions && corepack pnpm --filter @facturador/backend db:generate && corepack pnpm lint && corepack pnpm typecheck && corepack pnpm test && corepack pnpm openapi:check && corepack pnpm check:dev-start && corepack pnpm build && corepack pnpm check:xsd-artifact && corepack pnpm check:ride-assets"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -211,6 +211,10 @@ Variables de `add-document-archive` (design D6). Son configuración operativa, n
 | `RIDE_TASK_TIMEOUT_MS` | No | 30000 | Plazo de un render, en milisegundos (5000 a 120000). Al vencer, el worker se reemplaza y el intento falla con backoff. |
 | `RIDE_JOB_MAX_ATTEMPTS` | No | 5 | Intentos del job `document.render_ride` (1 a 50). Al agotarlos, la generación queda detenida y visible; el comprobante sigue autorizado. |
 | `RIDE_SWEEP_INTERVAL_SECONDS` | No | 300 | Intervalo del barrido que encola el RIDE de los autorizados sin RIDE ni job (10 a 86400). |
+| `RIDE_FONTS_DIRECTORY` | No | `dist/assets/fonts/noto-sans/` en el build; `assets/fonts/noto-sans/` en desarrollo | Directorio de las fuentes del RIDE, su licencia y su manifiesto. |
+
+- El build copia las fuentes Noto Sans 2.015 (Regular y Bold), su licencia OFL y `manifest.json` a `dist/assets/fonts/noto-sans/`, y `check:ride-assets` comprueba cada archivo con el hash que fija el código. Es una comprobación distinta de `check:xsd-artifact`; `verify` ejecuta las dos.
+- Al arrancar, la API verifica las fuentes. Si falta un archivo, el manifiesto no coincide o un hash no coincide, registra qué archivo falla (sin rutas absolutas), `ride_assets_available` vale 0 y `/health/ready` responde `503` con `rideAssets: "unavailable"`, un detalle propio distinto del de los XSD. El RIDE nunca usa fuentes del sistema.
 
 ### Actualizaciones y reversión
 

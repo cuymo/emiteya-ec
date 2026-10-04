@@ -399,7 +399,11 @@ describe("flujo completo de la transmisión al SRI", () => {
     const operator = await signIn(OPERATOR.email, OPERATOR.password);
     const first = await emit(operator, draftBody);
     const ready = (await (await fetch(`${backend.base}/health/ready`)).json()) as object;
-    expect(ready).toEqual({ status: "ready", sriTransmission: "disabled" });
+    expect(ready).toEqual({
+      status: "ready",
+      sriTransmission: "disabled",
+      rideAssets: "available",
+    });
     expect(await metric("sri_transmission_enabled")).toBe("sri_transmission_enabled 0");
     await new Promise((resolve) => setTimeout(resolve, 2_000));
     const pending = await db.database.prisma.job.findMany({ where: { documentId: first.id } });

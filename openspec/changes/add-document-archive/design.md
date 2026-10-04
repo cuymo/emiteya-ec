@@ -217,6 +217,7 @@ comprobante AUTHORIZED
   - Noto Sans 2.015, Regular y Bold (OFL 1.1), en `backend/assets/fonts/noto-sans/` con `OFL.txt` y un manifiesto (`manifest.json`) con nombre, versión, licencia, archivo y SHA-256.
   - El manifiesto es parte del artefacto de ejecución: el build copia las fuentes, la licencia y el manifiesto a `dist/assets/fonts/noto-sans/`.
   - **Comprobaciones separadas por responsabilidad.** `check:xsd-artifact` sigue comprobando solo los esquemas. Un script nuevo, `check:ride-assets`, comprueba en el artefacto construido el manifiesto, las fuentes, la licencia y cada hash. `verify` ejecuta los dos.
+  - `RIDE_FONTS_DIRECTORY`, opcional como `XSD_DIRECTORY`, sustituye el directorio por defecto (operación y pruebas de arranque). La primitiva del pool admite un `workerData` aditivo para pasárselo al worker; el pool criptográfico no lo usa.
   - **Readiness por responsabilidad.** Un XSD faltante o alterado deja no lista la emisión (como hoy). Unas fuentes o un manifiesto faltantes o alterados dejan no listo el RIDE: `/health/ready` responde no listo con el motivo en el log, y el runner del RIDE no toma jobs. Son dos comprobaciones distintas, cada una con su detalle.
   - Se embeben con subconjunto y solo dentro del PDF; no se sirven por otra ruta.
   - Cada carácter dibujado debe tener glifo en ambas; si no, `RIDE_GLYPH_MISSING` con los códigos.
