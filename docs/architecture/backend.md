@@ -10,7 +10,7 @@
 - Database: PostgreSQL.
 - Authentication: Better Auth.
 - Validation: Zod.
-- External HTTP: Axios.
+- External HTTP: Axios; excepción: el adaptador SOAP del SRI usa el `fetch` nativo de Node, solo en infraestructura (ADR 0018, enmienda del transporte).
 
 ## Estructura del backend en este proyecto
 
@@ -123,17 +123,17 @@ En este proyecto (Q-30, design D8 de `add-invoice-emission`):
 
 ## External Service Boundary
 
-- Use Axios in infrastructure clients.
+- Use Axios in infrastructure clients; excepción: el adaptador SOAP del SRI usa el `fetch` nativo de Node, solo en infraestructura (ADR 0018, enmienda del transporte).
 - Define typed payloads and normalized application responses.
 - Provider tokens come from validated environment/runtime settings.
 - Provider errors are normalized before reaching UI code.
 
 ## Background Jobs
 
-- Job ownership: el módulo `fiscal` es dueño de los jobs de recepción, autorización, reconciliación, recuperación, validez y RIDE; `taxpayer`, del aviso de vencimiento del certificado; `reports`, de las exportaciones grandes si la medición las exige. Detalle en `fiscal-emission.md`.
-- Persistence: tabla de jobs en PostgreSQL, en la misma base de datos que los comprobantes, para encolar un job en la misma transacción que la transición de estado (ADR 0012).
-- Retry policy: backoff exponencial con jitter, configurable por tipo de job. Las consultas al SRI se reintentan; el envío a recepción nunca se reintenta sin reconciliar antes (CTX §33). La autorización se consulta hasta 24 horas desde `RECIBIDA` (Q-06).
-- Cancellation: los jobs fiscales no se cancelan, porque el comprobante ya tiene efectos ante el SRI; un administrador puede llevar el comprobante a revisión manual. Los jobs de exportación sí se cancelan.
+- Job ownership: el módulo `fiscal` es dueño de los jobs de recepción, autorización, reconciliación, recuperación y RIDE; `taxpayer`, del aviso de vencimiento del certificado; `reports`, de las exportaciones grandes si la medición las exige. La consulta de validez para observar anulaciones es una capacidad futura (Q-16). Detalle en `fiscal-emission.md`.
+- Persistence: cola durable propia en PostgreSQL, en la misma base de datos que los comprobantes, sin librería de jobs (ADR 0012, aceptado el 2026-10-03). Tiene deduplicación, `scheduledAt` y `nextAttemptAt`, intentos, arriendo con expiración, selección con `FOR UPDATE SKIP LOCKED`, último error tipado, workers configurables y apagado ordenado. Los estados del job no son estados fiscales.
+- Retry policy: backoff exponencial con jitter, configurable por tipo de job, con un máximo de intentos o una ventana, sin reintentos infinitos ni bucles calientes. Las consultas al SRI se reintentan; el envío a recepción nunca se reintenta sin reconciliar antes (CTX §33). La autorización se consulta hasta 24 horas desde `RECIBIDA` (Q-06).
+- Cancellation: los jobs fiscales no se cancelan, porque el comprobante ya tiene efectos ante el SRI; un administrador puede ordenar una reconciliación manual. La revisión manual la define el design del cambio 7 (Q-06). Los jobs de exportación sí se cancelan.
 - Progress reporting: el estado fiscal del comprobante es el progreso visible; las exportaciones informan su avance.
 
 Use persisted jobs for long-running work that must continue after browser refresh.

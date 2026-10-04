@@ -4,9 +4,9 @@
 
 | Service | Purpose | Auth | Owner |
 | --- | --- | --- | --- |
-| SRI — Recepción | Recibir el comprobante firmado: `RECIBIDA` o `DEVUELTA`. | Ninguna; el XML va firmado con el certificado del contribuyente. | `fiscal/sri` |
-| SRI — Autorización | Consultar por clave de acceso: en procesamiento, `AUTORIZADO` o `NO AUTORIZADO`. | Ninguna. | `fiscal/sri` |
-| SRI — Consulta de validez | Reconciliar y detectar anulaciones (`ConsultaComprobante`). | Ninguna. | `fiscal/sri` |
+| SRI — Recepción | Recibir el comprobante firmado: `RECIBIDA` o `DEVUELTA`. | Ninguna; el XML va firmado con el certificado del contribuyente. | Adaptador SOAP propio de `sri-engine` (ADR 0018) |
+| SRI — Autorización | Consultar por clave de acceso: en procesamiento, `AUTORIZADO` o `NO AUTORIZADO`. Es también la consulta por clave con que se reconcilia. | Ninguna. | Adaptador SOAP propio de `sri-engine` |
+| SRI — Consulta de validez | Detectar anulaciones (`ConsultaComprobante`). Es una capacidad futura (Q-16), fuera de `add-sri-transmission`. | Ninguna. | — |
 | SMTP (post-MVP) | Entrega por correo del RIDE y el XML (Q-24). | Credenciales SMTP del operador. | Puerto de notificación |
 
 ## Integration Rules
@@ -16,7 +16,7 @@
 - Normalize provider errors before exposing them internally.
 - Avoid provider names in user-facing UI unless necessary.
 - Document rate limits and usage gates.
-- Use Axios for server-side external API calls.
+- Use Axios for server-side external API calls; excepción: el adaptador SOAP del SRI usa el `fetch` nativo de Node, solo en infraestructura (ADR 0018, enmienda del transporte).
 - Do not call external provider APIs directly from the browser when tokens are required.
 - Add runtime timeout configuration.
 - Add backoff, queueing, or persisted jobs for bulk provider calls.
@@ -42,9 +42,9 @@
 - Base URL: un conjunto de WSDL por ambiente (Pruebas `celcer.sri.gob.ec`, Producción `cel.sri.gob.ec`), listados en CTX §7. Son valores por defecto en un módulo central versionado, sobrescribibles por configuración; la lógica de negocio nunca contiene URLs (ERS SRI-REQ-01).
 - Docs: ficha técnica off-line v2.34 (CTX SRI-02) y WSDL vigentes; prevalecen en el orden de CTX §1.
 - Auth: ninguna en el transporte. TLS estándar del runtime, sin certificados ni fingerprints fijados, porque el SRI puede cambiarlos (CTX §7.5).
-- Protocol: SOAP. Recepción `validarComprobante(xml firmado)`, autorización `autorizacionComprobante(claveAcceso)` y consulta `consultarEstadoAutorizacionComprobante(claveAcceso)`. `ConsultaFactura` tiene otro contrato y queda fuera del MVP (CTX §25). Los objetos de la librería SOAP se normalizan antes de salir del adaptador (CTX §44).
-- Timeout: de conexión corto y de petición controlado, configurables por variable de entorno.
-- Rate limit: sin cuota publicada. Un comprobante por envío, hasta 320 KB, sin lotes (CTX §29). El ambiente de Pruebas no se usa para pruebas de carga (CTX §49).
+- Protocol: SOAP, con un adaptador propio sobre el `fetch` nativo de Node (ADR 0018, enmienda del transporte). Recepción `validarComprobante(xml firmado)` y autorización `autorizacionComprobante(claveAcceso)`, que también sirve para reconciliar por clave. La consulta `consultarEstadoAutorizacionComprobante(claveAcceso)` queda para la capacidad futura de anulaciones (Q-16), salvo que el design del cambio 7 justifique usarla para reconciliar. `ConsultaFactura` tiene otro contrato y queda fuera del MVP (CTX §25). El adaptador captura la respuesta original antes de normalizarla (CTX §44).
+- Timeout: de conexión y cabeceras, y de lectura del cuerpo, separados y configurables por variable de entorno. Son configuración operativa, no una regla normativa del SRI.
+- Rate limit: sin cuota publicada. Un comprobante por envío, sin lotes, dentro del límite de tamaño de la ficha (CTX §29). Su cifra exacta en bytes espera la fuente oficial (Q-47). El ambiente de Pruebas no se usa para pruebas de carga (CTX §49).
 - Usage endpoint: ninguno. La salud verifica la disponibilidad del WSDL de cada servicio.
 - Internal route prefix: ninguno; el SRI nunca se expone a través de la API propia.
 - Error behavior: mensajes con identificador, mensaje, información adicional y tipo, conservados completos junto a la respuesta original. Tratamiento por código en `fiscal-emission.md` y CTX §32.

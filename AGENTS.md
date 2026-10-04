@@ -16,7 +16,7 @@ It is a TypeScript application built with:
 - Prisma for ORM and migrations.
 - Tailwind CSS and shadcn/ui for UI.
 - React Hook Form and Zod for forms.
-- Axios for external HTTP integrations.
+- Axios for external HTTP integrations (exception: the SRI SOAP adapter uses native `fetch` in infrastructure, ADR 0018).
 - pnpm through Corepack as the only package manager.
 
 ## Read Before Working

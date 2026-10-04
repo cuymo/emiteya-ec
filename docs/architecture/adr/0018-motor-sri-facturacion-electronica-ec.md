@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted el 2026-10-02. Enmendado el 2026-10-03 con los spikes S-2 y S-3 offline: la validación XSD no usa el envoltorio de la librería (ADR 0021), y la factura usa un builder propio (Q-44). El resto del ADR sigue vigente.
+Accepted el 2026-10-02. Enmendado el 2026-10-03 con los spikes S-2 y S-3 offline: la validación XSD no usa el envoltorio de la librería (ADR 0021), y la factura usa un builder propio (Q-44). Enmendado de nuevo el 2026-10-03, antes de proponer `add-sri-transmission`: el transporte SOAP es un adaptador propio, no `SriClient` (Q-34). El resto del ADR sigue vigente.
 
 ## Context
 
@@ -81,7 +81,7 @@ siguiente.
   - `generateClaveAcceso`, con un código numérico generado por nosotros con `crypto.randomInt`;
   - para el XSD, `xmllint-wasm` directo detrás de `XsdValidator`, no `validateXmlAgainstXsd` (ADR 0021 y enmienda abajo);
   - `EcSriSigner`, a través de `XmlSigner`;
-  - `SriClient`, solo como transporte, con un `fetch` inyectado que captura la respuesta original para persistirla. La clasificación se hace sobre esa respuesta, con nuestro parser.
+  - `SriClient`, solo como transporte, con un `fetch` inyectado que captura la respuesta original para persistirla. La clasificación se hace sobre esa respuesta, con nuestro parser. **Sustituido** por un adaptador SOAP propio (enmienda del transporte, Q-34).
 
 - **No se usan:**
   - `FacturacionElectronicaEC` ni los métodos `emitir*`;
@@ -164,7 +164,7 @@ factura, cada capacidad queda así:
 - **Se reutiliza tras pasar su prueba de contrato:**
   - `generateClaveAcceso`, mientras siga compatible detrás de `AccessKeys`;
   - `EcSriSigner`, detrás de `XmlSigner`;
-  - `SriClient` como transporte en `add-sri-transmission`, con las compensaciones de este ADR.
+  - `SriClient` como transporte en `add-sri-transmission`, con las compensaciones de este ADR. **Sustituido** por el adaptador SOAP propio (enmienda siguiente, Q-34).
 - **No se usa:**
   - `FacturacionElectronicaEC` ni los métodos `emitir*`;
   - `buildFacturaXml` de la versión 1.0.1;
@@ -176,3 +176,54 @@ No se hace fork de la librería como dependencia del producto. Una versión que 
 texto decimal y escriba los campos del emisor sería una oportunidad de reevaluar el builder con las
 pruebas de contrato y los XML de referencia de S-3, no una dependencia para continuar.
 
+## Enmienda del 2026-10-03: transporte SOAP propio (Q-34)
+
+Antes de proponer `add-sri-transmission`, la revisión de readiness del cambio 7 encontró que
+`SriClient` 1.0.1 no sirve como dueño del protocolo:
+
+- **No devuelve la respuesta original completa:** solo la escribe en el log en debug, y descarta el cuerpo de un HTTP que no es 2xx.
+- **Pierde información:** de varias autorizaciones usa la primera, y no devuelve el XML autorizado, el ambiente ni la clave consultada.
+- **Simplifica estados ambiguos:**
+  - una recepción sin `estado` la toma como `DEVUELTA`;
+  - una autorización sin bloque la toma como `NO AUTORIZADO`;
+  - los errores 70, 43 y 45 llegan como `DEVUELTA`.
+- **No implementa la consulta por clave** para reconciliar, ni `ConsultaComprobante`.
+- **Rigidez:** sus endpoints están fijos en el código, y su único timeout no cubre la lectura del cuerpo.
+
+Decisión: `add-sri-transmission` implementa un adaptador SOAP propio detrás del puerto
+`SriTransport`, en la infraestructura de `sri-engine`.
+
+- **Propio:**
+  - el transporte HTTP/SOAP;
+  - la captura de la respuesta original;
+  - el parser SOAP y la clasificación;
+  - la consulta por clave para reconciliar.
+- **Se reutiliza tras su prueba de contrato:**
+  - `generateClaveAcceso`, detrás de `AccessKeys`;
+  - `EcSriSigner`, detrás de `XmlSigner`: el firmador ya aprobado.
+- **No se usa:**
+  - `SriClient` 1.0.1 como dueño del protocolo;
+  - los métodos `emitir*`;
+  - el builder de la librería;
+  - su envoltorio de XSD;
+  - ningún `rollback`.
+
+**Cliente HTTP.** Es una excepción explícita a la convención general de Axios (`stack.md`,
+`integrations.md`, `backend.md`). El adaptador SOAP del SRI usa el `fetch` nativo de Node 24, solo
+en infraestructura, porque necesita controlar:
+
+- el estado HTTP y las cabeceras relevantes;
+- el cuerpo exacto en bytes;
+- la cancelación;
+- un timeout de conexión y de cabeceras separado del de lectura del cuerpo;
+- las respuestas HTML y los SOAP Fault;
+- la inyección en pruebas.
+
+El dominio y la aplicación nunca importan `fetch`. Los timeouts son configuración operativa, no una
+regla normativa del SRI.
+
+**Consecuencias:**
+
+- Hay más código propio (transporte, parser y clasificación), cubierto por pruebas de contrato con respuestas grabadas del SRI.
+- Los endpoints por ambiente pasan a ser configurables (ERS SRI-REQ-01, CTX §7.5).
+- La librería sigue siendo una dependencia para la clave de acceso y la firma.

@@ -26,7 +26,7 @@ corepack pnpm verify
 - Better Auth for authentication.
 - Prisma for database access.
 - PostgreSQL as the primary database.
-- Axios for external HTTP APIs.
+- Axios for external HTTP APIs; excepción: el adaptador SOAP del SRI usa el `fetch` nativo de Node, solo en infraestructura (ADR 0018, enmienda del transporte).
 
 ## Frontend
 
