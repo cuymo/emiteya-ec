@@ -162,7 +162,20 @@ Fija `lease_owner` y `lease_expires_at` e incrementa `attempt_count`. Es SQL cru
 - Su duración se valida al arrancar: debe superar el presupuesto completo del transporte (conexión, cabeceras y cuerpo) más un margen.
 - Un arriendo nunca vence con una llamada en curso, así que no hay latido.
 
-**Transmisión deshabilitada.** Con `SRI_TRANSMISSION_ENABLED` en falso (el valor por defecto), el runner no toma jobs `sri.*`. Siguen `PENDING`, y no hay ninguna llamada al SRI.
+**Transmisión deshabilitada.** `SRI_TRANSMISSION_ENABLED` es falso por defecto. Así:
+- el runner no toma jobs `sri.*`: siguen `PENDING`, sin arriendo, sin consumir intentos y sin reintentos;
+- no hay ninguna llamada de red al SRI;
+- el encolado al firmar y el barrido siguen creando jobs, de modo que habilitarla después continúa con los existentes;
+- la instalación puede declararse lista, y lo deja ver: `GET /health/ready` añade un detalle `sriTransmission: "disabled"`, hay una métrica `sri_transmission_enabled` (0 o 1) y un log de arranque sin secretos.
+
+**Transmisión habilitada.** El arranque y la readiness exigen sus precondiciones técnicas:
+- endpoints válidos por ambiente;
+- una política de tamaño vigente (D17);
+- `SRI_JOB_WORKERS` ≥ 1;
+- la base de datos;
+- un arriendo que cubre el presupuesto del transporte.
+
+Si falta una, `/health/ready` responde `503` con el motivo en el log y no se envía nada. El interruptor nunca salta una invariante fiscal: la integridad, el tamaño y la evidencia previa se aplican igual.
 
 ### D6. Tipos de job, deduplicación y backoff
 
@@ -172,9 +185,11 @@ Fija `lease_owner` y `lease_expires_at` e incrementa `attempt_count`. Es SQL cru
 | `sri.authorize` | `sri.authorize:{documentId}` | La transición a `RECEIVED` | Consulta idempotente con backoff (base y tope configurables), con la primera tras `SRI_AUTHORIZATION_FIRST_DELAY_SECONDS` (CTX §23.1) | Ventana de conclusión (D4): con respuestas sin conclusión, `MANUAL_REVIEW`; con fallos de transporte, `STOPPED` |
 | `sri.reconcile` | `sri.reconcile:{documentId}` | La transición a `SEND_UNKNOWN` (inmediata, o tras `SRI_ERROR70_DELAY_SECONDS` para el 70) y la reconciliación manual | Igual que `sri.authorize` | Igual que `sri.authorize` |
 
-- **Exclusión entre fases.**
+- **Exclusión entre fases y traspaso atómico.**
   - El índice por comprobante (D5) impide dos jobs `sri.*` activos a la vez.
-  - Cada job se encola solo en la transacción que termina el anterior.
+  - Cada job se encola solo en la transacción que termina el anterior. Por ejemplo, `sri.transmit` pasa a `DONE` y `sri.authorize` nace `PENDING`, o al pasar a `SEND_UNKNOWN`, `sri.transmit` pasa a `DONE` y nace `sri.reconcile`.
+  - Dentro de esa transacción, el job actual se actualiza a `DONE` antes de insertar el siguiente. El índice parcial se comprueba por sentencia, así que la inserción ya no choca con el job saliente. Nunca hay una ventana sin job ni dos jobs activos.
+  - Si dos workers intentan avanzar el mismo comprobante, solo el dueño del arriendo confirma: la guarda de `lease_owner` y la transición guardada revierten al otro.
   - Una reconciliación manual sobre un comprobante con un job activo se rechaza.
 - **Barrido idempotente.** Al arrancar y cada `SRI_SWEEP_INTERVAL_SECONDS`, inserta un `sri.transmit` para cada `SIGNED` sin ningún job, con `INSERT … ON CONFLICT DO NOTHING` sobre la clave.
   - Es el backfill de los firmados que existan al desplegar, y la red de seguridad de la garantía transaccional.
@@ -224,23 +239,27 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
 2. comprobar que el artefacto pertenece al comprobante y a la empresa;
 3. recalcular el SHA-256 y el tamaño y compararlos con los registrados;
 4. comprobar que la clave del comprobante coincide con la del snapshot, y que los bytes contienen exactamente una vez `<claveAcceso>{clave}</claveAcceso>`;
-5. comprobar el tamaño contra la política (D17).
+5. comprobar que los metadatos del artefacto son coherentes con el comprobante (tipo de documento y versión del esquema del snapshot);
+6. comprobar el tamaño contra la política (D17).
 
 - Si una comprobación falla, el job se detiene con `INTEGRITY_FAILED` o `TOO_LARGE`, de clase determinista y con alerta crítica. El estado fiscal no cambia y no hay ninguna llamada al SRI.
 - El sobre lleva el base64 del `Buffer` leído, sin pasar por texto.
 - Nunca se reconstruye el XML desde el snapshot.
 
-### D10. Transporte SOAP propio (`SriTransport`)
+### D10. Transporte SOAP propio (`SriTransport` y `SriInquiryPort`)
 
-- **Puerto, en la aplicación de `sri-engine`:** `exchange({ environment, service, envelope: Buffer })` devuelve un `TransportOutcome`:
+- **Puertos, en la aplicación de `sri-engine`:**
+  - `SriTransport.exchange({ environment, service, envelope: Buffer })` devuelve un `TransportOutcome`. Los servicios son `RECEPTION`, `AUTHORIZATION` y `VALIDITY` (`ConsultaComprobante`, CTX §7.3, §7.4, §24).
+  - `SriInquiryPort` expone `queryAuthorization(environment, accessKey)` y `queryValidity(environment, accessKey)` sobre el transporte (D15). El dominio decide la estrategia, y el transporte implementa los servicios web.
+- **Frontera conservadora.** Solo se clasifica como no enviado lo que se puede demostrar:
 
-  | Categoría | Cuándo | Significado |
+  | Clase | Cuándo | Efecto |
   | --- | --- | --- |
-  | `NOT_SENT` | DNS sin resolver, conexión rechazada, conexión vencida antes de conectar, fallo TLS antes de enviar (códigos `ENOTFOUND`, `EAI_AGAIN`, `ECONNREFUSED`, `UND_ERR_CONNECT_TIMEOUT` y errores TLS) | La solicitud no salió |
-  | `REQUEST_TIMEOUT` | Sin cabeceras dentro del plazo, después de enviar | Incierto |
-  | `BODY_TIMEOUT` | Cabeceras recibidas, cuerpo incompleto dentro del plazo | Incierto |
-  | `CONNECTION_LOST` | Conexión cortada después de escribir la solicitud | Incierto |
-  | `RESPONSE` | Respuesta completa | Con estado HTTP, cabeceras seguras, cuerpo exacto y tiempos de inicio, cabeceras y fin |
+  | `PROVABLY_NOT_SENT` | El error de `fetch` tiene como causa un fallo anterior a la conexión: DNS (`ENOTFOUND`, `EAI_AGAIN`), conexión rechazada (`ECONNREFUSED`), plazo de conexión interno de Node (`UND_ERR_CONNECT_TIMEOUT`) o un fallo de verificación TLS (códigos `CERT_*`, `*_SELF_SIGNED_*`, `ERR_TLS_*`). En `fetch` la solicitud HTTP solo se escribe después de conectar y completar el TLS | El comprobante sigue `SIGNED` y el envío se reintenta, sin reconciliar |
+  | `MAY_HAVE_BEEN_SENT` | Todo lo demás: plazo propio (`AbortController`) hasta las cabeceras, abort durante la solicitud, socket cortado (`UND_ERR_SOCKET`, `ECONNRESET`), plazo de lectura del cuerpo, cualquier causa desconocida o ausente | `SEND_UNKNOWN`, evidencia guardada y reconciliación antes de cualquier reenvío |
+
+  Un plazo propio es siempre ambiguo, porque `fetch` no expone si ya conectó. Por eso no se configura un plazo de conexión propio: el de conexión es el interno de Node, que da un error demostrable. Los plazos configurables son el de las cabeceras (`SRI_REQUEST_TIMEOUT_MS`, desde el inicio) y el de lectura del cuerpo (`SRI_BODY_TIMEOUT_MS`).
+- **Resultado de transporte:** `NOT_SENT`, solo `PROVABLY_NOT_SENT`; `REQUEST_TIMEOUT`, `BODY_TIMEOUT` y `CONNECTION_LOST`, todos `MAY_HAVE_BEEN_SENT`; o `RESPONSE`, con el estado HTTP, las cabeceras seguras, el cuerpo exacto y los tiempos de inicio, cabeceras y fin.
 
   La clasificación del cuerpo de un `RESPONSE` (D11 y D12) distingue:
   - HTTP sin éxito;
@@ -248,13 +267,17 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
   - SOAP Fault;
   - XML mal formado;
   - SOAP válido con la respuesta del SRI.
-
-- **Adaptador.** Usa el `fetch` nativo de Node, solo en la infraestructura de `sri-engine` (excepción a Axios, ADR 0018).
-  - Tiene tres plazos separados: conexión, cabeceras y cuerpo, con `AbortController` y temporizadores por fase.
-  - Ante la duda, una causa no reconocida se trata como incierta, nunca como `NOT_SENT`.
-  - Sin fijar certificados TLS (CTX §7.5).
-- **Endpoints.** Viven en un módulo central versionado con los valores de CTX §7.1 y §7.2 (recepción y autorización, por ambiente), sobrescribibles por variable de entorno. La lógica de negocio nunca ve una URL. La consulta de validez (CTX §7.3, §7.4) no se usa en este cambio.
-- **Sobres.** Los arma un escritor propio con los espacios de nombres de los WSDL oficiales: `validarComprobante` con el XML en base64 y `autorizacionComprobante` con la clave. Son funciones puras con pruebas de igualdad de bytes.
+- **Adaptador.** Usa el `fetch` nativo de Node, solo en la infraestructura de `sri-engine` (excepción a Axios, ADR 0018). Limita los bytes de la respuesta y no fija certificados TLS (CTX §7.5).
+- **Endpoints.** Viven en un módulo central versionado con los valores de CTX §7.1–§7.4 por ambiente y servicio, sobrescribibles por variable de entorno. La lógica de negocio nunca ve una URL.
+- **Sobres.**
+  - Los de `validarComprobante` (XML en base64) y `autorizacionComprobante` (clave) usan los espacios de nombres que fija la versión 1.0.1 de `facturacion-electronica-ec` (`http://ec.gob.sri.ws.recepcion`, `http://ec.gob.sri.ws.autorizacion`). S-3 online los confirma contra los WSDL oficiales.
+  - El de `consultarEstadoAutorizacionComprobante` necesita el contrato oficial del WSDL de `ConsultaComprobante`, que el 2026-10-03 no fue accesible (el servicio cortó la conexión). No se inventa: hasta obtenerlo (Q-48), el adaptador de validez responde `UNAVAILABLE` y la estrategia lo trata como "sin evidencia adicional" (D15).
+  - Son funciones puras con pruebas de igualdad de bytes.
+- **Pruebas de contrato de la frontera,** contra servidores locales:
+  - puerto cerrado y nombre `.invalid`: `NOT_SENT`;
+  - TLS con un certificado no confiable: `NOT_SENT`;
+  - servidor que acepta y no responde, socket cortado tras leer la solicitud, abort durante la subida, cabeceras sin cuerpo: `MAY_HAVE_BEEN_SENT`;
+  - el mapeo de `UND_ERR_CONNECT_TIMEOUT` y de una causa desconocida, con pruebas unitarias.
 
 ### D11. Recepción: parser y clasificación
 
@@ -333,19 +356,26 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
 
 ### D15. Reconciliación automática y manual
 
-- **Un solo caso de uso:** `reconcileDocument(companyId, documentId, origin)`, con `origin` `AUTOMATIC` (job) o `MANUAL` (administrador, motivo).
-  - Consulta la autorización por la clave del comprobante: es el servicio que trae la decisión.
-  - No usa `ConsultaComprobante` (Q-16).
-  - Aplica D12, y para `KEY_UNKNOWN` aplica esta tabla:
+- **Un solo caso de uso,** `reconcileDocument(companyId, documentId, origin)`, con `origin` `AUTOMATIC` (job) o `MANUAL` (administrador, motivo). Usa `SriInquiryPort`, y el dominio decide la estrategia:
+  1. **Autorización por clave** (`queryAuthorization`): es la consulta que trae la decisión y el XML autorizado. Se aplica D12.
+  2. **Validez por clave** (`queryValidity`, `ConsultaComprobante`), solo antes de concluir que el SRI no conoce la clave. Nunca para observar anulaciones (Q-16), ni en la consulta periódica.
+- **Por qué la consulta de validez.** Según CTX §24, el servicio responde `estadoAutorizacion` (`AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO`), o el error 99 cuando la clave está fuera del rango de fechas o no hay datos.
+  - El error 99 no distingue "fuera de rango" de "sin datos", ni "no recibido" de "recibido y en proceso". Por eso la consulta de validez nunca autoriza un reenvío.
+  - Sí aporta evidencia útil cuando informa un estado: la clave es conocida, y eso impide un reenvío a ciegas. CTX §24.1 la recomienda para reconciliar.
+  - Se usa como guarda: solo puede impedir un reenvío.
+- **Decisión ante `KEY_UNKNOWN` de la autorización:**
 
-  | Antecedente del comprobante | Decisión ante `KEY_UNKNOWN` |
+  | Antecedente o evidencia | Decisión |
   | --- | --- |
-  | Solo incertidumbre de transporte, sin evidencia de recepción | Reenviar: encola `sri.transmit` de reenvío con los mismos bytes (D9). El comprobante sigue `SEND_UNKNOWN` |
-  | Evidencia de recepción (`RECIBIDA`, 70 o 43) | No reenviar: nueva consulta dentro de la ventana; al agotarla, `MANUAL_REVIEW` |
-  | Causa 45 | `MANUAL_REVIEW` |
+  | La validez informa `AUTORIZADO` o `NO AUTORIZADO` | No reenviar: `RECEIVED` y `sri.authorize`, que obtiene el registro concluyente |
+  | La validez informa `PENDIENTE DE ANULAR` o `ANULADO` | `MANUAL_REVIEW`: es un estado que este cambio no modela (Q-16) |
+  | La validez da el error 99, `UNAVAILABLE` o un fallo de transporte, y hay evidencia de recepción (`RECIBIDA`, 70 o 43) | No reenviar: nueva consulta dentro de la ventana; al agotarla, `MANUAL_REVIEW` |
+  | Igual, con la causa 45 | `MANUAL_REVIEW` |
+  | Igual, sin evidencia de recepción (solo incertidumbre de transporte) | Reenviar: encola `sri.transmit` de reenvío con los mismos bytes (D9). El comprobante sigue `SEND_UNKNOWN` |
   | El comprobante está en `MANUAL_REVIEW` | Sigue en `MANUAL_REVIEW`, sin reenvío |
 
   La evidencia de recepción se calcula a partir de los resultados guardados de sus intentos, no de una bandera mutable.
+- **`MANUAL_REVIEW` es la barrera de falla cerrada.** Solo sale con una reconciliación manual que obtiene evidencia concluyente (`RECEIVED`, `AUTHORIZED` o `NOT_AUTHORIZED`). Si la situación sigue ambigua, permanece. No existe una acción "reenviar de todas formas": una acción manual distinta sería un cambio de OpenSpec explícito.
 - **Manual:**
   - `POST /api/v1/invoices/{invoiceId}/reconciliations` con `{ reason }` (de 1 a 500 caracteres) y el permiso `invoices.reconcile`.
   - Se admite en `MANUAL_REVIEW`, `SEND_UNKNOWN`, y en `SIGNED` o `RECEIVED` sin un job `sri.*` activo; es decir, con el job detenido.
@@ -358,7 +388,7 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
   - los intentos guardan el origen, quién inició y el job;
   - las transiciones guardan el actor (`SYSTEM`, o `USER` con el administrador) y la causa `RECONCILIATION`;
   - una reconciliación manual se audita (D19).
-- **`SIGNED` con su job detenido:** la reconciliación consulta la clave. Si el SRI no la conoce y no hay evidencia de recepción, encola el `sri.transmit`. Así el administrador reactiva un envío detenido sin una operación de envío.
+- **`SIGNED` con su job detenido:** la reconciliación consulta la clave. Si ninguna evidencia muestra que el SRI la conoce y no hay evidencia de recepción, encola el `sri.transmit`. Así el administrador reactiva un envío detenido sin una operación de envío.
 
 ### D16. Autorización registrada y artefacto `AUTHORIZED_XML`
 
@@ -466,7 +496,7 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 | `SRI_JOB_WORKERS` | 2 | Workers (de 0 a 8) |
 | `SRI_JOB_LEASE_SECONDS` | 120 | Duración del arriendo |
 | `SRI_JOB_POLL_INTERVAL_MS` | — | Intervalo de sondeo |
-| `SRI_CONNECT_TIMEOUT_MS`, `SRI_HEADERS_TIMEOUT_MS`, `SRI_BODY_TIMEOUT_MS` | — | Plazos del transporte |
+| `SRI_REQUEST_TIMEOUT_MS`, `SRI_BODY_TIMEOUT_MS` | — | Plazos del transporte: hasta las cabeceras y de lectura del cuerpo. El de conexión es el interno de Node (D10) |
 | `SRI_RESPONSE_MAX_BYTES` | 5 MB | Tamaño máximo de una respuesta |
 | `SRI_AUTHORIZATION_FIRST_DELAY_SECONDS` | — | Espera antes de la primera consulta de autorización |
 | `SRI_POLL_BACKOFF_BASE_SECONDS`, `SRI_POLL_BACKOFF_CAP_SECONDS` | — | Backoff de las consultas |
@@ -475,9 +505,9 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 | `SRI_TRANSMIT_MAX_ATTEMPTS`, `SRI_TRANSMIT_DEADLINE_HOURS` | — | Límites del envío |
 | `SRI_SWEEP_INTERVAL_SECONDS` | — | Intervalo del barrido |
 | `SRI_BREAKER_FAILURES`, `SRI_BREAKER_COOLDOWN_SECONDS` | — | Circuit breaker |
-| `SRI_ENDPOINT_TEST_RECEPTION`, `SRI_ENDPOINT_TEST_AUTHORIZATION`, `SRI_ENDPOINT_PRODUCTION_RECEPTION`, `SRI_ENDPOINT_PRODUCTION_AUTHORIZATION` | — | Endpoints, opcionales |
+| `SRI_ENDPOINT_{TEST,PRODUCTION}_{RECEPTION,AUTHORIZATION,VALIDITY}` | — | Endpoints, opcionales |
 
-- **Al arrancar** se comprueba que el arriendo supera la suma de los plazos del transporte más un margen.
+- **Al arrancar** se comprueba que el arriendo supera la suma de los plazos del transporte (más el plazo interno de conexión de Node) y un margen.
 - **El interruptor nace apagado.** Habilitarlo es una decisión de despliegue, después de las compuertas (D23): así un despliegue no transmite al SRI por accidente.
 
 ### D23. Pruebas y compuertas de evidencia
@@ -487,13 +517,14 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
   - la clasificación de la recepción y de la autorización, con sus tablas completas, sobre respuestas sintéticas construidas con la estructura oficial (CTX §22–§23 y los WSDL) y marcadas como sintéticas;
   - el backoff, la detención y los sobres SOAP, byte a byte;
   - la normalización del ambiente y de la fecha.
-- **Contrato del transporte,** contra un servidor HTTP local que simula cada categoría:
-  - DNS sin resolver y conexión rechazada;
-  - plazo de conexión, de cabeceras y de cuerpo;
-  - corte después de enviar;
+- **Contrato del transporte,** contra servidores locales, con la frontera de D10 explícita:
+  - `PROVABLY_NOT_SENT`: puerto cerrado, nombre `.invalid` y TLS no confiable;
+  - `MAY_HAVE_BEEN_SENT`: plazo de cabeceras, socket cortado tras leer la solicitud, abort durante la subida y plazo del cuerpo;
   - HTML con 200, Fault con 500, XML ilegible, respuesta gigante y respuesta válida.
 - **Integración con PostgreSQL y dos empresas:**
   - la cola: concurrencia con `SKIP LOCKED`, deduplicación, exclusión por comprobante, vencimiento del arriendo, apagado ordenado, en un esquema distinto de `public`;
+  - el traspaso atómico entre fases (`sri.transmit` → `sri.authorize`, y `sri.transmit` → `sri.reconcile` al pasar a `SEND_UNKNOWN`), sin ventana sin job ni choque con el índice, y dos workers que intentan avanzar la misma factura;
+  - con la transmisión deshabilitada: ningún arriendo, ningún intento consumido y ninguna llamada;
   - el encolado al firmar (caída simulada justo después) y el barrido repetido;
   - la evidencia antes de la clasificación, incluida la caída entre la TX A y la TX B;
   - la integridad (hash y tamaño alterados);
@@ -568,6 +599,8 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 - **[Compromiso] La transmisión nace deshabilitada** → Evita transmitir por accidente al desplegar. El despliegue documenta cómo habilitarla tras las compuertas.
 - **[Riesgo] El circuit breaker vive en la memoria de cada proceso** → Basta con una instancia por empresa; varios procesos solo hacen más intentos durante una caída.
 - **[Riesgo] Q-47 sigue abierta y bloquea el cierre de apply** → Las partes independientes avanzan, y la transmisión real ya está bloqueada además por las otras compuertas.
+- **[Riesgo] El contrato oficial de `ConsultaComprobante` no estuvo accesible** → El puerto y la estrategia están diseñados y probados con un SRI simulado. El adaptador real de validez espera el WSDL oficial (Q-48) y, mientras tanto, responde `UNAVAILABLE`: la guarda no aporta evidencia y decide la autorización, como en el caso A de CTX §52.
+- **[Riesgo] Los espacios de nombres de recepción y autorización salen de la librería, no de un WSDL oficial verificado** → S-3 online los confirma, y un cambio sería un `/opsx:update`.
 - **[Riesgo] Una respuesta gigante o maliciosa** → Hay límite de bytes, el parser rechaza DTD y los plazos son por fase.
 
 ## Migration Plan
@@ -586,4 +619,5 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 ## Open Questions
 
 - **Q-47:** la cifra exacta del límite de tamaño. No cambia el enfoque: el dataset espera la fuente oficial y bloquea el cierre de apply (D17).
+- **Q-48:** el contrato oficial del WSDL de `ConsultaComprobante`. Sin él, la guarda de validez queda sin evidencia adicional (D15). No cambia los specs ni las tareas.
 - **Formatos reales de la respuesta del SRI:** el texto del estado en procesamiento, el formato de la fecha y si el `comprobante` llega en CDATA o escapado. No cambian el enfoque, porque el parser no concluye ante lo desconocido, y S-3 online los confirma.

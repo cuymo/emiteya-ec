@@ -40,14 +40,18 @@
   - backoff dentro de los límites y detención al agotar
 - [ ] 2.2 Implementar el runner (design D5):
   - workers configurables y sondeo con jitter;
-  - interruptor por prefijo de tipo, para `SRI_TRANSMISSION_ENABLED`;
+  - interruptor por prefijo de tipo, para `SRI_TRANSMISSION_ENABLED`: deshabilitada, los jobs `sri.*` no se toman, no consumen intentos ni reintentos y no hacen llamadas, mientras el encolado y el barrido siguen creándolos;
   - apagado ordenado registrado en `platform/lifecycle`: deja de tomar trabajo, espera hasta el plazo de gracia y libera los arriendos pendientes.
 
   Verificar con pruebas:
   - apagado con un job en curso que termina, o que se libera y se retoma;
-  - ningún job `sri.*` tomado con el interruptor apagado;
+  - con el interruptor apagado: ningún job `sri.*` tomado, ningún intento consumido y ninguna llamada; al encenderlo, los jobs existentes avanzan;
   - sin bucles calientes cuando la cola está vacía o todo falla
-- [ ] 2.3 Añadir las variables de la cola y del SRI de design D22 a `env.ts`, validando que el arriendo supera la suma de los plazos del transporte, y documentarlas en `deployment.md`. Verificar con pruebas de entorno: valores por defecto, rangos, interruptor apagado por defecto y arriendo insuficiente rechazado
+- [ ] 2.3 Añadir las variables de la cola y del SRI de design D22 a `env.ts`, validando que el arriendo supera los plazos del transporte, y documentarlas en `deployment.md` (design D5 y D22).
+  - Con la transmisión deshabilitada: detalle `sriTransmission: "disabled"` en `/health/ready`, métrica `sri_transmission_enabled` y log de arranque sin secretos.
+  - Con la transmisión habilitada, la readiness exige sus precondiciones: endpoints válidos, política de tamaño vigente, al menos un worker y la base de datos. Si falta una, `503` con el motivo en el log.
+
+  Verificar con pruebas de entorno (valores por defecto, rangos, interruptor apagado por defecto, arriendo insuficiente rechazado) y pruebas de readiness: deshabilitada y lista, habilitada sin política de tamaño y no lista
 
 ## 3. Política de tamaño del envío (Q-47)
 
@@ -75,19 +79,24 @@
 
 ## 5. Transporte SOAP propio (`SriTransport`)
 
-- [ ] 5.1 Definir el puerto `SriTransport` y su resultado (`NOT_SENT`, `REQUEST_TIMEOUT`, `BODY_TIMEOUT`, `CONNECTION_LOST`, `RESPONSE`), y el módulo central de endpoints por ambiente con los valores de CTX §7.1 y §7.2, sobrescribibles por variable de entorno (design D10). Verificar con pruebas unitarias de la resolución de endpoints y de que ninguna URL aparece fuera de ese módulo
+- [ ] 5.1 Definir los puertos `SriTransport` (servicios `RECEPTION`, `AUTHORIZATION` y `VALIDITY`; resultados `NOT_SENT`, `REQUEST_TIMEOUT`, `BODY_TIMEOUT`, `CONNECTION_LOST` y `RESPONSE`) y `SriInquiryPort` (`queryAuthorization`, `queryValidity`), y el módulo central de endpoints por ambiente y servicio con los valores de CTX §7.1–§7.4, sobrescribibles por variable de entorno (design D10). Verificar con pruebas unitarias de la resolución de endpoints y de que ninguna URL aparece fuera de ese módulo
 - [ ] 5.2 Implementar el adaptador sobre el `fetch` nativo, solo en la infraestructura de `sri-engine`:
-  - plazos de conexión, cabeceras y cuerpo separados;
-  - mapeo de causas a categorías, con lo desconocido tratado como incierto;
+  - plazo hasta las cabeceras y plazo de lectura del cuerpo, separados;
+  - frontera conservadora de design D10: solo las causas anteriores a la conexión (DNS, conexión rechazada, plazo de conexión interno y fallo TLS) son `NOT_SENT`; un plazo propio, un abort, un socket cortado o una causa desconocida son inciertos;
   - cabeceras seguras;
   - límite de bytes de la respuesta;
   - sin fijar certificados TLS.
 
-  Añadir la regla de ESLint y la prueba de arquitectura que impiden `fetch` y el parser XML fuera de esa infraestructura. Verificar con pruebas de contrato contra un servidor HTTP local:
-  - DNS sin resolver, conexión rechazada y plazo de conexión, que dan `NOT_SENT`;
-  - plazo de cabeceras, plazo de cuerpo y corte después de enviar;
+  Añadir la regla de ESLint y la prueba de arquitectura que impiden `fetch` y el parser XML fuera de esa infraestructura. Verificar con pruebas de contrato contra servidores locales:
+  - `NOT_SENT`: puerto cerrado, nombre `.invalid` y TLS con un certificado no confiable;
+  - inciertos: servidor que no responde, socket cortado tras leer la solicitud, abort durante la subida y cabeceras sin cuerpo;
+  - pruebas unitarias del mapeo de `UND_ERR_CONNECT_TIMEOUT` y de una causa desconocida;
   - HTML con 200, Fault con 500, cuerpo vacío, respuesta gigante y respuesta válida con su cuerpo exacto
-- [ ] 5.3 Implementar los sobres `validarComprobante` (con el base64 del `Buffer` exacto) y `autorizacionComprobante`, con los espacios de nombres de los WSDL oficiales, y el circuit breaker por servicio y ambiente (design D6 y D10). Verificar con pruebas byte a byte de los sobres y pruebas del breaker: se abre tras N fallos, se entreabre tras la pausa y no consume intentos
+- [ ] 5.3 Implementar los sobres `validarComprobante` (con el base64 del `Buffer` exacto) y `autorizacionComprobante`, con los espacios de nombres de design D10, y el circuit breaker por servicio y ambiente (design D6 y D10).
+  - Intentar obtener el WSDL oficial de `ConsultaComprobante`. Si se obtiene, implementar el sobre de `consultarEstadoAutorizacionComprobante` con su cita.
+  - Si no, el adaptador de validez responde `UNAVAILABLE` y Q-48 sigue abierta: no se inventa el contrato.
+
+  Verificar con pruebas byte a byte de los sobres, pruebas del adaptador de validez (contrato oficial, o `UNAVAILABLE`) y pruebas del breaker: se abre tras N fallos, se entreabre tras la pausa y no consume intentos
 
 ## 6. Parsers y clasificación
 
@@ -107,6 +116,7 @@
   - extracción del `comprobante` exacto.
 
   Verificar con pruebas unitarias de cada caso, incluidas una fecha ilegible, un ambiente distinto y un número distinto de la clave, que dan `INCONSISTENT`, y un estado desconocido que da `NO_CONCLUSION`
+- [ ] 6.3 Implementar la clasificación pura de la respuesta de validez (design D15): un estado `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO` da `KEY_KNOWN` con su estado; el error 99, una respuesta desconocida o `UNAVAILABLE` dan `NO_EVIDENCE`. Verificar con pruebas unitarias sobre respuestas sintéticas, y con la estructura oficial si se obtuvo el WSDL de la tarea 5.3
 
 ## 7. Evidencia y máquina de transmisión
 
@@ -127,6 +137,8 @@
 
 - [ ] 8.1 Exportar `enqueueTransmissionIn(scope, document)` desde `fiscal` y llamarlo en la transacción que firma (`invoices/application/signing-pipeline.ts`), e implementar el barrido idempotente al arrancar y periódico (design D6). Verificar con pruebas de integración:
   - una factura firmada tiene su `sri.transmit` en la misma transacción;
+  - el traspaso atómico entre fases: `sri.transmit` `DONE` y `sri.authorize` `PENDING` en una transacción, y lo mismo al pasar a `SEND_UNKNOWN` con `sri.reconcile`, sin ventana sin job ni choque con el índice parcial;
+  - dos workers que intentan avanzar la misma factura: solo uno confirma;
   - una caída simulada justo después de firmar conserva el job;
   - el barrido ejecutado varias veces crea exactamente un job por cada `SIGNED` sin job, y no reactiva jobs `STOPPED`
 - [ ] 8.2 Implementar el handler `sri.transmit` (design D9, D11 y D14):
@@ -171,9 +183,10 @@
 
 ## 10. Reconciliación automática
 
-- [ ] 10.1 Implementar `reconcileDocument` y el handler `sri.reconcile` con la tabla de design D15:
-  - la autorización por clave decide;
-  - una clave desconocida sin evidencia de recepción encola el reenvío de los mismos bytes;
+- [ ] 10.1 Implementar `reconcileDocument` sobre `SriInquiryPort` y el handler `sri.reconcile` con la estrategia de design D15:
+  - la autorización por clave decide primero;
+  - antes de concluir que el SRI no conoce la clave, la consulta de validez actúa como guarda: un estado informado impide el reenvío, lleva a `RECEIVED` o, si es de anulación, a `MANUAL_REVIEW`;
+  - una clave desconocida sin evidencia de recepción ni evidencia de validez encola el reenvío de los mismos bytes;
   - con evidencia de recepción (`RECIBIDA`, 70 o 43) no se reenvía;
   - la causa 45 con una clave desconocida lleva a `MANUAL_REVIEW`;
   - desde `MANUAL_REVIEW`, una clave desconocida no habilita el reenvío;
@@ -262,7 +275,7 @@
   - `backend.md`, `ARCHITECTURE.md` y `database.md`;
   - `domain-model.md` y `glossary.md`;
   - `capabilities.md`;
-  - `open-questions.md`: Q-06 resuelta, y Q-47 según la tarea 3.2.
+  - `open-questions.md`: Q-06 resuelta, Q-47 según la tarea 3.2 y Q-48 según la tarea 5.3.
 
   Verificar que los documentos citan las rutas, permisos, estados, tipos de job y códigos implementados
 

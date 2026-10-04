@@ -28,15 +28,23 @@ El sistema SHALL transmitir al SRI cada comprobante firmado sin intervención de
 - **THEN** no existe: solo puede consultar el estado y, si es administrador, pedir una reconciliación
 
 ### Requirement: Transmisión habilitada por configuración
-El sistema SHALL contactar al SRI solo cuando la instalación tiene la transmisión habilitada por configuración. Mientras está deshabilitada, ningún comprobante se envía ni se consulta, y los firmados conservan su transmisión programada.
+El sistema SHALL contactar al SRI solo con la transmisión habilitada por configuración, que nace deshabilitada. Deshabilitada, los trabajos pendientes no se toman, no consumen intentos ni hacen llamadas, y la instalación informa que está deshabilitada a propósito. Habilitada, exige las precondiciones técnicas para transmitir; si falta una, no se declara lista.
 
 #### Scenario: Transmisión deshabilitada
 - **WHEN** la instalación tiene la transmisión deshabilitada
-- **THEN** no hay ninguna llamada al SRI y los comprobantes firmados siguen firmados con su transmisión programada
+- **THEN** no hay ninguna llamada al SRI, los trabajos pendientes no avanzan ni consumen intentos, y los comprobantes firmados conservan su transmisión programada
+
+#### Scenario: Deshabilitada a propósito y observable
+- **WHEN** la transmisión está deshabilitada
+- **THEN** la instalación puede declararse lista, y su estado de salud, sus métricas y el registro de arranque informan que la transmisión está deshabilitada, sin secretos
 
 #### Scenario: Habilitación posterior
 - **WHEN** se habilita la transmisión con comprobantes firmados pendientes
-- **THEN** se transmiten sin que nadie los reprograme
+- **THEN** se transmiten los trabajos ya existentes, sin que nadie los reprograme
+
+#### Scenario: Habilitada sin precondiciones
+- **WHEN** la transmisión está habilitada y falta una precondición, como endpoints válidos, una política de tamaño vigente o al menos un worker
+- **THEN** la instalación no se declara lista y no se envía ningún comprobante
 
 ### Requirement: Una sola transmisión a la vez por comprobante
 Un comprobante SHALL tener como máximo una interacción en curso con el SRI, aunque haya varios workers o procesos. Nunca hay dos transmisiones equivalentes simultáneas del mismo comprobante.
@@ -48,6 +56,10 @@ Un comprobante SHALL tener como máximo una interacción en curso con el SRI, au
 #### Scenario: Worker que cae con una transmisión en curso
 - **WHEN** un worker cae mientras transmite un comprobante
 - **THEN** otro worker solo lo retoma cuando vence su arriendo, sin dos envíos en paralelo
+
+#### Scenario: Paso entre fases sin hueco
+- **WHEN** un comprobante pasa de una fase a la siguiente, como del envío a la consulta de autorización o del resultado incierto a la reconciliación
+- **THEN** en ningún momento queda sin trabajo programado ni con dos trabajos activos
 
 ### Requirement: Integridad del comprobante firmado antes de cada envío
 Antes de cada envío, el sistema SHALL comprobar que el XML firmado persistido pertenece al comprobante, conserva su hash y su tamaño y contiene su clave de acceso, y SHALL enviar exactamente esos bytes. Nunca reconstruye el XML desde el snapshot. Si una comprobación falla, no envía nada.
@@ -148,7 +160,7 @@ Ante el error 70, el sistema SHALL conservar el comprobante, su clave, su númer
 - **THEN** no se reenvía: se sigue consultando dentro de la ventana y, si se agota, el comprobante pasa a revisión manual
 
 ### Requirement: Errores 43 y 45
-Los errores 43 (clave registrada) y 45 (secuencial registrado) SHALL llevar a reconciliar por clave antes de cualquier otra acción, y nunca a devuelto. Un secuencial registrado con otra clave nunca se reutiliza ni lleva a reservar otro número.
+Los errores 43 (clave registrada) y 45 (secuencial registrado) SHALL llevar a reconciliar por clave antes de cualquier otra acción, y nunca a devuelto. Tras un 45, si la evidencia queda contradictoria o sin conclusión, el comprobante pasa a revisión manual. Un secuencial registrado con otra clave nunca se reutiliza ni lleva a reservar otro número.
 
 #### Scenario: Clave registrada
 - **WHEN** la recepción responde con el error 43
@@ -159,11 +171,11 @@ Los errores 43 (clave registrada) y 45 (secuencial registrado) SHALL llevar a re
 - **THEN** el comprobante toma el estado que informa el SRI
 
 #### Scenario: Secuencial registrado con otra clave
-- **WHEN** la recepción responde con el error 45 y el SRI no conoce esta clave
+- **WHEN** la recepción responde con el error 45 y la evidencia oficial no muestra esta clave, o es contradictoria
 - **THEN** el comprobante pasa a revisión manual, sin reenvío ni otro número
 
 ### Requirement: Resultado incierto
-Cuando no se puede demostrar si el SRI recibió el comprobante, el sistema SHALL llevarlo a resultado incierto y reconciliarlo por clave antes de cualquier reenvío. Un resultado incierto nunca es terminal ni equivale a devuelto o no autorizado. Si el envío falló de forma demostrable antes de salir, el comprobante sigue firmado y el envío se reintenta.
+Cuando no se puede demostrar que la solicitud no llegó al SRI, el sistema SHALL llevar el comprobante a resultado incierto y reconciliarlo por clave antes de cualquier reenvío. Un resultado incierto nunca es terminal ni equivale a devuelto o no autorizado. Solo un fallo que demuestra que la solicitud no pudo salir deja el comprobante firmado para reintentar el envío.
 
 #### Scenario: Tiempo agotado después de enviar
 - **WHEN** el envío vence sin respuesta
@@ -177,9 +189,13 @@ Cuando no se puede demostrar si el SRI recibió el comprobante, el sistema SHALL
 - **WHEN** la conexión se corta después de enviar la solicitud
 - **THEN** el comprobante pasa a resultado incierto
 
-#### Scenario: Fallo antes de enviar
-- **WHEN** no se pudo establecer la conexión porque la dirección no se resolvió, la conexión fue rechazada o venció antes de conectar
-- **THEN** el comprobante sigue firmado y el envío se reintenta con espera creciente
+#### Scenario: Fallo demostrable antes de enviar
+- **WHEN** la dirección no se resolvió, la conexión fue rechazada antes de establecerse, venció antes de conectar o el TLS falló antes de que empezara la solicitud HTTP
+- **THEN** el comprobante sigue firmado y el envío se reintenta con espera creciente, sin reconciliar
+
+#### Scenario: Ambigüedad después de empezar
+- **WHEN** vence un plazo genérico o el de las cabeceras, se corta la conexión, se aborta la solicitud en curso o vence la lectura del cuerpo
+- **THEN** el comprobante pasa a resultado incierto, aunque la causa pudiera haber ocurrido antes del envío
 
 ### Requirement: Consulta de autorización
 Después de recibido, el sistema SHALL consultar la autorización por la misma clave, tras un intervalo configurable y con espera creciente, durante una ventana configurable, hasta obtener una respuesta concluyente. Una respuesta sin conclusión nunca se trata como no autorizada.
@@ -235,7 +251,7 @@ Si la respuesta trae varias autorizaciones, el sistema SHALL concluir autorizado
 - **THEN** el comprobante pasa a revisión manual
 
 ### Requirement: Reconciliación por clave
-La reconciliación SHALL consultar al SRI por la clave del comprobante y decidir su estado con las reglas de la autorización. Solo SHALL reenviar los mismos bytes firmados cuando el SRI demuestra que no conoce la clave y no hay evidencia previa de que la recibió.
+La reconciliación SHALL consultar al SRI por la clave con las consultas oficiales disponibles, primero la de autorización, y decidir el estado con sus reglas. Solo SHALL reenviar los mismos bytes cuando ninguna evidencia oficial disponible muestra que el SRI conoce la clave y no hay evidencia previa de que la recibió. Una consulta oficial que muestra la clave conocida impide el reenvío.
 
 #### Scenario: Ya autorizado
 - **WHEN** un comprobante en resultado incierto se reconcilia y el SRI lo informa autorizado
@@ -249,6 +265,10 @@ La reconciliación SHALL consultar al SRI por la clave del comprobante y decidir
 - **WHEN** el SRI no conoce la clave y el único antecedente es un resultado incierto de transporte
 - **THEN** se reenvían los mismos bytes firmados
 
+#### Scenario: Consulta de validez que conoce la clave
+- **WHEN** la autorización no encuentra la clave, pero la consulta de validez del SRI informa un estado para ella
+- **THEN** no se reenvía: si informa autorizado o no autorizado, el comprobante pasa a recibido para obtener la autorización; si informa un estado de anulación, pasa a revisión manual
+
 #### Scenario: Clave desconocida con evidencia de recepción
 - **WHEN** el SRI no conoce la clave, pero antes respondió `RECIBIDA`, el error 70 o el error 43
 - **THEN** no se reenvía y se sigue consultando dentro de la ventana
@@ -258,7 +278,7 @@ La reconciliación SHALL consultar al SRI por la clave del comprobante y decidir
 - **THEN** el estado no cambia y se reintenta con espera creciente
 
 ### Requirement: Revisión manual
-Un comprobante SHALL pasar a revisión manual solo cuando su resultado no puede resolverse automáticamente de forma segura: una respuesta inconsistente con el comprobante, un secuencial registrado con otra clave o la ventana de autorización agotada sin conclusión. Un error técnico recuperable nunca lleva a revisión manual. Solo sale con una reconciliación manual.
+Un comprobante SHALL pasar a revisión manual solo cuando su resultado no puede resolverse automáticamente de forma segura: una respuesta inconsistente, un secuencial registrado con otra clave o la ventana agotada sin conclusión. Un error técnico recuperable nunca lleva a ella. Solo sale con una reconciliación manual que obtiene evidencia concluyente, y ninguna acción lo reenvía.
 
 #### Scenario: Respuesta inconsistente
 - **WHEN** el SRI responde por una clave distinta de la consultada
@@ -271,6 +291,10 @@ Un comprobante SHALL pasar a revisión manual solo cuando su resultado no puede 
 #### Scenario: Sin salida automática
 - **WHEN** un comprobante está en revisión manual
 - **THEN** ningún proceso automático cambia su estado
+
+#### Scenario: Sin reenvío desde la revisión manual
+- **WHEN** un comprobante en revisión manual se reconcilia y la evidencia sigue sin concluir o el SRI no conoce la clave
+- **THEN** sigue en revisión manual, no se reenvía y no existe una acción para reenviarlo de todas formas
 
 ### Requirement: Reconciliación manual
 Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
