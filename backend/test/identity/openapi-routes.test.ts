@@ -21,6 +21,8 @@ import type { Emission } from "../../src/modules/invoices/application/emission.t
 import type { Invoices } from "../../src/modules/invoices/application/invoices.ts";
 import { invoicesRouter } from "../../src/modules/invoices/infrastructure/http/invoices-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
+import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
+import { inventoryRouter } from "../../src/modules/inventory/infrastructure/http/inventory-router.ts";
 import type { JobStore } from "../../src/platform/jobs/jobs.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
@@ -47,6 +49,7 @@ describe("rutas documentadas", () => {
       signingCertificateRouter({} as SigningCertificates, { maxBytes: 1 }),
       fiscalCatalogsRouter({} as FiscalCatalogs),
       partiesRouter({} as Parties),
+      inventoryRouter({} as Inventory),
       productsRouter({} as Products),
       invoicesRouter({ drafts: {} as Drafts, emission: {} as Emission, invoices: {} as Invoices }),
       ...archiveRouters({

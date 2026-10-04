@@ -139,3 +139,40 @@ export type InventoryScope = Readonly<{
 export interface InventoryUnitOfWork {
   run<T>(work: (scope: InventoryScope) => Promise<T>): Promise<T>;
 }
+
+/** Producto visto por el inventario: lo implementa la lectura exportada de `products`. */
+export type InventoryProduct = Readonly<{
+  id: string;
+  mainCode: string | null;
+  auxiliaryCode: string | null;
+  name: string;
+  kind: "GOOD" | "SERVICE";
+  status: "ACTIVE" | "INACTIVE";
+  stockTracked: boolean;
+}>;
+
+/**
+ * Productos sobre el cliente de la transacción (design D1 y D7): la lectura y el cambio de la marca
+ * de control de stock de un producto con inventario inicializado, que pertenecen a `products`.
+ */
+export type InventoryProducts = (db: DbClient) => {
+  find(companyId: string, productId: string): Promise<InventoryProduct | null>;
+  setStockTracked(
+    companyId: string,
+    productId: string,
+    stockTracked: boolean,
+    userId: string,
+  ): Promise<boolean>;
+};
+
+/** Inventario de un producto con la persona que lo inicializó y su último movimiento. */
+export type StockDetail = Readonly<{
+  stock: StoredStock;
+  initializedByName: string;
+  lastMovementAt: Date | null;
+}>;
+
+/** Lecturas del inventario para la API (design D8). */
+export interface StockReads {
+  detail(companyId: string, productId: string): Promise<StockDetail | null>;
+}

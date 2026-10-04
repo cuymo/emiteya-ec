@@ -5,6 +5,7 @@ import type {
   ProductData,
   RecordStatus,
 } from "@facturador/contracts";
+import type { DbClient } from "../../../platform/db/database.ts";
 import type { AuditLog } from "../../audit/application/audit-log.ts";
 import type { ProductRecord } from "../domain/product.ts";
 
@@ -63,6 +64,16 @@ export interface ProductRepository {
     status: RecordStatus,
     userId: string,
   ): Promise<boolean>;
+  /**
+   * Fija la marca de control de stock si es distinta (add-minimal-inventory, design D7): la usa el
+   * inventario para un producto con inventario inicializado. true si cambió.
+   */
+  setStockTrackedIfDifferent(
+    companyId: string,
+    productId: string,
+    stockTracked: boolean,
+    userId: string,
+  ): Promise<boolean>;
   /** Productos activos por estado tributario y por entrada referida. */
   taxSummary(
     companyId: string,
@@ -73,8 +84,23 @@ export interface ProductRepository {
   }>;
 }
 
+/**
+ * Inventario de un producto sobre un cliente (add-minimal-inventory, design D7 y D11): si está
+ * inicializado, la marca de control de stock la cambia el inventario. Lo implementa `inventory`,
+ * que toma el lock del control de stock del producto, y lo inyecta `main.ts`; products no lo importa.
+ */
+export type InventoryInitialization = (db: DbClient) => {
+  isInitialized(companyId: string, productId: string): Promise<boolean>;
+};
+
+export type ProductsScope = {
+  products: ProductRepository;
+  audit: AuditLog;
+  inventory: ReturnType<InventoryInitialization>;
+};
+
 export interface ProductsUnitOfWork {
-  run<T>(work: (scope: { products: ProductRepository; audit: AuditLog }) => Promise<T>): Promise<T>;
+  run<T>(work: (scope: ProductsScope) => Promise<T>): Promise<T>;
 }
 
 export class DuplicateMainCodeError extends Error {

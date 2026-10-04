@@ -107,6 +107,8 @@ describe("generación de OpenAPI", () => {
       "/fiscal-catalogs/{catalogType}/entries",
       "/fiscal-catalogs/{catalogType}/entries/{entryKey}/enablement",
       "/fiscal-sequences",
+      "/inventory/items/{productId}/initialization",
+      "/inventory/items/{productId}/tracking",
       "/invoices",
       "/invoices/drafts",
       "/invoices/drafts/{draftId}",

@@ -2,7 +2,9 @@
 // D13 y D14). La empresa sale siempre del contexto de la sesión. Las referencias fiscales nuevas o
 // cambiadas se validan con la disponibilidad que publica `catalogs` hoy en Ecuador; las invariantes
 // del tipo, sobre el estado final de la solicitud. El estado tributario se deriva en cada consulta.
-// Solo se auditan las altas, los estados y los cambios de precio o de impuestos.
+// Solo se auditan las altas, los estados y los cambios de precio, de impuestos o de la marca de
+// control de stock. Con el inventario inicializado, la marca la cambia el inventario
+// (add-minimal-inventory, design D7).
 import {
   changeProductStatusSchema,
   createProductSchema,
@@ -31,6 +33,7 @@ import {
 import {
   goodsOnly,
   mainCodeTaken,
+  stockTrackingManagedByInventory,
   productChanged,
   productNotFound,
   taxUnavailable,
@@ -219,6 +222,7 @@ export function createProducts({
               name: product.name,
               kind: product.kind,
               unitPrice: product.unitPrice,
+              stockTracked: product.stockTracked,
               ...auditTaxes(data),
             },
             correlationId: ctx.requestId,
@@ -245,6 +249,14 @@ export function createProducts({
       const changes = productChanges(before, data);
       try {
         const updated = await uow.run(async (scope) => {
+          // La consulta toma el lock del control de stock del producto: no se cruza con su
+          // inicialización.
+          if (
+            before.stockTracked !== data.stockTracked &&
+            (await scope.inventory.isInitialized(ctx.companyId, productId))
+          ) {
+            throw stockTrackingManagedByInventory();
+          }
           const applied = await scope.products.updateIfVersion(
             ctx.companyId,
             productId,

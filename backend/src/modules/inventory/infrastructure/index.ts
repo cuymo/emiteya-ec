@@ -1,8 +1,16 @@
 // Composición del módulo de inventario para main.ts y las pruebas (add-minimal-inventory, design
 // D1). Lo que otros módulos reciben del inventario se inyecta al componer: `fiscal`, `invoices` y
 // `products` no importan este módulo.
+import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
+import type { Authorizer } from "../../identity/application/authorization.ts";
+import { productStockTracking } from "../../products/infrastructure/index.ts";
+import { createInventory } from "../application/inventory.ts";
+import type { InventoryProducts } from "../application/ports.ts";
+import { inventoryRouter } from "./http/inventory-router.ts";
 import { createStockRepository } from "./prisma-stock.ts";
+import { createStockReads } from "./prisma-stock-reads.ts";
+import { createInventoryUnitOfWork, lockStockTrackingIn } from "./unit-of-work.ts";
 
 export { createStockRepository } from "./prisma-stock.ts";
 export {
@@ -10,6 +18,7 @@ export {
   type InvoiceStockLinesReader,
 } from "../application/invoice-outflow.ts";
 export { createInventoryUnitOfWork, lockStockTrackingIn } from "./unit-of-work.ts";
+export { createStockReads } from "./prisma-stock-reads.ts";
 export { reconcileStock, type StockDifference } from "./reconciliation.ts";
 
 /**
@@ -24,4 +33,64 @@ export function inventoryStockReads(db: DbClient) {
       return new Map([...found].map(([productId, item]) => [productId, item.balance]));
     },
   };
+}
+
+/**
+ * Inventario inicializado de un producto, sobre un cliente: `products` lo recibe para rechazar el
+ * cambio de la marca de un producto con inventario desde su corrección (design D7). Toma el lock del
+ * control de stock del producto, el mismo que la inicialización.
+ */
+export function inventoryInitialization(db: DbClient) {
+  const stock = createStockRepository(db);
+  return {
+    async isInitialized(companyId: string, productId: string) {
+      await lockStockTrackingIn(db, companyId, productId);
+      return (await stock.find(companyId, productId)) !== null;
+    },
+  };
+}
+
+/** Productos vistos por el inventario: la lectura y la marca que pertenecen a `products`. */
+const inventoryProducts: InventoryProducts = (db) => {
+  const products = productStockTracking(db);
+  return {
+    async find(companyId, productId) {
+      const found = await products.find(companyId, productId);
+      return found
+        ? {
+            id: found.id,
+            mainCode: found.mainCode,
+            auxiliaryCode: found.auxiliaryCode,
+            name: found.name,
+            kind: found.kind,
+            status: found.status,
+            stockTracked: found.stockTracked,
+          }
+        : null;
+    },
+    setStockTracked: (companyId, productId, stockTracked, userId) =>
+      products.setStockTracked(companyId, productId, stockTracked, userId),
+  };
+};
+
+export type InventoryModuleOptions = {
+  prisma: PrismaClient;
+  authorizer: Authorizer;
+  now?: () => Date;
+};
+
+export function inventoryModule({
+  prisma,
+  authorizer,
+  now = () => new Date(),
+}: InventoryModuleOptions) {
+  const service = createInventory({
+    uow: createInventoryUnitOfWork(prisma),
+    products: inventoryProducts,
+    reads: createStockReads,
+    db: prisma,
+    authorizer,
+    now,
+  });
+  return { routers: [inventoryRouter(service)], service };
 }

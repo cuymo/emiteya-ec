@@ -177,6 +177,14 @@ export function createProductRepository(db: DbClient): ProductRepository {
       });
     },
 
+    async setStockTrackedIfDifferent(companyId, productId, stockTracked, userId) {
+      const { count } = await db.product.updateMany({
+        where: { id: productId, companyId, stockTracked: { not: stockTracked } },
+        data: { stockTracked, version: { increment: 1 }, updatedBy: userId },
+      });
+      return count === 1;
+    },
+
     async changeStatusIfDifferent(companyId, productId, status, userId) {
       const { count } = await db.product.updateMany({
         where: { id: productId, companyId, status: { not: status } },

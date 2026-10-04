@@ -1,5 +1,6 @@
 // Arnés HTTP del módulo taxpayer: la aplicación real con Better Auth, el contexto de petición de
 // design D3 y los routers de usuarios, taxpayer y fiscal montados como en main.ts.
+import type { JobStore } from "../../src/platform/jobs/jobs.ts";
 import { randomInt } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import type { Registry } from "@prometheus-io/client";
@@ -16,7 +17,11 @@ import {
 } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { partiesModule } from "../../src/modules/parties/infrastructure/index.ts";
 import { productsModule } from "../../src/modules/products/infrastructure/index.ts";
-import { inventoryStockReads } from "../../src/modules/inventory/infrastructure/index.ts";
+import {
+  inventoryInitialization,
+  inventoryModule,
+  inventoryStockReads,
+} from "../../src/modules/inventory/infrastructure/index.ts";
 import { invoicesModule } from "../../src/modules/invoices/infrastructure/index.ts";
 import type { DocumentSigner } from "../../src/modules/invoices/application/signing-pipeline.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
@@ -56,6 +61,11 @@ export type InvoicesHarnessOptions = {
   stageTimings?: boolean;
   /** Registro del histograma de las etapas de la emisión. */
   metrics?: Registry;
+  /**
+   * Cola durable del esquema de la prueba (add-minimal-inventory): el `sri.transmit` que nace al
+   * firmar queda en ese esquema y la prueba puede ejecutarlo.
+   */
+  jobs?: Pick<JobStore, "enqueueIn">;
 };
 
 /** Sin firma configurada: ningún comprobante se puede firmar. */
@@ -132,6 +142,13 @@ export function buildTaxpayerApp(
             prisma: db.database.prisma,
             authorizer,
             catalogs: fiscalCatalogQueries(db.database.prisma),
+            inventoryInitialization,
+            ...(options.now ? { now: options.now } : {}),
+          }).routers,
+          // add-minimal-inventory: el inventario de los productos.
+          ...inventoryModule({
+            prisma: db.database.prisma,
+            authorizer,
             ...(options.now ? { now: options.now } : {}),
           }).routers,
         );
@@ -152,6 +169,7 @@ export function buildTaxpayerApp(
           ...(options.invoices?.accessKeys ? { accessKeys: options.invoices.accessKeys } : {}),
           ...(options.invoices?.stageTimings ? { stageTimings: true } : {}),
           ...(options.invoices?.metrics ? { metrics: options.invoices.metrics } : {}),
+          ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
           ...((options.invoices?.now ?? options.now)
             ? { now: options.invoices?.now ?? options.now }
             : {}),

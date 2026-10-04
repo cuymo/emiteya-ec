@@ -48,6 +48,10 @@ export const AUDIT_ACTIONS = [
   // add-sri-transmission, design D19: solo la reconciliación manual, sin respuestas del SRI ni XML.
   "invoice.reconciliation_requested",
   "invoice.reconciliation_completed",
+  // add-minimal-inventory, design D12: la configuración del inventario; nunca los movimientos.
+  "inventory.initialized",
+  "inventory.tracking_disabled",
+  "inventory.tracking_enabled",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

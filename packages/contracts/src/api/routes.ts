@@ -106,6 +106,12 @@ import {
   listDocumentsQuerySchema,
   printRequestViewSchema,
 } from "../archive.ts";
+import {
+  initializeStockSchema,
+  stockItemDetailViewSchema,
+  stockItemParamsSchema,
+  stockTrackingSchema,
+} from "../inventory.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -163,6 +169,10 @@ const configErrors = {
   403: errors[403],
 };
 
+const stockProductNotFound = {
+  description: "El producto no existe en la empresa (PRODUCT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
 const documentNotFound = {
   description: "El comprobante no existe en la empresa (DOCUMENT_NOT_FOUND).",
   schema: errorEnvelopeSchema,
@@ -860,7 +870,7 @@ export const apiRoutes: readonly RouteDefinition[] = [
       },
       409: {
         description:
-          "El producto cambió después de la consulta (PRODUCT_CHANGED) o el código principal está en uso (PRODUCT_MAIN_CODE_TAKEN).",
+          "El producto cambió después de la consulta (PRODUCT_CHANGED), el código principal está en uso (PRODUCT_MAIN_CODE_TAKEN) o la marca de control de stock de un producto con inventario inicializado se cambia desde el inventario (STOCK_TRACKING_MANAGED_BY_INVENTORY).",
         schema: errorEnvelopeSchema,
       },
     },
@@ -1210,6 +1220,53 @@ export const apiRoutes: readonly RouteDefinition[] = [
       409: {
         description:
           "El RIDE ya existe (RIDE_ALREADY_AVAILABLE), su generación está programada o en curso (RIDE_GENERATION_IN_PROGRESS) o el comprobante no está autorizado (DOCUMENT_NOT_AUTHORIZED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  // Inventario contabilizado por hechos fiscales autorizados (add-minimal-inventory, design D10).
+  // Sin rutas para recalcular ni fijar el saldo: solo cambia con movimientos.
+  defineRoute({
+    method: "post",
+    path: "/inventory/items/:productId/initialization",
+    summary:
+      "Inicializar el inventario de un producto marcado como controlado con su movimiento INICIAL, una sola vez",
+    request: { params: stockItemParamsSchema, body: initializeStockSchema },
+    responses: {
+      201: {
+        description: "Inventario inicializado. El detalle del inventario.",
+        schema: successEnvelope(stockItemDetailViewSchema),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: stockProductNotFound,
+      409: {
+        description:
+          "El inventario ya está inicializado (INVENTORY_ALREADY_INITIALIZED) o el producto no está marcado como controlado (STOCK_TRACKING_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/inventory/items/:productId/tracking",
+    summary:
+      "Activar o desactivar el control de stock de un producto con inventario inicializado; desactivar exige saldo cero",
+    request: { params: stockItemParamsSchema, body: stockTrackingSchema },
+    responses: {
+      200: {
+        description:
+          "Control fijado. Desactivar no cancela las salidas de facturas ya emitidas. El detalle del inventario.",
+        schema: successEnvelope(stockItemDetailViewSchema),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: stockProductNotFound,
+      409: {
+        description:
+          "El inventario no está inicializado (INVENTORY_NOT_INITIALIZED), el saldo no es cero (STOCK_TRACKING_HAS_BALANCE) o el producto es un servicio (STOCK_TRACKING_REQUIRED).",
         schema: errorEnvelopeSchema,
       },
     },

@@ -80,13 +80,13 @@
 
 ## 6. Inicialización y control del inventario
 
-- [ ] 6.1 Implementar `POST /api/v1/inventory/items/{productId}/initialization` con la operación transaccional exportada de `products` que bloquea el producto, y la auditoría `inventory.initialized` (design D7 y D12). Verificar con pruebas HTTP:
+- [x] 6.1 Implementar `POST /api/v1/inventory/items/{productId}/initialization` con la operación transaccional exportada de `products` que bloquea el producto, y la auditoría `inventory.initialized` (design D7 y D12). Verificar con pruebas HTTP:
   - inicializar con `12.5` y con `0`;
   - producto sin marca o servicio rechazado;
   - segunda inicialización y dos simultáneas: una sola, la otra `409 INVENTORY_ALREADY_INITIALIZED`;
   - cantidad negativa rechazada;
   - sin sesión `401`, operador `403` y producto de otra empresa `404`, sin evento de auditoría en ningún rechazo
-- [ ] 6.2 Implementar `PUT /api/v1/inventory/items/{productId}/tracking` (design D7):
+- [x] 6.2 Implementar `PUT /api/v1/inventory/items/{productId}/tracking` (design D7):
   - desactivar solo con saldo cero (`409 STOCK_TRACKING_HAS_BALANCE` con saldo positivo o negativo);
   - reactivar sin otro `INICIAL`;
   - repetir el estado sin cambios ni auditoría;
@@ -97,7 +97,7 @@
   - A: emitida con control activo y saldo 0, control desactivado en cero, autorizada después: registra su salida y el saldo queda negativo;
   - B: control desactivado, emitida (decisión `false`), control reactivado, autorizada: no registra salida;
   - C: emitida con control activo, desactivado y reactivado antes de autorizar, autorizada: exactamente una salida
-- [ ] 6.3 Inyectar en `products` el puerto `InventoryInitialization` y aplicar en la corrección del producto, después de bloquear su fila:
+- [x] 6.3 Inyectar en `products` el puerto `InventoryInitialization` y aplicar en la corrección del producto, después de bloquear su fila:
   - `409 STOCK_TRACKING_MANAGED_BY_INVENTORY` si cambia la marca de un producto inicializado;
   - la auditoría del cambio de la marca en `product.updated` (design D7 y D12).
 

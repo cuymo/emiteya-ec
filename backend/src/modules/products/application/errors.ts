@@ -10,6 +10,13 @@ export const productChanged = () =>
     "Otro usuario cambió este producto después de que lo abriste. Recarga para ver sus datos.",
   );
 
+/** La marca de un producto con inventario inicializado la cambia el inventario (add-minimal-inventory). */
+export const stockTrackingManagedByInventory = () =>
+  new ConflictError(
+    "STOCK_TRACKING_MANAGED_BY_INVENTORY",
+    "El inventario de este producto ya está inicializado: un administrador cambia su control de stock desde Inventario.",
+  );
+
 export const mainCodeTaken = (mainCode: string) =>
   new ConflictError(
     "PRODUCT_MAIN_CODE_TAKEN",

@@ -63,14 +63,15 @@ export function productSearchKeys(data: Pick<ProductData, "name" | "mainCode" | 
 export const canonicalPrice = (text: string) => UnitPrice.parse(text).toString();
 
 /**
- * Cambios auditables de una corrección (design D13): solo el precio y los impuestos, con su valor
- * anterior y el nuevo. null si no cambian.
+ * Cambios auditables de una corrección (design D13): el precio, los impuestos y, desde
+ * add-minimal-inventory, la marca de control de stock, con su valor anterior y el nuevo. null si no
+ * cambian.
  */
 export function productChanges(
   before: ProductRecord,
   after: ProductData,
-): Record<string, string | null> | null {
-  const changes: Record<string, string | null> = {};
+): Record<string, string | boolean | null> | null {
+  const changes: Record<string, string | boolean | null> = {};
   const price = canonicalPrice(after.unitPrice);
   if (before.unitPrice !== price) {
     changes["unitPrice.from"] = before.unitPrice;
@@ -81,6 +82,10 @@ export function productChanges(
       changes[`taxes.${slot}.from`] = before.taxes[slot];
       changes[`taxes.${slot}.to`] = after.taxes[slot];
     }
+  }
+  if (before.stockTracked !== after.stockTracked) {
+    changes["stockTracked.from"] = before.stockTracked;
+    changes["stockTracked.to"] = after.stockTracked;
   }
   return Object.keys(changes).length > 0 ? changes : null;
 }

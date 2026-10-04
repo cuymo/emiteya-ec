@@ -39,6 +39,8 @@ import {
 import { productsModule } from "./modules/products/infrastructure/index.ts";
 import {
   createStockRepository,
+  inventoryInitialization,
+  inventoryModule,
   inventoryOutflowFollower,
   inventoryStockReads,
 } from "./modules/inventory/infrastructure/index.ts";
@@ -280,8 +282,16 @@ apiRouter.use(
   ...partiesModule({ prisma: database.prisma, authorizer, rules: catalogQueries }).routers,
 );
 apiRouter.use(
-  ...productsModule({ prisma: database.prisma, authorizer, catalogs: catalogQueries }).routers,
+  ...productsModule({
+    prisma: database.prisma,
+    authorizer,
+    catalogs: catalogQueries,
+    // add-minimal-inventory, design D7: la marca de un producto con inventario la cambia el inventario.
+    inventoryInitialization,
+  }).routers,
 );
+// Inventario contabilizado por hechos fiscales autorizados (add-minimal-inventory, design D10).
+apiRouter.use(...inventoryModule({ prisma: database.prisma, authorizer }).routers);
 // Cola durable de jobs (ADR 0012): la usan los workers, la firma y la reconciliación manual.
 const jobStore = createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATABASE_URL).schema);
 const transmissionSettings = transmissionSettingsFromEnv(env);

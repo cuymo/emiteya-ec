@@ -3,7 +3,7 @@ import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
 import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
-import type { CatalogAvailability } from "../application/ports.ts";
+import type { CatalogAvailability, InventoryInitialization } from "../application/ports.ts";
 import { createProducts } from "../application/products.ts";
 import { productsRouter } from "./http/products-router.ts";
 import { createProductRepository } from "./prisma-products.ts";
@@ -18,11 +18,37 @@ export function productReader(db: DbClient) {
   return { find: (companyId: string, productId: string) => products.find(companyId, productId) };
 }
 
+/**
+ * Marca de control de stock de un producto con inventario inicializado, sobre el cliente de la
+ * transacción del inventario (add-minimal-inventory, design D7): la lectura del producto y el cambio
+ * de su marca, que incrementa su versión. La auditoría la registra el inventario.
+ */
+export function productStockTracking(db: DbClient) {
+  const products = createProductRepository(db);
+  return {
+    find: (companyId: string, productId: string) => products.find(companyId, productId),
+    setStockTracked: (
+      companyId: string,
+      productId: string,
+      stockTracked: boolean,
+      userId: string,
+    ) => products.setStockTrackedIfDifferent(companyId, productId, stockTracked, userId),
+  };
+}
+
+export type { InventoryInitialization } from "../application/ports.ts";
+
 export type ProductsModuleOptions = {
   prisma: PrismaClient;
   authorizer: Authorizer;
   /** Disponibilidad de las entradas fiscales de `catalogs` (design D2). */
   catalogs: CatalogAvailability;
+  /**
+   * Inventario inicializado de un producto (add-minimal-inventory, design D7): lo implementa
+   * `inventory` y lo compone `main.ts`. Obligatorio: sin él, la marca de un producto con inventario
+   * se podría cambiar desde la corrección del producto.
+   */
+  inventoryInitialization: InventoryInitialization;
   now?: () => Date;
 };
 
@@ -30,11 +56,12 @@ export function productsModule({
   prisma,
   authorizer,
   catalogs,
+  inventoryInitialization,
   now = () => new Date(),
 }: ProductsModuleOptions) {
   const service = createProducts({
     products: createProductRepository(prisma),
-    uow: createProductsUnitOfWork(prisma),
+    uow: createProductsUnitOfWork(prisma, inventoryInitialization),
     catalogs,
     authorizer,
     today: () => ecuadorDate(now()),
