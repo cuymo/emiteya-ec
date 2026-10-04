@@ -122,3 +122,27 @@ describe("transporte SOAP propio (add-sri-transmission, design D10 y D11)", () =
     expect(await restrictedImports("allowed-transport.ts", base)).toBe(0);
   });
 });
+
+describe("renderer del RIDE (ADR 0022; add-document-archive, design D1 y D15)", () => {
+  it("fuera de sri-engine nadie importa pdfmake, bwip-js ni fontkit", async () => {
+    expect(await restrictedImports("infrastructure/imports-ride.ts")).toBe(3);
+  });
+
+  it("el resto de sri-engine/infrastructure tampoco carga el renderer", async () => {
+    expect(
+      await restrictedImports(
+        "imports-ride.ts",
+        "test/fixtures/lint/modules/sri-engine/infrastructure",
+      ),
+    ).toBe(1);
+  });
+
+  it("la infraestructura del RIDE sí carga sus librerías y el parser XML", async () => {
+    expect(
+      await restrictedImports(
+        "allowed.ts",
+        "test/fixtures/lint/modules/sri-engine/infrastructure/ride",
+      ),
+    ).toBe(0);
+  });
+});

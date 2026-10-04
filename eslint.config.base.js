@@ -28,6 +28,14 @@ const sriEngineImports = {
   message:
     "facturacion-electronica-ec, ec-sri-invoice-signer, xmllint-wasm y el parser XML solo se usan dentro de modules/sri-engine/infrastructure/ (ADR 0018 y 0021; design D10 y D11 de add-sri-transmission).",
 };
+// El RIDE se dibuja solo en su infraestructura, que carga la entrada de su worker (ADR 0022, design
+// D1 y D15 de add-document-archive): ningún otro código, y menos el hilo HTTP, carga pdfmake.
+const RIDE_MODULE = "**/modules/sri-engine/infrastructure/ride/**";
+const rideImports = {
+  regex: "^(?:pdfmake|pdfkit|bwip-js|fontkit)(?:/.*)?$",
+  message:
+    "pdfmake, pdfkit, bwip-js y fontkit solo se usan en modules/sri-engine/infrastructure/ride/, que carga el worker del RIDE (ADR 0022).",
+};
 // El transporte con el SRI usa el `fetch` nativo solo en su adaptador (enmienda del ADR 0018).
 const fetchRestriction = {
   name: "fetch",
@@ -56,6 +64,7 @@ const domainRestrictions = {
     betterAuthImports,
     sriEngineImports,
     forgeImports,
+    rideImports,
   ],
 };
 
@@ -66,6 +75,7 @@ const applicationRestrictions = {
     betterAuthImports,
     sriEngineImports,
     forgeImports,
+    rideImports,
   ],
 };
 
@@ -98,7 +108,7 @@ export function nodeConfig({ tsconfigRootDir, typedFiles = ["src/**/*.ts", "test
       rules: {
         "no-restricted-imports": [
           "error",
-          { patterns: [betterAuthImports, sriEngineImports, forgeImports] },
+          { patterns: [betterAuthImports, sriEngineImports, forgeImports, rideImports] },
         ],
       },
     },
@@ -116,10 +126,24 @@ export function nodeConfig({ tsconfigRootDir, typedFiles = ["src/**/*.ts", "test
     },
     {
       files: [BETTER_AUTH_MODULE],
-      rules: { "no-restricted-imports": ["error", { patterns: [sriEngineImports, forgeImports] }] },
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          { patterns: [sriEngineImports, forgeImports, rideImports] },
+        ],
+      },
     },
     {
       files: [SRI_ENGINE_MODULE],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          { patterns: [betterAuthImports, forgeImports, rideImports] },
+        ],
+      },
+    },
+    {
+      files: [RIDE_MODULE],
       rules: {
         "no-restricted-imports": ["error", { patterns: [betterAuthImports, forgeImports] }],
       },
@@ -127,7 +151,10 @@ export function nodeConfig({ tsconfigRootDir, typedFiles = ["src/**/*.ts", "test
     {
       files: PKCS12_READER_MODULE,
       rules: {
-        "no-restricted-imports": ["error", { patterns: [betterAuthImports, sriEngineImports] }],
+        "no-restricted-imports": [
+          "error",
+          { patterns: [betterAuthImports, sriEngineImports, rideImports] },
+        ],
       },
     },
     {
