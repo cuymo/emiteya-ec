@@ -665,8 +665,8 @@ La implementa `add-sri-transmission` (cambio 7).
 
 - Conjunto probatorio por comprobante según CTX §31, guardado mediante el puerto de almacenamiento, en PostgreSQL al inicio (ADR 0010). El XML firmado lo guarda el cambio 6 con sus bytes exactos y metadatos. En el cambio 7, cada respuesta original del SRI queda asociada a su intento, y el XML autorizado es un artefacto propio que nunca reemplaza al firmado. Cada artefacto se escribe una vez y guarda su hash. Antes de enviar o descargar se recalcula el hash, y si no coincide se alerta (ERS RF-407).
 - El XML autorizado se extrae de la respuesta del SRI, nunca se reconstruye (CTX §45).
-- El RIDE se genera tras la autorización, desde el comprobante autorizado, con la marca de Pruebas cuando aplica, y registra la versión del renderer.
-- Cada entrega queda registrada; un fallo de entrega no cambia el estado fiscal (CTX §46).
+- El RIDE se genera una vez tras la autorización, desde el `AUTHORIZED_XML` y metadatos inmutables (autorización, denominaciones del snapshot y logo de su versión de configuración), nunca desde datos vigentes. Muestra el ambiente de Pruebas cuando aplica y registra la versión del renderer. Se guarda como artefacto inmutable con su SHA-256, y toda descarga o impresión usa esos mismos bytes (ADR 0022, spike S-4).
+- Cada entrega observable queda registrada (`DOWNLOAD` o `PRINT_REQUESTED`), sin afirmar que se imprimió o que el receptor la recibió; el correo es P1 (Q-24). Un fallo de entrega no cambia el estado fiscal (CTX §46).
 
 ## API de emisión
 

@@ -124,7 +124,7 @@ siguiente.
 
 ## Consequences
 
-- Menos código propio para builders, clave de acceso, XSD, XAdES-BES y SOAP. Q-34 queda parcialmente resuelta: S-2 y S-3 validan la librería en lugar de elegir una, y el PDF (S-4) sigue abierto.
+- Menos código propio para builders, clave de acceso, XSD, XAdES-BES y SOAP. Q-34 queda parcialmente resuelta: S-2 y S-3 validan la librería en lugar de elegir una, y el PDF (S-4) sigue abierto. El PDF se resolvió el 2026-10-04 con el spike S-4 y el ADR 0022, sin usar la librería.
 - Dependencia de un mantenedor único y de `ec-sri-invoice-signer`. Las versiones exactas, las pruebas de contrato y los puertos propios permiten reemplazar una pieza sin tocar el dominio.
 - El adaptador compensa:
   - genera el código numérico;
