@@ -55,7 +55,7 @@
 
 ## 3. Política de tamaño del envío (Q-47)
 
-- [ ] 3.1 Añadir a `catalogs` la tabla `sri_transmission_policy` (migración y entrada en `migrations.test.ts`), el cargador del dataset y la lectura de la política versionada de tamaño (design D17):
+- [x] 3.1 Añadir a `catalogs` la tabla `sri_transmission_policy` (migración y entrada en `migrations.test.ts`), el cargador del dataset y la lectura de la política versionada de tamaño (design D17):
   - campos `maxSignedDocumentBytes`, `sourceText`, `sourceSection`, `literalUnit`, `interpretation` y vigencia;
   - resolución por la fecha del envío;
   - sin versión vigente, ningún resultado;

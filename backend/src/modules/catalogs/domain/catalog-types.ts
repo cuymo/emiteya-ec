@@ -3,12 +3,16 @@ import { FISCAL_CATALOG_TYPES, type FiscalCatalogType } from "@facturador/contra
 
 export { FISCAL_CATALOG_TYPES, type FiscalCatalogType };
 
-/** Datasets que el cargador aplica: los seis catálogos de entradas más política, registro y matriz. */
+/**
+ * Datasets que el cargador aplica: los seis catálogos de entradas, la política de consumidor final,
+ * el registro, la matriz y la política de tamaño del envío al SRI.
+ */
 export const DATASET_TYPES = [
   ...FISCAL_CATALOG_TYPES,
   "consumer-final-policy",
   "schema-registry",
   "special-case-matrix",
+  "sri-transmission-policy",
 ] as const;
 export type DatasetType = (typeof DATASET_TYPES)[number];
 

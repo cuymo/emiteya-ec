@@ -1,0 +1,35 @@
+Extracto literal para Q-47 (add-sri-transmission, tarea 3.2, design D17).
+
+Fuente: Ficha técnica "Manual de usuario, catálogo y especificaciones técnicas. Emisión de
+Comprobantes Electrónicos. Método de autorización Off-line", versión 2.34, publicada el 2026-07-27.
+URL oficial: la del dataset consumer-final-policy/1.json (portal del SRI).
+SHA-256 del PDF descargado el 2026-10-03: 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9
+(el mismo de los datasets publicados). Extraído con pdftotext -layout.
+
+Página 20, sección 7.5 "Procesos que ejecuta el Sistema de Autorización de Documentos
+Electrónicos", última viñeta:
+
+  •      El límite máximo en tamaño y número de comprobantes electrónicos a ser
+         validados y autorizados por lote es de 500 kb o 50 comprobantes
+         aproximadamente (considerando cada comprobante con un solo ítem);
+         mientras que, para el envío individual, el tamaño máximo por comprobante
+         será de 320 Kb.
+
+Misma página, tras la tabla 8 (formato XML para envío por lote):
+
+  Las claves de acceso para el envío de lote de máximo 50 comprobantes (512 kb)
+
+Página 16, numeral 7.1.2 (y página 21, numeral 8.1.2), la única otra unidad de este tipo:
+
+  (por definición y recomendación del MINTEL la conexión debe ser mayor a 256Kbps).
+
+Tabla de errores, código 26 "Tamaño máximo superado": "Tamaño del archivo supera lo establecido"
+(RECEPCIÓN), sin cifra.
+
+Observaciones (2026-10-03):
+- La unidad literal del envío individual es "Kb". La ficha no define la unidad en ningún lugar.
+- La misma página da dos cifras distintas para el mismo límite del lote ("500 kb" y "512 kb"), y
+  "Kbps" se usa para kilobits por segundo. El texto no permite fijar si "Kb" son kilobytes o
+  kilobits, ni si un kilo vale 1000 o 1024.
+- Por eso la conversión exacta a bytes no se puede determinar con esta fuente: Q-47 sigue abierta
+  y el dataset sri-transmission-policy no se publica.

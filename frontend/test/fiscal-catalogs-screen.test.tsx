@@ -173,6 +173,11 @@ function routes(overrides: Record<string, Route> = {}): Record<string, Route> {
         },
       },
     }),
+    // Q-47: sin fuente oficial verificada, la política de tamaño no está publicada.
+    "GET /api/v1/fiscal-catalogs/sri-transmission-policy": () => ({
+      status: 200,
+      body: { data: { source: null, at: "2026-10-03", applicable: null, versions: [] } },
+    }),
     "GET /api/v1/fiscal-catalogs/special-cases": () => ({
       status: 200,
       body: {
@@ -429,6 +434,62 @@ describe("Catálogos fiscales (design D17)", () => {
     expect(screen.getByText(`SHA-256 ${"b".repeat(64)}`)).toBeDefined();
     expect(screen.getByText("Fuente: W3C")).toBeDefined();
     expect(screen.getByText(`SHA-256 ${"c".repeat(64)}`)).toBeDefined();
+  });
+});
+
+describe("Límite de tamaño del envío al SRI (add-sri-transmission, design D17)", () => {
+  it("sin política publicada explica que la transmisión espera la fuente oficial", async () => {
+    renderScreen();
+    await userEvent.setup().click(await screen.findByText("Límite de tamaño del envío al SRI"));
+    expect(await screen.findByText(/Pendiente de la fuente oficial/)).toBeDefined();
+    expect(screen.getByText(/ningún comprobante se transmite al SRI/)).toBeDefined();
+  });
+
+  it("con una política publicada muestra los bytes, la cita, la sección, la unidad y la vigencia", async () => {
+    // Política sintética de la prueba: no es la cifra oficial (Q-47).
+    renderScreen({
+      "GET /api/v1/fiscal-catalogs/sri-transmission-policy": () => ({
+        status: 200,
+        body: {
+          data: {
+            source: SOURCE,
+            at: "2026-10-03",
+            applicable: {
+              id: "s1",
+              maxSignedDocumentBytes: 4096,
+              sourceText: "Texto sintético",
+              sourceSection: "Sección sintética",
+              literalUnit: "bytes (sintético)",
+              interpretation: "Interpretación sintética",
+              effectiveFrom: "2026-07-27",
+              effectiveFromBasis: "SOURCE_STATED",
+              effectiveTo: null,
+              datasetVersion: 1,
+            },
+            versions: [],
+          },
+        },
+      }),
+    });
+    await userEvent.setup().click(await screen.findByText("Límite de tamaño del envío al SRI"));
+    expect(await screen.findByText("4.096 bytes")).toBeDefined();
+    expect(screen.getByText("«Texto sintético»")).toBeDefined();
+    expect(screen.getByText("Sección sintética")).toBeDefined();
+    expect(screen.getByText("bytes (sintético)")).toBeDefined();
+    expect(screen.getByText("Interpretación sintética")).toBeDefined();
+    expect(screen.getByText("Desde 27/07/2026 (declarada por la fuente)")).toBeDefined();
+  });
+
+  it("un error al consultarla se puede reintentar", async () => {
+    renderScreen({
+      "GET /api/v1/fiscal-catalogs/sri-transmission-policy": () => ({
+        status: 500,
+        body: errorBody("INTERNAL_ERROR", "x"),
+      }),
+    });
+    await userEvent.setup().click(await screen.findByText("Límite de tamaño del envío al SRI"));
+    const alert = await screen.findByRole("alert", undefined, { timeout: 5_000 });
+    expect(within(alert).getByRole("button", { name: "Intentar de nuevo" })).toBeDefined();
   });
 });
 

@@ -95,6 +95,7 @@ describe("generación de OpenAPI", () => {
       "/fiscal-catalogs/consumer-final-policy",
       "/fiscal-catalogs/schemas",
       "/fiscal-catalogs/special-cases",
+      "/fiscal-catalogs/sri-transmission-policy",
       "/fiscal-catalogs/{catalogType}/entries",
       "/fiscal-catalogs/{catalogType}/entries/{entryKey}/enablement",
       "/fiscal-sequences",

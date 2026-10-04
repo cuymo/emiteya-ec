@@ -398,6 +398,26 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea la política de tamaño del envío al SRI con sus restricciones y triggers", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "sri_transmission_policy_values_check",
+        "fiscal_catalog_dataset_catalog_type_check",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining(["sri_transmission_policy_effective_from_key"]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "sri_transmission_policy_no_delete",
+        "sri_transmission_policy_no_truncate",
+        "sri_transmission_policy_guard",
+        "sri_transmission_policy_no_overlap",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     // El único objeto sobre la empresa exige su consumidor final al confirmarla (trigger de
     // restricción de add-parties-and-products, design D5); no limita cuántas empresas hay.

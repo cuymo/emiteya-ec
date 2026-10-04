@@ -516,6 +516,25 @@ model ConsumerFinalPolicy {
   @@map("consumer_final_policy")
 }
 
+// Límite de tamaño del comprobante firmado para su envío individual al SRI (add-sri-transmission,
+// design D17, Q-47): política versionada con la cita de la fuente, su sección, la unidad literal y
+// su interpretación exacta en bytes. Mismo patrón que la política de consumidor final.
+model SriTransmissionPolicy {
+  id                     String    @id @default(uuid())
+  maxSignedDocumentBytes Int       @map("max_signed_document_bytes")
+  sourceText             String    @map("source_text")
+  sourceSection          String    @map("source_section")
+  literalUnit            String    @map("literal_unit")
+  interpretation         String
+  effectiveFrom          DateTime  @unique @map("effective_from") @db.Date
+  effectiveFromBasis     String    @map("effective_from_basis")
+  effectiveTo            DateTime? @map("effective_to") @db.Date
+  datasetVersion         Int       @map("dataset_version")
+  closedInDatasetVersion Int?      @map("closed_in_dataset_version")
+
+  @@map("sri_transmission_policy")
+}
+
 // Registro de esquemas XSD (design D2 y D14, ADR 0008): filas inmutables por versión
 // del dataset; rige la última versión aplicada.
 model SchemaRegistryEntry {

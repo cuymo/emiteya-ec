@@ -11,6 +11,7 @@ import {
   fiscalCatalogSummaryViewSchema,
   schemaRegistryEntryViewSchema,
   specialCaseViewSchema,
+  sriTransmissionPolicyViewSchema,
   type CatalogEntryVersionView,
   type CatalogEntryView,
   type FiscalCatalogType,
@@ -77,6 +78,19 @@ export function useConsumerFinalPolicy(enabled: boolean) {
     queryFn: ({ signal }) =>
       apiFetch("/fiscal-catalogs/consumer-final-policy", {
         schema: consumerFinalPolicyViewSchema,
+        signal,
+      }),
+  });
+}
+
+/** Límite de tamaño del envío al SRI (add-sri-transmission, design D17). */
+export function useSriTransmissionPolicy(enabled: boolean) {
+  return useQuery({
+    queryKey: [...FISCAL_CATALOGS_KEY, "sri-transmission-policy"],
+    enabled,
+    queryFn: ({ signal }) =>
+      apiFetch("/fiscal-catalogs/sri-transmission-policy", {
+        schema: sriTransmissionPolicyViewSchema,
         signal,
       }),
   });

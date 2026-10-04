@@ -20,6 +20,7 @@ import type {
   NewEntryVersion,
   StoredEntryVersion,
   StoredPolicyVersion,
+  StoredSizePolicyVersion,
   StoredSchemaEntry,
 } from "./ports.ts";
 
@@ -235,6 +236,53 @@ async function applyPolicy(store: DatasetStore, dataset: ValidatedDataset): Prom
   return inserts.length;
 }
 
+/** Política de tamaño del envío al SRI: mismas reglas que la de consumidor final (design D17). */
+async function applySizePolicy(store: DatasetStore, dataset: ValidatedDataset): Promise<number> {
+  if (dataset.catalogType !== "sri-transmission-policy") return 0;
+  const label = `${dataset.catalogType} v${dataset.version}`;
+  const stored = new Map(
+    (await store.sizePolicyVersions()).map((version) => [version.effectiveFrom, version]),
+  );
+  const fileStarts = new Set(dataset.versions.map((version) => version.effectiveFrom));
+  for (const start of stored.keys()) {
+    if (!fileStarts.has(start))
+      throw new FiscalCatalogDatasetConflict(`${label}: falta la versión ${start}`);
+  }
+  const comparable = (version: Omit<StoredSizePolicyVersion, "id" | "datasetVersion">) =>
+    canonicalJson({
+      maxSignedDocumentBytes: version.maxSignedDocumentBytes,
+      sourceText: version.sourceText,
+      sourceSection: version.sourceSection,
+      literalUnit: version.literalUnit,
+      interpretation: version.interpretation,
+      effectiveFrom: version.effectiveFrom,
+      effectiveFromBasis: version.effectiveFromBasis,
+    });
+  const inserts = [];
+  for (const version of dataset.versions) {
+    const current = stored.get(version.effectiveFrom);
+    if (!current) {
+      inserts.push({ ...version, datasetVersion: dataset.version });
+      continue;
+    }
+    if (comparable(current) !== comparable(version)) {
+      throw new FiscalCatalogDatasetConflict(
+        `${label}: altera la versión ${version.effectiveFrom}`,
+      );
+    }
+    if (current.effectiveTo !== version.effectiveTo) {
+      if (current.effectiveTo !== null) {
+        throw new FiscalCatalogDatasetConflict(
+          `${label}: reabre la versión ${version.effectiveFrom}`,
+        );
+      }
+      await store.closeSizePolicyVersion(current.id, version.effectiveTo!, dataset.version);
+    }
+  }
+  await store.insertSizePolicyVersions(inserts);
+  return inserts.length;
+}
+
 async function applyDataset(store: DatasetStore, dataset: ValidatedDataset): Promise<number> {
   await store.insertDataset({
     catalogType: dataset.catalogType,
@@ -255,6 +303,7 @@ async function applyDataset(store: DatasetStore, dataset: ValidatedDataset): Pro
     await store.insertSpecialCases(dataset.version, dataset.entries);
     return dataset.entries.length;
   }
+  if (dataset.catalogType === "sri-transmission-policy") return applySizePolicy(store, dataset);
   return dataset.catalogType === "consumer-final-policy"
     ? applyPolicy(store, dataset)
     : applyEntries(store, dataset);

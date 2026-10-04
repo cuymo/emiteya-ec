@@ -15,6 +15,10 @@ export function fiscalCatalogsRouter(service: FiscalCatalogs): Router {
     res.status(200).json({ data: await service.consumerFinalPolicy(contextOf(res), req.query) });
   });
 
+  router.get("/fiscal-catalogs/sri-transmission-policy", async (req, res) => {
+    res.status(200).json({ data: await service.sriTransmissionPolicy(contextOf(res), req.query) });
+  });
+
   router.get("/fiscal-catalogs/schemas", async (_req, res) => {
     res.status(200).json({ data: await service.schemas(contextOf(res)) });
   });

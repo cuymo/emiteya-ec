@@ -27,6 +27,7 @@ import { requireContext } from "./modules/identity/infrastructure/http/request-c
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
 import {
   catalogsModule,
+  ecuadorDate,
   fiscalCatalogQueries,
   loadInstalledFiscalCatalogs,
 } from "./modules/catalogs/infrastructure/index.ts";
@@ -250,7 +251,9 @@ const transmissionGate = createTransmissionGate(
     enabled: env.SRI_TRANSMISSION_ENABLED,
     workers: env.SRI_JOB_WORKERS,
     endpointsValid: () => true,
-    sizePolicyAvailable: () => Promise.resolve(false),
+    // La política de tamaño se resuelve con la fecha del envío; aquí, con la de hoy (design D17).
+    sizePolicyAvailable: async () =>
+      (await catalogQueries.sriTransmissionSizePolicy(ecuadorDate(new Date()))) !== null,
   },
   { logger, registry: metrics.registry },
 );

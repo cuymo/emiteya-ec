@@ -127,6 +127,26 @@ export const datasetFileSchema = z.discriminatedUnion("catalogType", [
       )
       .min(1),
   }),
+  // Límite de tamaño del envío al SRI (add-sri-transmission, design D17): la cita de la fuente, su
+  // sección, la unidad literal y la interpretación exacta en bytes con su justificación.
+  z.strictObject({
+    catalogType: z.literal("sri-transmission-policy"),
+    ...header,
+    versions: z
+      .array(
+        z.strictObject({
+          maxSignedDocumentBytes: z.number().int().positive(),
+          sourceText: text,
+          sourceSection: text,
+          literalUnit: text,
+          interpretation: text,
+          effectiveFrom: isoDate,
+          effectiveFromBasis: effectiveFromBasisSchema,
+          effectiveTo: isoDate.nullable(),
+        }),
+      )
+      .min(1),
+  }),
   z.strictObject({
     catalogType: z.literal("schema-registry"),
     ...header,
@@ -155,6 +175,15 @@ export type ConsumerFinalPolicyDataset = Extract<
   DatasetFile,
   { catalogType: "consumer-final-policy" }
 >;
+export type SriTransmissionPolicyDataset = Extract<
+  DatasetFile,
+  { catalogType: "sri-transmission-policy" }
+>;
+/** Datasets de una política con versiones por vigencia, sin entradas. */
+export type PolicyDataset = ConsumerFinalPolicyDataset | SriTransmissionPolicyDataset;
+export const isPolicyDataset = (dataset: DatasetFile): dataset is PolicyDataset =>
+  dataset.catalogType === "consumer-final-policy" ||
+  dataset.catalogType === "sri-transmission-policy";
 export type SchemaRegistryDataset = Extract<DatasetFile, { catalogType: "schema-registry" }>;
 export type SpecialCaseDataset = Extract<DatasetFile, { catalogType: "special-case-matrix" }>;
 
@@ -270,7 +299,14 @@ function checkFile(dataset: DatasetFile): void {
     checkVersions(label, dataset.entries);
   }
   if (dataset.catalogType === "schema-registry") checkSchemaRegistry(label, dataset);
-  if (dataset.catalogType === "consumer-final-policy") {
+  if (isPolicyDataset(dataset)) {
+    for (const version of dataset.versions) {
+      if (version.effectiveTo !== null && version.effectiveTo < version.effectiveFrom) {
+        throw new DatasetValidationError(
+          `${label}: vigencia invertida en ${version.effectiveFrom}`,
+        );
+      }
+    }
     checkVersions(
       label,
       dataset.versions.map((version) => ({ ...version, entryKey: "policy" })),
@@ -285,11 +321,9 @@ function checkFile(dataset: DatasetFile): void {
 function checkTransition(previous: DatasetFile, next: DatasetFile): void {
   const label = `${next.catalogType} v${previous.version}→v${next.version}`;
   if (!isEntriesDataset(previous) || !isEntriesDataset(next)) {
-    if (
-      previous.catalogType === "consumer-final-policy" &&
-      next.catalogType === previous.catalogType
-    ) {
-      const nextByStart = new Map(next.versions.map((version) => [version.effectiveFrom, version]));
+    if (isPolicyDataset(previous) && isPolicyDataset(next)) {
+      const nextVersions: readonly PolicyDataset["versions"][number][] = next.versions;
+      const nextByStart = new Map(nextVersions.map((version) => [version.effectiveFrom, version]));
       for (const version of previous.versions) {
         const now = nextByStart.get(version.effectiveFrom);
         const { effectiveTo: _a, ...before } = version;

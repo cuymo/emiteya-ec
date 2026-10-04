@@ -1,8 +1,8 @@
 // Catálogos fiscales (add-fiscal-catalogs, design D17). Usuario: administrador (cambia) u operador
 // (consulta). Objetivo: usar solo las entradas oficiales que corresponden a la empresa y saber de
 // dónde salen. Decisión: qué tarifas y formas de pago habilitar. Acción: el Switch de cada entrada.
-// P0: IVA y formas de pago. P1: ICE, IRBPNR y la fuente. P2: identificación, consumidor final, matriz
-// y esquemas, de solo lectura. P3 (historial de datasets): fuera.
+// P0: IVA y formas de pago. P1: ICE, IRBPNR y la fuente. P2: identificación, consumidor final, límite
+// de tamaño del envío al SRI, matriz y esquemas, de solo lectura. P3 (historial de datasets): fuera.
 "use client";
 
 import {
@@ -33,6 +33,7 @@ import {
   useSchemaRegistry,
   useSetEnablement,
   useSpecialCases,
+  useSriTransmissionPolicy,
 } from "./catalogs-api";
 
 const CATEGORY_LABELS: Record<SpecialCaseCategory, string> = {
@@ -279,6 +280,50 @@ function ConsumerFinalPolicy() {
   );
 }
 
+const bytes = new Intl.NumberFormat("es-EC");
+
+/**
+ * Límite de tamaño del envío al SRI (add-sri-transmission, design D17). Sin una fuente oficial
+ * verificada la política no está publicada y no se transmite (Q-47).
+ */
+function SriTransmissionPolicy() {
+  const policy = useSriTransmissionPolicy(true);
+  if (policy.isPending) return <Skeleton className="h-8 w-full" />;
+  if (policy.isError)
+    return (
+      <ErrorState message={errorMessage(policy.error)} onRetry={() => void policy.refetch()} />
+    );
+  if (!policy.data.source)
+    return (
+      <p>
+        Pendiente de la fuente oficial: la cifra exacta del límite no se ha verificado, así que no
+        hay política publicada y ningún comprobante se transmite al SRI.
+      </p>
+    );
+  const applicable = policy.data.applicable;
+  if (!applicable) return <p>No hay una política vigente hoy.</p>;
+  return (
+    <dl className="grid grid-cols-1 gap-x-3 gap-y-0.5 sm:grid-cols-[auto_1fr]">
+      <dt className="text-foreground-muted">Tamaño máximo del comprobante firmado</dt>
+      <dd className="tabular-nums">{bytes.format(applicable.maxSignedDocumentBytes)} bytes</dd>
+      <dt className="text-foreground-muted">Texto de la fuente</dt>
+      <dd>«{applicable.sourceText}»</dd>
+      <dt className="text-foreground-muted">Sección</dt>
+      <dd>{applicable.sourceSection}</dd>
+      <dt className="text-foreground-muted">Unidad literal</dt>
+      <dd>{applicable.literalUnit}</dd>
+      <dt className="text-foreground-muted">Interpretación</dt>
+      <dd>{applicable.interpretation}</dd>
+      <dt className="text-foreground-muted">Inicio</dt>
+      <dd>
+        {applicable.effectiveFromBasis === "SOURCE_STATED"
+          ? `Desde ${formatIsoDate(applicable.effectiveFrom)} (declarada por la fuente)`
+          : `Base del proyecto: ficha v${policy.data.source.version} (${formatIsoDate(applicable.effectiveFrom)})`}
+      </dd>
+    </dl>
+  );
+}
+
 function IdentificationTypes() {
   const entries = useCatalogEntries("identification-type", true);
   if (entries.isPending) return <Skeleton className="h-8 w-full" />;
@@ -482,6 +527,9 @@ export function FiscalCatalogsScreen() {
         </ReadOnlyGroup>
         <ReadOnlyGroup title="Consumidor final">
           <ConsumerFinalPolicy />
+        </ReadOnlyGroup>
+        <ReadOnlyGroup title="Límite de tamaño del envío al SRI">
+          <SriTransmissionPolicy />
         </ReadOnlyGroup>
         <ReadOnlyGroup title="Casos especiales">
           <SpecialCases />
