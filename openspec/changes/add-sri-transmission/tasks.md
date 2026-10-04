@@ -133,13 +133,13 @@
 
 ## 8. Envío de un comprobante firmado
 
-- [ ] 8.1 Exportar `enqueueTransmissionIn(scope, document)` desde `fiscal` y llamarlo en la transacción que firma (`invoices/application/signing-pipeline.ts`), e implementar el barrido idempotente al arrancar y periódico (design D6). Verificar con pruebas de integración:
+- [x] 8.1 Exportar `enqueueTransmissionIn(scope, document)` desde `fiscal` y llamarlo en la transacción que firma (`invoices/application/signing-pipeline.ts`), e implementar el barrido idempotente al arrancar y periódico (design D6). Verificar con pruebas de integración:
   - una factura firmada tiene su `sri.transmit` en la misma transacción;
   - el traspaso atómico entre fases: `sri.transmit` `DONE` y `sri.authorize` `PENDING` en una transacción, y lo mismo al pasar a `SEND_UNKNOWN` con `sri.reconcile`, sin ventana sin job ni choque con la unicidad de los jobs activos;
   - dos workers que intentan avanzar la misma factura: solo uno confirma;
   - una caída simulada justo después de firmar conserva el job;
   - el barrido ejecutado varias veces crea exactamente un job por cada `SIGNED` sin job, y no reactiva jobs `STOPPED`
-- [ ] 8.2 Implementar el handler `sri.transmit` (design D9, D11 y D14):
+- [x] 8.2 Implementar el handler `sri.transmit` (design D9, D11 y D14):
   - integridad (pertenencia, SHA-256, tamaño y clave);
   - política de tamaño;
   - sobre con los bytes exactos;

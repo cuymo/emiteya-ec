@@ -76,7 +76,7 @@ describe("evidencia antes de la clasificación", () => {
     decide: ({ classification, document, now }) =>
       classification?.outcome === "RECEIVED"
         ? {
-            transition: { to: "RECEIVED", cause: "TRANSMISSION" },
+            transitions: [{ to: "RECEIVED", cause: "TRANSMISSION" }],
             next: {
               companyId: document.companyId,
               type: "sri.authorize",
@@ -88,7 +88,7 @@ describe("evidencia antes de la clasificación", () => {
             job: { action: "COMPLETE" },
           }
         : {
-            transition: { to: "SEND_UNKNOWN", cause: "TRANSMISSION" },
+            transitions: [{ to: "SEND_UNKNOWN", cause: "TRANSMISSION" }],
             next: {
               companyId: document.companyId,
               type: "sri.reconcile",

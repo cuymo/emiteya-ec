@@ -3,7 +3,11 @@
 // importan infraestructura ajena.
 import type { ListMeta } from "@facturador/contracts";
 import type { AuditLog } from "../../audit/application/audit-log.ts";
-import type { ArtifactStore, DocumentRepository } from "../../fiscal/application/ports.ts";
+import type {
+  ArtifactStore,
+  DocumentRepository,
+  StoredDocument,
+} from "../../fiscal/application/ports.ts";
 import type { IdempotencyStore } from "../../../platform/idempotency/idempotency.ts";
 import type { SchemaRegistryEntry } from "../../sri-engine/application/schemas.ts";
 import type { DraftContent, DraftRecord } from "../domain/draft.ts";
@@ -130,6 +134,11 @@ export type SignedScope = {
   artifacts: ArtifactStore;
   documents: DocumentRepository;
   audit: AuditLog;
+  /**
+   * Encola el `sri.transmit` inicial en la misma transacción que firma (add-sri-transmission,
+   * design D6): nunca hay un comprobante firmado sin su job.
+   */
+  enqueueTransmission(document: Pick<StoredDocument, "id" | "companyId">): Promise<boolean>;
 };
 
 export interface SignedUnitOfWork {

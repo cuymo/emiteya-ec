@@ -50,14 +50,19 @@ export type JobFollowUp =
   | Readonly<{ action: "FAIL"; error: JobError; backoff: BackoffPolicy }>
   | Readonly<{ action: "STOP"; error: JobError }>;
 
-/** La decisión de un paso: se confirma entera en la TX B, o nada. */
+export type StepTransition = Readonly<{
+  to: DocumentState;
+  cause: TransitionCause;
+  actor?: TransitionActor;
+  authorization?: ReadAuthorization;
+}>;
+
+/**
+ * La decisión de un paso: se confirma entera en la TX B, o nada. Las transiciones se aplican en
+ * orden, cada una guardada por el estado anterior; nunca saltan la tabla de design D3.
+ */
 export type StepDecision = Readonly<{
-  transition: Readonly<{
-    to: DocumentState;
-    cause: TransitionCause;
-    actor?: TransitionActor;
-    authorization?: ReadAuthorization;
-  }> | null;
+  transitions: readonly StepTransition[];
   /** Job de la fase siguiente: nace en la misma transacción en que termina el actual. */
   next: NewJob | null;
   job: JobFollowUp;
@@ -135,12 +140,12 @@ export async function applyDecision(
   const { job, document, decision, now } = input;
   await deps.uow.run(async (scope) => {
     if (input.result) await scope.evidence.recordResult(input.result);
-    if (decision.transition) {
-      const { to, cause, actor, authorization } = decision.transition;
+    let state = document.state;
+    for (const { to, cause, actor, authorization } of decision.transitions) {
       const changed = await scope.documents.advance(
         document.companyId,
         document.id,
-        document.state,
+        state,
         to,
         authorization
           ? {
@@ -154,7 +159,7 @@ export async function applyDecision(
       await scope.documents.recordTransition({
         companyId: document.companyId,
         documentId: document.id,
-        from: document.state,
+        from: state,
         to,
         cause,
         actor: actor ?? { type: "SYSTEM" },
@@ -174,6 +179,7 @@ export async function applyDecision(
           },
         });
       }
+      state = to;
     }
     const followUp = decision.job;
     if (followUp.action === "COMPLETE") await deps.jobs.complete(scope.db, job, now);
@@ -283,7 +289,7 @@ export async function executeSriStep<C>(
       attemptId: attempt.id,
       transport: attempt.outcome.kind,
       outcome: classified?.outcome ?? "UNPARSEABLE",
-      to: decision.transition?.to ?? null,
+      to: decision.transitions.at(-1)?.to ?? null,
       durationMs: attempt.outcome.completedAt.getTime() - attempt.outcome.startedAt.getTime(),
     },
     "intento con el SRI clasificado",

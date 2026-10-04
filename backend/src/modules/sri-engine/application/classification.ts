@@ -2,6 +2,7 @@
 // respuesta guardada a un resultado, sin efectos. Nunca se concluye por inferencia: lo que no se
 // reconoce queda sin conclusión, y los mensajes se conservan todos, en orden.
 import type { Environment } from "../../taxpayer/domain/taxpayer-config.ts";
+import type { TransportOutcome } from "./transport.ts";
 
 /** Mensaje del SRI tal como llegó (CTX §22.2). */
 export type SriResponseMessage = Readonly<{
@@ -84,4 +85,15 @@ export type ValidityClassification = Readonly<{
   state: ValidityState | null;
   messages: readonly SriResponseMessage[];
   parsed: ParsedDetails;
+}>;
+
+/** Clasificadores de las respuestas, con su versión para el resultado guardado (design D7). */
+export type SriClassifiers = Readonly<{
+  reception: (outcome: TransportOutcome, accessKey: string) => ReceptionClassification;
+  authorization: (
+    outcome: TransportOutcome,
+    expected: Readonly<{ accessKey: string; environment: Environment }>,
+  ) => AuthorizationClassification;
+  validity: (outcome: TransportOutcome, accessKey: string) => ValidityClassification;
+  versions: Readonly<{ reception: string; authorization: string; validity: string }>;
 }>;

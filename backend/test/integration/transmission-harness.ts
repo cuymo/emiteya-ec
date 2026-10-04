@@ -46,7 +46,7 @@ export async function insertDocument(
         numericCode: "12345678",
         issueDate: new Date("2026-10-04"),
         state,
-        snapshot: { snapshotVersion: 1, documentType: "01", schemaVersion: "1.1.0" },
+        snapshot: { snapshotVersion: 1, key: { accessKey } },
         schemaVersion: "1.1.0",
         buyerIdentification: "9999999999999",
         buyerName: "CONSUMIDOR FINAL",

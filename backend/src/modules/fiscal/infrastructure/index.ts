@@ -18,6 +18,12 @@ export { createTransmissionReader } from "./prisma-transmission-reads.ts";
 export { createReconciliationRequestUnitOfWork } from "./reconciliation-unit-of-work.ts";
 export { createSriEvidenceRepository } from "./prisma-sri-evidence.ts";
 export { createTransmissionUnitOfWork } from "./transmission-unit-of-work.ts";
+export { createTransmissionSweeper, type TransmissionSweeper } from "./transmission-sweeper.ts";
+export { enqueueTransmissionIn } from "../application/transmission-jobs.ts";
+export {
+  DEFAULT_TRANSMISSION_SETTINGS,
+  type TransmissionSettings,
+} from "../application/transmission-settings.ts";
 export type {
   ReconciliationRequestUnitOfWork,
   TransmissionReader,
@@ -50,3 +56,7 @@ export function fiscalRouters({
     ),
   ];
 }
+
+// Handlers de la transmisión (add-sri-transmission, design D8 a D17).
+export { createTransmitHandler } from "../application/transmit-handler.ts";
+export { SRI_JOB_TYPES } from "../domain/transmission.ts";

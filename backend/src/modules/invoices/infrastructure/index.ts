@@ -4,9 +4,11 @@ import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import { createIdempotencyStore } from "../../../platform/idempotency/prisma-idempotency-store.ts";
 import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
 import {
+  DEFAULT_TRANSMISSION_SETTINGS,
   createDocumentRepository,
   createReconciliationRequestUnitOfWork,
   createTransmissionReader,
+  type TransmissionSettings,
 } from "../../fiscal/infrastructure/index.ts";
 import type { JobStore } from "../../../platform/jobs/jobs.ts";
 import { createPrismaJobStore } from "../../../platform/jobs/prisma-job-store.ts";
@@ -59,6 +61,8 @@ export type InvoicesModuleOptions = {
   jobs?: Pick<JobStore, "enqueueIn">;
   /** `SRI_CONCLUSION_WINDOW_HOURS` en milisegundos; 24 horas por defecto. */
   conclusionWindowMs?: number;
+  /** Límites del `sri.transmit` que nace al firmar (design D6 y D22). */
+  transmission?: TransmissionSettings;
   now?: () => Date;
 };
 
@@ -79,7 +83,11 @@ export function invoicesModule(options: InvoicesModuleOptions) {
   const documents = createDocumentRepository(options.prisma);
   const pipeline = createSigningPipeline({
     documents,
-    persist: createSignedUnitOfWork(options.prisma),
+    persist: createSignedUnitOfWork(options.prisma, {
+      jobs: options.jobs ?? createPrismaJobStore(options.prisma),
+      settings: options.transmission ?? DEFAULT_TRANSMISSION_SETTINGS,
+      now,
+    }),
     builder: createInvoiceXmlBuilder(),
     xsd: options.xsd,
     signer: options.signer,

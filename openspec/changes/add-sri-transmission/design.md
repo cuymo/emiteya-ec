@@ -233,6 +233,7 @@ transporte ─▶ TX A: sri_attempt + sri_response ─▶ COMMIT
 - **Si el clasificador falla** con una excepción o un XML ilegible, la TX B guarda un resultado `UNPARSEABLE`, sin conclusión, y el comprobante va a `SEND_UNKNOWN` desde `SIGNED`, o no cambia desde otros estados. El intento y la respuesta permanecen.
 - **Caída entre A y B.** Al retomar el job, el handler busca primero el último intento de ese job sin resultado y lo clasifica desde la respuesta guardada, sin llamar al SRI. Es la generalización del caso D de CTX §52.
 - **Pérdida del arriendo.** Si se pierde entre A y B, la TX B se revierte. El intento queda como evidencia, y el job lo clasifica al retomarse.
+- **Caída durante la llamada** (precisión de apply, CTX §22.3 "proceso cae"). El intento se inserta una sola vez con el resultado del transporte (D7), así que un arriendo de `sri.transmit` que empezó a llamar y no dejó intento se detecta al retomar: los arriendos del job (`attempt_count`) superan a sus intentos registrados. La solicitud pudo salir, así que no se reenvía: el comprobante pasa de `SIGNED` a `SEND_UNKNOWN` (transición ya prevista para un resultado incierto) con su reconciliación. Para que la cuenta sea exacta, un fallo antes de llamar, el breaker abierto y el apagado reprograman el job sin consumir el intento.
 
 ### D9. Integridad antes de cada envío
 
@@ -299,7 +300,7 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
   | `estado` `DEVUELTA` con un mensaje de identificador `70` | `KEY_IN_PROCESS` | `SEND_UNKNOWN` y `sri.reconcile` tras la espera del 70 |
   | `estado` `DEVUELTA` con identificador `43` o `45` | `KEY_REGISTERED` o `SEQUENTIAL_REGISTERED` | `SEND_UNKNOWN` y `sri.reconcile` |
   | `estado` `DEVUELTA` sin 70, 43 ni 45 | `RETURNED` | `RETURNED` |
-  | `claveAcceso` de la respuesta distinta de la del comprobante | `INCONSISTENT` | `MANUAL_REVIEW` |
+  | `claveAcceso` de la respuesta distinta de la del comprobante | `INCONSISTENT` | `MANUAL_REVIEW`, pasando por `SEND_UNKNOWN` en la misma TX B: la tabla de D3 no tiene `SIGNED` → `MANUAL_REVIEW` (precisión de apply) |
 
 - **Mensajes.** Se guardan todos, en orden, con el identificador, el mensaje, la información adicional y el tipo, incluidos los códigos desconocidos (CTX §22.2, §32).
 - **Transporte incierto.** `REQUEST_TIMEOUT`, `BODY_TIMEOUT` y `CONNECTION_LOST` llevan a `SEND_UNKNOWN` sin pasar por el parser. `NOT_SENT` deja el comprobante en `SIGNED` y reprograma el job.

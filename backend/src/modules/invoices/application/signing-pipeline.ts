@@ -230,6 +230,7 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
               actor: { type: "USER", userId: ctx.userId },
               metadata: { artifactSha256: artifact.sha256, correlationId: ctx.requestId },
             });
+            await scope.enqueueTransmission(document);
             await scope.audit.append({
               companyId,
               actor: { type: "USER", userId: ctx.userId },

@@ -126,22 +126,21 @@ describe("transmisión de facturas sobre HTTP", () => {
     });
   }
 
-  async function stoppedJob(invoice: InvoiceView, code = "SRI_UNAVAILABLE") {
-    await prisma.job.create({
+  /**
+   * Termina el `sri.transmit` que nació al firmar, como si la transmisión ya hubiera corrido:
+   * `DONE`, o `STOPPED` con su motivo.
+   */
+  async function finishTransmit(invoice: InvoiceView, status: "DONE" | "STOPPED", code?: string) {
+    await prisma.job.updateMany({
+      where: { documentId: invoice.id, type: "sri.transmit" },
       data: {
-        companyId: a.companyId,
-        type: "sri.transmit",
-        dedupeKey: `sri.transmit:${invoice.id}`,
-        documentId: invoice.id,
-        status: "STOPPED",
-        scheduledAt: new Date(),
-        nextAttemptAt: new Date(),
-        attemptCount: 10,
-        maxAttempts: 10,
-        lastErrorCode: code,
-        lastErrorClass: "RETRYABLE",
-        lastErrorAt: new Date(),
-        origin: "AUTOMATIC",
+        status,
+        activeDedupeKey: null,
+        activeSriDocumentId: null,
+        attemptCount: status === "STOPPED" ? 10 : 1,
+        ...(code
+          ? { lastErrorCode: code, lastErrorClass: "RETRYABLE", lastErrorAt: new Date() }
+          : {}),
         completedAt: new Date("2026-10-04T16:00:00Z"),
       },
     });
@@ -161,6 +160,11 @@ describe("transmisión de facturas sobre HTTP", () => {
     });
   const sriJobs = (invoice: { id: string }) =>
     prisma.job.findMany({ where: { documentId: invoice.id }, orderBy: { createdAt: "asc" } });
+  const reconciliations = (invoice: { id: string }) =>
+    prisma.job.findMany({
+      where: { documentId: invoice.id, type: "sri.reconcile" },
+      orderBy: { createdAt: "asc" },
+    });
 
   let signed: InvoiceView;
   let stopped: InvoiceView;
@@ -193,7 +197,9 @@ describe("transmisión de facturas sobre HTTP", () => {
     reserved = await emit(a, busy);
     foreign = await emit(b);
 
-    await stoppedJob(stopped);
+    await finishTransmit(stopped, "STOPPED", "SRI_UNAVAILABLE");
+    await finishTransmit(review, "DONE");
+    await finishTransmit(authorized, "DONE");
     await attempt(review, "UNKNOWN", []);
     await advance(review, ["SEND_UNKNOWN"]);
     await attempt(review, "SEQUENTIAL_REGISTERED", [
@@ -230,12 +236,12 @@ describe("transmisión de facturas sobre HTTP", () => {
   });
 
   describe("consulta", () => {
-    it("una factura firmada sin interacción con el SRI admite la reconciliación", async () => {
+    it("una factura firmada con su envío programado muestra la interacción en curso", async () => {
       const view = bodyOf(await get(`/invoices/${signed.id}`, a.cookies.operator)).data;
       expect(view.transmission).toEqual({
-        inProgress: false,
+        inProgress: true,
         stopped: null,
-        reconcilable: true,
+        reconcilable: false,
         authorization: null,
         lastResult: null,
       });
@@ -342,7 +348,7 @@ describe("transmisión de facturas sobre HTTP", () => {
         .post(`/api/v1/invoices/${review.id}/reconciliations`)
         .send({ reason: "x" });
       expect(anonymous.status).toBe(401);
-      expect(await sriJobs(review)).toEqual([]);
+      expect(await reconciliations(review)).toEqual([]);
       expect(await audits()).toEqual(before);
     });
 
@@ -354,7 +360,7 @@ describe("transmisión de facturas sobre HTTP", () => {
         const res = await reconcile(invoice, a.cookies.admin);
         expect(res.status).toBe(409);
         expect(bodyOf(res).error.code).toBe("INVOICE_NOT_RECONCILABLE");
-        expect(await sriJobs(invoice)).toEqual([]);
+        expect(await reconciliations(invoice)).toEqual([]);
       }
       expect(await audits()).toEqual([]);
     });
@@ -365,7 +371,7 @@ describe("transmisión de facturas sobre HTTP", () => {
       const view = bodyOf(res).data;
       expect(view.state).toBe("MANUAL_REVIEW");
       expect(view.transmission).toMatchObject({ inProgress: true, reconcilable: false });
-      const [job] = await sriJobs(review);
+      const [job] = await reconciliations(review);
       expect(job).toMatchObject({
         type: "sri.reconcile",
         status: "PENDING",
@@ -394,7 +400,7 @@ describe("transmisión de facturas sobre HTTP", () => {
       const res = await reconcile(review, a.cookies.admin);
       expect(res.status).toBe(409);
       expect(bodyOf(res).error.code).toBe("SRI_INTERACTION_IN_PROGRESS");
-      expect(await sriJobs(review)).toHaveLength(1);
+      expect(await reconciliations(review)).toHaveLength(1);
       expect(await audits()).toHaveLength(1);
     });
 

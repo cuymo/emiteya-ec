@@ -221,6 +221,7 @@ function pipelineWith(options: {
               artifacts,
               documents: docs.repository,
               audit: { append: () => Promise.resolve() },
+              enqueueTransmission: () => Promise.resolve(true),
             }),
     },
     builder: createInvoiceXmlBuilder(),

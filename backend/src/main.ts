@@ -40,11 +40,25 @@ import { productsModule } from "./modules/products/infrastructure/index.ts";
 import { invoicesModule } from "./modules/invoices/infrastructure/index.ts";
 import { taxpayerRouters } from "./modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
-import { createTransmissionGate } from "./modules/fiscal/infrastructure/transmission-gate.ts";
 import {
+  SRI_JOB_TYPES,
+  createArtifactStore,
+  createDocumentRepository,
+  createSriEvidenceRepository,
+  createTransmissionSweeper,
+  createTransmissionUnitOfWork,
+  createTransmitHandler,
+} from "./modules/fiscal/infrastructure/index.ts";
+import { createTransmissionGate } from "./modules/fiscal/infrastructure/transmission-gate.ts";
+import { transmissionSettingsFromEnv } from "./config/transmission.ts";
+import {
+  createCircuitBreaker,
+  createSoapTransport,
+  createSriGateway,
   createXmllintXsdValidator,
   endpointsValid,
   resolveSriEndpoints,
+  sriClassifiers,
   verifySchemaBundle,
 } from "./modules/sri-engine/infrastructure/index.ts";
 import {
@@ -231,8 +245,9 @@ apiRouter.use(
 apiRouter.use(
   ...productsModule({ prisma: database.prisma, authorizer, catalogs: catalogQueries }).routers,
 );
-// Cola durable de jobs (ADR 0012): la usan los workers y la reconciliación manual.
+// Cola durable de jobs (ADR 0012): la usan los workers, la firma y la reconciliación manual.
 const jobStore = createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATABASE_URL).schema);
+const transmissionSettings = transmissionSettingsFromEnv(env);
 
 // Borradores y facturas (add-invoice-emission, design D1 y D13).
 apiRouter.use(
@@ -247,7 +262,8 @@ apiRouter.use(
     stageTimings: env.EMISSION_STAGE_TIMINGS,
     logger,
     jobs: jobStore,
-    conclusionWindowMs: env.SRI_CONCLUSION_WINDOW_HOURS * 3_600_000,
+    conclusionWindowMs: transmissionSettings.poll.windowMs,
+    transmission: transmissionSettings,
   }).routers,
 );
 
@@ -276,12 +292,53 @@ logger.info(
 await transmissionGate.refresh();
 setInterval(() => void transmissionGate.refresh(), 30_000).unref();
 
+// Transporte SOAP propio y handlers de la transmisión (add-sri-transmission, design D6 a D17). El
+// único camino al SRI; con la transmisión deshabilitada sus jobs no se toman.
+const sriGateway = createSriGateway({
+  transport: createSoapTransport({
+    endpoints: sriEndpoints,
+    requestTimeoutMs: env.SRI_REQUEST_TIMEOUT_MS,
+    bodyTimeoutMs: env.SRI_BODY_TIMEOUT_MS,
+    maxResponseBytes: env.SRI_RESPONSE_MAX_BYTES,
+  }),
+  breaker: createCircuitBreaker({
+    failures: env.SRI_BREAKER_FAILURES,
+    cooldownMs: env.SRI_BREAKER_COOLDOWN_SECONDS * 1_000,
+  }),
+});
+const stepDependencies = {
+  db: database.prisma,
+  evidence: createSriEvidenceRepository(database.prisma),
+  uow: createTransmissionUnitOfWork(database.prisma),
+  jobs: jobStore,
+  logger,
+};
+const transmitHandler = createTransmitHandler({
+  ...stepDependencies,
+  documents: createDocumentRepository(database.prisma),
+  artifacts: createArtifactStore(database.prisma),
+  sizePolicy: (date) => catalogQueries.sriTransmissionSizePolicy(date),
+  gateway: sriGateway,
+  classifiers: sriClassifiers,
+  settings: transmissionSettings,
+  today: ecuadorDate,
+  alert: (details, message) => logger.error(details, message),
+});
+// Barrido de los firmados sin job: al arrancar y periódico, también con la transmisión apagada.
+const transmissionSweeper = createTransmissionSweeper({
+  prisma: database.prisma,
+  jobs: jobStore,
+  settings: transmissionSettings,
+  logger,
+});
+closers.unshift({ name: "transmission-sweeper", close: () => transmissionSweeper.close() });
+
 // Cola durable de jobs (ADR 0012): los workers corren en el proceso de la API y se cierran antes
 // que el pool criptográfico y la base de datos.
 const jobRunner = createJobRunner({
   store: jobStore,
   db: database.prisma,
-  handlers: {},
+  handlers: { [SRI_JOB_TYPES.transmit]: transmitHandler },
   workers: env.SRI_JOB_WORKERS,
   pollIntervalMs: env.SRI_JOB_POLL_INTERVAL_MS,
   leaseMs: env.SRI_JOB_LEASE_SECONDS * 1_000,
@@ -314,6 +371,13 @@ const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, "backend escuchando");
 });
 jobRunner.start();
+void transmissionSweeper.sweep().then(
+  (created) => {
+    if (created > 0) logger.info({ created }, "barrido de la transmisión al arrancar");
+  },
+  (error: unknown) => logger.error({ err: error }, "el barrido de la transmisión falló"),
+);
+transmissionSweeper.start(env.SRI_SWEEP_INTERVAL_SECONDS * 1_000);
 
 // Firmas vigentes que la clave de custodia configurada no abre: figuran como no disponibles hasta
 // volver a cargarlas (design D8). Sin secretos en el registro.
