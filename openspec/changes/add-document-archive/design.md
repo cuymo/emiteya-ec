@@ -223,7 +223,7 @@ comprobante AUTHORIZED
   - Cada carácter dibujado debe tener glifo en ambas; si no, `RIDE_GLYPH_MISSING` con los códigos.
 - **Code128.**
   - bwip-js codifica la clave, y las barras se dibujan como rectángulos vectoriales con zona de silencio de 10 módulos.
-  - Módulo de 0.329 mm y alto de al menos el 15 % del ancho y 6.35 mm.
+  - El módulo sale del ancho de la columna de la autorización: unos 0.33 mm, nunca menos de los 0.25 mm de GS1-128 (un módulo fijo de 0.329 mm no cabía con todas las claves). Alto de al menos el 15 % del ancho y 6.35 mm.
   - La clave completa va debajo como texto.
 - **Paginación.**
   - A4; encabezado repetido desde la segunda página (número, RUC y clave), encabezado del detalle repetido y pie "Página X de Y".
