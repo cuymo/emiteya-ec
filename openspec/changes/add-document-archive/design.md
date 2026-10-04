@@ -185,7 +185,7 @@ comprobante AUTHORIZED
   | Variable | Defecto | Rango |
   | --- | --- | --- |
   | `RIDE_WORKERS` | 2 | 1 a 8 |
-  | `RIDE_QUEUE` | 4 | 0 a 64 |
+  | `RIDE_QUEUE` | 4 | 1 a 64 (la primitiva rechaza toda tarea con una cola de tamaño 0) |
   | `RIDE_TASK_TIMEOUT_MS` | 30000 | 5000 a 120000 |
   | `RIDE_JOB_MAX_ATTEMPTS` | 5 | 1 a 50 |
   | `RIDE_SWEEP_INTERVAL_SECONDS` | 300 | 10 a 86400 |

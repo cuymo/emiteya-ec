@@ -23,7 +23,7 @@
   3. dejar `CryptoWorkerPool` como instancia independiente con sus errores HTTP de hoy.
 
   Verificar que las pruebas de caracterización, las del pool criptográfico y las de la firma pasan sin cambiar sus aserciones, y que las pruebas de la primitiva cubren la cola llena, el plazo vencido, el worker que muere, el cierre que espera la tarea en curso y rechaza las nuevas, y un error que llega al hilo principal solo como código
-- [ ] 2.2 Añadir a `env.ts` `RIDE_WORKERS`, `RIDE_QUEUE`, `RIDE_TASK_TIMEOUT_MS`, `RIDE_JOB_MAX_ATTEMPTS` y `RIDE_SWEEP_INTERVAL_SECONDS` con los defectos y rangos de design D6, y documentarlas en `deployment.md` como configuración operativa. Verificar con pruebas de entorno: valores por defecto, bordes de cada rango aceptados y valores fuera de rango rechazados
+- [x] 2.2 Añadir a `env.ts` `RIDE_WORKERS`, `RIDE_QUEUE`, `RIDE_TASK_TIMEOUT_MS`, `RIDE_JOB_MAX_ATTEMPTS` y `RIDE_SWEEP_INTERVAL_SECONDS` con los defectos y rangos de design D6, y documentarlas en `deployment.md` como configuración operativa. Verificar con pruebas de entorno: valores por defecto, bordes de cada rango aceptados y valores fuera de rango rechazados
 
 ## 3. Dependencias, fuentes y fuente canónica del RIDE
 

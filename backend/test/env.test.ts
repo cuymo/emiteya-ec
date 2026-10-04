@@ -395,3 +395,41 @@ describe("transmisión al SRI (add-sri-transmission, design D5 y D22)", () => {
     ).toBe("http://127.0.0.1:9/r");
   });
 });
+
+describe("RIDE (add-document-archive, design D6)", () => {
+  const RIDE = {
+    RIDE_WORKERS: [1, 8, 2],
+    RIDE_QUEUE: [1, 64, 4],
+    RIDE_TASK_TIMEOUT_MS: [5_000, 120_000, 30_000],
+    RIDE_JOB_MAX_ATTEMPTS: [1, 50, 5],
+    RIDE_SWEEP_INTERVAL_SECONDS: [10, 86_400, 300],
+  } as const;
+
+  it("aplica los valores por defecto", () => {
+    expect(loadEnv(valid)).toMatchObject(
+      Object.fromEntries(Object.entries(RIDE).map(([name, [, , fallback]]) => [name, fallback])),
+    );
+  });
+
+  it("acepta los bordes de cada rango", () => {
+    for (const [name, [min, max]] of Object.entries(RIDE)) {
+      expect(loadEnv({ ...valid, [name]: String(min) })).toMatchObject({ [name]: min });
+      expect(loadEnv({ ...valid, [name]: String(max) })).toMatchObject({ [name]: max });
+    }
+  });
+
+  it("rechaza valores fuera de rango sin mostrarlos", () => {
+    const below = Object.fromEntries(
+      Object.entries(RIDE).map(([name, [min]]) => [name, String(min - 1)]),
+    );
+    const above = Object.fromEntries(
+      Object.entries(RIDE).map(([name, [, max]]) => [name, String(max + 1)]),
+    );
+    for (const outOfRange of [below, above]) {
+      const error = envError({ ...valid, ...outOfRange });
+      expect(error?.variables).toEqual(Object.keys(RIDE));
+      expect(error?.message).not.toContain("86401");
+    }
+    expect(envError({ ...valid, RIDE_QUEUE: "0" })?.variables).toEqual(["RIDE_QUEUE"]);
+  });
+});

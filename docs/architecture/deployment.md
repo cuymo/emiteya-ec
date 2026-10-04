@@ -200,6 +200,18 @@ normativas:
 - **Apagado:** el runner deja de tomar trabajo, espera hasta 8 s a los jobs en curso y vence los arriendos de los que no terminaron, para que otra instancia los retome. El plazo de parada del orquestador debe cubrirlo.
 - **Habilitación:** solo después de las compuertas previas a la transmisión real (la cifra exacta en bytes de Q-47 publicada en su política, y S-3 online con un P12 ecuatoriano real validado y un RUC habilitado en Pruebas; el vector oficial de la clave se cumplió el 2026-10-04), y primero en Pruebas. El procedimiento y el estado de cada compuerta están en `docs/quality/sri-certification.md`.
 
+### RIDE y archivo documental
+
+Variables de `add-document-archive` (design D6). Son configuración operativa, no reglas normativas:
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `RIDE_WORKERS` | No | 2 | Workers del pool del RIDE (1 a 8), independiente del criptográfico. El defecto sale del benchmark de S-4: P95 de 182–191 ms por documento con menos memoria que 4 workers. |
+| `RIDE_QUEUE` | No | 4 | Renders en espera del pool (1 a 64). Con la cola llena, el job se reprograma sin gastar su intento. |
+| `RIDE_TASK_TIMEOUT_MS` | No | 30000 | Plazo de un render, en milisegundos (5000 a 120000). Al vencer, el worker se reemplaza y el intento falla con backoff. |
+| `RIDE_JOB_MAX_ATTEMPTS` | No | 5 | Intentos del job `document.render_ride` (1 a 50). Al agotarlos, la generación queda detenida y visible; el comprobante sigue autorizado. |
+| `RIDE_SWEEP_INTERVAL_SECONDS` | No | 300 | Intervalo del barrido que encola el RIDE de los autorizados sin RIDE ni job (10 a 86400). |
+
 ### Actualizaciones y reversión
 
 - **Invariante de esquema.** Desde `add-parties-and-products`, el esquema exige que cada empresa tenga exactamente un consumidor final. La migración `20261003210000_require_consumer_final` lo hace cumplir con un trigger de restricción diferido sobre `organization`.

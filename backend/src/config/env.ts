@@ -134,6 +134,14 @@ export const envSchema = z
     SRI_SWEEP_INTERVAL_SECONDS: int(10, 86_400).default(300),
     SRI_BREAKER_FAILURES: int(1, 100).default(5),
     SRI_BREAKER_COOLDOWN_SECONDS: int(1, 3_600).default(60),
+    // RIDE (add-document-archive, design D6): pool propio con su cola y su plazo, intentos de su
+    // job y barrido de los autorizados sin RIDE. Configuración operativa, no normativa. La cola
+    // empieza en 1: la primitiva del pool rechaza toda tarea con una cola de tamaño 0.
+    RIDE_WORKERS: int(1, 8).default(2),
+    RIDE_QUEUE: int(1, 64).default(4),
+    RIDE_TASK_TIMEOUT_MS: int(5_000, 120_000).default(30_000),
+    RIDE_JOB_MAX_ATTEMPTS: int(1, 50).default(5),
+    RIDE_SWEEP_INTERVAL_SECONDS: int(10, 86_400).default(300),
     // Endpoints opcionales; sin valor rigen los del módulo central de sri-engine (design D10).
     SRI_ENDPOINT_TEST_RECEPTION: endpoint,
     SRI_ENDPOINT_TEST_AUTHORIZATION: endpoint,
