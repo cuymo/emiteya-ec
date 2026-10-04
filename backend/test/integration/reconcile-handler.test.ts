@@ -38,7 +38,15 @@ import {
   response,
   validityResponse,
 } from "../support/sri-responses.ts";
+import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
+import {
+  createInventoryUnitOfWork,
+  createStockRepository,
+  inventoryOutflowFollower,
+} from "../../src/modules/inventory/infrastructure/index.ts";
+import { invoiceStockLines } from "../../src/modules/invoices/infrastructure/index.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
+import { balanceOf, insertProduct } from "./inventory-harness.ts";
 import { insertFiscalCompany, type FiscalCompany } from "./fiscal-harness.ts";
 import {
   insertDocument,
@@ -243,6 +251,74 @@ describe("reconciliación por clave", () => {
           .map((row) => [row.status, row.origin]),
       ).toEqual([["PENDING", "AUTOMATIC"]]);
     }
+  });
+
+  // add-minimal-inventory (design D5): la reconciliación automática y la manual que concluyen en
+  // autorizado registran la salida de inventario en la misma transacción, como la autorización.
+  it("la reconciliación automática y la manual que autorizan registran la salida de inventario", async () => {
+    await loadInstalledFiscalCatalogs(prisma);
+    const other = await insertFiscalCompany(prisma, "Empresa inventario", 1);
+    const product = await insertProduct(prisma, other);
+    await createInventoryUnitOfWork(prisma).run(({ stock }) =>
+      stock.initialize({
+        companyId: other.companyId,
+        productId: product,
+        quantity: "10",
+        note: null,
+        actorUserId: other.adminId,
+        at: new Date(),
+      }),
+    );
+    const withInventory = () =>
+      createReconcileHandler({
+        ...base(),
+        followers: [
+          inventoryOutflowFollower({ invoices: invoiceStockLines, stock: createStockRepository }),
+        ],
+        inquiry: gateway,
+        random: () => 0.5,
+      }).handler;
+    const reconcileJob = (document: TestDocument, overrides: Partial<NewJob> = {}) =>
+      leasedJob(store, prisma, {
+        companyId: other.companyId,
+        type: "sri.reconcile",
+        dedupeKey: `sri.reconcile:${document.id}`,
+        documentId: document.id,
+        runAt: new Date(),
+        maxAttempts: 1_000,
+        deadlineAt: new Date(Date.now() + 24 * 3_600_000),
+        ...overrides,
+      });
+    const snapshot = (quantity: string) => ({
+      snapshotVersion: 2,
+      lines: [{ productId: product, quantity, inventoryAffectsStock: true }],
+    });
+    const automatic = await insertDocument(prisma, other, "SEND_UNKNOWN", {
+      snapshot: snapshot("2"),
+    });
+    replies.push(authorizedReply(automatic));
+    await withInventory().run(await reconcileJob(automatic), context());
+    const manual = await insertDocument(prisma, other, "MANUAL_REVIEW", {
+      snapshot: snapshot("3"),
+    });
+    replies.push(authorizedReply(manual));
+    await withInventory().run(
+      await reconcileJob(manual, { origin: "MANUAL", requestedBy: other.adminId, reason: "x" }),
+      context(),
+    );
+    for (const [document, delta] of [
+      [automatic, "-2"],
+      [manual, "-3"],
+    ] as const) {
+      expect(await stateOf(document.id)).toBe("AUTHORIZED");
+      expect(
+        (await prisma.stockMovement.findMany({ where: { documentId: document.id } })).map((row) => [
+          row.movementType,
+          row.delta.toFixed(),
+        ]),
+      ).toEqual([["SALIDA_FACTURA", delta]]);
+    }
+    expect(await balanceOf(prisma, other.companyId, product)).toBe("5");
   });
 
   describe("caso A: timeout al enviar", () => {

@@ -16,6 +16,9 @@ const TABLES: Record<string, RegExp> = {
   parties: /\.party\.|\b(?:from|join|into|update)\s+"?party"?\b|"party"/i,
   products:
     /\.(?:product|productTax)\.|\b(?:from|join|into|update)\s+"?(?:product|product_tax)"?\b|"product(?:_tax)?"/i,
+  // add-minimal-inventory, design D1: el saldo y el kárdex son del inventario.
+  inventory:
+    /\.(?:stockBalance|stockMovement)\.|\b(?:from|join|into|update)\s+"?stock_(?:balance|movement)"?\b|"stock_(?:balance|movement)"/i,
 };
 
 /** Importaciones prohibidas por módulo de origen. */
@@ -75,6 +78,12 @@ describe("fronteras de parties y products", () => {
           content: 'import { c } from "../../parties/domain/c.ts";',
         },
         { path: "modules/products/application/z.ts", content: "await db.product.count()" },
+        { path: "modules/invoices/application/x.ts", content: "await db.stockBalance.findMany()" },
+        { path: "modules/inventory/application/x.ts", content: "await db.product.findMany()" },
+        {
+          path: "modules/inventory/infrastructure/x.ts",
+          content: "await db.stockMovement.create()",
+        },
         { path: "generated/prisma/x.ts", content: "db.party.findMany()" },
       ]),
     ).toEqual([
@@ -83,6 +92,8 @@ describe("fronteras de parties y products", () => {
       "modules/catalogs/application/y.ts: importación prohibida",
       "modules/parties/application/x.ts: importación prohibida",
       "modules/products/application/x.ts: importación prohibida",
+      "modules/invoices/application/x.ts: tablas de inventory",
+      "modules/inventory/application/x.ts: tablas de products",
     ]);
   });
 });

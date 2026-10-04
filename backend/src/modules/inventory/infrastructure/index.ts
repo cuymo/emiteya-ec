@@ -5,6 +5,10 @@ import type { DbClient } from "../../../platform/db/database.ts";
 import { createStockRepository } from "./prisma-stock.ts";
 
 export { createStockRepository } from "./prisma-stock.ts";
+export {
+  inventoryOutflowFollower,
+  type InvoiceStockLinesReader,
+} from "../application/invoice-outflow.ts";
 export { createInventoryUnitOfWork, lockStockTrackingIn } from "./unit-of-work.ts";
 export { reconcileStock, type StockDifference } from "./reconciliation.ts";
 

@@ -59,7 +59,7 @@
 
 ## 5. Salida de la factura al autorizar
 
-- [ ] 5.1 Implementar el seguidor `inventory/application/invoice-outflow.ts` con los pasos de design D5 y componerlo en `main.ts` junto al del RIDE. Añadir `inventory-dependency-direction.test.ts` y ampliar `module-boundaries.test.ts` (design D1). Verificar con pruebas de integración y de arquitectura:
+- [x] 5.1 Implementar el seguidor `inventory/application/invoice-outflow.ts` con los pasos de design D5 y componerlo en `main.ts` junto al del RIDE. Añadir `inventory-dependency-direction.test.ts` y ampliar `module-boundaries.test.ts` (design D1). Verificar con pruebas de integración y de arquitectura:
   - autorización directa, reconciliación automática y manual: una salida por producto con la suma exacta, que referencia la factura y su número, y el saldo actualizado en la misma transacción;
   - el mismo producto en varias líneas da una sola salida;
   - la suma cero, el servicio, el producto sin inicializar al emitir y el snapshot versión 1 no generan movimientos;
@@ -70,8 +70,8 @@
   - un fallo provocado después de insertar la salida de un producto y antes del commit no deja ningún movimiento ni ningún saldo cambiado;
   - el seguidor nunca lee el producto: cambiar la marca del producto después de emitir no altera la salida;
   - la prueba de arquitectura pasa sobre el código y detecta cada violación en archivos de ejemplo
-- [ ] 5.2 Cubrir la recuperación de design D6 con una prueba de integración: el SRI simulado responde `AUTORIZADO`, la respuesta queda guardada, el seguidor de inventario falla una vez y la factura sigue `RECEIVED`. Al reintentar el job, el intento se clasifica desde la respuesta guardada sin otra llamada al SRI simulado, la factura queda `AUTHORIZED` y existe una sola salida por producto. Verificar que la prueba pasa y cuenta cero llamadas nuevas al SRI
-- [ ] 5.3 Probar con PostgreSQL real la concurrencia de las autorizaciones (design D5):
+- [x] 5.2 Cubrir la recuperación de design D6 con una prueba de integración: el SRI simulado responde `AUTORIZADO`, la respuesta queda guardada, el seguidor de inventario falla una vez y la factura sigue `RECEIVED`. Al reintentar el job, el intento se clasifica desde la respuesta guardada sin otra llamada al SRI simulado, la factura queda `AUTHORIZED` y existe una sola salida por producto. Verificar que la prueba pasa y cuenta cero llamadas nuevas al SRI
+- [x] 5.3 Probar con PostgreSQL real la concurrencia de las autorizaciones (design D5):
   - dos autorizaciones simultáneas del mismo producto, con el saldo final exacto cruzando cero;
   - varias facturas concurrentes con productos en orden inverso, sin deadlocks y todas autorizadas;
   - la repetición de la misma autorización.

@@ -37,8 +37,12 @@ import {
   partiesModule,
 } from "./modules/parties/infrastructure/index.ts";
 import { productsModule } from "./modules/products/infrastructure/index.ts";
-import { inventoryStockReads } from "./modules/inventory/infrastructure/index.ts";
-import { invoicesModule } from "./modules/invoices/infrastructure/index.ts";
+import {
+  createStockRepository,
+  inventoryOutflowFollower,
+  inventoryStockReads,
+} from "./modules/inventory/infrastructure/index.ts";
+import { invoiceStockLines, invoicesModule } from "./modules/invoices/infrastructure/index.ts";
 import {
   createConfigurationLogoReader,
   taxpayerRouters,
@@ -361,9 +365,13 @@ const stepDependencies = {
   uow: createTransmissionUnitOfWork(database.prisma),
   jobs: jobStore,
   logger,
-  // Seguidores de las transiciones (add-document-archive, design D5): al autorizar, el job del
-  // RIDE nace en la misma transacción. La transmisión no conoce el archivo documental.
-  followers: [rideFollower({ jobs: jobStore, settings: rideSettings.job })],
+  // Seguidores de las transiciones (add-document-archive, design D5; add-minimal-inventory, design
+  // D5): al autorizar, el job del RIDE y la salida de inventario nacen en la misma transacción. La
+  // transmisión no conoce el archivo documental ni el inventario.
+  followers: [
+    rideFollower({ jobs: jobStore, settings: rideSettings.job }),
+    inventoryOutflowFollower({ invoices: invoiceStockLines, stock: createStockRepository }),
+  ],
   observer: registerTransmissionMetrics(metrics.registry, {
     prisma: database.prisma,
     breakerState: (environment, service) => sriBreaker.state(environment, service),

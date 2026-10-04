@@ -31,6 +31,8 @@ export async function insertDocument(
     issueDate?: string;
     buyer?: { identification: string; name: string };
     point?: number;
+    /** Para el inventario: campos del snapshot, por ejemplo la versión 2 con sus líneas. */
+    snapshot?: Record<string, unknown>;
   } = {},
 ) {
   const reservation = await createSequentialReservation(createFiscalUnitOfWork(prisma)).reserve(
@@ -54,7 +56,7 @@ export async function insertDocument(
         numericCode: "12345678",
         issueDate: new Date(options.issueDate ?? "2026-10-04"),
         state,
-        snapshot: { snapshotVersion: 1, key: { accessKey } },
+        snapshot: { snapshotVersion: 1, key: { accessKey }, ...options.snapshot },
         schemaVersion: "1.1.0",
         buyerIdentification: options.buyer?.identification ?? "9999999999999",
         buyerName: options.buyer?.name ?? "CONSUMIDOR FINAL",
