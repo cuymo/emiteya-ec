@@ -23,9 +23,16 @@ const betterAuthImports = {
 // node-forge solo desde el lector de PKCS#12 (ADR 0019); el resto usa sus puertos.
 const SRI_ENGINE_MODULE = "**/modules/sri-engine/infrastructure/**";
 const sriEngineImports = {
-  regex: "^(?:facturacion-electronica-ec|ec-sri-invoice-signer|xmllint-wasm)(?:/.*)?$",
+  regex:
+    "^(?:facturacion-electronica-ec|ec-sri-invoice-signer|xmllint-wasm|fast-xml-parser)(?:/.*)?$",
   message:
-    "facturacion-electronica-ec, ec-sri-invoice-signer y xmllint-wasm solo se usan dentro de modules/sri-engine/infrastructure/ (ADR 0018 y 0021).",
+    "facturacion-electronica-ec, ec-sri-invoice-signer, xmllint-wasm y el parser XML solo se usan dentro de modules/sri-engine/infrastructure/ (ADR 0018 y 0021; design D10 y D11 de add-sri-transmission).",
+};
+// El transporte con el SRI usa el `fetch` nativo solo en su adaptador (enmienda del ADR 0018).
+const fetchRestriction = {
+  name: "fetch",
+  message:
+    "fetch solo se usa en el transporte SOAP de modules/sri-engine/infrastructure/ (design D10 de add-sri-transmission).",
 };
 // El generador de P12 sintéticos de las pruebas también usa node-forge: no es código de producto.
 const PKCS12_READER_MODULE = [
@@ -92,6 +99,18 @@ export function nodeConfig({ tsconfigRootDir, typedFiles = ["src/**/*.ts", "test
         "no-restricted-imports": [
           "error",
           { patterns: [betterAuthImports, sriEngineImports, forgeImports] },
+        ],
+      },
+    },
+    {
+      // El código del producto y los fixtures de módulos de las pruebas de reglas.
+      files: ["src/**/*.ts", "**/modules/**/*.ts"],
+      ignores: [SRI_ENGINE_MODULE],
+      rules: {
+        "no-restricted-globals": ["error", fetchRestriction],
+        "no-restricted-properties": [
+          "error",
+          { object: "globalThis", property: "fetch", message: fetchRestriction.message },
         ],
       },
     },

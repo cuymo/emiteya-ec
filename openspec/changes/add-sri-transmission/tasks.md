@@ -79,8 +79,8 @@
 
 ## 5. Transporte SOAP propio (`SriTransport`)
 
-- [ ] 5.1 Definir los puertos `SriTransport` (servicios `RECEPTION`, `AUTHORIZATION` y `VALIDITY`; resultados `NOT_SENT`, `REQUEST_TIMEOUT`, `BODY_TIMEOUT`, `CONNECTION_LOST` y `RESPONSE`) y `SriInquiryPort` (`queryAuthorization`, `queryValidity`), y el módulo central de endpoints por ambiente y servicio con los valores de CTX §7.1–§7.4, sobrescribibles por variable de entorno (design D10). Verificar con pruebas unitarias de la resolución de endpoints y de que ninguna URL aparece fuera de ese módulo
-- [ ] 5.2 Implementar el adaptador sobre el `fetch` nativo, solo en la infraestructura de `sri-engine`:
+- [x] 5.1 Definir los puertos `SriTransport` (servicios `RECEPTION`, `AUTHORIZATION` y `VALIDITY`; resultados `NOT_SENT`, `REQUEST_TIMEOUT`, `BODY_TIMEOUT`, `CONNECTION_LOST` y `RESPONSE`) y `SriInquiryPort` (`queryAuthorization`, `queryValidity`), y el módulo central de endpoints por ambiente y servicio con los valores de CTX §7.1–§7.4, sobrescribibles por variable de entorno (design D10). Verificar con pruebas unitarias de la resolución de endpoints y de que ninguna URL aparece fuera de ese módulo
+- [x] 5.2 Implementar el adaptador sobre el `fetch` nativo, solo en la infraestructura de `sri-engine`:
   - plazo hasta las cabeceras y plazo de lectura del cuerpo, separados;
   - frontera conservadora de design D10: solo las causas anteriores a la conexión (DNS, conexión rechazada, plazo de conexión interno y fallo TLS) son `NOT_SENT`; un plazo propio, un abort, un socket cortado o una causa desconocida son inciertos;
   - cabeceras seguras;
@@ -92,7 +92,7 @@
   - inciertos: servidor que no responde, socket cortado tras leer la solicitud, abort durante la subida y cabeceras sin cuerpo;
   - pruebas unitarias del mapeo de `UND_ERR_CONNECT_TIMEOUT` y de una causa desconocida;
   - HTML con 200, Fault con 500, cuerpo vacío, respuesta gigante y respuesta válida con su cuerpo exacto
-- [ ] 5.3 Implementar los sobres `validarComprobante` (con el base64 del `Buffer` exacto), `autorizacionComprobante` y `consultarEstadoAutorizacionComprobante`, con los espacios de nombres y elementos de los WSDL oficiales y de la ficha v2.34, §7.2.3 y §8.2.3 (design D10; Q-48 resuelta el 2026-10-04), y el circuit breaker por servicio y ambiente (design D6 y D10). Guardar los WSDL oficiales con su SHA-256 en `docs/product/sri-wsdl/`.
+- [x] 5.3 Implementar los sobres `validarComprobante` (con el base64 del `Buffer` exacto), `autorizacionComprobante` y `consultarEstadoAutorizacionComprobante`, con los espacios de nombres y elementos de los WSDL oficiales y de la ficha v2.34, §7.2.3 y §8.2.3 (design D10; Q-48 resuelta el 2026-10-04), y el circuit breaker por servicio y ambiente (design D6 y D10). Guardar los WSDL oficiales con su SHA-256 en `docs/product/sri-wsdl/`.
 
   Verificar con pruebas byte a byte de los sobres, pruebas del adaptador de validez sobre el contrato oficial y pruebas del breaker: se abre tras N fallos, se entreabre tras la pausa y no consume intentos
 

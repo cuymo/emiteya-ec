@@ -13,6 +13,15 @@ async function restrictedImports(file: string, base = fixtures): Promise<number>
   return result?.messages.filter((m) => m.ruleId === "no-restricted-imports").length ?? 0;
 }
 
+async function restrictedFetch(file: string, base = fixtures): Promise<number> {
+  const [result] = await eslint.lintFiles([`${base}/${file}`]);
+  return (
+    result?.messages.filter(
+      (m) => m.ruleId === "no-restricted-globals" || m.ruleId === "no-restricted-properties",
+    ).length ?? 0
+  );
+}
+
 describe("reglas de capas", () => {
   it("domain no importa express", async () => {
     expect(await restrictedImports("domain/imports-express.ts")).toBe(1);
@@ -95,5 +104,21 @@ describe("frontera del motor SRI y de node-forge (ADR 0018 y 0019)", () => {
         "test/fixtures/lint/modules/signing/infrastructure/pkcs12",
       ),
     ).toBe(0);
+  });
+});
+
+describe("transporte SOAP propio (add-sri-transmission, design D10 y D11)", () => {
+  it("fuera de sri-engine no se llama a fetch, ni como global ni por globalThis", async () => {
+    expect(await restrictedFetch("infrastructure/uses-fetch.ts")).toBe(2);
+  });
+
+  it("application no importa el parser XML", async () => {
+    expect(await restrictedImports("application/imports-xml-parser.ts")).toBe(1);
+  });
+
+  it("el adaptador de sri-engine sí usa fetch y el parser XML", async () => {
+    const base = "test/fixtures/lint/modules/sri-engine/infrastructure";
+    expect(await restrictedFetch("allowed-transport.ts", base)).toBe(0);
+    expect(await restrictedImports("allowed-transport.ts", base)).toBe(0);
   });
 });

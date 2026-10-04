@@ -43,6 +43,8 @@ import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import { createTransmissionGate } from "./modules/fiscal/infrastructure/transmission-gate.ts";
 import {
   createXmllintXsdValidator,
+  endpointsValid,
+  resolveSriEndpoints,
   verifySchemaBundle,
 } from "./modules/sri-engine/infrastructure/index.ts";
 import {
@@ -251,11 +253,12 @@ apiRouter.use(
 
 // Transmisión al SRI (add-sri-transmission, design D5): nace deshabilitada. El estado se registra
 // sin secretos ni URLs; habilitada, la readiness exige sus precondiciones.
+const sriEndpoints = resolveSriEndpoints(env);
 const transmissionGate = createTransmissionGate(
   {
     enabled: env.SRI_TRANSMISSION_ENABLED,
     workers: env.SRI_JOB_WORKERS,
-    endpointsValid: () => true,
+    endpointsValid: () => endpointsValid(sriEndpoints, env.NODE_ENV === "production"),
     // La política de tamaño se resuelve con la fecha del envío; aquí, con la de hoy (design D17).
     sizePolicyAvailable: async () =>
       (await catalogQueries.sriTransmissionSizePolicy(ecuadorDate(new Date()))) !== null,
