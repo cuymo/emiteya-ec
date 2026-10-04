@@ -497,6 +497,7 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 - La empresa sale de la sesión; un comprobante de otra empresa es `404 DOCUMENT_NOT_FOUND`. El detalle de la factura y su historial de transmisión siguen en `/invoices`.
 - **Antes de servir:** permiso, empresa y comprobante, disponibilidad (`404 DOCUMENT_NOT_AVAILABLE`) y el SHA-256 y el tamaño recalculados; si no coinciden, `500 ARTIFACT_INTEGRITY_FAILED`, sin ningún byte ni entrega.
 - **Cabeceras:** `Content-Type`, `Content-Length`, `Content-Disposition: attachment` con `{tipo}-{número}.pdf` o `-autorizado.xml` y `-firmado.xml` (sin texto del cliente), `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` y el SHA-256 como `ETag`.
+- **`HEAD`:** las rutas de descarga responden `405` con `Allow: GET`; un `HEAD` no envía el documento y nunca registra una descarga.
 - **Impresión:** una acción explícita; ningún `GET` registra una solicitud de impresión. La interfaz pide después el mismo RIDE, que registra su `DOWNLOAD`.
 - **Entregas:** `document_delivery_event`, de solo agregado y sin auditoría duplicada. `DocumentNotificationPort` (`fiscal/application/ports.ts`) es el punto de extensión del correo en P1, sin implementación.
 

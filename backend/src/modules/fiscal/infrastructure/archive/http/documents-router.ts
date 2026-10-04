@@ -104,9 +104,15 @@ export function documentsRouter(deps: { archive: Archive; downloads: Downloads }
     send(res, 200, toDocumentSummaryView(document));
   });
 
-  // Descargas: los bytes guardados, verificados, con la descarga registrada (design D8).
+  // Descargas: los bytes guardados, verificados, con la descarga registrada (design D8). Express
+  // atiende HEAD con la ruta GET; un HEAD no envía el documento, así que se rechaza antes de
+  // registrar una descarga que no se sirvió.
   for (const [path, kind] of DOWNLOADS) {
     router.get(`/documents/:documentId/${path}`, async (req, res) => {
+      if (req.method === "HEAD") {
+        res.status(405).set("Allow", "GET").end();
+        return;
+      }
       serve(res, await downloads.download(contextOf(res), param(req.params.documentId), kind));
     });
   }

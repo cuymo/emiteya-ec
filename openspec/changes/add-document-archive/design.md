@@ -248,6 +248,7 @@ comprobante AUTHORIZED
   4. Determinado que se responde con el artefacto, se registra `DOWNLOAD` (D9).
   5. Se sirven los bytes.
 - **`DOWNLOAD`** significa que la aplicación inició una respuesta autorizada de descarga con el artefacto. No significa que el cliente terminó de recibir o guardar el archivo.
+- **`HEAD`.** Express atiende `HEAD` con la ruta `GET`, pero un `HEAD` no envía el documento: las tres rutas responden `405` con `Allow: GET`, sin verificar ni registrar nada.
 - **Cabeceras:**
   - `Content-Type` (`application/pdf` o `application/xml`) y `Content-Length`;
   - `Content-Disposition: attachment` con el nombre de archivo;

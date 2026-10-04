@@ -185,6 +185,18 @@ describe("descargas, impresión y entregas sobre HTTP", () => {
     });
   });
 
+  it("un HEAD no sirve el documento ni registra una entrega", async () => {
+    const document = await authorizedWithRide();
+    for (const path of ["ride", "authorized-xml", "signed-xml"]) {
+      const res = await request(api.app)
+        .head(`/api/v1/documents/${document.id}/${path}`)
+        .set("Cookie", a.cookies.operator);
+      expect(res.status).toBe(405);
+      expect(res.headers.allow).toBe("GET");
+    }
+    expect(await deliveriesOf(document.id)).toEqual([]);
+  });
+
   describe("sesión, empresa y auditoría", () => {
     it("sin sesión, o con un comprobante de otra empresa, no hay datos ni entrega", async () => {
       const foreign = await authorizedWithRide(b);
