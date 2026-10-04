@@ -418,6 +418,32 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea el historial de entregas y los índices del archivo documental", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "document_artifact_values_check",
+        "document_delivery_event_values_check",
+        "document_delivery_event_company_id_document_id_fkey",
+        "document_delivery_event_document_id_artifact_kind_fkey",
+        "document_delivery_event_actor_user_id_fkey",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "document_delivery_event_pkey",
+        "document_delivery_event_company_id_document_id_occurred_at_idx",
+        "electronic_document_company_id_issue_date_id_idx",
+        "electronic_document_company_id_buyer_identification_idx",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "document_delivery_event_append_only",
+        "document_delivery_event_no_truncate",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     // El único objeto sobre la empresa exige su consumidor final al confirmarla (trigger de
     // restricción de add-parties-and-products, design D5); no limita cuántas empresas hay.

@@ -2,7 +2,7 @@
 
 ## 1. Esquema del archivo documental
 
-- [ ] 1.1 Crear la migración aditiva de design D4, D9 y del Migration Plan:
+- [x] 1.1 Crear la migración aditiva de design D4, D9 y del Migration Plan:
   - CHECK de `document_artifact`: `SIGNED_XML` y `AUTHORIZED_XML` con `application/xml`, y `RIDE_PDF` con `application/pdf`;
   - tabla `document_delivery_event` con FK compuesta `(company_id, document_id)`, `event` (`DOWNLOAD`, `PRINT_REQUESTED`), `artifact_kind`, `artifact_sha256`, `actor_user_id` con `RESTRICT`, `request_id` y `occurred_at`, triggers contra `UPDATE`, `DELETE` y `TRUNCATE`, e índice `(company_id, document_id, occurred_at)`;
   - índices de la bandeja `(company_id, issue_date, id)` y `(company_id, buyer_identification)`.
@@ -13,7 +13,7 @@
   - una entrega no se puede cambiar, borrar ni truncar; una entrega con un comprobante de otra empresa o un evento fuera de la lista se rechaza;
   - un usuario con entregas no se puede borrar;
   - los artefactos `SIGNED_XML` y `AUTHORIZED_XML` existentes siguen válidos tras la migración
-- [ ] 1.2 Añadir la tabla a `migrations.test.ts` y documentar el CHECK, la tabla, sus triggers y los índices en `database.md`, reemplazando la tabla planificada de entregas. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
+- [x] 1.2 Añadir la tabla a `migrations.test.ts` y documentar el CHECK, la tabla, sus triggers y los índices en `database.md`, reemplazando la tabla planificada de entregas. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
 
 ## 2. Pool de workers genérico y configuración del RIDE
 

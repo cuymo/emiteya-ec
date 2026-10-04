@@ -49,6 +49,7 @@ model User {
   idempotencyRecords          IdempotencyRecord[]           @relation("IdempotencyCreator")
   jobsRequested               Job[]                         @relation("JobRequester")
   sriAttemptsInitiated        SriAttempt[]                  @relation("SriAttemptInitiator")
+  documentDeliveries          DocumentDeliveryEvent[]       @relation("DocumentDeliveryActor")
 
   @@unique([email])
   @@map("user")
@@ -789,11 +790,15 @@ model ElectronicDocument {
   transitions              DocumentStateTransition[]
   artifacts                DocumentArtifact[]
   idempotency              IdempotencyRecord[]
+  deliveries               DocumentDeliveryEvent[]
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@unique([companyId, id])
   @@index([companyId, documentType, createdAt, id])
   @@index([companyId, documentNumber])
+  // Bandeja (add-document-archive, design D2): orden por fecha de emisión y filtro por receptor.
+  @@index([companyId, issueDate, id])
+  @@index([companyId, buyerIdentification])
   @@map("electronic_document")
 }
 
@@ -820,21 +825,45 @@ model DocumentStateTransition {
 // Artefacto fiscal de un comprobante (ADR 0010): bytes exactos, inmutables, con su hash. Solo de
 // agregado; un comprobante tiene a lo sumo un artefacto de cada tipo.
 model DocumentArtifact {
-  id         String             @id @default(uuid())
-  companyId  String             @map("company_id")
-  documentId String             @map("document_id")
-  document   ElectronicDocument @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
-  /// SIGNED_XML en este cambio (CHECK en la migración).
+  id         String                  @id @default(uuid())
+  companyId  String                  @map("company_id")
+  documentId String                  @map("document_id")
+  document   ElectronicDocument      @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  /// SIGNED_XML y AUTHORIZED_XML con application/xml, RIDE_PDF con application/pdf (CHECK en la
+  /// migración).
   kind       String
-  mediaType  String             @map("media_type")
+  mediaType  String                  @map("media_type")
   content    Bytes
-  sizeBytes  Int                @map("size_bytes")
-  sha256     String             @db.Char(64)
+  sizeBytes  Int                     @map("size_bytes")
+  sha256     String                  @db.Char(64)
   metadata   Json
-  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdAt  DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  deliveries DocumentDeliveryEvent[]
 
   @@unique([documentId, kind])
   @@map("document_artifact")
+}
+
+// Entrega observable de un documento (add-document-archive, design D9; Q-24): una descarga que la
+// aplicación sirvió o una solicitud de impresión del RIDE. Solo de agregado; nunca guarda bytes ni
+// afirma que el documento se imprimió o llegó a su receptor.
+model DocumentDeliveryEvent {
+  id             String             @id @default(uuid())
+  companyId      String             @map("company_id")
+  documentId     String             @map("document_id")
+  document       ElectronicDocument @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  /// DOWNLOAD o PRINT_REQUESTED (CHECK en la migración).
+  event          String
+  artifactKind   String             @map("artifact_kind")
+  artifact       DocumentArtifact   @relation(fields: [documentId, artifactKind], references: [documentId, kind], onDelete: Restrict)
+  artifactSha256 String             @map("artifact_sha256") @db.Char(64)
+  actorUserId    String             @map("actor_user_id")
+  actor          User               @relation("DocumentDeliveryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  requestId      String             @map("request_id")
+  occurredAt     DateTime           @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  @@index([companyId, documentId, occurredAt])
+  @@map("document_delivery_event")
 }
 
 // Registro de idempotencia de la emisión (Q-30, design D8): empresa, operación y clave, con la huella
