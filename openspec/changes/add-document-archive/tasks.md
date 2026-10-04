@@ -68,7 +68,7 @@
 - [x] 5.1 Programar el RIDE al autorizar sin invertir la dependencia (design D1 y D5):
   - el puerto genérico `DocumentTransitionFollower` en `fiscal/application/document-transitions.ts`;
   - `applyDecision` recibe los seguidores como dependencia obligatoria y llama a cada uno, con el cliente de la TX B, después de guardar cada transición y su artefacto;
-  - el seguidor `fiscal/application/archive/ride-follower.ts` encola `document.render_ride` con la clave `document.render_ride:{documentId}` cuando la transición llega a `AUTHORIZED`;
+  - el seguidor `rideFollower` de `fiscal/application/archive/ride-jobs.ts` encola `document.render_ride` con la clave `document.render_ride:{documentId}` cuando la transición llega a `AUTHORIZED`;
   - `main.ts` los compone al arrancar;
   - la prueba de arquitectura: ningún archivo de `src/` fuera de `archive/` y de `main.ts` importa de `archive/`, y ningún archivo de la transmisión contiene `document.render_ride`.
 

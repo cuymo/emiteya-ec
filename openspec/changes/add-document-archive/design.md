@@ -138,7 +138,7 @@ comprobante AUTHORIZED
       DocumentTransitionFollower(db, { companyId, documentId, from, to, cause, at })
             ▲                                   ▲
             │ lo invoca                         │ lo implementa
-  transmission-step.ts (applyDecision)    archive/ride-follower.ts
+  transmission-step.ts (applyDecision)    archive/ride-jobs.ts (rideFollower)
             │                                   │ to === "AUTHORIZED" → enqueueIn(db, document.render_ride)
             └──────────── main.ts los compone al arrancar ─────────┘
   ```
@@ -152,7 +152,7 @@ comprobante AUTHORIZED
   - Inserta un job para cada `AUTHORIZED` sin `RIDE_PDF` que no tenga ningún job del tipo activo ni detenido.
   - Usa `INSERT … SELECT … ON CONFLICT DO NOTHING` sobre la clave activa.
   - Es el backfill de los autorizados existentes y la red de seguridad de la garantía transaccional. Nunca reactiva un job `STOPPED`.
-- **Handler** (`fiscal/application/ride-handler.ts`), sobre un job arrendado:
+- **Handler** (`fiscal/application/archive/ride-handler.ts`), sobre un job arrendado:
   1. Lee el comprobante. Si no existe o no está `AUTHORIZED`, el job se detiene con un código determinista.
   2. Si ya tiene `RIDE_PDF`, completa el job sin generar nada.
   3. Elige la fuente (D3), la verifica y lee el logo.
