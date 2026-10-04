@@ -353,6 +353,22 @@ describe("transmisión de facturas sobre HTTP", () => {
         "SEQUENTIAL_REGISTERED",
         "UNKNOWN",
       ]);
+      // Cada intento muestra su operación, su momento, su origen, su resultado y sus mensajes.
+      expect(data.events.find((e) => e.kind === "ATTEMPT")).toEqual({
+        kind: "ATTEMPT",
+        at: "2026-10-04T15:00:00.000Z",
+        operation: "RECEPTION",
+        origin: "AUTOMATIC",
+        outcome: "SEQUENTIAL_REGISTERED",
+        messages: [
+          {
+            identifier: "45",
+            message: "SECUENCIAL REGISTRADO",
+            additionalInformation: "Respuesta sintética",
+            type: "ERROR",
+          },
+        ],
+      });
       expect(data.total).toBe(6);
       const raw = JSON.stringify(res.body);
       expect(raw).not.toContain("respuesta-sintetica");
@@ -415,9 +431,10 @@ describe("transmisión de facturas sobre HTTP", () => {
 
     it("una factura de otra empresa es 404, un motivo vacío es 400 y un estado no admitido es 409", async () => {
       expect((await reconcile(foreign, a.cookies.admin)).status).toBe(404);
+      expect(await reconciliations(foreign)).toEqual([]);
       const empty = await reconcile(review, a.cookies.admin, " ");
       expect(empty.status).toBe(400);
-      for (const invoice of [authorized, reserved]) {
+      for (const invoice of [authorized, reserved, returned]) {
         const res = await reconcile(invoice, a.cookies.admin);
         expect(res.status).toBe(409);
         expect(bodyOf(res).error.code).toBe("INVOICE_NOT_RECONCILABLE");

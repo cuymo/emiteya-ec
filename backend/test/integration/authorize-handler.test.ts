@@ -180,6 +180,13 @@ describe("handler sri.authorize", () => {
     const [authorizedXml, signedXml] = artifacts;
     expect(Buffer.from(authorizedXml!.content).equals(signedXmlOf(document.accessKey))).toBe(true);
     expect(authorizedXml!.sha256).toBe(sha256(Buffer.from(authorizedXml!.content)));
+    expect([authorizedXml!.mediaType, authorizedXml!.sizeBytes]).toEqual([
+      "application/xml",
+      Buffer.from(authorizedXml!.content).length,
+    ]);
+    // El SIGNED_XML no cambia: sigue siendo lo enviado, con su hash.
+    expect(Buffer.from(signedXml!.content).equals(signedXmlOf(document.accessKey))).toBe(true);
+    expect(signedXml!.sha256).toBe(sha256(signedXmlOf(document.accessKey)));
     expect(authorizedXml!.metadata).toMatchObject({
       authorizationNumber: document.accessKey,
       authorizationDate: "2026-10-04T10:15:30-05:00",
@@ -218,7 +225,33 @@ describe("handler sri.authorize", () => {
         messages: [expect.objectContaining({ identifier: "46" })],
       });
       expect(await prisma.job.count({ where: { documentId: document.id } })).toBe(1);
+      expect(await documentOf(document.id)).toMatchObject({
+        documentNumber: document.documentNumber,
+        accessKey: document.accessKey,
+      });
     }
+  });
+
+  it("un AUTORIZADO sin fecha o sin número va a revisión manual", async () => {
+    for (const overrides of [{ fechaAutorizacion: undefined }, { numeroAutorizacion: undefined }]) {
+      const { document, job } = await receivedWithJob();
+      reply(document, [authorized(document, overrides)]);
+      await authorize().run(job, context());
+      expect(await documentOf(document.id)).toMatchObject({
+        state: "MANUAL_REVIEW",
+        authorizationNumber: null,
+      });
+    }
+  });
+
+  it("un fallo de transporte dentro de la ventana reintenta con espera, sin cambiar el estado", async () => {
+    const { document, job } = await receivedWithJob();
+    replies.push(failure("CONNECTION_LOST"));
+    await authorize().run(job, context());
+    expect((await documentOf(document.id)).state).toBe("RECEIVED");
+    const after = await jobOf(job.id);
+    expect(after).toMatchObject({ status: "PENDING", lastErrorCode: "SRI_UNAVAILABLE" });
+    expect(after.nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
   });
 
   it("un estado desconocido no concluye: sigue recibido y vuelve a consultar dentro de la ventana", async () => {
@@ -246,6 +279,15 @@ describe("handler sri.authorize", () => {
     reply(one.document, [{ estado: "RECHAZADO", ambiente: "PRUEBAS" }, authorized(one.document)]);
     await authorize().run(one.job, context());
     expect((await documentOf(one.document.id)).state).toBe("AUTHORIZED");
+    // Todas quedan en la evidencia: la respuesta original y el resultado con las dos.
+    const [evidence] = await prisma.sriAttempt.findMany({
+      where: { documentId: one.document.id },
+      include: { response: true, result: true },
+    });
+    expect(
+      Buffer.from(evidence!.response!.body).toString("utf8").split("<autorizacion>"),
+    ).toHaveLength(3);
+    expect(evidence!.result!.parsed).toMatchObject({ autorizaciones: 2 });
     const two = await receivedWithJob();
     reply(two.document, [authorized(two.document), authorized(two.document)]);
     await authorize().run(two.job, context());

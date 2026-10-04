@@ -52,6 +52,21 @@ describe("rutas documentadas", () => {
     expect(routers.flatMap(served).sort()).toEqual(documented);
   });
 
+  it("ninguna ruta envía al SRI, recibe, autoriza ni expone SOAP (add-sri-transmission, D18)", () => {
+    // Solo hay lecturas (historial y política de tamaño) y la reconciliación del administrador.
+    const sri = apiRoutes
+      .filter((route) =>
+        /send|submit|soap|recep|autoriz|authoriz|transmi|reconcil/i.test(route.path),
+      )
+      .map((route) => `${route.method} ${route.path}`)
+      .sort();
+    expect(sri).toEqual([
+      "get /fiscal-catalogs/sri-transmission-policy",
+      "get /invoices/:invoiceId/transmission",
+      "post /invoices/:invoiceId/reconciliations",
+    ]);
+  });
+
   it("ninguna ruta permite bloquear ni desbloquear la identidad tributaria", () => {
     expect(apiRoutes.filter((route) => /lock|bloque/i.test(route.path))).toEqual([]);
   });

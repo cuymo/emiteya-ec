@@ -4,7 +4,10 @@
 // factura, el barrido y el contador del punto intacto. Las respuestas son SINTÉTICAS con la
 // estructura oficial y la política de tamaño es la SINTÉTICA del arnés.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createTransmitHandler } from "../../src/modules/fiscal/application/transmit-handler.ts";
+import {
+  createTransmitHandler,
+  integrityProblem,
+} from "../../src/modules/fiscal/application/transmit-handler.ts";
 import { DocumentStateChangedError } from "../../src/modules/fiscal/application/transmission-step.ts";
 import { DEFAULT_TRANSMISSION_SETTINGS } from "../../src/modules/fiscal/application/transmission-settings.ts";
 import { createArtifactStore } from "../../src/modules/fiscal/infrastructure/prisma-artifacts.ts";
@@ -182,8 +185,25 @@ describe("handler sri.transmit", () => {
         status: "STOPPED",
         lastErrorDetail: { check: "SHA256" },
       });
+      expect(await stateOf(document.id)).toBe("SIGNED");
       expect(sent).toEqual([]);
       expect(alerts.filter((a) => a.includes("integridad"))).toHaveLength(3);
+    });
+
+    it("un tamaño guardado que no corresponde a los bytes es un fallo de integridad", async () => {
+      // La base de datos impide guardarlo (CHECK de document_artifact): se comprueba la función pura.
+      const { document: row } = await signedWithJob();
+      const document = (await createDocumentRepository(prisma).find(company.companyId, row.id))!;
+      const artifact = await createArtifactStore(prisma).read(
+        company.companyId,
+        row.id,
+        "SIGNED_XML",
+      );
+      expect(integrityProblem(document, artifact)).toBeNull();
+      expect(integrityProblem(document, { ...artifact!, sizeBytes: artifact!.sizeBytes + 1 })).toBe(
+        "SIZE",
+      );
+      expect(integrityProblem(document, null)).toBe("MISSING_ARTIFACT");
     });
 
     it("sobre el límite o sin política vigente, se detiene sin llamar", async () => {
@@ -196,6 +216,17 @@ describe("handler sri.transmit", () => {
         status: "STOPPED",
         lastErrorCode: "TOO_LARGE",
         lastErrorClass: "DETERMINISTIC",
+        lastErrorDetail: {
+          sizeBytes: signedXmlOf(big.document.accessKey).length + SYNTHETIC_POLICY_BYTES,
+          maxBytes: SYNTHETIC_POLICY_BYTES,
+        },
+      });
+      expect(
+        await prisma.electronicDocument.findUniqueOrThrow({ where: { id: big.document.id } }),
+      ).toMatchObject({
+        state: "SIGNED",
+        documentNumber: big.document.documentNumber,
+        accessKey: big.document.accessKey,
       });
       policy = null;
       const missing = await signedWithJob();
@@ -280,6 +311,12 @@ describe("handler sri.transmit", () => {
       });
       expect(result.outcome).toBe("RETURNED");
       expect(result.messages).toHaveLength(2);
+      expect(
+        await prisma.electronicDocument.findUniqueOrThrow({ where: { id: document.id } }),
+      ).toMatchObject({
+        documentNumber: document.documentNumber,
+        accessKey: document.accessKey,
+      });
     });
 
     it("sin estado, timeout, corte, HTML, Fault y vacío pasan a SEND_UNKNOWN con su reconciliación", async () => {
@@ -315,6 +352,23 @@ describe("handler sri.transmit", () => {
         );
         await run(job);
         expect(await stateOf(document.id)).toBe("SEND_UNKNOWN");
+        const result = await prisma.sriAttemptResult.findFirstOrThrow({
+          where: { attempt: { documentId: document.id } },
+        });
+        expect([
+          result.outcome,
+          (result.messages as { identifier: string }[])[0]?.identifier,
+        ]).toEqual([
+          { "70": "KEY_IN_PROCESS", "43": "KEY_REGISTERED", "45": "SEQUENTIAL_REGISTERED" }[
+            identifier
+          ],
+          identifier,
+        ]);
+        // Sin reenvío: el siguiente job es la reconciliación, nunca otro envío.
+        expect((await jobsOf(document.id)).map((row) => row.type)).toEqual([
+          "sri.transmit",
+          "sri.reconcile",
+        ]);
         const [, reconcile] = await jobsOf(document.id);
         expect(reconcile!.type).toBe("sri.reconcile");
         const delay = reconcile!.nextAttemptAt.getTime() - Date.now();
@@ -346,6 +400,8 @@ describe("handler sri.transmit", () => {
       replies.push(failure("NOT_SENT"));
       await run(job);
       expect(await stateOf(document.id)).toBe("SIGNED");
+      // Sin reconciliar: el único job sigue siendo el envío.
+      expect((await jobsOf(document.id)).map((row) => row.type)).toEqual(["sri.transmit"]);
       expect((await jobsOf(document.id))[0]).toMatchObject({
         status: "PENDING",
         lastErrorCode: "SRI_UNAVAILABLE",
