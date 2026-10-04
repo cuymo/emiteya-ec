@@ -205,7 +205,7 @@ Después de recibido, el sistema SHALL consultar la autorización por la misma c
 - **THEN** el comprobante sigue recibido y se programa otra consulta
 
 #### Scenario: No autorizado
-- **WHEN** la consulta responde `NO AUTORIZADO` para la clave y el ambiente del comprobante
+- **WHEN** la consulta responde `NO AUTORIZADO`, o `RECHAZADO` como en el ejemplo "Comprobante No Autorizado" de la ficha v2.34, para la clave y el ambiente del comprobante
 - **THEN** pasa a no autorizado con todos sus mensajes: es terminal, sin reintento ni reenvío, sin otra clave y sin otro número
 
 #### Scenario: Estado desconocido
@@ -268,6 +268,10 @@ La reconciliación SHALL consultar al SRI por la clave con las consultas oficial
 #### Scenario: Consulta de validez que conoce la clave
 - **WHEN** la autorización no encuentra la clave, pero la consulta de validez del SRI informa un estado para ella
 - **THEN** no se reenvía: si informa autorizado o no autorizado, el comprobante pasa a recibido para obtener la autorización; si informa un estado de anulación, pasa a revisión manual
+
+#### Scenario: Consulta de validez sin datos
+- **WHEN** la consulta de validez responde el error 99, porque la clave está fuera del rango de fechas o no hay datos
+- **THEN** esa respuesta no muestra la clave conocida ni autoriza por sí sola un reenvío: deciden la consulta de autorización y la evidencia de recepción
 
 #### Scenario: Clave desconocida con evidencia de recepción
 - **WHEN** el SRI no conoce la clave, pero antes respondió `RECIBIDA`, el error 70 o el error 43

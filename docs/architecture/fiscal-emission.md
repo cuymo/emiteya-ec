@@ -146,7 +146,7 @@ SIGNED ──(envío)──▶ RECEIVED ──▶ AUTHORIZED
 | `SEND_UNKNOWN` | No se sabe si el SRI recibió el XML, o la respuesta exige reconciliar (43, 45, 70). | Nunca |
 | `RETURNED` | Recepción `DEVUELTA` concluyente. Conserva el comprobante, su número, su clave y sus artefactos; no libera el secuencial. | Sin salida en el cambio 7: su corrección es una capacidad futura (BR-28) |
 | `AUTHORIZED` | `AUTORIZADO`, con número, fecha, ambiente y respuesta original guardados. | Sí |
-| `NOT_AUTHORIZED` | `NO AUTORIZADO` concluyente (Q-07). | Sí |
+| `NOT_AUTHORIZED` | `NO AUTORIZADO` concluyente, o `RECHAZADO` como en el ejemplo "Comprobante No Autorizado" de la ficha v2.34, §7.2.3 (Q-07). | Sí |
 
 Reglas:
 
@@ -176,7 +176,7 @@ Decididas el 2026-10-03 en la revisión de readiness del cambio 7; el design del
   - **Orden obligatorio:** bytes de la respuesta → persistir la respuesta original → clasificar → transición. Nunca se clasifica antes de conservar la evidencia.
   - El SOAP original nunca va a los logs ni a la auditoría.
   - No se reutiliza `document_artifact`, cuyo `UNIQUE(document_id, kind)` impide guardar varias respuestas.
-- **`NO AUTORIZADO` (Q-07).** Es terminal: se persiste la respuesta original, se clasifica, se guardan los mensajes estructurados y el comprobante pasa a `NOT_AUTHORIZED`. Nunca hay reintento automático ni reenvío, ni otra clave, ni otro número, ni reutilización del secuencial.
+- **`NO AUTORIZADO` (Q-07).** Incluye el texto `RECHAZADO` del ejemplo oficial de la ficha v2.34 (§7.2.3), cuya tabla 6 solo define PPR, AUT y NAT. Es terminal: se persiste la respuesta original, se clasifica, se guardan los mensajes estructurados y el comprobante pasa a `NOT_AUTHORIZED`. Nunca hay reintento automático ni reenvío, ni otra clave, ni otro número, ni reutilización del secuencial.
 - **`DEVUELTA`.** El comprobante pasa a `RETURNED` con su respuesta y sus mensajes, sin reutilizar el número. Un reintento nunca cambia el contenido. La corrección (BR-28) es la capacidad futura `correct-returned-document`.
   - Retransmitir los mismos bytes por un resultado incierto y corregir el contenido después de un `DEVUELTA` son casos distintos.
 - **Error 70.** Se conservan el comprobante, la clave, el secuencial y el `SIGNED_XML`; nunca se genera otro comprobante.
@@ -518,7 +518,7 @@ La implementa `add-sri-transmission` (cambio 7). Toda respuesta se persiste ante
 | Error 45: secuencial registrado | Reconciliar por la clave, sin reutilizar el secuencial. Escalar si está registrado con otra clave (Q-06). | `SEND_UNKNOWN` |
 | Timeout después de transmitir, conexión cortada, DNS o interrupción, HTTP 200 con HTML, SOAP Fault ambiguo, cuerpo vacío o malformado | No es un rechazo: reconciliar por la misma clave. | `SEND_UNKNOWN` |
 | Autorización `AUTORIZADO` | Guardar la respuesta original, el número, la fecha, el ambiente confirmado y el XML autorizado exacto con su hash. | `AUTHORIZED` |
-| Autorización `NO AUTORIZADO` | Persistir la respuesta y los mensajes estructurados, sin reintento ni reenvío (Q-07). | `NOT_AUTHORIZED` |
+| Autorización `NO AUTORIZADO` o `RECHAZADO` | Persistir la respuesta y los mensajes estructurados, sin reintento ni reenvío (Q-07). | `NOT_AUTHORIZED` |
 | Autorización en procesamiento | Reprogramar con backoff y jitter dentro de la ventana (Q-06). | `RECEIVED` |
 | Autorización sin el bloque esperado | No equivale a `NO AUTORIZADO`. Reconciliar; la intervención la define el design (Q-06). | Sin conclusión |
 

@@ -92,11 +92,9 @@
   - inciertos: servidor que no responde, socket cortado tras leer la solicitud, abort durante la subida y cabeceras sin cuerpo;
   - pruebas unitarias del mapeo de `UND_ERR_CONNECT_TIMEOUT` y de una causa desconocida;
   - HTML con 200, Fault con 500, cuerpo vacío, respuesta gigante y respuesta válida con su cuerpo exacto
-- [ ] 5.3 Implementar los sobres `validarComprobante` (con el base64 del `Buffer` exacto) y `autorizacionComprobante`, con los espacios de nombres de design D10, y el circuit breaker por servicio y ambiente (design D6 y D10).
-  - Intentar obtener el WSDL oficial de `ConsultaComprobante`. Si se obtiene, implementar el sobre de `consultarEstadoAutorizacionComprobante` con su cita.
-  - Si no, el adaptador de validez responde `UNAVAILABLE` y Q-48 sigue abierta: no se inventa el contrato.
+- [ ] 5.3 Implementar los sobres `validarComprobante` (con el base64 del `Buffer` exacto), `autorizacionComprobante` y `consultarEstadoAutorizacionComprobante`, con los espacios de nombres y elementos de los WSDL oficiales y de la ficha v2.34, §7.2.3 y §8.2.3 (design D10; Q-48 resuelta el 2026-10-04), y el circuit breaker por servicio y ambiente (design D6 y D10). Guardar los WSDL oficiales con su SHA-256 en `docs/product/sri-wsdl/`.
 
-  Verificar con pruebas byte a byte de los sobres, pruebas del adaptador de validez (contrato oficial, o `UNAVAILABLE`) y pruebas del breaker: se abre tras N fallos, se entreabre tras la pausa y no consume intentos
+  Verificar con pruebas byte a byte de los sobres, pruebas del adaptador de validez sobre el contrato oficial y pruebas del breaker: se abre tras N fallos, se entreabre tras la pausa y no consume intentos
 
 ## 6. Parsers y clasificación
 
@@ -110,13 +108,13 @@
   Guardar los mensajes estructurados en orden. Verificar con pruebas unitarias sobre respuestas sintéticas con la estructura oficial, marcadas como sintéticas, que cubren cada fila, varios mensajes y un código desconocido; `check:versions` pasa
 - [ ] 6.2 Implementar la clasificación pura de la autorización (design D12):
   - clave desconocida;
-  - una autorización `AUTORIZADO`, `NO AUTORIZADO` u otro estado;
+  - una autorización `AUTORIZADO`, `NO AUTORIZADO`, `RECHAZADO` (el no autorizado del ejemplo oficial) u otro estado;
   - validación de la clave, el número, la fecha (ISO 8601 o `dd/MM/yyyy HH:mm:ss` con su texto original), el ambiente normalizado y la `claveAcceso` del comprobante;
   - varias autorizaciones, con una válida o contradictorias;
   - extracción del `comprobante` exacto.
 
   Verificar con pruebas unitarias de cada caso, incluidas una fecha ilegible, un ambiente distinto y un número distinto de la clave, que dan `INCONSISTENT`, y un estado desconocido que da `NO_CONCLUSION`
-- [ ] 6.3 Implementar la clasificación pura de la respuesta de validez (design D15): un estado `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO` da `KEY_KNOWN` con su estado; el error 99, una respuesta desconocida o `UNAVAILABLE` dan `NO_EVIDENCE`. Verificar con pruebas unitarias sobre respuestas sintéticas, y con la estructura oficial si se obtuvo el WSDL de la tarea 5.3
+- [ ] 6.3 Implementar la clasificación pura de la respuesta de validez (design D15): un estado `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO` para la clave del comprobante da `KEY_KNOWN` con su estado; `estadoConsulta` `RECHAZADA`, el error 99 o una respuesta desconocida dan `NO_EVIDENCE`. Verificar con pruebas unitarias sobre respuestas sintéticas con la estructura del WSDL oficial y de los ejemplos de la ficha v2.34, §8.2.3
 
 ## 7. Evidencia y máquina de transmisión
 
@@ -275,7 +273,7 @@
   - `backend.md`, `ARCHITECTURE.md` y `database.md`;
   - `domain-model.md` y `glossary.md`;
   - `capabilities.md`;
-  - `open-questions.md`: Q-06 resuelta, Q-47 según la tarea 3.2 y Q-48 según la tarea 5.3.
+  - `open-questions.md`: Q-06 resuelta, Q-47 según la tarea 3.2 y Q-48 resuelta.
 
   Verificar que los documentos citan las rutas, permisos, estados, tipos de job y códigos implementados
 

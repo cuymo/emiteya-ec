@@ -5,8 +5,8 @@
 | Service | Purpose | Auth | Owner |
 | --- | --- | --- | --- |
 | SRI — Recepción | Recibir el comprobante firmado: `RECIBIDA` o `DEVUELTA`. | Ninguna; el XML va firmado con el certificado del contribuyente. | Adaptador SOAP propio de `sri-engine` (ADR 0018) |
-| SRI — Autorización | Consultar por clave de acceso: en procesamiento, `AUTORIZADO` o `NO AUTORIZADO`. Es también la consulta por clave con que se reconcilia. | Ninguna. | Adaptador SOAP propio de `sri-engine` |
-| SRI — Consulta de validez | Detectar anulaciones (`ConsultaComprobante`). Es una capacidad futura (Q-16), fuera de `add-sri-transmission`. | Ninguna. | — |
+| SRI — Autorización | Consultar por clave de acceso: en procesamiento, `AUTORIZADO` o no autorizado (`NO AUTORIZADO` o `RECHAZADO`, ficha v2.34, §7.2.3). Es también la consulta por clave con que se reconcilia. | Ninguna. | Adaptador SOAP propio de `sri-engine` |
+| SRI — Consulta de validez | `ConsultaComprobante`: guarda de la reconciliación antes de un reenvío; un estado informado impide reenviar (design D15 de `add-sri-transmission`). Nunca observa anulaciones: eso es una capacidad futura (Q-16). | Ninguna. | Adaptador SOAP propio de `sri-engine` |
 | SMTP (post-MVP) | Entrega por correo del RIDE y el XML (Q-24). | Credenciales SMTP del operador. | Puerto de notificación |
 
 ## Integration Rules

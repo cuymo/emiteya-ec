@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://ec.gob.sri.ws.consultas" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" name="ConsultaComprobanteService" targetNamespace="http://ec.gob.sri.ws.consultas">
+  <wsdl:types>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://ec.gob.sri.ws.consultas" attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://ec.gob.sri.ws.consultas">
+  <xs:element name="RespuestaConsultaComprobante" type="tns:respuestaConsultaComprobante"/>
+  <xs:element name="consultarEstadoAutorizacionComprobante" type="tns:consultarEstadoAutorizacionComprobante"/>
+  <xs:element name="consultarEstadoAutorizacionComprobanteResponse" type="tns:consultarEstadoAutorizacionComprobanteResponse"/>
+  <xs:element name="mensaje" type="tns:mensaje"/>
+  <xs:complexType name="consultarEstadoAutorizacionComprobante">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="claveAcceso" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="consultarEstadoAutorizacionComprobanteResponse">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="EstadoAutorizacionComprobante" type="tns:respuestaConsultaComprobante"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="respuestaConsultaComprobante">
+    <xs:complexContent>
+      <xs:extension base="tns:respuestaConsulta">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="estadoAutorizacion" type="xs:string"/>
+          <xs:element minOccurs="0" name="tipoComprobante" type="xs:string"/>
+          <xs:element minOccurs="0" name="rucEmisor" type="xs:string"/>
+          <xs:element minOccurs="0" name="fechaAutorizacion" type="xs:dateTime"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="respuestaConsulta">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="estadoConsulta" type="xs:string"/>
+      <xs:element minOccurs="0" name="claveAcceso" type="xs:string"/>
+      <xs:element minOccurs="0" name="mensajes">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element maxOccurs="unbounded" minOccurs="0" ref="tns:mensaje"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="mensaje">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="identificador" type="xs:string"/>
+      <xs:element minOccurs="0" name="mensaje" type="xs:string"/>
+      <xs:element minOccurs="0" name="informacionAdicional" type="xs:string"/>
+      <xs:element minOccurs="0" name="tipo" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="IllegalArgumentException" type="tns:IllegalArgumentException"/>
+  <xs:complexType name="IllegalArgumentException">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="message" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+  </wsdl:types>
+  <wsdl:message name="consultarEstadoAutorizacionComprobanteResponse">
+    <wsdl:part element="tns:consultarEstadoAutorizacionComprobanteResponse" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="consultarEstadoAutorizacionComprobante">
+    <wsdl:part element="tns:consultarEstadoAutorizacionComprobante" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="IllegalArgumentException">
+    <wsdl:part element="tns:IllegalArgumentException" name="IllegalArgumentException">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="ConsultaComprobante">
+    <wsdl:operation name="consultarEstadoAutorizacionComprobante">
+      <wsdl:input message="tns:consultarEstadoAutorizacionComprobante" name="consultarEstadoAutorizacionComprobante">
+    </wsdl:input>
+      <wsdl:output message="tns:consultarEstadoAutorizacionComprobanteResponse" name="consultarEstadoAutorizacionComprobanteResponse">
+    </wsdl:output>
+      <wsdl:fault message="tns:IllegalArgumentException" name="IllegalArgumentException">
+    </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ConsultaComprobanteServiceSoapBinding" type="tns:ConsultaComprobante">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="consultarEstadoAutorizacionComprobante">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="consultarEstadoAutorizacionComprobante">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="consultarEstadoAutorizacionComprobanteResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="IllegalArgumentException">
+        <soap:fault name="IllegalArgumentException" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ConsultaComprobanteService">
+    <wsdl:port binding="tns:ConsultaComprobanteServiceSoapBinding" name="ConsultaComprobantePort">
+      <soap:address location="https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

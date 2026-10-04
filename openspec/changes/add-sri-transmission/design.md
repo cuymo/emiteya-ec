@@ -17,6 +17,7 @@ Ver `proposal.md` para la motivación. Estado de partida, tras `add-invoice-emis
   - BR-28: fuera del cambio;
   - decisiones de `fiscal-emission.md`, sección "Decisiones para el diseño de `add-sri-transmission`".
 - **Fuentes técnicas:** CTX §7 (servicios), §21–§27 (recepción, autorización, errores 70, 43 y 45), §29 (tamaño), §32–§34 (mensajes, timeouts, worker), §44–§45 (normalización y XML autorizado), §52 (casos A–E) y §61 (I-09, I-11, I-15 a I-19). ERS §12.1 (estados mínimos) y RF-520..525.
+- **Fuentes oficiales verificadas durante apply** (2026-10-04, `/opsx:update`): la ficha v2.34 en PDF, con el mismo SHA-256 de los catálogos (§7.2.3, §7.5, §8.2.3, §8.4, tabla 6 y tabla de errores), y los tres WSDL oficiales del ambiente de Pruebas (`RecepcionComprobantesOffline`, `AutorizacionComprobantesOffline` y `ConsultaComprobante`), guardados con su SHA-256 en `docs/product/sri-wsdl/`.
 
 ## Goals / Non-Goals
 
@@ -272,8 +273,8 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
 - **Adaptador.** Usa el `fetch` nativo de Node, solo en la infraestructura de `sri-engine` (excepción a Axios, ADR 0018). Limita los bytes de la respuesta y no fija certificados TLS (CTX §7.5).
 - **Endpoints.** Viven en un módulo central versionado con los valores de CTX §7.1–§7.4 por ambiente y servicio, sobrescribibles por variable de entorno. La lógica de negocio nunca ve una URL.
 - **Sobres.**
-  - Los de `validarComprobante` (XML en base64) y `autorizacionComprobante` (clave) usan los espacios de nombres que fija la versión 1.0.1 de `facturacion-electronica-ec` (`http://ec.gob.sri.ws.recepcion`, `http://ec.gob.sri.ws.autorizacion`). S-3 online los confirma contra los WSDL oficiales.
-  - El de `consultarEstadoAutorizacionComprobante` necesita el contrato oficial del WSDL de `ConsultaComprobante`, que el 2026-10-03 no fue accesible (el servicio cortó la conexión). No se inventa: hasta obtenerlo (Q-48), el adaptador de validez responde `UNAVAILABLE` y la estrategia lo trata como "sin evidencia adicional" (D15).
+  - Los de `validarComprobante` (elemento `xml`, base64) y `autorizacionComprobante` (elemento `claveAccesoComprobante`) usan los espacios de nombres `http://ec.gob.sri.ws.recepcion` y `http://ec.gob.sri.ws.autorizacion`, verificados en los WSDL oficiales y en la ficha v2.34, §7.2.3. Los elementos hijos no llevan espacio de nombres (`elementFormDefault="unqualified"`) y la acción SOAP es vacía.
+  - El de `consultarEstadoAutorizacionComprobante` (elemento `claveAcceso`, espacio de nombres `http://ec.gob.sri.ws.consultas`) sigue el WSDL oficial de `ConsultaComprobante` y el ejemplo de la ficha v2.34, §8.2.3. Q-48 quedó resuelta el 2026-10-04: el adaptador de validez es real.
   - Son funciones puras con pruebas de igualdad de bytes.
 - **Pruebas de contrato de la frontera,** contra servidores locales:
   - puerto cerrado y nombre `.invalid`: `NOT_SENT`;
@@ -312,12 +313,12 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
   - una `claveAccesoConsultada` distinta es `INCONSISTENT`.
 - **Una sola autorización:**
   - `AUTORIZADO` válida → `AUTHORIZED`;
-  - `NO AUTORIZADO` → `NOT_AUTHORIZED`;
-  - cualquier otro estado, o ninguno → `NO_CONCLUSION`. El texto exacto del estado "en procesamiento" (PPR, CTX §23.1) no se supone: toda respuesta que no es `AUTORIZADO` ni `NO AUTORIZADO` se trata sin conclusión.
+  - `NO AUTORIZADO` o `RECHAZADO` → `NOT_AUTHORIZED`. La ficha v2.34 (§7.2.3) titula "Comprobante No Autorizado" su ejemplo con `<estado>RECHAZADO</estado>`, y su tabla 6 solo define los estados PPR, AUT y NAT: los dos textos son el estado no autorizado (decisión del 2026-10-04, `/opsx:update`);
+  - cualquier otro estado, o ninguno → `NO_CONCLUSION`. El texto exacto del estado "en procesamiento" (PPR, CTX §23.1) no se supone: toda respuesta que no es `AUTORIZADO`, `NO AUTORIZADO` ni `RECHAZADO` se trata sin conclusión.
 - **Validez de un `AUTORIZADO`:**
   - la clave consultada es la del comprobante;
   - `numeroAutorizacion` existe y es igual a la clave (CTX §23);
-  - `fechaAutorizacion` se puede leer: ISO 8601 con desfase, o `dd/MM/yyyy HH:mm:ss` en America/Guayaquil, con el texto original conservado;
+  - `fechaAutorizacion` se puede leer: ISO 8601 con desfase (el WSDL la declara `xs:dateTime`), o `dd/MM/yyyy HH:mm:ss` en America/Guayaquil, con el texto original conservado;
   - el `ambiente`, normalizado sin tildes (`PRUEBAS` o `PRODUCCION`), es el del comprobante (I-09);
   - si trae `comprobante`, su `claveAcceso` es la del comprobante.
 
@@ -361,8 +362,8 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
 - **Un solo caso de uso,** `reconcileDocument(companyId, documentId, origin)`, con `origin` `AUTOMATIC` (job) o `MANUAL` (administrador, motivo). Usa `SriInquiryPort`, y el dominio decide la estrategia:
   1. **Autorización por clave** (`queryAuthorization`): es la consulta que trae la decisión y el XML autorizado. Se aplica D12.
   2. **Validez por clave** (`queryValidity`, `ConsultaComprobante`), solo antes de concluir que el SRI no conoce la clave. Nunca para observar anulaciones (Q-16), ni en la consulta periódica.
-- **Por qué la consulta de validez.** Según CTX §24, el servicio responde `estadoAutorizacion` (`AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO`), o el error 99 cuando la clave está fuera del rango de fechas o no hay datos.
-  - El error 99 no distingue "fuera de rango" de "sin datos", ni "no recibido" de "recibido y en proceso". Por eso la consulta de validez nunca autoriza un reenvío.
+- **Por qué la consulta de validez.** Según CTX §24 y la ficha v2.34 (§8.2.3, §8.4), el servicio responde `estadoAutorizacion` (`AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO`), o, cuando la clave está fuera del rango de fechas o no hay datos, `estadoConsulta` `RECHAZADA` con el error 99. El texto de la ficha nombra `estadoAutorizacion` para ese caso y su ejemplo usa `estadoConsulta`: el parser acepta cualquiera de los dos.
+  - El error 99 solo difiere en su información adicional entre "fuera de rango" y "sin datos", y ninguno distingue "no recibido" de "recibido y en proceso". Por eso la consulta de validez nunca autoriza un reenvío.
   - Sí aporta evidencia útil cuando informa un estado: la clave es conocida, y eso impide un reenvío a ciegas. CTX §24.1 la recomienda para reconciliar.
   - Se usa como guarda: solo puede impedir un reenvío.
 - **Decisión ante `KEY_UNKNOWN` de la autorización:**
@@ -371,7 +372,7 @@ Antes de cada `sri.transmit`, incluidos los reenvíos:
   | --- | --- |
   | La validez informa `AUTORIZADO` o `NO AUTORIZADO` | No reenviar: `RECEIVED` y `sri.authorize`, que obtiene el registro concluyente |
   | La validez informa `PENDIENTE DE ANULAR` o `ANULADO` | `MANUAL_REVIEW`: es un estado que este cambio no modela (Q-16) |
-  | La validez da el error 99, `UNAVAILABLE` o un fallo de transporte, y hay evidencia de recepción (`RECIBIDA`, 70 o 43) | No reenviar: nueva consulta dentro de la ventana; al agotarla, `MANUAL_REVIEW` |
+  | La validez da el error 99, una respuesta sin estado reconocido o un fallo de transporte, y hay evidencia de recepción (`RECIBIDA`, 70 o 43) | No reenviar: nueva consulta dentro de la ventana; al agotarla, `MANUAL_REVIEW` |
   | Igual, con la causa 45 | `MANUAL_REVIEW` |
   | Igual, sin evidencia de recepción (solo incertidumbre de transporte) | Reenviar: encola `sri.transmit` de reenvío con los mismos bytes (D9). El comprobante sigue `SEND_UNKNOWN` |
   | El comprobante está en `MANUAL_REVIEW` | Sigue en `MANUAL_REVIEW`, sin reenvío |
@@ -575,7 +576,7 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 
 | # | Pregunta | Respuesta |
 | --- | --- | --- |
-| 1 | Fuente oficial | Ficha v2.34 (CTX §7, §21–§29, §32–§34, §44–§45, §52) y WSDL oficiales de recepción y autorización |
+| 1 | Fuente oficial | Ficha v2.34 (CTX §7, §21–§29, §32–§34, §44–§45, §52; §7.2.3, §8.2.3 y §8.4 del PDF verificado) y los WSDL oficiales de recepción, autorización y `ConsultaComprobante` (`docs/product/sri-wsdl/`) |
 | 2 | Versión y fecha | Ficha v2.34 del 2026-07-27. La cifra exacta del límite de tamaño está pendiente (Q-47) |
 | 3 | ¿Afecta XSD? | No |
 | 4 | ¿Afecta clave de acceso? | No se genera. Se usa la persistida, y el vector oficial sigue siendo una compuerta |
@@ -601,8 +602,7 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 - **[Compromiso] La transmisión nace deshabilitada** → Evita transmitir por accidente al desplegar. El despliegue documenta cómo habilitarla tras las compuertas.
 - **[Riesgo] El circuit breaker vive en la memoria de cada proceso** → Basta con una instancia por empresa; varios procesos solo hacen más intentos durante una caída.
 - **[Riesgo] Q-47 sigue abierta y bloquea el cierre de apply** → Las partes independientes avanzan, y la transmisión real ya está bloqueada además por las otras compuertas.
-- **[Riesgo] El contrato oficial de `ConsultaComprobante` no estuvo accesible** → El puerto y la estrategia están diseñados y probados con un SRI simulado. El adaptador real de validez espera el WSDL oficial (Q-48) y, mientras tanto, responde `UNAVAILABLE`: la guarda no aporta evidencia y decide la autorización, como en el caso A de CTX §52.
-- **[Riesgo] Los espacios de nombres de recepción y autorización salen de la librería, no de un WSDL oficial verificado** → S-3 online los confirma, y un cambio sería un `/opsx:update`.
+- **[Riesgo] Los contratos SOAP salen de los WSDL y de los ejemplos de la ficha, no de respuestas reales** → Los sobres siguen los WSDL oficiales y las respuestas sintéticas su estructura; S-3 online graba respuestas reales que pasan a ser fixtures, y una diferencia sería un `/opsx:update`.
 - **[Riesgo] Una respuesta gigante o maliciosa** → Hay límite de bytes, el parser rechaza DTD y los plazos son por fase.
 
 ## Migration Plan
@@ -621,5 +621,5 @@ Variables nuevas, todas operativas y no normativas, validadas con Zod y document
 ## Open Questions
 
 - **Q-47:** la cifra exacta del límite de tamaño. No cambia el enfoque: el dataset espera la fuente oficial y bloquea el cierre de apply (D17).
-- **Q-48:** el contrato oficial del WSDL de `ConsultaComprobante`. Sin él, la guarda de validez queda sin evidencia adicional (D15). No cambia los specs ni las tareas.
+- **Q-48:** resuelta el 2026-10-04 con el WSDL oficial de `ConsultaComprobante` y la ficha v2.34, §8.2.3 (D10, D15).
 - **Formatos reales de la respuesta del SRI:** el texto del estado en procesamiento, el formato de la fecha y si el `comprobante` llega en CDATA o escapado. No cambian el enfoque, porque el parser no concluye ante lo desconocido, y S-3 online los confirma.

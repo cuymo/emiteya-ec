@@ -20,7 +20,7 @@ Q-07, Q-16 y Q-34).
 - **Evidencia antes de la clasificación.** Cada interacción con el SRI deja un intento de solo agregado con su respuesta original, confirmado antes de clasificarla. Si el parser falla, la evidencia se conserva y no se inventa un resultado.
 - **Recepción:** `RECIBIDA` lleva a `RECEIVED`, y un `DEVUELTA` concluyente lleva a `RETURNED` con sus mensajes estructurados. Antes de concluir `RETURNED` se detectan los errores 70, 43 y 45. La ausencia de estado nunca equivale a `DEVUELTA`.
 - **Autorización:** consulta por la misma clave tras un intervalo configurable, con validación de la identidad, el ambiente, el número y la fecha.
-  - `NO AUTORIZADO` es terminal (Q-07).
+  - `NO AUTORIZADO` es terminal (Q-07), también con el texto `RECHAZADO` del ejemplo oficial de la ficha.
   - Una respuesta sin conclusión nunca se fuerza a `NOT_AUTHORIZED`.
   - Varias autorizaciones nunca se resuelven tomando la primera.
 - **Resultados inciertos y reconciliación.**

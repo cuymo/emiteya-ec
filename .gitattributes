@@ -7,3 +7,5 @@
 docs/product/sri-xsd/*.xsd binary
 # Esquema de la firma XML del W3C, importado por los XSD del SRI (spike S-2).
 docs/product/w3c-xsd/*.xsd binary
+# WSDL oficiales del SRI (add-sri-transmission, design D10): byte a byte, como su manifiesto.
+docs/product/sri-wsdl/*.wsdl binary
