@@ -252,7 +252,7 @@
 
 ## 14. Prueba end-to-end, compuertas y documentación
 
-- [ ] 14.1 Añadir la prueba end-to-end sobre `main.ts` con un SRI simulado en HTTP y los endpoints sobrescritos:
+- [x] 14.1 Añadir la prueba end-to-end sobre `main.ts` con un SRI simulado en HTTP y los endpoints sobrescritos:
   - preparación, emisión, transmisión, autorización y consulta;
   - rearranque a mitad de la transmisión;
   - eventos de auditoría exactos;

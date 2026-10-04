@@ -14,6 +14,8 @@ export type E2eBackend = {
   output: () => string;
   /** Detiene el proceso con SIGTERM y borra el esquema si lo creó este arranque. */
   stop: () => Promise<void>;
+  /** Mata el proceso con SIGKILL, sin apagado ordenado: una caída. No borra el esquema. */
+  crash: () => Promise<void>;
   /** Inicio de sesión con correo y contraseña desde el origen del frontend. */
   signIn: (email: string, password: string) => Promise<{ status: number; cookie: string }>;
   /** Petición a /api/v1 con la cookie de sesión y el origen del frontend. */
@@ -93,6 +95,12 @@ export async function startE2eBackend(options: {
     base,
     output: () => output,
     stop,
+    async crash() {
+      if (backend.exitCode !== null || backend.signalCode !== null) return;
+      const exited = new Promise((resolve) => backend.once("exit", resolve));
+      backend.kill("SIGKILL");
+      await exited;
+    },
     async signIn(email, password) {
       const res = await fetch(`${base}/api/auth/sign-in/email`, {
         method: "POST",
