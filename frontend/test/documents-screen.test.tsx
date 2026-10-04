@@ -1,6 +1,6 @@
 // Comprobantes, la bandeja documental (add-document-archive, tarea 10.2, design D13): carga, vacío,
 // sin coincidencias, error, sin permiso, filtros en la URL, rango inválido y descarga del RIDE.
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
@@ -175,6 +175,15 @@ describe("Comprobantes", () => {
     const hasta = screen.getByLabelText("Hasta");
     expect(hasta.getAttribute("aria-invalid")).toBe("true");
     expect(calls.some((entry) => entry.key.startsWith("GET /api/v1/documents"))).toBe(false);
+  });
+
+  it("dos fechas seguidas se acumulan aunque la primera todavía no esté en la URL", async () => {
+    render({ "GET /api/v1/documents": paged([item()]) });
+    await screen.findAllByText("001-001-000000001");
+    fireEvent.change(screen.getByLabelText("Desde"), { target: { value: "2026-12-31" } });
+    fireEvent.change(screen.getByLabelText("Hasta"), { target: { value: "2026-01-01" } });
+    const query = new URLSearchParams(navigation.replace.mock.lastCall![0].split("?")[1]);
+    expect(Object.fromEntries(query)).toEqual({ desde: "2026-12-31", hasta: "2026-01-01" });
   });
 
   it("descarga el RIDE desde la fila con su aviso", async () => {

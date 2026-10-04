@@ -18,7 +18,7 @@ import {
 import { Download, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { ChipGroup, RowActionButton, SearchInput } from "@/components/data-table/table-controls";
 import { DatePickerField } from "@/components/date-picker-field";
@@ -75,14 +75,22 @@ function useUrlState() {
   const sizeParam = Number.parseInt(params.get("filas") ?? "", 10);
   const pageSize = sizeParam >= 1 && sizeParam <= PAGE_SIZE_MAX ? sizeParam : PAGE_SIZE_DEFAULT;
   const value = (key: string) => params.get(key) ?? "";
+  // La última consulta pedida: dos cambios seguidos (Desde y luego Hasta) se acumulan aunque el
+  // primero todavía no haya llegado a la URL.
+  const current = params.toString();
+  const requested = useRef<string | null>(null);
+  useEffect(() => {
+    if (requested.current === current) requested.current = null;
+  }, [current]);
   function update(changes: Record<string, string | null>, resetPage = true) {
-    const next = new URLSearchParams(params.toString());
+    const next = new URLSearchParams(requested.current ?? current);
     for (const [key, change] of Object.entries(changes)) {
       if (change === null || change === "") next.delete(key);
       else next.set(key, change);
     }
     if (resetPage) next.delete("pagina");
     const query = next.toString();
+    requested.current = query;
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
   return {
