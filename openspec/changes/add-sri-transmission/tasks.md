@@ -267,7 +267,7 @@
   - conversión de las respuestas reales, anonimizadas, en fixtures.
 
   Buscar de nuevo el vector oficial de la clave en su fuente oficial y, si aparece, añadirlo a la prueba de contrato de `AccessKeys` con su cita; si no, dejarlo pendiente en `open-questions.md` sin inventarlo. Verificar en `/opsx:verify` el estado de las compuertas
-- [ ] 14.3 Actualizar la documentación:
+- [x] 14.3 Actualizar la documentación:
   - `fiscal-emission.md`: implementación, códigos, resolución de Q-06 y obligaciones;
   - `integrations.md` y `deployment.md`: endpoints, plazos, interruptor y habilitación tras las compuertas;
   - `backend.md`, `ARCHITECTURE.md` y `database.md`;

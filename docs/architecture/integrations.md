@@ -40,16 +40,18 @@
 ### SRI — Comprobantes electrónicos off-line
 
 - Base URL: un conjunto de WSDL por ambiente (Pruebas `celcer.sri.gob.ec`, Producción `cel.sri.gob.ec`), listados en CTX §7. Son valores por defecto en un módulo central versionado, sobrescribibles por configuración; la lógica de negocio nunca contiene URLs (ERS SRI-REQ-01).
-- Docs: ficha técnica off-line v2.34 (CTX SRI-02) y WSDL vigentes; prevalecen en el orden de CTX §1.
+- Docs: ficha técnica off-line v2.34 (CTX SRI-02) y WSDL vigentes, con copia de los WSDL de Pruebas en `docs/product/sri-wsdl/`; prevalecen en el orden de CTX §1.
 - Auth: ninguna en el transporte. TLS estándar del runtime, sin certificados ni fingerprints fijados, porque el SRI puede cambiarlos (CTX §7.5).
-- Protocol: SOAP, con un adaptador propio sobre el `fetch` nativo de Node (ADR 0018, enmienda del transporte). Recepción `validarComprobante(xml firmado)` y autorización `autorizacionComprobante(claveAcceso)`, que también sirve para reconciliar por clave. La consulta `consultarEstadoAutorizacionComprobante(claveAcceso)` queda para la capacidad futura de anulaciones (Q-16), salvo que el design del cambio 7 justifique usarla para reconciliar. `ConsultaFactura` tiene otro contrato y queda fuera del MVP (CTX §25). El adaptador captura la respuesta original antes de normalizarla (CTX §44).
-- Timeout: de conexión y cabeceras, y de lectura del cuerpo, separados y configurables por variable de entorno. Son configuración operativa, no una regla normativa del SRI.
+- Protocol: SOAP, con un adaptador propio sobre el `fetch` nativo de Node (ADR 0018, enmienda del transporte). Recepción `validarComprobante(xml firmado)` y autorización `autorizacionComprobante(claveAcceso)`, que también sirve para reconciliar por clave. La consulta de validez `consultarEstadoAutorizacionComprobante(claveAcceso)` solo es la guarda de la reconciliación antes de un reenvío (design D15 de `add-sri-transmission`); observar anulaciones es la capacidad futura Q-16. `ConsultaFactura` tiene otro contrato y queda fuera del MVP (CTX §25). El adaptador captura la respuesta original antes de normalizarla (CTX §44).
+- Timeout: hasta las cabeceras (`SRI_REQUEST_TIMEOUT_MS`) y de lectura del cuerpo (`SRI_BODY_TIMEOUT_MS`), separados y configurables; la conexión usa el plazo interno de Node. Son configuración operativa, no una regla normativa del SRI (`deployment.md`).
+- Retries: el envío solo se reintenta si el fallo demuestra que la solicitud no salió (`NOT_SENT`: DNS, conexión rechazada, plazo de conexión o certificado TLS no confiable). Cualquier otro fallo pudo ocurrir después de enviar y se reconcilia por la clave. Las consultas se repiten con backoff y jitter, y un circuit breaker por servicio y ambiente pausa las llamadas tras fallos seguidos.
 - Rate limit: sin cuota publicada. Un comprobante por envío, sin lotes, dentro del límite de tamaño de la ficha (CTX §29). Su cifra exacta en bytes espera la fuente oficial (Q-47). El ambiente de Pruebas no se usa para pruebas de carga (CTX §49).
-- Usage endpoint: ninguno. La salud verifica la disponibilidad del WSDL de cada servicio.
+- Usage endpoint: ninguno. La readiness no llama al SRI: con la transmisión habilitada comprueba sus precondiciones (workers, endpoints válidos y política de tamaño). La disponibilidad del SRI se ve en `sri_circuit_open` y `sri_attempts_total`.
+- Switch: `SRI_TRANSMISSION_ENABLED`, apagado por defecto; se habilita tras las compuertas de `../quality/sri-certification.md`.
 - Internal route prefix: ninguno; el SRI nunca se expone a través de la API propia.
-- Error behavior: mensajes con identificador, mensaje, información adicional y tipo, conservados completos junto a la respuesta original. Tratamiento por código en `fiscal-emission.md` y CTX §32.
+- Error behavior: mensajes con identificador, mensaje, información adicional y tipo, conservados completos junto a la respuesta original, que se guarda antes de clasificarla (`sri_attempt` y `sri_response`). Tratamiento por código en `fiscal-emission.md` y CTX §32.
 - Idempotency support: ninguna cabecera. La idempotencia es natural por la clave de acceso: reenviar el mismo XML firmado no crea otro comprobante, mientras que generar otro secuencial o clave sí. Por eso todo resultado ambiguo se reconcilia por la misma clave antes de reenviar (ADR 0005).
-- Webhook signature scheme and event ID field: no aplica; el SRI no notifica. La autorización se consulta con backoff, jitter y circuit breaker, hasta 24 horas desde `RECIBIDA` (CTX §23.1, §33).
+- Webhook signature scheme and event ID field: no aplica; el SRI no notifica. La autorización se consulta con backoff, jitter y circuit breaker dentro de la ventana de conclusión, 24 horas desde la primera evidencia de recepción por defecto (`SRI_CONCLUSION_WINDOW_HOURS`; CTX §23.1, §33).
 
 ## Inbound Webhooks
 

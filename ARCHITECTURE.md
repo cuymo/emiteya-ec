@@ -1,9 +1,10 @@
 # Architecture Map
 
 Estado: arquitectura objetivo del MVP, que se construye mediante los cambios OpenSpec de
-`docs/product/capabilities.md`. El código existe hasta `add-invoice-emission` (cambio 6), con la
-emisión local de la factura hasta `SIGNED`. La transmisión al SRI, los jobs, el RIDE, el
-inventario y los reportes siguen siendo objetivo.
+`docs/product/capabilities.md`. El código existe hasta `add-sri-transmission` (cambio 7): la
+emisión local de la factura hasta `SIGNED` y su transmisión al SRI con jobs persistidos hasta
+`AUTHORIZED`, con la transmisión apagada por defecto. El RIDE, la entrega, el inventario y los
+reportes siguen siendo objetivo.
 
 ## System Style
 
@@ -26,9 +27,9 @@ inventario y los reportes siguen siendo objetivo.
 | `backend/` módulo `catalogs` | Conocimiento fiscal normativo: catálogos fiscales versionados, resolución de vigencia, habilitación por empresa, política de consumidor final, registro de esquemas y matriz de casos especiales. Ofrece lecturas internas sin sesión a otros módulos. | `fiscal-catalogs` |
 | `backend/` módulo `parties`  | Terceros y el consumidor final del sistema de cada empresa.                                 | `parties`                                           |
 | `backend/` módulo `products` | Productos y servicios, su precio unitario y sus referencias a entradas fiscales.            | `products`                                          |
-| `backend/` módulo `invoices` | Borradores de factura, emisión hasta `SIGNED` (evaluación, snapshot, reserva, XML, XSD, firma y artefacto), reintento de la firma y consultas. Compone las lecturas internas de los demás módulos. Detalle en `docs/architecture/fiscal-emission.md`. | `invoices`, `document-emission` |
-| `backend/` módulo `sri-engine` | Piezas del protocolo del SRI detrás de puertos propios: clave de acceso, builder XML de la factura, validación XSD con el paquete verificado y firmador XAdES-BES (ADR 0018, ADR 0021). Desde el cambio 7, también el adaptador SOAP propio. | `document-emission`, `sri-transmission` |
-| `backend/` módulo `fiscal`   | Numeración, comprobante electrónico, transiciones y artefactos; en cambios futuros, la orquestación SRI con la estructura de CTX §42. Detalle en `docs/architecture/fiscal-emission.md`. | `fiscal-numbering`, `document-emission`, `sri-transmission`, los seis tipos, `document-archive` |
+| `backend/` módulo `invoices` | Borradores de factura, emisión hasta `SIGNED` (evaluación, snapshot, reserva, XML, XSD, firma y artefacto), reintento de la firma, consultas con el resumen y el historial de la transmisión, y la reconciliación manual. Compone las lecturas internas de los demás módulos. Detalle en `docs/architecture/fiscal-emission.md`. | `invoices`, `document-emission` |
+| `backend/` módulo `sri-engine` | Piezas del protocolo del SRI detrás de puertos propios: clave de acceso, builder XML de la factura, validación XSD con el paquete verificado y firmador XAdES-BES (ADR 0018, ADR 0021). Desde el cambio 7, también el adaptador SOAP propio, los endpoints, el circuit breaker y los clasificadores de recepción, autorización y validez. | `document-emission`, `sri-transmission` |
+| `backend/` módulo `fiscal`   | Numeración, comprobante electrónico, máquina de estados, transiciones y artefactos, y la orquestación SRI: jobs `sri.*`, evidencia de cada intento, reconciliación y barrido. Detalle en `docs/architecture/fiscal-emission.md`. | `fiscal-numbering`, `document-emission`, `sri-transmission`, los seis tipos, `document-archive` |
 | `backend/` módulo `inventory` | Stock opcional, movimientos y kárdex; reacciona a eventos fiscales.                        | `inventory`                                         |
 | `backend/` módulo `reports`  | Consultas filtradas y exportación XLSX.                                                     | `reports`, `data-portability`                       |
 | `backend/` módulo `audit`    | Eventos de auditoría, solo de agregado.                                                     | `audit-trail`                                       |
@@ -52,8 +53,10 @@ fiscal/
 ```
 
 Esa estructura es el objetivo. Hoy, `fiscal` tiene la numeración, el comprobante, las
-transiciones y el puerto de artefactos; el builder, la clave y la validación XSD viven en
-`sri-engine`; la firma, en `signing`; y la orquestación de la emisión local, en `invoices`.
+transiciones, el puerto de artefactos y la orquestación de la transmisión (handlers de los jobs,
+evidencia y reconciliación); el builder, la clave, la validación XSD, el transporte SOAP y los
+parsers viven en `sri-engine`; la firma, en `signing`; la cola de jobs, en `platform/jobs`; y la
+orquestación de la emisión local, en `invoices`.
 
 ## Dependency Direction
 
@@ -101,8 +104,9 @@ borrador -> Emitir (Idempotency-Key) -> transacción: bloqueos, validación, sna
             identidad tributaria y clave de acceso -> RESERVED            (cambio 6, implementado)
          -> XML -> XSD -> firma -> XSD -> XML firmado + hash persistidos -> SIGNED   (petición)
          -> job: recepción -> respuesta persistida -> job: autorización con backoff
-         -> XML autorizado + respuesta persistidos -> RIDE -> entrega         (jobs persistidos)
+         -> XML autorizado + respuesta persistidos -> AUTHORIZED   (cambio 7, implementado)
          -> reconciliación por la misma clave ante cualquier resultado ambiguo
+         -> RIDE -> entrega                                           (cambio 8, objetivo)
 ```
 
 Estados, transiciones y reglas de reintento en `docs/architecture/fiscal-emission.md`.

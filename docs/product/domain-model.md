@@ -190,10 +190,10 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 ### `sri_attempt` — Intento SRI
 
 - Purpose: evidencia de cada llamada al SRI (ERS RF-408, CTX §32).
-- Key attributes: identificador, comprobante, operación (recepción, autorización o consulta por clave para reconciliar), número de intento, inicio, fin, resultado normalizado, metadatos HTTP y de error seguros, todos los mensajes del SRI (identificador, mensaje, información adicional, tipo) y la respuesta original asociada al intento.
+- Key attributes: identificador, comprobante, job, operación (`RECEPTION`, `AUTHORIZATION` o `VALIDITY`), número de intento por comprobante, origen (`AUTOMATIC` o `MANUAL`, con quién lo pidió), ambiente y endpoint, inicio, cabeceras y fin, clase del resultado del transporte, metadatos HTTP seguros, hash y tamaño del sobre y del XML enviado. La respuesta original es `sri_response`; la clasificación, con todos los mensajes del SRI (identificador, mensaje, información adicional, tipo) y la versión del clasificador, es `sri_attempt_result`.
 - Invariants:
   - solo se agrega;
-  - la respuesta original se persiste antes de clasificarla, y la transición de estado va después;
+  - la respuesta original se persiste antes de clasificarla, en otra transacción, y la transición de estado va con la clasificación;
   - conserva todos los mensajes, incluidos los códigos desconocidos;
   - no contiene secretos;
   - el SOAP original nunca va a los logs ni a la auditoría;
@@ -202,7 +202,7 @@ tabla es un mapa funcional (ERS §8, CTX §63):
 ### `artifact` — Artefacto
 
 - Purpose: archivo probatorio de un comprobante (ERS RF-404, RF-405, RF-407; CTX §31).
-- Key attributes: comprobante, tipo (XML firmado, XML autorizado, RIDE, logo), hash SHA-256, tamaño, referencia de almacenamiento interna. Las respuestas originales del SRI pertenecen a su intento (`sri_attempt`).
+- Key attributes: comprobante, tipo (`SIGNED_XML`, `AUTHORIZED_XML` y, en cambios futuros, RIDE y logo), hash SHA-256, tamaño, referencia de almacenamiento interna. El `AUTHORIZED_XML` es el XML que devolvió el SRI y nunca reemplaza al `SIGNED_XML`. Las respuestas originales del SRI pertenecen a su intento (`sri_attempt`).
 - Invariants: se escribe una vez y no cambia; el XML autorizado se extrae de la respuesta del SRI, nunca se reconstruye (CTX §45); nunca se borra en cascada (ERS §13.1, ADR 0010).
 - El XML autorizado (lo recibido) nunca reemplaza al XML firmado (lo enviado). Los dos se verifican por hash, y la autorización guarda de forma inmutable su número, su fecha y el ambiente confirmado.
 - En `add-invoice-emission`: `document_artifact` con el tipo `SIGNED_XML`, los bytes UTF-8 exactos en `BYTEA`, su SHA-256 y tamaño, y metadatos con la versión y los hashes del esquema, la versión del builder y del firmador y la huella del certificado. Un comprobante `SIGNED` no existe sin su artefacto (trigger diferido).
@@ -249,7 +249,7 @@ Las requiere la arquitectura, aunque no son conceptos de negocio:
 
 - registro de idempotencia (`idempotency_record`, Q-30): empresa, operación, clave, huella de la solicitud y comprobante; de solo agregado y sin expiración durante la vida fiscal;
 - historial de transiciones de estado (`document_state_transition`): estado anterior y nuevo, causa, actor y metadatos, en la misma transacción que la transición;
-- job persistido, que llega con `add-sri-transmission`.
+- job persistido (`job`, ADR 0012): tipo (`sri.transmit`, `sri.authorize` o `sri.reconcile`), clave de deduplicación, comprobante, estado (`PENDING`, `LEASED`, `DONE` o `STOPPED`), intentos, plazo, arriendo, origen con su solicitante y motivo, y último error. Un solo job `sri.*` activo por comprobante; sus estados no son estados fiscales.
 
 Ver `../architecture/fiscal-emission.md`, `../architecture/idempotency.md` y
 `../architecture/database.md`.
@@ -302,9 +302,10 @@ curso y el arriendo son estados del job.
 | `RECEIVED`       | ERS, CTX | `RECIBIDA`, o el SRI procesa la clave: pendiente de autorización. Agrupa el `PENDING_AUTHORIZATION` de ERS §12.1. | No |
 | `AUTHORIZED`     | ERS, CTX | Autorizado, con número, fecha y ambiente guardados.               | Sí |
 | `RETURNED`       | ERS, CTX | `DEVUELTA` concluyente. Conserva el comprobante y su número.       | Sin salida en el cambio 7; su corrección es la capacidad futura `correct-returned-document` |
-| `NOT_AUTHORIZED` | ERS, CTX | `NO AUTORIZADO` concluyente.                                       | Sí (Q-07) |
+| `NOT_AUTHORIZED` | ERS, CTX | `NO AUTORIZADO` concluyente, o `RECHAZADO`.                       | Sí (Q-07) |
+| `MANUAL_REVIEW`  | ERS      | Respuesta inconsistente, error 45 con el secuencial registrado con otra clave, o ventana de conclusión agotada (design D4, Q-06). | No: sale solo con una reconciliación manual concluyente |
 
-- `MANUAL_REVIEW` (ERS §12.1): el design del cambio 7 decide si es un estado fiscal o una condición operativa (Q-06).
+- Los errores técnicos recuperables no cambian el estado fiscal: el job reintenta y, si agota sus límites, queda detenido (`STOPPED`), visible para el administrador.
 - `CANCEL_PENDING` y `CANCELLED` (CTX §26): pertenecen a la capacidad futura de anulaciones (Q-16).
 - `SEND_PENDING` (CTX) no se adopta: el envío en curso es un estado del job.
 
@@ -314,7 +315,10 @@ Nombres de CTX §62, más los eventos de configuración. No hay bus de eventos: 
 `add-invoice-emission`, `FiscalDocumentCreated` y `FiscalSequenceReserved` se registran como la
 transición inicial y la auditoría `invoice.reserved`, y `FiscalXmlSigned` como la transición a
 `SIGNED` y la auditoría `invoice.signed`. El reintento de la firma audita
-`invoice.signing_retried`.
+`invoice.signing_retried`. En `add-sri-transmission`, cada llamada al SRI queda en `sri_attempt`;
+cada cambio de estado, en `document_state_transition` (con la causa `TRANSMISSION`,
+`AUTHORIZATION` o `RECONCILIATION`), y la reconciliación pedida por el administrador, en las
+auditorías `invoice.reconciliation_requested` e `invoice.reconciliation_completed`.
 
 | Evento                       | Disparador                                             | Consumidores                                    |
 | ---------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
@@ -324,10 +328,10 @@ transición inicial y la auditoría `invoice.reserved`, y `FiscalXmlSigned` como
 | `FiscalXmlValidated`         | XML válido contra el XSD.                              | Firma.                                          |
 | `FiscalXmlSigned`            | XML firmado persistido con su hash.                    | `add-sri-transmission`.                         |
 | `SriSendAttempted`           | Llamada a recepción iniciada.                          | Auditoría, métricas.                            |
-| `SriSendUnknown`             | Timeout, error de red o respuesta ilegible.            | Job de reconciliación.                          |
+| `SriSendUnknown`             | Resultado incierto del envío, o errores 70, 43 y 45.   | Job de reconciliación.                          |
 | `SriReceived`                | Recepción `RECIBIDA`.                                  | Job de autorización.                            |
 | `SriReturned`                | Recepción `DEVUELTA`.                                  | Bandeja, métricas.                              |
-| `SriAuthorizationPending`    | Autorización en procesamiento o error 70.              | Job de autorización con backoff.                |
+| `SriAuthorizationPending`    | Autorización en procesamiento.                         | Job de autorización con backoff.                |
 | `SriAuthorized`              | Autorización `AUTORIZADO`.                             | RIDE, inventario (Q-18), entrega, auditoría.    |
 | `SriNotAuthorized`           | Autorización `NO AUTORIZADO`.                          | Bandeja, auditoría.                             |
 | `SriMessageRecorded`         | Mensaje del SRI persistido.                            | Bandeja.                                        |

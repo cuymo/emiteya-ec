@@ -81,7 +81,7 @@ Fuentes: ERS §18.1 y CTX §19.4, §49–52, §61.
 | Exportación              | El XLSX respeta los filtros, conserva identificaciones como texto e importes como números.                 | ERS AC-09          |
 | Respaldo                 | Restauración completa de configuración, comprobantes y artefactos.                                         | ERS AC-10          |
 | Seguridad                | Firma y contraseña ausentes de logs y respuestas; escaneo de dependencias y de secretos.                   | ERS §18.1, §20     |
-| Certificación SRI        | Matriz por tipo en el ambiente de Pruebas del SRI: camino feliz, XSD inválido, firma inválida, devuelto, autorizado, no autorizado y timeout con reconciliación. Fuera de CI y nunca como prueba de carga. | ERS AC-03; CTX §49 |
+| Certificación SRI        | Matriz por tipo en el ambiente de Pruebas del SRI: camino feliz, XSD inválido, firma inválida, devuelto, autorizado, no autorizado y timeout con reconciliación. Fuera de CI y nunca como prueba de carga. La factura empieza con S-3 online (`sri-certification.md`). | ERS AC-03; CTX §49 |
 
 Aunque el MVP tiene una sola empresa por instalación, los fixtures incluyen al menos dos
 empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).

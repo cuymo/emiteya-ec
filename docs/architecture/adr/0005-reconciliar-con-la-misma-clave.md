@@ -22,4 +22,4 @@ clave sí.
 
 - No existen comprobantes fiscales duplicados por fallas de red.
 - Un comprobante puede quedar pendiente hasta 24 horas.
-- El umbral para pasar a revisión manual se decide en Q-06.
+- El umbral para pasar a revisión manual se decidió en Q-06 (design D4 de `add-sri-transmission`): la ventana de conclusión, 24 horas por defecto desde la primera evidencia de recepción. Además, tras evidencia de recepción (`RECIBIDA`, 70 o 43) una clave desconocida nunca habilita el reenvío.

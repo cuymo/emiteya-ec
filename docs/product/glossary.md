@@ -68,15 +68,18 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Recepción                       | `reception`            | Servicio del SRI que acepta (`RECIBIDA`) o devuelve (`DEVUELTA`) el comprobante, con mensajes identificados por código.                     |
 | Autorización                    | `authorization`        | Servicio del SRI consultado por clave de acceso: en procesamiento (`PPR`), `AUTORIZADO` (`AUT`) o `NO AUTORIZADO` (`NAT`). Puede tardar hasta 24 horas desde `RECIBIDA`. |
 | Número de autorización          | `authorizationNumber`  | En el esquema off-line coincide con la clave de acceso del comprobante autorizado.                                                          |
-| Consulta de validez             | `documentQuery`        | Servicio `ConsultaComprobante` del SRI: `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO`. Detecta anulaciones (CTX §24), una capacidad futura (Q-16). `add-sri-transmission` reconcilia con la consulta de autorización por clave, y solo usa este servicio si su design lo justifica. |
-| Reconciliación                  | `reconciliation`       | Consulta por la misma clave de acceso para resolver un resultado ambiguo antes de cualquier reenvío.                                         |
+| Consulta de validez             | `documentQuery`        | Servicio `ConsultaComprobante` del SRI: `AUTORIZADO`, `NO AUTORIZADO`, `PENDIENTE DE ANULAR` o `ANULADO`. Detecta anulaciones (CTX §24), una capacidad futura (Q-16). `add-sri-transmission` reconcilia con la consulta de autorización por clave y usa este servicio solo como guarda antes de un reenvío: un estado informado lo impide. |
+| Reconciliación                  | `reconciliation`       | Consulta por la misma clave de acceso para resolver un resultado ambiguo antes de cualquier reenvío. Automática desde el job, o pedida por el administrador con un motivo ("Reconciliar con el SRI"). |
+| Transmisión detenida            | `stopped`              | El job de la transmisión agotó sus límites o encontró un problema que no se corrige reintentando. No cambia el estado fiscal; espera una reconciliación del administrador. |
+| Ventana de conclusión           | `conclusionWindow`     | Plazo para que el SRI concluya, 24 horas por defecto desde la primera evidencia de recepción (CTX §23.1). Al agotarlo sin conclusión, el comprobante pasa a revisión manual. |
+| Requiere atención               | `attention`            | Filtro de facturas que esperan a una persona o se verifican con el SRI: `SEND_UNKNOWN`, `MANUAL_REVIEW` o transmisión detenida. |
 | Anulación                       | `cancellation`         | Proceso del SRI en línea para dejar sin efecto un comprobante autorizado. No es una nota de crédito, no tiene Web Service público y el sistema no lo inventa (CTX §36). |
 | RIDE                            | `ride`                 | Representación Impresa del Documento Electrónico, en PDF. Se genera desde el comprobante autorizado.                                        |
 | Artefacto                       | `artifact`             | Archivo conservado de un comprobante (XML firmado, XML autorizado, respuestas del SRI, RIDE) junto con su hash.                             |
 | Snapshot fiscal                 | `fiscalSnapshot`       | Copia inmutable de emisor, receptor, ítems, impuestos, catálogos y versiones con que se emitió un comprobante (CTX §39).                     |
 | Intento SRI                     | `sriAttempt`           | Registro de una llamada a recepción, autorización o consulta y de su resultado.                                                             |
 | Entrega                         | `deliveryAttempt`      | Registro de la entrega del comprobante al receptor por descarga, impresión o correo. Su fallo no cambia el estado fiscal (CTX §46).         |
-| Revisión manual                 | `manualReview`         | Estado de un comprobante que el sistema no puede resolver solo.                                                                             |
+| Revisión manual                 | `manualReview`         | Estado de un comprobante que el sistema no puede resolver solo. Solo sale con una reconciliación manual con evidencia concluyente.        |
 | Catálogo fiscal                 | `fiscalCatalog`        | Tablas oficiales versionadas con vigencia y fuente: impuestos y tarifas, códigos de retención, formas de pago, tipos de identificación y de documento sustento (CTX §18). |
 | Registro de esquemas            | `schemaRegistry`       | Manifiesto de los XSD oficiales con tipo, versión, archivo, hash y origen. Sin entrada válida, no se emite (CTX §19).                        |
 | Caso especial                   | `specialCase`          | Operación que exige un anexo de la ficha (exportación, reembolso, combustibles…). Cada uno tiene una categoría declarada: `CORE`, `CONDITIONAL_ISSUER_RULE`, `CONDITIONAL_GO_LIVE`, `NOT_APPLICABLE` u `OUT_OF_MVP` (ADR 0014). |
@@ -116,13 +119,13 @@ en `../architecture/fiscal-emission.md`.
 | --------------------------------------------- | ------------------------- |
 | `RESERVED`                                    | Procesando                |
 | `SIGNED`                                      | Pendiente de envío        |
-| Job de envío en curso (no es estado fiscal)   | Enviando al SRI           |
+| Job `sri.*` en curso (no es estado fiscal)    | Junto al estado: "Hay una interacción con el SRI en curso" |
 | `SEND_UNKNOWN`                                | Verificando con el SRI    |
 | `RECEIVED`                                    | Pendiente de autorización |
 | `AUTHORIZED`                                  | Autorizado                |
 | `RETURNED`                                    | Devuelto                  |
 | `NOT_AUTHORIZED`                              | No autorizado             |
-| `MANUAL_REVIEW` (Q-06)                        | Requiere revisión         |
+| `MANUAL_REVIEW` (design D4, Q-06)             | Requiere revisión         |
 | `CANCEL_PENDING` (capacidad futura, Q-16)     | Pendiente de anulación    |
 | `CANCELLED` (capacidad futura, Q-16)          | Anulado                   |
 
