@@ -3,6 +3,8 @@
 import type { AuditLog } from "../../audit/application/audit-log.ts";
 import type { JobStore, NewJob } from "../../../platform/jobs/jobs.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
+import type { SriService, TransportOutcome } from "../../sri-engine/application/transport.ts";
+import type { Environment } from "../../taxpayer/domain/taxpayer-config.ts";
 import type { DocumentState } from "../domain/document.ts";
 import type { SriMessage, SriOperation, SriOutcome } from "../domain/transmission.ts";
 import type { StoredDocument } from "./ports.ts";
@@ -71,6 +73,65 @@ export type ReconciliationRequestScope = Readonly<{
 
 export interface ReconciliationRequestUnitOfWork {
   run<T>(work: (scope: ReconciliationRequestScope) => Promise<T>): Promise<T>;
+}
+
+/** Un intento con el SRI tal como lo devolvió el transporte (design D7). */
+export type NewSriAttempt = Readonly<{
+  companyId: string;
+  documentId: string;
+  jobId: string | null;
+  operation: SriService;
+  environment: Environment;
+  endpoint: string;
+  origin: "AUTOMATIC" | "MANUAL";
+  initiatedBy: string | null;
+  outcome: TransportOutcome;
+  envelope: Buffer;
+  /** En los envíos: el `SIGNED_XML` enviado. */
+  sentArtifact?: Readonly<{ sha256: string; sizeBytes: number }>;
+}>;
+
+/** Intento guardado, con la respuesta original reconstruida para clasificarla otra vez. */
+export type StoredSriAttempt = Readonly<{
+  id: string;
+  attemptNumber: number;
+  jobId: string | null;
+  operation: SriService;
+  origin: "AUTOMATIC" | "MANUAL";
+  initiatedBy: string | null;
+  outcome: TransportOutcome;
+}>;
+
+export type NewSriAttemptResult = Readonly<{
+  companyId: string;
+  attemptId: string;
+  outcome: SriOutcome;
+  messages: readonly SriMessage[];
+  parsed: Readonly<Record<string, string | number | boolean | null>> | null;
+  classifierVersion: string;
+}>;
+
+/** Resultado guardado de un intento del comprobante: la evidencia de las decisiones (design D15). */
+export type StoredSriResult = Readonly<{
+  attemptId: string;
+  operation: SriService;
+  outcome: SriOutcome;
+  at: Date;
+}>;
+
+/**
+ * Evidencia de los intentos (design D7 y D8). `record` confirma el intento y su respuesta antes de
+ * clasificar (TX A); `recordResult` va en la transacción de la decisión (TX B).
+ */
+export interface SriEvidenceRepository {
+  record(attempt: NewSriAttempt): Promise<StoredSriAttempt>;
+  /** El último intento del job sin resultado: una caída entre la TX A y la TX B. */
+  unclassified(companyId: string, jobId: string): Promise<StoredSriAttempt | null>;
+  recordResult(result: NewSriAttemptResult): Promise<void>;
+  /** Resultados de los intentos del comprobante, del más antiguo al más reciente. */
+  results(companyId: string, documentId: string): Promise<StoredSriResult[]>;
+  /** Intentos registrados por un job, de cualquier operación. */
+  countForJob(companyId: string, jobId: string): Promise<number>;
 }
 
 export type { NewJob };

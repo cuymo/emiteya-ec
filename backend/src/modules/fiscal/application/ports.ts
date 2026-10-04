@@ -153,6 +153,17 @@ export interface DocumentRepository {
   ): Promise<void>;
   /** `RESERVED` → `SIGNED`, con un intento más y el arriendo liberado; true si cambió. */
   markSigned(companyId: string, documentId: string, signedAt: Date): Promise<boolean>;
+  /**
+   * Transición de la transmisión guardada por el estado esperado (design D3): true si cambió. Con
+   * `AUTHORIZED`, escribe la autorización en la misma sentencia (design D16).
+   */
+  advance(
+    companyId: string,
+    documentId: string,
+    from: DocumentState,
+    to: DocumentState,
+    authorization?: DocumentAuthorization,
+  ): Promise<boolean>;
 }
 
 /** Metadatos no sensibles del artefacto: esquema, hashes, versiones y huella del certificado. */

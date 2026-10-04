@@ -148,6 +148,7 @@ function memoryDocuments(initial: StoredDocument) {
     recordTransition: () => Promise.resolve(),
     find: () => Promise.resolve(document),
     lock: () => Promise.reject(new Error("no se usa")),
+    advance: () => Promise.reject(new Error("no se usa")),
     list: () => Promise.reject(new Error("no se usa")),
     acquireAttemptLease(_c, _d, now, until) {
       if (document.state !== "RESERVED") return Promise.resolve(false);

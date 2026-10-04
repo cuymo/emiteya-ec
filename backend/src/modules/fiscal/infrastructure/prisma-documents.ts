@@ -215,6 +215,23 @@ export function createDocumentRepository(db: DbClient): DocumentRepository {
       });
     },
 
+    async advance(companyId, documentId, from, to, authorization) {
+      const { count } = await db.electronicDocument.updateMany({
+        where: { id: documentId, companyId, state: from },
+        data: {
+          state: to,
+          ...(authorization
+            ? {
+                authorizationNumber: authorization.number,
+                authorizationDate: authorization.date,
+                authorizationEnvironment: authorization.environment,
+              }
+            : {}),
+        },
+      });
+      return count === 1;
+    },
+
     async markSigned(companyId, documentId, signedAt) {
       const { count } = await db.electronicDocument.updateMany({
         where: { id: documentId, companyId, state: "RESERVED" },

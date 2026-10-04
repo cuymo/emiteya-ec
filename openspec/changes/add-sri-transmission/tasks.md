@@ -118,8 +118,8 @@
 
 ## 7. Evidencia y máquina de transmisión
 
-- [ ] 7.1 Implementar la máquina de transmisión en el dominio de `fiscal` (`canTransition`, causas y terminales) y los repositorios de intentos, respuestas y resultados, con el artefacto `AUTHORIZED_XML` en el puerto de artefactos (design D3, D7 y D16). Verificar con pruebas unitarias de la máquina (I-15, I-16) y pruebas de integración de los repositorios contra PostgreSQL
-- [ ] 7.2 Implementar el procedimiento común de los handlers, con la evidencia antes de la clasificación (design D8):
+- [x] 7.1 Implementar la máquina de transmisión en el dominio de `fiscal` (`canTransition`, causas y terminales) y los repositorios de intentos, respuestas y resultados, con el artefacto `AUTHORIZED_XML` en el puerto de artefactos (design D3, D7 y D16). Verificar con pruebas unitarias de la máquina (I-15, I-16) y pruebas de integración de los repositorios contra PostgreSQL
+- [x] 7.2 Implementar el procedimiento común de los handlers, con la evidencia antes de la clasificación (design D8):
   1. transporte;
   2. TX A con el intento y la respuesta;
   3. clasificación;

@@ -16,6 +16,8 @@ export { createArtifactStore } from "./prisma-artifacts.ts";
 // Transmisión al SRI (add-sri-transmission, design D1, D6, D15 y D18).
 export { createTransmissionReader } from "./prisma-transmission-reads.ts";
 export { createReconciliationRequestUnitOfWork } from "./reconciliation-unit-of-work.ts";
+export { createSriEvidenceRepository } from "./prisma-sri-evidence.ts";
+export { createTransmissionUnitOfWork } from "./transmission-unit-of-work.ts";
 export type {
   ReconciliationRequestUnitOfWork,
   TransmissionReader,
