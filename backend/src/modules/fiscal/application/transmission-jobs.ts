@@ -23,6 +23,8 @@ export type ReconciliationJobInput = Readonly<{
   runAt: Date;
   /** Ventana de conclusión: el job se detiene si no concluye antes. */
   windowMs: number;
+  /** Inicio de la ventana: la evidencia de recepción, si es anterior a `runAt` (design D4). */
+  windowStart?: Date;
 }>;
 
 type DocumentRef = Pick<StoredDocument, "id" | "companyId">;
@@ -94,7 +96,7 @@ export function reconcileJob(document: DocumentRef, input: ReconciliationJobInpu
     payload: input.correlationId ? { correlationId: input.correlationId } : {},
     runAt: input.runAt,
     maxAttempts: POLL_JOB_MAX_ATTEMPTS,
-    deadlineAt: new Date(input.runAt.getTime() + input.windowMs),
+    deadlineAt: new Date((input.windowStart ?? input.runAt).getTime() + input.windowMs),
     origin: input.origin,
     requestedBy: input.requestedBy ?? null,
     reason: input.reason ?? null,

@@ -115,9 +115,9 @@ export function createSriEvidenceRepository(db: DbClient): SriEvidenceRepository
       return toStored(row);
     },
 
-    async unclassified(companyId, jobId) {
+    async unclassified(companyId, jobId, operation) {
       const row = await db.sriAttempt.findFirst({
-        where: { companyId, jobId, result: { is: null } },
+        where: { companyId, jobId, result: { is: null }, ...(operation ? { operation } : {}) },
         orderBy: { attemptNumber: "desc" },
         include: { response: true },
       });

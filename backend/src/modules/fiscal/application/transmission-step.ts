@@ -45,6 +45,8 @@ export type Classified<C> = Readonly<{
 }>;
 
 export type JobFollowUp =
+  /** Solo guarda el resultado: el mismo arriendo sigue con otra consulta (design D15). */
+  | Readonly<{ action: "CONTINUE" }>
   | Readonly<{ action: "COMPLETE" }>
   | Readonly<{ action: "RESCHEDULE"; at: Date; consumeAttempt: boolean; error?: JobError }>
   | Readonly<{ action: "FAIL"; error: JobError; backoff: BackoffPolicy }>
@@ -182,7 +184,9 @@ export async function applyDecision(
       state = to;
     }
     const followUp = decision.job;
-    if (followUp.action === "COMPLETE") await deps.jobs.complete(scope.db, job, now);
+    if (followUp.action === "CONTINUE") {
+      // El job sigue arrendado: la decisión llega con la consulta siguiente.
+    } else if (followUp.action === "COMPLETE") await deps.jobs.complete(scope.db, job, now);
     else if (followUp.action === "RESCHEDULE") {
       await deps.jobs.reschedule(scope.db, job, {
         at: followUp.at,
@@ -211,7 +215,7 @@ export async function executeSriStep<C>(
   input: Readonly<{ job: Job; document: StoredDocument; signal: AbortSignal; now: () => Date }>,
 ): Promise<StepResult> {
   const { job, document } = input;
-  let attempt = await deps.evidence.unclassified(job.companyId, job.id);
+  let attempt = await deps.evidence.unclassified(job.companyId, job.id, step.operation);
   if (attempt) {
     deps.logger.warn(
       { jobId: job.id, documentId: document.id, attemptId: attempt.id },

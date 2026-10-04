@@ -61,3 +61,4 @@ export function fiscalRouters({
 export { createTransmitHandler } from "../application/transmit-handler.ts";
 export { SRI_JOB_TYPES } from "../domain/transmission.ts";
 export { createAuthorizeHandler } from "../application/authorize-handler.ts";
+export { createReconcileHandler } from "../application/reconcile-handler.ts";

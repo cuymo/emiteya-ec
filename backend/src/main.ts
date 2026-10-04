@@ -45,6 +45,7 @@ import {
   createArtifactStore,
   createAuthorizeHandler,
   createDocumentRepository,
+  createReconcileHandler,
   createSriEvidenceRepository,
   createTransmissionSweeper,
   createTransmissionUnitOfWork,
@@ -332,6 +333,13 @@ const authorizeHandler = createAuthorizeHandler({
   classifiers: sriClassifiers,
   settings: transmissionSettings,
 });
+const reconcileHandler = createReconcileHandler({
+  ...stepDependencies,
+  documents: createDocumentRepository(database.prisma),
+  inquiry: sriGateway,
+  classifiers: sriClassifiers,
+  settings: transmissionSettings,
+}).handler;
 // Barrido de los firmados sin job: al arrancar y periódico, también con la transmisión apagada.
 const transmissionSweeper = createTransmissionSweeper({
   prisma: database.prisma,
@@ -349,6 +357,7 @@ const jobRunner = createJobRunner({
   handlers: {
     [SRI_JOB_TYPES.transmit]: transmitHandler,
     [SRI_JOB_TYPES.authorize]: authorizeHandler,
+    [SRI_JOB_TYPES.reconcile]: reconcileHandler,
   },
   workers: env.SRI_JOB_WORKERS,
   pollIntervalMs: env.SRI_JOB_POLL_INTERVAL_MS,

@@ -84,3 +84,25 @@ describe("máquina de la transmisión", () => {
     expect(pairs.sort()).toEqual(allowed().sort());
   });
 });
+
+describe("caminos de la reconciliación (design D15)", () => {
+  it("solo usan transiciones permitidas, sin saltar la tabla", async () => {
+    const { pathTo } = await import("../../src/modules/fiscal/application/reconcile-handler.ts");
+    const targets = ["RECEIVED", "AUTHORIZED", "NOT_AUTHORIZED", "MANUAL_REVIEW"] as const;
+    for (const from of ["SIGNED", "SEND_UNKNOWN", "RECEIVED", "MANUAL_REVIEW"] as const) {
+      for (const target of targets) {
+        if (from === "RECEIVED" && target === "RECEIVED") continue;
+        const path = pathTo(from, target);
+        let state: (typeof DOCUMENT_STATES)[number] = from;
+        for (const to of path) {
+          expect(canTransition(state, to), `${state}>${to}`).toBe(true);
+          state = to;
+        }
+        expect(state).toBe(target);
+      }
+    }
+    expect(pathTo("SIGNED", "AUTHORIZED")).toEqual(["RECEIVED", "AUTHORIZED"]);
+    expect(pathTo("SIGNED", "MANUAL_REVIEW")).toEqual(["SEND_UNKNOWN", "MANUAL_REVIEW"]);
+    expect(pathTo("MANUAL_REVIEW", "MANUAL_REVIEW")).toEqual([]);
+  });
+});

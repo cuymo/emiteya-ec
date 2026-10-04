@@ -181,7 +181,7 @@
 
 ## 10. Reconciliación automática
 
-- [ ] 10.1 Implementar `reconcileDocument` sobre `SriInquiryPort` y el handler `sri.reconcile` con la estrategia de design D15:
+- [x] 10.1 Implementar `reconcileDocument` sobre `SriInquiryPort` y el handler `sri.reconcile` con la estrategia de design D15:
   - la autorización por clave decide primero;
   - antes de concluir que el SRI no conoce la clave, la consulta de validez actúa como guarda: un estado informado impide el reenvío, lleva a `RECEIVED` o, si es de anulación, a `MANUAL_REVIEW`;
   - una clave desconocida sin evidencia de recepción ni evidencia de validez encola el reenvío de los mismos bytes;

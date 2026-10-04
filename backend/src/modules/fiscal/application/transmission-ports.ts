@@ -125,8 +125,12 @@ export type StoredSriResult = Readonly<{
  */
 export interface SriEvidenceRepository {
   record(attempt: NewSriAttempt): Promise<StoredSriAttempt>;
-  /** El último intento del job sin resultado: una caída entre la TX A y la TX B. */
-  unclassified(companyId: string, jobId: string): Promise<StoredSriAttempt | null>;
+  /** El último intento del job sin resultado, de una operación si se indica: una caída entre A y B. */
+  unclassified(
+    companyId: string,
+    jobId: string,
+    operation?: SriService,
+  ): Promise<StoredSriAttempt | null>;
   recordResult(result: NewSriAttemptResult): Promise<void>;
   /** Resultados de los intentos del comprobante, del más antiguo al más reciente. */
   results(companyId: string, documentId: string): Promise<StoredSriResult[]>;

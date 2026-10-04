@@ -99,6 +99,7 @@ export function decideReception(
       origin: "AUTOMATIC",
       runAt: new Date(now.getTime() + delayMs),
       windowMs: settings.poll.windowMs,
+      windowStart: now,
     }),
     job: { action: "COMPLETE" },
   });
