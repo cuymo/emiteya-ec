@@ -7,7 +7,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { monitorEventLoopDelay } from "node:perf_hooks";
+import { performance } from "node:perf_hooks";
 import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from "vitest";
 import {
   RideRenderUnavailableError,
@@ -52,6 +52,23 @@ const pool = (options: Partial<Parameters<typeof createRideWorkerPool>[0]> = {})
   return created;
 };
 const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
+/** El hueco más largo entre dos turnos de un temporizador mientras corre `work`, en ms. */
+async function longestStall(work: () => Promise<unknown>) {
+  let longest = 0;
+  let last = performance.now();
+  const sampler = setInterval(() => {
+    const now = performance.now();
+    longest = Math.max(longest, now - last);
+    last = now;
+  }, 1);
+  try {
+    await work();
+    await new Promise((resolve) => setTimeout(resolve, 5)); // el último hueco se registra
+  } finally {
+    clearInterval(sampler);
+  }
+  return longest;
+}
 const reasonOf = (promise: Promise<unknown>) =>
   promise.then(
     () => null,
@@ -133,32 +150,41 @@ describe("pool del RIDE", () => {
   });
 
   it("el hilo principal atiende HTTP mientras se dibujan varios RIDE a la vez", async () => {
+    // Referencia en esta misma máquina: un solo render en el hilo no cede el event loop.
+    const assets = loadRideAssets(defaultRideFontsDirectory());
+    if (!assets.ok) throw new Error("fuentes");
+    const inThread = createInProcessRideRenderer(assets.fonts);
+    await inThread.render(multiPage.input); // calentamiento
+    const blockedMs = await longestStall(() => inThread.render(multiPage.input));
+
     const renderer = createPooledRideRenderer(pool({ size: 2, maxQueue: 8 }));
     await renderer.render(oneLine.input); // calentamiento de los workers
     const server: Server = createServer((_req, res) => res.end("ok"));
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     const { port } = server.address() as AddressInfo;
-    const delay = monitorEventLoopDelay({ resolution: 5 });
     try {
-      delay.enable();
-      const renders = Promise.all(
-        Array.from({ length: 6 }, () => renderer.render(multiPage.input)),
-      );
       let served = 0;
-      let rendering = true;
-      void renders.finally(() => (rendering = false));
-      while (rendering) {
-        const response = await fetch(`http://127.0.0.1:${port}/`);
-        expect(await response.text()).toBe("ok");
-        served++;
-        await new Promise((resolve) => setTimeout(resolve, 10));
-      }
-      delay.disable();
-      const outcomes = await renders;
+      let outcomes: RideRenderOutcome[] = [];
+      const pooledMs = await longestStall(async () => {
+        const renders = Promise.all(
+          Array.from({ length: 6 }, () => renderer.render(multiPage.input)),
+        );
+        let rendering = true;
+        void renders.finally(() => (rendering = false));
+        while (rendering) {
+          const response = await fetch(`http://127.0.0.1:${port}/`);
+          expect(await response.text()).toBe("ok");
+          served++;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        outcomes = await renders;
+      });
       expect(outcomes.every((outcome) => outcome.status === "RENDERED")).toBe(true);
       expect(served).toBeGreaterThan(5);
-      // Un render en el hilo lo bloquearía entre 100 y 220 ms; con el pool, el retraso es mínimo.
-      expect(delay.max / 1e6).toBeLessThan(60);
+      // Con seis renders en el pool, el hilo queda libre: su bloqueo más largo es muy inferior al de
+      // un solo render en el hilo. El umbral es relativo a la máquina (un runner de CI con dos
+      // núcleos es más lento que un equipo de desarrollo), nunca una cifra fija.
+      expect(pooledMs).toBeLessThan(blockedMs / 2);
     } finally {
       await new Promise((resolve) => server.close(resolve));
     }
