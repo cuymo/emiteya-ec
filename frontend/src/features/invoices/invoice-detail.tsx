@@ -21,6 +21,7 @@ import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
 import { CLASS_LABELS, STAGE_LABELS, formatDateTime, formatIssueDate } from "./invoice-format";
 import { useInvoice, useRetrySigning } from "./invoices-api";
 import { StateCell } from "./invoices-screen";
+import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "./transmission-section";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -150,6 +151,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-3">
           {!reserved && <TransmissionSection invoice={data} />}
+          <DocumentsSection invoice={data} />
           <Section title="Comprador">
             <p className="flex flex-col text-sm">
               <span className="font-medium break-words">{data.buyer.legalName}</span>

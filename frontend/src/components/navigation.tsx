@@ -9,6 +9,7 @@ import {
   FileKey,
   FilePenLine,
   FileText,
+  FolderArchive,
   Globe,
   ListOrdered,
   Package,
@@ -32,6 +33,13 @@ const GROUPS: Group[] = [
     placement: "main",
     destinations: [
       { href: "/facturas", label: "Facturas", icon: FileText, permission: "invoices.read" },
+      // add-document-archive, design D13: la bandeja documental.
+      {
+        href: "/comprobantes",
+        label: "Comprobantes",
+        icon: FolderArchive,
+        permission: "archive.read",
+      },
       { href: "/borradores", label: "Borradores", icon: FilePenLine, permission: "invoices.draft" },
       { href: "/terceros", label: "Terceros", icon: Contact, permission: "parties.read" },
       { href: "/productos", label: "Productos", icon: Package, permission: "products.read" },

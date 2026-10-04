@@ -113,6 +113,19 @@ describe("shell autenticado", () => {
     }
   });
 
+  it("administrador y operador ven Comprobantes en Operación (add-document-archive)", async () => {
+    for (const me of [ADMIN_ME, OPERATOR_ME]) {
+      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
+      const view = renderShell();
+      await screen.findByText("contenido");
+      expect(screen.getByRole("link", { name: "Comprobantes" }).getAttribute("href")).toBe(
+        "/comprobantes",
+      );
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("sin sesión lleva al inicio de sesión conservando la URL, sin aviso de sesión vencida", async () => {
     mockApi({
       "GET /api/v1/me": () => ({

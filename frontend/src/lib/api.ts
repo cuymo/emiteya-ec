@@ -112,3 +112,30 @@ export async function apiFetchPage<T, M>(
   }
   return page.data as { data: T; meta: M };
 }
+
+/**
+ * Descarga un archivo de una ruta bajo /api/v1: devuelve sus bytes y el nombre que propone el
+ * servidor en `Content-Disposition`, o lanza ApiError con el código del sobre de error.
+ */
+export async function apiFetchFile(
+  path: string,
+  init: Omit<RequestInit, "body"> = {},
+): Promise<{ blob: Blob; filename: string | null }> {
+  const response = await fetch(`${API_BASE_PATH}${path}`, init);
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => undefined);
+    const parsed = errorEnvelopeSchema.safeParse(body);
+    if (parsed.success) {
+      const { code, message, requestId } = parsed.data.error;
+      throw new ApiError(code, response.status, message, requestId);
+    }
+    throw new ApiError(
+      "UNEXPECTED_RESPONSE",
+      response.status,
+      "El servidor respondió con un error inesperado.",
+    );
+  }
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? null;
+  return { blob: await response.blob(), filename };
+}
