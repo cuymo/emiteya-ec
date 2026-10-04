@@ -167,10 +167,21 @@ describe("descargas, impresión y entregas sobre HTTP", () => {
   describe("impresión como acción explícita", () => {
     it("registra la solicitud sin bytes; las lecturas del RIDE nunca registran una impresión", async () => {
       const document = await authorizedWithRide();
-      const res = await print(a, document.id);
+      const res = await print(a, document.id).set("X-Request-Id", "req-impresion-1");
       expect(res.status).toBe(201);
       const data = (res.body as { data: { id: string; occurredAt: string } }).data;
       expect(Object.keys(data).sort()).toEqual(["id", "occurredAt"]);
+      expect(await deliveriesOf(document.id)).toMatchObject([
+        {
+          id: data.id,
+          companyId: a.companyId,
+          event: "PRINT_REQUESTED",
+          artifactKind: "RIDE_PDF",
+          artifactSha256: sha256(PDF),
+          actorUserId: a.operatorId,
+          requestId: "req-impresion-1",
+        },
+      ]);
       // La interfaz pide después el mismo RIDE: queda además su descarga.
       for (let i = 0; i < 3; i++) expect((await get(a, `${document.id}/ride`)).status).toBe(200);
       expect((await deliveriesOf(document.id)).map((d) => d.event)).toEqual([

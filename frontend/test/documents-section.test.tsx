@@ -169,6 +169,7 @@ describe("Documentos de la factura", () => {
     });
     expect(await screen.findByText(/Estamos preparando el RIDE/)).toBeDefined();
     expect(screen.queryByRole("button", { name: "Descargar RIDE" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Imprimir" })).toBeNull();
     ride = "AVAILABLE";
     await vi.advanceTimersByTimeAsync(5_000);
     expect(await screen.findByRole("button", { name: "Descargar RIDE" })).toBeDefined();

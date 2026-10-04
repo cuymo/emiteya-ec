@@ -197,6 +197,35 @@ describe("paginación", () => {
     expect(pages[0]).toContain("NÚMERO DE AUTORIZACIÓN");
     expect(pages[0]).toContain("CLAVE DE ACCESO");
   });
+
+  it("con cualquier número de líneas alrededor del final de la página, los totales no se parten", async () => {
+    let pushed = 0;
+    for (let count = 18; count <= 42; count++) {
+      const invoice = await authorizedInvoice(
+        {
+          ...INVOICE_CASES.oneLine,
+          name: `lineas-${count}`,
+          sequential: String(800 + count).padStart(9, "0"),
+          lines: Array.from({ length: count }, (_, i) => line(i + 1)),
+        },
+        p12Dir,
+      );
+      const pages = await pageTexts((await renderOk(invoice)).pdf);
+      const totals = pages.flatMap((page, index) =>
+        page.includes("SUBTOTAL SIN IMPUESTOS") || page.includes("VALOR TOTAL") ? [index] : [],
+      );
+      expect(totals, `${count} líneas`).toHaveLength(1);
+      for (const label of ["Forma de pago", "TOTAL DESCUENTO", "VALOR TOTAL"]) {
+        expect(pages[totals[0]!], `${count} líneas`).toContain(label);
+      }
+      const lastLine = pages.findIndex(
+        (page) => page.includes(`fin${count} `) || page.endsWith(`fin${count}`),
+      );
+      if (lastLine < totals[0]!) pushed++;
+    }
+    // El barrido cruza el final de la primera página: al menos un bloque pasó entero a la siguiente.
+    expect(pushed).toBeGreaterThan(0);
+  }, 120_000);
 });
 
 describe("determinismo por versión", () => {

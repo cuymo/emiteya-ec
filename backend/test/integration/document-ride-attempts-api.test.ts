@@ -152,6 +152,13 @@ describe("reintento de una generación detenida del RIDE sobre HTTP", () => {
     expect(res.status).toBe(409);
     expect(bodyOf(res).error.code).toBe("RIDE_GENERATION_IN_PROGRESS");
     expect(await rideJobs(document.id)).toHaveLength(1);
+    // En curso: el job está arrendado por un runner.
+    const running = await insertArchiveDocument(prisma, a, await nextInvoice(p12Dir));
+    await leasedJob(store, prisma, rideJob(running, SETTINGS, new Date()));
+    const leased = await retry(a, running.id);
+    expect(leased.status).toBe(409);
+    expect(bodyOf(leased).error.code).toBe("RIDE_GENERATION_IN_PROGRESS");
+    expect(await rideJobs(running.id)).toHaveLength(1);
   });
 
   it("un comprobante que no está autorizado se rechaza", async () => {

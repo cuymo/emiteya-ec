@@ -200,6 +200,11 @@ describe("contenido que el sistema no emite (RIDE_SOURCE_UNSUPPORTED)", () => {
       (xml: string) => xml.replace("<codigo>2</codigo>", "<codigo>3</codigo>"),
       ["impuesto.codigo:3"],
     ],
+    [
+      "IRBPNR",
+      (xml: string) => xml.replace("<codigo>2</codigo>", "<codigo>5</codigo>"),
+      ["impuesto.codigo:5"],
+    ],
   ])("%s", (_name, edit, detail) => {
     expect(rejection(edited(complete, edit))).toEqual({ code: "RIDE_SOURCE_UNSUPPORTED", detail });
   });
