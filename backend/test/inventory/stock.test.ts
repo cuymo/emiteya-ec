@@ -6,7 +6,6 @@ import {
   isNegative,
   negate,
   outflowsOf,
-  requestedByProduct,
   signViolation,
   trackingState,
 } from "../../src/modules/inventory/domain/stock.ts";
@@ -60,21 +59,6 @@ describe("dominio del inventario", () => {
         { productId: "p-a", quantity: "999999999999.999999", inventoryAffectsStock: true },
       ]),
     ).toEqual([{ productId: "p-a", quantity: "1999999999999.999998" }]);
-  });
-
-  it("la cantidad pedida suma las líneas del mismo producto", () => {
-    expect(
-      requestedByProduct([
-        { productId: "p-a", quantity: "3" },
-        { productId: "p-a", quantity: "4" },
-        { productId: "p-b", quantity: "0.5" },
-      ]),
-    ).toEqual(
-      new Map([
-        ["p-a", "7"],
-        ["p-b", "0.5"],
-      ]),
-    );
   });
 
   it("el dominio no convierte cantidades a number ni usa decimal.js", () => {

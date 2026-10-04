@@ -33,6 +33,7 @@ import type {
 import { stopMessage } from "../../application/transmission-messages.ts";
 import type { InvoiceTotals } from "../../domain/amounts.ts";
 import type { InvoiceSnapshot } from "../../domain/snapshot.ts";
+import { stockWarnings } from "../../domain/stock-warnings.ts";
 import type { EmissionObserver, EmissionOutcome } from "../metrics.ts";
 
 function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
@@ -124,7 +125,7 @@ export function toDraftView(details: DraftDetails): DraftView {
       })),
       totals: evaluation.totals ? totalsView(evaluation.totals) : null,
       issues: [...evaluation.issues],
-      stockWarnings: [],
+      stockWarnings: stockWarnings(input),
     },
     createdAt: draft.createdAt.toISOString(),
     createdBy: draft.createdBy,

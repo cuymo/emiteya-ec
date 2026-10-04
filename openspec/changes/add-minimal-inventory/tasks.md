@@ -140,7 +140,7 @@
 
 ## 9. Aviso de existencias en el borrador
 
-- [ ] 9.1 Añadir `stockWarnings` a la vista previa del borrador con `StockReads` (design D9): `STOCK_BELOW_REQUESTED` con la suma de las líneas del producto y su saldo, y `STOCK_NOT_INITIALIZED` sin saldo. Verificar con pruebas HTTP: 3 + 4 sobre saldo 5 avisa 7 frente a 5; un producto marcado sin inicializar avisa sin tratarlo como cero; saldo suficiente sin aviso; y la emisión de un borrador con avisos se completa
+- [x] 9.1 Añadir `stockWarnings` a la vista previa del borrador con `StockReads` (design D9): `STOCK_BELOW_REQUESTED` con la suma de las líneas del producto y su saldo, y `STOCK_NOT_INITIALIZED` sin saldo. Verificar con pruebas HTTP: 3 + 4 sobre saldo 5 avisa 7 frente a 5; un producto marcado sin inicializar avisa sin tratarlo como cero; saldo suficiente sin aviso; y la emisión de un borrador con avisos se completa
 
 ## 10. Pantallas
 

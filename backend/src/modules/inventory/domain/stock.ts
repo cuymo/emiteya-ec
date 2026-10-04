@@ -79,22 +79,6 @@ export function outflowsOf(lines: readonly InvoiceStockLine[]): Outflow[] {
     .sort((a, b) => (a.productId < b.productId ? -1 : a.productId > b.productId ? 1 : 0));
 }
 
-/** Cantidad pedida de cada producto de un borrador: la suma exacta de sus líneas (design D9). */
-export function requestedByProduct(
-  lines: readonly Readonly<{ productId: string; quantity: string }>[],
-): Map<string, string> {
-  const byProduct = new Map<string, string[]>();
-  for (const line of lines) {
-    byProduct.set(line.productId, [...(byProduct.get(line.productId) ?? []), line.quantity]);
-  }
-  return new Map(
-    [...byProduct.entries()].map(([productId, quantities]) => [
-      productId,
-      canonicalDecimal(sumExact(quantities)),
-    ]),
-  );
-}
-
 /** Variación de un movimiento a partir de la cantidad pedida: la salida resta. */
 export const negate = (quantity: string): string =>
   quantity.startsWith("-")
