@@ -185,7 +185,7 @@ Detalles:
 
 - **Lista (`GET /items`)**, paginada con el contrato común:
   - filtros: `search` (código o nombre, con la clave de búsqueda de `products`) y `state` (`TRACKED_NOT_INITIALIZED`, `TRACKED_INITIALIZED`, `DISABLED_INITIALIZED` o `NEGATIVE`);
-  - la pagina la lectura exportada de `products` con un filtro `{ stockTracked?, onlyIds?, excludeIds? }`, con los identificadores inicializados (o con saldo negativo) que aporta el inventario, y después se completa con los saldos de la página en una sola consulta;
+  - la pagina la lectura exportada de `products` con un filtro `{ stockTracked?, onlyIds?, excludeIds?, orIds? }`, con los identificadores inicializados (o con saldo negativo) que aporta el inventario, y después se completa con los saldos de la página en una sola consulta. Sin filtro de estado, `orIds` suma los inicializados a los marcados;
   - sin N+1 y sin leer tablas ajenas. `bench:inventory` mide el caso de 10 000 productos inicializados.
 - **Estado derivado, nunca persistido:**
   - `NOT_TRACKED`: sin marca y sin inventario; solo aparece en el detalle;

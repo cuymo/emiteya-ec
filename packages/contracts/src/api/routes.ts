@@ -108,11 +108,16 @@ import {
 } from "../archive.ts";
 import {
   initializeStockSchema,
+  listStockItemsQuerySchema,
+  listStockMovementsQuerySchema,
   stockAdjustmentSchema,
   stockEntrySchema,
   stockItemDetailViewSchema,
+  stockItemListMetaSchema,
   stockItemParamsSchema,
+  stockItemViewSchema,
   stockMovementHeadersSchema,
+  stockMovementListMetaSchema,
   stockMovementViewSchema,
   stockTrackingSchema,
 } from "../inventory.ts";
@@ -1247,6 +1252,61 @@ export const apiRoutes: readonly RouteDefinition[] = [
   }),
   // Inventario contabilizado por hechos fiscales autorizados (add-minimal-inventory, design D10).
   // Sin rutas para recalcular ni fijar el saldo: solo cambia con movimientos.
+  defineRoute({
+    method: "get",
+    path: "/inventory/items",
+    summary:
+      "Listar los productos marcados como controlados y los que tienen inventario, con su estado y su saldo",
+    request: { query: listStockItemsQuerySchema },
+    responses: {
+      200: {
+        description:
+          "Página de productos con el total en `meta`. Sin inicializar, `balance` es null.",
+        schema: z.strictObject({
+          data: z.array(stockItemViewSchema),
+          meta: stockItemListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/inventory/items/:productId",
+    summary: "Consultar el estado, el saldo y la inicialización del inventario de un producto",
+    request: { params: stockItemParamsSchema },
+    responses: {
+      200: {
+        description: "Inventario del producto.",
+        schema: successEnvelope(stockItemDetailViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: stockProductNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/inventory/items/:productId/movements",
+    summary:
+      "Consultar el kárdex de un producto por rango de fechas, del más reciente al más antiguo, con el saldo después de cada movimiento",
+    request: { params: stockItemParamsSchema, query: listStockMovementsQuerySchema },
+    responses: {
+      200: {
+        description: "Página de movimientos con el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(stockMovementViewSchema),
+          meta: stockMovementListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: stockProductNotFound,
+    },
+  }),
   defineRoute({
     method: "post",
     path: "/inventory/items/:productId/initialization",

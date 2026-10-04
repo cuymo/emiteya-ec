@@ -9,9 +9,12 @@ import {
   canonicalDecimal,
   compareDecimalStrings,
   initializeStockSchema,
+  listStockItemsQuerySchema,
+  listStockMovementsQuerySchema,
   stockAdjustmentSchema,
   stockEntrySchema,
   stockTrackingSchema,
+  type ListMeta,
   type StockMovementType,
 } from "@facturador/contracts";
 import { ConflictError } from "../../../platform/http/errors.ts";
@@ -21,6 +24,7 @@ import {
 } from "../../../platform/idempotency/idempotency.ts";
 import { parseInput, type Authorizer } from "../../identity/application/authorization.ts";
 import type { RequestContext } from "../../identity/application/request-context.ts";
+import { ecuadorRange } from "../domain/stock.ts";
 import {
   inventoryAlreadyInitialized,
   inventoryNotInitialized,
@@ -34,6 +38,7 @@ import {
   StockIdempotencyCollisionError,
   type InventoryObserver,
   type InventoryProduct,
+  type InventoryProductQuery,
   type InventoryProducts,
   type InventoryUnitOfWork,
   type MovementView,
@@ -41,9 +46,13 @@ import {
   type StockIdempotentOperation,
   type StockReads,
   type StockRepository,
+  type StockSummary,
   type StoredMovement,
 } from "./ports.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
+
+/** Producto de la lista con su saldo, si está inicializado. */
+export type StockListItem = Readonly<{ product: InventoryProduct; inventory: StockSummary | null }>;
 
 /** Producto con su inventario, si está inicializado. */
 export type StockItem = Readonly<{ product: InventoryProduct; inventory: StockDetail | null }>;
@@ -177,6 +186,74 @@ export function createInventory(deps: InventoryDependencies) {
   }
 
   return {
+    /**
+     * Lista de inventario (design D8): los productos marcados y los que tienen inventario, paginados
+     * por `products` con los identificadores inicializados, y los saldos de la página en una
+     * consulta. Un producto sin marca ni inventario no aparece.
+     */
+    async list(
+      ctx: RequestContext,
+      rawQuery: unknown,
+    ): Promise<{ items: StockListItem[]; meta: ListMeta }> {
+      authorizer.requirePermission(ctx, "inventory.read");
+      const query = parseInput(listStockItemsQuerySchema, rawQuery);
+      const stock = deps.stock(deps.db);
+      const page = { search: query.search, page: query.page, pageSize: query.pageSize };
+      let filter: InventoryProductQuery;
+      if (query.state === "NEGATIVE") {
+        filter = {
+          ...page,
+          onlyIds: await stock.initializedIds(ctx.companyId, { negative: true }),
+        };
+      } else {
+        const initialized = await stock.initializedIds(ctx.companyId);
+        filter =
+          query.state === "TRACKED_NOT_INITIALIZED"
+            ? { ...page, stockTracked: true, excludeIds: initialized }
+            : query.state === "TRACKED_INITIALIZED"
+              ? { ...page, stockTracked: true, onlyIds: initialized }
+              : query.state === "DISABLED_INITIALIZED"
+                ? { ...page, stockTracked: false, onlyIds: initialized }
+                : { ...page, stockTracked: true, orIds: initialized };
+      }
+      const { items, total } = await deps.products(deps.db).search(ctx.companyId, filter);
+      const summaries = await deps.reads(deps.db).summaries(
+        ctx.companyId,
+        items.map((product) => product.id),
+      );
+      return {
+        items: items.map((product) => ({
+          product,
+          inventory: summaries.get(product.id) ?? null,
+        })),
+        meta: { page: query.page, pageSize: query.pageSize, total },
+      };
+    },
+
+    /** Detalle del inventario de un producto, también sin marca ni inventario (design D8). */
+    async detail(ctx: RequestContext, productId: string): Promise<StockItem> {
+      authorizer.requirePermission(ctx, "inventory.read");
+      return item(ctx, productId, "inventory.read");
+    },
+
+    /** Kárdex de un producto por fechas de Ecuador inclusivas, del más reciente al más antiguo. */
+    async movements(
+      ctx: RequestContext,
+      productId: string,
+      rawQuery: unknown,
+    ): Promise<{ items: MovementView[]; meta: ListMeta }> {
+      authorizer.requirePermission(ctx, "inventory.read");
+      const query = parseInput(listStockMovementsQuerySchema, rawQuery);
+      const product = await deps.products(deps.db).find(ctx.companyId, productId);
+      if (!product) throw authorizer.missingResource(ctx, "inventory.read", productNotFound());
+      const { items, total } = await deps.reads(deps.db).movements(ctx.companyId, productId, {
+        range: ecuadorRange(query.from, query.to),
+        page: query.page,
+        pageSize: query.pageSize,
+      });
+      return { items, meta: { page: query.page, pageSize: query.pageSize, total } };
+    },
+
     /** Inicializa el inventario con su `INICIAL` (design D7): una sola vez en su vida. */
     async initialize(ctx: RequestContext, productId: string, body: unknown): Promise<StockItem> {
       authorizer.requirePermission(ctx, "inventory.initialize");

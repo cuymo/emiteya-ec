@@ -9,11 +9,11 @@ import {
   type StockMovementView,
 } from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
-import type { Inventory, StockItem } from "../../application/inventory.ts";
+import type { Inventory, StockItem, StockListItem } from "../../application/inventory.ts";
 import type { MovementView } from "../../application/ports.ts";
 import { isNegative, trackingState } from "../../domain/stock.ts";
 
-export function toStockItemView(item: StockItem): StockItemView {
+export function toStockItemView(item: StockListItem): StockItemView {
   const { product, inventory } = item;
   const balance = inventory?.stock.balance ?? null;
   return {
@@ -59,6 +59,25 @@ function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
 
 export function inventoryRouter(inventory: Inventory): Router {
   const router = Router();
+
+  router.get("/inventory/items", async (req, res) => {
+    const { items, meta } = await inventory.list(contextOf(res), req.query);
+    send(res, 200, items.map(toStockItemView), meta);
+  });
+
+  router.get("/inventory/items/:productId", async (req, res) => {
+    const item = await inventory.detail(contextOf(res), req.params.productId);
+    send(res, 200, toStockItemDetailView(item));
+  });
+
+  router.get("/inventory/items/:productId/movements", async (req, res) => {
+    const { items, meta } = await inventory.movements(
+      contextOf(res),
+      req.params.productId,
+      req.query,
+    );
+    send(res, 200, items.map(toStockMovementView), meta);
+  });
 
   router.post("/inventory/items/:productId/initialization", async (req, res) => {
     const item = await inventory.initialize(contextOf(res), req.params.productId, req.body);

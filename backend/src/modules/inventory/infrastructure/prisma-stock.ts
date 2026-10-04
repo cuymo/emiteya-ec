@@ -190,5 +190,13 @@ export function createStockRepository(db: DbClient): StockRepository {
       });
       return row ? toMovement(row) : null;
     },
+
+    async initializedIds(companyId, options = {}) {
+      const rows = await db.stockBalance.findMany({
+        where: { companyId, ...(options.negative ? { balance: { lt: 0 } } : {}) },
+        select: { productId: true },
+      });
+      return rows.map((row) => row.productId);
+    },
   };
 }

@@ -3,6 +3,7 @@
 import type { StockMovementOrigin, StockMovementType } from "@facturador/contracts";
 import type { AuditLog } from "../../audit/application/audit-log.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
+import type { MovementRange } from "../domain/stock.ts";
 
 /** Operaciones con clave de idempotencia; junto con la empresa y la clave forman su alcance. */
 export const STOCK_IDEMPOTENT_OPERATIONS = ["inventory.entry", "inventory.adjust"] as const;
@@ -123,6 +124,8 @@ export interface StockRepository {
     operation: StockIdempotentOperation,
     key: string,
   ): Promise<StoredMovement | null>;
+  /** Productos con inventario inicializado de la empresa; con `negative`, solo los de saldo menor que cero. */
+  initializedIds(companyId: string, options?: { negative?: boolean }): Promise<string[]>;
 }
 
 export type InventoryScope = Readonly<{
@@ -152,11 +155,30 @@ export type InventoryProduct = Readonly<{
 }>;
 
 /**
- * Productos sobre el cliente de la transacción (design D1 y D7): la lectura y el cambio de la marca
- * de control de stock de un producto con inventario inicializado, que pertenecen a `products`.
+ * Página de productos de la lista (design D8): por la marca y por los identificadores que aporta el
+ * inventario. `orIds` suma esos productos a los que cumplen la marca.
+ */
+export type InventoryProductQuery = Readonly<{
+  search?: string | undefined;
+  stockTracked?: boolean;
+  onlyIds?: readonly string[];
+  excludeIds?: readonly string[];
+  orIds?: readonly string[];
+  page: number;
+  pageSize: number;
+}>;
+
+/**
+ * Productos sobre el cliente de la transacción (design D1, D7 y D8): la lectura, la página de la
+ * lista y el cambio de la marca de control de stock de un producto con inventario inicializado, que
+ * pertenecen a `products`.
  */
 export type InventoryProducts = (db: DbClient) => {
   find(companyId: string, productId: string): Promise<InventoryProduct | null>;
+  search(
+    companyId: string,
+    query: InventoryProductQuery,
+  ): Promise<{ items: InventoryProduct[]; total: number }>;
   setStockTracked(
     companyId: string,
     productId: string,
@@ -165,12 +187,11 @@ export type InventoryProducts = (db: DbClient) => {
   ): Promise<boolean>;
 };
 
+/** Inventario de un producto con el momento de su último movimiento. */
+export type StockSummary = Readonly<{ stock: StoredStock; lastMovementAt: Date | null }>;
+
 /** Inventario de un producto con la persona que lo inicializó y su último movimiento. */
-export type StockDetail = Readonly<{
-  stock: StoredStock;
-  initializedByName: string;
-  lastMovementAt: Date | null;
-}>;
+export type StockDetail = StockSummary & Readonly<{ initializedByName: string }>;
 
 /** Movimiento con el nombre de su actor, para la API (design D8). */
 export type MovementView = StoredMovement & Readonly<{ actorName: string | null }>;
@@ -178,7 +199,18 @@ export type MovementView = StoredMovement & Readonly<{ actorName: string | null 
 /** Lecturas del inventario para la API (design D8). */
 export interface StockReads {
   detail(companyId: string, productId: string): Promise<StockDetail | null>;
+  /** Saldos de una página de productos, en una consulta, con su último movimiento en otra. */
+  summaries(
+    companyId: string,
+    productIds: readonly string[],
+  ): Promise<ReadonlyMap<string, StockSummary>>;
   movement(companyId: string, movementId: string): Promise<MovementView | null>;
+  /** Kárdex de un producto en el rango, por posición descendente. */
+  movements(
+    companyId: string,
+    productId: string,
+    query: Readonly<{ range: MovementRange; page: number; pageSize: number }>,
+  ): Promise<{ items: MovementView[]; total: number }>;
 }
 
 /** Métricas del inventario (design D14): cada movimiento registrado, por tipo. */

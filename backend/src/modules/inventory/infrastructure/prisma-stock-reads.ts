@@ -28,6 +28,57 @@ export function createStockReads(db: DbClient): StockReads {
       };
     },
 
+    async summaries(companyId, productIds) {
+      const found = await stock.findMany(companyId, productIds);
+      if (found.size === 0) return new Map();
+      const last = await db.stockMovement.findMany({
+        where: {
+          OR: [...found.values()].map((item) => ({
+            companyId,
+            productId: item.productId,
+            position: item.lastPosition,
+          })),
+        },
+        select: { productId: true, occurredAt: true },
+      });
+      const lastAt = new Map(last.map((row) => [row.productId, row.occurredAt]));
+      return new Map(
+        [...found].map(([productId, item]) => [
+          productId,
+          { stock: item, lastMovementAt: lastAt.get(productId) ?? null },
+        ]),
+      );
+    },
+
+    async movements(companyId, productId, { range, page, pageSize }) {
+      const where = {
+        companyId,
+        productId,
+        ...(range.from || range.before
+          ? {
+              occurredAt: {
+                ...(range.from ? { gte: range.from } : {}),
+                ...(range.before ? { lt: range.before } : {}),
+              },
+            }
+          : {}),
+      };
+      const [rows, total] = await Promise.all([
+        db.stockMovement.findMany({
+          where,
+          orderBy: { position: "desc" },
+          include: { actor: { select: { name: true } } },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        db.stockMovement.count({ where }),
+      ]);
+      return {
+        items: rows.map((row) => ({ ...toMovement(row), actorName: row.actor?.name ?? null })),
+        total,
+      };
+    },
+
     async movement(companyId, movementId) {
       const row = await db.stockMovement.findFirst({
         where: { id: movementId, companyId },

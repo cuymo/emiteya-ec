@@ -293,7 +293,7 @@ apiRouter.use(
 );
 // Inventario contabilizado por hechos fiscales autorizados (add-minimal-inventory, design D10). Sus
 // métricas se registran una vez: las comparten las operaciones del inventario y la salida al autorizar.
-const inventoryMetrics = registerInventoryMetrics(metrics.registry);
+const inventoryMetrics = registerInventoryMetrics(metrics.registry, { prisma: database.prisma });
 apiRouter.use(
   ...inventoryModule({ prisma: database.prisma, authorizer, observer: inventoryMetrics }).routers,
 );

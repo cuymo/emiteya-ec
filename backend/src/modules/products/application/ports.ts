@@ -41,12 +41,32 @@ export type EntryKeySet = readonly { catalogType: string; entryKey: string }[];
 
 export type TaxStatusFilter = { review: EntryKeySet; incomplete: EntryKeySet };
 
+/**
+ * Página de productos para la lista del inventario (add-minimal-inventory, design D8): por la marca
+ * de control de stock y por los identificadores que aporta el inventario, con la búsqueda de la
+ * lista de productos. `orIds` suma esos productos a los que cumplen la marca.
+ */
+export type StockProductQuery = Readonly<{
+  search?: string | undefined;
+  stockTracked?: boolean;
+  onlyIds?: readonly string[];
+  excludeIds?: readonly string[];
+  orIds?: readonly string[];
+  page: number;
+  pageSize: number;
+}>;
+
 export interface ProductRepository {
   find(companyId: string, productId: string): Promise<ProductRecord | null>;
   search(
     companyId: string,
     query: ListProductsQuery,
     taxStatus: TaxStatusFilter,
+  ): Promise<{ items: ProductRecord[]; total: number }>;
+  /** Página de productos de la lista del inventario, por nombre y, como desempate, por id. */
+  searchForStock(
+    companyId: string,
+    query: StockProductQuery,
   ): Promise<{ items: ProductRecord[]; total: number }>;
   /** Falla con DuplicateMainCodeError si el código principal ya existe en la empresa. */
   create(companyId: string, data: ProductData, userId: string): Promise<ProductRecord>;

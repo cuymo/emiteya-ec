@@ -129,7 +129,7 @@
 
 ## 8. Lista, detalle y kárdex
 
-- [ ] 8.1 Implementar `GET /api/v1/inventory/items`, `/{productId}` y `/{productId}/movements` con la lectura exportada de `products` y los saldos por página de design D8, y la métrica `inventory_negative_balances`. Registrar las rutas en OpenAPI. Verificar con pruebas HTTP:
+- [x] 8.1 Implementar `GET /api/v1/inventory/items`, `/{productId}` y `/{productId}/movements` con la lectura exportada de `products` y los saldos por página de design D8, y la métrica `inventory_negative_balances`. Registrar las rutas en OpenAPI. Verificar con pruebas HTTP:
   - los cuatro estados con `balance: null` sin inicializar y el negativo indicado;
   - filtros de estado y de saldo negativo, búsqueda por código y nombre, y paginación estable;
   - un producto sin marca ni inventario fuera de la lista;

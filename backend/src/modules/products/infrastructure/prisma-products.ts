@@ -138,6 +138,42 @@ export function createProductRepository(db: DbClient): ProductRepository {
       return { items: rows.map(toRecord), total };
     },
 
+    async searchForStock(companyId, query) {
+      const key = query.search ? escapeLike(searchKey(query.search)) : "";
+      const tracked: Prisma.ProductWhereInput =
+        query.stockTracked === undefined ? {} : { stockTracked: query.stockTracked };
+      const where: Prisma.ProductWhereInput = {
+        companyId,
+        AND: [
+          query.orIds ? { OR: [tracked, { id: { in: [...query.orIds] } }] } : tracked,
+          ...(query.onlyIds ? [{ id: { in: [...query.onlyIds] } }] : []),
+          ...(query.excludeIds ? [{ id: { notIn: [...query.excludeIds] } }] : []),
+          ...(key
+            ? [
+                {
+                  OR: [
+                    { searchMainCode: { startsWith: key } },
+                    { searchAuxiliaryCode: { startsWith: key } },
+                    { searchName: { contains: key } },
+                  ],
+                },
+              ]
+            : []),
+        ],
+      };
+      const [rows, total] = await Promise.all([
+        db.product.findMany({
+          where,
+          orderBy: [{ searchName: "asc" }, { id: "asc" }],
+          include: WITH_TAXES,
+          skip: (query.page - 1) * query.pageSize,
+          take: query.pageSize,
+        }),
+        db.product.count({ where }),
+      ]);
+      return { items: rows.map(toRecord), total };
+    },
+
     create(companyId, data, userId) {
       return translateUnique(async () => {
         const product = await db.product.create({

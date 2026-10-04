@@ -6,7 +6,11 @@ import type { DbClient } from "../../../platform/db/database.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import { productStockTracking } from "../../products/infrastructure/index.ts";
 import { createInventory } from "../application/inventory.ts";
-import type { InventoryObserver, InventoryProducts } from "../application/ports.ts";
+import type {
+  InventoryObserver,
+  InventoryProduct,
+  InventoryProducts,
+} from "../application/ports.ts";
 import { inventoryRouter } from "./http/inventory-router.ts";
 import { createStockRepository } from "./prisma-stock.ts";
 import { createStockReads } from "./prisma-stock-reads.ts";
@@ -52,22 +56,26 @@ export function inventoryInitialization(db: DbClient) {
 }
 
 /** Productos vistos por el inventario: la lectura y la marca que pertenecen a `products`. */
+const toInventoryProduct = (found: InventoryProduct): InventoryProduct => ({
+  id: found.id,
+  mainCode: found.mainCode,
+  auxiliaryCode: found.auxiliaryCode,
+  name: found.name,
+  kind: found.kind,
+  status: found.status,
+  stockTracked: found.stockTracked,
+});
+
 const inventoryProducts: InventoryProducts = (db) => {
   const products = productStockTracking(db);
   return {
     async find(companyId, productId) {
       const found = await products.find(companyId, productId);
-      return found
-        ? {
-            id: found.id,
-            mainCode: found.mainCode,
-            auxiliaryCode: found.auxiliaryCode,
-            name: found.name,
-            kind: found.kind,
-            status: found.status,
-            stockTracked: found.stockTracked,
-          }
-        : null;
+      return found ? toInventoryProduct(found) : null;
+    },
+    async search(companyId, query) {
+      const { items, total } = await products.search(companyId, query);
+      return { items: items.map(toInventoryProduct), total };
     },
     setStockTracked: (companyId, productId, stockTracked, userId) =>
       products.setStockTracked(companyId, productId, stockTracked, userId),

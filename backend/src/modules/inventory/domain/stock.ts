@@ -36,6 +36,20 @@ export function trackingState(stockTracked: boolean, initialized: boolean): Stoc
   return stockTracked ? "TRACKED_NOT_INITIALIZED" : "NOT_TRACKED";
 }
 
+/** Ecuador continental: UTC-05:00 todo el año, sin horario de verano (America/Guayaquil). */
+const ECUADOR_MIDNIGHT = "T00:00:00-05:00";
+const DAY_MS = 86_400_000;
+
+/** Instantes del kárdex por fechas de Ecuador inclusivas (design D8): desde y antes de. */
+export type MovementRange = Readonly<{ from?: Date; before?: Date }>;
+
+export function ecuadorRange(from?: string, to?: string): MovementRange {
+  return {
+    ...(from ? { from: new Date(`${from}${ECUADOR_MIDNIGHT}`) } : {}),
+    ...(to ? { before: new Date(new Date(`${to}${ECUADOR_MIDNIGHT}`).getTime() + DAY_MS) } : {}),
+  };
+}
+
 /** Línea de una factura con la decisión de inventario congelada al reservar (design D4). */
 export type InvoiceStockLine = Readonly<{
   productId: string;

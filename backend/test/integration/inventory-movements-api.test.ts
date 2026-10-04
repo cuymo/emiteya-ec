@@ -258,7 +258,7 @@ describe("entradas y ajustes del inventario sobre HTTP", () => {
         memberships: createMembershipReader(prisma),
         securityEvents: { emit: () => undefined },
       }),
-      observer: registerInventoryMetrics(registry),
+      observer: registerInventoryMetrics(registry, { prisma }),
     }).service;
     const product = await stocked(a, "0");
     const ctx = {
