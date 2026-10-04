@@ -1,0 +1,53 @@
+Extracto literal para el vector oficial de la clave de acceso (add-sri-transmission, tarea 14.2,
+design D23).
+
+Fuente: Ficha técnica "Manual de usuario, catálogo y especificaciones técnicas. Emisión de
+Comprobantes Electrónicos. Método de autorización Off-line", versión 2.34, publicada el 2026-07-27.
+URL oficial: la del dataset consumer-final-policy/1.json (portal del SRI).
+SHA-256 del PDF descargado el 2026-10-03: 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9
+(el mismo de los datasets publicados). Extraído con pdftotext -layout.
+
+Páginas 11 y 12, sección 5.2 (regla del dígito verificador y ejemplo de verificación):
+
+El dígito verificador será aplicado sobre toda la clave de acceso (48 dígitos) y
+deberá ser incorporado por el contribuyente a través del método denominado
+“Módulo 11”, con un factor de chequeo ponderado (2), este mecanismo de
+detección de errores será verificado al momento de la recepción del comprobante.
+Cuando el resultado del dígito verificador obtenido sea igual a once (11), el dígito
+verificador será el cero (0) y cuando el resultado del dígito verificador obtenido sea
+igual a diez 10, el dígito verificador será el uno (1).
+
+El código numérico constituye un mecanismo para brindar seguridad al emisor en
+cada comprobante emitido, el algoritmo numérico para conformar este código es
+potestad absoluta del contribuyente emisor.
+
+
+Ejemplo de verificación utilizando algoritmo de módulo 11:
+
+                     Cadena de verificación: 41261533
+
+                                    +---+---+---+---+---+---+---+---+ +---+
+                                     |4 |1 |2| 6| 1| 5| 3| 3|-|?|
+    Pasos 1 y 2                     +---+---+---+---+---+---+---+---+ +---+
+                                      | |      |    | | | | |
+                                     x3 x2 x7 x6 x5 x4 x3 x2
+                                      | |      |    | |     | | |
+                                    =12 =2 =14 =36 =5 =20 =9 =6
+
+    Paso 3                            12 +2 +14 +36 +5 +20 +9 +6 = 104
+
+    Paso 4                           104 mod 11 = 5 (ya que 104 = 11 x 9 + 5)
+
+    Paso 5                           11 - 5 = 6                                      Resultado = 6
+
+Página 18, sección 7.2.3, ejemplo "Recepción fallida" de validarComprobante:
+
+                             <claveAcceso>1702201205176001321000110010030001000011234567816</claveAcceso>
+
+Nota de la revisión (no es texto de la ficha): de las claves de 49 dígitos que aparecen en los
+ejemplos de la ficha, dos no cumplen el algoritmo del ejemplo de la sección 5.2: la de la página 23
+(2111202401176001321000110010010000011171234567810, verificador 0; el algoritmo da 5) y la que se
+repite en las páginas 66 y 77 (0403201301176815353000110015010000000081234567816, verificador 6; el
+algoritmo da 0). Los ejemplos de los sobres son ilustrativos: el vector oficial es el ejemplo de
+verificación de la sección 5.2, y la clave de la página 18 se usa porque la ficha la muestra como
+clave de un comprobante y cumple ese algoritmo.

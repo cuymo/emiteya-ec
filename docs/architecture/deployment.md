@@ -198,7 +198,7 @@ normativas:
 - **Deshabilitada** (por defecto): el runner no toma jobs `sri.*`, que siguen `PENDING` sin arriendo, sin consumir intentos y sin ninguna llamada de red. La firma y el barrido siguen creándolos, de modo que al habilitarla avanzan los existentes. La instalación puede estar lista, y lo deja ver: `/health/ready` responde `sriTransmission: "disabled"`, la métrica `sri_transmission_enabled` vale 0 y el arranque registra el estado sin secretos ni URLs.
 - **Habilitada:** exige sus precondiciones técnicas, endpoints válidos, una política de tamaño vigente (Q-47), al menos un worker y la base de datos. Si falta una, `/health/ready` responde `503`, el log nombra la precondición que falta y los jobs `sri.*` siguen pausados. El interruptor nunca salta una invariante fiscal: la integridad, el tamaño y la evidencia previa se comprueban en cada envío.
 - **Apagado:** el runner deja de tomar trabajo, espera hasta 8 s a los jobs en curso y vence los arriendos de los que no terminaron, para que otra instancia los retome. El plazo de parada del orquestador debe cubrirlo.
-- **Habilitación:** solo después de las compuertas previas a la transmisión real (S-3 online con un P12 real y un RUC de Pruebas, vector oficial de la clave y Q-47), y primero en Pruebas.
+- **Habilitación:** solo después de las compuertas previas a la transmisión real (S-3 online con un P12 real y un RUC de Pruebas, y Q-47; el vector oficial de la clave se cumplió el 2026-10-04), y primero en Pruebas. El procedimiento y el estado de cada compuerta están en `docs/quality/sri-certification.md`.
 
 ### Actualizaciones y reversión
 

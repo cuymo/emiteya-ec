@@ -260,7 +260,7 @@
   - con la transmisión apagada, ninguna llamada.
 
   Verificar que la prueba pasa
-- [ ] 14.2 Escribir el procedimiento de S-3 online en `docs/quality/sri-certification.md` (design D23):
+- [x] 14.2 Escribir el procedimiento de S-3 online en `docs/quality/sri-certification.md` (design D23):
   - P12 real, contraseña y RUC de Pruebas fuera del repositorio;
   - transporte, parsers y transiciones reales, sin rutas especiales;
   - verificación de la respuesta original y del XML autorizado;

@@ -1,8 +1,9 @@
 // Contrato del adaptador AccessKeys (add-invoice-emission, tarea 6.1, design D12): 49 dígitos con
 // la estructura de CTX §8.1 y el dígito verificador de la implementación de referencia de CTX §8.3,
 // calculado aquí de forma independiente. Debe pasar antes de aceptar cualquier actualización de
-// facturacion-electronica-ec. El vector oficial de la ficha v2.34 sigue pendiente: el portal del SRI
-// no fue accesible el 2026-10-03 (tarea 12.2; S-3 en open-questions.md) y no se inventa.
+// facturacion-electronica-ec. El vector oficial sale de la ficha v2.34 (add-sri-transmission, tarea
+// 14.2): el ejemplo de verificación de la sección 5.2 y la clave del ejemplo de recepción de la
+// sección 7.2.3, con su extracto literal en docs/product/sri-catalogs/fuentes/.
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -11,19 +12,28 @@ import {
 } from "../../src/modules/sri-engine/application/ports.ts";
 import { createAccessKeys } from "../../src/modules/sri-engine/infrastructure/access-keys.ts";
 
-/** CTX §8.3, transcrita: pesos 2 a 7 desde la derecha; 11 → 0 y 10 → 1. */
+/** CTX §8.3, transcrita: pesos 2 a 7 desde la derecha. */
+function weightedSum(digits: string): number {
+  let factor = 2;
+  let sum = 0;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    sum += Number(digits[i]) * factor;
+    factor++;
+    if (factor > 7) factor = 2;
+  }
+  return sum;
+}
+
+/** CTX §8.3, transcrita: 11 menos el residuo; 11 → 0 y 10 → 1. */
 function sriModulo11(first48Digits: string): number {
   if (!/^\d{48}$/.test(first48Digits)) {
     throw new Error("La base de la clave debe tener exactamente 48 dígitos");
   }
-  let factor = 2;
-  let sum = 0;
-  for (let i = first48Digits.length - 1; i >= 0; i--) {
-    sum += Number(first48Digits[i]) * factor;
-    factor++;
-    if (factor > 7) factor = 2;
-  }
-  const result = 11 - (sum % 11);
+  return checkDigit(first48Digits);
+}
+
+function checkDigit(digits: string): number {
+  const result = 11 - (weightedSum(digits) % 11);
   if (result === 11) return 0;
   if (result === 10) return 1;
   return result;
@@ -46,6 +56,28 @@ const compose = (overrides: Partial<AccessKeyInput> = {}) =>
 describe("contrato de AccessKeys (CTX §8)", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("la regla transcrita reproduce el ejemplo oficial de verificación (ficha v2.34, §5.2)", () => {
+    // Páginas 11 y 12 (PDF con SHA-256 7333aebf…): cadena 41261533, pesos 3 2 7 6 5 4 3 2,
+    // suma 104, 104 mod 11 = 5 y 11 − 5 = 6.
+    expect(weightedSum("41261533")).toBe(104);
+    expect(checkDigit("41261533")).toBe(6);
+  });
+
+  it("compone la clave del ejemplo oficial de recepción (ficha v2.34, §7.2.3, página 18)", () => {
+    expect(
+      keys.compose({
+        issueDate: "2012-02-17",
+        documentType: "05",
+        ruc: "1760013210001",
+        environment: "1",
+        establishment: "001",
+        emissionPoint: "003",
+        sequential: "000100001",
+        numericCode: "12345678",
+      }),
+    ).toBe("1702201205176001321000110010030001000011234567816");
   });
 
   it("compone la estructura de CTX §8.1 con el dígito verificador de §8.3", () => {

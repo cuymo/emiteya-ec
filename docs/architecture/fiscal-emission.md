@@ -205,7 +205,7 @@ Decididas el 2026-10-03 en la revisión de readiness del cambio 7; el design del
   - No bloquea proponer. Puede bloquear apply si el flujo necesita imponer la cifra exacta.
 - **API.** No hay `POST /send`, `/soap`, `/reception` ni `/authorization`: el sistema transmite con jobs. La API de facturas expone el estado, los mensajes de negocio y el historial útil. Si el design la justifica, añade una acción de reconciliación solo para el administrador.
 - **Compuertas externas.** No bloquean proponer ni apply; sí bloquean la transmisión real y el go-live:
-  - el vector oficial de la clave de acceso, que bloquea la transmisión real y S-3 online;
+  - el vector oficial de la clave de acceso: cumplido el 2026-10-04 (ficha v2.34, secciones 5.2 y 7.2.3, en la prueba de contrato de `AccessKeys`);
   - S-3 online con nuestro `SIGNED_XML` persistido, nuestro adaptador, nuestra clave, nuestros parsers y nuestras transiciones;
   - un P12 ecuatoriano real;
   - un RUC habilitado en Pruebas del SRI.
@@ -248,7 +248,7 @@ resume en "Implementación de `add-invoice-emission`".
   - No hay descargas en tiempo de ejecución ni caída a XSD de terceros: un archivo ausente o con otro hash falla cerrada.
   - Una prueba del artefacto de build demuestra que los esquemas están presentes (ADR 0021).
 - **Concurrencia XSD.** La validación usa concurrencia acotada, nunca un worker por solicitud sin límite. El adaptador ya acota la concurrencia, la cola y el plazo, con `VALIDATOR_BUSY` y `VALIDATOR_TIMEOUT` (ADR 0021). El design fija los valores y el comportamiento ante saturación; Q-26 dirá si hay que ajustarlos.
-- **Vector oficial de la clave de acceso.** No bloquea el proposal: el algoritmo coincide con CTX §8.3, una prueba independiente comprueba el dígito y S-3 offline la composición completa. Obtener y verificar el vector oficial de la ficha es evidencia adicional; no se inventa. El 2026-10-03 el portal del SRI no fue accesible desde el entorno del proyecto. El vector queda como evidencia pendiente y como compuerta previa a la transmisión: no bloquea el archive de este cambio (S-3 en `open-questions.md`).
+- **Vector oficial de la clave de acceso.** No bloquea el proposal: el algoritmo coincide con CTX §8.3, una prueba independiente comprueba el dígito y S-3 offline la composición completa. Obtener y verificar el vector oficial de la ficha es evidencia adicional; no se inventa. El 2026-10-03 el portal del SRI no fue accesible desde el entorno del proyecto. El vector queda como evidencia pendiente y como compuerta previa a la transmisión: no bloquea el archive de este cambio (S-3 en `open-questions.md`). Se obtuvo el 2026-10-04 en `add-sri-transmission`: el ejemplo de verificación de la sección 5.2 y la clave del ejemplo de recepción de la sección 7.2.3 pasan con el algoritmo sin cambios.
 
 ## Implementación de `add-invoice-emission`
 
