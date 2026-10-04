@@ -140,6 +140,22 @@ describe("bandeja de comprobantes sobre HTTP", () => {
     const all = bodyOf(await list(a, { pageSize: "100" })).data;
     const dates = all.map((item) => item.issueDate);
     expect(dates).toEqual([...dates].sort().reverse());
+    // En un mismo día, del emitido más tarde al más temprano.
+    const created = new Map(
+      (
+        await prisma.electronicDocument.findMany({
+          where: { id: { in: all.map((item) => item.id) } },
+          select: { id: true, createdAt: true },
+        })
+      ).map((row) => [row.id, row.createdAt.getTime()]),
+    );
+    const busiest = Object.entries(Object.groupBy(all, (item) => item.issueDate)).sort(
+      ([, x], [, y]) => y!.length - x!.length,
+    )[0]![1]!;
+    const sameDay = all.filter((item) => busiest.includes(item));
+    expect(sameDay.length).toBeGreaterThan(5);
+    const times = sameDay.map((item) => created.get(item.id)!);
+    expect(times).toEqual([...times].sort((x, y) => y - x));
     const first = bodyOf(await list(a, { pageSize: "3", page: "1" })).data;
     const second = bodyOf(await list(a, { pageSize: "3", page: "2" })).data;
     expect([...first, ...second].map((item) => item.id)).toEqual(all.slice(0, 6).map((i) => i.id));

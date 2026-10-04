@@ -105,7 +105,8 @@ export function createArchiveReads(db: DbClient): ArchiveReads {
         db.electronicDocument.findMany({
           where,
           select: SELECT,
-          orderBy: [{ issueDate: "desc" }, { id: "desc" }],
+          // Dentro de un mismo día, el emitido después va primero; el identificador solo desempata.
+          orderBy: [{ issueDate: "desc" }, { createdAt: "desc" }, { id: "desc" }],
           skip: (filters.page - 1) * filters.pageSize,
           take: filters.pageSize,
         }),

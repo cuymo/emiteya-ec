@@ -68,7 +68,7 @@ Estado de partida, tras `add-sri-transmission`:
   - `search` (prefijo del número o del nombre del receptor, como en `Facturas`);
   - `establishmentId` y `emissionPointId`;
   - paginación del contrato común.
-- **Orden:** fecha de emisión descendente y después el identificador, estable para la paginación.
+- **Orden:** fecha de emisión descendente; dentro del mismo día, del creado más tarde al más temprano, y el identificador como desempate estable para la paginación.
 - **Cada elemento:** identificador, tipo, número, fecha de emisión, receptor (nombre e identificación), total, estado, transmisión detenida (la lectura del cambio 7) y documentos:
   - `ride`: `AVAILABLE`, `PENDING`, `STOPPED` o `NOT_APPLICABLE`;
   - `authorizedXml` y `signedXml`: booleanos.
