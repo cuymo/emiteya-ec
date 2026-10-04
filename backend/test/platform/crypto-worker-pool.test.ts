@@ -99,6 +99,68 @@ describe("pool criptográfico (design D18)", () => {
     expect(bytes.byteLength).toBe(0);
   });
 
+  // Caracterización previa a la extracción de la primitiva genérica (add-document-archive, design
+  // D6): fija la semántica que el pool criptográfico conserva sobre ella.
+  it("una cola de tamaño 0 rechaza toda tarea, aunque haya un worker libre", async () => {
+    const p = pool({ size: 1, maxQueue: 0 });
+    await expect(p.run("echo", { value: "x" })).rejects.toBeInstanceOf(CryptoBusyError);
+  });
+
+  it("sus errores conservan el código y el estado HTTP", async () => {
+    const busy = pool({ size: 1, maxQueue: 1 });
+    const running = [busy.run("busy", { ms: 200 }), busy.run("echo", { value: "en cola" })];
+    const rejected = await busy.run("echo", { value: "x" }).catch((error: unknown) => error);
+    expect(rejected).toMatchObject({ code: "CRYPTO_BUSY", status: 503 });
+    await Promise.all(running);
+    const slow = pool({ size: 1, timeoutMs: 200 });
+    expect(await slow.run("hang", {}).catch((error: unknown) => error)).toMatchObject({
+      code: "CRYPTO_TIMEOUT",
+      status: 503,
+    });
+    const closed = pool();
+    await closed.close();
+    expect(await closed.run("echo", { value: "x" }).catch((error: unknown) => error)).toMatchObject(
+      { code: "CRYPTO_UNAVAILABLE", status: 503 },
+    );
+  });
+
+  it("registra la interrupción con la tarea y el motivo, nunca la carga útil", async () => {
+    const warnings: { details: object; message: string }[] = [];
+    const logger = {
+      warn: (details: object, message: string) => warnings.push({ details, message }),
+    };
+    const p = createCryptoWorkerPool({ entry, size: 1, timeoutMs: 200, logger });
+    pools.push(p);
+    await expect(p.run("hang", { secret: "no-se-registra" })).rejects.toBeInstanceOf(
+      CryptoTimeoutError,
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]!.message).toBe("tarea criptográfica interrumpida");
+    expect(warnings[0]!.details).toMatchObject({ task: "hang", reason: "timeout" });
+    expect(JSON.stringify(warnings)).not.toContain("no-se-registra");
+  });
+
+  it("un worker colgado no detiene a los demás", async () => {
+    const p = pool({ size: 2, timeoutMs: 1_000 });
+    await p.run("echo", { value: "calentamiento" });
+    const hung = p.run("hang", {}).catch((error: unknown) => error);
+    expect(await p.run("echo", { value: "en paralelo" })).toEqual({
+      ok: true,
+      value: { echoed: "en paralelo" },
+    });
+    expect(await hung).toBeInstanceOf(CryptoTimeoutError);
+  });
+
+  it("al cerrarse rechaza las tareas en cola y termina la que está en curso", async () => {
+    const p = createCryptoWorkerPool({ entry, size: 1, timeoutMs: 10_000 });
+    const inFlight = p.run("busy", { ms: 200 });
+    const queued = p.run("echo", { value: "en cola" }).catch((error: unknown) => error);
+    const closing = p.close();
+    expect(await queued).toBeInstanceOf(CryptoPoolClosedError);
+    expect(await inFlight).toEqual({ ok: true, value: { spent: true } });
+    await closing;
+  });
+
   it("al cerrarse espera la tarea en curso, termina los workers y rechaza nuevas tareas", async () => {
     const p = createCryptoWorkerPool({ entry, size: 1, timeoutMs: 10_000 });
     const inFlight = p.run("busy", { ms: 200 });
