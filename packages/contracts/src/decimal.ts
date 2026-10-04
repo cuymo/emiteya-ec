@@ -61,6 +61,18 @@ export const DECIMAL_SPECS = {
     min: "0",
     xsd: { types: ["cantidad"], documents: ["01", "03", "04", "06"] },
   },
+  /**
+   * Existencias del inventario (add-minimal-inventory, design D3): variaciones con signo y saldos.
+   * No sale de un XSD: lleva los decimales de `cantidad` y una parte entera que admite la salida de
+   * una factura de 1 000 líneas de cantidad máxima y cualquier saldo acumulado realista; con 6
+   * decimales, menos de 10²⁴. Un saldo puede ser negativo (Q-19).
+   */
+  existencia: {
+    totalDigits: 30,
+    fractionDigits: 6,
+    min: null,
+    xsd: { types: [], documents: [] },
+  },
 } as const satisfies Record<string, DecimalSpec>;
 
 export type DecimalSpecName = keyof typeof DECIMAL_SPECS;

@@ -2,8 +2,8 @@
 
 ## 1. Esquema del inventario
 
-- [ ] 1.1 Añadir el dominio decimal `existencia` (con signo, hasta 6 decimales y menos de 10²⁴ en valor absoluto) a `DECIMAL_SPECS` y a `decimal-policy.md` (design D3). Verificar con pruebas de contratos y de `fiscal-decimal`: bordes aceptados, más decimales y fuera de rango rechazados, signo negativo admitido y ninguna conversión a `number`
-- [ ] 1.2 Crear la migración aditiva de design D2:
+- [x] 1.1 Añadir el dominio decimal `existencia` (con signo, 30 dígitos en total y hasta 6 decimales: con 6 decimales, menos de 10²⁴) a `DECIMAL_SPECS` y a `decimal-policy.md` (design D3). Verificar con pruebas de contratos y de `fiscal-decimal`: bordes aceptados, más decimales y fuera de rango rechazados, signo negativo admitido y ninguna conversión a `number`
+- [x] 1.2 Crear la migración aditiva de design D2:
   - `stock_balance`: FK compuesta al producto, `balance`, `last_position`, `initialized_at` e `initialized_by`, con triggers contra `DELETE` y `TRUNCATE` y contra el cambio de empresa, producto o inicialización;
   - `stock_movement`, de solo agregado: FK a `stock_balance`, FK compuesta al comprobante, actor con `RESTRICT`, `CHECK` de signo por tipo, de coherencia y de dominio, y unicidades del `INICIAL`, de la salida por comprobante y producto, de la idempotencia `(company_id, idempotency_operation, idempotency_key)` y de la posición;
   - el trigger de restricción diferido que exige el `INICIAL` de cada saldo al confirmar;
@@ -15,7 +15,7 @@
   - cada `CHECK` de signo y de coherencia rechaza su caso;
   - un movimiento no se puede cambiar, borrar ni truncar, y un saldo no se puede borrar;
   - un movimiento con un comprobante de otra empresa se rechaza, y un usuario con movimientos no se puede borrar
-- [ ] 1.3 Añadir las tablas a `migrations.test.ts` y documentarlas en `database.md`, reemplazando la tabla planificada `stock_movement`. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
+- [x] 1.3 Añadir las tablas a `migrations.test.ts` y documentarlas en `database.md`, reemplazando la tabla planificada `stock_movement`. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
 
 ## 2. Contratos y permisos
 

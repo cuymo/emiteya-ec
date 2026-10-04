@@ -149,3 +149,5 @@ export const Money = typed("importe");
 export const UnitPrice = typed("precioUnitario");
 /** Cantidad no negativa (`cantidad`, 18/6). */
 export const Quantity = typed("cantidad");
+/** Variación o saldo de existencias, con signo (`existencia`, 30/6; add-minimal-inventory). */
+export const StockQuantity = typed("existencia");

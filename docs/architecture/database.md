@@ -37,7 +37,8 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `sri_attempt`, `sri_response`, `sri_attempt_result` | `fiscal` | Yes | Solo agregado: un intento por interacción con el SRI, su respuesta original confirmada antes de clasificarla y, aparte, su clasificación (design D5 de `add-sri-transmission`). |
 | `document_artifact` | `fiscal` | Yes | Solo agregado: bytes exactos en `bytea`, con hash y metadatos, detrás de un puerto de almacenamiento (ADR 0010). |
 | `document_delivery_event` | `fiscal` | Yes | Solo agregado: entregas observables (`DOWNLOAD`, `PRINT_REQUESTED`) atadas a un artefacto existente, sin el contenido del documento (Q-24, design D9 de `add-document-archive`). |
-| `stock_movement` | `inventory` | Yes | Solo agregado (ERS RF-313). |
+| `stock_balance` | `inventory` | Yes | Su existencia es la inicialización del inventario de un producto. Guarda el saldo materializado, siempre igual al kárdex. No se borra (design D2 de `add-minimal-inventory`). |
+| `stock_movement` | `inventory` | Yes | Solo agregado (ERS RF-313): variación con signo, saldo resultante y posición en el kárdex. |
 | `idempotency_record` | `platform` | Yes | Solo agregado: empresa, operación, clave y huella de la solicitud. Sin purga mientras dure la vida fiscal del comprobante (Q-30). |
 | `job` | `platform` | Yes | Cola durable propia con deduplicación, arriendo e intentos (ADR 0012, aceptado). Sus estados no son estados fiscales. |
 | `audit_event` | `audit` | Yes | Solo agregado. |
@@ -127,9 +128,11 @@ UNIQUE (company_id, identification_type, identification_number) -- party
 UNIQUE (company_id, main_code) WHERE main_code IS NOT NULL     -- product
 UNIQUE (active_company_id)                                     -- signing_certificate: una ACTIVE por empresa
 
--- Inventario (ERS RF-206, AC-08)
-UNIQUE (document_id, product_id, movement_type)
-  WHERE movement_type IN ('SALIDA_FACTURA', 'DEVOLUCION_NC')
+-- Inventario (ERS RF-206, AC-08; design D2 de add-minimal-inventory). Sin índices parciales:
+-- document_id solo existe en salidas y devoluciones, y la clave solo en entradas y ajustes.
+UNIQUE (company_id, document_id, product_id, movement_type)
+UNIQUE (company_id, idempotency_operation, idempotency_key)
+UNIQUE (company_id, product_id, position)                -- con INICIAL ⇔ position = 1
 ```
 
 - El comprobante guarda los códigos de establecimiento y punto como parte de su snapshot, además de las claves foráneas.
@@ -194,6 +197,8 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `document_artifact` | Propia (`fiscal`) | Artefacto exacto de un comprobante: `kind` (`SIGNED_XML`, el enviado; `AUTHORIZED_XML`, el recibido del SRI; `RIDE_PDF`, el RIDE generado una vez con sus versiones y su procedencia en los metadatos), tipo de medio, `content` (`bytea`), tamaño, SHA-256 y metadatos (ADR 0010). |
 | `document_delivery_event` | Propia (`fiscal`) | Entrega observable: comprobante de la misma empresa (FK compuesta), `event` (`DOWNLOAD`, `PRINT_REQUESTED`), `artifact_kind` con FK al artefacto `(document_id, kind)`, `artifact_sha256`, actor (`→ user`, `RESTRICT`), `request_id` y `occurred_at`. Nunca bytes, ni "impreso" ni "recibido". |
 | `idempotency_record` | Propia (`platform`) | Clave de idempotencia de la emisión con su huella y su comprobante (Q-30). |
+| `stock_balance` | Propia (`inventory`) | Inventario inicializado de un producto, `(company_id, product_id)` con FK compuesta al producto: `balance NUMERIC` (dominio `existencia`, con signo), `last_position`, `initialized_at`, `initialized_by` (`→ user`, `RESTRICT`) y `updated_at`. |
+| `stock_movement` | Propia (`inventory`) | Movimiento del kárdex. Datos: `movement_type` (`INICIAL`, `ENTRADA_MANUAL`, `SALIDA_FACTURA`, `DEVOLUCION_NC`, `AJUSTE`), `delta` con signo, `balance_after` y `position`. Referencias: FK al saldo, comprobante de la misma empresa con su número (FK compuesta, solo en salidas y devoluciones), `origin` (`USER` o `SYSTEM`), actor (`→ user`, `RESTRICT`) y `reason`. Idempotencia: `idempotency_operation`, `idempotency_key` y `request_hash`, solo en entradas y ajustes. Además, `occurred_at`. |
 
 Restricciones de la migración, incluidas las que Prisma no expresa (verificadas por
 `backend/test/integration/migrations.test.ts`):
@@ -297,6 +302,12 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `document_delivery_event_company_id_document_id_fkey`, `document_delivery_event_document_id_artifact_kind_fkey`, `document_delivery_event_actor_user_id_fkey` | `document_delivery_event` | El comprobante es de la misma empresa, el artefacto existe y el actor no se puede borrar (`ON DELETE RESTRICT`, ERS RF-409) | Relaciones en el esquema |
 | `document_delivery_event_append_only`, `document_delivery_event_no_truncate` | `document_delivery_event` | Triggers: solo de agregado, sin truncado | SQL de la migración |
 | `document_delivery_event_company_id_document_id_occurred_at_idx`, `electronic_document_company_id_issue_date_id_idx`, `electronic_document_company_id_buyer_identification_idx` | `document_delivery_event`, `electronic_document` | Índices del historial de entregas de un comprobante y de la bandeja: orden por fecha de emisión e identificador, y filtro por la identificación del receptor (design D2 de `add-document-archive`) | `@@index` en el esquema |
+| `stock_balance_values_check`, `stock_movement_values_check` | `stock_balance`, `stock_movement` | Dominio `existencia` (30 dígitos y 6 decimales, con signo). Tipo conocido, `INICIAL` exactamente en la posición 1, signo por tipo (`INICIAL >= 0`, entrada `> 0`, salida `< 0`, devolución `> 0`, ajuste `<> 0`). Comprobante y número solo y siempre en salidas y devoluciones. Salida del sistema y movimientos manuales de un usuario, con actor solo con origen `USER`. Motivo obligatorio en el ajuste. Operación, clave y huella juntas y solo en entradas (`inventory.entry`) y ajustes (`inventory.adjust`). | SQL de la migración |
+| `stock_balance_company_id_product_id_fkey`, `stock_balance_initialized_by_fkey`, `stock_movement_company_id_product_id_fkey`, `stock_movement_company_id_document_id_fkey`, `stock_movement_actor_user_id_fkey` | `stock_balance`, `stock_movement` | El producto y el comprobante son de la misma empresa; ningún movimiento existe sin su saldo; los usuarios no se pueden borrar (`ON DELETE RESTRICT`) | Relaciones en el esquema |
+| `stock_movement_company_id_product_id_position_key`, `stock_movement_document_product_type_key`, `stock_movement_idempotency_key` | `stock_movement` | Posición única por producto (un solo `INICIAL` en toda su vida), una salida por factura y producto, y una entrada o un ajuste por empresa, operación y clave | `@@unique` en el esquema |
+| `stock_movement_append_only`, `stock_movement_no_truncate`, `stock_balance_no_delete`, `stock_balance_no_truncate`, `stock_balance_guard` | `stock_movement`, `stock_balance` | Triggers: movimientos de solo agregado. El saldo no se borra, y su empresa, producto e inicialización no cambian; su posición solo avanza. | SQL de la migración |
+| `stock_movement_chain`, `stock_movement_in_balance`, `stock_balance_matches_ledger` | `stock_movement`, `stock_balance` | Cada movimiento sigue al anterior, sin huecos, con el saldo anterior más su variación. Al confirmar, cada movimiento está en su saldo, y cada saldo tiene su `INICIAL` y es igual al `balance_after` del último movimiento: el saldo es la suma del kárdex. | SQL de la migración (triggers de restricción diferidos los dos últimos) |
+| `stock_balance_company_id_balance_idx`, `stock_movement_company_id_product_id_occurred_at_idx` | `stock_balance`, `stock_movement` | Filtro de saldo negativo de la lista y kárdex por rango de fechas (design D8 de `add-minimal-inventory`) | `@@index` en el esquema |
 | `job_values_check`, `job_active_dedupe_key_key`, `job_active_sri_document_id_key`, `job_document_id_fkey` | `job` | Estado, tipo `dominio.acción`, origen con su solicitante y motivo de 1 a 500, intentos; `LEASED` con su arriendo; las columnas activas iguales a la clave y al comprobante solo mientras el job está activo; fin solo en `DONE` y `STOPPED`; clase de error. Un job activo por clave y una interacción activa con el SRI por comprobante: columnas únicas que solo tienen valor mientras el job está activo, porque Prisma no expresa índices parciales | SQL de la migración y `@unique` |
 | `sri_attempt_values_check`, `sri_attempt_document_id_attempt_number_key`, `sri_attempt_company_id_document_id_fkey` | `sri_attempt` | Operación, ambiente, origen con su iniciador, clase del transporte, estado HTTP solo con `RESPONSE`, hashes hex y fin posterior al inicio; número de intento único por comprobante; comprobante de la misma empresa | SQL de la migración, `@@unique` y `@relation` |
 | `sri_response_values_check`, `sri_attempt_result_values_check`, `sri_response_company_id_attempt_id_fkey`, `sri_attempt_result_company_id_attempt_id_fkey` | `sri_response`, `sri_attempt_result` | Tamaño igual a los bytes y SHA-256 hex; resultado dentro de la lista cerrada del clasificador y mensajes como arreglo JSON; uno por intento y de la misma empresa | SQL de la migración y `@relation` |

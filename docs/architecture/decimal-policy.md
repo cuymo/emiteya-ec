@@ -16,7 +16,8 @@ importe ni tarifa pasa por un `number` de JavaScript.
 
 Viven en `packages/contracts/src/decimal.ts` (`DECIMAL_SPECS`), las comparten backend y frontend,
 y cada una nombra el tipo XSD de origen. Una prueba compara cada especificación con los
-`simpleType` de los seis XSD soportados.
+`simpleType` de los seis XSD soportados. La excepción es `existencia`, un dominio interno del
+inventario que no sale de ningún XSD.
 
 | Especificación | Tipo del dominio | Dígitos totales | Decimales | Mínimo | Ejemplos válidos en el límite | Uso |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -24,6 +25,7 @@ y cada una nombra el tipo XSD de origen. Una prueba compara cada especificación
 | `importe` | `Money` | 14 | 2 | 0 | `99999999999999`, `999999999999.99` | Monto de la política de consumidor final; importes de la emisión |
 | `precioUnitario` | `UnitPrice` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Precio unitario de productos, sin impuestos |
 | `cantidad` | `Quantity` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Cantidades de la emisión |
+| `existencia` | `StockQuantity` | 30 | 6 | Sin mínimo (con signo) | `999999999999999999999999.999999`, `-999999999999999999999999.999999` | Variaciones y saldos del inventario (design D3 de `add-minimal-inventory`): los decimales de `cantidad` y una parte entera que admite la salida de una factura de 1 000 líneas de cantidad máxima. Un saldo puede ser negativo (Q-19). |
 
 - **Regla del XSD (Q-43):** la parte entera usa los dígitos que no ocupan los decimales; nunca `totalDigits` enteros más `fractionDigits` decimales. La semántica de `NUMERIC(p, s)`, que limitaría la parte entera a `p - s`, no es la regla.
 - **Primitivos compartidos:** una especificación no lleva límites normativos de un impuesto o de un código.
@@ -49,7 +51,7 @@ y cada una nombra el tipo XSD de origen. Una prueba compara cada especificación
   - Cada campo es `NUMERIC` sin precisión ni escala fijas, que guarda el valor exacto sin redondear. `NUMERIC(p, s)` no se usa: limitaría la parte entera a `p - s` dígitos y redondearía en silencio los decimales de más.
   - Un `CHECK` de dominio fija la especificación: mínimo, `scale(valor) <= fractionDigits` y `valor < 10^(totalDigits - scale(valor))`.
   - Se guarda la forma canónica (`toDatabase`), así que la escala guardada es la del valor.
-  - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`), `consumer_final_policy.max_amount` (`importe`) y, desde `add-invoice-emission`, `invoice_draft_line.quantity` (`cantidad`), `invoice_draft_line.discount`, `invoice_draft_payment.amount` y `electronic_document.total` (`importe`).
+  - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`), `consumer_final_policy.max_amount` (`importe`) y, desde `add-invoice-emission`, `invoice_draft_line.quantity` (`cantidad`), `invoice_draft_line.discount`, `invoice_draft_payment.amount` y `electronic_document.total` (`importe`); desde `add-minimal-inventory`, `stock_balance.balance`, `stock_movement.delta` y `stock_movement.balance_after` (`existencia`), sin mínimo.
 - **Conversión:** con el `Decimal` de Prisma siempre por texto.
 - **Aritmética fiscal** (design D5 de `add-invoice-emission`):
   - **Primitivas exactas** de `platform/decimal`: `sumExact`, `subtractExact`, `multiplyExact` y `percentageOfExact`, sobre `DecimalString` y sin redondeo. La precisión de 40 dígitos cubre el producto de dos valores de 18 dígitos. Una operación que necesitara más dígitos lanza `InexactOperationError` en vez de redondear en silencio.

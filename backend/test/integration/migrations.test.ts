@@ -308,6 +308,10 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "invoice_draft_line.quantity",
         "invoice_draft_payment.amount",
         "product.unit_price",
+        // add-minimal-inventory, design D3: dominio `existencia`, con signo.
+        "stock_balance.balance",
+        "stock_movement.balance_after",
+        "stock_movement.delta",
       ].map((column) => ({ column, type: "numeric", precision: null, scale: null })),
     );
     expect(await constraints()).toEqual(
@@ -318,6 +322,8 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "invoice_draft_line_values_check",
         "invoice_draft_payment_values_check",
         "electronic_document_values_check",
+        "stock_balance_values_check",
+        "stock_movement_values_check",
       ]),
     );
   });
@@ -440,6 +446,43 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
       expect.arrayContaining([
         "document_delivery_event_append_only",
         "document_delivery_event_no_truncate",
+      ]),
+    );
+  });
+
+  it("crea el saldo y los movimientos del inventario con sus restricciones y triggers", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "stock_balance_values_check",
+        "stock_balance_company_id_product_id_fkey",
+        "stock_balance_initialized_by_fkey",
+        "stock_movement_values_check",
+        "stock_movement_company_id_product_id_fkey",
+        "stock_movement_company_id_document_id_fkey",
+        "stock_movement_actor_user_id_fkey",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "stock_balance_pkey",
+        "stock_balance_company_id_balance_idx",
+        "stock_movement_pkey",
+        "stock_movement_company_id_product_id_position_key",
+        "stock_movement_company_id_product_id_occurred_at_idx",
+        "stock_movement_document_product_type_key",
+        "stock_movement_idempotency_key",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "stock_movement_append_only",
+        "stock_movement_no_truncate",
+        "stock_movement_chain",
+        "stock_movement_in_balance",
+        "stock_balance_guard",
+        "stock_balance_no_delete",
+        "stock_balance_no_truncate",
+        "stock_balance_matches_ledger",
       ]),
     );
   });

@@ -9,6 +9,7 @@ import {
   Percentage,
   InexactOperationError,
   Quantity,
+  StockQuantity,
   UnitPrice,
   multiplyExact,
   percentageOfExact,
@@ -18,6 +19,13 @@ import {
 } from "../../src/platform/decimal/fiscal-decimal.ts";
 
 describe("FiscalDecimal", () => {
+  it("las existencias admiten signo y la escala de cantidad (add-minimal-inventory, design D3)", () => {
+    expect(StockQuantity.parse("-3.750000").toString()).toBe("-3.75");
+    expect(StockQuantity.fromDatabase({ toFixed: () => "-0.500000" }).toString()).toBe("-0.5");
+    expect(sumExact(["2", "-5"])).toBe("-3");
+    expect(() => StockQuantity.parse("1.0000001")).toThrow(DecimalValueError);
+  });
+
   it("guarda y devuelve el valor exacto en forma canónica", () => {
     expect(UnitPrice.parse("12.345678").toString()).toBe("12.345678");
     expect(UnitPrice.parse("12.500000").toString()).toBe("12.5");

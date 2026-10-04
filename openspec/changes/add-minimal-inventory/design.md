@@ -77,15 +77,18 @@ invoices ◀── lecturas inyectadas de saldo e inicialización ─── inve
 
   | Restricción | Protege |
   | --- | --- |
-  | `UNIQUE (company_id, product_id) WHERE movement_type = 'INICIAL'` | A lo sumo un `INICIAL` en la vida del inventario (Q-21) |
-  | `UNIQUE (company_id, document_id, product_id, movement_type) WHERE movement_type IN ('SALIDA_FACTURA', 'DEVOLUCION_NC')` | Una sola salida por factura y producto (ERS RF-206, AC-08) |
-  | `UNIQUE (company_id, idempotency_operation, idempotency_key) WHERE idempotency_key IS NOT NULL` | Una sola entrada o un solo ajuste por empresa, operación y clave |
+  | `CHECK (movement_type = 'INICIAL') = (position = 1)` con `UNIQUE (company_id, product_id, position)` | A lo sumo un `INICIAL` en la vida del inventario (Q-21) |
+  | `UNIQUE (company_id, document_id, product_id, movement_type)`, con `document_id` solo en salidas y devoluciones | Una sola salida por factura y producto (ERS RF-206, AC-08) |
+  | `UNIQUE (company_id, idempotency_operation, idempotency_key)`, con la clave solo en entradas y ajustes | Una sola entrada o un solo ajuste por empresa, operación y clave |
   | `UNIQUE (company_id, product_id, position)` | Orden total y estable del kárdex |
   | `CHECK` del signo por tipo | `INICIAL >= 0`, `ENTRADA_MANUAL > 0`, `SALIDA_FACTURA < 0`, `DEVOLUCION_NC > 0`, `AJUSTE <> 0` |
   | `CHECK` de coherencia | Comprobante y número solo y siempre en `SALIDA_FACTURA` y `DEVOLUCION_NC`. Actor solo y siempre con origen `USER`. Motivo obligatorio en `AJUSTE`. Operación, clave y huella juntas, obligatorias en `ENTRADA_MANUAL` (`inventory.entry`) y `AJUSTE` (`inventory.adjust`) y ausentes en los demás tipos. |
   | `CHECK` de dominio decimal | `delta`, `balance_after` y `balance` en el dominio `existencia` (D3) |
-  | Trigger de restricción diferido en `stock_balance` | Al confirmar, cada saldo tiene su `INICIAL`, con `position = 1` y `balance_after = delta`. Junto con la FK, no puede existir un saldo sin `INICIAL` ni al revés. |
+  | Trigger de restricción diferido en `stock_balance` | Al confirmar, cada saldo tiene su `INICIAL` y es igual al `balance_after` de su último movimiento. Junto con la FK, no puede existir un saldo sin `INICIAL` ni al revés. |
+| Trigger `BEFORE INSERT` de la cadena | Cada movimiento sigue al anterior, sin huecos, y su `balance_after` es el anterior más su `delta` |
+| Trigger de restricción diferido en `stock_movement` | Un movimiento confirmado está reflejado en su saldo |
 
+- **Sin índices parciales:** las unicidades se apoyan en columnas que solo tienen valor cuando aplican, porque los NULL no chocan, como la cola de jobs. Así el esquema de Prisma y las migraciones coinciden sin deriva.
 - **Variación con signo canónica:** un solo modelo, `delta`. El saldo es `SUM(delta)`; `balance_after` y `stock_balance.balance` son su materialización.
   - Invariantes: el `balance_after` de cada movimiento es el saldo anterior más su `delta`, y el saldo vigente es igual a `SUM(delta)` y al `balance_after` del último movimiento.
   - **Reconciliación diagnóstica:** una función interna de `inventory/infrastructure` compara, por empresa y producto, el saldo materializado con `SUM(delta)` y con el último `balance_after`, y devuelve las diferencias. La usan las pruebas y `bench:inventory`. No es un endpoint ni corrige nada.
@@ -94,7 +97,7 @@ invoices ◀── lecturas inyectadas de saldo e inicialización ─── inve
 ### D3. Dominio decimal `existencia` y cantidades
 
 - **`existencia`:** dominio con signo nuevo en `decimal-policy.md` y `DECIMAL_SPECS`, para variaciones y saldos.
-  - Hasta 6 decimales y menos de 10²⁴ en valor absoluto (30 dígitos en total).
+  - 30 dígitos en total y hasta 6 decimales, con la regla de la política (Q-43): con 6 decimales, menos de 10²⁴ en valor absoluto. Sin mínimo.
   - Basta para una salida de hasta 1 000 líneas de `cantidad` máxima y para cualquier saldo acumulado realista. Un `CHECK` que rechazara una salida haría fallar la autorización.
   - Guardado como `NUMERIC` sin escala fija en forma canónica, como el resto de la política.
 - **Cantidades de las solicitudes:**
@@ -145,19 +148,19 @@ Detalles:
 ### D7. Inicialización, control y entradas
 
 - **`POST /items/{productId}/initialization`** (`inventory.initialize`).
-  - En una transacción: bloquea la fila del producto con la operación exportada de `products`, que exige que sea un bien marcado.
+  - En una transacción: toma el lock transaccional del control de stock del producto (`pg_advisory_xact_lock` de `stock-tracking:{empresa}:{producto}`), lee el producto con la lectura exportada de `products` y exige que sea un bien marcado.
   - Inserta `stock_balance` y el `INICIAL` (`position = 1`) y registra la auditoría `inventory.initialized`.
   - Una segunda inicialización o una simultánea choca con la clave de `stock_balance` y responde `409 INVENTORY_ALREADY_INITIALIZED`.
   - Es idempotente por construcción, sin clave.
 - **`PUT /items/{productId}/tracking`** (`inventory.configure`), con `{ tracked }`. Es una operación de fijar estado, idempotente por definición.
   - Solo para productos inicializados; un producto sin inicializar responde `409 INVENTORY_NOT_INITIALIZED`, porque su marca se cambia en el producto.
-  - Bloquea el saldo con `FOR UPDATE`. Desactivar exige `balance = 0` (`409 STOCK_TRACKING_HAS_BALANCE`); reactivar exige que el producto sea un bien.
+  - Toma el mismo lock y bloquea el saldo con una actualización atómica. Desactivar exige `balance = 0` (`409 STOCK_TRACKING_HAS_BALANCE`); reactivar exige que el producto sea un bien.
   - Cambia la marca con la operación de `products` y audita `inventory.tracking_disabled` o `inventory.tracking_enabled`.
   - Repetir el estado actual no cambia nada ni audita.
-- **Corrección del producto (`PUT /products/{id}`):** consulta `InventoryInitialization` después de bloquear la fila.
+- **Corrección del producto (`PUT /products/{id}`):** cuando la solicitud cambia la marca, consulta `InventoryInitialization`, que toma el mismo lock por producto.
   - Si el inventario está inicializado y la solicitud cambia la marca, responde `409 STOCK_TRACKING_MANAGED_BY_INVENTORY`.
   - Sin inicializar, la marca cambia como hoy y su cambio se audita en `product.updated`.
-  - La inicialización y la corrección bloquean la misma fila del producto, así que no pueden cruzarse.
+  - La inicialización, el control, las entradas, los ajustes y la corrección de la marca toman el mismo lock por producto, así que no pueden cruzarse. La salida al autorizar no lo necesita: el saldo bloqueado por su actualización atómica la serializa.
 - **Entradas y ajustes** (`POST /items/{productId}/entries` con `inventory.entry`, y `POST /items/{productId}/adjustments` con `inventory.adjust`).
   - **Contrato de idempotencia, tan fuerte como el de la emisión:**
     - `Idempotency-Key` obligatoria (`400 IDEMPOTENCY_KEY_REQUIRED` sin ella), con el formato de `platform/idempotency`.

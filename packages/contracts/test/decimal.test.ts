@@ -193,3 +193,35 @@ describe("tipos no negativos con su especificación (regla del XSD, Q-43)", () =
     expect(message("importe", "0.50")).toBeUndefined();
   });
 });
+
+describe("existencias del inventario (add-minimal-inventory, design D3)", () => {
+  const schema = decimalString(DECIMAL_SPECS.existencia);
+  const message = (text: string) => schema.safeParse(text).error?.issues[0]?.message;
+
+  it("no sale de un XSD: no declara tipos ni documentos de origen", () => {
+    expect(DECIMAL_SPECS.existencia.xsd).toEqual({ types: [], documents: [] });
+  });
+
+  it("admite negativos, 6 decimales y 30 dígitos en total: con 6 decimales, menos de 10²⁴", () => {
+    for (const text of [
+      "0",
+      "-3",
+      "-0.000001",
+      "12.5",
+      "999999999999999999999999.999999",
+      "-999999999999999999999999.999999",
+      "999999999999999999999999999999",
+    ]) {
+      expect(message(text), text).toBeUndefined();
+    }
+  });
+
+  it("rechaza el total de más, los decimales de más, -0 y un número JSON", () => {
+    expect(message("1000000000000000000000000.000001")).toBe(
+      "Admite como máximo 30 dígitos en total.",
+    );
+    expect(message("1.0000001")).toBe("Admite como máximo 6 decimales.");
+    expect(schema.safeParse("-0").success).toBe(false);
+    expect(schema.safeParse(5).success).toBe(false);
+  });
+});

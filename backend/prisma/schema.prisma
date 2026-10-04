@@ -50,6 +50,8 @@ model User {
   jobsRequested               Job[]                         @relation("JobRequester")
   sriAttemptsInitiated        SriAttempt[]                  @relation("SriAttemptInitiator")
   documentDeliveries          DocumentDeliveryEvent[]       @relation("DocumentDeliveryActor")
+  stockInitializations        StockBalance[]                @relation("StockInitializer")
+  stockMovements              StockMovement[]               @relation("StockMovementActor")
 
   @@unique([email])
   @@map("user")
@@ -655,6 +657,7 @@ model Product {
   updater             User               @relation("ProductUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
   taxes               ProductTax[]
   invoiceLines        InvoiceDraftLine[]
+  stock               StockBalance?
 
   @@unique([companyId, mainCode])
   @@unique([companyId, id])
@@ -791,6 +794,7 @@ model ElectronicDocument {
   artifacts                DocumentArtifact[]
   idempotency              IdempotencyRecord[]
   deliveries               DocumentDeliveryEvent[]
+  stockMovements           StockMovement[]
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@unique([companyId, id])
@@ -997,4 +1001,62 @@ model SriAttemptResult {
 
   @@unique([companyId, attemptId])
   @@map("sri_attempt_result")
+}
+
+// Inventario de un producto (add-minimal-inventory, design D2): su existencia es la inicialización.
+// Guarda el saldo materializado, que siempre es el saldo después del último movimiento y la suma de
+// sus variaciones (trigger diferido en la migración). No se borra.
+model StockBalance {
+  companyId     String          @map("company_id")
+  productId     String          @map("product_id")
+  product       Product         @relation(fields: [companyId, productId], references: [companyId, id], onDelete: Restrict)
+  /// Dominio `existencia` (CHECK en la migración); puede ser negativo (Q-19).
+  balance       Decimal         @db.Decimal
+  /// Posición del último movimiento del kárdex.
+  lastPosition  Int             @map("last_position")
+  initializedAt DateTime        @default(now()) @map("initialized_at") @db.Timestamptz(3)
+  initializedBy String          @map("initialized_by")
+  initializer   User            @relation("StockInitializer", fields: [initializedBy], references: [id], onDelete: Restrict)
+  updatedAt     DateTime        @default(now()) @map("updated_at") @db.Timestamptz(3)
+  movements     StockMovement[]
+
+  @@id([companyId, productId])
+  @@index([companyId, balance])
+  @@map("stock_balance")
+}
+
+// Movimiento de inventario (add-minimal-inventory, design D2): de solo agregado, con su variación
+// con signo y el saldo resultante. El `INICIAL` es la posición 1; la salida de una factura es única
+// por comprobante y producto; la idempotencia de entradas y ajustes tiene alcance empresa,
+// operación y clave (CHECK y triggers en la migración).
+model StockMovement {
+  id                   String              @id @default(uuid())
+  companyId            String              @map("company_id")
+  productId            String              @map("product_id")
+  stock                StockBalance        @relation(fields: [companyId, productId], references: [companyId, productId], onDelete: Restrict)
+  position             Int
+  /// INICIAL, ENTRADA_MANUAL, SALIDA_FACTURA, DEVOLUCION_NC o AJUSTE.
+  movementType         String              @map("movement_type")
+  delta                Decimal             @db.Decimal
+  balanceAfter         Decimal             @map("balance_after") @db.Decimal
+  documentId           String?             @map("document_id")
+  document             ElectronicDocument? @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  documentNumber       String?             @map("document_number") @db.Char(17)
+  /// USER o SYSTEM.
+  origin               String
+  actorUserId          String?             @map("actor_user_id")
+  actor                User?               @relation("StockMovementActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  /// Motivo del ajuste o nota de la inicialización o de la entrada.
+  reason               String?
+  /// inventory.entry o inventory.adjust: alcance de la clave junto con la empresa.
+  idempotencyOperation String?             @map("idempotency_operation")
+  idempotencyKey       String?             @map("idempotency_key") @db.VarChar(100)
+  requestHash          String?             @map("request_hash") @db.Char(64)
+  occurredAt           DateTime            @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  @@unique([companyId, productId, position])
+  @@unique([companyId, documentId, productId, movementType], map: "stock_movement_document_product_type_key")
+  @@unique([companyId, idempotencyOperation, idempotencyKey], map: "stock_movement_idempotency_key")
+  @@index([companyId, productId, occurredAt])
+  @@map("stock_movement")
 }
