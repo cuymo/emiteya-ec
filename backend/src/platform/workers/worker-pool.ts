@@ -33,6 +33,8 @@ export type WorkerPoolOptions = {
    */
   maxQueue?: number;
   logger?: Pick<Logger, "warn">;
+  /** Datos de arranque de cada worker (`workerData`), por ejemplo un directorio de recursos. */
+  workerData?: unknown;
   /** Mensaje del log de una tarea interrumpida, sin datos de la tarea. */
   interruptedMessage: string;
   errors: WorkerPoolErrors;
@@ -78,7 +80,10 @@ export function createWorkerPool(options: WorkerPoolOptions): WorkerPool {
 
   const spawn = (): Slot => {
     const slot: Slot = {
-      worker: new Worker(options.entry, { execArgv: workerExecArgv(options.entry) }),
+      worker: new Worker(options.entry, {
+        execArgv: workerExecArgv(options.entry),
+        workerData: options.workerData,
+      }),
       job: null,
       timer: null,
       started: 0,

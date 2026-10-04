@@ -11,6 +11,7 @@ export { createXmllintXsdValidator } from "./xmllint-xsd-validator.ts";
 export { verifySchemaBundle } from "./schema-bundle.ts";
 // Fuentes del RIDE (add-document-archive, design D7): sin pdfmake, que solo carga su worker.
 export { defaultRideFontsDirectory, verifyRideAssets } from "./ride/ride-assets.ts";
+export { createPooledRideRenderer, rideTasksEntry } from "./ride/pooled-ride-renderer.ts";
 // Transporte SOAP propio con el SRI (add-sri-transmission, design D6 y D10).
 export { createSoapTransport } from "./soap-transport.ts";
 export { endpointsValid, resolveSriEndpoints, type SriEndpoints } from "./endpoints.ts";
