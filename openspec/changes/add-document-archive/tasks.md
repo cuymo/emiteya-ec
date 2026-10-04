@@ -17,7 +17,7 @@
 
 ## 2. Pool de workers genérico y configuración del RIDE
 
-- [ ] 2.1 Extraer de forma conservadora la primitiva `platform/workers/worker-pool.ts` (design D6):
+- [x] 2.1 Extraer de forma conservadora la primitiva `platform/workers/worker-pool.ts` (design D6):
   1. antes de mover código, añadir pruebas de caracterización del pool criptográfico (cola, ocupado, plazo, reemplazo del worker caído y cierre ordenado) y comprobar que pasan sobre el código actual;
   2. extraer la primitiva (workers fijos, cola acotada, plazo que termina y reemplaza el worker, resultados tipados y cierre ordenado);
   3. dejar `CryptoWorkerPool` como instancia independiente con sus errores HTTP de hoy.

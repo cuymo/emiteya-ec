@@ -1,4 +1,5 @@
 // Pool criptográfico fuera del event loop (add-signing-certificate, design D18).
+import type { Logger } from "pino";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   CryptoBusyError,
@@ -126,9 +127,8 @@ describe("pool criptográfico (design D18)", () => {
 
   it("registra la interrupción con la tarea y el motivo, nunca la carga útil", async () => {
     const warnings: { details: object; message: string }[] = [];
-    const logger = {
-      warn: (details: object, message: string) => warnings.push({ details, message }),
-    };
+    const warn = (details: object, message: string) => void warnings.push({ details, message });
+    const logger = { warn } as unknown as Pick<Logger, "warn">;
     const p = createCryptoWorkerPool({ entry, size: 1, timeoutMs: 200, logger });
     pools.push(p);
     await expect(p.run("hang", { secret: "no-se-registra" })).rejects.toBeInstanceOf(
