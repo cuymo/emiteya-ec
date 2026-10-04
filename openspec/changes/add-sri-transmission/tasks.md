@@ -159,7 +159,7 @@
 
 ## 9. Autorización
 
-- [ ] 9.1 Implementar el handler `sri.authorize` (design D12 y D16):
+- [x] 9.1 Implementar el handler `sri.authorize` (design D12 y D16):
   - consulta por la clave en el servicio del ambiente del comprobante;
   - primera consulta tras la espera configurada y backoff;
   - `AUTHORIZED` con las columnas de autorización y el artefacto `AUTHORIZED_XML` cuando viene;

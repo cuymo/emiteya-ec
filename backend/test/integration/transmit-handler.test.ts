@@ -387,7 +387,7 @@ describe("handler sri.transmit", () => {
       expect(await transitionsOf(document.id)).toEqual(["SEND_UNKNOWN>RECEIVED"]);
     });
 
-    it("dos workers que intentan avanzar la misma factura: solo uno confirma", async () => {
+    it("dos workers que intentan avanzar la misma factura: solo uno confirma y nadie reenvía", async () => {
       const document = await insertDocument(prisma, company, "SIGNED");
       const first = await transmitJob(document, "worker-1");
       await prisma.job.update({ where: { id: first.id }, data: { leaseExpiresAt: new Date(0) } });
@@ -407,12 +407,20 @@ describe("handler sri.transmit", () => {
         rejected.reason instanceof LeaseLostError ||
           rejected.reason instanceof DocumentStateChangedError,
       ).toBe(true);
-      expect(await stateOf(document.id)).toBe("RECEIVED");
-      expect(await transitionsOf(document.id)).toEqual(["SIGNED>RECEIVED"]);
-      expect((await jobsOf(document.id)).map((row) => row.type)).toEqual([
-        "sri.transmit",
-        "sri.authorize",
-      ]);
+      // Solo el primer worker llamó. El segundo nunca reenvía: si encuentra la respuesta guardada
+      // la clasifica, y si no encuentra evidencia de un arriendo anterior que pudo enviar, pasa a
+      // SEND_UNKNOWN para reconciliar (design D8).
+      expect(sent).toHaveLength(1);
+      const transitions = await transitionsOf(document.id);
+      const successors = (await jobsOf(document.id)).slice(1).map((row) => row.type);
+      if ((await stateOf(document.id)) === "RECEIVED") {
+        expect(transitions).toEqual(["SIGNED>RECEIVED"]);
+        expect(successors).toEqual(["sri.authorize"]);
+      } else {
+        expect(await stateOf(document.id)).toBe("SEND_UNKNOWN");
+        expect(transitions).toEqual(["SIGNED>SEND_UNKNOWN"]);
+        expect(successors).toEqual(["sri.reconcile"]);
+      }
     });
 
     it("ningún caso cambia el contador del punto de emisión", async () => {

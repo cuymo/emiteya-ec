@@ -43,6 +43,7 @@ import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
   createArtifactStore,
+  createAuthorizeHandler,
   createDocumentRepository,
   createSriEvidenceRepository,
   createTransmissionSweeper,
@@ -324,6 +325,13 @@ const transmitHandler = createTransmitHandler({
   today: ecuadorDate,
   alert: (details, message) => logger.error(details, message),
 });
+const authorizeHandler = createAuthorizeHandler({
+  ...stepDependencies,
+  documents: createDocumentRepository(database.prisma),
+  gateway: sriGateway,
+  classifiers: sriClassifiers,
+  settings: transmissionSettings,
+});
 // Barrido de los firmados sin job: al arrancar y periódico, también con la transmisión apagada.
 const transmissionSweeper = createTransmissionSweeper({
   prisma: database.prisma,
@@ -338,7 +346,10 @@ closers.unshift({ name: "transmission-sweeper", close: () => transmissionSweeper
 const jobRunner = createJobRunner({
   store: jobStore,
   db: database.prisma,
-  handlers: { [SRI_JOB_TYPES.transmit]: transmitHandler },
+  handlers: {
+    [SRI_JOB_TYPES.transmit]: transmitHandler,
+    [SRI_JOB_TYPES.authorize]: authorizeHandler,
+  },
   workers: env.SRI_JOB_WORKERS,
   pollIntervalMs: env.SRI_JOB_POLL_INTERVAL_MS,
   leaseMs: env.SRI_JOB_LEASE_SECONDS * 1_000,
