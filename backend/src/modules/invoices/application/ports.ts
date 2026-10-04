@@ -1,6 +1,7 @@
 // Puertos del módulo invoices (add-invoice-emission, design D1 y D2). La infraestructura los
 // implementa con Prisma y con las lecturas internas de los otros módulos; los casos de uso nunca
 // importan infraestructura ajena.
+import type { DbClient } from "../../../platform/db/database.ts";
 import type { ListMeta } from "@facturador/contracts";
 import type { AuditLog } from "../../audit/application/audit-log.ts";
 import type {
@@ -61,12 +62,23 @@ export type ActiveCertificateRead = Readonly<{ id: string; fingerprint: string; 
  * Lecturas de la evaluación de una factura (design D1 y D6). La vista previa las hace sobre la
  * conexión; la emisión, dentro de su transacción de reserva, con lecturas coherentes.
  */
+/**
+ * Inventario de los productos sobre un cliente (add-minimal-inventory, design D1 y D4): el saldo de
+ * los que tienen inventario inicializado. Lo implementa `inventory` y lo inyecta `main.ts`; invoices
+ * no importa inventory.
+ */
+export type StockReads = (db: DbClient) => {
+  balances(companyId: string, productIds: readonly string[]): Promise<ReadonlyMap<string, string>>;
+};
+
 export type EvaluationReads = {
   currentConfig(companyId: string): Promise<EmissionConfig | null>;
   emissionPoint(companyId: string, emissionPointId: string): Promise<EvaluationPoint | null>;
   activeCertificate(companyId: string): Promise<ActiveCertificateRead | null>;
   party(companyId: string, partyId: string): Promise<EvaluationBuyer | null>;
   product(companyId: string, productId: string): Promise<EvaluationProduct | null>;
+  /** Saldo de los productos con inventario inicializado; los demás no aparecen. */
+  stock(companyId: string, productIds: readonly string[]): Promise<ReadonlyMap<string, string>>;
   catalogs: CatalogReads;
 };
 

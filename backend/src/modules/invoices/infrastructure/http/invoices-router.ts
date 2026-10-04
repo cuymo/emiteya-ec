@@ -32,7 +32,7 @@ import type {
 } from "../../application/invoices.ts";
 import { stopMessage } from "../../application/transmission-messages.ts";
 import type { InvoiceTotals } from "../../domain/amounts.ts";
-import type { InvoiceSnapshotV1 } from "../../domain/snapshot.ts";
+import type { InvoiceSnapshot } from "../../domain/snapshot.ts";
 import type { EmissionObserver, EmissionOutcome } from "../metrics.ts";
 
 function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
@@ -202,7 +202,7 @@ function transmissionView({ document, transmission }: InvoiceDetails): InvoiceVi
 /** Factura desde su snapshot: lo que se emitió, aunque después cambien productos o configuración. */
 export function toInvoiceView(details: InvoiceDetails): InvoiceView {
   const { document, artifact, authorizedArtifact } = details;
-  const snapshot = document.snapshot as InvoiceSnapshotV1;
+  const snapshot = document.snapshot as InvoiceSnapshot;
   const { issuer, buyer } = snapshot;
   return {
     id: document.id,

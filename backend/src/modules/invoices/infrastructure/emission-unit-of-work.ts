@@ -11,13 +11,14 @@ import {
   reserveSequentialIn,
 } from "../../fiscal/infrastructure/index.ts";
 import { createTaxpayerScope, lockTaxIdentityIn } from "../../taxpayer/infrastructure/index.ts";
-import type { EmissionUnitOfWork } from "../application/ports.ts";
+import type { EmissionUnitOfWork, StockReads } from "../application/ports.ts";
 import { createEvaluationReads, type SigningReads } from "./evaluation-reads.ts";
 import { createDraftRepository } from "./prisma-drafts.ts";
 
 export function createEmissionUnitOfWork(
   prisma: PrismaClient,
   signingReads: SigningReads,
+  stockReads: StockReads,
 ): EmissionUnitOfWork {
   return {
     run: (work) =>
@@ -42,7 +43,7 @@ export function createEmissionUnitOfWork(
             });
           },
           lockConfiguration: (companyId) => taxpayer.lockConfiguration(companyId),
-          reads: createEvaluationReads(tx, signingReads),
+          reads: createEvaluationReads(tx, signingReads, stockReads),
           reserveSequential: ({ reservedBy, correlationId, ...key }) =>
             reserveSequentialIn(createFiscalScope(tx), { ...key, reservedBy, correlationId }),
           lockTaxIdentity: (companyId) => lockTaxIdentityIn(taxpayer, companyId),

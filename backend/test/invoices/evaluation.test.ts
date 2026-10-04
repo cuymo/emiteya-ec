@@ -82,6 +82,7 @@ const input = (overrides: Partial<EvaluationInput> = {}): EvaluationInput => ({
         unitPrice: "8.75",
         status: "ACTIVE",
         taxes: [{ catalogType: "iva-rate", entryKey: "4" }],
+        stockTracked: false,
       },
     ],
   ]),
@@ -98,6 +99,7 @@ const input = (overrides: Partial<EvaluationInput> = {}): EvaluationInput => ({
   consumerFinalPolicy: { id: "policy@1", maxAmount: "50", datasetVersion: 1 },
   specialCases: SPECIAL_CASES,
   schemaAvailable: true,
+  stockBalances: new Map(),
   ...overrides,
 });
 const codes = (value: EvaluationInput) => evaluateInvoice(value).issues.map((i) => i.code);

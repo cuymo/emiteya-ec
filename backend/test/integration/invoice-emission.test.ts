@@ -11,7 +11,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { DraftView, InvoiceView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
-import type { InvoiceSnapshotV1 } from "../../src/modules/invoices/domain/snapshot.ts";
+import type { InvoiceSnapshot } from "../../src/modules/invoices/domain/snapshot.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
 import { createAccessKeys } from "../../src/modules/sri-engine/infrastructure/access-keys.ts";
 import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
@@ -248,11 +248,16 @@ describe("emisión de facturas hasta RESERVED", () => {
       const document = await prisma.electronicDocument.findUniqueOrThrow({
         where: { id: invoice.id },
       });
-      const snapshot = document.snapshot as unknown as InvoiceSnapshotV1;
-      expect(snapshot.lines[0]).toMatchObject({ unitPrice: "10", description: "Varilla" });
+      const snapshot = document.snapshot as unknown as InvoiceSnapshot;
+      expect(snapshot.lines[0]).toMatchObject({
+        unitPrice: "10",
+        description: "Varilla",
+        // add-minimal-inventory, design D4: producto sin marca de control de stock.
+        inventoryAffectsStock: false,
+      });
       expect(snapshot.issuer.headOfficeAddress).toBe("Av. Amazonas N24-03, Quito");
       expect(snapshot).toMatchObject({
-        snapshotVersion: 1,
+        snapshotVersion: 2,
         builderVersion: "1",
         taxpayerConfig: { version: 1 },
         environmentCode: "1",
@@ -287,7 +292,7 @@ describe("emisión de facturas hasta RESERVED", () => {
         const document = await db.database.prisma.electronicDocument.findUniqueOrThrow({
           where: { id: invoice.id },
         });
-        expect((document.snapshot as unknown as InvoiceSnapshotV1).issueDate).toBe("2026-10-03");
+        expect((document.snapshot as unknown as InvoiceSnapshot).issueDate).toBe("2026-10-03");
       } finally {
         now = NOW;
       }

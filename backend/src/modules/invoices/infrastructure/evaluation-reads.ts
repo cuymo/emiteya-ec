@@ -11,7 +11,7 @@ import { fiscalCatalogQueries } from "../../catalogs/infrastructure/index.ts";
 import { partyReader } from "../../parties/infrastructure/index.ts";
 import { productReader } from "../../products/infrastructure/index.ts";
 import { taxpayerEmissionReads } from "../../taxpayer/infrastructure/index.ts";
-import type { ActiveCertificateRead, EvaluationReads } from "../application/ports.ts";
+import type { ActiveCertificateRead, EvaluationReads, StockReads } from "../application/ports.ts";
 import type { EvaluationProduct } from "../domain/evaluation.ts";
 
 /** Firma vigente sobre un cliente: `signingModule(...).reads`. */
@@ -19,12 +19,17 @@ export type SigningReads = (db: DbClient) => {
   activeCertificate(companyId: string): Promise<ActiveCertificateRead | null>;
 };
 
-export function createEvaluationReads(db: DbClient, signingReads: SigningReads): EvaluationReads {
+export function createEvaluationReads(
+  db: DbClient,
+  signingReads: SigningReads,
+  stockReads: StockReads,
+): EvaluationReads {
   const taxpayer = taxpayerEmissionReads(db);
   const parties = partyReader(db);
   const products = productReader(db);
   const catalogs = fiscalCatalogQueries(db);
   const signing = signingReads(db);
+  const stock = stockReads(db);
   return {
     currentConfig: (companyId) => taxpayer.currentConfig(companyId),
     emissionPoint: (companyId, emissionPointId) =>
@@ -41,12 +46,14 @@ export function createEvaluationReads(db: DbClient, signingReads: SigningReads):
         name: found.name,
         unitPrice: found.unitPrice,
         status: found.status,
+        stockTracked: found.stockTracked,
         taxes: (Object.keys(PRODUCT_TAX_SLOTS) as ProductTaxSlot[]).flatMap((slot) => {
           const entryKey = found.taxes[slot];
           return entryKey ? [{ catalogType: PRODUCT_TAX_SLOTS[slot], entryKey }] : [];
         }),
       };
     },
+    stock: (companyId, productIds) => stock.balances(companyId, productIds),
     catalogs: {
       availability: (companyId, catalogType, date) =>
         catalogs.availability(companyId, catalogType as FiscalCatalogType, date),

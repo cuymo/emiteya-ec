@@ -37,6 +37,7 @@ import {
   partiesModule,
 } from "./modules/parties/infrastructure/index.ts";
 import { productsModule } from "./modules/products/infrastructure/index.ts";
+import { inventoryStockReads } from "./modules/inventory/infrastructure/index.ts";
 import { invoicesModule } from "./modules/invoices/infrastructure/index.ts";
 import {
   createConfigurationLogoReader,
@@ -300,6 +301,8 @@ apiRouter.use(
     prisma: database.prisma,
     authorizer,
     signingReads: signing.reads,
+    // add-minimal-inventory, design D1 y D4: la decisión de inventario de cada línea al reservar.
+    stockReads: inventoryStockReads,
     xsd: xsdValidator,
     signer: signing.documents,
     maxLines: env.INVOICE_MAX_LINES,

@@ -111,6 +111,8 @@ export type EvaluationProduct = Readonly<{
   unitPrice: string;
   status: "ACTIVE" | "INACTIVE";
   taxes: readonly ProductTaxRef[];
+  /** Marca de control de stock del producto al leerlo (add-minimal-inventory, design D4). */
+  stockTracked: boolean;
 }>;
 
 export type EvaluationPolicy = Readonly<{ id: string; maxAmount: string; datasetVersion: number }>;
@@ -139,6 +141,11 @@ export type EvaluationInput = Readonly<{
   specialCases: readonly Readonly<{ annex: number; topic: string; category: string }>[];
   /** El registro tiene la factura 1.1.0 soportada con todos sus imports. */
   schemaAvailable: boolean;
+  /**
+   * Saldo de los productos de las líneas que tienen inventario inicializado, leído con la
+   * evaluación (add-minimal-inventory, design D4 y D9); sin inicializar, el producto no aparece.
+   */
+  stockBalances: ReadonlyMap<string, string>;
 }>;
 
 export type EvaluatedTax = LineTaxRate &

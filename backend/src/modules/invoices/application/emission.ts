@@ -20,7 +20,7 @@ import type { RequestContext } from "../../identity/application/request-context.
 import type { AccessKeys, XsdValidator } from "../../sri-engine/application/ports.ts";
 import { registeredSchema } from "../../sri-engine/application/schemas.ts";
 import { evaluateInvoice } from "../domain/evaluation.ts";
-import { buildSnapshot, withKey, type InvoiceSnapshotV1 } from "../domain/snapshot.ts";
+import { buildSnapshot, withKey, type InvoiceSnapshot } from "../domain/snapshot.ts";
 import {
   DraftAlreadyEmittedError,
   EmissionRejectedError,
@@ -189,7 +189,7 @@ export function createEmission(deps: EmissionDependencies) {
         sequential,
         numericCode,
       });
-      const snapshot: InvoiceSnapshotV1 = withKey(draftSnapshot, {
+      const snapshot: InvoiceSnapshot = withKey(draftSnapshot, {
         documentNumber: reservation.documentNumber,
         sequential,
         numericCode,

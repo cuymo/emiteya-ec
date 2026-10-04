@@ -1,9 +1,9 @@
 // Proyección directa del snapshot de la factura a la entrada del builder XML (add-invoice-emission,
 // design D4): sin lecturas ni cálculos.
-import type { InvoiceSnapshot } from "../../sri-engine/application/ports.ts";
-import type { InvoiceSnapshotV1 } from "../domain/snapshot.ts";
+import type { InvoiceSnapshot as XmlInvoiceSnapshot } from "../../sri-engine/application/ports.ts";
+import type { InvoiceSnapshot } from "../domain/snapshot.ts";
 
-export function toXmlSnapshot(snapshot: InvoiceSnapshotV1): InvoiceSnapshot {
+export function toXmlSnapshot(snapshot: InvoiceSnapshot): XmlInvoiceSnapshot {
   const { issuer, buyer } = snapshot;
   return {
     schemaVersion: snapshot.schema.version,

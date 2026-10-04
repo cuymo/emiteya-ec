@@ -17,7 +17,7 @@ import {
   type XsdValidation,
   type XsdValidator,
 } from "../../sri-engine/application/ports.ts";
-import type { InvoiceSnapshotV1 } from "../domain/snapshot.ts";
+import type { InvoiceSnapshot } from "../domain/snapshot.ts";
 import { classOf } from "./diagnostics.ts";
 import type { SignedUnitOfWork } from "./ports.ts";
 import { toXmlSnapshot } from "./xml-snapshot.ts";
@@ -153,7 +153,7 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
       return timings.measure(TIMING_STAGE[name], work);
     };
     const { companyId } = ctx;
-    const snapshot = document.snapshot as InvoiceSnapshotV1;
+    const snapshot = document.snapshot as InvoiceSnapshot;
     const schema: RegisteredSchema = {
       documentType: "01",
       version: snapshot.schema.version,

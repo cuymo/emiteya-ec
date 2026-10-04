@@ -10,7 +10,7 @@ import type {
 } from "../../src/modules/fiscal/application/ports.ts";
 import type { AttemptDiagnostic } from "../../src/modules/fiscal/domain/document.ts";
 import { createSigningPipeline } from "../../src/modules/invoices/application/signing-pipeline.ts";
-import type { InvoiceSnapshotV1 } from "../../src/modules/invoices/domain/snapshot.ts";
+import type { InvoiceSnapshot } from "../../src/modules/invoices/domain/snapshot.ts";
 import {
   XsdValidatorError,
   type XsdValidation,
@@ -19,7 +19,7 @@ import { createInvoiceXmlBuilder } from "../../src/modules/sri-engine/infrastruc
 
 const CTX = { userId: "u1", companyId: "c1", role: "OPERATOR" as const, requestId: "r1" };
 
-const SNAPSHOT: InvoiceSnapshotV1 = {
+const SNAPSHOT: InvoiceSnapshot = {
   snapshotVersion: 1,
   schema: {
     documentType: "01",
@@ -109,7 +109,7 @@ const SNAPSHOT: InvoiceSnapshotV1 = {
   },
 };
 
-function reserved(snapshot: InvoiceSnapshotV1 = SNAPSHOT): StoredDocument {
+function reserved(snapshot: InvoiceSnapshot = SNAPSHOT): StoredDocument {
   return {
     id: "d1",
     companyId: "c1",
@@ -247,6 +247,31 @@ describe("procedimiento de firma (design D9 y D10)", () => {
   it("firma y deja SIGNED", async () => {
     const { run } = pipelineWith({});
     expect((await run()).state).toBe("SIGNED");
+  });
+
+  it("firma un snapshot de la versión 1 y uno de la 2 con el mismo XML: la decisión de inventario no forma parte del comprobante (add-minimal-inventory, design D4)", async () => {
+    const xmlOf = async (document: StoredDocument) => {
+      const validated: string[] = [];
+      const { run } = pipelineWith({
+        document,
+        validate: (xml) => {
+          validated.push(xml);
+          return Promise.resolve(VALID);
+        },
+      });
+      expect((await run()).state).toBe("SIGNED");
+      return validated;
+    };
+    const v2: InvoiceSnapshot = {
+      ...SNAPSHOT,
+      snapshotVersion: 2,
+      lines: SNAPSHOT.lines.map((line) => ({ ...line, inventoryAffectsStock: true })),
+    };
+    const fromV1 = await xmlOf(reserved());
+    const fromV2 = await xmlOf(reserved(v2));
+    expect(fromV1.length).toBeGreaterThan(0);
+    expect(fromV2).toEqual(fromV1);
+    expect(fromV1.join("")).not.toMatch(/inventoryAffectsStock|inventario/);
   });
 
   it("XSD_INVALID guarda solo la línea y el elemento, nunca el valor", async () => {

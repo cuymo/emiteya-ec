@@ -16,6 +16,7 @@ import {
 } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { partiesModule } from "../../src/modules/parties/infrastructure/index.ts";
 import { productsModule } from "../../src/modules/products/infrastructure/index.ts";
+import { inventoryStockReads } from "../../src/modules/inventory/infrastructure/index.ts";
 import { invoicesModule } from "../../src/modules/invoices/infrastructure/index.ts";
 import type { DocumentSigner } from "../../src/modules/invoices/application/signing-pipeline.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
@@ -143,6 +144,7 @@ export function buildTaxpayerApp(
           signingReads: signing
             ? signing.reads
             : () => ({ activeCertificate: () => Promise.resolve(null) }),
+          stockReads: inventoryStockReads,
           maxLines: options.invoices?.maxLines ?? 100,
           xsd: options.invoices?.xsd ?? testXsdValidator(),
           signer: options.invoices?.signer ?? signing?.documents ?? NO_SIGNER,

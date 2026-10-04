@@ -46,7 +46,7 @@
 
 ## 4. Snapshot versión 2
 
-- [ ] 4.1 Añadir a `invoices` el puerto `StockReads`, inyectado al componer desde `main.ts` con la implementación del inventario, sin importar `inventory` (design D1).
+- [x] 4.1 Añadir a `invoices` el puerto `StockReads`, inyectado al componer desde `main.ts` con la implementación del inventario, sin importar `inventory` (design D1).
   - Llevar `SNAPSHOT_VERSION` a 2, con `SnapshotLine.inventoryAffectsStock` decidido en la transacción de reserva: marca del producto y existencia del saldo (design D4).
   - Que los lectores acepten la versión 1 con `false`.
   - Añadir la lectura interna exportada `stockLinesOf(db, companyId, documentId)`.

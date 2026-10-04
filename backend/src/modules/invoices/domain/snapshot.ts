@@ -11,7 +11,11 @@ import {
   type SpecialCaseRule,
 } from "./evaluation.ts";
 
-export const SNAPSHOT_VERSION = 1;
+/**
+ * Versión del snapshot. La 2 (add-minimal-inventory, design D4) añade a cada línea la decisión de
+ * inventario; los snapshots de la versión 1 se siguen leyendo, sin esa decisión.
+ */
+export const SNAPSHOT_VERSION = 2;
 
 const ENVIRONMENT_CODES = { TEST: "1", PRODUCTION: "2" } as const;
 
@@ -40,10 +44,16 @@ export type SnapshotLine = Readonly<{
   subtotal: string;
   taxableBase: string;
   taxes: readonly SnapshotTax[];
+  /**
+   * Desde la versión 2: la línea afecta al inventario porque, al reservar, su producto estaba
+   * marcado como controlado y con inventario inicializado. Ausente en la versión 1, que nunca afecta
+   * al inventario. No forma parte del XML.
+   */
+  inventoryAffectsStock?: boolean;
 }>;
 
-export type InvoiceSnapshotV1 = Readonly<{
-  snapshotVersion: typeof SNAPSHOT_VERSION;
+export type InvoiceSnapshot = Readonly<{
+  snapshotVersion: 1 | typeof SNAPSHOT_VERSION;
   schema: Readonly<{
     documentType: "01";
     version: string;
@@ -122,7 +132,7 @@ export type InvoiceSnapshotV1 = Readonly<{
 }>;
 
 /** Snapshot completo salvo los datos de la reserva, que se añaden con `withKey`. */
-export type SnapshotDraft = Omit<InvoiceSnapshotV1, "key">;
+export type SnapshotDraft = Omit<InvoiceSnapshot, "key">;
 
 export class SnapshotIncompleteError extends Error {
   constructor() {
@@ -160,7 +170,7 @@ function usedCatalogs(
 export function buildSnapshot(args: {
   input: EvaluationInput;
   evaluation: Evaluation;
-  schema: InvoiceSnapshotV1["schema"];
+  schema: InvoiceSnapshot["schema"];
   builderVersion: string;
   datasetVersions: Readonly<Record<string, number>>;
 }): SnapshotDraft {
@@ -172,6 +182,10 @@ export function buildSnapshot(args: {
     throw new SnapshotIncompleteError();
   }
   const lines: SnapshotLine[] = evaluation.lines.map((line) => ({
+    // Decisión de inventario congelada al reservar (design D4): nunca se vuelve a consultar.
+    inventoryAffectsStock:
+      input.products.get(line.productId)?.stockTracked === true &&
+      input.stockBalances.has(line.productId),
     position: line.position,
     productId: line.productId,
     mainCode: line.mainCode,
@@ -265,7 +279,11 @@ export function buildSnapshot(args: {
 }
 
 /** Completa el snapshot con el número reservado, el código numérico y la clave de acceso. */
-export const withKey = (
-  draft: SnapshotDraft,
-  key: InvoiceSnapshotV1["key"],
-): InvoiceSnapshotV1 => ({ ...draft, key });
+export const withKey = (draft: SnapshotDraft, key: InvoiceSnapshot["key"]): InvoiceSnapshot => ({
+  ...draft,
+  key,
+});
+
+/** La decisión de inventario de una línea: falsa en un snapshot de la versión 1 (design D4). */
+export const lineAffectsInventory = (snapshot: InvoiceSnapshot, line: SnapshotLine): boolean =>
+  snapshot.snapshotVersion >= 2 && line.inventoryAffectsStock === true;

@@ -27,7 +27,10 @@ import { createSigningPipeline, type DocumentSigner } from "../application/signi
 import { createSignedUnitOfWork } from "./signed-unit-of-work.ts";
 import { createEmissionUnitOfWork } from "./emission-unit-of-work.ts";
 import { createEvaluationReads, type SigningReads } from "./evaluation-reads.ts";
+import type { StockReads } from "../application/ports.ts";
 import { invoicesRouter } from "./http/invoices-router.ts";
+export { invoiceStockLines, type InvoiceStockDocument } from "./stock-lines.ts";
+export type { StockReads } from "../application/ports.ts";
 import { registerEmissionMetrics } from "./metrics.ts";
 import { createDraftRepository } from "./prisma-drafts.ts";
 import { createDraftsUnitOfWork } from "./unit-of-work.ts";
@@ -37,6 +40,12 @@ export type InvoicesModuleOptions = {
   authorizer: Authorizer;
   /** Firma vigente sobre un cliente (`signingModule(...).reads`). */
   signingReads: SigningReads;
+  /**
+   * Inventario de los productos sobre un cliente (add-minimal-inventory, design D1): lo implementa
+   * `inventory` y lo compone `main.ts`. Obligatorio: olvidarlo es un error de tipos, no una emisión
+   * que congela todas sus líneas sin inventario.
+   */
+  stockReads: StockReads;
   /** Validador XSD con el paquete verificado al arrancar. */
   xsd: Pick<XsdValidator, "ensureAvailable" | "validate">;
   /** Firma de comprobantes con la firma vigente (`signingModule(...).documents`). */
@@ -71,7 +80,7 @@ const DEFAULT_CONCLUSION_WINDOW_MS = 24 * 3_600_000;
 export function invoicesModule(options: InvoicesModuleOptions) {
   const now = options.now ?? (() => new Date());
   const today = () => ecuadorDate(now());
-  const reads = createEvaluationReads(options.prisma, options.signingReads);
+  const reads = createEvaluationReads(options.prisma, options.signingReads, options.stockReads);
   const drafts = createDrafts({
     drafts: createDraftRepository(options.prisma),
     uow: createDraftsUnitOfWork(options.prisma),
@@ -110,7 +119,7 @@ export function invoicesModule(options: InvoicesModuleOptions) {
     now,
   });
   const emission = createEmission({
-    uow: createEmissionUnitOfWork(options.prisma, options.signingReads),
+    uow: createEmissionUnitOfWork(options.prisma, options.signingReads, options.stockReads),
     reads,
     idempotency: createIdempotencyStore(options.prisma),
     documents,

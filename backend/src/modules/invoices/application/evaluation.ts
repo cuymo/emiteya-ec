@@ -79,6 +79,7 @@ export async function readEvaluation(
   for (const catalogType of [...catalogTypes].sort()) {
     taxes.set(catalogType, await reads.catalogs.availability(companyId, catalogType, issueDate));
   }
+  const stockBalances = await reads.stock(companyId, [...products.keys()]);
   const paymentMethods = await reads.catalogs.availability(companyId, "payment-method", issueDate);
   const buyerIdentificationTypeUsable = buyer
     ? (await reads.catalogs.identificationRule(buyer.identificationType, issueDate)) !== null
@@ -117,6 +118,7 @@ export async function readEvaluation(
       consumerFinalPolicy,
       specialCases,
       schemaAvailable: schema !== null,
+      stockBalances,
     },
     config,
     certificate,
