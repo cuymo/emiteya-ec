@@ -34,7 +34,7 @@
   - al arrancar, el RIDE verifica sus fuentes y, si faltan o no coinciden, `/health/ready` no se declara listo, con un detalle propio distinto del de los XSD, el motivo en el log y sin rutas absolutas.
 
   Verificar con pruebas de la verificación (fuentes correctas, ausentes, alteradas y manifiesto ausente), una prueba de readiness con fuentes alteradas que responde no lista con su detalle, y `corepack pnpm build && corepack pnpm check:xsd-artifact && corepack pnpm check:ride-assets`
-- [ ] 3.3 Implementar el puerto `RideSourceReader` en `sri-engine/application` y su lectura en `sri-engine/infrastructure` (design D3):
+- [x] 3.3 Implementar el puerto `RideSourceReader` en `sri-engine/application` y su lectura en `sri-engine/infrastructure` (design D3):
   - rechaza un XML con `<!DOCTYPE` o entidades, de más de 2 MiB o con más de 24 niveles de anidamiento, y un documento que no sea una factura 1.1.0 (`RIDE_SOURCE_INVALID`);
   - rechaza cualquier elemento que el builder del sistema no escribe, y todo impuesto que no sea IVA (`RIDE_SOURCE_UNSUPPORTED`, con los nombres de los elementos);
   - devuelve el modelo de la factura con los textos y los importes como texto exacto del XML, nunca convertidos a `number`;
