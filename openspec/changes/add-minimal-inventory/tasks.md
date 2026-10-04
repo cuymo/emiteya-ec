@@ -31,7 +31,7 @@
 
 ## 3. Núcleo del inventario
 
-- [ ] 3.1 Crear el módulo `backend/src/modules/inventory/` con su dominio (tipos, signos, estado derivado y agrupación exacta de líneas por producto con `sumExact`) y su repositorio Prisma:
+- [x] 3.1 Crear el módulo `backend/src/modules/inventory/` con su dominio (tipos, signos, estado derivado y agrupación exacta de líneas por producto con `sumExact`) y su repositorio Prisma:
   - inicializar;
   - bloquear un saldo con `FOR UPDATE`;
   - insertar un movimiento con `position = last_position + 1` y `balance_after`, y actualizar el saldo en la misma transacción;
