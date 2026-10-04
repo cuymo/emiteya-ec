@@ -200,7 +200,7 @@
 
 ## 11. Reconciliación manual y API de la transmisión
 
-- [ ] 11.1 Implementar `POST /api/v1/invoices/{id}/reconciliations` (design D15, D18 y D19):
+- [x] 11.1 Implementar `POST /api/v1/invoices/{id}/reconciliations` (design D15, D18 y D19):
   - permiso `invoices.reconcile` y motivo obligatorio;
   - estados admitidos;
   - `202` con el job manual;
@@ -216,7 +216,7 @@
   - job activo;
   - dos solicitudes simultáneas, de las que solo una se programa;
   - eventos de auditoría exactos, sin SOAP
-- [ ] 11.2 Ampliar `GET /api/v1/invoices` y `GET /api/v1/invoices/{id}` con los estados nuevos, el filtro "requiere atención" y el resumen de la transmisión, e implementar `GET /api/v1/invoices/{id}/transmission` (design D18). Verificar con pruebas HTTP:
+- [x] 11.2 Ampliar `GET /api/v1/invoices` y `GET /api/v1/invoices/{id}` con los estados nuevos, el filtro "requiere atención" y el resumen de la transmisión, e implementar `GET /api/v1/invoices/{id}/transmission` (design D18). Verificar con pruebas HTTP:
   - el detalle autorizado muestra el número, la fecha y el ambiente;
   - el devuelto muestra todos sus mensajes;
   - la transmisión detenida muestra su motivo;

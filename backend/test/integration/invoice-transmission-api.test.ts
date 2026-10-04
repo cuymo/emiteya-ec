@@ -9,6 +9,21 @@ import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastr
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
 import type { DbClient } from "../../src/platform/db/database.ts";
 import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker-pool.ts";
+import { createReconcileHandler } from "../../src/modules/fiscal/application/reconcile-handler.ts";
+import { DEFAULT_TRANSMISSION_SETTINGS } from "../../src/modules/fiscal/application/transmission-settings.ts";
+import { createDocumentRepository } from "../../src/modules/fiscal/infrastructure/prisma-documents.ts";
+import { createSriEvidenceRepository } from "../../src/modules/fiscal/infrastructure/prisma-sri-evidence.ts";
+import { createTransmissionUnitOfWork } from "../../src/modules/fiscal/infrastructure/transmission-unit-of-work.ts";
+import type {
+  SriExchange,
+  SriService,
+  TransportOutcome,
+} from "../../src/modules/sri-engine/application/transport.ts";
+import { sriClassifiers } from "../../src/modules/sri-engine/infrastructure/index.ts";
+import type { PrismaClient } from "../../src/generated/prisma/client.ts";
+import type { Job } from "../../src/platform/jobs/jobs.ts";
+import { createPrismaJobStore } from "../../src/platform/jobs/prisma-job-store.ts";
+import { authorizationResponse, response, validityResponse } from "../support/sri-responses.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { CUSTODY, readyCompany, type ReadyCompany } from "./emission-harness.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
@@ -172,6 +187,8 @@ describe("transmisión de facturas sobre HTTP", () => {
   let authorized: InvoiceView;
   let reserved: InvoiceView;
   let foreign: InvoiceView;
+  let returned: InvoiceView;
+  let ambiguous: InvoiceView;
 
   beforeAll(async () => {
     db = await createMigratedSchema("invoice_transmission_api");
@@ -196,10 +213,30 @@ describe("transmisión de facturas sobre HTTP", () => {
     authorized = await emit(a);
     reserved = await emit(a, busy);
     foreign = await emit(b);
+    returned = await emit(a);
+    ambiguous = await emit(a);
 
     await finishTransmit(stopped, "STOPPED", "SRI_UNAVAILABLE");
     await finishTransmit(review, "DONE");
     await finishTransmit(authorized, "DONE");
+    await finishTransmit(returned, "DONE");
+    await finishTransmit(ambiguous, "DONE");
+    await attempt(returned, "RETURNED", [
+      {
+        identifier: "35",
+        message: "DOCUMENTO INVÁLIDO",
+        additionalInformation: "detalle 1",
+        type: "ERROR",
+      },
+      {
+        identifier: "999",
+        message: "CÓDIGO NUEVO",
+        additionalInformation: null,
+        type: "ADVERTENCIA",
+      },
+    ]);
+    await advance(returned, ["RETURNED"]);
+    await advance(ambiguous, ["SEND_UNKNOWN", "MANUAL_REVIEW"]);
     await attempt(review, "UNKNOWN", []);
     await advance(review, ["SEND_UNKNOWN"]);
     await attempt(review, "SEQUENTIAL_REGISTERED", [
@@ -264,6 +301,8 @@ describe("transmisión de facturas sobre HTTP", () => {
         [review.id]: false,
         [authorized.id]: false,
         [reserved.id]: false,
+        [returned.id]: false,
+        [ambiguous.id]: false,
       });
     });
 
@@ -325,11 +364,34 @@ describe("transmisión de facturas sobre HTTP", () => {
     it('filtra por estado de la transmisión y por "requiere atención", solo en su empresa', async () => {
       const ids = async (query: string) =>
         bodyOf(await get(`/invoices${query}`, a.cookies.admin)).data.map((item) => item.id);
-      expect(await ids("?state=MANUAL_REVIEW")).toEqual([review.id]);
+      expect((await ids("?state=MANUAL_REVIEW")).sort()).toEqual([review.id, ambiguous.id].sort());
+      expect(await ids("?state=RETURNED")).toEqual([returned.id]);
       expect(await ids("?state=AUTHORIZED")).toEqual([authorized.id]);
-      expect((await ids("?attention=true")).sort()).toEqual([stopped.id, review.id].sort());
+      expect((await ids("?attention=true")).sort()).toEqual(
+        [stopped.id, review.id, ambiguous.id].sort(),
+      );
       const other = bodyOf(await get("/invoices?attention=true", b.cookies.admin)).data;
       expect(other).toEqual([]);
+    });
+
+    it("el devuelto muestra todos los mensajes del SRI con su identificador e información", async () => {
+      const view = bodyOf(await get(`/invoices/${returned.id}`, a.cookies.operator)).data;
+      expect(view.state).toBe("RETURNED");
+      expect(view.transmission.reconcilable).toBe(false);
+      expect(view.transmission.lastResult?.messages).toEqual([
+        {
+          identifier: "35",
+          message: "DOCUMENTO INVÁLIDO",
+          additionalInformation: "detalle 1",
+          type: "ERROR",
+        },
+        {
+          identifier: "999",
+          message: "CÓDIGO NUEVO",
+          additionalInformation: null,
+          type: "ADVERTENCIA",
+        },
+      ]);
     });
 
     it("el historial de una factura de otra empresa es 404", async () => {
@@ -418,6 +480,159 @@ describe("transmisión de facturas sobre HTTP", () => {
       expect(await audits()).toHaveLength(2);
       const view = bodyOf(await get(`/invoices/${stopped.id}`, a.cookies.admin)).data;
       expect(view.transmission).toMatchObject({ inProgress: true, stopped: null });
+    });
+  });
+
+  describe("conclusión de la reconciliación manual (tarea 11.1)", () => {
+    const replies: { service: SriService; outcome: TransportOutcome }[] = [];
+    const exchange = (service: SriService, environment: "TEST" | "PRODUCTION") => {
+      const index = replies.findIndex((reply) => reply.service === service);
+      const outcome = replies.splice(index, 1)[0]!.outcome;
+      const result: SriExchange = {
+        service,
+        environment,
+        endpoint: `simulado:${service}`,
+        envelope: Buffer.from("<soapenv:Envelope/>"),
+        outcome,
+      };
+      return Promise.resolve(result);
+    };
+    const handler = () =>
+      createReconcileHandler({
+        db: prisma,
+        evidence: createSriEvidenceRepository(prisma),
+        uow: createTransmissionUnitOfWork(prisma as PrismaClient),
+        jobs: createPrismaJobStore(prisma as PrismaClient, db.name),
+        logger: { info: () => {}, warn: () => {} },
+        documents: createDocumentRepository(prisma),
+        inquiry: {
+          queryAuthorization: (environment) => exchange("AUTHORIZATION", environment),
+          queryValidity: (environment) => exchange("VALIDITY", environment),
+        },
+        classifiers: sriClassifiers,
+        settings: DEFAULT_TRANSMISSION_SETTINGS,
+      }).handler;
+    /** El worker toma el job que programó la solicitud. */
+    const runReconcile = async (invoice: InvoiceView) => {
+      const job = await prisma.job.update({
+        where: { activeDedupeKey: `sri.reconcile:${invoice.id}` },
+        data: {
+          status: "LEASED",
+          leaseOwner: "worker",
+          leaseExpiresAt: new Date(Date.now() + 60_000),
+          attemptCount: { increment: 1 },
+        },
+      });
+      await handler().run(job as unknown as Job, {
+        signal: new AbortController().signal,
+        now: () => new Date(),
+      });
+    };
+    const completed = (invoice: InvoiceView) =>
+      prisma.auditEvent.findMany({
+        where: {
+          action: "invoice.reconciliation_completed",
+          changes: { path: ["invoiceId"], equals: invoice.id },
+        },
+      });
+    const requestedFor = async (invoice: InvoiceView) =>
+      (
+        await prisma.auditEvent.findMany({
+          where: {
+            action: "invoice.reconciliation_requested",
+            changes: { path: ["invoiceId"], equals: invoice.id },
+          },
+        })
+      )[0]!;
+
+    it("en revisión manual, la que encuentra la autorización concluye y se audita con el administrador", async () => {
+      replies.push({
+        service: "AUTHORIZATION",
+        outcome: response(
+          authorizationResponse(review.accessKey, [
+            {
+              estado: "AUTORIZADO",
+              numeroAutorizacion: review.accessKey,
+              fechaAutorizacion: "2026-10-04T10:15:30-05:00",
+              ambiente: "PRUEBAS",
+            },
+          ]),
+        ),
+      });
+      await runReconcile(review);
+      const view = bodyOf(await get(`/invoices/${review.id}`, a.cookies.admin)).data;
+      expect(view.state).toBe("AUTHORIZED");
+      const [event] = await completed(review);
+      expect(event).toMatchObject({
+        actorUserId: a.adminId,
+        correlationId: (await requestedFor(review)).correlationId,
+        changes: {
+          invoiceId: review.id,
+          documentNumber: review.documentNumber,
+          result: "AUTHORIZED",
+          state: "AUTHORIZED",
+        },
+      });
+      expect(JSON.stringify(event)).not.toMatch(/soap|<factura|Envelope/i);
+    });
+
+    it("una transmisión detenida en SIGNED se reactiva con el reenvío de los mismos bytes", async () => {
+      replies.push(
+        {
+          service: "AUTHORIZATION",
+          outcome: response(authorizationResponse(stopped.accessKey, [], "0")),
+        },
+        {
+          service: "VALIDITY",
+          outcome: response(
+            validityResponse({
+              accessKey: stopped.accessKey,
+              estadoConsulta: "RECHAZADA",
+              messages: [
+                { identifier: "99", message: "ERROR AL CONSULTAR DATOS DEL SERVICIO WEB" },
+              ],
+            }),
+          ),
+        },
+      );
+      await runReconcile(stopped);
+      expect((await sriJobs(stopped)).map((job) => [job.type, job.status])).toEqual([
+        ["sri.transmit", "STOPPED"],
+        ["sri.reconcile", "DONE"],
+        ["sri.transmit", "PENDING"],
+      ]);
+      const view = bodyOf(await get(`/invoices/${stopped.id}`, a.cookies.admin)).data;
+      expect(view.transmission).toMatchObject({ inProgress: true, stopped: null });
+      const [event] = await completed(stopped);
+      expect(event?.changes).toMatchObject({ result: "RESEND", state: "SIGNED" });
+    });
+
+    it("en revisión manual, la que no concluye deja la factura en revisión, sin reenvío", async () => {
+      const res = await reconcile(ambiguous, a.cookies.admin, "Revisar otra vez");
+      expect(res.status).toBe(202);
+      replies.push(
+        {
+          service: "AUTHORIZATION",
+          outcome: response(authorizationResponse(ambiguous.accessKey, [], "0")),
+        },
+        {
+          service: "VALIDITY",
+          outcome: response(
+            validityResponse({ accessKey: ambiguous.accessKey, estadoConsulta: "RECHAZADA" }),
+          ),
+        },
+      );
+      await runReconcile(ambiguous);
+      const view = bodyOf(await get(`/invoices/${ambiguous.id}`, a.cookies.admin)).data;
+      expect(view.state).toBe("MANUAL_REVIEW");
+      expect(view.transmission).toMatchObject({ inProgress: false, reconcilable: true });
+      expect(
+        (await sriJobs(ambiguous)).filter(
+          (job) => job.type === "sri.transmit" && job.status === "PENDING",
+        ),
+      ).toEqual([]);
+      const [event] = await completed(ambiguous);
+      expect(event?.changes).toMatchObject({ result: "KEY_UNKNOWN", state: "MANUAL_REVIEW" });
     });
   });
 });
