@@ -126,6 +126,8 @@ export type StepDependencies = Readonly<{
     warn(details: object, message: string): void;
   }>;
   observer?: TransmissionObserver;
+  /** Fuente del jitter del backoff, también al fallar el job; inyectable en las pruebas. */
+  random?: (() => number) | undefined;
 }>;
 
 export const UNPARSEABLE_VERSION = "unparseable/1";
@@ -142,7 +144,7 @@ export type StepResult = "DECIDED" | "BREAKER_OPEN" | "SHUTTING_DOWN";
 
 /** Aplica la decisión en la TX B. El job actual termina antes de que nazca el siguiente. */
 export async function applyDecision(
-  deps: Pick<StepDependencies, "uow" | "jobs">,
+  deps: Pick<StepDependencies, "uow" | "jobs" | "random">,
   input: Readonly<{
     job: Job;
     document: StoredDocument;
@@ -208,7 +210,11 @@ export async function applyDecision(
         ...(followUp.error ? { error: followUp.error } : {}),
       });
     } else if (followUp.action === "FAIL") {
-      await deps.jobs.fail(scope.db, job, followUp.error, { backoff: followUp.backoff, now });
+      await deps.jobs.fail(scope.db, job, followUp.error, {
+        backoff: followUp.backoff,
+        now,
+        ...(deps.random ? { random: deps.random } : {}),
+      });
     } else await deps.jobs.stop(scope.db, job, followUp.error, now);
     if (decision.next && !(await deps.jobs.enqueueIn(scope.db, decision.next))) {
       throw new Error(`no se pudo encolar ${decision.next.type}: hay otra interacción activa`);
