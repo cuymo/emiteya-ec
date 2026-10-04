@@ -85,6 +85,14 @@ describe("generación de OpenAPI", () => {
     const paths = buildOpenApiDocument(apiRoutes, info).paths;
     expect(Object.keys(paths).sort()).toEqual([
       "/company/status",
+      "/documents",
+      "/documents/{documentId}",
+      "/documents/{documentId}/authorized-xml",
+      "/documents/{documentId}/deliveries",
+      "/documents/{documentId}/print-requests",
+      "/documents/{documentId}/ride",
+      "/documents/{documentId}/ride-attempts",
+      "/documents/{documentId}/signed-xml",
       "/establishments",
       "/establishments/{establishmentId}",
       "/establishments/{establishmentId}/emission-points",
@@ -127,6 +135,13 @@ describe("generación de OpenAPI", () => {
       "/users/{userId}/status",
     ]);
     expect(Object.keys(paths["/users"] ?? {}).sort()).toEqual(["get", "post"]);
+    // El RIDE solo se lee con GET; imprimir es una solicitud explícita con POST, sin bytes.
+    expect(Object.keys(paths["/documents/{documentId}/ride"] ?? {})).toEqual(["get"]);
+    expect(Object.keys(paths["/documents/{documentId}/print-requests"] ?? {})).toEqual(["post"]);
+    const ride = paths["/documents/{documentId}/ride"]?.get as {
+      responses: Record<string, { content?: Record<string, unknown> }>;
+    };
+    expect(Object.keys(ride.responses["200"]?.content ?? {})).toEqual(["application/pdf"]);
     // Ningún cuerpo de escritura documenta companyId: los esquemas son estrictos.
     expect(JSON.stringify(paths)).not.toContain("companyId");
   });
