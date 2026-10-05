@@ -21,7 +21,9 @@ documento no especifica comportamiento.
 | `correct-returned-document` | Corregir un comprobante `DEVUELTA` (BR-28) con revisión o versionado de solo agregado, si la norma permite conservar la misma identidad. Capacidad futura, separada de `sri-transmission`. | ERS §12.1 (`RETURNED` corregible); CTX §26.1, §27.1 | — | Q-08 (fecha), Q-07 (resuelta) |
 | `cancellation-observation` | Detectar anulaciones de comprobantes autorizados con la consulta de validez (`PENDIENTE DE ANULAR`, `ANULADO`). Capacidad futura, fuera de `sri-transmission`. | CTX §24, §36 | — | Q-16 |
 | `invoices`             | Factura con consumidor final, líneas, pagos y totales; borradores editables antes de emitir.      | ERS RF-010, RF-201..206; CTX §12, §35                          | AC-02, AC-08  | Q-45, Q-46 (Q-18 y Q-19 resueltas) |
-| `credit-notes`         | Nota de crédito desde un comprobante, con devolución de stock opcional.                           | ERS RF-210..213; CTX §13                                       | AC-03         | Q-10, Q-20                     |
+| `credit-notes`         | Nota de crédito 1.1.0 contra una factura propia autorizada, con causas `TOTAL_ANNULMENT` y `RETURN` (parcial o total, por líneas de la factura), crédito acumulado nunca mayor que la factura, declaraciones del usuario sobre las exclusiones que el sistema no comprueba, devolución de stock opcional solo por el retorno físico declarado al autorizar la nota, y su RIDE en la bandeja. Sin descuentos ni bonificaciones ni documentos sustento externos. | ERS RF-210..213, RF-212; CTX §13; Res. NAC-DGERCGC25-00000014 y 00000017 | AC-03         | — (Q-10 y Q-20 resueltas)      |
+| `credit-note-discounts-bonuses` | Notas de crédito por descuentos o bonificaciones posteriores a la venta, con su modelo de importes, su asignación tributaria y su redondeo. Capacidad futura, separada de `credit-notes`. | Reglamento de Comprobantes, art. 15 | — | — |
+| `external-supporting-documents` | Notas de crédito (y otros documentos relacionados) contra comprobantes emitidos fuera del sistema: externos, en papel o importados. Capacidad futura, solo si se necesita. | ERS RF-210; CTX §13.4 | — | — |
 | `debit-notes`          | Nota de débito sobre un comprobante.                                                              | ERS RF-220..222; CTX §14                                       | AC-03         | —                              |
 | `withholding-receipts` | Comprobante de retención 2.0.0 con documentos sustento.                                           | ERS RF-230..234; CTX §16                                       | AC-03         | —                              |
 | `shipping-guides`      | Guía de remisión con transportista y destinatarios.                                               | ERS RF-240..243; CTX §15                                       | AC-03         | —                              |
@@ -68,6 +70,10 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 Capacidades futuras sin número en la secuencia, decididas en la revisión de readiness del cambio 7
 (2026-10-03): `correct-returned-document` (corrección de un devuelto, BR-28) y
 `cancellation-observation` (observación de anulaciones, Q-16). Ninguna amplía `add-sri-transmission`.
+En la revisión de readiness del cambio 10 (2026-10-04) se suman `credit-note-discounts-bonuses`
+(la norma permite esa causa, pero el MVP no la implementa todavía) y `external-supporting-documents`
+(el MVP solo acepta como documento modificado una factura propia autorizada). Ninguna amplía
+`add-credit-notes`.
 
 Obligaciones de `add-fiscal-catalogs` (5a) para `add-parties-and-products` (5b), que consume
 `fiscal-catalogs` como dependencia canónica sin duplicar datasets ni reglas de vigencia:
@@ -99,6 +105,26 @@ parte del spec actual de esa capacidad hasta que otro cambio los implemente.
 | Requisito | Capacidad | Qué falta | Estado |
 | --- | --- | --- | --- |
 | ERS RF-202, "ingreso manual permitido" | `invoices` | Líneas de factura sin producto del catálogo. `add-invoice-emission` (cambio 6) solo admite líneas que refieren un producto activo. | Diferido; sus reglas son Q-46. No es Q-45, que trata de modificar el precio de un producto del catálogo. |
+
+## Trazabilidad de `credit-notes`
+
+Fuentes del cambio 10 y qué fija cada una. Los specs distinguen el requisito oficial de la política
+del MVP.
+
+| Regla | Origen | Fuente |
+| --- | --- | --- |
+| Causas: anular operaciones, aceptar devoluciones, conceder descuentos o bonificaciones; la nota consigna denominación, serie y número del comprobante modificado | Requisito oficial | Reglamento de Comprobantes de Venta, art. 15 (citado en la Res. NAC-DGERCGC25-00000014); art. 5 sustituido por la NAC-DGERCGC25-00000017 |
+| Una factura con la leyenda "consumidor final" no admite nota de crédito | Requisito oficial, desde el 01/01/2026 | Res. NAC-DGERCGC25-00000014, art. 3, último inciso; disposición final reformada por la 00000017 |
+| Sin nota de crédito para facturas comerciales negociables negociadas ni para comprobantes que sustentan una devolución de impuestos | Requisito oficial | Res. NAC-DGERCGC25-00000014, disposiciones generales segunda y tercera |
+| Sin plazo para emitir la nota (el de doce meses se eliminó) | Requisito oficial vigente | Res. NAC-DGERCGC25-00000017, art. 1, literal c |
+| Anular un comprobante de venta en línea o mediante nota de crédito | Requisito oficial | Res. NAC-DGERCGC25-00000014, art. 2 |
+| XML `notaCredito` 1.1.0 y su RIDE | Requisito oficial | `docs/product/sri-xsd/NotaCredito_V1.1.0.xsd`; ficha v2.34, anexo 3 y anexo 2 (página 61) |
+| Documento modificado: tipo, número completo, fecha, motivo, valor e impuestos coherentes con él | Contexto técnico | CTX §13.2–13.4 |
+| Solo facturas propias autorizadas como documento modificado | Política del MVP | Q-10 |
+| Causas `TOTAL_ANNULMENT` y `RETURN`; descuentos y bonificaciones diferidos | Política del MVP (alcance) | Q-10 |
+| Crédito acumulado no mayor que la factura, y por línea no mayor que su cantidad | Política conservadora del producto | Q-10 |
+| Declaraciones del usuario para las exclusiones no comprobables | Política del MVP | Q-10 |
+| Devolución de stock al autorizar la nota, por el retorno físico declarado y limitada a la salida original pendiente | Política del producto sobre ERS RF-212 | Q-20 |
 
 ## Huecos de trazabilidad
 

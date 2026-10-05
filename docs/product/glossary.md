@@ -38,11 +38,13 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Comprobante electrónico  | `electronicDocument` | —          | Cualquiera de los seis documentos del alcance.                                          |
 | Factura                  | `invoice`            | `01`       | Venta de bienes o prestación de servicios.                                              |
 | Liquidación de compra    | `purchaseSettlement` | `03`       | Compra de bienes o servicios en los casos que la normativa permite.                     |
-| Nota de crédito          | `creditNote`         | `04`       | Corrección o anulación permitida de un comprobante.                                     |
+| Nota de crédito          | `creditNote`         | `04`       | Corrección o anulación permitida de un comprobante. En el MVP, contra una factura propia autorizada, por anulación total (`TOTAL_ANNULMENT`) o devolución (`RETURN`). |
 | Nota de débito           | `debitNote`          | `05`       | Cobro adicional asociado a un comprobante.                                              |
 | Guía de remisión         | `shippingGuide`      | `06`       | Traslado de mercadería.                                                                 |
 | Comprobante de retención | `withholdingReceipt` | `07`       | Registro de retenciones efectuadas.                                                     |
 | Documento modificado     | `modifiedDocument`   | —          | Comprobante que una nota de crédito o de débito corrige o complementa.                  |
+| Retorno físico           | `physicalReturnQuantity` | —      | Cantidad de una línea de una nota de crédito que regresó físicamente; va de cero a la cantidad acreditada y es la única que devuelve stock, al autorizar la nota. |
+| Declaración de elegibilidad | `eligibilityDeclaration` | —   | Afirmaciones del usuario, antes de emitir una nota de crédito, sobre condiciones que el sistema no puede comprobar. Elegibilidad declarada, no verificada. |
 | Documento sustento       | `supportingDocument` | —          | Comprobante sobre el cual se practica una retención; normalmente lo emitió un proveedor. |
 | Comprobante relacionado  | `relatedDocument`    | —          | Comprobante de venta asociado a una guía de remisión.                                   |
 | Borrador                 | `draft`              | —          | Comprobante editable, sin secuencial ni efectos fiscales.                               |
@@ -73,7 +75,7 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Transmisión detenida            | `stopped`              | El job de la transmisión agotó sus límites o encontró un problema que no se corrige reintentando. No cambia el estado fiscal; espera una reconciliación del administrador. |
 | Ventana de conclusión           | `conclusionWindow`     | Plazo para que el SRI concluya, 24 horas por defecto desde la primera evidencia de recepción (CTX §23.1). Al agotarlo sin conclusión, el comprobante pasa a revisión manual. |
 | Requiere atención               | `attention`            | Filtro de facturas que esperan a una persona o se verifican con el SRI: `SEND_UNKNOWN`, `MANUAL_REVIEW` o transmisión detenida. |
-| Anulación                       | `cancellation`         | Proceso del SRI en línea para dejar sin efecto un comprobante autorizado. No es una nota de crédito, no tiene Web Service público y el sistema no lo inventa (CTX §36). |
+| Anulación                       | `cancellation`         | Proceso del SRI en línea para dejar sin efecto un comprobante autorizado. No es una nota de crédito, no tiene Web Service público y el sistema no lo inventa (CTX §36). La norma admite también anular un comprobante de venta mediante una nota de crédito de anulación total (Res. NAC-DGERCGC25-00000014, art. 2). |
 | RIDE                            | `ride`                 | Representación Impresa del Documento Electrónico, en PDF. Se genera desde el comprobante autorizado.                                        |
 | Artefacto                       | `artifact`             | Archivo conservado de un comprobante (XML firmado, XML autorizado, respuestas del SRI, RIDE) junto con su hash.                             |
 | Snapshot fiscal                 | `fiscalSnapshot`       | Copia inmutable de emisor, receptor, ítems, impuestos, catálogos y versiones con que se emitió un comprobante (CTX §39).                     |

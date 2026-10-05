@@ -26,4 +26,4 @@ complejidad crece rápido con costeo, bodegas y lotes.
 - No hay reportes de valorización.
 - Con la transmisión apagada, las facturas pendientes no descuentan stock, y entre la emisión y la autorización se puede vender lo que ya no hay. Es intencional; impedir la sobreventa antes de autorizar sería una capacidad separada de reserva o disponibilidad.
 - Las facturas que no se autorizan (`RETURNED`, `NOT_AUTHORIZED`) nunca afectaron el stock, así que no necesitan compensación.
-- Siguen pendientes Q-20 (devolución por nota de crédito, cambio 10) y Q-21 (saldo inicial, design del cambio 9).
+- Q-21 quedó resuelta por el design D3 de `add-minimal-inventory`: un solo `INICIAL` por producto. Q-20 quedó resuelta el 2026-10-04: la devolución por nota de crédito (`DEVOLUCION_NC`) nace solo cuando la nota entra en `AUTHORIZED`, en la misma transacción y por el mismo puerto de seguidores, por el retorno físico que el usuario declara, según el snapshot de la factura original y sin superar lo que su salida sacó y todavía no se devolvió.

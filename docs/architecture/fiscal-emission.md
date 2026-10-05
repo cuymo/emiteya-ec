@@ -571,6 +571,23 @@ Cambio 9. El inventario reacciona a la autorización; `fiscal` e `invoices` no l
 - **Borrador.** `preview.stockWarnings`, aparte de `issues`: `STOCK_BELOW_REQUESTED` cuando la suma de las líneas de un producto marcado supera su saldo, y `STOCK_NOT_INITIALIZED`, sin saldo, para un producto marcado sin inventario. Nunca bloquean la emisión ni garantizan existencias.
 - **Auditoría.** `inventory.initialized`, `inventory.tracking_enabled` e `inventory.tracking_disabled`, además del cambio de la marca en `product.updated`. Las entradas, los ajustes y las salidas no se auditan aparte: el kárdex guarda el actor, el momento y el motivo.
 
+## Decisiones para el diseño de `add-credit-notes`
+
+Decididas el 2026-10-04 en la revisión de readiness del cambio 10 (Q-10 y Q-20); el proposal y el
+design del cambio las concretan. Las reglas de negocio están en `docs/product/domain-model.md`
+(BR-30, BR-33 a BR-35, BR-45 y BR-59 a BR-62), con su origen oficial o de política del MVP en
+`docs/product/capabilities.md` (Trazabilidad de `credit-notes`).
+
+- **Documento propio.** La nota de crédito (`codDoc` 04, XSD `NotaCredito_V1.1.0`, ya en el registro de esquemas) tiene su secuencial por establecimiento, punto y tipo, su clave de acceso, su snapshot inmutable, su XML validado, firmado y archivado, sus jobs de transmisión, su reconciliación, su autorización y su evidencia. Reutiliza el pipeline existente; no lo copia en un sistema paralelo.
+- **Genérico y por tipo.**
+  - Genérico: reserva del secuencial y clave, `electronic_document` con su máquina de estados y sus transiciones, etapas de la firma con el builder y el XSD del tipo, artefactos, jobs `sri.*`, evidencia, reconciliación, puerto de seguidores de las transiciones, bandeja, descargas, entregas y el job, el runner y el pool del RIDE.
+  - Por tipo: la construcción de la nota desde el snapshot de la factura (sin borrador libre), su snapshot, su builder `notaCredito` 1.1.0, la distribución de su RIDE, la capacidad acreditable de la factura y la devolución de stock.
+- **Antes de reservar.** Permiso, empresa, factura propia en `AUTHORIZED` con snapshot y artefactos íntegros, exclusión de consumidor final, causa cerrada, cantidades contra la capacidad, declaraciones del usuario: todo se valida antes de consumir secuencial, clave, firma o llamada al SRI.
+- **Concurrencia de la capacidad (estrategia propuesta; el proposal fija el modelo).** La reserva de la nota toma, en su misma transacción, un lock sobre la factura modificada y consume una capacidad acreditable materializada por línea de la factura (cantidad e importes originales y acreditados), con incrementos atómicos y un `CHECK` de que lo acreditado no supera lo original. Así dos notas simultáneas no validan contra el mismo saldo, y la base es la última defensa. El retorno físico consume a la vez una capacidad devolvible por factura y producto, igual a su `SALIDA_FACTURA`, con el mismo tipo de defensa; la `DEVOLUCION_NC` la aplica después el seguidor al autorizar la nota. El design decide cuándo una nota libera su capacidad (por ejemplo, solo al terminar en `NOT_AUTHORIZED`), siempre fallando cerrado.
+- **Importes de una devolución.** Decimal exacto desde la línea original del snapshot: la cantidad acreditada fija la proporción, y la nota que completa una línea toma exactamente el remanente de base, descuento e impuestos, para que la suma de las notas no difiera del documento original. Con golden tests de línea completa, parcial, varias líneas, notas sucesivas, último remanente, impuestos, descuentos originales, cantidades de 6 decimales y una acumulación que intenta exceder la línea.
+- **Devolución de stock.** Otro seguidor de las transiciones, en la misma transacción que la entrada de la nota en `AUTHORIZED`; `fiscal` no importa `inventory`. Agrupa por producto con la suma exacta y bloquea los saldos en orden estable de `productId`, como la salida de la factura.
+- **RIDE.** La distribución oficial de la nota de crédito está en la ficha v2.34, anexo 2, página 61: la misma cabecera con la autorización y el Code128, emisor, comprador, el bloque del comprobante que se modifica con su fecha y la razón de modificación, el detalle, la información adicional y los subtotales, sin formas de pago. Usa las primitivas del RIDE de la factura validadas por S-4 (pdfmake, bwip-js, Noto Sans y paginación), sin otro spike; no es el RIDE de la factura con otro título. La nota aparece en la bandeja (`document-archive`), no en otra.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna
