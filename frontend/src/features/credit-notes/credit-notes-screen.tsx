@@ -120,7 +120,9 @@ function DraftsPanel() {
                 className="font-medium underline-offset-2 hover:underline"
               >
                 {CREDIT_NOTE_CAUSE_LABELS[draft.cause]} de la factura{" "}
-                <span className="tabular-nums">{draft.invoice.documentNumber}</span>
+                <span className="whitespace-nowrap tabular-nums">
+                  {draft.invoice.documentNumber}
+                </span>
               </Link>
               <span className="text-foreground-muted break-words">
                 {draft.buyerName} ·{" "}
@@ -377,8 +379,8 @@ export function CreditNotesScreen() {
             <span className="text-sm break-words">{note.buyerName}</span>
             <span className="text-sm text-foreground-muted">
               {CREDIT_NOTE_CAUSE_LABELS[note.cause]} · Factura{" "}
-              <span className="tabular-nums">{note.invoice.documentNumber}</span> ·{" "}
-              {formatIssueDate(note.issueDate)}
+              <span className="whitespace-nowrap tabular-nums">{note.invoice.documentNumber}</span>{" "}
+              · {formatIssueDate(note.issueDate)}
             </span>
             <StateCell state={note.state} stopped={note.transmissionStopped} />
           </div>

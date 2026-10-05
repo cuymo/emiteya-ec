@@ -6,7 +6,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { SessionGate } from "@/components/session";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import {
@@ -24,7 +24,7 @@ import {
   type Route,
 } from "./harness";
 
-const NOTE = { id: "nc-1", documentType: "04" } as const;
+const NOTE = { id: "nc-1", documentType: "04", state: "AUTHORIZED" } as const;
 const summary = (
   state: string,
   documents: { ride: string; authorizedXml: boolean; signedXml: boolean },
@@ -167,11 +167,49 @@ describe("Documentos de la nota de crédito", () => {
     ).toBeDefined();
   });
 
+  it("vuelve a pedir los documentos cuando el comprobante cambia de estado", async () => {
+    let server = "SIGNED";
+    function Changing() {
+      const [state, setState] = useState<"SIGNED" | "AUTHORIZED">("SIGNED");
+      return (
+        <>
+          <button
+            onClick={() => {
+              server = "AUTHORIZED";
+              setState("AUTHORIZED");
+            }}
+          >
+            Autorizar
+          </button>
+          <DocumentsSection document={{ ...NOTE, state }} />
+        </>
+      );
+    }
+    render(<Changing />, {
+      "GET /api/v1/documents/nc-1": () => ({
+        status: 200,
+        body: {
+          data:
+            server === "SIGNED"
+              ? summary("SIGNED", { ride: "NOT_APPLICABLE", authorizedXml: false, signedXml: true })
+              : summary("AUTHORIZED", { ride: "AVAILABLE", authorizedXml: true, signedXml: true }),
+        },
+      }),
+    });
+    expect(
+      await screen.findByText(
+        "El RIDE estará disponible cuando el SRI autorice la nota de crédito.",
+      ),
+    ).toBeDefined();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Autorizar" }));
+    expect(await screen.findByText("El RIDE está listo para entregarse.")).toBeDefined();
+  });
+
   it("un tipo que el sistema no emite no muestra la sección", async () => {
     const calls = render(
       <>
         <p>detalle</p>
-        <DocumentsSection document={{ id: "x-1", documentType: "07" }} />
+        <DocumentsSection document={{ id: "x-1", documentType: "07", state: "AUTHORIZED" }} />
       </>,
       {},
     );

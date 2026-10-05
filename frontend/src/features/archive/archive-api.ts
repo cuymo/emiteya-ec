@@ -68,10 +68,13 @@ export function useDocuments(query: DocumentsQuery, enabled: boolean) {
   });
 }
 
-/** Resumen de los documentos; mientras el RIDE se prepara, se vuelve a pedir cada 5 s. */
-export function useDocumentSummary(id: string, enabled: boolean) {
+/**
+ * Resumen de los documentos; mientras el RIDE se prepara, se vuelve a pedir cada 5 s. Con el estado
+ * del comprobante en la clave, cada transición (firmado, autorizado) vuelve a pedirlo.
+ */
+export function useDocumentSummary(id: string, state: DocumentState, enabled: boolean) {
   return useQuery({
-    queryKey: [...DOCUMENTS_KEY, "summary", id],
+    queryKey: [...DOCUMENTS_KEY, "summary", id, state],
     enabled,
     queryFn: ({ signal }) =>
       apiFetch(documentPath(id), { schema: documentSummaryViewSchema, signal }),

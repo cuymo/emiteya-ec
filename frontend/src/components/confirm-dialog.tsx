@@ -97,9 +97,10 @@ export function ConfirmDialog({
             }
             onConfirm(text.trim());
           }}
-          className="flex flex-col"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="flex flex-col gap-1 px-3 pt-3 pr-7 pb-2">
+          {/* Un contenido más alto que la pantalla se desplaza y las acciones quedan a la vista. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pt-3 pr-7 pb-2">
             <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
             <DialogDescription asChild>
               <div className="text-sm text-foreground-muted">{description}</div>

@@ -11,6 +11,7 @@ import {
   CREDIT_NOTE_CAUSE_LABELS,
   CREDIT_NOTE_ELIGIBILITY_DECLARATION,
   compareDecimalStrings,
+  type InvoiceState,
 } from "@facturador/contracts";
 import { ArrowLeft, RotateCw } from "lucide-react";
 import Link from "next/link";
@@ -43,6 +44,14 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       {children}
     </section>
   );
+}
+
+/** Dónde está el crédito de la nota en la factura: aplicado, liberado o todavía reservado. */
+function creditStatus(state: InvoiceState): string {
+  if (state === "AUTHORIZED") return "Su crédito está aplicado en la factura.";
+  if (state === "RETURNED" || state === "NOT_AUTHORIZED")
+    return "El crédito que reservaba en la factura se liberó: la factura vuelve a tenerlo disponible.";
+  return "Su crédito queda reservado en la factura hasta que el SRI autorice o rechace la nota.";
 }
 
 export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string }) {
@@ -145,9 +154,6 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
               Reintenta la firma para completarla.
             </p>
           )}
-          <p className="text-foreground-muted">
-            Su crédito sigue reservado en la factura hasta que el SRI la autorice o la rechace.
-          </p>
         </div>
       )}
 
@@ -167,6 +173,7 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
                 Emitida el {formatIssueDate(data.invoice.issueDate)}
               </span>
             </p>
+            <p className="text-sm">{creditStatus(data.state)}</p>
           </Section>
           <Section title="Causa y motivo">
             <dl className="grid grid-cols-1 gap-x-3 gap-y-0.5 text-sm sm:grid-cols-[auto_1fr]">
@@ -212,10 +219,14 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
             </ul>
           </Section>
           <Section title="Declaraciones del usuario">
-            <p className="text-sm">
-              Declaradas por {declarations.declaredByName ?? "un usuario"} el{" "}
-              {formatDateTime(declarations.declaredAt)}. Son declaraciones del usuario: el sistema
-              no puede comprobarlas.
+            <p className="flex flex-col text-sm">
+              <span>
+                Declaradas por {declarations.declaredByName ?? "un usuario"} ·{" "}
+                {formatDateTime(declarations.declaredAt)}
+              </span>
+              <span className="text-foreground-muted">
+                Son declaraciones del usuario: el sistema no puede comprobarlas.
+              </span>
             </p>
             <ul className="flex flex-col gap-1">
               {declarations.statements.map((statement) => (

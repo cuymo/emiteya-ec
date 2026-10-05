@@ -9,6 +9,7 @@
 import {
   ARTIFACT_KIND_LABELS,
   DELIVERY_EVENT_LABELS,
+  type DocumentState,
   type DocumentSummaryView,
   type DocumentType,
 } from "@facturador/contracts";
@@ -110,22 +111,36 @@ function rideMessage(kind: DocumentKind, summary: DocumentSummaryView): ReactNod
   }
 }
 
-/** Lo que la sección necesita del comprobante: su identificador y su tipo. */
-export type ArchivedDocument = Readonly<{ id: string; documentType: DocumentType }>;
+/** Lo que la sección necesita del comprobante: su identificador, su tipo y su estado. */
+export type ArchivedDocument = Readonly<{
+  id: string;
+  documentType: DocumentType;
+  state: DocumentState;
+}>;
 
 export function DocumentsSection({ document }: { document: ArchivedDocument }) {
   const kind = documentKind(document.documentType);
-  return kind ? <KindDocumentsSection kind={kind} documentId={document.id} /> : null;
+  return kind ? (
+    <KindDocumentsSection kind={kind} documentId={document.id} state={document.state} />
+  ) : null;
 }
 
-function KindDocumentsSection({ kind, documentId }: { kind: DocumentKind; documentId: string }) {
+function KindDocumentsSection({
+  kind,
+  documentId,
+  state,
+}: {
+  kind: DocumentKind;
+  documentId: string;
+  state: DocumentState;
+}) {
   const { me } = useSession();
   const headingId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const canRead = canSee(me.role, "archive.read");
   const canDownload = canSee(me.role, "archive.download");
   const canRetry = canSee(me.role, "archive.retryRide");
-  const summary = useDocumentSummary(documentId, canRead);
+  const summary = useDocumentSummary(documentId, state, canRead);
   const download = useDownloadDocument();
   const print = usePrintRide();
   const retry = useRetryRide({ onSuccess: () => headingRef.current?.focus() });

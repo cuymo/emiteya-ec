@@ -652,8 +652,8 @@ function DraftEditor({
                       )}
                       {computed && (
                         <p className="text-sm text-foreground-muted tabular-nums">
-                          En la nota: {formatDecimal(computed.quantity)} × base{" "}
-                          {formatUsd(computed.taxableBase)}; quedan{" "}
+                          En la nota: {formatDecimal(computed.quantity)} por una base imponible de{" "}
+                          {formatUsd(computed.taxableBase)}. Después de esta nota quedan{" "}
                           {formatDecimal(computed.remainingQuantity)} acreditables.
                         </p>
                       )}

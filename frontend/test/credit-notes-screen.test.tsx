@@ -232,6 +232,7 @@ describe("detalle de la nota de crédito", () => {
     ).toBe("/facturas/inv-1");
     expect(screen.getByText("Devolución de mercadería")).toBeDefined();
     expect(screen.getByText("Retorno físico al inventario: 1")).toBeDefined();
+    expect(screen.getByText("Su crédito está aplicado en la factura.")).toBeDefined();
     const declarations = screen.getByRole("region", { name: "Declaraciones del usuario" });
     expect(within(declarations).getByText(/Declaradas por Óscar Operador/)).toBeDefined();
     expect(within(declarations).getByText(/el sistema no puede comprobarlas/)).toBeDefined();
@@ -266,7 +267,7 @@ describe("detalle de la nota de crédito", () => {
       "GET /api/v1/documents/nc-1": () => ({ status: 404, body: errorBody("NOT_FOUND", "x") }),
     });
     expect(await screen.findByText(/la firma está en curso o se interrumpió/)).toBeDefined();
-    expect(screen.getByText(/Su crédito sigue reservado en la factura/)).toBeDefined();
+    expect(screen.getByText(/Su crédito queda reservado en la factura/)).toBeDefined();
     expect(screen.queryByRole("region", { name: "Transmisión al SRI" })).toBeNull();
     await userEvent.setup().click(screen.getByRole("button", { name: "Reintentar firma" }));
     expect(await screen.findByText("Firmaste la nota de crédito 001-001-000000007.")).toBeDefined();
