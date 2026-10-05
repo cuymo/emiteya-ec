@@ -36,6 +36,7 @@ import {
   creditNoteSigningProfile,
   creditNotesModule,
 } from "../../src/modules/credit-notes/infrastructure/index.ts";
+import { debitNotesModule } from "../../src/modules/debit-notes/infrastructure/index.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
 import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
@@ -232,6 +233,19 @@ export function buildTaxpayerApp(
             ? { accessKeys: options.creditNotes.accessKeys }
             : {}),
           ...(options.creditNotes?.metrics ? { metrics: options.creditNotes.metrics } : {}),
+          ...(invoicesNow ? { now: invoicesNow } : {}),
+        }).routers,
+      );
+      // Notas de débito (add-debit-notes): los mismos puertos que compone `main.ts`.
+      router.use(
+        ...debitNotesModule({
+          prisma: db.database.prisma,
+          schema: db.name,
+          authorizer,
+          signingReads: signing
+            ? signing.reads
+            : () => ({ activeCertificate: () => Promise.resolve(null) }),
+          invoices: invoiceCreditSource,
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

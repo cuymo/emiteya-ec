@@ -60,11 +60,11 @@
 
 ## 5. Borradores, vista previa y facturas elegibles
 
-- [ ] 5.1 Implementar el puerto `InvoiceSourceReader` sobre la lectura `invoiceCreditSource` que exporta `invoices`, sin cambiarla, inyectado por `main.ts` (design D3). Verificar con pruebas de integración:
+- [x] 5.1 Implementar el puerto `InvoiceSourceReader` sobre la lectura `invoiceCreditSource` que exporta `invoices`, sin cambiarla, inyectado por `main.ts` (design D3). Verificar con pruebas de integración:
   - factura autorizada leída sin consultar producto, tercero ni catálogo, con sus tratamientos y sus referencias fiscales;
   - snapshot o artefacto alterados detectados y nunca reparados;
   - factura de otra empresa, nota de crédito o nota de débito no encontradas
-- [ ] 5.2 Implementar los borradores con su vista previa (`/debit-notes/drafts`) y las facturas elegibles (`/debit-notes/eligible-invoices`), con sus rutas en OpenAPI. Verificar con pruebas HTTP:
+- [x] 5.2 Implementar los borradores con su vista previa (`/debit-notes/drafts`) y las facturas elegibles (`/debit-notes/eligible-invoices`), con sus rutas en OpenAPI. Verificar con pruebas HTTP:
   - factura en cada estado no autorizado rechazada; consumidor final rechazado; otro ambiente informado como problema; integridad informada como problema;
   - vista previa con los tratamientos de la factura, las bases e impuestos por tratamiento, el total y los problemas por concepto;
   - la lista de elegibles sin consumidor final, sin otro ambiente y sin notas de crédito ni de débito;

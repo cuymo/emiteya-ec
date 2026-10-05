@@ -142,6 +142,17 @@ import {
   listEligibleInvoicesQuerySchema,
   updateCreditNoteDraftSchema,
 } from "../credit-notes.ts";
+import {
+  createDebitNoteDraftSchema,
+  debitEligibleInvoiceViewSchema,
+  debitNoteDraftIdParamsSchema,
+  debitNoteDraftSummaryViewSchema,
+  debitNoteDraftViewSchema,
+  debitNoteListMetaSchema,
+  listDebitEligibleInvoicesQuerySchema,
+  listDebitNoteDraftsQuerySchema,
+  updateDebitNoteDraftSchema,
+} from "../debit-notes.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -255,6 +266,23 @@ const creditDraftInvoiceConflict = {
     "La factura no admite nota de crédito: no está autorizada (CREDIT_NOTE_INVOICE_NOT_ELIGIBLE) o se emitió a consumidor final (CREDIT_NOTE_CONSUMER_FINAL); o el borrador cambió (CREDIT_NOTE_DRAFT_CHANGED) o ya se emitió (CREDIT_NOTE_DRAFT_ALREADY_EMITTED).",
   schema: errorEnvelopeSchema,
 };
+// Notas de débito (add-debit-notes, design D20).
+const debitDraftNotFound = {
+  description:
+    "El borrador no existe en la empresa (DEBIT_NOTE_DRAFT_NOT_FOUND) o su factura no existe (DEBIT_NOTE_INVOICE_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const debitDraftReferenceErrors = {
+  description:
+    "Datos inválidos (una causa, una descripción, un importe, un tratamiento o una forma de pago con formato inválido, o un campo no permitido) o un punto de emisión que no existe en la empresa (EMISSION_POINT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const debitDraftInvoiceConflict = {
+  description:
+    "La factura no admite nota de débito: no está autorizada (DEBIT_NOTE_INVOICE_NOT_ELIGIBLE) o se emitió a consumidor final (DEBIT_NOTE_CONSUMER_FINAL, política del proyecto); o el borrador cambió (DEBIT_NOTE_DRAFT_CHANGED) o ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
+  schema: errorEnvelopeSchema,
+};
+
 const creditNoteResponse = (description: string) => ({
   description,
   schema: successEnvelope(creditNoteViewSchema),
@@ -1674,6 +1702,116 @@ export const apiRoutes: readonly RouteDefinition[] = [
       401: errors[401],
       403: errors[403],
       404: creditNoteNotFound,
+    },
+  }),
+  // Notas de débito (add-debit-notes, design D20).
+  defineRoute({
+    method: "get",
+    path: "/debit-notes/eligible-invoices",
+    summary:
+      "Buscar facturas que admiten nota de débito: autorizadas, sin consumidor final y del ambiente en que la empresa emite",
+    request: { query: listDebitEligibleInvoicesQuerySchema },
+    responses: {
+      200: {
+        description: "Página de facturas elegibles y el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(debitEligibleInvoiceViewSchema),
+          meta: debitNoteListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/debit-notes/drafts",
+    summary: "Listar los borradores de nota de débito pendientes, por última actualización",
+    request: { query: listDebitNoteDraftsQuerySchema },
+    responses: {
+      200: {
+        description: "Página de borradores `DRAFT` con el valor total de su vista previa.",
+        schema: z.strictObject({
+          data: z.array(debitNoteDraftSummaryViewSchema),
+          meta: debitNoteListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/debit-notes/drafts",
+    summary:
+      "Guardar un borrador de nota de débito sobre una factura autorizada: conceptos, forma de pago y punto",
+    request: { body: createDebitNoteDraftSchema },
+    responses: {
+      201: {
+        description:
+          "Borrador guardado, con la vista previa del servidor: los tratamientos de IVA de la factura, las bases e impuestos por tratamiento, el valor total, la forma de pago y los problemas por concepto. No reserva nada.",
+        schema: successEnvelope(debitNoteDraftViewSchema),
+      },
+      400: debitDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: debitDraftNotFound,
+      409: debitDraftInvoiceConflict,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/debit-notes/drafts/:draftId",
+    summary: "Consultar un borrador de nota de débito con su vista previa recalculada",
+    request: { params: debitNoteDraftIdParamsSchema },
+    responses: {
+      200: {
+        description:
+          "Borrador con la vista previa calculada con la fecha del día y el catálogo vigente.",
+        schema: successEnvelope(debitNoteDraftViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: debitDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/debit-notes/drafts/:draftId",
+    summary: "Corregir un borrador de nota de débito a partir de la versión consultada",
+    request: { params: debitNoteDraftIdParamsSchema, body: updateDebitNoteDraftSchema },
+    responses: {
+      200: {
+        description: "Borrador corregido.",
+        schema: successEnvelope(debitNoteDraftViewSchema),
+      },
+      400: debitDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: debitDraftNotFound,
+      409: debitDraftInvoiceConflict,
+    },
+  }),
+  defineRoute({
+    method: "delete",
+    path: "/debit-notes/drafts/:draftId",
+    summary: "Eliminar un borrador de nota de débito sin emitir",
+    request: { params: debitNoteDraftIdParamsSchema },
+    responses: {
+      204: { description: "Borrador eliminado, sin rastro fiscal." },
+      401: errors[401],
+      403: errors[403],
+      404: debitDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
 ];

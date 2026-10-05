@@ -64,6 +64,7 @@ import {
   createConfigurationLogoReader,
   taxpayerRouters,
 } from "./modules/taxpayer/infrastructure/index.ts";
+import { debitNotesModule } from "./modules/debit-notes/infrastructure/index.ts";
 import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
@@ -374,6 +375,18 @@ apiRouter.use(
     jobs: jobStore,
     conclusionWindowMs: transmissionSettings.poll.windowMs,
     stageTimings: env.EMISSION_STAGE_TIMINGS,
+  }).routers,
+);
+
+// Notas de débito (add-debit-notes, design D1 y D20): la factura de origen de `invoices` como
+// puerto, sin capacidades ni inventario.
+apiRouter.use(
+  ...debitNotesModule({
+    prisma: database.prisma,
+    schema: parseDatabaseUrl(env.DATABASE_URL).schema ?? "public",
+    authorizer,
+    signingReads: signing.reads,
+    invoices: invoiceCreditSource,
   }).routers,
 );
 

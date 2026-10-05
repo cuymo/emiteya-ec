@@ -35048,6 +35048,2675 @@
           }
         }
       }
+    },
+    "/debit-notes/eligible-invoices": {
+      "get": {
+        "summary": "Buscar facturas que admiten nota de débito: autorizadas, sin consumidor final y del ambiente en que la empresa emite",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 25,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de facturas elegibles y el total en `meta`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "documentNumber": {
+                            "type": "string"
+                          },
+                          "issueDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                          },
+                          "buyerIdentification": {
+                            "type": "string"
+                          },
+                          "buyerName": {
+                            "type": "string"
+                          },
+                          "total": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "documentNumber",
+                          "issueDate",
+                          "buyerIdentification",
+                          "buyerName",
+                          "total"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "pageSize",
+                        "total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos; el mensaje indica el campo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/debit-notes/drafts": {
+      "get": {
+        "summary": "Listar los borradores de nota de débito pendientes, por última actualización",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 25,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de borradores `DRAFT` con el valor total de su vista previa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "invoice": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "documentNumber": {
+                                "type": "string"
+                              },
+                              "issueDate": {
+                                "type": "string",
+                                "format": "date",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "documentNumber",
+                              "issueDate"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "buyerName": {
+                            "type": "string"
+                          },
+                          "conceptCount": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "previewTotal": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "version",
+                          "invoice",
+                          "buyerName",
+                          "conceptCount",
+                          "previewTotal",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "pageSize",
+                        "total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos; el mensaje indica el campo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Guardar un borrador de nota de débito sobre una factura autorizada: conceptos, forma de pago y punto",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "invoiceId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "emissionPointId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "paymentMethod": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9A-Z][0-9A-Z-]{0,63}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "concepts": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "cause": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "LATE_PAYMENT_INTEREST",
+                                "POST_INVOICE_COST_EXPENSE"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "amount": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "taxTreatment": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[0-9]{1,4}:[0-9]{1,4}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "invoiceId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Borrador guardado, con la vista previa del servidor: los tratamientos de IVA de la factura, las bases e impuestos por tratamiento, el valor total, la forma de pago y los problemas por concepto. No reserva nada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "invoice": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "documentNumber": {
+                              "type": "string"
+                            },
+                            "issueDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "buyerIdentification": {
+                              "type": "string"
+                            },
+                            "buyerName": {
+                              "type": "string"
+                            },
+                            "total": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "documentNumber",
+                            "issueDate",
+                            "buyerIdentification",
+                            "buyerName",
+                            "total"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "emissionPoint": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "establishmentCode": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string"
+                                },
+                                "available": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "establishmentCode",
+                                "code",
+                                "available"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "paymentMethod": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "concepts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "cause": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "LATE_PAYMENT_INTEREST",
+                                      "POST_INVOICE_COST_EXPENSE"
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "amount": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "taxTreatment": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "cause",
+                              "description",
+                              "amount",
+                              "taxTreatment"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "preview": {
+                          "type": "object",
+                          "properties": {
+                            "evaluatedOn": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "taxTreatments": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string"
+                                  },
+                                  "taxCode": {
+                                    "type": "string"
+                                  },
+                                  "rateCode": {
+                                    "type": "string"
+                                  },
+                                  "percentage": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "taxCode",
+                                  "rateCode",
+                                  "percentage",
+                                  "label"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "totals": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "withoutTaxes": {
+                                      "type": "string"
+                                    },
+                                    "taxes": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "key": {
+                                            "type": "string"
+                                          },
+                                          "taxCode": {
+                                            "type": "string"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "key",
+                                          "taxCode",
+                                          "rateCode",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "withoutTaxes",
+                                    "taxes",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "payment": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "entryKey": {
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "entryKey",
+                                    "code",
+                                    "label",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "issues": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "DEBIT_NOTE_NOT_FOUND",
+                                      "DEBIT_NOTE_DRAFT_NOT_FOUND",
+                                      "DEBIT_NOTE_INVOICE_NOT_FOUND",
+                                      "DEBIT_NOTE_DRAFT_CHANGED",
+                                      "DEBIT_NOTE_DRAFT_ALREADY_EMITTED",
+                                      "DEBIT_NOTE_DRAFT_INCOMPLETE",
+                                      "DEBIT_NOTE_INVOICE_NOT_ELIGIBLE",
+                                      "DEBIT_NOTE_CONSUMER_FINAL",
+                                      "DEBIT_NOTE_INVOICE_INTEGRITY",
+                                      "DEBIT_NOTE_CONCEPTS_REQUIRED",
+                                      "DEBIT_NOTE_CONCEPTS_TOO_MANY",
+                                      "DEBIT_NOTE_CONCEPT_INVALID",
+                                      "DEBIT_NOTE_TAX_TREATMENT_NOT_IN_INVOICE",
+                                      "DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE",
+                                      "DEBIT_NOTE_PAYMENT_TOTAL_MISMATCH",
+                                      "DEBIT_NOTE_AMOUNT_OUT_OF_RANGE",
+                                      "DEBIT_NOTE_DECLARATION_REQUIRED",
+                                      "DEBIT_NOTE_NOT_RECONCILABLE",
+                                      "IDEMPOTENCY_KEY_REQUIRED",
+                                      "IDEMPOTENCY_KEY_REUSED",
+                                      "TAXPAYER_NOT_CONFIGURED",
+                                      "EMISSION_POINT_NOT_FOUND",
+                                      "EMISSION_POINT_UNAVAILABLE",
+                                      "SIGNING_CERTIFICATE_NOT_USABLE",
+                                      "SCHEMA_NOT_AVAILABLE",
+                                      "SEQUENCE_EXHAUSTED",
+                                      "SRI_INTERACTION_IN_PROGRESS"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "concept": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "message",
+                                  "concept"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "evaluatedOn",
+                            "taxTreatments",
+                            "totals",
+                            "payment",
+                            "issues"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "updatedBy": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "version",
+                        "invoice",
+                        "emissionPoint",
+                        "paymentMethod",
+                        "concepts",
+                        "preview",
+                        "createdAt",
+                        "createdBy",
+                        "updatedAt",
+                        "updatedBy"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos (una causa, una descripción, un importe, un tratamiento o una forma de pago con formato inválido, o un campo no permitido) o un punto de emisión que no existe en la empresa (EMISSION_POINT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (DEBIT_NOTE_DRAFT_NOT_FOUND) o su factura no existe (DEBIT_NOTE_INVOICE_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La factura no admite nota de débito: no está autorizada (DEBIT_NOTE_INVOICE_NOT_ELIGIBLE) o se emitió a consumidor final (DEBIT_NOTE_CONSUMER_FINAL, política del proyecto); o el borrador cambió (DEBIT_NOTE_DRAFT_CHANGED) o ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/debit-notes/drafts/{draftId}": {
+      "get": {
+        "summary": "Consultar un borrador de nota de débito con su vista previa recalculada",
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Borrador con la vista previa calculada con la fecha del día y el catálogo vigente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "invoice": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "documentNumber": {
+                              "type": "string"
+                            },
+                            "issueDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "buyerIdentification": {
+                              "type": "string"
+                            },
+                            "buyerName": {
+                              "type": "string"
+                            },
+                            "total": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "documentNumber",
+                            "issueDate",
+                            "buyerIdentification",
+                            "buyerName",
+                            "total"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "emissionPoint": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "establishmentCode": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string"
+                                },
+                                "available": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "establishmentCode",
+                                "code",
+                                "available"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "paymentMethod": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "concepts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "cause": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "LATE_PAYMENT_INTEREST",
+                                      "POST_INVOICE_COST_EXPENSE"
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "amount": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "taxTreatment": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "cause",
+                              "description",
+                              "amount",
+                              "taxTreatment"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "preview": {
+                          "type": "object",
+                          "properties": {
+                            "evaluatedOn": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "taxTreatments": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string"
+                                  },
+                                  "taxCode": {
+                                    "type": "string"
+                                  },
+                                  "rateCode": {
+                                    "type": "string"
+                                  },
+                                  "percentage": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "taxCode",
+                                  "rateCode",
+                                  "percentage",
+                                  "label"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "totals": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "withoutTaxes": {
+                                      "type": "string"
+                                    },
+                                    "taxes": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "key": {
+                                            "type": "string"
+                                          },
+                                          "taxCode": {
+                                            "type": "string"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "key",
+                                          "taxCode",
+                                          "rateCode",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "withoutTaxes",
+                                    "taxes",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "payment": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "entryKey": {
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "entryKey",
+                                    "code",
+                                    "label",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "issues": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "DEBIT_NOTE_NOT_FOUND",
+                                      "DEBIT_NOTE_DRAFT_NOT_FOUND",
+                                      "DEBIT_NOTE_INVOICE_NOT_FOUND",
+                                      "DEBIT_NOTE_DRAFT_CHANGED",
+                                      "DEBIT_NOTE_DRAFT_ALREADY_EMITTED",
+                                      "DEBIT_NOTE_DRAFT_INCOMPLETE",
+                                      "DEBIT_NOTE_INVOICE_NOT_ELIGIBLE",
+                                      "DEBIT_NOTE_CONSUMER_FINAL",
+                                      "DEBIT_NOTE_INVOICE_INTEGRITY",
+                                      "DEBIT_NOTE_CONCEPTS_REQUIRED",
+                                      "DEBIT_NOTE_CONCEPTS_TOO_MANY",
+                                      "DEBIT_NOTE_CONCEPT_INVALID",
+                                      "DEBIT_NOTE_TAX_TREATMENT_NOT_IN_INVOICE",
+                                      "DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE",
+                                      "DEBIT_NOTE_PAYMENT_TOTAL_MISMATCH",
+                                      "DEBIT_NOTE_AMOUNT_OUT_OF_RANGE",
+                                      "DEBIT_NOTE_DECLARATION_REQUIRED",
+                                      "DEBIT_NOTE_NOT_RECONCILABLE",
+                                      "IDEMPOTENCY_KEY_REQUIRED",
+                                      "IDEMPOTENCY_KEY_REUSED",
+                                      "TAXPAYER_NOT_CONFIGURED",
+                                      "EMISSION_POINT_NOT_FOUND",
+                                      "EMISSION_POINT_UNAVAILABLE",
+                                      "SIGNING_CERTIFICATE_NOT_USABLE",
+                                      "SCHEMA_NOT_AVAILABLE",
+                                      "SEQUENCE_EXHAUSTED",
+                                      "SRI_INTERACTION_IN_PROGRESS"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "concept": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "message",
+                                  "concept"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "evaluatedOn",
+                            "taxTreatments",
+                            "totals",
+                            "payment",
+                            "issues"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "updatedBy": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "version",
+                        "invoice",
+                        "emissionPoint",
+                        "paymentMethod",
+                        "concepts",
+                        "preview",
+                        "createdAt",
+                        "createdBy",
+                        "updatedAt",
+                        "updatedBy"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (DEBIT_NOTE_DRAFT_NOT_FOUND) o su factura no existe (DEBIT_NOTE_INVOICE_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El borrador ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Corregir un borrador de nota de débito a partir de la versión consultada",
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "emissionPointId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "paymentMethod": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9A-Z][0-9A-Z-]{0,63}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "concepts": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "cause": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "LATE_PAYMENT_INTEREST",
+                                "POST_INVOICE_COST_EXPENSE"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "amount": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "taxTreatment": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[0-9]{1,4}:[0-9]{1,4}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "expectedVersion"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Borrador corregido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "invoice": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "documentNumber": {
+                              "type": "string"
+                            },
+                            "issueDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "buyerIdentification": {
+                              "type": "string"
+                            },
+                            "buyerName": {
+                              "type": "string"
+                            },
+                            "total": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "documentNumber",
+                            "issueDate",
+                            "buyerIdentification",
+                            "buyerName",
+                            "total"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "emissionPoint": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "establishmentCode": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string"
+                                },
+                                "available": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "establishmentCode",
+                                "code",
+                                "available"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "paymentMethod": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "concepts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "cause": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "LATE_PAYMENT_INTEREST",
+                                      "POST_INVOICE_COST_EXPENSE"
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "amount": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "taxTreatment": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "cause",
+                              "description",
+                              "amount",
+                              "taxTreatment"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "preview": {
+                          "type": "object",
+                          "properties": {
+                            "evaluatedOn": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "taxTreatments": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string"
+                                  },
+                                  "taxCode": {
+                                    "type": "string"
+                                  },
+                                  "rateCode": {
+                                    "type": "string"
+                                  },
+                                  "percentage": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "taxCode",
+                                  "rateCode",
+                                  "percentage",
+                                  "label"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "totals": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "withoutTaxes": {
+                                      "type": "string"
+                                    },
+                                    "taxes": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "key": {
+                                            "type": "string"
+                                          },
+                                          "taxCode": {
+                                            "type": "string"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "key",
+                                          "taxCode",
+                                          "rateCode",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "withoutTaxes",
+                                    "taxes",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "payment": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "entryKey": {
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "entryKey",
+                                    "code",
+                                    "label",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "issues": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "DEBIT_NOTE_NOT_FOUND",
+                                      "DEBIT_NOTE_DRAFT_NOT_FOUND",
+                                      "DEBIT_NOTE_INVOICE_NOT_FOUND",
+                                      "DEBIT_NOTE_DRAFT_CHANGED",
+                                      "DEBIT_NOTE_DRAFT_ALREADY_EMITTED",
+                                      "DEBIT_NOTE_DRAFT_INCOMPLETE",
+                                      "DEBIT_NOTE_INVOICE_NOT_ELIGIBLE",
+                                      "DEBIT_NOTE_CONSUMER_FINAL",
+                                      "DEBIT_NOTE_INVOICE_INTEGRITY",
+                                      "DEBIT_NOTE_CONCEPTS_REQUIRED",
+                                      "DEBIT_NOTE_CONCEPTS_TOO_MANY",
+                                      "DEBIT_NOTE_CONCEPT_INVALID",
+                                      "DEBIT_NOTE_TAX_TREATMENT_NOT_IN_INVOICE",
+                                      "DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE",
+                                      "DEBIT_NOTE_PAYMENT_TOTAL_MISMATCH",
+                                      "DEBIT_NOTE_AMOUNT_OUT_OF_RANGE",
+                                      "DEBIT_NOTE_DECLARATION_REQUIRED",
+                                      "DEBIT_NOTE_NOT_RECONCILABLE",
+                                      "IDEMPOTENCY_KEY_REQUIRED",
+                                      "IDEMPOTENCY_KEY_REUSED",
+                                      "TAXPAYER_NOT_CONFIGURED",
+                                      "EMISSION_POINT_NOT_FOUND",
+                                      "EMISSION_POINT_UNAVAILABLE",
+                                      "SIGNING_CERTIFICATE_NOT_USABLE",
+                                      "SCHEMA_NOT_AVAILABLE",
+                                      "SEQUENCE_EXHAUSTED",
+                                      "SRI_INTERACTION_IN_PROGRESS"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "concept": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "message",
+                                  "concept"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "evaluatedOn",
+                            "taxTreatments",
+                            "totals",
+                            "payment",
+                            "issues"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "updatedBy": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "version",
+                        "invoice",
+                        "emissionPoint",
+                        "paymentMethod",
+                        "concepts",
+                        "preview",
+                        "createdAt",
+                        "createdBy",
+                        "updatedAt",
+                        "updatedBy"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos (una causa, una descripción, un importe, un tratamiento o una forma de pago con formato inválido, o un campo no permitido) o un punto de emisión que no existe en la empresa (EMISSION_POINT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (DEBIT_NOTE_DRAFT_NOT_FOUND) o su factura no existe (DEBIT_NOTE_INVOICE_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La factura no admite nota de débito: no está autorizada (DEBIT_NOTE_INVOICE_NOT_ELIGIBLE) o se emitió a consumidor final (DEBIT_NOTE_CONSUMER_FINAL, política del proyecto); o el borrador cambió (DEBIT_NOTE_DRAFT_CHANGED) o ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar un borrador de nota de débito sin emitir",
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Borrador eliminado, sin rastro fiscal."
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (DEBIT_NOTE_DRAFT_NOT_FOUND) o su factura no existe (DEBIT_NOTE_INVOICE_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El borrador ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
