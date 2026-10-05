@@ -71,6 +71,8 @@ export type CreditNotesModuleOptions = {
   jobs?: Pick<JobStore, "enqueueIn">;
   /** `SRI_CONCLUSION_WINDOW_HOURS` en milisegundos; 24 horas por defecto. */
   conclusionWindowMs?: number;
+  /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión; nunca en producción. */
+  stageTimings?: boolean;
   now?: () => Date;
 };
 
@@ -140,7 +142,14 @@ export function creditNotesModule(options: CreditNotesModuleOptions) {
     ...(options.metrics ? { observer: registerCreditNoteMetrics(options.metrics) } : {}),
   });
   return {
-    routers: [creditNotesRouter({ drafts, emission, creditNotes })],
+    routers: [
+      creditNotesRouter({
+        drafts,
+        emission,
+        creditNotes,
+        serverTiming: options.stageTimings ?? false,
+      }),
+    ],
     drafts,
     emission,
     creditNotes,

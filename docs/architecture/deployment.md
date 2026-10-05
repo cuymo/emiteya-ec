@@ -146,7 +146,7 @@ Variables de `add-invoice-emission` (design D2 y D11):
 | `XSD_VALIDATION_QUEUE` | No | 16 | Validaciones en espera (0 a 256). Con la cola llena, la etapa falla con `VALIDATOR_BUSY`, reintentable. |
 | `XSD_VALIDATION_TIMEOUT_MS` | No | 10000 | Duración máxima de una validación, en milisegundos (1000 a 60000). Al vencer, `VALIDATOR_TIMEOUT`, reintentable. |
 | `INVOICE_MAX_LINES` | No | 100 | Líneas por factura (1 a 1000). Es una defensa de recursos de la aplicación, no un límite del SRI ni del XSD. |
-| `EMISSION_STAGE_TIMINGS` | No | 0 | `1` añade a la respuesta de la emisión la cabecera `Server-Timing` con la duración de cada etapa, para `bench:emission` y el diagnóstico local. El esquema de entorno la rechaza en producción. |
+| `EMISSION_STAGE_TIMINGS` | No | 0 | `1` añade a la respuesta de la emisión de la factura y de la nota de crédito la cabecera `Server-Timing` con la duración de cada etapa, para `bench:emission`, `bench:credit-notes` y el diagnóstico local. El esquema de entorno la rechaza en producción. |
 
 - El build del backend copia los XSD del registro a `dist/xsd/` y `check:xsd-artifact` comprueba cada archivo con su SHA-256.
 - Al arrancar, la API verifica el paquete completo: cada XSD e import del registro vigente, presente y con su SHA-256. Si falta alguno o un hash no coincide, registra qué archivo falla, `xsd_registry_available` vale 0 y `/health/ready` responde `503`: la instalación no se declara lista. Nunca descarga esquemas ni usa otros como sustitutos.

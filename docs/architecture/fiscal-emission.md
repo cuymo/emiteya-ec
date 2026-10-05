@@ -620,6 +620,11 @@ envío, la idempotencia y los errores.
 - **Comprobantes.** La bandeja ofrece los tipos que el sistema emite (`01` y `04`) en el filtro "Tipo de comprobante" de los filtros avanzados, en la URL (`tipo`) y enviado a la API como `documentType`; un tipo desconocido en la URL no filtra. Cada fila muestra el tipo bajo el número y enlaza al detalle de su tipo (`/facturas/{id}` o `/notas-credito/{id}`).
 - **Por tipo, sin cambiar las reglas.** `frontend/src/features/archive/document-kinds.ts` guarda lo que cambia por tipo: el nombre con que se nombra al usuario, la ruta del detalle, la ruta de su API, el permiso de reconciliación (`invoices.reconcile` o `creditNotes.reconcile`), el código del estado no reconciliable y la clave de caché. `DocumentsSection` y `TransmissionSection` reciben el comprobante (identificador, tipo, estado y transmisión) y no muestran nada para un tipo que el sistema no emite. Las reglas de disponibilidad de los documentos siguen en el servidor: RIDE solo de un comprobante autorizado, XML autorizado solo si su artefacto existe y el XML firmado como un documento distinto.
 
+### Medición
+
+- Con `EMISSION_STAGE_TIMINGS=1`, `POST /api/v1/credit-notes` devuelve sus etapas en `Server-Timing` (`total`, `reservation_tx` y las de la firma compartida: `xml`, `xsd`, `sign`, `persist`), como la emisión de la factura; nunca en producción.
+- `bench:credit-notes` (design D21) mide la búsqueda de facturas elegibles, la vista previa, la emisión con su reserva, el cálculo de muchas líneas, la contención y el RIDE de la nota, y termina con la reconciliación de las capacidades acreditable y devolvible (`../quality/performance.md`).
+
 ### Pantallas de la nota de crédito
 
 - **Notas de crédito** (`/notas-credito`, en "Operación", `creditNotes.read`): `frontend/src/features/credit-notes/credit-notes-screen.tsx`, con búsqueda por número o comprador, estado y causa en la URL (`q`, `estado`, `causa`), tarjetas por debajo de 768 px y los borradores en curso con su eliminación.

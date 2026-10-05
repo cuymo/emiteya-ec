@@ -1,9 +1,14 @@
 // Rutas de las notas de crédito bajo /api/v1 (add-credit-notes, design D16). La empresa, el rol y el
-// autor salen del contexto de la sesión; un recurso de otra empresa es `404`. Ninguna ruta envía al
-// SRI ni expone XML o respuestas originales.
+// autor salen del contexto de la sesión; un recurso de otra empresa es `404`. Con
+// `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing` (design D21), como la
+// de la factura. Ninguna ruta envía al SRI ni expone XML o respuestas originales.
 import { Router, type Response } from "express";
-import { IDEMPOTENCY_KEY_HEADER, type ListMeta } from "@facturador/contracts";
+import { IDEMPOTENCY_KEY_HEADER, type CreditNoteView, type ListMeta } from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
+import {
+  createStageTimings,
+  serverTimingHeader,
+} from "../../../../platform/metrics/stage-timings.ts";
 import type { CreditNotes } from "../../application/credit-notes.ts";
 import type { CreditNoteDrafts } from "../../application/drafts.ts";
 import type { CreditNoteEmission } from "../../application/emission.ts";
@@ -27,12 +32,15 @@ export type CreditNotesRouterDependencies = {
   drafts: CreditNoteDrafts;
   emission: CreditNoteEmission;
   creditNotes: CreditNotes;
+  /** EMISSION_STAGE_TIMINGS: cabecera `Server-Timing` en la emisión. */
+  serverTiming?: boolean;
 };
 
 export function creditNotesRouter({
   drafts,
   emission,
   creditNotes,
+  serverTiming = false,
 }: CreditNotesRouterDependencies): Router {
   const router = Router();
 
@@ -69,12 +77,22 @@ export function creditNotesRouter({
   });
 
   router.post("/credit-notes", async (req, res) => {
-    const { document, replayed } = await emission.emit(
-      contextOf(res),
-      req.header(IDEMPOTENCY_KEY_HEADER),
-      req.body,
-    );
-    send(res, replayed ? 200 : 201, toCreditNoteView(await creditNotes.details(document)));
+    const timings = createStageTimings();
+    let result: { view: CreditNoteView; replayed: boolean };
+    try {
+      result = await timings.envelope("total", async () => {
+        const { document, replayed } = await emission.emit(
+          contextOf(res),
+          req.header(IDEMPOTENCY_KEY_HEADER),
+          req.body,
+          timings,
+        );
+        return { view: toCreditNoteView(await creditNotes.details(document)), replayed };
+      });
+    } finally {
+      if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
+    }
+    send(res, result.replayed ? 200 : 201, result.view);
   });
 
   router.get("/credit-notes", async (req, res) => {
