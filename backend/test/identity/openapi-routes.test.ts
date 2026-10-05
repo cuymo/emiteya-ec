@@ -20,6 +20,10 @@ import type { Drafts } from "../../src/modules/invoices/application/drafts.ts";
 import type { Emission } from "../../src/modules/invoices/application/emission.ts";
 import type { Invoices } from "../../src/modules/invoices/application/invoices.ts";
 import { invoicesRouter } from "../../src/modules/invoices/infrastructure/http/invoices-router.ts";
+import type { CreditNotes } from "../../src/modules/credit-notes/application/credit-notes.ts";
+import type { CreditNoteDrafts } from "../../src/modules/credit-notes/application/drafts.ts";
+import type { CreditNoteEmission } from "../../src/modules/credit-notes/application/emission.ts";
+import { creditNotesRouter } from "../../src/modules/credit-notes/infrastructure/http/credit-notes-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
 import { inventoryRouter } from "../../src/modules/inventory/infrastructure/http/inventory-router.ts";
@@ -52,6 +56,11 @@ describe("rutas documentadas", () => {
       inventoryRouter({} as Inventory),
       productsRouter({} as Products),
       invoicesRouter({ drafts: {} as Drafts, emission: {} as Emission, invoices: {} as Invoices }),
+      creditNotesRouter({
+        drafts: {} as CreditNoteDrafts,
+        emission: {} as CreditNoteEmission,
+        creditNotes: {} as CreditNotes,
+      }),
       ...archiveRouters({
         prisma: {} as PrismaClient,
         authorizer: {} as Authorizer,

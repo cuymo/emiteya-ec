@@ -25,11 +25,17 @@ import {
   inventoryInitialization,
   inventoryModule,
   inventoryStockReads,
+  stockReturnCapacity,
 } from "../../src/modules/inventory/infrastructure/index.ts";
 import {
+  invoiceCreditSource,
   invoiceSigningProfile,
   invoicesModule,
 } from "../../src/modules/invoices/infrastructure/index.ts";
+import {
+  creditNoteSigningProfile,
+  creditNotesModule,
+} from "../../src/modules/credit-notes/infrastructure/index.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
 import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
@@ -74,6 +80,16 @@ export type InvoicesHarnessOptions = {
   jobs?: Pick<JobStore, "enqueueIn">;
 };
 
+/** Notas de crédito (add-credit-notes): las opciones que la prueba fija. */
+export type CreditNotesHarnessOptions = {
+  accessKeys?: AccessKeys;
+  /** false: la emisión se detiene en RESERVED (caída simulada después del commit). */
+  signAfterReserve?: boolean;
+  /** Firma de comprobantes; por defecto, la del módulo de firma configurado. */
+  signer?: DocumentSigner;
+  metrics?: Registry;
+};
+
 /** Sin firma configurada: ningún comprobante se puede firmar. */
 const NO_SIGNER: DocumentSigner = {
   signDocument: () =>
@@ -94,6 +110,7 @@ export function buildTaxpayerApp(
     logoMaxBytes?: number;
     signing?: SigningHarnessOptions;
     invoices?: InvoicesHarnessOptions;
+    creditNotes?: CreditNotesHarnessOptions;
     now?: () => Date;
   } = {},
 ) {
@@ -185,6 +202,36 @@ export function buildTaxpayerApp(
           ...(options.invoices?.stageTimings ? { stageTimings: true } : {}),
           ...(options.invoices?.metrics ? { metrics: options.invoices.metrics } : {}),
           ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
+          ...(invoicesNow ? { now: invoicesNow } : {}),
+        }).routers,
+      );
+      // Notas de crédito (add-credit-notes): los mismos puertos que compone `main.ts`.
+      const creditSigning = options.creditNotes?.signer
+        ? signingPipelines({
+            prisma: db.database.prisma,
+            xsd: options.invoices?.xsd ?? testXsdValidator(),
+            signer: options.creditNotes.signer,
+            ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
+            ...(invoicesNow ? { now: invoicesNow } : {}),
+          })
+        : documentSigning;
+      router.use(
+        ...creditNotesModule({
+          prisma: db.database.prisma,
+          schema: db.name,
+          authorizer,
+          signingReads: signing
+            ? signing.reads
+            : () => ({ activeCertificate: () => Promise.resolve(null) }),
+          invoices: invoiceCreditSource,
+          returns: stockReturnCapacity,
+          xsd: options.invoices?.xsd ?? testXsdValidator(),
+          signing: creditSigning.pipeline(creditNoteSigningProfile()),
+          ...(options.creditNotes?.signAfterReserve === false ? { signAfterReserve: false } : {}),
+          ...(options.creditNotes?.accessKeys
+            ? { accessKeys: options.creditNotes.accessKeys }
+            : {}),
+          ...(options.creditNotes?.metrics ? { metrics: options.creditNotes.metrics } : {}),
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

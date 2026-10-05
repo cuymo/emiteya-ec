@@ -7,6 +7,7 @@ import { z } from "zod";
 import { DECIMAL_SPECS, compareDecimalStrings, decimalString } from "./decimal.ts";
 import { documentTypeSchema } from "./fiscal-numbering.ts";
 import {
+  emitInvoiceHeadersSchema,
   invoiceAmountSchema,
   invoiceQuantitySchema,
   invoiceStateSchema,
@@ -210,6 +211,9 @@ export const creditNoteDeclarationsSchema = z
     { message: "Confirma por separado las dos declaraciones.", path: ["statements"] },
   );
 export type CreditNoteDeclarationsInput = z.input<typeof creditNoteDeclarationsSchema>;
+
+/** Cabecera obligatoria de la emisión, la misma de la factura: `Idempotency-Key`. */
+export const emitCreditNoteHeadersSchema = emitInvoiceHeadersSchema;
 
 /** Emisión (design D5 y D11): la huella cubre el borrador, su versión y las declaraciones. */
 export const emitCreditNoteSchema = strictBody({

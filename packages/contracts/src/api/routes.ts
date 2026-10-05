@@ -121,6 +121,21 @@ import {
   stockMovementViewSchema,
   stockTrackingSchema,
 } from "../inventory.ts";
+import {
+  createCreditNoteDraftSchema,
+  creditNoteDraftIdParamsSchema,
+  creditNoteDraftSummaryViewSchema,
+  creditNoteDraftViewSchema,
+  creditNoteIdParamsSchema,
+  creditNoteListMetaSchema,
+  creditNoteViewSchema,
+  eligibleInvoiceViewSchema,
+  emitCreditNoteHeadersSchema,
+  emitCreditNoteSchema,
+  listCreditNoteDraftsQuerySchema,
+  listEligibleInvoicesQuerySchema,
+  updateCreditNoteDraftSchema,
+} from "../credit-notes.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -213,6 +228,31 @@ const artifactIntegrity = {
     "Los bytes guardados no coinciden con su hash o su tamaño (ARTIFACT_INTEGRITY_FAILED): no se sirve nada.",
   schema: errorEnvelopeSchema,
 };
+
+// Notas de crédito (add-credit-notes, design D16).
+const creditDraftNotFound = {
+  description:
+    "El borrador no existe en la empresa (CREDIT_NOTE_DRAFT_NOT_FOUND) o su factura no existe (CREDIT_NOTE_INVOICE_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const creditNoteNotFound = {
+  description: "La nota de crédito no existe en la empresa (CREDIT_NOTE_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const creditDraftReferenceErrors = {
+  description:
+    "Datos inválidos o una referencia que no existe (EMISSION_POINT_NOT_FOUND, CREDIT_NOTE_LINE_INVALID) o un retorno físico mayor que la línea (CREDIT_NOTE_PHYSICAL_RETURN_INVALID).",
+  schema: errorEnvelopeSchema,
+};
+const creditDraftInvoiceConflict = {
+  description:
+    "La factura no admite nota de crédito: no está autorizada (CREDIT_NOTE_INVOICE_NOT_ELIGIBLE) o se emitió a consumidor final (CREDIT_NOTE_CONSUMER_FINAL); o el borrador cambió (CREDIT_NOTE_DRAFT_CHANGED) o ya se emitió (CREDIT_NOTE_DRAFT_ALREADY_EMITTED).",
+  schema: errorEnvelopeSchema,
+};
+const creditNoteResponse = (description: string) => ({
+  description,
+  schema: successEnvelope(creditNoteViewSchema),
+});
 
 export const apiRoutes: readonly RouteDefinition[] = [
   defineRoute({
@@ -1387,6 +1427,159 @@ export const apiRoutes: readonly RouteDefinition[] = [
           "El inventario no está inicializado (INVENTORY_NOT_INITIALIZED), el saldo no es cero (STOCK_TRACKING_HAS_BALANCE) o el producto es un servicio (STOCK_TRACKING_REQUIRED).",
         schema: errorEnvelopeSchema,
       },
+    },
+  }),
+  // Notas de crédito (add-credit-notes, design D16).
+  defineRoute({
+    method: "get",
+    path: "/credit-notes/eligible-invoices",
+    summary:
+      "Buscar facturas que admiten nota de crédito: autorizadas, sin consumidor final y con crédito disponible",
+    request: { query: listEligibleInvoicesQuerySchema },
+    responses: {
+      200: {
+        description: "Página de facturas elegibles con su crédito disponible y el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(eligibleInvoiceViewSchema),
+          meta: creditNoteListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/credit-notes/drafts",
+    summary: "Listar los borradores de nota de crédito pendientes, por última actualización",
+    request: { query: listCreditNoteDraftsQuerySchema },
+    responses: {
+      200: {
+        description: "Página de borradores `DRAFT` con el valor de su vista previa.",
+        schema: z.strictObject({
+          data: z.array(creditNoteDraftSummaryViewSchema),
+          meta: creditNoteListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/credit-notes/drafts",
+    summary:
+      "Guardar un borrador de nota de crédito sobre una factura autorizada: causa, motivo, punto, líneas y retorno físico",
+    request: { body: createCreditNoteDraftSchema },
+    responses: {
+      201: {
+        description:
+          "Borrador guardado, con la vista previa del servidor: importes, lo acreditable que queda y los problemas por línea. No reserva nada.",
+        schema: successEnvelope(creditNoteDraftViewSchema),
+      },
+      400: creditDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: creditDraftNotFound,
+      409: creditDraftInvoiceConflict,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/credit-notes/drafts/:draftId",
+    summary: "Consultar un borrador de nota de crédito con su vista previa recalculada",
+    request: { params: creditNoteDraftIdParamsSchema },
+    responses: {
+      200: {
+        description:
+          "Borrador con la vista previa calculada con la capacidad vigente de la factura.",
+        schema: successEnvelope(creditNoteDraftViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: creditDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (CREDIT_NOTE_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/credit-notes/drafts/:draftId",
+    summary: "Corregir un borrador de nota de crédito a partir de la versión consultada",
+    request: { params: creditNoteDraftIdParamsSchema, body: updateCreditNoteDraftSchema },
+    responses: {
+      200: {
+        description: "Borrador corregido.",
+        schema: successEnvelope(creditNoteDraftViewSchema),
+      },
+      400: creditDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: creditDraftNotFound,
+      409: creditDraftInvoiceConflict,
+    },
+  }),
+  defineRoute({
+    method: "delete",
+    path: "/credit-notes/drafts/:draftId",
+    summary: "Eliminar un borrador de nota de crédito sin emitir",
+    request: { params: creditNoteDraftIdParamsSchema },
+    responses: {
+      204: { description: "Borrador eliminado, sin rastro fiscal ni capacidad reservada." },
+      401: errors[401],
+      403: errors[403],
+      404: creditDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (CREDIT_NOTE_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/credit-notes",
+    summary:
+      "Emitir un borrador de nota de crédito con las declaraciones del usuario: reserva la capacidad, el número y la clave, y firma localmente (sin el SRI)",
+    request: { headers: emitCreditNoteHeadersSchema, body: emitCreditNoteSchema },
+    responses: {
+      200: creditNoteResponse(
+        "Repetición con la misma Idempotency-Key y la misma solicitud: la misma nota, sin otra capacidad. Si seguía `RESERVED`, se intenta firmar otra vez.",
+      ),
+      201: creditNoteResponse(
+        "Nota emitida: `SIGNED` con su artefacto, o `RESERVED` con el diagnóstico del intento, y su capacidad reservada.",
+      ),
+      400: {
+        description:
+          "Datos inválidos, declaraciones faltantes o de otra versión, o falta la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: creditDraftNotFound,
+      409: {
+        description:
+          "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo CREDIT_NOTE_QUANTITY_EXCEEDED, CREDIT_NOTE_AMOUNT_EXCEEDED, CREDIT_NOTE_TOTAL_ANNULMENT_NOT_AVAILABLE, CREDIT_NOTE_PHYSICAL_RETURN_EXCEEDED, CREDIT_NOTE_CONSUMER_FINAL o CREDIT_NOTE_INVOICE_INTEGRITY), o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/credit-notes/:creditNoteId/signing-attempts",
+    summary:
+      "Reintentar la firma de una nota de crédito reservada, con el mismo número, la misma clave y su capacidad reservada",
+    request: { params: creditNoteIdParamsSchema },
+    responses: {
+      200: creditNoteResponse(
+        "Nota tras el intento: `SIGNED`, o `RESERVED` con el diagnóstico. Una nota ya firmada se devuelve sin cambios.",
+      ),
+      401: errors[401],
+      403: errors[403],
+      404: creditNoteNotFound,
     },
   }),
 ];

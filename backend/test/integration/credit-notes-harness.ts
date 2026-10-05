@@ -8,6 +8,7 @@ import { createSequentialReservation } from "../../src/modules/fiscal/applicatio
 import { createFiscalUnitOfWork } from "../../src/modules/fiscal/infrastructure/unit-of-work.ts";
 import { invoiceTotals, lineAmounts } from "../../src/modules/invoices/domain/amounts.ts";
 import type { InvoiceSnapshot } from "../../src/modules/invoices/domain/snapshot.ts";
+import { createStockRepository } from "../../src/modules/inventory/infrastructure/index.ts";
 import { createAccessKeys } from "../../src/modules/sri-engine/infrastructure/access-keys.ts";
 import { signedXmlOf } from "./transmission-harness.ts";
 
@@ -288,4 +289,47 @@ export async function tamperSnapshot(
     await tx.$executeRawUnsafe("SET CONSTRAINTS ALL IMMEDIATE");
     await tx.$executeRawUnsafe(`ALTER TABLE ${table} ENABLE TRIGGER electronic_document_guard`);
   });
+}
+
+/**
+ * La salida de inventario de una factura para un producto, como la registra el seguidor de su
+ * autorización: inicializa el inventario del producto si falta (en su propia transacción) y agrega
+ * la `SALIDA_FACTURA`.
+ */
+export async function recordOutflow(
+  prisma: PrismaClient,
+  company: Pick<InvoiceCompany, "companyId" | "adminId">,
+  invoice: Pick<AuthorizedInvoiceDocument, "id" | "documentNumber">,
+  productId: string,
+  quantity: string,
+  initial = "100",
+): Promise<void> {
+  const exists = await prisma.stockBalance.findUnique({
+    where: { companyId_productId: { companyId: company.companyId, productId } },
+  });
+  if (!exists) {
+    await prisma.$transaction((tx) =>
+      createStockRepository(tx).initialize({
+        companyId: company.companyId,
+        productId,
+        quantity: initial,
+        note: null,
+        actorUserId: company.adminId,
+        at: new Date(),
+      }),
+    );
+  }
+  await prisma.$transaction((tx) =>
+    createStockRepository(tx).append({
+      companyId: company.companyId,
+      productId,
+      type: "SALIDA_FACTURA",
+      delta: `-${quantity}`,
+      origin: "SYSTEM",
+      actorUserId: null,
+      documentId: invoice.id,
+      documentNumber: invoice.documentNumber,
+      occurredAt: new Date(),
+    }),
+  );
 }

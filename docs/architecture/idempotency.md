@@ -190,6 +190,16 @@ lo decidió:
   - El reintento de la firma (`POST /api/v1/invoices/{id}/signing-attempts`) es idempotente por construcción: transición guardada, arriendo del intento y artefacto único por comprobante.
 - **Cliente.** El editor genera la clave al abrir la confirmación de la emisión y la repite en los reintentos de esa misma solicitud.
 
+### En este proyecto: emisión de notas de crédito
+
+`add-credit-notes` (design D11) aplica el contrato de la factura a `POST /api/v1/credit-notes`,
+operación `credit_note.emit`, en el mismo `idempotency_record`:
+
+- **Alcance.** Empresa, operación y clave, sin usuario. La misma clave sirve para una factura y para una nota: la operación forma parte del alcance.
+- **Huella.** SHA-256 del JSON canónico `{ operation, draftId, expectedVersion, declarations: { version, statements } }`, con las afirmaciones ordenadas: la misma declaración en otro orden es la misma solicitud. La versión del borrador fija la factura, la causa, el punto, las líneas, el retorno físico y el motivo.
+- **Registro.** Se inserta en la transacción de `RESERVED`, después de la reserva de la capacidad, del número y de la nota; una solicitud repetida con la misma huella devuelve la misma nota sin reservar otro número ni otra capacidad, y reanuda la firma si quedó `RESERVED`.
+- **Rechazos.** Un rechazo antes de reservar (capacidad, retorno físico, declaraciones, factura no elegible) no deja registro, capacidad ni número.
+
 ### En este proyecto: entradas y ajustes del inventario
 
 `add-minimal-inventory` (design D7) aplica el mismo contrato a las entradas manuales

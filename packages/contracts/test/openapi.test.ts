@@ -85,6 +85,11 @@ describe("generación de OpenAPI", () => {
     const paths = buildOpenApiDocument(apiRoutes, info).paths;
     expect(Object.keys(paths).sort()).toEqual([
       "/company/status",
+      "/credit-notes",
+      "/credit-notes/drafts",
+      "/credit-notes/drafts/{draftId}",
+      "/credit-notes/eligible-invoices",
+      "/credit-notes/{creditNoteId}/signing-attempts",
       "/documents",
       "/documents/{documentId}",
       "/documents/{documentId}/authorized-xml",

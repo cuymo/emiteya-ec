@@ -44,12 +44,18 @@ import {
   inventoryOutflowFollower,
   inventoryStockReads,
   registerInventoryMetrics,
+  stockReturnCapacity,
 } from "./modules/inventory/infrastructure/index.ts";
 import {
+  invoiceCreditSource,
   invoiceSigningProfile,
   invoiceStockLines,
   invoicesModule,
 } from "./modules/invoices/infrastructure/index.ts";
+import {
+  creditNoteSigningProfile,
+  creditNotesModule,
+} from "./modules/credit-notes/infrastructure/index.ts";
 import {
   createConfigurationLogoReader,
   taxpayerRouters,
@@ -345,6 +351,22 @@ apiRouter.use(
     logger,
     jobs: jobStore,
     conclusionWindowMs: transmissionSettings.poll.windowMs,
+  }).routers,
+);
+
+// Notas de crédito (add-credit-notes, design D1 y D16): la factura de origen de `invoices`, la
+// capacidad devolvible de `inventory` y la firma compartida con el perfil de la nota, como puertos.
+apiRouter.use(
+  ...creditNotesModule({
+    prisma: database.prisma,
+    schema: parseDatabaseUrl(env.DATABASE_URL).schema ?? "public",
+    authorizer,
+    signingReads: signing.reads,
+    invoices: invoiceCreditSource,
+    returns: stockReturnCapacity,
+    xsd: xsdValidator,
+    signing: documentSigning.pipeline(creditNoteSigningProfile()),
+    metrics: metrics.registry,
   }).routers,
 );
 
