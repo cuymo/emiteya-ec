@@ -16,6 +16,7 @@ import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker
 import {
   IVA0,
   insertAuthorizedInvoice,
+  insertCreditNote,
   recordOutflow,
   tamperSnapshot,
   type AuthorizedInvoiceDocument,
@@ -365,6 +366,54 @@ describe("emisión de notas de crédito", () => {
     // Ningún rechazo reservó número ni capacidad, ni dejó idempotencia o auditoría de la nota.
     expect(await trace()).toEqual(before);
     expect(await noteAudit()).toBe(auditBefore);
+  });
+
+  it("sin motivo, con un importe de línea negativo o con un crédito que superaría el total, se rechaza sin reservar número", async () => {
+    const fiscal = {
+      companyId: a.companyId,
+      adminId: a.adminId,
+      points: [
+        { establishmentId: a.establishmentId, emissionPointId: a.emissionPointId, code: "001" },
+      ],
+    };
+    // Sin motivo: el borrador se guarda, pero la emisión lo exige.
+    const withoutReason = await draft(await invoice(), { reason: null });
+    // 3 × 0.005 con descuento 0.01: la primera unidad acreditó la base entera y otra unidad daría
+    // una base negativa.
+    const tiny = await insertAuthorizedInvoice(db.database.prisma, companyOf(a), [
+      { productId: service, quantity: "3", unitPrice: "0.005", discount: "0.01" },
+    ]);
+    await insertCreditNote(db.database.prisma, fiscal, tiny, {
+      lines: [{ position: 1, quantity: "1" }],
+    });
+    const negative = await draft(tiny, { lines: [{ position: 1, quantity: "1" }] });
+    expect(negative.preview.issues).toContainEqual(
+      expect.objectContaining({ code: "CREDIT_NOTE_LINE_AMOUNT_NEGATIVE", line: 1 }),
+    );
+    // Una reserva previa de 125.00 sobre una factura de 130.00 deja 5.00: otra unidad de 11.50
+    // haría superar el total.
+    const nearlyFull = await invoice();
+    await insertCreditNote(db.database.prisma, fiscal, nearlyFull, {
+      lines: [{ position: 1, quantity: "1" }],
+      amount: "125.00",
+    });
+    const exceeding = await draft(nearlyFull, {
+      lines: [{ position: 2, quantity: "1", physicalReturn: "0" }],
+    });
+    expect(exceeding.preview.issues).toContainEqual(
+      expect.objectContaining({ code: "CREDIT_NOTE_AMOUNT_EXCEEDED" }),
+    );
+
+    const before = await trace();
+    for (const [created, code] of [
+      [withoutReason, "CREDIT_NOTE_REASON_REQUIRED"],
+      [negative, "CREDIT_NOTE_LINE_AMOUNT_NEGATIVE"],
+      [exceeding, "CREDIT_NOTE_AMOUNT_EXCEEDED"],
+    ] as const) {
+      const res = await emit(api, created);
+      expect([res.status, bodyOf(res).error.code]).toEqual([409, code]);
+    }
+    expect(await trace()).toEqual(before);
   });
 
   it("con el control del producto desactivado después de facturar, el retorno físico se acepta", async () => {

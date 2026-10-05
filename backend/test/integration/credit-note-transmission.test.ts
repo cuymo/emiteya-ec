@@ -172,6 +172,61 @@ describe("transmisión de una nota de crédito", () => {
     ]);
   });
 
+  it("no autorizada: queda no autorizada con los mensajes del SRI y su capacidad liberada", async () => {
+    const doc = await note(await invoice(), "RECEIVED");
+    sri.reply(doc, [
+      sri.authorized(doc, {
+        estado: "NO AUTORIZADO",
+        comprobante: undefined,
+        messages: [
+          { identifier: "65", message: "FECHA EMISION EXTEMPORANEA (sintético)", type: "ERROR" },
+        ],
+      }),
+    ]);
+    await sri.authorize().run(await sri.jobFor(doc, "sri.authorize"), sri.context());
+    expect(await stateOf(doc.id)).toBe("NOT_AUTHORIZED");
+    const result = await prisma.sriAttemptResult.findFirstOrThrow({
+      where: { attempt: { documentId: doc.id } },
+    });
+    expect(
+      (result.messages as { identifier: string; message: string }[]).map((m) => [
+        m.identifier,
+        m.message,
+      ]),
+    ).toEqual([["65", "FECHA EMISION EXTEMPORANEA (sintético)"]]);
+    expect(await statusOf(doc)).toBe("RELEASED");
+  });
+
+  it("autorizada: el job del RIDE nace en la misma transacción que la autorización y el crédito aplicado", async () => {
+    const doc = await note(await invoice(), "RECEIVED");
+    sri.reply(doc, [sri.authorized(doc)]);
+    const rideJobs = () => prisma.job.count({ where: { documentId: doc.id, type: RIDE_JOB_TYPE } });
+    let failed = false;
+    const flaky: DocumentTransitionFollower = () => {
+      if (failed) return Promise.resolve();
+      failed = true;
+      return Promise.reject(new Error("fallo local"));
+    };
+    const job = await sri.jobFor(doc, "sri.authorize");
+    // Un fallo dentro de la operación de la autorización revierte la transición, el job del RIDE
+    // y el crédito aplicado a la vez.
+    await expect(sri.authorize([...sri.followers, flaky]).run(job, sri.context())).rejects.toThrow(
+      "fallo local",
+    );
+    expect([await stateOf(doc.id), await rideJobs(), await statusOf(doc)]).toEqual([
+      "RECEIVED",
+      0,
+      "RESERVED",
+    ]);
+    // Al repetirla, los tres quedan juntos, con un solo job del RIDE.
+    await sri.authorize([...sri.followers, flaky]).run(job, sri.context());
+    expect([await stateOf(doc.id), await rideJobs(), await statusOf(doc)]).toEqual([
+      "AUTHORIZED",
+      1,
+      "APPLIED",
+    ]);
+  });
+
   it("la señal de la alerta cuenta las reservas sin concluir de más de 24 horas", async () => {
     const review = await note(await invoice(), "RECEIVED");
     sri.reply(review, [sri.authorized(review), sri.authorized(review)]);

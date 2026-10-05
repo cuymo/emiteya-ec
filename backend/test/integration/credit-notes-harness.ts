@@ -355,6 +355,8 @@ export async function insertCreditNote(
     lines: readonly { position: number; quantity: string; physicalReturn?: string }[];
     state?: string;
     cause?: "RETURN" | "TOTAL_ANNULMENT";
+    /** Valor de la reserva en lugar del calculado: un estado cuyas sumas cuadran pero que agota el total. */
+    amount?: string;
   },
 ): Promise<TestDocument> {
   // Los importes del cálculo único con lo acreditado vigente (las pruebas reservan en serie).
@@ -375,13 +377,14 @@ export async function insertCreditNote(
   });
   const totals = amounts.totals;
   if (!totals) throw new Error(`nota inválida: ${JSON.stringify(amounts.issues)}`);
+  const amount = input.amount ?? totals.total;
   const products = new Map(invoice.snapshot.lines.map((line) => [line.position, line.productId]));
   const returns = input.lines
     .filter((line) => line.physicalReturn && compareDecimalStrings(line.physicalReturn, "0") > 0)
     .map((line) => ({ productId: products.get(line.position)!, quantity: line.physicalReturn! }));
   return insertDocument(prisma, company, input.state ?? "RECEIVED", {
     documentType: "04",
-    total: totals.total,
+    total: amount,
     alongside: async (tx, document) => {
       const capacity = createCreditCapacityRepository(tx);
       await capacity.lock(company.companyId, invoice.id);
@@ -398,7 +401,7 @@ export async function insertCreditNote(
       await capacity.reserve({
         companyId: company.companyId,
         invoiceId: invoice.id,
-        amount: totals.total,
+        amount,
         lines: amounts.lines.map(({ position, quantity }) => ({ position, quantity })),
       });
       await stockReturnCapacity(tx).reserve({
@@ -411,7 +414,7 @@ export async function insertCreditNote(
         invoiceId: invoice.id,
         creditNoteId: document.id,
         cause: input.cause ?? "RETURN",
-        amount: totals.total,
+        amount,
         lines: amounts.lines.map((line) => ({
           position: line.position,
           quantity: line.quantity,

@@ -141,6 +141,9 @@ describe("API de borradores de nota de crédito", () => {
         409,
         "CREDIT_NOTE_INVOICE_NOT_ELIGIBLE",
       ]);
+      expect(bodyOf(res).error.message, state).toBe(
+        "Solo una factura autorizada admite nota de crédito.",
+      );
     }
   });
 

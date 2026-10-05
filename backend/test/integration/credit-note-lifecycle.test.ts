@@ -183,6 +183,7 @@ describe("ciclo de vida de la capacidad de una nota de crédito", () => {
   it("verificando, revisión manual, job detenido, transporte, parser y reintentos agotados: la capacidad sigue reservada", async () => {
     const product = await insertProduct(prisma, company);
     const invoice = await invoiceOf(product);
+    const balance = await balanceOf(prisma, company.companyId, product);
     const lines = [{ position: 1, quantity: "1", physicalReturn: "1" }];
     // Envío sin respuesta concluyente: verificando con el SRI.
     const unknown = await insertCreditNote(prisma, company, invoice, { lines, state: "SIGNED" });
@@ -228,6 +229,8 @@ describe("ciclo de vida de la capacidad de una nota de crédito", () => {
       expect(await devolutionsOf(note)).toEqual([]);
     }
     expect((await capacityOf(invoice)).reservedTotal.toFixed()).toBe("57.5");
+    // Ninguna de esas notas con retorno físico cambió el saldo.
+    expect(await balanceOf(prisma, company.companyId, product)).toBe(balance);
     await reconciled();
   });
 

@@ -129,13 +129,23 @@ describe("concurrencia de la reserva de notas de crédito", () => {
     await db?.drop();
   });
 
-  it("A: devoluciones de 6 y 5 de una línea de 10 a la vez, una se rechaza sin exceder", async () => {
+  it("A: devoluciones de 6 y 5 de una línea de 10 a la vez, una se rechaza sin exceder ni reservar número", async () => {
+    const issued = async () => ({
+      notes: await db.database.prisma.electronicDocument.count({ where: { documentType: "04" } }),
+      sequences: await db.database.prisma.fiscalSequenceReservation.count({
+        where: { documentType: "04" },
+      }),
+    });
     for (let round = 0; round < REPEAT; round++) {
       const target = await invoice();
+      const before = await issued();
       const outcomes = await race(target, [{ quantity: "6" }, { quantity: "5" }]);
       expect(outcomes.sort()).toEqual(["CREDIT_NOTE_QUANTITY_EXCEEDED", "OK"]);
       const state = await capacity(target.id);
       expect(["6", "5"]).toContain(state.lines[0]!.reserved);
+      // Solo la nota reservada consumió un número: la rechazada no dejó secuencial ni comprobante.
+      const after = await issued();
+      expect([after.notes - before.notes, after.sequences - before.sequences]).toEqual([1, 1]);
     }
     await noDifferences();
   });
