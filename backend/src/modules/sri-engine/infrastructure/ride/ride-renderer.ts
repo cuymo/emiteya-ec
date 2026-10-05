@@ -3,6 +3,12 @@
 // v2.34 (página 60) para el contenido que la factura 1.1.0 del sistema trae: emisor y autorización
 // arriba, comprador, detalle, formas de pago y totales de IVA. Solo lo carga el worker del RIDE.
 //
+// La nota de crédito 1.1.0 tiene su propia distribución (add-credit-notes, design D14; anexo 2,
+// página 61): la misma cabecera con "NOTA DE CRÉDITO", su autorización y el Code128 de su clave; el
+// comprador con el bloque del comprobante que se modifica, su fecha y la razón de la modificación;
+// el detalle con código y código auxiliar; y los subtotales con el valor total, sin formas de pago.
+// La lectura y la distribución se eligen por la raíz y la versión del XML.
+//
 // - Fuentes embebidas desde memoria (Noto Sans 2.015, OFL 1.1), con subconjunto; antes de dibujar
 //   se comprueba que cada carácter tenga glifo en Regular y en Bold: nunca hay sustitución.
 // - Ningún recurso externo: se niegan todas las URL y todo archivo local; el logo y las fuentes
@@ -19,6 +25,8 @@ import pdfmake, { type Content, type DocumentDefinition, type TableCell } from "
 import { FiscalDecimal } from "../../../../platform/decimal/fiscal-decimal.ts";
 import {
   RideRejectedError,
+  type RideCreditNote,
+  type RideDocumentData,
   type RideInvoice,
   type RideLogo,
   type RideRenderInput,
@@ -27,7 +35,7 @@ import {
   type RideVersions,
 } from "../../application/ride.ts";
 import { RIDE_FONTS_MANIFEST, type RideFonts } from "./ride-assets.ts";
-import { readRideSource } from "./ride-source.ts";
+import { readRideDocument } from "./ride-source.ts";
 
 /** Versión propia del layout: cambia con cualquier cambio de la salida para una misma entrada. */
 export const RIDE_RENDERER_VERSION = "1";
@@ -54,6 +62,13 @@ export const RIDE_VERSIONS: RideVersions = {
       sha256: RIDE_FONTS_MANIFEST.fonts.bold.sha256,
     },
   },
+};
+
+/** Versión de la distribución de la nota de crédito: cambia con cualquier cambio de su salida. */
+export const CREDIT_NOTE_RIDE_RENDERER_VERSION = "nota-credito-1";
+export const CREDIT_NOTE_RIDE_VERSIONS: RideVersions = {
+  ...RIDE_VERSIONS,
+  rendererVersion: CREDIT_NOTE_RIDE_RENDERER_VERSION,
 };
 
 /** Tablas normativas fijas de la ficha (no son estado mutable). */
@@ -114,8 +129,16 @@ function ecuadorDateTime(date: Date): string {
 
 const rateOf = (rate: string | null) => FiscalDecimal.parse("tarifa", rate ?? "0");
 
+const isCreditNote = (ride: RideDocumentData): ride is RideCreditNote =>
+  ride.kind === "CREDIT_NOTE";
+/** Denominación del comprobante modificado por su código (tabla 3 de la ficha). */
+const MODIFIED_TYPES: Readonly<Record<string, string>> = { "01": "FACTURA" };
+const modifiedTypeText = (ride: RideCreditNote) =>
+  MODIFIED_TYPES[ride.modified.documentType] ?? ride.modified.documentType;
+const titleOf = (ride: RideDocumentData) => (isCreditNote(ride) ? "NOTA DE CRÉDITO" : "FACTURA");
+
 /** Subtotales en el orden del anexo 2; solo los que el comprobante llenó. */
-export function totalRows(ride: RideInvoice): [string, string][] {
+export function totalRows(ride: RideDocumentData): [string, string][] {
   const withRate = ride.totals.taxes
     .filter((tax) => ![ZERO_RATE, NOT_SUBJECT, EXEMPT].includes(tax.rateCode))
     // Solo para ordenar de menor a mayor tarifa; lo dibujado es el texto del XML.
@@ -129,7 +152,8 @@ export function totalRows(ride: RideInvoice): [string, string][] {
   for (const tax of byCode(NOT_SUBJECT)) rows.push(["SUBTOTAL NO OBJETO DE IVA", tax.base]);
   for (const tax of byCode(EXEMPT)) rows.push(["SUBTOTAL EXENTO DE IVA", tax.base]);
   rows.push(["SUBTOTAL SIN IMPUESTOS", ride.totals.withoutTaxes]);
-  rows.push(["TOTAL DESCUENTO", ride.totals.discount]);
+  // La nota de crédito no trae el total de descuentos en su XML: no se calcula.
+  if (!isCreditNote(ride)) rows.push(["TOTAL DESCUENTO", ride.totals.discount]);
   for (const tax of withRate) rows.push([`IVA ${rateLabel(tax)}`, tax.amount]);
   rows.push(["VALOR TOTAL", ride.totals.total]);
   return rows;
@@ -137,13 +161,16 @@ export function totalRows(ride: RideInvoice): [string, string][] {
 
 const paymentText = (payment: RideInvoice["payments"][number]) =>
   payment.label === null ? payment.method : `${payment.method} - ${payment.label}`;
-const documentNumber = (ride: RideInvoice) =>
+const documentNumber = (ride: RideDocumentData) =>
   `${ride.establishment}-${ride.emissionPoint}-${ride.sequential}`;
-const environmentText = (ride: RideInvoice) => ENVIRONMENTS[ride.environment] ?? ride.environment;
-const emissionText = (ride: RideInvoice) => EMISSION_TYPES[ride.emissionType] ?? ride.emissionType;
+const environmentText = (ride: RideDocumentData) =>
+  ENVIRONMENTS[ride.environment] ?? ride.environment;
+const emissionText = (ride: RideDocumentData) =>
+  EMISSION_TYPES[ride.emissionType] ?? ride.emissionType;
 
 /** Textos del comprobante que se dibujan, para comprobar los glifos antes de maquetar. */
-export function drawnStrings(ride: RideInvoice): string[] {
+export function drawnStrings(ride: RideDocumentData): string[] {
+  if (isCreditNote(ride)) return creditNoteStrings(ride);
   return [
     documentNumber(ride),
     ride.authorization.number,
@@ -177,6 +204,42 @@ export function drawnStrings(ride: RideInvoice): string[] {
   ];
 }
 
+function creditNoteStrings(ride: RideCreditNote): string[] {
+  return [
+    documentNumber(ride),
+    ride.authorization.number,
+    environmentText(ride),
+    emissionText(ride),
+    ride.accessKey,
+    ride.legalName,
+    ride.tradeName ?? "",
+    ride.headOfficeAddress,
+    ride.establishmentAddress ?? "",
+    ride.specialTaxpayer ?? "",
+    ride.accountingRequired,
+    ride.withholdingAgentResolution ?? "",
+    ride.rimpeLegend ?? "",
+    ride.ruc,
+    ride.issueDate,
+    ride.buyer.legalName,
+    ride.buyer.identification,
+    modifiedTypeText(ride),
+    ride.modified.number,
+    ride.modified.issueDate,
+    ride.reason,
+    ...ride.lines.flatMap((line) => [
+      line.mainCode ?? "",
+      line.auxiliaryCode ?? "",
+      line.description,
+      line.quantity,
+      line.unitPrice,
+      line.discount,
+      line.total,
+    ]),
+    ...totalRows(ride).flat(),
+  ];
+}
+
 const label = (text: string) => ({ text, style: "label" });
 const value = (text: string | null) => ({ text: text ?? "", style: "value" });
 const amountCell = (text: string) => ({ text, alignment: "right", style: "cell" });
@@ -196,7 +259,7 @@ const row = (labelWidth: number, name: string, text: string | null, margin = [0,
   margin,
 });
 
-function issuerSection(ride: RideInvoice): Content {
+function issuerSection(ride: RideDocumentData): Content {
   return box([
     { text: ride.legalName, style: "issuerName" },
     ...(ride.tradeName ? [{ text: ride.tradeName, style: "value", margin: [0, 2, 0, 2] }] : []),
@@ -222,7 +285,7 @@ function issuerSection(ride: RideInvoice): Content {
   ]);
 }
 
-function authorizationSection(ride: RideInvoice, number: string): Content {
+function authorizationSection(ride: RideDocumentData, number: string): Content {
   return box([
     {
       columns: [
@@ -230,7 +293,7 @@ function authorizationSection(ride: RideInvoice, number: string): Content {
         { width: "*", text: ride.ruc, style: "ruc" },
       ],
     },
-    { text: "FACTURA", style: "documentTitle", margin: [0, 4, 0, 2] },
+    { text: titleOf(ride), style: "documentTitle", margin: [0, 4, 0, 2] },
     {
       columns: [
         { width: 20, ...label("No.") },
@@ -348,9 +411,97 @@ function closingSection(ride: RideInvoice): Content {
   };
 }
 
+/** Comprador y comprobante que se modifica (anexo 2, página 61). */
+function creditNoteBuyerSection(ride: RideCreditNote): Content {
+  return box(
+    [
+      row(150, "Razón Social / Nombres y Apellidos:", ride.buyer.legalName, [0, 0, 0, 0]),
+      {
+        columns: [
+          { width: 150, ...label("Identificación:") },
+          { width: "*", ...value(ride.buyer.identification) },
+          { width: 70, ...label("Fecha Emisión:") },
+          { width: 70, ...value(ride.issueDate) },
+        ],
+        margin: [0, 3, 0, 0],
+      },
+      {
+        canvas: [
+          { type: "line", x1: 0, y1: 0, x2: 535, y2: 0, lineWidth: 0.5, lineColor: "#000000" },
+        ],
+        margin: [0, 6, 0, 4],
+      },
+      {
+        columns: [
+          { width: 150, ...label("Comprobante que se modifica:") },
+          { width: 70, ...value(modifiedTypeText(ride)) },
+          { width: "*", ...value(ride.modified.number) },
+        ],
+      },
+      row(150, "Fecha Emisión (Comprobante a modificar):", ride.modified.issueDate),
+      row(150, "Razón de Modificación:", ride.reason),
+    ],
+    [0, 8, 0, 8],
+  );
+}
+
+function creditNoteDetailSection(ride: RideCreditNote): Content {
+  const hasMain = ride.lines.some((line) => line.mainCode);
+  const hasAuxiliary = ride.lines.some((line) => line.auxiliaryCode);
+  const headers = [
+    ...(hasMain ? ["Código"] : []),
+    ...(hasAuxiliary ? ["Código Auxiliar"] : []),
+    "Cantidad",
+    "Descripción",
+    "Precio Unitario",
+    "Descuento",
+    "Precio Total",
+  ];
+  const widths = [...(hasMain ? [52] : []), ...(hasAuxiliary ? [52] : []), 58, "*", 58, 48, 56];
+  const body: TableCell[][] = [
+    headers.map((text) => ({ text, style: "tableHeader" })),
+    ...ride.lines.map((line) => [
+      ...(hasMain ? [{ text: line.mainCode ?? "", style: "cell" }] : []),
+      ...(hasAuxiliary ? [{ text: line.auxiliaryCode ?? "", style: "cell" }] : []),
+      amountCell(line.quantity),
+      { text: line.description, style: "cell" },
+      amountCell(line.unitPrice),
+      amountCell(line.discount),
+      amountCell(line.total),
+    ]),
+  ];
+  return { table: { headerRows: 1, dontBreakRows: true, widths, body }, layout: "grid" };
+}
+
+/** Subtotales con el valor total; la nota no lleva formas de pago. */
+function creditNoteClosingSection(ride: RideCreditNote): Content {
+  return {
+    columns: [
+      { width: "*", text: "" },
+      {
+        width: 200,
+        table: {
+          widths: ["*", 64],
+          body: totalRows(ride).map(([name, amount]) => {
+            const strong = name === "VALOR TOTAL";
+            return [
+              { text: name, style: strong ? "totalStrong" : "cell" },
+              { ...amountCell(amount), ...(strong ? { style: "totalStrong" } : {}) },
+            ];
+          }),
+        },
+        layout: "grid",
+      },
+    ],
+    columnGap: COLUMN_GAP_PT,
+    margin: [0, 8, 0, 0],
+    unbreakable: true,
+  };
+}
+
 /** Definición del documento; `onPageCount` recibe el número de páginas al maquetar. */
 export function rideDocument(
-  ride: RideInvoice,
+  ride: RideDocumentData,
   logo: RideLogo | null,
   onPageCount: (pages: number) => void = () => {},
 ): DocumentDefinition {
@@ -371,7 +522,7 @@ export function rideDocument(
       currentPage === 1
         ? { text: "" }
         : {
-            text: `FACTURA No. ${number} · R.U.C. ${ride.ruc} · Clave de acceso ${ride.accessKey}`,
+            text: `${titleOf(ride)} No. ${number} · R.U.C. ${ride.ruc} · Clave de acceso ${ride.accessKey}`,
             style: "running",
             margin: [PAGE_MARGIN_PT, 16, PAGE_MARGIN_PT, 0],
           },
@@ -400,9 +551,13 @@ export function rideDocument(
         // La autorización y el código de barras quedan enteros en la primera página.
         unbreakable: true,
       },
-      buyerSection(ride),
-      detailSection(ride),
-      closingSection(ride),
+      ...(isCreditNote(ride)
+        ? [
+            creditNoteBuyerSection(ride),
+            creditNoteDetailSection(ride),
+            creditNoteClosingSection(ride),
+          ]
+        : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
     ],
     images: logo
       ? { logo: `data:${logo.mediaType};base64,${Buffer.from(logo.bytes).toString("base64")}` }
@@ -509,7 +664,7 @@ export function createInProcessRideRenderer(fonts: RideFonts): RideRenderer {
     async render(input: RideRenderInput): Promise<RideRenderOutcome> {
       const started = performance.now();
       try {
-        const ride = readRideSource(input);
+        const ride = readRideDocument(input);
         assertLogo(input.logo);
         assertGlyphs(drawnStrings(ride));
         let pages = 0;
@@ -524,7 +679,7 @@ export function createInProcessRideRenderer(fonts: RideFonts): RideRenderer {
           status: "RENDERED",
           pdf: new Uint8Array(pdf),
           pages,
-          versions: RIDE_VERSIONS,
+          versions: isCreditNote(ride) ? CREDIT_NOTE_RIDE_VERSIONS : RIDE_VERSIONS,
           renderMs: performance.now() - started,
         };
       } catch (error) {

@@ -609,6 +609,12 @@ envío, la idempotencia y los errores.
 | Composición | `signingPipelines` (`infrastructure/signing-pipelines.ts`) y `createSignedUnitOfWork`: `main.ts` y los arneses la crean una vez con el firmador, el validador y la cola | Cada módulo recibe su pipeline: `invoicesModule({ signing: documentSigning.pipeline(invoiceSigningProfile()) })` |
 | Reconciliación manual | `requestReconciliationIn` (`application/reconciliation-request.ts`): comprobante bloqueado, estado reconciliable, `sri.reconcile` manual y auditoría en una transacción; la finalización elige su acción por tipo en `reconcile-handler.ts` (`invoice.reconciliation_completed` o `credit_note.reconciliation_completed`) | Cada módulo expone su ruta, su permiso, sus errores y la acción de la solicitud |
 
+### RIDE de la nota de crédito
+
+- **Lectura por raíz.** `readRideDocument` (`sri-engine/infrastructure/ride/ride-source.ts`) aplica las mismas defensas al XML de origen y elige la lectura por la raíz y la versión: `factura` 1.1.0 (la lectura de la factura no cambió) o `notaCredito` 1.1.0, con su propia lista blanca de los elementos que escribe el builder de la nota y el modelo `RideCreditNote` (sin formas de pago, sin dirección del comprador y sin total de descuentos, que el XML de la nota no trae; con el comprobante modificado, su fecha y la razón de la modificación).
+- **Distribución propia.** El renderer dibuja la nota con la distribución de la ficha v2.34, anexo 2, página 61: "NOTA DE CRÉDITO" con su autorización y el Code128 de la clave de la nota, el bloque del comprobante que se modifica y los subtotales con el valor total, sin formas de pago. Su versión de distribución (`CREDIT_NOTE_RIDE_RENDERER_VERSION`) es distinta de la de la factura y viaja a los metadatos del artefacto. El pool de workers, el job, el artefacto y las descargas son los de la factura.
+- **Factura sin cambios.** Los bytes del RIDE de cada factura de las pruebas son los mismos antes y después de este cambio.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna

@@ -43,6 +43,8 @@ export type RideLine = Readonly<{
 
 /** Contenido de la factura 1.1.0 que el sistema emite, tal como está en el XML de origen. */
 export type RideInvoice = Readonly<{
+  /** Ausente en la factura: la distingue de la nota de crédito. */
+  kind?: "INVOICE";
   environment: "1" | "2";
   emissionType: string;
   legalName: string;
@@ -77,6 +79,24 @@ export type RideInvoice = Readonly<{
 }>;
 
 /**
+ * Contenido de la nota de crédito 1.1.0 que el sistema emite (add-credit-notes, design D14): lo de
+ * la factura salvo las formas de pago, la dirección del comprador y el total de descuentos, que el
+ * XML de la nota no trae, más el comprobante que modifica, su fecha y la razón de la modificación.
+ */
+export type RideCreditNote = Omit<RideInvoice, "kind" | "buyer" | "totals" | "payments"> &
+  Readonly<{
+    kind: "CREDIT_NOTE";
+    buyer: Omit<RideInvoice["buyer"], "address">;
+    totals: Readonly<{ withoutTaxes: string; taxes: readonly RideTax[]; total: string }>;
+    /** Comprobante modificado: su tipo (`01`), su número y su fecha `dd/mm/aaaa`. */
+    modified: Readonly<{ documentType: string; number: string; issueDate: string }>;
+    reason: string;
+  }>;
+
+/** Un comprobante que el RIDE dibuja, elegido por la raíz y la versión de su XML. */
+export type RideDocumentData = RideInvoice | RideCreditNote;
+
+/**
  * Motivos deterministas por los que el RIDE no se genera: reintentar da lo mismo, así que la
  * generación se detiene con el motivo (design D5).
  */
@@ -108,7 +128,7 @@ export class RideRejectedError extends Error {
 
 export interface RideSourceReader {
   /** Lee y valida el XML de origen; lanza `RideRejectedError` si no puede ser la fuente. */
-  read(input: RideSourceInput): RideInvoice;
+  read(input: RideSourceInput): RideDocumentData;
 }
 
 export type RideLogo = Readonly<{ bytes: Uint8Array; mediaType: "image/png" | "image/jpeg" }>;

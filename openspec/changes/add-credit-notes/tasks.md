@@ -78,8 +78,8 @@
 
 ## 11. RIDE de la nota de crédito
 
-- [ ] 11.1 Implementar la lectura `notaCredito` 1.1.0 con su lista blanca y el modelo `RideCreditNote`, la distribución de la ficha v2.34 (anexo 2, página 61) con su versión de renderer, la selección por raíz y versión en el renderer sin duplicar el pool, y las formas de pago opcionales en el handler (design D14). Verificar con golden propios: texto de las páginas (título, comprobante modificado, fecha, razón, detalle y subtotales, sin formas de pago), lectura del Code128 con la clave de la nota, contenido no emitido que detiene la generación, mismos bytes en dos procesos, y el RIDE de la factura sin cambios
-- [ ] 11.2 Comprobar el RIDE de la nota en el job, el pool y la bandeja. Verificar con una prueba de integración que una nota autorizada programa su RIDE en la misma operación, que se guarda una vez con su procedencia y que se descarga verificado
+- [x] 11.1 Implementar la lectura `notaCredito` 1.1.0 con su lista blanca y el modelo `RideCreditNote`, la distribución de la ficha v2.34 (anexo 2, página 61) con su versión de renderer, la selección por raíz y versión en el renderer sin duplicar el pool, y las formas de pago opcionales en el handler (design D14). Verificar con golden propios: texto de las páginas (título, comprobante modificado, fecha, razón, detalle y subtotales, sin formas de pago), lectura del Code128 con la clave de la nota, contenido no emitido que detiene la generación, mismos bytes en dos procesos, y el RIDE de la factura sin cambios
+- [x] 11.2 Comprobar el RIDE de la nota en el job, el pool y la bandeja. Verificar con una prueba de integración que una nota autorizada programa su RIDE en la misma operación, que se guarda una vez con su procedencia y que se descarga verificado
 
 ## 12. Bandeja con notas de crédito
 
