@@ -6,7 +6,7 @@
     "linesPerInvoice": 5,
     "invoiceTotal": "799.35",
     "priorCreditAmount": "29.43",
-    "seedSeconds": 468.5,
+    "seedSeconds": 480.8,
     "before": {
       "electronic_document": {
         "rows": 110002,
@@ -26,7 +26,7 @@
       },
       "credit_reservation": {
         "rows": 10001,
-        "totalSize": "7424 kB"
+        "totalSize": "7432 kB"
       },
       "credit_reservation_line": {
         "rows": 20001,
@@ -44,11 +44,11 @@
       },
       "document_artifact": {
         "rows": 210427,
-        "totalSize": "127 MB"
+        "totalSize": "126 MB"
       },
       "credit_capacity": {
         "rows": 10212,
-        "totalSize": "3128 kB"
+        "totalSize": "3144 kB"
       },
       "credit_capacity_line": {
         "rows": 51057,
@@ -56,7 +56,7 @@
       },
       "credit_reservation": {
         "rows": 10421,
-        "totalSize": "7592 kB"
+        "totalSize": "7568 kB"
       },
       "credit_reservation_line": {
         "rows": 20421,
@@ -82,16 +82,16 @@
     "os": "Linux 7.1.6-1-cachyos",
     "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
     "memory": "16 GiB",
-    "commit": "334328c"
+    "commit": "f235a6a"
   },
   "results": [
     {
       "name": "Facturas elegibles: primera página, sin filtro",
       "path": "/credit-notes/eligible-invoices",
       "results": 100003,
-      "p50": 648.6,
-      "p95": 913.4,
-      "max": 1566.8,
+      "p50": 639.1,
+      "p95": 819.4,
+      "max": 3236.2,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -99,9 +99,9 @@
       "name": "Facturas elegibles: búsqueda por número",
       "path": "/credit-notes/eligible-invoices?search=000054321",
       "results": 1,
-      "p50": 752.1,
-      "p95": 935.6,
-      "max": 1286.4,
+      "p50": 739.5,
+      "p95": 845.7,
+      "max": 1851.1,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -109,9 +109,9 @@
       "name": "Facturas elegibles: búsqueda por comprador (todas coinciden)",
       "path": "/credit-notes/eligible-invoices?search=perno",
       "results": 100003,
-      "p50": 670.7,
-      "p95": 902.1,
-      "max": 1241.9,
+      "p50": 669.8,
+      "p95": 866.5,
+      "max": 1838.8,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -119,9 +119,9 @@
       "name": "Vista previa del borrador sin créditos previos",
       "path": "/credit-notes/drafts/{id}",
       "results": null,
-      "p50": 12.6,
-      "p95": 15.3,
-      "max": 17.2,
+      "p50": 9.3,
+      "p95": 11.9,
+      "max": 21.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -129,9 +129,9 @@
       "name": "Vista previa del borrador con créditos previos",
       "path": "/credit-notes/drafts/{id}",
       "results": null,
-      "p50": 10.6,
-      "p95": 15.5,
-      "max": 18.6,
+      "p50": 10.5,
+      "p95": 13.6,
+      "max": 17.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -139,9 +139,9 @@
       "name": "Vista previa del borrador de 100 líneas",
       "path": "/credit-notes/drafts/{id}",
       "results": null,
-      "p50": 15.5,
-      "p95": 19.7,
-      "max": 27.7,
+      "p50": 19,
+      "p95": 23.6,
+      "max": 30.9,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -150,8 +150,8 @@
       "path": "calculateCreditNoteAmounts",
       "results": 100,
       "p50": 4.3,
-      "p95": 5.8,
-      "max": 7.5,
+      "p95": 5.9,
+      "max": 7.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -159,9 +159,9 @@
       "name": "Emisión con reserva sin créditos previos: total del servidor",
       "path": "POST /credit-notes",
       "results": 100,
-      "p50": 249.7,
-      "p95": 650.4,
-      "max": 727.1,
+      "p50": 294.6,
+      "p95": 436.5,
+      "max": 2585,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -169,9 +169,9 @@
       "name": "Emisión con reserva sin créditos previos: transacción de la reserva",
       "path": "reservation_tx",
       "results": 100,
-      "p50": 46.3,
-      "p95": 147.7,
-      "max": 209.5,
+      "p50": 52.4,
+      "p95": 108.9,
+      "max": 1344.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -179,9 +179,9 @@
       "name": "Emisión con reserva con créditos previos: total del servidor",
       "path": "POST /credit-notes",
       "results": 100,
-      "p50": 270.1,
-      "p95": 456.4,
-      "max": 793.5,
+      "p50": 263.8,
+      "p95": 561.1,
+      "max": 1287.6,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -189,9 +189,9 @@
       "name": "Emisión con reserva con créditos previos: transacción de la reserva",
       "path": "reservation_tx",
       "results": 100,
-      "p50": 42.5,
-      "p95": 125.6,
-      "max": 160.3,
+      "p50": 35.9,
+      "p95": 120.2,
+      "max": 158.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -199,9 +199,9 @@
       "name": "La misma factura, 10 simultáneas: total del servidor",
       "path": "POST /credit-notes",
       "results": 100,
-      "p50": 726.4,
-      "p95": 1547.1,
-      "max": 2030.1,
+      "p50": 758.6,
+      "p95": 1556,
+      "max": 2256.8,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -209,9 +209,9 @@
       "name": "La misma factura, 10 simultáneas: transacción de la reserva",
       "path": "reservation_tx",
       "results": 100,
-      "p50": 364.4,
-      "p95": 997.5,
-      "max": 1709.6,
+      "p50": 380.2,
+      "p95": 980.9,
+      "max": 1761.5,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -219,9 +219,9 @@
       "name": "Facturas distintas, 10 simultáneas: total del servidor",
       "path": "POST /credit-notes",
       "results": 100,
-      "p50": 701.8,
-      "p95": 1686.5,
-      "max": 2402.5,
+      "p50": 702.7,
+      "p95": 1109.5,
+      "max": 1318,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -229,9 +229,9 @@
       "name": "Facturas distintas, 10 simultáneas: transacción de la reserva",
       "path": "reservation_tx",
       "results": 100,
-      "p50": 373.8,
-      "p95": 980.7,
-      "max": 1905.6,
+      "p50": 373.3,
+      "p95": 768.1,
+      "max": 929.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -240,9 +240,9 @@
       "path": "RideWorkerPool",
       "results": 50,
       "pages": 1,
-      "p50": 83.1,
-      "p95": 93.5,
-      "max": 95.3,
+      "p50": 82.2,
+      "p95": 94.1,
+      "max": 108.5,
       "budgetMs": 1000,
       "withinBudget": true
     }
@@ -250,54 +250,54 @@
   "serialEmissions": {
     "withoutCredits": {
       "client": {
-        "p50": 254.5,
-        "p95": 653.7,
-        "max": 731.1
+        "p50": 299,
+        "p95": 440.3,
+        "max": 2589.8
       },
       "stages": {
         "reservation_tx": {
-          "p50": 46.3,
-          "p95": 147.7,
-          "max": 209.5
+          "p50": 52.4,
+          "p95": 108.9,
+          "max": 1344.7
         },
         "xml": {
           "p50": 0.1,
-          "p95": 0.1,
-          "max": 0.2
+          "p95": 0.2,
+          "max": 0.4
         },
         "xsd": {
-          "p50": 112.7,
-          "p95": 132.7,
-          "max": 149.7
+          "p50": 118.8,
+          "p95": 151.6,
+          "max": 173
         },
         "sign": {
-          "p50": 53.6,
-          "p95": 61.6,
-          "max": 70.1
+          "p50": 53.2,
+          "p95": 62.1,
+          "max": 68.1
         },
         "persist": {
-          "p50": 10.8,
-          "p95": 106.9,
-          "max": 189.8
+          "p50": 20.6,
+          "p95": 68.3,
+          "max": 186
         },
         "total": {
-          "p50": 249.7,
-          "p95": 650.4,
-          "max": 727.1
+          "p50": 294.6,
+          "p95": 436.5,
+          "max": 2585
         }
       }
     },
     "withCredits": {
       "client": {
-        "p50": 275.9,
-        "p95": 459.3,
-        "max": 797.4
+        "p50": 267.5,
+        "p95": 565.3,
+        "max": 1291.8
       },
       "stages": {
         "reservation_tx": {
-          "p50": 42.5,
-          "p95": 125.6,
-          "max": 160.3
+          "p50": 35.9,
+          "p95": 120.2,
+          "max": 158.7
         },
         "xml": {
           "p50": 0.1,
@@ -305,24 +305,24 @@
           "max": 0.2
         },
         "xsd": {
-          "p50": 115.5,
-          "p95": 133.5,
-          "max": 149.4
+          "p50": 118.4,
+          "p95": 153.3,
+          "max": 168.2
         },
         "sign": {
-          "p50": 52.3,
-          "p95": 63.7,
-          "max": 71.1
+          "p50": 52.4,
+          "p95": 60.9,
+          "max": 72.6
         },
         "persist": {
-          "p50": 12.6,
-          "p95": 85.4,
-          "max": 198
+          "p50": 14.8,
+          "p95": 115.8,
+          "max": 296.6
         },
         "total": {
-          "p50": 270.1,
-          "p95": 456.4,
-          "max": 793.5
+          "p50": 263.8,
+          "p95": 561.1,
+          "max": 1287.6
         }
       }
     }
@@ -331,18 +331,18 @@
     "La misma factura": {
       "concurrent": 10,
       "rounds": 10,
-      "reservationsPerSecond": 9.7,
+      "reservationsPerSecond": 9.5,
       "reservationTx": {
-        "p50": 364.4,
-        "p95": 997.5,
-        "max": 1709.6
+        "p50": 380.2,
+        "p95": 980.9,
+        "max": 1761.5
       },
-      "lockWaitP95Ms": 951.2,
+      "lockWaitP95Ms": 928.5,
       "stages": {
         "reservation_tx": {
-          "p50": 364.4,
-          "p95": 997.5,
-          "max": 1709.6
+          "p50": 380.2,
+          "p95": 980.9,
+          "max": 1761.5
         },
         "xml": {
           "p50": 0.1,
@@ -350,47 +350,47 @@
           "max": 0.2
         },
         "xsd": {
-          "p50": 137.2,
-          "p95": 202.8,
-          "max": 290.7
+          "p50": 140.7,
+          "p95": 208.3,
+          "max": 247.2
         },
         "sign": {
-          "p50": 66.4,
-          "p95": 149.1,
-          "max": 365.6
+          "p50": 66.1,
+          "p95": 156.5,
+          "max": 270.1
         },
         "persist": {
-          "p50": 16.5,
-          "p95": 87.6,
-          "max": 330
+          "p50": 15.6,
+          "p95": 161.8,
+          "max": 245.2
         },
         "total": {
-          "p50": 726.4,
-          "p95": 1547.1,
-          "max": 2030.1
+          "p50": 758.6,
+          "p95": 1556,
+          "max": 2256.8
         }
       },
       "client": {
-        "p50": 738,
-        "p95": 1564.7,
-        "max": 2050.8
+        "p50": 776.9,
+        "p95": 1571.1,
+        "max": 2273.7
       }
     },
     "Facturas distintas": {
       "concurrent": 10,
       "rounds": 10,
-      "reservationsPerSecond": 9.7,
+      "reservationsPerSecond": 9.8,
       "reservationTx": {
-        "p50": 373.8,
-        "p95": 980.7,
-        "max": 1905.6
+        "p50": 373.3,
+        "p95": 768.1,
+        "max": 929.7
       },
-      "lockWaitP95Ms": 934.4,
+      "lockWaitP95Ms": 715.7,
       "stages": {
         "reservation_tx": {
-          "p50": 373.8,
-          "p95": 980.7,
-          "max": 1905.6
+          "p50": 373.3,
+          "p95": 768.1,
+          "max": 929.7
         },
         "xml": {
           "p50": 0.1,
@@ -398,36 +398,36 @@
           "max": 0.3
         },
         "xsd": {
-          "p50": 133.9,
-          "p95": 192.2,
-          "max": 206.5
+          "p50": 137.3,
+          "p95": 215.2,
+          "max": 272.8
         },
         "sign": {
-          "p50": 66.2,
-          "p95": 152.2,
-          "max": 300.5
+          "p50": 67.1,
+          "p95": 118.2,
+          "max": 162
         },
         "persist": {
-          "p50": 14.9,
-          "p95": 168,
-          "max": 283.2
+          "p50": 15,
+          "p95": 104.6,
+          "max": 177.7
         },
         "total": {
-          "p50": 701.8,
-          "p95": 1686.5,
-          "max": 2402.5
+          "p50": 702.7,
+          "p95": 1109.5,
+          "max": 1318
         }
       },
       "client": {
-        "p50": 715.8,
-        "p95": 1700.2,
-        "max": 2417.4
+        "p50": 717.4,
+        "p95": 1124.1,
+        "max": 1333.6
       }
     }
   },
   "reconciliation": {
     "creditDifferences": 0,
     "returnDifferences": 0,
-    "seconds": 1.2
+    "seconds": 1.1
   }
 }
