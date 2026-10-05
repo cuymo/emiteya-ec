@@ -36,7 +36,10 @@ import {
   creditNoteSigningProfile,
   creditNotesModule,
 } from "../../src/modules/credit-notes/infrastructure/index.ts";
-import { debitNotesModule } from "../../src/modules/debit-notes/infrastructure/index.ts";
+import {
+  debitNoteSigningProfile,
+  debitNotesModule,
+} from "../../src/modules/debit-notes/infrastructure/index.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
 import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
@@ -91,6 +94,18 @@ export type CreditNotesHarnessOptions = {
   metrics?: Registry;
 };
 
+/** Notas de débito (add-debit-notes): las opciones que la prueba fija. */
+export type DebitNotesHarnessOptions = {
+  accessKeys?: AccessKeys;
+  /** false: la emisión se detiene en RESERVED (caída simulada después del commit). */
+  signAfterReserve?: boolean;
+  /** Firma de comprobantes; por defecto, la del módulo de firma configurado. */
+  signer?: DocumentSigner;
+  metrics?: Registry;
+  /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión. */
+  stageTimings?: boolean;
+};
+
 /** Sin firma configurada: ningún comprobante se puede firmar. */
 const NO_SIGNER: DocumentSigner = {
   signDocument: () =>
@@ -112,6 +127,7 @@ export function buildTaxpayerApp(
     signing?: SigningHarnessOptions;
     invoices?: InvoicesHarnessOptions;
     creditNotes?: CreditNotesHarnessOptions;
+    debitNotes?: DebitNotesHarnessOptions;
     now?: () => Date;
   } = {},
 ) {
@@ -237,6 +253,15 @@ export function buildTaxpayerApp(
         }).routers,
       );
       // Notas de débito (add-debit-notes): los mismos puertos que compone `main.ts`.
+      const debitSigning = options.debitNotes?.signer
+        ? signingPipelines({
+            prisma: db.database.prisma,
+            xsd: options.invoices?.xsd ?? testXsdValidator(),
+            signer: options.debitNotes.signer,
+            ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
+            ...(invoicesNow ? { now: invoicesNow } : {}),
+          })
+        : documentSigning;
       router.use(
         ...debitNotesModule({
           prisma: db.database.prisma,
@@ -246,6 +271,12 @@ export function buildTaxpayerApp(
             ? signing.reads
             : () => ({ activeCertificate: () => Promise.resolve(null) }),
           invoices: invoiceCreditSource,
+          xsd: options.invoices?.xsd ?? testXsdValidator(),
+          signing: debitSigning.pipeline(debitNoteSigningProfile()),
+          ...(options.debitNotes?.signAfterReserve === false ? { signAfterReserve: false } : {}),
+          ...(options.debitNotes?.accessKeys ? { accessKeys: options.debitNotes.accessKeys } : {}),
+          ...(options.debitNotes?.metrics ? { metrics: options.debitNotes.metrics } : {}),
+          ...(options.debitNotes?.stageTimings ? { stageTimings: true } : {}),
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

@@ -152,6 +152,25 @@ eventos de auditoría (`credit_note.reserved`, `credit_note.signed`,
 `credit_note.reconciliation_completed`) llevan la nota, su
 número, la factura y las declaraciones con su versión; nunca XML, SOAP ni la clave del certificado.
 
+## Notas de débito
+
+Señales de `add-debit-notes` (design D24), en `/metrics` y sin la empresa, la factura ni la nota en
+las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `debit_note_reservations_total` | Counter | Notas de débito reservadas al emitir. Una repetición con la misma `Idempotency-Key` no cuenta. |
+| `debit_note_concepts_total{cause}` | Counter | Conceptos de las notas reservadas, por causa (`LATE_PAYMENT_INTEREST`, `POST_INVOICE_COST_EXPENSE`); solo esos dos valores. |
+
+La nota de débito no tiene capacidades ni movimientos de inventario, así que no tiene señales de
+reservas sin conclusión: una nota en revisión manual o con resultado incierto se ve en
+`fiscal_documents{state}` y se reconcilia con `POST /api/v1/debit-notes/{id}/reconciliations`. La
+transmisión, la reconciliación y el RIDE usan las señales vigentes sin una etiqueta de tipo. Los
+eventos de auditoría (`debit_note.reserved`, `debit_note.signed`, `debit_note.signing_retried`,
+`debit_note.reconciliation_requested`, `debit_note.reconciliation_completed`) llevan la nota, su
+número, la factura, las causas y la declaración con su versión; nunca las descripciones de los
+conceptos, XML, SOAP ni la clave del certificado.
+
 ## Logging Rules
 
 - Do not log secrets.

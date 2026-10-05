@@ -146,6 +146,10 @@ import {
   createDebitNoteDraftSchema,
   debitEligibleInvoiceViewSchema,
   debitNoteDraftIdParamsSchema,
+  debitNoteIdParamsSchema,
+  debitNoteViewSchema,
+  emitDebitNoteHeadersSchema,
+  emitDebitNoteSchema,
   debitNoteDraftSummaryViewSchema,
   debitNoteDraftViewSchema,
   debitNoteListMetaSchema,
@@ -282,6 +286,15 @@ const debitDraftInvoiceConflict = {
     "La factura no admite nota de débito: no está autorizada (DEBIT_NOTE_INVOICE_NOT_ELIGIBLE) o se emitió a consumidor final (DEBIT_NOTE_CONSUMER_FINAL, política del proyecto); o el borrador cambió (DEBIT_NOTE_DRAFT_CHANGED) o ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
   schema: errorEnvelopeSchema,
 };
+
+const debitNoteNotFound = {
+  description: "La nota de débito no existe en la empresa (DEBIT_NOTE_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const debitNoteResponse = (description: string) => ({
+  description,
+  schema: successEnvelope(debitNoteViewSchema),
+});
 
 const creditNoteResponse = (description: string) => ({
   description,
@@ -1812,6 +1825,49 @@ export const apiRoutes: readonly RouteDefinition[] = [
         description: "El borrador ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
         schema: errorEnvelopeSchema,
       },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/debit-notes",
+    summary:
+      "Emitir un borrador de nota de débito con la declaración del usuario: reserva el número y la clave, y firma localmente (sin el SRI)",
+    request: { headers: emitDebitNoteHeadersSchema, body: emitDebitNoteSchema },
+    responses: {
+      200: debitNoteResponse(
+        "Repetición con la misma Idempotency-Key y la misma solicitud: la misma nota. Si seguía `RESERVED`, se intenta firmar otra vez.",
+      ),
+      201: debitNoteResponse(
+        "Nota emitida: `SIGNED` con su artefacto, o `RESERVED` con el diagnóstico del intento.",
+      ),
+      400: {
+        description:
+          "Datos inválidos, declaración faltante o de otra versión, o falta la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: debitDraftNotFound,
+      409: {
+        description:
+          "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo DEBIT_NOTE_CONSUMER_FINAL, DEBIT_NOTE_INVOICE_INTEGRITY, DEBIT_NOTE_TAX_TREATMENT_NOT_IN_INVOICE, DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE o DEBIT_NOTE_DECLARATION_REQUIRED), o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/debit-notes/:debitNoteId/signing-attempts",
+    summary:
+      "Reintentar la firma de una nota de débito reservada, con el mismo número y la misma clave",
+    request: { params: debitNoteIdParamsSchema },
+    responses: {
+      200: debitNoteResponse(
+        "Nota tras el intento: `SIGNED`, o `RESERVED` con el diagnóstico. Una nota ya firmada se devuelve sin cambios.",
+      ),
+      401: errors[401],
+      403: errors[403],
+      404: debitNoteNotFound,
     },
   }),
 ];

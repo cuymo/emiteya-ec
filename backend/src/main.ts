@@ -64,7 +64,10 @@ import {
   createConfigurationLogoReader,
   taxpayerRouters,
 } from "./modules/taxpayer/infrastructure/index.ts";
-import { debitNotesModule } from "./modules/debit-notes/infrastructure/index.ts";
+import {
+  debitNoteSigningProfile,
+  debitNotesModule,
+} from "./modules/debit-notes/infrastructure/index.ts";
 import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
@@ -387,6 +390,10 @@ apiRouter.use(
     authorizer,
     signingReads: signing.reads,
     invoices: invoiceCreditSource,
+    xsd: xsdValidator,
+    signing: documentSigning.pipeline(debitNoteSigningProfile()),
+    metrics: metrics.registry,
+    stageTimings: env.EMISSION_STAGE_TIMINGS,
   }).routers,
 );
 

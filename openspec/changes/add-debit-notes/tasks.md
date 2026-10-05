@@ -72,7 +72,7 @@
 
 ## 6. Emisión de la nota de débito
 
-- [ ] 6.1 Implementar la emisión (`POST /debit-notes`) con las comprobaciones previas de design D4 y la transacción de `RESERVED` de design D14, sin I/O externo dentro:
+- [x] 6.1 Implementar la emisión (`POST /debit-notes`) con las comprobaciones previas de design D4 y la transacción de `RESERVED` de design D14, sin I/O externo dentro:
   - idempotencia `debit_note.emit` con la huella de design D15;
   - `reserveDocumentIn` con el tipo `05`;
   - el snapshot autosuficiente y la relación con la factura;
@@ -91,9 +91,9 @@
   - `emitted-document-types.test.ts` con las rutas `/credit-notes`, `/debit-notes` e `/invoices`.
 
   Documentar la emisión, la idempotencia y los códigos de error en `fiscal-emission.md`, y las métricas en `observability.md`. Verificar que los documentos citan las rutas, los códigos y las métricas implementados
-- [ ] 6.2 Probar la atomicidad de la reserva forzando un fallo después de cada paso de la transacción. Verificar que no queda secuencial consumido, clave, comprobante, relación, snapshot, borrador emitido, registro de idempotencia ni auditoría
-- [ ] 6.3 Probar con PostgreSQL real la concurrencia de design D14: dos notas simultáneas de una misma factura, ambas válidas y con secuenciales distintos; dos emisiones simultáneas del mismo borrador con claves distintas, una sola nota y la otra `409`. Verificar que las pruebas pasan repetidas sin fallos intermitentes
-- [ ] 6.4 Implementar el reintento de firma (`/debit-notes/{id}/signing-attempts`). Verificar que una nota reservada se firma con su mismo número y su misma clave, con `debit_note.signing_retried`, y que otra empresa recibe `404`
+- [x] 6.2 Probar la atomicidad de la reserva forzando un fallo después de cada paso de la transacción. Verificar que no queda secuencial consumido, clave, comprobante, relación, snapshot, borrador emitido, registro de idempotencia ni auditoría
+- [x] 6.3 Probar con PostgreSQL real la concurrencia de design D14: dos notas simultáneas de una misma factura, ambas válidas y con secuenciales distintos; dos emisiones simultáneas del mismo borrador con claves distintas, una sola nota y la otra `409`. Verificar que las pruebas pasan repetidas sin fallos intermitentes
+- [x] 6.4 Implementar el reintento de firma (`/debit-notes/{id}/signing-attempts`). Verificar que una nota reservada se firma con su mismo número y su misma clave, con `debit_note.signing_retried`, y que otra empresa recibe `404`
 
 ## 7. Consulta, transmisión y reconciliación de la nota
 

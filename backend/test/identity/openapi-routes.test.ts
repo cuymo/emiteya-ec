@@ -26,6 +26,7 @@ import type { CreditNoteEmission } from "../../src/modules/credit-notes/applicat
 import { creditNotesRouter } from "../../src/modules/credit-notes/infrastructure/http/credit-notes-router.ts";
 import type { DebitNotes } from "../../src/modules/debit-notes/application/debit-notes.ts";
 import type { DebitNoteDrafts } from "../../src/modules/debit-notes/application/drafts.ts";
+import type { DebitNoteEmission } from "../../src/modules/debit-notes/application/emission.ts";
 import { debitNotesRouter } from "../../src/modules/debit-notes/infrastructure/http/debit-notes-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
@@ -64,7 +65,11 @@ describe("rutas documentadas", () => {
         emission: {} as CreditNoteEmission,
         creditNotes: {} as CreditNotes,
       }),
-      debitNotesRouter({ drafts: {} as DebitNoteDrafts, debitNotes: {} as DebitNotes }),
+      debitNotesRouter({
+        drafts: {} as DebitNoteDrafts,
+        emission: {} as DebitNoteEmission,
+        debitNotes: {} as DebitNotes,
+      }),
       ...archiveRouters({
         prisma: {} as PrismaClient,
         authorizer: {} as Authorizer,
