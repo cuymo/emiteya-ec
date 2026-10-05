@@ -1,7 +1,8 @@
 // ConfirmDialog (component-system.md, escalera de confirmación de forms-and-workflows.md): un paso
 // para lo reversible y, cuando el riesgo lo pide, escribir un texto exacto antes de confirmar. Puede
 // pedir además un texto libre obligatorio, como el motivo de una reconciliación (add-sri-transmission,
-// design D20), que recibe el foco al abrir.
+// design D20), que recibe el foco al abrir, o un contenido propio que habilita la confirmación, como
+// las declaraciones de una nota de crédito (add-credit-notes, design D19).
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
@@ -27,6 +28,8 @@ export function ConfirmDialog({
   tone = "primary",
   typedConfirmation,
   requiredText,
+  children,
+  confirmBlocked = false,
   onCloseAutoFocus,
 }: {
   open: boolean;
@@ -51,6 +54,10 @@ export function ConfirmDialog({
     /** Mensaje del error, o null si el texto es válido. */
     validate: (text: string) => string | null;
   };
+  /** Contenido propio después de la descripción, como casillas que el usuario debe marcar. */
+  children?: ReactNode;
+  /** Mientras es true, la confirmación queda deshabilitada (el llamador explica por qué). */
+  confirmBlocked?: boolean;
   /** Foco al cerrar: con `preventDefault`, el llamador decide dónde va en lugar de quien lo abrió. */
   onCloseAutoFocus?: (event: Event) => void;
 }) {
@@ -61,7 +68,7 @@ export function ConfirmDialog({
   const [typed, setTyped] = useState("");
   const [text, setText] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
-  const ready = !typedConfirmation || typed === typedConfirmation.expected;
+  const ready = (!typedConfirmation || typed === typedConfirmation.expected) && !confirmBlocked;
   return (
     <Dialog
       open={open}
@@ -97,6 +104,7 @@ export function ConfirmDialog({
             <DialogDescription asChild>
               <div className="text-sm text-foreground-muted">{description}</div>
             </DialogDescription>
+            {children}
             {requiredText && (
               <div className="mt-1 flex flex-col gap-0.5">
                 <label htmlFor={textId} className="text-sm font-medium">

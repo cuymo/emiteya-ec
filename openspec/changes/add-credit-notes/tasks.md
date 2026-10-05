@@ -87,14 +87,14 @@
 
 ## 13. Pantallas de notas de crédito
 
-- [ ] 13.1 Implementar Notas de crédito en `/notas-credito`, dentro de "Operación" (design D19), con lista, búsqueda, filtros en la URL y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
-- [ ] 13.2 Implementar el borrador (`/notas-credito/borradores/{id}`): selector de factura elegible, causa, líneas y cantidades en una devolución, retorno físico permitido o deshabilitado con su explicación (también en la anulación total), motivo, punto, vista previa del servidor y la confirmación con las dos declaraciones separadas, cada una con su texto completo y su contexto y la advertencia de que es una declaración del usuario, no una comprobación del sistema. Verificar con pruebas de componente:
+- [x] 13.1 Implementar Notas de crédito en `/notas-credito`, dentro de "Operación" (design D19), con lista, búsqueda, filtros en la URL y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
+- [x] 13.2 Implementar el borrador (`/notas-credito/borradores/{id}`): selector de factura elegible, causa, líneas y cantidades en una devolución, retorno físico permitido o deshabilitado con su explicación (también en la anulación total), motivo, punto, vista previa del servidor y la confirmación con las dos declaraciones separadas, cada una con su texto completo y su contexto y la advertencia de que es una declaración del usuario, no una comprobación del sistema. Verificar con pruebas de componente:
   - anulación total sin selección de líneas, con retorno físico solo en bienes elegibles;
   - problemas junto a su línea y emisión bloqueada;
   - emisión sin ambas declaraciones imposible;
   - doble clic que envía una sola emisión con la misma clave en el reintento;
   - los `409` explicados y el foco tras cada acción
-- [ ] 13.3 Implementar el detalle de la nota y, en el detalle de la factura, el crédito aplicado, reservado y disponible con la acción "Emitir nota de crédito" cuando corresponde. Verificar con pruebas de componente: declaraciones mostradas como declaradas por el usuario, reintento de firma, transmisión y documentos, y la acción oculta para una factura no elegible o sin permiso
+- [x] 13.3 Implementar el detalle de la nota y, en el detalle de la factura, el crédito aplicado, reservado y disponible con la acción "Emitir nota de crédito" cuando corresponde. Verificar con pruebas de componente: declaraciones mostradas como declaradas por el usuario, reintento de firma, transmisión y documentos, y la acción oculta para una factura no elegible o sin permiso
 - [ ] 13.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-credit-notes/ui-review.md`. Verificar que no quedan hallazgos abiertos
 
 ## 14. Rendimiento, prueba end-to-end y documentación de producto

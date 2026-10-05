@@ -4,7 +4,8 @@
 // necesita una reconciliación. Información mínima: estado, diagnóstico o transmisión, número, clave
 // y totales. Acciones: Reintentar firma (RESERVED) y Reconciliar con el SRI (administrador, estado
 // admitido). P0: estado y acción; P1: mensajes del SRI, autorización, totales y comprador; P2:
-// historial, líneas y pagos; P3 (versiones y metadatos técnicos): no se muestran.
+// historial, líneas, pagos y el crédito de las notas con "Emitir nota de crédito" (add-credit-notes,
+// design D19); P3 (versiones y metadatos técnicos): no se muestran.
 "use client";
 
 import { ArrowLeft, RotateCw } from "lucide-react";
@@ -23,6 +24,7 @@ import { useInvoice, useRetrySigning } from "./invoices-api";
 import { StateCell } from "./invoices-screen";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
+import { InvoiceCreditSection } from "@/features/credit-notes/invoice-credit-section";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -152,6 +154,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
         <div className="flex min-w-0 flex-col gap-3">
           {!reserved && <TransmissionSection document={data} />}
           <DocumentsSection document={data} />
+          <InvoiceCreditSection invoice={data} />
           <Section title="Comprador">
             <p className="flex flex-col text-sm">
               <span className="font-medium break-words">{data.buyer.legalName}</span>

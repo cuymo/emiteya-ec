@@ -7,6 +7,7 @@ import {
   Building2,
   Contact,
   FileKey,
+  FileMinus,
   FilePenLine,
   FileText,
   FolderArchive,
@@ -34,6 +35,13 @@ const GROUPS: Group[] = [
     placement: "main",
     destinations: [
       { href: "/facturas", label: "Facturas", icon: FileText, permission: "invoices.read" },
+      // add-credit-notes, design D19.
+      {
+        href: "/notas-credito",
+        label: "Notas de crédito",
+        icon: FileMinus,
+        permission: "creditNotes.read",
+      },
       // add-document-archive, design D13: la bandeja documental.
       {
         href: "/comprobantes",
