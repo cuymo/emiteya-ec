@@ -546,6 +546,9 @@ const backend = await startE2eBackend({
     CERTIFICATE_MASTER_KEY: randomBytes(32).toString("base64"),
     EMISSION_STAGE_TIMINGS: "1",
     LOGIN_IP_MAX_REQUESTS: "100",
+    // Sin el barrido del RIDE: encolaría el RIDE de las 100 000 facturas sembradas durante la
+    // medición y retrasaría el apagado. El RIDE de la nota se mide aparte en su pool.
+    RIDE_SWEEP_INTERVAL_SECONDS: "86400",
   },
 });
 try {
