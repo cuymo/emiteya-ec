@@ -20,7 +20,7 @@
 
 - [ ] 2.1 Crear `packages/contracts/src/debit-notes.ts` (design D5, D8, D9 y D20):
   - las causas cerradas con su etiqueta y su fuente;
-  - el borrador y sus conceptos (causa, descripción, importe como texto decimal, clave del tratamiento), la forma de pago y el punto;
+  - el borrador y sus conceptos (causa, descripción, importe como texto decimal, clave del tratamiento), una sola forma de pago como `entryKey` (sin etiqueta ni importe) y el punto;
   - la vista previa con los tratamientos de la factura, las bases e impuestos por tratamiento, el total, la forma de pago y los problemas por concepto;
   - el cuerpo de la emisión con `declarations { version, statements }`, y la política `DEBIT_NOTE_ELIGIBILITY_DECLARATION` versión 1 con `NOT_EFFECTIVELY_NEGOTIATED_COMMERCIAL_INVOICE`, su texto, su contexto y su fuente;
   - las vistas de lista y detalle, y los códigos de error.
@@ -30,6 +30,7 @@
   - un importe como número, con 3 decimales, en cero o negativo;
   - una descripción vacía, de 301 caracteres o de varias líneas;
   - más conceptos que el máximo;
+  - una forma de pago con etiqueta, importe o como lista de varias;
   - una declaración faltante o de otra versión;
   - un `companyId`, un número o una clave de comprobante en el cuerpo.
 - [ ] 2.2 Añadir `debitNotes.read`, `debitNotes.draft`, `debitNotes.emit` y `debitNotes.retrySigning` para ADMIN y OPERATOR, y `debitNotes.reconcile` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D21). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
@@ -42,18 +43,19 @@
   - la prueba de que el módulo no usa `number` ni la librería decimal directamente.
 
   Documentar el cálculo por tratamiento en `fiscal-emission.md` y actualizar BR-66 en `domain-model.md` si su texto difiere de lo implementado. Verificar que los documentos citan `calculateDebitNoteAmounts` y su versión
-- [ ] 3.2 Implementar la evaluación en el orden de design D4 (estado, integridad, ambiente, consumidor final como política del proyecto, conceptos, causas, descripciones, importes, tratamientos de la factura, forma de pago, declaración, preparación) y la vista previa pura que consume `calculateDebitNoteAmounts`. Verificar con pruebas unitarias:
+- [ ] 3.2 Implementar la evaluación en el orden de design D4 (estado, integridad, ambiente, consumidor final como política del proyecto, conceptos, causas, descripciones, importes, tratamientos de la factura, forma de pago resuelta con el resolver de `catalogs` y su total igual al valor total con decimal exacto, declaración, preparación) y la vista previa pura que consume `calculateDebitNoteAmounts`. Verificar con pruebas unitarias:
   - cada rechazo con su código y la posición del concepto;
   - el mensaje de consumidor final, que cita la política del proyecto y no la NAC-DGERCGC25-00000014;
   - un tratamiento que la factura no tenía, rechazado;
   - una factura con varias tarifas que nunca se colapsa;
   - una factura de más de doce meses aceptada (design D11);
-  - la descripción que no cambia la causa ni los importes
-- [ ] 3.3 Implementar el snapshot autosuficiente de design D13 y su construcción. Verificar con pruebas unitarias que guarda la factura con su autorización, sus tratamientos con sus referencias fiscales, los conceptos, el resultado del cálculo con su versión, la forma de pago y la declaración `USER_DECLARED` con su versión, actor y momento, y que nunca escribe `SYSTEM_VERIFIED`. Actualizar `glossary.md` con la forma de pago de la nota y el tratamiento de IVA de la factura tal como quedan en el snapshot
+  - la descripción que no cambia la causa ni los importes;
+  - forma de pago faltante, inexistente, no vigente o deshabilitada para la empresa, y un total distinto del valor total, rechazados
+- [ ] 3.3 Implementar el snapshot autosuficiente de design D13 y su construcción. Verificar con pruebas unitarias que guarda la factura con su autorización, sus tratamientos con sus referencias fiscales, los conceptos, el resultado del cálculo con su versión, `payments` con un solo elemento (código, denominación oficial, `catalogType`, `versionId`, `datasetVersion`, `entryKey` y el total igual al valor total) y la declaración `USER_DECLARED` con su versión, actor y momento, y que nunca escribe `SYSTEM_VERIFIED`. Actualizar `glossary.md` con la forma de pago de la nota y el tratamiento de IVA de la factura tal como quedan en el snapshot
 
 ## 4. XML de la nota de débito
 
-- [ ] 4.1 Crear `debit-note-xml-builder.ts` para `notaDebito` 1.0.0 desde el snapshot, sin el builder de alto nivel de la dependencia, reutilizando `xml-writer.ts` e `infoTributaria` con `codDoc` 05 (design D16). Verificar con golden fixtures de bytes exactos (un concepto, varios de una tarifa, varias tarifas con 0 %, no objeto y exento, comprador con caracteres especiales) que validan contra `NotaDebito_V1.0.0.xsd`, con los golden de la factura y de la nota de crédito sin cambios
+- [ ] 4.1 Crear `debit-note-xml-builder.ts` para `notaDebito` 1.0.0 desde el snapshot, sin el builder de alto nivel de la dependencia, reutilizando `xml-writer.ts` e `infoTributaria` con `codDoc` 05 (design D16). Verificar con golden fixtures de bytes exactos (un concepto, varios de una tarifa, varias tarifas con 0 %, no objeto y exento, comprador con caracteres especiales), todos con `pagos` y un solo `pago` tomado del snapshot, que validan contra `NotaDebito_V1.0.0.xsd`, con los golden de la factura y de la nota de crédito sin cambios
 - [ ] 4.2 Crear `debitNoteSigningProfile` y firmar una nota con el firmador vigente y el tipo `05`, con la validación XSD antes y después de firmar. Verificar que el XML firmado valida, lleva la clave y el certificado de la empresa, y que el artefacto declara el tipo `05`. Documentar en `fiscal-emission.md` el builder, la forma de pago con su evidencia de la ficha (design D8) y lo que la nota no escribe, y verificar que cita el builder y su versión
 
 ## 5. Borradores, vista previa y facturas elegibles
@@ -80,7 +82,9 @@
 
   Verificar con pruebas HTTP:
   - nota de un concepto y de varias tarifas firmadas con su propio contador;
-  - consumidor final, causa inválida, concepto en cero, tratamiento ajeno, forma de pago no vigente, declaración faltante y empresa no preparada, todos rechazados sin reservar número;
+  - consumidor final, causa inválida, concepto en cero, tratamiento ajeno, forma de pago no vigente o deshabilitada, declaración faltante y empresa no preparada, todos rechazados sin reservar número;
+  - prueba negativa: una nota sin forma de pago no queda reservada, no consume secuencial y no recibe clave;
+  - una forma de pago que cambia en el catálogo después de reservar no cambia el XML firmado;
   - doble envío secuencial y simultáneo con una sola nota, repetición después de quedar reservada que reanuda la firma, clave reutilizada con otros datos `409`, y sin clave `400`;
   - la misma clave en una factura, en una nota de crédito y en una nota de débito, independientes;
   - eventos de auditoría con la factura, las causas y la declaración, sin descripciones ni XML, y ninguno en los rechazos;
@@ -118,7 +122,7 @@
 ## 9. RIDE de la nota de débito
 
 - [ ] 9.1 Implementar la lectura `notaDebito` 1.0.0 con su lista blanca y el modelo `RideDebitNote`, la distribución de la ficha v2.34 (anexo 2, página 62) con la versión de renderer `nota-debito-1`, y la selección por raíz y versión sin duplicar el pool (design D18). Verificar con golden propios:
-  - texto de las páginas: título, comprobante modificado, fecha, razones y valores, forma de pago y subtotales por tratamiento;
+  - texto de las páginas: título, comprobante modificado, fecha, razones y valores, forma de pago con la denominación del snapshot (sin consultar el catálogo) y subtotales por tratamiento;
   - lectura del Code128 con la clave de la nota;
   - contenido no emitido que detiene la generación;
   - mismos bytes en dos procesos;
@@ -155,7 +159,7 @@
 
 ## 13. Fuentes oficiales y trazabilidad
 
-- [ ] 13.1 Archivar en `docs/product/sri-catalogs/fuentes/` el extracto literal de la ficha técnica v2.34 (PDF SHA-256 `7333aebf…`): la nota del IVA de la página 58, la obligatoriedad de `pagos` de las páginas 58 y 59, y la referencia a la distribución del RIDE de la página 62. Usar el método de los extractos existentes. Intentar archivar el texto oficial del aviso del SRI del cambio del 14 % al 12 %, sin blogs ni resúmenes de terceros. Actualizar `capabilities.md` (estado del cambio y trazabilidad de `debit-notes`), Q-49 y el SOURCE STATUS de design D6 con lo que se haya archivado. Verificar que los extractos citan su URL y su SHA-256, y que el cierre de APPLY informa de forma explícita lo que no se pudo archivar
+- [ ] 13.1 Archivar en `docs/product/sri-catalogs/fuentes/` el extracto literal de la ficha técnica v2.34 (PDF SHA-256 `7333aebf…`): la nota del IVA de la página 58, la obligatoriedad de `pagos` de las páginas 58 y 59, y la referencia a la distribución del RIDE de la página 62. Usar el método de los extractos existentes. El extracto de la página 58 es la evidencia primaria de la regla del IVA. Intentar archivar como complementario el texto oficial del aviso del SRI del cambio del 14 % al 12 %, sin blogs ni resúmenes de terceros; no hace falta para cerrar APPLY. Actualizar `capabilities.md` (estado del cambio y trazabilidad de `debit-notes`, con un solo pago como política del MVP), Q-49, BR-33 y el SOURCE STATUS de design D6 con lo que se haya archivado. Verificar que los extractos citan su URL y su SHA-256, y que el cierre de APPLY informa de forma explícita lo que no se pudo archivar
 
 ## 14. Verificación
 

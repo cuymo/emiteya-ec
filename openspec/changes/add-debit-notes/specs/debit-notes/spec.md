@@ -141,19 +141,31 @@ La vista previa, el snapshot, el XML y el RIDE MUST mostrar exactamente ese resu
 - **THEN** el sistema rechaza la nota antes de reservar número
 
 ### Requirement: Forma de pago de la nota de débito
-Una nota de débito SHALL llevar una forma de pago del catálogo vigente en su fecha de emisión, elegida por el usuario, que cubre exactamente su valor total. La ficha técnica la marca como obligatoria en la nota de débito.
+Una nota de débito SHALL llevar exactamente una forma de pago, obligatoria, elegida por el usuario entre las del catálogo fiscal vigentes y habilitadas para su empresa en la fecha de la reserva. Su total MUST ser exactamente el valor total de la nota. La ficha técnica exige los pagos en la nota de débito; que sea una sola es una política del MVP del proyecto. El XML y el RIDE muestran la forma de pago congelada al reservar.
 
 #### Scenario: Forma de pago elegida
-- **WHEN** un usuario elige una forma de pago vigente para una nota de 115.00
-- **THEN** la nota lleva esa forma de pago por 115.00
+- **WHEN** un usuario elige una forma de pago vigente y habilitada para una nota de 115.00
+- **THEN** la nota lleva esa forma de pago por 115.00, el mismo total en la vista previa, el snapshot, el XML y el RIDE
 
 #### Scenario: Sin forma de pago
 - **WHEN** un usuario intenta emitir una nota sin forma de pago
-- **THEN** la vista previa muestra el problema y el sistema no permite emitir la nota
+- **THEN** el sistema rechaza la emisión: la nota no queda reservada, no consume secuencial y no recibe clave de acceso
 
-#### Scenario: Forma de pago no vigente
-- **WHEN** la forma de pago elegida no está vigente en la fecha de emisión
+#### Scenario: Forma de pago no vigente o deshabilitada
+- **WHEN** la forma de pago elegida no existe, no está vigente en la fecha de la reserva o está deshabilitada para la empresa
 - **THEN** el sistema rechaza la nota antes de reservar número
+
+#### Scenario: Código o etiqueta del cliente
+- **WHEN** una solicitud envía un código libre, una etiqueta o un importe para la forma de pago
+- **THEN** el sistema rechaza la solicitud con un error de validación
+
+#### Scenario: Varias formas de pago
+- **WHEN** una solicitud envía más de una forma de pago
+- **THEN** el sistema la rechaza con un error de validación, porque el MVP admite una sola
+
+#### Scenario: Catálogo cambiado después de reservar
+- **WHEN** la denominación o la vigencia de la forma de pago cambian en el catálogo después de reservar una nota
+- **THEN** el XML y el RIDE de la nota llevan el código, la denominación y el total congelados al reservar
 
 ### Requirement: Declaración sobre la factura comercial negociable
 Antes de reservar una nota de débito, el usuario SHALL declarar que la factura no es una factura comercial negociable efectivamente negociada (`NOT_EFFECTIVELY_NEGOTIATED_COMMERCIAL_INVOICE`), requisito oficial del artículo 16; sin la declaración vigente no se emite. La nota la guarda con su versión, el actor y el momento, como declarada por el usuario y nunca como verificada por el sistema. Una comprobación automática futura prevalecería sobre ella.
@@ -223,7 +235,7 @@ Antes de reservar, el sistema SHALL comprobar la factura, el consumidor final, l
 - **THEN** la nota sigue reservada, como cualquier comprobante reservado, y un reintento la firma con su mismo número y su misma clave
 
 ### Requirement: Datos congelados en la nota de débito
-Desde su reserva, la nota SHALL contener en su snapshot todo lo que necesita: la factura modificada con su autorización, su comprador y sus tratamientos de IVA con sus referencias fiscales; los conceptos y el resultado del cálculo con su versión; la forma de pago; la declaración; el emisor, el punto, el secuencial, la clave y las versiones aplicadas. Su XML, su RIDE y su consulta nunca reconstruyen datos desde la factura, el producto, el tercero, el catálogo o la tarifa vigentes.
+Desde su reserva, la nota SHALL contener en su snapshot todo lo que necesita: la factura modificada con su autorización, su comprador y sus tratamientos de IVA con sus referencias fiscales; los conceptos y el resultado del cálculo con su versión; la forma de pago con su código, su denominación, su referencia de catálogo y su total; la declaración; el emisor, el punto, el secuencial, la clave y las versiones aplicadas. Su XML, su RIDE y su consulta nunca reconstruyen datos desde la factura, el producto, el tercero, el catálogo o la tarifa vigentes.
 
 #### Scenario: Catálogo cambiado después de reservar
 - **WHEN** después de reservar una nota cambia la tarifa vigente del catálogo y se completa la firma

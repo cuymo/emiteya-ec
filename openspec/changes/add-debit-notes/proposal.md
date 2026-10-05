@@ -19,14 +19,18 @@ cobro queda fuera del sistema: sin número, sin XML autorizado y sin evidencia. 
 - **IVA de la factura original.**
   - Solo se ofrecen y se aceptan los tratamientos (código, código de porcentaje y tarifa) congelados en el snapshot de la factura. Nunca se usa una tarifa vigente del catálogo, el producto ni el tercero.
   - Una factura con varias tarifas no se reduce a una sola: cada concepto elige la suya.
-  - **SOURCE STATUS: official SRI guidance identified / durable source copy/text still pending.** No bloquea este propose. Antes de cerrar APPLY se intenta conservar evidencia oficial durable, y si no se logra se informa de forma explícita (design D6).
+  - **SOURCE STATUS: official SRI guidance identified / durable source copy/text still pending.** La evidencia durable primaria es la ficha técnica v2.34 del repositorio, que dice en la página 58 que "la tarifa de IVA corresponderá a la fecha de emisión del documento de sustento". Su extracto se archiva durante APPLY. El aviso del SRI del 14 % al 12 % es evidencia complementaria y no hace falta para cerrar APPLY (design D6).
 - **Un solo cálculo versionado** (`calculateDebitNoteAmounts`), con decimal exacto y sin `number`:
   - los conceptos se agrupan por tratamiento;
   - el impuesto se materializa una vez sobre la base total de cada tratamiento;
   - el XML lleva un impuesto por tratamiento.
 
   La vista previa, el snapshot, el XML y el RIDE usan exactamente ese resultado.
-- **Forma de pago.** La ficha técnica v2.34 marca `pagos` como obligatorio en la nota de débito y su RIDE oficial la muestra (design D8). El usuario elige una forma de pago vigente, que cubre el valor total.
+- **Forma de pago obligatoria.** La ficha técnica v2.34 exige `pagos` en la nota de débito, aunque el XSD 1.0.0 permita omitirlo, y es la ficha la que define el comportamiento (design D8).
+  - La nota lleva exactamente un `pago`. Es una política del MVP del proyecto, no una restricción del SRI.
+  - El usuario lo elige del catálogo fiscal vigente y habilitado para su empresa al reservar; no se acepta un código libre ni una etiqueta del cliente.
+  - Su total es exactamente el valor total de la nota, con decimal exacto.
+  - Queda congelado en el snapshot, y el XML y el RIDE lo toman de ahí.
 - **Declaración del usuario antes de reservar:** la factura no es una factura comercial negociable efectivamente negociada (`NOT_EFFECTIVELY_NEGOTIATED_COMMERCIAL_INVOICE`, requisito oficial del artículo 16). El snapshot la guarda con su versión, el actor y el momento como declarada por el usuario, nunca como verificada por el sistema.
 - **Consumidor final excluido por política del proyecto** (BR-32: receptor identificado), no por la NAC-DGERCGC25-00000014. Se valida antes de reservar secuencial, crear la clave, firmar o llamar al SRI.
 - **Sin plazo de emisión:** las fuentes oficiales revisadas no establecen un plazo de emisión que este sistema deba imponer.

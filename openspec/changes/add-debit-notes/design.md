@@ -111,7 +111,7 @@ Fuera de la transacción, sin consumir secuencial, clave, firma ni llamada al SR
 8. no consumidor final (D10);
 9. de uno al máximo de conceptos;
 10. por concepto: causa válida, descripción válida, importe mayor que cero dentro del rango y tratamiento de la factura (D5, D6);
-11. forma de pago vigente (D8);
+11. exactamente una forma de pago, vigente y habilitada para la empresa en la fecha de la reserva según el resolver de `catalogs` (D8), con su total igual al valor total;
 12. declaración de la versión vigente (D9);
 13. empresa configurada, punto disponible, firma utilizable y esquema registrado;
 14. cálculo válido, dentro de los límites del XSD (D7).
@@ -133,10 +133,8 @@ La vista previa del borrador evalúa lo mismo, salvo la declaración, que se da 
 - **Regla oficial:** el IVA de la nota es el del comprobante de sustento, no el vigente en la fecha de la nota.
 
   **SOURCE STATUS: official SRI guidance identified / durable source copy/text still pending.**
-  - La indicación del SRI durante el cambio de tarifa del 14 % al 12 % está identificada (Q-49), pero su texto no está archivado en el repositorio.
-  - En este propose se localizó un texto oficial durable candidato: la ficha técnica v2.34, el mismo PDF que el repositorio ya cita (SHA-256 `7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9`). En "FORMATO XML NOTA DE DÉBITO", página 58, dice: "Nota: la tarifa de IVA corresponderá a la fecha de emisión del documento de sustento."
-  - Su extracto literal todavía no está en `docs/product/sri-catalogs/fuentes/`. La tarea 13.1 lo archiva antes de cerrar APPLY, e intenta archivar también el texto del aviso del 14 % al 12 %. Si no lo logra, el cierre lo informa de forma explícita. Nunca se sustituye con blogs ni resúmenes de terceros.
-  - No bloquea este propose.
+  - **Evidencia primaria:** la ficha técnica v2.34, el mismo PDF que el repositorio ya cita (SHA-256 `7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9`). En "FORMATO XML NOTA DE DÉBITO", página 58, dice: "Nota: la tarifa de IVA corresponderá a la fecha de emisión del documento de sustento." La tarea 13.1 archiva su extracto literal y su hash en `docs/product/sri-catalogs/fuentes/`, y con eso el estado pasa a fuente oficial durable archivada.
+  - **Evidencia complementaria:** la indicación del SRI durante el cambio de tarifa del 14 % al 12 % (Q-49). Se archiva si se logra, pero no hace falta para cerrar APPLY. Nunca se sustituye con blogs ni resúmenes de terceros.
 - **Política del proyecto, más estricta que la regla oficial:**
   - cada concepto elige uno de los tratamientos congelados en el snapshot de la factura: las combinaciones distintas `taxCode:rateCode` de los impuestos de sus líneas, con su porcentaje y sus referencias fiscales;
   - esos tratamientos son, por construcción, los vigentes en la fecha de emisión de la factura;
@@ -194,14 +192,29 @@ La vista previa del borrador evalúa lo mismo, salvo la declaración, que se da 
 
 ### D8. Forma de pago
 
-- **Evidencia:** el XSD tiene `pagos` opcional, pero la ficha técnica v2.34 (páginas 58 y 59) marca `pagos`, `pago`, `formaPago` y `total` como obligatorios en la nota de débito, y su RIDE oficial (página 62) muestra "Forma de pago" y "Valor". El sistema sigue la fuente más estricta.
-- **Modelo:**
-  - una forma de pago por nota, elegida por el usuario del catálogo `payment-method` vigente en la fecha de emisión de la nota (es un cobro nuevo, de hoy);
-  - su `total` es el `valorTotal` del cálculo, y el usuario no lo escribe;
-  - el snapshot guarda `entryKey`, `code`, `versionId`, `officialLabel` y `amount`;
-  - sin `plazo` ni `unidadTiempo`, como en la factura.
-- **Sin valor por defecto:** el borrador no copia la forma de pago de la factura, porque la nota es otra transacción. Sin forma de pago, la vista previa informa `DEBIT_NOTE_DRAFT_INCOMPLETE`.
-- Es la única entrada del borrador que no estaba en los pasos acordados. Se agrega porque la ficha la exige.
+- **Decisión (confirmada por el dueño del producto):** la forma de pago es obligatoria.
+  - La ficha técnica v2.34 (páginas 58 y 59) marca `pagos`, `pago`, `formaPago` y `total` como obligatorios en la nota de débito, y su RIDE oficial (página 62) muestra "Forma de pago" y "Valor".
+  - El XSD 1.0.0 permite omitir `pagos`, pero que el XSD sea más permisivo no hace opcional la forma de pago en el producto: la ficha define el comportamiento.
+- **Exactamente un `pago` por nota.**
+  - Es una política del MVP del proyecto. La documentación nunca dice que el SRI solo admita una forma de pago.
+  - El contrato lo expresa con un solo campo `paymentMethod`, no con una lista. Admitir varios pagos más adelante es una ampliación compatible: el snapshot ya guarda `payments` como lista de un elemento.
+- **Selección.**
+  - El borrador guarda solo la `entryKey` del catálogo `payment-method`. No se aceptan un código libre, una etiqueta ni un importe enviados por el cliente: el cuerpo estricto los rechaza.
+  - La vigencia y la habilitación se resuelven con el resolver centralizado de `catalogs` (`availability(companyId, "payment-method", fecha)`, el mismo que usa la factura): la entrada debe existir, tener una versión vigente y estar habilitada para la empresa (`usable`).
+  - La fecha es la de la reserva (la fecha de emisión capturada una vez). La vista previa la evalúa con la fecha del día, y la reserva la vuelve a evaluar dentro de la transacción, antes de consumir el secuencial.
+  - Una entrada inexistente, no vigente o deshabilitada es `DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE`; sin forma de pago, `DEBIT_NOTE_DRAFT_INCOMPLETE`. Ambos rechazos ocurren antes de reservar.
+- **Total.**
+  - `payment.total` es el `valorTotal` de `calculateDebitNoteAmounts`. El usuario no lo escribe.
+  - Antes de reservar, la evaluación comprueba con decimal exacto que `payment.total == valorTotal`, sin tolerancia ni redondeo adicional. Una diferencia, que no debería ocurrir, se rechaza (`DEBIT_NOTE_PAYMENT_TOTAL_MISMATCH`) antes de reservar.
+  - La vista previa, el snapshot, el XML y el RIDE muestran ese mismo valor.
+- **Snapshot.** `payments` es una lista de un elemento con la forma de los pagos de la factura: `position: 1`, `entryKey`, `code` (el `formaPago`), `catalogType: "payment-method"`, `versionId`, `datasetVersion`, `officialLabel` y `amount`.
+- **Sin `plazo` ni `unidadTiempo`.** La ficha los marca como obligatorios "cuando corresponda". El modelo del MVP no registra un plazo de crédito, así que nunca corresponden y no se escriben, como en la factura.
+- **Después de `RESERVED`** el catálogo no se vuelve a leer: el XML sale del snapshot (D16), y el RIDE toma la denominación de `snapshot.payments`, como el handler del RIDE de la factura (D18).
+- **Sin valor por defecto:** el borrador no copia la forma de pago de la factura, porque la nota es otra transacción.
+- **Pruebas:**
+  - golden y XSD con `pagos` presente, aunque el XSD permita omitirlo;
+  - una prueba negativa: sin forma de pago, la nota no queda reservada, no consume secuencial y no recibe clave;
+  - entrada no vigente, deshabilitada, inexistente, código libre, etiqueta, importe y varias formas de pago, todos rechazados.
 
 ### D9. Declaración de la factura comercial negociable
 
@@ -241,7 +254,7 @@ Después de `RESERVED`, la verdad fiscal de la nota es su snapshot; la factura s
 - `concepts`: posición, causa, descripción, importe y clave del tratamiento;
 - `taxes`: por tratamiento usado, código, código de porcentaje, porcentaje, base e importe;
 - `totals`: `withoutTaxes` y `total`;
-- `payment`;
+- `payments`: un elemento con `position`, `entryKey`, `code`, `catalogType`, `versionId`, `datasetVersion`, `officialLabel` y `amount` (D8);
 - `declarations`;
 - `key`: número, secuencial, código numérico, tipo de emisión y `accessKey`.
 
@@ -293,11 +306,11 @@ Después de `RESERVED`, la verdad fiscal de la nota es su snapshot; la factura s
 - `sri-engine/infrastructure/debit-note-xml-builder.ts`, puro y determinista, con versión de builder `1`. Mapea únicamente desde el snapshot y no usa el builder de alto nivel de la dependencia.
 - Reutiliza `xml-writer.ts` (escape y caracteres prohibidos), `infoTributaria` con `codDoc` 05 y el texto decimal exacto del snapshot, sin formatear importes.
 - **Contenido, en el orden del XSD:**
-  - `infoNotaDebito`: fecha, dirección del establecimiento, comprador, contribuyente especial y contabilidad si corresponden, `codDocModificado` 01, `numDocModificado`, `fechaEmisionDocSustento`, `totalSinImpuestos`, `impuestos` (D7), `valorTotal` y `pagos` con un `pago` (D8);
+  - `infoNotaDebito`: fecha, dirección del establecimiento, comprador, contribuyente especial y contabilidad si corresponden, `codDocModificado` 01, `numDocModificado`, `fechaEmisionDocSustento`, `totalSinImpuestos`, `impuestos` (D7), `valorTotal` y `pagos` con un solo `pago` (`formaPago` y `total` desde `snapshot.payments`, nunca desde la solicitud ni desde el catálogo vigente; D8);
   - `motivos`: un `motivo` por concepto, en su orden, con `razon` y `valor`.
 - **No escribe** `rise`, `compensaciones`, `valorDevolucionIva`, `plazo`, `unidadTiempo`, `maquinaFiscal` ni `infoAdicional`.
 - El pipeline compartido valida contra `NotaDebito_V1.0.0.xsd` antes y después de firmar, y el firmador recibe el tipo `05`.
-- **Pruebas:** golden fixtures de bytes exactos (un concepto, varios de una tarifa, varias tarifas con 0 %, no objeto y exento, comprador con caracteres especiales) validados contra el XSD oficial; XML firmado validado con la clave y el certificado de la empresa y el artefacto con el tipo `05`. No se toca `docs/product/sri-xsd/README.md` ni ningún artefacto cuyo hash está en el registro.
+- **Pruebas:** golden fixtures de bytes exactos (un concepto, varios de una tarifa, varias tarifas con 0 %, no objeto y exento, comprador con caracteres especiales), todos con `pagos`, validados contra el XSD oficial; XML firmado validado con la clave y el certificado de la empresa y el artefacto con el tipo `05`. No se toca `docs/product/sri-xsd/README.md` ni ningún artefacto cuyo hash está en el registro.
 
 ### D17. Transmisión y reconciliación
 
@@ -324,7 +337,7 @@ Después de `RESERVED`, la verdad fiscal de la nota es su snapshot; la factura s
   - comprador con la fecha de emisión;
   - "Comprobante que se modifica: FACTURA {número}" y su fecha de emisión;
   - tabla "RAZÓN DE LA MODIFICACIÓN" y "VALOR DE LA MODIFICACIÓN", con una fila por motivo;
-  - "Forma de pago" y "Valor";
+  - "Forma de pago" y "Valor": el `formaPago` y el `total` del XML, con la denominación de `snapshot.payments` (el handler del RIDE ya la lee así para la factura), nunca del catálogo vigente;
   - subtotales llenados por tratamiento, subtotal sin impuestos, IVA por tarifa y valor total.
 
   No es el RIDE de la factura ni el de la nota de crédito con otro título.
@@ -359,7 +372,7 @@ Después de `RESERVED`, la verdad fiscal de la nota es su snapshot; la factura s
 | `POST /api/v1/debit-notes/{debitNoteId}/signing-attempts` | Reintento de firma | `debitNotes.retrySigning` |
 | `POST /api/v1/debit-notes/{debitNoteId}/reconciliations` | Reconciliación manual (`202`) | `debitNotes.reconcile` |
 
-- **Borrador:** `{ invoiceId, emissionPointId, paymentMethod, concepts: [{ cause, description, amount, taxTreatment }] }`, que puede guardarse incompleto. La emisión exige punto, forma de pago y al menos un concepto completo.
+- **Borrador:** `{ invoiceId, emissionPointId, paymentMethod, concepts: [{ cause, description, amount, taxTreatment }] }`, que puede guardarse incompleto. `paymentMethod` es una sola `entryKey` del catálogo `payment-method`, sin etiqueta ni importe. La emisión exige punto, forma de pago y al menos un concepto completo.
 - **Emisión:** `{ draftId, expectedVersion, declarations: { version, statements } }`.
 - **Vista previa:**
   - `taxTreatments` de la factura, con clave, etiqueta y porcentaje;
@@ -369,7 +382,7 @@ Después de `RESERVED`, la verdad fiscal de la nota es su snapshot; la factura s
 - **Códigos:**
   - `DEBIT_NOTE_INVOICE_NOT_ELIGIBLE`, `DEBIT_NOTE_INVOICE_INTEGRITY`, `DEBIT_NOTE_CONSUMER_FINAL`;
   - `DEBIT_NOTE_CONCEPTS_REQUIRED`, `DEBIT_NOTE_CONCEPTS_TOO_MANY`, `DEBIT_NOTE_CONCEPT_INVALID`, `DEBIT_NOTE_TAX_TREATMENT_NOT_IN_INVOICE`;
-  - `DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE`, `DEBIT_NOTE_AMOUNT_OUT_OF_RANGE`, `DEBIT_NOTE_DECLARATION_REQUIRED`;
+  - `DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE`, `DEBIT_NOTE_PAYMENT_TOTAL_MISMATCH`, `DEBIT_NOTE_AMOUNT_OUT_OF_RANGE`, `DEBIT_NOTE_DECLARATION_REQUIRED`;
   - `DEBIT_NOTE_DRAFT_INCOMPLETE`, `DEBIT_NOTE_DRAFT_CHANGED`, `DEBIT_NOTE_DRAFT_ALREADY_EMITTED`, `DEBIT_NOTE_NOT_RECONCILABLE`;
   - y los compartidos de la emisión (`IDEMPOTENCY_KEY_*`, configuración, punto, firma y esquema).
 - **Validación:** consultas no estrictas y cuerpos estrictos, de modo que un `companyId`, un número o una clave de un comprobante externo se rechazan. Importes como texto decimal.
@@ -485,9 +498,10 @@ Una migración aditiva:
 | Causas: intereses de mora y costos o gastos posteriores | Oficial | Reglamento, art. 16 (`sri-catalogs/fuentes/reglamento-comprobantes-arts-15-16.txt`) |
 | Consigna denominación, serie y número del comprobante modificado | Oficial | Reglamento, art. 16 |
 | Factura comercial negociable negociada excluida | Oficial, declarada por el usuario | Reglamento, art. 16 |
-| IVA del comprobante de sustento | Oficial. SOURCE STATUS: official SRI guidance identified / durable source copy/text still pending | Aviso del SRI del 14 % al 12 % (Q-49) y ficha v2.34, página 58 (extracto pendiente, tarea 13.1) |
+| IVA del comprobante de sustento | Oficial. SOURCE STATUS: official SRI guidance identified / durable source copy/text still pending, hasta que la tarea 13.1 archive el extracto | Primaria: ficha v2.34, página 58. Complementaria: el aviso del SRI del 14 % al 12 % (Q-49) |
 | Solo tratamientos de la factura y sin tarifa global | Política del proyecto | Q-49, BR-66 |
 | `pagos` obligatorio y RIDE de la nota | Oficial | Ficha v2.34, páginas 58, 59 y 62 |
+| Exactamente un `pago` por nota | Política del MVP del proyecto | D8 |
 | Consumidor final excluido | Política del proyecto | BR-32, Q-49 |
 | Sin plazo de emisión | Ninguna fuente oficial revisada lo establece | BR-68, Q-49 |
 | Solo facturas propias, mismo ambiente, autorizadas e íntegras | Política del MVP | BR-65, Q-11 |
@@ -497,9 +511,9 @@ Una migración aditiva:
 ## Risks / Trade-offs
 
 - **Impuesto calculado por tratamiento:** el SRI podría validar otro modelo de cálculo. → El modelo cumple el XSD y la relación `valor = round(base × tarifa)` de cada impuesto. La matriz de certificación en Pruebas del SRI incluye notas de varios conceptos y tarifas, y una fuente que exija otro modelo se lleva a `/opsx:update`.
-- **Forma de pago:** la ficha exige `pagos` y el XSD no, y el SRI podría tratarlo de otro modo. → Se sigue la fuente más estricta (D8); la certificación en Pruebas lo confirma; omitirla después es un cambio pequeño del builder con otra versión.
+- **Forma de pago:** la ficha exige `pagos` y el XSD no. → La ficha define el comportamiento (D8, confirmado); la certificación en Pruebas lo confirma. Varios pagos son una ampliación compatible del modelo.
 - **Costo posterior con un tratamiento que la factura no tenía:** no se puede cobrar con una nota de débito en el MVP. → Es la política acordada (fallar cerrado); queda en `capabilities.md`.
-- **Texto oficial del IVA no archivado:** → Tarea 13.1, con informe explícito si no se logra.
+- **Texto oficial del IVA no archivado:** → La tarea 13.1 archiva el extracto de la ficha v2.34, la evidencia primaria. El aviso del 14 % al 12 % es complementario y no bloquea el cierre.
 - **Generalización:** tocar la bandeja, el RIDE y la reconciliación podría romper la factura o la nota de crédito. → Solo se agregan entradas por tipo; los golden y el contrato de regresión no cambian.
 - **Relación diferida con `electronic_document`:** acopla un tipo con su tabla. → El mismo patrón probado en la nota de crédito, documentado en `database.md`.
 
