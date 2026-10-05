@@ -1,6 +1,7 @@
 // SRI simulado y proxy de salida de las pruebas end-to-end (add-sri-transmission, tarea 14.1;
-// add-document-archive, tarea 11.2): recepción, autorización y validez con respuestas SINTÉTICAS
-// con la estructura oficial, y un proxy que solo admite el host del SRI simulado.
+// add-document-archive, tarea 11.2; add-credit-notes, tarea 14.2): recepción, autorización y
+// validez con respuestas SINTÉTICAS con la estructura oficial, y un proxy que solo admite el host
+// del SRI simulado.
 import {
   createServer as createHttpServer,
   request as httpRequest,
@@ -19,6 +20,8 @@ export type SriCall = { operation: "RECEPTION" | "AUTHORIZATION" | "VALIDITY"; k
 export type ReceptionBehavior = "RECEIVED" | "HOLD" | "FOREIGN_KEY";
 
 const sequentialOf = (key: string) => Number(key.slice(30, 39));
+/** Tipo y secuencial de la clave (`04:2`): la factura y la nota numeran por separado. */
+export const documentOf = (key: string) => `${key.slice(8, 10)}:${sequentialOf(key)}`;
 
 /**
  * SRI simulado: recepción, autorización y validez con respuestas SINTÉTICAS. Recuerda los bytes
@@ -30,6 +33,8 @@ export function simulatedSri() {
   const behaviors = new Map<number, ReceptionBehavior>();
   /** Secuenciales que el SRI autoriza sin devolver el comprobante (add-document-archive). */
   const withoutXml = new Set<number>();
+  /** Comprobantes (`documentOf`) que el SRI no autoriza (add-credit-notes). */
+  const notAuthorized = new Set<string>();
   const held: ServerResponse[] = [];
   let onHold: ((key: string) => void) | null = null;
   // Caído: corta cada conexión sin responder.
@@ -68,6 +73,24 @@ export function simulatedSri() {
       const key = /<claveAccesoComprobante>(\d{49})</.exec(body)?.[1] ?? "";
       calls.push({ operation: "AUTHORIZATION", key });
       const signed = received.get(key);
+      if (signed && notAuthorized.has(documentOf(key)))
+        return respond(
+          res,
+          authorizationResponse(key, [
+            {
+              estado: "NO AUTORIZADO",
+              fechaAutorizacion: new Date().toISOString(),
+              ambiente: "PRUEBAS",
+              messages: [
+                {
+                  identifier: "65",
+                  message: "FECHA EMISION EXTEMPORANEA (sintético)",
+                  type: "ERROR",
+                },
+              ],
+            },
+          ]),
+        );
       return respond(
         res,
         signed
@@ -118,6 +141,7 @@ export function simulatedSri() {
     received,
     behaviors,
     withoutXml,
+    notAuthorized,
     /** Resuelve con la clave cuando una recepción queda retenida sin respuesta. */
     nextHold: () => new Promise<string>((resolve) => (onHold = resolve)),
     releaseHeld: () => held.splice(0).forEach((res) => res.destroy()),
