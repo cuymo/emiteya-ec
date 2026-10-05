@@ -1,0 +1,176 @@
+{
+  "date": "2026-10-04",
+  "volume": {
+    "products": 10000,
+    "trackedNotInitialized": 1000,
+    "untracked": 1000,
+    "invoices": 100000,
+    "entries": 20000,
+    "adjustments": 2000,
+    "seedSeconds": 77.6,
+    "before": {
+      "tables": {
+        "product": {
+          "rows": 12000,
+          "totalSize": "9104 kB"
+        },
+        "electronic_document": {
+          "rows": 100000,
+          "totalSize": "110 MB"
+        },
+        "stock_balance": {
+          "rows": 10000,
+          "totalSize": "3624 kB"
+        },
+        "stock_movement": {
+          "rows": 251990,
+          "totalSize": "167 MB"
+        }
+      },
+      "hotProductMovements": 20013,
+      "negativeBalances": 1218
+    },
+    "after": {
+      "tables": {
+        "product": {
+          "rows": 12000,
+          "totalSize": "9104 kB"
+        },
+        "electronic_document": {
+          "rows": 100120,
+          "totalSize": "110 MB"
+        },
+        "stock_balance": {
+          "rows": 10000,
+          "totalSize": "3712 kB"
+        },
+        "stock_movement": {
+          "rows": 252810,
+          "totalSize": "167 MB"
+        }
+      },
+      "hotProductMovements": 20233,
+      "negativeBalances": 1220
+    }
+  },
+  "warmup": 20,
+  "samples": 200,
+  "budgetMs": 2000,
+  "environment": {
+    "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "shared_buffers": "128MB",
+    "work_mem": "4MB",
+    "effective_cache_size": "4GB",
+    "jit": "on",
+    "node": "v24.21.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
+    "memory": "16 GiB",
+    "commit": "b5c4a8c"
+  },
+  "results": [
+    {
+      "name": "Lista: primera página, sin filtro",
+      "path": "/inventory/items",
+      "results": 11000,
+      "p50": 57,
+      "p95": 67.2,
+      "max": 75.7,
+      "withinBudget": true
+    },
+    {
+      "name": "Lista: última página, sin filtro",
+      "path": "/inventory/items?page=440",
+      "results": 11000,
+      "p50": 56.6,
+      "p95": 64.8,
+      "max": 74.9,
+      "withinBudget": true
+    },
+    {
+      "name": "Lista: filtro de estado activo",
+      "path": "/inventory/items?state=TRACKED_INITIALIZED",
+      "results": 10000,
+      "p50": 55.2,
+      "p95": 66,
+      "max": 73.3,
+      "withinBudget": true
+    },
+    {
+      "name": "Lista: filtro de saldo negativo",
+      "path": "/inventory/items?state=NEGATIVE",
+      "results": 1218,
+      "p50": 15.6,
+      "p95": 21,
+      "max": 24.8,
+      "withinBudget": true
+    },
+    {
+      "name": "Lista: filtro sin inicializar",
+      "path": "/inventory/items?state=TRACKED_NOT_INITIALIZED",
+      "results": 1000,
+      "p50": 48.5,
+      "p95": 53.9,
+      "max": 66.6,
+      "withinBudget": true
+    },
+    {
+      "name": "Lista: búsqueda por código",
+      "path": "/inventory/items?search=inv0012",
+      "results": 100,
+      "p50": 55.9,
+      "p95": 65.2,
+      "max": 73.7,
+      "withinBudget": true
+    },
+    {
+      "name": "Detalle del producto con más movimientos",
+      "path": "/inventory/items/bench-product-1",
+      "results": null,
+      "p50": 4,
+      "p95": 6.8,
+      "max": 12.5,
+      "withinBudget": true
+    },
+    {
+      "name": "Kárdex: primera página del producto con más movimientos",
+      "path": "/inventory/items/bench-product-1/movements",
+      "results": 20013,
+      "p50": 6.4,
+      "p95": 9,
+      "max": 11,
+      "withinBudget": true
+    },
+    {
+      "name": "Kárdex: filtrado por un mes",
+      "path": "/inventory/items/bench-product-1/movements?from=2026-08-06&to=2026-09-05",
+      "results": 1787,
+      "p50": 4.3,
+      "p95": 6.4,
+      "max": 11.1,
+      "withinBudget": true
+    },
+    {
+      "name": "Entrada manual (HTTP)",
+      "path": "POST /inventory/items/bench-product-1/entries",
+      "results": null,
+      "p50": 9.1,
+      "p95": 11.7,
+      "max": 21.8,
+      "withinBudget": true
+    },
+    {
+      "name": "Salida automática de una factura de 5 líneas (seguidor en su transacción)",
+      "path": "inventoryOutflowFollower",
+      "results": 100,
+      "p50": 11.7,
+      "p95": 14.4,
+      "max": 30.1,
+      "withinBudget": true
+    }
+  ],
+  "reconciliation": {
+    "differences": 0,
+    "seconds": 3
+  }
+}

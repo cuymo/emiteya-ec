@@ -161,7 +161,7 @@
 
 ## 11. Rendimiento y prueba end-to-end
 
-- [ ] 11.1 Añadir `bench:inventory` en `backend/scripts/` (design D15). Debe sembrar 10 000 productos inicializados y un volumen de movimientos equivalente a 100 000 facturas, y medir por separado:
+- [x] 11.1 Añadir `bench:inventory` en `backend/scripts/` (design D15). Debe sembrar 10 000 productos inicializados y un volumen de movimientos equivalente a 100 000 facturas, y medir por separado:
   - la lista, con y sin filtro;
   - el detalle;
   - la primera página del kárdex;
@@ -170,7 +170,7 @@
   - la salida automática de una factura de varias líneas.
 
   Debe terminar con la reconciliación sin diferencias. Registrar el resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 en el entorno registrado
-- [ ] 11.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado:
+- [x] 11.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado:
   - marcar e inicializar un producto y registrar una entrada;
   - emitir una factura con dos líneas del producto y ver el aviso en el borrador;
   - autorizar y comprobar una sola salida, el saldo y el kárdex;
