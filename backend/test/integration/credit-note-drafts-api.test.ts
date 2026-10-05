@@ -2,7 +2,8 @@
 // D5 y D16): la factura en cada estado no autorizado y la de consumidor final se rechazan, la
 // integridad se informa como problema que bloquea, la anulación total no elige líneas, la vista
 // previa muestra los remanentes y los problemas por línea y se recalcula tras otra nota reservada;
-// sin sesión `401` y otra empresa `404`. Un borrador no reserva capacidad ni número.
+// sin sesión `401` y otra empresa `404`; una factura de otro ambiente que el de la empresa no se emite.
+// Un borrador no reserva capacidad ni número.
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type {
@@ -391,5 +392,46 @@ describe("API de borradores de nota de crédito", () => {
       companyId: b.companyId,
     });
     expect(withCompany.status).toBe(400);
+  });
+  it("una factura de otro ambiente se informa en la vista previa y no se emite, sin reservar nada", async () => {
+    // La empresa B emitió la factura en Pruebas y después pasó a Producción.
+    const target = await invoice(b);
+    const created = await call(b.cookies.operator, "post", "/credit-notes/drafts").send({
+      ...draftBody(target.id),
+      emissionPointId: b.emissionPointId,
+      lines: [{ position: 2, quantity: "1" }],
+    });
+    expect(created.status, JSON.stringify(created.body)).toBe(201);
+    const current = await call(b.cookies.admin, "get", "/taxpayer");
+    const changed = await call(b.cookies.admin, "put", "/taxpayer/environment").send({
+      environment: "PRODUCTION",
+      expectedVersion: (current.body as { data: { version: number } }).data.version,
+    });
+    expect(changed.status, JSON.stringify(changed.body)).toBe(200);
+
+    const preview = await call(
+      b.cookies.operator,
+      "get",
+      `/credit-notes/drafts/${bodyOf(created).data.id}`,
+    );
+    const issue = bodyOf(preview).data.preview.issues.find(
+      (candidate) => candidate.code === "CREDIT_NOTE_INVOICE_NOT_ELIGIBLE",
+    );
+    expect(issue?.message).toContain("la nota de crédito debe ser del mismo ambiente");
+    const before = await fiscalTrace();
+    const emitted = await request(api.app)
+      .post("/api/v1/credit-notes")
+      .set("Cookie", b.cookies.operator)
+      .set("Idempotency-Key", `otro-ambiente-${bodyOf(created).data.id}`)
+      .send({
+        draftId: bodyOf(created).data.id,
+        expectedVersion: bodyOf(created).data.version,
+        declarations: DECLARATIONS,
+      });
+    expect([emitted.status, bodyOf(emitted).error.code]).toEqual([
+      409,
+      "CREDIT_NOTE_INVOICE_NOT_ELIGIBLE",
+    ]);
+    expect(await fiscalTrace()).toEqual(before);
   });
 });

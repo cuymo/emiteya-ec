@@ -120,7 +120,7 @@ del MVP.
 | Anular un comprobante de venta en línea o mediante nota de crédito | Requisito oficial | Res. NAC-DGERCGC25-00000014, art. 2 |
 | XML `notaCredito` 1.1.0 y su RIDE | Requisito oficial | `docs/product/sri-xsd/NotaCredito_V1.1.0.xsd`; ficha v2.34, anexo 3 y anexo 2 (página 61) |
 | Documento modificado: tipo, número completo, fecha, motivo, valor e impuestos coherentes con él | Contexto técnico | CTX §13.2–13.4 |
-| Solo facturas propias autorizadas como documento modificado | Política del MVP | Q-10 |
+| Solo facturas propias autorizadas, del mismo ambiente que la nota, como documento modificado | Política del MVP | Q-10 |
 | Causas `TOTAL_ANNULMENT` y `RETURN`; descuentos y bonificaciones diferidos | Política del MVP (alcance) | Q-10 |
 | Crédito acumulado no mayor que la factura, y por línea no mayor que su cantidad | Política conservadora del producto | Q-10 |
 | Declaraciones del usuario para las exclusiones no comprobables | Política del MVP | Q-10 |

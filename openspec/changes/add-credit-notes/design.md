@@ -68,8 +68,8 @@
 
 ### D4. Orden de las comprobaciones antes de reservar
 
-- **Antes de la transacción**, sin consumir secuencial, clave, firma ni llamada al SRI: permiso → empresa de la sesión → factura existente en la empresa (`404` igual que inexistente) → estado `AUTHORIZED` → snapshot y artefactos íntegros → no consumidor final → causa → motivo → forma de las líneas y cantidades → retorno físico permitido por línea → declaraciones completas y de la versión vigente → empresa preparada, punto disponible, firma utilizable y esquema registrado → cálculo y comprobación preliminar de las capacidades.
-- **Transacción de `RESERVED`**, sin I/O externo dentro del bloqueo: bloquear la factura (y su capacidad) → recalcular con lo reservado y aplicado vigente (D6) y comprobar → reservar la capacidad acreditable → reservar la capacidad devolvible → reservar el secuencial → componer la clave → crear el snapshot inmutable → crear el comprobante `RESERVED` y su transición → registro de idempotencia → auditoría → commit. La construcción del XML, la firma y la red ocurren después del commit.
+- **Antes de la transacción**, sin consumir secuencial, clave, firma ni llamada al SRI: permiso → empresa de la sesión → factura existente en la empresa (`404` igual que inexistente) → estado `AUTHORIZED` → snapshot y artefactos íntegros → no consumidor final → causa → motivo → forma de las líneas y cantidades → retorno físico permitido por línea → declaraciones completas y de la versión vigente → empresa preparada y del mismo ambiente que la factura (`CREDIT_NOTE_INVOICE_NOT_ELIGIBLE`: una nota de Producción no modifica una factura de Pruebas, ni al revés), punto disponible, firma utilizable y esquema registrado → cálculo y comprobación preliminar de las capacidades.
+- **Transacción de `RESERVED`**, sin I/O externo dentro del bloqueo: bloquear la factura (y su capacidad) → recalcular con lo reservado y aplicado vigente (D6) y comprobar → reservar la capacidad acreditable → reservar la capacidad devolvible → reservar el secuencial → componer la clave → crear el snapshot inmutable → crear el comprobante `RESERVED` y su transición → registro de idempotencia → auditoría → commit. La construcción del XML, la firma y la red ocurren después del commit. Reservar una capacidad incrementa sus contadores en ese punto, con su `CHECK`; las filas de la reserva, que referencian la nota, se escriben después de crear el comprobante, en la misma transacción, y los triggers diferidos comparan contadores y filas al confirmar (`database.md`).
 - **Todo o nada:** si cualquier paso falla, no queda capacidad reservada, secuencial consumido, clave, comprobante parcial ni snapshot de declaraciones. Una prueba lo comprueba forzando el fallo después de cada paso.
 
 ### D5. Borrador, causas y emisión
@@ -235,10 +235,11 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
 
 - `credit_note_reservations_total{cause}` (reservas confirmadas) y `credit_note_reservation_conflicts_total{reason}` (rechazos por capacidad: cantidad, importe, anulación total, retorno físico); sin empresa ni comprobante como etiqueta.
 - La transmisión, el RIDE y el inventario usan sus métricas vigentes; la devolución cuenta en `inventory_movements_total{type="DEVOLUCION_NC"}`.
-- Alerta propuesta: reservas de capacidad sin conclusión durante más de 24 horas (`credit_reservation` en `RESERVED` con su nota en un estado terminal, que no debería existir; o una nota en revisión manual con capacidad reservada).
+- Alerta propuesta: reservas de capacidad sin conclusión durante más de 24 horas (`credit_reservation` en `RESERVED` con su nota en un estado terminal, que no debería existir; o una nota en revisión manual con capacidad reservada). Su señal es el gauge `credit_note_reservations_unconcluded_over_24h`, leído de la base en cada consulta de las métricas.
 
 ### D21. Rendimiento
 
+- Con `EMISSION_STAGE_TIMINGS`, la emisión de la nota devuelve sus etapas en `Server-Timing`, como la de la factura (nunca en producción); el benchmark mide con ellas la transacción de la reserva aparte del XML, el XSD y la firma.
 - `bench:credit-notes`, fuera de `verify`, sobre un esquema aislado con 100 000 facturas, 10 000 de ellas con créditos previos de varias líneas. Mide por separado: búsqueda de facturas elegibles, vista previa del borrador, reserva sin créditos previos, reserva con créditos previos, cálculo de una devolución parcial de muchas líneas, reservas que compiten por la misma factura, reservas simultáneas de facturas distintas y RIDE de la nota. Para la contención informa el rendimiento (reservas por segundo) y la espera por bloqueos cuando es material. Termina con la reconciliación de las capacidades sin diferencias. Objetivo: ERS RNF-005 (P95 menor que 2 s) donde aplica, y el P95 del render del RIDE menor que 1 s como el de la factura. Ningún bloqueo se mantiene durante el XML, la firma ni la red.
 
 ### D22. Migraciones
@@ -269,7 +270,7 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
 
 - En `AUTHORIZED`, la misma TX B deja juntos: el comprobante autorizado con su metadata y su artefacto, la reserva acreditable en `APPLIED`, las reservas devolvibles en `APPLIED`, las `DEVOLUCION_NC` y los saldos actualizados; o ninguno.
 - En `RETURNED` o `NOT_AUTHORIZED`, la misma TX B deja juntos la transición y las reservas acreditable y devolvibles en `RELEASED`, sin movimientos.
-- **Triggers de restricción diferidos** lo imponen al confirmar: una reserva `APPLIED` exige su nota `AUTHORIZED`; una `RELEASED`, su nota `RETURNED` o `NOT_AUTHORIZED`; y una nota de crédito en un estado terminal no puede tener reservas en `RESERVED`. Es un acoplamiento en la base entre `electronic_document` y las reservas, intencional para que nunca exista un estado local intermedio, y lo documenta `database.md`.
+- **Triggers de restricción diferidos** lo imponen al confirmar: una reserva `APPLIED` exige su nota `AUTHORIZED`; una `RELEASED`, su nota `RETURNED` o `NOT_AUTHORIZED`; una nota de crédito en un estado terminal no puede tener reservas en `RESERVED`; y una nota de crédito no se confirma sin su reserva acreditable. Es un acoplamiento en la base entre `electronic_document` y las reservas, intencional para que nunca exista un estado local intermedio, y lo documenta `database.md`.
 
 ## Risks / Trade-offs
 

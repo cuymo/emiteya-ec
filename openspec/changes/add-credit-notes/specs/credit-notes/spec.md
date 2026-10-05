@@ -9,7 +9,7 @@ declaraciones del usuario y la devolución física declarada.
 ## ADDED Requirements
 
 ### Requirement: Factura que admite nota de crédito
-Una nota de crédito SHALL modificar únicamente una factura emitida por el sistema, de la misma empresa, en estado autorizada y con su snapshot y sus artefactos fiscales íntegros. Es una política del MVP: no existe forma de referir un comprobante externo, en papel, importado o ingresado a mano, ni una factura en otro estado o un borrador.
+Una nota de crédito SHALL modificar únicamente una factura emitida por el sistema, de la misma empresa, en estado autorizada, del mismo ambiente en que la empresa emite y con su snapshot y sus artefactos fiscales íntegros. Es una política del MVP: no existe forma de referir un comprobante externo, en papel, importado o ingresado a mano, ni una factura en otro estado o un borrador, ni una factura de Pruebas desde Producción o al revés.
 
 #### Scenario: Factura autorizada
 - **WHEN** un usuario prepara una nota de crédito para una factura propia autorizada
@@ -18,6 +18,10 @@ Una nota de crédito SHALL modificar únicamente una factura emitida por el sist
 #### Scenario: Factura en otro estado
 - **WHEN** un usuario prepara una nota de crédito para una factura reservada, firmada, recibida, verificando con el SRI, en revisión manual, devuelta o no autorizada
 - **THEN** el sistema rechaza la solicitud indicando que solo una factura autorizada admite nota de crédito
+
+#### Scenario: Factura de otro ambiente
+- **WHEN** un usuario prepara o emite una nota de crédito para una factura autorizada en un ambiente distinto del que la empresa usa para emitir
+- **THEN** la vista previa muestra el problema, el sistema no permite emitir la nota y no reserva número ni capacidad
 
 #### Scenario: Comprobante externo
 - **WHEN** una solicitud intenta referir un comprobante por un número, una clave o una fecha que no son una factura del sistema
