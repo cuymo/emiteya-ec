@@ -56,27 +56,33 @@
 | RIDE | Lectura y distribución por raíz y versión (D14); el handler lee las formas de pago solo si el snapshot las tiene. |
 | Por tipo | Borrador, evaluación, snapshot, builder XML, distribución del RIDE, capacidad acreditable y devolvible, rutas y pantallas. |
 
-- La generalización va primero y se verifica con las pruebas existentes de la factura (golden de XML y de artefacto, firma, reintentos, transmisión) antes de agregar la nota.
+- **Refactor protegido.** La generalización va primero, en su propio grupo, después de fijar el contrato de regresión de la factura con las pruebas existentes y fixtures deterministas: la misma reserva, la misma clave, el mismo comportamiento del snapshot, el mismo XML byte a byte, la misma validación XSD, la misma firma, los mismos hashes de artefacto para entradas deterministas, las mismas transiciones, los mismos errores y la misma idempotencia. La factura no cambia para "ser más genérica" si la nota no lo necesita.
+- **Interfaces pequeñas, sin conmutador central.** Orquestación y primitivas compartidas, y por tipo solo lo que difiere, en interfaces separadas por responsabilidad: el builder del XML (snapshot → bytes), la metadata de la firma (tipo, versión del builder, acciones de auditoría), la lectura y la distribución del RIDE, y los seguidores de las transiciones. Ningún tipo implementa funciones que no usa, y no hay un `switch` por `codDoc` que concentre las diferencias.
 - **Alternativa descartada:** copiar el pipeline de firma en `credit-notes`. Duplica la etapa más delicada (arriendo, diagnóstico, artefacto, transición, encolado) y dos copias divergen.
 
 ### D3. Lectura inmutable de la factura
 
 - `invoices` exporta `invoiceCreditSource(db).find(companyId, invoiceId)`: identificador, tipo, número, fecha de emisión, clave, número, fecha y ambiente de la autorización, estado, `consumerFinal`, comprador, líneas (posición, producto, códigos, descripción, cantidad, precio, descuento, subtotal exacto, base, impuestos con código, tarifa, porcentaje, base e importe, `inventoryAffectsStock`), totales y versión del snapshot.
-- La integridad de la factura se comprueba con el almacén de artefactos de `fiscal`: `SIGNED_XML` y, si existe, `AUTHORIZED_XML` con su SHA-256 y tamaño. Una diferencia rechaza la nota antes de reservar.
+- La integridad de la factura se comprueba con el almacén de artefactos de `fiscal`: `SIGNED_XML` y, si existe, `AUTHORIZED_XML` con su SHA-256 y tamaño, además de la versión y la forma del snapshot. Se comprueba al crear o actualizar el borrador (su vista previa la informa como problema que bloquea) y otra vez antes de emitir. Una diferencia falla cerrada: no se emite, y nunca se repara con el producto o el tercero vigentes.
 - La nota nunca lee el producto, el tercero, el catálogo ni la configuración para un importe histórico. Los datos del emisor de la nota sí son los vigentes al reservarla: es un comprobante nuevo, emitido hoy, con la misma identidad tributaria bloqueada.
 
 ### D4. Orden de las comprobaciones antes de reservar
 
-Permiso → empresa de la sesión → factura existente en la empresa (`404` igual que inexistente) → estado `AUTHORIZED` → snapshot e artefactos íntegros → no consumidor final → causa → motivo → forma de las líneas → retorno físico permitido por línea → declaraciones → empresa preparada, punto disponible, firma utilizable y esquema registrado (las de cualquier comprobante) → capacidades bajo bloqueo (D7, D10) → reserva. Todo lo anterior a la reserva ocurre sin consumir secuencial, clave, firma ni llamada al SRI.
+- **Antes de la transacción**, sin consumir secuencial, clave, firma ni llamada al SRI: permiso → empresa de la sesión → factura existente en la empresa (`404` igual que inexistente) → estado `AUTHORIZED` → snapshot y artefactos íntegros → no consumidor final → causa → motivo → forma de las líneas y cantidades → retorno físico permitido por línea → declaraciones completas y de la versión vigente → empresa preparada, punto disponible, firma utilizable y esquema registrado → cálculo y comprobación preliminar de las capacidades.
+- **Transacción de `RESERVED`**, sin I/O externo dentro del bloqueo: bloquear la factura (y su capacidad) → recalcular con lo reservado y aplicado vigente (D6) y comprobar → reservar la capacidad acreditable → reservar la capacidad devolvible → reservar el secuencial → componer la clave → crear el snapshot inmutable → crear el comprobante `RESERVED` y su transición → registro de idempotencia → auditoría → commit. La construcción del XML, la firma y la red ocurren después del commit.
+- **Todo o nada:** si cualquier paso falla, no queda capacidad reservada, secuencial consumido, clave, comprobante parcial ni snapshot de declaraciones. Una prueba lo comprueba forzando el fallo después de cada paso.
 
 ### D5. Borrador, causas y emisión
 
-- **Borrador:** `credit_note_draft` (empresa, factura, punto de emisión, causa `TOTAL_ANNULMENT` o `RETURN`, motivo, versión, estado `DRAFT`/`EMITTED`, comprobante) y `credit_note_draft_line` (línea de la factura, cantidad acreditada, retorno físico). En `TOTAL_ANNULMENT` las líneas solo llevan el retorno físico; la cantidad acreditada es la completa.
+- **Borrador:** `credit_note_draft` (empresa, factura, punto de emisión, causa `TOTAL_ANNULMENT` o `RETURN`, motivo, versión, estado `DRAFT`/`EMITTED`, comprobante) y `credit_note_draft_line` (línea de la factura, cantidad acreditada, retorno físico). En `TOTAL_ANNULMENT` la cantidad acreditada de cada línea es la completa y no se elige; las líneas solo llevan el retorno físico, que el usuario declara de 0 a la cantidad original en los bienes cuya línea afectaba al inventario, siempre 0 en los servicios y en las demás, y sujeto a la capacidad devolvible. Nunca se asume un retorno total.
+- **Anulación total estricta:** solo si la capacidad acreditable de la factura tiene reservado = 0 y aplicado = 0. Después de cualquier devolución, aunque sea mínima, no procede.
 - El punto de emisión lo elige el usuario; por defecto, su punto predeterminado. La norma no exige el punto de la factura.
 - La vista previa la calcula el servidor en cada lectura del borrador con la capacidad vigente (D6, D7, D10) y lista los problemas por línea; el borrador no reserva nada.
 - **Emisión:** `POST /credit-notes` con `Idempotency-Key` y `{ draftId, expectedVersion, declarations: { version, statements } }`. La huella cubre los tres. La causa es un enum cerrado; el motivo es texto de una línea (1 a 300, `[^\n]*` del XSD) que nunca selecciona comportamiento.
 
 ### D6. Cálculo exacto de las líneas acreditadas
+
+- **Una sola primitiva fiscal, versionada:** `calculateCreditNoteAmounts` en `credit-notes/domain/` (versión de cálculo `1`, guardada en el snapshot). Recibe solo el estado fiscal inmutable de la línea, lo acreditado vigente y las cantidades pedidas, y devuelve por línea la cantidad acreditada, el subtotal, el descuento atribuible, la base, las bases y los importes de cada impuesto y el total; los totales del documento; y los valores de capacidad resultantes. La vista previa, la emisión (que congela su resultado en el snapshot), la comprobación de la capacidad y la pantalla usan ese resultado. El builder del XML solo transcribe el snapshot y el frontend solo muestra lo que devuelve el servidor: ninguno calcula.
 
 Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subtotal exacto `S`, base `B` e impuestos `T_i` (porcentaje `pct_i`), y para una cantidad acumulada `C` (acreditada vigente más la pedida):
 
@@ -92,6 +98,9 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
   - Si algún importe resultara negativo, la nota se rechaza (`CREDIT_NOTE_LINE_AMOUNT_NEGATIVE`) indicando la línea.
 - **Anulación total:** `C = Q` en todas las líneas sin crédito previo: cada línea copia la original.
 - **Totales de la nota:** `totalSinImpuestos = Σ base`; `totalConImpuestos` agrupado por código y tarifa con `Σ base` y `Σ impuesto`; `valorModificacion = totalSinImpuestos + Σ impuestos`. En una anulación total es exactamente el total de la factura.
+- **Invariante de particiones:** para cualquier partición válida de la cantidad original en notas sucesivas, al acreditar la totalidad, la suma de cada componente materializado de las notas (subtotal, descuento, base, cada base e importe de impuesto) es igual al componente original. La garantizan los objetivos acumulados; si una regla del XSD o del SRI impidiera mantenerla para un campo, la implementación se detiene y documenta la contradicción: no hay ajustes arbitrarios de centavos ni líneas de redondeo.
+- **Impuestos:** la factura del MVP solo emite IVA (ICE e IRBPNR no tienen datos de cálculo y la emisión los rechaza), así que la nota solo acredita IVA; las pruebas no inventan ICE ni IRBPNR.
+- **Property tests** con un generador determinista con semilla (como el de los benchmarks, sin dependencias nuevas) sobre particiones aleatorias de cantidades de hasta 6 decimales, con descuentos originales e IVA, y secuencias de notas parciales con liberaciones intermedias: la invariante de particiones y que ningún importe es negativo.
 - **Golden tests** (`backend/test/credit-notes/amounts.test.ts`), entre otros:
   - línea 3 × 10.00 con descuento 3.00 e IVA 15 %: completa (27.00, 4.05); una unidad (descuento 1.00, base 9.00, IVA 1.35); tres notas de una unidad que suman 27.00 y 4.05;
   - línea 3 × 3.333333 sin descuento (base 10.00, IVA 1.50): notas de una unidad con bases 3.33, 3.34 y 3.33 e IVA 0.50 cada una; suman 10.00 y 1.50;
@@ -108,23 +117,36 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
   - `credit_reservation_line`: línea, cantidad, importes acreditados (subtotal, descuento, base, impuestos) y retorno físico; inmutable. Es la fuente de "lo acreditado vigente" del D6.
 - **Inicialización perezosa e idempotente:** la primera reserva sobre una factura crea sus filas de capacidad desde el snapshot (`INSERT ... ON CONFLICT DO NOTHING`) bajo el bloqueo de la factura. No hay backfill: las facturas existentes se inicializan al recibir su primera nota, y nunca se tocan la factura ni sus artefactos.
 - **Reserva** (en la transacción de `RESERVED`, después del bloqueo): sumar a reservado el importe y las cantidades con incrementos atómicos; un exceso viola el `CHECK` y la transacción se revierte sin número. La anulación total exige reservado + aplicado = 0 y reserva el total y todas las cantidades.
+- **Fallar cerrado:** la capacidad sigue reservada en `RESERVED`, `SIGNED`, `RECEIVED`, `SEND_UNKNOWN` y `MANUAL_REVIEW`. Nunca se libera por tiempo, por un job detenido, por un error de transporte o del parser, por reintentos agotados ni por una caída del proceso: un problema operacional no demuestra que el SRI rechazó la nota. No existe un job de limpieza que libere reservas por antigüedad; una nota incierta reserva hasta que una reconciliación concluye.
+- **Reservas de solo agregado:** cada nota tiene su fila de reserva, que solo pasa de `RESERVED` a `APPLIED` o `RELEASED` y nunca se borra ni se reutiliza para otra nota; las filas liberadas quedan como evidencia. Los totales materializados de la capacidad son la suma de sus reservas por estado.
 - **Aplicación y liberación:** un seguidor de `credit-notes` en la TX B de la transición de la nota:
   - a `AUTHORIZED`: `UPDATE credit_reservation SET status = 'APPLIED' WHERE id = … AND status = 'RESERVED'`; si cambió una fila, mueve importe y cantidades de reservado a aplicado;
   - a `RETURNED` o `NOT_AUTHORIZED`: lo mismo con `RELEASED`, restando de reservado;
   - a cualquier otro estado: nada. Una repetición no cambia filas (la actualización guardada no coincide), así que no aplica ni libera dos veces.
+- **Recuperación:** si la transición terminal falla localmente después de conocer el resultado del SRI, la respuesta ya está guardada, el reintento la reclasifica y vuelve a intentar la transición; aplicar y liberar son idempotentes.
 - Los totales de la capacidad son siempre la suma de sus reservas por estado; la reconciliación diagnóstica (`reconcileCreditCapacity`, solo pruebas y benchmark) lo comprueba.
+- **Capacidades independientes:** la acreditable responde cuánto de la factura y de cada línea se puede acreditar todavía; la devolvible (D10), cuánto de lo que salió del inventario puede volver. Ninguna se deriva de la otra. Ejemplo: factura de 10 unidades con salida de 10; nota que acredita 5 con retorno físico 2; al autorizarse quedan 5 acreditables y 8 devolvibles.
 
 ### D8. Concurrencia
 
 - La reserva toma `pg_advisory_xact_lock` de la factura (`credit-capacity:{empresa}:{factura}`) antes de leer lo acreditado vigente y calcular. Dos notas de la misma factura se serializan; la segunda calcula con la reserva de la primera ya confirmada.
 - Los incrementos atómicos con `CHECK` son la última defensa si algún camino olvidara el bloqueo.
 - **Orden de bloqueos:** en la reserva, capacidad acreditable de la factura y después capacidad devolvible por producto en orden de `productId` (D10). En la TX B de la nota, el seguidor de la capacidad acreditable corre antes que el del inventario, que bloquea capacidad devolvible y saldos en orden de `productId`. Ningún camino toma estos bloqueos en otro orden, y la salida de la factura solo bloquea saldos.
-- Pruebas con PostgreSQL real: dos devoluciones de la misma línea, anulación total contra devolución, dos anulaciones totales, devolución con remanente exacto, dos retornos físicos del mismo producto, nota autorizada contra otro movimiento del producto, fallo después de la autorización externa y antes del commit local, repetición y reclasificación, liberación al terminar devuelta, liberación al terminar no autorizada, y ninguna liberación en resultado incierto.
+- Pruebas con PostgreSQL real, entre otras (línea de 10 unidades):
+  - A: devolución A reserva 6; devolución B pide 5 → B falla antes de reservar número;
+  - B: A reserva 6 y B reserva 4 → ambas válidas;
+  - C: A reservada y una anulación total → la anulación se rechaza;
+  - D: anulación total reservada y una devolución simultánea → la devolución se rechaza;
+  - E: A termina no autorizada → su capacidad se libera y una devolución nueva la consume;
+  - F: A queda verificando con el SRI → su capacidad sigue reservada y una devolución nueva no la consume;
+  - G: dos retornos físicos simultáneos nunca exceden la `SALIDA_FACTURA`;
+  - además: dos anulaciones totales, devolución con remanente exacto, nota autorizada contra otro movimiento del producto, fallo después de la autorización externa y antes del commit local, repetición y reclasificación, y liberación al terminar devuelta.
 
 ### D9. Declaraciones de elegibilidad
 
 - Una política versionada en `@facturador/contracts` (`CREDIT_NOTE_ELIGIBILITY_DECLARATION`, versión `1`) con dos afirmaciones de identificador estable: `NOT_NEGOTIATED_COMMERCIAL_INVOICE` y `NOT_TAX_REFUND_SUPPORT`, cada una con su texto y su fuente (disposiciones generales segunda y tercera de la NAC-DGERCGC25-00000014).
 - La emisión exige la versión vigente y las dos afirmaciones; el snapshot guarda `declarations: { version, statements, declaredBy, declaredAt, basis: "USER_DECLARED" }`. Nunca hay `SYSTEM_VERIFIED`.
+- La semántica son los identificadores y la versión, no el texto visible. La interfaz muestra cada afirmación completa, con su contexto (qué es una factura comercial negociable negociada, qué es sustentar una devolución de impuestos) y la advertencia de que es una declaración del usuario, no una comprobación del sistema; nunca casillas genéricas. Un cambio del texto legal es una versión nueva de la política.
 - Una exclusión que el sistema conoce (consumidor final, D4) se evalúa antes y no depende de las declaraciones.
 
 ### D10. Capacidad devolvible y devolución de stock
@@ -139,23 +161,24 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
   - el saldo existe siempre, porque la línea afectaba al inventario cuando se reservó la factura y un saldo nunca se borra; el control actual no se consulta; un saldo negativo no impide la devolución.
 - La unicidad vigente `(company_id, document_id, product_id, movement_type)` impide una segunda devolución por nota y producto. La recuperación es la de la salida de la factura: la TX B se revierte entera y el reintento reclasifica la respuesta guardada.
 - `inventory` no importa `credit-notes`: el número de la nota lo lee de `fiscal`, como el de la factura.
+- La capacidad devolvible es independiente de la acreditable (D7): `retorno físico ≤ cantidad acreditada` por línea, y `devuelto aplicado + reservado + pedido ≤ salida original` por producto.
 
 ### D11. Numeración, clave e idempotencia
 
 - Tipo `04`; contador por empresa, ambiente, establecimiento, punto y tipo, con la reserva atómica vigente (fiscal-numbering). La nota no comparte contador con la factura.
 - La clave se compone con la misma función, con `documentType: "04"`, en la reserva, y se guarda en `snapshot.key.accessKey`, la ruta que la transmisión comprueba.
-- Idempotencia: operación `credit_note.emit`, alcance empresa, operación y clave; el registro se inserta en la transacción de `RESERVED`, como `invoice.emit`. Repetición con la misma huella: la misma nota (y si está reservada, se reanuda la firma); otra huella: `409 IDEMPOTENCY_KEY_REUSED`.
+- Idempotencia: operación `credit_note.emit`, alcance empresa, operación y clave, sin TTL; el registro se inserta en la transacción de `RESERVED`, como `invoice.emit`. La huella canónica cubre `draftId`, `expectedVersion` (que fija la factura, la causa, el punto, las líneas, el retorno físico y el motivo) y las declaraciones con su versión. Repetición con la misma huella: la misma nota, también si ya quedó reservada (se reanuda la firma); otra huella: `409 IDEMPOTENCY_KEY_REUSED`.
 
 ### D12. Builder XML `notaCredito` 1.1.0
 
-- `sri-engine/infrastructure/credit-note-xml-builder.ts`, puro y determinista, con versión de builder `1`.
+- `sri-engine/infrastructure/credit-note-xml-builder.ts`, puro y determinista, con versión de builder `1`. Mapea únicamente desde el snapshot de la nota y no usa el builder de alto nivel de la dependencia. El pipeline valida contra el XSD antes y después de firmar, como en la factura.
 - Reutiliza `xml-writer.ts` (escape y caracteres prohibidos), el `infoTributaria` extraído del builder de la factura (con `codDoc` como dato) y el texto decimal exacto del snapshot, sin formatear importes.
 - `infoNotaCredito`: fecha, establecimiento, comprador, contribuyente especial, contabilidad, `codDocModificado` 01, `numDocModificado`, `fechaEmisionDocSustento`, `totalSinImpuestos`, `valorModificacion`, `moneda` DOLAR, `totalConImpuestos` y `motivo`; `detalles` con código interno y adicional opcionales, descripción, cantidad, precio, descuento, total sin impuesto e impuestos con tarifa.
 - Golden fixtures (bytes exactos) y validación contra el XSD oficial en las pruebas; la firma reutiliza el firmador con `04`.
 
 ### D13. Transmisión y reconciliación
 
-- Sin cambios en el transporte, la cola, los clasificadores ni la máquina de reconciliación. Las pruebas de transmisión, autorización, errores 70/43/45, resultado incierto, revisión manual y evidencia antes de clasificar se repiten con una nota de crédito.
+- Sin cambios en el transporte, la cola, los clasificadores ni la máquina de reconciliación. Casos de contrato y extremo a extremo con una nota de crédito: recibida, devuelta, error 70, errores 43 y 45, tiempo agotado o resultado incierto, autorizada, no autorizada, revisión manual, reclasificación de la respuesta guardada y reconciliación manual. Una nota incierta conserva su capacidad.
 - Rutas de la nota: historial de la transmisión (`TransmissionReader`, sin filtro de tipo) y reconciliación manual (`creditNotes.reconcile`), que usan las operaciones de `fiscal`.
 - `invoice_authorization_latency_seconds` ya observa cualquier comprobante; `observability.md` lo documenta. No se reetiqueta.
 
@@ -164,12 +187,13 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
 - Lectura `notaCredito` 1.1.0 en `sri-engine/infrastructure/ride/` con su lista blanca (los elementos que el builder escribe, solo IVA) y un modelo `RideCreditNote` (los datos de la factura más el comprobante modificado, su fecha, la razón y el valor de la modificación, sin formas de pago).
 - El renderer elige la lectura y la distribución por raíz y versión (`factura` 1.1.0, `notaCredito` 1.1.0); cada distribución tiene su versión de renderer.
 - La distribución sigue la ficha v2.34, anexo 2, página 61: cabecera con RUC, "NOTA DE CRÉDITO", número, autorización, ambiente, emisión y clave con Code128; emisor; comprador; bloque del comprobante que se modifica (FACTURA, número, fecha) y razón de la modificación; detalle; información adicional; subtotales con el valor total.
-- Reutiliza pdfmake, bwip-js, Noto Sans, la paginación, el pool de workers, el job, el modelo de artefactos y las entregas. Las pruebas leen el Code128 y comprueban el texto de las páginas.
+- Reutiliza pdfmake, bwip-js, Noto Sans, la paginación, el pool de workers (sin duplicarlo), el job, el modelo de artefactos y las entregas. El Code128 codifica la clave de la nota, nunca la de la factura. Las pruebas leen el Code128 y comprueban el texto de las páginas con golden propios de la nota.
 
 ### D15. Bandeja y frontend compartido
 
 - `AVAILABLE_TYPES = ["01", "04"]`: aparece el filtro de tipo, conectado a la API, y el tipo bajo el número. `DETAIL_PATHS["04"] = "/notas-credito"`.
 - `DocumentsSection` y `TransmissionSection` reciben el comprobante (identificador, tipo, estado) en lugar de una factura, con textos por tipo; la factura las usa igual que antes.
+- Las reglas de disponibilidad no cambian: RIDE solo de un comprobante autorizado, XML autorizado solo si su artefacto existe, y el XML firmado siempre distinto del autorizado. Los documentos históricos de factura siguen igual.
 
 ### D16. API y contratos
 
@@ -191,11 +215,12 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
 
 - `creditNotes.read`, `creditNotes.draft`, `creditNotes.emit` y `creditNotes.retrySigning`: administrador y operador (ERS: el operador emite comprobantes). Quien emite confirma las declaraciones.
 - `creditNotes.reconcile`: administrador, como `invoices.reconcile`.
+- Cada caso de uso exige su permiso en el servidor antes de leer o escribir; la empresa sale siempre de la sesión, nunca de un `invoiceId` o `companyId` del cliente.
 - Bandeja y descargas: `archive.*` vigentes. Matriz en `access-control.md` y espejo en el frontend.
 
 ### D18. Auditoría
 
-- `credit_note.reserved` (nota, número, clave, ambiente, valor de la modificación, factura, causa, versión de la declaración y afirmaciones), `credit_note.signed`, `credit_note.signing_retried`, `credit_note.reconciliation_requested` y `credit_note.reconciliation_completed`.
+- `credit_note.reserved` (nota, número, clave, ambiente, valor de la modificación, factura y su número, causa, versión de la declaración y afirmaciones, y los hechos funcionales seguros: número de líneas acreditadas y si hay retorno físico), `credit_note.signed`, `credit_note.signing_retried`, `credit_note.reconciliation_requested` y `credit_note.reconciliation_completed`. Sin XML ni datos innecesarios del comprador.
 - Sin eventos para borradores, consultas, transmisión automática, aplicación o liberación de capacidad, devolución de stock ni entregas: su evidencia son la capacidad, las transiciones, el kárdex y el historial de entregas.
 
 ### D19. Pantallas
@@ -214,7 +239,7 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
 
 ### D21. Rendimiento
 
-- `bench:credit-notes`, fuera de `verify`, sobre un esquema aislado con 100 000 facturas, 10 000 de ellas con créditos previos de varias líneas. Mide por separado: búsqueda de facturas elegibles, vista previa del borrador, reserva con créditos previos, cálculo de una devolución parcial de muchas líneas, consumo concurrente de capacidad sobre la misma factura y RIDE de la nota. Termina con la reconciliación de las capacidades sin diferencias. Objetivo: ERS RNF-005 (P95 menor que 2 s) donde aplica, y el P95 del render del RIDE menor que 1 s como el de la factura.
+- `bench:credit-notes`, fuera de `verify`, sobre un esquema aislado con 100 000 facturas, 10 000 de ellas con créditos previos de varias líneas. Mide por separado: búsqueda de facturas elegibles, vista previa del borrador, reserva sin créditos previos, reserva con créditos previos, cálculo de una devolución parcial de muchas líneas, reservas que compiten por la misma factura, reservas simultáneas de facturas distintas y RIDE de la nota. Para la contención informa el rendimiento (reservas por segundo) y la espera por bloqueos cuando es material. Termina con la reconciliación de las capacidades sin diferencias. Objetivo: ERS RNF-005 (P95 menor que 2 s) donde aplica, y el P95 del render del RIDE menor que 1 s como el de la factura. Ningún bloqueo se mantiene durante el XML, la firma ni la red.
 
 ### D22. Migraciones
 
@@ -234,6 +259,17 @@ Para cada línea de la factura con cantidad `Q`, precio `p`, descuento `D`, subt
 | A la vez | Versión | Bloqueo de la factura y `CHECK` | La TX B de la nota | Bloqueos por producto en orden |
 | Restricciones | Forma y cantidades | `CHECK` de capacidades, idempotencia | Triggers de transición | `CHECK` de capacidad devolvible, unicidad |
 | Auditoría | No | `credit_note.reserved` | No | No (kárdex) |
+
+### D24. Snapshot autosuficiente de la nota
+
+- Después de `RESERVED`, la verdad fiscal de la nota es su snapshot; nunca se relee la factura para reconstruir sus importes. La factura solo se lee para integridad y relaciones.
+- Guarda como mínimo: causa; motivo; identidad de la factura (identificador, tipo, número, fecha, clave, número y fecha de autorización, ambiente); por línea, la posición de la línea original, el producto, los códigos, la descripción, la cantidad acreditada, el retorno físico y los importes e impuestos resultantes del cálculo; los totales y el valor de la modificación; la versión del cálculo; las declaraciones con su versión, actor y momento; los datos del emisor vigentes al reservar; el comprador de la factura; el punto, el establecimiento, el secuencial, el código numérico y la clave (`key.accessKey`); y las versiones del esquema, del builder, de los datasets y de la configuración.
+
+### D25. Coherencia atómica de la transición terminal
+
+- En `AUTHORIZED`, la misma TX B deja juntos: el comprobante autorizado con su metadata y su artefacto, la reserva acreditable en `APPLIED`, las reservas devolvibles en `APPLIED`, las `DEVOLUCION_NC` y los saldos actualizados; o ninguno.
+- En `RETURNED` o `NOT_AUTHORIZED`, la misma TX B deja juntos la transición y las reservas acreditable y devolvibles en `RELEASED`, sin movimientos.
+- **Triggers de restricción diferidos** lo imponen al confirmar: una reserva `APPLIED` exige su nota `AUTHORIZED`; una `RELEASED`, su nota `RETURNED` o `NOT_AUTHORIZED`; y una nota de crédito en un estado terminal no puede tener reservas en `RESERVED`. Es un acoplamiento en la base entre `electronic_document` y las reservas, intencional para que nunca exista un estado local intermedio, y lo documenta `database.md`.
 
 ## Risks / Trade-offs
 

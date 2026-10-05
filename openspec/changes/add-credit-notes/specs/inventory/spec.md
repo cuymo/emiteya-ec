@@ -42,6 +42,10 @@ Cuando una nota de crédito entra en autorizada, el sistema SHALL registrar, en 
 - **WHEN** la autorización de la nota se procesa otra vez por un reintento o una reconciliación
 - **THEN** no se registra otra devolución y el saldo no cambia
 
+#### Scenario: Autorización coherente
+- **WHEN** una nota con retorno físico pasa a autorizada
+- **THEN** en la misma operación su crédito queda aplicado, su retorno físico aplicado, la devolución registrada y el saldo actualizado; si algo falla, nada de eso ni la autorización quedan
+
 #### Scenario: Devoluciones simultáneas con otros movimientos
 - **WHEN** la autorización de una nota con retorno físico y una entrada manual del mismo producto llegan a la vez
 - **THEN** existen ambos movimientos y el saldo es la suma exacta del kárdex

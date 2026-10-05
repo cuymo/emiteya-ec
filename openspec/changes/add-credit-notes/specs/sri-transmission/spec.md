@@ -46,6 +46,14 @@ La transmisión SHALL tratar igual la factura y la nota de crédito: el mismo en
 - **WHEN** el envío de una nota de crédito termina sin respuesta concluyente
 - **THEN** la nota queda verificando con el SRI y se reconcilia por su clave, sin reenviarse antes de saber si el SRI la recibió
 
+#### Scenario: Nota de crédito devuelta o no autorizada
+- **WHEN** el SRI devuelve una nota de crédito en la recepción o la informa no autorizada
+- **THEN** la nota queda devuelta o no autorizada con sus mensajes, como una factura
+
+#### Scenario: Respuesta guardada de una nota
+- **WHEN** la decisión local de una nota falla después de guardar la respuesta del SRI
+- **THEN** el reintento clasifica la respuesta guardada sin volver a llamar al SRI
+
 #### Scenario: Error 70 en una nota de crédito
 - **WHEN** el SRI responde el error 70 para una nota de crédito
 - **THEN** la nota se trata como clave en procesamiento, igual que una factura

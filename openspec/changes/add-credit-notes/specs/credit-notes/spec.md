@@ -24,8 +24,8 @@ Una nota de crédito SHALL modificar únicamente una factura emitida por el sist
 - **THEN** el sistema rechaza la solicitud por contener campos no permitidos
 
 #### Scenario: Artefactos alterados
-- **WHEN** el XML firmado o el XML autorizado de la factura no coinciden con su hash guardado
-- **THEN** el sistema no permite emitir la nota y lo indica, sin reservar número
+- **WHEN** el snapshot, el XML firmado o el XML autorizado de la factura no son íntegros
+- **THEN** el borrador muestra el problema, el sistema no permite emitir la nota, no reserva número y no repara los datos con el producto o el tercero vigentes
 
 ### Requirement: Factura emitida a consumidor final
 Una factura emitida a consumidor final MUST NOT recibir una nota de crédito (requisito oficial: Res. NAC-DGERCGC25-00000014, art. 3, último inciso, vigente desde el 01/01/2026). El sistema lo comprueba antes de reservar el secuencial, crear la clave de acceso, firmar o llamar al SRI, y ninguna declaración del usuario lo evita.
@@ -70,6 +70,14 @@ Una nota de crédito de anulación total SHALL acreditar exactamente todas las l
 #### Scenario: Anulación sin retorno físico
 - **WHEN** se autoriza una anulación total sin retorno físico declarado
 - **THEN** el inventario no cambia
+
+#### Scenario: Anulación después de una devolución mínima
+- **WHEN** una factura de 100.00 tiene una devolución autorizada de 0.50 y un usuario intenta una anulación total
+- **THEN** el sistema la rechaza, aunque quede casi todo el importe
+
+#### Scenario: Retorno físico en una anulación total
+- **WHEN** un usuario prepara una anulación total de una factura con un bien que afectaba al inventario y un servicio
+- **THEN** puede declarar para el bien un retorno físico de 0 a su cantidad original, el servicio queda en 0, y no se asume ningún retorno
 
 ### Requirement: Devolución por líneas de la factura
 Una nota de crédito de devolución SHALL acreditar líneas de la factura, cada una con una cantidad mayor que cero, parcial o completa. Cada línea de la nota se liga a una línea de la factura; no existen líneas libres ni repetidas. Acreditar todas las líneas con sus cantidades completas es una devolución total.
@@ -173,6 +181,14 @@ Al reservar una nota, su crédito y sus cantidades SHALL quedar reservados mient
 - **WHEN** la misma autorización o la misma no autorización de una nota se procesa otra vez por un reintento o una reconciliación
 - **THEN** su crédito no se aplica ni se libera dos veces
 
+#### Scenario: Problema operacional
+- **WHEN** la transmisión de una nota agota sus reintentos, se detiene, pierde la conexión, recibe una respuesta que no se interpreta o el proceso cae
+- **THEN** su crédito y sus cantidades siguen reservados: un problema operacional no demuestra que el SRI rechazó la nota
+
+#### Scenario: Sin limpieza por antigüedad
+- **WHEN** una nota lleva semanas en revisión manual
+- **THEN** ningún proceso libera su reserva hasta que una reconciliación concluye
+
 ### Requirement: Notas simultáneas sobre una factura
 Dos notas emitidas a la vez sobre la misma factura SHALL validarse una después de la otra contra la misma capacidad, y en conjunto nunca exceden la cantidad de una línea, el total de la factura ni la condición de la anulación total.
 
@@ -187,6 +203,14 @@ Dos notas emitidas a la vez sobre la misma factura SHALL validarse una después 
 #### Scenario: Dos anulaciones totales
 - **WHEN** dos anulaciones totales de la misma factura se emiten a la vez
 - **THEN** exactamente una se reserva
+
+#### Scenario: Dos devoluciones que caben
+- **WHEN** dos devoluciones de 6 y 4 unidades de una línea de 10 se emiten a la vez
+- **THEN** ambas se reservan y la línea queda sin cantidad acreditable
+
+#### Scenario: Nota incierta que retiene capacidad
+- **WHEN** una devolución de 6 unidades de una línea de 10 queda verificando con el SRI y otra pide 5
+- **THEN** la segunda se rechaza: la capacidad de la primera sigue reservada
 
 ### Requirement: Declaraciones de elegibilidad
 Antes de reservar una nota, el usuario SHALL declarar por separado que la factura no es una factura comercial negociable negociada y que no sustentó una devolución de impuestos (exclusiones oficiales que el sistema no puede comprobar). Sin ambas no se emite. La nota guarda la versión de la declaración, cada afirmación, el actor y el momento, como elegibilidad declarada, no verificada.
@@ -229,6 +253,10 @@ En una devolución, cada línea SHALL indicar una cantidad de retorno físico en
 #### Scenario: Control desactivado después de facturar
 - **WHEN** una línea que en la factura afectaba al inventario declara un retorno físico y hoy el producto tiene el control desactivado
 - **THEN** el retorno físico se acepta
+
+#### Scenario: Crédito y retorno físico independientes
+- **WHEN** una factura de 10 unidades que salieron del inventario recibe una nota autorizada que acredita 5 con retorno físico 2
+- **THEN** quedan 5 unidades acreditables y 8 devolvibles: ninguna capacidad se deriva de la otra
 
 ### Requirement: Retorno físico limitado por la salida original
 El retorno físico acumulado de cada producto de una factura MUST NOT superar lo que la salida de esa factura sacó del inventario. Cuentan las devoluciones aplicadas y las reservadas en notas sin conclusión. Si la factura no registró salida de ese producto, no admite retorno físico.
@@ -283,6 +311,28 @@ La nota de crédito SHALL ser un comprobante propio (tipo 04, versión 1.1.0) co
 - **WHEN** el tercero de la factura cambió su razón social después de facturar
 - **THEN** la nota lleva el comprador tal como figura en la factura
 
+### Requirement: Reserva de la nota sin efectos parciales
+La reserva de una nota SHALL bloquear la factura, volver a comprobar su capacidad con lo reservado y aplicado vigente, y reservar en una sola operación la capacidad acreditable, la capacidad devolvible, el secuencial, la clave, el snapshot y el comprobante. Si cualquier paso falla, no queda nada de eso. No hay comunicación externa mientras la factura está bloqueada.
+
+#### Scenario: Fallo dentro de la reserva
+- **WHEN** la reserva de una nota falla después de reservar su capacidad y antes de confirmarse
+- **THEN** no queda capacidad reservada, número consumido, clave, comprobante ni declaraciones guardadas
+
+#### Scenario: Firma fuera de la reserva
+- **WHEN** una nota se reserva y después su firma falla
+- **THEN** la nota sigue reservada con su capacidad, como cualquier comprobante reservado, y un reintento la firma
+
+### Requirement: Importes congelados en la nota
+Desde su reserva, la nota SHALL contener en su snapshot todo lo que necesita: la factura modificada, las líneas originales elegidas, las cantidades acreditadas, el retorno físico, los importes e impuestos resultantes, las declaraciones, el emisor, el comprador, el punto, el secuencial, la clave y las versiones aplicadas. Su XML, su RIDE y su consulta nunca reconstruyen importes desde la factura original.
+
+#### Scenario: XML y RIDE desde la nota
+- **WHEN** se firma una nota y después se genera su RIDE
+- **THEN** ambos salen solo del snapshot de la nota, con los importes calculados al reservarla
+
+#### Scenario: Un cálculo único
+- **WHEN** se comparan la vista previa del borrador, el snapshot de la nota emitida y su XML
+- **THEN** muestran los mismos importes, salidos del mismo cálculo
+
 ### Requirement: Emisión idempotente de la nota de crédito
 Cada emisión de una nota SHALL exigir una `Idempotency-Key` con alcance empresa, operación de nota de crédito y clave, y la huella del borrador, su versión y las declaraciones. La misma clave con la misma solicitud devuelve la misma nota sin reservar otro número ni otra capacidad; con otra solicitud responde `409 IDEMPOTENCY_KEY_REUSED`.
 
@@ -297,6 +347,10 @@ Cada emisión de una nota SHALL exigir una `Idempotency-Key` con alcance empresa
 #### Scenario: Misma clave en una factura y en una nota
 - **WHEN** un usuario usa para una nota la misma clave que usó para emitir una factura
 - **THEN** la nota se emite, porque la operación forma parte del alcance de la clave
+
+#### Scenario: Repetición después de reservar
+- **WHEN** el cliente repite con la misma clave una emisión cuya nota quedó reservada sin firmar
+- **THEN** el sistema devuelve esa nota y reanuda su firma, sin reservar otro número ni otra capacidad
 
 ### Requirement: Consulta de notas de crédito
 Un usuario con permiso SHALL consultar las notas de crédito de su empresa, paginadas y con búsqueda, y el detalle de cada una: factura modificada, causa, motivo, líneas, retorno físico, declaraciones, estado, diagnóstico del último intento de firma e historial de la transmisión. También SHALL consultar el crédito de una factura: aplicado, reservado y disponible.

@@ -33,6 +33,10 @@ El RIDE SHALL presentar, en el formato oficial de su tipo, la factura 1.1.0 o la
 - **WHEN** se genera el RIDE de una nota de crédito de devolución con dos líneas
 - **THEN** muestra "NOTA DE CRÉDITO" con su número y su autorización, el comprobante que modifica como FACTURA con su número y su fecha de emisión, la razón de la modificación, cada línea con su cantidad, precio, descuento y total, y los subtotales llenados con el valor total, sin formas de pago
 
+#### Scenario: Clave de la nota en el RIDE
+- **WHEN** se genera el RIDE de una nota de crédito
+- **THEN** el código de barras y la clave impresa son los de la nota, nunca los de la factura que modifica
+
 #### Scenario: Distribución propia de la nota de crédito
 - **WHEN** se comparan el RIDE de una factura y el de una nota de crédito
 - **THEN** la nota de crédito tiene su propio bloque del comprobante modificado y no reutiliza el bloque de formas de pago de la factura
@@ -49,6 +53,10 @@ La bandeja SHALL incluir las notas de crédito desde que se reservan, con su tip
 #### Scenario: Documentos de una nota autorizada
 - **WHEN** un usuario abre los documentos de una nota de crédito autorizada
 - **THEN** puede descargar su RIDE, su XML autorizado y su XML firmado, imprimir el RIDE y ver el historial de entregas
+
+#### Scenario: Documentos de una nota sin autorizar
+- **WHEN** un usuario abre los documentos de una nota firmada que todavía no está autorizada
+- **THEN** solo puede descargar su XML firmado, rotulado como firmado; el RIDE y el XML autorizado no están disponibles
 
 #### Scenario: RIDE programado al autorizar la nota
 - **WHEN** una nota de crédito pasa a autorizada
