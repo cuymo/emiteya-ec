@@ -121,13 +121,13 @@
 
 ## 9. RIDE de la nota de débito
 
-- [ ] 9.1 Implementar la lectura `notaDebito` 1.0.0 con su lista blanca y el modelo `RideDebitNote`, la distribución de la ficha v2.34 (anexo 2, página 62) con la versión de renderer `nota-debito-1`, y la selección por raíz y versión sin duplicar el pool (design D18). Verificar con golden propios:
+- [x] 9.1 Implementar la lectura `notaDebito` 1.0.0 con su lista blanca y el modelo `RideDebitNote`, la distribución de la ficha v2.34 (anexo 2, página 62) con la versión de renderer `nota-debito-1`, y la selección por raíz y versión sin duplicar el pool (design D18). Verificar con golden propios:
   - texto de las páginas: título, comprobante modificado, fecha, razones y valores, forma de pago con la denominación del snapshot (sin consultar el catálogo) y subtotales por tratamiento;
   - lectura del Code128 con la clave de la nota;
   - contenido no emitido que detiene la generación;
   - mismos bytes en dos procesos;
   - el RIDE de la factura y el de la nota de crédito sin cambios
-- [ ] 9.2 Comprobar el RIDE de la nota en el job, el pool y la bandeja. Verificar con una prueba de integración que una nota autorizada programa su RIDE en la misma operación, que se guarda una vez con su procedencia y que se descarga verificado. Documentar la lectura y la distribución del RIDE de la nota en `fiscal-emission.md`, con su versión de renderer
+- [x] 9.2 Comprobar el RIDE de la nota en el job, el pool y la bandeja. Verificar con una prueba de integración que una nota autorizada programa su RIDE en la misma operación, que se guarda una vez con su procedencia y que se descarga verificado. Documentar la lectura y la distribución del RIDE de la nota en `fiscal-emission.md`, con su versión de renderer
 
 ## 10. Bandeja con notas de débito
 

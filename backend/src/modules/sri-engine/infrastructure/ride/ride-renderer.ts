@@ -7,6 +7,12 @@
 // página 61): la misma cabecera con "NOTA DE CRÉDITO", su autorización y el Code128 de su clave; el
 // comprador con el bloque del comprobante que se modifica, su fecha y la razón de la modificación;
 // el detalle con código y código auxiliar; y los subtotales con el valor total, sin formas de pago.
+//
+// La nota de débito 1.0.0 también tiene la suya (add-debit-notes, design D18; anexo 2, página 62):
+// "NOTA DE DÉBITO" con su autorización y el Code128 de su clave; el comprador con el comprobante que
+// se modifica y su fecha; la tabla de razones y valores de la modificación; la forma de pago con su
+// denominación del snapshot; y los subtotales por tratamiento con el IVA y el valor total.
+//
 // La lectura y la distribución se eligen por la raíz y la versión del XML.
 //
 // - Fuentes embebidas desde memoria (Noto Sans 2.015, OFL 1.1), con subconjunto; antes de dibujar
@@ -26,6 +32,7 @@ import { FiscalDecimal } from "../../../../platform/decimal/fiscal-decimal.ts";
 import {
   RideRejectedError,
   type RideCreditNote,
+  type RideDebitNote,
   type RideDocumentData,
   type RideInvoice,
   type RideLogo,
@@ -69,6 +76,13 @@ export const CREDIT_NOTE_RIDE_RENDERER_VERSION = "nota-credito-1";
 export const CREDIT_NOTE_RIDE_VERSIONS: RideVersions = {
   ...RIDE_VERSIONS,
   rendererVersion: CREDIT_NOTE_RIDE_RENDERER_VERSION,
+};
+
+/** Versión de la distribución de la nota de débito: cambia con cualquier cambio de su salida. */
+export const DEBIT_NOTE_RIDE_RENDERER_VERSION = "nota-debito-1";
+export const DEBIT_NOTE_RIDE_VERSIONS: RideVersions = {
+  ...RIDE_VERSIONS,
+  rendererVersion: DEBIT_NOTE_RIDE_RENDERER_VERSION,
 };
 
 /** Tablas normativas fijas de la ficha (no son estado mutable). */
@@ -131,11 +145,15 @@ const rateOf = (rate: string | null) => FiscalDecimal.parse("tarifa", rate ?? "0
 
 const isCreditNote = (ride: RideDocumentData): ride is RideCreditNote =>
   ride.kind === "CREDIT_NOTE";
+const isDebitNote = (ride: RideDocumentData): ride is RideDebitNote => ride.kind === "DEBIT_NOTE";
+const isInvoice = (ride: RideDocumentData): ride is RideInvoice =>
+  !isCreditNote(ride) && !isDebitNote(ride);
 /** Denominación del comprobante modificado por su código (tabla 3 de la ficha). */
 const MODIFIED_TYPES: Readonly<Record<string, string>> = { "01": "FACTURA" };
-const modifiedTypeText = (ride: RideCreditNote) =>
+const modifiedTypeText = (ride: RideCreditNote | RideDebitNote) =>
   MODIFIED_TYPES[ride.modified.documentType] ?? ride.modified.documentType;
-const titleOf = (ride: RideDocumentData) => (isCreditNote(ride) ? "NOTA DE CRÉDITO" : "FACTURA");
+const titleOf = (ride: RideDocumentData) =>
+  isCreditNote(ride) ? "NOTA DE CRÉDITO" : isDebitNote(ride) ? "NOTA DE DÉBITO" : "FACTURA";
 
 /** Subtotales en el orden del anexo 2; solo los que el comprobante llenó. */
 export function totalRows(ride: RideDocumentData): [string, string][] {
@@ -152,8 +170,8 @@ export function totalRows(ride: RideDocumentData): [string, string][] {
   for (const tax of byCode(NOT_SUBJECT)) rows.push(["SUBTOTAL NO OBJETO DE IVA", tax.base]);
   for (const tax of byCode(EXEMPT)) rows.push(["SUBTOTAL EXENTO DE IVA", tax.base]);
   rows.push(["SUBTOTAL SIN IMPUESTOS", ride.totals.withoutTaxes]);
-  // La nota de crédito no trae el total de descuentos en su XML: no se calcula.
-  if (!isCreditNote(ride)) rows.push(["TOTAL DESCUENTO", ride.totals.discount]);
+  // Las notas de crédito y de débito no traen el total de descuentos en su XML: no se calcula.
+  if (isInvoice(ride)) rows.push(["TOTAL DESCUENTO", ride.totals.discount]);
   for (const tax of withRate) rows.push([`IVA ${rateLabel(tax)}`, tax.amount]);
   rows.push(["VALOR TOTAL", ride.totals.total]);
   return rows;
@@ -171,6 +189,7 @@ const emissionText = (ride: RideDocumentData) =>
 /** Textos del comprobante que se dibujan, para comprobar los glifos antes de maquetar. */
 export function drawnStrings(ride: RideDocumentData): string[] {
   if (isCreditNote(ride)) return creditNoteStrings(ride);
+  if (isDebitNote(ride)) return debitNoteStrings(ride);
   return [
     documentNumber(ride),
     ride.authorization.number,
@@ -236,6 +255,34 @@ function creditNoteStrings(ride: RideCreditNote): string[] {
       line.discount,
       line.total,
     ]),
+    ...totalRows(ride).flat(),
+  ];
+}
+
+function debitNoteStrings(ride: RideDebitNote): string[] {
+  return [
+    documentNumber(ride),
+    ride.authorization.number,
+    environmentText(ride),
+    emissionText(ride),
+    ride.accessKey,
+    ride.legalName,
+    ride.tradeName ?? "",
+    ride.headOfficeAddress,
+    ride.establishmentAddress ?? "",
+    ride.specialTaxpayer ?? "",
+    ride.accountingRequired,
+    ride.withholdingAgentResolution ?? "",
+    ride.rimpeLegend ?? "",
+    ride.ruc,
+    ride.issueDate,
+    ride.buyer.legalName,
+    ride.buyer.identification,
+    modifiedTypeText(ride),
+    ride.modified.number,
+    ride.modified.issueDate,
+    ...ride.reasons.flatMap((motivo) => [motivo.reason, motivo.value]),
+    ...ride.payments.flatMap((payment) => [paymentText(payment), payment.total]),
     ...totalRows(ride).flat(),
   ];
 }
@@ -364,7 +411,7 @@ function detailSection(ride: RideInvoice): Content {
   return { table: { headerRows: 1, dontBreakRows: true, widths, body }, layout: "grid" };
 }
 
-function closingSection(ride: RideInvoice): Content {
+function closingSection(ride: RideInvoice | RideDebitNote): Content {
   const payments: Content[] =
     ride.payments.length === 0
       ? []
@@ -411,8 +458,12 @@ function closingSection(ride: RideInvoice): Content {
   };
 }
 
-/** Comprador y comprobante que se modifica (anexo 2, página 61). */
-function creditNoteBuyerSection(ride: RideCreditNote): Content {
+/**
+ * Comprador y comprobante que se modifica (anexo 2, páginas 61 y 62), con las filas propias de la
+ * nota al final: la razón de la modificación en la nota de crédito; ninguna en la de débito, que
+ * lleva sus razones en su propia tabla.
+ */
+function modifiedDocumentSection(ride: RideCreditNote | RideDebitNote, extra: Content[]): Content {
   return box(
     [
       row(150, "Razón Social / Nombres y Apellidos:", ride.buyer.legalName, [0, 0, 0, 0]),
@@ -439,10 +490,32 @@ function creditNoteBuyerSection(ride: RideCreditNote): Content {
         ],
       },
       row(150, "Fecha Emisión (Comprobante a modificar):", ride.modified.issueDate),
-      row(150, "Razón de Modificación:", ride.reason),
+      ...extra,
     ],
     [0, 8, 0, 8],
   );
+}
+
+/** Comprador, comprobante que se modifica y razón de la modificación (anexo 2, página 61). */
+const creditNoteBuyerSection = (ride: RideCreditNote): Content =>
+  modifiedDocumentSection(ride, [row(150, "Razón de Modificación:", ride.reason)]);
+
+/** Razones y valores de la modificación, un motivo por fila (anexo 2, página 62). */
+function debitNoteReasonsSection(ride: RideDebitNote): Content {
+  const body: TableCell[][] = [
+    [
+      { text: "RAZÓN DE LA MODIFICACIÓN", style: "tableHeader" },
+      { text: "VALOR DE LA MODIFICACIÓN", style: "tableHeader" },
+    ],
+    ...ride.reasons.map((motivo) => [
+      { text: motivo.reason, style: "cell" },
+      amountCell(motivo.value),
+    ]),
+  ];
+  return {
+    table: { headerRows: 1, dontBreakRows: true, widths: ["*", 120], body },
+    layout: "grid",
+  };
 }
 
 function creditNoteDetailSection(ride: RideCreditNote): Content {
@@ -557,7 +630,9 @@ export function rideDocument(
             creditNoteDetailSection(ride),
             creditNoteClosingSection(ride),
           ]
-        : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
+        : isDebitNote(ride)
+          ? [modifiedDocumentSection(ride, []), debitNoteReasonsSection(ride), closingSection(ride)]
+          : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
     ],
     images: logo
       ? { logo: `data:${logo.mediaType};base64,${Buffer.from(logo.bytes).toString("base64")}` }
@@ -679,7 +754,11 @@ export function createInProcessRideRenderer(fonts: RideFonts): RideRenderer {
           status: "RENDERED",
           pdf: new Uint8Array(pdf),
           pages,
-          versions: isCreditNote(ride) ? CREDIT_NOTE_RIDE_VERSIONS : RIDE_VERSIONS,
+          versions: isCreditNote(ride)
+            ? CREDIT_NOTE_RIDE_VERSIONS
+            : isDebitNote(ride)
+              ? DEBIT_NOTE_RIDE_VERSIONS
+              : RIDE_VERSIONS,
           renderMs: performance.now() - started,
         };
       } catch (error) {

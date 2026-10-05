@@ -43,7 +43,7 @@ export type RideLine = Readonly<{
 
 /** Contenido de la factura 1.1.0 que el sistema emite, tal como está en el XML de origen. */
 export type RideInvoice = Readonly<{
-  /** Ausente en la factura: la distingue de la nota de crédito. */
+  /** Ausente en la factura: la distingue de las notas de crédito y de débito. */
   kind?: "INVOICE";
   environment: "1" | "2";
   emissionType: string;
@@ -93,8 +93,24 @@ export type RideCreditNote = Omit<RideInvoice, "kind" | "buyer" | "totals" | "pa
     reason: string;
   }>;
 
+/**
+ * Contenido de la nota de débito 1.0.0 que el sistema emite (add-debit-notes, design D18): la
+ * cabecera y el emisor de la factura, el comprador, el comprobante modificado, un motivo por
+ * concepto, la única forma de pago y los impuestos por tratamiento, con la tarifa de cada impuesto.
+ */
+export type RideDebitNote = Omit<RideInvoice, "kind" | "buyer" | "totals" | "lines"> &
+  Readonly<{
+    kind: "DEBIT_NOTE";
+    buyer: Omit<RideInvoice["buyer"], "address">;
+    totals: Readonly<{ withoutTaxes: string; taxes: readonly RideTax[]; total: string }>;
+    /** Comprobante modificado: su tipo (`01`), su número y su fecha `dd/mm/aaaa`. */
+    modified: Readonly<{ documentType: string; number: string; issueDate: string }>;
+    /** Un motivo por concepto, en su orden: la razón y el valor de la modificación. */
+    reasons: readonly Readonly<{ reason: string; value: string }>[];
+  }>;
+
 /** Un comprobante que el RIDE dibuja, elegido por la raíz y la versión de su XML. */
-export type RideDocumentData = RideInvoice | RideCreditNote;
+export type RideDocumentData = RideInvoice | RideCreditNote | RideDebitNote;
 
 /**
  * Motivos deterministas por los que el RIDE no se genera: reintentar da lo mismo, así que la

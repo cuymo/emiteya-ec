@@ -1,6 +1,6 @@
 // Lectura del XML de origen del RIDE (add-document-archive, design D3; add-credit-notes, design
-// D14): la factura 1.1.0 y la nota de crédito 1.1.0 que el sistema emite, elegidas por la raíz y la
-// versión del XML, y nada más. Rechaza un XML peligroso (DTD o entidades, demasiado grande o
+// D14; add-debit-notes, design D18): la factura 1.1.0, la nota de crédito 1.1.0 y la nota de débito
+// 1.0.0 que el sistema emite, elegidas por la raíz y la versión del XML, y nada más. Rechaza un XML peligroso (DTD o entidades, demasiado grande o
 // demasiado anidado), cualquier otro documento, y todo elemento que el builder del sistema no
 // escribe (ICE, IRBPNR, propina, información adicional…): el RIDE nunca omite contenido en silencio
 // ni afirma un soporte que la emisión no tiene. Los textos e importes salen tal como están en el
@@ -9,6 +9,7 @@ import { XMLParser, XMLValidator } from "fast-xml-parser";
 import {
   RideRejectedError,
   type RideCreditNote,
+  type RideDebitNote,
   type RideDocumentData,
   type RideInvoice,
   type RideLine,
@@ -25,6 +26,8 @@ export const RIDE_XML_MAX_DEPTH = 24;
 export const RIDE_INVOICE_VERSION = "1.1.0";
 /** La única versión que escribe el builder de add-credit-notes (`CREDIT_NOTE_SCHEMA_VERSION`). */
 export const RIDE_CREDIT_NOTE_VERSION = "1.1.0";
+/** La única versión que escribe el builder de add-debit-notes (`DEBIT_NOTE_SCHEMA_VERSION`). */
+export const RIDE_DEBIT_NOTE_VERSION = "1.0.0";
 /** IVA, el único impuesto que la emisión produce: ICE e IRBPNR no tienen datos de cálculo. */
 const IVA = "2";
 
@@ -138,6 +141,44 @@ const CREDIT_NOTE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
     ALLOWED["factura.detalles.detalle.impuestos.impuesto"]!,
 };
 
+/**
+ * Elementos que el builder de la nota de débito escribe, por ruta del padre (add-debit-notes, design
+ * D16): sin `rise`, compensaciones, `valorDevolucionIva`, plazo, unidad de tiempo, máquina fiscal ni
+ * información adicional.
+ */
+const DEBIT_NOTE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
+  notaDebito: ["infoTributaria", "infoNotaDebito", "motivos", "Signature"],
+  "notaDebito.infoTributaria": ALLOWED["factura.infoTributaria"]!,
+  "notaDebito.infoNotaDebito": [
+    "fechaEmision",
+    "dirEstablecimiento",
+    "tipoIdentificacionComprador",
+    "razonSocialComprador",
+    "identificacionComprador",
+    "contribuyenteEspecial",
+    "obligadoContabilidad",
+    "codDocModificado",
+    "numDocModificado",
+    "fechaEmisionDocSustento",
+    "totalSinImpuestos",
+    "impuestos",
+    "valorTotal",
+    "pagos",
+  ],
+  "notaDebito.infoNotaDebito.impuestos": ["impuesto"],
+  "notaDebito.infoNotaDebito.impuestos.impuesto": [
+    "codigo",
+    "codigoPorcentaje",
+    "tarifa",
+    "baseImponible",
+    "valor",
+  ],
+  "notaDebito.infoNotaDebito.pagos": ["pago"],
+  "notaDebito.infoNotaDebito.pagos.pago": ["formaPago", "total"],
+  "notaDebito.motivos": ["motivo"],
+  "notaDebito.motivos.motivo": ["razon", "valor"],
+};
+
 /** Lista blanca de una raíz: sus elementos por padre y sus hojas de texto. */
 type Whitelist = Readonly<{
   allowed: Readonly<Record<string, readonly string[]>>;
@@ -162,6 +203,7 @@ function whitelist(root: string, allowed: Readonly<Record<string, readonly strin
 }
 const INVOICE_WHITELIST = whitelist("factura", ALLOWED);
 const CREDIT_NOTE_WHITELIST = whitelist("notaCredito", CREDIT_NOTE_ALLOWED);
+const DEBIT_NOTE_WHITELIST = whitelist("notaDebito", DEBIT_NOTE_ALLOWED);
 const ARRAYS = new Set([
   "factura.detalles.detalle",
   "factura.detalles.detalle.impuestos.impuesto",
@@ -170,6 +212,10 @@ const ARRAYS = new Set([
   "notaCredito.detalles.detalle",
   "notaCredito.detalles.detalle.impuestos.impuesto",
   "notaCredito.infoNotaCredito.totalConImpuestos.totalImpuesto",
+  "notaDebito.infoNotaDebito.impuestos.impuesto",
+  "notaDebito.infoNotaDebito.pagos",
+  "notaDebito.infoNotaDebito.pagos.pago",
+  "notaDebito.motivos.motivo",
 ]);
 
 const parser = new XMLParser({
@@ -524,12 +570,126 @@ function readCreditNote(
   };
 }
 
-/** Elige la lectura por la raíz del XML: la factura o la nota de crédito que el sistema emite. */
+/**
+ * Lee la nota de débito 1.0.0 que el sistema emite (add-debit-notes, design D18): sus motivos, la
+ * única forma de pago y los impuestos por tratamiento con su tarifa. Más de un bloque de pagos o de
+ * un pago es contenido que el builder no escribe.
+ */
+function readDebitNote(
+  { document, roots }: Readonly<{ document: unknown; roots: string[] }>,
+  input: RideSourceInput,
+): RideDebitNote {
+  const { authorization } = input;
+  const nota = isNode(document) ? document.notaDebito : undefined;
+  if (roots.length !== 1 || !isNode(nota)) throw invalid("NOT_DEBIT_NOTE");
+  if (nota["@_version"] !== RIDE_DEBIT_NOTE_VERSION) throw invalid("UNSUPPORTED_VERSION");
+  const tributaria = nota.infoTributaria;
+  const info = nota.infoNotaDebito;
+  const motivos = nota.motivos;
+  if (!isNode(tributaria) || !isNode(info) || !isNode(motivos)) throw invalid("NOT_DEBIT_NOTE");
+  if (required(tributaria, "codDoc", "infoTributaria") !== "05") throw invalid("NOT_DEBIT_NOTE");
+
+  const unsupported = new Set<string>();
+  unsupportedElements(nota, "notaDebito", unsupported, DEBIT_NOTE_WHITELIST);
+  const taxNodes = list(isNode(info.impuestos) ? info.impuestos.impuesto : undefined);
+  for (const tax of taxNodes) {
+    const code = text(tax, "codigo", "impuesto");
+    if (code !== IVA) unsupported.add(`impuesto.codigo:${code ?? ""}`);
+  }
+  const paymentBlocks = list(info.pagos);
+  const paymentNodes = paymentBlocks.flatMap((block) => list(block.pago));
+  if (paymentBlocks.length > 1) unsupported.add("notaDebito.infoNotaDebito.pagos");
+  if (paymentNodes.length > 1) unsupported.add("notaDebito.infoNotaDebito.pagos.pago");
+  if (unsupported.size > 0) {
+    throw new RideRejectedError("RIDE_SOURCE_UNSUPPORTED", [...unsupported].sort());
+  }
+
+  const accessKey = required(tributaria, "claveAcceso", "infoTributaria");
+  const environment = required(tributaria, "ambiente", "infoTributaria");
+  if (environment !== "1" && environment !== "2") throw invalid("infoTributaria.ambiente");
+  // El XML, la nota guardada y su autorización deben describir el mismo comprobante: la clave
+  // impresa y el código de barras son los de la nota, nunca los de la factura que modifica.
+  const mismatches = [
+    ...(accessKey !== input.accessKey ? ["claveAcceso"] : []),
+    ...(authorization.number !== accessKey ? ["numeroAutorizacion"] : []),
+    ...(authorization.environment !== (environment === "1" ? "TEST" : "PRODUCTION")
+      ? ["ambiente"]
+      : []),
+  ];
+  if (mismatches.length > 0) {
+    throw new RideRejectedError("RIDE_AUTHORIZATION_MISMATCH", mismatches);
+  }
+
+  const reasons = list(motivos.motivo).map((motivo) => ({
+    reason: required(motivo, "razon", "motivo"),
+    value: required(motivo, "valor", "motivo"),
+  }));
+  if (reasons.length === 0) throw invalid("MISSING:motivos.motivo");
+  if (paymentNodes.length === 0) throw invalid("MISSING:pagos.pago");
+  const payments = paymentNodes.map((pago) => {
+    const method = required(pago, "formaPago", "pago");
+    return {
+      method,
+      label: input.paymentLabels[method] ?? null,
+      total: required(pago, "total", "pago"),
+    };
+  });
+  const taxes = taxNodes.map((tax): RideTax => ({
+    rateCode: required(tax, "codigoPorcentaje", "impuesto"),
+    rate: required(tax, "tarifa", "impuesto"),
+    base: required(tax, "baseImponible", "impuesto"),
+    amount: required(tax, "valor", "impuesto"),
+  }));
+
+  return {
+    kind: "DEBIT_NOTE",
+    environment,
+    emissionType: required(tributaria, "tipoEmision", "infoTributaria"),
+    legalName: required(tributaria, "razonSocial", "infoTributaria"),
+    tradeName: text(tributaria, "nombreComercial", "infoTributaria"),
+    ruc: required(tributaria, "ruc", "infoTributaria"),
+    accessKey,
+    establishment: required(tributaria, "estab", "infoTributaria"),
+    emissionPoint: required(tributaria, "ptoEmi", "infoTributaria"),
+    sequential: required(tributaria, "secuencial", "infoTributaria"),
+    headOfficeAddress: required(tributaria, "dirMatriz", "infoTributaria"),
+    establishmentAddress: text(info, "dirEstablecimiento", "infoNotaDebito"),
+    specialTaxpayer: text(info, "contribuyenteEspecial", "infoNotaDebito"),
+    accountingRequired: required(info, "obligadoContabilidad", "infoNotaDebito"),
+    withholdingAgentResolution: text(tributaria, "agenteRetencion", "infoTributaria"),
+    rimpeLegend: text(tributaria, "contribuyenteRimpe", "infoTributaria"),
+    issueDate: required(info, "fechaEmision", "infoNotaDebito"),
+    buyer: {
+      identificationType: required(info, "tipoIdentificacionComprador", "infoNotaDebito"),
+      identification: required(info, "identificacionComprador", "infoNotaDebito"),
+      legalName: required(info, "razonSocialComprador", "infoNotaDebito"),
+    },
+    modified: {
+      documentType: required(info, "codDocModificado", "infoNotaDebito"),
+      number: required(info, "numDocModificado", "infoNotaDebito"),
+      issueDate: required(info, "fechaEmisionDocSustento", "infoNotaDebito"),
+    },
+    reasons,
+    totals: {
+      withoutTaxes: required(info, "totalSinImpuestos", "infoNotaDebito"),
+      taxes,
+      total: required(info, "valorTotal", "infoNotaDebito"),
+    },
+    payments,
+    authorization,
+  };
+}
+
+/**
+ * Elige la lectura por la raíz del XML: la factura, la nota de crédito o la nota de débito que el
+ * sistema emite.
+ */
 export function readRideDocument(input: RideSourceInput): RideDocumentData {
   const parsed = parseSource(input);
-  return parsed.roots.length === 1 && parsed.roots[0] === "notaCredito"
-    ? readCreditNote(parsed, input)
-    : readInvoice(parsed, input);
+  const root = parsed.roots.length === 1 ? parsed.roots[0] : undefined;
+  if (root === "notaCredito") return readCreditNote(parsed, input);
+  if (root === "notaDebito") return readDebitNote(parsed, input);
+  return readInvoice(parsed, input);
 }
 
 export const rideSourceReader: RideSourceReader = { read: readRideDocument };

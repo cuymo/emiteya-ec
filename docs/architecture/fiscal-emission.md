@@ -667,6 +667,12 @@ Cambio 11, en curso. Esta sección crece con cada grupo del cambio.
 - **Transmisión sin cambios.** Los handlers de envío, autorización y reconciliación, la cola, los clasificadores, la evidencia guardada antes de clasificar y la reclasificación de la respuesta guardada atienden el tipo `05` igual que la factura (`debit-note-transmission.test.ts`, con respuestas sintéticas). Los seguidores de la capacidad acreditable, de la devolución de stock y de la salida de inventario no hacen nada para una nota de débito.
 - **Reconciliación manual:** `POST /api/v1/debit-notes/{id}/reconciliations` (`debitNotes.reconcile`, solo el administrador) con la solicitud compartida `requestReconciliationIn` y la auditoría `debit_note.reconciliation_requested`; la finalización se audita como `debit_note.reconciliation_completed` (`COMPLETED_AUDIT` de `reconcile-handler.ts`). Un estado que no se reconcilia es `409 DEBIT_NOTE_NOT_RECONCILABLE`.
 
+### RIDE de la nota de débito
+
+- **Lectura por raíz.** `readRideDocument` elige la lectura de `notaDebito` 1.0.0 (`readDebitNote`, `ride-source.ts`) con su propia lista blanca de los elementos que escribe el builder de la nota y el modelo `RideDebitNote`: el comprobante modificado y su fecha, un motivo por concepto, la única forma de pago y los impuestos por tratamiento con la tarifa de cada `impuesto`. Información adicional, compensaciones, un segundo `pago` o un segundo bloque de `pagos` detienen la generación (`RIDE_SOURCE_UNSUPPORTED`).
+- **Distribución propia.** El renderer dibuja la nota con la distribución de la ficha v2.34, anexo 2, página 62: "NOTA DE DÉBITO" con su autorización y el Code128 de la clave de la nota; el comprador con el comprobante que se modifica y su fecha; la tabla "RAZÓN DE LA MODIFICACIÓN" y "VALOR DE LA MODIFICACIÓN"; "Forma de pago" con la denominación de `snapshot.payments` (el handler ya la lee así para la factura, sin consultar el catálogo); y los subtotales por tratamiento con el IVA y el valor total, sin total de descuentos. Su versión de distribución es `nota-debito-1` (`DEBIT_NOTE_RIDE_RENDERER_VERSION`).
+- **Sin cambios para los demás.** El pool, el job, el artefacto, las descargas y las entregas son los de la factura; el RIDE de la factura y el de la nota de crédito tienen los mismos golden que antes.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna
