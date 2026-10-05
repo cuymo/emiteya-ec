@@ -617,8 +617,8 @@ envío, la idempotencia y los errores.
 
 ### Bandeja y secciones compartidas
 
-- **Comprobantes.** La bandeja ofrece los tipos que el sistema emite (`01` y `04`) en el filtro "Tipo de comprobante" de los filtros avanzados, en la URL (`tipo`) y enviado a la API como `documentType`; un tipo desconocido en la URL no filtra. Cada fila muestra el tipo bajo el número y enlaza al detalle de su tipo (`/facturas/{id}` o `/notas-credito/{id}`).
-- **Por tipo, sin cambiar las reglas.** `frontend/src/features/archive/document-kinds.ts` guarda lo que cambia por tipo: el nombre con que se nombra al usuario, la ruta del detalle, la ruta de su API, el permiso de reconciliación (`invoices.reconcile` o `creditNotes.reconcile`), el código del estado no reconciliable y la clave de caché. `DocumentsSection` y `TransmissionSection` reciben el comprobante (identificador, tipo, estado y transmisión) y no muestran nada para un tipo que el sistema no emite. Las reglas de disponibilidad de los documentos siguen en el servidor: RIDE solo de un comprobante autorizado, XML autorizado solo si su artefacto existe y el XML firmado como un documento distinto.
+- **Comprobantes.** La bandeja ofrece los tipos que el sistema emite (`01`, `04` y, desde `add-debit-notes`, `05`) en el filtro "Tipo de comprobante" de los filtros avanzados, en la URL (`tipo`) y enviado a la API como `documentType`; un tipo desconocido en la URL no filtra. Cada fila muestra el tipo bajo el número y enlaza al detalle de su tipo (`/facturas/{id}`, `/notas-credito/{id}` o `/notas-debito/{id}`).
+- **Por tipo, sin cambiar las reglas.** `frontend/src/features/archive/document-kinds.ts` guarda lo que cambia por tipo: el nombre con que se nombra al usuario, la ruta del detalle, la ruta de su API, el permiso de reconciliación (`invoices.reconcile`, `creditNotes.reconcile` o `debitNotes.reconcile`), el código del estado no reconciliable y la clave de caché. `DocumentsSection` y `TransmissionSection` reciben el comprobante (identificador, tipo, estado y transmisión) y no muestran nada para un tipo que el sistema no emite. Las reglas de disponibilidad de los documentos siguen en el servidor: RIDE solo de un comprobante autorizado, XML autorizado solo si su artefacto existe y el XML firmado como un documento distinto.
 
 ### Medición
 
@@ -672,6 +672,10 @@ Cambio 11, en curso. Esta sección crece con cada grupo del cambio.
 - **Lectura por raíz.** `readRideDocument` elige la lectura de `notaDebito` 1.0.0 (`readDebitNote`, `ride-source.ts`) con su propia lista blanca de los elementos que escribe el builder de la nota y el modelo `RideDebitNote`: el comprobante modificado y su fecha, un motivo por concepto, la única forma de pago y los impuestos por tratamiento con la tarifa de cada `impuesto`. Información adicional, compensaciones, un segundo `pago` o un segundo bloque de `pagos` detienen la generación (`RIDE_SOURCE_UNSUPPORTED`).
 - **Distribución propia.** El renderer dibuja la nota con la distribución de la ficha v2.34, anexo 2, página 62: "NOTA DE DÉBITO" con su autorización y el Code128 de la clave de la nota; el comprador con el comprobante que se modifica y su fecha; la tabla "RAZÓN DE LA MODIFICACIÓN" y "VALOR DE LA MODIFICACIÓN"; "Forma de pago" con la denominación de `snapshot.payments` (el handler ya la lee así para la factura, sin consultar el catálogo); y los subtotales por tratamiento con el IVA y el valor total, sin total de descuentos. Su versión de distribución es `nota-debito-1` (`DEBIT_NOTE_RIDE_RENDERER_VERSION`).
 - **Sin cambios para los demás.** El pool, el job, el artefacto, las descargas y las entregas son los de la factura; el RIDE de la factura y el de la nota de crédito tienen los mismos golden que antes.
+
+### Bandeja con notas de débito
+
+- **Un tipo más en el registro.** `EMITTED_DOCUMENT_TYPES` incluye `05` y `DOCUMENT_KINDS` guarda su nombre ("nota de débito"), el detalle `/notas-debito/{id}`, su API `/debit-notes`, el permiso `debitNotes.reconcile`, el código `DEBIT_NOTE_NOT_RECONCILABLE` y sus esquemas de vista y transmisión. El filtro "Tipo de comprobante" ofrece los tres tipos; `DocumentsSection` y `TransmissionSection` reciben la nota sin otra rama y las reglas de disponibilidad de los documentos siguen en el servidor.
 
 ## Reserva del secuencial
 

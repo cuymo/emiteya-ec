@@ -4,8 +4,8 @@
 // número, fecha, receptor, total, estado y si el RIDE está disponible. Acción principal: abrir el
 // comprobante. P0: número, estado y RIDE; P1: fecha, receptor y total; P2: filtros avanzados
 // (fechas, identificación, establecimiento, punto y tipo); P3 (identificadores y hashes): no se
-// muestra. La factura y la nota de crédito conviven con su tipo bajo el número (add-credit-notes,
-// design D15).
+// muestra. La factura, la nota de crédito y la nota de débito conviven con su tipo bajo el número
+// (add-credit-notes, design D15; add-debit-notes, design D19).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -315,7 +315,7 @@ export function DocumentsScreen() {
       <EmptyState
         kind="empty"
         title="Todavía no hay comprobantes"
-        description="Los comprobantes aparecen aquí cuando emites una factura o una nota de crédito."
+        description="Los comprobantes aparecen aquí cuando emites una factura, una nota de crédito o una nota de débito."
       />
     )
   ) : undefined;

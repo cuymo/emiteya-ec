@@ -131,7 +131,7 @@
 
 ## 10. Bandeja con notas de débito
 
-- [ ] 10.1 Agregar el tipo `05` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` (design D19): filtro de tipo con los tres tipos, tipo bajo el número y enlace al detalle de la nota de débito. Verificar con pruebas de componente: filtro en la URL, enlace por tipo, textos por tipo, RIDE solo de un comprobante autorizado, XML autorizado solo si existe, XML firmado distinto, y la factura y la nota de crédito sin cambios. Documentar el tipo `05` de la bandeja en `fiscal-emission.md` (Bandeja y secciones compartidas)
+- [x] 10.1 Agregar el tipo `05` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` (design D19): filtro de tipo con los tres tipos, tipo bajo el número y enlace al detalle de la nota de débito. Verificar con pruebas de componente: filtro en la URL, enlace por tipo, textos por tipo, RIDE solo de un comprobante autorizado, XML autorizado solo si existe, XML firmado distinto, y la factura y la nota de crédito sin cambios. Documentar el tipo `05` de la bandeja en `fiscal-emission.md` (Bandeja y secciones compartidas)
 
 ## 11. Pantallas de notas de débito
 

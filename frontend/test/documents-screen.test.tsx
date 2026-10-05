@@ -1,7 +1,8 @@
 // Comprobantes, la bandeja documental (add-document-archive, tarea 10.2, design D13): carga, vacío,
 // sin coincidencias, error, sin permiso, filtros en la URL, rango inválido y descarga del RIDE; con
-// la nota de crédito (add-credit-notes, tarea 12.1, design D15): el filtro de tipo en la URL, el tipo
-// bajo el número y el enlace al detalle según el tipo.
+// la nota de crédito (add-credit-notes, tarea 12.1, design D15) y la nota de débito (add-debit-notes,
+// tarea 10.1, design D19): el filtro de tipo en la URL, el tipo bajo el número y el enlace al detalle
+// según el tipo.
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -144,6 +145,30 @@ describe("Comprobantes", () => {
     ).toBeDefined();
   });
 
+  it("la nota de débito muestra su tipo bajo el número y enlaza a su detalle", async () => {
+    render({
+      "GET /api/v1/documents": paged([
+        item(),
+        item({ id: "nd-1", documentType: "05", number: "001-001-000000003", total: "23.00" }),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Comprobantes emitidos" });
+    await within(table).findByText("001-001-000000003");
+    const row = (number: string) =>
+      within(table)
+        .getAllByRole("row")
+        .find((candidate) => within(candidate).queryByText(number))!;
+    expect(within(row("001-001-000000003")).getByText("Nota de débito")).toBeDefined();
+    expect(within(row("001-001-000000003")).getByRole("link").getAttribute("href")).toBe(
+      "/notas-debito/nd-1",
+    );
+    expect(
+      within(row("001-001-000000003")).getByRole("button", {
+        name: "Descargar el RIDE de 001-001-000000003",
+      }),
+    ).toBeDefined();
+  });
+
   it("el filtro de tipo vive en la URL y llega a la API", async () => {
     navigation.search = new URLSearchParams("tipo=04");
     const calls = render({ "GET /api/v1/documents": paged([]) });
@@ -158,6 +183,7 @@ describe("Comprobantes", () => {
       "Todos",
       "Factura",
       "Nota de crédito",
+      "Nota de débito",
     ]);
     fireEvent.change(select, { target: { value: "01" } });
     expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=01", {
