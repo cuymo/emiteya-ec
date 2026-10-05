@@ -139,6 +139,19 @@ describe("shell autenticado", () => {
     }
   });
 
+  it("administrador y operador ven Notas de débito en Operación (add-debit-notes)", async () => {
+    for (const me of [ADMIN_ME, OPERATOR_ME]) {
+      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
+      const view = renderShell();
+      await screen.findByText("contenido");
+      expect(screen.getByRole("link", { name: "Notas de débito" }).getAttribute("href")).toBe(
+        "/notas-debito",
+      );
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("sin sesión lleva al inicio de sesión conservando la URL, sin aviso de sesión vencida", async () => {
     mockApi({
       "GET /api/v1/me": () => ({

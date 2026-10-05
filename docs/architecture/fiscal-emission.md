@@ -677,6 +677,10 @@ Cambio 11, en curso. Esta sección crece con cada grupo del cambio.
 
 - **Un tipo más en el registro.** `EMITTED_DOCUMENT_TYPES` incluye `05` y `DOCUMENT_KINDS` guarda su nombre ("nota de débito"), el detalle `/notas-debito/{id}`, su API `/debit-notes`, el permiso `debitNotes.reconcile`, el código `DEBIT_NOTE_NOT_RECONCILABLE` y sus esquemas de vista y transmisión. El filtro "Tipo de comprobante" ofrece los tres tipos; `DocumentsSection` y `TransmissionSection` reciben la nota sin otra rama y las reglas de disponibilidad de los documentos siguen en el servidor.
 
+### Pantallas de la nota de débito
+
+- **Notas de débito** (`/notas-debito`, en "Operación", `debitNotes.read`): `frontend/src/features/debit-notes/debit-notes-screen.tsx`, con búsqueda por número o comprador, estado y causa en la URL (`q`, `estado`, `causa` con `intereses` o `costos`), las causas de los conceptos de cada nota, tarjetas por debajo de 768 px y los borradores en curso con su eliminación (`debitNotes.draft`).
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna

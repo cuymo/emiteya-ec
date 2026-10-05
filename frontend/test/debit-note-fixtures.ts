@@ -101,3 +101,31 @@ export const debitNoteDetail = (
   signedAt: "2026-10-09T15:00:01.000Z",
   ...overrides,
 });
+
+export const debitNoteSummary = (overrides: Record<string, unknown> = {}) => ({
+  id: "nd-1",
+  documentNumber: "001-001-000000003",
+  environment: "TEST",
+  issueDate: "2026-10-09",
+  invoice: { id: "inv-1", documentNumber: "001-001-000000001" },
+  causes: ["LATE_PAYMENT_INTEREST", "POST_INVOICE_COST_EXPENSE"],
+  buyerIdentification: "0992877878001",
+  buyerName: "EL PERNO CIA. LTDA.",
+  total: "28.00",
+  state: "AUTHORIZED",
+  diagnosticCode: null,
+  transmissionStopped: false,
+  createdAt: "2026-10-09T15:00:00.000Z",
+  ...overrides,
+});
+
+export const debitNoteDraftSummary = (overrides: Record<string, unknown> = {}) => ({
+  id: "ndd-1",
+  version: 1,
+  invoice: { id: "inv-1", documentNumber: "001-001-000000001", issueDate: "2026-10-01" },
+  buyerName: "EL PERNO CIA. LTDA.",
+  conceptCount: 2,
+  previewTotal: "28.00",
+  updatedAt: "2026-10-09T15:00:00.000Z",
+  ...overrides,
+});

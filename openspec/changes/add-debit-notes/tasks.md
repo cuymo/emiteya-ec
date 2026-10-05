@@ -135,7 +135,7 @@
 
 ## 11. Pantallas de notas de débito
 
-- [ ] 11.1 Implementar Notas de débito en `/notas-debito`, dentro de "Operación" (design D23), con lista, búsqueda, filtros en la URL, borradores en curso y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
+- [x] 11.1 Implementar Notas de débito en `/notas-debito`, dentro de "Operación" (design D23), con lista, búsqueda, filtros en la URL, borradores en curso y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
 - [ ] 11.2 Implementar el borrador (`/notas-debito/borradores/{id}`) con los pasos de design D23:
   - selector de factura elegible;
   - conceptos con causa, descripción, importe y tratamiento, que solo ofrece los de la factura;

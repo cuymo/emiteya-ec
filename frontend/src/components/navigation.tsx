@@ -8,6 +8,7 @@ import {
   Contact,
   FileKey,
   FileMinus,
+  FilePlus,
   FilePenLine,
   FileText,
   FolderArchive,
@@ -41,6 +42,13 @@ const GROUPS: Group[] = [
         label: "Notas de crédito",
         icon: FileMinus,
         permission: "creditNotes.read",
+      },
+      // add-debit-notes, design D23.
+      {
+        href: "/notas-debito",
+        label: "Notas de débito",
+        icon: FilePlus,
+        permission: "debitNotes.read",
       },
       // add-document-archive, design D13: la bandeja documental.
       {
