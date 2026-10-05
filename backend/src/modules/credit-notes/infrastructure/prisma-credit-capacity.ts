@@ -145,7 +145,8 @@ export function createCreditCapacityRepository(db: DbClient): CreditCapacityRepo
       if (changed.count === 0) return false;
       const reservation = await db.creditReservation.findUniqueOrThrow({
         where: { companyId_creditNoteId: { companyId, creditNoteId } },
-        include: { lines: true },
+        // En orden de posición: el mismo orden de bloqueo que la reserva (design D8).
+        include: { lines: { orderBy: { position: "asc" } } },
       });
       const applied = outcome === "APPLIED";
       await db.creditCapacity.update({

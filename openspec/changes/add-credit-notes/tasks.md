@@ -61,14 +61,14 @@
 
 ## 9. Ciclo de vida de la capacidad y devolución de stock
 
-- [ ] 9.1 Implementar el seguidor de la capacidad acreditable (aplicar en `AUTHORIZED`, liberar en `RETURNED` y `NOT_AUTHORIZED`, nada en otro estado ni por problemas operacionales) y el del inventario (`DEVOLUCION_NC` agregada por producto con bloqueos en orden y reserva aplicada en `AUTHORIZED`, liberación en `RETURNED` y `NOT_AUTHORIZED`), compuestos en ese orden en `main.ts`, con la coherencia atómica de design D25 (design D7, D10). Verificar con pruebas de integración:
+- [x] 9.1 Implementar el seguidor de la capacidad acreditable (aplicar en `AUTHORIZED`, liberar en `RETURNED` y `NOT_AUTHORIZED`, nada en otro estado ni por problemas operacionales) y el del inventario (`DEVOLUCION_NC` agregada por producto con bloqueos en orden y reserva aplicada en `AUTHORIZED`, liberación en `RETURNED` y `NOT_AUTHORIZED`), compuestos en ese orden en `main.ts`, con la coherencia atómica de design D25 (design D7, D10). Verificar con pruebas de integración:
   - nota autorizada: en la misma transacción, crédito aplicado, retorno físico aplicado y una devolución por producto con la suma exacta, que referencia la nota y cruza un saldo negativo;
   - nota devuelta y nota no autorizada: capacidades liberadas en la transición, sin devolución, y filas de reserva conservadas;
   - verificando con el SRI, revisión manual, job detenido, error de transporte o del parser y reintentos agotados: capacidades reservadas;
   - repetición de cada decisión sin aplicar ni liberar dos veces;
   - control del producto desactivado después de facturar: la devolución se registra
-- [ ] 9.2 Probar la recuperación y la concurrencia del ciclo con PostgreSQL real: escenarios E y F de design D8; fallo después de la autorización externa y antes del commit local sin devolución ni crédito aplicado, y reintento que reclasifica la respuesta guardada sin otra llamada al SRI con una sola devolución; nota autorizada contra una entrada manual del mismo producto. Verificar que cada saldo es la suma de su kárdex y las capacidades coinciden con sus reservas
-- [ ] 9.3 Añadir la prueba de arquitectura de design D1 (`fiscal`, `invoices` e `inventory` no importan `credit-notes`) y documentar los seguidores, los puertos, las capacidades y su ciclo de vida fallando cerrado en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba pasa y detecta cada violación en archivos de ejemplo
+- [x] 9.2 Probar la recuperación y la concurrencia del ciclo con PostgreSQL real: escenarios E y F de design D8; fallo después de la autorización externa y antes del commit local sin devolución ni crédito aplicado, y reintento que reclasifica la respuesta guardada sin otra llamada al SRI con una sola devolución; nota autorizada contra una entrada manual del mismo producto. Verificar que cada saldo es la suma de su kárdex y las capacidades coinciden con sus reservas
+- [x] 9.3 Añadir la prueba de arquitectura de design D1 (`fiscal`, `invoices` e `inventory` no importan `credit-notes`) y documentar los seguidores, los puertos, las capacidades y su ciclo de vida fallando cerrado en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba pasa y detecta cada violación en archivos de ejemplo
 
 ## 10. Consulta, transmisión y reconciliación de la nota
 

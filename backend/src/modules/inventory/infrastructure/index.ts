@@ -24,8 +24,14 @@ export {
 export { createInventoryUnitOfWork, lockStockTrackingIn } from "./unit-of-work.ts";
 export { createStockReads } from "./prisma-stock-reads.ts";
 export { registerInventoryMetrics } from "./metrics.ts";
-export { reconcileStock, type StockDifference } from "./reconciliation.ts";
-export { stockReturnCapacity } from "./prisma-return-capacity.ts";
+export {
+  reconcileStock,
+  reconcileStockReturnCapacity,
+  type StockDifference,
+  type StockReturnDifference,
+} from "./reconciliation.ts";
+export { stockReturnCapacity, stockReturnReservations } from "./prisma-return-capacity.ts";
+export { creditNoteReturnFollower } from "../application/credit-note-return.ts";
 
 /**
  * Saldo de los productos con inventario inicializado, sobre un cliente: `invoices` lo recibe como

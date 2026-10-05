@@ -36,6 +36,16 @@ describe("dirección de las dependencias de las notas de crédito", () => {
     expect(creditNotesOffenders(sourceFiles(SRC))).toEqual([]);
   });
 
+  it("el arranque compone los puertos y los seguidores, la capacidad acreditable antes que la devolución", () => {
+    const main = readFileSync(join(SRC, "main.ts"), "utf8");
+    expect(main).toContain("invoices: invoiceCreditSource");
+    expect(main).toContain("returns: stockReturnCapacity");
+    const capacity = main.indexOf("creditCapacityFollower(");
+    const returns = main.indexOf("creditNoteReturnFollower(");
+    expect(capacity).toBeGreaterThan(0);
+    expect(returns).toBeGreaterThan(capacity);
+  });
+
   it("detecta cada violación en archivos de ejemplo", () => {
     expect(
       creditNotesOffenders([

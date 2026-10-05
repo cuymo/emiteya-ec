@@ -37,6 +37,7 @@ import {
 } from "./units-of-work.ts";
 
 export { createCreditCapacityRepository } from "./prisma-credit-capacity.ts";
+export { creditCapacityFollower } from "../application/followers.ts";
 export { reconcileCreditCapacity, type CreditCapacityDifference } from "./reconciliation.ts";
 
 /** Perfil de la nota de crédito para la firma compartida, con el builder `notaCredito` 1.1.0. */

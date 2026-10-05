@@ -2,6 +2,7 @@
 // materializado de cada producto con la suma de las variaciones de su kárdex, con su número de
 // movimientos y con el saldo después del último. La usan las pruebas y `bench:inventory`. No es un
 // endpoint y no corrige nada: la base ya impide las diferencias con sus triggers.
+import { compareDecimalStrings } from "@facturador/contracts";
 import { sumExact } from "../../../platform/decimal/fiscal-decimal.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
 import { toMovement } from "./prisma-stock.ts";
@@ -72,6 +73,74 @@ export async function reconcileStock(db: DbClient, companyId?: string): Promise<
         lastBalanceAfter: last,
         lastPosition: row.lastPosition,
         movements: ledger.count,
+      });
+    }
+  }
+  return differences;
+}
+
+export type StockReturnDifference = Readonly<{
+  companyId: string;
+  invoiceId: string;
+  productId: string;
+  original: string;
+  reserved: string;
+  applied: string;
+  reservedSum: string;
+  appliedSum: string;
+}>;
+
+/**
+ * Diferencias de la capacidad devolvible (add-credit-notes, design D10): lo reservado y lo aplicado
+ * de cada factura y producto contra la suma de sus reservas por estado, y que nada supere la salida.
+ * Como la del saldo, no corrige nada: la base ya lo impide.
+ */
+export async function reconcileStockReturnCapacity(
+  db: DbClient,
+  companyId?: string,
+): Promise<StockReturnDifference[]> {
+  const where = companyId ? { companyId } : {};
+  const [capacities, sums] = await Promise.all([
+    db.stockReturnCapacity.findMany({ where }),
+    db.stockReturnReservation.groupBy({
+      by: ["companyId", "invoiceId", "productId", "status"],
+      where: { ...where, status: { in: ["RESERVED", "APPLIED"] } },
+      _sum: { quantity: true },
+    }),
+  ]);
+  const sumOf = (
+    row: { companyId: string; invoiceId: string; productId: string },
+    status: string,
+  ) =>
+    sumExact([
+      sums
+        .find(
+          (sum) =>
+            sum.companyId === row.companyId &&
+            sum.invoiceId === row.invoiceId &&
+            sum.productId === row.productId &&
+            sum.status === status,
+        )
+        ?._sum.quantity?.toFixed() ?? "0",
+    ]);
+  const differences: StockReturnDifference[] = [];
+  for (const row of capacities) {
+    const reserved = sumExact([row.reservedQuantity.toFixed()]);
+    const applied = sumExact([row.appliedQuantity.toFixed()]);
+    const original = sumExact([row.originalQuantity.toFixed()]);
+    const reservedSum = sumOf(row, "RESERVED");
+    const appliedSum = sumOf(row, "APPLIED");
+    const exceeds = compareDecimalStrings(sumExact([reserved, applied]), original) > 0;
+    if (reserved !== reservedSum || applied !== appliedSum || exceeds) {
+      differences.push({
+        companyId: row.companyId,
+        invoiceId: row.invoiceId,
+        productId: row.productId,
+        original,
+        reserved,
+        applied,
+        reservedSum,
+        appliedSum,
       });
     }
   }

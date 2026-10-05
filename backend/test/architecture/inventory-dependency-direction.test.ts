@@ -60,14 +60,20 @@ describe("dirección de las dependencias del inventario", () => {
     expect(main).toContain("stockReads: inventoryStockReads");
   });
 
-  it("ninguna operación registra una devolución por nota de crédito todavía", () => {
-    // Solo el tipo reconocido y la regla de su signo: la devolución la define su propio cambio.
+  it("solo el seguidor de la nota de crédito del inventario registra una devolución (add-credit-notes, design D10)", () => {
+    // El tipo y la regla de su signo, el seguidor que la registra y la etiqueta de su métrica en el
+    // arranque: ningún otro módulo escribe una devolución.
     const writers = sourceFiles(SRC)
       .filter(
         ({ path, content }) => !path.startsWith("generated/") && content.includes("DEVOLUCION_NC"),
       )
-      .map(({ path }) => path);
-    expect(writers).toEqual(["modules/inventory/domain/stock.ts"]);
+      .map(({ path }) => path)
+      .sort();
+    expect(writers).toEqual([
+      "main.ts",
+      "modules/inventory/application/credit-note-return.ts",
+      "modules/inventory/domain/stock.ts",
+    ]);
   });
 
   it("detecta cada violación en archivos de ejemplo", () => {

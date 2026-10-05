@@ -182,6 +182,22 @@ autorizados, nunca una reserva de disponibilidad:
 - **Reconciliación.** `reconcileStock` compara cada saldo con la suma de su kárdex; la usan las pruebas y `bench:inventory`. No hay ruta para recalcular ni fijar el saldo.
 - **Métricas.** `inventory_movements_total{type}` e `inventory_negative_balances` (`observability.md`).
 
+## Notas de crédito
+
+El módulo `credit-notes` (`add-credit-notes`) emite notas de crédito contra facturas propias
+autorizadas, con capacidades que fallan cerradas:
+
+- **Capas.**
+  - `domain/`: el cálculo único y versionado de los importes (`calculateCreditNoteAmounts`, objetivos acumulados), la evaluación en el orden de design D4, la vista previa pura y el snapshot autosuficiente de la nota;
+  - `application/`: borradores, emisión (comprobación previa y transacción de `RESERVED`), reintento de firma, consultas, el perfil de la firma y el seguidor de la capacidad acreditable;
+  - `infrastructure/`: borradores, capacidad acreditable y su reconciliación diagnóstica, lecturas de la preparación de la empresa, facturas elegibles, unidades de trabajo, métricas y rutas.
+- **Dirección.** `fiscal`, `invoices` e `inventory` no importan `credit-notes`. `main.ts` compone la lectura de la factura (`invoiceCreditSource`, con la integridad del snapshot y de sus artefactos), la capacidad devolvible de `inventory` (`stockReturnCapacity`, puerto `ReturnCapacity`), la firma compartida con `creditNoteSigningProfile` y los seguidores.
+- **Capacidad acreditable.** Por factura y por línea (`credit_capacity`, `credit_capacity_line`): reservado y aplicado nunca superan lo original (`CHECK`) y siempre son la suma de las reservas por estado (triggers diferidos). La reserva toma `pg_advisory_xact_lock` de la factura antes de leer lo vigente; la capacidad acreditable se bloquea antes que la devolvible, por producto en orden de `productId`.
+- **Capacidad devolvible.** Por factura y producto (`stock_return_capacity`), igual a la salida de la factura, independiente de la acreditable.
+- **Ciclo de vida, fallando cerrado.** La capacidad queda reservada en `RESERVED`, `SIGNED`, `RECEIVED`, `SEND_UNKNOWN` y `MANUAL_REVIEW`. En la transacción de la transición terminal de la nota, `creditCapacityFollower` la aplica (`AUTHORIZED`) o la libera (`RETURNED`, `NOT_AUTHORIZED`), y después `creditNoteReturnFollower` aplica el retorno físico con su `DEVOLUCION_NC` o lo libera. Un resultado incierto, un job detenido, un error de transporte o del parser, los reintentos agotados o una caída no la liberan, y no existe un job de limpieza por antigüedad. Los triggers diferidos de design D25 rechazan al confirmar una reserva que no corresponde al estado de su nota.
+- **Reconciliación.** `reconcileCreditCapacity` y `reconcileStockReturnCapacity` comparan cada capacidad con sus reservas; las usan las pruebas y `bench:credit-notes`.
+- **Métricas.** `credit_note_reservations_total{cause}` y `credit_note_reservation_conflicts_total{reason}` (`../quality/observability.md`).
+
 ## Sensitive Operations
 
 A sensitive operation reads or changes private data, money, inventory, permissions, files,

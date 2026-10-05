@@ -8,7 +8,15 @@ import { createSequentialReservation } from "../../src/modules/fiscal/applicatio
 import { createFiscalUnitOfWork } from "../../src/modules/fiscal/infrastructure/unit-of-work.ts";
 import { invoiceTotals, lineAmounts } from "../../src/modules/invoices/domain/amounts.ts";
 import type { InvoiceSnapshot } from "../../src/modules/invoices/domain/snapshot.ts";
-import { createStockRepository } from "../../src/modules/inventory/infrastructure/index.ts";
+import { compareDecimalStrings } from "@facturador/contracts";
+import { calculateCreditNoteAmounts } from "../../src/modules/credit-notes/domain/amounts.ts";
+import { createCreditCapacityRepository } from "../../src/modules/credit-notes/infrastructure/prisma-credit-capacity.ts";
+import {
+  createStockRepository,
+  stockReturnCapacity,
+} from "../../src/modules/inventory/infrastructure/index.ts";
+import type { FiscalCompany } from "./fiscal-harness.ts";
+import { insertDocument, type TestDocument } from "./transmission-harness.ts";
 import { createAccessKeys } from "../../src/modules/sri-engine/infrastructure/access-keys.ts";
 import { signedXmlOf } from "./transmission-harness.ts";
 
@@ -332,4 +340,95 @@ export async function recordOutflow(
       occurredAt: new Date(),
     }),
   );
+}
+
+/**
+ * Nota de crédito en `state` sobre una factura, con sus reservas acreditable y devolvible escritas
+ * en la misma transacción por los repositorios reales y con los importes del cálculo único. Su
+ * snapshot es el mínimo que la transmisión necesita (la clave) y su XML firmado, el sintético.
+ */
+export async function insertCreditNote(
+  prisma: PrismaClient,
+  company: FiscalCompany,
+  invoice: AuthorizedInvoiceDocument,
+  input: {
+    lines: readonly { position: number; quantity: string; physicalReturn?: string }[];
+    state?: string;
+    cause?: "RETURN" | "TOTAL_ANNULMENT";
+  },
+): Promise<TestDocument> {
+  // Los importes del cálculo único con lo acreditado vigente (las pruebas reservan en serie).
+  const state = await createCreditCapacityRepository(prisma).read(company.companyId, invoice.id);
+  const amounts = calculateCreditNoteAmounts({
+    invoiceLines: invoice.snapshot.lines.map((line) => ({
+      position: line.position,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      subtotal: line.subtotal,
+      discount: line.discount,
+      taxableBase: line.taxableBase,
+      taxes: line.taxes,
+    })),
+    credited: state.credited,
+    requested: input.lines.map(({ position, quantity }) => ({ position, quantity })),
+    invoice: { total: invoice.total, reserved: state.reserved, applied: state.applied },
+  });
+  const totals = amounts.totals;
+  if (!totals) throw new Error(`nota inválida: ${JSON.stringify(amounts.issues)}`);
+  const products = new Map(invoice.snapshot.lines.map((line) => [line.position, line.productId]));
+  const returns = input.lines
+    .filter((line) => line.physicalReturn && compareDecimalStrings(line.physicalReturn, "0") > 0)
+    .map((line) => ({ productId: products.get(line.position)!, quantity: line.physicalReturn! }));
+  return insertDocument(prisma, company, input.state ?? "RECEIVED", {
+    documentType: "04",
+    total: totals.total,
+    alongside: async (tx, document) => {
+      const capacity = createCreditCapacityRepository(tx);
+      await capacity.lock(company.companyId, invoice.id);
+      await capacity.initialize({
+        companyId: company.companyId,
+        invoiceId: invoice.id,
+        total: invoice.total,
+        lines: invoice.snapshot.lines.map(({ position, productId, quantity }) => ({
+          position,
+          productId,
+          quantity,
+        })),
+      });
+      await capacity.reserve({
+        companyId: company.companyId,
+        invoiceId: invoice.id,
+        amount: totals.total,
+        lines: amounts.lines.map(({ position, quantity }) => ({ position, quantity })),
+      });
+      await stockReturnCapacity(tx).reserve({
+        companyId: company.companyId,
+        invoiceId: invoice.id,
+        returns,
+      });
+      await capacity.record({
+        companyId: company.companyId,
+        invoiceId: invoice.id,
+        creditNoteId: document.id,
+        cause: input.cause ?? "RETURN",
+        amount: totals.total,
+        lines: amounts.lines.map((line) => ({
+          position: line.position,
+          quantity: line.quantity,
+          subtotal: line.subtotal,
+          discount: line.discount,
+          taxableBase: line.taxableBase,
+          taxes: line.taxes,
+          physicalReturn:
+            input.lines.find((l) => l.position === line.position)?.physicalReturn ?? "0",
+        })),
+      });
+      await stockReturnCapacity(tx).record({
+        companyId: company.companyId,
+        invoiceId: invoice.id,
+        creditNoteId: document.id,
+        returns,
+      });
+    },
+  });
 }

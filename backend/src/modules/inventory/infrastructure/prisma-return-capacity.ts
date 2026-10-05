@@ -7,6 +7,7 @@
 import { compareDecimalStrings } from "@facturador/contracts";
 import { subtractExact, sumExact } from "../../../platform/decimal/fiscal-decimal.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
+import type { StockReturnReservations } from "../application/credit-note-return.ts";
 import { StockReturnExceededError } from "../application/ports.ts";
 
 type ProductReturn = Readonly<{ productId: string; quantity: string }>;
@@ -138,6 +139,42 @@ export function stockReturnCapacity(db: DbClient) {
           quantity: ret.quantity,
         })),
       });
+    },
+  };
+}
+
+/** Reservas devolvibles de las notas, para el seguidor de la autorización (design D10). */
+export function stockReturnReservations(db: DbClient): StockReturnReservations {
+  return {
+    async reservedOf(companyId, creditNoteId) {
+      const rows = await db.stockReturnReservation.findMany({
+        where: { companyId, creditNoteId, status: "RESERVED" },
+        orderBy: { productId: "asc" },
+      });
+      return rows.map((row) => ({ productId: row.productId, quantity: row.quantity.toFixed() }));
+    },
+
+    async conclude(companyId, creditNoteId, productId, outcome, at) {
+      const changed = await db.stockReturnReservation.updateMany({
+        where: { companyId, creditNoteId, productId, status: "RESERVED" },
+        data: { status: outcome, concludedAt: at },
+      });
+      if (changed.count === 0) return false;
+      const reservation = await db.stockReturnReservation.findUniqueOrThrow({
+        where: { companyId_creditNoteId_productId: { companyId, creditNoteId, productId } },
+      });
+      await db.stockReturnCapacity.update({
+        where: {
+          companyId_invoiceId_productId: { companyId, invoiceId: reservation.invoiceId, productId },
+        },
+        data: {
+          reservedQuantity: { decrement: reservation.quantity },
+          ...(outcome === "APPLIED"
+            ? { appliedQuantity: { increment: reservation.quantity } }
+            : {}),
+        },
+      });
+      return true;
     },
   };
 }

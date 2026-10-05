@@ -39,12 +39,14 @@ import {
 import { productsModule } from "./modules/products/infrastructure/index.ts";
 import {
   createStockRepository,
+  creditNoteReturnFollower,
   inventoryInitialization,
   inventoryModule,
   inventoryOutflowFollower,
   inventoryStockReads,
   registerInventoryMetrics,
   stockReturnCapacity,
+  stockReturnReservations,
 } from "./modules/inventory/infrastructure/index.ts";
 import {
   invoiceCreditSource,
@@ -53,6 +55,8 @@ import {
   invoicesModule,
 } from "./modules/invoices/infrastructure/index.ts";
 import {
+  createCreditCapacityRepository,
+  creditCapacityFollower,
   creditNoteSigningProfile,
   creditNotesModule,
 } from "./modules/credit-notes/infrastructure/index.ts";
@@ -417,14 +421,23 @@ const stepDependencies = {
   jobs: jobStore,
   logger,
   // Seguidores de las transiciones (add-document-archive, design D5; add-minimal-inventory, design
-  // D5): al autorizar, el job del RIDE y la salida de inventario nacen en la misma transacción. La
-  // transmisión no conoce el archivo documental ni el inventario.
+  // D5; add-credit-notes, design D7, D8, D10 y D25): al autorizar, el job del RIDE y la salida de
+  // inventario de una factura nacen en la misma transacción; la nota de crédito aplica o libera su
+  // capacidad acreditable y, después, su capacidad devolvible con la DEVOLUCION_NC. La transmisión
+  // no conoce el archivo documental, el inventario ni las notas de crédito.
   followers: [
     rideFollower({ jobs: jobStore, settings: rideSettings.job }),
     inventoryOutflowFollower({
       invoices: invoiceStockLines,
       stock: createStockRepository,
       onOutflow: () => inventoryMetrics.movement("SALIDA_FACTURA"),
+    }),
+    creditCapacityFollower({ capacity: createCreditCapacityRepository }),
+    creditNoteReturnFollower({
+      returns: stockReturnReservations,
+      stock: createStockRepository,
+      documents: createDocumentRepository,
+      onReturn: () => inventoryMetrics.movement("DEVOLUCION_NC"),
     }),
   ],
   observer: registerTransmissionMetrics(metrics.registry, {
