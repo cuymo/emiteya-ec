@@ -154,8 +154,8 @@
 
 ## 12. Rendimiento y prueba end-to-end
 
-- [ ] 12.1 Añadir `bench:debit-notes` en `backend/scripts/` (design D25) y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 donde aplica, que el RIDE de la nota tarda menos de 1 s y que la transacción de la reserva no incluye XML, firma ni red
-- [ ] 12.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado: factura con dos tarifas autorizada; nota de débito de dos conceptos en tratamientos distintos autorizada, con su RIDE en la bandeja; otra nota no autorizada; y la capacidad acreditable y el inventario de la factura sin cambios. Verificar que la prueba pasa
+- [x] 12.1 Añadir `bench:debit-notes` en `backend/scripts/` (design D25) y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 donde aplica, que el RIDE de la nota tarda menos de 1 s y que la transacción de la reserva no incluye XML, firma ni red
+- [x] 12.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado: factura con dos tarifas autorizada; nota de débito de dos conceptos en tratamientos distintos autorizada, con su RIDE en la bandeja; otra nota no autorizada; y la capacidad acreditable y el inventario de la factura sin cambios. Verificar que la prueba pasa
 
 ## 13. Fuentes oficiales y trazabilidad
 

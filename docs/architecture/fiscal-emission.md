@@ -677,6 +677,12 @@ Cambio 11, en curso. Esta sección crece con cada grupo del cambio.
 
 - **Un tipo más en el registro.** `EMITTED_DOCUMENT_TYPES` incluye `05` y `DOCUMENT_KINDS` guarda su nombre ("nota de débito"), el detalle `/notas-debito/{id}`, su API `/debit-notes`, el permiso `debitNotes.reconcile`, el código `DEBIT_NOTE_NOT_RECONCILABLE` y sus esquemas de vista y transmisión. El filtro "Tipo de comprobante" ofrece los tres tipos; `DocumentsSection` y `TransmissionSection` reciben la nota sin otra rama y las reglas de disponibilidad de los documentos siguen en el servidor.
 
+### Medición de la nota de débito
+
+- Con `EMISSION_STAGE_TIMINGS=1`, `POST /api/v1/debit-notes` devuelve sus etapas en `Server-Timing` (`total`, `reservation_tx` y las de la firma compartida: `xml`, `xsd`, `sign`, `persist`), como la factura y la nota de crédito; nunca en producción.
+- `bench:debit-notes` (design D25) mide la búsqueda de facturas elegibles, la vista previa de 1 y de 100 conceptos, el cálculo, la emisión con su reserva, la contención en una misma factura y en facturas distintas y el RIDE de la nota, y termina comprobando que las notas no tocaron la capacidad acreditable ni el inventario (`../quality/performance.md`).
+- `test/integration/e2e-debit-notes.test.ts` recorre el flujo sobre `main.ts` con el SRI simulado: una factura con dos tarifas, una nota de dos tratamientos autorizada con su RIDE en la bandeja y su único `pago` en los XML, otra no autorizada, y la factura con el mismo crédito, el mismo inventario y las reconciliaciones sin diferencias.
+
 ### Pantallas de la nota de débito
 
 - **Notas de débito** (`/notas-debito`, en "Operación", `debitNotes.read`): `frontend/src/features/debit-notes/debit-notes-screen.tsx`, con búsqueda por número o comprador, estado y causa en la URL (`q`, `estado`, `causa` con `intereses` o `costos`), las causas de los conceptos de cada nota, tarjetas por debajo de 768 px y los borradores en curso con su eliminación (`debitNotes.draft`).

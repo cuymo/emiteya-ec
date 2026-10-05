@@ -19,6 +19,7 @@
     "bench:ride": "node --conditions=development scripts/bench-ride.ts",
     "bench:inventory": "node --conditions=development scripts/bench-inventory.ts",
     "bench:credit-notes": "node --conditions=development scripts/bench-credit-notes.ts",
+    "bench:debit-notes": "node --conditions=development scripts/bench-debit-notes.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:auth-schema": "auth generate --config src/modules/identity/infrastructure/better-auth/cli.config.ts --output prisma/schema.prisma -y && prisma format",
