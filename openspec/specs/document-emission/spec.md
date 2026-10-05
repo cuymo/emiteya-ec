@@ -56,7 +56,7 @@ Al superar la validación, el sistema SHALL crear en una sola transacción el co
 - **THEN** su número no vuelve al contador y el siguiente comprobante recibe el número siguiente
 
 ### Requirement: Snapshot inmutable como fuente de verdad
-El snapshot SHALL contener todo lo necesario para reproducir el XML: datos fiscales del emisor, establecimiento, punto, ambiente, comprador, líneas, descripciones, importes materializados, referencias y tarifas fiscales resueltas, formas de pago, resultado del consumidor final, casos especiales, fecha de emisión, componentes de la clave y versiones aplicadas. Desde la reserva MUST ser inmutable y el comprobante no vuelve a leer datos de la empresa, terceros, productos ni catálogos.
+El snapshot SHALL contener todo lo necesario para reproducir el XML: datos fiscales del emisor, establecimiento, punto, ambiente, comprador, líneas, descripciones, importes materializados, referencias y tarifas fiscales resueltas, formas de pago, resultado del consumidor final, casos especiales, fecha de emisión, componentes de la clave y versiones aplicadas. Contiene también, por línea, la decisión de si afecta al inventario, tomada al reservar. Desde la reserva MUST ser inmutable y el comprobante no vuelve a leer datos de la empresa, terceros, productos, inventario ni catálogos.
 
 #### Scenario: Producto cambiado después de reservar
 - **WHEN** un administrador cambia el precio de un producto de un comprobante ya reservado y después se completa la firma
@@ -69,6 +69,14 @@ El snapshot SHALL contener todo lo necesario para reproducir el XML: datos fisca
 #### Scenario: Intento de modificar el snapshot
 - **WHEN** cualquier operación intenta cambiar el snapshot, el número, la clave o la fecha de un comprobante reservado
 - **THEN** el sistema lo impide y el comprobante no cambia
+
+#### Scenario: Decisión de inventario de cada línea
+- **WHEN** se reserva una factura con una línea de un producto con inventario activo y otra de un servicio
+- **THEN** el snapshot indica que la primera línea afecta al inventario y la segunda no, y esa decisión no cambia aunque después cambien el producto o su inventario
+
+#### Scenario: XML sin la decisión de inventario
+- **WHEN** se firma una factura cuyo snapshot lleva la decisión de inventario
+- **THEN** el XML firmado es el mismo que sin esa decisión: el inventario no forma parte del comprobante
 
 ### Requirement: Clave de acceso
 La clave de acceso SHALL tener 49 dígitos compuestos desde el snapshot: fecha `ddmmaaaa`, tipo, RUC, ambiente, establecimiento, punto, secuencial de nueve dígitos, código numérico de 8 dígitos de un generador criptográfico, tipo de emisión normal y dígito verificador módulo 11. MUST calcularse una sola vez, en la reserva, y nunca regenerarse.
