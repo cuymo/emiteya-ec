@@ -149,7 +149,7 @@
   - éxito que lleva al detalle de la nota emitida;
   - doble clic que envía una sola emisión con la misma clave en el reintento;
   - los `409` explicados y el foco tras cada acción
-- [ ] 11.3 Implementar el detalle de la nota y, en el detalle de la factura, la acción "Emitir nota de débito" cuando corresponde. Verificar con pruebas de componente: conceptos con causa y tratamiento, declaración mostrada como declarada por el usuario, reintento de firma, transmisión y documentos, y la acción oculta para una factura no elegible o sin permiso. Documentar las pantallas en `fiscal-emission.md` con sus rutas y permisos
+- [x] 11.3 Implementar el detalle de la nota y, en el detalle de la factura, la acción "Emitir nota de débito" cuando corresponde. Verificar con pruebas de componente: conceptos con causa y tratamiento, declaración mostrada como declarada por el usuario, reintento de firma, transmisión y documentos, y la acción oculta para una factura no elegible o sin permiso. Documentar las pantallas en `fiscal-emission.md` con sus rutas y permisos
 - [ ] 11.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-debit-notes/ui-review.md`. Verificar que no quedan hallazgos abiertos
 
 ## 12. Rendimiento y prueba end-to-end

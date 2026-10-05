@@ -25,6 +25,7 @@ import { StateCell } from "./invoices-screen";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { InvoiceCreditSection } from "@/features/credit-notes/invoice-credit-section";
+import { InvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-note-action";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -123,6 +124,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
             Reintentar firma
           </AsyncButton>
         )}
+        <InvoiceDebitNoteAction invoice={data} />
       </div>
 
       {reserved && (
