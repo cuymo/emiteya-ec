@@ -135,6 +135,33 @@ export function percentageOfExact(base: string, percentage: string): string {
   return times(new Exact(base), new Exact(percentage)).dividedBy(100).toFixed();
 }
 
+/** Entero escalado de un `DecimalString` no negativo: `12.345` es `12345n` con escala 3. */
+function scaled(text: string): { units: bigint; scale: number } {
+  const value = new Exact(text);
+  if (value.isNegative() && !value.isZero())
+    throw new RangeError("Se esperaba un valor no negativo.");
+  const fixed = value.abs().toFixed();
+  const [integer = "0", fraction = ""] = fixed.split(".");
+  return { units: BigInt(integer + fraction), scale: fraction.length };
+}
+
+/**
+ * Cociente `numerador / denominador` materializado a `scale` decimales con HALF_UP, exacto con
+ * enteros: un cociente periódico (por ejemplo, un tercio) nunca se redondea dos veces. Solo para
+ * valores no negativos y un denominador positivo (add-credit-notes, design D6).
+ */
+export function divideRoundHalfUp(numerator: string, denominator: string, scale: number): string {
+  const n = scaled(numerator);
+  const d = scaled(denominator);
+  if (d.units === 0n) throw new RangeError("El denominador debe ser positivo.");
+  const top = n.units * 10n ** BigInt(d.scale + scale);
+  const bottom = d.units * 10n ** BigInt(n.scale);
+  const quotient = (2n * top + bottom) / (2n * bottom);
+  if (scale === 0) return quotient.toString();
+  const digits = quotient.toString().padStart(scale + 1, "0");
+  return `${digits.slice(0, -scale)}.${digits.slice(-scale)}`;
+}
+
 const typed = (specName: DecimalSpecName) => ({
   parse: (text: string) => FiscalDecimal.parse(specName, text),
   fromDatabase: (stored: { toFixed(): string } | string) =>

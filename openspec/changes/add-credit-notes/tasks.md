@@ -32,10 +32,10 @@
 
 ## 5. Dominio de la nota
 
-- [ ] 5.1 Implementar `calculateCreditNoteAmounts`, la primitiva única y versionada de design D6 (objetivos acumulados, importes de la nota, remanente, totales, valor de la modificación y capacidad resultante, sin `number`). Verificar con:
+- [x] 5.1 Implementar `calculateCreditNoteAmounts`, la primitiva única y versionada de design D6 (objetivos acumulados, importes de la nota, remanente, totales, valor de la modificación y capacidad resultante, sin `number`). Verificar con:
   - los golden tests de design D6: línea completa, parcial, varias líneas, notas sucesivas, último remanente, remanente después de liberar una nota, IVA, descuentos originales, cantidades de 6 decimales, acumulación que excede la línea e importe negativo rechazado;
   - property tests con generador determinista sobre particiones de la cantidad y secuencias de notas con liberaciones: al acreditar la totalidad, cada componente materializado suma exactamente el original, y ningún importe es negativo
-- [ ] 5.2 Implementar las reglas de elegibilidad y de líneas en el orden de design D4 (estado, integridad, consumidor final, causa, motivo, líneas, retorno físico por línea con su independencia de la capacidad acreditable, declaraciones) y la vista previa pura que consume `calculateCreditNoteAmounts`. Verificar con pruebas unitarias de cada rechazo, de que la anulación total copia la factura, no admite líneas ni cantidades y acepta un retorno físico de 0 a la cantidad original solo en bienes elegibles, y de que procede solo sin crédito reservado ni aplicado
+- [x] 5.2 Implementar las reglas de elegibilidad y de líneas en el orden de design D4 (estado, integridad, consumidor final, causa, motivo, líneas, retorno físico por línea con su independencia de la capacidad acreditable, declaraciones) y la vista previa pura que consume `calculateCreditNoteAmounts`. Verificar con pruebas unitarias de cada rechazo, de que la anulación total copia la factura, no admite líneas ni cantidades y acepta un retorno físico de 0 a la cantidad original solo en bienes elegibles, y de que procede solo sin crédito reservado ni aplicado
 
 ## 6. Factura de origen y capacidad acreditable
 
