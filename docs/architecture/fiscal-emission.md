@@ -263,8 +263,8 @@ Cambio 6. Código en `backend/src/modules/invoices/` y contratos en
 | Evaluación pura, con todos los problemas en el orden de D6 | `invoices/domain/evaluation.ts` |
 | Aritmética fiscal exacta y materialización HALF_UP | `invoices/domain/amounts.ts`, sobre `platform/decimal` |
 | Snapshot versionado (`InvoiceSnapshotV1`) | `invoices/domain/snapshot.ts` |
-| Transacción de `RESERVED` | `invoices/application/emission.ts` y `invoices/infrastructure/emission-unit-of-work.ts` |
-| Del snapshot al artefacto firmado | `invoices/application/signing-pipeline.ts` |
+| Transacción de `RESERVED` | `invoices/application/emission.ts` y `invoices/infrastructure/emission-unit-of-work.ts`, con la reserva compartida `fiscal/application/document-reservation.ts` (`add-credit-notes`) |
+| Del snapshot al artefacto firmado | `fiscal/application/signing-pipeline.ts`, compartido por tipo desde `add-credit-notes`, con el perfil `invoices/application/signing-profile.ts` |
 | Consultas y reintento de la firma | `invoices/application/invoices.ts` |
 | Idempotencia durable (Q-30) | `platform/idempotency` (`idempotency.md`) |
 | Clave de acceso, builder XML, validación XSD y firmador | `sri-engine` (`AccessKeys`, `InvoiceXmlBuilder`, `XsdValidator`, `ec-sri-signer.ts`) |
@@ -380,7 +380,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Máquina fiscal: estados, transiciones, causas y terminales | `fiscal/domain/document.ts` |
 | Tipos de job, operaciones, resultados y motivos de detención | `fiscal/domain/transmission.ts` |
 | Cola durable: reclamo con `SKIP LOCKED`, arriendos, backoff y runner | `platform/jobs` (`jobs.ts`, `prisma-job-store.ts`, `runner.ts`) |
-| Encolado al firmar | `invoices/application/signing-pipeline.ts`, con `fiscal/application/transmission-jobs.ts` |
+| Encolado al firmar | `fiscal/application/signing-pipeline.ts` y `fiscal/infrastructure/signed-unit-of-work.ts`, con `fiscal/application/transmission-jobs.ts` |
 | Barrido de firmados sin job e interruptor | `fiscal/infrastructure/transmission-sweeper.ts`, `transmission-gate.ts` |
 | Paso con el SRI: evidencia antes de la clasificación y decisión guardada | `fiscal/application/transmission-step.ts` |
 | Envío, autorización y reconciliación | `fiscal/application/transmit-handler.ts`, `authorize-handler.ts`, `reconcile-handler.ts` |
@@ -388,7 +388,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Transporte SOAP, sobres, endpoints y circuit breaker | `sri-engine/infrastructure` (`soap-transport.ts`, `soap-envelopes.ts`, `endpoints.ts`, `circuit-breaker.ts`, `sri-gateway.ts`) |
 | Clasificadores de recepción, autorización y validez | `sri-engine/infrastructure` (`reception-classifier.ts`, `authorization-classifier.ts`, `validity-classifier.ts`) |
 | Política de tamaño | `catalogs` (dataset `sri-transmission-policy`) |
-| Consultas y reconciliación manual | `invoices/application/invoices.ts` e `invoices/infrastructure/http/invoices-router.ts` |
+| Consultas y reconciliación manual | `invoices/application/invoices.ts` e `invoices/infrastructure/http/invoices-router.ts`, con la solicitud compartida `fiscal/application/reconciliation-request.ts` (`add-credit-notes`) |
 | Métricas | `fiscal/infrastructure/transmission-metrics.ts` |
 | Pantallas | `frontend/src/features/invoices/` (`transmission-section.tsx`) |
 
@@ -587,6 +587,27 @@ design del cambio las concretan. Las reglas de negocio están en `docs/product/d
 - **Importes de una devolución.** Decimal exacto desde la línea original del snapshot: la cantidad acreditada fija la proporción, y la nota que completa una línea toma exactamente el remanente de base, descuento e impuestos, para que la suma de las notas no difiera del documento original. Con golden tests de línea completa, parcial, varias líneas, notas sucesivas, último remanente, impuestos, descuentos originales, cantidades de 6 decimales y una acumulación que intenta exceder la línea.
 - **Devolución de stock.** Otro seguidor de las transiciones, en la misma transacción que la entrada de la nota en `AUTHORIZED`; `fiscal` no importa `inventory`. Agrupa por producto con la suma exacta y bloquea los saldos en orden estable de `productId`, como la salida de la factura.
 - **RIDE.** La distribución oficial de la nota de crédito está en la ficha v2.34, anexo 2, página 61: la misma cabecera con la autorización y el Code128, emisor, comprador, el bloque del comprobante que se modifica con su fecha y la razón de modificación, el detalle, la información adicional y los subtotales, sin formas de pago. Usa las primitivas del RIDE de la factura validadas por S-4 (pdfmake, bwip-js, Noto Sans y paginación), sin otro spike; no es el RIDE de la factura con otro título. La nota aparece en la bandeja (`document-archive`), no en otra.
+
+## Implementación de `add-credit-notes`
+
+Cambio 10, en curso. Esta sección crece con cada grupo del cambio.
+
+### Reserva y firma compartidas por tipo
+
+La factura y la nota de crédito comparten la orquestación; cada tipo aporta solo lo que difiere, en
+interfaces pequeñas y sin un conmutador por `codDoc` (design D2). La generalización no cambió la
+factura: `backend/test/integration/invoice-regression-contract.test.ts` fija, con entradas
+deterministas y fixtures generados antes del refactor, la reserva, el número, la clave, el
+snapshot, el XML byte a byte, el XML firmado que solo agrega la firma, su validación XSD, su
+verificación, los metadatos y el hash del artefacto, las transiciones, la auditoría, el job de
+envío, la idempotencia y los errores.
+
+| Pieza | Compartida en `fiscal` | Por tipo |
+| --- | --- | --- |
+| Reserva | `reserveDocumentIn` (`application/document-reservation.ts`): secuencial, identidad tributaria bloqueada, código numérico y clave, `insertReserved` y transición a `RESERVED`, con el tipo como dato | El módulo bloquea su borrador, evalúa, arma el snapshot (`withKey`) y sus columnas, y registra su idempotencia y su auditoría en la misma transacción |
+| Firma | `createSigningPipeline` (`application/signing-pipeline.ts`): arriendo, XML, XSD antes y después de firmar, firma con el tipo del comprobante, artefacto con sus metadatos, paso a `SIGNED`, transición, encolado del `sri.transmit` y diagnóstico. El esquema sale del snapshot y el tipo, del comprobante | `SigningProfile`: el builder del XML desde el snapshot (`SnapshotXmlBuilder`, que traduce sus fallos a `XmlBuildFailure`) y la auditoría del paso a `SIGNED` (`SignedAudit`). La factura: `invoiceSigningProfile` |
+| Composición | `signingPipelines` (`infrastructure/signing-pipelines.ts`) y `createSignedUnitOfWork`: `main.ts` y los arneses la crean una vez con el firmador, el validador y la cola | Cada módulo recibe su pipeline: `invoicesModule({ signing: documentSigning.pipeline(invoiceSigningProfile()) })` |
+| Reconciliación manual | `requestReconciliationIn` (`application/reconciliation-request.ts`): comprobante bloqueado, estado reconciliable, `sri.reconcile` manual y auditoría en una transacción; la finalización elige su acción por tipo en `reconcile-handler.ts` (`invoice.reconciliation_completed` o `credit_note.reconciliation_completed`) | Cada módulo expone su ruta, su permiso, sus errores y la acción de la solicitud |
 
 ## Reserva del secuencial
 

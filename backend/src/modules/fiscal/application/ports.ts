@@ -213,6 +213,25 @@ export interface ArtifactStore {
 }
 
 /**
+ * Persistencia del artefacto y del paso a `SIGNED` en una transacción (add-invoice-emission, design
+ * D9, paso 6), compartida por tipo (add-credit-notes, design D2).
+ */
+export type SignedScope = {
+  artifacts: ArtifactStore;
+  documents: DocumentRepository;
+  audit: AuditLog;
+  /**
+   * Encola el `sri.transmit` inicial en la misma transacción que firma (add-sri-transmission,
+   * design D6): nunca hay un comprobante firmado sin su job.
+   */
+  enqueueTransmission(document: Pick<StoredDocument, "id" | "companyId">): Promise<boolean>;
+};
+
+export interface SignedUnitOfWork {
+  run<T>(work: (scope: SignedScope) => Promise<T>): Promise<T>;
+}
+
+/**
  * Notificación de un documento a su receptor (add-document-archive, design D9; Q-24): el punto de
  * extensión del correo en P1. No tiene implementación ni cableado: el MVP no envía correos. Sus
  * eventos futuros reflejarán la evidencia del proveedor (enviado, aceptado o rebotado), nunca que el

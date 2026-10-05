@@ -149,6 +149,23 @@ Use persisted jobs for long-running work that must continue after browser refres
 Jobs may run more than once. Give each a deduplication key and make its handler idempotent;
 see `idempotency.md`.
 
+## Emisión por tipo de comprobante
+
+La reserva, la firma y la reconciliación manual son de `fiscal` y las comparten todos los tipos que
+el sistema emite (`add-credit-notes`, design D2; detalle en `fiscal-emission.md`):
+
+- `reserveDocumentIn` reserva el secuencial, bloquea la identidad tributaria, compone la clave e
+  inserta el comprobante `RESERVED` con su transición, dentro de la transacción del módulo que emite.
+- `createSigningPipeline` lleva el comprobante de `RESERVED` a `SIGNED` con el perfil de su tipo
+  (`SigningProfile`: builder del XML desde el snapshot y auditoría del paso a `SIGNED`); `main.ts`
+  compone `signingPipelines` una vez y entrega a cada módulo su pipeline.
+- `requestReconciliationIn` hace la solicitud manual; cada módulo pone su ruta, su permiso y su
+  auditoría.
+
+Por tipo quedan el borrador, la evaluación, el snapshot, el builder del XML, la distribución del
+RIDE, las rutas y las pantallas. Un tipo nuevo registra su perfil; no se agrega un conmutador por
+`codDoc`.
+
 ## Inventario
 
 El módulo `inventory` (`add-minimal-inventory`) lleva stock contabilizado por hechos fiscales

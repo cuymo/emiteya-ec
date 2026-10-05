@@ -4,11 +4,11 @@ import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import { createIdempotencyStore } from "../../../platform/idempotency/prisma-idempotency-store.ts";
 import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
 import {
-  DEFAULT_TRANSMISSION_SETTINGS,
   createDocumentRepository,
   createReconciliationRequestUnitOfWork,
   createTransmissionReader,
-  type TransmissionSettings,
+  type SigningPipeline,
+  type SigningProfile,
 } from "../../fiscal/infrastructure/index.ts";
 import type { JobStore } from "../../../platform/jobs/jobs.ts";
 import { createPrismaJobStore } from "../../../platform/jobs/prisma-job-store.ts";
@@ -18,13 +18,11 @@ import { createAccessKeys } from "../../sri-engine/infrastructure/access-keys.ts
 import { INVOICE_XML_BUILDER_VERSION } from "../../sri-engine/infrastructure/invoice-xml-builder.ts";
 import { createAuditLog } from "../../audit/infrastructure/prisma-audit-log.ts";
 import { createArtifactStore } from "../../fiscal/infrastructure/index.ts";
-import { XML_SIGNER_VERSION } from "../../sri-engine/infrastructure/ec-sri-signer.ts";
 import { createInvoiceXmlBuilder } from "../../sri-engine/infrastructure/invoice-xml-builder.ts";
 import { createDrafts } from "../application/drafts.ts";
 import { createEmission } from "../application/emission.ts";
 import { createInvoices } from "../application/invoices.ts";
-import { createSigningPipeline, type DocumentSigner } from "../application/signing-pipeline.ts";
-import { createSignedUnitOfWork } from "./signed-unit-of-work.ts";
+import { invoiceSigningProfile as createInvoiceSigningProfile } from "../application/signing-profile.ts";
 import { createEmissionUnitOfWork } from "./emission-unit-of-work.ts";
 import { createEvaluationReads, type SigningReads } from "./evaluation-reads.ts";
 import type { StockReads } from "../application/ports.ts";
@@ -46,10 +44,13 @@ export type InvoicesModuleOptions = {
    * que congela todas sus líneas sin inventario.
    */
   stockReads: StockReads;
-  /** Validador XSD con el paquete verificado al arrancar. */
-  xsd: Pick<XsdValidator, "ensureAvailable" | "validate">;
-  /** Firma de comprobantes con la firma vigente (`signingModule(...).documents`). */
-  signer: DocumentSigner;
+  /** Validador XSD con el paquete verificado al arrancar: los archivos del esquema antes de reservar. */
+  xsd: Pick<XsdValidator, "ensureAvailable">;
+  /**
+   * Firma compartida de `fiscal` con el perfil de la factura (add-credit-notes, design D2):
+   * `signingPipelines(...).pipeline(invoiceSigningProfile())`, compuesta por `main.ts`.
+   */
+  signing: SigningPipeline;
   /** `INVOICE_MAX_LINES`. */
   maxLines: number;
   /**
@@ -70,10 +71,12 @@ export type InvoicesModuleOptions = {
   jobs?: Pick<JobStore, "enqueueIn">;
   /** `SRI_CONCLUSION_WINDOW_HOURS` en milisegundos; 24 horas por defecto. */
   conclusionWindowMs?: number;
-  /** Límites del `sri.transmit` que nace al firmar (design D6 y D22). */
-  transmission?: TransmissionSettings;
   now?: () => Date;
 };
+
+/** Perfil de la factura para la firma compartida, con el builder de la factura 1.1.0. */
+export const invoiceSigningProfile = (): SigningProfile =>
+  createInvoiceSigningProfile(createInvoiceXmlBuilder());
 
 const DEFAULT_CONCLUSION_WINDOW_MS = 24 * 3_600_000;
 
@@ -90,20 +93,7 @@ export function invoicesModule(options: InvoicesModuleOptions) {
     maxLines: options.maxLines,
   });
   const documents = createDocumentRepository(options.prisma);
-  const pipeline = createSigningPipeline({
-    documents,
-    persist: createSignedUnitOfWork(options.prisma, {
-      jobs: options.jobs ?? createPrismaJobStore(options.prisma),
-      settings: options.transmission ?? DEFAULT_TRANSMISSION_SETTINGS,
-      now,
-    }),
-    builder: createInvoiceXmlBuilder(),
-    xsd: options.xsd,
-    signer: options.signer,
-    signerVersion: XML_SIGNER_VERSION,
-    now,
-    ...(options.logger ? { logger: options.logger } : {}),
-  });
+  const pipeline = options.signing;
   const invoices = createInvoices({
     documents,
     artifacts: createArtifactStore(options.prisma),

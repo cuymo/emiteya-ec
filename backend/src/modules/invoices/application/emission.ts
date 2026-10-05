@@ -1,8 +1,9 @@
 // Emisión de una factura desde un borrador (add-invoice-emission, design D6 a D9). Fuera de la
 // transacción: permiso, cabecera Idempotency-Key, repetición en el registro y archivos del esquema.
 // Dentro, en el orden de D7: borrador bloqueado, configuración bloqueada, evaluación, snapshot,
-// secuencial, identidad bloqueada, código numérico y clave, comprobante RESERVED con su transición,
-// borrador EMITTED, registro de idempotencia y auditoría. Después del commit, la firma (D9). Las
+// la reserva compartida de `fiscal` (secuencial, identidad bloqueada, código numérico y clave,
+// comprobante RESERVED con su transición; add-credit-notes D2), borrador EMITTED, registro de
+// idempotencia y auditoría. Después del commit, la firma (D9). Las
 // etapas `reservation_tx`, `validation_snapshot` y `arithmetic` se miden para el benchmark y el
 // histograma de la emisión (D16).
 import { emitInvoiceSchema } from "@facturador/contracts";
@@ -14,6 +15,7 @@ import {
   type IdempotencyStore,
 } from "../../../platform/idempotency/idempotency.ts";
 import { NO_TIMINGS, type StageTimings } from "../../../platform/metrics/stage-timings.ts";
+import { reserveDocumentIn } from "../../fiscal/application/document-reservation.ts";
 import type { DocumentRepository, StoredDocument } from "../../fiscal/application/ports.ts";
 import { parseInput, type Authorizer } from "../../identity/application/authorization.ts";
 import type { RequestContext } from "../../identity/application/request-context.ts";
@@ -164,67 +166,27 @@ export function createEmission(deps: EmissionDependencies) {
           datasetVersions: await scope.reads.catalogs.datasetVersions(),
         }),
       );
-      // 5. Secuencial con el ambiente del snapshot.
-      const reservation = await scope.reserveSequential({
+      // 5 a 8. Secuencial, identidad bloqueada, clave y comprobante RESERVED con su transición.
+      const { document, snapshot } = await reserveDocumentIn(scope, deps.accessKeys, {
         companyId: ctx.companyId,
-        environment: draftSnapshot.environment,
-        establishmentId: evaluated.point.establishment.id,
-        emissionPointId: evaluated.point.point.id,
         documentType: "01",
+        issueDate,
+        environment: draftSnapshot.environment,
+        environmentCode: draftSnapshot.environmentCode,
+        ruc: draftSnapshot.issuer.ruc,
+        establishment: draftSnapshot.issuer.establishment,
+        emissionPoint: draftSnapshot.issuer.emissionPoint,
         reservedBy: ctx.userId,
         correlationId: ctx.requestId,
+        withKey: (key): InvoiceSnapshot => withKey(draftSnapshot, key),
+        columns: (snapshot) => ({
+          schemaVersion: snapshot.schema.version,
+          buyerIdentification: snapshot.buyer.identification,
+          buyerName: snapshot.buyer.legalName,
+          total: snapshot.totals.total,
+        }),
       });
-      // 6. Identidad tributaria bloqueada.
-      await scope.lockTaxIdentity(ctx.companyId);
-      // 7. Código numérico y clave de acceso.
-      const sequential = String(reservation.sequential).padStart(9, "0");
-      const numericCode = deps.accessKeys.numericCode();
-      const accessKey = deps.accessKeys.compose({
-        issueDate,
-        documentType: "01",
-        ruc: draftSnapshot.issuer.ruc,
-        environment: draftSnapshot.environmentCode,
-        establishment: draftSnapshot.issuer.establishment.code,
-        emissionPoint: draftSnapshot.issuer.emissionPoint.code,
-        sequential,
-        numericCode,
-      });
-      const snapshot: InvoiceSnapshot = withKey(draftSnapshot, {
-        documentNumber: reservation.documentNumber,
-        sequential,
-        numericCode,
-        emissionType: "1",
-        accessKey,
-      });
-      // 8. Comprobante RESERVED, su transición y el borrador EMITTED.
-      const document = await scope.documents.insertReserved({
-        companyId: ctx.companyId,
-        documentType: "01",
-        environment: snapshot.environment,
-        establishmentId: snapshot.issuer.establishment.id,
-        emissionPointId: snapshot.issuer.emissionPoint.id,
-        documentNumber: reservation.documentNumber,
-        sequential: reservation.sequential,
-        reservationId: reservation.reservationId,
-        accessKey,
-        numericCode,
-        issueDate,
-        snapshot,
-        schemaVersion: snapshot.schema.version,
-        buyerIdentification: snapshot.buyer.identification,
-        buyerName: snapshot.buyer.legalName,
-        total: snapshot.totals.total,
-        createdBy: ctx.userId,
-      });
-      await scope.documents.recordTransition({
-        companyId: ctx.companyId,
-        documentId: document.id,
-        from: null,
-        to: "RESERVED",
-        cause: "EMISSION",
-        actor: { type: "USER", userId: ctx.userId },
-        metadata: { reservationId: reservation.reservationId, correlationId: ctx.requestId },
-      });
+      // El borrador EMITTED.
       await scope.markDraftEmitted(ctx.companyId, draft.id, document.id, ctx.userId);
       // 9. Registro de idempotencia: su clave única es la última defensa.
       await scope.idempotency.insert({
@@ -243,7 +205,7 @@ export function createEmission(deps: EmissionDependencies) {
         changes: {
           invoiceId: document.id,
           documentNumber: document.documentNumber,
-          accessKey,
+          accessKey: snapshot.key.accessKey,
           environment: document.environment,
           total: document.total,
         },

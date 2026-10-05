@@ -4,23 +4,29 @@
 // paso a SIGNED, su transición y la auditoría. Un fallo deja el comprobante RESERVED con el
 // diagnóstico del último intento; nunca reintenta por su cuenta. Las etapas se miden como `xml`,
 // `xsd` (antes y después de firmar), `sign` y `persist` (design D16).
-import type { SigningAttemptCode, SigningAttemptStage } from "@facturador/contracts";
+//
+// La orquestación es la misma para cada tipo (add-credit-notes, design D2): el esquema sale del
+// snapshot y el tipo, del comprobante. Lo que difiere lo da el perfil del tipo, en interfaces
+// pequeñas: el XML desde su snapshot y la auditoría del paso a SIGNED. Cada módulo crea su pipeline
+// con su perfil; no hay un conmutador por `codDoc`.
+import {
+  SIGNING_ATTEMPT_CODES,
+  type SigningAttemptCode,
+  type SigningAttemptStage,
+} from "@facturador/contracts";
+import type { AuditAction, AuditChanges } from "../../audit/domain/audit-event.ts";
 import { NO_TIMINGS, type StageTimings } from "../../../platform/metrics/stage-timings.ts";
-import type { DocumentRepository, StoredDocument } from "../../fiscal/application/ports.ts";
-import type { AttemptDetail } from "../../fiscal/domain/document.ts";
 import type { RequestContext } from "../../identity/application/request-context.ts";
 import {
-  InvoiceXmlError,
   XsdValidatorError,
-  type InvoiceXmlBuilder,
   type RegisteredSchema,
+  type SchemaFile,
   type XsdValidation,
   type XsdValidator,
 } from "../../sri-engine/application/ports.ts";
-import type { InvoiceSnapshot } from "../domain/snapshot.ts";
-import { classOf } from "./diagnostics.ts";
-import type { SignedUnitOfWork } from "./ports.ts";
-import { toXmlSnapshot } from "./xml-snapshot.ts";
+import type { AttemptDetail } from "../domain/document.ts";
+import type { DocumentType } from "../domain/numbering.ts";
+import type { DocumentRepository, SignedUnitOfWork, StoredDocument } from "./ports.ts";
 
 /** Duración del arriendo de un intento: lo retoma una repetición o un reintento si el proceso cae. */
 export const ATTEMPT_LEASE_SECONDS = 120;
@@ -30,9 +36,49 @@ export type DocumentSigner = {
   signDocument(
     companyId: string,
     xml: string,
-    documentType: "01",
+    documentType: DocumentType,
   ): Promise<{ xml: string; certificateFingerprint: string; certificateId: string }>;
 };
+
+/** El snapshot no se puede escribir como XML; el código nunca lleva datos del comprobante. */
+export class XmlBuildFailure extends Error {
+  readonly code: "SCHEMA_UNAVAILABLE" | "INVALID_SNAPSHOT_AMOUNT" | "INVALID_SNAPSHOT_TEXT";
+  constructor(code: XmlBuildFailure["code"]) {
+    super(code);
+    this.name = "XmlBuildFailure";
+    this.code = code;
+  }
+}
+
+/** XML de un tipo desde su snapshot. Lanza `XmlBuildFailure` si el snapshot no se puede escribir. */
+export type SnapshotXmlBuilder = Readonly<{
+  /** Versión del builder, que el artefacto registra. */
+  version: string;
+  build(snapshot: unknown): string;
+}>;
+
+/** Auditoría del paso a SIGNED de un tipo: su acción y sus cambios, sin XML ni bytes. */
+export type SignedAudit = Readonly<{
+  action: AuditAction;
+  changes(document: StoredDocument, artifactSha256: string): AuditChanges;
+}>;
+
+/** Lo que difiere por tipo en la firma; el resto del procedimiento es el mismo. */
+export type SigningProfile = Readonly<{
+  documentType: DocumentType;
+  xml: SnapshotXmlBuilder;
+  signedAudit: SignedAudit;
+}>;
+
+/** El esquema que el snapshot de cada tipo fija al reservar. */
+type PinnedSchema = Readonly<{
+  schema: Readonly<{
+    version: string;
+    path: string;
+    sha256: string;
+    imports: readonly SchemaFile[];
+  }>;
+}>;
 
 /** Etapa del benchmark y del histograma de la emisión para cada etapa del intento. */
 const TIMING_STAGE: Record<SigningAttemptStage, string> = {
@@ -92,7 +138,7 @@ function xsdDetail(result: XsdValidation): AttemptDetail | null {
 export type SigningPipelineDependencies = {
   documents: DocumentRepository;
   persist: SignedUnitOfWork;
-  builder: InvoiceXmlBuilder;
+  profile: SigningProfile;
   xsd: Pick<XsdValidator, "validate">;
   signer: DocumentSigner;
   /** Versiones del firmador que registra el artefacto. */
@@ -106,6 +152,7 @@ export type SigningAttempt = Readonly<{ document: StoredDocument; attempted: boo
 
 export function createSigningPipeline(deps: SigningPipelineDependencies) {
   const now = deps.now ?? (() => new Date());
+  const { profile } = deps;
 
   /** Pide un intento hacia SIGNED: solo empieza si el comprobante sigue RESERVED y toma el arriendo. */
   async function attempt(
@@ -113,6 +160,9 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
     document: StoredDocument,
     timings: StageTimings = NO_TIMINGS,
   ): Promise<SigningAttempt> {
+    if (document.documentType !== profile.documentType) {
+      throw new Error("El comprobante no es del tipo de este procedimiento de firma.");
+    }
     if (document.state !== "RESERVED") return { document, attempted: false };
     const started = now();
     const leased = await deps.documents.acquireAttemptLease(
@@ -153,25 +203,21 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
       return timings.measure(TIMING_STAGE[name], work);
     };
     const { companyId } = ctx;
-    const snapshot = document.snapshot as InvoiceSnapshot;
+    const pinned = (document.snapshot as PinnedSchema).schema;
     const schema: RegisteredSchema = {
-      documentType: "01",
-      version: snapshot.schema.version,
-      path: snapshot.schema.path,
-      sha256: snapshot.schema.sha256,
-      imports: snapshot.schema.imports,
+      documentType: document.documentType,
+      version: pinned.version,
+      path: pinned.path,
+      sha256: pinned.sha256,
+      imports: pinned.imports,
     };
     const current: { stage: SigningAttemptStage } = { stage: "BUILD_XML" };
     try {
       const xml = await stage("BUILD_XML", current, () => {
         try {
-          return Promise.resolve(deps.builder.build(toXmlSnapshot(snapshot)));
+          return Promise.resolve(profile.xml.build(document.snapshot));
         } catch (error) {
-          if (error instanceof InvoiceXmlError) {
-            throw new AttemptFailure(
-              error.code === "UNSUPPORTED_SCHEMA_VERSION" ? "SCHEMA_UNAVAILABLE" : error.code,
-            );
-          }
+          if (error instanceof XmlBuildFailure) throw new AttemptFailure(error.code);
           throw new AttemptFailure("INVALID_SNAPSHOT_TEXT");
         }
       });
@@ -182,7 +228,7 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
         if (!result.valid) throw new AttemptFailure("XSD_INVALID", xsdDetail(result));
       });
       const signed = await stage("SIGN", current, () =>
-        deps.signer.signDocument(companyId, xml, "01").catch((error: unknown) => {
+        deps.signer.signDocument(companyId, xml, document.documentType).catch((error: unknown) => {
           const code = (error as { code?: unknown } | null)?.code;
           throw new AttemptFailure(
             typeof code === "string" && SIGNING_CODES.has(code)
@@ -207,12 +253,12 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
               mediaType: "application/xml",
               content: Buffer.from(signed.xml, "utf8"),
               metadata: {
-                documentType: "01",
+                documentType: document.documentType,
                 schemaVersion: schema.version,
                 schemaPath: schema.path,
                 schemaSha256: schema.sha256,
                 imports: schema.imports.map(({ path, sha256 }) => ({ path, sha256 })),
-                builderVersion: deps.builder.version,
+                builderVersion: profile.xml.version,
                 signerVersion: deps.signerVersion,
                 certificateFingerprint: signed.certificateFingerprint,
               },
@@ -234,20 +280,16 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
             await scope.audit.append({
               companyId,
               actor: { type: "USER", userId: ctx.userId },
-              action: "invoice.signed",
-              changes: {
-                invoiceId: document.id,
-                documentNumber: document.documentNumber,
-                artifactSha256: artifact.sha256,
-              },
+              action: profile.signedAudit.action,
+              changes: profile.signedAudit.changes(document, artifact.sha256),
               correlationId: ctx.requestId,
             });
             return (await scope.documents.find(companyId, document.id))!;
           });
         } catch (error) {
           deps.logger?.error(
-            { err: error, documentId: document.id },
-            "no se pudo guardar la factura firmada",
+            { err: error, documentId: document.id, documentType: document.documentType },
+            "no se pudo guardar el comprobante firmado",
           );
           throw new AttemptFailure("PERSIST_FAILED");
         }
@@ -266,7 +308,7 @@ export function createSigningPipeline(deps: SigningPipelineDependencies) {
       await deps.documents.recordAttemptFailure(companyId, document.id, {
         stage: current.stage,
         code: failure.code,
-        class: classOf(failure.code),
+        class: SIGNING_ATTEMPT_CODES[failure.code],
         at: now(),
         detail: failure.detail,
       });

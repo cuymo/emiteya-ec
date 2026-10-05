@@ -21,6 +21,16 @@ export { createTransmissionUnitOfWork } from "./transmission-unit-of-work.ts";
 export { createTransmissionSweeper, type TransmissionSweeper } from "./transmission-sweeper.ts";
 export { enqueueTransmissionIn } from "../application/transmission-jobs.ts";
 export {
+  signingPipelines,
+  type SigningPipelines,
+  type SigningPipelinesOptions,
+} from "./signing-pipelines.ts";
+export type {
+  DocumentSigner,
+  SigningPipeline,
+  SigningProfile,
+} from "../application/signing-pipeline.ts";
+export {
   DEFAULT_TRANSMISSION_SETTINGS,
   type TransmissionSettings,
 } from "../application/transmission-settings.ts";

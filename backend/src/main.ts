@@ -45,12 +45,16 @@ import {
   inventoryStockReads,
   registerInventoryMetrics,
 } from "./modules/inventory/infrastructure/index.ts";
-import { invoiceStockLines, invoicesModule } from "./modules/invoices/infrastructure/index.ts";
+import {
+  invoiceSigningProfile,
+  invoiceStockLines,
+  invoicesModule,
+} from "./modules/invoices/infrastructure/index.ts";
 import {
   createConfigurationLogoReader,
   taxpayerRouters,
 } from "./modules/taxpayer/infrastructure/index.ts";
-import { fiscalRouters } from "./modules/fiscal/infrastructure/index.ts";
+import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
   createArtifactStore,
@@ -314,6 +318,17 @@ apiRouter.use(
   }),
 );
 
+// Firma de comprobantes compartida por tipo (add-credit-notes, design D2): cada módulo que emite
+// pide su pipeline con su perfil.
+const documentSigning = signingPipelines({
+  prisma: database.prisma,
+  xsd: xsdValidator,
+  signer: signing.documents,
+  jobs: jobStore,
+  transmission: transmissionSettings,
+  logger,
+});
+
 // Borradores y facturas (add-invoice-emission, design D1 y D13).
 apiRouter.use(
   ...invoicesModule({
@@ -323,14 +338,13 @@ apiRouter.use(
     // add-minimal-inventory, design D1 y D4: la decisión de inventario de cada línea al reservar.
     stockReads: inventoryStockReads,
     xsd: xsdValidator,
-    signer: signing.documents,
+    signing: documentSigning.pipeline(invoiceSigningProfile()),
     maxLines: env.INVOICE_MAX_LINES,
     metrics: metrics.registry,
     stageTimings: env.EMISSION_STAGE_TIMINGS,
     logger,
     jobs: jobStore,
     conclusionWindowMs: transmissionSettings.poll.windowMs,
-    transmission: transmissionSettings,
   }).routers,
 );
 

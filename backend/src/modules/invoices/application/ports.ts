@@ -4,12 +4,8 @@
 import type { DbClient } from "../../../platform/db/database.ts";
 import type { ListMeta } from "@facturador/contracts";
 import type { AuditLog } from "../../audit/application/audit-log.ts";
-import type {
-  ArtifactStore,
-  DocumentRepository,
-  StoredDocument,
-} from "../../fiscal/application/ports.ts";
 import type { IdempotencyStore } from "../../../platform/idempotency/idempotency.ts";
+import type { DocumentReservationScope } from "../../fiscal/application/document-reservation.ts";
 import type { SchemaRegistryEntry } from "../../sri-engine/application/schemas.ts";
 import type { DraftContent, DraftRecord } from "../domain/draft.ts";
 import type {
@@ -99,17 +95,12 @@ export type CatalogReads = {
 
 export type Page<T> = { items: T[]; meta: ListMeta };
 
-export type SequentialReservation = Readonly<{
-  reservationId: string;
-  sequential: number;
-  documentNumber: string;
-}>;
-
 /**
  * Operaciones de la transacción de `RESERVED` (design D7), todas sobre la misma transacción: sin
- * I/O externo ni XML.
+ * I/O externo ni XML. La reserva del comprobante es la compartida de `fiscal` (add-credit-notes,
+ * design D2).
  */
-export type EmissionScope = {
+export type EmissionScope = DocumentReservationScope & {
   /** `SELECT … FOR UPDATE` del borrador de la empresa: serializa sus emisiones. */
   lockDraft(companyId: string, draftId: string): Promise<DraftRecord | null>;
   markDraftEmitted(
@@ -121,38 +112,10 @@ export type EmissionScope = {
   /** Lock advisory de la configuración de la empresa. */
   lockConfiguration(companyId: string): Promise<void>;
   reads: EvaluationReads;
-  reserveSequential(input: {
-    companyId: string;
-    environment: "TEST" | "PRODUCTION";
-    establishmentId: string;
-    emissionPointId: string;
-    documentType: "01";
-    reservedBy: string;
-    correlationId: string;
-  }): Promise<SequentialReservation>;
-  /** Bloquea la identidad tributaria; idempotente. */
-  lockTaxIdentity(companyId: string): Promise<boolean>;
-  documents: DocumentRepository;
   idempotency: IdempotencyStore;
   audit: AuditLog;
 };
 
 export interface EmissionUnitOfWork {
   run<T>(work: (scope: EmissionScope) => Promise<T>): Promise<T>;
-}
-
-/** Persistencia del artefacto y del paso a `SIGNED` en una transacción (design D9, paso 6). */
-export type SignedScope = {
-  artifacts: ArtifactStore;
-  documents: DocumentRepository;
-  audit: AuditLog;
-  /**
-   * Encola el `sri.transmit` inicial en la misma transacción que firma (add-sri-transmission,
-   * design D6): nunca hay un comprobante firmado sin su job.
-   */
-  enqueueTransmission(document: Pick<StoredDocument, "id" | "companyId">): Promise<boolean>;
-};
-
-export interface SignedUnitOfWork {
-  run<T>(work: (scope: SignedScope) => Promise<T>): Promise<T>;
 }

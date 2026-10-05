@@ -1,10 +1,6 @@
 // Diagnóstico del último intento de firma (add-invoice-emission, design D10): cada código con su
 // clase y un mensaje para el usuario, sin secretos, sin el XML y sin la salida de libxml2.
-import {
-  SIGNING_ATTEMPT_CODES,
-  type SigningAttemptClass,
-  type SigningAttemptCode,
-} from "@facturador/contracts";
+import { SIGNING_ATTEMPT_CODES, type SigningAttemptCode } from "@facturador/contracts";
 
 export const DIAGNOSTIC_MESSAGES: Record<SigningAttemptCode, string> = {
   VALIDATOR_BUSY: "La validación del XML está saturada. Reintenta la firma en unos segundos.",
@@ -36,9 +32,6 @@ export const DIAGNOSTIC_MESSAGES: Record<SigningAttemptCode, string> = {
 
 export const isAttemptCode = (code: string): code is SigningAttemptCode =>
   Object.hasOwn(SIGNING_ATTEMPT_CODES, code);
-
-export const classOf = (code: SigningAttemptCode): SigningAttemptClass =>
-  SIGNING_ATTEMPT_CODES[code];
 
 /** Mensaje del diagnóstico; para XSD_INVALID añade solo la línea y el elemento, nunca su valor. */
 export function diagnosticMessage(

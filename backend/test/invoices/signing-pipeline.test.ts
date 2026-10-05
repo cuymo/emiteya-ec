@@ -9,7 +9,8 @@ import type {
   StoredDocument,
 } from "../../src/modules/fiscal/application/ports.ts";
 import type { AttemptDiagnostic } from "../../src/modules/fiscal/domain/document.ts";
-import { createSigningPipeline } from "../../src/modules/invoices/application/signing-pipeline.ts";
+import { createSigningPipeline } from "../../src/modules/fiscal/application/signing-pipeline.ts";
+import { invoiceSigningProfile } from "../../src/modules/invoices/application/signing-profile.ts";
 import type { InvoiceSnapshot } from "../../src/modules/invoices/domain/snapshot.ts";
 import {
   XsdValidatorError,
@@ -224,7 +225,7 @@ function pipelineWith(options: {
               enqueueTransmission: () => Promise.resolve(true),
             }),
     },
-    builder: createInvoiceXmlBuilder(),
+    profile: invoiceSigningProfile(createInvoiceXmlBuilder()),
     xsd: { validate: (xml) => (options.validate ?? (() => Promise.resolve(VALID)))(xml) },
     signer: {
       signDocument: (_c, xml) =>

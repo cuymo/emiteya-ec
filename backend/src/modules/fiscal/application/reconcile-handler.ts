@@ -9,7 +9,7 @@
 //    reenvían los mismos bytes. Desde `MANUAL_REVIEW` nunca se reenvía: sin conclusión, permanece.
 //
 // Nunca reserva otro número ni cambia la clave o el contenido.
-import type { AuditEventInput } from "../../audit/domain/audit-event.ts";
+import type { AuditAction, AuditEventInput } from "../../audit/domain/audit-event.ts";
 import type { Job, JobError } from "../../../platform/jobs/jobs.ts";
 import type { JobHandler } from "../../../platform/jobs/runner.ts";
 import type {
@@ -101,6 +101,15 @@ function moveTo(
   }));
 }
 
+/**
+ * Acción y campo del comprobante en la auditoría de la finalización, por tipo (add-credit-notes,
+ * design D2): un dato por tipo emitido, no un conmutador.
+ */
+const COMPLETED_AUDIT: Readonly<Record<string, { action: AuditAction; idField: string }>> = {
+  "01": { action: "invoice.reconciliation_completed", idField: "invoiceId" },
+  "04": { action: "credit_note.reconciliation_completed", idField: "creditNoteId" },
+};
+
 /** Estado final de una decisión, para la auditoría de la reconciliación manual. */
 const finalState = (context: Context, transitions: readonly StepTransition[]) =>
   transitions.at(-1)?.to ?? context.document.state;
@@ -114,12 +123,15 @@ function finish(
   const { job, document } = context;
   const concludes = decision.job.action === "COMPLETE" || decision.job.action === "STOP";
   if (job.origin !== "MANUAL" || !job.requestedBy || !concludes) return decision;
+  const audited = COMPLETED_AUDIT[document.documentType];
+  if (!audited)
+    throw new Error(`Sin auditoría de reconciliación para el tipo ${document.documentType}.`);
   const audit: AuditEventInput = {
     companyId: document.companyId,
     actor: { type: "USER", userId: job.requestedBy },
-    action: "invoice.reconciliation_completed",
+    action: audited.action,
     changes: {
-      invoiceId: document.id,
+      [audited.idField]: document.id,
       documentNumber: document.documentNumber,
       result,
       state: finalState(context, decision.transitions),

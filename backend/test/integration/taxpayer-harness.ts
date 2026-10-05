@@ -10,7 +10,11 @@ import { createAuthorizer } from "../../src/modules/identity/application/authori
 import { createUserAdministration } from "../../src/modules/identity/application/user-administration.ts";
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
-import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
+import {
+  fiscalRouters,
+  signingPipelines,
+  type DocumentSigner,
+} from "../../src/modules/fiscal/infrastructure/index.ts";
 import {
   catalogsModule,
   fiscalCatalogQueries,
@@ -22,8 +26,10 @@ import {
   inventoryModule,
   inventoryStockReads,
 } from "../../src/modules/inventory/infrastructure/index.ts";
-import { invoicesModule } from "../../src/modules/invoices/infrastructure/index.ts";
-import type { DocumentSigner } from "../../src/modules/invoices/application/signing-pipeline.ts";
+import {
+  invoiceSigningProfile,
+  invoicesModule,
+} from "../../src/modules/invoices/infrastructure/index.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
 import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
@@ -154,6 +160,15 @@ export function buildTaxpayerApp(
         );
       if (signing) router.use(...signing.routers);
       // Borradores y facturas (add-invoice-emission); sin firma configurada, ninguna es utilizable.
+      // La firma es la compartida de `fiscal` con el perfil de la factura (add-credit-notes, D2).
+      const invoicesNow = options.invoices?.now ?? options.now;
+      const documentSigning = signingPipelines({
+        prisma: db.database.prisma,
+        xsd: options.invoices?.xsd ?? testXsdValidator(),
+        signer: options.invoices?.signer ?? signing?.documents ?? NO_SIGNER,
+        ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
+        ...(invoicesNow ? { now: invoicesNow } : {}),
+      });
       router.use(
         ...invoicesModule({
           prisma: db.database.prisma,
@@ -164,15 +179,13 @@ export function buildTaxpayerApp(
           stockReads: inventoryStockReads,
           maxLines: options.invoices?.maxLines ?? 100,
           xsd: options.invoices?.xsd ?? testXsdValidator(),
-          signer: options.invoices?.signer ?? signing?.documents ?? NO_SIGNER,
+          signing: documentSigning.pipeline(invoiceSigningProfile()),
           ...(options.invoices?.signAfterReserve === false ? { signAfterReserve: false } : {}),
           ...(options.invoices?.accessKeys ? { accessKeys: options.invoices.accessKeys } : {}),
           ...(options.invoices?.stageTimings ? { stageTimings: true } : {}),
           ...(options.invoices?.metrics ? { metrics: options.invoices.metrics } : {}),
           ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
-          ...((options.invoices?.now ?? options.now)
-            ? { now: options.invoices?.now ?? options.now }
-            : {}),
+          ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );
       return router;

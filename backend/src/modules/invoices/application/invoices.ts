@@ -16,7 +16,7 @@ import type {
   DocumentRepository,
   StoredDocument,
 } from "../../fiscal/application/ports.ts";
-import { enqueueReconciliationIn } from "../../fiscal/application/transmission-jobs.ts";
+import { requestReconciliationIn } from "../../fiscal/application/reconciliation-request.ts";
 import type {
   ReconciliationRequestUnitOfWork,
   TransmissionEvent,
@@ -28,7 +28,7 @@ import { parseInput, type Authorizer } from "../../identity/application/authoriz
 import type { RequestContext } from "../../identity/application/request-context.ts";
 import { invoiceNotFound, invoiceNotReconcilable, sriInteractionInProgress } from "./errors.ts";
 import type { Page } from "./ports.ts";
-import type { SigningPipeline } from "./signing-pipeline.ts";
+import type { SigningPipeline } from "../../fiscal/application/signing-pipeline.ts";
 
 export type InvoiceDetails = Readonly<{
   document: StoredDocument;
@@ -163,9 +163,9 @@ export function createInvoices(deps: {
     },
 
     /**
-     * Reconciliación manual (design D15 y D19): con el comprobante bloqueado, comprueba su estado,
-     * encola un `sri.reconcile` manual y audita la solicitud en la misma transacción. Un rechazo
-     * no deja job ni evento.
+     * Reconciliación manual (design D15 y D19) con la solicitud compartida de `fiscal`: con el
+     * comprobante bloqueado, comprueba su estado, encola un `sri.reconcile` manual y audita la
+     * solicitud en la misma transacción. Un rechazo no deja job ni evento.
      */
     async requestReconciliation(
       ctx: RequestContext,
@@ -175,33 +175,29 @@ export function createInvoices(deps: {
       authorizer.requirePermission(ctx, "invoices.reconcile");
       const { reason } = parseInput(requestReconciliationSchema, body);
       const found = await find(ctx, invoiceId);
-      const document = await deps.reconciliations.run(async (scope) => {
-        const current = await scope.lockDocument(ctx.companyId, found.id);
-        if (!current || !RECONCILABLE_STATES.has(current.state)) throw invoiceNotReconcilable();
-        const enqueued = await enqueueReconciliationIn(scope.jobs, scope.db, current, {
-          origin: "MANUAL",
-          requestedBy: ctx.userId,
+      const result = await deps.reconciliations.run((scope) =>
+        requestReconciliationIn(scope, {
+          companyId: ctx.companyId,
+          documentId: found.id,
+          userId: ctx.userId,
           reason,
           correlationId: ctx.requestId,
           runAt: now(),
           windowMs: deps.conclusionWindowMs,
-        });
-        if (!enqueued) throw sriInteractionInProgress();
-        await scope.audit.append({
-          companyId: ctx.companyId,
-          actor: { type: "USER", userId: ctx.userId },
-          action: "invoice.reconciliation_requested",
-          changes: {
-            invoiceId: current.id,
-            documentNumber: current.documentNumber,
-            state: current.state,
-            reason,
-          },
-          correlationId: ctx.requestId,
-        });
-        return current;
-      });
-      return details(document);
+          audit: (current) => ({
+            action: "invoice.reconciliation_requested",
+            changes: {
+              invoiceId: current.id,
+              documentNumber: current.documentNumber,
+              state: current.state,
+              reason,
+            },
+          }),
+        }),
+      );
+      if (result.outcome === "NOT_RECONCILABLE") throw invoiceNotReconcilable();
+      if (result.outcome === "IN_PROGRESS") throw sriInteractionInProgress();
+      return details(result.document);
     },
   };
 }
