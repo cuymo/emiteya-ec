@@ -52,6 +52,8 @@ model User {
   documentDeliveries          DocumentDeliveryEvent[]       @relation("DocumentDeliveryActor")
   stockInitializations        StockBalance[]                @relation("StockInitializer")
   stockMovements              StockMovement[]               @relation("StockMovementActor")
+  creditNoteDraftsCreated     CreditNoteDraft[]             @relation("CreditNoteDraftCreator")
+  creditNoteDraftsUpdated     CreditNoteDraft[]             @relation("CreditNoteDraftUpdater")
 
   @@unique([email])
   @@map("user")
@@ -132,6 +134,7 @@ model Organization {
   documents                  ElectronicDocument[]
   idempotencyRecords         IdempotencyRecord[]
   jobs                       Job[]
+  creditNoteDrafts           CreditNoteDraft[]
 
   @@unique([slug])
   @@map("organization")
@@ -298,6 +301,7 @@ model EmissionPoint {
   defaults        MemberDefaultEmissionPoint[]
   sequences       FiscalSequence[]
   invoiceDrafts   InvoiceDraft[]
+  creditDrafts    CreditNoteDraft[]
 
   @@unique([establishmentId, code])
   @@unique([companyId, id])
@@ -633,31 +637,33 @@ model Party {
 // sin impuestos en `NUMERIC` sin escala fija, con el CHECK de dominio de `precioUnitario` (18
 // dígitos en total, 6 decimales como máximo); código principal único por empresa.
 model Product {
-  id                  String             @id @default(uuid())
-  companyId           String             @map("company_id")
-  company             Organization       @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  id                  String                @id @default(uuid())
+  companyId           String                @map("company_id")
+  company             Organization          @relation(fields: [companyId], references: [id], onDelete: Restrict)
   kind                String
-  mainCode            String?            @map("main_code") @db.VarChar(25)
-  auxiliaryCode       String?            @map("auxiliary_code") @db.VarChar(25)
-  name                String             @db.VarChar(300)
-  description         String?            @db.VarChar(1000)
-  unitPrice           Decimal            @map("unit_price") @db.Decimal
-  stockTracked        Boolean            @default(false) @map("stock_tracked")
-  status              String             @default("ACTIVE")
-  version             Int                @default(1)
-  searchName          String             @map("search_name")
+  mainCode            String?               @map("main_code") @db.VarChar(25)
+  auxiliaryCode       String?               @map("auxiliary_code") @db.VarChar(25)
+  name                String                @db.VarChar(300)
+  description         String?               @db.VarChar(1000)
+  unitPrice           Decimal               @map("unit_price") @db.Decimal
+  stockTracked        Boolean               @default(false) @map("stock_tracked")
+  status              String                @default("ACTIVE")
+  version             Int                   @default(1)
+  searchName          String                @map("search_name")
   /// Colación C en la migración, como la identificación de los terceros (design D10).
-  searchMainCode      String?            @map("search_main_code")
-  searchAuxiliaryCode String?            @map("search_auxiliary_code")
-  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  createdBy           String             @map("created_by")
-  creator             User               @relation("ProductCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
-  updatedBy           String             @map("updated_by")
-  updater             User               @relation("ProductUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  searchMainCode      String?               @map("search_main_code")
+  searchAuxiliaryCode String?               @map("search_auxiliary_code")
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy           String                @map("created_by")
+  creator             User                  @relation("ProductCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt           DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy           String                @map("updated_by")
+  updater             User                  @relation("ProductUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
   taxes               ProductTax[]
   invoiceLines        InvoiceDraftLine[]
   stock               StockBalance?
+  creditLines         CreditCapacityLine[]
+  returnCapacities    StockReturnCapacity[]
 
   @@unique([companyId, mainCode])
   @@unique([companyId, id])
@@ -795,6 +801,14 @@ model ElectronicDocument {
   idempotency              IdempotencyRecord[]
   deliveries               DocumentDeliveryEvent[]
   stockMovements           StockMovement[]
+  /// add-credit-notes: borradores de nota sobre esta factura, y el borrador que emitió esta nota.
+  creditDrafts             CreditNoteDraft[]         @relation("CreditNoteDraftInvoice")
+  creditDraft              CreditNoteDraft?          @relation("CreditNoteDraftDocument")
+  /// Capacidad acreditable y devolvible de esta factura, y las reservas de esta nota.
+  creditCapacity           CreditCapacity?
+  creditReservation        CreditReservation?
+  returnCapacities         StockReturnCapacity[]
+  returnReservations       StockReturnReservation[]
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@unique([companyId, id])
@@ -1059,4 +1073,181 @@ model StockMovement {
   @@unique([companyId, idempotencyOperation, idempotencyKey], map: "stock_movement_idempotency_key")
   @@index([companyId, productId, occurredAt])
   @@map("stock_movement")
+}
+
+// Borrador de una nota de crédito (add-credit-notes, design D5): la factura que modifica, la causa,
+// el motivo y el punto; sus líneas llevan la cantidad acreditada y el retorno físico. No reserva
+// nada: la vista previa se calcula en cada lectura. EMITTED si y solo si tiene su comprobante.
+model CreditNoteDraft {
+  id              String                @id @default(uuid())
+  companyId       String                @map("company_id")
+  company         Organization          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  invoiceId       String                @map("invoice_id")
+  invoice         ElectronicDocument    @relation("CreditNoteDraftInvoice", fields: [companyId, invoiceId], references: [companyId, id], onDelete: Restrict)
+  emissionPointId String?               @map("emission_point_id")
+  emissionPoint   EmissionPoint?        @relation(fields: [companyId, emissionPointId], references: [companyId, id], onDelete: Restrict)
+  /// TOTAL_ANNULMENT o RETURN (CHECK en la migración).
+  cause           String
+  /// Motivo de una sola línea, de 1 a 300 caracteres (`motivo` del XSD); obligatorio al emitir.
+  reason          String?
+  /// DRAFT o EMITTED (CHECK en la migración).
+  status          String                @default("DRAFT")
+  documentId      String?               @unique @map("document_id")
+  document        ElectronicDocument?   @relation("CreditNoteDraftDocument", fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  version         Int                   @default(1)
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy       String                @map("created_by")
+  creator         User                  @relation("CreditNoteDraftCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt       DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy       String                @map("updated_by")
+  updater         User                  @relation("CreditNoteDraftUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  lines           CreditNoteDraftLine[]
+
+  @@unique([companyId, id])
+  @@unique([companyId, documentId])
+  @@index([companyId, status, updatedAt])
+  @@map("credit_note_draft")
+}
+
+// Línea de un borrador de nota por la posición de la línea de la factura: la cantidad acreditada y
+// el retorno físico declarado, de 0 a lo acreditado (design D5).
+model CreditNoteDraftLine {
+  draftId        String          @map("draft_id")
+  companyId      String          @map("company_id")
+  draft          CreditNoteDraft @relation(fields: [companyId, draftId], references: [companyId, id], onDelete: Cascade)
+  position       Int
+  /// Dominio `cantidad` (18/6); en una anulación total, la cantidad original.
+  quantity       Decimal         @db.Decimal
+  physicalReturn Decimal         @map("physical_return") @db.Decimal
+
+  @@id([draftId, position])
+  @@map("credit_note_draft_line")
+}
+
+// Capacidad acreditable de una factura (add-credit-notes, design D7): el total original y lo
+// reservado y aplicado por sus notas, que nunca lo superan (CHECK). Nace con la primera nota desde
+// el snapshot; el original no cambia. Los totales son siempre la suma de sus reservas por estado
+// (trigger diferido en la migración).
+model CreditCapacity {
+  companyId     String               @map("company_id")
+  invoiceId     String               @map("invoice_id")
+  invoice       ElectronicDocument   @relation(fields: [companyId, invoiceId], references: [companyId, id], onDelete: Restrict)
+  /// Dominio `importe` (14/2), como el total de la factura.
+  originalTotal Decimal              @map("original_total") @db.Decimal
+  reservedTotal Decimal              @default(0) @map("reserved_total") @db.Decimal
+  appliedTotal  Decimal              @default(0) @map("applied_total") @db.Decimal
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  lines         CreditCapacityLine[]
+  reservations  CreditReservation[]
+
+  @@id([companyId, invoiceId])
+  @@map("credit_capacity")
+}
+
+// Capacidad acreditable de una línea de la factura por su posición: la cantidad original y lo
+// reservado y aplicado, con el mismo CHECK (design D7).
+model CreditCapacityLine {
+  companyId        String                  @map("company_id")
+  invoiceId        String                  @map("invoice_id")
+  capacity         CreditCapacity          @relation(fields: [companyId, invoiceId], references: [companyId, invoiceId], onDelete: Restrict)
+  position         Int
+  productId        String                  @map("product_id")
+  product          Product                 @relation(fields: [companyId, productId], references: [companyId, id], onDelete: Restrict)
+  /// Dominio `cantidad` (18/6).
+  originalQuantity Decimal                 @map("original_quantity") @db.Decimal
+  reservedQuantity Decimal                 @default(0) @map("reserved_quantity") @db.Decimal
+  appliedQuantity  Decimal                 @default(0) @map("applied_quantity") @db.Decimal
+  reservationLines CreditReservationLine[]
+
+  @@id([companyId, invoiceId, position])
+  @@map("credit_capacity_line")
+}
+
+// Reserva acreditable de una nota (design D7): una por nota, de solo agregado. Solo pasa de
+// RESERVED a APPLIED (nota autorizada) o RELEASED (devuelta o no autorizada), nunca se borra ni se
+// reutiliza (triggers en la migración).
+model CreditReservation {
+  id           String                  @id @default(uuid())
+  companyId    String                  @map("company_id")
+  invoiceId    String                  @map("invoice_id")
+  capacity     CreditCapacity          @relation(fields: [companyId, invoiceId], references: [companyId, invoiceId], onDelete: Restrict)
+  creditNoteId String                  @map("credit_note_id")
+  creditNote   ElectronicDocument      @relation(fields: [companyId, creditNoteId], references: [companyId, id], onDelete: Restrict)
+  /// TOTAL_ANNULMENT o RETURN.
+  cause        String
+  /// Valor de la modificación de la nota (`importe`).
+  amount       Decimal                 @db.Decimal
+  /// RESERVED, APPLIED o RELEASED.
+  status       String                  @default("RESERVED")
+  reservedAt   DateTime                @default(now()) @map("reserved_at") @db.Timestamptz(3)
+  concludedAt  DateTime?               @map("concluded_at") @db.Timestamptz(3)
+  lines        CreditReservationLine[]
+
+  @@unique([companyId, creditNoteId])
+  @@unique([companyId, invoiceId, id])
+  @@index([companyId, invoiceId, status])
+  @@map("credit_reservation")
+}
+
+// Línea acreditada por una nota (design D6 y D7): la cantidad, los importes resultantes del cálculo
+// y el retorno físico. Inmutable; es la fuente de lo acreditado vigente de la línea.
+model CreditReservationLine {
+  reservationId  String             @map("reservation_id")
+  companyId      String             @map("company_id")
+  invoiceId      String             @map("invoice_id")
+  reservation    CreditReservation  @relation(fields: [companyId, invoiceId, reservationId], references: [companyId, invoiceId, id], onDelete: Restrict)
+  position       Int
+  capacityLine   CreditCapacityLine @relation(fields: [companyId, invoiceId, position], references: [companyId, invoiceId, position], onDelete: Restrict)
+  quantity       Decimal            @db.Decimal
+  /// Subtotal exacto acreditado (sin redondear).
+  subtotal       Decimal            @db.Decimal
+  discount       Decimal            @db.Decimal
+  taxableBase    Decimal            @map("taxable_base") @db.Decimal
+  /// Impuestos acreditados: `[{ taxCode, rateCode, percentage, base, amount }]`.
+  taxes          Json
+  physicalReturn Decimal            @map("physical_return") @db.Decimal
+
+  @@id([reservationId, position])
+  @@map("credit_reservation_line")
+}
+
+// Capacidad devolvible de una factura por producto (add-credit-notes, design D10): la salida
+// original (el valor absoluto de su SALIDA_FACTURA, o cero sin salida) y lo reservado y aplicado por
+// los retornos físicos de sus notas, que nunca la superan (CHECK). Independiente de la acreditable.
+model StockReturnCapacity {
+  companyId        String                   @map("company_id")
+  invoiceId        String                   @map("invoice_id")
+  invoice          ElectronicDocument       @relation(fields: [companyId, invoiceId], references: [companyId, id], onDelete: Restrict)
+  productId        String                   @map("product_id")
+  product          Product                  @relation(fields: [companyId, productId], references: [companyId, id], onDelete: Restrict)
+  /// Dominio `existencia` (30/6), no negativo.
+  originalQuantity Decimal                  @map("original_quantity") @db.Decimal
+  reservedQuantity Decimal                  @default(0) @map("reserved_quantity") @db.Decimal
+  appliedQuantity  Decimal                  @default(0) @map("applied_quantity") @db.Decimal
+  createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  reservations     StockReturnReservation[]
+
+  @@id([companyId, invoiceId, productId])
+  @@map("stock_return_capacity")
+}
+
+// Retorno físico reservado por una nota y producto (design D10), con las guardas de la reserva
+// acreditable: solo pasa de RESERVED a APPLIED (con su DEVOLUCION_NC) o RELEASED.
+model StockReturnReservation {
+  companyId    String              @map("company_id")
+  creditNoteId String              @map("credit_note_id")
+  creditNote   ElectronicDocument  @relation(fields: [companyId, creditNoteId], references: [companyId, id], onDelete: Restrict)
+  productId    String              @map("product_id")
+  invoiceId    String              @map("invoice_id")
+  capacity     StockReturnCapacity @relation(fields: [companyId, invoiceId, productId], references: [companyId, invoiceId, productId], onDelete: Restrict)
+  /// Dominio `existencia`, positivo.
+  quantity     Decimal             @db.Decimal
+  /// RESERVED, APPLIED o RELEASED.
+  status       String              @default("RESERVED")
+  reservedAt   DateTime            @default(now()) @map("reserved_at") @db.Timestamptz(3)
+  concludedAt  DateTime?           @map("concluded_at") @db.Timestamptz(3)
+
+  @@id([companyId, creditNoteId, productId])
+  @@index([companyId, invoiceId, productId, status])
+  @@map("stock_return_reservation")
 }

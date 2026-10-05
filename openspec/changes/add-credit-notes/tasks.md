@@ -10,7 +10,7 @@
 
 ## 2. Esquema
 
-- [ ] 2.1 Crear la migración aditiva de design D7, D10, D22 y D25:
+- [x] 2.1 Crear la migración aditiva de design D7, D10, D22 y D25:
   - borradores de nota y sus líneas, con versión, estado `DRAFT`/`EMITTED` y comprobante;
   - `credit_capacity`, `credit_capacity_line`, `credit_reservation` y `credit_reservation_line`, con `CHECK` de capacidad, original inmutable, reservas de solo agregado que solo pasan de `RESERVED` a `APPLIED` o `RELEASED`;
   - `stock_return_capacity` y `stock_return_reservation`, con las mismas guardas;
@@ -18,7 +18,7 @@
   - FK compuestas por empresa y `credit_note.emit` en el `CHECK` de `idempotency_record`.
 
   Verificar con pruebas de integración del esquema: exceso de capacidad rechazado por el `CHECK`, una reserva no vuelve de `APPLIED` o `RELEASED` ni se borra, el original no cambia, cada trigger diferido rechaza su estado incoherente al confirmar, reservas y capacidad de otra empresa rechazadas, y la operación nueva admitida en el registro de idempotencia
-- [ ] 2.2 Añadir las tablas a `migrations.test.ts` y documentarlas, con el acoplamiento intencional de los triggers diferidos, en `database.md`. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
+- [x] 2.2 Añadir las tablas a `migrations.test.ts` y documentarlas, con el acoplamiento intencional de los triggers diferidos, en `database.md`. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
 
 ## 3. Contratos y permisos
 

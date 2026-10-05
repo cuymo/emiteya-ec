@@ -6,8 +6,11 @@ import { createHash } from "node:crypto";
 import { IDEMPOTENCY_KEY_HEADER, IDEMPOTENCY_KEY_PATTERN } from "@facturador/contracts";
 import { AppError, ConflictError } from "../http/errors.ts";
 
-/** Operaciones con registro de idempotencia; la base de datos acepta solo estas. */
-export const IDEMPOTENT_OPERATIONS = ["invoice.emit"] as const;
+/**
+ * Operaciones con registro de idempotencia; la base de datos acepta solo estas (`credit_note.emit`:
+ * add-credit-notes, design D11).
+ */
+export const IDEMPOTENT_OPERATIONS = ["invoice.emit", "credit_note.emit"] as const;
 export type IdempotentOperation = (typeof IDEMPOTENT_OPERATIONS)[number];
 
 export const idempotencyKeyRequired = (message: string) =>

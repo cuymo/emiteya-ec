@@ -3,7 +3,7 @@
 import { createHash, randomInt } from "node:crypto";
 import { createSequentialReservation } from "../../src/modules/fiscal/application/reservation.ts";
 import { createFiscalUnitOfWork } from "../../src/modules/fiscal/infrastructure/unit-of-work.ts";
-import type { PrismaClient } from "../../src/generated/prisma/client.ts";
+import type { Prisma, PrismaClient } from "../../src/generated/prisma/client.ts";
 import type { Job, JobStore, NewJob } from "../../src/platform/jobs/jobs.ts";
 import { key, reservationInput, type FiscalCompany } from "./fiscal-harness.ts";
 
@@ -33,10 +33,16 @@ export async function insertDocument(
     point?: number;
     /** Para el inventario: campos del snapshot, por ejemplo la versión 2 con sus líneas. */
     snapshot?: Record<string, unknown>;
+    /** Para las notas de crédito (add-credit-notes): el tipo, el total y sus reservas. */
+    documentType?: "01" | "04";
+    total?: string;
+    /** Escrituras en la misma transacción que el comprobante, como las reservas de una nota. */
+    alongside?: (tx: Prisma.TransactionClient, document: { id: string }) => Promise<void>;
   } = {},
 ) {
+  const documentType = options.documentType ?? "01";
   const reservation = await createSequentialReservation(createFiscalUnitOfWork(prisma)).reserve(
-    reservationInput(key(company, options.point ?? 0)),
+    reservationInput(key(company, options.point ?? 0, documentType)),
   );
   const point = company.points[options.point ?? 0]!;
   const accessKey = randomAccessKey();
@@ -45,7 +51,7 @@ export async function insertDocument(
     const document = await tx.electronicDocument.create({
       data: {
         companyId: company.companyId,
-        documentType: "01",
+        documentType,
         environment,
         establishmentId: point.establishmentId,
         emissionPointId: point.emissionPointId,
@@ -60,7 +66,7 @@ export async function insertDocument(
         schemaVersion: "1.1.0",
         buyerIdentification: options.buyer?.identification ?? "9999999999999",
         buyerName: options.buyer?.name ?? "CONSUMIDOR FINAL",
-        total: "11.50",
+        total: options.total ?? "11.50",
         createdBy: company.adminId,
         signedAt: state === "RESERVED" ? null : new Date("2026-10-04T14:00:00Z"),
         ...(state === "AUTHORIZED"
@@ -83,10 +89,11 @@ export async function insertDocument(
           content: new Uint8Array(content),
           sizeBytes: content.length,
           sha256: sha256(content),
-          metadata: { documentType: "01", schemaVersion: "1.1.0" },
+          metadata: { documentType, schemaVersion: "1.1.0" },
         },
       });
     }
+    await options.alongside?.(tx, document);
     return document;
   });
 }
