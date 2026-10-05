@@ -12,8 +12,8 @@ export const DEBIT_NOTE_TRANSMISSION = {
   lastResult: null,
 };
 
-const IVA15 = { key: "2:4", taxCode: "2", rateCode: "4", percentage: "15", label: "IVA 15 %" };
-const IVA0 = { key: "2:0", taxCode: "2", rateCode: "0", percentage: "0", label: "IVA 0 %" };
+const IVA15 = { key: "2:4", taxCode: "2", rateCode: "4", percentage: "15", label: "15%" };
+const IVA0 = { key: "2:0", taxCode: "2", rateCode: "0", percentage: "0", label: "0%" };
 
 export const debitNoteDetail = (
   state: string,

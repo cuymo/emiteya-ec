@@ -132,12 +132,20 @@ describe("borrador de nota de débito", () => {
   });
 
   it("desde seis tratamientos los ofrece en una lista, igual a la de la factura", async () => {
-    const treatments = ["0", "2", "3", "4", "5", "6"].map((rateCode) => ({
+    // Las denominaciones oficiales del catálogo: un porcentaje se nombra "IVA n %"; las demás, igual.
+    const treatments = [
+      ["0", "0", "0%"],
+      ["5", "5", "5%"],
+      ["2", "12", "12%"],
+      ["4", "15", "15%"],
+      ["7", "0", "Exento de IVA"],
+      ["6", "0", "No Objeto de Impuesto"],
+    ].map(([rateCode, percentage, label]) => ({
       key: `2:${rateCode}`,
       taxCode: "2",
-      rateCode,
-      percentage: rateCode === "0" ? "0" : rateCode,
-      label: `Tarifa ${rateCode}`,
+      rateCode: rateCode!,
+      percentage: percentage!,
+      label: label!,
     }));
     render(<DebitNoteDraftScreen draftId="ndd-1" />, {
       "GET /api/v1/debit-notes/drafts/ndd-1": ok(
@@ -153,7 +161,15 @@ describe("borrador de nota de débito", () => {
       within(select)
         .getAllByRole("option")
         .map((option) => option.textContent),
-    ).toEqual(["Elige un tratamiento", ...treatments.map((treatment) => treatment.label)]);
+    ).toEqual([
+      "Elige un tratamiento",
+      "IVA 0 %",
+      "IVA 5 %",
+      "IVA 12 %",
+      "IVA 15 %",
+      "Exento de IVA",
+      "No Objeto de Impuesto",
+    ]);
   });
 
   it("los problemas aparecen junto a su concepto y bloquean la emisión", async () => {

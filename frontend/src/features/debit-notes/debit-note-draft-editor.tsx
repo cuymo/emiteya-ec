@@ -65,6 +65,7 @@ import {
   useEmitDebitNote,
   useSaveDebitNoteDraft,
 } from "./debit-notes-api";
+import { treatmentLabel } from "./debit-note-format";
 
 type ConceptValues = {
   /** Vacía hasta que el usuario la elige: la causa se declara, no se infiere. */
@@ -301,7 +302,7 @@ function TreatmentField({
           aria-labelledby={labelId}
           options={treatments.map((treatment) => ({
             value: treatment.key,
-            label: treatment.label,
+            label: treatmentLabel(treatment),
           }))}
           value={value || undefined}
           onChange={onChange}
@@ -320,7 +321,7 @@ function TreatmentField({
         <option value="">Elige un tratamiento</option>
         {treatments.map((treatment) => (
           <option key={treatment.key} value={treatment.key}>
-            {treatment.label}
+            {treatmentLabel(treatment)}
           </option>
         ))}
       </Select>
@@ -519,8 +520,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                   {formatUsd(draft.invoice.total)}
                 </span>
                 <span className="text-sm text-foreground-muted">
-                  Tratamientos de IVA de la factura:{" "}
-                  {treatments.map((treatment) => treatment.label).join(", ")}
+                  Tratamientos de IVA de la factura: {treatments.map(treatmentLabel).join(", ")}
                 </span>
               </span>
             </div>
@@ -699,9 +699,9 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 <dd className="text-right">{formatUsd(preview.totals.withoutTaxes)}</dd>
                 {preview.totals.taxes.map((tax) => (
                   <div key={tax.key} className="contents">
-                    <dt>Base {tax.label}</dt>
+                    <dt>Base {treatmentLabel(tax)}</dt>
                     <dd className="text-right">{formatUsd(tax.base)}</dd>
-                    <dt>{tax.label}</dt>
+                    <dt>{treatmentLabel(tax)}</dt>
                     <dd className="text-right">{formatUsd(tax.amount)}</dd>
                   </div>
                 ))}
@@ -787,13 +787,16 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
               La emisión reserva el número de la nota y la firma; no se puede deshacer. La factura
               no cambia.
             </p>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-foreground">
+            {/* En pantallas angostas, cada dato bajo su nombre: el número no se parte. */}
+            <dl className="grid grid-cols-1 gap-x-2 text-foreground sm:grid-cols-[auto_1fr] sm:gap-y-0.5">
               <dt className="text-foreground-muted">Ambiente</dt>
-              <dd>{environment ?? "Desconocido"}</dd>
+              <dd className="max-sm:mb-0.5">{environment ?? "Desconocido"}</dd>
               <dt className="text-foreground-muted">Factura</dt>
-              <dd className="tabular-nums">{draft.invoice.documentNumber}</dd>
+              <dd className="whitespace-nowrap tabular-nums max-sm:mb-0.5">
+                {draft.invoice.documentNumber}
+              </dd>
               <dt className="text-foreground-muted">Valor total</dt>
-              <dd className="tabular-nums">
+              <dd className="tabular-nums max-sm:mb-0.5">
                 {preview.totals ? formatUsd(preview.totals.total) : "—"}
               </dd>
               <dt className="text-foreground-muted">Forma de pago</dt>

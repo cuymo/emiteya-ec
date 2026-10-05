@@ -29,6 +29,7 @@ import {
 } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/invoices/invoices-screen";
 import { useDebitNote, useRetryDebitNoteSigning } from "./debit-notes-api";
+import { treatmentLabel } from "./debit-note-format";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -184,7 +185,8 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
                   <span className="flex min-w-0 flex-col">
                     <span className="font-medium break-words">{concept.description}</span>
                     <span className="text-foreground-muted">
-                      {DEBIT_NOTE_CAUSE_LABELS[concept.cause]} · {concept.taxTreatment.label}
+                      {DEBIT_NOTE_CAUSE_LABELS[concept.cause]} ·{" "}
+                      {treatmentLabel(concept.taxTreatment)}
                     </span>
                   </span>
                   <span className="whitespace-nowrap tabular-nums">
@@ -234,9 +236,9 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
             <dd className="text-right">{formatUsd(data.totals.withoutTaxes)}</dd>
             {data.totals.taxes.map((tax) => (
               <div key={tax.key} className="contents">
-                <dt>Base {tax.label}</dt>
+                <dt>Base {treatmentLabel(tax)}</dt>
                 <dd className="text-right">{formatUsd(tax.base)}</dd>
-                <dt>{tax.label}</dt>
+                <dt>{treatmentLabel(tax)}</dt>
                 <dd className="text-right">{formatUsd(tax.amount)}</dd>
               </div>
             ))}
