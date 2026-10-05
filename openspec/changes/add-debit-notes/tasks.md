@@ -2,7 +2,7 @@
 
 ## 1. Esquema
 
-- [ ] 1.1 Crear la migración aditiva de design D26:
+- [x] 1.1 Crear la migración aditiva de design D26:
   - `debit_note_draft` y `debit_note_draft_concept`, con versión, estado `DRAFT`/`EMITTED`, comprobante y la guarda que impide cambiar o borrar un borrador emitido y sus conceptos;
   - `debit_note_support`, inmutable, única por nota, con el trigger que exige una nota `05` y una factura `01` en `AUTHORIZED` de la misma empresa y del mismo ambiente;
   - el trigger de restricción diferido que impide confirmar un comprobante `05` sin su relación;
@@ -14,7 +14,7 @@
   - comprobante `05` sin relación rechazado al confirmar, y la factura y la nota de crédito no afectadas por ese trigger;
   - borrador emitido inmutable;
   - la operación nueva admitida en el registro de idempotencia.
-- [ ] 1.2 Añadir las tablas a `migrations.test.ts` y documentarlas, con el acoplamiento intencional del trigger diferido, en `database.md`. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
+- [x] 1.2 Añadir las tablas a `migrations.test.ts` y documentarlas, con el acoplamiento intencional del trigger diferido, en `database.md`. Verificar que `migrations.test.ts` pasa sin deriva entre migraciones y esquema
 
 ## 2. Contratos y permisos
 

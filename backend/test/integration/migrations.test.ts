@@ -317,6 +317,8 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "credit_reservation_line.quantity",
         "credit_reservation_line.subtotal",
         "credit_reservation_line.taxable_base",
+        // add-debit-notes, design D26: `importe`, positivo.
+        "debit_note_draft_concept.amount",
         "electronic_document.total",
         "fiscal_catalog_entry.percentage",
         "invoice_draft_line.discount",
@@ -350,6 +352,7 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "credit_reservation_line_values_check",
         "stock_return_capacity_values_check",
         "stock_return_reservation_values_check",
+        "debit_note_draft_concept_values_check",
       ]),
     );
   });
@@ -599,6 +602,48 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "credit_reservation_matches_note",
         "stock_return_reservation_matches_note",
         "credit_note_matches_reservations",
+      ]),
+    );
+  });
+
+  it("crea los borradores de nota de débito y la factura de cada nota con sus restricciones y triggers", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "debit_note_draft_values_check",
+        "debit_note_draft_company_id_fkey",
+        "debit_note_draft_company_id_invoice_id_fkey",
+        "debit_note_draft_company_id_emission_point_id_fkey",
+        "debit_note_draft_company_id_document_id_fkey",
+        "debit_note_draft_created_by_fkey",
+        "debit_note_draft_updated_by_fkey",
+        "debit_note_draft_concept_values_check",
+        "debit_note_draft_concept_company_id_draft_id_fkey",
+        "debit_note_support_company_id_debit_note_id_fkey",
+        "debit_note_support_company_id_invoice_id_fkey",
+        "idempotency_record_values_check",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "debit_note_draft_pkey",
+        "debit_note_draft_document_id_key",
+        "debit_note_draft_company_id_id_key",
+        "debit_note_draft_company_id_document_id_key",
+        "debit_note_draft_company_id_status_updated_at_idx",
+        "debit_note_draft_concept_pkey",
+        "debit_note_support_pkey",
+        "debit_note_support_company_id_invoice_id_idx",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "debit_note_draft_guard",
+        "debit_note_draft_concept_guard",
+        "debit_note_support_origin",
+        "debit_note_support_immutable",
+        "debit_note_support_no_truncate",
+        // Trigger de restricción diferido (design D26).
+        "debit_note_has_support",
       ]),
     );
   });

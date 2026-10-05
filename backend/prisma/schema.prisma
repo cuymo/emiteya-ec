@@ -54,6 +54,8 @@ model User {
   stockMovements              StockMovement[]               @relation("StockMovementActor")
   creditNoteDraftsCreated     CreditNoteDraft[]             @relation("CreditNoteDraftCreator")
   creditNoteDraftsUpdated     CreditNoteDraft[]             @relation("CreditNoteDraftUpdater")
+  debitNoteDraftsCreated      DebitNoteDraft[]              @relation("DebitNoteDraftCreator")
+  debitNoteDraftsUpdated      DebitNoteDraft[]              @relation("DebitNoteDraftUpdater")
 
   @@unique([email])
   @@map("user")
@@ -135,6 +137,7 @@ model Organization {
   idempotencyRecords         IdempotencyRecord[]
   jobs                       Job[]
   creditNoteDrafts           CreditNoteDraft[]
+  debitNoteDrafts            DebitNoteDraft[]
 
   @@unique([slug])
   @@map("organization")
@@ -302,6 +305,7 @@ model EmissionPoint {
   sequences       FiscalSequence[]
   invoiceDrafts   InvoiceDraft[]
   creditDrafts    CreditNoteDraft[]
+  debitDrafts     DebitNoteDraft[]
 
   @@unique([establishmentId, code])
   @@unique([companyId, id])
@@ -809,6 +813,12 @@ model ElectronicDocument {
   creditReservation        CreditReservation?
   returnCapacities         StockReturnCapacity[]
   returnReservations       StockReturnReservation[]
+  /// add-debit-notes: borradores de nota de débito sobre esta factura, el borrador que emitió esta
+  /// nota, y la factura de esta nota de débito o las notas de débito de esta factura.
+  debitDrafts              DebitNoteDraft[]          @relation("DebitNoteDraftInvoice")
+  debitDraft               DebitNoteDraft?           @relation("DebitNoteDraftDocument")
+  debitSupport             DebitNoteSupport?         @relation("DebitNoteSupportNote")
+  debitNotes               DebitNoteSupport[]        @relation("DebitNoteSupportInvoice")
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@unique([companyId, id])
@@ -1250,4 +1260,74 @@ model StockReturnReservation {
   @@id([companyId, creditNoteId, productId])
   @@index([companyId, invoiceId, productId, status])
   @@map("stock_return_reservation")
+}
+
+// Borrador de una nota de débito (add-debit-notes, design D20 y D26): la factura que modifica, el
+// punto y la única forma de pago (una `entryKey` del catálogo `payment-method`); sus conceptos llevan
+// la causa, la descripción, el importe y el tratamiento de IVA de la factura. Puede guardarse
+// incompleto y no reserva nada. EMITTED si y solo si tiene su comprobante.
+model DebitNoteDraft {
+  id              String                  @id @default(uuid())
+  companyId       String                  @map("company_id")
+  company         Organization            @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  invoiceId       String                  @map("invoice_id")
+  invoice         ElectronicDocument      @relation("DebitNoteDraftInvoice", fields: [companyId, invoiceId], references: [companyId, id], onDelete: Restrict)
+  emissionPointId String?                 @map("emission_point_id")
+  emissionPoint   EmissionPoint?          @relation(fields: [companyId, emissionPointId], references: [companyId, id], onDelete: Restrict)
+  /// Clave de la entrada del catálogo `payment-method`; nunca una etiqueta ni un importe.
+  paymentMethod   String?                 @map("payment_method")
+  /// DRAFT o EMITTED (CHECK en la migración).
+  status          String                  @default("DRAFT")
+  documentId      String?                 @unique @map("document_id")
+  document        ElectronicDocument?     @relation("DebitNoteDraftDocument", fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  version         Int                     @default(1)
+  createdAt       DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy       String                  @map("created_by")
+  creator         User                    @relation("DebitNoteDraftCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt       DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy       String                  @map("updated_by")
+  updater         User                    @relation("DebitNoteDraftUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  concepts        DebitNoteDraftConcept[]
+
+  @@unique([companyId, id])
+  @@unique([companyId, documentId])
+  @@index([companyId, status, updatedAt])
+  @@map("debit_note_draft")
+}
+
+// Concepto de un borrador de nota de débito (design D5): cada campo puede faltar mientras se
+// prepara; la vista previa informa lo que falta. La causa y la descripción nunca seleccionan otra
+// cosa que su propio valor.
+model DebitNoteDraftConcept {
+  draftId      String         @map("draft_id")
+  companyId    String         @map("company_id")
+  draft        DebitNoteDraft @relation(fields: [companyId, draftId], references: [companyId, id], onDelete: Cascade)
+  position     Int
+  /// LATE_PAYMENT_INTEREST o POST_INVOICE_COST_EXPENSE (CHECK en la migración).
+  cause        String?
+  /// `razon` del XSD: una sola línea de 1 a 300 caracteres.
+  description  String?
+  /// Dominio `importe` (14/2), mayor que cero.
+  amount       Decimal?       @db.Decimal
+  /// Clave `taxCode:rateCode` de un tratamiento de IVA de la factura.
+  taxTreatment String?        @map("tax_treatment")
+
+  @@id([draftId, position])
+  @@map("debit_note_draft_concept")
+}
+
+// Factura que modifica una nota de débito (design D26): una por nota e inmutable. Un trigger exige
+// una nota 05 y una factura 01 autorizada de la misma empresa y del mismo ambiente, y un trigger
+// diferido impide confirmar una nota de débito sin su factura.
+model DebitNoteSupport {
+  companyId   String             @map("company_id")
+  debitNoteId String             @map("debit_note_id")
+  debitNote   ElectronicDocument @relation("DebitNoteSupportNote", fields: [companyId, debitNoteId], references: [companyId, id], onDelete: Restrict)
+  invoiceId   String             @map("invoice_id")
+  invoice     ElectronicDocument @relation("DebitNoteSupportInvoice", fields: [companyId, invoiceId], references: [companyId, id], onDelete: Restrict)
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([companyId, debitNoteId])
+  @@index([companyId, invoiceId])
+  @@map("debit_note_support")
 }
