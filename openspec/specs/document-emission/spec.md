@@ -56,7 +56,7 @@ Al superar la validación, el sistema SHALL crear en una sola transacción el co
 - **THEN** su número no vuelve al contador y el siguiente comprobante recibe el número siguiente
 
 ### Requirement: Snapshot inmutable como fuente de verdad
-El snapshot SHALL contener todo lo necesario para reproducir el XML: datos fiscales del emisor, establecimiento, punto, ambiente, comprador, líneas, descripciones, importes materializados, referencias y tarifas fiscales resueltas, formas de pago, resultado del consumidor final, casos especiales, fecha de emisión, componentes de la clave y versiones aplicadas. Contiene también, por línea, la decisión de si afecta al inventario, tomada al reservar. Desde la reserva MUST ser inmutable y el comprobante no vuelve a leer datos de la empresa, terceros, productos, inventario ni catálogos.
+El snapshot SHALL contener todo lo necesario para reproducir el XML: datos fiscales del emisor, establecimiento, punto, ambiente, comprador, líneas, descripciones, importes materializados, referencias y tarifas fiscales resueltas, formas de pago, resultado del consumidor final, casos especiales, fecha de emisión, componentes de la clave y versiones aplicadas. Contiene también, por línea, la decisión de si afecta al inventario, tomada al reservar. En una nota de crédito contiene además la factura modificada (identificador, tipo, número, fecha, clave y autorización), la causa, el motivo, la línea de la factura a la que se liga cada línea, el retorno físico declarado y las declaraciones del usuario. Desde la reserva MUST ser inmutable y el comprobante no vuelve a leer datos de la empresa, terceros, productos, inventario ni catálogos.
 
 #### Scenario: Producto cambiado después de reservar
 - **WHEN** un administrador cambia el precio de un producto de un comprobante ya reservado y después se completa la firma
@@ -77,6 +77,14 @@ El snapshot SHALL contener todo lo necesario para reproducir el XML: datos fisca
 #### Scenario: XML sin la decisión de inventario
 - **WHEN** se firma una factura cuyo snapshot lleva la decisión de inventario
 - **THEN** el XML firmado es el mismo que sin esa decisión: el inventario no forma parte del comprobante
+
+#### Scenario: Nota de crédito y su factura
+- **WHEN** se reserva una nota de crédito
+- **THEN** su snapshot guarda la factura modificada, la causa, las líneas ligadas a las de la factura, el retorno físico y las declaraciones, y el XML se reproduce solo desde ese snapshot
+
+#### Scenario: Retorno físico y declaraciones fuera del XML
+- **WHEN** se firma una nota de crédito con retorno físico declarado
+- **THEN** su XML no lleva el retorno físico ni las declaraciones: no forman parte del comprobante
 
 ### Requirement: Clave de acceso
 La clave de acceso SHALL tener 49 dígitos compuestos desde el snapshot: fecha `ddmmaaaa`, tipo, RUC, ambiente, establecimiento, punto, secuencial de nueve dígitos, código numérico de 8 dígitos de un generador criptográfico, tipo de emisión normal y dígito verificador módulo 11. MUST calcularse una sola vez, en la reserva, y nunca regenerarse.
@@ -199,3 +207,22 @@ El sistema SHALL rechazar antes de reservar una emisión que requiere un caso es
 #### Scenario: Anexo 26 que no corresponde
 - **WHEN** la empresa no declara un RUC proveedor, o declara su propio RUC
 - **THEN** el anexo 26 no aplica y la emisión no se rechaza por él
+
+### Requirement: Tipos de comprobante que el sistema emite
+El sistema SHALL emitir la factura 1.1.0 y la nota de crédito 1.1.0, cada una con su esquema registrado, su construcción del XML desde el snapshot y su secuencial independiente por ambiente, establecimiento, punto y tipo. Ambas siguen la misma reserva, firma, idempotencia, recuperación y registro de transiciones. Un tipo sin construcción propia no se emite.
+
+#### Scenario: Secuenciales independientes
+- **WHEN** un punto emite una factura, después una nota de crédito y después otra factura
+- **THEN** las facturas tienen los secuenciales 1 y 2, y la nota de crédito el 1 de su propio contador
+
+#### Scenario: Firma de una nota de crédito
+- **WHEN** se firma una nota de crédito reservada
+- **THEN** queda firmada con su artefacto, validado contra el XSD de la nota de crédito, como una factura
+
+#### Scenario: Factura sin cambios
+- **WHEN** se emite una factura después de este cambio
+- **THEN** su XML, su snapshot, su firma y su artefacto son los mismos que antes, para los mismos datos
+
+#### Scenario: Tipo no emitido
+- **WHEN** una solicitud intenta emitir una nota de débito, una retención, una guía de remisión o una liquidación de compra
+- **THEN** no existe una operación para hacerlo

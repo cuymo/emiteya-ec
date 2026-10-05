@@ -309,7 +309,7 @@ Un comprobante SHALL pasar a revisión manual solo cuando su resultado no puede 
 - **THEN** sigue en revisión manual, no se reenvía y no existe una acción para reenviarlo de todas formas
 
 ### Requirement: Reconciliación manual
-Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
+Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura o de una nota de crédito en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
 
 #### Scenario: Reconciliación de una revisión manual
 - **WHEN** un administrador reconcilia una factura en revisión manual y el SRI la informa autorizada
@@ -334,6 +334,10 @@ Un administrador SHALL poder pedir, con un motivo, la reconciliación de una fac
 #### Scenario: Operador
 - **WHEN** un operador pide una reconciliación
 - **THEN** el sistema responde prohibido
+
+#### Scenario: Nota de crédito en revisión manual
+- **WHEN** un administrador reconcilia una nota de crédito en revisión manual y el SRI la informa autorizada
+- **THEN** la nota pasa a autorizada con las mismas reglas que una factura, y su crédito pasa a aplicado
 
 ### Requirement: Número, clave y XML firmado invariables durante la transmisión
 La transmisión SHALL usar siempre el número, la clave, el snapshot y el XML firmado del comprobante. Ningún reintento, reconciliación ni respuesta del SRI crea otro comprobante, otro número u otra clave, regenera el XML ni libera el secuencial. Un comprobante devuelto no tiene corrección en esta versión.
@@ -382,3 +386,26 @@ Los intentos, las respuestas, las transmisiones y las reconciliaciones de una em
 #### Scenario: Reconciliación de otra empresa
 - **WHEN** un administrador de la empresa A pide reconciliar una factura de la empresa B
 - **THEN** el sistema responde que no existe y no se programa nada
+
+### Requirement: Transmisión de cada tipo emitido
+La transmisión SHALL tratar igual la factura y la nota de crédito: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
+
+#### Scenario: Nota de crédito autorizada
+- **WHEN** una nota de crédito firmada se envía y el SRI la autoriza
+- **THEN** queda autorizada con su número de autorización y su XML autorizado, como una factura
+
+#### Scenario: Nota de crédito con resultado incierto
+- **WHEN** el envío de una nota de crédito termina sin respuesta concluyente
+- **THEN** la nota queda verificando con el SRI y se reconcilia por su clave, sin reenviarse antes de saber si el SRI la recibió
+
+#### Scenario: Nota de crédito devuelta o no autorizada
+- **WHEN** el SRI devuelve una nota de crédito en la recepción o la informa no autorizada
+- **THEN** la nota queda devuelta o no autorizada con sus mensajes, como una factura
+
+#### Scenario: Respuesta guardada de una nota
+- **WHEN** la decisión local de una nota falla después de guardar la respuesta del SRI
+- **THEN** el reintento clasifica la respuesta guardada sin volver a llamar al SRI
+
+#### Scenario: Error 70 en una nota de crédito
+- **WHEN** el SRI responde el error 70 para una nota de crédito
+- **THEN** la nota se trata como clave en procesamiento, igual que una factura

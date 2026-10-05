@@ -131,7 +131,7 @@ El RIDE SHALL salir del XML autorizado y de los datos inmutables de la autorizac
 - **THEN** no se genera el RIDE y la generación se detiene con su motivo
 
 ### Requirement: Contenido del RIDE
-El RIDE SHALL presentar, en el formato oficial, la factura 1.1.0 que el sistema emite: emisor y sus leyendas, número, autorización, ambiente, emisión, clave, receptor, detalle, formas de pago y totales de IVA, solo con los subtotales llenados. Importes y cantidades SHALL salir del texto exacto del comprobante, sin recalcular, redondear ni convertir. Si el comprobante trae contenido que el sistema no emite, el RIDE no se genera: nunca se omite en silencio.
+El RIDE SHALL presentar, en el formato oficial de su tipo, la factura 1.1.0 o la nota de crédito 1.1.0 que el sistema emite. La factura muestra emisor y sus leyendas, número, autorización, ambiente, emisión, clave, receptor, detalle, formas de pago y totales de IVA, solo con los subtotales llenados. La nota de crédito sigue su distribución oficial (ficha v2.34, anexo 2): muestra además el comprobante que modifica, su fecha de emisión y la razón de la modificación, y no lleva formas de pago. Importes y cantidades SHALL salir del texto exacto del comprobante, sin recalcular, redondear ni convertir. Si el comprobante trae contenido que el sistema no emite, el RIDE no se genera: nunca se omite en silencio.
 
 #### Scenario: Factura completa
 - **WHEN** se genera el RIDE de una factura con varias líneas, descuentos, varias tarifas de IVA y varias formas de pago
@@ -156,6 +156,18 @@ El RIDE SHALL presentar, en el formato oficial, la factura 1.1.0 que el sistema 
 #### Scenario: Contenido que el sistema no emite
 - **WHEN** el comprobante de origen trae ICE, IRBPNR, propina, información adicional u otro elemento que el sistema no emite
 - **THEN** no se genera el RIDE y la generación se detiene indicando los elementos
+
+#### Scenario: Nota de crédito
+- **WHEN** se genera el RIDE de una nota de crédito de devolución con dos líneas
+- **THEN** muestra "NOTA DE CRÉDITO" con su número y su autorización, el comprobante que modifica como FACTURA con su número y su fecha de emisión, la razón de la modificación, cada línea con su cantidad, precio, descuento y total, y los subtotales llenados con el valor total, sin formas de pago
+
+#### Scenario: Clave de la nota en el RIDE
+- **WHEN** se genera el RIDE de una nota de crédito
+- **THEN** el código de barras y la clave impresa son los de la nota, nunca los de la factura que modifica
+
+#### Scenario: Distribución propia de la nota de crédito
+- **WHEN** se comparan el RIDE de una factura y el de una nota de crédito
+- **THEN** la nota de crédito tiene su propio bloque del comprobante modificado y no reutiliza el bloque de formas de pago de la factura
 
 ### Requirement: Clave de acceso legible por máquina
 El RIDE SHALL mostrar la clave de acceso completa como texto y como un código de barras Code128 que, leído, devuelve exactamente la misma clave, con un tamaño legible en la práctica.
@@ -346,3 +358,22 @@ Los comprobantes, documentos y entregas de una empresa SHALL ser invisibles para
 #### Scenario: Bandeja de otra empresa
 - **WHEN** un usuario de la empresa A consulta la bandeja con cualquier filtro
 - **THEN** no aparece ningún comprobante de la empresa B
+
+### Requirement: Notas de crédito en la bandeja
+La bandeja SHALL incluir las notas de crédito desde que se reservan, con su tipo visible, el filtro por tipo de comprobante y el acceso a su detalle. Sus documentos disponibles, descargas verificadas, impresión, historial de entregas y RIDE siguen las mismas reglas que los de una factura.
+
+#### Scenario: Factura y nota de crédito
+- **WHEN** la empresa tiene facturas y notas de crédito emitidas
+- **THEN** la bandeja muestra ambas con su tipo, y el filtro por nota de crédito deja solo las notas
+
+#### Scenario: Documentos de una nota autorizada
+- **WHEN** un usuario abre los documentos de una nota de crédito autorizada
+- **THEN** puede descargar su RIDE, su XML autorizado y su XML firmado, imprimir el RIDE y ver el historial de entregas
+
+#### Scenario: Documentos de una nota sin autorizar
+- **WHEN** un usuario abre los documentos de una nota firmada que todavía no está autorizada
+- **THEN** solo puede descargar su XML firmado, rotulado como firmado; el RIDE y el XML autorizado no están disponibles
+
+#### Scenario: RIDE programado al autorizar la nota
+- **WHEN** una nota de crédito pasa a autorizada
+- **THEN** la generación de su RIDE queda programada en la misma operación, como la de una factura
