@@ -632,6 +632,18 @@ envío, la idempotencia y los errores.
 - **Detalle** (`/notas-credito/{id}`): `credit-note-detail.tsx`, con el reintento de la firma (`creditNotes.retrySigning`), la transmisión y los documentos compartidos, la factura modificada, las líneas con su retorno físico y las declaraciones "declaradas por" el usuario.
 - **Factura:** su detalle muestra el crédito aplicado, reservado y disponible (`invoice-credit-section.tsx`) y "Emitir nota de crédito" cuando la factura no es a consumidor final, tiene valor acreditable y el usuario puede preparar notas.
 
+## Implementación de `add-debit-notes`
+
+Cambio 11, en curso. Esta sección crece con cada grupo del cambio.
+
+### Cálculo de la nota de débito
+
+- **Una primitiva versionada.** `calculateDebitNoteAmounts` (`debit-notes/domain/amounts.ts`, versión de cálculo `1`) recibe los conceptos (importe y clave del tratamiento) y los tratamientos de IVA de la factura (`invoiceTaxTreatments`, `debit-notes/domain/treatments.ts`), y devuelve las bases por concepto, la base y el impuesto de cada tratamiento, el subtotal y el valor total. La vista previa, el snapshot, el XML y el RIDE usan ese resultado; ninguno calcula.
+- **Por tratamiento, nunca por concepto.** Cada base de concepto es su importe exacto (hasta 2 decimales); la base de un tratamiento es la suma exacta de sus conceptos; su impuesto se materializa HALF_UP a 2 decimales una sola vez sobre esa suma; el valor total es el subtotal más los impuestos. Tres conceptos de 0.10 al 15 % dan un IVA de 0.05, no 0.06, y cualquier partición de la misma base da el mismo impuesto.
+- **Tratamientos de la factura.** Las combinaciones distintas `taxCode:rateCode` de los impuestos IVA de sus líneas, con el porcentaje y las referencias del catálogo de su snapshot. 0 %, no objeto y exento son tres tratamientos distintos, cada uno con su `codigoPorcentaje`.
+- **Evaluación.** `evaluateDebitNote` (`debit-notes/domain/evaluation.ts`) informa los problemas en el orden de la design D4 de `add-debit-notes`: estado, integridad, ambiente, consumidor final (política del proyecto, BR-32), conceptos, forma de pago, declaración, preparación y cálculo. La forma de pago llega resuelta por el resolver de `catalogs`, y su total se comprueba igual al valor total con decimal exacto (`paymentCoversTotal`).
+- **Pruebas.** `backend/test/debit-notes/amounts.test.ts` fija los golden de la design D7 y comprueba con un generador determinista las identidades de bases, impuestos y totales, la independencia de la partición y del orden, y que el módulo no usa `number`.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna

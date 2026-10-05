@@ -37,13 +37,13 @@
 
 ## 3. Dominio de la nota de débito
 
-- [ ] 3.1 Implementar `calculateDebitNoteAmounts` (design D7), versión 1, sin `number`: bases por concepto, bases por tratamiento, impuesto HALF_UP sobre la base total de cada tratamiento, subtotal, valor total y límites del XSD. Verificar con:
+- [x] 3.1 Implementar `calculateDebitNoteAmounts` (design D7), versión 1, sin `number`: bases por concepto, bases por tratamiento, impuesto HALF_UP sobre la base total de cada tratamiento, subtotal, valor total y límites del XSD. Verificar con:
   - los golden tests de design D7: un concepto; varios de una tarifa; varias tarifas; decimales internos; otra partición con el mismo total; 0 %, no objeto y exento sin agrupar; tarifa histórica del 12 %; exceso de dígitos;
   - property tests con generador determinista: cada base es la suma de sus conceptos, cada impuesto es el redondeo de su base, el total es el subtotal más los impuestos, la suma de los motivos es el subtotal, ningún importe es negativo ni tiene más de 2 decimales, y cualquier repartición de los mismos totales da los mismos impuestos;
   - la prueba de que el módulo no usa `number` ni la librería decimal directamente.
 
   Documentar el cálculo por tratamiento en `fiscal-emission.md` y actualizar BR-66 en `domain-model.md` si su texto difiere de lo implementado. Verificar que los documentos citan `calculateDebitNoteAmounts` y su versión
-- [ ] 3.2 Implementar la evaluación en el orden de design D4 (estado, integridad, ambiente, consumidor final como política del proyecto, conceptos, causas, descripciones, importes, tratamientos de la factura, forma de pago resuelta con el resolver de `catalogs` y su total igual al valor total con decimal exacto, declaración, preparación) y la vista previa pura que consume `calculateDebitNoteAmounts`. Verificar con pruebas unitarias:
+- [x] 3.2 Implementar la evaluación en el orden de design D4 (estado, integridad, ambiente, consumidor final como política del proyecto, conceptos, causas, descripciones, importes, tratamientos de la factura, forma de pago resuelta con el resolver de `catalogs` y su total igual al valor total con decimal exacto, declaración, preparación) y la vista previa pura que consume `calculateDebitNoteAmounts`. Verificar con pruebas unitarias:
   - cada rechazo con su código y la posición del concepto;
   - el mensaje de consumidor final, que cita la política del proyecto y no la NAC-DGERCGC25-00000014;
   - un tratamiento que la factura no tenía, rechazado;
@@ -51,7 +51,7 @@
   - una factura de más de doce meses aceptada (design D11);
   - la descripción que no cambia la causa ni los importes;
   - forma de pago faltante, inexistente, no vigente o deshabilitada para la empresa, y un total distinto del valor total, rechazados
-- [ ] 3.3 Implementar el snapshot autosuficiente de design D13 y su construcción. Verificar con pruebas unitarias que guarda la factura con su autorización, sus tratamientos con sus referencias fiscales, los conceptos, el resultado del cálculo con su versión, `payments` con un solo elemento (código, denominación oficial, `catalogType`, `versionId`, `datasetVersion`, `entryKey` y el total igual al valor total) y la declaración `USER_DECLARED` con su versión, actor y momento, y que nunca escribe `SYSTEM_VERIFIED`. Actualizar `glossary.md` con la forma de pago de la nota y el tratamiento de IVA de la factura tal como quedan en el snapshot
+- [x] 3.3 Implementar el snapshot autosuficiente de design D13 y su construcción. Verificar con pruebas unitarias que guarda la factura con su autorización, sus tratamientos con sus referencias fiscales, los conceptos, el resultado del cálculo con su versión, `payments` con un solo elemento (código, denominación oficial, `catalogType`, `versionId`, `datasetVersion`, `entryKey` y el total igual al valor total) y la declaración `USER_DECLARED` con su versión, actor y momento, y que nunca escribe `SYSTEM_VERIFIED`. Actualizar `glossary.md` con la forma de pago de la nota y el tratamiento de IVA de la factura tal como quedan en el snapshot
 
 ## 4. XML de la nota de débito
 
