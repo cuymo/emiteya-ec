@@ -1,7 +1,8 @@
 // Datos de la bandeja y de los documentos de un comprobante (add-document-archive, design D8 y
 // D13): la bandeja con sus filtros, el resumen de documentos (que se refresca mientras el RIDE se
-// prepara), el historial de entregas, las descargas, la impresión y el reintento. Las acciones que
-// dejan rastro pasan por useMutationFeedback.
+// prepara), el historial de entregas, las descargas, la impresión y el reintento; y la transmisión
+// de un comprobante con su reconciliación, según su tipo (add-credit-notes, design D15). Las
+// acciones que dejan rastro pasan por useMutationFeedback.
 "use client";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -13,10 +14,12 @@ import {
   printRequestViewSchema,
   type DocumentState,
   type DocumentSummaryView,
+  type DocumentType,
 } from "@facturador/contracts";
 import { z } from "zod";
 import { useMutationFeedback } from "@/components/feedback";
 import { apiFetch, apiFetchFile, apiFetchPage } from "@/lib/api";
+import { withArticle, type DocumentKind } from "./document-kinds";
 
 export const DOCUMENTS_KEY = ["documents"] as const;
 
@@ -24,6 +27,7 @@ const documentPath = (id: string) => `/documents/${encodeURIComponent(id)}`;
 
 export type DocumentsQuery = {
   search: string;
+  documentType: DocumentType | undefined;
   state: DocumentState | undefined;
   from: string;
   to: string;
@@ -50,6 +54,7 @@ export function useDocuments(query: DocumentsQuery, enabled: boolean) {
     if (query[key]) params.set(key, query[key]);
   }
   if (query.state) params.set("state", query.state);
+  if (query.documentType) params.set("documentType", query.documentType);
   return useQuery({
     queryKey: [...DOCUMENTS_KEY, "list", query],
     enabled,
@@ -171,6 +176,41 @@ export function useRetryRide(options: { onSuccess?: () => void } = {}) {
       }),
     success: () => "Volvimos a preparar el RIDE.",
     invalidate: [DOCUMENTS_KEY],
+    ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
+  });
+}
+
+const kindPath = (kind: DocumentKind, id: string) => `${kind.apiPath}/${encodeURIComponent(id)}`;
+
+/** Historial de la transmisión de un comprobante: se pide al abrirlo (add-sri-transmission D20). */
+export function useDocumentTransmission(kind: DocumentKind, id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...kind.queryKey, "transmission", id],
+    enabled,
+    queryFn: ({ signal }) =>
+      apiFetch(`${kindPath(kind, id)}/transmission`, { schema: kind.transmissionSchema, signal }),
+  });
+}
+
+/** Reconciliación manual con el SRI, con motivo; solo el administrador. */
+export function useRequestDocumentReconciliation(
+  kind: DocumentKind,
+  options: { onSuccess?: () => void } = {},
+) {
+  return useMutationFeedback({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      apiFetch(`${kindPath(kind, id)}/reconciliations`, {
+        method: "POST",
+        json: { reason },
+        schema: kind.viewSchema,
+      }),
+    success: (document) =>
+      `Pediste la reconciliación de ${withArticle(kind)} ${document.documentNumber}. El estado se actualizará cuando el SRI responda.`,
+    invalidate: [kind.queryKey],
+    errorMessages: {
+      SRI_INTERACTION_IN_PROGRESS: `${withArticle(kind, true)} ya tiene una interacción con el SRI en curso. Espera a que termine y vuelve a intentarlo.`,
+      [kind.notReconcilableCode]: `El estado de ${withArticle(kind)} cambió y ya no admite una reconciliación. Recarga para ver su estado.`,
+    },
     ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }

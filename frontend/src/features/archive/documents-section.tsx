@@ -1,4 +1,5 @@
-// Sección "Documentos" del detalle de una factura (add-document-archive, design D13). Usuario:
+// Sección "Documentos" del detalle de un comprobante (add-document-archive, design D13; la factura y
+// la nota de crédito la comparten con textos por tipo, add-credit-notes D15). Usuario:
 // administrador u operador. Objetivo: entregar el comprobante autorizado. Decisión: qué documento
 // descargar o si imprimir. P0: el estado del RIDE y "Descargar RIDE"; P1: "Imprimir", "XML
 // autorizado" y "XML firmado" (rotulado como firmado); P2: historial de entregas plegable; P3
@@ -9,7 +10,7 @@ import {
   ARTIFACT_KIND_LABELS,
   DELIVERY_EVENT_LABELS,
   type DocumentSummaryView,
-  type InvoiceView,
+  type DocumentType,
 } from "@facturador/contracts";
 import { CirclePause, Download, FileCode2, LoaderCircle, Printer, RefreshCw } from "lucide-react";
 import { useId, useRef, useState, type ReactNode } from "react";
@@ -28,6 +29,7 @@ import {
   type DownloadKind,
 } from "./archive-api";
 import { stopReason } from "./archive-format";
+import { documentKind, withArticle, type DocumentKind } from "./document-kinds";
 
 /** Historial plegable: descargas servidas y solicitudes de impresión, sin datos técnicos. */
 function DeliveryHistory({ documentId }: { documentId: string }) {
@@ -88,7 +90,7 @@ function DeliveryHistory({ documentId }: { documentId: string }) {
   );
 }
 
-function rideMessage(summary: DocumentSummaryView): ReactNode {
+function rideMessage(kind: DocumentKind, summary: DocumentSummaryView): ReactNode {
   switch (summary.documents.ride) {
     case "AVAILABLE":
       return "El RIDE está listo para entregarse.";
@@ -103,19 +105,27 @@ function rideMessage(summary: DocumentSummaryView): ReactNode {
       return null;
     case "NOT_APPLICABLE":
       return summary.state === "RESERVED"
-        ? "Los documentos estarán disponibles cuando la factura se firme."
-        : "El RIDE estará disponible cuando el SRI autorice la factura.";
+        ? `Los documentos estarán disponibles cuando ${withArticle(kind)} se firme.`
+        : `El RIDE estará disponible cuando el SRI autorice ${withArticle(kind)}.`;
   }
 }
 
-export function DocumentsSection({ invoice }: { invoice: InvoiceView }) {
+/** Lo que la sección necesita del comprobante: su identificador y su tipo. */
+export type ArchivedDocument = Readonly<{ id: string; documentType: DocumentType }>;
+
+export function DocumentsSection({ document }: { document: ArchivedDocument }) {
+  const kind = documentKind(document.documentType);
+  return kind ? <KindDocumentsSection kind={kind} documentId={document.id} /> : null;
+}
+
+function KindDocumentsSection({ kind, documentId }: { kind: DocumentKind; documentId: string }) {
   const { me } = useSession();
   const headingId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const canRead = canSee(me.role, "archive.read");
   const canDownload = canSee(me.role, "archive.download");
   const canRetry = canSee(me.role, "archive.retryRide");
-  const summary = useDocumentSummary(invoice.id, canRead);
+  const summary = useDocumentSummary(documentId, canRead);
   const download = useDownloadDocument();
   const print = usePrintRide();
   const retry = useRetryRide({ onSuccess: () => headingRef.current?.focus() });
@@ -123,18 +133,22 @@ export function DocumentsSection({ invoice }: { invoice: InvoiceView }) {
 
   if (!canRead) return null;
 
-  const downloadButton = (kind: DownloadKind, label: string, variant: "primary" | "outline") => (
+  const downloadButton = (
+    artifact: DownloadKind,
+    label: string,
+    variant: "primary" | "outline",
+  ) => (
     <AsyncButton
       variant={variant}
-      pending={download.isPending && pendingKind === kind}
+      pending={download.isPending && pendingKind === artifact}
       pendingLabel={`Descargando ${label.toLowerCase()}`}
       disabled={download.isPending}
       onClick={() => {
-        setPendingKind(kind);
-        download.mutate({ id: invoice.id, kind });
+        setPendingKind(artifact);
+        download.mutate({ id: documentId, kind: artifact });
       }}
     >
-      {kind === "ride" ? <Download aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}
+      {artifact === "ride" ? <Download aria-hidden="true" /> : <FileCode2 aria-hidden="true" />}
       {label}
     </AsyncButton>
   );
@@ -144,14 +158,14 @@ export function DocumentsSection({ invoice }: { invoice: InvoiceView }) {
   else if (summary.error instanceof ApiError && summary.error.status === 403)
     body = (
       <p className="text-sm text-foreground-muted">
-        No tienes acceso a los documentos de esta factura. Pide a un administrador que revise tu
+        No tienes acceso a los documentos de esta {kind.noun}. Pide a un administrador que revise tu
         rol.
       </p>
     );
   else if (summary.isError)
     body = (
       <ErrorState
-        message="No pudimos cargar los documentos de la factura."
+        message={`No pudimos cargar los documentos de ${withArticle(kind)}.`}
         onRetry={() => void summary.refetch()}
       />
     );
@@ -171,13 +185,13 @@ export function DocumentsSection({ invoice }: { invoice: InvoiceView }) {
               <p>{stopReason(rideGeneration.reason)}</p>
               <p className="text-foreground-muted">
                 {rideGeneration.stoppedAt && `${formatDateTime(rideGeneration.stoppedAt)} · `}
-                La factura sigue autorizada.
+                {withArticle(kind, true)} sigue autorizada.
                 {!canRetry && " Pide a un administrador que la reintente."}
               </p>
             </div>
           </div>
         ) : (
-          <p className="text-sm">{rideMessage(data)}</p>
+          <p className="text-sm">{rideMessage(kind, data)}</p>
         )}
         {(canDownload || (canRetry && rideGeneration.retryable)) && (
           <div className="flex flex-wrap items-center gap-1">
@@ -188,7 +202,7 @@ export function DocumentsSection({ invoice }: { invoice: InvoiceView }) {
                   variant="outline"
                   pending={print.isPending}
                   pendingLabel="Preparando la impresión"
-                  onClick={() => print.mutate({ id: invoice.id })}
+                  onClick={() => print.mutate({ id: documentId })}
                 >
                   <Printer aria-hidden="true" />
                   Imprimir
@@ -199,7 +213,7 @@ export function DocumentsSection({ invoice }: { invoice: InvoiceView }) {
               <AsyncButton
                 pending={retry.isPending}
                 pendingLabel="Reintentando"
-                onClick={() => retry.mutate({ id: invoice.id })}
+                onClick={() => retry.mutate({ id: documentId })}
               >
                 <RefreshCw aria-hidden="true" />
                 Reintentar generación
@@ -214,7 +228,7 @@ export function DocumentsSection({ invoice }: { invoice: InvoiceView }) {
           </div>
         )}
         {(documents.signedXml || documents.ride !== "NOT_APPLICABLE") && (
-          <DeliveryHistory documentId={invoice.id} />
+          <DeliveryHistory documentId={documentId} />
         )}
       </>
     );

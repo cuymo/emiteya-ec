@@ -83,7 +83,7 @@
 
 ## 12. Bandeja con notas de crédito
 
-- [ ] 12.1 Mostrar las notas en Comprobantes (design D15): tipos disponibles `01` y `04`, filtro de tipo visible y conectado a la API, tipo bajo el número y enlace al detalle según el tipo; `DocumentsSection` y `TransmissionSection` reciben el comprobante y su tipo. Verificar con pruebas de componente: filtro de tipo en la URL, enlace por tipo, textos por tipo, RIDE solo de un comprobante autorizado, XML autorizado solo si existe, XML firmado distinto, y la factura sin cambios
+- [x] 12.1 Mostrar las notas en Comprobantes (design D15): tipos disponibles `01` y `04`, filtro de tipo visible y conectado a la API, tipo bajo el número y enlace al detalle según el tipo; `DocumentsSection` y `TransmissionSection` reciben el comprobante y su tipo. Verificar con pruebas de componente: filtro de tipo en la URL, enlace por tipo, textos por tipo, RIDE solo de un comprobante autorizado, XML autorizado solo si existe, XML firmado distinto, y la factura sin cambios
 
 ## 13. Pantallas de notas de crédito
 

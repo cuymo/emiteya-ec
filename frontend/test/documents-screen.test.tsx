@@ -1,5 +1,7 @@
 // Comprobantes, la bandeja documental (add-document-archive, tarea 10.2, design D13): carga, vacío,
-// sin coincidencias, error, sin permiso, filtros en la URL, rango inválido y descarga del RIDE.
+// sin coincidencias, error, sin permiso, filtros en la URL, rango inválido y descarga del RIDE; con
+// la nota de crédito (add-credit-notes, tarea 12.1, design D15): el filtro de tipo en la URL, el tipo
+// bajo el número y el enlace al detalle según el tipo.
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -112,8 +114,65 @@ describe("Comprobantes", () => {
     expect(within(row("001-001-000000001")).getByRole("link").getAttribute("href")).toBe(
       "/facturas/doc-1",
     );
-    // Con un solo tipo de comprobante, el filtro de tipo no se muestra.
-    expect(screen.queryByLabelText("Tipo de comprobante")).toBeNull();
+    expect(within(row("001-001-000000001")).getByText("Factura")).toBeDefined();
+  });
+
+  it("la nota de crédito muestra su tipo bajo el número y enlaza a su detalle", async () => {
+    render({
+      "GET /api/v1/documents": paged([
+        item(),
+        item({ id: "nc-1", documentType: "04", number: "001-001-000000007", total: "11.50" }),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Comprobantes emitidos" });
+    await within(table).findByText("001-001-000000007");
+    const row = (number: string) =>
+      within(table)
+        .getAllByRole("row")
+        .find((candidate) => within(candidate).queryByText(number))!;
+    expect(within(row("001-001-000000007")).getByText("Nota de crédito")).toBeDefined();
+    expect(within(row("001-001-000000007")).getByRole("link").getAttribute("href")).toBe(
+      "/notas-credito/nc-1",
+    );
+    expect(within(row("001-001-000000001")).getByRole("link").getAttribute("href")).toBe(
+      "/facturas/doc-1",
+    );
+    expect(
+      within(row("001-001-000000007")).getByRole("button", {
+        name: "Descargar el RIDE de 001-001-000000007",
+      }),
+    ).toBeDefined();
+  });
+
+  it("el filtro de tipo vive en la URL y llega a la API", async () => {
+    navigation.search = new URLSearchParams("tipo=04");
+    const calls = render({ "GET /api/v1/documents": paged([]) });
+    expect(
+      (await screen.findAllByText("No hay comprobantes que coincidan")).length,
+    ).toBeGreaterThan(0);
+    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/documents?"))!;
+    expect(new URLSearchParams(call.key.split("?")[1]).get("documentType")).toBe("04");
+    const select = screen.getByLabelText("Tipo de comprobante") as HTMLSelectElement;
+    expect(select.value).toBe("04");
+    expect([...select.options].map((option) => option.textContent)).toEqual([
+      "Todos",
+      "Factura",
+      "Nota de crédito",
+    ]);
+    fireEvent.change(select, { target: { value: "01" } });
+    expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=01", {
+      scroll: false,
+    });
+    fireEvent.change(select, { target: { value: "" } });
+    expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes", { scroll: false });
+  });
+
+  it("un tipo desconocido en la URL no filtra", async () => {
+    navigation.search = new URLSearchParams("tipo=99");
+    const calls = render({ "GET /api/v1/documents": paged([item()]) });
+    await screen.findAllByText("001-001-000000001");
+    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/documents?"))!;
+    expect(new URLSearchParams(call.key.split("?")[1]).has("documentType")).toBe(false);
   });
 
   it("muestra la carga, la bandeja vacía y el error con reintento", async () => {

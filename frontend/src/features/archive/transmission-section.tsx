@@ -1,6 +1,7 @@
-// Sección "Transmisión al SRI" del detalle de una factura (add-sri-transmission, design D20).
-// Usuario: el operador, para ver si la factura quedó autorizada; el administrador, para destrabar
-// las que requieren atención. Decisión: si la factura está lista para entregarse o necesita una
+// Sección "Transmisión al SRI" del detalle de un comprobante (add-sri-transmission, design D20;
+// add-credit-notes, design D15: la factura y la nota de crédito la comparten con textos por tipo).
+// Usuario: el operador, para ver si el comprobante quedó autorizado; el administrador, para
+// destrabar los que requieren atención. Decisión: si está listo para entregarse o necesita una
 // acción. P0: estado y acción "Reconciliar con el SRI" (solo el administrador, en un estado
 // admitido); P1: mensajes del SRI y datos de la autorización; P2: historial plegable; P3
 // (identificadores de intentos, cabeceras y tiempos técnicos): no se muestran. Nunca XML ni SOAP.
@@ -10,6 +11,7 @@ import {
   INVOICE_STATE_LABELS,
   RECONCILIATION_REASON_MAX,
   requestReconciliationSchema,
+  type DocumentType,
   type InvoiceView,
   type SriMessageView,
   type TransmissionEventView,
@@ -22,23 +24,38 @@ import { ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
-import { CAUSE_LABELS, OPERATION_LABELS, OUTCOME_LABELS, formatDateTime } from "./invoice-format";
-import { useInvoiceTransmission, useRequestReconciliation } from "./invoices-api";
+import {
+  CAUSE_LABELS,
+  OPERATION_LABELS,
+  OUTCOME_LABELS,
+  formatDateTime,
+} from "@/features/invoices/invoice-format";
+import { useDocumentTransmission, useRequestDocumentReconciliation } from "./archive-api";
+import { documentKind, withArticle, type DocumentKind } from "./document-kinds";
 
 /** Qué significa el estado para el usuario, en una frase. */
-const STATE_EXPLANATIONS: Record<InvoiceView["state"], string> = {
-  RESERVED: "La factura todavía no está firmada: no se envía al SRI hasta completar la firma.",
-  SIGNED: "La factura está firmada y espera su envío al SRI.",
-  SEND_UNKNOWN:
-    "No se pudo confirmar si el SRI recibió la factura. Se verifica con su misma clave antes de cualquier reenvío.",
-  RECEIVED:
-    "El SRI recibió la factura y está decidiendo su autorización; puede tardar hasta 24 horas.",
-  RETURNED: "El SRI devolvió la factura. Revisa sus mensajes.",
-  AUTHORIZED: "El SRI autorizó la factura: está lista para entregarse.",
-  NOT_AUTHORIZED: "El SRI no autorizó la factura. Revisa sus mensajes.",
-  MANUAL_REVIEW:
-    "El resultado del SRI no se pudo resolver automáticamente: un administrador debe reconciliar la factura.",
-};
+function stateExplanation(kind: DocumentKind, state: InvoiceView["state"]): string {
+  const object = withArticle(kind);
+  const subject = withArticle(kind, true);
+  switch (state) {
+    case "RESERVED":
+      return `${subject} todavía no está firmada: no se envía al SRI hasta completar la firma.`;
+    case "SIGNED":
+      return `${subject} está firmada y espera su envío al SRI.`;
+    case "SEND_UNKNOWN":
+      return `No se pudo confirmar si el SRI recibió ${object}. Se verifica con su misma clave antes de cualquier reenvío.`;
+    case "RECEIVED":
+      return `El SRI recibió ${object} y está decidiendo su autorización; puede tardar hasta 24 horas.`;
+    case "RETURNED":
+      return `El SRI devolvió ${object}. Revisa sus mensajes.`;
+    case "AUTHORIZED":
+      return `El SRI autorizó ${object}: está lista para entregarse.`;
+    case "NOT_AUTHORIZED":
+      return `El SRI no autorizó ${object}. Revisa sus mensajes.`;
+    case "MANUAL_REVIEW":
+      return `El resultado del SRI no se pudo resolver automáticamente: un administrador debe reconciliar ${object}.`;
+  }
+}
 
 /** Mensajes del SRI con su identificador, su texto, la información adicional y el tipo. */
 function SriMessageList({
@@ -94,9 +111,9 @@ function eventDetail(event: TransmissionEventView): string {
 }
 
 /** Historial plegable: transiciones e intentos resumidos, sin datos técnicos. */
-function TransmissionHistory({ invoiceId }: { invoiceId: string }) {
+function TransmissionHistory({ kind, documentId }: { kind: DocumentKind; documentId: string }) {
   const [open, setOpen] = useState(false);
-  const history = useInvoiceTransmission(invoiceId, open);
+  const history = useDocumentTransmission(kind, documentId, open);
   let content: ReactNode = null;
   if (open) {
     if (history.isPending) content = <Skeleton className="h-8 w-full" />;
@@ -147,13 +164,33 @@ function TransmissionHistory({ invoiceId }: { invoiceId: string }) {
   );
 }
 
-export function TransmissionSection({ invoice }: { invoice: InvoiceView }) {
+/** Lo que la sección necesita del comprobante: su identidad, su tipo, su estado y su transmisión. */
+export type TransmissionDocument = Readonly<
+  Pick<InvoiceView, "id" | "documentNumber" | "state" | "transmission"> & {
+    documentType: DocumentType;
+  }
+>;
+
+export function TransmissionSection({ document }: { document: TransmissionDocument }) {
+  const kind = documentKind(document.documentType);
+  return kind ? <KindTransmissionSection kind={kind} document={document} /> : null;
+}
+
+function KindTransmissionSection({
+  kind,
+  document,
+}: {
+  kind: DocumentKind;
+  document: TransmissionDocument;
+}) {
   const { me } = useSession();
   const headingId = useId();
-  const canReconcile = canSee(me.role, "invoices.reconcile");
+  const canReconcile = canSee(me.role, kind.reconcilePermission);
   const [confirming, setConfirming] = useState(false);
-  const reconcile = useRequestReconciliation({ onSuccess: () => setConfirming(false) });
-  const { transmission } = invoice;
+  const reconcile = useRequestDocumentReconciliation(kind, {
+    onSuccess: () => setConfirming(false),
+  });
+  const { transmission } = document;
   const authorization = transmission.authorization;
   const messages = transmission.lastResult?.messages ?? [];
 
@@ -171,10 +208,10 @@ export function TransmissionSection({ invoice }: { invoice: InvoiceView }) {
         )}
       </div>
       <p className="text-sm">
-        {invoice.state === "MANUAL_REVIEW" && transmission.inProgress
+        {document.state === "MANUAL_REVIEW" && transmission.inProgress
           ? "La reconciliación está en curso: el estado se actualizará cuando el SRI responda."
-          : STATE_EXPLANATIONS[invoice.state]}
-        {transmission.inProgress && !["RESERVED", "MANUAL_REVIEW"].includes(invoice.state) && (
+          : stateExplanation(kind, document.state)}
+        {transmission.inProgress && !["RESERVED", "MANUAL_REVIEW"].includes(document.state) && (
           <span className="text-foreground-muted"> Hay una interacción con el SRI en curso.</span>
         )}
       </p>
@@ -212,23 +249,23 @@ export function TransmissionSection({ invoice }: { invoice: InvoiceView }) {
           <SriMessageList messages={messages} label="Mensajes del SRI" />
         </div>
       )}
-      <TransmissionHistory invoiceId={invoice.id} />
+      <TransmissionHistory kind={kind} documentId={document.id} />
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
         title="Reconciliar con el SRI"
         description={
           <p>
-            Se consultará al SRI por la clave de la factura {invoice.documentNumber} y se aplicarán
-            sus reglas: nunca se crea otro número, otra clave ni otro contenido, y solo se reenvía
-            el mismo XML firmado si el SRI no conoce la factura y no hay evidencia de que la
-            recibió.
+            Se consultará al SRI por la clave de {withArticle(kind)} {document.documentNumber} y se
+            aplicarán sus reglas: nunca se crea otro número, otra clave ni otro contenido, y solo se
+            reenvía el mismo XML firmado si el SRI no conoce {withArticle(kind)} y no hay evidencia
+            de que la recibió.
           </p>
         }
         confirmLabel="Reconciliar"
         pending={reconcile.isPending}
         onConfirm={(reason) => {
-          if (reason) reconcile.mutate({ id: invoice.id, reason });
+          if (reason) reconcile.mutate({ id: document.id, reason });
         }}
         requiredText={{
           label: "Motivo",

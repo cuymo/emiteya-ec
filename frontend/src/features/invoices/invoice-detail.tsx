@@ -22,7 +22,7 @@ import { CLASS_LABELS, STAGE_LABELS, formatDateTime, formatIssueDate } from "./i
 import { useInvoice, useRetrySigning } from "./invoices-api";
 import { StateCell } from "./invoices-screen";
 import { DocumentsSection } from "@/features/archive/documents-section";
-import { TransmissionSection } from "./transmission-section";
+import { TransmissionSection } from "@/features/archive/transmission-section";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -150,8 +150,8 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-3">
-          {!reserved && <TransmissionSection invoice={data} />}
-          <DocumentsSection invoice={data} />
+          {!reserved && <TransmissionSection document={data} />}
+          <DocumentsSection document={data} />
           <Section title="Comprador">
             <p className="flex flex-col text-sm">
               <span className="font-medium break-words">{data.buyer.legalName}</span>

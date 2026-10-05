@@ -4,7 +4,8 @@
 // número, fecha, receptor, total, estado y si el RIDE está disponible. Acción principal: abrir el
 // comprobante. P0: número, estado y RIDE; P1: fecha, receptor y total; P2: filtros avanzados
 // (fechas, identificación, establecimiento, punto y tipo); P3 (identificadores y hashes): no se
-// muestra.
+// muestra. La factura y la nota de crédito conviven con su tipo bajo el número (add-credit-notes,
+// design D15).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -35,6 +36,7 @@ import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/invoices/invoices-screen";
 import { useDocuments, useDownloadDocument } from "./archive-api";
 import { RIDE_STATUS_LABELS } from "./archive-format";
+import { EMITTED_DOCUMENT_TYPES, documentKind } from "./document-kinds";
 
 type StateFilter =
   | "todos"
@@ -59,11 +61,14 @@ const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: Docum
 ];
 const isStateFilter = (value: string | null): value is StateFilter =>
   STATE_FILTERS.some((filter) => filter.value === value);
-/** Hoy solo existe la factura: el filtro de tipo se oculta mientras haya un solo tipo. */
-const AVAILABLE_TYPES = ["01"] as const;
-const DETAIL_PATHS: Partial<Record<DocumentListItem["documentType"], string>> = {
-  "01": "/facturas",
-};
+/** Tipos que la bandeja ofrece en su filtro: los que el sistema emite. */
+const TYPE_FILTERS = [
+  { value: "", label: "Todos" },
+  ...EMITTED_DOCUMENT_TYPES.map((type) => ({ value: type, label: DOCUMENT_TYPE_LABELS[type] })),
+] as const;
+const isTypeFilter = (value: string | null): value is (typeof EMITTED_DOCUMENT_TYPES)[number] =>
+  EMITTED_DOCUMENT_TYPES.some((type) => type === value);
+const detailPath = (item: DocumentListItem) => documentKind(item.documentType)?.detailPath;
 
 function useUrlState() {
   const params = useSearchParams();
@@ -75,6 +80,7 @@ function useUrlState() {
   const sizeParam = Number.parseInt(params.get("filas") ?? "", 10);
   const pageSize = sizeParam >= 1 && sizeParam <= PAGE_SIZE_MAX ? sizeParam : PAGE_SIZE_DEFAULT;
   const value = (key: string) => params.get(key) ?? "";
+  const typeParam = params.get("tipo");
   // La última consulta pedida: dos cambios seguidos (Desde y luego Hasta) se acumulan aunque el
   // primero todavía no haya llegado a la URL.
   const current = params.toString();
@@ -98,6 +104,7 @@ function useUrlState() {
     page,
     pageSize,
     search: value("q"),
+    documentType: isTypeFilter(typeParam) ? typeParam : undefined,
     from: value("desde"),
     to: value("hasta"),
     identification: value("identificacion"),
@@ -155,6 +162,7 @@ export function DocumentsScreen() {
   const documents = useDocuments(
     {
       search: url.search,
+      documentType: url.documentType,
       state,
       from: url.from,
       to: url.to,
@@ -169,6 +177,7 @@ export function DocumentsScreen() {
   const forbidden = documents.error instanceof ApiError && documents.error.status === 403;
   const filtersActive =
     url.search !== "" ||
+    url.documentType !== undefined ||
     url.filter !== "todos" ||
     url.from !== "" ||
     url.to !== "" ||
@@ -186,15 +195,13 @@ export function DocumentsScreen() {
         id: "number",
         header: "Número",
         cell: ({ row }) => {
-          const base = DETAIL_PATHS[row.original.documentType];
+          const base = detailPath(row.original);
           const label = (
             <span className="flex flex-col">
               <span className="font-medium tabular-nums">{row.original.number}</span>
-              {AVAILABLE_TYPES.length > 1 && (
-                <span className="text-xs text-foreground-muted">
-                  {DOCUMENT_TYPE_LABELS[row.original.documentType]}
-                </span>
-              )}
+              <span className="text-xs text-foreground-muted">
+                {DOCUMENT_TYPE_LABELS[row.original.documentType]}
+              </span>
             </span>
           );
           return base ? (
@@ -271,6 +278,7 @@ export function DocumentsScreen() {
     setIdentificationDraft("");
     url.update({
       q: null,
+      tipo: null,
       estado: null,
       desde: null,
       hasta: null,
@@ -307,7 +315,7 @@ export function DocumentsScreen() {
       <EmptyState
         kind="empty"
         title="Todavía no hay comprobantes"
-        description="Los comprobantes aparecen aquí cuando emites una factura."
+        description="Los comprobantes aparecen aquí cuando emites una factura o una nota de crédito."
       />
     )
   ) : undefined;
@@ -315,8 +323,22 @@ export function DocumentsScreen() {
   const advancedFilters = (
     <div
       id="filtros-avanzados"
-      className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-1 sm:grid-cols-2 md:grid md:grid-cols-[repeat(5,minmax(0,1fr))]`}
+      className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-1 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-[repeat(6,minmax(0,1fr))]`}
     >
+      <div className="flex flex-col gap-0.5">
+        <Label htmlFor="filtro-tipo">Tipo de comprobante</Label>
+        <Select
+          id="filtro-tipo"
+          value={url.documentType ?? ""}
+          onChange={(event) => url.update({ tipo: event.target.value })}
+        >
+          {TYPE_FILTERS.map((filter) => (
+            <option key={filter.value} value={filter.value}>
+              {filter.label}
+            </option>
+          ))}
+        </Select>
+      </div>
       <DatePickerField
         label="Desde"
         value={url.from}
@@ -422,20 +444,25 @@ export function DocumentsScreen() {
           </div>
         }
         renderCard={(item) => {
-          const base = DETAIL_PATHS[item.documentType];
+          const base = detailPath(item);
           return (
             <div className="flex flex-col gap-1">
               <div className="flex items-start justify-between gap-1">
-                {base ? (
-                  <Link
-                    href={`${base}/${item.id}`}
-                    className="font-medium tabular-nums underline-offset-2 hover:underline"
-                  >
-                    {item.number}
-                  </Link>
-                ) : (
-                  <span className="font-medium tabular-nums">{item.number}</span>
-                )}
+                <span className="flex flex-col">
+                  {base ? (
+                    <Link
+                      href={`${base}/${item.id}`}
+                      className="font-medium tabular-nums underline-offset-2 hover:underline"
+                    >
+                      {item.number}
+                    </Link>
+                  ) : (
+                    <span className="font-medium tabular-nums">{item.number}</span>
+                  )}
+                  <span className="text-xs text-foreground-muted">
+                    {DOCUMENT_TYPE_LABELS[item.documentType]}
+                  </span>
+                </span>
                 <RideCell document={item} />
               </div>
               <span className="break-words">{item.buyer.name}</span>

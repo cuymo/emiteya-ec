@@ -390,7 +390,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Política de tamaño | `catalogs` (dataset `sri-transmission-policy`) |
 | Consultas y reconciliación manual | `invoices/application/invoices.ts` e `invoices/infrastructure/http/invoices-router.ts`, con la solicitud compartida `fiscal/application/reconciliation-request.ts` (`add-credit-notes`) |
 | Métricas | `fiscal/infrastructure/transmission-metrics.ts` |
-| Pantallas | `frontend/src/features/invoices/` (`transmission-section.tsx`) |
+| Pantallas | `frontend/src/features/archive/transmission-section.tsx`, compartida por la factura y la nota de crédito con textos, rutas y permiso por tipo (`document-kinds.ts`, `add-credit-notes`) |
 
 ### Rutas y permisos
 
@@ -614,6 +614,11 @@ envío, la idempotencia y los errores.
 - **Lectura por raíz.** `readRideDocument` (`sri-engine/infrastructure/ride/ride-source.ts`) aplica las mismas defensas al XML de origen y elige la lectura por la raíz y la versión: `factura` 1.1.0 (la lectura de la factura no cambió) o `notaCredito` 1.1.0, con su propia lista blanca de los elementos que escribe el builder de la nota y el modelo `RideCreditNote` (sin formas de pago, sin dirección del comprador y sin total de descuentos, que el XML de la nota no trae; con el comprobante modificado, su fecha y la razón de la modificación).
 - **Distribución propia.** El renderer dibuja la nota con la distribución de la ficha v2.34, anexo 2, página 61: "NOTA DE CRÉDITO" con su autorización y el Code128 de la clave de la nota, el bloque del comprobante que se modifica y los subtotales con el valor total, sin formas de pago. Su versión de distribución (`CREDIT_NOTE_RIDE_RENDERER_VERSION`) es distinta de la de la factura y viaja a los metadatos del artefacto. El pool de workers, el job, el artefacto y las descargas son los de la factura.
 - **Factura sin cambios.** Los bytes del RIDE de cada factura de las pruebas son los mismos antes y después de este cambio.
+
+### Bandeja y secciones compartidas
+
+- **Comprobantes.** La bandeja ofrece los tipos que el sistema emite (`01` y `04`) en el filtro "Tipo de comprobante" de los filtros avanzados, en la URL (`tipo`) y enviado a la API como `documentType`; un tipo desconocido en la URL no filtra. Cada fila muestra el tipo bajo el número y enlaza al detalle de su tipo (`/facturas/{id}` o `/notas-credito/{id}`).
+- **Por tipo, sin cambiar las reglas.** `frontend/src/features/archive/document-kinds.ts` guarda lo que cambia por tipo: el nombre con que se nombra al usuario, la ruta del detalle, la ruta de su API, el permiso de reconciliación (`invoices.reconcile` o `creditNotes.reconcile`), el código del estado no reconciliable y la clave de caché. `DocumentsSection` y `TransmissionSection` reciben el comprobante (identificador, tipo, estado y transmisión) y no muestran nada para un tipo que el sistema no emite. Las reglas de disponibilidad de los documentos siguen en el servidor: RIDE solo de un comprobante autorizado, XML autorizado solo si su artefacto existe y el XML firmado como un documento distinto.
 
 ## Reserva del secuencial
 

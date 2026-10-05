@@ -19,6 +19,7 @@ import {
 
 const INVOICE = {
   id: "inv-1",
+  documentType: "01",
   documentNumber: "001-001-000000001",
   state: "AUTHORIZED",
 } as InvoiceView;
@@ -65,7 +66,7 @@ function render(
   });
   renderApp(
     <SessionGate fallback={<p>cargando</p>}>
-      <DocumentsSection invoice={invoice} />
+      <DocumentsSection document={invoice} />
     </SessionGate>,
   );
   return calls;
