@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notaDebito id="comprobante" version="1.0.0">
+  <infoTributaria>
+    <ambiente>2</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <nombreComercial>Ferretería "La Ñusta" &amp; Cía.</nombreComercial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0910202605179001234500220010010000000041234567810</claveAcceso>
+    <codDoc>05</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000004</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+    <agenteRetencion>1</agenteRetencion>
+    <contribuyenteRimpe>CONTRIBUYENTE RÉGIMEN RIMPE</contribuyenteRimpe>
+  </infoTributaria>
+  <infoNotaDebito>
+    <fechaEmision>09/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <tipoIdentificacionComprador>05</tipoIdentificacionComprador>
+    <razonSocialComprador>Peña &amp; Asociados &lt;Construcciones&gt; 'Ñandú'</razonSocialComprador>
+    <identificacionComprador>1710034065</identificacionComprador>
+    <contribuyenteEspecial>12345</contribuyenteEspecial>
+    <obligadoContabilidad>NO</obligadoContabilidad>
+    <codDocModificado>01</codDocModificado>
+    <numDocModificado>001-001-000000041</numDocModificado>
+    <fechaEmisionDocSustento>01/09/2026</fechaEmisionDocSustento>
+    <totalSinImpuestos>12.34</totalSinImpuestos>
+    <impuestos>
+      <impuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>4</codigoPorcentaje>
+        <tarifa>15</tarifa>
+        <baseImponible>12.34</baseImponible>
+        <valor>1.85</valor>
+      </impuesto>
+    </impuestos>
+    <valorTotal>14.19</valorTotal>
+    <pagos>
+      <pago>
+        <formaPago>01</formaPago>
+        <total>14.19</total>
+      </pago>
+    </pagos>
+  </infoNotaDebito>
+  <motivos>
+    <motivo>
+      <razon>Mora — factura "N° 41" &amp; recargo &lt;legal&gt;</razon>
+      <valor>12.34</valor>
+    </motivo>
+  </motivos>
+</notaDebito>

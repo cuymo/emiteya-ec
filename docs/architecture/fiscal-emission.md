@@ -644,6 +644,14 @@ Cambio 11, en curso. Esta sección crece con cada grupo del cambio.
 - **Evaluación.** `evaluateDebitNote` (`debit-notes/domain/evaluation.ts`) informa los problemas en el orden de la design D4 de `add-debit-notes`: estado, integridad, ambiente, consumidor final (política del proyecto, BR-32), conceptos, forma de pago, declaración, preparación y cálculo. La forma de pago llega resuelta por el resolver de `catalogs`, y su total se comprueba igual al valor total con decimal exacto (`paymentCoversTotal`).
 - **Pruebas.** `backend/test/debit-notes/amounts.test.ts` fija los golden de la design D7 y comprueba con un generador determinista las identidades de bases, impuestos y totales, la independencia de la partición y del orden, y que el módulo no usa `number`.
 
+### XML y firma de la nota de débito
+
+- **Builder propio.** `createDebitNoteXmlBuilder` (`sri-engine/infrastructure/debit-note-xml-builder.ts`, versión de builder `1`) escribe `notaDebito` 1.0.0 desde la proyección del snapshot (`toDebitNoteXmlSnapshot`, `debit-notes/application/xml-snapshot.ts`), en el orden del XSD, con `infoTributaria` (`codDoc` 05), `xml-writer.ts` y el texto decimal exacto del snapshot. No usa el builder de alto nivel de la dependencia.
+- **Contenido.** `infoNotaDebito` con el comprador de la factura, `codDocModificado` 01, `numDocModificado`, `fechaEmisionDocSustento`, `totalSinImpuestos`, un `impuesto` por tratamiento (código, código de porcentaje, tarifa, base e impuesto), `valorTotal` y `pagos`; `motivos` con un `motivo` por concepto (`razon` es la descripción, `valor` la base).
+- **Forma de pago.** `pagos` se escribe siempre con un solo `pago` (`formaPago` y `total` de `snapshot.payments`), porque la ficha técnica v2.34 lo marca como obligatorio en la nota de débito (páginas 58 y 59) aunque el XSD lo permita omitir. Un solo pago es una política del MVP del proyecto. Sin `plazo` ni `unidadTiempo`: el modelo no registra un plazo de crédito.
+- **Lo que no escribe:** `rise`, `compensaciones`, `valorDevolucionIva`, `maquinaFiscal` ni `infoAdicional`.
+- **Firma.** `debitNoteSigningProfile` registra el builder en la firma compartida y la auditoría `debit_note.signed`; el firmador recibe el tipo `05` (`NOTA_DEBITO` en la librería), y el XML se valida contra `NotaDebito_V1.0.0.xsd` antes y después de firmar. Los golden de bytes exactos están en `backend/test/fixtures/debit-note-xml/`.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna

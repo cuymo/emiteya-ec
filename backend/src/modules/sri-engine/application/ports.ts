@@ -232,6 +232,48 @@ export interface CreditNoteXmlBuilder {
   build(snapshot: CreditNoteXmlSnapshot): string;
 }
 
+/**
+ * Proyección del snapshot de la nota de débito que recibe su builder (add-debit-notes, design D16):
+ * los importes son `DecimalString` ya calculados por `calculateDebitNoteAmounts` y congelados al
+ * reservar, y la forma de pago es la única del snapshot. El builder solo transcribe; no lee la
+ * factura, el reloj ni catálogos.
+ */
+export type DebitNoteXmlSnapshot = Readonly<{
+  /** Versión del XSD registrado con que se construye. */
+  schemaVersion: string;
+  environment: "1" | "2";
+  issueDate: string;
+  accessKey: string;
+  sequential: string;
+  issuer: InvoiceSnapshot["issuer"];
+  /** El comprador de la factura modificada, tal como figura en ella. */
+  buyer: Readonly<{ identificationType: string; identification: string; legalName: string }>;
+  /** Comprobante modificado: tipo, número `EEE-PPP-SSSSSSSSS` y fecha `YYYY-MM-DD`. */
+  modified: Readonly<{ documentType: "01"; documentNumber: string; issueDate: string }>;
+  /** `totalSinImpuestos`. */
+  withoutTaxes: string;
+  /** Un impuesto por tratamiento usado: código, código de porcentaje, tarifa, base e impuesto. */
+  taxes: readonly Readonly<{
+    taxCode: string;
+    rateCode: string;
+    rate: string;
+    base: string;
+    amount: string;
+  }>[];
+  /** `valorTotal`. */
+  total: string;
+  /** El único `pago`: `formaPago` y `total` (el valor total). */
+  payment: Readonly<{ method: string; total: string }>;
+  /** Un `motivo` por concepto, en su orden: `razon` (la descripción) y `valor` (la base). */
+  reasons: readonly Readonly<{ reason: string; value: string }>[];
+}>;
+
+/** XML sin firmar de una nota de débito: función pura y determinista de su snapshot (D16). */
+export interface DebitNoteXmlBuilder {
+  readonly version: string;
+  build(snapshot: DebitNoteXmlSnapshot): string;
+}
+
 export const INVOICE_XML_ERRORS = [
   "UNSUPPORTED_SCHEMA_VERSION",
   "INVALID_SNAPSHOT_AMOUNT",
@@ -255,6 +297,16 @@ export class CreditNoteXmlError extends Error {
   constructor(code: InvoiceXmlErrorCode) {
     super(code);
     this.name = "CreditNoteXmlError";
+    this.code = code;
+  }
+}
+
+/** Snapshot de una nota de débito que no se puede escribir, con los mismos códigos. */
+export class DebitNoteXmlError extends Error {
+  readonly code: InvoiceXmlErrorCode;
+  constructor(code: InvoiceXmlErrorCode) {
+    super(code);
+    this.name = "DebitNoteXmlError";
     this.code = code;
   }
 }

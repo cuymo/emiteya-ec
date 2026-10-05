@@ -55,6 +55,12 @@ export const AUDIT_ACTIONS = [
   "credit_note.signing_retried",
   "credit_note.reconciliation_requested",
   "credit_note.reconciliation_completed",
+  // add-debit-notes, design D22: las mismas reglas, sin XML, SOAP ni descripciones de los conceptos.
+  "debit_note.reserved",
+  "debit_note.signed",
+  "debit_note.signing_retried",
+  "debit_note.reconciliation_requested",
+  "debit_note.reconciliation_completed",
   // add-minimal-inventory, design D12: la configuración del inventario; nunca los movimientos.
   "inventory.initialized",
   "inventory.tracking_disabled",

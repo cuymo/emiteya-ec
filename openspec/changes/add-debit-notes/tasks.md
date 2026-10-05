@@ -55,8 +55,8 @@
 
 ## 4. XML de la nota de débito
 
-- [ ] 4.1 Crear `debit-note-xml-builder.ts` para `notaDebito` 1.0.0 desde el snapshot, sin el builder de alto nivel de la dependencia, reutilizando `xml-writer.ts` e `infoTributaria` con `codDoc` 05 (design D16). Verificar con golden fixtures de bytes exactos (un concepto, varios de una tarifa, varias tarifas con 0 %, no objeto y exento, comprador con caracteres especiales), todos con `pagos` y un solo `pago` tomado del snapshot, que validan contra `NotaDebito_V1.0.0.xsd`, con los golden de la factura y de la nota de crédito sin cambios
-- [ ] 4.2 Crear `debitNoteSigningProfile` y firmar una nota con el firmador vigente y el tipo `05`, con la validación XSD antes y después de firmar. Verificar que el XML firmado valida, lleva la clave y el certificado de la empresa, y que el artefacto declara el tipo `05`. Documentar en `fiscal-emission.md` el builder, la forma de pago con su evidencia de la ficha (design D8) y lo que la nota no escribe, y verificar que cita el builder y su versión
+- [x] 4.1 Crear `debit-note-xml-builder.ts` para `notaDebito` 1.0.0 desde el snapshot, sin el builder de alto nivel de la dependencia, reutilizando `xml-writer.ts` e `infoTributaria` con `codDoc` 05 (design D16). Verificar con golden fixtures de bytes exactos (un concepto, varios de una tarifa, varias tarifas con 0 %, no objeto y exento, comprador con caracteres especiales), todos con `pagos` y un solo `pago` tomado del snapshot, que validan contra `NotaDebito_V1.0.0.xsd`, con los golden de la factura y de la nota de crédito sin cambios
+- [x] 4.2 Crear `debitNoteSigningProfile` y firmar una nota con el firmador vigente y el tipo `05`, con la validación XSD antes y después de firmar. Verificar que el XML firmado valida, lleva la clave y el certificado de la empresa, y que el artefacto declara el tipo `05`. Documentar en `fiscal-emission.md` el builder, la forma de pago con su evidencia de la ficha (design D8) y lo que la nota no escribe, y verificar que cita el builder y su versión
 
 ## 5. Borradores, vista previa y facturas elegibles
 

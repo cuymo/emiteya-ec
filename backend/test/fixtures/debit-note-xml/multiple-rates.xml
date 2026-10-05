@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notaDebito id="comprobante" version="1.0.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0910202605179001234500110010010000000031234567814</claveAcceso>
+    <codDoc>05</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000003</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoNotaDebito>
+    <fechaEmision>09/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <tipoIdentificacionComprador>04</tipoIdentificacionComprador>
+    <razonSocialComprador>EL PERNO CIA. LTDA.</razonSocialComprador>
+    <identificacionComprador>0992877878001</identificacionComprador>
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <codDocModificado>01</codDocModificado>
+    <numDocModificado>001-001-000000041</numDocModificado>
+    <fechaEmisionDocSustento>01/09/2026</fechaEmisionDocSustento>
+    <totalSinImpuestos>80.00</totalSinImpuestos>
+    <impuestos>
+      <impuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>0</codigoPorcentaje>
+        <tarifa>0</tarifa>
+        <baseImponible>20.00</baseImponible>
+        <valor>0.00</valor>
+      </impuesto>
+      <impuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>4</codigoPorcentaje>
+        <tarifa>15</tarifa>
+        <baseImponible>50.00</baseImponible>
+        <valor>7.50</valor>
+      </impuesto>
+      <impuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>6</codigoPorcentaje>
+        <tarifa>0</tarifa>
+        <baseImponible>6.00</baseImponible>
+        <valor>0.00</valor>
+      </impuesto>
+      <impuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>7</codigoPorcentaje>
+        <tarifa>0</tarifa>
+        <baseImponible>4.00</baseImponible>
+        <valor>0.00</valor>
+      </impuesto>
+    </impuestos>
+    <valorTotal>87.50</valorTotal>
+    <pagos>
+      <pago>
+        <formaPago>19</formaPago>
+        <total>87.50</total>
+      </pago>
+    </pagos>
+  </infoNotaDebito>
+  <motivos>
+    <motivo>
+      <razon>Intereses de mora</razon>
+      <valor>50.00</valor>
+    </motivo>
+    <motivo>
+      <razon>Flete posterior a la venta</razon>
+      <valor>20.00</valor>
+    </motivo>
+    <motivo>
+      <razon>Gasto notarial</razon>
+      <valor>6.00</valor>
+    </motivo>
+    <motivo>
+      <razon>Gasto de envío de documentos</razon>
+      <valor>4.00</valor>
+    </motivo>
+  </motivos>
+</notaDebito>
