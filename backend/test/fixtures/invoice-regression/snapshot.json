@@ -1,0 +1,147 @@
+{
+  "key": {
+    "accessKey": "0510202601179001234500110010010000000011234567815",
+    "sequential": "000000001",
+    "numericCode": "12345678",
+    "emissionType": "1",
+    "documentNumber": "001-001-000000001"
+  },
+  "buyer": {
+    "address": "Av. Quito y Guayaquil",
+    "partyId": "<id>",
+    "legalName": "EL PERNO CIA. LTDA.",
+    "consumerFinal": false,
+    "identification": "0992877878001",
+    "identificationType": "04",
+    "consumerFinalPolicy": null
+  },
+  "lines": [
+    {
+      "taxes": [
+        {
+          "base": "25.00",
+          "amount": "3.75",
+          "taxCode": "2",
+          "entryKey": "4",
+          "rateCode": "4",
+          "versionId": "<id>",
+          "percentage": "15",
+          "catalogType": "iva-rate",
+          "officialLabel": "15%"
+        }
+      ],
+      "discount": "1.25",
+      "mainCode": "CEM-50",
+      "position": 1,
+      "quantity": "3",
+      "subtotal": "26.25",
+      "productId": "<id>",
+      "unitPrice": "8.75",
+      "description": "Cemento 50 kg",
+      "taxableBase": "25.00",
+      "auxiliaryCode": null,
+      "inventoryAffectsStock": false
+    }
+  ],
+  "issuer": {
+    "ruc": "1790012345001",
+    "legalName": "COMERCIAL ANDINA S.A.",
+    "tradeName": null,
+    "emissionPoint": {
+      "id": "<id>",
+      "code": "001"
+    },
+    "establishment": {
+      "id": "<id>",
+      "code": "001",
+      "address": "Av. 6 de Diciembre, Quito"
+    },
+    "largeTaxpayer": false,
+    "rimpeCategory": null,
+    "headOfficeAddress": "Av. Amazonas N24-03, Quito",
+    "accountingRequired": true,
+    "specialTaxpayerNumber": null,
+    "withholdingAgentResolution": null
+  },
+  "schema": {
+    "path": "sri-xsd/factura_V1.1.0.xsd",
+    "sha256": "62db9bf0ecceb00ef2b7ed136e59224815e5e5e33c77efc6a0552001e052eb8b",
+    "imports": [
+      {
+        "path": "w3c-xsd/xmldsig-core-schema.xsd",
+        "sha256": "d102ad3df7664c307e0c2c776ba4a90513b1969974d8a940bae1a77f9f21e15d"
+      }
+    ],
+    "version": "1.1.0",
+    "documentType": "01"
+  },
+  "totals": {
+    "taxes": [
+      {
+        "base": "25.00",
+        "amount": "3.75",
+        "taxCode": "2",
+        "rateCode": "4",
+        "percentage": "15"
+      }
+    ],
+    "total": "28.75",
+    "discount": "1.25",
+    "withoutTaxes": "25.00"
+  },
+  "payments": [
+    {
+      "code": "01",
+      "amount": "28.75",
+      "entryKey": "01",
+      "position": 1,
+      "versionId": "<id>",
+      "officialLabel": "SIN UTILIZACION DEL SISTEMA FINANCIERO"
+    }
+  ],
+  "issueDate": "2026-10-05",
+  "environment": "TEST",
+  "specialCases": {
+    "operation": [],
+    "issuerRules": [
+      {
+        "annex": 21,
+        "active": false,
+        "category": "CONDITIONAL_ISSUER_RULE",
+        "supported": true
+      },
+      {
+        "annex": 22,
+        "active": false,
+        "category": "CONDITIONAL_ISSUER_RULE",
+        "supported": true
+      },
+      {
+        "annex": 24,
+        "active": false,
+        "category": "CONDITIONAL_ISSUER_RULE",
+        "supported": true
+      },
+      {
+        "annex": 26,
+        "active": false,
+        "category": "CONDITIONAL_GO_LIVE",
+        "supported": false
+      }
+    ]
+  },
+  "builderVersion": "1",
+  "taxpayerConfig": {
+    "version": 1,
+    "versionId": "<id>"
+  },
+  "catalogDatasets": {
+    "iva-rate": 1,
+    "payment-method": 1,
+    "schema-registry": 2,
+    "identification-type": 1,
+    "special-case-matrix": 1
+  },
+  "environmentCode": "1",
+  "snapshotVersion": 2
+}

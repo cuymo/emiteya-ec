@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<factura id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0510202601179001234500110010010000000011234567815</claveAcceso>
+    <codDoc>01</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000001</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoFactura>
+    <fechaEmision>05/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. 6 de Diciembre, Quito</dirEstablecimiento>
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <tipoIdentificacionComprador>04</tipoIdentificacionComprador>
+    <razonSocialComprador>EL PERNO CIA. LTDA.</razonSocialComprador>
+    <identificacionComprador>0992877878001</identificacionComprador>
+    <direccionComprador>Av. Quito y Guayaquil</direccionComprador>
+    <totalSinImpuestos>25.00</totalSinImpuestos>
+    <totalDescuento>1.25</totalDescuento>
+    <totalConImpuestos>
+      <totalImpuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>4</codigoPorcentaje>
+        <baseImponible>25.00</baseImponible>
+        <valor>3.75</valor>
+      </totalImpuesto>
+    </totalConImpuestos>
+    <importeTotal>28.75</importeTotal>
+    <moneda>DOLAR</moneda>
+    <pagos>
+      <pago>
+        <formaPago>01</formaPago>
+        <total>28.75</total>
+      </pago>
+    </pagos>
+  </infoFactura>
+  <detalles>
+    <detalle>
+      <codigoPrincipal>CEM-50</codigoPrincipal>
+      <descripcion>Cemento 50 kg</descripcion>
+      <cantidad>3</cantidad>
+      <precioUnitario>8.75</precioUnitario>
+      <descuento>1.25</descuento>
+      <precioTotalSinImpuesto>25.00</precioTotalSinImpuesto>
+      <impuestos>
+        <impuesto>
+          <codigo>2</codigo>
+          <codigoPorcentaje>4</codigoPorcentaje>
+          <tarifa>15</tarifa>
+          <baseImponible>25.00</baseImponible>
+          <valor>3.75</valor>
+        </impuesto>
+      </impuestos>
+    </detalle>
+  </detalles>
+</factura>
