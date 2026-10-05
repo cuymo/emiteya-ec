@@ -273,6 +273,7 @@ export function buildTaxpayerApp(
           invoices: invoiceCreditSource,
           xsd: options.invoices?.xsd ?? testXsdValidator(),
           signing: debitSigning.pipeline(debitNoteSigningProfile()),
+          ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
           ...(options.debitNotes?.signAfterReserve === false ? { signAfterReserve: false } : {}),
           ...(options.debitNotes?.accessKeys ? { accessKeys: options.debitNotes.accessKeys } : {}),
           ...(options.debitNotes?.metrics ? { metrics: options.debitNotes.metrics } : {}),

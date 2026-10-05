@@ -1,15 +1,23 @@
 // Vistas de las notas de débito (add-debit-notes, design D20): el borrador con su vista previa, la
 // nota desde su snapshot y las facturas elegibles. Sin XML, respuestas originales ni datos técnicos.
 import {
+  DEBIT_NOTE_CAUSES,
   DEBIT_NOTE_ELIGIBILITY_DECLARATION,
   type DebitEligibleInvoiceView,
   type DebitNoteDraftSummaryView,
   type DebitNoteDraftView,
+  type DebitNoteSummaryView,
+  type DebitNoteTransmissionView,
   type DebitNoteView,
   type SriMessageView,
 } from "@facturador/contracts";
+import { roundHalfUp } from "../../../../platform/decimal/fiscal-decimal.ts";
 import { stopMessage } from "../../../invoices/application/transmission-messages.ts";
-import type { DebitNoteDetails } from "../../application/debit-notes.ts";
+import type {
+  DebitNoteDetails,
+  DebitNoteListItem,
+  DebitNoteTransmission,
+} from "../../application/debit-notes.ts";
 import { debitNoteDiagnosticMessage, isAttemptCode } from "../../application/diagnostics.ts";
 import type { DebitNoteDraftDetails } from "../../application/drafts.ts";
 import type { DebitEligibleInvoice } from "../../application/ports.ts";
@@ -228,5 +236,62 @@ export function toDebitNoteView(details: DebitNoteDetails): DebitNoteView {
     transmission: transmissionView(details),
     createdAt: document.createdAt.toISOString(),
     signedAt: document.signedAt?.toISOString() ?? null,
+  };
+}
+
+export function toDebitNoteSummaryView({
+  document,
+  transmissionStopped,
+}: DebitNoteListItem): DebitNoteSummaryView {
+  const snapshot = document.snapshot as DebitNoteSnapshot;
+  const attempt = document.lastAttempt;
+  return {
+    id: document.id,
+    documentNumber: document.documentNumber,
+    environment: document.environment,
+    issueDate: document.issueDate,
+    invoice: { id: snapshot.invoice.id, documentNumber: snapshot.invoice.documentNumber },
+    causes: DEBIT_NOTE_CAUSES.filter((cause) => snapshot.concepts.some((c) => c.cause === cause)),
+    buyerIdentification: document.buyerIdentification,
+    buyerName: document.buyerName,
+    total: roundHalfUp(document.total, 2),
+    state: document.state,
+    diagnosticCode:
+      document.state === "RESERVED" && attempt && isAttemptCode(attempt.code) ? attempt.code : null,
+    transmissionStopped,
+    createdAt: document.createdAt.toISOString(),
+  };
+}
+
+/** Historial de la transmisión: transiciones e intentos resumidos (design D17). */
+export function toDebitNoteTransmissionView({
+  document,
+  events,
+  total,
+}: DebitNoteTransmission): DebitNoteTransmissionView {
+  return {
+    debitNoteId: document.id,
+    state: document.state,
+    events: events.map((event) =>
+      event.kind === "TRANSITION"
+        ? {
+            kind: "TRANSITION",
+            at: event.at.toISOString(),
+            fromState: event.from,
+            toState: event.to,
+            cause: event.cause,
+            actor: event.actor,
+            actorName: event.actorName,
+          }
+        : {
+            kind: "ATTEMPT",
+            at: event.at.toISOString(),
+            operation: event.operation,
+            origin: event.origin,
+            outcome: event.outcome,
+            messages: messagesView(event.messages),
+          },
+    ),
+    total,
   };
 }

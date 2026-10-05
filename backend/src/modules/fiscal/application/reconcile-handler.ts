@@ -103,11 +103,13 @@ function moveTo(
 
 /**
  * Acción y campo del comprobante en la auditoría de la finalización, por tipo (add-credit-notes,
- * design D2): un dato por tipo emitido, no un conmutador.
+ * design D2; add-debit-notes, design D17): un dato por tipo emitido, no un conmutador.
  */
 const COMPLETED_AUDIT: Readonly<Record<string, { action: AuditAction; idField: string }>> = {
   "01": { action: "invoice.reconciliation_completed", idField: "invoiceId" },
   "04": { action: "credit_note.reconciliation_completed", idField: "creditNoteId" },
+  // add-debit-notes, design D2 y D17.
+  "05": { action: "debit_note.reconciliation_completed", idField: "debitNoteId" },
 };
 
 /** Estado final de una decisión, para la auditoría de la reconciliación manual. */

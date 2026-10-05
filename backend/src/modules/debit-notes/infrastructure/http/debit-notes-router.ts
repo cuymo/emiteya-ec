@@ -16,6 +16,8 @@ import {
   toDebitEligibleInvoiceView,
   toDebitNoteDraftSummaryView,
   toDebitNoteDraftView,
+  toDebitNoteSummaryView,
+  toDebitNoteTransmissionView,
   toDebitNoteView,
 } from "./views.ts";
 
@@ -90,6 +92,33 @@ export function debitNotesRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  router.get("/debit-notes", async (req, res) => {
+    const { items, meta } = await debitNotes.list(contextOf(res), req.query);
+    send(res, 200, items.map(toDebitNoteSummaryView), meta);
+  });
+
+  router.get("/debit-notes/:debitNoteId", async (req, res) => {
+    send(
+      res,
+      200,
+      toDebitNoteView(await debitNotes.get(contextOf(res), param(req.params.debitNoteId))),
+    );
+  });
+
+  router.get("/debit-notes/:debitNoteId/transmission", async (req, res) => {
+    const view = await debitNotes.transmission(contextOf(res), param(req.params.debitNoteId));
+    send(res, 200, toDebitNoteTransmissionView(view));
+  });
+
+  router.post("/debit-notes/:debitNoteId/reconciliations", async (req, res) => {
+    const details = await debitNotes.requestReconciliation(
+      contextOf(res),
+      param(req.params.debitNoteId),
+      req.body,
+    );
+    send(res, 202, toDebitNoteView(details));
   });
 
   router.post("/debit-notes/:debitNoteId/signing-attempts", async (req, res) => {

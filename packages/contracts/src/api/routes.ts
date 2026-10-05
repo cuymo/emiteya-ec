@@ -121,7 +121,10 @@ import {
   stockMovementViewSchema,
   stockTrackingSchema,
 } from "../inventory.ts";
-import { requestReconciliationSchema as creditNoteReconciliationSchema } from "../invoices.ts";
+import {
+  requestReconciliationSchema as creditNoteReconciliationSchema,
+  requestReconciliationSchema as debitNoteReconciliationSchema,
+} from "../invoices.ts";
 import {
   createCreditNoteDraftSchema,
   creditNoteDraftIdParamsSchema,
@@ -147,7 +150,10 @@ import {
   debitEligibleInvoiceViewSchema,
   debitNoteDraftIdParamsSchema,
   debitNoteIdParamsSchema,
+  debitNoteSummaryViewSchema,
+  debitNoteTransmissionViewSchema,
   debitNoteViewSchema,
+  listDebitNotesQuerySchema,
   emitDebitNoteHeadersSchema,
   emitDebitNoteSchema,
   debitNoteDraftSummaryViewSchema,
@@ -1851,6 +1857,75 @@ export const apiRoutes: readonly RouteDefinition[] = [
       409: {
         description:
           "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo DEBIT_NOTE_CONSUMER_FINAL, DEBIT_NOTE_INVOICE_INTEGRITY, DEBIT_NOTE_TAX_TREATMENT_NOT_IN_INVOICE, DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE o DEBIT_NOTE_DECLARATION_REQUIRED), o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/debit-notes",
+    summary:
+      "Listar notas de débito por estado y causa y buscar por número o comprador, las más recientes primero",
+    request: { query: listDebitNotesQuerySchema },
+    responses: {
+      200: {
+        description: "Página de notas de débito con su factura, sus causas y el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(debitNoteSummaryViewSchema),
+          meta: debitNoteListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/debit-notes/:debitNoteId",
+    summary:
+      "Consultar una nota de débito desde su snapshot: factura modificada, conceptos con su causa y su tratamiento, impuestos por tratamiento, forma de pago, declaración del usuario, diagnóstico y transmisión",
+    request: { params: debitNoteIdParamsSchema },
+    responses: {
+      200: debitNoteResponse("Nota de débito."),
+      401: errors[401],
+      403: errors[403],
+      404: debitNoteNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/debit-notes/:debitNoteId/transmission",
+    summary:
+      "Consultar el historial de la transmisión al SRI de una nota de débito, sin respuestas originales ni XML",
+    request: { params: debitNoteIdParamsSchema },
+    responses: {
+      200: {
+        description: "Las 100 entradas más recientes del historial y el total.",
+        schema: successEnvelope(debitNoteTransmissionViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: debitNoteNotFound,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/debit-notes/:debitNoteId/reconciliations",
+    summary:
+      "Pedir la reconciliación de una nota de débito con el SRI, con motivo (solo el administrador)",
+    request: { params: debitNoteIdParamsSchema, body: debitNoteReconciliationSchema },
+    responses: {
+      202: debitNoteResponse(
+        "Reconciliación programada con las reglas de la transmisión; la nota con su estado actual.",
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: debitNoteNotFound,
+      409: {
+        description:
+          "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (DEBIT_NOTE_NOT_RECONCILABLE).",
         schema: errorEnvelopeSchema,
       },
     },

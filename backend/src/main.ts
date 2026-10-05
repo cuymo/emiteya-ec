@@ -393,6 +393,8 @@ apiRouter.use(
     xsd: xsdValidator,
     signing: documentSigning.pipeline(debitNoteSigningProfile()),
     metrics: metrics.registry,
+    jobs: jobStore,
+    conclusionWindowMs: transmissionSettings.poll.windowMs,
     stageTimings: env.EMISSION_STAGE_TIMINGS,
   }).routers,
 );

@@ -97,17 +97,17 @@
 
 ## 7. Consulta, transmisión y reconciliación de la nota
 
-- [ ] 7.1 Implementar la consulta (`/debit-notes`, `/debit-notes/{id}`, `/debit-notes/{id}/transmission`) con sus rutas en OpenAPI. Verificar con pruebas HTTP:
+- [x] 7.1 Implementar la consulta (`/debit-notes`, `/debit-notes/{id}`, `/debit-notes/{id}/transmission`) con sus rutas en OpenAPI. Verificar con pruebas HTTP:
   - detalle con la factura, los conceptos con causa y tratamiento, los impuestos por tratamiento, la forma de pago y la declaración presentada como declarada;
   - búsqueda y paginación;
   - `403`, `401` y otra empresa `404`
-- [ ] 7.2 Implementar la reconciliación manual de la nota (`/debit-notes/{id}/reconciliations`, `debitNotes.reconcile`, `debit_note.reconciliation_requested`) y agregar `"05"` a `COMPLETED_AUDIT` en `reconcile-handler.ts` (`debit_note.reconciliation_completed`). Verificar con pruebas HTTP:
+- [x] 7.2 Implementar la reconciliación manual de la nota (`/debit-notes/{id}/reconciliations`, `debitNotes.reconcile`, `debit_note.reconciliation_requested`) y agregar `"05"` a `COMPLETED_AUDIT` en `reconcile-handler.ts` (`debit_note.reconciliation_completed`). Verificar con pruebas HTTP:
   - administrador que reconcilia una nota en revisión manual que pasa a autorizada;
   - operador `403`;
   - estado no reconciliable rechazado;
   - eventos sin SOAP;
   - las pruebas de reconciliación de la factura y de la nota de crédito sin cambios
-- [ ] 7.3 Repetir con una nota de débito los casos de la transmisión (design D17), con respuestas SINTÉTICAS: `RECIBIDA`, `DEVUELTA`, errores 70, 43 y 45, `SEND_UNKNOWN`, `MANUAL_REVIEW`, `AUTORIZADO` y `NO AUTORIZADO`, la respuesta guardada antes de clasificar, la reclasificación de la respuesta guardada sin otra llamada al SRI, la reconciliación manual y una respuesta sin estado que no es un rechazo. Verificar que pasan sin cambios en el transporte, la cola ni los clasificadores, y documentar en `fiscal-emission.md` que la transmisión y la reconciliación atienden el tipo `05` sin cambios
+- [x] 7.3 Repetir con una nota de débito los casos de la transmisión (design D17), con respuestas SINTÉTICAS: `RECIBIDA`, `DEVUELTA`, errores 70, 43 y 45, `SEND_UNKNOWN`, `MANUAL_REVIEW`, `AUTORIZADO` y `NO AUTORIZADO`, la respuesta guardada antes de clasificar, la reclasificación de la respuesta guardada sin otra llamada al SRI, la reconciliación manual y una respuesta sin estado que no es un rechazo. Verificar que pasan sin cambios en el transporte, la cola ni los clasificadores, y documentar en `fiscal-emission.md` que la transmisión y la reconciliación atienden el tipo `05` sin cambios
 
 ## 8. Independencia de la capacidad acreditable y del inventario
 

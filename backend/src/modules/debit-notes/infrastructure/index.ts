@@ -9,10 +9,13 @@ import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
 import {
   createArtifactStore,
   createDocumentRepository,
+  createReconciliationRequestUnitOfWork,
   createTransmissionReader,
   type SigningPipeline,
   type SigningProfile,
 } from "../../fiscal/infrastructure/index.ts";
+import type { JobStore } from "../../../platform/jobs/jobs.ts";
+import { createPrismaJobStore } from "../../../platform/jobs/prisma-job-store.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import type { AccessKeys, XsdValidator } from "../../sri-engine/application/ports.ts";
 import { createAccessKeys } from "../../sri-engine/infrastructure/access-keys.ts";
@@ -26,6 +29,7 @@ import { createDebitNoteEmission } from "../application/emission.ts";
 import type { InvoiceSourceReader } from "../application/ports.ts";
 import { debitNoteSigningProfile as createDebitNoteSigningProfile } from "../application/signing-profile.ts";
 import { createDebitEligibleInvoiceReader } from "./eligible-invoices.ts";
+import { createDebitNoteListReader } from "./prisma-debit-note-list.ts";
 import { debitNotesRouter } from "./http/debit-notes-router.ts";
 import { registerDebitNoteMetrics } from "./metrics.ts";
 import { createDebitNoteDraftRepository } from "./prisma-drafts.ts";
@@ -56,10 +60,16 @@ export type DebitNotesModuleOptions = {
   signAfterReserve?: boolean;
   accessKeys?: AccessKeys;
   metrics?: Registry;
+  /** Cola durable: la reconciliación manual encola su job. */
+  jobs?: Pick<JobStore, "enqueueIn">;
+  /** `SRI_CONCLUSION_WINDOW_HOURS` en milisegundos; 24 horas por defecto. */
+  conclusionWindowMs?: number;
   /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión; nunca en producción. */
   stageTimings?: boolean;
   now?: () => Date;
 };
+
+const DEFAULT_CONCLUSION_WINDOW_MS = 24 * 3_600_000;
 
 export function debitNotesModule(options: DebitNotesModuleOptions) {
   const now = options.now ?? (() => new Date());
@@ -83,7 +93,14 @@ export function debitNotesModule(options: DebitNotesModuleOptions) {
     authorizer: options.authorizer,
     transmission: createTransmissionReader(prisma),
     eligible: createDebitEligibleInvoiceReader(prisma, options.schema),
+    list: createDebitNoteListReader(prisma),
     reads,
+    reconciliations: createReconciliationRequestUnitOfWork(
+      prisma,
+      options.jobs ?? createPrismaJobStore(prisma, options.schema),
+    ),
+    conclusionWindowMs: options.conclusionWindowMs ?? DEFAULT_CONCLUSION_WINDOW_MS,
+    now,
     async userName(companyId, userId) {
       const member = await prisma.member.findFirst({
         where: { organizationId: companyId, userId },
