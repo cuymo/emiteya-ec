@@ -235,7 +235,7 @@ Antes de reservar, el sistema SHALL comprobar la factura, el consumidor final, l
 - **THEN** la nota sigue reservada, como cualquier comprobante reservado, y un reintento la firma con su mismo número y su misma clave
 
 ### Requirement: Datos congelados en la nota de débito
-Desde su reserva, la nota SHALL contener en su snapshot todo lo que necesita: la factura modificada con su autorización, su comprador y sus tratamientos de IVA con sus referencias fiscales; los conceptos y el resultado del cálculo con su versión; la forma de pago con su código, su denominación, su referencia de catálogo y su total; la declaración; el emisor, el punto, el secuencial, la clave y las versiones aplicadas. Su XML, su RIDE y su consulta nunca reconstruyen datos desde la factura, el producto, el tercero, el catálogo o la tarifa vigentes.
+Desde su reserva, la nota SHALL contener en su snapshot la factura modificada con su autorización, su comprador y sus tratamientos de IVA con sus referencias fiscales; los conceptos y el resultado del cálculo con su versión; la forma de pago con su referencia de catálogo; la declaración; el emisor, el punto, el secuencial, la clave y las versiones. Su XML, su RIDE y su consulta nunca reconstruyen datos desde la factura, el producto, el tercero, el catálogo o la tarifa vigentes.
 
 #### Scenario: Catálogo cambiado después de reservar
 - **WHEN** después de reservar una nota cambia la tarifa vigente del catálogo y se completa la firma
