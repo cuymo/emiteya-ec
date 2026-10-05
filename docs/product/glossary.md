@@ -39,7 +39,7 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Factura                  | `invoice`            | `01`       | Venta de bienes o prestación de servicios.                                              |
 | Liquidación de compra    | `purchaseSettlement` | `03`       | Compra de bienes o servicios en los casos que la normativa permite.                     |
 | Nota de crédito          | `creditNote`         | `04`       | Corrección o anulación permitida de un comprobante. En el MVP, contra una factura propia autorizada, por anulación total (`TOTAL_ANNULMENT`) o devolución (`RETURN`). |
-| Nota de débito           | `debitNote`          | `05`       | Cobro adicional asociado a un comprobante.                                              |
+| Nota de débito           | `debitNote`          | `05`       | Cobro adicional asociado a un comprobante de venta: intereses de mora o costos y gastos posteriores (Reglamento de Comprobantes de Venta, art. 16). En el MVP, contra una factura propia autorizada del mismo ambiente; no aumenta la capacidad acreditable de la factura ni mueve inventario. |
 | Guía de remisión         | `shippingGuide`      | `06`       | Traslado de mercadería.                                                                 |
 | Comprobante de retención | `withholdingReceipt` | `07`       | Registro de retenciones efectuadas.                                                     |
 | Documento modificado     | `modifiedDocument`   | —          | Comprobante que una nota de crédito o de débito corrige o complementa.                  |
@@ -49,6 +49,11 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Devolución               | `RETURN`             | —          | Causa de una nota de crédito que acredita las líneas y cantidades elegidas de la factura, hasta lo acreditable de cada línea. |
 | Valor de la modificación | `totals.total` (`valorModificacion`) | — | Total de la nota de crédito: lo que acredita a la factura, calculado por el algoritmo único desde el snapshot de la factura. |
 | Borrador de nota de crédito | `creditNoteDraft`  | —          | Nota editable sobre una factura, sin secuencial ni efectos; su vista previa del servidor muestra los importes y los problemas sin reservar nada. |
+| Interés de mora          | `LATE_PAYMENT_INTEREST` | —       | Causa de una nota de débito: cobro de intereses por el pago tardío de la factura. |
+| Costo o gasto posterior  | `POST_INVOICE_COST_EXPENSE` | —   | Causa de una nota de débito: recuperación de costos y gastos que el vendedor incurrió después de emitir la factura. |
+| Concepto de débito       | `debitConcept`       | —          | Cada cargo de una nota de débito: su causa, su descripción, su base exacta y el tratamiento de IVA de la factura que le corresponde (`motivo` en el XML). |
+| Tratamiento de IVA de la factura | `invoiceTaxTreatment` | — | Código, código de porcentaje y tarifa de IVA que la factura modificada aplicó, tomados de su snapshot; un concepto de débito solo usa uno de ellos. |
+| Factura comercial negociable negociada | `negotiatedCommercialInvoice` | — | Factura con carácter de título valor (Código de Comercio) que efectivamente se negoció; no admite nota de crédito ni de débito (arts. 15 y 16). El sistema no lo comprueba: el usuario lo declara. |
 | Capacidad acreditable    | `creditCapacity`     | —          | Lo que todavía puede acreditarse de una factura: su total y la cantidad de cada línea, menos lo reservado y lo aplicado por sus notas vigentes. |
 | Capacidad devolvible     | `stockReturnCapacity` | —         | Lo que todavía puede volver al inventario por producto: lo que sacó la salida de la factura, menos lo reservado y lo aplicado por los retornos físicos de sus notas. Independiente de la capacidad acreditable. |
 | Reserva de crédito       | `creditReservation`  | —          | Lo que una nota toma de las capacidades al emitirse: `RESERVED` hasta su conclusión, `APPLIED` si el SRI la autoriza y `RELEASED` si la devuelve o no la autoriza. Nunca se libera por un problema operativo. |

@@ -19,12 +19,12 @@ documento no especifica comportamiento.
 | `document-emission`    | Núcleo común: emisión idempotente, snapshot, máquina local `RESERVED` → `SIGNED`, clave de acceso, XML, XSD y firma, hasta el artefacto firmado. | ERS RF-006..010, RF-520..525, SRI-REQ-02..05, SRI-REQ-11; CTX §4, §8, §10, §11, §19–21, §39, §41 | AC-02, AC-05 | — (Q-08, Q-14, Q-29, Q-30, Q-35, Q-38, Q-39 y Q-44 resueltas; de Q-34 quedan el SOAP y el PDF; Q-26 parcial: emisión medida con `bench:emission`) |
 | `sri-transmission`     | Transmisión con jobs desde `SIGNED`: recepción, autorización asíncrona, errores 43/45/70, reconciliación por clave de los resultados inciertos (automática o del administrador), revisión manual, límite de tamaño versionado y respuestas originales inmutables. Nace apagada. Sin observación de anulaciones (Q-16) ni corrección de devueltos (BR-28). | ERS SRI-REQ-01, SRI-REQ-06..10, RNF-004; CTX §7, §22–27, §29, §32–34, §44, §52 | AC-02, AC-06 | — (Q-06, Q-07 y Q-48 resueltas; Q-47 resuelta como compuerta previa a la transmisión real; Q-16 diferida; Q-34 SOAP resuelta) |
 | `correct-returned-document` | Corregir un comprobante `DEVUELTA` (BR-28) con revisión o versionado de solo agregado, si la norma permite conservar la misma identidad. Capacidad futura, separada de `sri-transmission`. | ERS §12.1 (`RETURNED` corregible); CTX §26.1, §27.1 | — | Q-08 (fecha), Q-07 (resuelta) |
-| `cancellation-observation` | Detectar anulaciones de comprobantes autorizados con la consulta de validez (`PENDIENTE DE ANULAR`, `ANULADO`). Capacidad futura, fuera de `sri-transmission`. | CTX §24, §36 | — | Q-16 |
+| `cancellation-observation` | Detectar anulaciones de comprobantes autorizados con la consulta de validez (`PENDIENTE DE ANULAR`, `ANULADO`), incluidas las de documentos complementarios como la nota de débito, que regulan las resoluciones NAC-DGERCGC25-00000014 y 00000017. Capacidad futura, fuera de `sri-transmission` y de la emisión de `debit-notes`. | CTX §24, §36; Res. NAC-DGERCGC25-00000014 y 00000017 | — | Q-16 |
 | `invoices`             | Factura con consumidor final, líneas, pagos y totales; borradores editables antes de emitir.      | ERS RF-010, RF-201..206; CTX §12, §35                          | AC-02, AC-08  | Q-45, Q-46 (Q-18 y Q-19 resueltas) |
 | `credit-notes`         | Nota de crédito 1.1.0 contra una factura propia autorizada, con causas `TOTAL_ANNULMENT` y `RETURN` (parcial o total, por líneas de la factura), crédito acumulado nunca mayor que la factura con capacidades acreditable y devolvible independientes que fallan cerradas (reservadas al emitir, aplicadas o liberadas solo al concluir), un único cálculo versionado desde el snapshot de la factura, declaraciones del usuario sobre las exclusiones que el sistema no comprueba, devolución de stock opcional solo por el retorno físico declarado por línea al autorizar la nota, la transmisión y la reconciliación de la factura, su RIDE propio en la bandeja y sus pantallas. Sin descuentos ni bonificaciones ni documentos sustento externos. Medido con `bench:credit-notes`. | ERS RF-210..213, RF-212; CTX §13; Res. NAC-DGERCGC25-00000014 y 00000017 | AC-03         | — (Q-10 y Q-20 resueltas)      |
 | `credit-note-discounts-bonuses` | Notas de crédito por descuentos o bonificaciones posteriores a la venta, con su modelo de importes, su asignación tributaria y su redondeo. Capacidad futura, separada de `credit-notes`. | Reglamento de Comprobantes, art. 15 | — | — |
-| `external-supporting-documents` | Notas de crédito (y otros documentos relacionados) contra comprobantes emitidos fuera del sistema: externos, en papel o importados. Capacidad futura, solo si se necesita. | ERS RF-210; CTX §13.4 | — | — |
-| `debit-notes`          | Nota de débito sobre un comprobante.                                                              | ERS RF-220..222; CTX §14                                       | AC-03         | —                              |
+| `external-supporting-documents` | Notas de crédito y de débito (y otros documentos relacionados) contra comprobantes emitidos fuera del sistema: externos, en papel o importados. Capacidad futura, solo si se necesita. | ERS RF-210; CTX §13.4 | — | — |
+| `debit-notes`          | Nota de débito 1.0.0 contra una factura propia autorizada del mismo ambiente, por las causas oficiales del artículo 16 (intereses de mora y costos o gastos posteriores), con uno o más conceptos, cada uno con un tratamiento de IVA que ya existía en la factura y su impuesto exacto, la declaración del usuario sobre la factura comercial negociable, su transmisión, su RIDE en la bandeja y sus pantallas. No aumenta la capacidad acreditable de la factura ni mueve inventario. Sin facturas externas ni anulación de la nota. | ERS RF-220..222; CTX §14; Reglamento de Comprobantes de Venta, art. 16 | AC-03         | — (Q-49 resuelta)              |
 | `withholding-receipts` | Comprobante de retención 2.0.0 con documentos sustento.                                           | ERS RF-230..234; CTX §16                                       | AC-03         | —                              |
 | `shipping-guides`      | Guía de remisión con transportista y destinatarios.                                               | ERS RF-240..243; CTX §15                                       | AC-03         | —                              |
 | `purchase-settlements` | Liquidación de compra separada de la factura.                                                     | ERS RF-250..253; CTX §17                                       | AC-03         | Q-12                           |
@@ -60,7 +60,7 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 8   | `add-document-archive`     | `document-archive`                                    | 7              | AC-07; completa AC-02 con S-3 online |
 | 9   | `add-minimal-inventory`    | `inventory`                                           | 7              | AC-08         |
 | 10  | `add-credit-notes`         | `credit-notes`                                        | 7, 9           | AC-03 parcial |
-| 11  | `add-debit-notes`          | `debit-notes`                                         | 7              | AC-03 parcial |
+| 11  | `add-debit-notes`          | `debit-notes`                                         | 7, 8, 10       | AC-03 parcial |
 | 12  | `add-withholding-receipts` | `withholding-receipts`                                | 7              | AC-03 parcial |
 | 13  | `add-shipping-guides`      | `shipping-guides`                                     | 7              | AC-03 parcial |
 | 14  | `add-purchase-settlements` | `purchase-settlements`                                | 7              | AC-03         |
@@ -134,6 +134,24 @@ Lo que implementa `add-credit-notes` (detalle en `../architecture/fiscal-emissio
 - **Métricas:** `credit_note_reservations_total{cause}`, `credit_note_reservation_conflicts_total{reason}`, `credit_note_reservations_unconcluded_over_24h` (la señal de la alerta) e `inventory_movements_total{type="DEVOLUCION_NC"}` (`../quality/observability.md`).
 - **Pantallas:** `Notas de crédito` (`/notas-credito`), el borrador con la confirmación de las declaraciones, el detalle, el crédito en el detalle de la factura y el filtro de tipo en `Comprobantes`.
 - **Rendimiento:** `bench:credit-notes` (`../quality/performance.md`).
+
+## Trazabilidad de `debit-notes`
+
+Fuentes del cambio 11 y qué fija cada una (Q-49). Los specs distinguirán el requisito oficial de la
+política del MVP.
+
+| Regla | Origen | Fuente |
+| --- | --- | --- |
+| Causas: cobro de intereses de mora y recuperación de costos y gastos posteriores a la emisión del comprobante; la nota consigna denominación, serie y número del comprobante modificado | Requisito oficial | Reglamento de Comprobantes de Venta, art. 16 (`sri-catalogs/fuentes/reglamento-comprobantes-arts-15-16.txt`) |
+| Una factura comercial negociable efectivamente negociada no admite nota de débito | Requisito oficial; el usuario lo declara mientras el sistema no pueda comprobarlo | Reglamento de Comprobantes de Venta, art. 16 |
+| IVA del comprobante original, no el vigente a la fecha de la nota | Indicación oficial del SRI (cambio de tarifa del 14 % al 12 %), citada por el dueño del producto; texto pendiente de archivar | Q-49 |
+| XML `notaDebito` 1.0.0 y su RIDE | Requisito oficial | `docs/product/sri-xsd/NotaDebito_V1.0.0.xsd`, verificado contra el portal el 2026-10-05 (`sri-catalogs/fuentes/nota-de-debito-xsd-verificacion.txt`); CTX §14 |
+| Sin plazo de emisión impuesto | Las fuentes oficiales vigentes revisadas no lo establecen; no se extrapola el art. 5 reformado de la NAC-DGERCGC25-00000017, que rige las notas de crédito | Q-49 |
+| Solo facturas propias autorizadas, del mismo ambiente, como documento modificado | Política del MVP | Q-11, Q-49 |
+| Causas cerradas `LATE_PAYMENT_INTEREST` y `POST_INVOICE_COST_EXPENSE`; cada concepto con un tratamiento de IVA de la factura | Política del MVP sobre el art. 16 | Q-49 |
+| Factura a consumidor final no admite nota de débito | Política del producto (receptor identificado, BR-32), no la NAC-DGERCGC25-00000014 | Q-49 |
+| No aumenta la capacidad acreditable de la factura ni mueve inventario; una nota de crédito no modifica una nota de débito | Política del producto | Q-49 |
+| La anulación de una nota de débito ya emitida queda fuera | Las resoluciones NAC-DGERCGC25-00000014 y 00000017 regulan la anulación de documentos complementarios; es una capacidad futura | Q-16 |
 
 ## Huecos de trazabilidad
 

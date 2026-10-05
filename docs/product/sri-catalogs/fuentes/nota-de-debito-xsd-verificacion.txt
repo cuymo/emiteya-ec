@@ -1,0 +1,30 @@
+Verificación del XSD de la nota de débito contra el portal del SRI (readiness de add-debit-notes,
+2026-10-05). El manifiesto `docs/product/sri-xsd/README.md` no se edita: el dataset
+schema-registry lo cita por su SHA-256.
+
+Portal: https://www.sri.gob.ec/facturacion-electronica
+- Publica "Esquemas XSD Y XML Tipo de documento Nota de Débito – Versión 1.0.0 / Actualizado a
+  Febrero 2022", con la ruta
+  /o/sri-portlet-biblioteca-alfresco-internet/descargar/ccc3913a-879e-41b6-82b7-11b627b7d1d8/XML%20y%20XSD%20Nota%20de%20D%c3%a9bito.zip
+  (la misma del manifiesto).
+- ZIP descargado el 2026-10-05: SHA-256 068a70165bf76974fb64ea435d66d927863569083b1a5ce5d017b4f50d21ab14
+  (el mismo del manifiesto). Contiene solo:
+  - NotaDebito_V1.0.0.xsd (2022-02-07), SHA-256 f40323adef667a2d95de75a611272a78b73a7f82711201bd7a7a52d3bb353fd6,
+    idéntico a docs/product/sri-xsd/NotaDebito_V1.0.0.xsd y a la entrada 05 del dataset schema-registry;
+  - NotaDebito_V1.0.0.xml, un ejemplo con valores de relleno (version="version0", codDoc 00): no
+    sirve como evidencia de la versión ni del código.
+
+Esquema:
+- Raíz `notaDebito`, con los atributos `id` y `version` (xsd:NMTOKEN, obligatorio).
+- Un solo import: xmldsig-core-schema.xsd (W3C, docs/product/w3c-xsd/).
+- `motivos/motivo` con `razon` y `valor`; `impuestos/impuesto` con `codigo`, `codigoPorcentaje`,
+  `tarifa`, `baseImponible`, `valor` y `valorDevolucionIva` opcional, a nivel del comprobante;
+  `pagos` opcional.
+- El código 05 y la versión 1.0.0 salen de la ficha y de CTX §3.1 y §14, y de esta publicación.
+
+Otro paquete del portal: "Esquemas XSD de notas de crédito y débito con el campo Devolución IVA /
+Actualizado a Diciembre 2020" (/o/sri-portlet-biblioteca-alfresco-internet/descargar/6477b86b-1713-4865-abb5-8c4428be03c7/XSD.zip,
+SHA-256 29cf04c7848c27a2f98200582d5595a57b3d7767206cfb04188e373653c55702). Su NOTA_DEBITO-1.0.0.xsd
+(2020-03-16, SHA-256 f9a596a86a4078f18688b16279d19d6fb2548f84b28b889cb958da47b2d7a4a1) es una revisión
+anterior de la misma versión: el de febrero de 2022 le añade `agenteRetencion` y `contribuyenteRimpe`
+en `infoTributaria`. El vigente es el de 2022, el del repositorio.

@@ -1,0 +1,32 @@
+Extracto literal de los artículos 15 y 16 del Reglamento de Comprobantes de Venta, Retención y
+Documentos Complementarios, para la trazabilidad de las notas de crédito y de débito (readiness de
+add-debit-notes, 2026-10-05).
+
+Fuente: SRI, Dirección Nacional Jurídica, Departamento de Normativa. Texto con "ULTIMA REFORMA:
+Decreto 580, Registro Oficial 448, 28-Febrero-2015. Estado: Vigente" (Decreto No. 430).
+URL oficial: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/c3a2c922-5960-4c08-9a73-bde19fadce42/REGLAMENTO+DE+COMPROBANTES+DE+VENTA,+RETENCI%D3N+Y+DOCUMENTOS+COMPLEMENTARIOS.pdf
+SHA-256 del PDF descargado el 2026-10-05: a7d27c905f6054dfd77dd2da7ee3362c547d625b5b734e789e222ce286dc1997
+Extraído con pdftotext -layout; solo se normalizan los saltos de página.
+
+Art. 15.- Notas de crédito.- Las notas de crédito son documentos que se emitirán para anular
+operaciones, aceptar devoluciones y conceder descuentos o bonificaciones.
+
+Las notas de crédito deberán consignar la denominación, serie y número de los comprobantes de
+venta a los cuales se refieren.
+
+El adquirente o quien a su nombre reciba la nota de crédito, deberá consignar en su original y copia,
+el nombre del adquirente, su número de Registro Único de Contribuyentes o cédula de ciudadanía o
+pasaporte y fecha de recepción.
+
+Las facturas que tengan el carácter de “comercial negociables”, a las que se refiere el Código de
+Comercio y que en efecto sean negociadas, no podrán ser modificadas con notas de crédito.
+
+Art. 16.- Notas de débito.- Las notas de débito se emitirán para el cobro de intereses de mora y para
+recuperar costos y gastos, incurridos por el vendedor con posterioridad a la emisión del
+comprobante de venta.
+
+Las notas de débito deberán consignar la denominación, serie y número de los comprobantes de
+venta a los cuales se refieren.
+
+Las facturas que tengan el carácter de “comercial negociables”, a las que se refiere el Código de
+Comercio y en efecto sean negociadas no podrán ser modificadas con notas de débito.
