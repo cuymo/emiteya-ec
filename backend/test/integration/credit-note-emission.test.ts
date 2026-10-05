@@ -390,8 +390,8 @@ describe("emisión de notas de crédito", () => {
     expect(negative.preview.issues).toContainEqual(
       expect.objectContaining({ code: "CREDIT_NOTE_LINE_AMOUNT_NEGATIVE", line: 1 }),
     );
-    // Una reserva previa de 125.00 sobre una factura de 130.00 deja 5.00: otra unidad de 11.50
-    // haría superar el total.
+    // Una reserva previa de 125.00 sobre una factura de 130.00 deja 5.00: el servicio de 15.00
+    // (sin IVA) haría superar el total.
     const nearlyFull = await invoice();
     await insertCreditNote(db.database.prisma, fiscal, nearlyFull, {
       lines: [{ position: 1, quantity: "1" }],
