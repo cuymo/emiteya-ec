@@ -111,13 +111,13 @@
 
 ## 8. Independencia de la capacidad acreditable y del inventario
 
-- [ ] 8.1 Probar la no interacción de design D12 con PostgreSQL real:
+- [x] 8.1 Probar la no interacción de design D12 con PostgreSQL real:
   - factura de 100.00 con una nota de débito autorizada de 20.00 que sigue con 100.00 acreditables y admite una anulación total de 100.00;
   - nota de débito ausente de las facturas elegibles de una nota de crédito, y un borrador de nota de crédito con su identificador `404`;
   - nota de débito autorizada, devuelta y no autorizada contra una factura con productos con inventario, sin movimientos ni cambios de saldo.
 
   Verificar que la reconciliación de las capacidades y de los saldos no informa diferencias
-- [ ] 8.2 Añadir la prueba de arquitectura de design D1 (`fiscal`, `invoices`, `inventory` y `credit-notes` no importan `debit-notes`; `debit-notes` no importa `inventory` ni `credit-notes`) y documentar el módulo en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba pasa y detecta cada violación en archivos de ejemplo
+- [x] 8.2 Añadir la prueba de arquitectura de design D1 (`fiscal`, `invoices`, `inventory` y `credit-notes` no importan `debit-notes`; `debit-notes` no importa `inventory` ni `credit-notes`) y documentar el módulo en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba pasa y detecta cada violación en archivos de ejemplo
 
 ## 9. RIDE de la nota de débito
 

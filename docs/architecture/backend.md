@@ -152,7 +152,8 @@ see `idempotency.md`.
 ## Emisión por tipo de comprobante
 
 La reserva, la firma y la reconciliación manual son de `fiscal` y las comparten todos los tipos que
-el sistema emite (`add-credit-notes`, design D2; detalle en `fiscal-emission.md`):
+el sistema emite: factura, nota de crédito y nota de débito (`add-credit-notes`, design D2;
+`add-debit-notes`, design D2; detalle en `fiscal-emission.md`):
 
 - `reserveDocumentIn` reserva el secuencial, bloquea la identidad tributaria, compone la clave e
   inserta el comprobante `RESERVED` con su transición, dentro de la transacción del módulo que emite.
@@ -197,6 +198,20 @@ autorizadas, con capacidades que fallan cerradas:
 - **Ciclo de vida, fallando cerrado.** La capacidad queda reservada en `RESERVED`, `SIGNED`, `RECEIVED`, `SEND_UNKNOWN` y `MANUAL_REVIEW`. En la transacción de la transición terminal de la nota, `creditCapacityFollower` la aplica (`AUTHORIZED`) o la libera (`RETURNED`, `NOT_AUTHORIZED`), y después `creditNoteReturnFollower` aplica el retorno físico con su `DEVOLUCION_NC` o lo libera. Un resultado incierto, un job detenido, un error de transporte o del parser, los reintentos agotados o una caída no la liberan, y no existe un job de limpieza por antigüedad. Los triggers diferidos de design D25 rechazan al confirmar una reserva que no corresponde al estado de su nota.
 - **Reconciliación.** `reconcileCreditCapacity` y `reconcileStockReturnCapacity` comparan cada capacidad con sus reservas; las usan las pruebas y `bench:credit-notes`.
 - **Métricas.** `credit_note_reservations_total{cause}`, `credit_note_reservation_conflicts_total{reason}` y `credit_note_reservations_unconcluded_over_24h`, la señal de la alerta de reservas sin conclusión (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
+
+## Notas de débito
+
+El módulo `debit-notes` (`add-debit-notes`) emite notas de débito contra facturas propias
+autorizadas, sin capacidades ni inventario:
+
+- **Capas.**
+  - `domain/`: los tratamientos de IVA de la factura (`invoiceTaxTreatments`), el cálculo único y versionado por tratamiento (`calculateDebitNoteAmounts`), la evaluación en el orden de design D4, la vista previa pura y el snapshot autosuficiente;
+  - `application/`: borradores, emisión (comprobación previa y transacción de `RESERVED`), consultas, reintento de firma, reconciliación manual y el perfil de la firma;
+  - `infrastructure/`: borradores, lecturas de la preparación de la empresa con el resolver de `catalogs` para la forma de pago, facturas elegibles, la lista, unidades de trabajo, métricas y rutas.
+- **Dirección.** `fiscal`, `invoices`, `inventory` y `credit-notes` no importan `debit-notes`, y `debit-notes` no importa `inventory` ni `credit-notes`. `main.ts` compone la lectura de la factura (`invoiceCreditSource`) y la firma compartida con `debitNoteSigningProfile`.
+- **Reserva.** Sin bloqueo de la factura: la nota no consume ninguna capacidad suya y `AUTHORIZED` no tiene salida. El borrador y la configuración se bloquean; la factura de la nota se registra en `debit_note_support`, con un trigger que exige una factura autorizada de la misma empresa y del mismo ambiente y otro, diferido, que impide confirmar un comprobante `05` sin ella (`database.md`).
+- **Forma de pago.** Una sola, resuelta con `catalogs.availability` en la fecha de la reserva (vigencia y habilitación) y congelada en `snapshot.payments`; el XML y el RIDE la toman del snapshot.
+- **Métricas.** `debit_note_reservations_total` y `debit_note_concepts_total{cause}` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
 
 ## Sensitive Operations
 
