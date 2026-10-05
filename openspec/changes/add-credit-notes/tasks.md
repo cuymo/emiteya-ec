@@ -27,8 +27,8 @@
 
 ## 4. XML de la nota de crédito
 
-- [ ] 4.1 Extraer `infoTributaria` del builder de la factura con `codDoc` como dato y crear `credit-note-xml-builder.ts` para `notaCredito` 1.1.0, que mapea solo desde el snapshot de la nota, sin el builder de alto nivel de la dependencia (design D12). Verificar con golden fixtures de bytes exactos (devolución parcial, varias líneas y tarifas, anulación total, comprador con caracteres especiales) que validan contra `NotaCredito_V1.1.0.xsd`, con el golden de la factura sin cambios
-- [ ] 4.2 Firmar una nota de crédito con el firmador vigente y el tipo `04`, con la validación XSD antes y después de firmar. Verificar que el XML firmado valida contra el XSD, lleva la clave y el certificado de la empresa, y que el artefacto declara el tipo `04`
+- [x] 4.1 Extraer `infoTributaria` del builder de la factura con `codDoc` como dato y crear `credit-note-xml-builder.ts` para `notaCredito` 1.1.0, que mapea solo desde el snapshot de la nota, sin el builder de alto nivel de la dependencia (design D12). Verificar con golden fixtures de bytes exactos (devolución parcial, varias líneas y tarifas, anulación total, comprador con caracteres especiales) que validan contra `NotaCredito_V1.1.0.xsd`, con el golden de la factura sin cambios
+- [x] 4.2 Firmar una nota de crédito con el firmador vigente y el tipo `04`, con la validación XSD antes y después de firmar. Verificar que el XML firmado valida contra el XSD, lleva la clave y el certificado de la empresa, y que el artefacto declara el tipo `04`
 
 ## 5. Dominio de la nota
 

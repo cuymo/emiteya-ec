@@ -10,6 +10,7 @@ import {
   type InvoiceSnapshot,
   type InvoiceXmlBuilder,
 } from "../application/ports.ts";
+import { infoTributaria, sriDate } from "./info-tributaria.ts";
 import {
   XmlWriterError,
   element,
@@ -25,10 +26,6 @@ export const INVOICE_SCHEMA_VERSION = "1.1.0";
 export const INVOICE_XML_BUILDER_VERSION = "1";
 
 const DOCUMENT_TYPE = "01";
-// Fuera de línea, el tipo de emisión es siempre normal (CTX §8.2).
-const EMISSION_TYPE = "1";
-// Único valor que admite el tipo `contribuyenteRimpe` del XSD.
-const RIMPE_LEGEND = "CONTRIBUYENTE RÉGIMEN RIMPE";
 // La factura se emite en dólares.
 const CURRENCY = "DOLAR";
 
@@ -36,27 +33,6 @@ const CURRENCY = "DOLAR";
 function amount(name: string, value: string): XmlNode {
   if (!isDecimalString(value)) throw new InvoiceXmlError("INVALID_SNAPSHOT_AMOUNT");
   return leaf(name, value);
-}
-
-const sriDate = (iso: string) => iso.split("-").reverse().join("/");
-
-function infoTributaria(snapshot: InvoiceSnapshot): XmlNode {
-  const { issuer } = snapshot;
-  return element("infoTributaria", [
-    leaf("ambiente", snapshot.environment),
-    leaf("tipoEmision", EMISSION_TYPE),
-    leaf("razonSocial", issuer.legalName),
-    optionalLeaf("nombreComercial", issuer.tradeName),
-    leaf("ruc", issuer.ruc),
-    leaf("claveAcceso", snapshot.accessKey),
-    leaf("codDoc", DOCUMENT_TYPE),
-    leaf("estab", issuer.establishment),
-    leaf("ptoEmi", issuer.emissionPoint),
-    leaf("secuencial", snapshot.sequential),
-    leaf("dirMatriz", issuer.headOfficeAddress),
-    optionalLeaf("agenteRetencion", issuer.withholdingAgentResolution),
-    issuer.rimpe ? leaf("contribuyenteRimpe", RIMPE_LEGEND) : null,
-  ]);
 }
 
 function infoFactura(snapshot: InvoiceSnapshot): XmlNode {
@@ -132,7 +108,7 @@ export function createInvoiceXmlBuilder(): InvoiceXmlBuilder {
           element(
             "factura",
             [
-              infoTributaria(snapshot),
+              infoTributaria(snapshot, DOCUMENT_TYPE),
               infoFactura(snapshot),
               element("detalles", snapshot.lines.map(detalle)),
             ],

@@ -198,6 +198,40 @@ export interface InvoiceXmlBuilder {
   build(snapshot: InvoiceSnapshot): string;
 }
 
+/**
+ * Proyección del snapshot de la nota de crédito que recibe su builder (add-credit-notes, design
+ * D12 y D24): los importes son `DecimalString` ya calculados por `calculateCreditNoteAmounts` y
+ * congelados al reservar. El builder solo transcribe; no lee la factura, el reloj ni catálogos.
+ */
+export type CreditNoteXmlSnapshot = Readonly<{
+  /** Versión del XSD registrado con que se construye. */
+  schemaVersion: string;
+  environment: "1" | "2";
+  issueDate: string;
+  accessKey: string;
+  sequential: string;
+  issuer: InvoiceSnapshot["issuer"];
+  /** El comprador de la factura modificada, tal como figura en ella. */
+  buyer: Readonly<{ identificationType: string; identification: string; legalName: string }>;
+  /** Comprobante modificado: tipo, número `EEE-PPP-SSSSSSSSS` y fecha `YYYY-MM-DD`. */
+  modified: Readonly<{ documentType: "01"; documentNumber: string; issueDate: string }>;
+  lines: readonly InvoiceLineSnapshot[];
+  totals: Readonly<{
+    withoutTaxes: string;
+    taxes: readonly Readonly<{ taxCode: string; rateCode: string; base: string; amount: string }>[];
+    /** `valorModificacion`. */
+    total: string;
+  }>;
+  /** `motivo`: una sola línea de 1 a 300 caracteres. */
+  reason: string;
+}>;
+
+/** XML sin firmar de una nota de crédito: función pura y determinista de su snapshot (D12). */
+export interface CreditNoteXmlBuilder {
+  readonly version: string;
+  build(snapshot: CreditNoteXmlSnapshot): string;
+}
+
 export const INVOICE_XML_ERRORS = [
   "UNSUPPORTED_SCHEMA_VERSION",
   "INVALID_SNAPSHOT_AMOUNT",
@@ -211,6 +245,16 @@ export class InvoiceXmlError extends Error {
   constructor(code: InvoiceXmlErrorCode) {
     super(code);
     this.name = "InvoiceXmlError";
+    this.code = code;
+  }
+}
+
+/** Snapshot de una nota de crédito que no se puede escribir, con los mismos códigos. */
+export class CreditNoteXmlError extends Error {
+  readonly code: InvoiceXmlErrorCode;
+  constructor(code: InvoiceXmlErrorCode) {
+    super(code);
+    this.name = "CreditNoteXmlError";
     this.code = code;
   }
 }

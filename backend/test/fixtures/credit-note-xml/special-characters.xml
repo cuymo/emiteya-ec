@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notaCredito id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>2</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <nombreComercial>Ferretería "La Ñusta" &amp; Cía.</nombreComercial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0510202604179001234500220010010000000041234567819</claveAcceso>
+    <codDoc>04</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000004</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+    <agenteRetencion>1</agenteRetencion>
+    <contribuyenteRimpe>CONTRIBUYENTE RÉGIMEN RIMPE</contribuyenteRimpe>
+  </infoTributaria>
+  <infoNotaCredito>
+    <fechaEmision>05/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <tipoIdentificacionComprador>05</tipoIdentificacionComprador>
+    <razonSocialComprador>Peña &amp; Asociados &lt;Construcciones&gt; 'Ñandú'</razonSocialComprador>
+    <identificacionComprador>1710034065</identificacionComprador>
+    <contribuyenteEspecial>12345</contribuyenteEspecial>
+    <obligadoContabilidad>NO</obligadoContabilidad>
+    <codDocModificado>01</codDocModificado>
+    <numDocModificado>001-001-000000041</numDocModificado>
+    <fechaEmisionDocSustento>01/10/2026</fechaEmisionDocSustento>
+    <totalSinImpuestos>6.00</totalSinImpuestos>
+    <valorModificacion>6.90</valorModificacion>
+    <moneda>DOLAR</moneda>
+    <totalConImpuestos>
+      <totalImpuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>4</codigoPorcentaje>
+        <baseImponible>6.00</baseImponible>
+        <valor>0.90</valor>
+      </totalImpuesto>
+    </totalConImpuestos>
+    <motivo>Devolución: producto con fallas — garantía "N° 12" &amp; cambio &lt;inmediato&gt;</motivo>
+  </infoNotaCredito>
+  <detalles>
+    <detalle>
+      <codigoInterno>TUB-1/2"</codigoInterno>
+      <codigoAdicional>A&amp;B&lt;1&gt;</codigoAdicional>
+      <descripcion>Tubo PVC ½" — presión &lt;alta&gt; &amp; 'reforzado'</descripcion>
+      <cantidad>1.5</cantidad>
+      <precioUnitario>4.200000</precioUnitario>
+      <descuento>0.30</descuento>
+      <precioTotalSinImpuesto>6.00</precioTotalSinImpuesto>
+      <impuestos>
+        <impuesto>
+          <codigo>2</codigo>
+          <codigoPorcentaje>4</codigoPorcentaje>
+          <tarifa>15</tarifa>
+          <baseImponible>6.00</baseImponible>
+          <valor>0.90</valor>
+        </impuesto>
+      </impuestos>
+    </detalle>
+  </detalles>
+</notaCredito>
