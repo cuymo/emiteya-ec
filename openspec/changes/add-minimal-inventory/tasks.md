@@ -157,7 +157,7 @@
   - el doble clic que envía una sola solicitud;
   - los `409` explicados, el foco tras cada acción, y el rango inválido
 - [x] 10.3 En el diálogo del producto, deshabilitar la marca de un producto inicializado con "El control se gestiona en Inventario" y un enlace; en el editor del borrador, mostrar los avisos de existencias junto a su línea como aviso informativo que no bloquea la emisión (design D13). Verificar con pruebas de componente de ambos
-- [ ] 10.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-minimal-inventory/ui-review.md`. Verificar que la revisión no deja hallazgos abiertos
+- [x] 10.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-minimal-inventory/ui-review.md`. Verificar que la revisión no deja hallazgos abiertos
 
 ## 11. Rendimiento y prueba end-to-end
 

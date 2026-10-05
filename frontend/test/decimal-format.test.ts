@@ -1,5 +1,6 @@
 // Presentación de decimales sin pasar por number (add-fiscal-catalogs, design D10).
 import { describe, expect, it } from "vitest";
+import { formatDelta } from "@/features/inventory/inventory-format";
 import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
 
 describe("formatDecimal", () => {
@@ -19,5 +20,14 @@ describe("formatDecimal", () => {
     expect(formatPercentage("15")).toBe("15 %");
     expect(formatPercentage("12.5")).toBe("12,5 %");
     expect(formatUsd("50")).toBe("USD 50,00");
+  });
+});
+
+describe("formatDelta (add-minimal-inventory)", () => {
+  it("muestra el signo de la variación, y un saldo inicial de cero sin signo", () => {
+    expect(formatDelta("5")).toBe("+5");
+    expect(formatDelta("-3.5")).toBe("-3,5");
+    expect(formatDelta("1250.000001")).toBe("+1.250,000001");
+    expect(formatDelta("0")).toBe("0");
   });
 });

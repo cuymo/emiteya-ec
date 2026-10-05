@@ -95,13 +95,28 @@ function Kardex({ productId }: { productId: string }) {
         id: "date",
         header: "Fecha",
         cell: ({ row }) => (
-          <span className="tabular-nums">{formatDateTime(row.original.occurredAt)}</span>
+          <span className="whitespace-nowrap tabular-nums">
+            {formatDateTime(row.original.occurredAt)}
+          </span>
         ),
       },
       {
         id: "type",
         header: "Movimiento",
-        cell: ({ row }) => MOVEMENT_TYPE_LABELS[row.original.type],
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap">{MOVEMENT_TYPE_LABELS[row.original.type]}</span>
+        ),
+      },
+      // El detalle va antes de las cifras: la última columna de la tabla es estrecha y alineada a la
+      // derecha, para las cifras o las acciones.
+      {
+        id: "detail",
+        header: "Detalle",
+        cell: ({ row }) => (
+          <span className="block min-w-24">
+            <MovementDetail movement={row.original} />
+          </span>
+        ),
       },
       {
         id: "delta",
@@ -118,11 +133,6 @@ function Kardex({ productId }: { productId: string }) {
             {formatDecimal(row.original.balanceAfter)}
           </span>
         ),
-      },
-      {
-        id: "detail",
-        header: "Detalle",
-        cell: ({ row }) => <MovementDetail movement={row.original} />,
       },
     ],
     [],

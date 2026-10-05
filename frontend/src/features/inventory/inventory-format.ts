@@ -2,6 +2,7 @@
 // el saldo negativo destacado y sin cifra antes de inicializar, y los movimientos en lenguaje de
 // negocio.
 import {
+  canonicalDecimal,
   STOCK_MOVEMENT_TYPE_LABELS,
   STOCK_TRACKING_STATE_LABELS,
   type StockMovementOrigin,
@@ -44,6 +45,8 @@ export const ORIGIN_LABELS: Record<StockMovementOrigin, string> = {
   SYSTEM: "Sistema",
 };
 
-/** Variación con signo explícito: "+5", "-3,5". */
+/** Variación con signo explícito: "+5", "-3,5"; un saldo inicial de cero es "0". */
 export const formatDelta = (delta: string) =>
-  delta.startsWith("-") ? formatDecimal(delta) : `+${formatDecimal(delta)}`;
+  delta.startsWith("-") || canonicalDecimal(delta) === "0"
+    ? formatDecimal(delta)
+    : `+${formatDecimal(delta)}`;

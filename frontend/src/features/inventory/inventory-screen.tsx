@@ -66,15 +66,26 @@ function useUrlState() {
 }
 
 /** Saldo: sin cifra antes de inicializar; el negativo, con icono y texto, nunca solo color. */
-export function BalanceCell({ item }: { item: Pick<StockItemView, "balance" | "negative"> }) {
+export function BalanceCell({
+  item,
+  wrap = true,
+}: {
+  item: Pick<StockItemView, "balance" | "negative">;
+  /** En la tabla, el saldo negativo queda en una línea; en las tarjetas, puede partirse. */
+  wrap?: boolean;
+}) {
   if (item.balance === null) {
-    return <span className="text-sm text-foreground-muted">Sin saldo</span>;
+    return <span className="text-sm whitespace-nowrap text-foreground-muted">Sin saldo</span>;
   }
   if (item.negative) {
     return (
-      <span className="inline-flex flex-wrap items-center justify-end gap-0.5 text-danger">
+      <span
+        className={`inline-flex ${wrap ? "flex-wrap" : "whitespace-nowrap"} items-center justify-end gap-0.5 text-danger`}
+      >
         <TriangleAlert aria-hidden="true" className="size-2" />
-        <span className="text-sm font-medium text-foreground">Saldo negativo</span>
+        <span className="text-sm font-medium whitespace-nowrap text-foreground">
+          Saldo negativo
+        </span>
         <span className="font-medium tabular-nums">{formatDecimal(item.balance)}</span>
       </span>
     );
@@ -143,7 +154,7 @@ export function InventoryScreen() {
         header: () => <span className="block text-right">Saldo</span>,
         cell: ({ row }) => (
           <span className="block text-right">
-            <BalanceCell item={row.original} />
+            <BalanceCell item={row.original} wrap={false} />
           </span>
         ),
       },
@@ -152,7 +163,9 @@ export function InventoryScreen() {
         header: "Último movimiento",
         cell: ({ row }) =>
           row.original.lastMovementAt ? (
-            <span className="tabular-nums">{formatDateTime(row.original.lastMovementAt)}</span>
+            <span className="whitespace-nowrap tabular-nums">
+              {formatDateTime(row.original.lastMovementAt)}
+            </span>
           ) : (
             <span className="text-foreground-muted">—</span>
           ),
