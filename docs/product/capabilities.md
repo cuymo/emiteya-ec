@@ -137,6 +137,8 @@ Lo que implementa `add-credit-notes` (detalle en `../architecture/fiscal-emissio
 
 ## Trazabilidad de `debit-notes`
 
+Estado: `add-debit-notes` implementado el 2026-10-05 (todas sus tareas), pendiente de archivar.
+
 Fuentes del cambio 11 y qué fija cada una (Q-49). Los specs distinguirán el requisito oficial de la
 política del MVP.
 
@@ -144,14 +146,26 @@ política del MVP.
 | --- | --- | --- |
 | Causas: cobro de intereses de mora y recuperación de costos y gastos posteriores a la emisión del comprobante; la nota consigna denominación, serie y número del comprobante modificado | Requisito oficial | Reglamento de Comprobantes de Venta, art. 16 (`sri-catalogs/fuentes/reglamento-comprobantes-arts-15-16.txt`) |
 | Una factura comercial negociable efectivamente negociada no admite nota de débito | Requisito oficial; el usuario lo declara mientras el sistema no pueda comprobarlo | Reglamento de Comprobantes de Venta, art. 16 |
-| IVA del comprobante original, no el vigente a la fecha de la nota | Indicación oficial del SRI (cambio de tarifa del 14 % al 12 %), citada por el dueño del producto; texto pendiente de archivar | Q-49 |
+| IVA del comprobante original, no el vigente a la fecha de la nota | Requisito oficial, con fuente durable archivada | Primaria: ficha v2.34, página 58, "la tarifa de IVA corresponderá a la fecha de emisión del documento de sustento" (`sri-catalogs/fuentes/ficha-v2.34-nota-de-debito.txt`). Complementaria: la pregunta 11 de las preguntas frecuentes del SRI del cambio de tarifa de 2016 (`sri-catalogs/fuentes/sri-preguntas-frecuentes-tarifa-iva-2016.txt`); el aviso del cambio del 14 % al 12 % no se encontró en el portal y no se archiva. Q-49 |
 | XML `notaDebito` 1.0.0 y su RIDE | Requisito oficial | `docs/product/sri-xsd/NotaDebito_V1.0.0.xsd`, verificado contra el portal el 2026-10-05 (`sri-catalogs/fuentes/nota-de-debito-xsd-verificacion.txt`); CTX §14 |
+| `pagos` obligatorio en la nota de débito, con su forma de pago y su total | Requisito oficial | Ficha v2.34, páginas 58 y 59 (`sri-catalogs/fuentes/ficha-v2.34-nota-de-debito.txt`) |
+| Exactamente un `pago`, por el valor total exacto, de una forma de pago vigente y habilitada del catálogo | Política del MVP del proyecto, no un límite del SRI; varias formas de pago serían una extensión compatible | Design D8 de `add-debit-notes` |
+| Distribución del RIDE de la nota de débito | Requisito oficial | Ficha v2.34, anexo 2, página 62 |
 | Sin plazo de emisión impuesto | Las fuentes oficiales vigentes revisadas no lo establecen; no se extrapola el art. 5 reformado de la NAC-DGERCGC25-00000017, que rige las notas de crédito | Q-49 |
 | Solo facturas propias autorizadas, del mismo ambiente, como documento modificado | Política del MVP | Q-11, Q-49 |
 | Causas cerradas `LATE_PAYMENT_INTEREST` y `POST_INVOICE_COST_EXPENSE`; cada concepto con un tratamiento de IVA de la factura | Política del MVP sobre el art. 16 | Q-49 |
 | Factura a consumidor final no admite nota de débito | Política del producto (receptor identificado, BR-32), no la NAC-DGERCGC25-00000014 | Q-49 |
 | No aumenta la capacidad acreditable de la factura ni mueve inventario; una nota de crédito no modifica una nota de débito | Política del producto | Q-49 |
 | La anulación de una nota de débito ya emitida queda fuera | Las resoluciones NAC-DGERCGC25-00000014 y 00000017 regulan la anulación de documentos complementarios; es una capacidad futura | Q-16 |
+
+Lo que implementa `add-debit-notes` (detalle en `../architecture/fiscal-emission.md`,
+`../architecture/database.md` y `../security/access-control.md`):
+
+- **Rutas y permisos:** `GET /api/v1/debit-notes/eligible-invoices` y los borradores (`GET/POST /api/v1/debit-notes/drafts`, `GET/PUT/DELETE /api/v1/debit-notes/drafts/{draftId}`) con `debitNotes.draft`; `POST /api/v1/debit-notes` (con `Idempotency-Key` y la declaración) con `debitNotes.emit`; `GET /api/v1/debit-notes`, `GET /api/v1/debit-notes/{debitNoteId}` y `GET /api/v1/debit-notes/{debitNoteId}/transmission` con `debitNotes.read`; `POST /api/v1/debit-notes/{debitNoteId}/signing-attempts` con `debitNotes.retrySigning`; y `POST /api/v1/debit-notes/{debitNoteId}/reconciliations` con `debitNotes.reconcile`, solo del administrador. La bandeja filtra con `GET /api/v1/documents?documentType=05`.
+- **Códigos de error:** los `DEBIT_NOTE_*` de `packages/contracts/src/debit-notes.ts`, entre ellos `DEBIT_NOTE_TAX_TREATMENT_NOT_IN_INVOICE`, `DEBIT_NOTE_PAYMENT_METHOD_NOT_USABLE`, `DEBIT_NOTE_PAYMENT_TOTAL_MISMATCH` y `DEBIT_NOTE_DECLARATION_REQUIRED`, más los de la emisión compartidos con la factura.
+- **Métricas:** `debit_note_reservations_total` y `debit_note_concepts_total{cause}` (`../quality/observability.md`).
+- **Pantallas:** `Notas de débito` (`/notas-debito`), la nueva nota desde la factura o el selector, el borrador con la confirmación de la declaración, el detalle y el tipo `05` en `Comprobantes`.
+- **Rendimiento:** `bench:debit-notes` (`../quality/performance.md`).
 
 ## Huecos de trazabilidad
 

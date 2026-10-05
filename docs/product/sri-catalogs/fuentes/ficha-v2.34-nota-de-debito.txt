@@ -1,0 +1,177 @@
+Extracto literal para add-debit-notes (tarea 13.1, design D6, D8, D16, D18 y D28; Q-49; BR-33).
+
+Fuente: Ficha técnica "Manual de usuario, catálogo y especificaciones técnicas. Emisión de
+Comprobantes Electrónicos. Método de autorización Off-line", versión 2.34, publicada el 2026-07-27.
+URL oficial (la del dataset consumer-final-policy/1.json):
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf
+SHA-256 del PDF descargado el 2026-10-05: 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9
+(el mismo de los extractos anteriores y de los datasets publicados). Extraído con pdftotext -layout,
+por página (-f 58 -l 59 y -f 62 -l 62); se conservan las columnas y se quitan solo las líneas vacías
+repetidas.
+
+== Página 58: "FORMATO XML NOTA DE DÉBITO" (hasta el pie de la página) ==
+
+FORMATO XML NOTA DE DÉBITO
+Nota: la tarifa de IVA corresponderá a la fecha de emisión del documento de
+sustento.
+
+                                                                                               TIPO DE       LONGITUD /
+                                 ETIQUETAS O TAGS                              CARACTER
+                                                                                               CAMPO          FORMATO
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>                        Obligatorio         -              -
+
+<notaDebito version="1.0.0" id="comprobante">                                  Obligatorio         -              -
+<infoTributaria>                                                               Obligatorio         -              -
+                                                                               Obligatorio,
+<ambiente>1</ambiente>                                                          conforme       Numérico           1
+                                                                                 tabla 4
+                                                                               Obligatorio,
+<tipoEmision>1</tipoEmision>                                                    conforme       Numérico           1
+                                                                                 tabla 2
+<razonSocial>PRUEBA</razonSocial>                                              Obligatorio    Alfanumérico     Max 300
+                                                                                Obligatorio
+<nombreComercial>PRUEBA 2</nombreComercial>
+                                                                                 cuando       Alfanumérico     Max 300
+                                                                               corresponda
+<ruc>1760013210001</ruc>                                                       Obligatorio     Numérico          13
+                                                                               Obligatorio,
+<claveAcceso>2103201605176001321000110010010000000011234567814</claveAcceso>    conforme       Numérico          49
+                                                                                 tabla 1
+                                                                               Obligatorio,
+<codDoc>05</codDoc>                                                             conforme       Numérico           2
+                                                                                 tabla 3
+<estab>001</estab>                                                             Obligatorio     Numérico           3
+<ptoEmi>001</ptoEmi>                                                           Obligatorio     Numérico           3
+<secuencial>000000001</secuencial>                                             Obligatorio     Numérico           9
+<dirMatriz>SALINAS</dirMatriz>                                                 Obligatorio    Alfanumérico     Max 300
+</infoTributaria>                                                              Obligatorio         -              -
+<infoNotaDebito>                                                               Obligatorio         -              -
+<fechaEmision>21/03/2016</fechaEmision>                                        Obligatorio       Fecha       dd/mm/aaaa
+                                                                                Obligatorio
+<dirEstablecimiento>PÁEZ</dirEstablecimiento>                                    cuando       Alfanumérico     Max 300
+                                                                               corresponda
+                                                                               Obligatorio,
+<tipoIdentificacionComprador>04</tipoIdentificacionComprador>                   conforme      Alfanumérico     Max 20
+                                                                                 tabla 6
+<razonSocialComprador>PRUEBA SRI</razonSocialComprador>                        Obligatorio    Alfanumérico     Max 300
+
+<identificacionComprador>1713328506001</identificacionComprador>               Obligatorio    Alfanumérico     Max 20
+                                                                                Obligatorio
+<contribuyenteEspecial>12345</contribuyenteEspecial>                             cuando       Alfanumérico   Min 3 Max 13
+                                                                               corresponda
+                                                                                Obligatorio
+<obligadoContabilidad>SI</obligadoContabilidad>                                  cuando          Texto         SI / NO
+                                                                               corresponda
+
+== Página 59 (continuación de la tabla, hasta el pie de la página) ==
+
+
+                                                                                             TIPO DE       LONGITUD /
+                                  ETIQUETAS O TAGS                           CARACTER
+                                                                                             CAMPO          FORMATO
+                                                                             Obligatorio,
+<codDocModificado>01</codDocModificado>                                       conforme       Numérico            2
+                                                                               tabla 3
+<numDocModificado>001-001-112312315</numDocModificado>                       Obligatorio     Numérico           15
+
+<fechaEmisionDocSustento>21/03/2016</fechaEmisionDocSustento>                Obligatorio       Fecha       dd/mm/aaaa
+
+<totalSinImpuestos>50.0</totalSinImpuestos>                                  Obligatorio     Numérico         Max 14
+
+<impuestos>                                                                  Obligatorio         -               -
+
+<impuesto>                                                                   Obligatorio         -               -
+                                                                             Obligatorio,
+<codigo>2</codigo>                                                            conforme       Numérico            1
+                                                                               tabla 16
+                                                                             Obligatorio,
+<codigoPorcentaje>2</codigoPorcentaje>                                        conforme       Numérico      Min 1 Max 4
+                                                                               tabla 17
+                                                                                                           Min 1 Max 4
+<tarifa>12.00</tarifa>                                                       Obligatorio     Numérico      / 2 enteros, 2
+                                                                                                            decimales
+<baseImponible>50.0</baseImponible>                                          Obligatorio     Numérico         Max 14
+
+<valor>6.00</valor>                                                          Obligatorio     Numérico         Max 14
+
+</impuesto>                                                                  Obligatorio         -               -
+
+</impuestos>                                                                 Obligatorio         -               -
+
+<valorTotal>56.00</valorTotal>                                               Obligatorio     Numérico         Max 14
+
+<pagos>                                                                      Obligatorio         -               -
+<pago>                                                                       Obligatorio         -               -
+                                                                             Obligatorio,
+<formaPago>17</formaPago>                                                     conforme       Numérico            2
+                                                                               tabla 24
+<total>56,00</total>                                                         Obligatorio     Numérico         Max 14
+                                                                             Obligatorio,
+<plazo>15<plazo>                                                               cuando        Numérico         Max 14
+                                                                             corresponda
+                                                                             Obligatorio,
+<unidadTiempo>dias</unidadTiempo>                                              cuando          Texto          Max 10
+                                                                             corresponda
+</pago>                                                                      Obligatorio         -               -
+
+</pagos>                                                                     Obligatorio         -               -
+
+</infoNotaDebito>                                                            Obligatorio         -               -
+
+<motivos>                                                                    Obligatorio         -               -
+
+<motivo>                                                                     Obligatorio         -               -
+
+<razon>Interés por mora</razon>                                              Obligatorio    Alfanumérico     Max 300
+
+<valor>50.00</valor>                                                         Obligatorio    Alfanumérico     Max 300
+
+</motivo>                                                                    Obligatorio         -               -
+
+</motivos>                                                                   Obligatorio         -               -
+
+<infoAdicional>                                                              Obligatorio         -               -
+                                                                              Obligatorio
+<campoAdicional nombre="Dirección">AMAZONAS S/N ROCA</campoAdicional>          cuando       Alfanumérico     Max 300
+                                                                             corresponda
+                                                                              Obligatorio
+<campoAdicional nombre="Email">prueba@sri.gob.ec</campoAdicional>              cuando       Alfanumérico     Max 300
+                                                                             corresponda
+                                                                              Obligatorio
+<campoAdicional nombre="Teléfono">0222222222222 ext. 3322</campoAdicional>     cuando       Alfanumérico     Max 300
+                                                                             corresponda
+</infoAdicional>                                                             Obligatorio         -               -
+
+</notaDebito>                                                                Obligatorio         -               -
+
+== Página 62: anexo 2, "FORMATO DE REPRESENTACIONES IMPRESAS DE DOCUMENTOS ELECTRÓNICOS (RIDE)" ==
+
+El texto extraíble de la página es solo su título:
+
+NOTA DE DÉBITO
+
+La distribución del RIDE de la nota de débito es una imagen sin texto extraíble. Es la referencia de
+la distribución que dibuja el renderer (`nota-debito-1`, design D18); se comparó visualmente con la
+página renderizada del mismo PDF en la tarea 9.1. El anexo 2 empieza en la página 60 con la factura.
+
+== Observaciones (2026-10-05) ==
+
+- IVA del comprobante de sustento (BR-33, design D6): la nota de la página 58 es la evidencia
+  primaria y durable de la regla oficial "la tarifa de IVA corresponderá a la fecha de emisión del
+  documento de sustento". La política del proyecto es más estricta: cada concepto usa uno de los
+  tratamientos congelados en el snapshot de la factura (BR-66).
+- `pagos` (design D8): la ficha marca `<pagos>`, `<pago>`, `<formaPago>` (conforme tabla 24) y
+  `<total>` como "Obligatorio", aunque el XSD NotaDebito_V1.0.0 declara `pagos` con minOccurs="0".
+  La ficha define el comportamiento: la nota de débito lleva siempre su forma de pago. Que lleve
+  exactamente un `pago` es una política del MVP del proyecto, no un límite del SRI.
+- `plazo` y `unidadTiempo` son "Obligatorio, cuando corresponda": el MVP no registra plazos de pago
+  en la nota y no los escribe (design D16).
+- El ejemplo escribe `<total>56,00</total>` con coma decimal; el XSD exige punto y el builder escribe
+  el texto decimal exacto del snapshot con punto.
+- `<infoAdicional>` aparece como "Obligatorio" en la tabla de la nota de débito (página 59), con cada
+  `<campoAdicional>` "Obligatorio cuando corresponda"; en la de la nota de crédito (página 58) es
+  "Obligatorio cuando corresponda". El XSD lo declara con minOccurs="0" y exige al menos un
+  `campoAdicional` dentro. El design D16 no lo escribe; las respuestas del SRI de las pruebas son
+  sintéticas, así que la certificación contra el ambiente de Pruebas debe confirmarlo antes de
+  producción.

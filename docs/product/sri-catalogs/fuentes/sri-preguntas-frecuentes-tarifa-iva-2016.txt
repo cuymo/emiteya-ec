@@ -1,0 +1,34 @@
+Extracto literal complementario para add-debit-notes (tarea 13.1, design D6; Q-49; BR-33).
+
+Fuente: SRI, "Preguntas frecuentes nueva tarifa IVA y procedimiento para facturas" (PDF de 9
+páginas, creado el 2016-06-02), publicado en el portal del SRI:
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/d9995fcc-d747-4e0b-a1db-3790774fb5a5/PREGUNTAS+FRECUENTES+NUEVA+TARIFA+IVA+Y+PROCEDIMIENTO+PARA+FACTURAS.pdf
+SHA-256 del PDF descargado el 2026-10-05: d825aee9ea6c22a883b8dd4dc6db11f24d2c89129765bc575b22adc28c36e402
+Extraído con pdftotext -layout.
+
+== Página 1, encabezado y pregunta 1 ==
+
+                                Preguntas frecuentes
+Ciudadanía en general:
+
+    No.                   Pregunta                                   Respuesta
+
+     1    ¿Desde qué fecha está vigente la tarifa      La tarifa de IVA 14% entrará en
+          de IVA 14%?                                  vigencia a partir del 1 de junio de
+                                                       2016.
+
+== Página 3, pregunta 11 ==
+
+11   ¿Puedo emitir notas de crédito o débito     Si, siempre que la factura haya sido
+     con tarifa 12% si las facturas fueron       emitida con fecha anterior al 1 de
+     emitidas con fecha anterior al 1 de junio   junio de 2016.
+     de 2016?
+
+== Observaciones (2026-10-05) ==
+
+- Es la indicación oficial del SRI para el cambio de tarifa del 12 % al 14 % (vigente desde el
+  2016-06-01): una nota de crédito o de débito conserva la tarifa de la factura emitida antes del
+  cambio. Es el mismo criterio de la nota de la página 58 de la ficha v2.34
+  (ficha-v2.34-nota-de-debito.txt), que es la evidencia primaria de la regla.
+- No es el aviso del cambio del 14 % al 12 % (2017-06-01) que cita Q-49: ese texto no se encontró en
+  el portal del SRI al 2026-10-05 y no se archiva. No se sustituye con blogs ni resúmenes de terceros.

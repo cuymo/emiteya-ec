@@ -132,9 +132,9 @@ La vista previa del borrador evalúa lo mismo, salvo la declaración, que se da 
 
 - **Regla oficial:** el IVA de la nota es el del comprobante de sustento, no el vigente en la fecha de la nota.
 
-  **SOURCE STATUS: official SRI guidance identified / durable source copy/text still pending.**
+  **SOURCE STATUS: fuente oficial durable archivada** (tarea 13.1, `docs/product/sri-catalogs/fuentes/ficha-v2.34-nota-de-debito.txt`).
   - **Evidencia primaria:** la ficha técnica v2.34, el mismo PDF que el repositorio ya cita (SHA-256 `7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9`). En "FORMATO XML NOTA DE DÉBITO", página 58, dice: "Nota: la tarifa de IVA corresponderá a la fecha de emisión del documento de sustento." La tarea 13.1 archiva su extracto literal y su hash en `docs/product/sri-catalogs/fuentes/`, y con eso el estado pasa a fuente oficial durable archivada.
-  - **Evidencia complementaria:** la indicación del SRI durante el cambio de tarifa del 14 % al 12 % (Q-49). Se archiva si se logra, pero no hace falta para cerrar APPLY. Nunca se sustituye con blogs ni resúmenes de terceros.
+  - **Evidencia complementaria:** la indicación del SRI durante el cambio de tarifa del 14 % al 12 % (Q-49). Se archiva si se logra, pero no hace falta para cerrar APPLY. Nunca se sustituye con blogs ni resúmenes de terceros. Resultado de la tarea 13.1: ese aviso no se encontró en el portal del SRI y no se archiva; se archiva en su lugar la pregunta 11 de las preguntas frecuentes oficiales del SRI del cambio de tarifa de 2016 (del 12 % al 14 %), que aplica el mismo criterio (`docs/product/sri-catalogs/fuentes/sri-preguntas-frecuentes-tarifa-iva-2016.txt`, con su URL y su SHA-256).
 - **Política del proyecto, más estricta que la regla oficial:**
   - cada concepto elige uno de los tratamientos congelados en el snapshot de la factura: las combinaciones distintas `taxCode:rateCode` de los impuestos de sus líneas, con su porcentaje y sus referencias fiscales;
   - esos tratamientos son, por construcción, los vigentes en la fecha de emisión de la factura;
@@ -498,9 +498,9 @@ Una migración aditiva:
 | Causas: intereses de mora y costos o gastos posteriores | Oficial | Reglamento, art. 16 (`sri-catalogs/fuentes/reglamento-comprobantes-arts-15-16.txt`) |
 | Consigna denominación, serie y número del comprobante modificado | Oficial | Reglamento, art. 16 |
 | Factura comercial negociable negociada excluida | Oficial, declarada por el usuario | Reglamento, art. 16 |
-| IVA del comprobante de sustento | Oficial. SOURCE STATUS: official SRI guidance identified / durable source copy/text still pending, hasta que la tarea 13.1 archive el extracto | Primaria: ficha v2.34, página 58. Complementaria: el aviso del SRI del 14 % al 12 % (Q-49) |
+| IVA del comprobante de sustento | Oficial. SOURCE STATUS: fuente oficial durable archivada | Primaria: ficha v2.34, página 58 (`sri-catalogs/fuentes/ficha-v2.34-nota-de-debito.txt`). Complementaria: preguntas frecuentes del SRI del cambio de tarifa de 2016, pregunta 11 (`sri-catalogs/fuentes/sri-preguntas-frecuentes-tarifa-iva-2016.txt`); el aviso del 14 % al 12 % (Q-49) no se encontró |
 | Solo tratamientos de la factura y sin tarifa global | Política del proyecto | Q-49, BR-66 |
-| `pagos` obligatorio y RIDE de la nota | Oficial | Ficha v2.34, páginas 58, 59 y 62 |
+| `pagos` obligatorio y RIDE de la nota | Oficial | Ficha v2.34, páginas 58, 59 y 62 (`sri-catalogs/fuentes/ficha-v2.34-nota-de-debito.txt`) |
 | Exactamente un `pago` por nota | Política del MVP del proyecto | D8 |
 | Consumidor final excluido | Política del proyecto | BR-32, Q-49 |
 | Sin plazo de emisión | Ninguna fuente oficial revisada lo establece | BR-68, Q-49 |

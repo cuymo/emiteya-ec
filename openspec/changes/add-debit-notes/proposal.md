@@ -19,7 +19,7 @@ cobro queda fuera del sistema: sin número, sin XML autorizado y sin evidencia. 
 - **IVA de la factura original.**
   - Solo se ofrecen y se aceptan los tratamientos (código, código de porcentaje y tarifa) congelados en el snapshot de la factura. Nunca se usa una tarifa vigente del catálogo, el producto ni el tercero.
   - Una factura con varias tarifas no se reduce a una sola: cada concepto elige la suya.
-  - **SOURCE STATUS: official SRI guidance identified / durable source copy/text still pending.** La evidencia durable primaria es la ficha técnica v2.34 del repositorio, que dice en la página 58 que "la tarifa de IVA corresponderá a la fecha de emisión del documento de sustento". Su extracto se archiva durante APPLY. El aviso del SRI del 14 % al 12 % es evidencia complementaria y no hace falta para cerrar APPLY (design D6).
+  - **SOURCE STATUS: fuente oficial durable archivada.** La evidencia durable primaria es la ficha técnica v2.34 del repositorio, que dice en la página 58 que "la tarifa de IVA corresponderá a la fecha de emisión del documento de sustento"; su extracto se archivó durante APPLY (`docs/product/sri-catalogs/fuentes/ficha-v2.34-nota-de-debito.txt`). El aviso del SRI del 14 % al 12 % era evidencia complementaria: no se encontró en el portal, y se archivó en su lugar la pregunta 11 de las preguntas frecuentes oficiales del cambio de 2016 (design D6).
 - **Un solo cálculo versionado** (`calculateDebitNoteAmounts`), con decimal exacto y sin `number`:
   - los conceptos se agrupan por tratamiento;
   - el impuesto se materializa una vez sobre la base total de cada tratamiento;
