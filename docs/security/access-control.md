@@ -122,7 +122,7 @@ admin de Better Auth no concede nada. Toda celda "No" responde `403` en el servi
 usuario de otra empresa responde `404`.
 
 Permisos implementados (cambios `add-user-access`, design D4; `add-taxpayer-setup`, design D10;
-`add-fiscal-numbering`, design D10; `add-signing-certificate`, design D10; `add-fiscal-catalogs`, design D12; `add-parties-and-products`, design D12; y `add-invoice-emission`, design D14). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
+`add-fiscal-numbering`, design D10; `add-signing-certificate`, design D10; `add-fiscal-catalogs`, design D12; `add-parties-and-products`, design D12; `add-invoice-emission`, design D14; y `add-credit-notes`, design D17). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
 denegado por defecto;
 `backend/test/identity/access-policy-doc.test.ts` comprueba que esta tabla coincide con él:
 
@@ -168,12 +168,17 @@ denegado por defecto;
 | `inventory.adjust` | Registrar un ajuste de existencias, positivo o negativo, con motivo | Sí | No |
 | `inventory.initialize` | Inicializar el inventario de un producto con su movimiento `INICIAL` | Sí | No |
 | `inventory.configure` | Activar o desactivar el control de stock de un producto con inventario inicializado | Sí | No |
+| `creditNotes.read` | Consultar y buscar notas de crédito, con su diagnóstico y su transmisión, y el crédito de una factura | Sí | Sí |
+| `creditNotes.draft` | Buscar facturas elegibles y crear, consultar, corregir y eliminar borradores de nota de crédito | Sí | Sí |
+| `creditNotes.emit` | Emitir una nota de crédito desde un borrador, con las declaraciones de elegibilidad del usuario: reserva el número y la capacidad y la firma localmente | Sí | Sí |
+| `creditNotes.retrySigning` | Reintentar la firma de una nota de crédito reservada, con el mismo número y la misma clave | Sí | Sí |
+| `creditNotes.reconcile` | Pedir la reconciliación de una nota de crédito con el SRI, con motivo, como la de una factura | Sí | No |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
 
 Matriz propuesta para los módulos futuros (Q-22). El ERS solo dice "permisos básicos"; cada
-cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; `add-sri-transmission` confirmó "Resolver revisión manual u ordenar una reconciliación" solo para el administrador (`invoices.reconcile`); `add-document-archive` confirmó "Consultar la bandeja y descargar XML y RIDE" para ambos roles (`archive.read` y `archive.download`), y bajo esa misma fila el reintento de una generación detenida del RIDE (`archive.retryRide`): solo vuelve a programar el mismo documento que el usuario ya puede descargar, sin efecto fiscal, sin reemplazar un RIDE y sin dejar dos generaciones activas; `add-minimal-inventory` confirmó "Registrar entradas manuales de inventario" (ambos roles) y "Registrar ajustes de inventario" (administrador), y añadió las tres filas del inventario de abajo:
+cambio confirma las filas de sus propias operaciones al añadirlas al mapa. `add-parties-and-products` confirmó las dos filas de terceros y productos. `add-invoice-emission` confirmó, para la factura, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles; `add-sri-transmission` confirmó "Resolver revisión manual u ordenar una reconciliación" solo para el administrador (`invoices.reconcile`); `add-document-archive` confirmó "Consultar la bandeja y descargar XML y RIDE" para ambos roles (`archive.read` y `archive.download`), y bajo esa misma fila el reintento de una generación detenida del RIDE (`archive.retryRide`): solo vuelve a programar el mismo documento que el usuario ya puede descargar, sin efecto fiscal, sin reemplazar un RIDE y sin dejar dos generaciones activas; `add-minimal-inventory` confirmó "Registrar entradas manuales de inventario" (ambos roles) y "Registrar ajustes de inventario" (administrador), y añadió las tres filas del inventario de abajo; `add-credit-notes` confirmó, para la nota de crédito, "Crear borradores y emitir" y "Corregir un comprobante con XML inválido" (el reintento de la firma) para ambos roles, y "Resolver revisión manual u ordenar una reconciliación" solo para el administrador (`creditNotes.reconcile`). Quien emite una nota confirma sus declaraciones de elegibilidad: son del usuario que emite, sin un permiso aparte:
 
 | Operación                                                    | `ADMIN` | `OPERATOR`        |
 | ------------------------------------------------------------ | ------- | ----------------- |

@@ -42,7 +42,12 @@ export type Permission =
   | "inventory.entry"
   | "inventory.adjust"
   | "inventory.initialize"
-  | "inventory.configure";
+  | "inventory.configure"
+  | "creditNotes.read"
+  | "creditNotes.draft"
+  | "creditNotes.emit"
+  | "creditNotes.retrySigning"
+  | "creditNotes.reconcile";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -86,6 +91,11 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "inventory.adjust",
     "inventory.initialize",
     "inventory.configure",
+    "creditNotes.read",
+    "creditNotes.draft",
+    "creditNotes.emit",
+    "creditNotes.retrySigning",
+    "creditNotes.reconcile",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",
@@ -108,6 +118,10 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "archive.retryRide",
     "inventory.read",
     "inventory.entry",
+    "creditNotes.read",
+    "creditNotes.draft",
+    "creditNotes.emit",
+    "creditNotes.retrySigning",
   ]),
 };
 

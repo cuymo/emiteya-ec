@@ -57,6 +57,12 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "inventory.adjust": { ADMIN: true, OPERATOR: false },
   "inventory.initialize": { ADMIN: true, OPERATOR: false },
   "inventory.configure": { ADMIN: true, OPERATOR: false },
+  // add-credit-notes, design D17: como la factura; la reconciliación, solo el administrador.
+  "creditNotes.read": { ADMIN: true, OPERATOR: true },
+  "creditNotes.draft": { ADMIN: true, OPERATOR: true },
+  "creditNotes.emit": { ADMIN: true, OPERATOR: true },
+  "creditNotes.retrySigning": { ADMIN: true, OPERATOR: true },
+  "creditNotes.reconcile": { ADMIN: true, OPERATOR: false },
 };
 
 describe("política de autorización central", () => {

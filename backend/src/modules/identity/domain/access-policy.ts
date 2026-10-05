@@ -43,6 +43,11 @@ export const PERMISSIONS = [
   "inventory.adjust",
   "inventory.initialize",
   "inventory.configure",
+  "creditNotes.read",
+  "creditNotes.draft",
+  "creditNotes.emit",
+  "creditNotes.retrySigning",
+  "creditNotes.reconcile",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -96,6 +101,13 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "inventory.adjust",
     "inventory.initialize",
     "inventory.configure",
+    // add-credit-notes, design D17: consultar, preparar, emitir con sus declaraciones, reintentar
+    // la firma y pedir la reconciliación de una nota de crédito.
+    "creditNotes.read",
+    "creditNotes.draft",
+    "creditNotes.emit",
+    "creditNotes.retrySigning",
+    "creditNotes.reconcile",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -130,6 +142,13 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     // inicializa, no ajusta ni cambia el control de un producto con inventario.
     "inventory.read",
     "inventory.entry",
+    // add-credit-notes, design D17: consulta, prepara, emite con sus declaraciones y reintenta la
+    // firma, como el administrador; la reconciliación es solo del administrador, como la de la
+    // factura.
+    "creditNotes.read",
+    "creditNotes.draft",
+    "creditNotes.emit",
+    "creditNotes.retrySigning",
   ]),
 };
 
