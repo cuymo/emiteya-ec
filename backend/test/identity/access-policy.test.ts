@@ -63,6 +63,11 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "creditNotes.emit": { ADMIN: true, OPERATOR: true },
   "creditNotes.retrySigning": { ADMIN: true, OPERATOR: true },
   "creditNotes.reconcile": { ADMIN: true, OPERATOR: false },
+  "debitNotes.read": { ADMIN: true, OPERATOR: true },
+  "debitNotes.draft": { ADMIN: true, OPERATOR: true },
+  "debitNotes.emit": { ADMIN: true, OPERATOR: true },
+  "debitNotes.retrySigning": { ADMIN: true, OPERATOR: true },
+  "debitNotes.reconcile": { ADMIN: true, OPERATOR: false },
 };
 
 describe("política de autorización central", () => {

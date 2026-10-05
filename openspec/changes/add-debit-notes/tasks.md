@@ -18,7 +18,7 @@
 
 ## 2. Contratos y permisos
 
-- [ ] 2.1 Crear `packages/contracts/src/debit-notes.ts` (design D5, D8, D9 y D20):
+- [x] 2.1 Crear `packages/contracts/src/debit-notes.ts` (design D5, D8, D9 y D20):
   - las causas cerradas con su etiqueta y su fuente;
   - el borrador y sus conceptos (causa, descripción, importe como texto decimal, clave del tratamiento), una sola forma de pago como `entryKey` (sin etiqueta ni importe) y el punto;
   - la vista previa con los tratamientos de la factura, las bases e impuestos por tratamiento, el total, la forma de pago y los problemas por concepto;
@@ -33,7 +33,7 @@
   - una forma de pago con etiqueta, importe o como lista de varias;
   - una declaración faltante o de otra versión;
   - un `companyId`, un número o una clave de comprobante en el cuerpo.
-- [ ] 2.2 Añadir `debitNotes.read`, `debitNotes.draft`, `debitNotes.emit` y `debitNotes.retrySigning` para ADMIN y OPERATOR, y `debitNotes.reconcile` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D21). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
+- [x] 2.2 Añadir `debitNotes.read`, `debitNotes.draft`, `debitNotes.emit` y `debitNotes.retrySigning` para ADMIN y OPERATOR, y `debitNotes.reconcile` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D21). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
 
 ## 3. Dominio de la nota de débito
 

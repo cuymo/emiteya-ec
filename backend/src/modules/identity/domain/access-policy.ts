@@ -48,6 +48,11 @@ export const PERMISSIONS = [
   "creditNotes.emit",
   "creditNotes.retrySigning",
   "creditNotes.reconcile",
+  "debitNotes.read",
+  "debitNotes.draft",
+  "debitNotes.emit",
+  "debitNotes.retrySigning",
+  "debitNotes.reconcile",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -108,6 +113,13 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "creditNotes.emit",
     "creditNotes.retrySigning",
     "creditNotes.reconcile",
+    // add-debit-notes, design D21: consultar, preparar, emitir con su declaración, reintentar la
+    // firma y pedir la reconciliación de una nota de débito.
+    "debitNotes.read",
+    "debitNotes.draft",
+    "debitNotes.emit",
+    "debitNotes.retrySigning",
+    "debitNotes.reconcile",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -149,6 +161,12 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "creditNotes.draft",
     "creditNotes.emit",
     "creditNotes.retrySigning",
+    // add-debit-notes, design D21: consulta, prepara, emite con su declaración y reintenta la firma,
+    // como el administrador; la reconciliación es solo del administrador.
+    "debitNotes.read",
+    "debitNotes.draft",
+    "debitNotes.emit",
+    "debitNotes.retrySigning",
   ]),
 };
 

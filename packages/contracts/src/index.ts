@@ -16,3 +16,4 @@ export * from "./invoices.ts";
 export * from "./archive.ts";
 export * from "./inventory.ts";
 export * from "./credit-notes.ts";
+export * from "./debit-notes.ts";
