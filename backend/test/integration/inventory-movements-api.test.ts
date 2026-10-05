@@ -235,6 +235,50 @@ describe("entradas y ajustes del inventario sobre HTTP", () => {
     expect(await balanceOf(prisma, a.companyId, product)).toBe("2");
   });
 
+  it("una empresa indicada en el cuerpo se rechaza sin registrar nada", async () => {
+    const otherCompanyMovements = () =>
+      prisma.stockMovement.count({ where: { companyId: b.companyId } });
+    const before = await otherCompanyMovements();
+    const marked = await createProduct(db, a, { unitPrice: "1", name: "Marcado con empresa" });
+    await prisma.product.update({ where: { id: marked }, data: { stockTracked: true } });
+    const initialization = await request(api.app)
+      .post(`/api/v1/inventory/items/${marked}/initialization`)
+      .set("Cookie", a.cookies.admin)
+      .send({ quantity: "1", companyId: b.companyId });
+    const product = await stocked(a, "1");
+    for (const res of [
+      initialization,
+      await post(a, "operator", `${product}/entries`, { quantity: "1", companyId: b.companyId }),
+      await post(a, "admin", `${product}/adjustments`, {
+        delta: "-1",
+        reason: "Merma",
+        companyId: b.companyId,
+      }),
+    ]) {
+      expect(res.status, JSON.stringify(res.body)).toBe(400);
+    }
+    expect(await balanceOf(prisma, a.companyId, marked)).toBeNull();
+    expect(await movementsOf(product)).toHaveLength(1);
+    expect(await otherCompanyMovements()).toBe(before);
+  });
+
+  it("una entrada equivocada se corrige con un ajuste y sigue en el kárdex", async () => {
+    const product = await stocked(a, "0");
+    expect((await entry(a, product, "10")).status).toBe(201);
+    expect((await adjust(a, product, "-9", "La entrada era de 1 unidad")).status).toBe(201);
+    expect(
+      (await movementsOf(product)).map((movement) => [
+        movement.movementType,
+        movement.delta.toFixed(),
+      ]),
+    ).toEqual([
+      ["INICIAL", "0"],
+      ["ENTRADA_MANUAL", "10"],
+      ["AJUSTE", "-9"],
+    ]);
+    expect(await balanceOf(prisma, a.companyId, product)).toBe("1");
+  });
+
   it("no hay rutas para editar ni borrar movimientos ni para fijar el saldo", async () => {
     const product = await stocked(a, "1");
     const [initial] = await movementsOf(product);

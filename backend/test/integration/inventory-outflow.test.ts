@@ -181,7 +181,7 @@ describe("salida de inventario al autorizar", () => {
     prisma = db.database.prisma;
     await loadInstalledFiscalCatalogs(prisma);
     store = createPrismaJobStore(prisma, db.name);
-    company = await insertFiscalCompany(prisma, "Inventario A", 1);
+    company = await insertFiscalCompany(prisma, "Inventario A", 2);
   });
 
   beforeEach(() => {
@@ -226,6 +226,29 @@ describe("salida de inventario al autorizar", () => {
     );
     expect(await balanceOf(prisma, company.companyId, a)).toBe("5.5");
     expect(await balanceOf(prisma, company.companyId, b)).toBe("2");
+    await expectReconciled(prisma, company.companyId);
+  });
+
+  it("las facturas de dos establecimientos descuentan del mismo saldo, sin eventos de auditoría", async () => {
+    const product = await stockedProduct("10");
+    const first = await invoiceWith("RECEIVED", [line(product, "3")]);
+    const second = await insertDocument(prisma, company, "RECEIVED", {
+      point: 1,
+      snapshot: { snapshotVersion: 2, lines: [line(product, "2")] },
+    });
+    expect(first.establishmentId).not.toBe(second.establishmentId);
+    for (const invoice of [first, second]) {
+      reply(invoice, [authorized(invoice)]);
+      await authorize().run(await jobFor(invoice, "sri.authorize"), context());
+      expect(await stateOf(invoice.id)).toBe("AUTHORIZED");
+    }
+    expect(await prisma.stockBalance.count({ where: { productId: product } })).toBe(1);
+    expect(await balanceOf(prisma, company.companyId, product)).toBe("5");
+    expect(
+      await prisma.auditEvent.count({
+        where: { companyId: company.companyId, action: { startsWith: "inventory." } },
+      }),
+    ).toBe(0);
     await expectReconciled(prisma, company.companyId);
   });
 

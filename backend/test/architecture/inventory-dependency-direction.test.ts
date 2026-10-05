@@ -60,6 +60,16 @@ describe("dirección de las dependencias del inventario", () => {
     expect(main).toContain("stockReads: inventoryStockReads");
   });
 
+  it("ninguna operación registra una devolución por nota de crédito todavía", () => {
+    // Solo el tipo reconocido y la regla de su signo: la devolución la define su propio cambio.
+    const writers = sourceFiles(SRC)
+      .filter(
+        ({ path, content }) => !path.startsWith("generated/") && content.includes("DEVOLUCION_NC"),
+      )
+      .map(({ path }) => path);
+    expect(writers).toEqual(["modules/inventory/domain/stock.ts"]);
+  });
+
   it("detecta cada violación en archivos de ejemplo", () => {
     expect(
       inventoryOffenders([
