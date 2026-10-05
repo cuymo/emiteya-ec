@@ -39,8 +39,8 @@
 
 ## 6. Factura de origen y capacidad acreditable
 
-- [ ] 6.1 Exportar desde `invoices` la lectura `invoiceCreditSource` con los datos inmutables de design D3 y la comprobación de integridad del snapshot y de sus artefactos con el almacén de `fiscal`, usada al preparar el borrador y antes de emitir. Verificar con pruebas de integración: factura autorizada leída sin consultar producto, tercero ni catálogo; snapshot o artefacto alterados detectados y nunca reparados; factura de otra empresa no encontrada
-- [ ] 6.2 Implementar el repositorio de la capacidad acreditable (design D7, D8): inicialización perezosa idempotente desde el snapshot, bloqueo de la factura, reserva con incrementos atómicos, lectura de lo acreditado vigente por línea y la reconciliación diagnóstica. Verificar con pruebas de integración: inicialización repetida sin duplicados, exceso de cantidad o de importe rechazado por la base, anulación total con crédito previo rechazada, y la reconciliación sin diferencias tras una secuencia mixta
+- [x] 6.1 Exportar desde `invoices` la lectura `invoiceCreditSource` con los datos inmutables de design D3 y la comprobación de integridad del snapshot y de sus artefactos con el almacén de `fiscal`, usada al preparar el borrador y antes de emitir. Verificar con pruebas de integración: factura autorizada leída sin consultar producto, tercero ni catálogo; snapshot o artefacto alterados detectados y nunca reparados; factura de otra empresa no encontrada
+- [x] 6.2 Implementar el repositorio de la capacidad acreditable (design D7, D8): inicialización perezosa idempotente desde el snapshot, bloqueo de la factura, reserva con incrementos atómicos, lectura de lo acreditado vigente por línea y la reconciliación diagnóstica. Verificar con pruebas de integración: inicialización repetida sin duplicados, exceso de cantidad o de importe rechazado por la base, anulación total con crédito previo rechazada, y la reconciliación sin diferencias tras una secuencia mixta
 
 ## 7. Capacidad devolvible
 

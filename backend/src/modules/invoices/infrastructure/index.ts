@@ -28,6 +28,12 @@ import { createEvaluationReads, type SigningReads } from "./evaluation-reads.ts"
 import type { StockReads } from "../application/ports.ts";
 import { invoicesRouter } from "./http/invoices-router.ts";
 export { invoiceStockLines, type InvoiceStockDocument } from "./stock-lines.ts";
+export {
+  invoiceCreditSource,
+  type InvoiceCreditLine,
+  type InvoiceCreditSource,
+  type InvoiceIntegrityProblem,
+} from "./credit-source.ts";
 export type { StockReads } from "../application/ports.ts";
 import { registerEmissionMetrics } from "./metrics.ts";
 import { createDraftRepository } from "./prisma-drafts.ts";
