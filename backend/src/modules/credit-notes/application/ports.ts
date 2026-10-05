@@ -1,7 +1,8 @@
 // Puertos del módulo credit-notes (add-credit-notes, design D1, D3, D7 y D10). La infraestructura
 // los implementa con Prisma; las lecturas de `invoices` y la capacidad devolvible de `inventory` se
 // inyectan desde `main.ts`, de modo que ningún módulo de los que la nota lee la importa.
-import type { CreditNoteCause } from "@facturador/contracts";
+import type { CreditNoteCause, InvoiceState } from "@facturador/contracts";
+import type { StoredDocument } from "../../fiscal/application/ports.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
 import type { IdempotencyStore } from "../../../platform/idempotency/idempotency.ts";
 import type { AuditLog } from "../../audit/application/audit-log.ts";
@@ -115,6 +116,14 @@ export const STOCK_RETURN_EXCEEDED = "STOCK_RETURN_EXCEEDED";
  * `inventory`. Es independiente de la capacidad acreditable.
  */
 export type ReturnCapacity = (db: DbClient) => {
+  /** Por producto: la salida original y lo reservado y aplicado; sin salida, todo en cero. */
+  state(
+    companyId: string,
+    invoiceId: string,
+    productIds: readonly string[],
+  ): Promise<
+    ReadonlyMap<string, Readonly<{ original: string; reserved: string; applied: string }>>
+  >;
   /** Disponible por producto: la salida original menos lo aplicado y reservado; cero sin salida. */
   available(
     companyId: string,
@@ -246,4 +255,17 @@ export type CreditNoteEmissionScope = DocumentReservationScope & {
 
 export interface CreditNoteEmissionUnitOfWork {
   run<T>(work: (scope: CreditNoteEmissionScope) => Promise<T>): Promise<T>;
+}
+
+export interface CreditNoteListReader {
+  list(
+    companyId: string,
+    query: {
+      search?: string | undefined;
+      state?: InvoiceState | undefined;
+      cause?: CreditNoteCause | undefined;
+      page: number;
+      pageSize: number;
+    },
+  ): Promise<{ items: StoredDocument[]; total: number }>;
 }

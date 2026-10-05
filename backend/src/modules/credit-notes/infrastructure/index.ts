@@ -9,10 +9,13 @@ import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
 import {
   createArtifactStore,
   createDocumentRepository,
+  createReconciliationRequestUnitOfWork,
   createTransmissionReader,
   type SigningPipeline,
   type SigningProfile,
 } from "../../fiscal/infrastructure/index.ts";
+import type { JobStore } from "../../../platform/jobs/jobs.ts";
+import { createPrismaJobStore } from "../../../platform/jobs/prisma-job-store.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import type { AccessKeys, XsdValidator } from "../../sri-engine/application/ports.ts";
 import { createAccessKeys } from "../../sri-engine/infrastructure/access-keys.ts";
@@ -26,6 +29,7 @@ import { createCreditNoteEmission } from "../application/emission.ts";
 import type { InvoiceCreditSourceReader, ReturnCapacity } from "../application/ports.ts";
 import { creditNoteSigningProfile as createCreditNoteSigningProfile } from "../application/signing-profile.ts";
 import { createEligibleInvoiceReader } from "./eligible-invoices.ts";
+import { createCreditNoteListReader } from "./prisma-credit-note-list.ts";
 import { creditNotesRouter } from "./http/credit-notes-router.ts";
 import { registerCreditNoteMetrics } from "./metrics.ts";
 import { createCreditCapacityRepository } from "./prisma-credit-capacity.ts";
@@ -63,8 +67,14 @@ export type CreditNotesModuleOptions = {
   signAfterReserve?: boolean;
   accessKeys?: AccessKeys;
   metrics?: Registry;
+  /** Cola durable: la reconciliación manual encola su job. */
+  jobs?: Pick<JobStore, "enqueueIn">;
+  /** `SRI_CONCLUSION_WINDOW_HOURS` en milisegundos; 24 horas por defecto. */
+  conclusionWindowMs?: number;
   now?: () => Date;
 };
+
+const DEFAULT_CONCLUSION_WINDOW_MS = 24 * 3_600_000;
 
 export function creditNotesModule(options: CreditNotesModuleOptions) {
   const now = options.now ?? (() => new Date());
@@ -92,6 +102,14 @@ export function creditNotesModule(options: CreditNotesModuleOptions) {
     authorizer: options.authorizer,
     transmission: createTransmissionReader(prisma),
     eligible: createEligibleInvoiceReader(prisma, options.schema),
+    list: createCreditNoteListReader(prisma),
+    context,
+    reconciliations: createReconciliationRequestUnitOfWork(
+      prisma,
+      options.jobs ?? createPrismaJobStore(prisma, options.schema),
+    ),
+    conclusionWindowMs: options.conclusionWindowMs ?? DEFAULT_CONCLUSION_WINDOW_MS,
+    now,
     async userName(companyId, userId) {
       const member = await prisma.member.findFirst({
         where: { organizationId: companyId, userId },

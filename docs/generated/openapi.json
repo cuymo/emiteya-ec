@@ -31225,6 +31225,2953 @@
             }
           }
         }
+      },
+      "get": {
+        "summary": "Listar notas de crédito por estado y causa y buscar por número o comprador, las más recientes primero",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "enum": [
+                "RESERVED",
+                "SIGNED",
+                "SEND_UNKNOWN",
+                "RECEIVED",
+                "RETURNED",
+                "AUTHORIZED",
+                "NOT_AUTHORIZED",
+                "MANUAL_REVIEW"
+              ]
+            }
+          },
+          {
+            "name": "cause",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "enum": [
+                "TOTAL_ANNULMENT",
+                "RETURN"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 25,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de notas de crédito con su factura, su causa y el total en `meta`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "documentNumber": {
+                            "type": "string"
+                          },
+                          "environment": {
+                            "type": "string",
+                            "enum": [
+                              "TEST",
+                              "PRODUCTION"
+                            ]
+                          },
+                          "issueDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                          },
+                          "invoice": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "documentNumber": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "documentNumber"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "cause": {
+                            "type": "string",
+                            "enum": [
+                              "TOTAL_ANNULMENT",
+                              "RETURN"
+                            ]
+                          },
+                          "buyerIdentification": {
+                            "type": "string"
+                          },
+                          "buyerName": {
+                            "type": "string"
+                          },
+                          "total": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "RESERVED",
+                              "SIGNED",
+                              "SEND_UNKNOWN",
+                              "RECEIVED",
+                              "RETURNED",
+                              "AUTHORIZED",
+                              "NOT_AUTHORIZED",
+                              "MANUAL_REVIEW"
+                            ]
+                          },
+                          "diagnosticCode": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "VALIDATOR_BUSY",
+                                  "VALIDATOR_TIMEOUT",
+                                  "CRYPTO_BUSY",
+                                  "CRYPTO_TIMEOUT",
+                                  "CRYPTO_UNAVAILABLE",
+                                  "PERSIST_FAILED",
+                                  "SIGNING_CERTIFICATE_NOT_USABLE",
+                                  "CUSTODY_UNAVAILABLE",
+                                  "CERTIFICATE_MISMATCH",
+                                  "SIGNER_FAILED",
+                                  "SCHEMA_UNAVAILABLE",
+                                  "SCHEMA_HASH_MISMATCH",
+                                  "XSD_INVALID",
+                                  "SIGNED_XML_INVALID",
+                                  "INVALID_SNAPSHOT_TEXT",
+                                  "INVALID_SNAPSHOT_AMOUNT"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "transmissionStopped": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "documentNumber",
+                          "environment",
+                          "issueDate",
+                          "invoice",
+                          "cause",
+                          "buyerIdentification",
+                          "buyerName",
+                          "total",
+                          "state",
+                          "diagnosticCode",
+                          "transmissionStopped",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "pageSize",
+                        "total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos; el mensaje indica el campo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/credit-notes/invoices/{invoiceId}/credit": {
+      "get": {
+        "summary": "Consultar el crédito de una factura: aplicado, reservado y disponible, por línea y con el retorno físico posible",
+        "parameters": [
+          {
+            "name": "invoiceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Crédito de la factura.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "invoiceId": {
+                          "type": "string"
+                        },
+                        "documentNumber": {
+                          "type": "string"
+                        },
+                        "issueDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "buyerIdentification": {
+                          "type": "string"
+                        },
+                        "buyerName": {
+                          "type": "string"
+                        },
+                        "consumerFinal": {
+                          "type": "boolean"
+                        },
+                        "total": {
+                          "type": "string"
+                        },
+                        "applied": {
+                          "type": "string"
+                        },
+                        "reserved": {
+                          "type": "string"
+                        },
+                        "available": {
+                          "type": "string"
+                        },
+                        "totalAnnulmentAvailable": {
+                          "type": "boolean"
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "productId": {
+                                "type": "string"
+                              },
+                              "mainCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "string"
+                              },
+                              "unitPrice": {
+                                "type": "string"
+                              },
+                              "discount": {
+                                "type": "string"
+                              },
+                              "taxableBase": {
+                                "type": "string"
+                              },
+                              "taxes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "taxCode": {
+                                      "type": "string"
+                                    },
+                                    "rateCode": {
+                                      "type": "string"
+                                    },
+                                    "percentage": {
+                                      "type": "string"
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "taxCode",
+                                    "rateCode",
+                                    "percentage",
+                                    "base",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "inventoryAffectsStock": {
+                                "type": "boolean"
+                              },
+                              "credited": {
+                                "type": "object",
+                                "properties": {
+                                  "applied": {
+                                    "type": "string"
+                                  },
+                                  "reserved": {
+                                    "type": "string"
+                                  },
+                                  "available": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "applied",
+                                  "reserved",
+                                  "available"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "returnable": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "original": {
+                                        "type": "string"
+                                      },
+                                      "applied": {
+                                        "type": "string"
+                                      },
+                                      "reserved": {
+                                        "type": "string"
+                                      },
+                                      "available": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "original",
+                                      "applied",
+                                      "reserved",
+                                      "available"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "productId",
+                              "mainCode",
+                              "description",
+                              "quantity",
+                              "unitPrice",
+                              "discount",
+                              "taxableBase",
+                              "taxes",
+                              "inventoryAffectsStock",
+                              "credited",
+                              "returnable"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "invoiceId",
+                        "documentNumber",
+                        "issueDate",
+                        "buyerIdentification",
+                        "buyerName",
+                        "consumerFinal",
+                        "total",
+                        "applied",
+                        "reserved",
+                        "available",
+                        "totalAnnulmentAvailable",
+                        "lines"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La factura no existe en la empresa (CREDIT_NOTE_INVOICE_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/credit-notes/{creditNoteId}": {
+      "get": {
+        "summary": "Consultar una nota de crédito desde su snapshot: factura modificada, causa, líneas con su retorno físico, declaraciones del usuario, diagnóstico y transmisión",
+        "parameters": [
+          {
+            "name": "creditNoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nota de crédito.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "documentType": {
+                          "type": "string",
+                          "enum": [
+                            "01",
+                            "03",
+                            "04",
+                            "05",
+                            "06",
+                            "07"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "TEST",
+                            "PRODUCTION"
+                          ]
+                        },
+                        "documentNumber": {
+                          "type": "string"
+                        },
+                        "accessKey": {
+                          "type": "string"
+                        },
+                        "issueDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RESERVED",
+                            "SIGNED",
+                            "SEND_UNKNOWN",
+                            "RECEIVED",
+                            "RETURNED",
+                            "AUTHORIZED",
+                            "NOT_AUTHORIZED",
+                            "MANUAL_REVIEW"
+                          ]
+                        },
+                        "cause": {
+                          "type": "string",
+                          "enum": [
+                            "TOTAL_ANNULMENT",
+                            "RETURN"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "invoice": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "documentNumber": {
+                              "type": "string"
+                            },
+                            "issueDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "accessKey": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "documentNumber",
+                            "issueDate",
+                            "accessKey"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "issuer": {
+                          "type": "object",
+                          "properties": {
+                            "ruc": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            },
+                            "tradeName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "headOfficeAddress": {
+                              "type": "string"
+                            },
+                            "establishmentAddress": {
+                              "type": "string"
+                            },
+                            "accountingRequired": {
+                              "type": "boolean"
+                            },
+                            "specialTaxpayerNumber": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "withholdingAgentResolution": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "rimpeCategory": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "EMPRENDEDOR",
+                                    "NEGOCIO_POPULAR"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "ruc",
+                            "legalName",
+                            "tradeName",
+                            "headOfficeAddress",
+                            "establishmentAddress",
+                            "accountingRequired",
+                            "specialTaxpayerNumber",
+                            "withholdingAgentResolution",
+                            "rimpeCategory"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "buyer": {
+                          "type": "object",
+                          "properties": {
+                            "identificationType": {
+                              "type": "string"
+                            },
+                            "identification": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            },
+                            "address": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "identificationType",
+                            "identification",
+                            "legalName",
+                            "address"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "mainCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "auxiliaryCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "string"
+                              },
+                              "unitPrice": {
+                                "type": "string"
+                              },
+                              "discount": {
+                                "type": "string"
+                              },
+                              "taxableBase": {
+                                "type": "string"
+                              },
+                              "taxes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "taxCode": {
+                                      "type": "string"
+                                    },
+                                    "rateCode": {
+                                      "type": "string"
+                                    },
+                                    "percentage": {
+                                      "type": "string"
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "taxCode",
+                                    "rateCode",
+                                    "percentage",
+                                    "base",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "physicalReturn": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "mainCode",
+                              "auxiliaryCode",
+                              "description",
+                              "quantity",
+                              "unitPrice",
+                              "discount",
+                              "taxableBase",
+                              "taxes",
+                              "physicalReturn"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "withoutTaxes": {
+                              "type": "string"
+                            },
+                            "taxes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "taxCode": {
+                                    "type": "string"
+                                  },
+                                  "rateCode": {
+                                    "type": "string"
+                                  },
+                                  "percentage": {
+                                    "type": "string"
+                                  },
+                                  "base": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "taxCode",
+                                  "rateCode",
+                                  "percentage",
+                                  "base",
+                                  "amount"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "total": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "withoutTaxes",
+                            "taxes",
+                            "total"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "declarations": {
+                          "type": "object",
+                          "properties": {
+                            "version": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "statements": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "enum": [
+                                      "NOT_NEGOTIATED_COMMERCIAL_INVOICE",
+                                      "NOT_TAX_REFUND_SUPPORT"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  },
+                                  "source": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "text",
+                                  "source"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "basis": {
+                              "type": "string",
+                              "const": "USER_DECLARED"
+                            },
+                            "declaredBy": {
+                              "type": "string"
+                            },
+                            "declaredByName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "declaredAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            }
+                          },
+                          "required": [
+                            "version",
+                            "statements",
+                            "basis",
+                            "declaredBy",
+                            "declaredByName",
+                            "declaredAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "diagnostic": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "stage": {
+                                  "type": "string",
+                                  "enum": [
+                                    "BUILD_XML",
+                                    "VALIDATE_XSD",
+                                    "SIGN",
+                                    "VALIDATE_SIGNED_XSD",
+                                    "PERSIST"
+                                  ]
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "VALIDATOR_BUSY",
+                                    "VALIDATOR_TIMEOUT",
+                                    "CRYPTO_BUSY",
+                                    "CRYPTO_TIMEOUT",
+                                    "CRYPTO_UNAVAILABLE",
+                                    "PERSIST_FAILED",
+                                    "SIGNING_CERTIFICATE_NOT_USABLE",
+                                    "CUSTODY_UNAVAILABLE",
+                                    "CERTIFICATE_MISMATCH",
+                                    "SIGNER_FAILED",
+                                    "SCHEMA_UNAVAILABLE",
+                                    "SCHEMA_HASH_MISMATCH",
+                                    "XSD_INVALID",
+                                    "SIGNED_XML_INVALID",
+                                    "INVALID_SNAPSHOT_TEXT",
+                                    "INVALID_SNAPSHOT_AMOUNT"
+                                  ]
+                                },
+                                "class": {
+                                  "type": "string",
+                                  "enum": [
+                                    "RETRYABLE_OPERATIONAL",
+                                    "DETERMINISTIC_CONFIGURATION",
+                                    "DETERMINISTIC_VALIDATION"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                "attemptCount": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "stage",
+                                "code",
+                                "class",
+                                "message",
+                                "at",
+                                "attemptCount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "artifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "authorizedArtifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "transmission": {
+                          "type": "object",
+                          "properties": {
+                            "inProgress": {
+                              "type": "boolean"
+                            },
+                            "stopped": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "message": {
+                                      "type": "string"
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    }
+                                  },
+                                  "required": [
+                                    "code",
+                                    "message",
+                                    "at"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "reconcilable": {
+                              "type": "boolean"
+                            },
+                            "authorization": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "number": {
+                                      "type": "string"
+                                    },
+                                    "authorizedAt": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "environment": {
+                                      "type": "string",
+                                      "enum": [
+                                        "TEST",
+                                        "PRODUCTION"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "number",
+                                    "authorizedAt",
+                                    "environment"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastResult": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "operation": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEPTION",
+                                        "AUTHORIZATION",
+                                        "VALIDITY"
+                                      ]
+                                    },
+                                    "outcome": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEIVED",
+                                        "RETURNED",
+                                        "KEY_IN_PROCESS",
+                                        "KEY_REGISTERED",
+                                        "SEQUENTIAL_REGISTERED",
+                                        "UNKNOWN",
+                                        "INCONSISTENT",
+                                        "AUTHORIZED",
+                                        "NOT_AUTHORIZED",
+                                        "NO_CONCLUSION",
+                                        "KEY_UNKNOWN",
+                                        "KEY_KNOWN",
+                                        "NO_EVIDENCE",
+                                        "NOT_SENT",
+                                        "UNPARSEABLE"
+                                      ]
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "messages": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "identifier": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "message": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "additionalInformation": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "type": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "identifier",
+                                          "message",
+                                          "additionalInformation",
+                                          "type"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "operation",
+                                    "outcome",
+                                    "at",
+                                    "messages"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "inProgress",
+                            "stopped",
+                            "reconcilable",
+                            "authorization",
+                            "lastResult"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "signedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "documentType",
+                        "environment",
+                        "documentNumber",
+                        "accessKey",
+                        "issueDate",
+                        "state",
+                        "cause",
+                        "reason",
+                        "invoice",
+                        "issuer",
+                        "buyer",
+                        "lines",
+                        "totals",
+                        "declarations",
+                        "diagnostic",
+                        "artifact",
+                        "authorizedArtifact",
+                        "transmission",
+                        "createdAt",
+                        "signedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La nota de crédito no existe en la empresa (CREDIT_NOTE_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/credit-notes/{creditNoteId}/transmission": {
+      "get": {
+        "summary": "Consultar el historial de la transmisión al SRI de una nota de crédito, sin respuestas originales ni XML",
+        "parameters": [
+          {
+            "name": "creditNoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Las 100 entradas más recientes del historial y el total.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "creditNoteId": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RESERVED",
+                            "SIGNED",
+                            "SEND_UNKNOWN",
+                            "RECEIVED",
+                            "RETURNED",
+                            "AUTHORIZED",
+                            "NOT_AUTHORIZED",
+                            "MANUAL_REVIEW"
+                          ]
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "TRANSITION"
+                                  },
+                                  "at": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                  },
+                                  "fromState": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "RESERVED",
+                                          "SIGNED",
+                                          "SEND_UNKNOWN",
+                                          "RECEIVED",
+                                          "RETURNED",
+                                          "AUTHORIZED",
+                                          "NOT_AUTHORIZED",
+                                          "MANUAL_REVIEW"
+                                        ]
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "toState": {
+                                    "type": "string",
+                                    "enum": [
+                                      "RESERVED",
+                                      "SIGNED",
+                                      "SEND_UNKNOWN",
+                                      "RECEIVED",
+                                      "RETURNED",
+                                      "AUTHORIZED",
+                                      "NOT_AUTHORIZED",
+                                      "MANUAL_REVIEW"
+                                    ]
+                                  },
+                                  "cause": {
+                                    "type": "string"
+                                  },
+                                  "actor": {
+                                    "type": "string",
+                                    "enum": [
+                                      "SYSTEM",
+                                      "USER"
+                                    ]
+                                  },
+                                  "actorName": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "at",
+                                  "fromState",
+                                  "toState",
+                                  "cause",
+                                  "actor",
+                                  "actorName"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "ATTEMPT"
+                                  },
+                                  "at": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                  },
+                                  "operation": {
+                                    "type": "string",
+                                    "enum": [
+                                      "RECEPTION",
+                                      "AUTHORIZATION",
+                                      "VALIDITY"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "type": "string",
+                                    "enum": [
+                                      "AUTOMATIC",
+                                      "MANUAL"
+                                    ]
+                                  },
+                                  "outcome": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "RECEIVED",
+                                          "RETURNED",
+                                          "KEY_IN_PROCESS",
+                                          "KEY_REGISTERED",
+                                          "SEQUENTIAL_REGISTERED",
+                                          "UNKNOWN",
+                                          "INCONSISTENT",
+                                          "AUTHORIZED",
+                                          "NOT_AUTHORIZED",
+                                          "NO_CONCLUSION",
+                                          "KEY_UNKNOWN",
+                                          "KEY_KNOWN",
+                                          "NO_EVIDENCE",
+                                          "NOT_SENT",
+                                          "UNPARSEABLE"
+                                        ]
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "messages": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "identifier": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "message": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "additionalInformation": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "type": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "identifier",
+                                        "message",
+                                        "additionalInformation",
+                                        "type"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "at",
+                                  "operation",
+                                  "origin",
+                                  "outcome",
+                                  "messages"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "creditNoteId",
+                        "state",
+                        "events",
+                        "total"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La nota de crédito no existe en la empresa (CREDIT_NOTE_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/credit-notes/{creditNoteId}/reconciliations": {
+      "post": {
+        "summary": "Pedir la reconciliación de una nota de crédito con el SRI, con motivo (solo el administrador)",
+        "parameters": [
+          {
+            "name": "creditNoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Reconciliación programada con las reglas de la transmisión; la nota con su estado actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "documentType": {
+                          "type": "string",
+                          "enum": [
+                            "01",
+                            "03",
+                            "04",
+                            "05",
+                            "06",
+                            "07"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "TEST",
+                            "PRODUCTION"
+                          ]
+                        },
+                        "documentNumber": {
+                          "type": "string"
+                        },
+                        "accessKey": {
+                          "type": "string"
+                        },
+                        "issueDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RESERVED",
+                            "SIGNED",
+                            "SEND_UNKNOWN",
+                            "RECEIVED",
+                            "RETURNED",
+                            "AUTHORIZED",
+                            "NOT_AUTHORIZED",
+                            "MANUAL_REVIEW"
+                          ]
+                        },
+                        "cause": {
+                          "type": "string",
+                          "enum": [
+                            "TOTAL_ANNULMENT",
+                            "RETURN"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "invoice": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "documentNumber": {
+                              "type": "string"
+                            },
+                            "issueDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "accessKey": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "documentNumber",
+                            "issueDate",
+                            "accessKey"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "issuer": {
+                          "type": "object",
+                          "properties": {
+                            "ruc": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            },
+                            "tradeName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "headOfficeAddress": {
+                              "type": "string"
+                            },
+                            "establishmentAddress": {
+                              "type": "string"
+                            },
+                            "accountingRequired": {
+                              "type": "boolean"
+                            },
+                            "specialTaxpayerNumber": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "withholdingAgentResolution": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "rimpeCategory": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "EMPRENDEDOR",
+                                    "NEGOCIO_POPULAR"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "ruc",
+                            "legalName",
+                            "tradeName",
+                            "headOfficeAddress",
+                            "establishmentAddress",
+                            "accountingRequired",
+                            "specialTaxpayerNumber",
+                            "withholdingAgentResolution",
+                            "rimpeCategory"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "buyer": {
+                          "type": "object",
+                          "properties": {
+                            "identificationType": {
+                              "type": "string"
+                            },
+                            "identification": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            },
+                            "address": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "identificationType",
+                            "identification",
+                            "legalName",
+                            "address"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "mainCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "auxiliaryCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "string"
+                              },
+                              "unitPrice": {
+                                "type": "string"
+                              },
+                              "discount": {
+                                "type": "string"
+                              },
+                              "taxableBase": {
+                                "type": "string"
+                              },
+                              "taxes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "taxCode": {
+                                      "type": "string"
+                                    },
+                                    "rateCode": {
+                                      "type": "string"
+                                    },
+                                    "percentage": {
+                                      "type": "string"
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "taxCode",
+                                    "rateCode",
+                                    "percentage",
+                                    "base",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "physicalReturn": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "mainCode",
+                              "auxiliaryCode",
+                              "description",
+                              "quantity",
+                              "unitPrice",
+                              "discount",
+                              "taxableBase",
+                              "taxes",
+                              "physicalReturn"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "withoutTaxes": {
+                              "type": "string"
+                            },
+                            "taxes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "taxCode": {
+                                    "type": "string"
+                                  },
+                                  "rateCode": {
+                                    "type": "string"
+                                  },
+                                  "percentage": {
+                                    "type": "string"
+                                  },
+                                  "base": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "taxCode",
+                                  "rateCode",
+                                  "percentage",
+                                  "base",
+                                  "amount"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "total": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "withoutTaxes",
+                            "taxes",
+                            "total"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "declarations": {
+                          "type": "object",
+                          "properties": {
+                            "version": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "statements": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "enum": [
+                                      "NOT_NEGOTIATED_COMMERCIAL_INVOICE",
+                                      "NOT_TAX_REFUND_SUPPORT"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  },
+                                  "source": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "text",
+                                  "source"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "basis": {
+                              "type": "string",
+                              "const": "USER_DECLARED"
+                            },
+                            "declaredBy": {
+                              "type": "string"
+                            },
+                            "declaredByName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "declaredAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            }
+                          },
+                          "required": [
+                            "version",
+                            "statements",
+                            "basis",
+                            "declaredBy",
+                            "declaredByName",
+                            "declaredAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "diagnostic": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "stage": {
+                                  "type": "string",
+                                  "enum": [
+                                    "BUILD_XML",
+                                    "VALIDATE_XSD",
+                                    "SIGN",
+                                    "VALIDATE_SIGNED_XSD",
+                                    "PERSIST"
+                                  ]
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "VALIDATOR_BUSY",
+                                    "VALIDATOR_TIMEOUT",
+                                    "CRYPTO_BUSY",
+                                    "CRYPTO_TIMEOUT",
+                                    "CRYPTO_UNAVAILABLE",
+                                    "PERSIST_FAILED",
+                                    "SIGNING_CERTIFICATE_NOT_USABLE",
+                                    "CUSTODY_UNAVAILABLE",
+                                    "CERTIFICATE_MISMATCH",
+                                    "SIGNER_FAILED",
+                                    "SCHEMA_UNAVAILABLE",
+                                    "SCHEMA_HASH_MISMATCH",
+                                    "XSD_INVALID",
+                                    "SIGNED_XML_INVALID",
+                                    "INVALID_SNAPSHOT_TEXT",
+                                    "INVALID_SNAPSHOT_AMOUNT"
+                                  ]
+                                },
+                                "class": {
+                                  "type": "string",
+                                  "enum": [
+                                    "RETRYABLE_OPERATIONAL",
+                                    "DETERMINISTIC_CONFIGURATION",
+                                    "DETERMINISTIC_VALIDATION"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                "attemptCount": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "stage",
+                                "code",
+                                "class",
+                                "message",
+                                "at",
+                                "attemptCount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "artifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "authorizedArtifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "transmission": {
+                          "type": "object",
+                          "properties": {
+                            "inProgress": {
+                              "type": "boolean"
+                            },
+                            "stopped": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "message": {
+                                      "type": "string"
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    }
+                                  },
+                                  "required": [
+                                    "code",
+                                    "message",
+                                    "at"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "reconcilable": {
+                              "type": "boolean"
+                            },
+                            "authorization": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "number": {
+                                      "type": "string"
+                                    },
+                                    "authorizedAt": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "environment": {
+                                      "type": "string",
+                                      "enum": [
+                                        "TEST",
+                                        "PRODUCTION"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "number",
+                                    "authorizedAt",
+                                    "environment"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastResult": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "operation": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEPTION",
+                                        "AUTHORIZATION",
+                                        "VALIDITY"
+                                      ]
+                                    },
+                                    "outcome": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEIVED",
+                                        "RETURNED",
+                                        "KEY_IN_PROCESS",
+                                        "KEY_REGISTERED",
+                                        "SEQUENTIAL_REGISTERED",
+                                        "UNKNOWN",
+                                        "INCONSISTENT",
+                                        "AUTHORIZED",
+                                        "NOT_AUTHORIZED",
+                                        "NO_CONCLUSION",
+                                        "KEY_UNKNOWN",
+                                        "KEY_KNOWN",
+                                        "NO_EVIDENCE",
+                                        "NOT_SENT",
+                                        "UNPARSEABLE"
+                                      ]
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "messages": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "identifier": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "message": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "additionalInformation": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "type": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "identifier",
+                                          "message",
+                                          "additionalInformation",
+                                          "type"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "operation",
+                                    "outcome",
+                                    "at",
+                                    "messages"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "inProgress",
+                            "stopped",
+                            "reconcilable",
+                            "authorization",
+                            "lastResult"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "signedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "documentType",
+                        "environment",
+                        "documentNumber",
+                        "accessKey",
+                        "issueDate",
+                        "state",
+                        "cause",
+                        "reason",
+                        "invoice",
+                        "issuer",
+                        "buyer",
+                        "lines",
+                        "totals",
+                        "declarations",
+                        "diagnostic",
+                        "artifact",
+                        "authorizedArtifact",
+                        "transmission",
+                        "createdAt",
+                        "signedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos; el mensaje indica el campo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La nota de crédito no existe en la empresa (CREDIT_NOTE_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (CREDIT_NOTE_NOT_RECONCILABLE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/credit-notes/{creditNoteId}/signing-attempts": {

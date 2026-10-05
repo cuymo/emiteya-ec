@@ -11,7 +11,7 @@ import { createFiscalUnitOfWork } from "./unit-of-work.ts";
 export { createFiscalScope } from "./unit-of-work.ts";
 export { reserveSequentialIn } from "../application/reservation.ts";
 // Comprobantes y su historial (add-invoice-emission, design D3).
-export { createDocumentRepository } from "./prisma-documents.ts";
+export { createDocumentRepository, toStoredDocument } from "./prisma-documents.ts";
 export { createArtifactStore } from "./prisma-artifacts.ts";
 // Transmisión al SRI (add-sri-transmission, design D1, D6, D15 y D18).
 export { createTransmissionReader } from "./prisma-transmission-reads.ts";

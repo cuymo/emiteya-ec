@@ -121,14 +121,20 @@ import {
   stockMovementViewSchema,
   stockTrackingSchema,
 } from "../inventory.ts";
+import { requestReconciliationSchema as creditNoteReconciliationSchema } from "../invoices.ts";
 import {
   createCreditNoteDraftSchema,
   creditNoteDraftIdParamsSchema,
   creditNoteDraftSummaryViewSchema,
   creditNoteDraftViewSchema,
+  creditInvoiceIdParamsSchema,
   creditNoteIdParamsSchema,
   creditNoteListMetaSchema,
+  creditNoteSummaryViewSchema,
+  creditNoteTransmissionViewSchema,
   creditNoteViewSchema,
+  invoiceCreditViewSchema,
+  listCreditNotesQuerySchema,
   eligibleInvoiceViewSchema,
   emitCreditNoteHeadersSchema,
   emitCreditNoteSchema,
@@ -1563,6 +1569,94 @@ export const apiRoutes: readonly RouteDefinition[] = [
       409: {
         description:
           "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo CREDIT_NOTE_QUANTITY_EXCEEDED, CREDIT_NOTE_AMOUNT_EXCEEDED, CREDIT_NOTE_TOTAL_ANNULMENT_NOT_AVAILABLE, CREDIT_NOTE_PHYSICAL_RETURN_EXCEEDED, CREDIT_NOTE_CONSUMER_FINAL o CREDIT_NOTE_INVOICE_INTEGRITY), o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/credit-notes",
+    summary:
+      "Listar notas de crédito por estado y causa y buscar por número o comprador, las más recientes primero",
+    request: { query: listCreditNotesQuerySchema },
+    responses: {
+      200: {
+        description: "Página de notas de crédito con su factura, su causa y el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(creditNoteSummaryViewSchema),
+          meta: creditNoteListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/credit-notes/invoices/:invoiceId/credit",
+    summary:
+      "Consultar el crédito de una factura: aplicado, reservado y disponible, por línea y con el retorno físico posible",
+    request: { params: creditInvoiceIdParamsSchema },
+    responses: {
+      200: {
+        description: "Crédito de la factura.",
+        schema: successEnvelope(invoiceCreditViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "La factura no existe en la empresa (CREDIT_NOTE_INVOICE_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/credit-notes/:creditNoteId",
+    summary:
+      "Consultar una nota de crédito desde su snapshot: factura modificada, causa, líneas con su retorno físico, declaraciones del usuario, diagnóstico y transmisión",
+    request: { params: creditNoteIdParamsSchema },
+    responses: {
+      200: creditNoteResponse("Nota de crédito."),
+      401: errors[401],
+      403: errors[403],
+      404: creditNoteNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/credit-notes/:creditNoteId/transmission",
+    summary:
+      "Consultar el historial de la transmisión al SRI de una nota de crédito, sin respuestas originales ni XML",
+    request: { params: creditNoteIdParamsSchema },
+    responses: {
+      200: {
+        description: "Las 100 entradas más recientes del historial y el total.",
+        schema: successEnvelope(creditNoteTransmissionViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: creditNoteNotFound,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/credit-notes/:creditNoteId/reconciliations",
+    summary:
+      "Pedir la reconciliación de una nota de crédito con el SRI, con motivo (solo el administrador)",
+    request: { params: creditNoteIdParamsSchema, body: creditNoteReconciliationSchema },
+    responses: {
+      202: creditNoteResponse(
+        "Reconciliación programada con las reglas de la transmisión; la nota con su estado actual.",
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: creditNoteNotFound,
+      409: {
+        description:
+          "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (CREDIT_NOTE_NOT_RECONCILABLE).",
         schema: errorEnvelopeSchema,
       },
     },

@@ -110,7 +110,8 @@ export function creditNoteTransmission(prisma: PrismaClient, store: JobStore) {
       createTransmitHandler({
         ...base(chosen),
         artifacts: createArtifactStore(prisma),
-        sizePolicy: () => Promise.resolve({ maxSignedDocumentBytes: SYNTHETIC_POLICY_BYTES }),
+        // Múltiplo de la cifra SINTÉTICA de pruebas: el XML firmado real de una nota la supera.
+        sizePolicy: () => Promise.resolve({ maxSignedDocumentBytes: SYNTHETIC_POLICY_BYTES * 16 }),
         today: () => "2026-10-05",
         alert: () => {},
       }),
@@ -132,6 +133,22 @@ export function creditNoteTransmission(prisma: PrismaClient, store: JobStore) {
         deadlineAt: new Date(Date.now() + 24 * 3_600_000),
         ...(Object.keys(payload).length > 0 ? { payload } : {}),
       }),
+    /** Arrienda el job pendiente que el propio sistema encoló (por ejemplo, al firmar). */
+    leasePending: async (documentId: string, type: string): Promise<Job> => {
+      const pending = await prisma.job.findFirstOrThrow({
+        where: { documentId, type, status: "PENDING" },
+      });
+      const row = await prisma.job.update({
+        where: { id: pending.id },
+        data: {
+          status: "LEASED",
+          leaseOwner: "worker-de-prueba",
+          leaseExpiresAt: new Date(Date.now() + 60_000),
+          attemptCount: { increment: 1 },
+        },
+      });
+      return row as unknown as Job;
+    },
     authorized: (
       document: TestDocument,
       overrides: Partial<SyntheticAuthorization> = {},

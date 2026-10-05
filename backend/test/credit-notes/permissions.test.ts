@@ -64,7 +64,7 @@ function setup() {
     requested,
     drafts: createCreditNoteDrafts(deps({})),
     emission: createCreditNoteEmission(deps({ builderVersion: "1" })),
-    creditNotes: createCreditNotes(deps({})),
+    creditNotes: createCreditNotes(deps({ conclusionWindowMs: 1 })),
   };
 }
 
@@ -100,6 +100,22 @@ describe("guardia de permisos de notas de crédito (spec credit-notes: Permisos)
       "reintentar la firma",
       "creditNotes.retrySigning",
       (s) => s.creditNotes.retrySigning(CTX, "nota-1"),
+    ],
+    ["listar notas", "creditNotes.read", (s) => s.creditNotes.list(CTX, {})],
+    [
+      "consultar el historial de la transmisión",
+      "creditNotes.read",
+      (s) => s.creditNotes.transmission(CTX, "nota-1"),
+    ],
+    [
+      "consultar el crédito de una factura",
+      "creditNotes.read",
+      (s) => s.creditNotes.invoiceCredit(CTX, "factura-1"),
+    ],
+    [
+      "pedir una reconciliación",
+      "creditNotes.reconcile",
+      (s) => s.creditNotes.requestReconciliation(CTX, "nota-1", { reason: "x" }),
     ],
   ];
 

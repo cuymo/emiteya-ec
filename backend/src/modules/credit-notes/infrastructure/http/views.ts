@@ -2,14 +2,28 @@
 // nota desde su snapshot y las facturas elegibles. Sin XML, respuestas originales ni datos técnicos.
 import {
   CREDIT_NOTE_ELIGIBILITY_DECLARATION,
+  compareDecimalStrings,
   type CreditNoteDraftSummaryView,
   type CreditNoteDraftView,
+  type CreditNoteSummaryView,
+  type CreditNoteTransmissionView,
   type CreditNoteView,
   type EligibleInvoiceView,
+  type InvoiceCreditView,
   type SriMessageView,
 } from "@facturador/contracts";
+import {
+  roundHalfUp,
+  subtractExact,
+  sumExact,
+} from "../../../../platform/decimal/fiscal-decimal.ts";
 import { stopMessage } from "../../../invoices/application/transmission-messages.ts";
-import type { CreditNoteDetails } from "../../application/credit-notes.ts";
+import type {
+  CreditNoteDetails,
+  CreditNoteListItem,
+  CreditNoteTransmission,
+  InvoiceCredit,
+} from "../../application/credit-notes.ts";
 import { creditNoteDiagnosticMessage, isAttemptCode } from "../../application/diagnostics.ts";
 import type { CreditNoteDraftDetails } from "../../application/drafts.ts";
 import type { EligibleInvoice } from "../../application/ports.ts";
@@ -225,5 +239,128 @@ export function toCreditNoteView(details: CreditNoteDetails): CreditNoteView {
     transmission: transmissionView(details),
     createdAt: document.createdAt.toISOString(),
     signedAt: document.signedAt?.toISOString() ?? null,
+  };
+}
+
+const money = (value: string) => roundHalfUp(value, 2);
+
+export function toCreditNoteSummaryView({
+  document,
+  transmissionStopped,
+}: CreditNoteListItem): CreditNoteSummaryView {
+  const snapshot = document.snapshot as CreditNoteSnapshot;
+  const attempt = document.lastAttempt;
+  return {
+    id: document.id,
+    documentNumber: document.documentNumber,
+    environment: document.environment,
+    issueDate: document.issueDate,
+    invoice: { id: snapshot.invoice.id, documentNumber: snapshot.invoice.documentNumber },
+    cause: snapshot.cause,
+    buyerIdentification: document.buyerIdentification,
+    buyerName: document.buyerName,
+    total: money(document.total),
+    state: document.state,
+    diagnosticCode:
+      document.state === "RESERVED" && attempt && isAttemptCode(attempt.code) ? attempt.code : null,
+    transmissionStopped,
+    createdAt: document.createdAt.toISOString(),
+  };
+}
+
+/** Historial de la transmisión: transiciones e intentos resumidos (design D13). */
+export function toCreditNoteTransmissionView({
+  document,
+  events,
+  total,
+}: CreditNoteTransmission): CreditNoteTransmissionView {
+  return {
+    creditNoteId: document.id,
+    state: document.state,
+    events: events.map((event) =>
+      event.kind === "TRANSITION"
+        ? {
+            kind: "TRANSITION",
+            at: event.at.toISOString(),
+            fromState: event.from,
+            toState: event.to,
+            cause: event.cause,
+            actor: event.actor,
+            actorName: event.actorName,
+          }
+        : {
+            kind: "ATTEMPT",
+            at: event.at.toISOString(),
+            operation: event.operation,
+            origin: event.origin,
+            outcome: event.outcome,
+            messages: messagesView(event.messages),
+          },
+    ),
+    total,
+  };
+}
+
+/** Crédito de una factura: aplicado, reservado, disponible y por línea (design D16). */
+export function toInvoiceCreditView({
+  invoice,
+  capacity,
+  returnable,
+}: InvoiceCredit): InvoiceCreditView {
+  const lines = new Map(capacity.lines.map((line) => [line.position, line]));
+  const total = invoice.totals.total;
+  const credited = sumExact([capacity.reserved, capacity.applied]);
+  return {
+    invoiceId: invoice.id,
+    documentNumber: invoice.documentNumber,
+    issueDate: invoice.issueDate,
+    buyerIdentification: invoice.buyer.identification,
+    buyerName: invoice.buyer.legalName,
+    consumerFinal: invoice.consumerFinal,
+    total: money(total),
+    applied: money(capacity.applied),
+    reserved: money(capacity.reserved),
+    available: money(subtractExact(total, credited)),
+    totalAnnulmentAvailable: compareDecimalStrings(credited, "0") === 0,
+    lines: invoice.lines.map((line) => {
+      const state = lines.get(line.position);
+      const reserved = state?.reserved ?? "0";
+      const applied = state?.applied ?? "0";
+      const returns = line.inventoryAffectsStock ? returnable.get(line.productId) : undefined;
+      return {
+        position: line.position,
+        productId: line.productId,
+        mainCode: line.mainCode,
+        description: line.description,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        discount: line.discount,
+        taxableBase: line.taxableBase,
+        taxes: line.taxes.map(({ taxCode, rateCode, percentage, base, amount }) => ({
+          taxCode,
+          rateCode,
+          percentage,
+          base,
+          amount,
+        })),
+        inventoryAffectsStock: line.inventoryAffectsStock,
+        credited: {
+          applied,
+          reserved,
+          available: subtractExact(subtractExact(line.quantity, applied), reserved),
+        },
+        returnable: returns
+          ? {
+              original: returns.original,
+              applied: returns.applied,
+              reserved: returns.reserved,
+              available: subtractExact(
+                subtractExact(returns.original, returns.applied),
+                returns.reserved,
+              ),
+            }
+          : null,
+      };
+    }),
   };
 }

@@ -42,7 +42,8 @@ type Row = {
   authorizationEnvironment: string | null;
 };
 
-const toStored = (row: Row): StoredDocument => ({
+/** Fila del comprobante como `StoredDocument`; la usan las consultas propias de cada tipo. */
+export const toStoredDocument = (row: Row): StoredDocument => ({
   id: row.id,
   companyId: row.companyId,
   documentType: row.documentType as DocumentType,
@@ -111,7 +112,7 @@ export function createDocumentRepository(db: DbClient): DocumentRepository {
           createdBy: document.createdBy,
         },
       });
-      return toStored(row);
+      return toStoredDocument(row);
     },
 
     async recordTransition(transition) {
@@ -131,7 +132,7 @@ export function createDocumentRepository(db: DbClient): DocumentRepository {
 
     async find(companyId, documentId) {
       const row = await db.electronicDocument.findFirst({ where: { id: documentId, companyId } });
-      return row ? toStored(row) : null;
+      return row ? toStoredDocument(row) : null;
     },
 
     async lock(companyId, documentId) {
@@ -142,7 +143,7 @@ export function createDocumentRepository(db: DbClient): DocumentRepository {
         data: { companyId },
       });
       const row = await db.electronicDocument.findFirst({ where: { id: documentId, companyId } });
-      return row ? toStored(row) : null;
+      return row ? toStoredDocument(row) : null;
     },
 
     async list(companyId, query) {
@@ -184,7 +185,7 @@ export function createDocumentRepository(db: DbClient): DocumentRepository {
         }),
         db.electronicDocument.count({ where }),
       ]);
-      return { items: rows.map(toStored), total };
+      return { items: rows.map(toStoredDocument), total };
     },
 
     async acquireAttemptLease(companyId, documentId, now, until) {

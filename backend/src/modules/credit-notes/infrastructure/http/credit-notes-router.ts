@@ -10,8 +10,11 @@ import type { CreditNoteEmission } from "../../application/emission.ts";
 import {
   toCreditNoteDraftSummaryView,
   toCreditNoteDraftView,
+  toCreditNoteSummaryView,
+  toCreditNoteTransmissionView,
   toCreditNoteView,
   toEligibleInvoiceView,
+  toInvoiceCreditView,
 } from "./views.ts";
 
 function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
@@ -72,6 +75,38 @@ export function creditNotesRouter({
       req.body,
     );
     send(res, replayed ? 200 : 201, toCreditNoteView(await creditNotes.details(document)));
+  });
+
+  router.get("/credit-notes", async (req, res) => {
+    const { items, meta } = await creditNotes.list(contextOf(res), req.query);
+    send(res, 200, items.map(toCreditNoteSummaryView), meta);
+  });
+
+  router.get("/credit-notes/invoices/:invoiceId/credit", async (req, res) => {
+    const credit = await creditNotes.invoiceCredit(contextOf(res), param(req.params.invoiceId));
+    send(res, 200, toInvoiceCreditView(credit));
+  });
+
+  router.get("/credit-notes/:creditNoteId", async (req, res) => {
+    send(
+      res,
+      200,
+      toCreditNoteView(await creditNotes.get(contextOf(res), param(req.params.creditNoteId))),
+    );
+  });
+
+  router.get("/credit-notes/:creditNoteId/transmission", async (req, res) => {
+    const view = await creditNotes.transmission(contextOf(res), param(req.params.creditNoteId));
+    send(res, 200, toCreditNoteTransmissionView(view));
+  });
+
+  router.post("/credit-notes/:creditNoteId/reconciliations", async (req, res) => {
+    const details = await creditNotes.requestReconciliation(
+      contextOf(res),
+      param(req.params.creditNoteId),
+      req.body,
+    );
+    send(res, 202, toCreditNoteView(details));
   });
 
   router.post("/credit-notes/:creditNoteId/signing-attempts", async (req, res) => {

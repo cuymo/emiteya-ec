@@ -51,26 +51,40 @@ export function stockReturnCapacity(db: DbClient) {
     return new Map(rows.map((row) => [row.productId, absolute(row.delta.toFixed())]));
   }
 
+  /** Por producto: la salida original y lo reservado y aplicado; sin salida, todo en cero. */
+  async function state(companyId: string, invoiceId: string, productIds: readonly string[]) {
+    const [capacities, original] = await Promise.all([
+      db.stockReturnCapacity.findMany({
+        where: { companyId, invoiceId, productId: { in: [...productIds] } },
+      }),
+      outflows(companyId, invoiceId, productIds),
+    ]);
+    const byId = new Map(capacities.map((row) => [row.productId, row]));
+    return new Map(
+      productIds.map((productId) => {
+        const row = byId.get(productId);
+        const current = row
+          ? {
+              original: row.originalQuantity.toFixed(),
+              reserved: row.reservedQuantity.toFixed(),
+              applied: row.appliedQuantity.toFixed(),
+            }
+          : { original: original.get(productId) ?? "0", reserved: "0", applied: "0" };
+        return [productId, current] as const;
+      }),
+    );
+  }
+
   return {
+    state,
+
     async available(companyId: string, invoiceId: string, productIds: readonly string[]) {
-      const [capacities, original] = await Promise.all([
-        db.stockReturnCapacity.findMany({
-          where: { companyId, invoiceId, productId: { in: [...productIds] } },
-        }),
-        outflows(companyId, invoiceId, productIds),
-      ]);
-      const byId = new Map(capacities.map((row) => [row.productId, row]));
+      const states = await state(companyId, invoiceId, productIds);
       return new Map(
-        productIds.map((productId) => {
-          const row = byId.get(productId);
-          const available = row
-            ? subtractExact(
-                subtractExact(row.originalQuantity.toFixed(), row.appliedQuantity.toFixed()),
-                row.reservedQuantity.toFixed(),
-              )
-            : (original.get(productId) ?? "0");
-          return [productId, available] as const;
-        }),
+        [...states].map(([productId, current]) => [
+          productId,
+          subtractExact(subtractExact(current.original, current.applied), current.reserved),
+        ]),
       );
     },
 

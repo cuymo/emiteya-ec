@@ -371,6 +371,8 @@ apiRouter.use(
     xsd: xsdValidator,
     signing: documentSigning.pipeline(creditNoteSigningProfile()),
     metrics: metrics.registry,
+    jobs: jobStore,
+    conclusionWindowMs: transmissionSettings.poll.windowMs,
   }).routers,
 );
 

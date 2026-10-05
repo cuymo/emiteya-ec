@@ -72,9 +72,9 @@
 
 ## 10. Consulta, transmisión y reconciliación de la nota
 
-- [ ] 10.1 Implementar la consulta (`/credit-notes`, `/credit-notes/{id}`, `/credit-notes/{id}/transmission`) y el crédito de una factura (`/credit-notes/invoices/{invoiceId}/credit`), con sus rutas en OpenAPI. Verificar con pruebas HTTP: detalle con factura, causa, líneas, retorno físico y declaraciones presentadas como declaradas; crédito aplicado, reservado y disponible; búsqueda y paginación; `403`, `401` y otra empresa `404`
-- [ ] 10.2 Implementar la reconciliación manual de la nota (`/credit-notes/{id}/reconciliations`, `creditNotes.reconcile`) con sus eventos de auditoría. Verificar con pruebas HTTP: administrador que reconcilia una nota en revisión manual que pasa a autorizada con su crédito aplicado, operador `403`, estado no reconciliable rechazado y eventos sin SOAP
-- [ ] 10.3 Repetir con una nota de crédito los casos de la transmisión (design D13), con respuestas SINTÉTICAS: recibida, devuelta, error 70, errores 43 y 45, tiempo agotado o resultado incierto, autorizada, no autorizada, revisión manual, reclasificación de la respuesta guardada y reconciliación manual. Verificar que pasan sin cambios en el transporte, la cola ni los clasificadores, y que una nota incierta conserva su capacidad
+- [x] 10.1 Implementar la consulta (`/credit-notes`, `/credit-notes/{id}`, `/credit-notes/{id}/transmission`) y el crédito de una factura (`/credit-notes/invoices/{invoiceId}/credit`), con sus rutas en OpenAPI. Verificar con pruebas HTTP: detalle con factura, causa, líneas, retorno físico y declaraciones presentadas como declaradas; crédito aplicado, reservado y disponible; búsqueda y paginación; `403`, `401` y otra empresa `404`
+- [x] 10.2 Implementar la reconciliación manual de la nota (`/credit-notes/{id}/reconciliations`, `creditNotes.reconcile`) con sus eventos de auditoría. Verificar con pruebas HTTP: administrador que reconcilia una nota en revisión manual que pasa a autorizada con su crédito aplicado, operador `403`, estado no reconciliable rechazado y eventos sin SOAP
+- [x] 10.3 Repetir con una nota de crédito los casos de la transmisión (design D13), con respuestas SINTÉTICAS: recibida, devuelta, error 70, errores 43 y 45, tiempo agotado o resultado incierto, autorizada, no autorizada, revisión manual, reclasificación de la respuesta guardada y reconciliación manual. Verificar que pasan sin cambios en el transporte, la cola ni los clasificadores, y que una nota incierta conserva su capacidad
 
 ## 11. RIDE de la nota de crédito
 

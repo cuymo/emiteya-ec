@@ -523,6 +523,8 @@ export const creditNoteSummaryViewSchema = z.strictObject({
 });
 export type CreditNoteSummaryView = z.infer<typeof creditNoteSummaryViewSchema>;
 
+/** Historial de la transmisión de una nota: las 100 entradas más recientes y el total. */
+export const CREDIT_NOTE_TRANSMISSION_HISTORY_LIMIT = 100;
 export const creditNoteTransmissionViewSchema = z.strictObject({
   creditNoteId: z.string(),
   state: invoiceStateSchema,

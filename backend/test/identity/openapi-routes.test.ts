@@ -82,9 +82,11 @@ describe("rutas documentadas", () => {
       .sort();
     // La descarga del XML autorizado lee un artefacto guardado: no habla con el SRI.
     expect(sri).toEqual([
+      "get /credit-notes/:creditNoteId/transmission",
       "get /documents/:documentId/authorized-xml",
       "get /fiscal-catalogs/sri-transmission-policy",
       "get /invoices/:invoiceId/transmission",
+      "post /credit-notes/:creditNoteId/reconciliations",
       "post /invoices/:invoiceId/reconciliations",
     ]);
   });
