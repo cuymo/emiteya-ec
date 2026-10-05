@@ -99,6 +99,21 @@ export class StockIdempotencyCollisionError extends Error {
   }
 }
 
+/**
+ * El retorno físico de una nota supera lo que queda de la salida de la factura para el producto
+ * (add-credit-notes, design D10). Su `code` es el que espera el puerto de `credit-notes`.
+ */
+export class StockReturnExceededError extends Error {
+  readonly code = "STOCK_RETURN_EXCEEDED";
+  readonly productId: string;
+
+  constructor(productId: string) {
+    super(`el retorno físico del producto ${productId} supera su salida`);
+    this.name = "StockReturnExceededError";
+    this.productId = productId;
+  }
+}
+
 export interface StockRepository {
   find(companyId: string, productId: string): Promise<StoredStock | null>;
   findMany(

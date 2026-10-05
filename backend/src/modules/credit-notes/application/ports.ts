@@ -2,6 +2,7 @@
 // los implementa con Prisma; las lecturas de `invoices` y la capacidad devolvible de `inventory` se
 // inyectan desde `main.ts`, de modo que ningún módulo de los que la nota lee la importa.
 import type { CreditNoteCause } from "@facturador/contracts";
+import type { DbClient } from "../../../platform/db/database.ts";
 import type { CreditedLine } from "../domain/amounts.ts";
 
 /** Una línea de la capacidad acreditable: la cantidad original y lo reservado y aplicado. */
@@ -95,3 +96,39 @@ export interface CreditCapacityRepository {
     at: Date,
   ): Promise<boolean>;
 }
+
+/** Retorno físico de una nota para un producto de la factura. */
+export type ProductReturn = Readonly<{ productId: string; quantity: string }>;
+
+/** Código del error con que la capacidad devolvible rechaza un exceso (design D10). */
+export const STOCK_RETURN_EXCEEDED = "STOCK_RETURN_EXCEEDED";
+
+/**
+ * Capacidad devolvible de las facturas por producto (design D10), sobre la transacción del
+ * llamador. La implementa `inventory` y la compone `main.ts`: `credit-notes` no importa
+ * `inventory`. Es independiente de la capacidad acreditable.
+ */
+export type ReturnCapacity = (db: DbClient) => {
+  /** Disponible por producto: la salida original menos lo aplicado y reservado; cero sin salida. */
+  available(
+    companyId: string,
+    invoiceId: string,
+    productIds: readonly string[],
+  ): Promise<ReadonlyMap<string, string>>;
+  /**
+   * Suma los retornos a lo reservado, por producto en orden estable; un exceso lanza un error con
+   * `code` igual a `STOCK_RETURN_EXCEEDED`.
+   */
+  reserve(input: {
+    companyId: string;
+    invoiceId: string;
+    returns: readonly ProductReturn[];
+  }): Promise<void>;
+  /** Escribe las reservas devolvibles de la nota, ya creada la nota. */
+  record(input: {
+    companyId: string;
+    invoiceId: string;
+    creditNoteId: string;
+    returns: readonly ProductReturn[];
+  }): Promise<void>;
+};
