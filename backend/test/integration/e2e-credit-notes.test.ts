@@ -3,6 +3,8 @@
 // política de tamaño SINTÉTICA. Una factura de dos productos autorizada; una devolución parcial con
 // retorno físico que se autoriza (crédito aplicado, DEVOLUCION_NC y RIDE en la bandeja); otra nota
 // que el SRI no autoriza y libera su capacidad; y la anulación total rechazada por el crédito previo.
+// Los XML de la nota se descargan con su historial de entregas, y su auditoría es solo la de la
+// emisión.
 import { randomBytes, randomUUID } from "node:crypto";
 import type {
   CreditNoteDraftView,
@@ -291,6 +293,24 @@ describe("flujo completo de las notas de crédito", () => {
     const text = (await pageTexts(Buffer.from(await ride.arrayBuffer()))).join(" ");
     expect(text).toContain("NOTA DE CRÉDITO");
     expect(text).toContain(`FACTURA ${invoice.data.documentNumber}`);
+    // Sus XML autorizado y firmado se descargan, y cada descarga queda en su historial de entregas.
+    for (const kind of ["authorized-xml", "signed-xml"]) {
+      const xml = await fetch(`${backend.base}/api/v1/documents/${returned.data.id}/${kind}`, {
+        headers: { cookie: operator, origin: E2E_ORIGIN },
+      });
+      expect([kind, xml.status]).toEqual([kind, 200]);
+      expect(await xml.text()).toContain(returned.data.accessKey);
+    }
+    const deliveries = await api<{ items: { event: string; artifactKind: string }[] }>(
+      "GET",
+      `/documents/${returned.data.id}/deliveries`,
+      operator,
+    );
+    expect(deliveries.data.items.map((d) => `${d.event}:${d.artifactKind}`).sort()).toEqual([
+      "DOWNLOAD:AUTHORIZED_XML",
+      "DOWNLOAD:RIDE_PDF",
+      "DOWNLOAD:SIGNED_XML",
+    ]);
 
     // Nota 2: devolución de la instalación; el SRI simulado no la autoriza y su capacidad se libera.
     sri.notAuthorized.add("04:2");
@@ -355,5 +375,17 @@ describe("flujo completo de las notas de crédito", () => {
     expect(await reconcileStockReturnCapacity(db.database.prisma, companyId)).toEqual([]);
     expect(await reconcileStock(db.database.prisma, companyId)).toEqual([]);
     expect(new Set(proxy.destinations)).toEqual(new Set([`${SRI_HOST}:80`]));
+    // La auditoría de las notas es la de su emisión: la transmisión, la autorización, el crédito
+    // aplicado, la devolución de stock y las descargas no la duplican.
+    const audit = await db.database.prisma.auditEvent.findMany({ orderBy: { occurredAt: "asc" } });
+    const aboutNotes = audit.filter((event) =>
+      [returned.data.id, rejected.data.id].some((id) => JSON.stringify(event.changes).includes(id)),
+    );
+    expect(aboutNotes.map((event) => event.action)).toEqual([
+      "credit_note.reserved",
+      "credit_note.signed",
+      "credit_note.reserved",
+      "credit_note.signed",
+    ]);
   }, 240_000);
 });

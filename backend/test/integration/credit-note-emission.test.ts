@@ -17,6 +17,7 @@ import {
   IVA0,
   insertAuthorizedInvoice,
   recordOutflow,
+  tamperSnapshot,
   type AuthorizedInvoiceDocument,
   type InvoiceCompany,
 } from "./credit-notes-harness.ts";
@@ -244,6 +245,144 @@ describe("emisión de notas de crédito", () => {
       percentage: "15",
       amount: "3.00",
     });
+  });
+
+  it("la vista previa, el snapshot y el XML llevan los mismos importes y el comprador de la factura, sin el retorno ni las declaraciones en el XML", async () => {
+    const target = await invoice();
+    // El tercero cambió su razón social después de facturar: la nota lleva la de la factura.
+    await db.database.prisma.party.update({
+      where: { id: a.customerId },
+      data: { legalName: "FERRETERÍA EL PERNO RENOVADA S.A.", searchName: "ferreteria" },
+    });
+    const created = await draft(target, {
+      lines: [
+        { position: 1, quantity: "3", physicalReturn: "2" },
+        { position: 2, quantity: "1", physicalReturn: "0" },
+      ],
+    });
+    const before = new Date();
+    const res = await emit(api, created);
+    const after = new Date();
+    expect(res.status, JSON.stringify(res.body)).toBe(201);
+    const document = await db.database.prisma.electronicDocument.findUniqueOrThrow({
+      where: { id: bodyOf(res).data.id },
+    });
+    const snapshot = document.snapshot as unknown as CreditNoteSnapshot;
+    expect(snapshot.buyer.legalName).toBe("EL PERNO CIA. LTDA.");
+    // Un solo cálculo: la vista previa del borrador y el snapshot de la nota coinciden.
+    expect(snapshot.totals).toMatchObject(created.preview.totals!);
+    expect(
+      snapshot.lines.map(({ position, quantity, discount, taxableBase }) => ({
+        position,
+        quantity,
+        discount,
+        taxableBase,
+      })),
+    ).toEqual(
+      created.preview.lines.map(({ position, quantity, discount, taxableBase }) => ({
+        position,
+        quantity,
+        discount,
+        taxableBase,
+      })),
+    );
+    // Las declaraciones guardan el usuario y el momento de la emisión.
+    const declaredAt = new Date(snapshot.declarations.declaredAt);
+    expect(declaredAt.getTime()).toBeGreaterThanOrEqual(before.getTime() - 1000);
+    expect(declaredAt.getTime()).toBeLessThanOrEqual(after.getTime() + 1000);
+    // El XML lleva los mismos importes y el comprador de la factura, y no el retorno ni las
+    // declaraciones, que no forman parte del comprobante.
+    const signed = await db.database.prisma.documentArtifact.findFirstOrThrow({
+      where: { documentId: document.id, kind: "SIGNED_XML" },
+    });
+    const xml = Buffer.from(signed.content).toString("utf8");
+    expect(xml).toContain("<razonSocialComprador>EL PERNO CIA. LTDA.</razonSocialComprador>");
+    expect(xml).not.toContain("RENOVADA");
+    expect(xml).toContain(`<valorModificacion>${snapshot.totals.total}</valorModificacion>`);
+    expect(xml).toContain(`<totalSinImpuestos>${snapshot.totals.withoutTaxes}</totalSinImpuestos>`);
+    for (const line of snapshot.lines) {
+      expect(xml).toContain(`<precioTotalSinImpuesto>${line.taxableBase}</precioTotalSinImpuesto>`);
+    }
+    for (const absent of [
+      "physicalReturn",
+      "etorno",
+      "NOT_NEGOTIATED",
+      "NOT_TAX_REFUND",
+      "Declaro",
+    ]) {
+      expect(xml).not.toContain(absent);
+    }
+  });
+
+  it("una factura alterada o a consumidor final se rechaza sin reservar ni auditar, y emitir sin sesión responde 401", async () => {
+    const target = await invoice();
+    const created = await draft(target);
+    // El snapshot de la factura se corrompe después de guardar el borrador.
+    await tamperSnapshot(db.database.prisma, db.name, target.id, (snapshot) => ({
+      ...snapshot,
+      totals: { ...(snapshot.totals as Record<string, unknown>), total: "1.00" },
+    }));
+    const before = await trace();
+    const noteAudit = () =>
+      db.database.prisma.auditEvent.count({ where: { action: { startsWith: "credit_note." } } });
+    const auditBefore = await noteAudit();
+    const altered = await emit(api, created);
+    expect([altered.status, bodyOf(altered).error.code]).toEqual([
+      409,
+      "CREDIT_NOTE_INVOICE_INTEGRITY",
+    ]);
+    // Nada se repara con los datos vigentes: el snapshot alterado sigue igual.
+    const stored = await db.database.prisma.electronicDocument.findUniqueOrThrow({
+      where: { id: target.id },
+    });
+    expect((stored.snapshot as { totals: { total: string } }).totals.total).toBe("1.00");
+
+    const consumerFinal = await insertAuthorizedInvoice(
+      db.database.prisma,
+      companyOf(a),
+      [{ productId: good, quantity: "1", unitPrice: "10.00" }],
+      { consumerFinal: true },
+    );
+    const refused = await request(api.app)
+      .post("/api/v1/credit-notes/drafts")
+      .set("Cookie", a.cookies.operator)
+      .send({
+        invoiceId: consumerFinal.id,
+        emissionPointId: a.emissionPointId,
+        cause: "RETURN",
+        reason: "Devolución",
+        lines: [{ position: 1, quantity: "1" }],
+      });
+    expect([refused.status, bodyOf(refused).error.code]).toEqual([
+      409,
+      "CREDIT_NOTE_CONSUMER_FINAL",
+    ]);
+    const anonymous = await request(api.app)
+      .post("/api/v1/credit-notes")
+      .set("Idempotency-Key", randomUUID())
+      .send({ draftId: created.id, expectedVersion: created.version, declarations: DECLARATIONS });
+    expect(anonymous.status).toBe(401);
+    // Ningún rechazo reservó número ni capacidad, ni dejó idempotencia o auditoría de la nota.
+    expect(await trace()).toEqual(before);
+    expect(await noteAudit()).toBe(auditBefore);
+  });
+
+  it("con el control del producto desactivado después de facturar, el retorno físico se acepta", async () => {
+    const target = await invoice();
+    await db.database.prisma.product.update({ where: { id: good }, data: { stockTracked: false } });
+    try {
+      const res = await emit(
+        api,
+        await draft(target, { lines: [{ position: 1, quantity: "2", physicalReturn: "2" }] }),
+      );
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+      expect(bodyOf(res).data.lines).toMatchObject([{ position: 1, physicalReturn: "2" }]);
+    } finally {
+      await db.database.prisma.product.update({
+        where: { id: good },
+        data: { stockTracked: true },
+      });
+    }
   });
 
   it("rechaza sin reservar número: declaración faltante, cantidad excedida y retorno no permitido o excedido", async () => {

@@ -1,7 +1,8 @@
 // Dirección de las dependencias de las notas de crédito (add-credit-notes, design D1): la nota lee la
 // factura y usa las operaciones de `fiscal` y del inventario, nunca al revés. `fiscal`, `invoices` e
 // `inventory` no importan `credit-notes`: sus puertos, sus seguidores y la lectura de la factura los
-// compone el arranque.
+// compone el arranque. Y solo la conclusión de la nota aplica o libera su capacidad (design D7): no
+// hay un job ni un barrido que la libere por antigüedad.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,6 +45,31 @@ describe("dirección de las dependencias de las notas de crédito", () => {
     const returns = main.indexOf("creditNoteReturnFollower(");
     expect(capacity).toBeGreaterThan(0);
     expect(returns).toBeGreaterThan(capacity);
+  });
+
+  it("solo la conclusión de una nota aplica o libera su capacidad: ningún job ni barrido la libera", () => {
+    const files = sourceFiles(SRC);
+    // Los únicos que concluyen una reserva son los seguidores de la transición de la nota.
+    expect(
+      files
+        .filter(({ content }) => /\.conclude\(/.test(content))
+        .map(({ path }) => path)
+        .sort(),
+    ).toEqual([
+      "modules/credit-notes/application/followers.ts",
+      "modules/inventory/application/credit-note-return.ts",
+    ]);
+    // Ningún job, runner ni barrido toca las reservas, por antigua que sea una nota sin conclusión.
+    expect(
+      files
+        .filter(({ path }) => /jobs|runner|sweeper/.test(path))
+        .filter(({ content }) =>
+          /creditReservation|credit_reservation|stockReturnReservation|stock_return_reservation/.test(
+            content,
+          ),
+        )
+        .map(({ path }) => path),
+    ).toEqual([]);
   });
 
   it("detecta cada violación en archivos de ejemplo", () => {

@@ -115,6 +115,14 @@ describe("repositorio del inventario", () => {
       await append({ productId: product, delta: "1.25" }),
     ];
     expect(movements.map((movement) => movement.position)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    // INICIAL de 10, entrada de 5, salida de una factura de 3 y ajuste de -1: el saldo es 11.
+    expect(movements.slice(0, 4).map((m) => [m.type, m.delta])).toEqual([
+      ["INICIAL", "10"],
+      ["ENTRADA_MANUAL", "5"],
+      ["SALIDA_FACTURA", "-3"],
+      ["AJUSTE", "-1"],
+    ]);
+    expect(movements[3]!.balanceAfter).toBe("11");
     for (let index = 1; index < movements.length; index++) {
       expect(movements[index]!.balanceAfter).toBe(
         sumExact([movements[index - 1]!.balanceAfter, movements[index]!.delta]),

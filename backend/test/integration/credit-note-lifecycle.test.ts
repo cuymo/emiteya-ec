@@ -5,7 +5,9 @@
 // devuelta y no autorizada, capacidades liberadas sin devolución y filas conservadas; verificando,
 // revisión manual, job detenido, error de transporte o del parser y reintentos agotados, capacidades
 // reservadas; repetir cada decisión no aplica ni libera dos veces; y el control del producto
-// desactivado después de facturar no impide la devolución.
+// desactivado después de facturar no impide la devolución. Sin retorno físico declarado, una
+// anulación total o una devolución autorizadas no cambian el inventario, y una nota reservada o
+// firmada todavía no devuelve nada.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
@@ -226,6 +228,45 @@ describe("ciclo de vida de la capacidad de una nota de crédito", () => {
       expect(await devolutionsOf(note)).toEqual([]);
     }
     expect((await capacityOf(invoice)).reservedTotal.toFixed()).toBe("57.5");
+    await reconciled();
+  });
+
+  it("sin retorno físico declarado, una anulación total o una devolución autorizadas no cambian el inventario; reservada o firmada tampoco devuelve", async () => {
+    const product = await insertProduct(prisma, company);
+    const annulled = await invoiceOf(product);
+    const annulment = await insertCreditNote(prisma, company, annulled, {
+      cause: "TOTAL_ANNULMENT",
+      lines: [
+        { position: 1, quantity: "5" },
+        { position: 2, quantity: "5" },
+      ],
+    });
+    const returned = await invoiceOf(product);
+    const withoutReturn = await insertCreditNote(prisma, company, returned, {
+      lines: [{ position: 1, quantity: "3", physicalReturn: "0" }],
+    });
+    // Dos salidas de 10 sobre un inventario inicial de 100.
+    expect(await balanceOf(prisma, company.companyId, product)).toBe("80");
+    for (const note of [annulment, withoutReturn]) {
+      sri.reply(note, [sri.authorized(note)]);
+      await sri.authorize().run(await sri.jobFor(note, "sri.authorize"), sri.context());
+      expect(await stateOf(note.id)).toBe("AUTHORIZED");
+      expect((await reservationOf(note)).status).toBe("APPLIED");
+      expect(await returnsOf(note)).toEqual([]);
+      expect(await devolutionsOf(note)).toEqual([]);
+    }
+    expect((await capacityOf(annulled)).appliedTotal.toFixed(2)).toBe(annulled.total);
+
+    // Con retorno físico declarado, una nota reservada o firmada todavía no devuelve nada.
+    const pending = await invoiceOf(product);
+    const lines = [{ position: 1, quantity: "2", physicalReturn: "2" }];
+    const reserved = await insertCreditNote(prisma, company, pending, { lines, state: "RESERVED" });
+    const signed = await insertCreditNote(prisma, company, pending, { lines, state: "SIGNED" });
+    for (const note of [reserved, signed]) {
+      expect((await returnsOf(note)).map((r) => r.status)).toEqual(["RESERVED"]);
+      expect(await devolutionsOf(note)).toEqual([]);
+    }
+    expect(await balanceOf(prisma, company.companyId, product)).toBe("70");
     await reconciled();
   });
 
