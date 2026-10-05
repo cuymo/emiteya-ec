@@ -272,7 +272,15 @@ Las requiere la arquitectura, aunque no son conceptos de negocio:
 
 - registro de idempotencia (`idempotency_record`, Q-30): empresa, operación, clave, huella de la solicitud y comprobante; de solo agregado y sin expiración durante la vida fiscal;
 - historial de transiciones de estado (`document_state_transition`): estado anterior y nuevo, causa, actor y metadatos, en la misma transacción que la transición;
-- job persistido (`job`, ADR 0012): tipo (`sri.transmit`, `sri.authorize` o `sri.reconcile`), clave de deduplicación, comprobante, estado (`PENDING`, `LEASED`, `DONE` o `STOPPED`), intentos, plazo, arriendo, origen con su solicitante y motivo, y último error. Un solo job `sri.*` activo por comprobante; sus estados no son estados fiscales.
+- job persistido (`job`, ADR 0012): tipo (`sri.transmit`, `sri.authorize` o `sri.reconcile`), clave de deduplicación, comprobante, estado (`PENDING`, `LEASED`, `DONE` o `STOPPED`), intentos, plazo, arriendo, origen con su solicitante y motivo, y último error. Un solo job `sri.*` activo por comprobante; sus estados no son estados fiscales;
+- borrador de nota de crédito (`credit_note_draft` y sus líneas, `add-credit-notes`): factura, punto, causa, motivo y, por posición de la factura, la cantidad (solo en la devolución) y el retorno físico; pasa a `EMITTED` en la misma transacción que crea la nota;
+- capacidad acreditable (`credit_capacity` y `credit_capacity_line`): por factura, su total original y lo reservado y aplicado; por línea, la cantidad original, el producto del snapshot y lo reservado y aplicado. Nace con la primera nota de la factura;
+- reserva de crédito (`credit_reservation` y sus líneas): la nota, la causa, el valor y, por línea, la cantidad, los importes calculados y el retorno físico; `RESERVED`, `APPLIED` o `RELEASED`, de solo agregado salvo su conclusión;
+- capacidad y reserva devolvibles (`stock_return_capacity` y `stock_return_reservation`, de `inventory`): por factura y producto, lo que sacó su salida y lo reservado y aplicado por los retornos físicos de las notas.
+
+Los triggers diferidos comprueban al confirmar que cada capacidad es la suma de sus reservas por
+estado, que una reserva corresponde al estado de su nota y que una nota terminal no conserva capacidad
+reservada.
 
 Ver `../architecture/fiscal-emission.md`, `../architecture/idempotency.md` y
 `../architecture/database.md`.
@@ -341,7 +349,12 @@ transición inicial y la auditoría `invoice.reserved`, y `FiscalXmlSigned` como
 `invoice.signing_retried`. En `add-sri-transmission`, cada llamada al SRI queda en `sri_attempt`;
 cada cambio de estado, en `document_state_transition` (con la causa `TRANSMISSION`,
 `AUTHORIZATION` o `RECONCILIATION`), y la reconciliación pedida por el administrador, en las
-auditorías `invoice.reconciliation_requested` e `invoice.reconciliation_completed`.
+auditorías `invoice.reconciliation_requested` e `invoice.reconciliation_completed`. La nota de
+crédito (`add-credit-notes`) usa los mismos eventos con sus auditorías `credit_note.reserved` (con
+las declaraciones y su versión), `credit_note.signed`, `credit_note.signing_retried`,
+`credit_note.reconciliation_requested` y `credit_note.reconciliation_completed`; su conclusión aplica
+o libera la reserva de crédito y, al autorizarse, registra la `DEVOLUCION_NC` en la misma
+transacción que la transición.
 
 | Evento                       | Disparador                                             | Consumidores                                    |
 | ---------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
@@ -353,10 +366,10 @@ auditorías `invoice.reconciliation_requested` e `invoice.reconciliation_complet
 | `SriSendAttempted`           | Llamada a recepción iniciada.                          | Auditoría, métricas.                            |
 | `SriSendUnknown`             | Resultado incierto del envío, o errores 70, 43 y 45.   | Job de reconciliación.                          |
 | `SriReceived`                | Recepción `RECIBIDA`.                                  | Job de autorización.                            |
-| `SriReturned`                | Recepción `DEVUELTA`.                                  | Bandeja, métricas.                              |
+| `SriReturned`                | Recepción `DEVUELTA`.                                  | Bandeja, métricas, liberación de la capacidad de la nota de crédito. |
 | `SriAuthorizationPending`    | Autorización en procesamiento.                         | Job de autorización con backoff.                |
-| `SriAuthorized`              | Autorización `AUTORIZADO`.                             | RIDE, salida de inventario (Q-18), entrega, auditoría. |
-| `SriNotAuthorized`           | Autorización `NO AUTORIZADO`.                          | Bandeja, auditoría.                             |
+| `SriAuthorized`              | Autorización `AUTORIZADO`.                             | RIDE, salida de inventario (Q-18), aplicación del crédito y devolución de la nota de crédito, entrega, auditoría. |
+| `SriNotAuthorized`           | Autorización `NO AUTORIZADO`.                          | Bandeja, auditoría, liberación de la capacidad de la nota de crédito. |
 | `SriMessageRecorded`         | Mensaje del SRI persistido.                            | Bandeja.                                        |
 | `FiscalRideGenerated`        | RIDE generado desde el comprobante autorizado.         | Entrega.                                        |
 | `FiscalDocumentDelivered`    | Entrega registrada.                                    | Bandeja.                                        |
@@ -429,9 +442,10 @@ se repiten aquí.
 - **BR-37** En la guía de remisión, la fecha de inicio del traslado no es anterior a la fecha de emisión (CTX §15.4).
 - **BR-38** La liquidación de compra es un flujo separado de la factura y solo se usa en los casos que la normativa permite (ERS RF-250, RF-253; Q-12).
 - **BR-59** Las causas de la nota de crédito del MVP son cerradas: `TOTAL_ANNULMENT` y `RETURN`. El motivo es texto para el comprobante y nunca selecciona comportamiento. Los descuentos y bonificaciones, que la norma permite, son la capacidad futura `credit-note-discounts-bonuses`: un alcance del MVP, no una prohibición legal (Q-10).
-- **BR-60** `TOTAL_ANNULMENT` acredita el total de la factura, reproducido desde su snapshot, y solo existe mientras la factura no tiene ningún crédito previo; no es la anulación de un saldo restante. No implica retorno físico.
+- **BR-60** `TOTAL_ANNULMENT` acredita el total de la factura, reproducido desde su snapshot, y solo existe mientras la factura no tiene ningún crédito previo, reservado ni aplicado; no es la anulación de un saldo restante. No implica por sí misma un retorno físico: el usuario lo declara por línea, como en la devolución, y solo eso vuelve al inventario (BR-45).
 - **BR-61** En `RETURN`, parcial o total, cada línea de la nota referencia una línea de la factura con la cantidad que acredita; no hay líneas libres. Precio, base, descuento e impuestos se derivan del estado fiscal de la línea original con decimal exacto, y la última nota que completa una línea toma exactamente el remanente, así que la suma de las notas nunca difiere en centavos del documento original.
 - **BR-62** Antes de reservar una nota, el usuario declara por separado que la factura no es una factura comercial negociable negociada y que no sustentó una devolución de impuestos. Sin ambas declaraciones no se emite. La nota guarda en su snapshot inmutable la versión de la declaración, cada afirmación, el actor y el momento: es una elegibilidad declarada por el usuario, no verificada por el sistema, y nunca anula una exclusión que el sistema conoce (Q-10).
+- **BR-63** La capacidad acreditable (el total y cada línea de la factura) y la devolvible (lo que la salida de la factura sacó, por producto) son independientes: una devolución sin retorno físico consume solo la primera. Una nota toma ambas al emitirse, en la misma transacción que su número y antes de cualquier XML, firma o llamada al SRI, y las conserva reservadas hasta su conclusión: las aplica en la transacción que la lleva a `AUTHORIZED` y las libera en la que la lleva a `RETURNED` o `NOT_AUTHORIZED`. Falla cerrada: un problema operativo, un resultado incierto o una revisión manual nunca liberan capacidad, y no hay un barrido que lo haga; solo concluye la transmisión o la reconciliación del administrador (design D7 y D25 de `add-credit-notes`). Las reservas son de solo agregado.
 
 ### Catálogos
 

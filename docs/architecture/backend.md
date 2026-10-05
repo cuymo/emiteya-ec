@@ -196,7 +196,7 @@ autorizadas, con capacidades que fallan cerradas:
 - **Capacidad devolvible.** Por factura y producto (`stock_return_capacity`), igual a la salida de la factura, independiente de la acreditable.
 - **Ciclo de vida, fallando cerrado.** La capacidad queda reservada en `RESERVED`, `SIGNED`, `RECEIVED`, `SEND_UNKNOWN` y `MANUAL_REVIEW`. En la transacción de la transición terminal de la nota, `creditCapacityFollower` la aplica (`AUTHORIZED`) o la libera (`RETURNED`, `NOT_AUTHORIZED`), y después `creditNoteReturnFollower` aplica el retorno físico con su `DEVOLUCION_NC` o lo libera. Un resultado incierto, un job detenido, un error de transporte o del parser, los reintentos agotados o una caída no la liberan, y no existe un job de limpieza por antigüedad. Los triggers diferidos de design D25 rechazan al confirmar una reserva que no corresponde al estado de su nota.
 - **Reconciliación.** `reconcileCreditCapacity` y `reconcileStockReturnCapacity` comparan cada capacidad con sus reservas; las usan las pruebas y `bench:credit-notes`.
-- **Métricas.** `credit_note_reservations_total{cause}` y `credit_note_reservation_conflicts_total{reason}` (`../quality/observability.md`).
+- **Métricas.** `credit_note_reservations_total{cause}`, `credit_note_reservation_conflicts_total{reason}` y `credit_note_reservations_unconcluded_over_24h`, la señal de la alerta de reservas sin conclusión (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
 
 ## Sensitive Operations
 

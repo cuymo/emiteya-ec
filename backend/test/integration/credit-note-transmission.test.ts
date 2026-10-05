@@ -9,7 +9,12 @@ import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import type { DocumentTransitionFollower } from "../../src/modules/fiscal/application/document-transitions.ts";
 import { RIDE_JOB_TYPE } from "../../src/modules/fiscal/application/archive/ride-jobs.ts";
+import { Registry } from "@prometheus-io/client";
 import { reconcileCreditCapacity } from "../../src/modules/credit-notes/infrastructure/index.ts";
+import {
+  STALE_RESERVATION_MS,
+  registerCreditNoteMetrics,
+} from "../../src/modules/credit-notes/infrastructure/metrics.ts";
 import { createPrismaJobStore, type JobStore } from "../../src/platform/jobs/prisma-job-store.ts";
 import { failure, receptionResponse, response } from "../support/sri-responses.ts";
 import {
@@ -165,6 +170,27 @@ describe("transmisión de una nota de crédito", () => {
       "MANUAL_REVIEW",
       "RESERVED",
     ]);
+  });
+
+  it("la señal de la alerta cuenta las reservas sin concluir de más de 24 horas", async () => {
+    const review = await note(await invoice(), "RECEIVED");
+    sri.reply(review, [sri.authorized(review), sri.authorized(review)]);
+    await sri.authorize().run(await sri.jobFor(review, "sri.authorize"), sri.context());
+    expect(await stateOf(review.id)).toBe("MANUAL_REVIEW");
+    const gauge = async (now: Date) => {
+      const registry = new Registry();
+      registerCreditNoteMetrics(registry, { prisma, now: () => now });
+      const text = await registry.getSingleMetricAsString(
+        "credit_note_reservations_unconcluded_over_24h",
+      );
+      return Number(/^credit_note_reservations_unconcluded_over_24h (\d+)$/m.exec(text)![1]);
+    };
+    // Hoy ninguna lleva 24 horas; pasado el plazo, cuenta cada reserva RESERVED, incluida la de la
+    // nota en revisión manual, y ninguna concluida.
+    expect(await gauge(new Date())).toBe(0);
+    const reserved = await prisma.creditReservation.count({ where: { status: "RESERVED" } });
+    expect(reserved).toBeGreaterThan(0);
+    expect(await gauge(new Date(Date.now() + STALE_RESERVATION_MS + 60_000))).toBe(reserved);
   });
 
   it("la decisión local que falla después de guardar la respuesta se reclasifica sin volver a llamar al SRI", async () => {

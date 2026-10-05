@@ -139,7 +139,9 @@ export function creditNotesModule(options: CreditNotesModuleOptions) {
     ...(options.signAfterReserve === false
       ? {}
       : { continueToSigned: options.signing.continueToSigned }),
-    ...(options.metrics ? { observer: registerCreditNoteMetrics(options.metrics) } : {}),
+    ...(options.metrics
+      ? { observer: registerCreditNoteMetrics(options.metrics, { prisma: options.prisma, now }) }
+      : {}),
   });
   return {
     routers: [

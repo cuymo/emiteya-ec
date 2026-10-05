@@ -117,6 +117,41 @@ transmisión con su código, sin datos del comprador; el job reintenta con la re
 guardada. La reconciliación diagnóstica (`reconcileStock`) no es un endpoint: la usan las pruebas y
 `bench:inventory`.
 
+## Notas de crédito
+
+Señales de `add-credit-notes` (design D20), en `/metrics` y sin la empresa, la factura ni la nota en
+las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `credit_note_reservations_total{cause}` | Counter | Notas reservadas al emitir, por causa (`RETURN`, `TOTAL_ANNULMENT`). Una repetición con la misma `Idempotency-Key` no cuenta. |
+| `credit_note_reservation_conflicts_total{reason}` | Counter | Emisiones rechazadas por capacidad, por motivo: `QUANTITY` (`CREDIT_NOTE_QUANTITY_EXCEEDED`), `AMOUNT` (`CREDIT_NOTE_AMOUNT_EXCEEDED`), `TOTAL_ANNULMENT` (`CREDIT_NOTE_TOTAL_ANNULMENT_NOT_AVAILABLE`) y `PHYSICAL_RETURN` (`CREDIT_NOTE_PHYSICAL_RETURN_EXCEEDED`) |
+| `credit_note_reservations_unconcluded_over_24h` | Gauge | Reservas acreditables `RESERVED` de hace más de 24 horas, leídas de la base en cada consulta de las métricas |
+| `inventory_movements_total{type="DEVOLUCION_NC"}` | Counter | Devoluciones al inventario de las notas autorizadas, contadas al registrarlas en la transacción de la conclusión |
+
+La transmisión, la reconciliación y el RIDE de la nota usan las señales de la transmisión y del
+archivo documental (`fiscal_jobs`, `sri_attempts_total`, `fiscal_documents{state}`,
+`ride_render_duration_seconds`…), sin una etiqueta de tipo: la nota no tiene métricas propias de
+transmisión.
+
+Alerta propuesta: reservas de capacidad sin conclusión durante más de 24 horas,
+`credit_note_reservations_unconcluded_over_24h > 0`. Fallar cerrado es intencional (design D7): una
+nota en revisión manual o con resultado incierto retiene su crédito y su retorno físico hasta que su
+transmisión concluye o un administrador la reconcilia (`POST /api/v1/credit-notes/{id}/reconciliations`),
+y no hay un barrido que la libere. Una reserva `RESERVED` con su nota en un estado terminal no puede
+existir: la base la rechaza al confirmar (design D25). Un aumento sostenido de
+`credit_note_reservation_conflicts_total` indica notas que compiten por la misma factura o vistas
+previas desactualizadas.
+
+Un fallo del seguidor de la conclusión revierte la transición de la nota y queda en el log del job de
+la transmisión, sin datos del comprador; el job reintenta con la respuesta del SRI ya guardada. La
+reconciliación diagnóstica de las capacidades (`reconcileCreditCapacity` y
+`reconcileStockReturnCapacity`) no es un endpoint: la usan las pruebas y `bench:credit-notes`. Los
+eventos de auditoría (`credit_note.reserved`, `credit_note.signed`,
+`credit_note.signing_retried`, `credit_note.reconciliation_requested`,
+`credit_note.reconciliation_completed`) llevan la nota, su
+número, la factura y las declaraciones con su versión; nunca XML, SOAP ni la clave del certificado.
+
 ## Logging Rules
 
 - Do not log secrets.

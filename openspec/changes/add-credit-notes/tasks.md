@@ -101,7 +101,7 @@
 
 - [x] 14.1 Añadir `bench:credit-notes` en `backend/scripts/` (design D21), con la contención (reservas por segundo y espera por bloqueos cuando es material), y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 donde aplica, el RIDE de la nota menos de 1 s, y que termina con la reconciliación de las capacidades sin diferencias
 - [x] 14.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado: factura con dos productos autorizada; devolución parcial con retorno físico autorizada (crédito aplicado, `DEVOLUCION_NC`, RIDE en la bandeja); otra nota no autorizada que libera su capacidad; y anulación total rechazada por el crédito previo. Verificar que la prueba pasa
-- [ ] 14.3 Documentar las métricas y la alerta en `observability.md`, y actualizar `domain-model.md`, `glossary.md` y `capabilities.md` con lo implementado. Verificar que los documentos citan las rutas, los permisos, los códigos de error y las métricas implementados
+- [x] 14.3 Documentar las métricas y la alerta en `observability.md`, y actualizar `domain-model.md`, `glossary.md` y `capabilities.md` con lo implementado. Verificar que los documentos citan las rutas, los permisos, los códigos de error y las métricas implementados
 
 ## 15. Verificación
 
