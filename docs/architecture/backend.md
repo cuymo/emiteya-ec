@@ -102,7 +102,7 @@ Responsibilities:
 
 En este proyecto (Q-30, design D8 de `add-invoice-emission`):
 
-- `POST /api/v1/invoices` exige `Idempotency-Key`; sin ella, `400 IDEMPOTENCY_KEY_REQUIRED`. Es hoy la única operación con clave.
+- `POST /api/v1/invoices` exige `Idempotency-Key`; sin ella, `400 IDEMPOTENCY_KEY_REQUIRED`. Las entradas y los ajustes del inventario siguen el mismo contrato, con su clave guardada en el movimiento (`add-minimal-inventory`, design D7).
 - La clave reutilizada con otra solicitud responde `409 IDEMPOTENCY_KEY_REUSED`, no `422`.
 - El alcance es empresa, operación y clave, sin usuario. El registro es durable en PostgreSQL y no expira durante la vida fiscal útil del documento.
 - El registro se escribe en la misma transacción que el efecto, no con un reclamo previo. Detalle y diferencias con la plantilla en `idempotency.md`.
@@ -140,6 +140,7 @@ En este proyecto (Q-30, design D8 de `add-invoice-emission`):
   - el render corre en `RideWorkerPool`, una instancia de la primitiva `platform/workers/worker-pool.ts` independiente del pool criptográfico;
   - un pool ocupado o un apagado reprograman sin gastar el intento; un plazo vencido, un worker caído o un error inesperado reintentan con backoff hasta `RIDE_JOB_MAX_ATTEMPTS`; un rechazo determinista detiene el job con su motivo. El comprobante sigue `AUTHORIZED`;
   - un usuario con `archive.retryRide` reintenta una generación detenida.
+- Inventario (`add-minimal-inventory`, design D5): la salida de una factura no es un job. La registra un seguidor de las transiciones en la misma transacción que la transición a `AUTHORIZED`; un fallo revierte la autorización, el job reintenta y reclasifica la respuesta ya guardada del SRI sin volver a llamarlo.
 - Cancellation: los jobs fiscales no se cancelan, porque el comprobante ya tiene efectos ante el SRI; un administrador puede ordenar una reconciliación manual, que también reactiva un envío detenido. `MANUAL_REVIEW` es un estado fiscal y solo sale con esa reconciliación (Q-06, resuelta en `add-sri-transmission`). Los jobs de exportación sí se cancelan.
 - Progress reporting: el estado fiscal del comprobante es el progreso visible; las exportaciones informan su avance.
 
@@ -147,6 +148,22 @@ Use persisted jobs for long-running work that must continue after browser refres
 
 Jobs may run more than once. Give each a deduplication key and make its handler idempotent;
 see `idempotency.md`.
+
+## Inventario
+
+El módulo `inventory` (`add-minimal-inventory`) lleva stock contabilizado por hechos fiscales
+autorizados, nunca una reserva de disponibilidad:
+
+- **Capas.**
+  - `domain/stock.ts`: el signo de cada tipo de movimiento, el estado derivado (`NOT_TRACKED`, `TRACKED_NOT_INITIALIZED`, `TRACKED_INITIALIZED`, `DISABLED_INITIALIZED`), las salidas de una factura agrupadas por producto en orden estable y el rango del kárdex en fechas de Ecuador;
+  - `application/`: los casos de uso (inicializar, fijar el control, entradas, ajustes, lista, detalle y kárdex) y el seguidor de la autorización (`invoice-outflow.ts`);
+  - `infrastructure/`: el repositorio del saldo y del kárdex, sus lecturas, la unidad de trabajo, la reconciliación diagnóstica, las métricas y las rutas.
+- **Dirección.** `fiscal`, `invoices` y `products` no importan `inventory`. `main.ts` compone el seguidor `inventoryOutflowFollower`, `StockReads` para `invoices` (la decisión de cada línea en el snapshot versión 2 y los avisos del borrador) e `InventoryInitialization` para `products` (la marca de un producto con inventario solo cambia desde el inventario). El inventario lee el producto, la página de la lista y la marca con la lectura exportada de `products`, y las líneas de la factura con la de `invoices`; nunca sus tablas.
+- **Saldo.** Un saldo materializado por producto (`stock_balance`) y un kárdex de solo agregado (`stock_movement`) con variaciones con signo. Cada movimiento suma su variación con una actualización atómica que bloquea la fila del saldo hasta el fin de la transacción y toma de ella su posición y su saldo resultante; nunca se lee, se calcula y se escribe. Los triggers de la base encadenan cada movimiento con el anterior y comprueban al confirmar que el saldo es el resultante de su último movimiento (`database.md`).
+- **Concurrencia.** La inicialización, el control, las entradas, los ajustes y la corrección de la marca toman un lock transaccional por empresa y producto (`pg_advisory_xact_lock`). Una factura bloquea los saldos de sus productos en orden de `productId`, así que dos facturas con los mismos productos no se bloquean entre sí.
+- **Salida.** Solo de las líneas con `inventoryAffectsStock` en el snapshot, congelado al reservar: el seguidor no consulta el producto ni la marca vigentes, así que desactivar el control no cancela las salidas de las facturas ya emitidas.
+- **Reconciliación.** `reconcileStock` compara cada saldo con la suma de su kárdex; la usan las pruebas y `bench:inventory`. No hay ruta para recalcular ni fijar el saldo.
+- **Métricas.** `inventory_movements_total{type}` e `inventory_negative_balances` (`observability.md`).
 
 ## Sensitive Operations
 

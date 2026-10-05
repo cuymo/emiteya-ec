@@ -113,20 +113,34 @@ pendientes (`Q-xx`) están en `open-questions.md`.
   - Código principal único por empresa cuando existe (ERS RF-301), también con productos desactivados. El XSD decide si es obligatorio en cada caso (CTX §12.4).
   - El precio unitario es un decimal exacto sin impuestos, con la escala de `precioUnitario` (`decimal-policy.md`).
   - Refiere exactamente una tarifa de IVA, como mucho un ICE y como mucho un IRBPNR, por la identidad de la entrada (`catalogType`, `entryKey`); nunca copia una tarifa (CTX §12.5).
-  - Un servicio no lleva control de stock ni IRBPNR; el estado final de cada corrección lo cumple. `stockTracked` es solo un dato hasta el inventario (ADR 0006).
+  - Un servicio no lleva control de stock ni IRBPNR; el estado final de cada corrección lo cumple. Antes de inicializar su inventario, administradores y operadores cambian `stockTracked` desde la corrección del producto; después, solo un administrador lo cambia desde el inventario (`add-minimal-inventory`, design D11).
   - Su estado tributario (`READY`, `REVIEW_REQUIRED`, `INCOMPLETE`) se deriva de sus referencias en una fecha y nunca se guarda.
   - Se desactiva y se reactiva; nunca se borra.
 - Relationships: aparece en líneas de comprobante; tiene movimientos de inventario.
 
+### `stock_balance` — Saldo de inventario
+
+- Purpose: existencias contabilizadas de un producto con inventario inicializado (`add-minimal-inventory`, design D2).
+- Key attributes: empresa y producto (su clave), saldo, posición del último movimiento, fecha y persona de la inicialización.
+- Invariants:
+  - Existe solo desde la inicialización, que es única; sin él, el producto no tiene saldo, nunca cero.
+  - Es el saldo después de su último movimiento y, con la cadena de movimientos, la suma exacta de las variaciones de su kárdex; los triggers de la base lo comprueban al confirmar.
+  - Cambia solo con un movimiento, por una actualización atómica; no hay ruta para fijarlo ni recalcularlo. Nunca se borra.
+  - Puede ser negativo (Q-19).
+- Relationships: pertenece a un producto; tiene sus movimientos.
+
 ### `stock_movement` — Movimiento de inventario
 
 - Purpose: variación de existencias de un producto controlado.
-- Key attributes: producto, tipo, cantidad con signo, fecha, usuario, comprobante de origen, motivo.
+- Key attributes: producto, posición, tipo, variación con signo, saldo resultante, momento, origen (usuario o sistema), actor, comprobante de origen y su número, motivo o nota, y la clave de idempotencia con la huella de su solicitud en las entradas y los ajustes.
 - Invariants:
   - Inmutable: no se edita ni se borra; se corrige con un ajuste compensatorio (ERS RF-313).
   - Referencia el comprobante, el usuario y el origen cuando existen (ERS RF-312).
+  - El signo depende del tipo: `INICIAL` cero o más, `ENTRADA_MANUAL` y `DEVOLUCION_NC` positivos, `SALIDA_FACTURA` negativo y `AJUSTE` distinto de cero con motivo.
+  - Un solo `INICIAL` por producto, en la posición 1 (Q-21). Cada movimiento sigue al anterior: su saldo resultante es el anterior más su variación.
   - Una sola `SALIDA_FACTURA` por factura y producto, y una sola `DEVOLUCION_NC` por nota de crédito y producto (ERS RF-206, AC-08).
-- Relationships: pertenece a un producto; opcionalmente a un comprobante.
+  - Una sola entrada o un solo ajuste por empresa, operación y clave de idempotencia.
+- Relationships: pertenece a un saldo y a un producto; opcionalmente a un comprobante.
 
 ### `electronic_document` — Comprobante electrónico
 
@@ -134,7 +148,7 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 - Key attributes: tipo, ambiente, establecimiento, punto, secuencial, número, clave de acceso, código numérico, fecha de emisión, receptor o sujeto, totales, estado fiscal, usuario y fecha de creación (ERS RF-008), número y fecha de autorización, clave de idempotencia y metadatos del snapshot: versión XSD, versión del builder, versión de catálogos, versión de configuración de la empresa y versión del renderer del RIDE (CTX §39).
 - Invariants:
   - Nace en `RESERVED`, ya con secuencial y clave de acceso: los campos que la componen (fecha, tipo, RUC, ambiente, serie, secuencial, código numérico) quedan fijos desde ese momento (CTX §8, §27.1). El borrador (`invoice_draft`) no es un estado fiscal: vive aparte y pasa a `EMITTED` en la misma transacción que crea el comprobante (ERS RF-010, design D2 de `add-invoice-emission`).
-  - Su snapshot versionado (`snapshotVersion` 1 en la factura) guarda el emisor, el comprador, las líneas con sus impuestos, los pagos, los totales, la clave y las versiones de esquema, builder y catálogos. La factura de `add-invoice-emission` guarda ahí sus líneas, impuestos y pagos, y el documento solo copia en columnas lo que se consulta: número, clave, comprador y total.
+  - Su snapshot versionado (`snapshotVersion` 2 en la factura desde `add-minimal-inventory`; los guardados con la versión 1 se leen igual) guarda el emisor, el comprador, las líneas con sus impuestos, los pagos, los totales, la clave y las versiones de esquema, builder y catálogos. La factura de `add-invoice-emission` guarda ahí sus líneas, impuestos y pagos, y el documento solo copia en columnas lo que se consulta: número, clave, comprador y total.
   - Desde `SIGNED`, el contenido de un comprobante que llegó al SRI no se edita; las correcciones siguen el flujo documental (ERS RF-009). La única excepción es el reenvío corregido de un comprobante devuelto, con la misma clave y secuencial (BR-28).
   - Cambia de estado solo mediante la máquina de estados, y cada transición queda registrada (ERS RF-524, RF-525).
   - La clave de acceso es única y coincide con los datos del XML (CTX §61, I-01..I-08).
@@ -423,9 +437,9 @@ se repiten aquí.
 
 ### Inventario
 
-- **BR-42** Solo los productos con control de stock generan movimientos (ERS RF-205, RF-310).
+- **BR-42** Solo los productos con control de stock generan movimientos (ERS RF-205, RF-310). Una factura descuenta las líneas cuya decisión `inventoryAffectsStock` quedó congelada en su snapshot al reservar: producto marcado y con inventario inicializado. Desactivar el control solo afecta a las emisiones nuevas.
 - **BR-43** Una factura genera una sola salida por producto, y solo cuando entra de forma concluyente en `AUTHORIZED`, en la misma transacción que esa transición. La cantidad es la suma exacta de sus líneas de ese producto. Repeticiones, reintentos y reconciliaciones no la duplican (ERS RF-205, RF-206, AC-08; Q-18). `RESERVED`, `SIGNED`, `RECEIVED`, `SEND_UNKNOWN`, `MANUAL_REVIEW`, `RETURNED` y `NOT_AUTHORIZED` no modifican el stock, así que ninguno necesita compensación; con la transmisión apagada, las facturas pendientes no descuentan.
-- **BR-44** Los movimientos no se borran; se corrigen con ajustes compensatorios (ERS RF-313).
+- **BR-44** Los movimientos no se borran; se corrigen con ajustes compensatorios (ERS RF-313). El inventario de un producto se inicializa una sola vez con su `INICIAL` (Q-21); el control solo se desactiva con saldo cero, y reactivarlo continúa el mismo kárdex.
 - **BR-45** Una nota de crédito devuelve stock solo si el usuario indica retorno físico (ERS RF-212, Q-20).
 - **BR-46** Sin costo promedio, valorización contable ni multibodega (ERS RF-315).
 - **BR-57** El inventario nunca bloquea guardar un borrador, emitir, reservar el secuencial, firmar, transmitir ni autorizar. La salida se registra aunque el saldo quede negativo, y el saldo negativo se muestra tal cual: no se trunca a cero, no se rechaza el movimiento ni se compensa con un ajuste (Q-19, ADR 0006). Significa que las salidas fiscales registradas superan las existencias registradas, y no altera el comprobante.

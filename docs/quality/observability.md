@@ -98,6 +98,25 @@ Ninguna métrica lleva bytes, XML, claves de acceso completas, datos del comprad
 de empresa. Los logs del RIDE llevan el job, el comprobante, la procedencia, las páginas y la
 duración; nunca el contenido.
 
+## Inventario
+
+Señales de `add-minimal-inventory` (design D14), en `/metrics` y sin la empresa ni el producto en
+las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `inventory_movements_total{type}` | Counter | Movimientos registrados por tipo (`INICIAL`, `ENTRADA_MANUAL`, `AJUSTE`, `SALIDA_FACTURA`). Una repetición con la misma clave no cuenta; la salida de una factura se cuenta al registrarla en la transacción de su autorización. |
+| `inventory_negative_balances` | Gauge | Productos con saldo negativo, leídos de la base en cada consulta de las métricas |
+
+Alerta propuesta, informativa porque el saldo negativo está permitido (Q-19): los saldos negativos
+crecen, por ejemplo `delta(inventory_negative_balances[1d]) > 0` sostenido varios días, que indica
+salidas fiscales sin las entradas correspondientes.
+
+Un fallo del seguidor de la salida revierte la autorización y queda en el log del job de la
+transmisión con su código, sin datos del comprador; el job reintenta con la respuesta del SRI ya
+guardada. La reconciliación diagnóstica (`reconcileStock`) no es un endpoint: la usan las pruebas y
+`bench:inventory`.
+
 ## Logging Rules
 
 - Do not log secrets.

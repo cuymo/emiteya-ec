@@ -164,7 +164,7 @@ Disabling a button prevents most double clicks. Only the server guarantees a sin
 
 ### En este proyecto: emisión de facturas (Q-30)
 
-`add-invoice-emission` (design D8) implementa la única operación con clave de idempotencia:
+`add-invoice-emission` (design D8) implementa la primera operación con clave de idempotencia:
 `POST /api/v1/invoices`, operación `invoice.emit`. Se aparta de la plantilla anterior donde Q-30
 lo decidió:
 
@@ -189,6 +189,20 @@ lo decidió:
   - Los borradores no tienen efecto fiscal, y su edición usa `expectedVersion`.
   - El reintento de la firma (`POST /api/v1/invoices/{id}/signing-attempts`) es idempotente por construcción: transición guardada, arriendo del intento y artefacto único por comprobante.
 - **Cliente.** El editor genera la clave al abrir la confirmación de la emisión y la repite en los reintentos de esa misma solicitud.
+
+### En este proyecto: entradas y ajustes del inventario
+
+`add-minimal-inventory` (design D7) aplica el mismo contrato a las entradas manuales
+(`POST /api/v1/inventory/items/{productId}/entries`, operación `inventory.entry`) y a los ajustes
+(`POST /api/v1/inventory/items/{productId}/adjustments`, operación `inventory.adjust`):
+
+- **Alcance.** Empresa, operación y clave, sin usuario. La misma clave sirve en otra empresa y entre una entrada y un ajuste: son alcances distintos.
+- **Registro.** No hay una tabla aparte: el movimiento guarda su operación, su clave y la huella de su solicitud, y la restricción única `stock_movement_idempotency_key` sobre `(company_id, idempotency_operation, idempotency_key)` es la última defensa. Sin TTL ni purga: el kárdex es de solo agregado.
+- **Huella.** SHA-256 del JSON canónico de la operación, el producto y los datos funcionales exactos, con la cantidad canónica (`10` y `10.00` son la misma solicitud): `{ operation, productId, quantity, note }` en la entrada y `{ operation, productId, delta, reason }` en el ajuste.
+- **Respuestas.** Movimiento nuevo: `201`. Misma clave y misma huella: `200` con el mismo movimiento. Otra huella: `409 IDEMPOTENCY_KEY_REUSED`. Sin clave o con otro formato: `400 IDEMPOTENCY_KEY_REQUIRED`.
+- **Concurrencia.** La operación toma el lock del control de stock del producto y busca la clave dentro de él. Dos solicitudes simultáneas con la misma clave sobre productos distintos chocan en la restricción única; la perdedora se revierte, lee la ganadora en una transacción nueva y responde como repetición o con `409`.
+- **Cliente.** Cada diálogo genera su clave al abrirse y la repite en los reintentos; volver a abrirlo es otra intención y otra clave.
+- **Operaciones sin clave.** La inicialización es única por producto (un segundo intento responde `409 INVENTORY_ALREADY_INITIALIZED`), fijar el control es idempotente por estado y la salida de una factura es única por comprobante, producto y tipo.
 
 ## Concurrency
 

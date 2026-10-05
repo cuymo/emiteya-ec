@@ -1,11 +1,12 @@
 # Architecture Map
 
 Estado: arquitectura objetivo del MVP, que se construye mediante los cambios OpenSpec de
-`docs/product/capabilities.md`. El código existe hasta `add-document-archive` (cambio 8): la
+`docs/product/capabilities.md`. El código existe hasta `add-minimal-inventory` (cambio 9): la
 emisión local de la factura hasta `SIGNED`, su transmisión al SRI con jobs persistidos hasta
-`AUTHORIZED`, con la transmisión apagada por defecto, y el archivo documental: el RIDE generado una
-vez, la bandeja, las descargas verificadas y el historial de entregas. El correo, el inventario y
-los reportes siguen siendo objetivo.
+`AUTHORIZED`, con la transmisión apagada por defecto; el archivo documental: el RIDE generado una
+vez, la bandeja, las descargas verificadas y el historial de entregas; y el inventario mínimo:
+stock contabilizado por las facturas autorizadas, las entradas y los ajustes, con su kárdex. El
+correo y los reportes siguen siendo objetivo.
 
 ## System Style
 
@@ -31,7 +32,7 @@ los reportes siguen siendo objetivo.
 | `backend/` módulo `invoices` | Borradores de factura, emisión hasta `SIGNED` (evaluación, snapshot, reserva, XML, XSD, firma y artefacto), reintento de la firma, consultas con el resumen y el historial de la transmisión, y la reconciliación manual. Compone las lecturas internas de los demás módulos. Detalle en `docs/architecture/fiscal-emission.md`. | `invoices`, `document-emission` |
 | `backend/` módulo `sri-engine` | Piezas del protocolo del SRI detrás de puertos propios: clave de acceso, builder XML de la factura, validación XSD con el paquete verificado y firmador XAdES-BES (ADR 0018, ADR 0021). Desde el cambio 7, también el adaptador SOAP propio, los endpoints, el circuit breaker y los clasificadores de recepción, autorización y validez. | `document-emission`, `sri-transmission` |
 | `backend/` módulo `fiscal`   | Numeración, comprobante electrónico, máquina de estados, transiciones y artefactos, y la orquestación SRI: jobs `sri.*`, evidencia de cada intento, reconciliación y barrido. Detalle en `docs/architecture/fiscal-emission.md`. | `fiscal-numbering`, `document-emission`, `sri-transmission`, los seis tipos, `document-archive` |
-| `backend/` módulo `inventory` | Stock opcional contabilizado por hechos fiscales autorizados (no reserva de disponibilidad), movimientos y kárdex; la salida de una factura nace al entrar en `AUTHORIZED` (Q-18). | `inventory`                                         |
+| `backend/` módulo `inventory` | Stock opcional contabilizado por hechos fiscales autorizados (no reserva de disponibilidad): inicialización única con `INICIAL`, entradas y ajustes con clave de idempotencia, saldo materializado igual a la suma de su kárdex, control por producto, lista, detalle y kárdex. La salida de una factura la registra su seguidor al entrar en `AUTHORIZED`, con la decisión congelada en el snapshot (Q-18). Detalle en `docs/architecture/backend.md`. | `inventory`                                         |
 | `backend/` módulo `reports`  | Consultas filtradas y exportación XLSX.                                                     | `reports`, `data-portability`                       |
 | `backend/` módulo `audit`    | Eventos de auditoría, solo de agregado.                                                     | `audit-trail`                                       |
 | `backend/` `platform`        | Configuración validada, runner de jobs, salud, logs, métricas.                              | Transversal                                         |
@@ -80,6 +81,8 @@ Rules:
 - `fiscal` no importa `inventory`: el inventario reacciona a eventos fiscales, así puede desactivarse sin tocar la emisión (ADR 0006).
   - La salida de una factura es otro seguidor del mismo puerto genérico de transiciones: se registra al entrar en `AUTHORIZED`, en la misma transacción, y su fallo revierte la autorización. `main.ts` lo compone al arrancar, como el seguidor del archivo, y una prueba de arquitectura comprueba la dirección (Q-18).
   - El inventario nunca bloquea la emisión, la firma, la transmisión ni la autorización; el saldo puede quedar negativo (Q-19).
+  - `invoices` y `products` tampoco importan `inventory` (design D1 de `add-minimal-inventory`): reciben puertos que implementa el inventario y compone `main.ts`. `invoices` recibe `StockReads` (los saldos, para congelar en el snapshot versión 2 la decisión `inventoryAffectsStock` de cada línea y para los avisos del borrador); `products` recibe `InventoryInitialization` (para rechazar el cambio de la marca de un producto con inventario desde su corrección).
+  - `inventory` usa las lecturas exportadas de `products` (el producto, la página de la lista y el cambio de la marca), de `invoices` (las líneas de inventario del snapshot, nunca el producto vigente) y de `fiscal`. `test/architecture/inventory-dependency-direction.test.ts` comprueba que solo `main.ts` lo compone y que la transmisión no nombra la salida.
 - El archivo documental depende de la transmisión, nunca al revés (design D1 y D5 de `add-document-archive`):
   - la transmisión solo conoce el puerto genérico de seguidores de las transiciones (`fiscal/application/document-transitions.ts`) y los invoca en la misma transacción que guarda cada transición;
   - el seguidor del archivo encola `document.render_ride` al llegar a `AUTHORIZED`, y `main.ts` lo compone al arrancar;
@@ -117,6 +120,8 @@ borrador -> Emitir (Idempotency-Key) -> transacción: bloqueos, validación, sna
          -> reconciliación por la misma clave ante cualquier resultado ambiguo
          -> job del RIDE en la misma transacción que AUTHORIZED -> RIDE_PDF guardado una vez
          -> bandeja, descargas verificadas e impresión, con su historial  (cambio 8)
+         -> salida de inventario en la misma transacción que AUTHORIZED, por las líneas con
+            inventoryAffectsStock en el snapshot versión 2; saldo que puede quedar negativo (cambio 9)
 ```
 
 Estados, transiciones y reglas de reintento en `docs/architecture/fiscal-emission.md`.

@@ -534,6 +534,43 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 - **Artefacto.** `RIDE_PDF` con `application/pdf`, sus bytes, SHA-256 y tamaño, y en los metadatos las versiones, las páginas, el origen (`kind`, `sha256`, `provenance`), el hash del logo, el número de autorización y el job. Un segundo RIDE choca con `UNIQUE (document_id, kind)` y el job termina sin error.
 - **Detenciones propias de `fiscal`:** `RIDE_SOURCE_INTEGRITY` (origen ausente o alterado), `RIDE_LOGO_INTEGRITY`, `RIDE_DOCUMENT_NOT_AUTHORIZED`, `RIDE_DOCUMENT_NOT_FOUND`, además de los rechazos del renderer.
 
+## Implementación de `add-minimal-inventory`
+
+Cambio 9. El inventario reacciona a la autorización; `fiscal` e `invoices` no lo importan
+(`backend.md`, sección Inventario).
+
+| Pieza | Dónde |
+| --- | --- |
+| Decisión de inventario de cada línea, congelada en el snapshot versión 2 | `invoices/domain/snapshot.ts` (`inventoryAffectsStock`, `lineAffectsInventory`), con los saldos de `StockReads` leídos en la evaluación |
+| Líneas de inventario de una factura para el seguidor | `invoices/infrastructure/stock-lines.ts` (`invoiceStockLines`) |
+| Seguidor de la autorización | `inventory/application/invoice-outflow.ts` (`inventoryOutflowFollower`), compuesto en `main.ts` junto al seguidor del RIDE |
+| Avisos de existencias del borrador | `invoices/domain/stock-warnings.ts` |
+
+- **Snapshot versión 2.** Al reservar, cada línea guarda `inventoryAffectsStock`: verdadero solo si el producto estaba marcado como controlado y tenía inventario inicializado. Un snapshot versión 1 se lee como `false` en todas sus líneas. El campo no llega al XML: los bytes del XML firmado no cambian con la versión.
+- **Salida.** Al entrar en `AUTHORIZED` (autorización, reconciliación automática o manual), en la TX B de la decisión, el seguidor lee del snapshot el número y las líneas con `inventoryAffectsStock`, las agrupa por producto con su suma exacta y registra una `SALIDA_FACTURA` por producto, en orden de `productId`. Nunca consulta el producto ni la marca vigentes, y nunca falla por un saldo insuficiente: el saldo puede quedar negativo (Q-19).
+- **No retroactivo.** Desactivar el control solo afecta a las emisiones nuevas. Una factura emitida con el control activo descuenta al autorizarse aunque el control se haya desactivado antes; una emitida con el control desactivado no descuenta aunque se reactive antes de autorizarla; emitir activo, desactivar y reactivar antes de autorizar deja exactamente una salida.
+- **Una sola vez.** `UNIQUE (company_id, document_id, product_id, movement_type)` sobre el kárdex. Una repetición de la transición no duplica la salida.
+- **Recuperación.** La respuesta del SRI queda guardada en la TX A. Si la TX B falla, incluso después de insertar el movimiento, se revierten juntos la transición, la autorización, el artefacto y la salida; el job reintenta y reclasifica la respuesta guardada sin volver a llamar al SRI.
+- **Transmisión apagada.** Sin `AUTHORIZED` no hay salida: con `SRI_TRANSMISSION_ENABLED` apagado, las facturas firmadas no descuentan (Q-18).
+
+### Rutas y permisos del inventario
+
+| Método y ruta | Uso | Permiso |
+| --- | --- | --- |
+| `GET /api/v1/inventory/items` | Productos marcados o con inventario, con su estado, saldo (`null` sin inicializar), indicador negativo y último movimiento; `search` por código o nombre y `state` (`TRACKED_NOT_INITIALIZED`, `TRACKED_INITIALIZED`, `DISABLED_INITIALIZED`, `NEGATIVE`), paginados | `inventory.read` |
+| `GET /api/v1/inventory/items/{productId}` | Detalle, también sin marca ni inventario (`NOT_TRACKED`), con la inicialización y el último movimiento | `inventory.read` |
+| `GET /api/v1/inventory/items/{productId}/movements` | Kárdex por fechas de Ecuador inclusivas (`from`, `to`), del más reciente al más antiguo, con el saldo resultante, el origen, el actor, el número de la factura y el motivo o la nota | `inventory.read` |
+| `POST /api/v1/inventory/items/{productId}/initialization` | Inicializar con `INICIAL` (`201`), una sola vez, con cantidad mayor o igual que cero | `inventory.initialize` |
+| `POST /api/v1/inventory/items/{productId}/entries` | Entrada manual mayor que cero, con `Idempotency-Key` (`201`, o `200` en la repetición) | `inventory.entry` |
+| `POST /api/v1/inventory/items/{productId}/adjustments` | Ajuste con signo, distinto de cero y con motivo, con `Idempotency-Key` (`201`, o `200` en la repetición) | `inventory.adjust` |
+| `PUT /api/v1/inventory/items/{productId}/tracking` | Activar o desactivar el control de un producto inicializado; desactivar exige saldo cero | `inventory.configure` |
+
+- Administradores y operadores tienen `inventory.read` e `inventory.entry`; solo el administrador, los demás. La empresa sale de la sesión; un producto de otra empresa es `404 PRODUCT_NOT_FOUND`.
+- Rechazos `409`: `INVENTORY_ALREADY_INITIALIZED`, `INVENTORY_NOT_INITIALIZED`, `STOCK_TRACKING_REQUIRED`, `STOCK_TRACKING_DISABLED`, `STOCK_TRACKING_HAS_BALANCE`, `IDEMPOTENCY_KEY_REUSED`; y en la corrección del producto, `STOCK_TRACKING_MANAGED_BY_INVENTORY`. Sin clave: `400 IDEMPOTENCY_KEY_REQUIRED`.
+- Sin rutas para editar o borrar movimientos ni para recalcular o fijar el saldo.
+- **Borrador.** `preview.stockWarnings`, aparte de `issues`: `STOCK_BELOW_REQUESTED` cuando la suma de las líneas de un producto marcado supera su saldo, y `STOCK_NOT_INITIALIZED`, sin saldo, para un producto marcado sin inventario. Nunca bloquean la emisión ni garantizan existencias.
+- **Auditoría.** `inventory.initialized`, `inventory.tracking_enabled` e `inventory.tracking_disabled`, además del cambio de la marca en `product.updated`. Las entradas, los ajustes y las salidas no se auditan aparte: el kárdex guarda el actor, el momento y el motivo.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna

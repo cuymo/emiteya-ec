@@ -180,7 +180,7 @@
 
 ## 12. Documentación
 
-- [ ] 12.1 Documentar el módulo, el seguidor, la dirección de las dependencias, los puertos inyectados y el snapshot versión 2:
+- [x] 12.1 Documentar el módulo, el seguidor, la dirección de las dependencias, los puertos inyectados y el snapshot versión 2:
   - en `ARCHITECTURE.md`, `backend.md` y `fiscal-emission.md`;
   - las métricas y la alerta en `observability.md`;
   - los términos (configurado sin inicializar, `INICIAL`, variación, saldo negativo) en `domain-model.md` y `glossary.md`.
