@@ -34,7 +34,9 @@ import type { WithholdingOptions } from "../../src/modules/withholding-receipts/
 import type { WithholdingReceipts } from "../../src/modules/withholding-receipts/application/withholding-receipts.ts";
 import { withholdingReceiptsRouter } from "../../src/modules/withholding-receipts/infrastructure/http/withholding-receipts-router.ts";
 import type { ShippingGuideDrafts } from "../../src/modules/shipping-guides/application/drafts.ts";
+import type { ShippingGuideEmission } from "../../src/modules/shipping-guides/application/emission.ts";
 import type { ShippingGuideOptions } from "../../src/modules/shipping-guides/application/options.ts";
+import type { ShippingGuides } from "../../src/modules/shipping-guides/application/shipping-guides.ts";
 import { shippingGuidesRouter } from "../../src/modules/shipping-guides/infrastructure/http/shipping-guides-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
@@ -87,6 +89,8 @@ describe("rutas documentadas", () => {
       shippingGuidesRouter({
         drafts: {} as ShippingGuideDrafts,
         options: {} as ShippingGuideOptions,
+        emission: {} as ShippingGuideEmission,
+        guides: {} as ShippingGuides,
       }),
       ...archiveRouters({
         prisma: {} as PrismaClient,

@@ -5,13 +5,19 @@ import type {
   ShippingEligibleInvoiceView,
   ShippingGuideDraftSummaryView,
   ShippingGuideDraftView,
+  ShippingGuideView,
   ShippingRecipientPartyView,
+  SriMessageView,
 } from "@facturador/contracts";
+import { stopMessage } from "../../../fiscal/application/transmission-messages.ts";
+import { isAttemptCode, shippingGuideDiagnosticMessage } from "../../application/diagnostics.ts";
 import type { ShippingGuideDraftDetails } from "../../application/drafts.ts";
 import { carrierView } from "../../application/options.ts";
 import type { EligibleInvoice } from "../../application/ports.ts";
+import type { ShippingGuideDetails } from "../../application/shipping-guides.ts";
 import type { ShippingGuideDraftRecord } from "../../domain/draft.ts";
 import type { GuideParty } from "../../domain/evaluation.ts";
+import type { ShippingGuideSnapshot } from "../../domain/snapshot.ts";
 
 export const toRecipientPartyView = (party: GuideParty): ShippingRecipientPartyView => ({
   id: party.id,
@@ -126,3 +132,168 @@ export const toShippingGuideDraftSummaryView = (
   transportStart: draft.transportStart,
   updatedAt: draft.updatedAt.toISOString(),
 });
+
+export const messagesView = (messages: readonly SriMessageView[]): SriMessageView[] =>
+  messages.map(({ identifier, message, additionalInformation, type }) => ({
+    identifier,
+    message,
+    additionalInformation,
+    type,
+  }));
+
+function diagnosticView({ document }: ShippingGuideDetails): ShippingGuideView["diagnostic"] {
+  const attempt = document.lastAttempt;
+  if (document.state !== "RESERVED" || !attempt || !isAttemptCode(attempt.code)) return null;
+  return {
+    stage: attempt.stage as NonNullable<ShippingGuideView["diagnostic"]>["stage"],
+    code: attempt.code,
+    class: attempt.class,
+    message: shippingGuideDiagnosticMessage(attempt.code, attempt.detail),
+    at: attempt.at.toISOString(),
+    attemptCount: document.attemptCount,
+  };
+}
+
+function transmissionView({
+  document,
+  transmission,
+}: ShippingGuideDetails): ShippingGuideView["transmission"] {
+  return {
+    inProgress: transmission.inProgress,
+    stopped: transmission.stopped
+      ? {
+          code: transmission.stopped.code,
+          message: stopMessage(transmission.stopped.code),
+          at: transmission.stopped.at.toISOString(),
+        }
+      : null,
+    reconcilable: transmission.reconcilable,
+    authorization: document.authorization
+      ? {
+          number: document.authorization.number,
+          authorizedAt: document.authorization.date.toISOString(),
+          environment: document.authorization.environment,
+        }
+      : null,
+    lastResult: transmission.lastResult
+      ? {
+          operation: transmission.lastResult.operation,
+          outcome: transmission.lastResult.outcome,
+          at: transmission.lastResult.at.toISOString(),
+          messages: messagesView(transmission.lastResult.messages),
+        }
+      : null,
+  };
+}
+
+/**
+ * Guía desde su snapshot: lo que se emitió, sin releer terceros, establecimientos, productos ni
+ * facturas. Una excepción se presenta como declarada por el usuario, nunca como verificada.
+ */
+export function toShippingGuideView(details: ShippingGuideDetails): ShippingGuideView {
+  const { document, artifact, authorizedArtifact } = details;
+  const snapshot = document.snapshot as ShippingGuideSnapshot;
+  const { issuer, departure, transporter } = snapshot;
+  return {
+    id: document.id,
+    documentType: document.documentType,
+    environment: document.environment,
+    documentNumber: document.documentNumber,
+    accessKey: document.accessKey,
+    issueDate: document.issueDate,
+    state: document.state,
+    issuer: {
+      ruc: issuer.ruc,
+      legalName: issuer.legalName,
+      tradeName: issuer.tradeName,
+      headOfficeAddress: issuer.headOfficeAddress,
+      establishmentAddress: issuer.establishment.address,
+      accountingRequired: issuer.accountingRequired,
+      specialTaxpayerNumber: issuer.specialTaxpayerNumber,
+      withholdingAgentResolution: issuer.withholdingAgentResolution,
+      rimpeCategory: issuer.rimpeCategory,
+    },
+    departure: {
+      source: departure.source,
+      establishment: departure.establishment
+        ? {
+            id: departure.establishment.id,
+            code: departure.establishment.code,
+            address: departure.establishment.address,
+          }
+        : null,
+      address: departure.address,
+    },
+    transporter: {
+      source: transporter.source,
+      partyId: transporter.partyId,
+      identificationType: transporter.identificationType,
+      identification: transporter.identification,
+      legalName: transporter.legalName,
+    },
+    plate: snapshot.plate,
+    transportStart: snapshot.transportStart,
+    transportEnd: snapshot.transportEnd,
+    recipients: snapshot.recipients.map((recipient) => ({
+      position: recipient.position,
+      kind: recipient.kind,
+      partyId: recipient.partyId,
+      destinationEstablishment: recipient.destination
+        ? {
+            id: recipient.destination.id,
+            code: recipient.destination.code,
+            address: recipient.destination.address,
+          }
+        : null,
+      identificationType: recipient.identificationType,
+      identification: recipient.identification,
+      legalName: recipient.legalName,
+      address: recipient.address,
+      motive: recipient.motive,
+      route: recipient.route,
+      destinationEstablishmentCode: recipient.destinationEstablishmentCode,
+      support:
+        recipient.support.kind === "INTERNAL_INVOICE"
+          ? {
+              kind: "INTERNAL_INVOICE",
+              invoice: {
+                id: recipient.support.invoice.id,
+                documentType: "01",
+                documentNumber: recipient.support.invoice.documentNumber,
+                issueDate: recipient.support.invoice.issueDate,
+                authorizationNumber: recipient.support.invoice.authorization.number,
+              },
+            }
+          : {
+              kind: "DECLARED_EXCEPTION",
+              declaration: {
+                case: recipient.support.declaration.case,
+                literal: recipient.support.declaration.literal,
+                label: recipient.support.declaration.label,
+                policyVersion: recipient.support.declaration.policyVersion,
+                basis: "USER_DECLARED",
+                declaredBy: recipient.support.declaration.declaredBy,
+                declaredByName: recipient.support.declaration.declaredByName,
+                declaredAt: recipient.support.declaration.declaredAt,
+              },
+            },
+      details: recipient.details.map((detail) => ({
+        position: detail.position,
+        productId: detail.productId,
+        mainCode: detail.mainCode,
+        auxiliaryCode: detail.auxiliaryCode,
+        description: detail.description,
+        quantity: detail.quantity,
+      })),
+    })),
+    counts: { recipients: snapshot.counts.recipients, details: snapshot.counts.details },
+    diagnostic: diagnosticView(details),
+    artifact: artifact ? { sha256: artifact.sha256, sizeBytes: artifact.sizeBytes } : null,
+    authorizedArtifact: authorizedArtifact
+      ? { sha256: authorizedArtifact.sha256, sizeBytes: authorizedArtifact.sizeBytes }
+      : null,
+    transmission: transmissionView(details),
+    createdAt: document.createdAt.toISOString(),
+    signedAt: document.signedAt?.toISOString() ?? null,
+  };
+}

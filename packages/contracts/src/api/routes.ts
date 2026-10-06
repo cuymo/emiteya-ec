@@ -183,6 +183,10 @@ import {
   withholdingSupplierViewSchema,
 } from "../withholding-receipts.ts";
 import {
+  emitShippingGuideHeadersSchema,
+  emitShippingGuideSchema,
+  shippingGuideIdParamsSchema,
+  shippingGuideViewSchema,
   createShippingGuideDraftSchema,
   listShippingGuideDraftsQuerySchema,
   listShippingLookupQuerySchema,
@@ -371,6 +375,14 @@ const shippingDraftConflict = {
     "El borrador excede un límite de recursos del sistema (SHIPPING_GUIDE_RESOURCE_LIMIT, una defensa del sistema, no un límite del SRI), cambió (SHIPPING_GUIDE_DRAFT_CHANGED) o ya se emitió (SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED).",
   schema: errorEnvelopeSchema,
 };
+const shippingGuideNotFound = {
+  description: "La guía de remisión no existe en la empresa (SHIPPING_GUIDE_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const shippingGuideResponse = (description: string) => ({
+  description,
+  schema: successEnvelope(shippingGuideViewSchema),
+});
 const shippingLookup = <T extends z.ZodType>(description: string, item: T) => ({
   description,
   schema: z.strictObject({ data: z.array(item), meta: shippingGuideListMetaSchema }),
@@ -2432,6 +2444,62 @@ export const apiRoutes: readonly RouteDefinition[] = [
         description: "El borrador ya se emitió (SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED).",
         schema: errorEnvelopeSchema,
       },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/shipping-guides",
+    summary:
+      "Emitir un borrador de guía de remisión: reserva el número y la clave, congela el snapshot con la declaración de las excepciones y firma localmente (sin el SRI)",
+    request: { headers: emitShippingGuideHeadersSchema, body: emitShippingGuideSchema },
+    responses: {
+      200: shippingGuideResponse(
+        "Repetición con la misma Idempotency-Key y la misma solicitud: la misma guía. Si seguía `RESERVED`, se intenta firmar otra vez.",
+      ),
+      201: shippingGuideResponse(
+        "Guía emitida: `SIGNED` con su artefacto, o `RESERVED` con el diagnóstico del intento.",
+      ),
+      400: {
+        description:
+          "Datos inválidos o falta la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: shippingDraftNotFound,
+      409: {
+        description:
+          "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo SHIPPING_GUIDE_START_BEFORE_ISSUE, SHIPPING_GUIDE_CARRIER_ROLE_REQUIRED, SHIPPING_GUIDE_ORIGIN_ESTABLISHMENT_REQUIRED, SHIPPING_GUIDE_SAME_ESTABLISHMENT, SHIPPING_GUIDE_INVOICE_NOT_AUTHORIZED, SHIPPING_GUIDE_DECLARATION_REQUIRED o SHIPPING_GUIDE_DECLARATION_VERSION_MISMATCH); el borrador cambió (SHIPPING_GUIDE_DRAFT_CHANGED) o ya se emitió con otra clave (SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED); o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/shipping-guides/:shippingGuideId/signing-attempts",
+    summary:
+      "Reintentar la firma de una guía de remisión reservada, con el mismo número, la misma clave y la misma fecha de emisión",
+    request: { params: shippingGuideIdParamsSchema },
+    responses: {
+      200: shippingGuideResponse(
+        "Guía tras el intento: `SIGNED`, o `RESERVED` con el diagnóstico. Una guía ya firmada se devuelve sin cambios.",
+      ),
+      401: errors[401],
+      403: errors[403],
+      404: shippingGuideNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/:shippingGuideId",
+    summary:
+      "Consultar una guía de remisión desde su snapshot: transportista, placa, fechas, partida y cada destinatario con su sustento (la excepción declarada por el usuario) y su detalle, diagnóstico y transmisión",
+    request: { params: shippingGuideIdParamsSchema },
+    responses: {
+      200: shippingGuideResponse("Guía de remisión."),
+      401: errors[401],
+      403: errors[403],
+      404: shippingGuideNotFound,
     },
   }),
 ];

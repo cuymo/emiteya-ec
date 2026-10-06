@@ -193,6 +193,27 @@ relacionada con su base y las cantidades de documentos y retenciones con sus imp
 SOAP ni la clave del certificado. Los borradores, las consultas, la transmisión automática y las
 entregas no se auditan.
 
+## Guías de remisión
+
+Señales de `add-shipping-guides` (design D27), en `/metrics` y sin la empresa, los terceros ni la
+guía en las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `shipping_guide_reservations_total` | Counter | Guías de remisión reservadas al emitir. Una repetición con la misma `Idempotency-Key` no cuenta. |
+| `shipping_guide_recipients_total{support}` | Counter | Destinatarios de las guías reservadas, por clase de sustento (`internal_invoice` para una factura de la empresa, `declared_exception` para una excepción declarada); solo esos dos valores. |
+
+La guía no tiene capacidades ni movimientos de inventario, así que no tiene señales de reservas sin
+conclusión: una guía en revisión manual o con resultado incierto se ve en `fiscal_documents{state}`.
+La transmisión, la reconciliación y el RIDE usan las señales vigentes sin una etiqueta de tipo. Los
+logs registran identificadores, estados y códigos; nunca direcciones, placas, descripciones ni
+identificaciones (SEC-003). Los eventos de auditoría (`shipping_guide.reserved`,
+`shipping_guide.signed`, `shipping_guide.signing_retried`, `shipping_guide.reconciliation_requested`,
+`shipping_guide.reconciliation_completed`) llevan la guía, su número, su clave, el transportista con
+su origen, los conteos, las clases de sustento y cada excepción declarada con su caso y la versión de
+la política; nunca direcciones, descripciones, la placa, XML, SOAP ni la clave del certificado. Los
+borradores, las consultas, la transmisión automática y las entregas no se auditan.
+
 ## Logging Rules
 
 - Do not log secrets.

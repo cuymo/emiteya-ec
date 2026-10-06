@@ -74,7 +74,10 @@ import {
   withholdingReceiptSigningProfile,
   withholdingReceiptsModule,
 } from "./modules/withholding-receipts/infrastructure/index.ts";
-import { shippingGuidesModule } from "./modules/shipping-guides/infrastructure/index.ts";
+import {
+  shippingGuideSigningProfile,
+  shippingGuidesModule,
+} from "./modules/shipping-guides/infrastructure/index.ts";
 import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
@@ -448,6 +451,10 @@ apiRouter.use(
       detailsPerRecipient: env.SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT,
       details: env.SHIPPING_GUIDE_MAX_DETAILS,
     },
+    xsd: xsdValidator,
+    signing: documentSigning.pipeline(shippingGuideSigningProfile()),
+    metrics: metrics.registry,
+    stageTimings: env.EMISSION_STAGE_TIMINGS,
   }).routers,
 );
 

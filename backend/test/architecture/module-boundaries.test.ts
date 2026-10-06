@@ -11,14 +11,21 @@ const SRC = fileURLToPath(new URL("../../src/", import.meta.url));
 
 type SourceFile = { path: string; content: string };
 
-/** Acceso a las tablas de un módulo: delegados de Prisma o SQL con el nombre de la tabla. */
+/**
+ * Acceso a las tablas de un módulo: delegados de Prisma o SQL con el nombre de la tabla. Las palabras
+ * de SQL valen en mayúsculas o minúsculas; el nombre de la tabla, como lo escribe la base (en
+ * minúsculas), para no confundirlo con un valor como `"PARTY"` o `"PRODUCT"` (add-shipping-guides).
+ */
+const SQL = "(?:from|FROM|join|JOIN|into|INTO|update|UPDATE)";
 const TABLES: Record<string, RegExp> = {
-  parties: /\.party\.|\b(?:from|join|into|update)\s+"?party"?\b|"party"/i,
-  products:
-    /\.(?:product|productTax)\.|\b(?:from|join|into|update)\s+"?(?:product|product_tax)"?\b|"product(?:_tax)?"/i,
+  parties: new RegExp(`\\.party\\.|\\b${SQL}\\s+"?party"?\\b|"party"`),
+  products: new RegExp(
+    `\\.(?:product|productTax)\\.|\\b${SQL}\\s+"?(?:product|product_tax)"?\\b|"product(?:_tax)?"`,
+  ),
   // add-minimal-inventory, design D1: el saldo y el kárdex son del inventario.
-  inventory:
-    /\.(?:stockBalance|stockMovement)\.|\b(?:from|join|into|update)\s+"?stock_(?:balance|movement)"?\b|"stock_(?:balance|movement)"/i,
+  inventory: new RegExp(
+    `\\.(?:stockBalance|stockMovement)\\.|\\b${SQL}\\s+"?stock_(?:balance|movement)"?\\b|"stock_(?:balance|movement)"`,
+  ),
 };
 
 /** Importaciones prohibidas por módulo de origen. */
@@ -85,6 +92,12 @@ describe("fronteras de parties y products", () => {
           content: "await db.stockMovement.create()",
         },
         { path: "generated/prisma/x.ts", content: "db.party.findMany()" },
+        { path: "modules/fiscal/application/y.ts", content: "SELECT id from party WHERE 1" },
+        // Un valor en mayúsculas no es la tabla (add-shipping-guides).
+        {
+          path: "modules/shipping-guides/domain/x.ts",
+          content: 'const kind = "PARTY"; const suggestion = "PRODUCT";',
+        },
       ]),
     ).toEqual([
       "modules/fiscal/application/x.ts: tablas de parties",
@@ -94,6 +107,7 @@ describe("fronteras de parties y products", () => {
       "modules/products/application/x.ts: importación prohibida",
       "modules/invoices/application/x.ts: tablas de inventory",
       "modules/inventory/application/x.ts: tablas de products",
+      "modules/fiscal/application/y.ts: tablas de parties",
     ]);
   });
 });

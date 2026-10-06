@@ -67,7 +67,7 @@
 
 ## 7. Emisión de la guía
 
-- [ ] 7.1 Implementar la emisión (`POST /shipping-guides`) con las comprobaciones previas, la declaración de design D14 y la transacción de `RESERVED` de design D13, sin I/O externo dentro: idempotencia `shipping_guide.emit` con la huella de design D15, `reserveDocumentIn` con `06` y las columnas `RECIPIENTS`, el snapshot, el registro y sus destinatarios, la auditoría `shipping_guide.reserved`, la firma después del commit y las métricas de design D27. Verificar con pruebas HTTP:
+- [x] 7.1 Implementar la emisión (`POST /shipping-guides`) con las comprobaciones previas, la declaración de design D14 y la transacción de `RESERVED` de design D13, sin I/O externo dentro: idempotencia `shipping_guide.emit` con la huella de design D15, `reserveDocumentIn` con `06` y las columnas `RECIPIENTS`, el snapshot, el registro y sus destinatarios, la auditoría `shipping_guide.reserved`, la firma después del commit y las métricas de design D27. Verificar con pruebas HTTP:
   - guía de uno y de varios destinatarios firmada con su propio contador;
   - la vista previa, el snapshot, el XML y la consulta con los mismos datos;
   - cada rechazo de la evaluación sin reservar número, entre ellos el inicio anterior a la emisión, un borrador emitido otro día, un transportista sin el rol, un traslado propio sin origen o con el mismo establecimiento como origen y destino;
@@ -78,9 +78,9 @@
   - `emitted-document-types.test.ts` con `/shipping-guides` y sin liquidación.
 
   Documentar la emisión, la declaración, la idempotencia y los códigos en `fiscal-emission.md` y las métricas en `observability.md`
-- [ ] 7.2 Probar la atomicidad forzando un fallo después de cada paso de la transacción. Verificar que no quedan secuencial, clave, comprobante, destinatarios, registro, snapshot, borrador emitido, idempotencia ni auditoría
-- [ ] 7.3 Probar con PostgreSQL real la concurrencia: dos guías simultáneas sobre la misma factura, ambas válidas con secuenciales distintos, y dos emisiones simultáneas del mismo borrador con claves distintas, una sola guía y la otra `409`. Extender la prueba de secuenciales independientes con factura, nota de crédito, nota de débito, retención, guía y factura en el mismo punto (01, 04, 05, 07 y 06). Verificar que las pruebas pasan repetidas sin fallos intermitentes
-- [ ] 7.4 Implementar el reintento de firma (`/shipping-guides/{id}/signing-attempts`). Verificar que una guía reservada se firma con su mismo número, su misma clave y su misma fecha de emisión, con `shipping_guide.signing_retried`, y que otra empresa recibe `404`
+- [x] 7.2 Probar la atomicidad forzando un fallo después de cada paso de la transacción. Verificar que no quedan secuencial, clave, comprobante, destinatarios, registro, snapshot, borrador emitido, idempotencia ni auditoría
+- [x] 7.3 Probar con PostgreSQL real la concurrencia: dos guías simultáneas sobre la misma factura, ambas válidas con secuenciales distintos, y dos emisiones simultáneas del mismo borrador con claves distintas, una sola guía y la otra `409`. Extender la prueba de secuenciales independientes con factura, nota de crédito, nota de débito, retención, guía y factura en el mismo punto (01, 04, 05, 07 y 06). Verificar que las pruebas pasan repetidas sin fallos intermitentes
+- [x] 7.4 Implementar el reintento de firma (`/shipping-guides/{id}/signing-attempts`). Verificar que una guía reservada se firma con su mismo número, su misma clave y su misma fecha de emisión, con `shipping_guide.signing_retried`, y que otra empresa recibe `404`
 
 ## 8. Consulta, transmisión y reconciliación
 

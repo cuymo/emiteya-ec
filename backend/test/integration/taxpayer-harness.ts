@@ -57,7 +57,10 @@ import {
   withholdingReceiptSigningProfile,
   withholdingReceiptsModule,
 } from "../../src/modules/withholding-receipts/infrastructure/index.ts";
-import { shippingGuidesModule } from "../../src/modules/shipping-guides/infrastructure/index.ts";
+import {
+  shippingGuideSigningProfile,
+  shippingGuidesModule,
+} from "../../src/modules/shipping-guides/infrastructure/index.ts";
 import type { Permission } from "../../src/modules/identity/domain/access-policy.ts";
 import { ForbiddenError } from "../../src/platform/http/errors.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
@@ -151,6 +154,14 @@ export type ShippingGuidesHarnessOptions = {
   limits?: Partial<ShippingGuideLimits>;
   /** Permisos que el autorizador de las guías niega, para probar el `403`. */
   deny?: readonly Permission[];
+  accessKeys?: AccessKeys;
+  /** false: la emisión se detiene en RESERVED (caída simulada después del commit). */
+  signAfterReserve?: boolean;
+  /** Firma de comprobantes; por defecto, la del módulo de firma configurado. */
+  signer?: DocumentSigner;
+  metrics?: Registry;
+  /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión. */
+  stageTimings?: boolean;
 };
 
 /** Un autorizador que niega además los permisos dados (los dos roles tienen los del borrador). */
@@ -391,18 +402,34 @@ export function buildTaxpayerApp(
         }).routers,
       );
       // Guías de remisión (add-shipping-guides): los mismos puertos que compone `main.ts`.
+      const shipping = options.shippingGuides;
+      const shippingSigning = shipping?.signer
+        ? signingPipelines({
+            prisma: db.database.prisma,
+            xsd: options.invoices?.xsd ?? testXsdValidator(),
+            signer: shipping.signer,
+            ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
+            ...(invoicesNow ? { now: invoicesNow } : {}),
+          })
+        : documentSigning;
       router.use(
         ...shippingGuidesModule({
           prisma: db.database.prisma,
           schema: db.name,
-          authorizer: denying(authorizer, options.shippingGuides?.deny),
+          authorizer: denying(authorizer, shipping?.deny),
           signingReads: signing
             ? signing.reads
             : () => ({ activeCertificate: () => Promise.resolve(null) }),
           parties: shippingPartyReader,
           products: productReader,
           invoices: invoiceCreditSource,
-          limits: { ...SHIPPING_GUIDE_LIMITS_DEFAULT, ...options.shippingGuides?.limits },
+          limits: { ...SHIPPING_GUIDE_LIMITS_DEFAULT, ...shipping?.limits },
+          xsd: options.invoices?.xsd ?? testXsdValidator(),
+          signing: shippingSigning.pipeline(shippingGuideSigningProfile()),
+          ...(shipping?.signAfterReserve === false ? { signAfterReserve: false } : {}),
+          ...(shipping?.accessKeys ? { accessKeys: shipping.accessKeys } : {}),
+          ...(shipping?.metrics ? { metrics: shipping.metrics } : {}),
+          ...(shipping?.stageTimings ? { stageTimings: true } : {}),
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

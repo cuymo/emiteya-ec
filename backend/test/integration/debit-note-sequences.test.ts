@@ -1,11 +1,12 @@
-// Secuenciales independientes por tipo en el mismo ámbito de numeración (add-debit-notes y
-// add-withholding-receipts, spec document-emission "Secuenciales independientes"; ADR 0003): en un
-// mismo ambiente, establecimiento y punto, factura → nota de crédito → nota de débito → retención →
-// factura, y después retención → nota de débito → nota de crédito → factura. Cada tipo sigue su
-// propio contador, sin huecos, y ninguno consume ni salta el de otro; el número, la columna, la clave
-// de acceso y el XML firmado dicen lo mismo. La primera factura es autorizada por el arnés con la
-// reserva real del secuencial (las notas exigen una factura autorizada y la transmisión está
-// apagada); las demás se emiten por HTTP.
+// Secuenciales independientes por tipo en el mismo ámbito de numeración (add-debit-notes,
+// add-withholding-receipts y add-shipping-guides, spec document-emission "Secuenciales
+// independientes"; ADR 0003): en un mismo ambiente, establecimiento y punto, factura → nota de
+// crédito → nota de débito → retención → guía de remisión → factura, y después guía → retención →
+// nota de débito → nota de crédito → factura. Cada tipo sigue su propio contador, sin huecos, y
+// ninguno consume ni salta el de otro; el número, la columna, la clave de acceso y el XML firmado
+// dicen lo mismo. La primera factura es autorizada por el arnés con la reserva real del secuencial
+// (las notas y la guía exigen una factura autorizada y la transmisión está apagada); las demás se
+// emiten por HTTP.
 import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
@@ -29,7 +30,7 @@ const DEBIT_DECLARATIONS = {
   statements: ["NOT_EFFECTIVELY_NEGOTIATED_COMMERCIAL_INVOICE"],
 };
 
-describe("secuenciales independientes de la factura, las notas y la retención", () => {
+describe("secuenciales independientes de la factura, las notas, la retención y la guía", () => {
   let db: MigratedSchema;
   let api: ReturnType<typeof buildTaxpayerApp>;
   let a: ReadyCompany;
@@ -114,6 +115,30 @@ describe("secuenciales independientes de la factura, las notas y la retención",
     );
   };
 
+  const emitShippingGuide = async (invoiceId: string) => {
+    const draft = await post("/shipping-guides/drafts", {
+      emissionPointId: a.emissionPointId,
+      transporter: { source: "SELF" },
+      plate: "PAA-1234",
+      transportStart: "2026-10-06",
+      transportEnd: "2026-10-06",
+      recipients: [
+        {
+          recipient: { kind: "PARTY", partyId: a.customerId },
+          address: "Av. Quito y Guayaquil",
+          motive: "Venta",
+          support: { kind: "INTERNAL_INVOICE", invoiceId },
+          details: [{ productId: a.productId, description: "Cemento 50 kg", quantity: "10" }],
+        },
+      ],
+    });
+    return post(
+      "/shipping-guides",
+      { draftId: draft.id, expectedVersion: draft.version, exceptionDeclaration: null },
+      randomUUID(),
+    );
+  };
+
   /** Tipo y secuencial según el número, la columna, la clave de acceso y el XML firmado. */
   const numbering = async (document: { id: string }) => {
     const stored = await db.database.prisma.electronicDocument.findUniqueOrThrow({
@@ -168,7 +193,7 @@ describe("secuenciales independientes de la factura, las notas y la retención",
     await db?.drop();
   });
 
-  it("factura, nota de crédito, nota de débito, retención y factura siguen cada una su propio contador", async () => {
+  it("factura, nota de crédito, nota de débito, retención, guía y factura siguen cada una su propio contador", async () => {
     // Factura 1, autorizada con la reserva real del secuencial de facturas.
     const firstInvoice = await insertAuthorizedInvoice(
       db.database.prisma,
@@ -183,8 +208,10 @@ describe("secuenciales independientes de la factura, las notas y la retención",
     const firstCredit = await emitCreditNote(firstInvoice.id);
     const firstDebit = await emitDebitNote(firstInvoice.id);
     const firstWithholding = await emitWithholding();
+    const firstGuide = await emitShippingGuide(firstInvoice.id);
     const secondInvoice = await emitInvoice();
-    // Segunda ronda en otro orden: la retención primero.
+    // Segunda ronda en otro orden: la guía primero.
+    const secondGuide = await emitShippingGuide(firstInvoice.id);
     const secondWithholding = await emitWithholding();
     const secondDebit = await emitDebitNote(firstInvoice.id);
     const secondCredit = await emitCreditNote(firstInvoice.id);
@@ -212,7 +239,9 @@ describe("secuenciales independientes de la factura, las notas y la retención",
       [firstCredit, "04", 1],
       [firstDebit, "05", 1],
       [firstWithholding, "07", 1],
+      [firstGuide, "06", 1],
       [secondInvoice, "01", 2],
+      [secondGuide, "06", 2],
       [secondWithholding, "07", 2],
       [secondDebit, "05", 2],
       [secondCredit, "04", 2],
@@ -237,6 +266,7 @@ describe("secuenciales independientes de la factura, las notas y la retención",
       ["01", 4],
       ["04", 3],
       ["05", 3],
+      ["06", 3],
       ["07", 3],
     ]);
     const reservations = await db.database.prisma.fiscalSequenceReservation.findMany({
@@ -251,6 +281,8 @@ describe("secuenciales independientes de la factura, las notas y la retención",
       ["04", 2],
       ["05", 1],
       ["05", 2],
+      ["06", 1],
+      ["06", 2],
       ["07", 1],
       ["07", 2],
     ]);
