@@ -309,7 +309,7 @@ Un comprobante SHALL pasar a revisión manual solo cuando su resultado no puede 
 - **THEN** sigue en revisión manual, no se reenvía y no existe una acción para reenviarlo de todas formas
 
 ### Requirement: Reconciliación manual
-Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura o de una nota de crédito en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
+Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura, de una nota de crédito o de una nota de débito en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
 
 #### Scenario: Reconciliación de una revisión manual
 - **WHEN** un administrador reconcilia una factura en revisión manual y el SRI la informa autorizada
@@ -338,6 +338,14 @@ Un administrador SHALL poder pedir, con un motivo, la reconciliación de una fac
 #### Scenario: Nota de crédito en revisión manual
 - **WHEN** un administrador reconcilia una nota de crédito en revisión manual y el SRI la informa autorizada
 - **THEN** la nota pasa a autorizada con las mismas reglas que una factura, y su crédito pasa a aplicado
+
+#### Scenario: Nota de débito en revisión manual
+- **WHEN** un administrador reconcilia una nota de débito en revisión manual y el SRI la informa autorizada
+- **THEN** la nota pasa a autorizada con las mismas reglas que una factura, sin cambiar la capacidad acreditable de su factura ni el inventario
+
+#### Scenario: Nota de débito en un estado que no se reconcilia
+- **WHEN** un administrador pide la reconciliación de una nota de débito autorizada, no autorizada o devuelta
+- **THEN** se rechaza la reconciliación sin programarla
 
 ### Requirement: Número, clave y XML firmado invariables durante la transmisión
 La transmisión SHALL usar siempre el número, la clave, el snapshot y el XML firmado del comprobante. Ningún reintento, reconciliación ni respuesta del SRI crea otro comprobante, otro número u otra clave, regenera el XML ni libera el secuencial. Un comprobante devuelto no tiene corrección en esta versión.
@@ -388,7 +396,7 @@ Los intentos, las respuestas, las transmisiones y las reconciliaciones de una em
 - **THEN** el sistema responde que no existe y no se programa nada
 
 ### Requirement: Transmisión de cada tipo emitido
-La transmisión SHALL tratar igual la factura y la nota de crédito: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
+La transmisión SHALL tratar igual la factura, la nota de crédito y la nota de débito: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
 
 #### Scenario: Nota de crédito autorizada
 - **WHEN** una nota de crédito firmada se envía y el SRI la autoriza
@@ -409,3 +417,35 @@ La transmisión SHALL tratar igual la factura y la nota de crédito: el mismo en
 #### Scenario: Error 70 en una nota de crédito
 - **WHEN** el SRI responde el error 70 para una nota de crédito
 - **THEN** la nota se trata como clave en procesamiento, igual que una factura
+
+#### Scenario: Nota de débito recibida y autorizada
+- **WHEN** una nota de débito firmada se envía, la recepción responde `RECIBIDA` y la consulta la informa autorizada
+- **THEN** la nota pasa por recibida y queda autorizada con su número de autorización y su XML autorizado, como una factura
+
+#### Scenario: Nota de débito devuelta
+- **WHEN** la recepción responde `DEVUELTA` para una nota de débito
+- **THEN** la nota queda devuelta con todos los mensajes del SRI
+
+#### Scenario: Nota de débito no autorizada
+- **WHEN** la consulta informa no autorizada una nota de débito
+- **THEN** la nota queda no autorizada con sus mensajes
+
+#### Scenario: Errores 70, 43 y 45 en una nota de débito
+- **WHEN** el SRI responde el error 70, el 43 o el 45 para una nota de débito
+- **THEN** la nota sigue las mismas reglas que una factura: clave en procesamiento, clave registrada o secuencial registrado, reconciliados por su clave sin reenviar a ciegas
+
+#### Scenario: Nota de débito con resultado incierto
+- **WHEN** el envío de una nota de débito termina sin respuesta concluyente
+- **THEN** la nota queda verificando con el SRI y se reconcilia por su clave, sin reenviarse antes de saber si el SRI la recibió
+
+#### Scenario: Nota de débito en revisión manual
+- **WHEN** la reconciliación automática de una nota de débito agota sus intentos sin conclusión
+- **THEN** la nota queda en revisión manual, como una factura
+
+#### Scenario: Respuesta sin estado de una nota de débito
+- **WHEN** la recepción o la autorización de una nota de débito responde sin un estado concluyente
+- **THEN** no se trata como un rechazo: la nota no queda devuelta ni no autorizada
+
+#### Scenario: Evidencia antes de clasificar una nota de débito
+- **WHEN** el SRI responde a un envío o a una consulta de una nota de débito
+- **THEN** la respuesta queda guardada antes de clasificarla, y si la decisión local falla, el reintento clasifica la respuesta guardada sin volver a llamar al SRI
