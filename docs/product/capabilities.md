@@ -137,7 +137,7 @@ Lo que implementa `add-credit-notes` (detalle en `../architecture/fiscal-emissio
 
 ## Trazabilidad de `debit-notes`
 
-Estado: `add-debit-notes` implementado el 2026-10-05 (todas sus tareas), pendiente de archivar.
+Estado: `add-debit-notes` archivado el 2026-10-05 (`openspec/changes/archive/2026-10-05-add-debit-notes/`).
 
 Fuentes del cambio 11 y qué fija cada una (Q-49). Los specs distinguirán el requisito oficial de la
 política del MVP.

@@ -634,7 +634,7 @@ envío, la idempotencia y los errores.
 
 ## Implementación de `add-debit-notes`
 
-Cambio 11, implementado el 2026-10-05 (todas sus tareas) y pendiente de archivar.
+Cambio 11, archivado el 2026-10-05.
 
 ### Cálculo de la nota de débito
 
