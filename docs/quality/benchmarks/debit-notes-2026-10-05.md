@@ -1,6 +1,6 @@
 # Benchmark de las notas de débito (2026-10-05)
 
-Volumen: 100000 facturas AUTHORIZED de 5 líneas en dos tratamientos de IVA (15 % y 0 %), en una empresa. Siembra por SQL en 45.6 s. Calentamiento de 10 y 100 mediciones secuenciales por consulta y por emisión desde el cliente HTTP contra `main.ts`, con la custodia habilitada y la transmisión apagada; la contención son 10 rondas de 10 emisiones simultáneas. El cálculo se mide en proceso (1000 veces) y el RIDE en `RideWorkerPool` con 2 workers. Objetivos: ERS RNF-005, P95 menor que 2000 ms, y el P95 del render del RIDE menor que 1000 ms (design D25 de `add-debit-notes`). Las respuestas del SRI no participan. Generado por `bench:debit-notes`; datos en `debit-notes-2026-10-05.json`.
+Volumen: 100000 facturas AUTHORIZED de 5 líneas en dos tratamientos de IVA (15 % y 0 %), en una empresa. Siembra por SQL en 37.1 s. Calentamiento de 10 y 100 mediciones secuenciales por consulta y por emisión desde el cliente HTTP contra `main.ts`, con la custodia habilitada y la transmisión apagada; la contención son 10 rondas de 10 emisiones simultáneas. El cálculo se mide en proceso (1000 veces) y el RIDE en `RideWorkerPool` con 2 workers. Objetivos: ERS RNF-005, P95 menor que 2000 ms, y el P95 del render del RIDE menor que 1000 ms (design D25 de `add-debit-notes`). Las respuestas del SRI no participan. Generado por `bench:debit-notes`; datos en `debit-notes-2026-10-05.json`.
 
 ## Entorno
 
@@ -15,7 +15,7 @@ Volumen: 100000 facturas AUTHORIZED de 5 líneas en dos tratamientos de IVA (15 
 | os | Linux 7.1.6-1-cachyos |
 | cpu | AMD Ryzen 5 3600 6-Core Processor (12 núcleos) |
 | memory | 16 GiB |
-| commit | f1a2b21 |
+| commit | 66787e9 |
 
 ## Volumen
 
@@ -31,35 +31,35 @@ Volumen: 100000 facturas AUTHORIZED de 5 líneas en dos tratamientos de IVA (15 
 
 | Operación | Ruta o etapa | Resultados | P50 (ms) | P95 (ms) | Máx. (ms) | Objetivo (ms) | Dentro del objetivo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Facturas elegibles: primera página, sin filtro | `/debit-notes/eligible-invoices` | 100001 | 614.6 | 648.1 | 677.2 | 2000 | Sí |
-| Facturas elegibles: búsqueda por número | `/debit-notes/eligible-invoices?search=000054321` | 1 | 740.4 | 807.7 | 829.6 | 2000 | Sí |
-| Facturas elegibles: búsqueda por comprador (todas coinciden) | `/debit-notes/eligible-invoices?search=perno` | 100001 | 644.1 | 677 | 724.6 | 2000 | Sí |
-| Vista previa del borrador de 1 concepto | `/debit-notes/drafts/{id}` | — | 9.6 | 12.3 | 19.3 | 2000 | Sí |
-| Vista previa del borrador de 100 conceptos en dos tratamientos | `/debit-notes/drafts/{id}` | — | 11.6 | 14 | 17.7 | 2000 | Sí |
-| Cálculo de 100 conceptos de un tratamiento (en proceso) | `calculateDebitNoteAmounts` | 100 | 0.5 | 0.7 | 1.6 | 2000 | Sí |
-| Cálculo de 100 conceptos en cinco tratamientos (en proceso) | `calculateDebitNoteAmounts` | 100 | 0.5 | 0.8 | 1.2 | 2000 | Sí |
-| Emisión con reserva: total del servidor | `POST /debit-notes` | 100 | 208.8 | 271.7 | 291.7 | 2000 | Sí |
-| Emisión con reserva: transacción de la reserva | `reservation_tx` | 100 | 20.4 | 39.6 | 54.7 | 2000 | Sí |
-| La misma factura, 10 simultáneas: total del servidor | `POST /debit-notes` | 100 | 579.4 | 722.9 | 735.8 | 2000 | Sí |
-| La misma factura, 10 simultáneas: transacción de la reserva | `reservation_tx` | 100 | 130.3 | 232.8 | 269.2 | 2000 | Sí |
-| Facturas distintas, 10 simultáneas: total del servidor | `POST /debit-notes` | 100 | 568 | 685 | 715.3 | 2000 | Sí |
-| Facturas distintas, 10 simultáneas: transacción de la reserva | `reservation_tx` | 100 | 124.6 | 224.4 | 245.8 | 2000 | Sí |
-| Render del RIDE de la nota (worker) | `RideWorkerPool` | 50 | 85.2 | 91.6 | 99.2 | 1000 | Sí |
+| Facturas elegibles: primera página, sin filtro | `/debit-notes/eligible-invoices` | 100001 | 646 | 709.4 | 759 | 2000 | Sí |
+| Facturas elegibles: búsqueda por número | `/debit-notes/eligible-invoices?search=000054321` | 1 | 785.1 | 840.1 | 856.7 | 2000 | Sí |
+| Facturas elegibles: búsqueda por comprador (todas coinciden) | `/debit-notes/eligible-invoices?search=perno` | 100001 | 668.1 | 720 | 749.5 | 2000 | Sí |
+| Vista previa del borrador de 1 concepto | `/debit-notes/drafts/{id}` | — | 10.8 | 13.7 | 23.4 | 2000 | Sí |
+| Vista previa del borrador de 100 conceptos en dos tratamientos | `/debit-notes/drafts/{id}` | — | 13.4 | 16.9 | 18 | 2000 | Sí |
+| Cálculo de 100 conceptos de un tratamiento (en proceso) | `calculateDebitNoteAmounts` | 100 | 0.5 | 0.9 | 2.5 | 2000 | Sí |
+| Cálculo de 100 conceptos en cinco tratamientos (en proceso) | `calculateDebitNoteAmounts` | 100 | 0.6 | 1 | 2.4 | 2000 | Sí |
+| Emisión con reserva: total del servidor | `POST /debit-notes` | 100 | 235.6 | 263.6 | 321.8 | 2000 | Sí |
+| Emisión con reserva: transacción de la reserva | `reservation_tx` | 100 | 22.6 | 29.5 | 60.1 | 2000 | Sí |
+| La misma factura, 10 simultáneas: total del servidor | `POST /debit-notes` | 100 | 623.5 | 762.5 | 793.4 | 2000 | Sí |
+| La misma factura, 10 simultáneas: transacción de la reserva | `reservation_tx` | 100 | 141.7 | 272.7 | 316.3 | 2000 | Sí |
+| Facturas distintas, 10 simultáneas: total del servidor | `POST /debit-notes` | 100 | 612.8 | 765.7 | 804.4 | 2000 | Sí |
+| Facturas distintas, 10 simultáneas: transacción de la reserva | `reservation_tx` | 100 | 136.7 | 266.6 | 311.6 | 2000 | Sí |
+| Render del RIDE de la nota (worker) | `RideWorkerPool` | 50 | 91.8 | 100.7 | 107.9 | 1000 | Sí |
 
 ## Etapas de la emisión en serie (P95, ms)
 
 | `reservation_tx` | `xml` | `xsd` | `sign` | `persist` | `total` | Cliente |
 | --- | --- | --- | --- | --- | --- | --- |
-| 39.6 | 0.1 | 126.7 | 60.5 | 21.6 | 271.7 | 275.5 |
+| 29.5 | 0.1 | 153.2 | 65.7 | 14 | 263.6 | 268.3 |
 
 ## Contención
 
 | Escenario | Simultáneas | Reservas por segundo | `reservation_tx` P50 | `reservation_tx` P95 | Espera por bloqueos P95 (ms) | Total P95 |
 | --- | --- | --- | --- | --- | --- | --- |
-| La misma factura | 10 | 13.7 | 130.3 | 232.8 | 212.4 | 722.9 |
-| Facturas distintas | 10 | 14.3 | 124.6 | 224.4 | 204 | 685 |
+| La misma factura | 10 | 12.9 | 141.7 | 272.7 | 250.1 | 762.5 |
+| Facturas distintas | 10 | 13 | 136.7 | 266.6 | 244 | 765.7 |
 
-- La espera por bloqueos es lo que el P95 de `reservation_tx` supera a su mediana en serie (20.4 ms), que no espera a nadie. Una nota de débito no bloquea su factura (design D14): las reservas de una empresa se serializan en el bloqueo de la configuración y en el contador del punto, como la factura y la nota de crédito.
+- La espera por bloqueos es lo que el P95 de `reservation_tx` supera a su mediana en serie (22.6 ms), que no espera a nadie. Una nota de débito no bloquea su factura (design D14): las reservas de una empresa se serializan en el bloqueo de la configuración y en el contador del punto, como la factura y la nota de crédito.
 - Ningún bloqueo se mantiene durante el XML, el XSD ni la firma: son etapas aparte, después de confirmar la reserva.
 
 Independencia al terminar: 311 notas emitidas; filas de capacidad acreditable 0 → 0 y movimientos de inventario 0 → 0.
