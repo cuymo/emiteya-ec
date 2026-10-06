@@ -29,7 +29,9 @@ import type { DebitNoteDrafts } from "../../src/modules/debit-notes/application/
 import type { DebitNoteEmission } from "../../src/modules/debit-notes/application/emission.ts";
 import { debitNotesRouter } from "../../src/modules/debit-notes/infrastructure/http/debit-notes-router.ts";
 import type { WithholdingDrafts } from "../../src/modules/withholding-receipts/application/drafts.ts";
+import type { WithholdingEmission } from "../../src/modules/withholding-receipts/application/emission.ts";
 import type { WithholdingOptions } from "../../src/modules/withholding-receipts/application/options.ts";
+import type { WithholdingReceipts } from "../../src/modules/withholding-receipts/application/withholding-receipts.ts";
 import { withholdingReceiptsRouter } from "../../src/modules/withholding-receipts/infrastructure/http/withholding-receipts-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
@@ -76,6 +78,8 @@ describe("rutas documentadas", () => {
       withholdingReceiptsRouter({
         drafts: {} as WithholdingDrafts,
         options: {} as WithholdingOptions,
+        emission: {} as WithholdingEmission,
+        withholdings: {} as WithholdingReceipts,
       }),
       ...archiveRouters({
         prisma: {} as PrismaClient,

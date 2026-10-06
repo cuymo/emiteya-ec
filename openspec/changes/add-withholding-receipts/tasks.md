@@ -105,7 +105,7 @@
 
 ## 7. Emisión del comprobante de retención
 
-- [ ] 7.1 Implementar la emisión (`POST /withholding-receipts`) con las comprobaciones previas y la transacción de `RESERVED` de design D15, sin I/O externo dentro: idempotencia `withholding_receipt.emit` con la huella de design D16, `reserveDocumentIn` con el tipo `07`, el snapshot, el registro y sus líneas, la auditoría `withholding_receipt.reserved`, la firma después del commit y las métricas de design D26. Verificar con pruebas HTTP:
+- [x] 7.1 Implementar la emisión (`POST /withholding-receipts`) con las comprobaciones previas y la transacción de `RESERVED` de design D15, sin I/O externo dentro: idempotencia `withholding_receipt.emit` con la huella de design D16, `reserveDocumentIn` con el tipo `07`, el snapshot, el registro y sus líneas, la auditoría `withholding_receipt.reserved`, la firma después del commit y las métricas de design D26. Verificar con pruebas HTTP:
   - retención de uno y de varios documentos firmada con su propio contador;
   - la vista previa, el snapshot, el XML y la consulta con los mismos valores;
   - cada rechazo de la evaluación sin reservar número, incluida la prueba negativa sin documentos ni retenciones, que no consume secuencial ni recibe clave;
@@ -116,9 +116,9 @@
   - `emitted-document-types.test.ts` con la ruta nueva.
 
   Documentar la emisión, la idempotencia y los códigos en `fiscal-emission.md` y las métricas en `observability.md`
-- [ ] 7.2 Probar la atomicidad forzando un fallo después de cada paso de la transacción. Verificar que no quedan secuencial, clave, comprobante, registro, líneas, snapshot, borrador emitido, idempotencia ni auditoría
-- [ ] 7.3 Probar con PostgreSQL real la concurrencia: dos retenciones simultáneas al mismo proveedor, ambas válidas con secuenciales distintos, y dos emisiones simultáneas del mismo borrador con claves distintas, una sola retención y la otra `409`. Extender la prueba de secuenciales independientes con factura, nota de crédito, nota de débito, retención y factura en el mismo punto. Verificar que las pruebas pasan repetidas sin fallos intermitentes
-- [ ] 7.4 Implementar el reintento de firma (`/withholding-receipts/{id}/signing-attempts`). Verificar que una retención reservada se firma con su mismo número y su misma clave, con `withholding_receipt.signing_retried`, y que otra empresa recibe `404`
+- [x] 7.2 Probar la atomicidad forzando un fallo después de cada paso de la transacción. Verificar que no quedan secuencial, clave, comprobante, registro, líneas, snapshot, borrador emitido, idempotencia ni auditoría
+- [x] 7.3 Probar con PostgreSQL real la concurrencia: dos retenciones simultáneas al mismo proveedor, ambas válidas con secuenciales distintos, y dos emisiones simultáneas del mismo borrador con claves distintas, una sola retención y la otra `409`. Extender la prueba de secuenciales independientes con factura, nota de crédito, nota de débito, retención y factura en el mismo punto. Verificar que las pruebas pasan repetidas sin fallos intermitentes
+- [x] 7.4 Implementar el reintento de firma (`/withholding-receipts/{id}/signing-attempts`). Verificar que una retención reservada se firma con su mismo número y su misma clave, con `withholding_receipt.signing_retried`, y que otra empresa recibe `404`
 
 ## 8. Consulta, transmisión y reconciliación
 

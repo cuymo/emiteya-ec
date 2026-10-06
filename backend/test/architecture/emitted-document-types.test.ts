@@ -9,7 +9,7 @@ import { IDEMPOTENCY_KEY_HEADER, apiRoutes } from "@facturador/contracts";
 const NOT_EMITTED = /shipping|remisi|gu[ií]a|purchase|settlement|liquidaci/i;
 
 describe("tipos de comprobante emitidos", () => {
-  it("solo la factura, la nota de crédito y la nota de débito tienen una operación de emisión", () => {
+  it("la factura, la nota de crédito, la nota de débito y la retención tienen una operación de emisión", () => {
     const emissions = apiRoutes
       .filter(
         (route) =>
@@ -19,7 +19,12 @@ describe("tipos de comprobante emitidos", () => {
       )
       .map((route) => route.path)
       .sort();
-    expect(emissions).toEqual(["/credit-notes", "/debit-notes", "/invoices"]);
+    expect(emissions).toEqual([
+      "/credit-notes",
+      "/debit-notes",
+      "/invoices",
+      "/withholding-receipts",
+    ]);
   });
 
   it("no existe ninguna ruta de una guía o una liquidación", () => {

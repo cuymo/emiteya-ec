@@ -44,7 +44,10 @@ import {
   debitNoteSigningProfile,
   debitNotesModule,
 } from "../../src/modules/debit-notes/infrastructure/index.ts";
-import { withholdingReceiptsModule } from "../../src/modules/withholding-receipts/infrastructure/index.ts";
+import {
+  withholdingReceiptSigningProfile,
+  withholdingReceiptsModule,
+} from "../../src/modules/withholding-receipts/infrastructure/index.ts";
 import type { Permission } from "../../src/modules/identity/domain/access-policy.ts";
 import { ForbiddenError } from "../../src/platform/http/errors.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
@@ -122,6 +125,14 @@ export type WithholdingHarnessOptions = {
    * consulta, el borrador y la emisión, el `403` se prueba con una política que no los concede.
    */
   deny?: readonly Permission[];
+  accessKeys?: AccessKeys;
+  /** false: la emisión se detiene en RESERVED (caída simulada después del commit). */
+  signAfterReserve?: boolean;
+  /** Firma de comprobantes; por defecto, la del módulo de firma configurado. */
+  signer?: DocumentSigner;
+  metrics?: Registry;
+  /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión. */
+  stageTimings?: boolean;
 };
 
 /** Sin firma configurada: ningún comprobante se puede firmar. */
@@ -301,6 +312,15 @@ export function buildTaxpayerApp(
         }).routers,
       );
       // Comprobantes de retención (add-withholding-receipts): los mismos puertos que compone `main.ts`.
+      const withholdingSigning = options.withholdingReceipts?.signer
+        ? signingPipelines({
+            prisma: db.database.prisma,
+            xsd: options.invoices?.xsd ?? testXsdValidator(),
+            signer: options.withholdingReceipts.signer,
+            ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
+            ...(invoicesNow ? { now: invoicesNow } : {}),
+          })
+        : documentSigning;
       const denied = new Set(options.withholdingReceipts?.deny ?? []);
       const withholdingAuthorizer: typeof authorizer = denied.size
         ? {
@@ -320,6 +340,18 @@ export function buildTaxpayerApp(
             : () => ({ activeCertificate: () => Promise.resolve(null) }),
           parties: supplierReader,
           limits: { ...WITHHOLDING_LIMITS_DEFAULT, ...options.withholdingReceipts?.limits },
+          xsd: options.invoices?.xsd ?? testXsdValidator(),
+          signing: withholdingSigning.pipeline(withholdingReceiptSigningProfile()),
+          ...(options.withholdingReceipts?.signAfterReserve === false
+            ? { signAfterReserve: false }
+            : {}),
+          ...(options.withholdingReceipts?.accessKeys
+            ? { accessKeys: options.withholdingReceipts.accessKeys }
+            : {}),
+          ...(options.withholdingReceipts?.metrics
+            ? { metrics: options.withholdingReceipts.metrics }
+            : {}),
+          ...(options.withholdingReceipts?.stageTimings ? { stageTimings: true } : {}),
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

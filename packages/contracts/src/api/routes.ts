@@ -164,6 +164,10 @@ import {
   updateDebitNoteDraftSchema,
 } from "../debit-notes.ts";
 import {
+  emitWithholdingHeadersSchema,
+  emitWithholdingReceiptSchema,
+  withholdingReceiptIdParamsSchema,
+  withholdingReceiptViewSchema,
   createWithholdingDraftSchema,
   listWithholdingDraftsQuerySchema,
   listWithholdingSuppliersQuerySchema,
@@ -321,6 +325,16 @@ const withholdingDraftConflict = {
     "El borrador excede un límite de recursos del sistema (WITHHOLDING_RESOURCE_LIMIT, una defensa del sistema, no un límite del SRI), cambió (WITHHOLDING_DRAFT_CHANGED) o ya se emitió (WITHHOLDING_DRAFT_ALREADY_EMITTED).",
   schema: errorEnvelopeSchema,
 };
+
+const withholdingNotFound = {
+  description:
+    "El comprobante de retención no existe en la empresa (WITHHOLDING_RECEIPT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const withholdingResponse = (description: string) => ({
+  description,
+  schema: successEnvelope(withholdingReceiptViewSchema),
+});
 
 const debitNoteNotFound = {
   description: "La nota de débito no existe en la empresa (DEBIT_NOTE_NOT_FOUND).",
@@ -2097,6 +2111,48 @@ export const apiRoutes: readonly RouteDefinition[] = [
         description: "El borrador ya se emitió (WITHHOLDING_DRAFT_ALREADY_EMITTED).",
         schema: errorEnvelopeSchema,
       },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/withholding-receipts",
+    summary:
+      "Emitir un borrador de retención: reserva el número y la clave, congela el snapshot con los valores retenidos del servidor y firma localmente (sin el SRI)",
+    request: { headers: emitWithholdingHeadersSchema, body: emitWithholdingReceiptSchema },
+    responses: {
+      200: withholdingResponse(
+        "Repetición con la misma Idempotency-Key y la misma solicitud: la misma retención. Si seguía `RESERVED`, se intenta firmar otra vez.",
+      ),
+      201: withholdingResponse(
+        "Retención emitida: `SIGNED` con su artefacto, o `RESERVED` con el diagnóstico del intento.",
+      ),
+      400: {
+        description:
+          "Datos inválidos o falta la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: withholdingDraftNotFound,
+      409: {
+        description:
+          "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo WITHHOLDING_SUBJECT_CONSUMER_FINAL, WITHHOLDING_RELATED_PARTY_REQUIRED, WITHHOLDING_SUPPORTS_REQUIRED, WITHHOLDING_CONCEPT_NOT_SUPPORTED, WITHHOLDING_IVA_CODE_NOT_SUPPORTED o WITHHOLDING_SPECIAL_TAXPAYER_INCOMPATIBLE); el borrador cambió (WITHHOLDING_DRAFT_CHANGED) o ya se emitió con otra clave (WITHHOLDING_DRAFT_ALREADY_EMITTED); o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/withholding-receipts/:withholdingReceiptId/signing-attempts",
+    summary: "Reintentar la firma de una retención reservada, con el mismo número y la misma clave",
+    request: { params: withholdingReceiptIdParamsSchema },
+    responses: {
+      200: withholdingResponse(
+        "Retención tras el intento: `SIGNED`, o `RESERVED` con el diagnóstico. Una retención ya firmada se devuelve sin cambios.",
+      ),
+      401: errors[401],
+      403: errors[403],
+      404: withholdingNotFound,
     },
   }),
 ];

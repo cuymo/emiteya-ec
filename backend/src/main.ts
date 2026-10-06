@@ -69,7 +69,10 @@ import {
   debitNoteSigningProfile,
   debitNotesModule,
 } from "./modules/debit-notes/infrastructure/index.ts";
-import { withholdingReceiptsModule } from "./modules/withholding-receipts/infrastructure/index.ts";
+import {
+  withholdingReceiptSigningProfile,
+  withholdingReceiptsModule,
+} from "./modules/withholding-receipts/infrastructure/index.ts";
 import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
@@ -416,6 +419,10 @@ apiRouter.use(
       taxesPerSupport: env.WITHHOLDING_MAX_TAXES_PER_SUPPORT,
       paymentsPerSupport: env.WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT,
     },
+    xsd: xsdValidator,
+    signing: documentSigning.pipeline(withholdingReceiptSigningProfile()),
+    metrics: metrics.registry,
+    stageTimings: env.EMISSION_STAGE_TIMINGS,
   }).routers,
 );
 

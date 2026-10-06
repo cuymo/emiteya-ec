@@ -8,12 +8,14 @@ import { AppError, ConflictError } from "../http/errors.ts";
 
 /**
  * Operaciones con registro de idempotencia; la base de datos acepta solo estas (`credit_note.emit`:
- * add-credit-notes, design D11; `debit_note.emit`: add-debit-notes, design D15).
+ * add-credit-notes, design D11; `debit_note.emit`: add-debit-notes, design D15;
+ * `withholding_receipt.emit`: add-withholding-receipts, design D16).
  */
 export const IDEMPOTENT_OPERATIONS = [
   "invoice.emit",
   "credit_note.emit",
   "debit_note.emit",
+  "withholding_receipt.emit",
 ] as const;
 export type IdempotentOperation = (typeof IDEMPOTENT_OPERATIONS)[number];
 

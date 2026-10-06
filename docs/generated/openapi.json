@@ -47121,6 +47121,2656 @@
           }
         }
       }
+    },
+    "/withholding-receipts": {
+      "post": {
+        "summary": "Emitir un borrador de retención: reserva el número y la clave, congela el snapshot con los valores retenidos del servidor y firma localmente (sin el SRI)",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "pattern": "^[!-~]{1,100}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "draftId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "draftId",
+                  "expectedVersion"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repetición con la misma Idempotency-Key y la misma solicitud: la misma retención. Si seguía `RESERVED`, se intenta firmar otra vez.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "documentType": {
+                          "type": "string",
+                          "enum": [
+                            "01",
+                            "03",
+                            "04",
+                            "05",
+                            "06",
+                            "07"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "TEST",
+                            "PRODUCTION"
+                          ]
+                        },
+                        "documentNumber": {
+                          "type": "string"
+                        },
+                        "accessKey": {
+                          "type": "string"
+                        },
+                        "issueDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RESERVED",
+                            "SIGNED",
+                            "SEND_UNKNOWN",
+                            "RECEIVED",
+                            "RETURNED",
+                            "AUTHORIZED",
+                            "NOT_AUTHORIZED",
+                            "MANUAL_REVIEW"
+                          ]
+                        },
+                        "issuer": {
+                          "type": "object",
+                          "properties": {
+                            "ruc": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            },
+                            "tradeName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "headOfficeAddress": {
+                              "type": "string"
+                            },
+                            "establishmentAddress": {
+                              "type": "string"
+                            },
+                            "accountingRequired": {
+                              "type": "boolean"
+                            },
+                            "specialTaxpayerNumber": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "withholdingAgentResolution": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "rimpeCategory": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "EMPRENDEDOR",
+                                    "NEGOCIO_POPULAR"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "ruc",
+                            "legalName",
+                            "tradeName",
+                            "headOfficeAddress",
+                            "establishmentAddress",
+                            "accountingRequired",
+                            "specialTaxpayerNumber",
+                            "withholdingAgentResolution",
+                            "rimpeCategory"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "subject": {
+                          "type": "object",
+                          "properties": {
+                            "partyId": {
+                              "type": "string"
+                            },
+                            "identificationType": {
+                              "type": "string"
+                            },
+                            "identification": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "partyId",
+                            "identificationType",
+                            "identification",
+                            "legalName"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "relatedParty": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string",
+                              "enum": [
+                                "SI",
+                                "NO"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "const": "USER_DECLARED"
+                            },
+                            "declaredBy": {
+                              "type": "string"
+                            },
+                            "declaredByName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "declaredAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "declaredBy",
+                            "declaredByName",
+                            "declaredAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "fiscalPeriod": {
+                          "type": "string"
+                        },
+                        "supports": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "documentType": {
+                                "type": "string",
+                                "enum": [
+                                  "01",
+                                  "02",
+                                  "03"
+                                ]
+                              },
+                              "documentTypeLabel": {
+                                "type": "string"
+                              },
+                              "supportCode": {
+                                "type": "string"
+                              },
+                              "supportCodeLabel": {
+                                "type": "string"
+                              },
+                              "number": {
+                                "type": "string"
+                              },
+                              "issueDate": {
+                                "type": "string",
+                                "format": "date",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                              },
+                              "authorizationNumber": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "totalWithoutTaxes": {
+                                "type": "string"
+                              },
+                              "importTotal": {
+                                "type": "string"
+                              },
+                              "taxes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "tax": {
+                                      "type": "string",
+                                      "enum": [
+                                        "2",
+                                        "3",
+                                        "5"
+                                      ]
+                                    },
+                                    "taxLabel": {
+                                      "type": "string"
+                                    },
+                                    "rateCode": {
+                                      "type": "string"
+                                    },
+                                    "rateLabel": {
+                                      "type": "string"
+                                    },
+                                    "rate": {
+                                      "type": "string"
+                                    },
+                                    "rateBasis": {
+                                      "type": "string",
+                                      "enum": [
+                                        "CATALOG",
+                                        "USER_DECLARED"
+                                      ]
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "tax",
+                                    "taxLabel",
+                                    "rateCode",
+                                    "rateLabel",
+                                    "rate",
+                                    "rateBasis",
+                                    "base",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "payments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "code",
+                                    "label",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "withholdings": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "tax": {
+                                      "type": "string",
+                                      "enum": [
+                                        "1",
+                                        "2"
+                                      ]
+                                    },
+                                    "entryKey": {
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "percentage": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    },
+                                    "taxLabel": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "tax",
+                                    "entryKey",
+                                    "code",
+                                    "label",
+                                    "base",
+                                    "percentage",
+                                    "amount",
+                                    "taxLabel"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "documentType",
+                              "documentTypeLabel",
+                              "supportCode",
+                              "supportCodeLabel",
+                              "number",
+                              "issueDate",
+                              "authorizationNumber",
+                              "totalWithoutTaxes",
+                              "importTotal",
+                              "taxes",
+                              "payments",
+                              "withholdings"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "withheld": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "withheld"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "diagnostic": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "stage": {
+                                  "type": "string",
+                                  "enum": [
+                                    "BUILD_XML",
+                                    "VALIDATE_XSD",
+                                    "SIGN",
+                                    "VALIDATE_SIGNED_XSD",
+                                    "PERSIST"
+                                  ]
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "VALIDATOR_BUSY",
+                                    "VALIDATOR_TIMEOUT",
+                                    "CRYPTO_BUSY",
+                                    "CRYPTO_TIMEOUT",
+                                    "CRYPTO_UNAVAILABLE",
+                                    "PERSIST_FAILED",
+                                    "SIGNING_CERTIFICATE_NOT_USABLE",
+                                    "CUSTODY_UNAVAILABLE",
+                                    "CERTIFICATE_MISMATCH",
+                                    "SIGNER_FAILED",
+                                    "SCHEMA_UNAVAILABLE",
+                                    "SCHEMA_HASH_MISMATCH",
+                                    "XSD_INVALID",
+                                    "SIGNED_XML_INVALID",
+                                    "INVALID_SNAPSHOT_TEXT",
+                                    "INVALID_SNAPSHOT_AMOUNT"
+                                  ]
+                                },
+                                "class": {
+                                  "type": "string",
+                                  "enum": [
+                                    "RETRYABLE_OPERATIONAL",
+                                    "DETERMINISTIC_CONFIGURATION",
+                                    "DETERMINISTIC_VALIDATION"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                "attemptCount": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "stage",
+                                "code",
+                                "class",
+                                "message",
+                                "at",
+                                "attemptCount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "artifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "authorizedArtifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "transmission": {
+                          "type": "object",
+                          "properties": {
+                            "inProgress": {
+                              "type": "boolean"
+                            },
+                            "stopped": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "message": {
+                                      "type": "string"
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    }
+                                  },
+                                  "required": [
+                                    "code",
+                                    "message",
+                                    "at"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "reconcilable": {
+                              "type": "boolean"
+                            },
+                            "authorization": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "number": {
+                                      "type": "string"
+                                    },
+                                    "authorizedAt": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "environment": {
+                                      "type": "string",
+                                      "enum": [
+                                        "TEST",
+                                        "PRODUCTION"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "number",
+                                    "authorizedAt",
+                                    "environment"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastResult": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "operation": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEPTION",
+                                        "AUTHORIZATION",
+                                        "VALIDITY"
+                                      ]
+                                    },
+                                    "outcome": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEIVED",
+                                        "RETURNED",
+                                        "KEY_IN_PROCESS",
+                                        "KEY_REGISTERED",
+                                        "SEQUENTIAL_REGISTERED",
+                                        "UNKNOWN",
+                                        "INCONSISTENT",
+                                        "AUTHORIZED",
+                                        "NOT_AUTHORIZED",
+                                        "NO_CONCLUSION",
+                                        "KEY_UNKNOWN",
+                                        "KEY_KNOWN",
+                                        "NO_EVIDENCE",
+                                        "NOT_SENT",
+                                        "UNPARSEABLE"
+                                      ]
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "messages": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "identifier": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "message": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "additionalInformation": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "type": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "identifier",
+                                          "message",
+                                          "additionalInformation",
+                                          "type"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "operation",
+                                    "outcome",
+                                    "at",
+                                    "messages"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "inProgress",
+                            "stopped",
+                            "reconcilable",
+                            "authorization",
+                            "lastResult"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "signedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "documentType",
+                        "environment",
+                        "documentNumber",
+                        "accessKey",
+                        "issueDate",
+                        "state",
+                        "issuer",
+                        "subject",
+                        "relatedParty",
+                        "fiscalPeriod",
+                        "supports",
+                        "totals",
+                        "diagnostic",
+                        "artifact",
+                        "authorizedArtifact",
+                        "transmission",
+                        "createdAt",
+                        "signedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Retención emitida: `SIGNED` con su artefacto, o `RESERVED` con el diagnóstico del intento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "documentType": {
+                          "type": "string",
+                          "enum": [
+                            "01",
+                            "03",
+                            "04",
+                            "05",
+                            "06",
+                            "07"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "TEST",
+                            "PRODUCTION"
+                          ]
+                        },
+                        "documentNumber": {
+                          "type": "string"
+                        },
+                        "accessKey": {
+                          "type": "string"
+                        },
+                        "issueDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RESERVED",
+                            "SIGNED",
+                            "SEND_UNKNOWN",
+                            "RECEIVED",
+                            "RETURNED",
+                            "AUTHORIZED",
+                            "NOT_AUTHORIZED",
+                            "MANUAL_REVIEW"
+                          ]
+                        },
+                        "issuer": {
+                          "type": "object",
+                          "properties": {
+                            "ruc": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            },
+                            "tradeName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "headOfficeAddress": {
+                              "type": "string"
+                            },
+                            "establishmentAddress": {
+                              "type": "string"
+                            },
+                            "accountingRequired": {
+                              "type": "boolean"
+                            },
+                            "specialTaxpayerNumber": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "withholdingAgentResolution": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "rimpeCategory": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "EMPRENDEDOR",
+                                    "NEGOCIO_POPULAR"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "ruc",
+                            "legalName",
+                            "tradeName",
+                            "headOfficeAddress",
+                            "establishmentAddress",
+                            "accountingRequired",
+                            "specialTaxpayerNumber",
+                            "withholdingAgentResolution",
+                            "rimpeCategory"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "subject": {
+                          "type": "object",
+                          "properties": {
+                            "partyId": {
+                              "type": "string"
+                            },
+                            "identificationType": {
+                              "type": "string"
+                            },
+                            "identification": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "partyId",
+                            "identificationType",
+                            "identification",
+                            "legalName"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "relatedParty": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string",
+                              "enum": [
+                                "SI",
+                                "NO"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "const": "USER_DECLARED"
+                            },
+                            "declaredBy": {
+                              "type": "string"
+                            },
+                            "declaredByName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "declaredAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "declaredBy",
+                            "declaredByName",
+                            "declaredAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "fiscalPeriod": {
+                          "type": "string"
+                        },
+                        "supports": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "documentType": {
+                                "type": "string",
+                                "enum": [
+                                  "01",
+                                  "02",
+                                  "03"
+                                ]
+                              },
+                              "documentTypeLabel": {
+                                "type": "string"
+                              },
+                              "supportCode": {
+                                "type": "string"
+                              },
+                              "supportCodeLabel": {
+                                "type": "string"
+                              },
+                              "number": {
+                                "type": "string"
+                              },
+                              "issueDate": {
+                                "type": "string",
+                                "format": "date",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                              },
+                              "authorizationNumber": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "totalWithoutTaxes": {
+                                "type": "string"
+                              },
+                              "importTotal": {
+                                "type": "string"
+                              },
+                              "taxes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "tax": {
+                                      "type": "string",
+                                      "enum": [
+                                        "2",
+                                        "3",
+                                        "5"
+                                      ]
+                                    },
+                                    "taxLabel": {
+                                      "type": "string"
+                                    },
+                                    "rateCode": {
+                                      "type": "string"
+                                    },
+                                    "rateLabel": {
+                                      "type": "string"
+                                    },
+                                    "rate": {
+                                      "type": "string"
+                                    },
+                                    "rateBasis": {
+                                      "type": "string",
+                                      "enum": [
+                                        "CATALOG",
+                                        "USER_DECLARED"
+                                      ]
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "tax",
+                                    "taxLabel",
+                                    "rateCode",
+                                    "rateLabel",
+                                    "rate",
+                                    "rateBasis",
+                                    "base",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "payments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "code",
+                                    "label",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "withholdings": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "tax": {
+                                      "type": "string",
+                                      "enum": [
+                                        "1",
+                                        "2"
+                                      ]
+                                    },
+                                    "entryKey": {
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "percentage": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    },
+                                    "taxLabel": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "tax",
+                                    "entryKey",
+                                    "code",
+                                    "label",
+                                    "base",
+                                    "percentage",
+                                    "amount",
+                                    "taxLabel"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "documentType",
+                              "documentTypeLabel",
+                              "supportCode",
+                              "supportCodeLabel",
+                              "number",
+                              "issueDate",
+                              "authorizationNumber",
+                              "totalWithoutTaxes",
+                              "importTotal",
+                              "taxes",
+                              "payments",
+                              "withholdings"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "withheld": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "withheld"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "diagnostic": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "stage": {
+                                  "type": "string",
+                                  "enum": [
+                                    "BUILD_XML",
+                                    "VALIDATE_XSD",
+                                    "SIGN",
+                                    "VALIDATE_SIGNED_XSD",
+                                    "PERSIST"
+                                  ]
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "VALIDATOR_BUSY",
+                                    "VALIDATOR_TIMEOUT",
+                                    "CRYPTO_BUSY",
+                                    "CRYPTO_TIMEOUT",
+                                    "CRYPTO_UNAVAILABLE",
+                                    "PERSIST_FAILED",
+                                    "SIGNING_CERTIFICATE_NOT_USABLE",
+                                    "CUSTODY_UNAVAILABLE",
+                                    "CERTIFICATE_MISMATCH",
+                                    "SIGNER_FAILED",
+                                    "SCHEMA_UNAVAILABLE",
+                                    "SCHEMA_HASH_MISMATCH",
+                                    "XSD_INVALID",
+                                    "SIGNED_XML_INVALID",
+                                    "INVALID_SNAPSHOT_TEXT",
+                                    "INVALID_SNAPSHOT_AMOUNT"
+                                  ]
+                                },
+                                "class": {
+                                  "type": "string",
+                                  "enum": [
+                                    "RETRYABLE_OPERATIONAL",
+                                    "DETERMINISTIC_CONFIGURATION",
+                                    "DETERMINISTIC_VALIDATION"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                "attemptCount": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "stage",
+                                "code",
+                                "class",
+                                "message",
+                                "at",
+                                "attemptCount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "artifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "authorizedArtifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "transmission": {
+                          "type": "object",
+                          "properties": {
+                            "inProgress": {
+                              "type": "boolean"
+                            },
+                            "stopped": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "message": {
+                                      "type": "string"
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    }
+                                  },
+                                  "required": [
+                                    "code",
+                                    "message",
+                                    "at"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "reconcilable": {
+                              "type": "boolean"
+                            },
+                            "authorization": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "number": {
+                                      "type": "string"
+                                    },
+                                    "authorizedAt": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "environment": {
+                                      "type": "string",
+                                      "enum": [
+                                        "TEST",
+                                        "PRODUCTION"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "number",
+                                    "authorizedAt",
+                                    "environment"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastResult": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "operation": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEPTION",
+                                        "AUTHORIZATION",
+                                        "VALIDITY"
+                                      ]
+                                    },
+                                    "outcome": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEIVED",
+                                        "RETURNED",
+                                        "KEY_IN_PROCESS",
+                                        "KEY_REGISTERED",
+                                        "SEQUENTIAL_REGISTERED",
+                                        "UNKNOWN",
+                                        "INCONSISTENT",
+                                        "AUTHORIZED",
+                                        "NOT_AUTHORIZED",
+                                        "NO_CONCLUSION",
+                                        "KEY_UNKNOWN",
+                                        "KEY_KNOWN",
+                                        "NO_EVIDENCE",
+                                        "NOT_SENT",
+                                        "UNPARSEABLE"
+                                      ]
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "messages": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "identifier": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "message": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "additionalInformation": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "type": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "identifier",
+                                          "message",
+                                          "additionalInformation",
+                                          "type"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "operation",
+                                    "outcome",
+                                    "at",
+                                    "messages"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "inProgress",
+                            "stopped",
+                            "reconcilable",
+                            "authorization",
+                            "lastResult"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "signedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "documentType",
+                        "environment",
+                        "documentNumber",
+                        "accessKey",
+                        "issueDate",
+                        "state",
+                        "issuer",
+                        "subject",
+                        "relatedParty",
+                        "fiscalPeriod",
+                        "supports",
+                        "totals",
+                        "diagnostic",
+                        "artifact",
+                        "authorizedArtifact",
+                        "transmission",
+                        "createdAt",
+                        "signedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos o falta la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (WITHHOLDING_DRAFT_NOT_FOUND) o su proveedor no existe en la empresa (WITHHOLDING_SUBJECT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo WITHHOLDING_SUBJECT_CONSUMER_FINAL, WITHHOLDING_RELATED_PARTY_REQUIRED, WITHHOLDING_SUPPORTS_REQUIRED, WITHHOLDING_CONCEPT_NOT_SUPPORTED, WITHHOLDING_IVA_CODE_NOT_SUPPORTED o WITHHOLDING_SPECIAL_TAXPAYER_INCOMPATIBLE); el borrador cambió (WITHHOLDING_DRAFT_CHANGED) o ya se emitió con otra clave (WITHHOLDING_DRAFT_ALREADY_EMITTED); o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/withholding-receipts/{withholdingReceiptId}/signing-attempts": {
+      "post": {
+        "summary": "Reintentar la firma de una retención reservada, con el mismo número y la misma clave",
+        "parameters": [
+          {
+            "name": "withholdingReceiptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retención tras el intento: `SIGNED`, o `RESERVED` con el diagnóstico. Una retención ya firmada se devuelve sin cambios.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "documentType": {
+                          "type": "string",
+                          "enum": [
+                            "01",
+                            "03",
+                            "04",
+                            "05",
+                            "06",
+                            "07"
+                          ]
+                        },
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "TEST",
+                            "PRODUCTION"
+                          ]
+                        },
+                        "documentNumber": {
+                          "type": "string"
+                        },
+                        "accessKey": {
+                          "type": "string"
+                        },
+                        "issueDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RESERVED",
+                            "SIGNED",
+                            "SEND_UNKNOWN",
+                            "RECEIVED",
+                            "RETURNED",
+                            "AUTHORIZED",
+                            "NOT_AUTHORIZED",
+                            "MANUAL_REVIEW"
+                          ]
+                        },
+                        "issuer": {
+                          "type": "object",
+                          "properties": {
+                            "ruc": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            },
+                            "tradeName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "headOfficeAddress": {
+                              "type": "string"
+                            },
+                            "establishmentAddress": {
+                              "type": "string"
+                            },
+                            "accountingRequired": {
+                              "type": "boolean"
+                            },
+                            "specialTaxpayerNumber": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "withholdingAgentResolution": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "rimpeCategory": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "EMPRENDEDOR",
+                                    "NEGOCIO_POPULAR"
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "ruc",
+                            "legalName",
+                            "tradeName",
+                            "headOfficeAddress",
+                            "establishmentAddress",
+                            "accountingRequired",
+                            "specialTaxpayerNumber",
+                            "withholdingAgentResolution",
+                            "rimpeCategory"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "subject": {
+                          "type": "object",
+                          "properties": {
+                            "partyId": {
+                              "type": "string"
+                            },
+                            "identificationType": {
+                              "type": "string"
+                            },
+                            "identification": {
+                              "type": "string"
+                            },
+                            "legalName": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "partyId",
+                            "identificationType",
+                            "identification",
+                            "legalName"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "relatedParty": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string",
+                              "enum": [
+                                "SI",
+                                "NO"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "const": "USER_DECLARED"
+                            },
+                            "declaredBy": {
+                              "type": "string"
+                            },
+                            "declaredByName": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "declaredAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "declaredBy",
+                            "declaredByName",
+                            "declaredAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "fiscalPeriod": {
+                          "type": "string"
+                        },
+                        "supports": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "documentType": {
+                                "type": "string",
+                                "enum": [
+                                  "01",
+                                  "02",
+                                  "03"
+                                ]
+                              },
+                              "documentTypeLabel": {
+                                "type": "string"
+                              },
+                              "supportCode": {
+                                "type": "string"
+                              },
+                              "supportCodeLabel": {
+                                "type": "string"
+                              },
+                              "number": {
+                                "type": "string"
+                              },
+                              "issueDate": {
+                                "type": "string",
+                                "format": "date",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                              },
+                              "authorizationNumber": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "totalWithoutTaxes": {
+                                "type": "string"
+                              },
+                              "importTotal": {
+                                "type": "string"
+                              },
+                              "taxes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "tax": {
+                                      "type": "string",
+                                      "enum": [
+                                        "2",
+                                        "3",
+                                        "5"
+                                      ]
+                                    },
+                                    "taxLabel": {
+                                      "type": "string"
+                                    },
+                                    "rateCode": {
+                                      "type": "string"
+                                    },
+                                    "rateLabel": {
+                                      "type": "string"
+                                    },
+                                    "rate": {
+                                      "type": "string"
+                                    },
+                                    "rateBasis": {
+                                      "type": "string",
+                                      "enum": [
+                                        "CATALOG",
+                                        "USER_DECLARED"
+                                      ]
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "tax",
+                                    "taxLabel",
+                                    "rateCode",
+                                    "rateLabel",
+                                    "rate",
+                                    "rateBasis",
+                                    "base",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "payments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "code",
+                                    "label",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "withholdings": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "position": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "tax": {
+                                      "type": "string",
+                                      "enum": [
+                                        "1",
+                                        "2"
+                                      ]
+                                    },
+                                    "entryKey": {
+                                      "type": "string"
+                                    },
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "percentage": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    },
+                                    "taxLabel": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "position",
+                                    "tax",
+                                    "entryKey",
+                                    "code",
+                                    "label",
+                                    "base",
+                                    "percentage",
+                                    "amount",
+                                    "taxLabel"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "documentType",
+                              "documentTypeLabel",
+                              "supportCode",
+                              "supportCodeLabel",
+                              "number",
+                              "issueDate",
+                              "authorizationNumber",
+                              "totalWithoutTaxes",
+                              "importTotal",
+                              "taxes",
+                              "payments",
+                              "withholdings"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "withheld": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "withheld"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "diagnostic": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "stage": {
+                                  "type": "string",
+                                  "enum": [
+                                    "BUILD_XML",
+                                    "VALIDATE_XSD",
+                                    "SIGN",
+                                    "VALIDATE_SIGNED_XSD",
+                                    "PERSIST"
+                                  ]
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "VALIDATOR_BUSY",
+                                    "VALIDATOR_TIMEOUT",
+                                    "CRYPTO_BUSY",
+                                    "CRYPTO_TIMEOUT",
+                                    "CRYPTO_UNAVAILABLE",
+                                    "PERSIST_FAILED",
+                                    "SIGNING_CERTIFICATE_NOT_USABLE",
+                                    "CUSTODY_UNAVAILABLE",
+                                    "CERTIFICATE_MISMATCH",
+                                    "SIGNER_FAILED",
+                                    "SCHEMA_UNAVAILABLE",
+                                    "SCHEMA_HASH_MISMATCH",
+                                    "XSD_INVALID",
+                                    "SIGNED_XML_INVALID",
+                                    "INVALID_SNAPSHOT_TEXT",
+                                    "INVALID_SNAPSHOT_AMOUNT"
+                                  ]
+                                },
+                                "class": {
+                                  "type": "string",
+                                  "enum": [
+                                    "RETRYABLE_OPERATIONAL",
+                                    "DETERMINISTIC_CONFIGURATION",
+                                    "DETERMINISTIC_VALIDATION"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                "attemptCount": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "stage",
+                                "code",
+                                "class",
+                                "message",
+                                "at",
+                                "attemptCount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "artifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "authorizedArtifact": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "sha256": {
+                                  "type": "string"
+                                },
+                                "sizeBytes": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "sha256",
+                                "sizeBytes"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "transmission": {
+                          "type": "object",
+                          "properties": {
+                            "inProgress": {
+                              "type": "boolean"
+                            },
+                            "stopped": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "message": {
+                                      "type": "string"
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    }
+                                  },
+                                  "required": [
+                                    "code",
+                                    "message",
+                                    "at"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "reconcilable": {
+                              "type": "boolean"
+                            },
+                            "authorization": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "number": {
+                                      "type": "string"
+                                    },
+                                    "authorizedAt": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "environment": {
+                                      "type": "string",
+                                      "enum": [
+                                        "TEST",
+                                        "PRODUCTION"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "number",
+                                    "authorizedAt",
+                                    "environment"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lastResult": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "operation": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEPTION",
+                                        "AUTHORIZATION",
+                                        "VALIDITY"
+                                      ]
+                                    },
+                                    "outcome": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RECEIVED",
+                                        "RETURNED",
+                                        "KEY_IN_PROCESS",
+                                        "KEY_REGISTERED",
+                                        "SEQUENTIAL_REGISTERED",
+                                        "UNKNOWN",
+                                        "INCONSISTENT",
+                                        "AUTHORIZED",
+                                        "NOT_AUTHORIZED",
+                                        "NO_CONCLUSION",
+                                        "KEY_UNKNOWN",
+                                        "KEY_KNOWN",
+                                        "NO_EVIDENCE",
+                                        "NOT_SENT",
+                                        "UNPARSEABLE"
+                                      ]
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    "messages": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "identifier": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "message": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "additionalInformation": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          },
+                                          "type": {
+                                            "type": [
+                                              "string",
+                                              "null"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "identifier",
+                                          "message",
+                                          "additionalInformation",
+                                          "type"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "operation",
+                                    "outcome",
+                                    "at",
+                                    "messages"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "inProgress",
+                            "stopped",
+                            "reconcilable",
+                            "authorization",
+                            "lastResult"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "signedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "documentType",
+                        "environment",
+                        "documentNumber",
+                        "accessKey",
+                        "issueDate",
+                        "state",
+                        "issuer",
+                        "subject",
+                        "relatedParty",
+                        "fiscalPeriod",
+                        "supports",
+                        "totals",
+                        "diagnostic",
+                        "artifact",
+                        "authorizedArtifact",
+                        "transmission",
+                        "createdAt",
+                        "signedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El comprobante de retención no existe en la empresa (WITHHOLDING_RECEIPT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

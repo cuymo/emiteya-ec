@@ -2,13 +2,24 @@
 // empresa, el rol y el autor salen del contexto de la sesión; un recurso de otra empresa es `404`.
 // Ninguna ruta envía al SRI ni expone XML o respuestas originales.
 import { Router, type Response } from "express";
-import type { ListMeta } from "@facturador/contracts";
+import {
+  IDEMPOTENCY_KEY_HEADER,
+  type ListMeta,
+  type WithholdingReceiptView,
+} from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
+import {
+  createStageTimings,
+  serverTimingHeader,
+} from "../../../../platform/metrics/stage-timings.ts";
 import type { WithholdingDrafts } from "../../application/drafts.ts";
+import type { WithholdingEmission } from "../../application/emission.ts";
 import type { WithholdingOptions } from "../../application/options.ts";
+import type { WithholdingReceipts } from "../../application/withholding-receipts.ts";
 import {
   toWithholdingDraftSummaryView,
   toWithholdingDraftView,
+  toWithholdingReceiptView,
   toWithholdingSupplierView,
 } from "./views.ts";
 
@@ -21,11 +32,18 @@ const param = (value: unknown) => String(value);
 export type WithholdingReceiptsRouterDependencies = {
   drafts: WithholdingDrafts;
   options: WithholdingOptions;
+  emission: WithholdingEmission;
+  withholdings: WithholdingReceipts;
+  /** EMISSION_STAGE_TIMINGS: cabecera `Server-Timing` en la emisión. */
+  serverTiming?: boolean;
 };
 
 export function withholdingReceiptsRouter({
   drafts,
   options,
+  emission,
+  withholdings,
+  serverTiming = false,
 }: WithholdingReceiptsRouterDependencies): Router {
   const router = Router();
 
@@ -63,6 +81,33 @@ export function withholdingReceiptsRouter({
   router.delete("/withholding-receipts/drafts/:draftId", async (req, res) => {
     await drafts.remove(contextOf(res), param(req.params.draftId));
     res.status(204).end();
+  });
+
+  router.post("/withholding-receipts", async (req, res) => {
+    const timings = createStageTimings();
+    let result: { view: WithholdingReceiptView; replayed: boolean };
+    try {
+      result = await timings.envelope("total", async () => {
+        const { document, replayed } = await emission.emit(
+          contextOf(res),
+          req.header(IDEMPOTENCY_KEY_HEADER),
+          req.body,
+          timings,
+        );
+        return { view: toWithholdingReceiptView(await withholdings.details(document)), replayed };
+      });
+    } finally {
+      if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
+    }
+    send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  router.post("/withholding-receipts/:withholdingReceiptId/signing-attempts", async (req, res) => {
+    const details = await withholdings.retrySigning(
+      contextOf(res),
+      param(req.params.withholdingReceiptId),
+    );
+    send(res, 200, toWithholdingReceiptView(details));
   });
 
   return router;

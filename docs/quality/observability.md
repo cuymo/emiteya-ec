@@ -171,6 +171,28 @@ eventos de auditoría (`debit_note.reserved`, `debit_note.signed`, `debit_note.s
 número, la factura, las causas y la declaración con su versión; nunca las descripciones de los
 conceptos, XML, SOAP ni la clave del certificado.
 
+## Comprobantes de retención
+
+Señales de `add-withholding-receipts` (design D26), en `/metrics` y sin la empresa, el proveedor ni
+el comprobante en las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `withholding_receipt_reservations_total` | Counter | Comprobantes de retención reservados al emitir. Una repetición con la misma `Idempotency-Key` no cuenta. |
+| `withholding_receipt_items_total{tax}` | Counter | Retenciones de los comprobantes reservados, por impuesto (`income` para la renta, `iva` para el IVA); solo esos dos valores. |
+
+La retención no tiene capacidades ni movimientos de inventario, así que no tiene señales de
+reservas sin conclusión: una retención en revisión manual o con resultado incierto se ve en
+`fiscal_documents{state}` y se reconcilia con `POST /api/v1/withholding-receipts/{id}/reconciliations`.
+La transmisión, la reconciliación y el RIDE usan las señales vigentes sin una etiqueta de tipo. Los
+eventos de auditoría (`withholding_receipt.reserved`, `withholding_receipt.signed`,
+`withholding_receipt.signing_retried`, `withholding_receipt.reconciliation_requested`,
+`withholding_receipt.reconciliation_completed`) llevan el comprobante, su número, su clave, el
+total retenido, el sujeto (identificación y razón social), el período, la declaración de parte
+relacionada con su base y las cantidades de documentos y retenciones con sus impuestos; nunca XML,
+SOAP ni la clave del certificado. Los borradores, las consultas, la transmisión automática y las
+entregas no se auditan.
+
 ## Logging Rules
 
 - Do not log secrets.
