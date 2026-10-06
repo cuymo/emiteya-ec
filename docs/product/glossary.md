@@ -70,7 +70,8 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Forma de pago            | `paymentMethod`      | —          | Código del catálogo fiscal de formas de pago.                                           |
 | Periodo fiscal           | `fiscalPeriod`       | —          | Mes y año de una retención (`MM/AAAA`), declarado en el comprobante (BR-36).            |
 | Transportista            | `carrier`            | —          | Quien traslada la mercadería de una guía: la propia empresa (`SELF`) o un tercero con el rol `CARRIER` (`PARTY`), según su origen (`transporterSource`). |
-| Destinatario             | `consignee`          | —          | Quien recibe la mercadería trasladada: un tercero identificado o, en un traslado entre establecimientos propios, la propia empresa. Una guía tiene uno o más. |
+| Destinatario             | `consignee`          | —          | Quien recibe la mercadería trasladada: un tercero identificado o, en un traslado entre establecimientos propios, la propia empresa con su establecimiento de destino. Una guía tiene uno o más. |
+| Establecimiento de origen | `originEstablishment` | —         | Establecimiento propio desde el que parte una guía; su dirección es la partida. Obligatorio, y distinto del destino, en un traslado entre establecimientos propios. |
 | Sujeto retenido          | `withheldParty`      | —          | Tercero al que se le practica una retención.                                            |
 | Parte relacionada        | `relatedParty`       | —          | Declaración SI/NO del usuario en una retención (`parteRel`) sobre su relación con el sujeto retenido. |
 | Concepto de retención    | `withholdingConcept` | —          | Entrada del catálogo con el código y el porcentaje de una retención de renta (`withholding-income-concept`, Catálogo ATS) o de IVA (`withholding-iva-code`, tabla 20 de la ficha). Solo los soportados se eligen. |

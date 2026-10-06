@@ -24,7 +24,7 @@ inventario que no sale de ningún XSD.
 | `tarifa` | `Percentage` | 4 | 2 | 0 | `9999`, `99.99`, `100`, `300` | Porcentaje de una tarifa |
 | `importe` | `Money` | 14 | 2 | 0 | `99999999999999`, `999999999999.99` | Monto de la política de consumidor final; importes de la emisión |
 | `precioUnitario` | `UnitPrice` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Precio unitario de productos, sin impuestos |
-| `cantidad` | `Quantity` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Cantidades de la emisión |
+| `cantidad` | `Quantity` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Cantidades de la emisión. En la guía de remisión, mayor que cero aunque el XSD admita 0 (política del proyecto, P7 de Q-51); se guarda y se escribe en su forma canónica, sin redondeo (`2.500` es `2.5`), y más de 6 decimales se rechaza |
 | `porcentajeRetener` | — | 3 | 2 | 0 | `999`, `100`, `9.99`, `1.75` | Porcentaje de una retención (`porcentajeRetener` del comprobante de retención 2.0.0) y la `tarifa` del impuesto declarado de su documento sustento, que el mismo XSD define con la misma escala (design D6 y D13 de `add-withholding-receipts`). `100` cumple los 3 dígitos en su forma canónica; `100.00` no |
 | `existencia` | `StockQuantity` | 30 | 6 | Sin mínimo (con signo) | `999999999999999999999999.999999`, `-999999999999999999999999.999999` | Variaciones y saldos del inventario (design D3 de `add-minimal-inventory`): los decimales de `cantidad` y una parte entera que admite la salida de una factura de 1 000 líneas de cantidad máxima. Un saldo puede ser negativo (Q-19). |
 

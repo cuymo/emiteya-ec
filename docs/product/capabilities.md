@@ -216,7 +216,10 @@ política del MVP y la defensa de recursos.
 | Destinatario identificado, partida, destinos, conductor, placa, mercadería con unidad y cantidad, motivo y fechas | Requisito oficial | Reglamento de Comprobantes de Venta, art. 30 (`sri-catalogs/fuentes/reglamento-comprobantes-arts-27-38.txt`) |
 | Comprobante de venta salvo las excepciones a) a e) del art. 30, numeral 8 | Requisito oficial | Reglamento, art. 30 |
 | Factura `01` propia, autorizada, del mismo ambiente, o excepción declarada b), c), d) o e); sin venta itinerante ni comprobantes externos | Política del MVP (P1) | Q-51 |
-| Traslado entre establecimientos propios con la empresa como destinataria | Política del MVP (P2) | Q-51 |
+| Traslado entre establecimientos propios con la empresa como destinataria, origen y destino registrados, activos y distintos, y la partida derivada del origen | Requisito oficial ("traslado entre establecimientos de un mismo contribuyente") y política del MVP (P2) | Reglamento, art. 30, numeral 8, literal d; Q-51 |
+| Factura a consumidor final como sustento con un destinatario identificado | Política del MVP | Q-51 |
+| Mercancías de la factura como sugerencia no autoritativa | Política del MVP | Q-51 |
+| Conductor (Reglamento, art. 30) frente a transportista (XSD, ficha y facturador gratuito): solo los campos del transportista del XML 1.1.0 | Requisito oficial con terminología distinta | Reglamento, art. 30; ficha v2.34, anexo 3 y tabla 15; Q-51 |
 | Destinatario externo: tercero activo 04, 05 o 06, sin rol obligatorio | Política del MVP (P3) sobre el art. 30 | Q-51 |
 | Transportista `SELF` (identidad tributaria) o `PARTY` (rol `CARRIER` obligatorio, 04, 05 o 06) | Política del MVP (P4) | Q-51 |
 | Placa como texto fiscal, sin formato vehicular | Política del MVP (P5); la tabla 29 es de facturas de combustibles | Ficha v2.34, anexo 12; Q-51 |
