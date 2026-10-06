@@ -218,7 +218,7 @@ El sistema SHALL registrar un evento cuando una emisión deja una factura reserv
 - **THEN** el evento no contiene el XML, los bytes firmados ni datos de la firma electrónica
 
 ### Requirement: Auditoría de la reconciliación manual
-El sistema SHALL registrar un evento cuando un administrador pide la reconciliación de una factura, de una nota de crédito o de una nota de débito con el SRI, y otro cuando esa reconciliación termina. Llevan el actor, la empresa, el comprobante y su tipo, el número, el motivo y el resultado, nunca la respuesta del SRI. Las transmisiones, consultas y reconciliaciones automáticas no generan eventos de auditoría: su evidencia son los intentos y las transiciones.
+El sistema SHALL registrar un evento cuando un administrador pide la reconciliación de una factura, de una nota de crédito, de una nota de débito o de un comprobante de retención con el SRI, y otro cuando esa reconciliación termina. Llevan el actor, la empresa, el comprobante y su tipo, el número, el motivo y el resultado, nunca la respuesta del SRI. Las transmisiones, consultas y reconciliaciones automáticas no generan eventos de auditoría: su evidencia son los intentos y las transiciones.
 
 #### Scenario: Reconciliación pedida y completada
 - **WHEN** un administrador pide la reconciliación de una factura y la reconciliación termina
@@ -243,6 +243,10 @@ El sistema SHALL registrar un evento cuando un administrador pide la reconciliac
 #### Scenario: Reconciliación de una nota de débito
 - **WHEN** un administrador pide la reconciliación de una nota de débito y la reconciliación termina
 - **THEN** existen los eventos de solicitud y de finalización de nota de débito con la nota, su número y su tipo, sin la respuesta del SRI
+
+#### Scenario: Reconciliación de un comprobante de retención
+- **WHEN** un administrador pide la reconciliación de un comprobante de retención y la reconciliación termina
+- **THEN** existen los eventos de solicitud y de finalización de comprobante de retención con el comprobante, su número y su tipo, sin la respuesta del SRI
 
 ### Requirement: Auditoría de la configuración del inventario
 El sistema SHALL registrar un evento por cada inicialización del inventario de un producto y por cada desactivación o reactivación de su control, con actor, empresa, producto, acción, estado anterior y nuevo del control y momento. Las entradas manuales, los ajustes y las salidas no generan eventos: el movimiento inmutable, con su actor, su motivo y su momento, es su evidencia.
@@ -295,4 +299,23 @@ El sistema SHALL registrar un evento cuando una nota de débito queda reservada,
 
 #### Scenario: Sin duplicar otras evidencias
 - **WHEN** una nota de débito se prepara en borrador, se transmite, se autoriza y se descarga su RIDE
+- **THEN** esas acciones no generan eventos de auditoría: su evidencia son los intentos, las transiciones y el historial de entregas
+
+### Requirement: Auditoría de la emisión de comprobantes de retención
+El sistema SHALL registrar un evento cuando un comprobante de retención queda reservado, cuando queda firmado y cuando comienza un reintento de firma válido. El de reserva lleva el comprobante, su número, su clave, el ambiente, el total retenido, el sujeto retenido, el período fiscal, la declaración de parte relacionada y el número de documentos sustento y de retenciones con sus impuestos; el del reintento, el comprobante, su número y su resultado. Un reintento que no inicia un intento, porque el comprobante ya está firmado u otro intento está en curso, no genera evento. Ninguno lleva el XML, la respuesta del SRI ni secretos.
+
+#### Scenario: Retención reservada y firmada
+- **WHEN** un usuario emite un comprobante de retención que llega a firmado
+- **THEN** existen un evento de reserva con el sujeto, el período y la declaración, y un evento de firma con el SHA-256 del artefacto, ambos con el usuario como actor
+
+#### Scenario: Reintento de firma
+- **WHEN** un usuario reintenta la firma de un comprobante de retención reservado
+- **THEN** existe un evento de reintento con el comprobante y su número
+
+#### Scenario: Solicitud rechazada antes de reservar
+- **WHEN** una emisión de comprobante de retención se rechaza antes de reservar
+- **THEN** no se registra ningún evento
+
+#### Scenario: Sin duplicar otras evidencias
+- **WHEN** un comprobante de retención se prepara en borrador, se transmite, se autoriza y se descarga su RIDE
 - **THEN** esas acciones no generan eventos de auditoría: su evidencia son los intentos, las transiciones y el historial de entregas

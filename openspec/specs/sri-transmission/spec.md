@@ -309,7 +309,7 @@ Un comprobante SHALL pasar a revisión manual solo cuando su resultado no puede 
 - **THEN** sigue en revisión manual, no se reenvía y no existe una acción para reenviarlo de todas formas
 
 ### Requirement: Reconciliación manual
-Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura, de una nota de crédito o de una nota de débito en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
+Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura, de una nota de crédito, de una nota de débito o de un comprobante de retención en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
 
 #### Scenario: Reconciliación de una revisión manual
 - **WHEN** un administrador reconcilia una factura en revisión manual y el SRI la informa autorizada
@@ -345,6 +345,14 @@ Un administrador SHALL poder pedir, con un motivo, la reconciliación de una fac
 
 #### Scenario: Nota de débito en un estado que no se reconcilia
 - **WHEN** un administrador pide la reconciliación de una nota de débito autorizada, no autorizada o devuelta
+- **THEN** se rechaza la reconciliación sin programarla
+
+#### Scenario: Comprobante de retención en revisión manual
+- **WHEN** un administrador reconcilia un comprobante de retención en revisión manual y el SRI lo informa autorizado
+- **THEN** el comprobante pasa a autorizado con las mismas reglas que una factura, sin cambiar inventario ni facturas
+
+#### Scenario: Comprobante de retención en un estado que no se reconcilia
+- **WHEN** un administrador pide la reconciliación de un comprobante de retención autorizado, no autorizado o devuelto
 - **THEN** se rechaza la reconciliación sin programarla
 
 ### Requirement: Número, clave y XML firmado invariables durante la transmisión
@@ -396,7 +404,7 @@ Los intentos, las respuestas, las transmisiones y las reconciliaciones de una em
 - **THEN** el sistema responde que no existe y no se programa nada
 
 ### Requirement: Transmisión de cada tipo emitido
-La transmisión SHALL tratar igual la factura, la nota de crédito y la nota de débito: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
+La transmisión SHALL tratar igual la factura, la nota de crédito, la nota de débito y el comprobante de retención: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
 
 #### Scenario: Nota de crédito autorizada
 - **WHEN** una nota de crédito firmada se envía y el SRI la autoriza
@@ -448,4 +456,32 @@ La transmisión SHALL tratar igual la factura, la nota de crédito y la nota de 
 
 #### Scenario: Evidencia antes de clasificar una nota de débito
 - **WHEN** el SRI responde a un envío o a una consulta de una nota de débito
+- **THEN** la respuesta queda guardada antes de clasificarla, y si la decisión local falla, el reintento clasifica la respuesta guardada sin volver a llamar al SRI
+
+#### Scenario: Retención recibida y autorizada
+- **WHEN** un comprobante de retención firmado se envía, la recepción responde `RECIBIDA` y la consulta lo informa autorizado
+- **THEN** pasa por recibido y queda autorizado con su número de autorización y su XML autorizado, como una factura
+
+#### Scenario: Retención devuelta o no autorizada
+- **WHEN** la recepción responde `DEVUELTA` o la consulta informa no autorizado un comprobante de retención
+- **THEN** queda devuelto o no autorizado con todos los mensajes del SRI
+
+#### Scenario: Errores 70, 43 y 45 en una retención
+- **WHEN** el SRI responde el error 70, el 43 o el 45 para un comprobante de retención
+- **THEN** sigue las mismas reglas que una factura y se reconcilia por su clave sin reenviar a ciegas
+
+#### Scenario: Retención no enviada de forma comprobable
+- **WHEN** el envío de un comprobante de retención falla de una forma que demuestra que la solicitud no salió
+- **THEN** se reintenta el envío como el de una factura, sin pasar a verificando
+
+#### Scenario: Retención con resultado incierto
+- **WHEN** el envío de un comprobante de retención termina sin respuesta concluyente
+- **THEN** queda verificando con el SRI y se reconcilia por su clave, sin reenviarse antes de saber si el SRI lo recibió
+
+#### Scenario: Retención en revisión manual
+- **WHEN** la reconciliación automática de un comprobante de retención agota sus intentos sin conclusión
+- **THEN** queda en revisión manual, como una factura
+
+#### Scenario: Evidencia antes de clasificar una retención
+- **WHEN** el SRI responde a un envío o a una consulta de un comprobante de retención
 - **THEN** la respuesta queda guardada antes de clasificarla, y si la decisión local falla, el reintento clasifica la respuesta guardada sin volver a llamar al SRI

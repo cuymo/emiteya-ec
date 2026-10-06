@@ -9,7 +9,7 @@ política de consumidor final, el registro de esquemas XSD y la matriz de casos 
 ## Requirements
 
 ### Requirement: Catálogos fiscales oficiales
-El sistema SHALL ofrecer a todas las empresas los catálogos fiscales oficiales de tipos de identificación, impuestos, tarifas de IVA, códigos de ICE, códigos de IRBPNR y formas de pago. Cada entrada SHALL indicar su código, su descripción oficial, su vigencia desde y, si la tiene, hasta, el origen de su fecha de inicio (declarada por la fuente o base del proyecto), su documento fuente, la versión de esa fuente y su estado normativo.
+El sistema SHALL ofrecer a todas las empresas los catálogos fiscales oficiales de tipos de identificación, impuestos, tarifas de IVA, códigos de ICE, códigos de IRBPNR, formas de pago, impuestos a retener, códigos de retención del IVA, conceptos de retención del impuesto a la renta, tipos de documento sustento y códigos de sustento. Cada entrada SHALL indicar su código, su descripción oficial, su vigencia desde y, si la tiene, hasta, el origen de su fecha de inicio (declarada por la fuente o base del proyecto), su documento fuente, la versión de esa fuente y su estado normativo.
 
 #### Scenario: Consulta de un catálogo
 - **WHEN** un usuario consulta las formas de pago
@@ -30,6 +30,10 @@ El sistema SHALL ofrecer a todas las empresas los catálogos fiscales oficiales 
 #### Scenario: Funciona sin conexión con el SRI
 - **WHEN** el sistema arranca sin acceso a internet
 - **THEN** los catálogos fiscales están disponibles con los datos distribuidos en la versión instalada
+
+#### Scenario: Catálogos de retención
+- **WHEN** un usuario consulta los conceptos de retención del impuesto a la renta
+- **THEN** ve cada concepto con su código, su denominación oficial, su porcentaje o el texto con que la fuente lo publica, su vigencia, su fuente (el Catálogo ATS con su fecha de actualización y su SHA-256) y su clasificación de alcance
 
 ### Requirement: Identidad propia de cada entrada oficial
 El sistema SHALL dar a cada entrada oficial una identidad estable dentro de su catálogo, distinta del código fiscal. Cuando la fuente publica varias filas con el mismo código y denominaciones distintas, cada fila SHALL ser una entrada propia que conserva ese código.
@@ -142,7 +146,9 @@ El sistema SHALL determinar, con una única regla, qué versión de una entrada 
 - **THEN** el sistema devuelve la misma versión que antes, con el mismo identificador y los mismos valores
 
 ### Requirement: Habilitación de entradas por empresa
-El sistema SHALL permitir que un administrador habilite o deshabilite para su empresa las tarifas de IVA, los códigos de ICE e IRBPNR y las formas de pago. Sin una decisión de la empresa rige el valor por defecto de cada catálogo: habilitadas las tarifas de IVA y las formas de pago, deshabilitados ICE e IRBPNR. Una entrada solo es utilizable si está habilitada y vigente. La habilitación no cambia los datos oficiales.
+El sistema SHALL permitir que un administrador habilite o deshabilite para su empresa las tarifas de IVA, los códigos de ICE e IRBPNR, las formas de pago, los códigos de retención del IVA y los conceptos de retención de la renta. Sin una decisión de la empresa rige el valor por defecto de cada catálogo: habilitadas las tarifas de IVA, las formas de pago y los catálogos de retención, deshabilitados ICE e IRBPNR. Una entrada solo es utilizable si está habilitada y vigente. La habilitación no cambia los datos oficiales.
+
+En los catálogos de retención solo se habilitan o deshabilitan las entradas soportadas: los conceptos de la renta clasificados como soportados para residentes con porcentaje fijo (`SUPPORTED_FIXED_RESIDENT`) y los códigos de retención del IVA clasificados como soportados (`SUPPORTED_FIXED`), entre ellos el código 7, que representa explícitamente una retención en cero. Habilitar o deshabilitar una entrada fuera de alcance (`OUT_OF_SCOPE_NON_RESIDENT`, `OUT_OF_SCOPE_VARIABLE`, `OUT_OF_SCOPE_SPECIAL_STRUCTURE` u `OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION`, como el código 8 de no procede retención) se rechaza siempre con el mismo motivo y no registra ninguna decisión. La entrada sigue en el catálogo para su trazabilidad y no puede usarse en una retención.
 
 #### Scenario: Deshabilitar una tarifa
 - **WHEN** un administrador deshabilita la tarifa de IVA del 14 %
@@ -179,6 +185,22 @@ El sistema SHALL permitir que un administrador habilite o deshabilite para su em
 #### Scenario: Cambios simultáneos de la misma entrada
 - **WHEN** dos administradores cambian a la vez la habilitación de la misma entrada
 - **THEN** la entrada queda en un único estado final y se registra un solo cambio por cada transición real
+
+#### Scenario: Deshabilitar un concepto de retención
+- **WHEN** un administrador deshabilita el concepto de renta 303 para su empresa
+- **THEN** el concepto deja de ofrecerse en sus retenciones y su entrada oficial no cambia
+
+#### Scenario: Habilitar un concepto de renta fuera de alcance
+- **WHEN** un administrador intenta habilitar un concepto de renta clasificado fuera de alcance por no residente, por porcentaje variable, por estructura especial excluida o por representación ambigua
+- **THEN** el sistema rechaza cada solicitud con el mismo motivo, no registra ninguna decisión y el concepto sigue en el catálogo sin poder usarse
+
+#### Scenario: Habilitar el código 8 de retención del IVA
+- **WHEN** un administrador intenta habilitar el código 8 de no procede retención
+- **THEN** el sistema rechaza la solicitud, no registra ninguna decisión y el código sigue en el catálogo sin poder seleccionarse para una retención
+
+#### Scenario: Habilitar el código 7 de retención del IVA
+- **WHEN** un administrador deshabilita el código 7 de retención en cero y lo vuelve a habilitar
+- **THEN** el código queda habilitado para su empresa y una retención con él lleva el 0 % y un valor retenido de 0.00
 
 ### Requirement: Política de consumidor final
 El sistema SHALL conservar como dato versionado la política de consumidor final: el monto máximo para facturar sin identificar al comprador, su vigencia y su fuente, y la identidad canónica del consumidor final (tipo de venta a consumidor final, identificación 9999999999999 y razón social CONSUMIDOR FINAL). Este cambio la publica; no la aplica ni crea terceros.
@@ -258,3 +280,37 @@ El sistema SHALL mantener como política versionada el límite de tamaño de un 
 #### Scenario: Fuente sin verificar
 - **WHEN** la cifra exacta en bytes no puede verificarse en la fuente oficial
 - **THEN** la política no se publica, no se usa ningún valor provisional y ningún comprobante se envía al SRI
+
+### Requirement: Clasificación de alcance de las entradas de retención
+Cada concepto de retención de la renta y cada código de retención del IVA SHALL conservar la fila oficial completa, con su código y su porcentaje o el texto literal de la fuente, e indicar su clasificación: soportado (residente con porcentaje fijo), fuera de alcance por porcentaje variable, por no residente, por estructura especial excluida o por representación ambigua en la fuente. Solo las soportadas se pueden elegir.
+
+#### Scenario: Concepto con porcentaje textual
+- **WHEN** un usuario consulta un concepto que la fuente publica con "varios porcentajes"
+- **THEN** lo ve con ese texto literal, sin un porcentaje inventado, clasificado fuera de alcance por porcentaje variable
+
+#### Scenario: Concepto de no residentes
+- **WHEN** un usuario consulta un concepto del módulo de pagos a no residentes
+- **THEN** lo ve clasificado fuera de alcance por no residente
+
+#### Scenario: Código publicado con un espacio
+- **WHEN** un usuario consulta un concepto cuyo código la fuente publica con un espacio interno, como `323 M`
+- **THEN** lo ve con el código literal de la fuente, con el espacio, clasificado fuera de alcance por representación ambigua, pendiente de evidencia y de soporte futuro
+
+#### Scenario: Retención del IVA que no procede
+- **WHEN** un usuario consulta el código 8 de retención del IVA, "no procede retención"
+- **THEN** lo ve con su porcentaje 0 % y su denominación, clasificado fuera de alcance porque la fuente no define su representación en el comprobante
+
+#### Scenario: Cantidad de conceptos soportados
+- **WHEN** se instala la versión del catálogo de la renta del Catálogo ATS del 06/08/2026, con sus 127 filas
+- **THEN** la cantidad de conceptos soportados es la que resulta de aplicar las reglas de clasificación a esas filas, sin un número fijado en el sistema
+
+### Requirement: Compatibilidad del sustento con el tipo de documento
+El catálogo de tipos de documento sustento SHALL indicar, para cada tipo, los códigos de sustento que admite según el Catálogo ATS, y el catálogo de códigos de sustento su vigencia. Un código de sustento solo es utilizable con un tipo que lo admite y en su vigencia.
+
+#### Scenario: Códigos admitidos por la nota de venta
+- **WHEN** un usuario consulta el tipo de documento sustento nota de venta
+- **THEN** ve los códigos de sustento que el Catálogo ATS le asigna, sin el de crédito tributario del IVA
+
+#### Scenario: Código de sustento vencido
+- **WHEN** un usuario consulta el código de sustento 00, vigente hasta el 28/02/2015
+- **THEN** lo ve con su vigencia cerrada y no es utilizable
