@@ -115,6 +115,8 @@ const COMPLETED_AUDIT: Readonly<Record<string, { action: AuditAction; idField: s
     action: "withholding_receipt.reconciliation_completed",
     idField: "withholdingReceiptId",
   },
+  // add-shipping-guides, design D18.
+  "06": { action: "shipping_guide.reconciliation_completed", idField: "shippingGuideId" },
 };
 
 /** Estado final de una decisión, para la auditoría de la reconciliación manual. */

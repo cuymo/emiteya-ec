@@ -185,7 +185,10 @@ import {
 import {
   emitShippingGuideHeadersSchema,
   emitShippingGuideSchema,
+  listShippingGuidesQuerySchema,
   shippingGuideIdParamsSchema,
+  shippingGuideSummaryViewSchema,
+  shippingGuideTransmissionViewSchema,
   shippingGuideViewSchema,
   createShippingGuideDraftSchema,
   listShippingGuideDraftsQuerySchema,
@@ -2500,6 +2503,59 @@ export const apiRoutes: readonly RouteDefinition[] = [
       401: errors[401],
       403: errors[403],
       404: shippingGuideNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides",
+    summary:
+      "Listar guías de remisión por estado y buscar por número, transportista o identificación de cualquier destinatario, las más recientes primero",
+    request: { query: listShippingGuidesQuerySchema },
+    responses: {
+      200: shippingLookup(
+        'Página de guías con su transportista, "N destinatarios" o el nombre del único, las fechas del transporte y el total en `meta`; sin importes.',
+        shippingGuideSummaryViewSchema,
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/:shippingGuideId/transmission",
+    summary:
+      "Consultar el historial de la transmisión al SRI de una guía de remisión, sin respuestas originales ni XML",
+    request: { params: shippingGuideIdParamsSchema },
+    responses: {
+      200: {
+        description: "Las 100 entradas más recientes del historial y el total.",
+        schema: successEnvelope(shippingGuideTransmissionViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: shippingGuideNotFound,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/shipping-guides/:shippingGuideId/reconciliations",
+    summary:
+      "Pedir la reconciliación de una guía de remisión con el SRI, con motivo (solo el administrador)",
+    request: { params: shippingGuideIdParamsSchema, body: requestReconciliationSchema },
+    responses: {
+      202: shippingGuideResponse(
+        "Reconciliación programada con las reglas de la transmisión; la guía con su estado actual.",
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: shippingGuideNotFound,
+      409: {
+        description:
+          "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (SHIPPING_GUIDE_NOT_RECONCILABLE).",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
 ];

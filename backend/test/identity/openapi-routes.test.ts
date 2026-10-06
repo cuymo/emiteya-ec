@@ -124,6 +124,8 @@ describe("rutas documentadas", () => {
         "post /invoices/:invoiceId/reconciliations",
         "get /withholding-receipts/:withholdingReceiptId/transmission",
         "post /withholding-receipts/:withholdingReceiptId/reconciliations",
+        "get /shipping-guides/:shippingGuideId/transmission",
+        "post /shipping-guides/:shippingGuideId/reconciliations",
       ].sort(),
     );
   });

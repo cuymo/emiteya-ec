@@ -5,6 +5,8 @@ import type {
   ShippingEligibleInvoiceView,
   ShippingGuideDraftSummaryView,
   ShippingGuideDraftView,
+  ShippingGuideSummaryView,
+  ShippingGuideTransmissionView,
   ShippingGuideView,
   ShippingRecipientPartyView,
   SriMessageView,
@@ -14,7 +16,11 @@ import { isAttemptCode, shippingGuideDiagnosticMessage } from "../../application
 import type { ShippingGuideDraftDetails } from "../../application/drafts.ts";
 import { carrierView } from "../../application/options.ts";
 import type { EligibleInvoice } from "../../application/ports.ts";
-import type { ShippingGuideDetails } from "../../application/shipping-guides.ts";
+import type {
+  ShippingGuideDetails,
+  ShippingGuideListItem,
+  ShippingGuideTransmission,
+} from "../../application/shipping-guides.ts";
 import type { ShippingGuideDraftRecord } from "../../domain/draft.ts";
 import type { GuideParty } from "../../domain/evaluation.ts";
 import type { ShippingGuideSnapshot } from "../../domain/snapshot.ts";
@@ -295,5 +301,65 @@ export function toShippingGuideView(details: ShippingGuideDetails): ShippingGuid
     transmission: transmissionView(details),
     createdAt: document.createdAt.toISOString(),
     signedAt: document.signedAt?.toISOString() ?? null,
+  };
+}
+
+/** Fila de la lista desde el snapshot: el transportista y "N destinatarios" o el nombre, sin importes. */
+export function toShippingGuideSummaryView({
+  document,
+  transmissionStopped,
+}: ShippingGuideListItem): ShippingGuideSummaryView {
+  const snapshot = document.snapshot as ShippingGuideSnapshot;
+  const attempt = document.lastAttempt;
+  return {
+    id: document.id,
+    documentNumber: document.documentNumber,
+    environment: document.environment,
+    issueDate: document.issueDate,
+    carrierName: snapshot.transporter.legalName,
+    recipients: {
+      count: snapshot.recipients.length,
+      name: snapshot.recipients.length === 1 ? snapshot.recipients[0]!.legalName : null,
+    },
+    transportStart: snapshot.transportStart,
+    transportEnd: snapshot.transportEnd,
+    state: document.state,
+    diagnosticCode:
+      document.state === "RESERVED" && attempt && isAttemptCode(attempt.code) ? attempt.code : null,
+    transmissionStopped,
+    createdAt: document.createdAt.toISOString(),
+  };
+}
+
+/** Historial de la transmisión: transiciones e intentos resumidos (design D18). */
+export function toShippingGuideTransmissionView({
+  document,
+  events,
+  total,
+}: ShippingGuideTransmission): ShippingGuideTransmissionView {
+  return {
+    shippingGuideId: document.id,
+    state: document.state,
+    events: events.map((event) =>
+      event.kind === "TRANSITION"
+        ? {
+            kind: "TRANSITION",
+            at: event.at.toISOString(),
+            fromState: event.from,
+            toState: event.to,
+            cause: event.cause,
+            actor: event.actor,
+            actorName: event.actorName,
+          }
+        : {
+            kind: "ATTEMPT",
+            at: event.at.toISOString(),
+            operation: event.operation,
+            origin: event.origin,
+            outcome: event.outcome,
+            messages: messagesView(event.messages),
+          },
+    ),
+    total,
   };
 }

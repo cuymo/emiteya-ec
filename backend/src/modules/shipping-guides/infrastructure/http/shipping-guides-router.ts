@@ -21,6 +21,8 @@ import {
   toRecipientPartyView,
   toShippingGuideDraftSummaryView,
   toShippingGuideDraftView,
+  toShippingGuideSummaryView,
+  toShippingGuideTransmissionView,
   toShippingGuideView,
 } from "./views.ts";
 
@@ -132,9 +134,28 @@ export function shippingGuidesRouter({
     send(res, result.replayed ? 200 : 201, result.view);
   });
 
+  router.get("/shipping-guides", async (req, res) => {
+    const { items, meta } = await guides.list(contextOf(res), req.query);
+    send(res, 200, items.map(toShippingGuideSummaryView), meta);
+  });
+
   router.get("/shipping-guides/:shippingGuideId", async (req, res) => {
     const details = await guides.get(contextOf(res), param(req.params.shippingGuideId));
     send(res, 200, toShippingGuideView(details));
+  });
+
+  router.get("/shipping-guides/:shippingGuideId/transmission", async (req, res) => {
+    const view = await guides.transmission(contextOf(res), param(req.params.shippingGuideId));
+    send(res, 200, toShippingGuideTransmissionView(view));
+  });
+
+  router.post("/shipping-guides/:shippingGuideId/reconciliations", async (req, res) => {
+    const details = await guides.requestReconciliation(
+      contextOf(res),
+      param(req.params.shippingGuideId),
+      req.body,
+    );
+    send(res, 202, toShippingGuideView(details));
   });
 
   router.post("/shipping-guides/:shippingGuideId/signing-attempts", async (req, res) => {

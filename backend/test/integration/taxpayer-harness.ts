@@ -426,6 +426,7 @@ export function buildTaxpayerApp(
           limits: { ...SHIPPING_GUIDE_LIMITS_DEFAULT, ...shipping?.limits },
           xsd: options.invoices?.xsd ?? testXsdValidator(),
           signing: shippingSigning.pipeline(shippingGuideSigningProfile()),
+          ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
           ...(shipping?.signAfterReserve === false ? { signAfterReserve: false } : {}),
           ...(shipping?.accessKeys ? { accessKeys: shipping.accessKeys } : {}),
           ...(shipping?.metrics ? { metrics: shipping.metrics } : {}),

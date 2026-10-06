@@ -1,8 +1,8 @@
 // Composición del módulo shipping-guides (add-shipping-guides, design D1, D2 y D22): borradores con
-// su vista previa, opciones y búsquedas, la emisión, la consulta y el reintento de la firma, sobre las
-// lecturas de taxpayer, catalogs y signing, y las lecturas de terceros, productos y facturas que
-// compone `main.ts`. Ningún otro módulo importa este; este no importa `parties`, `products`,
-// `invoices` ni `inventory`.
+// su vista previa, opciones y búsquedas, la emisión, la consulta, la reconciliación manual y el
+// reintento de la firma, sobre las lecturas de taxpayer, catalogs y signing, y las lecturas de
+// terceros, productos y facturas que compone `main.ts`. Ningún otro módulo importa este; este no
+// importa `parties`, `products`, `invoices` ni `inventory`.
 import type { Registry } from "@prometheus-io/client";
 import type { ShippingGuideLimits } from "@facturador/contracts";
 import type { PrismaClient } from "../../../generated/prisma/client.ts";
@@ -12,10 +12,13 @@ import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
 import {
   createArtifactStore,
   createDocumentRepository,
+  createReconciliationRequestUnitOfWork,
   createTransmissionReader,
   type SigningPipeline,
   type SigningProfile,
 } from "../../fiscal/infrastructure/index.ts";
+import type { JobStore } from "../../../platform/jobs/jobs.ts";
+import { createPrismaJobStore } from "../../../platform/jobs/prisma-job-store.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import type { AccessKeys, XsdValidator } from "../../sri-engine/application/ports.ts";
 import { createAccessKeys } from "../../sri-engine/infrastructure/access-keys.ts";
@@ -37,6 +40,7 @@ import { createShippingEligibleInvoiceReader } from "./eligible-invoices.ts";
 import { shippingGuidesRouter } from "./http/shipping-guides-router.ts";
 import { registerShippingGuideMetrics } from "./metrics.ts";
 import { createShippingGuideDraftRepository } from "./prisma-drafts.ts";
+import { createShippingGuideListReader } from "./prisma-shipping-guide-list.ts";
 import { createShippingGuideReads, type SigningReads } from "./reads.ts";
 import {
   createShippingGuideDraftsUnitOfWork,
@@ -72,8 +76,14 @@ export type ShippingGuidesModuleOptions = {
   metrics?: Registry;
   /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión; nunca en producción. */
   stageTimings?: boolean;
+  /** Cola durable: la reconciliación manual encola su job. */
+  jobs?: Pick<JobStore, "enqueueIn">;
+  /** `SRI_CONCLUSION_WINDOW_HOURS` en milisegundos; 24 horas por defecto. */
+  conclusionWindowMs?: number;
   now?: () => Date;
 };
+
+const DEFAULT_CONCLUSION_WINDOW_MS = 24 * 3_600_000;
 
 export function shippingGuidesModule(options: ShippingGuidesModuleOptions) {
   const now = options.now ?? (() => new Date());
@@ -108,6 +118,13 @@ export function shippingGuidesModule(options: ShippingGuidesModuleOptions) {
     audit: createAuditLog(prisma),
     authorizer: options.authorizer,
     transmission: createTransmissionReader(prisma),
+    list: createShippingGuideListReader(prisma),
+    reconciliations: createReconciliationRequestUnitOfWork(
+      prisma,
+      options.jobs ?? createPrismaJobStore(prisma, options.schema),
+    ),
+    conclusionWindowMs: options.conclusionWindowMs ?? DEFAULT_CONCLUSION_WINDOW_MS,
+    now,
   });
   const emission = createShippingGuideEmission({
     uow: createShippingGuideEmissionUnitOfWork(prisma, {
