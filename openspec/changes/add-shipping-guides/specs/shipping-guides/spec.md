@@ -91,19 +91,27 @@ La fecha de inicio del transporte SHALL no ser anterior a la fecha de emisión d
 - **THEN** el sistema la acepta
 
 ### Requirement: Dirección de partida
-La guía SHALL llevar una dirección de partida obligatoria, texto libre de 1 a 300 caracteres sin saltos de línea. El borrador la propone con la dirección del establecimiento del punto de emisión, y el usuario puede cambiarla antes de emitir. Se congela al reservar.
+La guía SHALL llevar una dirección de partida obligatoria: la de un establecimiento propio activo que el usuario elige como origen, derivada y congelada con su identidad, o un texto libre de 1 a 300 caracteres sin saltos de línea, que el borrador propone con la dirección del establecimiento del punto de emisión. Un traslado entre establecimientos propios exige un origen elegido; un texto libre no lo prueba.
+
+#### Scenario: Origen elegido
+- **WHEN** un usuario elige el establecimiento 001 como origen
+- **THEN** la dirección de partida de la guía es la del establecimiento 001, y la guía guarda su identidad, su código y su dirección
 
 #### Scenario: Dirección propuesta
-- **WHEN** un usuario crea un borrador en un punto de emisión
-- **THEN** la dirección de partida propuesta es la del establecimiento de ese punto
+- **WHEN** un usuario crea un borrador en un punto de emisión sin elegir un origen
+- **THEN** la dirección de partida propuesta como texto es la del establecimiento de ese punto, sin que cuente como origen elegido
 
 #### Scenario: Partida desde otro lugar
-- **WHEN** el usuario cambia la dirección de partida por la de una bodega
+- **WHEN** el usuario escribe como partida la dirección de una bodega no registrada en una guía sin traslados entre establecimientos propios
 - **THEN** la guía lleva la dirección que el usuario escribió
 
 #### Scenario: Sin dirección de partida
-- **WHEN** la dirección de partida está vacía al emitir
+- **WHEN** la guía no tiene origen elegido y la dirección de partida está vacía al emitir
 - **THEN** el sistema rechaza la emisión indicando el campo, sin reservar número
+
+#### Scenario: Dirección libre en un traslado propio
+- **WHEN** una guía con un destinatario en traslado entre establecimientos propios tiene una dirección de partida libre y ningún origen elegido
+- **THEN** el sistema rechaza la emisión pidiendo el establecimiento de origen, sin reservar número
 
 ### Requirement: Destinatarios de la guía
 La guía SHALL tener uno o más destinatarios, en orden. Cada uno lleva su identificación, su razón social, una dirección de destino obligatoria de 1 a 300 caracteres, su motivo del traslado, su sustento y uno o más detalles. Un mismo tercero puede aparecer en varios destinatarios. Ningún destinatario representa por sí solo a la guía.
@@ -144,15 +152,27 @@ Un destinatario externo SHALL ser un tercero de la empresa, activo, identificado
 - **THEN** el usuario escribe la dirección de destino, y sin ella la emisión se rechaza indicando el destinatario
 
 ### Requirement: Traslado entre establecimientos propios
-En un traslado entre establecimientos de la empresa, el destinatario SHALL ser la propia empresa: su RUC y su razón social vigentes al reservar, y la dirección y el código de un establecimiento propio activo que el usuario elige, como dirección y código del establecimiento de destino. No se crea un tercero que represente a la empresa. Su sustento es siempre la excepción de traslado entre establecimientos propios.
+En un traslado entre establecimientos de la empresa, el destinatario SHALL ser la propia empresa, con su RUC y su razón social vigentes al reservar. La guía SHALL tener un establecimiento de origen y el destinatario uno de destino, ambos propios, activos y distintos, que el usuario elige; el destino aporta la dirección y el código de destino. No se compara con el establecimiento del punto. No se crea un tercero. Su sustento es siempre la excepción de este caso.
 
-#### Scenario: Traslado a otro establecimiento
-- **WHEN** un usuario emite una guía a la propia empresa con el establecimiento 002
-- **THEN** el destinatario lleva el RUC y la razón social de la empresa, la dirección del establecimiento 002 y el código de destino 002, y no existe un tercero nuevo
+#### Scenario: Traslado entre dos establecimientos
+- **WHEN** un usuario emite una guía con origen en el establecimiento 001 y un destinatario que es la propia empresa en el establecimiento 002
+- **THEN** la partida es la dirección del 001, el destinatario lleva el RUC y la razón social de la empresa, la dirección del 002 y el código de destino 002, la guía guarda la identidad de los dos establecimientos, y no existe un tercero nuevo
+
+#### Scenario: Mismo establecimiento
+- **WHEN** el establecimiento de destino es el mismo que el de origen
+- **THEN** el sistema rechaza la solicitud: el traslado es entre establecimientos distintos
+
+#### Scenario: Emisión desde un tercer establecimiento
+- **WHEN** la guía se emite desde un punto del establecimiento 003, con origen en el 001 y destino en el 002
+- **THEN** el sistema la acepta
+
+#### Scenario: Emisión desde el destino
+- **WHEN** la guía se emite desde un punto del establecimiento 002, con origen en el 001 y destino en el 002
+- **THEN** el sistema la acepta: el establecimiento emisor puede ser el de origen, el de destino u otro
 
 #### Scenario: Establecimiento inactivo
-- **WHEN** el establecimiento de destino elegido está desactivado al emitir
-- **THEN** el sistema rechaza la emisión sin reservar número
+- **WHEN** el establecimiento de origen o el de destino está desactivado al emitir
+- **THEN** el sistema rechaza la emisión indicando cuál, sin reservar número
 
 #### Scenario: Otra clase de sustento
 - **WHEN** un destinatario que es la propia empresa lleva una factura o una excepción distinta del traslado entre establecimientos propios
@@ -205,7 +225,7 @@ Cada destinatario SHALL llevar exactamente un sustento, de una de dos clases: un
 - **THEN** el sistema la rechaza por estar fuera del alcance actual
 
 ### Requirement: Factura como sustento
-Una factura sustento SHALL ser una factura emitida por este sistema, de la misma empresa y del mismo ambiente que la guía, autorizada e íntegra. El sistema toma de su documento inmutable el tipo 01, su número, su número de autorización y su fecha de emisión; el usuario no los escribe. La factura no cambia, varias guías pueden referenciarla y no hay saldo por despachar.
+Una factura sustento SHALL ser una factura emitida por este sistema, de la misma empresa y del mismo ambiente que la guía, autorizada e íntegra. El sistema toma de su documento inmutable el tipo 01, su número, su número de autorización y su fecha de emisión; el usuario no los escribe. Una factura a consumidor final es sustento con un destinatario identificado (política del MVP). La factura no cambia, varias guías la referencian y no hay saldo por despachar.
 
 #### Scenario: Factura autorizada
 - **WHEN** un destinatario lleva como sustento una factura autorizada de la empresa
@@ -234,6 +254,10 @@ Una factura sustento SHALL ser una factura emitida por este sistema, de la misma
 #### Scenario: Destinatario distinto del comprador
 - **WHEN** el destinatario es un tercero identificado distinto del comprador de la factura
 - **THEN** el sistema acepta la guía
+
+#### Scenario: Factura a consumidor final
+- **WHEN** el sustento es una factura autorizada emitida a consumidor final y el destinatario es un tercero identificado
+- **THEN** el sistema acepta la guía, y el destinatario es ese tercero, nunca el consumidor final
 
 ### Requirement: Excepción declarada
 Una excepción declarada SHALL ser un caso del art. 30, numeral 8, del Reglamento que admite el MVP: cantidad o precio determinado después del traslado, consignación, traslado entre establecimientos propios, o exhibición o demostración. Es una declaración del usuario (`USER_DECLARED`): al emitir, el usuario la confirma, y la guía guarda el caso, la versión de la política, el actor y el momento, fuera del XML.
@@ -286,15 +310,23 @@ Cada detalle SHALL llevar una descripción obligatoria de 1 a 300 caracteres, qu
 - **THEN** el sistema rechaza la emisión indicando el detalle, sin reservar número
 
 ### Requirement: Precarga desde la factura
-El sistema SHALL ofrecer, para una factura sustento, sus líneas cuyo producto es hoy un bien activo, con sus códigos, su descripción y su cantidad facturada, para precargar el detalle de un destinatario. Lo precargado es editable antes de emitir y no se compara con lo facturado.
+El sistema SHALL ofrecer, como sugerencia no autoritativa, las líneas de una factura sustento con sus datos históricos: sugiere marcadas las que hoy se resuelven como un bien activo y ofrece las demás para agregarse como línea libre con sus datos históricos. El tipo vigente del producto no se presenta como la naturaleza de la línea facturada ni decide la elegibilidad. El usuario confirma las mercancías; la guía congela su detalle.
 
-#### Scenario: Bienes de la factura
-- **WHEN** un usuario precarga el detalle desde una factura con dos bienes y un servicio
-- **THEN** recibe los dos bienes con su cantidad facturada, y no el servicio
+#### Scenario: Sugerencias de la factura
+- **WHEN** un usuario carga las mercancías de una factura con dos líneas cuyo producto es hoy un bien activo y una cuyo producto es hoy un servicio
+- **THEN** recibe marcadas las dos primeras con su cantidad facturada, y la tercera sin marcar, ofrecida como línea libre con sus datos históricos, sin rotularla como servicio ni como no trasladable
+
+#### Scenario: Línea agregada como libre
+- **WHEN** el usuario agrega como línea libre una línea de la factura cuyo producto ya no está activo
+- **THEN** el detalle lleva la descripción, los códigos y la cantidad históricos de la línea, editables, sin referencia a un producto
 
 #### Scenario: Cantidad editada
-- **WHEN** el usuario reduce la cantidad precargada de un bien antes de emitir
+- **WHEN** el usuario reduce la cantidad sugerida de una línea antes de emitir
 - **THEN** la guía lleva la cantidad editada y la factura no cambia
+
+#### Scenario: Elegibilidad independiente de los productos
+- **WHEN** ninguna línea de una factura autorizada se resuelve hoy como un bien activo
+- **THEN** la factura sigue siendo un sustento válido y el usuario escribe las mercancías
 
 ### Requirement: Cantidad del detalle
 La cantidad SHALL ser un decimal exacto mayor que cero, de hasta 18 dígitos en total y 6 decimales. El sistema la guarda y la escribe en su forma canónica, sin redondearla. Cero, un negativo, más de 6 decimales o más de 18 dígitos se rechazan, aunque el XSD admita cero (política del proyecto).
@@ -365,15 +397,15 @@ Antes de reservar, el sistema SHALL comprobar el transportista, la placa, las fe
 - **THEN** sigue reservada, y un reintento la firma con su mismo número y su misma clave
 
 ### Requirement: Datos congelados en la guía
-Desde su reserva, la guía SHALL contener en su snapshot el emisor, el punto, la fecha de emisión, la dirección de partida, el transportista con su origen, tipo, identificación y razón social, la placa, las fechas y cada destinatario con su identificación, razón social, dirección, motivo, ruta, código de destino, sustento y detalle. Su XML, su RIDE y su consulta nunca releen el tercero, la empresa, el establecimiento, el producto ni la factura.
+Desde su reserva, la guía SHALL contener en su snapshot el emisor, el punto, la fecha de emisión, la partida con su establecimiento de origen cuando lo hay, el transportista con su origen, tipo, identificación y razón social, la placa, las fechas y cada destinatario con su identificación, razón social, dirección, establecimiento de destino, motivo, ruta, código de destino, sustento y detalle. Su XML, su RIDE y su consulta nunca releen el tercero, la empresa, el establecimiento, el producto ni la factura.
 
 #### Scenario: Transportista cambiado después de reservar
 - **WHEN** el tercero transportista corrige su nombre o pierde el rol de transportista después de reservar una guía
 - **THEN** el XML y el RIDE llevan el transportista del snapshot
 
-#### Scenario: Establecimiento cambiado después de reservar
-- **WHEN** se corrige la dirección del establecimiento de destino de un traslado propio después de reservar
-- **THEN** la guía conserva la dirección con la que se reservó
+#### Scenario: Establecimientos cambiados después de reservar
+- **WHEN** se corrige la dirección del establecimiento de origen o del de destino de un traslado propio después de reservar
+- **THEN** la guía conserva las direcciones con las que se reservó
 
 ### Requirement: Emisión idempotente de la guía
 La emisión SHALL exigir una `Idempotency-Key` y registrar, por empresa, operación y clave, la huella canónica de la solicitud, que cubre el borrador, su versión, todos sus datos funcionales y la confirmación de la declaración. La misma clave con la misma huella devuelve la misma guía; con otra huella se rechaza. El registro no vence.

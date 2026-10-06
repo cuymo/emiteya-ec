@@ -22,16 +22,16 @@
 
 - [ ] 2.1 Crear la migración aditiva `add_shipping_guides` (design D26):
   - `shipping_guide_draft`, con `recipients` en `JSONB`, sus `CHECK` de forma y tamaño y la guarda que impide cambiar o borrar un borrador emitido;
-  - `shipping_guide`, inmutable, con los `CHECK` del transportista (origen y tercero coherentes, identificación de hasta 13, placa de 1 a 20 sin saltos de línea), fin no anterior al inicio y conteos positivos, y el trigger que exige un `06` de la empresa con el inicio no anterior a su fecha de emisión;
-  - `shipping_guide_recipient`, inmutable, con FK a `electronic_document_recipient`, los `CHECK` de coherencia entre clase, sustento, factura, caso y declaración, y el trigger que exige una factura `01` autorizada de la empresa y del ambiente de la guía;
-  - el trigger de restricción diferido que impide confirmar un `06` sin su registro, sin destinatarios en las dos tablas o con conteos distintos;
+  - `shipping_guide`, inmutable, con el establecimiento de origen opcional (FK compuesta por empresa), los `CHECK` del transportista (origen y tercero coherentes, identificación de hasta 13, placa de 1 a 20 sin saltos de línea), fin no anterior al inicio y conteos positivos, y el trigger que exige un `06` de la empresa con el inicio no anterior a su fecha de emisión;
+  - `shipping_guide_recipient`, inmutable, con FK a `electronic_document_recipient`, los `CHECK` de coherencia entre clase, sustento, factura, caso y declaración, y el trigger que exige una factura `01` autorizada de la empresa y del ambiente de la guía, y para `OWN_COMPANY` una guía con origen distinto de su destino;
+  - el trigger de restricción diferido que impide confirmar un `06` sin su registro, sin destinatarios en las dos tablas, con conteos distintos o con posiciones que no son contiguas desde 1;
   - `shipping_guide.emit` en el `CHECK` de `idempotency_record`.
 
   Verificar con pruebas de integración del esquema:
   - un `06` sin registro o sin destinatarios, rechazado al confirmar;
   - las facturas, notas y retenciones no afectadas por el trigger;
   - una factura sustento de otra empresa, de otro ambiente, sin autorizar o de otro tipo, rechazada;
-  - `OWN_COMPANY` sin la excepción de establecimientos propios, rechazado;
+  - `OWN_COMPANY` sin la excepción de establecimientos propios, sin origen o con el destino igual al origen, rechazado;
   - un inicio anterior a la fecha de emisión, rechazado;
   - registro y destinatarios inmutables y borrador emitido inmutable;
   - la operación nueva en el registro de idempotencia
@@ -42,7 +42,7 @@
 - [ ] 3.1 Crear `packages/contracts/src/shipping-guides.ts` (design D22): el borrador estricto con el transportista, los destinatarios, el sustento tipado y los detalles; la emisión con `exceptionDeclaration`; los casos de excepción con su texto oficial y `SHIPPING_GUIDE_EXCEPTION_POLICY_VERSION = 1`; las opciones, la vista previa, las vistas de lista y detalle, la transmisión, los códigos de error y los máximos absolutos. Registrar las rutas en `apiRoutes`. Verificar con pruebas de contratos que se rechazan:
   - un precio, un impuesto, `detallesAdicionales`, un documento aduanero, varias placas o un `companyId`;
   - un número, una autorización o una fecha de sustento escritos a mano, la venta itinerante o un caso desconocido;
-  - la dirección o el código de destino enviados para la propia empresa, y los códigos enviados con un producto;
+  - la dirección de partida enviada con un origen elegido, la dirección o el código de destino enviados para la propia empresa, y los códigos enviados con un producto;
   - una cantidad como número, en cero, negativa, con 7 decimales o con 19 dígitos;
   - un código de destino que no tiene 3 dígitos y una placa de 21 caracteres;
   - más elementos que los máximos absolutos
@@ -51,26 +51,27 @@
 
 ## 4. Dominio de la guía
 
-- [ ] 4.1 Implementar la evaluación pura en el orden de design D12, con D3 a D9 y los límites compuestos de D23: transportista `SELF`/`PARTY`, placa, fechas contra la fecha de evaluación, partida, destinatarios `PARTY`/`OWN_COMPANY`, sustento tipado, coherencia entre caso y destinatario, detalle con producto o libre, cantidad mayor que cero y la declaración requerida. Verificar con pruebas unitarias cada rechazo con su código y su posición, el límite global de detalles que rige aunque los individuales permitan más, y que el inicio igual a la emisión y un traslado de 60 días se aceptan
-- [ ] 4.2 Implementar el snapshot autosuficiente de design D11 y su construcción, con la declaración `USER_DECLARED` (caso, versión, actor y momento) y los datos de la factura tomados de su documento inmutable. Verificar con pruebas unitarias que guarda el transportista con su origen, cada destinatario con su sustento y su detalle, las cantidades canónicas (`2.500` como `2.5`) y que no lee nada después de construido. Añadir a `decimal-policy.md` la cantidad de la guía mayor que cero como política del proyecto
+- [ ] 4.1 Implementar la evaluación pura en el orden de design D12, con D3 a D9 y los límites compuestos de D23: transportista `SELF`/`PARTY`, placa, fechas contra la fecha de evaluación, partida con su origen (obligatorio con la excepción d), destinatarios `PARTY`/`OWN_COMPANY` con el destino distinto del origen y sin comparar con el establecimiento del punto, sustento tipado, coherencia entre caso y destinatario, detalle con producto o libre, cantidad mayor que cero y la declaración requerida. Verificar con pruebas unitarias cada rechazo con su código y su posición, el límite global de detalles que rige aunque los individuales permitan más, que el inicio igual a la emisión y un traslado de 60 días se aceptan, que un traslado propio emitido desde el establecimiento de origen, el de destino o un tercero se acepta, y que una factura a consumidor final con un destinatario identificado se acepta
+- [ ] 4.2 Implementar el snapshot autosuficiente de design D11 y su construcción, con la partida y su establecimiento de origen, el establecimiento de destino de cada traslado propio, la declaración `USER_DECLARED` por destinatario (caso, versión, actor y momento) y los datos de la factura tomados de su documento inmutable. Verificar con pruebas unitarias que guarda el transportista con su origen, los dos establecimientos con su identidad, código y dirección, cada destinatario con su sustento y su detalle, las cantidades canónicas (`2.500` como `2.5`) y que no lee nada después de construido. Añadir a `decimal-policy.md` la cantidad de la guía mayor que cero como política del proyecto
+- [ ] 4.3 Alinear la documentación durable con el `/opsx:update` del 2026-10-06: Q-51 (P2 con origen y destino registrados, activos y distintos y la partida derivada del origen; la precarga no autoritativa; la factura a consumidor final como política del MVP; conductor frente a transportista), BR-76, BR-77 y BR-81 de `domain-model.md`, la trazabilidad de `shipping-guides` en `capabilities.md`, el glosario y las decisiones de `fiscal-emission.md`. Verificar que ninguno de esos documentos afirma ya que el destino puede ser el establecimiento de partida libre ni que el tipo vigente del producto representa la línea facturada
 
 ## 5. XML de la guía
 
-- [ ] 5.1 Crear `shipping-guide-xml-builder.ts` para `guiaRemision` 1.1.0 desde el snapshot (design D16), con `infoTributaria` compartida y sin `rise`, `docAduaneroUnico`, `detallesAdicionales`, `maquinaFiscal`, `infoAdicional` ni nodos vacíos. Verificar con golden fixtures de bytes exactos, todos validados contra el XSD oficial: transporte propio y tercero; destinatario con factura; varios destinatarios con factura y excepciones; la propia empresa con su código; ruta y código de un tercero; producto y línea libre; 6 decimales y forma canónica; caracteres especiales; longitudes máximas
+- [ ] 5.1 Crear `shipping-guide-xml-builder.ts` para `guiaRemision` 1.1.0 desde el snapshot (design D16), con `infoTributaria` compartida y sin `rise`, `docAduaneroUnico`, `detallesAdicionales`, `maquinaFiscal`, `infoAdicional` ni nodos vacíos. Verificar con golden fixtures de bytes exactos, todos validados contra el XSD oficial: transporte propio y tercero; destinatario con factura; varios destinatarios con factura y excepciones; la propia empresa con origen y destino distintos y la partida del origen; ruta y código de un tercero; producto y línea libre; 6 decimales y forma canónica; caracteres especiales; longitudes máximas
 - [ ] 5.2 Crear `shippingGuideSigningProfile` y firmar con el firmador vigente y el tipo `06`, con el XSD antes y después de firmar. Verificar que el XML firmado valida, que el artefacto lleva el tipo `06` y que la firma de la factura, las notas y la retención no cambia
 
 ## 6. Lecturas, borradores, vista previa y opciones
 
-- [ ] 6.1 Implementar los puertos `ShippingPartyReader`, `ShippingProductReader` y `ShippingInvoiceReader` (sobre `invoiceCreditSource`, sin cambiarla) compuestos por `main.ts`, y las rutas `/shipping-guides/carriers`, `/shipping-guides/recipients`, `/shipping-guides/eligible-invoices`, `/shipping-guides/eligible-invoices/{invoiceId}/goods` y `/shipping-guides/options` (design D9 y D22). Verificar con pruebas HTTP: transportistas con `selectable` y su motivo; destinatarios sin el consumidor final ni el `08`; facturas autorizadas del ambiente vigente con búsqueda; la precarga solo con los bienes activos y el conteo de omitidas; las opciones con los casos, los establecimientos activos y los límites efectivos; `403`, `401` y `404` con referencias de otra empresa
-- [ ] 6.2 Implementar los borradores con su vista previa (`/shipping-guides/drafts`, design D12), incluido `{ fromInvoiceId }` y la dirección de partida propuesta. Verificar con pruebas HTTP: borrador incompleto que se guarda sin reservar; vista previa con los problemas por destinatario y detalle; la propuesta desde la factura con su comprador, su sustento y sus bienes; versión del borrador; borrador emitido inmutable; aislamiento por empresa. Documentar las rutas en `fiscal-emission.md`
+- [ ] 6.1 Implementar los puertos `ShippingPartyReader`, `ShippingProductReader` y `ShippingInvoiceReader` (sobre `invoiceCreditSource`, sin cambiarla) compuestos por `main.ts`, y las rutas `/shipping-guides/carriers`, `/shipping-guides/recipients`, `/shipping-guides/eligible-invoices`, `/shipping-guides/eligible-invoices/{invoiceId}/goods` y `/shipping-guides/options` (design D9 y D22). Verificar con pruebas HTTP: transportistas con `selectable` y su motivo; destinatarios sin el consumidor final ni el `08`; facturas autorizadas del ambiente vigente con búsqueda; todas las líneas de una factura con sus datos históricos y su sugerencia (`PRODUCT` para las que hoy se resuelven como bien activo, `FREE_LINE` para las demás), sin rotular ninguna como servicio ni como no trasladable, y una factura sin líneas resolubles que sigue siendo elegible; las opciones con los casos, los establecimientos activos y los límites efectivos; `403`, `401` y `404` con referencias de otra empresa
+- [ ] 6.2 Implementar los borradores con su vista previa (`/shipping-guides/drafts`, design D12), incluido `{ fromInvoiceId }` y la dirección de partida propuesta. Verificar con pruebas HTTP: borrador incompleto que se guarda sin reservar; vista previa con los problemas por destinatario y detalle; la propuesta desde la factura con su comprador, su sustento y solo las sugerencias `PRODUCT` como detalle; el origen sin valor por defecto y la partida derivada al elegirlo; versión del borrador; borrador emitido inmutable; aislamiento por empresa. Documentar las rutas en `fiscal-emission.md`
 
 ## 7. Emisión de la guía
 
 - [ ] 7.1 Implementar la emisión (`POST /shipping-guides`) con las comprobaciones previas, la declaración de design D14 y la transacción de `RESERVED` de design D13, sin I/O externo dentro: idempotencia `shipping_guide.emit` con la huella de design D15, `reserveDocumentIn` con `06` y las columnas `RECIPIENTS`, el snapshot, el registro y sus destinatarios, la auditoría `shipping_guide.reserved`, la firma después del commit y las métricas de design D27. Verificar con pruebas HTTP:
   - guía de uno y de varios destinatarios firmada con su propio contador;
   - la vista previa, el snapshot, el XML y la consulta con los mismos datos;
-  - cada rechazo de la evaluación sin reservar número, entre ellos el inicio anterior a la emisión, un borrador emitido otro día y un transportista sin el rol;
-  - la declaración ausente o con otra versión rechazada, y guardada con actor y momento cuando se confirma;
+  - cada rechazo de la evaluación sin reservar número, entre ellos el inicio anterior a la emisión, un borrador emitido otro día, un transportista sin el rol, un traslado propio sin origen o con el mismo establecimiento como origen y destino;
+  - la declaración ausente o con otra versión rechazada, y congelada por destinatario con caso, versión, actor y momento cuando se confirma; la misma clave con otra declaración es otra huella;
   - un tercero, un producto o un establecimiento que cambia después de reservar no cambia el XML firmado;
   - doble envío secuencial y simultáneo con una sola guía; repetición que reanuda la firma; clave reutilizada `409` y sin clave `400`;
   - eventos de auditoría sin direcciones, XML ni SOAP, y ninguno en los rechazos;
@@ -106,15 +107,17 @@
 - [ ] 12.1 Implementar Guías de remisión en `/guias-remision`, dentro de "Operación" (design D25), con lista, búsqueda, filtro de estado en la URL, borradores en curso y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
 - [ ] 12.2 Implementar el borrador con los pasos de design D25:
   - transporte propio o tercero, con el selector de transportistas, los no seleccionables con su motivo y "Nuevo transportista" con `PartyDialog` y el rol marcado; la placa;
-  - fechas y dirección de partida propuesta;
-  - destinatarios tercero o establecimiento propio, con "Nuevo destinatario" con `PartyDialog` sin roles;
-  - sustento factura o sin factura, con la precarga de bienes y los casos con su texto oficial; la excepción fija del establecimiento propio;
+  - fechas; partida desde un establecimiento propio elegido (sin selección inicial, dirección derivada de solo lectura) u otra dirección propuesta desde el punto;
+  - destinatarios tercero o establecimiento propio de destino, que excluye el origen y pide elegir el origen si falta, con "Nuevo destinatario" con `PartyDialog` sin roles;
+  - sustento factura o sin factura, con "Cargar mercancías de la factura" (sugerencias marcadas, líneas libres sin marcar con sus datos históricos y el aviso de sugerencia no autoritativa) y los casos con su texto oficial; la excepción fija del establecimiento propio;
   - detalle con producto o línea libre, la descripción con su rótulo, ayuda, contador y vista previa, y la cantidad decimal;
   - vista previa del servidor y la confirmación con la casilla de la declaración.
 
   Verificar con pruebas de componente:
   - solo transportistas con el rol, y ningún rol asignado sin la acción explícita;
-  - los campos derivados de solo lectura (dirección y código del establecimiento propio, códigos del producto);
+  - los campos derivados de solo lectura (partida del origen, dirección y código del establecimiento de destino, códigos del producto);
+  - el destino igual al origen imposible de elegir, y el emisor libre de ser origen, destino u otro;
+  - la carga de mercancías que nunca agrega sola una línea libre y deja confirmar o editar cada una;
   - problemas junto a su destinatario y su detalle, y emisión bloqueada;
   - la casilla de la declaración exigida solo con excepciones;
   - límites presentados como defensa del sistema;
@@ -127,7 +130,7 @@
 ## 13. Rendimiento y prueba end-to-end
 
 - [ ] 13.1 Añadir `bench:shipping-guides` en `backend/scripts/` (design D28), con el barrido del RIDE apagado, y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005, que el RIDE tarda menos de 1 s, que la transacción de la reserva no incluye XML, firma ni red, que la bandeja filtrada por un destinatario cumple el objetivo, y que el CPU, la memoria y la latencia del peor caso confirman los valores por defecto de design D23 (o ajustarlos con `/opsx:update` y la evidencia). Registrar el tamaño del XML firmado del peor caso solo como medición, sin relacionarlo con Q-47
-- [ ] 13.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado aislado: una guía con transporte propio a dos destinatarios (una factura autorizada y un traslado a un establecimiento propio), autorizada y con su RIDE en la bandeja; otra no autorizada; y el inventario, la factura y los roles sin cambios. Verificar que la prueba pasa
+- [ ] 13.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado aislado: una guía con transporte propio, origen en un establecimiento propio y dos destinatarios (una factura autorizada y un traslado a otro establecimiento propio distinto del origen), autorizada y con su RIDE en la bandeja; otra no autorizada; y el inventario, la factura y los roles sin cambios. Verificar que la prueba pasa
 
 ## 14. Verificación
 

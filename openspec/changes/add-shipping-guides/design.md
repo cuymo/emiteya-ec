@@ -78,27 +78,30 @@
 - La fecha de emisión es la fecha de Ecuador de la reserva (`deps.today()`), capturada una vez; la vista previa compara con la de hoy y la reserva otra vez con la suya. Se congela con la clave; el reintento de firma y la transmisión no la cambian.
 - El XML escribe `dd/mm/aaaa`. El error 82 del SRI, si llegara, se trata como cualquier devolución (D19).
 
-### D6. Dirección de partida y establecimiento emisor
+### D6. Partida, establecimiento de origen y establecimiento emisor
 
-- `departureAddress` es texto libre de 1 a 300 caracteres sin saltos de línea. Al crear el borrador, y al cambiar de punto mientras el usuario no la haya editado, el servidor propone la dirección del establecimiento del punto.
-- `dirEstablecimiento` sale del establecimiento del punto, como en los demás builders.
+- **Dos formas de partida en el borrador:**
+  - `originEstablishmentId`: un establecimiento propio activo que el usuario elige de forma explícita, sin valor por defecto. `dirPartida` se deriva de la dirección de ese establecimiento y se congela con su identidad (id, código y dirección); el cliente no envía `departureAddress` (contrato estricto);
+  - si es nulo, `departureAddress`: texto libre de 1 a 300 caracteres sin saltos de línea. Al crear el borrador, y al cambiar de punto mientras el usuario no la haya editado, el servidor propone como texto la dirección del establecimiento del punto. Esa propuesta no es un origen.
+- **Excepción d:** una guía con algún destinatario en `OWN_ESTABLISHMENT_TRANSFER` exige `originEstablishmentId` (`SHIPPING_GUIDE_ORIGIN_ESTABLISHMENT_REQUIRED`). La fuente define el caso como "traslado entre establecimientos de un mismo contribuyente" (Reglamento, art. 30, numeral 8, literal d): una dirección libre no registrada, como una bodega, no lo prueba. Un traslado entre una bodega no registrada y un establecimiento queda para una capacidad futura con otra justificación normativa.
+- `dirEstablecimiento` sale del establecimiento del punto, como en los demás builders. El establecimiento emisor puede ser el de origen, el de destino u otro establecimiento de la empresa: no se compara con ninguno de ellos.
 
 ### D7. Destinatarios (P2, P3)
 
 - **Forma en el borrador:** una lista ordenada `recipients`, cada uno con:
-  - `recipient: { kind: "PARTY", partyId } | { kind: "OWN_COMPANY", establishmentId } | null`;
+  - `recipient: { kind: "PARTY", partyId } | { kind: "OWN_COMPANY", destinationEstablishmentId } | null`;
   - `address`, `motive`, `route` y `destinationEstablishmentCode` (texto);
   - `support` (D8) y `details` (D9).
 - **`PARTY`:** tercero por `(company_id, id)`: existe, activo, no es el consumidor final (`SHIPPING_GUIDE_RECIPIENT_CONSUMER_FINAL`), tipo `04`, `05` o `06` (`08`: `SHIPPING_GUIDE_RECIPIENT_FOREIGN_OUT_OF_SCOPE`). Sin rol obligatorio y sin asignarle `CUSTOMER`. `address` se propone desde el tercero al elegirlo y es obligatoria. `destinationEstablishmentCode` es opcional (`^[0-9]{3}$`), declarado por el usuario y no verificado.
-- **`OWN_COMPANY`:** establecimiento por `(company_id, id)`, activo. La identificación y la razón social salen de la configuración tributaria; la dirección y el código de destino, del establecimiento elegido; el cliente no envía `address` ni `destinationEstablishmentCode` (contrato estricto). Su sustento es siempre la excepción `OWN_ESTABLISHMENT_TRANSFER`. No se crea un tercero. El código de destino nunca toma por defecto el establecimiento emisor; elegirlo como destino es válido, porque la partida puede ser una bodega.
+- **`OWN_COMPANY`:** establecimiento de destino por `(company_id, id)`, propio, activo y distinto del establecimiento de origen de la guía (`SHIPPING_GUIDE_SAME_ESTABLISHMENT`; D6). La identificación y la razón social salen de la configuración tributaria; la dirección y el código de destino, del establecimiento de destino; el cliente no envía `address` ni `destinationEstablishmentCode` (contrato estricto). Su sustento es siempre la excepción `OWN_ESTABLISHMENT_TRANSFER`. No se crea un tercero. La regla es origen distinto de destino; ninguno se compara con el establecimiento del punto, que puede ser cualquiera de los dos u otro. Varios destinatarios del caso d comparten el origen de la guía y pueden ir a destinos distintos. El código de destino de un tercero nunca toma por defecto el establecimiento emisor.
 - `motive` es obligatorio (1 a 300, sin catálogo) y `route` opcional (1 a 300). Los textos se recortan; vacío equivale a ausente.
 - El mismo tercero puede repetirse en varios destinatarios.
 
 ### D8. Sustento tipado (P1)
 
 - `support: { kind: "INTERNAL_INVOICE", invoiceId } | { kind: "DECLARED_EXCEPTION", case } | null`, con `case` en `QUANTITY_OR_PRICE_AFTER_TRANSFER` (literal b), `CONSIGNMENT` (c), `OWN_ESTABLISHMENT_TRANSFER` (d) y `EXHIBITION_OR_DEMONSTRATION` (e). La venta itinerante no tiene código; un valor desconocido es un error de contrato.
-- **`INTERNAL_INVOICE`:** `ShippingInvoiceReader.find(companyId, invoiceId)`; se exige tipo `01` (otro tipo responde como inexistente para el sustento), `AUTHORIZED`, el mismo ambiente que la guía al reservar (`SHIPPING_GUIDE_INVOICE_ENVIRONMENT_MISMATCH`) e integridad sin problemas (`SHIPPING_GUIDE_INVOICE_NOT_INTACT`). Los cuatro datos salen del documento inmutable: `codDocSustento` 01, `numDocSustento` = su número, `numAutDocSustento` = su número de autorización (49 dígitos, igual a la clave) y `fechaEmisionDocSustento` = su fecha de emisión. El destinatario puede no ser el comprador.
-- **`DECLARED_EXCEPTION`:** `OWN_ESTABLISHMENT_TRANSFER` exige un destinatario `OWN_COMPANY`, y los otros tres un `PARTY` (`SHIPPING_GUIDE_EXCEPTION_RECIPIENT_MISMATCH`). La declaración se confirma al emitir (D14): el snapshot y el registro guardan `{ case, policyVersion, basis: "USER_DECLARED", declaredBy, declaredByName, declaredAt }`. La política es la versión 1, con el texto de cada caso tomado del art. 30, numeral 8, en `packages/contracts`.
+- **`INTERNAL_INVOICE`:** `ShippingInvoiceReader.find(companyId, invoiceId)`; se exige tipo `01` (otro tipo responde como inexistente para el sustento), `AUTHORIZED`, el mismo ambiente que la guía al reservar (`SHIPPING_GUIDE_INVOICE_ENVIRONMENT_MISMATCH`) e integridad sin problemas (`SHIPPING_GUIDE_INVOICE_NOT_INTACT`). Los cuatro datos salen del documento inmutable: `codDocSustento` 01, `numDocSustento` = su número, `numAutDocSustento` = su número de autorización (49 dígitos, igual a la clave) y `fechaEmisionDocSustento` = su fecha de emisión. El destinatario puede no ser el comprador: una factura propia autorizada emitida a consumidor final es sustento válido mientras el destinatario sea un tercero identificado (política del MVP: ninguna fuente oficial archivada exige que el destinatario sea el adquirente, y la guía identifica al destinatario físico). El consumidor final nunca se copia como destinatario.
+- **`DECLARED_EXCEPTION`:** `OWN_ESTABLISHMENT_TRANSFER` exige un destinatario `OWN_COMPANY`, y los otros tres un `PARTY` (`SHIPPING_GUIDE_EXCEPTION_RECIPIENT_MISMATCH`). La declaración se confirma al emitir (D14): por cada destinatario con excepción, el snapshot y el registro congelan `{ case, policyVersion, basis: "USER_DECLARED", declaredBy, declaredByName, declaredAt }`; la confirmación nunca queda solo en el estado de la interfaz. La política es la versión 1, con el texto de cada caso tomado del art. 30, numeral 8, en `packages/contracts`.
 - **Sin capacidad de despacho:** la factura no se bloquea ni se modifica; varias guías la referencian; las cantidades no se comparan con lo facturado. La factura es terminal en `AUTHORIZED`, así que no hay carrera con su estado.
 
 ### D9. Detalle, producto y cantidad (P6, P7)
@@ -108,16 +111,26 @@
 - **Línea libre:** `mainCode` y `auxiliaryCode` opcionales (1 a 25, sin saltos de línea).
 - **Descripción:** obligatoria, 1 a 300 caracteres sin saltos de línea. La unidad y las características van dentro de ella (art. 30, numeral 6), porque el XML no tiene campo de unidad y no hay catálogo de unidades. La interfaz lo hace explícito con el rótulo "Descripción (incluye unidad y características)", un ejemplo en la ayuda ("10 cajas de 12 botellas de 1 litro"), el contador de 300 y la vista previa del texto tal como irá al XML y al RIDE.
 - **Cantidad:** `decimalString(DECIMAL_SPECS.cantidad)` con la política del proyecto de mayor que cero (`SHIPPING_GUIDE_QUANTITY_INVALID`); se guarda canónica, sin `number` ni redondeo. Sin precio, impuesto, total ni `detallesAdicionales`.
-- **Precarga desde la factura:** `GET .../eligible-invoices/{invoiceId}/goods` devuelve las líneas del snapshot cuyo producto es hoy un bien activo, con `productId`, sus códigos, su descripción y su cantidad, y el número de líneas omitidas. El snapshot de la factura no guarda el tipo bien/servicio, así que la precarga lo lee del producto vigente; es solo una propuesta editable, y lo que vale es lo que la guía congela.
+- **Precarga desde la factura, sugerencia de interfaz no autoritativa:** `GET .../eligible-invoices/{invoiceId}/goods` devuelve todas las líneas del snapshot de la factura con sus datos históricos (códigos, descripción y cantidad facturada) y una sugerencia por línea:
+  - `PRODUCT`, cuando el producto de la línea se resuelve hoy como un bien activo: se propone, marcado, como detalle con ese producto;
+  - `FREE_LINE`, cuando ya no se resuelve así (producto inactivo, inexistente o hoy servicio): se ofrece, sin marcar, para agregarse como línea libre con los datos históricos de la línea.
+
+  El snapshot de la factura no congela el tipo bien/servicio. El tipo vigente del producto solo decide qué se sugiere de forma automática: nunca se presenta como la naturaleza histórica de la línea, no valida la factura sustento, no decide la elegibilidad de la guía, y una línea no resoluble no se convierte en servicio ni se declara no trasladable. El usuario confirma o edita las mercancías reales antes de emitir; la autoridad es el detalle que congela la guía.
 
 ### D10. Cabecera común sin total ni comprador (P10)
 
 - **Base de datos:** `electronic_document.total`, `buyer_identification` y `buyer_name` pasan a admitir `NULL`. El `CHECK electronic_document_values_check` añade `("document_type" = '06') = ("total" IS NULL)`, la misma igualdad para `buyer_identification` y `buyer_name`, y mantiene el dominio `importe` cuando el total existe. Una factura, nota o retención sin total o sin comprador es imposible; una guía con total o comprador también. El trigger de inmutabilidad ya usa `IS DISTINCT FROM` y protege los nulos.
-- **Destinatarios en la cabecera:** tabla genérica de `fiscal`, `electronic_document_recipient` (empresa, comprobante, posición, identificación y nombre), inmutable, escrita en la misma reserva. Es la representación de un comprobante con varios receptores, que hoy solo tiene la guía; `fiscal` no conoce la guía ni su sustento.
+- **Destinatarios en la cabecera:** tabla genérica de `fiscal`, `electronic_document_recipient` (empresa, comprobante, posición, identificación y nombre). Es la representación de un comprobante con varios receptores, que hoy solo tiene la guía; `fiscal` no conoce la guía ni su sustento. Propiedades:
+  - se escribe en la misma operación atómica de la reserva, nunca después;
+  - es segura por empresa: FK compuesta `(company_id, document_id)` y la empresa en cada consulta;
+  - es inmutable desde su escritura, y solo existe para un comprobante reservado o posterior;
+  - conserva un orden estable: posiciones únicas y contiguas desde 1, en el orden de los destinatarios del snapshot;
+  - no es autoridad del XML ni del RIDE, que salen del snapshot fiscal: sirve a la bandeja, a sus filtros y a los reportes;
+  - sin backfill: los demás tipos siguen usando sus columnas de comprador.
 - **Reserva:** `DocumentColumns` pasa a una unión: `{ receiver: "BUYER", buyerIdentification, buyerName, total }` o `{ receiver: "RECIPIENTS", recipients: [{ identification, name }] }`. Los cuatro tipos existentes usan la primera sin cambios de comportamiento.
 - **Lectura:** `StoredDocument` expone `buyerIdentification`, `buyerName` y `total` como nulos posibles; `fiscal` exporta `documentBuyer(document)`, que los devuelve no nulos para los tipos con comprador y falla como invariante rota si faltan, y la usan las notas, la retención y la factura donde hoy los leen.
 - **Bandeja:** `documentListItemSchema` cambia a `buyer: {…} | null`, `total: … | null` y `recipients: { count, name | null } | null`, con una refinación: el tipo `06` tiene comprador y total nulos y `recipients`, y los demás al revés. `name` es el del único destinatario y `null` si hay varios. El filtro por identificación es `buyer_identification = X OR EXISTS (destinatario con identificación X)`, y la búsqueda por nombre añade la misma rama; índice `(company_id, identification)` en la tabla de destinatarios.
-- **Pruebas:** de base de datos (cada combinación prohibida del `CHECK`, el trigger de inmutabilidad con nulos, la tabla de destinatarios inmutable), de API (el contrato de la bandeja con una guía de uno y de varios destinatarios, y con los demás tipos sin cambios) y del frontend de la bandeja.
+- **Pruebas:** de base de datos y de migración (cada combinación prohibida del `CHECK` en las dos direcciones: un tipo monetario sin total o sin comprador, y un `06` con total o con comprador; las filas existentes que conservan sus valores; el trigger de inmutabilidad con nulos; la tabla de destinatarios inmutable y con orden estable), de API (el contrato de la bandeja con una guía de uno y de varios destinatarios, y con los demás tipos sin cambios) y del frontend de la bandeja.
 - **Alternativas descartadas:** guardar `0.00` y el primer destinatario (P10 lo prohíbe); leer los destinatarios del JSON del snapshot en la bandeja (sin índice para el filtro, y la bandeja leería un snapshot de 300 detalles por fila); una columna de conteo sin tabla (no permite filtrar por un destinatario).
 
 ### D11. Snapshot autosuficiente
@@ -126,9 +139,9 @@ Después de `RESERVED`, la verdad fiscal de la guía es su snapshot. Guarda:
 
 - `snapshotVersion: 1`; el esquema (`06`, `1.1.0`, ruta, hash e imports); la versión del builder; las versiones de los datasets y de la configuración;
 - la fecha de emisión, el ambiente y su código; el emisor vigente al reservar con sus leyendas y el establecimiento con su dirección;
-- `departureAddress`, `transporter` (D3), `plate`, `transportStart` y `transportEnd`;
+- `departure`: `{ source: "ESTABLISHMENT", establishmentId, code, address }` o `{ source: "FREE_TEXT", address }` (D6); `transporter` (D3), `plate`, `transportStart` y `transportEnd`;
 - `recipients`, cada uno con:
-  - posición, `kind`, `partyId` o `establishmentId`, identificación, tipo de identificación (informativo, no va al XML), razón social, dirección, motivo, ruta y código de destino;
+  - posición, `kind`, `partyId` o el establecimiento de destino (`establishmentId`, código y dirección), identificación, tipo de identificación (informativo, no va al XML), razón social, dirección, motivo, ruta y código de destino;
   - `support`: `INTERNAL_INVOICE` con `invoiceId`, tipo, número, fecha, número, fecha y ambiente de la autorización; o `DECLARED_EXCEPTION` con la declaración de D8;
   - `details`: posición, `productId` y el nombre del producto al reservar (informativo, no va al XML), códigos, descripción y cantidad canónica;
 - `counts` (destinatarios y detalles);
@@ -136,14 +149,14 @@ Después de `RESERVED`, la verdad fiscal de la guía es su snapshot. Guarda:
 
 ### D12. Evaluación, borrador y vista previa
 
-- El borrador se guarda incompleto; la vista previa del servidor recalcula en este orden: punto y esquema; transportista (D3); placa (D4); fechas (D5); partida (D6); límites (D23); por destinatario: destinatario (D7), sustento (D8), detalles (D9); declaración requerida si hay excepciones.
-- La vista previa devuelve por destinatario la identidad, la dirección final y el sustento resuelto (número, fecha y autorización de la factura, o el texto de la excepción); por detalle los códigos y la cantidad canónica; los conteos; `exceptionDeclarationRequired`; `evaluatedOn`; y `issues` con la posición del destinatario y del detalle.
-- **Crear desde una factura:** `POST /drafts` acepta `{ fromInvoiceId }` y arma un borrador con un destinatario: el comprador de la factura si es un tercero activo `04`, `05` o `06`, si no vacío; el sustento con esa factura; y la precarga de D9. El usuario completa lo demás.
+- El borrador se guarda incompleto; la vista previa del servidor recalcula en este orden: punto y esquema; transportista (D3); placa (D4); fechas (D5); partida y origen (D6); límites (D23); por destinatario: destinatario (D7), sustento (D8), detalles (D9); declaración requerida si hay excepciones.
+- La vista previa devuelve la partida derivada y, por destinatario, la identidad, la dirección final y el sustento resuelto (número, fecha y autorización de la factura, o el texto de la excepción); por detalle los códigos y la cantidad canónica; los conteos; `exceptionDeclarationRequired`; `evaluatedOn`; y `issues` con la posición del destinatario y del detalle.
+- **Crear desde una factura:** `POST /drafts` acepta `{ fromInvoiceId }` y arma un borrador con un destinatario: el comprador de la factura si es un tercero activo `04`, `05` o `06`, si no vacío; el sustento con esa factura; y como detalle solo las sugerencias `PRODUCT` de D9. Las líneas `FREE_LINE` no se agregan solas: el editor las ofrece. El usuario completa lo demás y confirma las mercancías.
 
 ### D13. Transacción de la reserva y atomicidad
 
 - **Antes de la transacción**, sin consumir nada: permiso, `Idempotency-Key` y empresa de la sesión; borrador con la versión esperada y repetición en el registro; esquema con su hash; la evaluación completa de D12; la declaración (D14); empresa configurada, punto disponible y firma utilizable.
-- **Transacción de `RESERVED`**, sin I/O externo: bloquear el borrador y comprobar su estado y su versión; bloquear la configuración tributaria; volver a leer terceros, establecimientos, productos y facturas y volver a evaluar con la fecha de la reserva; armar el snapshot sin la clave; `reserveDocumentIn` con `06` y las columnas `RECIPIENTS`; registrar `shipping_guide` y sus destinatarios (D26); borrador `EMITTED`; registro de idempotencia; auditoría `shipping_guide.reserved`; commit.
+- **Transacción de `RESERVED`**, sin I/O externo: bloquear el borrador y comprobar su estado y su versión; bloquear la configuración tributaria; volver a leer terceros, los establecimientos de origen y de destino, productos y facturas y volver a evaluar con la fecha de la reserva; armar el snapshot sin la clave; `reserveDocumentIn` con `06` y las columnas `RECIPIENTS`; registrar `shipping_guide` y sus destinatarios (D26); borrador `EMITTED`; registro de idempotencia; auditoría `shipping_guide.reserved`; commit.
 - **Concurrencia:** las facturas no tienen capacidad que consumir. Dos guías sobre la misma factura son válidas a la vez; dos emisiones del mismo borrador se serializan por su bloqueo.
 - **Todo o nada:** una prueba fuerza el fallo después de cada paso y comprueba que no quedan secuencial, clave, comprobante, destinatarios, registro, borrador emitido, idempotencia ni auditoría.
 
@@ -156,14 +169,14 @@ Después de `RESERVED`, la verdad fiscal de la guía es su snapshot. Guarda:
 
 - **Numeración y clave:** tipo `06`, contador propio. La prueba de secuenciales independientes se extiende: factura, nota de crédito, nota de débito, retención y guía en el mismo punto, cada una el 1 de su contador, y la segunda factura el 2.
 - **Idempotencia:** operación `shipping_guide.emit`, por empresa y clave, sin TTL, en la transacción.
-- **Huella canónica:** `draftId`, `expectedVersion`, los datos funcionales de esa versión (punto, transportista, placa, partida, fechas, y cada destinatario en orden con su destinatario, textos, sustento y detalles) y la declaración. Claves ordenadas y posiciones explícitas.
+- **Huella canónica:** `draftId`, `expectedVersion`, los datos funcionales de esa versión (punto, transportista, placa, partida con su origen, fechas, y cada destinatario en orden con su destinatario, textos, sustento con su caso y detalles) y la confirmación de la declaración con su versión, porque cambia el documento emitido. Claves ordenadas y posiciones explícitas.
 - **Respuestas:** la misma huella devuelve la misma guía (`200`) y reanuda la firma si quedó reservada; otra huella, `409 IDEMPOTENCY_KEY_REUSED`; un borrador ya emitido con otra clave, `409 SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED`; sin clave, `400 IDEMPOTENCY_KEY_REQUIRED`.
 
 ### D16. Builder XML `guiaRemision` 1.1.0 y firma
 
 - `sri-engine/infrastructure/shipping-guide-xml-builder.ts`, puro y determinista, versión de builder `1`, solo desde el snapshot, sin el builder de alto nivel de la dependencia. Reutiliza `xml-writer.ts` e `infoTributaria` con `codDoc` 06, `agenteRetencion` y `contribuyenteRimpe`.
 - **Contenido, en el orden del XSD:**
-  - `infoGuiaRemision`: `dirEstablecimiento`, `dirPartida`, `razonSocialTransportista`, `tipoIdentificacionTransportista`, `rucTransportista`, `obligadoContabilidad` y `contribuyenteEspecial` cuando corresponden, `fechaIniTransporte`, `fechaFinTransporte` y `placa`;
+  - `infoGuiaRemision`: `dirEstablecimiento`, `dirPartida` (la dirección de `departure` del snapshot), `razonSocialTransportista`, `tipoIdentificacionTransportista`, `rucTransportista`, `obligadoContabilidad` y `contribuyenteEspecial` cuando corresponden, `fechaIniTransporte`, `fechaFinTransporte` y `placa`;
   - por destinatario: `identificacionDestinatario`, `razonSocialDestinatario`, `dirDestinatario`, `motivoTraslado`, `codEstabDestino` y `ruta` si existen, los cuatro datos del sustento solo para `INTERNAL_INVOICE`, y `detalles/detalle` con `codigoInterno` y `codigoAdicional` si existen, `descripcion` y `cantidad` canónica.
 - **No escribe:** `rise`, `docAduaneroUnico`, `detallesAdicionales`, `maquinaFiscal` ni `infoAdicional`; ningún nodo vacío.
 - El pipeline compartido valida contra `GuiaRemision_V1.1.0.xsd` antes y después de firmar; el firmador recibe el tipo `06`.
@@ -208,7 +221,7 @@ Después de `RESERVED`, la verdad fiscal de la guía es su snapshot. Guarda:
 | --- | --- | --- |
 | `GET /api/v1/shipping-guides/carriers` | Terceros activos con el rol `CARRIER` y tipo 04, 05 o 06, cada uno con `selectable` y su motivo (identificación de más de 13 caracteres) | `shippingGuides.draft` |
 | `GET /api/v1/shipping-guides/recipients` | Terceros activos con tipo 04, 05 o 06, sin el consumidor final, con cualquier rol | `shippingGuides.draft` |
-| `GET /api/v1/shipping-guides/eligible-invoices` y `.../{invoiceId}/goods` | Facturas autorizadas de la empresa en su ambiente vigente, con búsqueda, y la precarga de D9 | `shippingGuides.draft` |
+| `GET /api/v1/shipping-guides/eligible-invoices` y `.../{invoiceId}/goods` | Facturas autorizadas de la empresa en su ambiente vigente, con búsqueda, y las líneas de una factura con su sugerencia no autoritativa (D9) | `shippingGuides.draft` |
 | `GET /api/v1/shipping-guides/options` | Casos de excepción con su texto y la versión de la política, establecimientos activos, identidad tributaria para `SELF`, límites efectivos y `evaluatedOn` | `shippingGuides.draft` |
 | `GET/POST /api/v1/shipping-guides/drafts`, `GET/PUT/DELETE /api/v1/shipping-guides/drafts/{draftId}` | Borradores con su vista previa | `shippingGuides.draft` |
 | `POST /api/v1/shipping-guides` | Emisión con `Idempotency-Key` (`201`, o `200` en la repetición) | `shippingGuides.emit` |
@@ -217,12 +230,13 @@ Después de `RESERVED`, la verdad fiscal de la guía es su snapshot. Guarda:
 | `POST /api/v1/shipping-guides/{shippingGuideId}/signing-attempts` | Reintento de firma | `shippingGuides.retrySigning` |
 | `POST /api/v1/shipping-guides/{shippingGuideId}/reconciliations` | Reconciliación manual (`202`) | `shippingGuides.reconcile` |
 
-- **Cuerpos estrictos:** un precio, un impuesto, `detallesAdicionales`, un documento aduanero, varias placas, un número o una autorización de sustento escritos a mano, un `companyId` o un código derivado (dirección y código de la propia empresa, códigos de un producto) se rechazan como campos no permitidos.
+- **Cuerpos estrictos:** un precio, un impuesto, `detallesAdicionales`, un documento aduanero, varias placas, un número o una autorización de sustento escritos a mano, un `companyId` o un dato derivado (la dirección de partida con un origen elegido, la dirección y el código de la propia empresa, los códigos de un producto) se rechazan como campos no permitidos.
+- **Borrador:** `{ emissionPointId, originEstablishmentId, departureAddress, transporter, plate, transportStart, transportEnd, recipients }`.
 - **Emisión:** `{ draftId, expectedVersion, exceptionDeclaration }`.
 - **Códigos de error** (además de los compartidos de la emisión):
   - transportista: `SHIPPING_GUIDE_CARRIER_REQUIRED`, `SHIPPING_GUIDE_CARRIER_INACTIVE`, `SHIPPING_GUIDE_CARRIER_ROLE_REQUIRED`, `SHIPPING_GUIDE_CARRIER_IDENTIFICATION_TOO_LONG`, `SHIPPING_GUIDE_CARRIER_CONSUMER_FINAL` y `SHIPPING_GUIDE_CARRIER_FOREIGN_OUT_OF_SCOPE`;
   - placa, fechas y partida: `SHIPPING_GUIDE_PLATE_INVALID`, `SHIPPING_GUIDE_DATE_INVALID`, `SHIPPING_GUIDE_START_BEFORE_ISSUE`, `SHIPPING_GUIDE_END_BEFORE_START` y `SHIPPING_GUIDE_DEPARTURE_ADDRESS_INVALID`;
-  - destinatarios: `SHIPPING_GUIDE_RECIPIENTS_REQUIRED`, `SHIPPING_GUIDE_RECIPIENT_INVALID`, `SHIPPING_GUIDE_RECIPIENT_INACTIVE`, `SHIPPING_GUIDE_RECIPIENT_CONSUMER_FINAL`, `SHIPPING_GUIDE_RECIPIENT_FOREIGN_OUT_OF_SCOPE`, `SHIPPING_GUIDE_ESTABLISHMENT_INACTIVE`, `SHIPPING_GUIDE_MOTIVE_REQUIRED`, `SHIPPING_GUIDE_ADDRESS_REQUIRED` y `SHIPPING_GUIDE_DESTINATION_CODE_INVALID`;
+  - destinatarios: `SHIPPING_GUIDE_RECIPIENTS_REQUIRED`, `SHIPPING_GUIDE_RECIPIENT_INVALID`, `SHIPPING_GUIDE_RECIPIENT_INACTIVE`, `SHIPPING_GUIDE_RECIPIENT_CONSUMER_FINAL`, `SHIPPING_GUIDE_RECIPIENT_FOREIGN_OUT_OF_SCOPE`, `SHIPPING_GUIDE_ORIGIN_ESTABLISHMENT_REQUIRED`, `SHIPPING_GUIDE_SAME_ESTABLISHMENT`, `SHIPPING_GUIDE_ESTABLISHMENT_INACTIVE` (origen o destino, con el campo), `SHIPPING_GUIDE_MOTIVE_REQUIRED`, `SHIPPING_GUIDE_ADDRESS_REQUIRED` y `SHIPPING_GUIDE_DESTINATION_CODE_INVALID`;
   - sustento: `SHIPPING_GUIDE_SUPPORT_REQUIRED`, `SHIPPING_GUIDE_INVOICE_NOT_AUTHORIZED`, `SHIPPING_GUIDE_INVOICE_ENVIRONMENT_MISMATCH`, `SHIPPING_GUIDE_INVOICE_NOT_INTACT`, `SHIPPING_GUIDE_EXCEPTION_RECIPIENT_MISMATCH`, `SHIPPING_GUIDE_DECLARATION_REQUIRED` y `SHIPPING_GUIDE_DECLARATION_VERSION_MISMATCH`;
   - detalle: `SHIPPING_GUIDE_DETAILS_REQUIRED`, `SHIPPING_GUIDE_DESCRIPTION_INVALID`, `SHIPPING_GUIDE_CODE_INVALID`, `SHIPPING_GUIDE_PRODUCT_NOT_GOOD`, `SHIPPING_GUIDE_PRODUCT_INACTIVE` y `SHIPPING_GUIDE_QUANTITY_INVALID`;
   - límites y estado: `SHIPPING_GUIDE_RESOURCE_LIMIT` (con el límite y su naturaleza de defensa), `SHIPPING_GUIDE_DRAFT_INCOMPLETE`, `SHIPPING_GUIDE_DRAFT_CHANGED`, `SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED` y `SHIPPING_GUIDE_NOT_RECONCILABLE`.
@@ -262,9 +276,9 @@ Después de `RESERVED`, la verdad fiscal de la guía es su snapshot. Guarda:
   - P0 destinatarios con su sustento y su detalle, y los problemas que bloquean; P1 transportista, placa y fechas; P2 partida, punto, ruta y código de destino; P3 identificadores y versiones, que no se muestran.
   - Pasos y controles (`component-selection.md`):
     1. el transporte: origen con un `SegmentedControl` "Propio" / "Tercero"; el tercero con `EntityPickerDialog` (conjunto grande) filtrado a transportistas, con los no seleccionables deshabilitados y su motivo, y "Nuevo transportista" con `PartyDialog` y el rol marcado; la placa en un `Input`;
-    2. las fechas de inicio y fin con `DatePickerField`, y la dirección de partida en un `Input` propuesto desde el establecimiento;
-    3. los destinatarios: lista ordenada con agregar y quitar, en tarjetas; por destinatario, la clase con un `SegmentedControl` "Tercero" / "Establecimiento propio"; el tercero con `EntityPickerDialog` y "Nuevo destinatario" con `PartyDialog` sin roles; el establecimiento con un `Select` (conjunto pequeño, código y dirección); la dirección, el motivo, la ruta y el código de destino en `Input`, con la dirección y el código de solo lectura para el establecimiento propio;
-    4. el sustento: `SegmentedControl` "Factura" / "Sin factura"; la factura con `EntityPickerDialog` de facturas elegibles y la acción "Cargar los bienes de la factura"; sin factura, un `RadioGroup` con los tres casos para un tercero y su texto oficial; el establecimiento propio fija la excepción de traslado entre establecimientos y la muestra de solo lectura;
+    2. las fechas de inicio y fin con `DatePickerField`; la partida con un `SegmentedControl` "Establecimiento propio" / "Otra dirección": el establecimiento de origen en un `Select` sin selección inicial (la dirección derivada, de solo lectura), o la dirección en un `Input` propuesto desde el establecimiento del punto;
+    3. los destinatarios: lista ordenada con agregar y quitar, en tarjetas; por destinatario, la clase con un `SegmentedControl` "Tercero" / "Establecimiento propio"; el tercero con `EntityPickerDialog` y "Nuevo destinatario" con `PartyDialog` sin roles; el establecimiento de destino con un `Select` (conjunto pequeño, código y dirección) que excluye el de origen y, si la guía no tiene origen, pide elegirlo primero; la dirección, el motivo, la ruta y el código de destino en `Input`, con la dirección y el código de solo lectura para el establecimiento propio;
+    4. el sustento: `SegmentedControl` "Factura" / "Sin factura"; la factura con `EntityPickerDialog` de facturas elegibles y la acción "Cargar mercancías de la factura", que abre un diálogo con las líneas de la factura: las sugerencias `PRODUCT` marcadas y las `FREE_LINE` sin marcar, con "agregar como línea libre" y sus datos históricos, y el aviso de que es una sugerencia y que el usuario confirma las mercancías reales; sin factura, un `RadioGroup` con los tres casos para un tercero y su texto oficial; el establecimiento propio fija la excepción de traslado entre establecimientos y la muestra de solo lectura;
     5. el detalle: filas en tabla desde 640 px y apiladas por debajo, con el producto en `EntityPickerDialog` (bienes activos) o línea libre, la descripción con el rótulo, la ayuda, el contador y la vista previa de D9, los códigos (de solo lectura con producto) y la cantidad decimal;
     6. la vista previa del servidor del borrador guardado, con los problemas junto a su destinatario y su detalle, y los límites presentados como defensa del sistema.
   - **Emisión:** un `ConfirmDialog` con el resumen (ambiente, transportista, placa, fechas, destinatarios con su sustento y conteo de detalles). Si hay excepciones declaradas, lista cada una con su texto y pide una casilla: "Declaro que los traslados sin factura corresponden a los casos indicados del art. 30 del Reglamento de Comprobantes". La `Idempotency-Key` nace en la confirmación y se repite en el reintento de la misma versión.
@@ -281,9 +295,9 @@ Dos migraciones aditivas, para que la cabecera común y la guía sean unidades s
 - **`electronic_document`:** `total`, `buyer_identification` y `buyer_name` admiten `NULL`; `electronic_document_values_check` con las igualdades de D10. Sin backfill: ninguna guía existe y las filas actuales cumplen el `CHECK`, que una prueba de migración verifica.
 - **`electronic_document_recipient`:** empresa, comprobante, posición (desde 1), identificación (1 a 20) y nombre (1 a 300); clave `(document_id, position)`; FK compuesta al comprobante; índice `(company_id, identification)`; sin `UPDATE` ni `DELETE`.
 - **`shipping_guide_draft`:** empresa, versión, estado `DRAFT`/`EMITTED`, comprobante, punto, transportista, placa, partida y fechas opcionales mientras se prepara, y `recipients` como `JSONB` validado por el contrato, con un `CHECK` de arreglo y de tamaño máximo como defensa. Un borrador emitido no cambia ni se borra.
-- **`shipping_guide`:** una fila inmutable por guía con el origen, el tercero opcional, el tipo, la identificación (hasta 13) y el nombre del transportista, la placa, las fechas y los conteos, con sus `CHECK` (origen y tercero coherentes, fin no anterior al inicio, conteos positivos). Un trigger exige que el comprobante sea un `06` de la empresa y que el inicio no sea anterior a su fecha de emisión.
-- **`shipping_guide_recipient`:** una fila inmutable por destinatario, con FK a `electronic_document_recipient`, la clase (`PARTY`/`OWN_COMPANY`), el tercero o el establecimiento, la clase de sustento, la factura opcional, el caso, la versión de la política, quién declaró y cuándo, con `CHECK` de coherencia (factura si y solo si `INTERNAL_INVOICE`; caso si y solo si `DECLARED_EXCEPTION`; `OWN_COMPANY` si y solo si `OWN_ESTABLISHMENT_TRANSFER`). Un trigger exige que la factura sea un `01` autorizado de la empresa y del ambiente de la guía.
-- **Trigger de restricción diferido:** un comprobante `06` no se confirma sin su fila de `shipping_guide`, sin al menos un destinatario en las dos tablas, ni con conteos distintos. Es el mismo acoplamiento intencional de las notas y la retención, documentado en `database.md`.
+- **`shipping_guide`:** una fila inmutable por guía con el establecimiento de origen opcional (FK compuesta por empresa), el origen del transportista, el tercero opcional, el tipo, la identificación (hasta 13) y el nombre del transportista, la placa, las fechas y los conteos, con sus `CHECK` (origen y tercero coherentes, fin no anterior al inicio, conteos positivos). Un trigger exige que el comprobante sea un `06` de la empresa y que el inicio no sea anterior a su fecha de emisión.
+- **`shipping_guide_recipient`:** una fila inmutable por destinatario, con FK a `electronic_document_recipient`, la clase (`PARTY`/`OWN_COMPANY`), el tercero o el establecimiento de destino, la clase de sustento, la factura opcional, el caso, la versión de la política, quién declaró y cuándo, con `CHECK` de coherencia (factura si y solo si `INTERNAL_INVOICE`; caso si y solo si `DECLARED_EXCEPTION`; `OWN_COMPANY` si y solo si `OWN_ESTABLISHMENT_TRANSFER`). Un trigger exige que la factura sea un `01` autorizado de la empresa y del ambiente de la guía, y que un `OWN_COMPANY` tenga una guía con establecimiento de origen distinto de su destino.
+- **Trigger de restricción diferido:** un comprobante `06` no se confirma sin su fila de `shipping_guide`, sin al menos un destinatario en las dos tablas, con conteos distintos ni con posiciones que no sean contiguas desde 1. Es el mismo acoplamiento intencional de las notas y la retención, documentado en `database.md`.
 - **Idempotencia:** `shipping_guide.emit` en el `CHECK` de `idempotency_record`.
 - FK compuestas por empresa y sin índices parciales. `migrations.test.ts` y `database.md` las documentan.
 
@@ -297,7 +311,7 @@ Dos migraciones aditivas, para que la cabecera común y la guía sean unidades s
 
 - **Server-Timing** con `EMISSION_STAGE_TIMINGS`, como los demás tipos; nunca en producción.
 - **`bench:shipping-guides`**, fuera de `verify`, sobre un esquema aislado con 10 000 terceros (una parte con el rol `CARRIER`), 10 000 productos, 20 000 facturas autorizadas y 100 000 guías emitidas de uno a tres destinatarios (volumen de Q-26), con el barrido del RIDE apagado. Mide:
-  - la búsqueda de transportistas, de destinatarios y de facturas elegibles, y la precarga de bienes;
+  - la búsqueda de transportistas, de destinatarios y de facturas elegibles, y las líneas sugeridas de una factura;
   - la creación y la vista previa del peor caso con los valores por defecto (10 destinatarios, 100 detalles) y con los máximos absolutos (50 destinatarios, 300 detalles);
   - la reserva en serie y la del peor caso, con `reservation_tx` aparte del XML, el XSD y la firma;
   - 10 rondas de 10 emisiones simultáneas sobre la misma factura y sobre facturas distintas;
@@ -332,9 +346,12 @@ Dos migraciones aditivas, para que la cabecera común y la guía sean unidades s
 | Inicio no anterior a la emisión | Oficial | Ficha v2.34, página 38, error 82 |
 | Fin no anterior al inicio; sin duración máxima | Validación del proyecto | Q-51 |
 | Destinatario identificado, partida, destinos, conductor, placa, mercadería, motivo y fechas | Oficial | Reglamento, art. 30 |
+| Conductor (art. 30, numeral 3) frente a transportista (`razonSocialTransportista`, `rucTransportista`) | Oficial, con terminología distinta: el Reglamento nombra al conductor; el XSD, la ficha (anexo 3) y el facturador gratuito (tabla 15, "transportista o remitente") modelan al transportista. El sistema modela solo los campos del transportista que expresa el XML 1.1.0, sin un campo de conductor aparte; la certificación real en Pruebas incluye los casos `SELF` y `PARTY` | Reglamento, art. 30; XSD; ficha v2.34, anexo 3 y tabla 15 |
 | Comprobante de venta salvo las excepciones a) a e) | Oficial | Reglamento, art. 30, numeral 8 |
 | Factura propia autorizada o excepción b, c, d o e declarada | Política del MVP (P1) | Q-51 |
-| Traslado entre establecimientos propios con la empresa | Política del MVP (P2) | Q-51 |
+| Traslado entre establecimientos propios con la empresa, con origen y destino registrados, activos y distintos | Oficial ("traslado entre establecimientos de un mismo contribuyente") y política del MVP (P2: origen registrado obligatorio, partida derivada de él) | Reglamento, art. 30, numeral 8, literal d; Q-51 |
+| Factura a consumidor final como sustento con un destinatario identificado | Política del MVP | Q-51, D8 |
+| Precarga desde la factura como sugerencia no autoritativa | Política del MVP | D9 |
 | Destinatario 04, 05 o 06, sin rol obligatorio | Política del MVP (P3) | Q-51 |
 | Transportista `SELF` o `PARTY` con `CARRIER` | Política del MVP (P4) | Q-51 |
 | Placa sin formato vehicular | Política del MVP (P5) | Q-51; ficha, anexo 12 |
@@ -352,7 +369,8 @@ Dos migraciones aditivas, para que la cabecera común y la guía sean unidades s
 - **Excepciones declaradas mal usadas:** el sistema no puede comprobar una consignación o una exhibición. → Declaración explícita al emitir, con actor, momento y versión, presentada siempre como del usuario.
 - **Cambiar la nulabilidad de la cabecera común** podría dejar pasar un comprobante sin total. → `CHECK` por tipo en la base, refinación del contrato de la bandeja, `documentBuyer` como guarda de invariante y los golden de los demás tipos sin cambios.
 - **Bandeja con destinatarios:** la rama `EXISTS` del filtro podría degradar la consulta. → Índice por identificación y medición en el benchmark con 100 000 guías.
-- **Precarga con el tipo vigente del producto:** un producto que cambió de bien a servicio no se precarga. → Es una propuesta editable; la guía congela su propio detalle.
+- **Precarga con el tipo vigente del producto**, que puede no representar la línea facturada. → Solo decide qué se sugiere; las líneas no resolubles se ofrecen como línea libre con sus datos históricos; el usuario confirma las mercancías y la guía congela su propio detalle.
+- **Traslados desde una bodega no registrada:** no admiten la excepción d. → Se registra el establecimiento, o se espera la capacidad futura con su justificación normativa.
 - **Generalización:** tocar la bandeja, el RIDE, la reconciliación y la cabecera podría romper otros tipos. → Solo entradas por tipo y la unión de `DocumentColumns`; regresión de los cuatro tipos existentes.
 
 ## Migration Plan

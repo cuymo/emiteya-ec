@@ -48,7 +48,7 @@ El sistema SHALL emitir la factura 1.1.0, la nota de crédito 1.1.0, la nota de 
 ## ADDED Requirements
 
 ### Requirement: Snapshot de la guía de remisión
-El snapshot de una guía de remisión SHALL contener, además del emisor, el punto, el ambiente, la fecha de emisión, la clave y las versiones, la dirección de partida, el transportista con su origen, la placa, las fechas del transporte y cada destinatario con su identificación, su dirección, su motivo, su ruta, su código de destino, su sustento (la factura con sus datos o la excepción declarada con su caso, su versión, su actor y su momento) y su detalle. Desde la reserva MUST ser inmutable.
+El snapshot de una guía de remisión SHALL contener, además del emisor, el punto, el ambiente, la fecha de emisión, la clave y las versiones, la partida con su establecimiento de origen si lo hay, el transportista con su origen, la placa, las fechas del transporte y cada destinatario con su identificación, su dirección, su establecimiento de destino si lo hay, su motivo, su ruta, su código de destino, su sustento (la factura con sus datos o la excepción declarada con su caso, su versión, su actor y su momento) y su detalle. Desde la reserva MUST ser inmutable.
 
 #### Scenario: Guía y sus destinatarios
 - **WHEN** se reserva una guía con dos destinatarios, uno con factura y otro con una excepción declarada

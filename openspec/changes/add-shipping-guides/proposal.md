@@ -16,16 +16,17 @@ Q-51 está resuelta (P1 a P10) y el XSD 1.1.0 se verificó contra el portal del 
   - `SELF`: transporte propio con la identidad tributaria de la empresa (RUC, tipo 04, razón social), sin un tercero artificial;
   - `PARTY`: un tercero activo con el rol de transportista, identificado con RUC, cédula o pasaporte, con una identificación de hasta 13 caracteres (ficha v2.34, anexo 3). Un tercero sin ese rol no se puede elegir hasta que el usuario lo configure; la guía nunca asigna roles.
 - **Una placa** por guía (P5): texto fiscal de hasta 20 caracteres, sin formato vehicular inventado.
-- **Fechas del transporte:** la de inicio no es anterior a la fecha de emisión de la guía (requisito oficial, error 82 de la ficha) y la de fin no es anterior a la de inicio (validación del proyecto), sin duración máxima. La dirección de partida es texto libre, propuesta desde el establecimiento emisor.
+- **Fechas del transporte:** la de inicio no es anterior a la fecha de emisión de la guía (requisito oficial, error 82 de la ficha) y la de fin no es anterior a la de inicio (validación del proyecto), sin duración máxima.
+- **Partida:** un establecimiento propio activo elegido como origen, del que se deriva y congela la dirección, o un texto libre que el borrador propone desde el establecimiento del punto.
 - **Uno o más destinatarios** (P3), cada uno con su dirección, su motivo del traslado (texto libre), su ruta opcional y su detalle:
   - un tercero activo identificado con RUC, cédula o pasaporte, sin rol obligatorio y sin asignarle el de cliente; nunca el consumidor final ni una identificación del exterior;
-  - o la propia empresa, en un traslado entre establecimientos propios (P2), con la dirección y el código de un establecimiento propio activo.
+  - o la propia empresa, en un traslado entre establecimientos propios (P2): la guía elige un establecimiento de origen y el destinatario uno de destino, ambos propios, activos y distintos, sin compararlos con el establecimiento emisor; la partida sale del origen y la dirección y el código de destino, del destino. Una dirección libre no registrada no prueba este caso.
 - **Sustento tipado por destinatario** (P1), exactamente uno de:
   - una factura propia (`INTERNAL_INVOICE`), de la misma empresa y del mismo ambiente, autorizada e íntegra, de la que el sistema toma el tipo, el número, la autorización y la fecha;
   - una excepción declarada por el usuario (`DECLARED_EXCEPTION`) del art. 30, numeral 8, del Reglamento: cantidad o precio determinado después del traslado, consignación, traslado entre establecimientos propios o exhibición y demostración, con su caso, la versión de la política, el actor y el momento, fuera del XML.
 
-  Varias guías pueden referenciar una factura y una guía puede llevar facturas distintas en destinatarios distintos. No hay saldo por despachar ni cambios en la factura.
-- **Detalle sin precios** (P6, P7): descripción obligatoria con la unidad y las características, producto opcional (activo y de tipo bien) con sus códigos congelados, o una línea libre; cantidad decimal exacta mayor que cero, de hasta 6 decimales, sin redondeo. Las cantidades se pueden precargar desde los bienes de la factura y siguen editables.
+  Varias guías pueden referenciar una factura y una guía puede llevar facturas distintas en destinatarios distintos. Una factura a consumidor final es sustento con un destinatario identificado, sin copiar al consumidor final (política del MVP). No hay saldo por despachar ni cambios en la factura.
+- **Detalle sin precios** (P6, P7): descripción obligatoria con la unidad y las características, producto opcional (activo y de tipo bien) con sus códigos congelados, o una línea libre; cantidad decimal exacta mayor que cero, de hasta 6 decimales, sin redondeo. Las mercancías de una factura se pueden cargar como sugerencia no autoritativa: las líneas que hoy se resuelven como bien se proponen, las demás se ofrecen como línea libre con sus datos históricos, y el usuario confirma lo que realmente se traslada.
 - **Sin total monetario ni receptor único** (P10): el comprobante genérico guarda la guía sin total y sin un receptor que la represente; la bandeja muestra el nombre de su único destinatario o "N destinatarios", sin importe, y el filtro por identificación encuentra la guía por cualquiera de sus destinatarios. Los demás tipos siguen exigiendo su total y su receptor.
 - **Sin inventario** (P8): la guía no reserva, descuenta, devuelve ni ajusta stock ni crea movimientos.
 - **Límites de recursos configurables y compuestos** (P9): destinatarios por guía (10, hasta 50), detalles por destinatario (50, hasta 100) y detalles por guía (100, hasta 300). Son defensas del producto, no límites del SRI ni del XSD, y no interpretan Q-47.
@@ -40,7 +41,8 @@ Q-51 está resuelta (P1 a P10) y el XSD 1.1.0 se verificó contra el portal del 
 - `detallesAdicionales` (`shipping-guide-additional-details`).
 - Varios vehículos, placas o conductores (`shipping-guide-multiple-vehicles`).
 - Stock por establecimiento o ubicación y logística (`location-stock`); saldo por despachar de una factura.
-- Guías emitidas por el transportista o el destinatario en nombre de un tercero.
+- Guías emitidas por el transportista o el destinatario en nombre de un tercero, y un campo de conductor aparte del transportista que el XML 1.1.0 no expresa.
+- Traslados entre una bodega no registrada y un establecimiento como excepción de establecimientos propios.
 - Identificación del exterior, documento aduanero, importación, exportación y regímenes especiales; combustibles; máquina fiscal; factura sustitutiva de guía; emisor itinerante; interrupción del transporte. Sin campos parciales.
 - Información adicional en el XML, la referencia de la factura a la guía (`infoFactura/guiaRemision`), la corrección de una guía devuelta (`correct-returned-document`) y la anulación (`cancellation-observation`, Q-16).
 
