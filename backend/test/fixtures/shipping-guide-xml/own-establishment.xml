@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<guiaRemision id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>DISTRIBUIDORA NACIONAL S.A.</razonSocial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0610202606179001234500110010010000000031234567814</claveAcceso>
+    <codDoc>06</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000003</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoGuiaRemision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <dirPartida>Av. 6 de Diciembre N33-55, Quito</dirPartida>
+    <razonSocialTransportista>DISTRIBUIDORA NACIONAL S.A.</razonSocialTransportista>
+    <tipoIdentificacionTransportista>04</tipoIdentificacionTransportista>
+    <rucTransportista>1790012345001</rucTransportista>
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <fechaIniTransporte>06/10/2026</fechaIniTransporte>
+    <fechaFinTransporte>07/10/2026</fechaFinTransporte>
+    <placa>PAA-1234</placa>
+  </infoGuiaRemision>
+  <destinatarios>
+    <destinatario>
+      <identificacionDestinatario>1790012345001</identificacionDestinatario>
+      <razonSocialDestinatario>DISTRIBUIDORA NACIONAL S.A.</razonSocialDestinatario>
+      <dirDestinatario>Av. 10 de Agosto y Colón, Quito</dirDestinatario>
+      <motivoTraslado>Reposición de stock</motivoTraslado>
+      <codEstabDestino>002</codEstabDestino>
+      <detalles>
+        <detalle>
+          <descripcion>Varilla 12 mm</descripcion>
+          <cantidad>250</cantidad>
+        </detalle>
+      </detalles>
+    </destinatario>
+  </destinatarios>
+</guiaRemision>

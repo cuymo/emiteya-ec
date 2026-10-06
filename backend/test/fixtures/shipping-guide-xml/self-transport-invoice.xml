@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<guiaRemision id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>DISTRIBUIDORA NACIONAL S.A.</razonSocial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0610202606179001234500110010010000000011234567811</claveAcceso>
+    <codDoc>06</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000001</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoGuiaRemision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <dirPartida>Av. Eloy Alfaro 34 y Av. Libertad</dirPartida>
+    <razonSocialTransportista>DISTRIBUIDORA NACIONAL S.A.</razonSocialTransportista>
+    <tipoIdentificacionTransportista>04</tipoIdentificacionTransportista>
+    <rucTransportista>1790012345001</rucTransportista>
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <fechaIniTransporte>06/10/2026</fechaIniTransporte>
+    <fechaFinTransporte>07/10/2026</fechaFinTransporte>
+    <placa>PAA-1234</placa>
+  </infoGuiaRemision>
+  <destinatarios>
+    <destinatario>
+      <identificacionDestinatario>1790012345001</identificacionDestinatario>
+      <razonSocialDestinatario>COMERCIAL ANDINA S.A.</razonSocialDestinatario>
+      <dirDestinatario>Av. Simón Bolívar S/N Intercambiador</dirDestinatario>
+      <motivoTraslado>Venta de maquinaria</motivoTraslado>
+      <codDocSustento>01</codDocSustento>
+      <numDocSustento>001-001-000000123</numDocSustento>
+      <numAutDocSustento>0510202601179001234500110010010000001231234567815</numAutDocSustento>
+      <fechaEmisionDocSustento>05/10/2026</fechaEmisionDocSustento>
+      <detalles>
+        <detalle>
+          <codigoInterno>CEM-50</codigoInterno>
+          <descripcion>Cemento 50 kg en sacos</descripcion>
+          <cantidad>10</cantidad>
+        </detalle>
+      </detalles>
+    </destinatario>
+  </destinatarios>
+</guiaRemision>

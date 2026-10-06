@@ -67,6 +67,13 @@ export const AUDIT_ACTIONS = [
   "withholding_receipt.signing_retried",
   "withholding_receipt.reconciliation_requested",
   "withholding_receipt.reconciliation_completed",
+  // add-shipping-guides, design D24: las mismas reglas, con las excepciones declaradas, sin
+  // direcciones, descripciones, placa, XML ni SOAP.
+  "shipping_guide.reserved",
+  "shipping_guide.signed",
+  "shipping_guide.signing_retried",
+  "shipping_guide.reconciliation_requested",
+  "shipping_guide.reconciliation_completed",
   // add-minimal-inventory, design D12: la configuración del inventario; nunca los movimientos.
   "inventory.initialized",
   "inventory.tracking_disabled",

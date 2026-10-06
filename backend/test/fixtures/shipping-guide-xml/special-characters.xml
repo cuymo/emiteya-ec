@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<guiaRemision id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>2</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>DISTRIBUIDORA NACIONAL S.A.</razonSocial>
+    <nombreComercial>Ferretería "La Ñusta" &amp; Cía.</nombreComercial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0610202606179001234500220010010000000051234567815</claveAcceso>
+    <codDoc>06</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000005</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+    <contribuyenteRimpe>CONTRIBUYENTE RÉGIMEN RIMPE</contribuyenteRimpe>
+  </infoTributaria>
+  <infoGuiaRemision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <dirPartida>Bodega &lt;norte&gt; &amp; patio 'B'</dirPartida>
+    <razonSocialTransportista>DISTRIBUIDORA NACIONAL S.A.</razonSocialTransportista>
+    <tipoIdentificacionTransportista>04</tipoIdentificacionTransportista>
+    <rucTransportista>1790012345001</rucTransportista>
+    <obligadoContabilidad>NO</obligadoContabilidad>
+    <contribuyenteEspecial>12345</contribuyenteEspecial>
+    <fechaIniTransporte>06/10/2026</fechaIniTransporte>
+    <fechaFinTransporte>07/10/2026</fechaFinTransporte>
+    <placa>PAA-1234</placa>
+  </infoGuiaRemision>
+  <destinatarios>
+    <destinatario>
+      <identificacionDestinatario>1790012345001</identificacionDestinatario>
+      <razonSocialDestinatario>Peña &amp; Asociados &lt;Construcciones&gt; 'Ñandú'</razonSocialDestinatario>
+      <dirDestinatario>Av. Simón Bolívar S/N Intercambiador</dirDestinatario>
+      <motivoTraslado>Venta "especial" &amp; entrega</motivoTraslado>
+      <codDocSustento>01</codDocSustento>
+      <numDocSustento>001-001-000000123</numDocSustento>
+      <numAutDocSustento>0510202601179001234500110010010000001231234567815</numAutDocSustento>
+      <fechaEmisionDocSustento>05/10/2026</fechaEmisionDocSustento>
+      <detalles>
+        <detalle>
+          <descripcion>Tubería ½" &amp; codos</descripcion>
+          <cantidad>3</cantidad>
+        </detalle>
+      </detalles>
+    </destinatario>
+  </destinatarios>
+</guiaRemision>

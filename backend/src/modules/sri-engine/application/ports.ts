@@ -332,6 +332,56 @@ export interface WithholdingReceiptXmlBuilder {
   build(snapshot: WithholdingReceiptXmlSnapshot): string;
 }
 
+/**
+ * Snapshot de una guía de remisión 1.1.0 para su builder (add-shipping-guides, design D16): la
+ * partida, el transportista, la placa, las fechas y los destinatarios con su sustento y su detalle,
+ * tal como los congeló la reserva. No tiene importes.
+ */
+export type ShippingGuideXmlSnapshot = Readonly<{
+  /** Versión del XSD registrado con que se construye. */
+  schemaVersion: string;
+  environment: "1" | "2";
+  accessKey: string;
+  sequential: string;
+  issuer: InvoiceSnapshot["issuer"];
+  /** `dirPartida`. */
+  departureAddress: string;
+  carrier: Readonly<{ identificationType: string; identification: string; legalName: string }>;
+  /** `YYYY-MM-DD`. */
+  transportStart: string;
+  transportEnd: string;
+  plate: string;
+  recipients: readonly Readonly<{
+    identification: string;
+    legalName: string;
+    address: string;
+    motive: string;
+    destinationEstablishmentCode: string | null;
+    route: string | null;
+    /** Solo con una factura sustento: sus cuatro datos. */
+    support: Readonly<{
+      documentType: string;
+      /** `NNN-NNN-NNNNNNNNN`. */
+      documentNumber: string;
+      authorizationNumber: string;
+      /** `YYYY-MM-DD`. */
+      issueDate: string;
+    }> | null;
+    details: readonly Readonly<{
+      mainCode: string | null;
+      auxiliaryCode: string | null;
+      description: string;
+      quantity: string;
+    }>[];
+  }>[];
+}>;
+
+/** XML sin firmar de una guía de remisión: función pura y determinista de su snapshot. */
+export interface ShippingGuideXmlBuilder {
+  readonly version: string;
+  build(snapshot: ShippingGuideXmlSnapshot): string;
+}
+
 export const INVOICE_XML_ERRORS = [
   "UNSUPPORTED_SCHEMA_VERSION",
   "INVALID_SNAPSHOT_AMOUNT",
@@ -375,6 +425,16 @@ export class WithholdingReceiptXmlError extends Error {
   constructor(code: InvoiceXmlErrorCode) {
     super(code);
     this.name = "WithholdingReceiptXmlError";
+    this.code = code;
+  }
+}
+
+/** Snapshot de una guía de remisión que no se puede escribir, con los mismos códigos. */
+export class ShippingGuideXmlError extends Error {
+  readonly code: InvoiceXmlErrorCode;
+  constructor(code: InvoiceXmlErrorCode) {
+    super(code);
+    this.name = "ShippingGuideXmlError";
     this.code = code;
   }
 }

@@ -57,8 +57,8 @@
 
 ## 5. XML de la guía
 
-- [ ] 5.1 Crear `shipping-guide-xml-builder.ts` para `guiaRemision` 1.1.0 desde el snapshot (design D16), con `infoTributaria` compartida y sin `rise`, `docAduaneroUnico`, `detallesAdicionales`, `maquinaFiscal`, `infoAdicional` ni nodos vacíos. Verificar con golden fixtures de bytes exactos, todos validados contra el XSD oficial: transporte propio y tercero; destinatario con factura; varios destinatarios con factura y excepciones; la propia empresa con origen y destino distintos y la partida del origen; ruta y código de un tercero; producto y línea libre; 6 decimales y forma canónica; caracteres especiales; longitudes máximas
-- [ ] 5.2 Crear `shippingGuideSigningProfile` y firmar con el firmador vigente y el tipo `06`, con el XSD antes y después de firmar. Verificar que el XML firmado valida, que el artefacto lleva el tipo `06` y que la firma de la factura, las notas y la retención no cambia
+- [x] 5.1 Crear `shipping-guide-xml-builder.ts` para `guiaRemision` 1.1.0 desde el snapshot (design D16), con `infoTributaria` compartida y sin `rise`, `docAduaneroUnico`, `detallesAdicionales`, `maquinaFiscal`, `infoAdicional` ni nodos vacíos. Verificar con golden fixtures de bytes exactos, todos validados contra el XSD oficial: transporte propio y tercero; destinatario con factura; varios destinatarios con factura y excepciones; la propia empresa con origen y destino distintos y la partida del origen; ruta y código de un tercero; producto y línea libre; 6 decimales y forma canónica; caracteres especiales; longitudes máximas
+- [x] 5.2 Crear `shippingGuideSigningProfile` y firmar con el firmador vigente y el tipo `06`, con el XSD antes y después de firmar. Verificar que el XML firmado valida, que el artefacto lleva el tipo `06` y que la firma de la factura, las notas y la retención no cambia
 
 ## 6. Lecturas, borradores, vista previa y opciones
 
