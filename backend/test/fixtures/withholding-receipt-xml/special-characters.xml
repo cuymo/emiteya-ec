@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<comprobanteRetencion id="comprobante" version="2.0.0">
+  <infoTributaria>
+    <ambiente>2</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <nombreComercial>Ferretería "La Ñusta" &amp; Cía.</nombreComercial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0610202607179001234500220010010000000061234567812</claveAcceso>
+    <codDoc>07</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000006</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+    <agenteRetencion>1</agenteRetencion>
+    <contribuyenteRimpe>CONTRIBUYENTE RÉGIMEN RIMPE</contribuyenteRimpe>
+  </infoTributaria>
+  <infoCompRetencion>
+    <fechaEmision>06/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <contribuyenteEspecial>12345</contribuyenteEspecial>
+    <obligadoContabilidad>NO</obligadoContabilidad>
+    <tipoIdentificacionSujetoRetenido>05</tipoIdentificacionSujetoRetenido>
+    <parteRel>NO</parteRel>
+    <razonSocialSujetoRetenido>Peña &amp; Asociados &lt;Construcciones&gt; 'Ñandú'</razonSocialSujetoRetenido>
+    <identificacionSujetoRetenido>1710034065</identificacionSujetoRetenido>
+    <periodoFiscal>10/2026</periodoFiscal>
+  </infoCompRetencion>
+  <docsSustento>
+    <docSustento>
+      <codSustento>01</codSustento>
+      <codDocSustento>01</codDocSustento>
+      <numDocSustento>001001000000123</numDocSustento>
+      <fechaEmisionDocSustento>01/10/2026</fechaEmisionDocSustento>
+      <numAutDocSustento>0110202601179123456700110010010000001231234567815</numAutDocSustento>
+      <pagoLocExt>01</pagoLocExt>
+      <totalSinImpuestos>100.29</totalSinImpuestos>
+      <importeTotal>115.33</importeTotal>
+      <impuestosDocSustento>
+        <impuestoDocSustento>
+          <codImpuestoDocSustento>2</codImpuestoDocSustento>
+          <codigoPorcentaje>4</codigoPorcentaje>
+          <baseImponible>100.29</baseImponible>
+          <tarifa>15</tarifa>
+          <valorImpuesto>15.04</valorImpuesto>
+        </impuestoDocSustento>
+      </impuestosDocSustento>
+      <retenciones>
+        <retencion>
+          <codigo>1</codigo>
+          <codigoRetencion>312C</codigoRetencion>
+          <baseImponible>100.29</baseImponible>
+          <porcentajeRetener>1.75</porcentajeRetener>
+          <valorRetenido>1.76</valorRetenido>
+        </retencion>
+      </retenciones>
+      <pagos>
+        <pago>
+          <formaPago>20</formaPago>
+          <total>115.33</total>
+        </pago>
+      </pagos>
+    </docSustento>
+  </docsSustento>
+</comprobanteRetencion>

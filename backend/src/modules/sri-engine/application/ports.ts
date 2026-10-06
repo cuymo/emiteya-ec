@@ -274,6 +274,64 @@ export interface DebitNoteXmlBuilder {
   build(snapshot: DebitNoteXmlSnapshot): string;
 }
 
+/**
+ * Proyección del snapshot del comprobante de retención que recibe su builder (add-withholding-receipts,
+ * design D17): los valores retenidos los calculó `calculateWithholdingAmounts` y los congeló la
+ * reserva; los impuestos y los pagos de cada documento sustento son los que declaró el usuario. El
+ * builder solo transcribe; no lee el tercero, el reloj ni catálogos.
+ */
+export type WithholdingReceiptXmlSnapshot = Readonly<{
+  /** Versión del XSD registrado con que se construye. */
+  schemaVersion: string;
+  environment: "1" | "2";
+  issueDate: string;
+  accessKey: string;
+  sequential: string;
+  issuer: InvoiceSnapshot["issuer"];
+  /** El sujeto retenido tal como se congeló al reservar. */
+  subject: Readonly<{ identificationType: string; identification: string; legalName: string }>;
+  /** `parteRel`: la declaración del usuario. */
+  relatedParty: "SI" | "NO";
+  /** `periodoFiscal`, `MM/AAAA`. */
+  fiscalPeriod: string;
+  supports: readonly Readonly<{
+    /** `codSustento`: dos dígitos. */
+    supportCode: string;
+    /** `codDocSustento`: el código de dos caracteres (`01`, `02`, `03`). */
+    documentType: string;
+    /** `numDocSustento`: 15 dígitos. */
+    number: string;
+    /** `YYYY-MM-DD`. */
+    issueDate: string;
+    authorizationNumber: string | null;
+    totalWithoutTaxes: string;
+    importTotal: string;
+    /** `impuestoDocSustento`: código, código de porcentaje, base, tarifa y valor declarados. */
+    taxes: readonly Readonly<{
+      taxCode: string;
+      rateCode: string;
+      base: string;
+      tariff: string;
+      amount: string;
+    }>[];
+    /** `retencion`: código, código de retención, base, porcentaje y valor retenido. */
+    withholdings: readonly Readonly<{
+      taxCode: string;
+      code: string;
+      base: string;
+      percentage: string;
+      amount: string;
+    }>[];
+    payments: readonly Readonly<{ method: string; total: string }>[];
+  }>[];
+}>;
+
+/** XML sin firmar de un comprobante de retención: función pura y determinista de su snapshot. */
+export interface WithholdingReceiptXmlBuilder {
+  readonly version: string;
+  build(snapshot: WithholdingReceiptXmlSnapshot): string;
+}
+
 export const INVOICE_XML_ERRORS = [
   "UNSUPPORTED_SCHEMA_VERSION",
   "INVALID_SNAPSHOT_AMOUNT",
@@ -307,6 +365,16 @@ export class DebitNoteXmlError extends Error {
   constructor(code: InvoiceXmlErrorCode) {
     super(code);
     this.name = "DebitNoteXmlError";
+    this.code = code;
+  }
+}
+
+/** Snapshot de un comprobante de retención que no se puede escribir, con los mismos códigos. */
+export class WithholdingReceiptXmlError extends Error {
+  readonly code: InvoiceXmlErrorCode;
+  constructor(code: InvoiceXmlErrorCode) {
+    super(code);
+    this.name = "WithholdingReceiptXmlError";
     this.code = code;
   }
 }

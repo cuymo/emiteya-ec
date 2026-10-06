@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<comprobanteRetencion id="comprobante" version="2.0.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>COMERCIAL ANDINA S.A.</razonSocial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0610202607179001234500110010010000000041234567810</claveAcceso>
+    <codDoc>07</codDoc>
+    <estab>001</estab>
+    <ptoEmi>001</ptoEmi>
+    <secuencial>000000004</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+    <agenteRetencion>1</agenteRetencion>
+  </infoTributaria>
+  <infoCompRetencion>
+    <fechaEmision>06/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <tipoIdentificacionSujetoRetenido>04</tipoIdentificacionSujetoRetenido>
+    <parteRel>NO</parteRel>
+    <razonSocialSujetoRetenido>PROVEEDORA DEL SUR S.A.</razonSocialSujetoRetenido>
+    <identificacionSujetoRetenido>1791234567001</identificacionSujetoRetenido>
+    <periodoFiscal>10/2026</periodoFiscal>
+  </infoCompRetencion>
+  <docsSustento>
+    <docSustento>
+      <codSustento>01</codSustento>
+      <codDocSustento>01</codDocSustento>
+      <numDocSustento>001001000000123</numDocSustento>
+      <fechaEmisionDocSustento>01/10/2026</fechaEmisionDocSustento>
+      <numAutDocSustento>0110202601179123456700110010010000001231234567815</numAutDocSustento>
+      <pagoLocExt>01</pagoLocExt>
+      <totalSinImpuestos>100.29</totalSinImpuestos>
+      <importeTotal>115.33</importeTotal>
+      <impuestosDocSustento>
+        <impuestoDocSustento>
+          <codImpuestoDocSustento>2</codImpuestoDocSustento>
+          <codigoPorcentaje>4</codigoPorcentaje>
+          <baseImponible>100.29</baseImponible>
+          <tarifa>15</tarifa>
+          <valorImpuesto>15.04</valorImpuesto>
+        </impuestoDocSustento>
+      </impuestosDocSustento>
+      <retenciones>
+        <retencion>
+          <codigo>1</codigo>
+          <codigoRetencion>312C</codigoRetencion>
+          <baseImponible>100.29</baseImponible>
+          <porcentajeRetener>1.75</porcentajeRetener>
+          <valorRetenido>1.76</valorRetenido>
+        </retencion>
+        <retencion>
+          <codigo>2</codigo>
+          <codigoRetencion>7</codigoRetencion>
+          <baseImponible>15.04</baseImponible>
+          <porcentajeRetener>0</porcentajeRetener>
+          <valorRetenido>0.00</valorRetenido>
+        </retencion>
+      </retenciones>
+      <pagos>
+        <pago>
+          <formaPago>20</formaPago>
+          <total>115.33</total>
+        </pago>
+      </pagos>
+    </docSustento>
+  </docsSustento>
+</comprobanteRetencion>

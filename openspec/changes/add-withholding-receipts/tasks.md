@@ -77,7 +77,7 @@
 
 ## 5. XML del comprobante de retención
 
-- [ ] 5.1 Crear `withholding-receipt-xml-builder.ts` para `comprobanteRetencion` 2.0.0 desde el snapshot, sin el builder de alto nivel de la dependencia, reutilizando `xml-writer.ts` e `infoTributaria` con `codDoc` 07 (design D17). Verificar con golden fixtures de bytes exactos que validan contra `ComprobanteRetencion_V2.0.0.xsd`:
+- [x] 5.1 Crear `withholding-receipt-xml-builder.ts` para `comprobanteRetencion` 2.0.0 desde el snapshot, sin el builder de alto nivel de la dependencia, reutilizando `xml-writer.ts` e `infoTributaria` con `codDoc` 07 (design D17). Verificar con golden fixtures de bytes exactos que validan contra `ComprobanteRetencion_V2.0.0.xsd`:
   - un documento con renta;
   - renta e IVA;
   - varios documentos con varias retenciones anidadas;
@@ -89,7 +89,7 @@
   - `pagoLocExt` 01 y sin los elementos que el sistema no escribe.
 
   Los golden de la factura y de las notas, sin cambios
-- [ ] 5.2 Crear `withholdingReceiptSigningProfile` y firmar con el firmador vigente y el tipo `07`, con el XSD antes y después de firmar. Verificar que el XML firmado valida, lleva la clave y el certificado de la empresa, y que el artefacto declara el tipo `07`. Documentar el builder, lo que no escribe y el formato de los códigos de documento sustento en `fiscal-emission.md`
+- [x] 5.2 Crear `withholdingReceiptSigningProfile` y firmar con el firmador vigente y el tipo `07`, con el XSD antes y después de firmar. Verificar que el XML firmado valida, lleva la clave y el certificado de la empresa, y que el artefacto declara el tipo `07`. Documentar el builder, lo que no escribe y el formato de los códigos de documento sustento en `fiscal-emission.md`
 
 ## 6. Borradores, vista previa, proveedores y opciones
 

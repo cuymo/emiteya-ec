@@ -61,6 +61,12 @@ export const AUDIT_ACTIONS = [
   "debit_note.signing_retried",
   "debit_note.reconciliation_requested",
   "debit_note.reconciliation_completed",
+  // add-withholding-receipts, design D23: las mismas reglas, sin XML ni SOAP.
+  "withholding_receipt.reserved",
+  "withholding_receipt.signed",
+  "withholding_receipt.signing_retried",
+  "withholding_receipt.reconciliation_requested",
+  "withholding_receipt.reconciliation_completed",
   // add-minimal-inventory, design D12: la configuración del inventario; nunca los movimientos.
   "inventory.initialized",
   "inventory.tracking_disabled",
