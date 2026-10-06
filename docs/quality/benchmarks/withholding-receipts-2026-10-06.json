@@ -1,0 +1,614 @@
+{
+  "date": "2026-10-06",
+  "volume": {
+    "suppliers": 10000,
+    "receipts": 100000,
+    "seedSeconds": 101.8,
+    "before": {
+      "party": {
+        "rows": 10003,
+        "totalSize": "7744 kB"
+      },
+      "electronic_document": {
+        "rows": 100001,
+        "totalSize": "409 MB"
+      },
+      "withholding_receipt": {
+        "rows": 100001,
+        "totalSize": "27 MB"
+      },
+      "withholding_receipt_line": {
+        "rows": 200002,
+        "totalSize": "56 MB"
+      },
+      "withholding_receipt_draft": {
+        "rows": 1,
+        "totalSize": "96 kB"
+      }
+    },
+    "after": {
+      "party": {
+        "rows": 10003,
+        "totalSize": "7744 kB"
+      },
+      "electronic_document": {
+        "rows": 100333,
+        "totalSize": "411 MB"
+      },
+      "withholding_receipt": {
+        "rows": 100333,
+        "totalSize": "27 MB"
+      },
+      "withholding_receipt_line": {
+        "rows": 204472,
+        "totalSize": "58 MB"
+      },
+      "withholding_receipt_draft": {
+        "rows": 393,
+        "totalSize": "1392 kB"
+      }
+    }
+  },
+  "warmup": 10,
+  "samples": 100,
+  "budgetMs": 2000,
+  "rideBudgetMs": 1000,
+  "limits": {
+    "default": {
+      "supports": 10,
+      "itemsPerSupport": 5,
+      "taxesPerSupport": 5,
+      "paymentsPerSupport": 5
+    },
+    "absolute": {
+      "supports": 30,
+      "itemsPerSupport": 10,
+      "taxesPerSupport": 10,
+      "paymentsPerSupport": 10
+    }
+  },
+  "backendBaseline": {
+    "rssMiB": 685.6,
+    "peakRssMiB": 685.6
+  },
+  "environment": {
+    "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "shared_buffers": "128MB",
+    "work_mem": "4MB",
+    "effective_cache_size": "4GB",
+    "jit": "on",
+    "node": "v24.15.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
+    "memory": "16 GiB",
+    "commit": "0667d56"
+  },
+  "results": [
+    {
+      "name": "Proveedores: primera página, sin filtro",
+      "path": "/withholding-receipts/suppliers",
+      "results": 10002,
+      "p50": 9.8,
+      "p95": 12.5,
+      "max": 19.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Proveedores: búsqueda por identificación",
+      "path": "/withholding-receipts/suppliers?search=1700005",
+      "results": 1000,
+      "p50": 9.4,
+      "p95": 12.2,
+      "max": 17.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Proveedores: búsqueda por razón social (todas coinciden)",
+      "path": "/withholding-receipts/suppliers?search=benchmark",
+      "results": 10000,
+      "p50": 13.2,
+      "p95": 14.3,
+      "max": 20.3,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Resolución de los catálogos (opciones del borrador)",
+      "path": "/withholding-receipts/options",
+      "results": null,
+      "p50": 17.3,
+      "p95": 23.5,
+      "max": 28.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Creación del borrador del peor caso (límites por defecto: 10 documentos × 5 retenciones, 5 impuestos y 5 pagos)",
+      "path": "POST /withholding-receipts/drafts",
+      "results": 20,
+      "p50": 24.2,
+      "p95": 30.4,
+      "max": 30.8,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Vista previa del borrador del peor caso (límites por defecto)",
+      "path": "/withholding-receipts/drafts/{id}",
+      "results": null,
+      "p50": 17.8,
+      "p95": 23.9,
+      "max": 32.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (límites por defecto): total del servidor",
+      "path": "POST /withholding-receipts",
+      "results": 10,
+      "p50": 285.7,
+      "p95": 395.5,
+      "max": 395.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (límites por defecto): transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 10,
+      "p50": 59.6,
+      "p95": 91.4,
+      "max": 91.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Creación del borrador del peor caso (máximos absolutos: 30 documentos × 10 retenciones, 10 impuestos y 10 pagos)",
+      "path": "POST /withholding-receipts/drafts",
+      "results": 20,
+      "p50": 37.4,
+      "p95": 40.1,
+      "max": 40.8,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Vista previa del borrador del peor caso (máximos absolutos)",
+      "path": "/withholding-receipts/drafts/{id}",
+      "results": null,
+      "p50": 22.8,
+      "p95": 26.7,
+      "max": 32.9,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (máximos absolutos): total del servidor",
+      "path": "POST /withholding-receipts",
+      "results": 10,
+      "p50": 456.1,
+      "p95": 478.1,
+      "max": 478.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (máximos absolutos): transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 10,
+      "p50": 147.4,
+      "p95": 179.6,
+      "max": 179.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Cálculo de 50 retenciones (en proceso)",
+      "path": "calculateWithholdingAmounts",
+      "results": 50,
+      "p50": 0.4,
+      "p95": 0.5,
+      "max": 1.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Cálculo de 300 retenciones (en proceso)",
+      "path": "calculateWithholdingAmounts",
+      "results": 300,
+      "p50": 2.2,
+      "p95": 2.6,
+      "max": 5.3,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión con reserva: total del servidor",
+      "path": "POST /withholding-receipts",
+      "results": 100,
+      "p50": 231.1,
+      "p95": 259.1,
+      "max": 355.8,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión con reserva: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 36,
+      "p95": 45.2,
+      "max": 48,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "El mismo proveedor, 10 simultáneas: total del servidor",
+      "path": "POST /withholding-receipts",
+      "results": 100,
+      "p50": 602.3,
+      "p95": 779.4,
+      "max": 821.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "El mismo proveedor, 10 simultáneas: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 225.5,
+      "p95": 410.2,
+      "max": 455.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Proveedores distintos, 10 simultáneas: total del servidor",
+      "path": "POST /withholding-receipts",
+      "results": 100,
+      "p50": 591,
+      "p95": 782.2,
+      "max": 799.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Proveedores distintos, 10 simultáneas: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 199.5,
+      "p95": 389.8,
+      "max": 431.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: primera página, sin filtro",
+      "path": "/withholding-receipts",
+      "results": 100333,
+      "p50": 17.1,
+      "p95": 25.8,
+      "max": 26.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: búsqueda por número",
+      "path": "/withholding-receipts?search=000054321",
+      "results": 1,
+      "p50": 61.6,
+      "p95": 72,
+      "max": 75.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: búsqueda por proveedor",
+      "path": "/withholding-receipts?search=BENCHMARK%2005432",
+      "results": 10,
+      "p50": 60.9,
+      "p95": 69.9,
+      "max": 77,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: filtro por período",
+      "path": "/withholding-receipts?fiscalPeriod=09%2F2026",
+      "results": 8333,
+      "p50": 23.5,
+      "p95": 24.6,
+      "max": 36.3,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: filtro por estado",
+      "path": "/withholding-receipts?state=AUTHORIZED",
+      "results": 100000,
+      "p50": 36.9,
+      "p95": 38.3,
+      "max": 58.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Render del RIDE de una retención (worker)",
+      "path": "RideWorkerPool",
+      "results": 30,
+      "pages": 1,
+      "p50": 83.5,
+      "p95": 96.6,
+      "max": 100.2,
+      "budgetMs": 1000,
+      "withinBudget": true
+    },
+    {
+      "name": "Render del RIDE del máximo de filas (300 retenciones, 15 páginas)",
+      "path": "RideWorkerPool",
+      "results": 30,
+      "pages": 15,
+      "p50": 286.4,
+      "p95": 299.3,
+      "max": 305.6,
+      "budgetMs": 1000,
+      "withinBudget": true
+    }
+  ],
+  "worstCase": {
+    "límites por defecto": {
+      "shape": "10 documentos × 5 retenciones, 5 impuestos y 5 pagos",
+      "withholdings": 50,
+      "signedXmlBytes": 46614,
+      "signedXmlKiB": 45.5,
+      "largestId": "af009c27-b934-41b0-be3c-59b798bfa20a",
+      "stages": {
+        "reservation_tx": {
+          "p50": 59.6,
+          "p95": 91.4,
+          "max": 91.4
+        },
+        "xml": {
+          "p50": 0.6,
+          "p95": 1.1,
+          "max": 1.1
+        },
+        "xsd": {
+          "p50": 114.3,
+          "p95": 168.1,
+          "max": 168.1
+        },
+        "sign": {
+          "p50": 64.6,
+          "p95": 79.3,
+          "max": 79.3
+        },
+        "persist": {
+          "p50": 11.8,
+          "p95": 23.6,
+          "max": 23.6
+        },
+        "total": {
+          "p50": 285.7,
+          "p95": 395.5,
+          "max": 395.5
+        }
+      },
+      "client": {
+        "p50": 289.6,
+        "p95": 399.3,
+        "max": 399.3
+      },
+      "backend": {
+        "cpuMsPerDraftRequest": 21.4,
+        "cpuMsPerDraftAndEmission": 521.8,
+        "rssBeforeMiB": 685.6,
+        "rssMiB": 779,
+        "peakRssMiB": 793.1
+      }
+    },
+    "máximos absolutos": {
+      "shape": "30 documentos × 10 retenciones, 10 impuestos y 10 pagos",
+      "withholdings": 300,
+      "signedXmlBytes": 230114,
+      "signedXmlKiB": 224.7,
+      "largestId": "f97341da-19d6-41de-9b8e-39b925677909",
+      "stages": {
+        "reservation_tx": {
+          "p50": 147.4,
+          "p95": 179.6,
+          "max": 179.6
+        },
+        "xml": {
+          "p50": 3.1,
+          "p95": 4.3,
+          "max": 4.3
+        },
+        "xsd": {
+          "p50": 127.1,
+          "p95": 148.8,
+          "max": 148.8
+        },
+        "sign": {
+          "p50": 108.9,
+          "p95": 124.4,
+          "max": 124.4
+        },
+        "persist": {
+          "p50": 24.7,
+          "p95": 26.8,
+          "max": 26.8
+        },
+        "total": {
+          "p50": 456.1,
+          "p95": 478.1,
+          "max": 478.1
+        }
+      },
+      "client": {
+        "p50": 461.7,
+        "p95": 483.3,
+        "max": 483.3
+      },
+      "backend": {
+        "cpuMsPerDraftRequest": 25.8,
+        "cpuMsPerDraftAndEmission": 683.6,
+        "rssBeforeMiB": 779,
+        "rssMiB": 893.5,
+        "peakRssMiB": 901.6
+      }
+    }
+  },
+  "signedXmlMaxBytes": 230114,
+  "signedXmlNote": "Medición de recursos del peor caso; sin relación con Q-47 ni con ningún límite del SRI.",
+  "serialEmissions": {
+    "client": {
+      "p50": 234.9,
+      "p95": 261.8,
+      "max": 358.8
+    },
+    "stages": {
+      "reservation_tx": {
+        "p50": 36,
+        "p95": 45.2,
+        "max": 48
+      },
+      "xml": {
+        "p50": 0.1,
+        "p95": 0.1,
+        "max": 0.1
+      },
+      "xsd": {
+        "p50": 112.8,
+        "p95": 134.8,
+        "max": 144.5
+      },
+      "sign": {
+        "p50": 50,
+        "p95": 57.8,
+        "max": 67.1
+      },
+      "persist": {
+        "p50": 8.3,
+        "p95": 11.4,
+        "max": 127.6
+      },
+      "total": {
+        "p50": 231.1,
+        "p95": 259.1,
+        "max": 355.8
+      }
+    }
+  },
+  "contention": {
+    "El mismo proveedor": {
+      "concurrent": 10,
+      "rounds": 10,
+      "reservationsPerSecond": 12.5,
+      "reservationTx": {
+        "p50": 225.5,
+        "p95": 410.2,
+        "max": 455.6
+      },
+      "lockWaitP95Ms": 374.2,
+      "stages": {
+        "reservation_tx": {
+          "p50": 225.5,
+          "p95": 410.2,
+          "max": 455.6
+        },
+        "xml": {
+          "p50": 0.1,
+          "p95": 0.1,
+          "max": 0.2
+        },
+        "xsd": {
+          "p50": 187.4,
+          "p95": 243.9,
+          "max": 269.1
+        },
+        "sign": {
+          "p50": 57.5,
+          "p95": 69.3,
+          "max": 145.9
+        },
+        "persist": {
+          "p50": 9.5,
+          "p95": 14,
+          "max": 46.9
+        },
+        "total": {
+          "p50": 602.3,
+          "p95": 779.4,
+          "max": 821.1
+        }
+      },
+      "client": {
+        "p50": 613.9,
+        "p95": 795,
+        "max": 853.6
+      }
+    },
+    "Proveedores distintos": {
+      "concurrent": 10,
+      "rounds": 10,
+      "reservationsPerSecond": 12.6,
+      "reservationTx": {
+        "p50": 199.5,
+        "p95": 389.8,
+        "max": 431.7
+      },
+      "lockWaitP95Ms": 353.8,
+      "stages": {
+        "reservation_tx": {
+          "p50": 199.5,
+          "p95": 389.8,
+          "max": 431.7
+        },
+        "xml": {
+          "p50": 0.1,
+          "p95": 0.1,
+          "max": 0.2
+        },
+        "xsd": {
+          "p50": 191.8,
+          "p95": 252.3,
+          "max": 266.6
+        },
+        "sign": {
+          "p50": 57.1,
+          "p95": 63.2,
+          "max": 67.5
+        },
+        "persist": {
+          "p50": 9.2,
+          "p95": 12.6,
+          "max": 24.6
+        },
+        "total": {
+          "p50": 591,
+          "p95": 782.2,
+          "max": 799.7
+        }
+      },
+      "client": {
+        "p50": 602.7,
+        "p95": 796.5,
+        "max": 814.6
+      }
+    }
+  },
+  "independence": {
+    "emitted": 100333,
+    "creditCapacity": {
+      "before": 0,
+      "after": 0
+    },
+    "stockMovements": {
+      "before": 0,
+      "after": 0
+    }
+  }
+}

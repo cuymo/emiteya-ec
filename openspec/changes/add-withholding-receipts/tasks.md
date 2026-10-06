@@ -172,8 +172,8 @@
 
 ## 13. Rendimiento y prueba end-to-end
 
-- [ ] 13.1 Añadir `bench:withholding-receipts` en `backend/scripts/` (design D27), con el barrido del RIDE apagado, y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 donde aplica, que el RIDE tarda menos de 1 s, que la transacción de la reserva no incluye XML, firma ni red, y que el CPU, la memoria y la latencia del peor caso confirman los valores por defecto de design D25 (o ajustarlos con `/opsx:update`). Registrar el tamaño del XML firmado del peor caso solo como medición, sin relacionarlo con Q-47
-- [ ] 13.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado: una retención de renta e IVA sobre dos facturas de un proveedor, autorizada y con su RIDE en la bandeja; otra no autorizada; y el inventario y las facturas sin cambios. Verificar que la prueba pasa
+- [x] 13.1 Añadir `bench:withholding-receipts` en `backend/scripts/` (design D27), con el barrido del RIDE apagado, y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 donde aplica, que el RIDE tarda menos de 1 s, que la transacción de la reserva no incluye XML, firma ni red, y que el CPU, la memoria y la latencia del peor caso confirman los valores por defecto de design D25 (o ajustarlos con `/opsx:update`). Registrar el tamaño del XML firmado del peor caso solo como medición, sin relacionarlo con Q-47
+- [x] 13.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado: una retención de renta e IVA sobre dos facturas de un proveedor, autorizada y con su RIDE en la bandeja; otra no autorizada; y el inventario y las facturas sin cambios. Verificar que la prueba pasa
 
 ## 14. Verificación
 
