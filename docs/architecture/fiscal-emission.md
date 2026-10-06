@@ -790,6 +790,26 @@ Cambio 13, en curso. Las decisiones están en la sección anterior y en el desig
 - **Reserva:** `DocumentColumns` es la unión `{ receiver: "BUYER", buyerIdentification, buyerName, total }` o `{ receiver: "RECIPIENTS", recipients }`. La factura, las notas y la retención usan `BUYER` sin otros cambios. `StoredDocument` expone el comprador y el total como nulos posibles, y `documentBuyer` (de `fiscal`) los devuelve no nulos para los tipos que los tienen o falla como invariante rota.
 - **Bandeja:** `documentListItemSchema` lleva `buyer` y `total` nulos solo en el `06`, y `recipients: { count, name | null }` solo en el `06`, con una refinación que lo exige en las dos direcciones. El filtro por identificación encuentra una guía por cualquiera de sus destinatarios, y la búsqueda por nombre también. El frontend deriva el receptor (el comprador, el nombre del único destinatario o "N destinatarios") y muestra el total de una guía como "—" con el texto accesible "Sin total monetario".
 
+### Borradores, búsquedas y opciones
+
+Rutas de `/api/v1` del módulo `shipping-guides`, todas con el permiso `shippingGuides.draft` (ADMIN y OPERATOR). Una referencia de otra empresa responde `404`, igual que una inexistente; el punto de emisión de otra empresa es `400` (`EMISSION_POINT_NOT_FOUND`), como en los demás tipos. Ninguna reserva número, escribe auditoría ni habla con el SRI.
+
+| Ruta | Qué devuelve |
+| --- | --- |
+| `GET /shipping-guides/carriers` | Terceros activos con el rol `CARRIER` y tipo 04, 05 o 06, por identificación o razón social. Uno cuya identificación tiene más de 13 caracteres viene con `selectable: false` y su motivo (ficha v2.34, anexo 3). |
+| `GET /shipping-guides/recipients` | Terceros activos de tipo 04, 05 o 06 con cualquier rol, sin el consumidor final ni el `08`. |
+| `GET /shipping-guides/eligible-invoices` | Facturas `AUTHORIZED` de la empresa en el ambiente vigente, por número, identificación o nombre del comprador. Incluye las emitidas a consumidor final: el destinatario de la guía es otro tercero identificado (política del MVP). |
+| `GET /shipping-guides/eligible-invoices/{invoiceId}/goods` | Todas las líneas de la factura con sus datos históricos (códigos, descripción y cantidad facturada) y una sugerencia no autoritativa: `PRODUCT` si su producto es hoy un bien activo, `FREE_LINE` si no, para agregarla como línea libre. Nunca rotula una línea como servicio ni como no trasladable y no decide la elegibilidad. |
+| `GET /shipping-guides/options` | La política de excepciones (literales b a e del art. 30, numeral 8, con su texto y `version: 1`), los establecimientos propios activos, la identidad del transporte propio (RUC y razón social) y los límites efectivos de recursos. |
+| `GET`, `POST /shipping-guides/drafts` | Lista de borradores `DRAFT` con su transportista y sus cantidades; creación de un borrador, incompleto o no, con su vista previa. |
+| `GET`, `PUT`, `DELETE /shipping-guides/drafts/{draftId}` | Consulta con la vista previa recalculada con la fecha del día, corrección con `expectedVersion` (`SHIPPING_GUIDE_DRAFT_CHANGED` si cambió) y eliminación sin rastro fiscal. Un borrador emitido responde `SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED`. |
+
+- **Vista previa:** la evaluación de design D12 con la fecha del día. Devuelve la partida, el transportista y cada destinatario tal como irían al XML, los problemas con el campo, la posición del destinatario y la del detalle, y si la emisión pedirá confirmar la declaración de una excepción.
+- **Partida:** sin partida ni origen, el borrador nuevo propone como texto la dirección del establecimiento del punto. El establecimiento de origen nunca tiene valor por defecto; al elegirlo, la partida sale de su dirección y no se envía.
+- **Desde una factura** (`{ fromInvoiceId }`): propone un destinatario con el comprador de la factura si es un tercero activo de tipo 04, 05 o 06 (a consumidor final, ninguno), la factura como sustento y como detalle solo las sugerencias `PRODUCT`. Las líneas libres las agrega el usuario.
+- **Traslado propio:** el origen y el destino son establecimientos de la empresa, registrados, activos y distintos entre sí; no se comparan con el establecimiento del punto.
+- **Límites:** los efectivos (`SHIPPING_GUIDE_MAX_*`) se aplican al guardar con `409 SHIPPING_GUIDE_RESOURCE_LIMIT`, presentados como defensa de recursos del sistema y no como límite del SRI.
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna

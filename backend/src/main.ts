@@ -35,9 +35,10 @@ import {
   consumerFinalInitializer,
   ensureConsumerFinals,
   partiesModule,
+  shippingPartyReader,
   supplierReader,
 } from "./modules/parties/infrastructure/index.ts";
-import { productsModule } from "./modules/products/infrastructure/index.ts";
+import { productReader, productsModule } from "./modules/products/infrastructure/index.ts";
 import {
   createStockRepository,
   creditNoteReturnFollower,
@@ -73,6 +74,7 @@ import {
   withholdingReceiptSigningProfile,
   withholdingReceiptsModule,
 } from "./modules/withholding-receipts/infrastructure/index.ts";
+import { shippingGuidesModule } from "./modules/shipping-guides/infrastructure/index.ts";
 import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
@@ -426,6 +428,26 @@ apiRouter.use(
     jobs: jobStore,
     conclusionWindowMs: transmissionSettings.poll.windowMs,
     stageTimings: env.EMISSION_STAGE_TIMINGS,
+  }).routers,
+);
+
+// Guías de remisión (add-shipping-guides, design D1, D2 y D22): los terceros de `parties`, los
+// productos de `products` y la factura sustento de `invoices` como puertos, sin inventario ni
+// capacidades. Los límites de recursos son defensas del sistema, no límites del SRI (design D23).
+apiRouter.use(
+  ...shippingGuidesModule({
+    prisma: database.prisma,
+    schema: parseDatabaseUrl(env.DATABASE_URL).schema ?? "public",
+    authorizer,
+    signingReads: signing.reads,
+    parties: shippingPartyReader,
+    products: productReader,
+    invoices: invoiceCreditSource,
+    limits: {
+      recipients: env.SHIPPING_GUIDE_MAX_RECIPIENTS,
+      detailsPerRecipient: env.SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT,
+      details: env.SHIPPING_GUIDE_MAX_DETAILS,
+    },
   }).routers,
 );
 

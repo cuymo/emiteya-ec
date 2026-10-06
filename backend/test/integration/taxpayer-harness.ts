@@ -6,11 +6,16 @@ import { fileURLToPath } from "node:url";
 import type { Registry } from "@prometheus-io/client";
 import { Router } from "express";
 import {
+  SHIPPING_GUIDE_LIMITS_DEFAULT,
   WITHHOLDING_LIMITS_DEFAULT,
   userSchemas,
+  type ShippingGuideLimits,
   type WithholdingLimits,
 } from "@facturador/contracts";
-import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
+import {
+  createAuthorizer,
+  type Authorizer,
+} from "../../src/modules/identity/application/authorization.ts";
 import { createUserAdministration } from "../../src/modules/identity/application/user-administration.ts";
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
@@ -23,8 +28,12 @@ import {
   catalogsModule,
   fiscalCatalogQueries,
 } from "../../src/modules/catalogs/infrastructure/index.ts";
-import { partiesModule, supplierReader } from "../../src/modules/parties/infrastructure/index.ts";
-import { productsModule } from "../../src/modules/products/infrastructure/index.ts";
+import {
+  partiesModule,
+  shippingPartyReader,
+  supplierReader,
+} from "../../src/modules/parties/infrastructure/index.ts";
+import { productReader, productsModule } from "../../src/modules/products/infrastructure/index.ts";
 import {
   inventoryInitialization,
   inventoryModule,
@@ -48,6 +57,7 @@ import {
   withholdingReceiptSigningProfile,
   withholdingReceiptsModule,
 } from "../../src/modules/withholding-receipts/infrastructure/index.ts";
+import { shippingGuidesModule } from "../../src/modules/shipping-guides/infrastructure/index.ts";
 import type { Permission } from "../../src/modules/identity/domain/access-policy.ts";
 import { ForbiddenError } from "../../src/platform/http/errors.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
@@ -135,6 +145,28 @@ export type WithholdingHarnessOptions = {
   stageTimings?: boolean;
 };
 
+/** Guías de remisión (add-shipping-guides): las opciones que la prueba fija. */
+export type ShippingGuidesHarnessOptions = {
+  /** Límites efectivos de recursos; los valores por defecto del entorno si no se fijan. */
+  limits?: Partial<ShippingGuideLimits>;
+  /** Permisos que el autorizador de las guías niega, para probar el `403`. */
+  deny?: readonly Permission[];
+};
+
+/** Un autorizador que niega además los permisos dados (los dos roles tienen los del borrador). */
+function denying(authorizer: Authorizer, deny: readonly Permission[] | undefined): Authorizer {
+  const denied = new Set(deny ?? []);
+  return denied.size
+    ? {
+        ...authorizer,
+        requirePermission: (ctx, permission) => {
+          if (denied.has(permission)) throw new ForbiddenError();
+          authorizer.requirePermission(ctx, permission);
+        },
+      }
+    : authorizer;
+}
+
 /** Sin firma configurada: ningún comprobante se puede firmar. */
 const NO_SIGNER: DocumentSigner = {
   signDocument: () =>
@@ -158,6 +190,7 @@ export function buildTaxpayerApp(
     creditNotes?: CreditNotesHarnessOptions;
     debitNotes?: DebitNotesHarnessOptions;
     withholdingReceipts?: WithholdingHarnessOptions;
+    shippingGuides?: ShippingGuidesHarnessOptions;
     now?: () => Date;
   } = {},
 ) {
@@ -354,6 +387,22 @@ export function buildTaxpayerApp(
             ? { metrics: options.withholdingReceipts.metrics }
             : {}),
           ...(options.withholdingReceipts?.stageTimings ? { stageTimings: true } : {}),
+          ...(invoicesNow ? { now: invoicesNow } : {}),
+        }).routers,
+      );
+      // Guías de remisión (add-shipping-guides): los mismos puertos que compone `main.ts`.
+      router.use(
+        ...shippingGuidesModule({
+          prisma: db.database.prisma,
+          schema: db.name,
+          authorizer: denying(authorizer, options.shippingGuides?.deny),
+          signingReads: signing
+            ? signing.reads
+            : () => ({ activeCertificate: () => Promise.resolve(null) }),
+          parties: shippingPartyReader,
+          products: productReader,
+          invoices: invoiceCreditSource,
+          limits: { ...SHIPPING_GUIDE_LIMITS_DEFAULT, ...options.shippingGuides?.limits },
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

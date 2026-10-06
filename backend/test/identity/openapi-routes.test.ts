@@ -33,6 +33,9 @@ import type { WithholdingEmission } from "../../src/modules/withholding-receipts
 import type { WithholdingOptions } from "../../src/modules/withholding-receipts/application/options.ts";
 import type { WithholdingReceipts } from "../../src/modules/withholding-receipts/application/withholding-receipts.ts";
 import { withholdingReceiptsRouter } from "../../src/modules/withholding-receipts/infrastructure/http/withholding-receipts-router.ts";
+import type { ShippingGuideDrafts } from "../../src/modules/shipping-guides/application/drafts.ts";
+import type { ShippingGuideOptions } from "../../src/modules/shipping-guides/application/options.ts";
+import { shippingGuidesRouter } from "../../src/modules/shipping-guides/infrastructure/http/shipping-guides-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
 import { inventoryRouter } from "../../src/modules/inventory/infrastructure/http/inventory-router.ts";
@@ -80,6 +83,10 @@ describe("rutas documentadas", () => {
         options: {} as WithholdingOptions,
         emission: {} as WithholdingEmission,
         withholdings: {} as WithholdingReceipts,
+      }),
+      shippingGuidesRouter({
+        drafts: {} as ShippingGuideDrafts,
+        options: {} as ShippingGuideOptions,
       }),
       ...archiveRouters({
         prisma: {} as PrismaClient,

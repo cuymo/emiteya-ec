@@ -36,6 +36,11 @@ export function taxpayerEmissionReads(db: DbClient) {
     /** Punto de la empresa con su establecimiento, o null si no existe en ella. */
     emissionPoint: (companyId: string, emissionPointId: string) =>
       establishments.findPointWithEstablishment(companyId, emissionPointId),
+    /** Establecimiento de la empresa, o null si no existe en ella (add-shipping-guides, D6 y D7). */
+    establishment: (companyId: string, establishmentId: string) =>
+      establishments.find(companyId, establishmentId),
+    /** Establecimientos de la empresa, por código. */
+    establishments: (companyId: string) => establishments.list(companyId),
   };
 }
 

@@ -152,3 +152,81 @@ export function partiesModule({
   });
   return { routers: [partiesRouter(service)], service };
 }
+
+/**
+ * Terceros para la guía de remisión (add-shipping-guides, design D3 y D7), sobre un cliente: la
+ * lectura por identificador o por identidad tributaria con su dirección, los transportistas (activos,
+ * con el rol `CARRIER`) y los destinatarios (activos, con cualquier rol), ambos de tipo 04, 05 o 06
+ * y sin el consumidor final. La guía nunca asigna roles.
+ */
+export function shippingPartyReader(db: DbClient) {
+  type Row = {
+    id: string;
+    status: string;
+    identificationType: string;
+    identification: string;
+    legalName: string;
+    address: string | null;
+    roles: string[];
+    systemRecord: string | null;
+  };
+  const view = (row: Row) => ({
+    id: row.id,
+    status: row.status,
+    identificationType: row.identificationType,
+    identification: row.identification,
+    legalName: row.legalName,
+    address: row.address,
+    roles: row.roles,
+    consumerFinal: row.systemRecord === "CONSUMER_FINAL",
+  });
+  const search = async (
+    companyId: string,
+    query: Readonly<{ search?: string | undefined; page: number; pageSize: number }>,
+    carriers: boolean,
+  ) => {
+    const key = query.search ? escapeLike(searchKey(query.search)) : "";
+    const where = {
+      companyId,
+      status: "ACTIVE",
+      systemRecord: null,
+      identificationType: { in: ["04", "05", "06"] },
+      ...(carriers ? { roles: { has: "CARRIER" } } : {}),
+      ...(key
+        ? {
+            OR: [{ searchIdentification: { startsWith: key } }, { searchName: { contains: key } }],
+          }
+        : {}),
+    };
+    const [rows, total] = await Promise.all([
+      db.party.findMany({
+        where,
+        orderBy: [{ searchName: "asc" }, { id: "asc" }],
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+      }),
+      db.party.count({ where }),
+    ]);
+    return { items: rows.map(view), total };
+  };
+  return {
+    async find(companyId: string, partyId: string) {
+      const row = await db.party.findFirst({ where: { id: partyId, companyId } });
+      return row ? view(row) : null;
+    },
+    async findByIdentity(companyId: string, identificationType: string, identification: string) {
+      const row = await db.party.findFirst({
+        where: { companyId, identificationType, identification },
+      });
+      return row ? view(row) : null;
+    },
+    searchCarriers: (
+      companyId: string,
+      query: Readonly<{ search?: string | undefined; page: number; pageSize: number }>,
+    ) => search(companyId, query, true),
+    searchRecipients: (
+      companyId: string,
+      query: Readonly<{ search?: string | undefined; page: number; pageSize: number }>,
+    ) => search(companyId, query, false),
+  };
+}

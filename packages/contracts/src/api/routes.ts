@@ -182,6 +182,22 @@ import {
   withholdingOptionsViewSchema,
   withholdingSupplierViewSchema,
 } from "../withholding-receipts.ts";
+import {
+  createShippingGuideDraftSchema,
+  listShippingGuideDraftsQuerySchema,
+  listShippingLookupQuerySchema,
+  shippingCarrierViewSchema,
+  shippingEligibleInvoiceViewSchema,
+  shippingGuideDraftIdParamsSchema,
+  shippingGuideDraftSummaryViewSchema,
+  shippingGuideDraftViewSchema,
+  shippingGuideListMetaSchema,
+  shippingGuideOptionsViewSchema,
+  shippingInvoiceGoodsViewSchema,
+  shippingInvoiceIdParamsSchema,
+  shippingRecipientPartyViewSchema,
+  updateShippingGuideDraftSchema,
+} from "../shipping-guides.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -337,6 +353,27 @@ const withholdingNotFound = {
 const withholdingResponse = (description: string) => ({
   description,
   schema: successEnvelope(withholdingReceiptViewSchema),
+});
+
+// Guías de remisión (add-shipping-guides, design D22).
+const shippingDraftNotFound = {
+  description:
+    "El borrador no existe en la empresa (SHIPPING_GUIDE_DRAFT_NOT_FOUND), o su transportista, un destinatario, un establecimiento, un producto o una factura no existe en la empresa (SHIPPING_GUIDE_CARRIER_NOT_FOUND, SHIPPING_GUIDE_RECIPIENT_NOT_FOUND, SHIPPING_GUIDE_ESTABLISHMENT_NOT_FOUND, SHIPPING_GUIDE_PRODUCT_NOT_FOUND o SHIPPING_GUIDE_INVOICE_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const shippingDraftReferenceErrors = {
+  description:
+    "Datos inválidos (una fecha, una placa, un código de destino o una cantidad fuera de formato, un sustento escrito a mano, un dato derivado enviado, un campo no permitido o más elementos que los máximos absolutos) o un punto de emisión que no existe en la empresa (EMISSION_POINT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const shippingDraftConflict = {
+  description:
+    "El borrador excede un límite de recursos del sistema (SHIPPING_GUIDE_RESOURCE_LIMIT, una defensa del sistema, no un límite del SRI), cambió (SHIPPING_GUIDE_DRAFT_CHANGED) o ya se emitió (SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED).",
+  schema: errorEnvelopeSchema,
+};
+const shippingLookup = <T extends z.ZodType>(description: string, item: T) => ({
+  description,
+  schema: z.strictObject({ data: z.array(item), meta: shippingGuideListMetaSchema }),
 });
 
 const debitNoteNotFound = {
@@ -2224,6 +2261,175 @@ export const apiRoutes: readonly RouteDefinition[] = [
       409: {
         description:
           "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (WITHHOLDING_NOT_RECONCILABLE).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  // Guías de remisión (add-shipping-guides, design D22).
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/carriers",
+    summary:
+      "Buscar transportistas: terceros activos con el rol de transportista y RUC, cédula o pasaporte, por identificación o razón social",
+    request: { query: listShippingLookupQuerySchema },
+    responses: {
+      200: shippingLookup(
+        "Página de transportistas y el total en `meta`. Uno cuya identificación no cabe en la guía viene no seleccionable, con su motivo.",
+        shippingCarrierViewSchema,
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/recipients",
+    summary:
+      "Buscar destinatarios: terceros activos con RUC, cédula o pasaporte y cualquier rol, por identificación o razón social",
+    request: { query: listShippingLookupQuerySchema },
+    responses: {
+      200: shippingLookup(
+        "Página de terceros y el total en `meta`; nunca el consumidor final.",
+        shippingRecipientPartyViewSchema,
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/eligible-invoices",
+    summary:
+      "Buscar facturas que pueden sustentar una guía: autorizadas, de la empresa y del ambiente vigente, por número o comprador",
+    request: { query: listShippingLookupQuerySchema },
+    responses: {
+      200: shippingLookup(
+        "Página de facturas y el total en `meta`, también las emitidas a consumidor final.",
+        shippingEligibleInvoiceViewSchema,
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/eligible-invoices/:invoiceId/goods",
+    summary:
+      "Consultar las mercancías sugeridas de una factura: una sugerencia de la interfaz, no una autoridad",
+    request: { params: shippingInvoiceIdParamsSchema },
+    responses: {
+      200: {
+        description:
+          "Cada línea de la factura con sus datos históricos: `PRODUCT` si su producto sigue activo y es un bien, `FREE_LINE` en otro caso, para agregarla como línea libre. El snapshot de la guía es la autoridad.",
+        schema: successEnvelope(shippingInvoiceGoodsViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "La factura no existe en la empresa (SHIPPING_GUIDE_INVOICE_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/options",
+    summary:
+      "Consultar las opciones del borrador de guía: la política de excepciones con su versión, los establecimientos propios activos, la identidad del transporte propio y los límites de recursos",
+    responses: {
+      200: {
+        description: "Opciones resueltas con la fecha de hoy para la empresa.",
+        schema: successEnvelope(shippingGuideOptionsViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/drafts",
+    summary: "Listar los borradores de guía pendientes, por última actualización",
+    request: { query: listShippingGuideDraftsQuerySchema },
+    responses: {
+      200: shippingLookup(
+        "Página de borradores `DRAFT` con su transportista y sus cantidades de destinatarios y detalles.",
+        shippingGuideDraftSummaryViewSchema,
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/shipping-guides/drafts",
+    summary:
+      "Guardar un borrador de guía: punto, partida, transportista, placa, fechas y destinatarios con su sustento y sus detalles, o proponerlo desde una factura",
+    request: { body: createShippingGuideDraftSchema },
+    responses: {
+      201: {
+        description:
+          "Borrador guardado con la vista previa del servidor y sus problemas por destinatario y por detalle. Sin partida, propone la dirección del establecimiento del punto; desde una factura, su comprador, la factura como sustento y las mercancías sugeridas `PRODUCT`. No reserva nada.",
+        schema: successEnvelope(shippingGuideDraftViewSchema),
+      },
+      400: shippingDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: shippingDraftNotFound,
+      409: shippingDraftConflict,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/shipping-guides/drafts/:draftId",
+    summary: "Consultar un borrador de guía con su vista previa recalculada",
+    request: { params: shippingGuideDraftIdParamsSchema },
+    responses: {
+      200: {
+        description: "Borrador con la vista previa calculada con la fecha del día.",
+        schema: successEnvelope(shippingGuideDraftViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: shippingDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/shipping-guides/drafts/:draftId",
+    summary: "Corregir un borrador de guía a partir de la versión consultada",
+    request: { params: shippingGuideDraftIdParamsSchema, body: updateShippingGuideDraftSchema },
+    responses: {
+      200: {
+        description: "Borrador corregido.",
+        schema: successEnvelope(shippingGuideDraftViewSchema),
+      },
+      400: shippingDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: shippingDraftNotFound,
+      409: shippingDraftConflict,
+    },
+  }),
+  defineRoute({
+    method: "delete",
+    path: "/shipping-guides/drafts/:draftId",
+    summary: "Eliminar un borrador de guía sin emitir",
+    request: { params: shippingGuideDraftIdParamsSchema },
+    responses: {
+      204: { description: "Borrador eliminado, sin rastro fiscal." },
+      401: errors[401],
+      403: errors[403],
+      404: shippingDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED).",
         schema: errorEnvelopeSchema,
       },
     },

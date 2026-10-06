@@ -523,7 +523,7 @@ export const shippingGuideOptionsViewSchema = z.strictObject({
   /** Establecimientos propios activos: origen y destino de un traslado propio. */
   establishments: z.array(establishmentRefSchema),
   /** Identidad tributaria del transporte propio, o null si la empresa no está configurada. */
-  companyIdentity: z.strictObject({ ruc: z.string(), legalName: z.string() }).nullable(),
+  issuerIdentity: z.strictObject({ ruc: z.string(), legalName: z.string() }).nullable(),
 });
 export type ShippingGuideOptionsView = z.infer<typeof shippingGuideOptionsViewSchema>;
 
