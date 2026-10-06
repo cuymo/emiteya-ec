@@ -65,6 +65,9 @@ function SupportCard({ support }: { support: Support }) {
           {formatIssueDate(support.issueDate)}
         </span>
       </div>
+      <p className="text-xs text-foreground-muted">
+        Declarado por el usuario: el sistema no verifica su existencia en el SRI.
+      </p>
       <p className="text-foreground-muted break-words">
         Sustento {support.supportCode}: {support.supportCodeLabel}
       </p>

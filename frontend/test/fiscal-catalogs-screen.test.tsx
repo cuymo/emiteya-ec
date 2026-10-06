@@ -87,7 +87,12 @@ const scoped = (
   id: string,
   officialLabel: string,
   scopeClassification: string,
-  { percentage = null as string | null, rateText = null as string | null, ats = true } = {},
+  {
+    percentage = null as string | null,
+    rateText = null as string | null,
+    ats = true,
+    allowed = null as string[] | null,
+  } = {},
 ) =>
   version({
     id,
@@ -100,7 +105,7 @@ const scoped = (
       selectable: scopeClassification.startsWith("SUPPORTED"),
       percentage,
       rateText,
-      allowedSupportCodes: null,
+      allowedSupportCodes: allowed,
     },
   });
 
@@ -226,7 +231,16 @@ function routes(overrides: Record<string, Route> = {}): Record<string, Route> {
       ]),
     "GET /api/v1/fiscal-catalogs/support-document-type/entries": () =>
       catalog("support-document-type", [
-        entry("01", scoped("sd-01", "Factura", "SUPPORTED"), { source: "NOT_ENABLEABLE" }),
+        entry("01", scoped("sd-01", "Factura", "SUPPORTED", { allowed: ["01", "02", "03"] }), {
+          source: "NOT_ENABLEABLE",
+        }),
+        entry(
+          "02",
+          scoped("sd-02", "Nota o boleta de venta", "SUPPORTED", {
+            allowed: ["02", "04", "05", "07", "08", "14", "15", "00"],
+          }),
+          { source: "NOT_ENABLEABLE" },
+        ),
         entry(
           "41",
           scoped("sd-41", "Comprobante de venta emitido por reembolso", "OUT_OF_SCOPE_MVP"),
@@ -642,19 +656,32 @@ describe("Catálogos de retención (add-withholding-receipts, design D24)", () =
     expect(nonResident.textContent).toContain("Pago a no residentes");
     expect(within(nonResident).queryByRole("switch")).toBeNull();
     const ambiguous = await row(list, "Rendimientos financieros: depósitos");
-    expect(within(ambiguous).getByText("Pendiente de evidencia")).toBeDefined();
+    expect(within(ambiguous).getByText("Fuera de alcance")).toBeDefined();
     expect(ambiguous.textContent).toContain("según convenio");
-    expect(ambiguous.textContent).toContain("soporte futuro");
+    expect(ambiguous.textContent).toContain("pendiente de evidencia y de soporte futuro");
     expect(within(ambiguous).queryByRole("switch")).toBeNull();
     // El código 8 se conserva con su razón y sin control; el 7 se habilita.
     const iva = screen.findByRole("list", { name: "Códigos de retención del IVA" });
     expect(within(await row(iva, "Retención en cero 0.00%")).getByRole("switch")).toBeDefined();
-    expect(within(await row(iva, "No procede retención 0.00%")).queryByRole("switch")).toBeNull();
+    const notApplicable = await row(iva, "No procede retención 0.00%");
+    expect(within(notApplicable).queryByRole("switch")).toBeNull();
+    // El código 8: fuera de alcance porque la fuente no define su representación, sin prometer
+    // soporte futuro.
+    expect(notApplicable.textContent).toContain(
+      "La fuente no define su representación en el comprobante.",
+    );
+    expect(notApplicable.textContent).not.toContain("soporte futuro");
     // El ISD queda pendiente de evidencia; los sustentos no se habilitan.
     const taxes = screen.findByRole("list", { name: "Impuestos a retener" });
-    expect(within(await row(taxes, "ISD")).getByText("Pendiente de evidencia")).toBeDefined();
+    const isd = await row(taxes, "ISD");
+    expect(within(isd).getByText("Fuera de alcance")).toBeDefined();
+    expect(isd.textContent).toContain("Pendiente de evidencia oficial");
     const types = screen.findByRole("list", { name: "Tipos de documento sustento" });
     expect(within(await row(types, "Factura")).queryByRole("switch")).toBeNull();
+    // Cada tipo muestra los sustentos que el Catálogo ATS le asigna: la nota de venta, sin el 01.
+    const saleNote = await row(types, "Nota o boleta de venta");
+    expect(saleNote.textContent).toContain("Sustentos admitidos: 02, 04, 05, 07, 08, 14, 15, 00");
+    expect(saleNote.textContent).not.toMatch(/Sustentos admitidos:.*\b01\b/);
   });
 
   it("nombra el Catálogo ATS como fuente y como base del proyecto, no la ficha", async () => {
@@ -665,11 +692,12 @@ describe("Catálogos de retención (add-withholding-receipts, design D24)", () =
       "Base del proyecto: Catálogo del Anexo Transaccional Simplificado (ATS) del 06/08/2026 (06/08/2026)",
     );
     expect(supported.textContent).not.toContain("ficha v2026");
-    expect(
-      screen.getAllByText(
-        "Fuente: Catálogo del Anexo Transaccional Simplificado (ATS) del 06/08/2026, versión 1 del catálogo.",
-      ).length,
-    ).toBeGreaterThan(0);
+    const sources = screen.getAllByText(
+      /^Fuente: Catálogo del Anexo Transaccional Simplificado \(ATS\) del 06\/08\/2026, versión 1 del catálogo\./,
+    );
+    expect(sources.length).toBeGreaterThan(0);
+    // La fuente del Catálogo ATS lleva su fecha de actualización y el SHA-256 del archivo.
+    expect(sources[0]!.textContent).toContain(`SHA-256 del archivo: ${"b".repeat(64)}`);
     // La ficha sigue nombrada por su versión.
     const iva = screen.findByRole("list", { name: "Códigos de retención del IVA" });
     expect((await row(iva, "Retención en cero 0.00%")).textContent).toContain(

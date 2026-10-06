@@ -3,8 +3,9 @@
 // respuestas del SRI SINTÉTICAS con la estructura oficial y sin red: RECIBIDA, DEVUELTA, errores 70,
 // 43 y 45, una respuesta sin estado que no es un rechazo, el fallo que demuestra que la solicitud no
 // salió (NOT_SENT), el resultado incierto (SEND_UNKNOWN) y su reconciliación por clave, AUTORIZADO,
-// NO AUTORIZADO, MANUAL_REVIEW, la respuesta guardada antes de clasificar y su reclasificación sin
-// otra llamada al SRI. Los seguidores de la nota de crédito y del inventario la ignoran. La
+// NO AUTORIZADO, MANUAL_REVIEW (también cuando la reconciliación automática agota su ventana), la
+// respuesta guardada antes de clasificar (en el envío y en la consulta) y su reclasificación sin otra
+// llamada al SRI. Los seguidores de la nota de crédito y del inventario la ignoran. La
 // reconciliación manual por HTTP la prueba `withholding-reconciliation-api.test.ts`.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
@@ -12,7 +13,13 @@ import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastr
 import type { DocumentTransitionFollower } from "../../src/modules/fiscal/application/document-transitions.ts";
 import { RIDE_JOB_TYPE } from "../../src/modules/fiscal/application/archive/ride-jobs.ts";
 import { createPrismaJobStore, type JobStore } from "../../src/platform/jobs/prisma-job-store.ts";
-import { failure, receptionResponse, response } from "../support/sri-responses.ts";
+import {
+  authorizationResponse,
+  failure,
+  receptionResponse,
+  response,
+  validityResponse,
+} from "../support/sri-responses.ts";
 import {
   creditNoteTransmission,
   type CreditNoteTransmission,
@@ -82,6 +89,133 @@ describe("transmisión de un comprobante de retención", () => {
       ["sri.transmit", "DONE"],
       ["sri.authorize", "PENDING"],
     ]);
+  });
+
+  it("DEVUELTA y NO AUTORIZADO conservan todos los mensajes del SRI con todos sus campos", async () => {
+    const MESSAGES = [
+      {
+        identifier: "35",
+        message: "ARCHIVO NO CUMPLE ESTRUCTURA XML (sintético)",
+        additionalInformation: "Se encontró un elemento inválido (sintético)",
+        type: "ERROR",
+      },
+      {
+        identifier: "60",
+        message: "ESTE PROCESO FUE REALIZADO EN EL AMBIENTE DE PRUEBAS",
+        type: "ADVERTENCIA",
+      },
+    ];
+    const returned = await note("SIGNED");
+    sri.replies.push(
+      response(
+        receptionResponse("DEVUELTA", [{ accessKey: returned.accessKey, messages: MESSAGES }]),
+      ),
+    );
+    await sri.transmit().run(await sri.jobFor(returned, "sri.transmit"), sri.context());
+    const rejected = await note("RECEIVED");
+    sri.reply(rejected, [
+      sri.authorized(rejected, {
+        estado: "NO AUTORIZADO",
+        comprobante: undefined,
+        messages: MESSAGES,
+      }),
+    ]);
+    await sri.authorize().run(await sri.jobFor(rejected, "sri.authorize"), sri.context());
+    for (const [doc, state] of [
+      [returned, "RETURNED"],
+      [rejected, "NOT_AUTHORIZED"],
+    ] as const) {
+      expect(await stateOf(doc.id)).toBe(state);
+      const result = await prisma.sriAttemptResult.findFirstOrThrow({
+        where: { attempt: { documentId: doc.id } },
+      });
+      expect(result.messages, state).toEqual([
+        {
+          identifier: "35",
+          message: "ARCHIVO NO CUMPLE ESTRUCTURA XML (sintético)",
+          additionalInformation: "Se encontró un elemento inválido (sintético)",
+          type: "ERROR",
+        },
+        {
+          identifier: "60",
+          message: "ESTE PROCESO FUE REALIZADO EN EL AMBIENTE DE PRUEBAS",
+          additionalInformation: null,
+          type: "ADVERTENCIA",
+        },
+      ]);
+    }
+  });
+
+  it("la reconciliación automática que agota su ventana sin conclusión la deja en revisión manual", async () => {
+    const doc = await note("SIGNED");
+    await prisma.electronicDocument.update({
+      where: { id: doc.id },
+      data: { state: "SEND_UNKNOWN" },
+    });
+    // El envío dejó evidencia de que el SRI tenía la clave en proceso.
+    const attempt = await prisma.sriAttempt.create({
+      data: {
+        companyId: doc.companyId,
+        documentId: doc.id,
+        attemptNumber: (await prisma.sriAttempt.count({ where: { documentId: doc.id } })) + 1,
+        operation: "RECEPTION",
+        environment: "TEST",
+        endpoint: "simulado:RECEPTION",
+        origin: "AUTOMATIC",
+        startedAt: new Date(),
+        completedAt: new Date(),
+        transportOutcome: "RESPONSE",
+        httpStatus: 200,
+        envelopeSha256: "a".repeat(64),
+        envelopeSize: 10,
+      },
+    });
+    await prisma.sriAttemptResult.create({
+      data: {
+        attemptId: attempt.id,
+        companyId: doc.companyId,
+        outcome: "KEY_IN_PROCESS",
+        messages: [],
+        classifierVersion: "reception/1",
+      },
+    });
+    // La consulta no conoce la clave y la validez no informa nada; la ventana ya se agotó.
+    sri.replies.push(
+      response(authorizationResponse(doc.accessKey, [], "0")),
+      response(
+        validityResponse({
+          accessKey: doc.accessKey,
+          estadoConsulta: "RECHAZADA",
+          messages: [{ identifier: "99", message: "ERROR AL CONSULTAR DATOS DEL SERVICIO WEB" }],
+        }),
+      ),
+    );
+    const job = await sri.jobFor(doc, "sri.reconcile");
+    await sri.reconcile().run({ ...job, deadlineAt: new Date(Date.now() - 1) }, sri.context());
+    expect(await stateOf(doc.id)).toBe("MANUAL_REVIEW");
+    // Sin reenviar: ninguna recepción nueva.
+    expect(sri.calls).not.toContain("RECEPTION");
+  });
+
+  it("guarda la respuesta del envío antes de clasificar y la clasifica al retomar sin volver a enviar", async () => {
+    const doc = await note("SIGNED");
+    sri.replies.push(response(receptionResponse("RECIBIDA")));
+    let failed = false;
+    const flaky: DocumentTransitionFollower = () => {
+      if (failed) return Promise.resolve();
+      failed = true;
+      return Promise.reject(new Error("fallo local"));
+    };
+    const job = await sri.jobFor(doc, "sri.transmit");
+    await expect(sri.transmit([...sri.followers, flaky]).run(job, sri.context())).rejects.toThrow(
+      "fallo local",
+    );
+    // La respuesta de la recepción quedó guardada aunque la decisión local falló.
+    expect(await stateOf(doc.id)).toBe("SIGNED");
+    expect(await prisma.sriResponse.count({ where: { attempt: { documentId: doc.id } } })).toBe(1);
+    await sri.transmit([...sri.followers, flaky]).run(job, sri.context());
+    expect(sri.calls).toEqual(["RECEPTION"]);
+    expect(await stateOf(doc.id)).toBe("RECEIVED");
   });
 
   it("DEVUELTA: queda devuelta con todos los mensajes del SRI", async () => {

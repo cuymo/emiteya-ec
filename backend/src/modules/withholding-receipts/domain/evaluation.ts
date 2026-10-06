@@ -488,7 +488,7 @@ function withholdingItemIssues(
       issues.push(
         issue(
           "WITHHOLDING_TAX_NOT_SUPPORTED",
-          "El sistema retiene solo el impuesto a la renta y el IVA: el ISD y los demás impuestos están fuera de alcance.",
+          "El sistema retiene solo el impuesto a la renta y el IVA: el ISD y los demás impuestos están fuera del alcance actual.",
           position,
         ),
       );
@@ -527,12 +527,12 @@ function withholdingItemIssues(
         income
           ? issue(
               "WITHHOLDING_CONCEPT_NOT_SUPPORTED",
-              `El concepto de renta ${code} está fuera del alcance del sistema (${CLASSIFICATION_REASONS[option.scopeClassification] ?? option.scopeClassification}).`,
+              outOfScopeConceptMessage(code, option),
               position,
             )
           : issue(
               "WITHHOLDING_IVA_CODE_NOT_SUPPORTED",
-              `El código de retención del IVA ${code} no se puede elegir: la fuente no define su representación en el comprobante.`,
+              `El código de retención del IVA ${code} no se emite como retención en el alcance actual: la fuente no define su representación en el comprobante.`,
               position,
             ),
       );
@@ -589,6 +589,25 @@ function withholdingItemIssues(
   };
 }
 
+/** Conceptos de distribución de dividendos: la fuente los nombra así en su denominación. */
+const DIVIDENDS = /dividendo/i;
+
+/**
+ * Mensaje de un concepto de renta fuera de alcance con su razón: los dividendos y los pagos al
+ * exterior se nombran como tales, y los demás con la razón de su clasificación.
+ */
+function outOfScopeConceptMessage(code: string, option: CatalogOption): string {
+  const label = option.applicable?.officialLabel ?? "";
+  if (option.scopeClassification === "OUT_OF_SCOPE_NON_RESIDENT") {
+    return `El concepto de renta ${code} es un pago a no residentes: los pagos al exterior están fuera del alcance actual.`;
+  }
+  if (DIVIDENDS.test(label)) {
+    return `El concepto de renta ${code} corresponde a dividendos: los dividendos están fuera del alcance actual.`;
+  }
+  const reason = CLASSIFICATION_REASONS[option.scopeClassification!] ?? option.scopeClassification;
+  return `El concepto de renta ${code} está fuera del alcance actual: ${reason}.`;
+}
+
 /** Razón de cada clasificación fuera de alcance, para los mensajes y la interfaz. */
 export const CLASSIFICATION_REASONS: Partial<Record<ScopeClassification, string>> = {
   OUT_OF_SCOPE_NON_RESIDENT: "pago a no residentes",
@@ -642,10 +661,15 @@ function supportIssues(
     const option = catalogs.supportCodes.get(support.supportCode);
     const allowed = documentType.allowedSupportCodes ?? [];
     if (!option?.usable || !option.applicable || !allowed.includes(support.supportCode)) {
+      // Los sustentos que el Catálogo ATS admite para el tipo y que se pueden usar hoy.
+      const admitted = allowed.filter((code) => {
+        const candidate = catalogs.supportCodes.get(code);
+        return candidate?.usable === true && candidate.applicable !== null;
+      });
       issues.push(
         issue(
           "WITHHOLDING_SUPPORT_CODE_INCOMPATIBLE",
-          `El código de sustento ${support.supportCode} no es compatible con ${documentType.officialLabel.toLowerCase()} o está fuera de alcance.`,
+          `El código de sustento ${support.supportCode} no se puede usar con ${documentType.officialLabel.toLowerCase()}. Sustentos admitidos: ${admitted.join(", ") || "ninguno vigente"}.`,
           at,
         ),
       );
@@ -790,7 +814,7 @@ function supportIssues(
     issues.push(
       issue(
         "WITHHOLDING_ITEMS_REQUIRED",
-        "Agrega al menos una retención a este documento sustento.",
+        `El documento sustento ${position} no tiene retenciones: agrega al menos una.`,
         at,
       ),
     );

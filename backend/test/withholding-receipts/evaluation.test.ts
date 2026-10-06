@@ -4,7 +4,15 @@
 // que el usuario no eligió. Los catálogos salen de los datasets instalados.
 import { describe, expect, it } from "vitest";
 import { evaluateWithholdingReceipt } from "../../src/modules/withholding-receipts/domain/evaluation.ts";
-import { DRAFT, ISSUE_DATE, SUPPLIER, SUPPORT, evaluationInput, withSupport } from "./fixtures.ts";
+import {
+  DRAFT,
+  ISSUE_DATE,
+  SUPPLIER,
+  SUPPORT,
+  catalogsFor,
+  evaluationInput,
+  withSupport,
+} from "./fixtures.ts";
 
 type Input = Parameters<typeof evaluationInput>[0];
 const evaluate = (overrides: Input = {}) => evaluateWithholdingReceipt(evaluationInput(overrides));
@@ -201,6 +209,13 @@ describe("documentos sustento (design D6 y D10)", () => {
     expect(codes({ draft: withSupport({ documentType: "02", supportCode: "01" }) })).toEqual([
       at("WITHHOLDING_SUPPORT_CODE_INCOMPATIBLE", { support: 1 }),
     ]);
+    // El rechazo indica los sustentos admitidos para la nota de venta y vigentes hoy.
+    expect(
+      evaluate({ draft: withSupport({ documentType: "02", supportCode: "01" }) }).issues[0]
+        ?.message,
+    ).toBe(
+      "El código de sustento 01 no se puede usar con nota o boleta de venta. Sustentos admitidos: 02, 04, 05, 07, 14, 15.",
+    );
     expect(codes({ draft: withSupport({ documentType: "02", supportCode: "02" }) })).toEqual([]);
     for (const supportCode of ["00", "08", "09", "10", "13"]) {
       expect(codes({ draft: withSupport({ supportCode }) }), supportCode).toEqual([
@@ -243,6 +258,17 @@ describe("documentos sustento (design D6 y D10)", () => {
     expect(result).toEqual([
       ...Array.from({ length: 8 }, () => at("WITHHOLDING_DRAFT_INCOMPLETE", { support: 1 })),
       at("WITHHOLDING_ITEMS_REQUIRED", { support: 1 }),
+    ]);
+    // El mensaje identifica el documento, también cuando la emisión informa solo el primero.
+    const second = evaluate({
+      draft: { supports: [SUPPORT, { ...SUPPORT, withholdings: [] }] },
+    });
+    expect(second.issues.map((i) => [i.code, i.support, i.message])).toEqual([
+      [
+        "WITHHOLDING_ITEMS_REQUIRED",
+        2,
+        "El documento sustento 2 no tiene retenciones: agrega al menos una.",
+      ],
     ]);
   });
 
@@ -375,8 +401,9 @@ describe("retenciones de cada documento (design D7 a D9 y D13)", () => {
   it("rechaza los conceptos de renta fuera de alcance con su razón", () => {
     for (const [entryKey, reason] of [
       ["346", "porcentaje variable"],
-      ["500", "no residentes"],
-      ["325", "estructura especial"],
+      ["500", "los pagos al exterior están fuera del alcance actual"],
+      ["325", "los dividendos están fuera del alcance actual"],
+      ["3250", "los dividendos están fuera del alcance actual"],
       ["340", "estructura especial"],
       ["332H", "estructura especial"],
       ["323-M", "representación exacta"],
@@ -397,6 +424,7 @@ describe("retenciones de cada documento (design D7 a D9 y D13)", () => {
     ]);
     expect(result.computed).toEqual([]);
     expect(result.amounts).toBeNull();
+    expect(result.issues[0]?.message).toContain("no se emite como retención en el alcance actual");
   });
 
   it("rechaza el ISD y cualquier otro impuesto a retener", () => {
@@ -405,6 +433,28 @@ describe("retenciones de cada documento (design D7 a D9 y D13)", () => {
         at("WITHHOLDING_TAX_NOT_SUPPORTED", { support: 1, withholding: 1 }),
       ]);
     }
+    expect(evaluate(withItems(item("6", "4580"))).issues[0]?.message).toContain(
+      "el ISD y los demás impuestos están fuera del alcance actual",
+    );
+  });
+
+  it("un concepto que dejó de estar vigente antes de la emisión se informa y bloquea la emisión", () => {
+    // Una versión posterior del catálogo cierra la vigencia del 312C el día anterior a la emisión.
+    const catalogs = catalogsFor(DRAFT.supports);
+    const concept = catalogs.incomeConcepts.get("312C")!;
+    const incomeConcepts = new Map(catalogs.incomeConcepts);
+    incomeConcepts.set("312C", { ...concept, applicable: null, usable: false });
+    const result = evaluate({ catalogs: { ...catalogs, incomeConcepts } });
+    expect(result.issues.map((i) => [i.code, i.support, i.withholding, i.message])).toEqual([
+      [
+        "WITHHOLDING_ENTRY_NOT_USABLE",
+        1,
+        1,
+        "El concepto de renta 312C no está vigente en la fecha de emisión.",
+      ],
+    ]);
+    // Sin todas las retenciones calculadas no hay total: la emisión no puede reservar.
+    expect(result.amounts).toBeNull();
   });
 
   it("una entrada inexistente, sin vigencia o deshabilitada no es utilizable", () => {

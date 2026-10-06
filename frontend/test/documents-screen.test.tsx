@@ -199,6 +199,29 @@ describe("Comprobantes", () => {
     ).toBeNull();
   });
 
+  it("la bandeja muestra los cuatro tipos con su tipo bajo el número", async () => {
+    render({
+      "GET /api/v1/documents": paged([
+        item(),
+        item({ id: "nc-1", documentType: "04", number: "001-001-000000002" }),
+        item({ id: "nd-1", documentType: "05", number: "001-001-000000003" }),
+        item({ id: "ret-1", documentType: "07", number: "001-001-000000004" }),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Comprobantes emitidos" });
+    await within(table).findByText("001-001-000000004");
+    const typeOf = (number: string) =>
+      within(
+        within(table)
+          .getAllByRole("row")
+          .find((candidate) => within(candidate).queryByText(number))!,
+      );
+    expect(typeOf("001-001-000000001").getByText("Factura")).toBeDefined();
+    expect(typeOf("001-001-000000002").getByText("Nota de crédito")).toBeDefined();
+    expect(typeOf("001-001-000000003").getByText("Nota de débito")).toBeDefined();
+    expect(typeOf("001-001-000000004").getByText("Comprobante de retención")).toBeDefined();
+  });
+
   it("el filtro de tipo vive en la URL y llega a la API", async () => {
     navigation.search = new URLSearchParams("tipo=04");
     const calls = render({ "GET /api/v1/documents": paged([]) });

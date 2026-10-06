@@ -27,6 +27,7 @@ import {
   creditNoteTransmission,
   type CreditNoteTransmission,
 } from "./credit-note-transmission-harness.ts";
+import { buildArchiveApp } from "./archive-api-harness.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { CUSTODY, readyCompany, type ReadyCompany } from "./emission-harness.ts";
 import { insertProduct } from "./inventory-harness.ts";
@@ -248,6 +249,26 @@ describe("la retención no toca el inventario, las capacidades ni las facturas y
     expect(await reconcileCreditCapacity(db.database.prisma, a.companyId)).toEqual([]);
     expect(await reconcileStock(db.database.prisma, a.companyId)).toEqual([]);
     expect(await reconcileStockReturnCapacity(db.database.prisma, a.companyId)).toEqual([]);
+  });
+
+  it("la bandeja filtra las retenciones entre facturas, notas de débito y retenciones", async () => {
+    const archive = buildArchiveApp(db);
+    const all = await request(archive.app)
+      .get("/api/v1/documents?pageSize=100")
+      .set("Cookie", a.cookies.operator);
+    const types = new Set(
+      (all.body as { data: { documentType: string }[] }).data.map((d) => d.documentType),
+    );
+    expect([...types].sort()).toEqual(["01", "05", "07"]);
+    const filtered = await request(archive.app)
+      .get("/api/v1/documents?documentType=07&pageSize=100")
+      .set("Cookie", a.cookies.operator);
+    const rows = (filtered.body as { data: { documentType: string; buyer: { name: string } }[] })
+      .data;
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row) => row.documentType === "07")).toBe(true);
+    // El receptor de una retención en la bandeja es el sujeto retenido.
+    expect(rows.every((row) => row.buyer.name === "PROVEEDORA DEL SUR S.A.")).toBe(true);
   });
 
   it("la factura sigue con todo su crédito y la retención no es un documento sustento de las notas", async () => {

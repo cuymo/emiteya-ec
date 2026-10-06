@@ -79,6 +79,13 @@ describe("detalle de la retención", () => {
     const supports = screen.getByRole("region", { name: "Documentos sustento" });
     const card = within(supports).getByRole("listitem", { name: "Factura 001-001-000000123" });
     expect(within(card).getByText(/Sustento 01: Crédito Tributario/)).toBeDefined();
+    // El documento figura como declarado por el usuario, sin ninguna indicación de verificación.
+    expect(
+      within(card).getByText(
+        "Declarado por el usuario: el sistema no verifica su existencia en el SRI.",
+      ),
+    ).toBeDefined();
+    expect(card.textContent).not.toMatch(/verificado|validado por el SRI/i);
     const rows = within(within(card).getByRole("table")).getAllByRole("row");
     expect(within(rows[1]!).getByText("RENTA 312")).toBeDefined();
     expect(within(rows[1]!).getByText("1,75 %")).toBeDefined();

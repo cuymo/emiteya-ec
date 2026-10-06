@@ -96,13 +96,16 @@ describe("RIDE del comprobante de retención (ficha v2.34, anexo 2, página 63)"
       "Fecha Emisión: 06/10/2026",
       "Comprobante Número Fecha Emisión Ejercicio Fiscal Base Imponible para la Retención Impuesto Porcentaje Retención Valor Retenido",
       // Renta e IVA de la factura, en su orden, con los datos de su documento.
-      "Factura 001-001-000000123 01/10/2026 10/2026 100.00 RENTA 1.75 1.75",
-      "Factura 001-001-000000123 01/10/2026 10/2026 16.50 IVA 70 11.55",
+      // Redondeo: 312C del 1.75 % sobre 100.29 retiene 1.76, el valor del cálculo único.
+      "Factura 001-001-000000123 01/10/2026 10/2026 100.29 RENTA 1.75 1.76",
+      "Factura 001-001-000000123 01/10/2026 10/2026 15.04 IVA 70 10.53",
       // Renta de la liquidación de compra.
       "002-005-000004567 28/09/2026 10/2026 1000.00 RENTA 10 100.00",
       "DATOS ADICIONALES: IMPUESTOS DECLARADOS DE LOS DOCUMENTOS SUSTENTO",
       "Factura 001-001-000000123 Impuesto Código Porcentaje Base Imponible Tarifa Valor",
-      "2 - IVA 4 110.00 15 16.50",
+      // Varias entradas tributarias en su orden: IVA 15 %, IVA 0 % e ICE.
+      "2 - IVA 4 100.29 15 15.04",
+      "2 - IVA 0 10.00 0 0.00",
       "3 - ICE 3011 100.00 10 10.00",
       "002-005-000004567 Impuesto Código Porcentaje Base Imponible Tarifa Valor",
       "2 - IVA 4 1000.00 15 150.00",
@@ -131,13 +134,13 @@ describe("RIDE del comprobante de retención (ficha v2.34, anexo 2, página 63)"
     });
     const text = (await pageTexts(relabeled.pdf)).join(" ");
     expect(text).toContain(
-      "FACTURA CONGELADA 001-001-000000123 01/10/2026 10/2026 100.00 RENTA X 1.75",
+      "FACTURA CONGELADA 001-001-000000123 01/10/2026 10/2026 100.29 RENTA X 1.75",
     );
     expect(text).toContain("3 - ICE CONGELADO 3011");
     // Sin denominación en el snapshot, el código literal; el RIDE nunca consulta el catálogo.
     const { withholdingLabels: _omitted, ...withoutLabels } = receipt.input;
     const coded = (await pageTexts((await renderOk(withoutLabels)).pdf)).join(" ");
-    expect(coded).toContain("01 001-001-000000123 01/10/2026 10/2026 100.00 1 1.75 1.75");
+    expect(coded).toContain("01 001-001-000000123 01/10/2026 10/2026 100.29 1 1.75 1.76");
     expect(coded).toContain("3 3011 100.00 10 10.00");
   });
 

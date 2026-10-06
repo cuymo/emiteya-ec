@@ -88,8 +88,9 @@ export const withheld = (
 ) => ({ taxCode, code, base, percentage, amount });
 
 /**
- * Factura con IVA e ICE de la que se retiene renta (312) e IVA (código 2, 70 %), y una liquidación de
- * compra con IVA e IRBPNR de la que se retiene renta (303, 10 %).
+ * Factura con IVA 15 %, IVA 0 % e ICE de la que se retiene renta (312C, 1.75 % de 100.29 = 1.76) e
+ * IVA (código 2, 70 % de 15.04 = 10.53), y una liquidación de compra con IVA e IRBPNR de la que se
+ * retiene renta (303, 10 %).
  */
 export const TWO_SUPPORTS: readonly WithholdingSupport[] = [
   {
@@ -98,17 +99,18 @@ export const TWO_SUPPORTS: readonly WithholdingSupport[] = [
     number: "001001000000123",
     issueDate: "2026-10-01",
     authorizationNumber: "0110202601179123456700110010010000001231234567815",
-    totalWithoutTaxes: "110.00",
-    importTotal: "126.50",
+    totalWithoutTaxes: "110.29",
+    importTotal: "135.33",
     taxes: [
-      supportTax("2", "4", "15", "110.00", "16.50"),
+      supportTax("2", "4", "15", "100.29", "15.04"),
+      supportTax("2", "0", "0", "10.00", "0.00"),
       supportTax("3", "3011", "10", "100.00", "10.00"),
     ],
     withholdings: [
-      withheld("1", "312", "100.00", "1.75", "1.75"),
-      withheld("2", "2", "16.50", "70", "11.55"),
+      withheld("1", "312C", "100.29", "1.75", "1.76"),
+      withheld("2", "2", "15.04", "70", "10.53"),
     ],
-    payments: [{ method: "20", total: "126.50" }],
+    payments: [{ method: "20", total: "135.33" }],
   },
   {
     supportCode: "02",

@@ -12,7 +12,9 @@ const OPERATOR = {
   email: "operador@e2e-catalogos.ec",
   password: "contrasena-operador-e2e-1",
 };
-// 5 tipos de identificación + 3 impuestos + 9 IVA + 75 ICE + 1 IRBPNR + 8 formas de pago.
+// 5 tipos de identificación + 3 impuestos + 9 IVA + 75 ICE + 1 IRBPNR + 8 formas de pago, y los de
+// add-withholding-receipts: 3 impuestos a retener + 8 códigos del IVA + 127 conceptos de renta + 40
+// tipos de documento sustento + 16 códigos de sustento.
 const LOADED = { datasets: 15, keys: 295, entries: 295, policy: 1, schemas: 13, cases: 26 };
 
 /** Registro de arranque de la carga de catálogos (main.ts con LOG_LEVEL=info). */

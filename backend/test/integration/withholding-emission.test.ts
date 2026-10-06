@@ -373,6 +373,10 @@ describe("emisión de comprobantes de retención", () => {
       409,
       "WITHHOLDING_ITEMS_REQUIRED",
     ]);
+    // El rechazo indica el documento sin retenciones.
+    expect(bodyOf(noItems).error.message).toBe(
+      "El documento sustento 1 no tiene retenciones: agrega al menos una.",
+    );
     expect(await trace()).toEqual(before);
   });
 
@@ -389,10 +393,21 @@ describe("emisión de comprobantes de retención", () => {
       { supports: [{ ...SUPPORT, issueDate: "2026-10-07" }] },
       "WITHHOLDING_SUPPORT_DATE_AFTER_ISSUE",
     );
-    await rejected(
+    const incompatible = await rejected(
       { supports: [{ ...SUPPORT, documentType: "02" }] },
       "WITHHOLDING_SUPPORT_CODE_INCOMPATIBLE",
     );
+    expect(incompatible.message).toContain("Sustentos admitidos: 02, 04, 05, 07, 14, 15.");
+    const dividends = await rejected(
+      { supports: [{ ...SUPPORT, withholdings: [{ tax: "1", entryKey: "325", base: "1.00" }] }] },
+      "WITHHOLDING_CONCEPT_NOT_SUPPORTED",
+    );
+    expect(dividends.message).toContain("los dividendos están fuera del alcance actual");
+    const nonResident = await rejected(
+      { supports: [{ ...SUPPORT, withholdings: [{ tax: "1", entryKey: "500", base: "1.00" }] }] },
+      "WITHHOLDING_CONCEPT_NOT_SUPPORTED",
+    );
+    expect(nonResident.message).toContain("los pagos al exterior están fuera del alcance actual");
     await rejected(
       { supports: [{ ...SUPPORT, withholdings: [{ tax: "1", entryKey: "346", base: "1.00" }] }] },
       "WITHHOLDING_CONCEPT_NOT_SUPPORTED",
@@ -401,10 +416,11 @@ describe("emisión de comprobantes de retención", () => {
       { supports: [{ ...SUPPORT, withholdings: [{ tax: "1", entryKey: "323-M", base: "1.00" }] }] },
       "WITHHOLDING_CONCEPT_NOT_SUPPORTED",
     );
-    await rejected(
+    const notApplicable = await rejected(
       { supports: [{ ...SUPPORT, withholdings: [{ tax: "2", entryKey: "8", base: "1.00" }] }] },
       "WITHHOLDING_IVA_CODE_NOT_SUPPORTED",
     );
+    expect(notApplicable.message).toContain("no se emite como retención en el alcance actual");
     await rejected(
       {
         supports: [
@@ -512,10 +528,69 @@ describe("emisión de comprobantes de retención", () => {
       409,
       "WITHHOLDING_DRAFT_ALREADY_EMITTED",
     ]);
+    const beforeRejections = await trace();
     const keyless = await emit(api, other, null);
     expect([keyless.status, bodyOf(keyless).error.code]).toEqual([400, "IDEMPOTENCY_KEY_REQUIRED"]);
     const stale = await emit(api, { id: other.id, version: other.version + 1 });
     expect([stale.status, bodyOf(stale).error.code]).toEqual([409, "WITHHOLDING_DRAFT_CHANGED"]);
+    // Una versión ya reemplazada: el borrador se corrigió después de leerlo.
+    const corrected = await request(api.app)
+      .put(`/api/v1/withholding-receipts/drafts/${other.id}`)
+      .set("Cookie", a.cookies.operator)
+      .send({
+        partyId: a.supplierId,
+        relatedParty: "NO",
+        emissionPointId: a.emissionPointId,
+        supports: [SUPPORT],
+        expectedVersion: other.version,
+      });
+    expect(corrected.status, JSON.stringify(corrected.body)).toBe(200);
+    const replaced = await emit(api, other);
+    expect([replaced.status, bodyOf(replaced).error.code]).toEqual([
+      409,
+      "WITHHOLDING_DRAFT_CHANGED",
+    ]);
+    // Ninguno de estos rechazos reserva, audita ni guarda una clave.
+    expect(await trace()).toEqual(beforeRejections);
+  });
+
+  it("sin withholdings.emit responde 403, y un límite configurado se aplica también al emitir", async () => {
+    const created = await draft({
+      supports: [
+        {
+          ...SUPPORT,
+          withholdings: [
+            { tax: "1", entryKey: "312", base: "10.00" },
+            { tax: "1", entryKey: "303", base: "10.00" },
+            { tax: "2", entryKey: "1", base: "1.50" },
+          ],
+        },
+      ],
+    });
+    const before = await trace();
+    const denied = buildTaxpayerApp(db, {
+      signing: { pool, custody: CUSTODY },
+      withholdingReceipts: { deny: ["withholdings.emit"] },
+      now: () => clock,
+    });
+    const forbidden = await emit(denied, created);
+    expect([forbidden.status, bodyOf(forbidden).error.code]).toEqual([403, "FORBIDDEN"]);
+    // La instalación baja el máximo de retenciones por documento: el borrador guardado con tres ya
+    // no se emite.
+    const limited = buildTaxpayerApp(db, {
+      signing: { pool, custody: CUSTODY },
+      withholdingReceipts: { limits: { itemsPerSupport: 2 } },
+      now: () => clock,
+    });
+    const overLimit = await emit(limited, created);
+    expect([overLimit.status, bodyOf(overLimit).error.code]).toEqual([
+      409,
+      "WITHHOLDING_RESOURCE_LIMIT",
+    ]);
+    expect(bodyOf(overLimit).error.message).toContain(
+      "Es una defensa de recursos del sistema, no un límite del SRI.",
+    );
+    expect(await trace()).toEqual(before);
   });
 
   it("la repetición de una retención que quedó reservada reanuda su firma sin otro número", async () => {

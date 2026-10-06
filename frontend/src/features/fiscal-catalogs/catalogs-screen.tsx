@@ -75,35 +75,33 @@ const normalize = (text: string) =>
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
 
-/** Clasificación de alcance de una entrada de retención y, si está fuera de alcance, su razón. */
-const SCOPE_LABELS: Record<ScopeClassification, { label: string; reason: string | null }> = {
-  SUPPORTED: { label: "Soportada", reason: null },
-  SUPPORTED_FIXED: { label: "Soportada", reason: null },
-  SUPPORTED_FIXED_RESIDENT: { label: "Soportada", reason: null },
-  OUT_OF_SCOPE_NON_RESIDENT: {
-    label: "Fuera de alcance",
-    reason: "Pago a no residentes: el sistema retiene solo a proveedores residentes.",
-  },
-  OUT_OF_SCOPE_VARIABLE: {
-    label: "Fuera de alcance",
-    reason: "La fuente publica un porcentaje variable o textual, no uno fijo.",
-  },
-  OUT_OF_SCOPE_SPECIAL_STRUCTURE: {
-    label: "Fuera de alcance",
-    reason: "Exige una estructura especial del comprobante que el sistema no emite.",
-  },
-  OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION: {
-    label: "Pendiente de evidencia",
-    reason:
-      "La fuente no establece la representación exacta de su código en el comprobante; soporte futuro.",
-  },
-  OUT_OF_SCOPE_PENDING_EVIDENCE: {
-    label: "Pendiente de evidencia",
-    reason: "Falta evidencia oficial para emitirla; soporte futuro.",
-  },
-  OUT_OF_SCOPE_MVP: { label: "Fuera de alcance", reason: "No forma parte del alcance actual." },
-  OUT_OF_SCOPE_EXPIRED: { label: "Fuera de alcance", reason: "Ya no está vigente." },
-};
+/** Etiqueta de la clasificación: soportada o fuera de alcance. */
+const scopeLabel = (classification: ScopeClassification) =>
+  classification.startsWith("SUPPORTED") ? "Soportada" : "Fuera de alcance";
+
+/** Razón de una entrada fuera de alcance, con el texto de la spec de cada catálogo. */
+function scopeReason(catalogType: FiscalCatalogType, classification: ScopeClassification) {
+  switch (classification) {
+    case "OUT_OF_SCOPE_NON_RESIDENT":
+      return "Por no residente: los pagos al exterior están fuera del alcance actual.";
+    case "OUT_OF_SCOPE_VARIABLE":
+      return "Por porcentaje variable: la fuente publica un porcentaje variable o textual, no uno fijo.";
+    case "OUT_OF_SCOPE_SPECIAL_STRUCTURE":
+      return "Por estructura especial excluida: exige datos que el comprobante del sistema no emite.";
+    case "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION":
+      return catalogType === "withholding-iva-code"
+        ? "La fuente no define su representación en el comprobante."
+        : "Por representación ambigua en la fuente: no establece la representación exacta de su código; pendiente de evidencia y de soporte futuro.";
+    case "OUT_OF_SCOPE_PENDING_EVIDENCE":
+      return "Pendiente de evidencia oficial para emitirla; soporte futuro.";
+    case "OUT_OF_SCOPE_MVP":
+      return "No forma parte del alcance actual.";
+    case "OUT_OF_SCOPE_EXPIRED":
+      return "Ya no está vigente.";
+    default:
+      return null;
+  }
+}
 
 function SourceLine({ summary }: { summary: FiscalCatalogSummaryView | undefined }) {
   if (!summary) return null;
@@ -111,6 +109,7 @@ function SourceLine({ summary }: { summary: FiscalCatalogSummaryView | undefined
     return (
       <p className="text-xs text-foreground-muted">
         Fuente: {sourceName(summary.source)}, versión {summary.datasetVersion} del catálogo.
+        <span className="block break-all">SHA-256 del archivo: {summary.source.sha256}</span>
       </p>
     );
   }
@@ -143,7 +142,13 @@ function EntryRow({
   const version = entry.applicable ?? entry.versions.at(-1)!;
   const rate = rateDescription(entry);
   const scope = version.withholding;
-  const scopeLabel = scope ? SCOPE_LABELS[scope.scopeClassification] : null;
+  const classification = scope
+    ? {
+        label: scopeLabel(scope.scopeClassification),
+        reason: scopeReason(catalogType, scope.scopeClassification),
+      }
+    : null;
+  const admitted = scope?.allowedSupportCodes ?? null;
   const withholdingRate = scope?.percentage
     ? formatPercentage(scope.percentage)
     : (scope?.rateText ?? null);
@@ -161,17 +166,25 @@ function EntryRow({
           {rate ? ` · ${rate}` : ""}
           {withholdingRate ? ` · ${withholdingRate}` : ""}
         </span>
-        {scopeLabel && (
+        {classification && (
           <span className="flex flex-col gap-0.5">
             <span>
               <StatusBadge
                 tone={scope?.selectable ? "success" : "neutral"}
-                label={scopeLabel.label}
+                label={classification.label}
               />
             </span>
-            {scopeLabel.reason && (
-              <span className="text-xs text-foreground-muted">{scopeLabel.reason}</span>
+            {classification.reason && (
+              <span className="text-xs text-foreground-muted">{classification.reason}</span>
             )}
+          </span>
+        )}
+        {admitted && (
+          <span className="text-xs text-foreground-muted">
+            Sustentos admitidos:{" "}
+            <span className="tabular-nums">
+              {admitted.length > 0 ? admitted.join(", ") : "ninguno"}
+            </span>
           </span>
         )}
         <span className="text-xs text-foreground-muted">

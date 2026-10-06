@@ -69,6 +69,8 @@ const buttonsIn = (name: string) =>
     .queryAllByRole("button")
     .map((button) => button.textContent);
 
+const print = vi.fn();
+
 beforeEach(() => {
   navigation.pathname = "/retenciones/ret-1";
   navigation.search = new URLSearchParams();
@@ -76,6 +78,19 @@ beforeEach(() => {
     "URL",
     Object.assign(URL, { createObjectURL: vi.fn(() => "blob:ride"), revokeObjectURL: vi.fn() }),
   );
+  print.mockReset();
+  // jsdom no carga el PDF del iframe: se simula la carga y su ventana de impresión.
+  vi.spyOn(HTMLIFrameElement.prototype, "contentWindow", "get").mockReturnValue({
+    focus: () => {},
+    print,
+  } as unknown as Window);
+  const append = Element.prototype.append;
+  vi.spyOn(Element.prototype, "append").mockImplementation(function (this: Element, ...nodes) {
+    append.apply(this, nodes);
+    for (const node of nodes) {
+      if (node instanceof HTMLIFrameElement) setTimeout(() => node.onload?.(new Event("load")), 0);
+    }
+  });
 });
 
 afterEach(() => {
@@ -116,6 +131,42 @@ describe("Documentos de la retención", () => {
       await screen.findByText("El RIDE estará disponible cuando el SRI autorice la retención."),
     ).toBeDefined();
     expect(buttonsIn("Documentos")).toEqual(["XML firmado"]);
+  });
+
+  it("autorizada: imprime el RIDE registrando la solicitud y muestra el historial de entregas", async () => {
+    const calls = render(<DocumentsSection document={NOTE} />, {
+      "GET /api/v1/documents/ret-1": ok(
+        summary("AUTHORIZED", { ride: "AVAILABLE", authorizedXml: true, signedXml: true }),
+      ),
+      "POST /api/v1/documents/ret-1/print-requests": () => ({
+        status: 201,
+        body: { data: { id: "del-1", occurredAt: "2026-10-06T15:00:00.000Z" } },
+      }),
+      "GET /api/v1/documents/ret-1/ride": () => ({ status: 200, body: "%PDF" }),
+      "GET /api/v1/documents/ret-1/deliveries": ok({
+        items: [
+          {
+            id: "del-1",
+            event: "PRINT_REQUESTED",
+            artifactKind: "RIDE_PDF",
+            actorName: "Óscar Operador",
+            occurredAt: "2026-10-06T15:00:00.000Z",
+          },
+        ],
+        total: 1,
+      }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Imprimir" }));
+    expect(await screen.findByText("Abrimos el RIDE para imprimir.")).toBeDefined();
+    const keys = calls.map((call) => call.key);
+    expect(keys.indexOf("POST /api/v1/documents/ret-1/print-requests")).toBeLessThan(
+      keys.indexOf("GET /api/v1/documents/ret-1/ride"),
+    );
+    await waitFor(() => expect(print).toHaveBeenCalledOnce());
+    await user.click(screen.getByText("Historial de entregas"));
+    const list = await screen.findByRole("list", { name: "Historial de entregas" });
+    expect(within(list).getByText("Solicitud de impresión · RIDE")).toBeDefined();
   });
 
   it("autorizada sin XML autorizado guardado: no lo ofrece", async () => {

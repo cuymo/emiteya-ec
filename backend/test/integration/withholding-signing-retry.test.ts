@@ -2,14 +2,21 @@
 // D2, D22 y D23): una retención que quedó reservada por un servicio ocupado se firma con su mismo
 // número, su misma clave y su mismo snapshot, con `withholding_receipt.signing_retried`. Una
 // retención firmada se devuelve sin efecto ni auditoría; la de otra empresa o un comprobante de otro
-// tipo responden `404`; sin sesión, `401`.
+// tipo responden `404`; sin sesión, `401`. Los datos congelados al reservar (la razón social del
+// proveedor y la forma de pago) rigen el XML firmado y el RIDE aunque cambien antes de firmar.
 import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { WithholdingReceiptView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
+import {
+  defaultRideFontsDirectory,
+  loadRideAssets,
+} from "../../src/modules/sri-engine/infrastructure/ride/ride-assets.ts";
+import { createInProcessRideRenderer } from "../../src/modules/sri-engine/infrastructure/ride/ride-renderer.ts";
 import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker-pool.ts";
+import { pageTexts } from "../support/pdf-inspection.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { CUSTODY, readyCompany, type ReadyCompany } from "./emission-harness.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
@@ -154,6 +161,65 @@ describe("reintento de la firma de un comprobante de retención", () => {
     const unchanged = await retry(api, receipt.id);
     expect([unchanged.status, bodyOf(unchanged).data.state]).toEqual([200, "SIGNED"]);
     expect(await retried(receipt.id)).toBe(2);
+  });
+
+  it("la razón social corregida y la forma de pago deshabilitada después de reservar no cambian el XML ni el RIDE", async () => {
+    const receipt = await emitted(busy);
+    expect(receipt.state).toBe("RESERVED");
+    const prisma = db.database.prisma;
+    const original = await prisma.party.findUniqueOrThrow({ where: { id: a.supplierId } });
+    // El proveedor corrige su razón social y la empresa deshabilita la forma de pago 20.
+    await prisma.party.update({
+      where: { id: a.supplierId },
+      data: { legalName: "RAZÓN SOCIAL CORREGIDA S.A.", searchName: "razon social corregida s.a." },
+    });
+    const disabled = await request(api.app)
+      .put("/api/v1/fiscal-catalogs/payment-method/entries/20/enablement")
+      .set("Cookie", a.cookies.admin)
+      .send({ enabled: false });
+    expect(disabled.status, JSON.stringify(disabled.body)).toBe(200);
+    try {
+      const res = await retry(api, receipt.id);
+      expect([res.status, bodyOf(res).data.state]).toEqual([200, "SIGNED"]);
+      const signed = await prisma.documentArtifact.findFirstOrThrow({
+        where: { documentId: receipt.id, kind: "SIGNED_XML" },
+      });
+      const xml = Buffer.from(signed.content).toString("utf8");
+      expect(xml).toContain(
+        `<razonSocialSujetoRetenido>${original.legalName}</razonSocialSujetoRetenido>`,
+      );
+      expect(xml).not.toContain("RAZÓN SOCIAL CORREGIDA");
+      expect(xml.replace(/>\s+</g, "><")).toContain(
+        "<pago><formaPago>20</formaPago><total>115.00</total></pago>",
+      );
+      // El RIDE se dibuja desde ese XML: lleva la razón social del snapshot.
+      const assets = loadRideAssets(defaultRideFontsDirectory());
+      if (!assets.ok) throw new Error("las fuentes del RIDE no están íntegras");
+      const rendered = await createInProcessRideRenderer(assets.fonts).render({
+        xml: new Uint8Array(signed.content),
+        accessKey: receipt.accessKey,
+        authorization: {
+          number: receipt.accessKey,
+          authorizedAt: new Date("2026-10-06T15:20:00Z"),
+          environment: "TEST",
+        },
+        paymentLabels: {},
+        logo: null,
+      });
+      if (rendered.status !== "RENDERED") throw new Error(JSON.stringify(rendered));
+      const text = (await pageTexts(rendered.pdf)).join(" ");
+      expect(text).toContain(original.legalName);
+      expect(text).not.toContain("RAZÓN SOCIAL CORREGIDA");
+    } finally {
+      await prisma.party.update({
+        where: { id: a.supplierId },
+        data: { legalName: original.legalName, searchName: original.searchName },
+      });
+      await request(api.app)
+        .put("/api/v1/fiscal-catalogs/payment-method/entries/20/enablement")
+        .set("Cookie", a.cookies.admin)
+        .send({ enabled: true });
+    }
   });
 
   it("una retención de otra empresa o un comprobante de otro tipo responden 404; sin sesión, 401", async () => {

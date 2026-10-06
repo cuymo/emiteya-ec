@@ -37,8 +37,8 @@ describe("reconciliación manual de un comprobante de retención", () => {
     timeoutMs: 30_000,
   });
 
-  /** Retención emitida por la API y llevada a revisión manual: recibida y con dos autorizaciones. */
-  const inManualReview = async () => {
+  /** Retención emitida por la API, firmada y con su envío pendiente. */
+  const signedReceipt = async () => {
     const draft = await request(api.app)
       .post("/api/v1/withholding-receipts/drafts")
       .set("Cookie", a.cookies.operator)
@@ -66,7 +66,11 @@ describe("reconciliación manual de un comprobante de retención", () => {
       .set("Idempotency-Key", randomUUID())
       .send({ draftId: (draft.body as Body).data.id, expectedVersion: 1 });
     expect(emitted.status, JSON.stringify(emitted.body)).toBe(201);
-    const receipt = bodyOf(emitted).data as unknown as TestDocument;
+    return bodyOf(emitted).data as unknown as TestDocument;
+  };
+  /** Retención emitida por la API y llevada a revisión manual: recibida y con dos autorizaciones. */
+  const inManualReview = async () => {
+    const receipt = await signedReceipt();
     sri.replies.push(response(receptionResponse("RECIBIDA")));
     await sri.transmit().run(await sri.leasePending(receipt.id, "sri.transmit"), sri.context());
     sri.reply(receipt, [sri.authorized(receipt), sri.authorized(receipt)]);
@@ -113,6 +117,18 @@ describe("reconciliación manual de un comprobante de retención", () => {
       "WITHHOLDING_RECEIPT_NOT_FOUND",
     ]);
 
+    const prisma = db.database.prisma;
+    const untouched = async () => ({
+      capacities: await prisma.creditCapacity.findMany(),
+      returns: await prisma.stockReturnCapacity.findMany(),
+      movements: await prisma.stockMovement.count(),
+      balances: await prisma.stockBalance.findMany(),
+      others: await prisma.electronicDocument.findMany({
+        where: { documentType: { not: "07" } },
+        orderBy: { id: "asc" },
+      }),
+    });
+    const before = await untouched();
     const requested = await reconcile(receipt.id, a.cookies.admin);
     expect([requested.status, bodyOf(requested).data.state]).toEqual([202, "MANUAL_REVIEW"]);
     // Mientras el job está activo, otra solicitud se rechaza sin programar otra.
@@ -140,11 +156,14 @@ describe("reconciliación manual de un comprobante de retención", () => {
       state: "MANUAL_REVIEW",
       reason: "El SRI confirmó la autorización",
     });
-    expect(events[1]!.changes).toMatchObject({
+    expect(events[1]!.changes).toEqual({
       withholdingReceiptId: receipt.id,
       documentNumber: receipt.documentNumber,
+      result: "AUTHORIZED",
       state: "AUTHORIZED",
     });
+    // Sin cambiar el inventario, las capacidades ni las facturas y notas.
+    expect(await untouched()).toEqual(before);
     for (const event of events) {
       expect(JSON.stringify(event.changes)).not.toMatch(/soap|<|claveAcceso/i);
     }
@@ -179,5 +198,45 @@ describe("reconciliación manual de un comprobante de retención", () => {
     ).toBe(jobs);
     const empty = await reconcile(receipt.id, a.cookies.admin, "  ");
     expect(empty.status).toBe(400);
+    // Devuelta o no autorizada tampoco se reconcilian.
+    const returned = await signedReceipt();
+    sri.replies.push(
+      response(
+        receptionResponse("DEVUELTA", [
+          {
+            accessKey: returned.accessKey,
+            messages: [{ identifier: "35", message: "mensaje sintético", type: "ERROR" }],
+          },
+        ]),
+      ),
+    );
+    await sri.transmit().run(await sri.leasePending(returned.id, "sri.transmit"), sri.context());
+    const notAuthorized = await signedReceipt();
+    sri.replies.push(response(receptionResponse("RECIBIDA")));
+    await sri
+      .transmit()
+      .run(await sri.leasePending(notAuthorized.id, "sri.transmit"), sri.context());
+    sri.reply(notAuthorized, [
+      sri.authorized(notAuthorized, { estado: "NO AUTORIZADO", comprobante: undefined }),
+    ]);
+    await sri
+      .authorize()
+      .run(await sri.leasePending(notAuthorized.id, "sri.authorize"), sri.context());
+    for (const [concluded, state] of [
+      [returned, "RETURNED"],
+      [notAuthorized, "NOT_AUTHORIZED"],
+    ] as const) {
+      expect(await stateOf(concluded.id)).toBe(state);
+      const rejected = await reconcile(concluded.id, a.cookies.admin);
+      expect([rejected.status, bodyOf(rejected).error.code], state).toEqual([
+        409,
+        "WITHHOLDING_NOT_RECONCILABLE",
+      ]);
+      expect(
+        await db.database.prisma.job.count({
+          where: { documentId: concluded.id, type: "sri.reconcile" },
+        }),
+      ).toBe(0);
+    }
   });
 });

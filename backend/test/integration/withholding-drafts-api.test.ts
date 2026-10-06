@@ -262,6 +262,16 @@ describe("API de borradores de retención", () => {
         }),
       );
       expect(withPercentage.status).toBe(400);
+      // El ISD (impuesto 6) se rechaza indicando que está fuera del alcance actual.
+      const isd = await call(a.cookies.operator, "post", "/withholding-receipts/drafts").send(
+        draftBody({
+          supports: [{ ...SUPPORT, withholdings: [{ tax: "6", entryKey: "4580", base: "1.00" }] }],
+        }),
+      );
+      expect(isd.status).toBe(400);
+      expect(bodyOf(isd).error.message).toContain(
+        "el ISD y los demás impuestos están fuera del alcance actual",
+      );
       expect(
         (
           await call(a.cookies.operator, "post", "/withholding-receipts/drafts").send(
@@ -289,7 +299,10 @@ describe("API de borradores de retención", () => {
       ]);
     });
 
-    it("respeta la versión del borrador al corregirlo y lo elimina sin rastro fiscal", async () => {
+    it("respeta la versión del borrador al corregirlo y lo elimina sin rastro fiscal ni auditoría", async () => {
+      const audited = () =>
+        db.database.prisma.auditEvent.count({ where: { companyId: a.companyId } });
+      const auditBefore = await audited();
       const draft = await createDraft();
       const updated = await call(
         a.cookies.operator,
@@ -328,6 +341,8 @@ describe("API de borradores de retención", () => {
         (await call(a.cookies.operator, "get", `/withholding-receipts/drafts/${draft.id}`)).status,
       ).toBe(404);
       expect(await fiscalTrace()).toEqual({ documents: 0, reservations: 0, receipts: 0 });
+      // Crear, corregir, consultar y eliminar un borrador no deja eventos de auditoría.
+      expect(await audited()).toBe(auditBefore);
     });
 
     it("lista los borradores con su proveedor, sus documentos y el total de la vista previa", async () => {

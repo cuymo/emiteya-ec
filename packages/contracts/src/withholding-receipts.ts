@@ -63,7 +63,8 @@ export type SupportTaxCode = z.infer<typeof supportTaxCodeSchema>;
 /** Impuestos que se retienen en el MVP (design D9): renta 1 e IVA 2. */
 export const WITHHOLDING_TAX_CODES = ["1", "2"] as const;
 export const withholdingTaxCodeSchema = z.enum(WITHHOLDING_TAX_CODES, {
-  error: "El impuesto de la retención debe ser 1 renta o 2 IVA.",
+  error:
+    "El impuesto de la retención debe ser 1 renta o 2 IVA: el ISD y los demás impuestos están fuera del alcance actual.",
 });
 export type WithholdingTaxCode = z.infer<typeof withholdingTaxCodeSchema>;
 
@@ -165,21 +166,21 @@ export const withholdingSupportSchema = strictBody({
     .array(withholdingSupportTaxSchema, { error: "Los impuestos del documento no son válidos." })
     .max(
       WITHHOLDING_LIMITS_MAX.taxesPerSupport,
-      `Un documento sustento admite como máximo ${WITHHOLDING_LIMITS_MAX.taxesPerSupport} impuestos.`,
+      `Un documento sustento admite como máximo ${WITHHOLDING_LIMITS_MAX.taxesPerSupport} impuestos. Es una defensa de recursos del sistema, no un límite del SRI.`,
     )
     .default([]),
   payments: z
     .array(withholdingSupportPaymentSchema, { error: "Las formas de pago no son válidas." })
     .max(
       WITHHOLDING_LIMITS_MAX.paymentsPerSupport,
-      `Un documento sustento admite como máximo ${WITHHOLDING_LIMITS_MAX.paymentsPerSupport} formas de pago.`,
+      `Un documento sustento admite como máximo ${WITHHOLDING_LIMITS_MAX.paymentsPerSupport} formas de pago. Es una defensa de recursos del sistema, no un límite del SRI.`,
     )
     .default([]),
   withholdings: z
     .array(withholdingItemSchema, { error: "Las retenciones no son válidas." })
     .max(
       WITHHOLDING_LIMITS_MAX.itemsPerSupport,
-      `Un documento sustento admite como máximo ${WITHHOLDING_LIMITS_MAX.itemsPerSupport} retenciones.`,
+      `Un documento sustento admite como máximo ${WITHHOLDING_LIMITS_MAX.itemsPerSupport} retenciones. Es una defensa de recursos del sistema, no un límite del SRI.`,
     )
     .default([]),
 });
@@ -201,7 +202,7 @@ const draftShape = {
     .array(withholdingSupportSchema, { error: "Los documentos sustento no son válidos." })
     .max(
       WITHHOLDING_LIMITS_MAX.supports,
-      `La retención admite como máximo ${WITHHOLDING_LIMITS_MAX.supports} documentos sustento.`,
+      `La retención admite como máximo ${WITHHOLDING_LIMITS_MAX.supports} documentos sustento. Es una defensa de recursos del sistema, no un límite del SRI.`,
     )
     .default([]),
 };

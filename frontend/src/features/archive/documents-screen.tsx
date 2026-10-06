@@ -4,8 +4,10 @@
 // número, fecha, receptor, total, estado y si el RIDE está disponible. Acción principal: abrir el
 // comprobante. P0: número, estado y RIDE; P1: fecha, receptor y total; P2: filtros avanzados
 // (fechas, identificación, establecimiento, punto y tipo); P3 (identificadores y hashes): no se
-// muestra. La factura, la nota de crédito y la nota de débito conviven con su tipo bajo el número
-// (add-credit-notes, design D15; add-debit-notes, design D19).
+// muestra. La factura, la nota de crédito, la nota de débito y el comprobante de retención conviven
+// con su tipo bajo el número (add-credit-notes, design D15; add-debit-notes, design D19;
+// add-withholding-receipts, design D20); en la retención, el total es el retenido y el receptor el
+// sujeto retenido.
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
