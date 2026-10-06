@@ -5,6 +5,8 @@ import {
   CERTIFICATE_MAX_BYTES_LIMIT,
   emailSchema,
   passwordSchema,
+  SHIPPING_GUIDE_LIMITS_DEFAULT,
+  SHIPPING_GUIDE_LIMITS_MAX,
   WITHHOLDING_LIMITS_DEFAULT,
   WITHHOLDING_LIMITS_MAX,
   type PasswordPolicy,
@@ -122,6 +124,20 @@ export const envSchema = z
     ),
     WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT: int(1, WITHHOLDING_LIMITS_MAX.paymentsPerSupport).default(
       WITHHOLDING_LIMITS_DEFAULT.paymentsPerSupport,
+    ),
+    // Guía de remisión (add-shipping-guides, design D23, P9): destinatarios por guía, detalles por
+    // destinatario y detalles por guía, aplicados juntos. Defensas de recursos del sistema, nunca
+    // límites del SRI ni del XSD ni una lectura de Q-47; el máximo de cada rango es el máximo
+    // absoluto del contrato.
+    SHIPPING_GUIDE_MAX_RECIPIENTS: int(1, SHIPPING_GUIDE_LIMITS_MAX.recipients).default(
+      SHIPPING_GUIDE_LIMITS_DEFAULT.recipients,
+    ),
+    SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT: int(
+      1,
+      SHIPPING_GUIDE_LIMITS_MAX.detailsPerRecipient,
+    ).default(SHIPPING_GUIDE_LIMITS_DEFAULT.detailsPerRecipient),
+    SHIPPING_GUIDE_MAX_DETAILS: int(1, SHIPPING_GUIDE_LIMITS_MAX.details).default(
+      SHIPPING_GUIDE_LIMITS_DEFAULT.details,
     ),
     // Cabecera `Server-Timing` con las etapas de la emisión (design D16): solo para el benchmark y
     // el diagnóstico local; prohibida en producción.

@@ -73,6 +73,11 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "withholdings.emit": { ADMIN: true, OPERATOR: true },
   "withholdings.retrySigning": { ADMIN: true, OPERATOR: true },
   "withholdings.reconcile": { ADMIN: true, OPERATOR: false },
+  "shippingGuides.read": { ADMIN: true, OPERATOR: true },
+  "shippingGuides.draft": { ADMIN: true, OPERATOR: true },
+  "shippingGuides.emit": { ADMIN: true, OPERATOR: true },
+  "shippingGuides.retrySigning": { ADMIN: true, OPERATOR: true },
+  "shippingGuides.reconcile": { ADMIN: true, OPERATOR: false },
 };
 
 describe("política de autorización central", () => {

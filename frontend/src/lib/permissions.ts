@@ -57,7 +57,12 @@ export type Permission =
   | "withholdings.draft"
   | "withholdings.emit"
   | "withholdings.retrySigning"
-  | "withholdings.reconcile";
+  | "withholdings.reconcile"
+  | "shippingGuides.read"
+  | "shippingGuides.draft"
+  | "shippingGuides.emit"
+  | "shippingGuides.retrySigning"
+  | "shippingGuides.reconcile";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -116,6 +121,11 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "withholdings.emit",
     "withholdings.retrySigning",
     "withholdings.reconcile",
+    "shippingGuides.read",
+    "shippingGuides.draft",
+    "shippingGuides.emit",
+    "shippingGuides.retrySigning",
+    "shippingGuides.reconcile",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",
@@ -150,6 +160,10 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "withholdings.draft",
     "withholdings.emit",
     "withholdings.retrySigning",
+    "shippingGuides.read",
+    "shippingGuides.draft",
+    "shippingGuides.emit",
+    "shippingGuides.retrySigning",
   ]),
 };
 

@@ -283,6 +283,38 @@ describe("emisión de facturas (add-invoice-emission, design D2 y D11)", () => {
     });
   });
 
+  it("los límites de la guía tienen sus valores por defecto, se configuran y se acotan (add-shipping-guides, D23)", () => {
+    expect(loadEnv(valid)).toMatchObject({
+      SHIPPING_GUIDE_MAX_RECIPIENTS: 10,
+      SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT: 50,
+      SHIPPING_GUIDE_MAX_DETAILS: 100,
+    });
+    expect(
+      loadEnv({
+        ...valid,
+        SHIPPING_GUIDE_MAX_RECIPIENTS: "50",
+        SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT: "100",
+        SHIPPING_GUIDE_MAX_DETAILS: "300",
+      }),
+    ).toMatchObject({
+      SHIPPING_GUIDE_MAX_RECIPIENTS: 50,
+      SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT: 100,
+      SHIPPING_GUIDE_MAX_DETAILS: 300,
+    });
+    const error = envError({
+      ...valid,
+      SHIPPING_GUIDE_MAX_RECIPIENTS: "51",
+      SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT: "0",
+      SHIPPING_GUIDE_MAX_DETAILS: "301",
+    });
+    expect(error?.variables).toEqual([
+      "SHIPPING_GUIDE_MAX_RECIPIENTS",
+      "SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT",
+      "SHIPPING_GUIDE_MAX_DETAILS",
+    ]);
+    expect(error?.message).not.toContain("301");
+  });
+
   it("los límites de la retención tienen sus valores por defecto, se configuran y se acotan (add-withholding-receipts, D25)", () => {
     expect(loadEnv(valid)).toMatchObject({
       WITHHOLDING_MAX_SUPPORTS: 10,

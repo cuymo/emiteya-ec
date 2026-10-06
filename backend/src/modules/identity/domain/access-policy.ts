@@ -58,6 +58,11 @@ export const PERMISSIONS = [
   "withholdings.emit",
   "withholdings.retrySigning",
   "withholdings.reconcile",
+  "shippingGuides.read",
+  "shippingGuides.draft",
+  "shippingGuides.emit",
+  "shippingGuides.retrySigning",
+  "shippingGuides.reconcile",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -132,6 +137,13 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "withholdings.emit",
     "withholdings.retrySigning",
     "withholdings.reconcile",
+    // add-shipping-guides, design D24: consultar, preparar, emitir, reintentar la firma y pedir la
+    // reconciliación de una guía de remisión.
+    "shippingGuides.read",
+    "shippingGuides.draft",
+    "shippingGuides.emit",
+    "shippingGuides.retrySigning",
+    "shippingGuides.reconcile",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -185,6 +197,12 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "withholdings.draft",
     "withholdings.emit",
     "withholdings.retrySigning",
+    // add-shipping-guides, design D24: consulta, prepara, emite y reintenta la firma de una guía
+    // de remisión, como el administrador; la reconciliación es solo del administrador (Q-22).
+    "shippingGuides.read",
+    "shippingGuides.draft",
+    "shippingGuides.emit",
+    "shippingGuides.retrySigning",
   ]),
 };
 

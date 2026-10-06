@@ -39,15 +39,15 @@
 
 ## 3. Contratos, permisos y límites
 
-- [ ] 3.1 Crear `packages/contracts/src/shipping-guides.ts` (design D22): el borrador estricto con el transportista, los destinatarios, el sustento tipado y los detalles; la emisión con `exceptionDeclaration`; los casos de excepción con su texto oficial y `SHIPPING_GUIDE_EXCEPTION_POLICY_VERSION = 1`; las opciones, la vista previa, las vistas de lista y detalle, la transmisión, los códigos de error y los máximos absolutos. Registrar las rutas en `apiRoutes`. Verificar con pruebas de contratos que se rechazan:
+- [x] 3.1 Crear `packages/contracts/src/shipping-guides.ts` (design D22): el borrador estricto con el transportista, los destinatarios, el sustento tipado y los detalles; la emisión con `exceptionDeclaration`; los casos de excepción con su texto oficial y `SHIPPING_GUIDE_EXCEPTION_POLICY_VERSION = 1`; las opciones, la vista previa, las vistas de lista y detalle, la transmisión, los códigos de error y los máximos absolutos. Registrar las rutas en `apiRoutes` junto con su router, en los grupos 6 a 8, como en el cambio 12: la prueba que compara el registro con los routers exige que lleguen juntos. Verificar con pruebas de contratos que se rechazan:
   - un precio, un impuesto, `detallesAdicionales`, un documento aduanero, varias placas o un `companyId`;
   - un número, una autorización o una fecha de sustento escritos a mano, la venta itinerante o un caso desconocido;
   - la dirección de partida enviada con un origen elegido, la dirección o el código de destino enviados para la propia empresa, y los códigos enviados con un producto;
   - una cantidad como número, en cero, negativa, con 7 decimales o con 19 dígitos;
   - un código de destino que no tiene 3 dígitos y una placa de 21 caracteres;
   - más elementos que los máximos absolutos
-- [ ] 3.2 Añadir `shippingGuides.read`, `shippingGuides.draft`, `shippingGuides.emit` y `shippingGuides.retrySigning` para ADMIN y OPERATOR, y `shippingGuides.reconcile` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D24). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
-- [ ] 3.3 Añadir `SHIPPING_GUIDE_MAX_RECIPIENTS`, `SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT` y `SHIPPING_GUIDE_MAX_DETAILS` al esquema de entorno con sus valores por defecto y sus rangos (design D23), y documentarlas en `deployment.md` como defensa de recursos, no límites del SRI. Verificar con pruebas del esquema de entorno: valor por defecto, valor configurado y valor fuera de rango rechazado
+- [x] 3.2 Añadir `shippingGuides.read`, `shippingGuides.draft`, `shippingGuides.emit` y `shippingGuides.retrySigning` para ADMIN y OPERATOR, y `shippingGuides.reconcile` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D24). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
+- [x] 3.3 Añadir `SHIPPING_GUIDE_MAX_RECIPIENTS`, `SHIPPING_GUIDE_MAX_DETAILS_PER_RECIPIENT` y `SHIPPING_GUIDE_MAX_DETAILS` al esquema de entorno con sus valores por defecto y sus rangos (design D23), y documentarlas en `deployment.md` como defensa de recursos, no límites del SRI. Verificar con pruebas del esquema de entorno: valor por defecto, valor configurado y valor fuera de rango rechazado
 
 ## 4. Dominio de la guía
 

@@ -122,7 +122,7 @@ admin de Better Auth no concede nada. Toda celda "No" responde `403` en el servi
 usuario de otra empresa responde `404`.
 
 Permisos implementados (cambios `add-user-access`, design D4; `add-taxpayer-setup`, design D10;
-`add-fiscal-numbering`, design D10; `add-signing-certificate`, design D10; `add-fiscal-catalogs`, design D12; `add-parties-and-products`, design D12; `add-invoice-emission`, design D14; y `add-credit-notes`, design D17). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
+`add-fiscal-numbering`, design D10; `add-signing-certificate`, design D10; `add-fiscal-catalogs`, design D12; `add-parties-and-products`, design D12; `add-invoice-emission`, design D14; `add-credit-notes`, design D17; y `add-shipping-guides`, design D24). Son las filas del mapa central `backend/src/modules/identity/domain/access-policy.ts`,
 denegado por defecto;
 `backend/test/identity/access-policy-doc.test.ts` comprueba que esta tabla coincide con él:
 
@@ -183,6 +183,11 @@ denegado por defecto;
 | `withholdings.emit` | Emitir un comprobante de retención desde un borrador: reserva el número y lo firma localmente | Sí | Sí |
 | `withholdings.retrySigning` | Reintentar la firma de una retención reservada, con el mismo número y la misma clave | Sí | Sí |
 | `withholdings.reconcile` | Pedir la reconciliación de una retención con el SRI, con motivo, como la de una factura | Sí | No |
+| `shippingGuides.read` | Consultar y buscar guías de remisión, con su diagnóstico y su transmisión | Sí | Sí |
+| `shippingGuides.draft` | Buscar transportistas, destinatarios y facturas elegibles con sus mercancías sugeridas, consultar las opciones y crear, consultar, corregir y eliminar borradores de guía | Sí | Sí |
+| `shippingGuides.emit` | Emitir una guía de remisión desde un borrador, con la confirmación de las excepciones declaradas: reserva el número y la firma localmente | Sí | Sí |
+| `shippingGuides.retrySigning` | Reintentar la firma de una guía reservada, con el mismo número y la misma clave | Sí | Sí |
+| `shippingGuides.reconcile` | Pedir la reconciliación de una guía de remisión con el SRI, con motivo, como la de una factura | Sí | No |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).

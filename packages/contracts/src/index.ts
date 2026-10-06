@@ -18,3 +18,4 @@ export * from "./inventory.ts";
 export * from "./credit-notes.ts";
 export * from "./debit-notes.ts";
 export * from "./withholding-receipts.ts";
+export * from "./shipping-guides.ts";
