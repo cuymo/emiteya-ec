@@ -1,0 +1,61 @@
+Verificación del XSD del comprobante de retención contra el portal del SRI (readiness de
+add-withholding-receipts, 2026-10-05). El manifiesto `docs/product/sri-xsd/README.md` no se edita: el
+dataset schema-registry lo cita por su SHA-256.
+
+Portal: https://www.sri.gob.ec/facturacion-electronica
+- Publica "Esquemas XSD Y XML Tipo de documento Comprobante de Retención – Versión 1.0.0 – 2.0.0 /
+  Actualizado a Febrero 2022", con la ruta
+  /o/sri-portlet-biblioteca-alfresco-internet/descargar/90950fca-73a7-4cfb-9c2d-3142b10435f2/XML%20y%20XSD%20Comprobante%20de%20Retenci%c3%b3n.zip
+  (la misma del manifiesto).
+- ZIP descargado el 2026-10-05: SHA-256 d365dec7ffe15199ddb1eefa8b91c12e4bdc884cbc40b4177410466148c255f8
+  (el mismo del manifiesto). Contiene:
+  - ComprobanteRetencion_V2.0.0.xsd (2022-02-07), SHA-256 1e006d6d16c791c8f5b23d1f3e006cd066ccba2bfb797a3cb9098bd09c793cb7,
+    idéntico a docs/product/sri-xsd/ComprobanteRetencion_V2.0.0.xsd y a la entrada 07 del dataset
+    schema-registry;
+  - ComprobanteRetencion_V2.0.0.xml (ejemplo), ComprobanteRetencion_V1.0.0.xsd y
+    ComprobanteRetencion_V1.0.0.xml.
+- La versión 2.0.0 es la del anexo 10 de la ficha v2.34 ("comprobante de retención ATS versión
+  2.0.0", páginas 104 a 108), la de CTX §16.1 y la del registro de esquemas.
+
+Esquema 2.0.0:
+- Raíz `comprobanteRetencion`, con los atributos `id` y `version`; un solo import:
+  xmldsig-core-schema.xsd (W3C, docs/product/w3c-xsd/).
+- `infoCompRetencion`: `tipoIdentificacionSujetoRetenido` (patrón [0][4-8]), `tipoSujetoRetenido`
+  opcional (01|02), `parteRel` obligatorio (SI|NO), razón social e identificación del sujeto y
+  `periodoFiscal` obligatorio (patrón (0[1-9]|1[012])/20[0-9][0-9]).
+- `docsSustento/docSustento` sin máximo: `codSustento` ([0-9]{2}), `codDocSustento` ([0-9]{1,3}),
+  `numDocSustento` obligatorio ([0-9]{15}; la tabla del anexo 10 lo marca "Opcional"),
+  `fechaEmisionDocSustento`, `numAutDocSustento` opcional ([0-9]{10,49}), `pagoLocExt` (01|02) y los
+  campos del exterior opcionales, `totalSinImpuestos`, `importeTotal`, `impuestosDocSustento`
+  (`codImpuestoDocSustento` [235]), `retenciones/retencion` sin máximo, `reembolsos` opcional y
+  `pagos/pago` obligatorio (`formaPago` 01 a 21).
+- `retencion`: `codigo` ([126]: renta, IVA, ISD), `codigoRetencion` (1 a 5 caracteres),
+  `baseImponible` (14 dígitos, 2 decimales), `porcentajeRetener` (3 dígitos, 2 decimales),
+  `valorRetenido` (14 dígitos, 2 decimales) y los bloques opcionales `dividendos` y
+  `compraCajBanano`.
+- `infoAdicional` opcional, con 1 a 15 `campoAdicional`.
+
+Fuera del XSD, la ficha v2.34 fija para este comprobante:
+- Página 13, notas de la tabla 6: "En el caso de emisión de notas de crédito, notas de débito y
+  comprobantes de retención, se debe obligatoriamente identificar al receptor o sujeto retenido con el
+  tipo de identificación correspondiente (RUC, cédula, pasaporte o identificación del exterior)". El
+  XSD admite el código 07 (consumidor final), pero la ficha lo excluye.
+- Páginas 32 y 33, tablas 19 y 20: impuestos a retener (renta 1, IVA 2, ISD 6), códigos y porcentajes
+  de la retención del IVA y del ISD; página 34: los porcentajes de la renta se toman del Catálogo del
+  Anexo Transaccional Simplificado (ATS).
+- Anexo 10: `codSustento` según la tabla 5, `codDocSustento` según la tabla 4, `formapago` según la
+  tabla 13, `tipoSujetoRetenido` según la tabla 14 y `pagoLocExt` según la tabla 15, todas del
+  Catálogo ATS.
+- Página 108: "El formato RIDE del comprobante de retención corresponderá al publicado para la
+  versión 1.0.0" (anexo 2, página 63).
+
+Catálogo ATS (fuente de la renta y de las tablas del anexo 10), identificado el 2026-10-05:
+- Página oficial "Anexos y guías": https://www.sri.gob.ec/formularios-e-instructivos1, que publica
+  "Catálogo ATS - 3.58 MB (fecha actualización: 06 de agosto de 2026)".
+- Archivo: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/e6a826af-b22c-40bb-8752-d711f293b8f9/Catalogo_ATS.xls
+  SHA-256 del descargado el 2026-10-05: bd3f7834f2cd31187af39cd2f4c685a646d7e49316e92ee493da5f2dd9776e3e
+- La hoja "TABLAS RETENCIONES" (tabla 3.10) publica los conceptos de retención en la fuente del
+  impuesto a la renta en bloques por vigencia, el más reciente "DESDE 06/AGOSTO/2026"; la hoja "TABLAS
+  REFERENCIALES" publica las tablas 4, 5, 11, 13, 14 y 15, entre otras.
+- No se archiva todavía en el repositorio: el apply de add-withholding-receipts lo archiva con su
+  URL, su SHA-256 y su fecha de actualización, y lo transcribe a datasets versionados (Q-50).

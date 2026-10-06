@@ -1,0 +1,92 @@
+Extracto literal de los artículos 3, 8 (incisos sobre los comprobantes de retención) y 40 del
+Reglamento de Comprobantes de Venta, Retención y Documentos Complementarios, para la trazabilidad del
+comprobante de retención (readiness de add-withholding-receipts, 2026-10-05).
+
+Fuente: SRI, Dirección Nacional Jurídica, Departamento de Normativa. Texto con "ULTIMA REFORMA:
+Decreto 580, Registro Oficial 448, 28-Febrero-2015. Estado: Vigente" (Decreto No. 430).
+URL oficial: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/c3a2c922-5960-4c08-9a73-bde19fadce42/REGLAMENTO+DE+COMPROBANTES+DE+VENTA,+RETENCI%D3N+Y+DOCUMENTOS+COMPLEMENTARIOS.pdf
+SHA-256 del PDF descargado el 2026-10-05: a7d27c905f6054dfd77dd2da7ee3362c547d625b5b734e789e222ce286dc1997
+(el mismo de reglamento-comprobantes-arts-15-16.txt). Extraído con pdftotext -layout; solo se quitan
+los encabezados de página y se normalizan los saltos.
+
+Art. 3.- Comprobantes de retención.- Son comprobantes de retención los documentos que
+acreditan las retenciones de impuestos realizadas por los agentes de retención en cumplimiento de
+lo dispuesto en la Ley de Régimen Tributario Interno, este reglamento y las resoluciones que para el
+efecto emita el Director General del Servicio de Rentas Internas.
+
+[Art. 8.- Obligación de emisión de comprobantes de venta y comprobantes de retención; incisos
+sobre los comprobantes de retención:]
+
+Los agentes de retención en forma obligatoria emitirán el comprobante de retención en el momento
+que se realice el pago o se acredite en cuenta, lo que ocurra primero y estará disponible para la
+entrega al proveedor dentro de los cinco días hábiles siguientes al de presentación del comprobante
+de venta.
+
+Sin perjuicio de lo dispuesto en el inciso anterior, las instituciones del sistema financiero nacional,
+podrán emitir un solo comprobante de retención a sus clientes y proveedores, individualmente
+considerados, cuando realicen más de una transacción por mes. El comprobante de retención así
+emitido deberá estar disponible para la entrega dentro de los cinco primeros días del mes siguiente.
+
+Los agentes de retención del impuesto a la salida de divisas, cuando realicen la transferencia de
+valores gravados con el impuesto, emitirán el respectivo comprobante de retención al momento en
+que se realice la retención del impuesto, de conformidad a lo dispuesto en la Ley Reformatoria para
+la Equidad Tributaria del Ecuador y en su reglamento de aplicación. Los comprobantes de retención
+deberán estar a disposición de los contribuyentes del impuesto a la salida de divisas, dentro de los
+dos días hábiles siguientes a la fecha de retención.
+
+Art. 40.- Requisitos de llenado para los comprobantes de retención.- Se incluirá en los
+comprobantes de retención como información no pre impresa la siguiente:
+
+1. Apellidos y nombres, denominación o razón social de la persona natural o sociedad o sucesión
+indivisa a la cual se le efectuó la retención.
+2. Número del registro único de contribuyentes o cédula de identidad o pasaporte del sujeto al que
+se le efectúa la retención.
+
+3. Impuesto por el cual se efectúa la retención en la fuente: Impuesto a la Renta, Impuesto al Valor
+Agregado o Impuesto a la Salida de Divisas.
+
+4. Denominación y número del comprobante de venta que motiva la retención, cuando corresponda.
+
+5. El valor de la transacción o del monto de la transferencia de divisas al exterior que constituye la
+base para la retención.
+
+6. El porcentaje aplicado para la retención.
+7. Valor del impuesto retenido.
+
+8. El ejercicio fiscal al que corresponde la retención.
+
+9. La fecha de emisión del comprobante de retención.
+
+10. La firma del agente de retención.
+
+11. Cuando corresponda, el convenio internacional para evitar la doble tributación en el cual se
+ampara la retención.
+
+Los comprobantes de retención se emitirán conjuntamente en original y copias o, en el caso de
+utilización de sistemas computarizados autorizados, de manera consecutiva.
+
+El comprobante de retención deberá ser emitido aún en los casos en los que el convenio
+internacional para evitar la doble tributación, exima de la retención.
+
+La información sobre los impuestos retenidos que se registre en los comprobantes respectivos podrá
+ser consolidada mensualmente, por cada sujeto al que se efectúen las retenciones, en los pagos o
+acreditaciones en cuenta por servicios, realizados con intermediación de instituciones del sistema
+financiero, en las que éstas sean agentes de retención.
+
+El detalle de la información de los comprobantes de venta que originaron la retención constará en
+este documento o en un anexo que constituirá parte integrante del mismo y será entregado al sujeto
+al que se le efectuó la retención.
+
+Cada comprobante de retención debe ser totalizado y cerrado individualmente. En el caso de
+comprobantes de retención emitidos por sistemas computarizados autorizados por el Servicio de
+Rentas Internas, que tuvieran más de una página, deberá numerarse cada una de ellas, especificando
+el número de la misma y el total de páginas que conforman el comprobante de retención.
+
+Observaciones (2026-10-05):
+- El artículo 8 fija cuándo se emite el comprobante: al realizar el pago o acreditar en cuenta, lo que
+  ocurra primero, y disponible dentro de los cinco días hábiles siguientes a la presentación del
+  comprobante de venta. El sistema no conoce esas fechas ni las hace cumplir; por eso el catálogo se
+  resuelve con la fecha de emisión del comprobante de retención (Q-50).
+- El artículo 40 exige consignar la base, el porcentaje y el valor retenido, y el ejercicio fiscal al
+  que corresponde la retención; no fija una fórmula para derivar la base ni una regla para el mes del
+  período fiscal (Q-50).

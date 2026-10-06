@@ -66,10 +66,13 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Código numérico          | `numericCode`        | —          | Ocho dígitos dentro de la clave de acceso. Se genera una sola vez por comprobante.      |
 | Tipo de emisión          | `emissionType`       | —          | Normal en el esquema off-line.                                                          |
 | Forma de pago            | `paymentMethod`      | —          | Código del catálogo fiscal de formas de pago.                                           |
-| Periodo fiscal           | `fiscalPeriod`       | —          | Mes y año de una retención (`MM/AAAA`).                                                 |
+| Periodo fiscal           | `fiscalPeriod`       | —          | Mes y año de una retención (`MM/AAAA`), declarado en el comprobante (BR-36).            |
 | Transportista            | `carrier`            | —          | Tercero que traslada la mercadería de una guía.                                         |
 | Destinatario             | `consignee`          | —          | Tercero que recibe la mercadería trasladada.                                            |
 | Sujeto retenido          | `withheldParty`      | —          | Tercero al que se le practica una retención.                                            |
+| Parte relacionada        | `relatedParty`       | —          | Declaración SI/NO del usuario en una retención (`parteRel`) sobre su relación con el sujeto retenido. |
+| Concepto de retención    | `withholdingConcept` | —          | Entrada del catálogo con el código y el porcentaje de una retención de renta o IVA.     |
+| Código de sustento       | `supportCode`        | —          | Motivo tributario del documento sustento (`codSustento`, tabla 5 del Catálogo ATS).      |
 
 ## Proceso fiscal
 
