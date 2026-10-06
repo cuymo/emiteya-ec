@@ -283,6 +283,43 @@ describe("emisión de facturas (add-invoice-emission, design D2 y D11)", () => {
     });
   });
 
+  it("los límites de la retención tienen sus valores por defecto, se configuran y se acotan (add-withholding-receipts, D25)", () => {
+    expect(loadEnv(valid)).toMatchObject({
+      WITHHOLDING_MAX_SUPPORTS: 10,
+      WITHHOLDING_MAX_ITEMS_PER_SUPPORT: 5,
+      WITHHOLDING_MAX_TAXES_PER_SUPPORT: 5,
+      WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT: 5,
+    });
+    expect(
+      loadEnv({
+        ...valid,
+        WITHHOLDING_MAX_SUPPORTS: "30",
+        WITHHOLDING_MAX_ITEMS_PER_SUPPORT: "1",
+        WITHHOLDING_MAX_TAXES_PER_SUPPORT: "10",
+        WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT: "2",
+      }),
+    ).toMatchObject({
+      WITHHOLDING_MAX_SUPPORTS: 30,
+      WITHHOLDING_MAX_ITEMS_PER_SUPPORT: 1,
+      WITHHOLDING_MAX_TAXES_PER_SUPPORT: 10,
+      WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT: 2,
+    });
+    const error = envError({
+      ...valid,
+      WITHHOLDING_MAX_SUPPORTS: "31",
+      WITHHOLDING_MAX_ITEMS_PER_SUPPORT: "0",
+      WITHHOLDING_MAX_TAXES_PER_SUPPORT: "11",
+      WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT: "cinco",
+    });
+    expect(error?.variables).toEqual([
+      "WITHHOLDING_MAX_SUPPORTS",
+      "WITHHOLDING_MAX_ITEMS_PER_SUPPORT",
+      "WITHHOLDING_MAX_TAXES_PER_SUPPORT",
+      "WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT",
+    ]);
+    expect(error?.message).not.toContain("31");
+  });
+
   it("solo activa los tiempos por etapa de la emisión con EMISSION_STAGE_TIMINGS=1 (design D16)", () => {
     expect(loadEnv(valid).EMISSION_STAGE_TIMINGS).toBe(false);
     expect(loadEnv({ ...valid, EMISSION_STAGE_TIMINGS: "0" }).EMISSION_STAGE_TIMINGS).toBe(false);

@@ -42,7 +42,7 @@
 
 ## 3. Contratos y permisos
 
-- [ ] 3.1 Crear `packages/contracts/src/withholding-receipts.ts` (design D21):
+- [x] 3.1 Crear `packages/contracts/src/withholding-receipts.ts` (design D21):
   - el borrador estricto con sus documentos, impuestos, pagos y retenciones, con importes como texto decimal;
   - la emisión `{ draftId, expectedVersion }`;
   - las opciones, la vista previa, las vistas de lista y detalle, la transmisión, los códigos de error y los máximos absolutos de los límites.
@@ -54,8 +54,8 @@
   - un tipo de documento como número (`1`) o fuera de `"01"`, `"02"` y `"03"`; un impuesto del documento fuera de 2, 3 y 5; una tarifa enviada para el IVA; una retención de impuesto 3, 5 o 6;
   - una base como número, con 3 decimales o en cero;
   - más elementos que los máximos absolutos
-- [ ] 3.2 Añadir `withholdings.read`, `withholdings.draft`, `withholdings.emit` y `withholdings.retrySigning` para ADMIN y OPERATOR, y `withholdings.reconcile` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D22). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
-- [ ] 3.3 Añadir las variables de los límites de design D25 al esquema de entorno, con sus valores por defecto y sus rangos, y documentarlas en `deployment.md` como defensas de recursos. Verificar con pruebas del esquema de entorno (valor por defecto, valor configurado y valor fuera de rango rechazado)
+- [x] 3.2 Añadir `withholdings.read`, `withholdings.draft`, `withholdings.emit` y `withholdings.retrySigning` para ADMIN y OPERATOR, y `withholdings.reconcile` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D22). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
+- [x] 3.3 Añadir las variables de los límites de design D25 al esquema de entorno, con sus valores por defecto y sus rangos, y documentarlas en `deployment.md` como defensas de recursos. Verificar con pruebas del esquema de entorno (valor por defecto, valor configurado y valor fuera de rango rechazado)
 
 ## 4. Dominio de la retención
 

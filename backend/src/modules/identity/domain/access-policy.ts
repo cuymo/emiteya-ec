@@ -53,6 +53,11 @@ export const PERMISSIONS = [
   "debitNotes.emit",
   "debitNotes.retrySigning",
   "debitNotes.reconcile",
+  "withholdings.read",
+  "withholdings.draft",
+  "withholdings.emit",
+  "withholdings.retrySigning",
+  "withholdings.reconcile",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -120,6 +125,13 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "debitNotes.emit",
     "debitNotes.retrySigning",
     "debitNotes.reconcile",
+    // add-withholding-receipts, design D22: consultar, preparar, emitir, reintentar la firma y
+    // pedir la reconciliación de un comprobante de retención.
+    "withholdings.read",
+    "withholdings.draft",
+    "withholdings.emit",
+    "withholdings.retrySigning",
+    "withholdings.reconcile",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -167,6 +179,12 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "debitNotes.draft",
     "debitNotes.emit",
     "debitNotes.retrySigning",
+    // add-withholding-receipts, design D22: consulta, prepara, emite y reintenta la firma de un
+    // comprobante de retención, como el administrador; la reconciliación es solo del administrador.
+    "withholdings.read",
+    "withholdings.draft",
+    "withholdings.emit",
+    "withholdings.retrySigning",
   ]),
 };
 

@@ -52,7 +52,12 @@ export type Permission =
   | "debitNotes.draft"
   | "debitNotes.emit"
   | "debitNotes.retrySigning"
-  | "debitNotes.reconcile";
+  | "debitNotes.reconcile"
+  | "withholdings.read"
+  | "withholdings.draft"
+  | "withholdings.emit"
+  | "withholdings.retrySigning"
+  | "withholdings.reconcile";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -106,6 +111,11 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "debitNotes.emit",
     "debitNotes.retrySigning",
     "debitNotes.reconcile",
+    "withholdings.read",
+    "withholdings.draft",
+    "withholdings.emit",
+    "withholdings.retrySigning",
+    "withholdings.reconcile",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",
@@ -136,6 +146,10 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "debitNotes.draft",
     "debitNotes.emit",
     "debitNotes.retrySigning",
+    "withholdings.read",
+    "withholdings.draft",
+    "withholdings.emit",
+    "withholdings.retrySigning",
   ]),
 };
 

@@ -5,6 +5,8 @@ import {
   CERTIFICATE_MAX_BYTES_LIMIT,
   emailSchema,
   passwordSchema,
+  WITHHOLDING_LIMITS_DEFAULT,
+  WITHHOLDING_LIMITS_MAX,
   type PasswordPolicy,
 } from "@facturador/contracts";
 import { z } from "zod";
@@ -106,6 +108,21 @@ export const envSchema = z
     XSD_VALIDATION_TIMEOUT_MS: int(1_000, 60_000).default(10_000),
     // Líneas por factura (design D2): defensa de recursos de la aplicación, no un límite del SRI.
     INVOICE_MAX_LINES: int(1, 1_000).default(100),
+    // Comprobante de retención (add-withholding-receipts, design D25): documentos sustento y, por
+    // documento, retenciones, impuestos declarados y formas de pago. Defensas de recursos del
+    // sistema, no límites del SRI; el máximo de cada rango es el máximo absoluto del contrato.
+    WITHHOLDING_MAX_SUPPORTS: int(1, WITHHOLDING_LIMITS_MAX.supports).default(
+      WITHHOLDING_LIMITS_DEFAULT.supports,
+    ),
+    WITHHOLDING_MAX_ITEMS_PER_SUPPORT: int(1, WITHHOLDING_LIMITS_MAX.itemsPerSupport).default(
+      WITHHOLDING_LIMITS_DEFAULT.itemsPerSupport,
+    ),
+    WITHHOLDING_MAX_TAXES_PER_SUPPORT: int(1, WITHHOLDING_LIMITS_MAX.taxesPerSupport).default(
+      WITHHOLDING_LIMITS_DEFAULT.taxesPerSupport,
+    ),
+    WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT: int(1, WITHHOLDING_LIMITS_MAX.paymentsPerSupport).default(
+      WITHHOLDING_LIMITS_DEFAULT.paymentsPerSupport,
+    ),
     // Cabecera `Server-Timing` con las etapas de la emisión (design D16): solo para el benchmark y
     // el diagnóstico local; prohibida en producción.
     EMISSION_STAGE_TIMINGS: z

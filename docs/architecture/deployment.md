@@ -146,6 +146,10 @@ Variables de `add-invoice-emission` (design D2 y D11):
 | `XSD_VALIDATION_QUEUE` | No | 16 | Validaciones en espera (0 a 256). Con la cola llena, la etapa falla con `VALIDATOR_BUSY`, reintentable. |
 | `XSD_VALIDATION_TIMEOUT_MS` | No | 10000 | Duración máxima de una validación, en milisegundos (1000 a 60000). Al vencer, `VALIDATOR_TIMEOUT`, reintentable. |
 | `INVOICE_MAX_LINES` | No | 100 | Líneas por factura (1 a 1000). Es una defensa de recursos de la aplicación, no un límite del SRI ni del XSD. |
+| `WITHHOLDING_MAX_SUPPORTS` | No | 10 | Documentos sustento por comprobante de retención (1 a 30). Defensa de recursos del sistema (design D25 de `add-withholding-receipts`): acota el trabajo de la vista previa, el cálculo, el XML, la firma y el RIDE. No es un límite del SRI ni guarda relación con el tamaño del envío (Q-47). |
+| `WITHHOLDING_MAX_ITEMS_PER_SUPPORT` | No | 5 | Retenciones por documento sustento (1 a 10). Defensa de recursos del sistema, no un límite del SRI. |
+| `WITHHOLDING_MAX_TAXES_PER_SUPPORT` | No | 5 | Impuestos declarados por documento sustento (1 a 10). Defensa de recursos del sistema, no un límite del SRI. |
+| `WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT` | No | 5 | Formas de pago por documento sustento (1 a 10). Defensa de recursos del sistema, no un límite del SRI. |
 | `EMISSION_STAGE_TIMINGS` | No | 0 | `1` añade a la respuesta de la emisión de la factura, de la nota de crédito y de la nota de débito la cabecera `Server-Timing` con la duración de cada etapa, para `bench:emission`, `bench:credit-notes`, `bench:debit-notes` y el diagnóstico local. El esquema de entorno la rechaza en producción. |
 
 - El build del backend copia los XSD del registro a `dist/xsd/` y `check:xsd-artifact` comprueba cada archivo con su SHA-256.
