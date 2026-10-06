@@ -34,10 +34,11 @@ export async function insertDocument(
     /** Para el inventario: campos del snapshot, por ejemplo la versión 2 con sus líneas. */
     snapshot?: Record<string, unknown>;
     /**
-     * Para las notas (add-credit-notes, add-debit-notes): el tipo, el total y, en `alongside`, las
-     * reservas de una nota de crédito o la factura de una nota de débito.
+     * Para las notas y las retenciones (add-credit-notes, add-debit-notes, add-withholding-receipts):
+     * el tipo, el total y, en `alongside`, las reservas de una nota de crédito, la factura de una
+     * nota de débito o el registro y las líneas de un comprobante de retención.
      */
-    documentType?: "01" | "04" | "05";
+    documentType?: "01" | "04" | "05" | "07";
     total?: string;
     /** Escrituras en la misma transacción que el comprobante, como las reservas de una nota. */
     alongside?: (tx: Prisma.TransactionClient, document: { id: string }) => Promise<void>;

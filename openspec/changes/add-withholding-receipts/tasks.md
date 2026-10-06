@@ -25,7 +25,7 @@
 
 ## 2. Esquema de la retención
 
-- [ ] 2.1 Crear la migración aditiva de design D28:
+- [x] 2.1 Crear la migración aditiva de design D28:
   - `withholding_receipt_draft`, con `supports` en `JSONB`, sus `CHECK` de forma y tamaño, el período con su patrón y la guarda que impide cambiar o borrar un borrador emitido;
   - `withholding_receipt` y `withholding_receipt_line`, inmutables, con el trigger que exige un comprobante `07` de la empresa y los `CHECK` de dominio de las líneas;
   - el trigger de restricción diferido que impide confirmar un `07` sin su fila y al menos una línea;
@@ -38,7 +38,7 @@
   - borrador emitido inmutable;
   - registro de otra empresa o de otro tipo rechazado;
   - la operación nueva en el registro de idempotencia
-- [ ] 2.2 Añadir las tablas a `migrations.test.ts` y documentarlas, con el acoplamiento intencional del trigger diferido, en `database.md`. Verificar que `migrations.test.ts` pasa sin deriva
+- [x] 2.2 Añadir las tablas a `migrations.test.ts` y documentarlas, con el acoplamiento intencional del trigger diferido, en `database.md`. Verificar que `migrations.test.ts` pasa sin deriva
 
 ## 3. Contratos y permisos
 

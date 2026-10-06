@@ -56,6 +56,8 @@ model User {
   creditNoteDraftsUpdated     CreditNoteDraft[]             @relation("CreditNoteDraftUpdater")
   debitNoteDraftsCreated      DebitNoteDraft[]              @relation("DebitNoteDraftCreator")
   debitNoteDraftsUpdated      DebitNoteDraft[]              @relation("DebitNoteDraftUpdater")
+  withholdingDraftsCreated    WithholdingReceiptDraft[]     @relation("WithholdingReceiptDraftCreator")
+  withholdingDraftsUpdated    WithholdingReceiptDraft[]     @relation("WithholdingReceiptDraftUpdater")
 
   @@unique([email])
   @@map("user")
@@ -138,6 +140,7 @@ model Organization {
   jobs                       Job[]
   creditNoteDrafts           CreditNoteDraft[]
   debitNoteDrafts            DebitNoteDraft[]
+  withholdingReceiptDrafts   WithholdingReceiptDraft[]
 
   @@unique([slug])
   @@map("organization")
@@ -293,19 +296,20 @@ model Establishment {
 // Punto de emisión (design D7): código único por establecimiento; código y establecimiento
 // inmutables (trigger). Solo tiene código y estado.
 model EmissionPoint {
-  id              String                       @id @default(uuid())
-  companyId       String                       @map("company_id")
-  establishmentId String                       @map("establishment_id")
-  establishment   Establishment                @relation(fields: [companyId, establishmentId], references: [companyId, id], onDelete: Restrict)
-  code            String                       @db.Char(3)
-  active          Boolean                      @default(true)
-  createdAt       DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  defaults        MemberDefaultEmissionPoint[]
-  sequences       FiscalSequence[]
-  invoiceDrafts   InvoiceDraft[]
-  creditDrafts    CreditNoteDraft[]
-  debitDrafts     DebitNoteDraft[]
+  id                String                       @id @default(uuid())
+  companyId         String                       @map("company_id")
+  establishmentId   String                       @map("establishment_id")
+  establishment     Establishment                @relation(fields: [companyId, establishmentId], references: [companyId, id], onDelete: Restrict)
+  code              String                       @db.Char(3)
+  active            Boolean                      @default(true)
+  createdAt         DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  defaults          MemberDefaultEmissionPoint[]
+  sequences         FiscalSequence[]
+  invoiceDrafts     InvoiceDraft[]
+  creditDrafts      CreditNoteDraft[]
+  debitDrafts       DebitNoteDraft[]
+  withholdingDrafts WithholdingReceiptDraft[]
 
   @@unique([establishmentId, code])
   @@unique([companyId, id])
@@ -609,29 +613,32 @@ model CompanyFiscalCatalogSetting {
 // empresa, tipo y número. El consumidor final es un registro del sistema (`system_record`), uno por
 // empresa, inmutable y obligatorio; lo garantizan los CHECK y triggers de la migración.
 model Party {
-  id                   String         @id @default(uuid())
-  companyId            String         @map("company_id")
-  company              Organization   @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  identificationType   String         @map("identification_type") @db.Char(2)
-  identification       String         @db.VarChar(20)
-  legalName            String         @map("legal_name") @db.VarChar(300)
-  address              String?        @db.VarChar(300)
-  email                String?        @db.VarChar(300)
-  phone                String?        @db.VarChar(50)
-  roles                String[]       @default([])
-  status               String         @default("ACTIVE")
-  systemRecord         String?        @map("system_record")
-  version              Int            @default(1)
-  searchName           String         @map("search_name")
+  id                   String                    @id @default(uuid())
+  companyId            String                    @map("company_id")
+  company              Organization              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  identificationType   String                    @map("identification_type") @db.Char(2)
+  identification       String                    @db.VarChar(20)
+  legalName            String                    @map("legal_name") @db.VarChar(300)
+  address              String?                   @db.VarChar(300)
+  email                String?                   @db.VarChar(300)
+  phone                String?                   @db.VarChar(50)
+  roles                String[]                  @default([])
+  status               String                    @default("ACTIVE")
+  systemRecord         String?                   @map("system_record")
+  version              Int                       @default(1)
+  searchName           String                    @map("search_name")
   /// Colación C en la migración: el índice btree sirve para LIKE 'prefijo%' (design D10).
-  searchIdentification String         @map("search_identification")
-  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  createdBy            String?        @map("created_by")
-  creator              User?          @relation("PartyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
-  updatedBy            String?        @map("updated_by")
-  updater              User?          @relation("PartyUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  searchIdentification String                    @map("search_identification")
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy            String?                   @map("created_by")
+  creator              User?                     @relation("PartyCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy            String?                   @map("updated_by")
+  updater              User?                     @relation("PartyUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
   invoiceDrafts        InvoiceDraft[]
+  /// add-withholding-receipts: borradores y comprobantes de retención de este proveedor.
+  withholdingDrafts    WithholdingReceiptDraft[]
+  withholdingReceipts  WithholdingReceipt[]
 
   @@unique([companyId, identificationType, identification])
   // Destino de la referencia del comprador de un borrador, en la misma empresa (add-invoice-emission).
@@ -823,6 +830,9 @@ model ElectronicDocument {
   debitDraft               DebitNoteDraft?           @relation("DebitNoteDraftDocument")
   debitSupport             DebitNoteSupport?         @relation("DebitNoteSupportNote")
   debitNotes               DebitNoteSupport[]        @relation("DebitNoteSupportInvoice")
+  /// add-withholding-receipts: el borrador que emitió esta retención y su registro.
+  withholdingDraft         WithholdingReceiptDraft?  @relation("WithholdingReceiptDraftDocument")
+  withholdingReceipt       WithholdingReceipt?       @relation("WithholdingReceiptDocument")
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@unique([companyId, id])
@@ -1334,4 +1344,88 @@ model DebitNoteSupport {
   @@id([companyId, debitNoteId])
   @@index([companyId, invoiceId])
   @@map("debit_note_support")
+}
+
+// Borrador de comprobante de retención (add-withholding-receipts, design D6 y D28): un documento de
+// trabajo, no fiscal; la verdad del comprobante es su snapshot. Cada campo puede faltar mientras se
+// prepara. Los documentos sustento, con sus impuestos, pagos y retenciones, viven en `supports`
+// (JSONB) validado por el contrato al escribir, con un CHECK de forma y de tamaño como defensa.
+model WithholdingReceiptDraft {
+  id              String              @id @default(uuid())
+  companyId       String              @map("company_id")
+  company         Organization        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  partyId         String?             @map("party_id")
+  party           Party?              @relation(fields: [companyId, partyId], references: [companyId, id], onDelete: Restrict)
+  /// SI o NO, declarado por el usuario (CHECK en la migración); sin valor por defecto.
+  relatedParty    String?             @map("related_party")
+  /// `MM/AAAA` (CHECK en la migración).
+  fiscalPeriod    String?             @map("fiscal_period") @db.Char(7)
+  emissionPointId String?             @map("emission_point_id")
+  emissionPoint   EmissionPoint?      @relation(fields: [companyId, emissionPointId], references: [companyId, id], onDelete: Restrict)
+  supports        Json                @default("[]")
+  /// DRAFT o EMITTED (CHECK en la migración).
+  status          String              @default("DRAFT")
+  documentId      String?             @unique @map("document_id")
+  document        ElectronicDocument? @relation("WithholdingReceiptDraftDocument", fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  version         Int                 @default(1)
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy       String              @map("created_by")
+  creator         User                @relation("WithholdingReceiptDraftCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy       String              @map("updated_by")
+  updater         User                @relation("WithholdingReceiptDraftUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, id])
+  @@unique([companyId, documentId])
+  @@index([companyId, status, updatedAt])
+  @@map("withholding_receipt_draft")
+}
+
+// Registro inmutable de un comprobante de retención (design D28): su proveedor, su período fiscal y
+// la declaración de parte relacionada, para la consulta y los filtros. Un trigger exige que el
+// comprobante sea un 07 de la empresa, y otro, diferido, que un 07 no se confirme sin este registro
+// y al menos una línea.
+model WithholdingReceipt {
+  companyId    String                   @map("company_id")
+  documentId   String                   @map("document_id")
+  document     ElectronicDocument       @relation("WithholdingReceiptDocument", fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  partyId      String                   @map("party_id")
+  party        Party                    @relation(fields: [companyId, partyId], references: [companyId, id], onDelete: Restrict)
+  /// SI o NO, declarado por el usuario (CHECK en la migración).
+  relatedParty String                   @map("related_party")
+  /// `MM/AAAA` (CHECK en la migración).
+  fiscalPeriod String                   @map("fiscal_period") @db.Char(7)
+  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  lines        WithholdingReceiptLine[]
+
+  @@id([companyId, documentId])
+  @@index([companyId, fiscalPeriod])
+  @@index([companyId, partyId])
+  @@map("withholding_receipt")
+}
+
+// Una retención del comprobante (design D28), en su documento sustento: tipo, sustento, número y
+// fecha del documento; impuesto, código de retención, entrada del catálogo, base, porcentaje y valor,
+// con sus CHECK de dominio. Inmutable. Sirve a la consulta, a los filtros y al reporte del cambio 15.
+model WithholdingReceiptLine {
+  companyId           String             @map("company_id")
+  documentId          String             @map("document_id")
+  receipt             WithholdingReceipt @relation(fields: [companyId, documentId], references: [companyId, documentId], onDelete: Restrict)
+  supportPosition     Int                @map("support_position")
+  position            Int
+  /// `01`, `02` o `03` (CHECK en la migración).
+  supportDocumentType String             @map("support_document_type") @db.Char(2)
+  supportCode         String             @map("support_code") @db.Char(2)
+  supportNumber       String             @map("support_number") @db.Char(15)
+  supportIssueDate    DateTime           @map("support_issue_date") @db.Date
+  /// `1` renta o `2` IVA (CHECK en la migración).
+  tax                 String
+  withholdingCode     String             @map("withholding_code")
+  entryKey            String             @map("entry_key")
+  base                Decimal            @db.Decimal
+  percentage          Decimal            @db.Decimal
+  amount              Decimal            @db.Decimal
+
+  @@id([companyId, documentId, supportPosition, position])
+  @@map("withholding_receipt_line")
 }

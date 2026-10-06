@@ -333,6 +333,10 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "stock_return_capacity.original_quantity",
         "stock_return_capacity.reserved_quantity",
         "stock_return_reservation.quantity",
+        // add-withholding-receipts, design D13 y D28: `importe` y `porcentajeRetener`.
+        "withholding_receipt_line.amount",
+        "withholding_receipt_line.base",
+        "withholding_receipt_line.percentage",
       ].map((column) => ({ column, type: "numeric", precision: null, scale: null })),
     );
     expect(await constraints()).toEqual(
@@ -353,6 +357,7 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "stock_return_capacity_values_check",
         "stock_return_reservation_values_check",
         "debit_note_draft_concept_values_check",
+        "withholding_receipt_line_values_check",
       ]),
     );
   });
@@ -644,6 +649,52 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
         "debit_note_support_no_truncate",
         // Trigger de restricción diferido (design D26).
         "debit_note_has_support",
+      ]),
+    );
+  });
+
+  it("crea los borradores, el registro y las líneas de las retenciones con sus restricciones y triggers", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "withholding_receipt_draft_values_check",
+        "withholding_receipt_draft_supports_check",
+        "withholding_receipt_draft_company_id_fkey",
+        "withholding_receipt_draft_company_id_party_id_fkey",
+        "withholding_receipt_draft_company_id_emission_point_id_fkey",
+        "withholding_receipt_draft_company_id_document_id_fkey",
+        "withholding_receipt_draft_created_by_fkey",
+        "withholding_receipt_draft_updated_by_fkey",
+        "withholding_receipt_values_check",
+        "withholding_receipt_company_id_document_id_fkey",
+        "withholding_receipt_company_id_party_id_fkey",
+        "withholding_receipt_line_values_check",
+        "withholding_receipt_line_company_id_document_id_fkey",
+        "idempotency_record_values_check",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "withholding_receipt_draft_pkey",
+        "withholding_receipt_draft_document_id_key",
+        "withholding_receipt_draft_company_id_id_key",
+        "withholding_receipt_draft_company_id_document_id_key",
+        "withholding_receipt_draft_company_id_status_updated_at_idx",
+        "withholding_receipt_pkey",
+        "withholding_receipt_company_id_fiscal_period_idx",
+        "withholding_receipt_company_id_party_id_idx",
+        "withholding_receipt_line_pkey",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "withholding_receipt_draft_guard",
+        "withholding_receipt_origin",
+        "withholding_receipt_immutable",
+        "withholding_receipt_no_truncate",
+        "withholding_receipt_line_immutable",
+        "withholding_receipt_line_no_truncate",
+        // Trigger de restricción diferido (design D28).
+        "withholding_receipt_complete",
       ]),
     );
   });
