@@ -32,6 +32,8 @@ El sistema SHALL ofrecer a todas las empresas los catálogos fiscales oficiales 
 ### Requirement: Habilitación de entradas por empresa
 El sistema SHALL permitir que un administrador habilite o deshabilite para su empresa las tarifas de IVA, los códigos de ICE e IRBPNR, las formas de pago, los códigos de retención del IVA y los conceptos de retención de la renta. Sin una decisión de la empresa rige el valor por defecto de cada catálogo: habilitadas las tarifas de IVA, las formas de pago y los catálogos de retención, deshabilitados ICE e IRBPNR. Una entrada solo es utilizable si está habilitada y vigente. La habilitación no cambia los datos oficiales.
 
+En los catálogos de retención solo se habilitan o deshabilitan las entradas soportadas: los conceptos de la renta clasificados como soportados para residentes con porcentaje fijo (`SUPPORTED_FIXED_RESIDENT`) y los códigos de retención del IVA clasificados como soportados (`SUPPORTED_FIXED`), entre ellos el código 7, que representa explícitamente una retención en cero. Habilitar o deshabilitar una entrada fuera de alcance (`OUT_OF_SCOPE_NON_RESIDENT`, `OUT_OF_SCOPE_VARIABLE`, `OUT_OF_SCOPE_SPECIAL_STRUCTURE` u `OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION`, como el código 8 de no procede retención) se rechaza siempre con el mismo motivo y no registra ninguna decisión. La entrada sigue en el catálogo para su trazabilidad y no puede usarse en una retención.
+
 #### Scenario: Deshabilitar una tarifa
 - **WHEN** un administrador deshabilita la tarifa de IVA del 14 %
 - **THEN** esa tarifa figura como deshabilitada para su empresa y su entrada oficial no cambia
@@ -71,6 +73,18 @@ El sistema SHALL permitir que un administrador habilite o deshabilite para su em
 #### Scenario: Deshabilitar un concepto de retención
 - **WHEN** un administrador deshabilita el concepto de renta 303 para su empresa
 - **THEN** el concepto deja de ofrecerse en sus retenciones y su entrada oficial no cambia
+
+#### Scenario: Habilitar un concepto de renta fuera de alcance
+- **WHEN** un administrador intenta habilitar un concepto de renta clasificado fuera de alcance por no residente, por porcentaje variable, por estructura especial excluida o por representación ambigua
+- **THEN** el sistema rechaza cada solicitud con el mismo motivo, no registra ninguna decisión y el concepto sigue en el catálogo sin poder usarse
+
+#### Scenario: Habilitar el código 8 de retención del IVA
+- **WHEN** un administrador intenta habilitar el código 8 de no procede retención
+- **THEN** el sistema rechaza la solicitud, no registra ninguna decisión y el código sigue en el catálogo sin poder seleccionarse para una retención
+
+#### Scenario: Habilitar el código 7 de retención del IVA
+- **WHEN** un administrador deshabilita el código 7 de retención en cero y lo vuelve a habilitar
+- **THEN** el código queda habilitado para su empresa y una retención con él lleva el 0 % y un valor retenido de 0.00
 
 ## ADDED Requirements
 

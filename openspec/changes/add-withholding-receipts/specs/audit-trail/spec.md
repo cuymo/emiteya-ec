@@ -36,7 +36,7 @@ El sistema SHALL registrar un evento cuando un administrador pide la reconciliac
 ## ADDED Requirements
 
 ### Requirement: Auditoría de la emisión de comprobantes de retención
-El sistema SHALL registrar un evento cuando un comprobante de retención queda reservado, cuando queda firmado y cuando comienza un reintento de firma válido. El de reserva lleva el comprobante, su número, su clave, el ambiente, el total retenido, el sujeto retenido, el período fiscal, la declaración de parte relacionada y el número de documentos sustento y de retenciones con sus impuestos. Ninguno lleva el XML, la respuesta del SRI ni secretos.
+El sistema SHALL registrar un evento cuando un comprobante de retención queda reservado, cuando queda firmado y cuando comienza un reintento de firma válido. El de reserva lleva el comprobante, su número, su clave, el ambiente, el total retenido, el sujeto retenido, el período fiscal, la declaración de parte relacionada y el número de documentos sustento y de retenciones con sus impuestos; el del reintento, el comprobante, su número y su resultado. Un reintento que no inicia un intento, porque el comprobante ya está firmado u otro intento está en curso, no genera evento. Ninguno lleva el XML, la respuesta del SRI ni secretos.
 
 #### Scenario: Retención reservada y firmada
 - **WHEN** un usuario emite un comprobante de retención que llega a firmado

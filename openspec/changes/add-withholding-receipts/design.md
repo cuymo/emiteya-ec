@@ -56,7 +56,7 @@
 | Catálogos | Tipos nuevos en `catalogs` con sus datasets y su resolución vigente (D7 a D11) |
 | Por tipo | Borrador, evaluación, cálculo, snapshot, builder XML, distribución del RIDE, rutas y pantallas |
 
-- **Regresión protegida:** el contrato de la factura y los golden del XML y del RIDE de la factura y de las notas pasan sin cambios. Las únicas ediciones compartidas son las tablas por tipo y los catálogos.
+- **Regresión protegida:** el contrato de la factura y los golden del XML y del RIDE de la factura y de las notas pasan sin cambios. Las únicas ediciones compartidas son las tablas por tipo, los catálogos y dos utilidades que la retención necesita sin importar `invoices` (D1): el diagnóstico compartido de la firma (`fiscal/application/signing-diagnostics.ts`) y el motivo de una transmisión detenida (`fiscal/application/transmission-messages.ts`), que pasan a `fiscal` sin cambiar su comportamiento; `invoices` los reexporta para la factura y las notas.
 - **Alternativa descartada:** un `switch` por `codDoc` en la firma o en la transmisión; las interfaces por tipo ya cubren la diferencia.
 
 ### D3. Sujeto retenido
@@ -181,7 +181,8 @@
   - `allowed_support_codes`, los sustentos de un tipo de documento.
 - **Habilitación:** `withholding-iva-code` y `withholding-income-concept` son habilitables, habilitados por defecto (ERS RF-234, "catálogos configurados/vigentes"; BR-40). Los demás no son habilitables.
   - Una entrada es utilizable si está soportada, vigente y habilitada.
-  - Habilitar o deshabilitar una entrada fuera de alcance se rechaza (`CATALOG_ENTRY_NOT_SELECTABLE`), para no mostrar un estado que no tiene efecto.
+  - Solo se habilitan o deshabilitan las entradas soportadas: en la renta, `SUPPORTED_FIXED_RESIDENT`; en el IVA, `SUPPORTED_FIXED`, incluido el código 7 de retención en cero.
+  - Habilitar o deshabilitar una entrada fuera de alcance (`OUT_OF_SCOPE_NON_RESIDENT`, `OUT_OF_SCOPE_VARIABLE`, `OUT_OF_SCOPE_SPECIAL_STRUCTURE` u `OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION`, como el código 8) se rechaza siempre con `400 CATALOG_ENTRY_NOT_SELECTABLE` y no registra ninguna decisión, para no mostrar un estado que no tiene efecto. La entrada sigue en el dataset para su trazabilidad.
 - **Sin sincronización:** los datasets se distribuyen con el producto y se aplican al arrancar, como los demás.
 - **Evidencia durable:** el apply archiva en `docs/product/sri-catalogs/fuentes/` un extracto normalizado del Catálogo ATS, suficiente para reproducir el comportamiento implementado.
   - **Procedencia:** la URL oficial, la fecha de actualización publicada (06/08/2026), el SHA-256 del archivo descargado (`bd3f7834…`) y el método de extracción.
@@ -339,7 +340,7 @@ Después de `RESERVED`, la verdad fiscal del comprobante es su snapshot. Guarda:
 ### D20. Bandeja y frontend compartido
 
 - `EMITTED_DOCUMENT_TYPES = ["01", "04", "05", "07"]` y `DOCUMENT_KINDS["07"]`:
-  - nombre "comprobante de retención";
+  - nombre "retención" en las frases de las secciones compartidas, que lo concuerdan en femenino ("la retención", "firmada", "autorizada"); el filtro y la etiqueta del tipo dicen "Comprobante de retención" (`DOCUMENT_TYPE_LABELS`);
   - `/retenciones` y `/withholding-receipts`;
   - `withholdings.reconcile` y `WITHHOLDING_NOT_RECONCILABLE`;
   - sus esquemas de vista y de transmisión.
@@ -418,12 +419,12 @@ Después de `RESERVED`, la verdad fiscal del comprobante es su snapshot. Guarda:
     2. la parte relacionada, con un `SegmentedControl` SI/NO sin selección inicial, porque se declara;
     3. el período, con un selector de mes y año que propone el mes de emisión, y un aviso visible cuando difiere;
     4. los documentos: una lista ordenada con agregar y quitar, tarjetas en pantallas angostas; por documento, el tipo con un `SegmentedControl` de tres opciones, el sustento con un `Select` filtrado por el tipo, el número con máscara `001-001-000000001`, la fecha con `DatePickerField` y la autorización opcional;
-    5. los totales, los impuestos (tarifa con un `Select`, base y valor) y los pagos (forma de pago con un `Select` y total) de cada documento;
+    5. los totales, los impuestos (el código de porcentaje con un `Select` para IVA e IRBPNR y con el combobox con búsqueda para los 75 códigos de ICE, que superan el máximo de opciones de un `Select`; base y valor) y los pagos (forma de pago con un `Select` y total) de cada documento;
     6. las retenciones de cada documento: el impuesto con un `SegmentedControl` renta/IVA; el concepto de renta con un combobox con búsqueda (59 opciones con denominaciones largas) y el código de IVA con un `Select`; la base;
     7. la vista previa del servidor del borrador guardado, con el porcentaje y el valor de cada retención en solo lectura y los problemas junto a su documento y su retención;
     8. emitir.
   - El porcentaje y el valor retenido nunca son campos editables. La interfaz muestra los del servidor, y el código 7 con su nota oficial.
-  - **Emisión:** un `ConfirmDialog` con el resumen: proveedor, período (resaltado si difiere del mes de emisión), parte relacionada, documentos y total retenido. La `Idempotency-Key` nace en la confirmación y se repite en el reintento de la misma versión.
+  - **Emisión:** un `ConfirmDialog` con el resumen: proveedor, período (resaltado si difiere del mes de emisión), parte relacionada, documentos y total retenido. Si el período guardado difiere del mes de emisión, el diálogo pide además una casilla que lo confirma: el aviso de la vista previa no bloquea, y la confirmación lo hace explícito antes de reservar. La `Idempotency-Key` nace en la confirmación y se repite en el reintento de la misma versión.
 - **Detalle** (`/retenciones/{id}`): estado, proveedor, período, parte relacionada "declarada por" el usuario, documentos con sus impuestos, pagos y retenciones, total retenido, diagnóstico y reintento de firma, transmisión y documentos.
   - Brief: el objetivo es confirmar que la retención quedó autorizada y entregar sus documentos. La decisión es si reintentar la firma o pedir la reconciliación (administrador). Acción principal: descargar el RIDE de una retención autorizada, o reintentar la firma de una reservada.
   - P0 estado, número y total retenido; P1 proveedor, período y retenciones por documento; P2 impuestos y pagos de cada documento, declaración, transmisión y documentos; P3 identificadores y hashes, que no se muestran.
