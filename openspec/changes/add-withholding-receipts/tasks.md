@@ -3,10 +3,11 @@
 ## 1. Fuentes y catálogos de retención
 
 - [ ] 1.1 Archivar en `docs/product/sri-catalogs/fuentes/` (design D11):
-  - los extractos literales del Catálogo ATS oficial: la tabla 3.10, con el bloque "DESDE 06/AGOSTO/2026" completo y las filas fuera de alcance, y las tablas 4, 5, 11 y 13;
-  - el extracto de las tablas 19 y 20 de la ficha v2.34 (páginas 32 y 33).
+  - el extracto normalizado del Catálogo ATS oficial, con la URL, la fecha de actualización (06/08/2026), el SHA-256 del archivo (`bd3f7834…`) y el método de extracción;
+  - en ese extracto, por cada tabla usada (la 3.10 con el bloque "DESDE 06/AGOSTO/2026" completo, y las tablas 4, 5, 11 y 13): la hoja y la sección de origen, las filas y los campos relevantes con los códigos RAW (incluidos `323 M` y los numéricos `1.0`), la transformación aplicada, la clasificación del MVP y las cantidades de filas de entrada y de salida;
+  - el extracto de las tablas 19 y 20 de la ficha v2.34 (páginas 32 y 33, SHA-256 `7333aebf…`).
 
-  Cada extracto lleva la URL, la fecha de actualización publicada, el SHA-256 del archivo (`bd3f7834…` y `7333aebf…`) y el método de extracción. El `.xls` no entra al repositorio ni es una dependencia de ejecución. Verificar que cada extracto cita su URL y su SHA-256, y actualizar `sri-catalogs/README.md` con las fuentes nuevas
+  El `.xls` no entra al repositorio ni es una dependencia de ejecución. Verificar que cada extracto cita su URL y su SHA-256 y permite auditar la derivación, y actualizar `sri-catalogs/README.md` con las fuentes nuevas
 - [ ] 1.2 Crear la migración de los catálogos (design D11 y D28):
   - los tipos nuevos en los `CHECK` de `catalog_type`;
   - el `CHECK` de `code` por catálogo, con el código literal de la renta;
@@ -15,10 +16,10 @@
   Verificar con `migrations.test.ts` sin deriva, con pruebas del esquema que rechazan una clasificación inválida, un código fuera de su formato y atributos de otro catálogo, y con los catálogos existentes sin cambios
 - [ ] 1.3 Agregar los tipos `withholding-tax`, `withholding-iva-code`, `withholding-income-concept`, `support-document-type` y `support-code` a `FISCAL_CATALOG_TYPES`, con sus esquemas de dataset estrictos, sus datasets versión 1 transcritos de los extractos y su carga (design D7 a D10). Verificar con:
   - pruebas de datos que contrastan cada entrada con su extracto, como `ice-dataset-review.test.ts`;
-  - la clasificación de la renta (43 no residentes, 14 variables, 7 de estructura especial, 4 de representación ambigua y 59 soportados), con la cantidad soportada derivada del dataset y sin ninguna constante con ese número;
-  - el código 8 de IVA fuera de alcance y el 7 soportado;
-  - la compatibilidad tabla 4–tabla 5 (la nota de venta sin el sustento 01) y la vigencia cerrada del sustento 00;
-  - la igualdad de las formas de pago vigentes de la tabla 13 con el catálogo `payment-method`;
+  - la derivación de la renta reproducida desde el extracto por las reglas de design D7 (127 filas → 43 no residentes, 14 variables, 7 de estructura especial, 4 de representación ambigua con su código RAW → 59 soportados) y comparada con el dataset, sin ninguna constante con ese número ni una lista manual de soportados;
+  - el código 8 de IVA conservado y fuera de alcance, y el 7 soportado con 0 %;
+  - la compatibilidad tabla 4–tabla 5 (la nota de venta sin el sustento 01), la vigencia cerrada del sustento 00 y los tipos `"01"`, `"02"` y `"03"` como códigos de dos caracteres;
+  - el test de contrato de equivalencia de design D6: el conjunto vigente de la tabla 13 del extracto y el de `payment-method`, iguales en códigos y denominaciones normalizadas para fechas desde el 01/09/2016, con las diferencias históricas documentadas;
   - arranques repetidos sin cambios y un dataset alterado que impide arrancar
 - [ ] 1.4 Extender la resolución y la habilitación de `catalogs` (design D11 y D12): utilizable si está soportada, vigente y habilitada; habilitables y habilitados por defecto `withholding-iva-code` y `withholding-income-concept`; habilitar o deshabilitar una entrada fuera de alcance rechazado con `CATALOG_ENTRY_NOT_SELECTABLE`; consulta con la clasificación, el texto literal y los sustentos admitidos. Verificar con pruebas de integración de la resolución por fecha, de la habilitación por empresa y su aislamiento, del `403` del operador y de la consulta de la API, y documentar los catálogos nuevos en `fiscal-catalogs` de `docs/architecture/` y en `glossary.md`
 
@@ -50,6 +51,7 @@
   - un porcentaje, una denominación o un valor retenido en el cuerpo;
   - un `companyId` o campos del exterior, de reembolso o de dividendos;
   - un período fuera de `MM/AAAA`, un número de documento que no tiene 15 dígitos y una autorización que no tiene 10, 37 o 49;
+  - un tipo de documento como número (`1`) o fuera de `"01"`, `"02"` y `"03"`; un impuesto del documento fuera de 2, 3 y 5; una tarifa enviada para el IVA; una retención de impuesto 3, 5 o 6;
   - una base como número, con 3 decimales o en cero;
   - más elementos que los máximos absolutos
 - [ ] 3.2 Añadir `withholdings.read`, `withholdings.draft`, `withholdings.emit` y `withholdings.retrySigning` para ADMIN y OPERATOR, y `withholdings.reconcile` solo para ADMIN, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D22). Verificar con `access-policy.test.ts`, la prueba de espejo y la prueba de documentación de la matriz
@@ -66,11 +68,11 @@
   Documentar el dominio en `decimal-policy.md` y el cálculo en `fiscal-emission.md`, citando la función y su versión
 - [ ] 4.2 Implementar la evaluación en el orden de design D15 y la vista previa pura (design D3 a D6, D8, D9 y D12):
   - sujeto, parte relacionada y período (con el aviso de período distinto del mes de emisión);
-  - documentos con tipo, sustento compatible, número, fecha, autorización, totales, impuestos y pagos;
+  - documentos con tipo, sustento compatible, número, fecha, autorización y totales; impuestos de IVA, ICE e IRBPNR con su código de porcentaje vigente en la fecha del documento y la tarifa del catálogo (IVA) o declarada (ICE e IRBPNR); y pagos utilizables;
   - retenciones con impuesto, entrada soportada, vigente y habilitada, y base;
   - límites y contribuyente especial compatible.
 
-  Verificar con pruebas unitarias: cada rechazo con su código y la posición del documento y de la retención; consumidor final citando la ficha; identificación del exterior; tercero sin rol de proveedor; período futuro; concepto variable, de no residente, de dividendos y de código ambiguo; código 8 de IVA; ISD; fecha del sustento posterior a la emisión; importes declarados sin comparaciones entre ellos
+  Verificar con pruebas unitarias: cada rechazo con su código y la posición del documento y de la retención; consumidor final citando la ficha; identificación del exterior; tercero sin rol de proveedor; período futuro; concepto variable, de no residente, de dividendos y de código ambiguo; código 8 de IVA; ISD; fecha del sustento posterior a la emisión; código de porcentaje de ICE no vigente en la fecha del documento; IVA diferenciado; importes declarados sin comparaciones ni recálculos; ninguna retención de código 7 u 8 creada sin que el usuario la elija
 - [ ] 4.3 Implementar el snapshot autosuficiente de design D14 y su construcción. Verificar con pruebas unitarias que guarda el sujeto, `relatedParty` como `USER_DECLARED` (nunca `SYSTEM_VERIFIED`), el período, cada documento con sus impuestos, pagos y retenciones anidadas con sus referencias de catálogo, la versión del cálculo y el total retenido
 
 ## 5. XML del comprobante de retención
@@ -79,7 +81,9 @@
   - un documento con renta;
   - renta e IVA;
   - varios documentos con varias retenciones anidadas;
-  - retención en cero;
+  - retención en cero con el código 7 explícito y el valor 0.00;
+  - sustento solo con IVA, con IVA e ICE, con IRBPNR y con varias entradas tributarias;
+  - `<codDocSustento>01</codDocSustento>`, `<codDocSustento>02</codDocSustento>` y `<codDocSustento>03</codDocSustento>` literales;
   - sujeto con caracteres especiales;
   - sustento con y sin autorización;
   - `pagoLocExt` 01 y sin los elementos que el sistema no escribe.
@@ -131,6 +135,7 @@
 
 - [ ] 10.1 Implementar la lectura `comprobanteRetencion` 2.0.0 con su lista blanca y el modelo `RideWithholdingReceipt`, la distribución de la ficha v2.34 (anexo 2, página 63) con el renderer `retencion-1`, las denominaciones desde el snapshot y la selección por raíz y versión sin duplicar el pool (design D19). Verificar con golden propios:
   - texto de las páginas con una fila por retención y los datos de su documento;
+  - el bloque adicional con los impuestos declarados de cada documento (IVA, ICE e IRBPNR);
   - varios documentos y varias retenciones;
   - paginación con el máximo de filas;
   - lectura del Code128 con la clave de la retención;
@@ -167,7 +172,7 @@
 
 ## 13. Rendimiento y prueba end-to-end
 
-- [ ] 13.1 Añadir `bench:withholding-receipts` en `backend/scripts/` (design D27), con el barrido del RIDE apagado, y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 donde aplica, que el RIDE tarda menos de 1 s, que la transacción de la reserva no incluye XML, firma ni red, y que el tamaño firmado del peor caso confirma los valores por defecto de design D25 (o ajustarlos con `/opsx:update`)
+- [ ] 13.1 Añadir `bench:withholding-receipts` en `backend/scripts/` (design D27), con el barrido del RIDE apagado, y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005 donde aplica, que el RIDE tarda menos de 1 s, que la transacción de la reserva no incluye XML, firma ni red, y que el CPU, la memoria y la latencia del peor caso confirman los valores por defecto de design D25 (o ajustarlos con `/opsx:update`). Registrar el tamaño del XML firmado del peor caso solo como medición, sin relacionarlo con Q-47
 - [ ] 13.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado: una retención de renta e IVA sobre dos facturas de un proveedor, autorizada y con su RIDE en la bandeja; otra no autorizada; y el inventario y las facturas sin cambios. Verificar que la prueba pasa
 
 ## 14. Verificación

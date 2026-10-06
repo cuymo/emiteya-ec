@@ -20,20 +20,21 @@ de `capabilities.md`; Q-50 está resuelta y el XSD 2.0.0 se verificó contra el 
   - si difiere del mes de emisión, se muestra antes de emitir y nunca se corrige.
 - **Uno o más documentos sustento** por comprobante, como referencias estructuradas externas que el usuario declara:
   - tipos `01` factura, `02` nota de venta y `03` liquidación de compra (política del MVP);
-  - cada uno con su código de sustento compatible según el Catálogo ATS, su número, su fecha, su autorización cuando corresponda, sus totales, sus impuestos de IVA y sus formas de pago.
+  - cada uno con su tipo como código fiscal de dos caracteres (`01`, `02`, `03`), su código de sustento compatible según el Catálogo ATS, su número, su fecha, su autorización cuando corresponda, sus totales, sus impuestos (IVA, ICE e IRBPNR, como información tributaria declarada del documento) y sus formas de pago.
 
   El sistema no verifica su existencia ni crea facturas recibidas, compras ni cuentas por pagar.
 - **Retenciones por documento sustento**, anidadas como en el esquema ATS: renta e IVA.
   - **Renta:** solo los conceptos para pagos a residentes con porcentaje numérico fijo del Catálogo ATS, vigentes en la fecha de emisión y fuera de las estructuras excluidas. El dataset oficial del 06/08/2026 da 59 seleccionables de 127 (design D7); el número sale del dataset, no del código.
-  - **IVA:** los códigos de la tabla 20 de la ficha con porcentaje fijo; "no procede retención" no es seleccionable porque la fuente no define su semántica dentro del comprobante (design D8).
+  - **IVA:** los códigos de la tabla 20 de la ficha con porcentaje fijo, incluido el 7 de retención en cero, que produce una retención explícita de valor 0.00; el 8, "no procede retención", se conserva en el catálogo pero no es seleccionable porque la fuente no define su semántica dentro del comprobante (design D8).
+  - ICE e IRBPNR solo aparecen como impuestos declarados del documento sustento: no se retienen.
   - El usuario elige el concepto y escribe la base. El servidor resuelve el código, la denominación, el porcentaje y su vigencia con la fecha de emisión, y calcula el valor retenido con un solo cálculo versionado. El cálculo es decimal exacto con HALF_UP a 2 decimales, el mismo para la vista previa, el snapshot, el XML y el RIDE.
 - **Catálogos versionados** en `fiscal-catalogs`, sin sincronización en tiempo de ejecución:
   - impuestos a retener (tabla 19) y retención del IVA (tabla 20) de la ficha v2.34;
   - conceptos de la renta del Catálogo ATS, completos, cada uno con su clasificación de alcance;
   - tipos de documento sustento y códigos de sustento del Catálogo ATS, con su compatibilidad.
 
-  El Catálogo ATS oficial se archiva con su URL y su SHA-256.
-- **Límites de recursos configurables** para documentos sustento, retenciones, impuestos y pagos por documento: son defensas del producto, no límites del SRI. Sus valores por defecto se justifican con el tamaño del XML firmado y el benchmark.
+  Los impuestos del sustento y sus formas de pago reutilizan los catálogos existentes (`tax`, `iva-rate`, `ice-rate`, `irbpnr-rate` y `payment-method`, este último equivalente a la tabla 13 del ATS, comprobado). El Catálogo ATS oficial se archiva como extracto normalizado con su URL, su fecha, su SHA-256 y la derivación de cada dataset.
+- **Límites de recursos configurables** para documentos sustento, retenciones, impuestos y pagos por documento: son defensas del producto, no límites del SRI, y no tienen relación con el límite de tamaño del envío (Q-47 sigue abierta y la transmisión real sigue cerrada). Sus valores por defecto se confirman con el benchmark de CPU, memoria y latencia.
 - **Pipeline compartido:** reserva, firma, firmador, transmisión SOAP, cola, máquina de estados, reconciliación, bandeja, descargas y RIDE. La factura y las notas de crédito y de débito no cambian, byte a byte.
 - **RIDE propio** con la distribución oficial (ficha v2.34, anexo 2, página 63), con una fila por retención y los datos de su documento sustento. La bandeja trata los tipos 01, 04, 05 y 07.
 - **Pantallas:** Retenciones, con lista, borrador con vista previa y detalle con transmisión y documentos; la retención en Comprobantes.
@@ -45,7 +46,8 @@ de `capabilities.md`; Q-50 está resuelta y el XSD 2.0.0 se verificó contra el 
 - Pagos al exterior, identificación del exterior, convenios de doble tributación y `tipoSujetoRetenido` (`withholding-foreign-payments`).
 - Reembolsos, dividendos, compra de cajas de banano y autorretenciones (`withholding-special-supports`).
 - Conceptos de renta con porcentaje variable, textual, por rango, por mil o dependiente de convenio (`withholding-variable-rate-concepts`), y los de no residentes.
-- Documentos sustento distintos de 01, 02 y 03, sus impuestos de ICE o IRBPNR, y la asociación interna con una liquidación propia, que llegará con `add-purchase-settlements` sin cambiar la representación fiscal guardada.
+- Retenciones de ICE o IRBPNR, documentos sustento distintos de 01, 02 y 03, y la asociación interna con una liquidación propia, que llegará con `add-purchase-settlements` sin cambiar la representación fiscal guardada.
+- Los conceptos de renta `323 M`, `323 N`, `323 O` y `323 P`, cuya representación exacta del código la fuente no establece: pendientes de evidencia y de soporte futuro.
 - Compras, cuentas por pagar, ATS y declaraciones (ERS §2.3).
 - Corrección de una retención devuelta (`correct-returned-document`) y anulación (`cancellation-observation`, Q-16).
 - Información adicional, máquina fiscal y fecha de registro contable en el XML.

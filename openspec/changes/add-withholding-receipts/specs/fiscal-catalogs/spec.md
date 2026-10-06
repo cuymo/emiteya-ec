@@ -87,15 +87,15 @@ Cada concepto de retención de la renta y cada código de retención del IVA SHA
 
 #### Scenario: Código publicado con un espacio
 - **WHEN** un usuario consulta un concepto cuyo código la fuente publica con un espacio interno, como `323 M`
-- **THEN** lo ve con el código literal de la fuente, clasificado fuera de alcance por representación ambigua
+- **THEN** lo ve con el código literal de la fuente, con el espacio, clasificado fuera de alcance por representación ambigua, pendiente de evidencia y de soporte futuro
 
 #### Scenario: Retención del IVA que no procede
 - **WHEN** un usuario consulta el código 8 de retención del IVA, "no procede retención"
 - **THEN** lo ve con su porcentaje 0 % y su denominación, clasificado fuera de alcance porque la fuente no define su representación en el comprobante
 
 #### Scenario: Cantidad de conceptos soportados
-- **WHEN** se instala la versión del catálogo de la renta del Catálogo ATS del 06/08/2026
-- **THEN** la cantidad de conceptos soportados es la que resulta de su clasificación, sin un número fijado en el sistema
+- **WHEN** se instala la versión del catálogo de la renta del Catálogo ATS del 06/08/2026, con sus 127 filas
+- **THEN** la cantidad de conceptos soportados es la que resulta de aplicar las reglas de clasificación a esas filas, sin un número fijado en el sistema
 
 ### Requirement: Compatibilidad del sustento con el tipo de documento
 El catálogo de tipos de documento sustento SHALL indicar, para cada tipo, los códigos de sustento que admite según el Catálogo ATS, y el catálogo de códigos de sustento su vigencia. Un código de sustento solo es utilizable con un tipo que lo admite y en su vigencia.

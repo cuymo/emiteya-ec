@@ -99,11 +99,18 @@
   - número `^[0-9]{15}$`; autorización con exactamente 10, 37 o 49 dígitos (ficha v2.34, anexo 10);
   - fecha real y no posterior a la fecha de emisión de la retención: el artículo 8 ordena emitir la retención al pagar o acreditar un comprobante de venta ya presentado (validación del proyecto);
   - totales en el dominio `importe` (14 dígitos, 2 decimales, mayores o iguales a cero).
-- **Impuestos del documento:** solo IVA (`codImpuestoDocSustento` 2) en el MVP; ICE e IRBPNR quedan fuera.
-  - Cada impuesto elige una entrada de `iva-rate` vigente en la fecha del documento sustento: es la tarifa del comprobante del proveedor, como en BR-33. No pasa por la habilitación de la empresa, porque describe el documento de otro.
-  - La tarifa escrita es el porcentaje de la entrada, o 0 para no objeto y exento, como en la factura. El IVA diferenciado, sin porcentaje, se rechaza.
-  - La base y el valor del impuesto se transcriben, en el dominio `importe`.
-- **Pagos del documento:** cada uno elige una forma de pago utilizable para la empresa en la fecha de emisión (el pago lo hace la empresa), con el resolver de `catalogs`, y declara su total. El anexo 10 remite a la tabla 13 del Catálogo ATS; sus formas vigentes (01 y 15 a 21) son las mismas del catálogo `payment-method`, y una prueba de datos lo comprueba.
+- **Impuestos del documento:** IVA (2), ICE (3) e IRBPNR (5). `codImpuestoDocSustento` remite a la tabla general de impuestos, que es exactamente el catálogo `tax` (2, 3 y 5; patrón `[235]` del XSD). Son información tributaria declarada del documento externo: no amplían los impuestos que se retienen, que siguen siendo renta e IVA (D9).
+  - El código de porcentaje es una entrada de `iva-rate`, `ice-rate` o `irbpnr-rate` según el impuesto, vigente en la fecha del documento sustento. Es el impuesto del comprobante del proveedor, como en BR-33, así que no pasa por la habilitación de la empresa (ICE e IRBPNR están deshabilitados por defecto para sus propias facturas).
+  - **Tarifa:** la del IVA sale del catálogo (su porcentaje, o 0 para no objeto y exento, como en la factura), y el IVA diferenciado, sin porcentaje, se rechaza. La de ICE e IRBPNR la declara el usuario, porque esos catálogos no publican tarifas (requisito "Semántica de cada impuesto" de `fiscal-catalogs`). Va en el dominio `tarifa` del XSD de la retención (3 dígitos, 2 decimales, mayor o igual a cero).
+  - La base y el valor del impuesto se transcriben, en el dominio `importe`, y nunca se recalculan ni se corrigen.
+  - El snapshot, el XML y el RIDE conservan todas las entradas en su orden.
+- **Pagos del documento:** cada uno elige una forma de pago utilizable para la empresa en la fecha de emisión (el pago lo hace la empresa), con el resolver de `catalogs`, y declara su total.
+  - **Equivalencia comprobada:** `formapago` remite a la tabla 13 del Catálogo ATS. Comparada con el catálogo `payment-method` (ficha v2.34, tabla 24), para toda fecha desde el 01/09/2016 las dos tienen los mismos códigos vigentes (01, 15, 16, 17, 18, 19, 20 y 21) con la misma semántica.
+  - **Diferencias, todas históricas:**
+    - el ATS conserva los códigos 02 a 14, cerrados el 31/08/2016;
+    - para 16, 17 y 18 el ATS declara inicio el 01/05/2016 y la ficha el 01/06/2016;
+    - la denominación del 20 difiere solo en una tilde ("UTILIZACION" frente a "UTILIZACIÓN").
+  - La fecha de emisión es la de la reserva (D12), siempre posterior al 01/09/2016, así que ninguna diferencia alcanza a una retención. Se reutiliza `payment-method` sin duplicar el catálogo. Un test de contrato contrasta, contra el extracto archivado de la tabla 13, el conjunto vigente de cada catálogo en fechas desde el 01/09/2016, con sus denominaciones normalizadas.
 - **Sin comparaciones entre importes:** el sistema no suma impuestos ni pagos contra los totales, ni compara la base de una retención con su documento. Son datos declarados y ninguna fuente archivada fija esas relaciones; la certificación en Pruebas (S-3) confirmará si el SRI valida alguna.
 - **No es un registro de compras:** los documentos viven solo dentro del borrador y del comprobante. No hay facturas recibidas, cuentas por pagar ni verificación contra el SRI. `add-purchase-settlements` podrá asociar una liquidación propia a un sustento `03` con un identificador interno opcional, sin cambiar los datos fiscales guardados.
 
@@ -123,10 +130,12 @@
   | `OUT_OF_SCOPE_NON_RESIDENT` | Módulo "CÓDIGOS PARA PAGOS A NO RESIDENTE" | 43 |
   | `OUT_OF_SCOPE_VARIABLE` | El porcentaje de la fuente no es un número: texto, rango, "varios porcentajes", por mil o según convenio | 14 |
   | `OUT_OF_SCOPE_SPECIAL_STRUCTURE` | Residente con porcentaje fijo que exige una estructura excluida por Q-50: banano (340, entre los códigos que el anexo 10 asocia a `compraCajBanano`), dividendos (325, 3250, 328, 329 y 331, de sustento 10 y bloque `dividendos`) y pago al exterior (332H) | 7 |
-  | `OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION` | El código lleva un espacio interno en la fuente (`323 M`, `323 N`, `323 O`, `323 P`); la fuente no establece si el `codigoRetencion` del XML lo conserva | 4 |
+  | `OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION` | El código lleva un espacio interno en la fuente (`323 M`, `323 N`, `323 O`, `323 P`); la fuente no establece si el `codigoRetencion` del XML lo conserva. Pendiente de evidencia y de soporte futuro; se conserva el código RAW con el espacio | 4 |
   | `SUPPORTED_FIXED_RESIDENT` | El resto: residente, porcentaje numérico fijo, sin estructura excluida | 59 |
 
-- **Cantidad soportada:** 59 de 127. No hay ninguna constante con ese número: sale de contar la clasificación del dataset, y una prueba lo fija para esta versión del dataset.
+- **Cantidad soportada:** 59 de 127. No hay ninguna constante con ese número ni una lista manual de soportados.
+  - Las reglas se aplican sobre el extracto normalizado (D11): módulo, celda del porcentaje y código RAW, más la lista razonada de estructura especial, cuyos códigos provienen de la fuente o de su denominación oficial.
+  - Una prueba reproduce la derivación desde el extracto (127 filas, 43, 14, 7, 4 y 59) y la compara con el dataset.
 - **Bloques anteriores:** la fecha de emisión es siempre la de la reserva (D12), así que ningún comprobante del sistema puede resolverse con un bloque anterior al 06/08/2026. No se transcriben, y siguen en el extracto archivado. Un bloque nuevo del SRI es una versión nueva del dataset, que cierra las vigencias que cambian.
 - **Alternativa descartada:** transcribir solo los soportados. Perdería la trazabilidad de por qué un código no se ofrece y obligaría a rehacer el dataset para ampliar el alcance.
 
@@ -142,7 +151,7 @@
   - (C) otra semántica de reporte.
 
   La ficha lo publica en la tabla 20 bajo "No procede retención", sin nota. El anexo 10 admite cualquier código de la tabla 20 en `codigoRetencion`, lo que hace válida la estructura pero no decide entre las lecturas. La tabla 11 del Catálogo ATS no lista los códigos 7 ni 8, pero el ATS reporta el IVA retenido por porcentaje, así que su ausencia no prueba nada. La fuente no permite decidir de forma inequívoca: el código 8 se conserva en el dataset con su razón, no es seleccionable y una solicitud que lo envíe se rechaza (`WITHHOLDING_IVA_CODE_NOT_SUPPORTED`). Nunca se convierte en una retención del 0 %.
-- **Código 7:** su denominación es "Retención en cero", una retención con porcentaje fijo 0 % (lectura A). Es seleccionable. La interfaz muestra su nota oficial y su aplicabilidad es responsabilidad del agente, como la de cualquier concepto.
+- **Código 7:** su denominación es "Retención en cero", una retención con porcentaje fijo 0 % (lectura A). Es seleccionable y produce una retención explícita con el código 7, el porcentaje 0 y el valor 0.00. Nunca se crea sola: el sistema no agrega retenciones con el código 7 ni con el 8 que el usuario no eligió, y el 8 nunca se reinterpreta como el 7. La interfaz muestra su nota oficial y su aplicabilidad es responsabilidad del agente, como la de cualquier concepto.
 - **ISD:** la tabla 20 publica también el ISD (4580 y 4586); no se transcribe en este cambio porque el impuesto está fuera del MVP (`withholding-isd`).
 
 ### D9. Impuestos a retener
@@ -157,7 +166,11 @@
   - `SUPPORTED`: 01 a 07, 14 y 15;
   - fuera de alcance: 08 y 09 (reembolsos, Q-50), 10 (dividendos), 11, 12 y 13 (tipos de documento fuera del MVP) y 00 (vencido).
 - **Compatibilidad:** un sustento solo es utilizable con un tipo que lo admite según la tabla 4, si ambos están soportados y el sustento está vigente en la fecha de emisión. Por ejemplo, la nota de venta admite 02, 04, 05, 07, 14 y 15, sin el 01 de crédito tributario del IVA.
-- **Formato de los códigos:** la hoja guarda los tipos como números (`1.0`). Se escriben con dos dígitos (`01`, `02`, `03`), como el `codDoc` de esos comprobantes en la tabla 3 de la ficha y el tipo de comprobante del ATS. El XSD admite de 1 a 3 dígitos. El sustento se escribe con los dos dígitos literales de la tabla 5 (patrón `[0-9]{2}` del XSD).
+- **Formato de los códigos, decidido:** el tipo de documento sustento es un código fiscal de dos caracteres (`"01"`, `"02"`, `"03"`), tratado como `string` en el dominio, los contratos y la API, nunca como un entero que pudiera convertir `"01"` en `1`.
+  - **Evidencia:** son los códigos de esos comprobantes en la tabla 3 de la ficha (`codDoc`) y el tipo de comprobante de dos dígitos del ATS; el XSD admite de 1 a 3 dígitos.
+  - **Origen en la hoja:** la hoja guarda los tipos como números (`1.0`). El extracto conserva ese valor RAW y la transformación a dos caracteres.
+  - **Sustento:** se escribe con los dos dígitos literales de la tabla 5 (patrón `[0-9]{2}` del XSD).
+  - **Pruebas:** golden que verifican literalmente `<codDocSustento>01</codDocSustento>`, `02` y `03`.
 
 ### D11. Infraestructura de los catálogos nuevos
 
@@ -170,7 +183,15 @@
   - Una entrada es utilizable si está soportada, vigente y habilitada.
   - Habilitar o deshabilitar una entrada fuera de alcance se rechaza (`CATALOG_ENTRY_NOT_SELECTABLE`), para no mostrar un estado que no tiene efecto.
 - **Sin sincronización:** los datasets se distribuyen con el producto y se aplican al arrancar, como los demás.
-- **Evidencia durable:** el apply archiva en `docs/product/sri-catalogs/fuentes/` extractos literales de las tablas usadas del Catálogo ATS: la 3.10 (el bloque vigente completo, con las filas fuera de alcance), la 4, la 5, la 11 y la 13. Llevan la URL, la fecha de actualización publicada, el SHA-256 del archivo y el método de extracción. También archiva el extracto de las tablas 19 y 20 de la ficha. Una prueba de datos contrasta cada entrada de los datasets con su extracto, como `ice-dataset-review.test.ts` con la tabla 18.
+- **Evidencia durable:** el apply archiva en `docs/product/sri-catalogs/fuentes/` un extracto normalizado del Catálogo ATS, suficiente para reproducir el comportamiento implementado.
+  - **Procedencia:** la URL oficial, la fecha de actualización publicada (06/08/2026), el SHA-256 del archivo descargado (`bd3f7834…`) y el método de extracción.
+  - **Contenido de cada tabla usada** (la 3.10 con su bloque vigente completo, y las tablas 4, 5, 11 y 13):
+    - hoja y sección de origen;
+    - las filas y los campos relevantes, con los códigos RAW tal como aparecen, incluidos los de los espacios y los numéricos `1.0`;
+    - la transformación aplicada a cada campo;
+    - la clasificación del MVP y la cantidad de filas de entrada y de salida.
+  - **Ficha:** el extracto de las tablas 19 y 20.
+  - Una prueba de datos contrasta cada entrada de los datasets con su extracto, como `ice-dataset-review.test.ts` con la tabla 18, y reproduce la derivación de la renta (D7).
 - **Alternativa descartada:** versionar el `.xls` oficial en el repositorio y leerlo al arrancar. Haría del Excel una dependencia de ejecución. El repositorio ya cita la ficha por su hash y archiva extractos, y el SHA-256 permite verificar cualquier copia del archivo.
 
 ### D12. Fecha efectiva de la resolución
@@ -208,7 +229,7 @@ Después de `RESERVED`, la verdad fiscal del comprobante es su snapshot. Guarda:
 - `supports`, cada uno con:
   - posición, tipo de documento con su denominación, código de sustento con su denominación, número, fecha y autorización;
   - totales;
-  - `taxes`: código, código de porcentaje, tarifa, base, valor y la referencia de la entrada `iva-rate`;
+  - `taxes`: código de impuesto (2, 3 o 5), código de porcentaje, tarifa (del catálogo para el IVA, declarada para ICE e IRBPNR, con su origen), base, valor y la referencia de la entrada de `iva-rate`, `ice-rate` o `irbpnr-rate`;
   - `payments`: código, denominación, total y la referencia de la entrada `payment-method`;
   - `withholdings`: posición, impuesto, referencia de la entrada, código, denominación, base, porcentaje y valor;
 - `totals.withheld`;
@@ -267,14 +288,16 @@ Después de `RESERVED`, la verdad fiscal del comprobante es su snapshot. Guarda:
   - por documento, `docSustento` con:
     - `codSustento`, `codDocSustento`, `numDocSustento`, `fechaEmisionDocSustento` y `numAutDocSustento` si se declaró;
     - `pagoLocExt` 01, `totalSinImpuestos` e `importeTotal`;
-    - `impuestosDocSustento`, `retenciones` (`codigo`, `codigoRetencion`, `baseImponible`, `porcentajeRetener`, `valorRetenido`) y `pagos`.
+    - `impuestosDocSustento` con cada impuesto declarado (`codImpuestoDocSustento` 2, 3 o 5, `codigoPorcentaje`, `baseImponible`, `tarifa`, `valorImpuesto`), `retenciones` (`codigo`, `codigoRetencion`, `baseImponible`, `porcentajeRetener`, `valorRetenido`) y `pagos`.
 - **No escribe:** `fechaRegistroContable`, `tipoRegi`, `paisEfecPago`, `aplicConvDobTrib`, `pagExtSujRetNorLeg`, `pagoRegFis`, los totales de reembolso, `reembolsos`, `dividendos`, `compraCajBanano`, `maquinaFiscal` ni `infoAdicional`. El anexo 10 marca `infoAdicional` como "Opcional" para la retención.
 - El pipeline compartido valida contra `ComprobanteRetencion_V2.0.0.xsd` antes y después de firmar, y el firmador recibe el tipo `07`.
 - **Pruebas:** golden fixtures de bytes exactos, todos validados contra el XSD oficial:
   - un documento con renta;
   - un documento con renta e IVA;
   - varios documentos con varias retenciones;
-  - retención en cero;
+  - retención en cero (código 7 explícito, valor 0.00);
+  - sustento solo con IVA, con IVA e ICE, con IRBPNR y con varias entradas tributarias;
+  - `<codDocSustento>01</codDocSustento>`, `02` y `03` literales;
   - sujeto con caracteres especiales;
   - sustento con y sin autorización.
 
@@ -301,7 +324,9 @@ Después de `RESERVED`, la verdad fiscal del comprobante es su snapshot. Guarda:
   - sujeto retenido con su identificación y la fecha de emisión;
   - una tabla con las columnas Comprobante, Número, Fecha Emisión, Ejercicio Fiscal, Base Imponible para la Retención, Impuesto, Porcentaje Retención y Valor Retenido, con una fila por retención y los datos de su documento.
 
-  Sin información adicional, que el sistema no emite. Las filas se paginan con el paginador vigente.
+  - como datos adicionales que el anexo 2 permite ("Se podrán imprimir datos adicionales en el RIDE", página 60), un bloque por documento sustento con sus impuestos declarados: código, código de porcentaje, base, tarifa y valor.
+
+  Sin información adicional del XML, que el sistema no emite. Las filas se paginan con el paginador vigente.
 - **Reutiliza** pdfmake, bwip-js, Noto Sans, el pool, el job, el artefacto, las descargas y las entregas.
 - **Pruebas:**
   - golden con el texto de las páginas y la lectura del Code128;
@@ -335,7 +360,9 @@ Después de `RESERVED`, la verdad fiscal del comprobante es su snapshot. Guarda:
 | `POST /api/v1/withholding-receipts/{withholdingReceiptId}/reconciliations` | Reconciliación manual (`202`) | `withholdings.reconcile` |
 
 - **Borrador:** `{ partyId, relatedParty, fiscalPeriod, emissionPointId, supports: [...] }`.
-  - Cada documento: `{ documentType, supportCode, number, issueDate, authorizationNumber, totalWithoutTaxes, importTotal, taxes: [{ rateEntryKey, base, amount }], payments: [{ paymentMethod, total }], withholdings: [{ tax, entryKey, base }] }`.
+  - Cada documento: `{ documentType, supportCode, number, issueDate, authorizationNumber, totalWithoutTaxes, importTotal, taxes: [{ tax, rateEntryKey, rate, base, amount }], payments: [{ paymentMethod, total }], withholdings: [{ tax, entryKey, base }] }`.
+  - `documentType` es el enum de `string` `"01" | "02" | "03"`; el `tax` de un impuesto del documento es `"2" | "3" | "5"`, y el de una retención `"1" | "2"`.
+  - `rate` solo se acepta para ICE e IRBPNR; para el IVA se rechaza, porque sale del catálogo.
   - Se puede guardar incompleto: cada campo puede faltar y la vista previa lo informa.
   - Un porcentaje, una denominación, un valor retenido, un `companyId` o un campo del exterior se rechazan: los cuerpos son estrictos.
 - **Emisión:** `{ draftId, expectedVersion }`.
@@ -415,12 +442,9 @@ Después de `RESERVED`, la verdad fiscal del comprobante es su snapshot. Guarda:
   | `WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT` | 5 | 1 a 10 |
 
   El tamaño del cuerpo sigue limitado por `JSON_BODY_LIMIT`.
-- **Justificación de los valores por defecto:** el tamaño del XML firmado.
-  - Con valores de longitud máxima, cada bloque mide en UTF-8 aproximadamente: impuesto 242 bytes, retención 215, pago 68, documento sin hijos 500, cabeceras 1 817 y firma con certificado unos 4 200.
-  - Con los valores por defecto, el peor caso es de unos 37 KB. Entra incluso en la lectura más conservadora de "320 Kb" de la ficha, 320 kilobits o 40 000 bytes, mientras Q-47 no fije la cifra.
-  - Los máximos absolutos (30 documentos con 10 elementos de cada clase) dan unos 179 KB, por debajo de 320 000 bytes.
-  - El benchmark (D27) mide el tamaño firmado real y el CPU y la memoria del peor caso. Si contradice el modelo, los valores se ajustan con `/opsx:update` antes de archivar.
-  - La política de tamaño del envío (Q-47) sigue siendo la compuerta final de la transmisión.
+- **Naturaleza:** defensa de recursos del proyecto y nada más. Los valores por defecto acotan el trabajo de la vista previa, del cálculo, del XML, de la firma y del RIDE por comprobante. El benchmark (D27) los confirma con CPU, memoria y latencia, y si los contradice se ajustan con `/opsx:update` antes de archivar.
+- **Tamaño del XML como medición:** el benchmark registra el tamaño del XML firmado del peor caso. Con valores de longitud máxima, la estimación previa es de unos 37 KB con los valores por defecto y de unos 179 KB con los máximos absolutos. Es solo una medición de recursos.
+- **Sin relación con Q-47:** los límites no interpretan ni cumplen el "320 Kb" de la ficha. Q-47 sigue abierta, la transmisión real sigue cerrada hasta resolverla, y su política se implementará en un cambio aparte cuando exista la cifra oficial. Este cambio no introduce ningún límite del SRI.
 - Los errores y la interfaz presentan el límite como una defensa del sistema, nunca como una regla del SRI. `deployment.md` documenta las variables.
 
 ### D26. Observabilidad
@@ -497,14 +521,17 @@ Una migración aditiva:
 | Período explícito, editable y no futuro | Política del MVP (la fuente exige el ejercicio fiscal) | Q-50 |
 | Documentos sustento 01, 02 y 03, uno o más | Política del MVP sobre el XSD | Q-50 |
 | Base del usuario, porcentaje del catálogo, valor del servidor con HALF_UP | Política del MVP y política decimal | Q-50, D13 |
-| Límites de recursos | Defensa del producto | D25 |
+| Impuestos del documento sustento IVA, ICE e IRBPNR, declarados | Oficial (`codImpuestoDocSustento` según la tabla general de impuestos) y política del MVP (no se retienen) | Ficha v2.34, anexo 10; catálogo `tax`; D6 |
+| Formas de pago del sustento con `payment-method` | Equivalencia comprobada con la tabla 13 del ATS desde el 01/09/2016 | D6 |
+| `codDocSustento` de dos caracteres | Oficial (tabla 3 de la ficha y ATS) | D10 |
+| Impuestos del sustento en el RIDE | Datos adicionales permitidos | Ficha v2.34, anexo 2, página 60 |
+| Límites de recursos | Defensa del producto, sin relación con Q-47 | D25 |
 | Sin inventario, capacidades ni compras | Política del producto | BR-75 |
 
 ## Risks / Trade-offs
 
-- **Formato de los códigos de documento sustento** (`01` frente a `1`): el XSD admite ambos. → Se usa el de dos dígitos, consistente con la tabla 3 y el ATS; la certificación en Pruebas lo confirma, y un cambio se hace con `/opsx:update` sin migrar datos.
 - **Validaciones del SRI no documentadas** sobre los importes del sustento (error 52, "Error en diferencias"): el sistema no compara importes sin fuente. → La certificación incluye retenciones con importes coherentes; una regla que aparezca se propone con su fuente.
-- **Conceptos excluidos que un usuario necesita** (porcentaje variable, código ambiguo, dividendos): no los puede emitir. → Quedan visibles con su razón en Catálogos fiscales y como capacidades futuras. Los 4 códigos ambiguos se pueden habilitar con una versión del dataset si la certificación confirma su representación.
+- **Conceptos excluidos que un usuario necesita** (porcentaje variable, código ambiguo, dividendos): no los puede emitir. → Quedan visibles con su razón en Catálogos fiscales y como capacidades futuras. Los 4 códigos con espacio quedan pendientes de evidencia y de soporte futuro: se habilitan con una versión del dataset cuando una fuente oficial establezca su representación exacta.
 - **Catálogo ATS que cambia con frecuencia** (cuatro bloques en 2026): un bloque nuevo exige una versión del producto. → Proceso de catálogos existente; la fecha efectiva protege los comprobantes ya emitidos.
 - **Documentos sustento declarados sin verificar:** un error de transcripción llega al SRI. → Validación estructural estricta y la interfaz los presenta como declarados. El SRI responde en la autorización y la evidencia queda guardada.
 - **Generalización:** tocar la bandeja, el RIDE, la reconciliación y los catálogos podría romper otros tipos. → Solo se agregan entradas por tipo; los golden y el contrato de regresión no cambian.

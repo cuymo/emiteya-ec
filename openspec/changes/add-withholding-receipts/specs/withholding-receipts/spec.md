@@ -89,6 +89,10 @@ Cada documento sustento SHALL llevar su código de sustento, compatible con su t
 - **WHEN** un borrador declara un número de documento con 14 dígitos o con letras
 - **THEN** el sistema lo rechaza indicando el formato
 
+#### Scenario: Tipo de documento como código de dos caracteres
+- **WHEN** se firma una retención con una factura, una nota de venta y una liquidación de compra como documentos sustento
+- **THEN** su XML lleva literalmente `<codDocSustento>01</codDocSustento>`, `<codDocSustento>02</codDocSustento>` y `<codDocSustento>03</codDocSustento>`
+
 #### Scenario: Autorización de longitud inválida
 - **WHEN** un borrador declara una autorización de 20 dígitos
 - **THEN** el sistema la rechaza indicando que debe tener 10, 37 o 49 dígitos
@@ -97,24 +101,55 @@ Cada documento sustento SHALL llevar su código de sustento, compatible con su t
 - **WHEN** un borrador declara un documento sustento con fecha posterior a la fecha de emisión de la retención
 - **THEN** el sistema lo rechaza sin reservar número
 
-### Requirement: Impuestos y pagos del documento sustento
-Cada documento sustento SHALL llevar uno o más impuestos de IVA y una o más formas de pago, transcritos por el usuario. Cada impuesto elige una tarifa de IVA con porcentaje vigente en la fecha del documento y declara su base y su valor. Cada pago elige una forma de pago utilizable para la empresa en la fecha de emisión y declara su total. El sistema no deriva ni compara entre sí estos importes.
+### Requirement: Impuestos declarados del documento sustento
+Cada documento sustento SHALL llevar uno o más impuestos transcritos por el usuario: IVA (2), ICE (3) o IRBPNR (5), con su código de porcentaje vigente en la fecha del documento, su base, su tarifa y su valor. La tarifa del IVA sale del catálogo; la de ICE e IRBPNR la declara el usuario, porque el catálogo no la publica. Son información tributaria declarada: no se retienen ni se recalculan.
 
-#### Scenario: Impuesto del documento
+#### Scenario: Documento solo con IVA
 - **WHEN** un usuario declara en una factura del proveedor una base de 100.00 al 15 % con un IVA de 15.00
-- **THEN** el comprobante lleva ese impuesto con la tarifa 15, la base 100.00 y el valor 15.00 declarados
+- **THEN** el comprobante lleva ese impuesto con el código 2, la tarifa 15, la base 100.00 y el valor 15.00 declarados
 
-#### Scenario: Tarifa sin porcentaje
+#### Scenario: Documento con IVA e ICE
+- **WHEN** un usuario declara en un documento sustento un impuesto de IVA y otro de ICE con su código de porcentaje vigente en la fecha del documento y su tarifa
+- **THEN** el comprobante conserva los dos impuestos con su código, su código de porcentaje, su base, su tarifa y su valor
+
+#### Scenario: Documento con IRBPNR
+- **WHEN** un usuario declara en un documento sustento un impuesto IRBPNR con el código 5001
+- **THEN** el comprobante conserva el impuesto con el código 5, el código de porcentaje 5001, su base, la tarifa declarada y su valor
+
+#### Scenario: Varias entradas tributarias
+- **WHEN** un documento sustento declara IVA al 15 %, IVA al 0 % e ICE
+- **THEN** el snapshot, el XML y el RIDE conservan las tres entradas en su orden
+
+#### Scenario: Código de porcentaje no vigente en la fecha del documento
+- **WHEN** un usuario declara un código de porcentaje que no está vigente en la fecha del documento sustento
+- **THEN** el sistema lo rechaza sin reservar número
+
+#### Scenario: Tarifa de IVA sin porcentaje
 - **WHEN** un usuario elige para un documento sustento la tarifa de IVA diferenciado, que no tiene porcentaje
 - **THEN** el sistema la rechaza indicando que la tarifa no tiene un porcentaje publicado
+
+#### Scenario: Importes transcritos sin recálculo
+- **WHEN** un usuario declara un documento con un total sin impuestos de 100.00 y un importe total de 115.01
+- **THEN** el sistema conserva los valores declarados, sin corregirlos ni advertir una diferencia que ninguna fuente establece
+
+#### Scenario: ICE no retenido
+- **WHEN** un documento sustento declara ICE
+- **THEN** el ICE no aparece entre las retenciones y ninguna solicitud puede retenerlo
+
+### Requirement: Formas de pago del documento sustento
+Cada documento sustento SHALL llevar una o más formas de pago con su total, transcritas por el usuario. Cada pago elige una forma de pago utilizable para la empresa en la fecha de emisión, del catálogo de formas de pago, que coincide en códigos y semántica con la tabla del Catálogo ATS a la que remite el XML para toda fecha que el sistema resuelve.
+
+#### Scenario: Forma de pago del sustento
+- **WHEN** un usuario declara que pagó una factura con transferencia por 115.00
+- **THEN** el comprobante lleva el pago con el código 20 y el total 115.00 en ese documento sustento
 
 #### Scenario: Sin pagos
 - **WHEN** un documento sustento no lleva ninguna forma de pago
 - **THEN** el sistema rechaza la emisión sin reservar número
 
-#### Scenario: Importes transcritos sin recálculo
-- **WHEN** un usuario declara un documento con un total sin impuestos de 100.00 y un importe total de 115.01
-- **THEN** el sistema conserva los valores declarados, sin corregirlos ni advertir una diferencia que ninguna fuente establece
+#### Scenario: Forma de pago deshabilitada
+- **WHEN** un documento sustento declara una forma de pago que la empresa deshabilitó
+- **THEN** el sistema la rechaza sin reservar número
 
 ### Requirement: Retenciones de cada documento sustento
 Cada documento sustento SHALL tener una o más retenciones propias, de renta o de IVA, y cada retención pertenece a un solo documento sustento. La vista previa, el snapshot, el XML y el RIDE conservan esa pertenencia.
@@ -161,6 +196,10 @@ Una retención de IVA SHALL usar un código de la tabla 20 de la ficha técnica 
 - **WHEN** un borrador envía el código 8 de no procede retención
 - **THEN** el sistema lo rechaza indicando que ese código no se emite como retención en el alcance actual
 
+#### Scenario: Sin retención automática
+- **WHEN** un usuario emite una retención de renta sin retención de IVA en un documento sustento
+- **THEN** el comprobante no lleva ninguna retención con el código 8 ni con el código 7 que el usuario no haya elegido
+
 ### Requirement: Impuestos a retener del MVP
 El comprobante SHALL retener solo impuesto a la renta (código 1) e IVA (código 2). El impuesto a la salida de divisas queda fuera del MVP porque la fuente oficial publica dos códigos vigentes sin una regla que determine cuándo aplica cada uno.
 
@@ -206,7 +245,7 @@ El valor retenido SHALL ser la base por el porcentaje del catálogo dividido par
 - **THEN** el sistema la rechaza por contener campos no permitidos
 
 ### Requirement: Límites de recursos de la retención
-El sistema SHALL limitar los documentos sustento por comprobante y las retenciones, los impuestos y los pagos por documento con valores configurables. Son defensas de recursos del producto, no límites del SRI ni del XSD, y no se presentan como reglas fiscales.
+El sistema SHALL limitar los documentos sustento por comprobante y las retenciones, los impuestos y los pagos por documento con valores configurables. Son defensas de recursos del producto, no límites del SRI ni del XSD, no se presentan como reglas fiscales y no reemplazan el límite de tamaño del envío al SRI, que sigue siendo una política aparte.
 
 #### Scenario: Demasiados documentos sustento
 - **WHEN** un borrador supera el máximo configurado de documentos sustento
