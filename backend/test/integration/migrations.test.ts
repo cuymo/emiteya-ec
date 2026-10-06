@@ -724,6 +724,60 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea los borradores, el registro y los destinatarios de las guías con sus restricciones y triggers", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "shipping_guide_draft_values_check",
+        "shipping_guide_draft_recipients_check",
+        "shipping_guide_draft_company_id_fkey",
+        "shipping_guide_draft_company_id_emission_point_id_fkey",
+        "shipping_guide_draft_company_id_origin_establishment_id_fkey",
+        "shipping_guide_draft_company_id_carrier_party_id_fkey",
+        "shipping_guide_draft_company_id_document_id_fkey",
+        "shipping_guide_draft_created_by_fkey",
+        "shipping_guide_draft_updated_by_fkey",
+        "shipping_guide_values_check",
+        "shipping_guide_company_id_document_id_fkey",
+        "shipping_guide_company_id_origin_establishment_id_fkey",
+        "shipping_guide_company_id_carrier_party_id_fkey",
+        "shipping_guide_recipient_values_check",
+        "shipping_guide_recipient_company_id_document_id_fkey",
+        "shipping_guide_recipient_company_id_document_id_position_fkey",
+        "shipping_guide_recipient_company_id_party_id_fkey",
+        "shipping_guide_recipient_company_id_destination_establish_fkey",
+        "shipping_guide_recipient_company_id_invoice_id_fkey",
+        "shipping_guide_recipient_declared_by_fkey",
+        "idempotency_record_values_check",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "shipping_guide_draft_pkey",
+        "shipping_guide_draft_document_id_key",
+        "shipping_guide_draft_company_id_id_key",
+        "shipping_guide_draft_company_id_document_id_key",
+        "shipping_guide_draft_company_id_status_updated_at_idx",
+        "shipping_guide_pkey",
+        "shipping_guide_company_id_carrier_identification_idx",
+        "shipping_guide_recipient_pkey",
+        "shipping_guide_recipient_company_id_invoice_id_idx",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "shipping_guide_draft_guard",
+        "shipping_guide_origin",
+        "shipping_guide_immutable",
+        "shipping_guide_no_truncate",
+        "shipping_guide_recipient_rules",
+        "shipping_guide_recipient_immutable",
+        "shipping_guide_recipient_no_truncate",
+        // Trigger de restricción diferido (design D26).
+        "shipping_guide_complete",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     // El único objeto sobre la empresa exige su consumidor final al confirmarla (trigger de
     // restricción de add-parties-and-products, design D5); no limita cuántas empresas hay.

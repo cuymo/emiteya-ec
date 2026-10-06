@@ -10,6 +10,7 @@ import { rideJob, RIDE_BACKOFF } from "../../src/modules/fiscal/application/arch
 import { createPrismaJobStore, type JobStore } from "../../src/platform/jobs/prisma-job-store.ts";
 import { archiveCompany, buildArchiveApp, type ArchiveCompany } from "./archive-api-harness.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
+import { insertGuideParty, insertShippingGuide } from "./shipping-guide-harness.ts";
 import { insertDocument, leasedJob, sha256, type TestDocument } from "./transmission-harness.ts";
 
 type Body = {
@@ -97,16 +98,19 @@ describe("bandeja de comprobantes sobre HTTP", () => {
     docs.point2signed = await insertDocument(prisma, a, "SIGNED", { point: 1 });
     // Guías de remisión sin total ni comprador (add-shipping-guides, design D10): una con un solo
     // destinatario y otra con tres.
-    docs.guideSingle = await insertDocument(prisma, a, "SIGNED", {
-      documentType: "06",
-      recipients: [{ identification: "0102030405", name: "María Pérez" }],
+    const recipientOf = async (identification: string, name: string) => ({
+      identification,
+      name,
+      partyId: await insertGuideParty(prisma, a, identification, { legalName: name }),
     });
-    docs.guideMany = await insertDocument(prisma, a, "SIGNED", {
-      documentType: "06",
+    docs.guideSingle = await insertShippingGuide(prisma, a, "SIGNED", {
+      recipients: [await recipientOf("0102030405", "María Pérez")],
+    });
+    docs.guideMany = await insertShippingGuide(prisma, a, "SIGNED", {
       recipients: [
-        { identification: "1790012345001", name: "Comercial Andina S.A." },
-        { identification: "0991234567001", name: "Distribuidora del Litoral" },
-        { identification: "1712345678", name: "Juan Torres" },
+        await recipientOf("1790012345001", "Comercial Andina S.A."),
+        await recipientOf("0991234567001", "Distribuidora del Litoral"),
+        await recipientOf("1712345678", "Juan Torres"),
       ],
     });
     // La empresa B tiene sus propios comprobantes.

@@ -20,7 +20,7 @@
 
 ## 2. Esquema de la guía
 
-- [ ] 2.1 Crear la migración aditiva `add_shipping_guides` (design D26):
+- [x] 2.1 Crear la migración aditiva `add_shipping_guides` (design D26):
   - `shipping_guide_draft`, con `recipients` en `JSONB`, sus `CHECK` de forma y tamaño y la guarda que impide cambiar o borrar un borrador emitido;
   - `shipping_guide`, inmutable, con el establecimiento de origen opcional (FK compuesta por empresa), los `CHECK` del transportista (origen y tercero coherentes, identificación de hasta 13, placa de 1 a 20 sin saltos de línea), fin no anterior al inicio y conteos positivos, y el trigger que exige un `06` de la empresa con el inicio no anterior a su fecha de emisión;
   - `shipping_guide_recipient`, inmutable, con FK a `electronic_document_recipient`, los `CHECK` de coherencia entre clase, sustento, factura, caso y declaración, y el trigger que exige una factura `01` autorizada de la empresa y del ambiente de la guía, y para `OWN_COMPANY` una guía con origen distinto de su destino;
@@ -35,7 +35,7 @@
   - un inicio anterior a la fecha de emisión, rechazado;
   - registro y destinatarios inmutables y borrador emitido inmutable;
   - la operación nueva en el registro de idempotencia
-- [ ] 2.2 Añadir las tablas a `migrations.test.ts` y documentarlas en `database.md`, con el acoplamiento intencional del trigger diferido. Verificar que `migrations.test.ts` pasa sin deriva
+- [x] 2.2 Añadir las tablas a `migrations.test.ts` y documentarlas en `database.md`, con el acoplamiento intencional del trigger diferido. Verificar que `migrations.test.ts` pasa sin deriva
 
 ## 3. Contratos, permisos y límites
 
