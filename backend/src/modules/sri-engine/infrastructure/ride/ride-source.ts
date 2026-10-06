@@ -1,10 +1,11 @@
 // Lectura del XML de origen del RIDE (add-document-archive, design D3; add-credit-notes, design
-// D14; add-debit-notes, design D18): la factura 1.1.0, la nota de crédito 1.1.0 y la nota de débito
-// 1.0.0 que el sistema emite, elegidas por la raíz y la versión del XML, y nada más. Rechaza un XML peligroso (DTD o entidades, demasiado grande o
-// demasiado anidado), cualquier otro documento, y todo elemento que el builder del sistema no
-// escribe (ICE, IRBPNR, propina, información adicional…): el RIDE nunca omite contenido en silencio
-// ni afirma un soporte que la emisión no tiene. Los textos e importes salen tal como están en el
-// XML, sin recortarlos ni convertirlos a número.
+// D14; add-debit-notes, design D18; add-withholding-receipts, design D19): la factura 1.1.0, la nota
+// de crédito 1.1.0, la nota de débito 1.0.0 y el comprobante de retención 2.0.0 que el sistema
+// emite, elegidos por la raíz y la versión del XML, y nada más. Rechaza un XML peligroso (DTD o
+// entidades, demasiado grande o demasiado anidado), cualquier otro documento, y todo elemento que el
+// builder del sistema no escribe (ICE, IRBPNR, propina, información adicional…): el RIDE nunca omite
+// contenido en silencio ni afirma un soporte que la emisión no tiene. Los textos e importes salen tal
+// como están en el XML, sin recortarlos ni convertirlos a número.
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 import {
   RideRejectedError,
@@ -16,6 +17,7 @@ import {
   type RideSourceInput,
   type RideSourceReader,
   type RideTax,
+  type RideWithholdingReceipt,
 } from "../../application/ride.ts";
 
 /** Mayor que cualquier comprobante firmado admitido por la política de tamaño del envío. */
@@ -28,6 +30,8 @@ export const RIDE_INVOICE_VERSION = "1.1.0";
 export const RIDE_CREDIT_NOTE_VERSION = "1.1.0";
 /** La única versión que escribe el builder de add-debit-notes (`DEBIT_NOTE_SCHEMA_VERSION`). */
 export const RIDE_DEBIT_NOTE_VERSION = "1.0.0";
+/** La única versión que escribe el builder de add-withholding-receipts. */
+export const RIDE_WITHHOLDING_RECEIPT_VERSION = "2.0.0";
 /** IVA, el único impuesto que la emisión produce: ICE e IRBPNR no tienen datos de cálculo. */
 const IVA = "2";
 
@@ -179,6 +183,69 @@ const DEBIT_NOTE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
   "notaDebito.motivos.motivo": ["razon", "valor"],
 };
 
+/**
+ * Elementos que el builder del comprobante de retención escribe, por ruta del padre
+ * (add-withholding-receipts, design D17): sin `tipoSujetoRetenido`, `fechaRegistroContable`,
+ * `tipoRegi`, `paisEfecPago`, convenios, reembolsos, dividendos, banano, máquina fiscal ni
+ * información adicional.
+ */
+const WITHHOLDING_SUPPORT = "comprobanteRetencion.docsSustento.docSustento";
+const WITHHOLDING_ALLOWED: Readonly<Record<string, readonly string[]>> = {
+  comprobanteRetencion: ["infoTributaria", "infoCompRetencion", "docsSustento", "Signature"],
+  "comprobanteRetencion.infoTributaria": ALLOWED["factura.infoTributaria"]!,
+  "comprobanteRetencion.infoCompRetencion": [
+    "fechaEmision",
+    "dirEstablecimiento",
+    "contribuyenteEspecial",
+    "obligadoContabilidad",
+    "tipoIdentificacionSujetoRetenido",
+    "parteRel",
+    "razonSocialSujetoRetenido",
+    "identificacionSujetoRetenido",
+    "periodoFiscal",
+  ],
+  "comprobanteRetencion.docsSustento": ["docSustento"],
+  [WITHHOLDING_SUPPORT]: [
+    "codSustento",
+    "codDocSustento",
+    "numDocSustento",
+    "fechaEmisionDocSustento",
+    "numAutDocSustento",
+    "pagoLocExt",
+    "totalSinImpuestos",
+    "importeTotal",
+    "impuestosDocSustento",
+    "retenciones",
+    "pagos",
+  ],
+  [`${WITHHOLDING_SUPPORT}.impuestosDocSustento`]: ["impuestoDocSustento"],
+  [`${WITHHOLDING_SUPPORT}.impuestosDocSustento.impuestoDocSustento`]: [
+    "codImpuestoDocSustento",
+    "codigoPorcentaje",
+    "baseImponible",
+    "tarifa",
+    "valorImpuesto",
+  ],
+  [`${WITHHOLDING_SUPPORT}.retenciones`]: ["retencion"],
+  [`${WITHHOLDING_SUPPORT}.retenciones.retencion`]: [
+    "codigo",
+    "codigoRetencion",
+    "baseImponible",
+    "porcentajeRetener",
+    "valorRetenido",
+  ],
+  [`${WITHHOLDING_SUPPORT}.pagos`]: ["pago"],
+  [`${WITHHOLDING_SUPPORT}.pagos.pago`]: ["formaPago", "total"],
+};
+/** Impuestos a retener que la emisión produce (renta e IVA): sin ISD. */
+const WITHHOLDING_TAXES = new Set(["1", "2"]);
+/** Impuestos declarados del documento sustento: IVA, ICE e IRBPNR. */
+const SUPPORT_TAXES = new Set(["2", "3", "5"]);
+/** Tipos de documento sustento del MVP: factura, nota de venta y liquidación de compra. */
+const SUPPORT_DOCUMENT_TYPES = new Set(["01", "02", "03"]);
+/** Pago local (tabla 15 del Catálogo ATS): el único que la emisión escribe. */
+const LOCAL_PAYMENT = "01";
+
 /** Lista blanca de una raíz: sus elementos por padre y sus hojas de texto. */
 type Whitelist = Readonly<{
   allowed: Readonly<Record<string, readonly string[]>>;
@@ -204,6 +271,7 @@ function whitelist(root: string, allowed: Readonly<Record<string, readonly strin
 const INVOICE_WHITELIST = whitelist("factura", ALLOWED);
 const CREDIT_NOTE_WHITELIST = whitelist("notaCredito", CREDIT_NOTE_ALLOWED);
 const DEBIT_NOTE_WHITELIST = whitelist("notaDebito", DEBIT_NOTE_ALLOWED);
+const WITHHOLDING_WHITELIST = whitelist("comprobanteRetencion", WITHHOLDING_ALLOWED);
 const ARRAYS = new Set([
   "factura.detalles.detalle",
   "factura.detalles.detalle.impuestos.impuesto",
@@ -216,6 +284,14 @@ const ARRAYS = new Set([
   "notaDebito.infoNotaDebito.pagos",
   "notaDebito.infoNotaDebito.pagos.pago",
   "notaDebito.motivos.motivo",
+  "comprobanteRetencion.docsSustento",
+  WITHHOLDING_SUPPORT,
+  `${WITHHOLDING_SUPPORT}.impuestosDocSustento`,
+  `${WITHHOLDING_SUPPORT}.impuestosDocSustento.impuestoDocSustento`,
+  `${WITHHOLDING_SUPPORT}.retenciones`,
+  `${WITHHOLDING_SUPPORT}.retenciones.retencion`,
+  `${WITHHOLDING_SUPPORT}.pagos`,
+  `${WITHHOLDING_SUPPORT}.pagos.pago`,
 ]);
 
 const parser = new XMLParser({
@@ -681,14 +757,162 @@ function readDebitNote(
 }
 
 /**
- * Elige la lectura por la raíz del XML: la factura, la nota de crédito o la nota de débito que el
- * sistema emite.
+ * Lee el comprobante de retención 2.0.0 que el sistema emite (add-withholding-receipts, design D19):
+ * el sujeto retenido, el período fiscal y cada documento sustento con sus impuestos declarados y sus
+ * retenciones, con las denominaciones del snapshot. Un impuesto a retener distinto de renta o IVA, un
+ * impuesto declarado distinto de IVA, ICE o IRBPNR, un tipo de documento fuera del MVP, un pago al
+ * exterior o un bloque repetido es contenido que el builder no escribe.
+ */
+function readWithholdingReceipt(
+  { document, roots }: Readonly<{ document: unknown; roots: string[] }>,
+  input: RideSourceInput,
+): RideWithholdingReceipt {
+  const { authorization } = input;
+  const comprobante = isNode(document) ? document.comprobanteRetencion : undefined;
+  if (roots.length !== 1 || !isNode(comprobante)) throw invalid("NOT_WITHHOLDING_RECEIPT");
+  if (comprobante["@_version"] !== RIDE_WITHHOLDING_RECEIPT_VERSION) {
+    throw invalid("UNSUPPORTED_VERSION");
+  }
+  const tributaria = comprobante.infoTributaria;
+  const info = comprobante.infoCompRetencion;
+  const blocks = list(comprobante.docsSustento);
+  if (!isNode(tributaria) || !isNode(info) || blocks.length === 0) {
+    throw invalid("NOT_WITHHOLDING_RECEIPT");
+  }
+  if (required(tributaria, "codDoc", "infoTributaria") !== "07") {
+    throw invalid("NOT_WITHHOLDING_RECEIPT");
+  }
+
+  const unsupported = new Set<string>();
+  unsupportedElements(comprobante, "comprobanteRetencion", unsupported, WITHHOLDING_WHITELIST);
+  if (blocks.length > 1) unsupported.add("comprobanteRetencion.docsSustento");
+  const supportNodes = blocks.flatMap((block) => list(block.docSustento));
+  /** Un único bloque contenedor por documento: uno repetido es contenido que no se emite. */
+  const single = (support: Node, name: string): Node[] => {
+    const containers = list(support[name]);
+    if (containers.length > 1) unsupported.add(`${WITHHOLDING_SUPPORT}.${name}`);
+    return containers;
+  };
+  const supports = supportNodes.map((support) => ({
+    support,
+    taxes: single(support, "impuestosDocSustento").flatMap((block) =>
+      list(block.impuestoDocSustento),
+    ),
+    withholdings: single(support, "retenciones").flatMap((block) => list(block.retencion)),
+    payments: single(support, "pagos").flatMap((block) => list(block.pago)),
+  }));
+  for (const { support, taxes, withholdings } of supports) {
+    const documentType = text(support, "codDocSustento", "docSustento");
+    if (!SUPPORT_DOCUMENT_TYPES.has(documentType ?? "")) {
+      unsupported.add(`docSustento.codDocSustento:${documentType ?? ""}`);
+    }
+    const payment = text(support, "pagoLocExt", "docSustento");
+    if (payment !== LOCAL_PAYMENT) unsupported.add(`docSustento.pagoLocExt:${payment ?? ""}`);
+    for (const tax of taxes) {
+      const code = text(tax, "codImpuestoDocSustento", "impuestoDocSustento");
+      if (!SUPPORT_TAXES.has(code ?? "")) {
+        unsupported.add(`impuestoDocSustento.codImpuestoDocSustento:${code ?? ""}`);
+      }
+    }
+    for (const item of withholdings) {
+      const code = text(item, "codigo", "retencion");
+      if (!WITHHOLDING_TAXES.has(code ?? "")) unsupported.add(`retencion.codigo:${code ?? ""}`);
+    }
+  }
+  if (unsupported.size > 0) {
+    throw new RideRejectedError("RIDE_SOURCE_UNSUPPORTED", [...unsupported].sort());
+  }
+
+  const accessKey = required(tributaria, "claveAcceso", "infoTributaria");
+  const environment = required(tributaria, "ambiente", "infoTributaria");
+  if (environment !== "1" && environment !== "2") throw invalid("infoTributaria.ambiente");
+  // El XML, la retención guardada y su autorización deben describir el mismo comprobante: la clave
+  // impresa y el código de barras son los de la retención, nunca los de un documento sustento.
+  const mismatches = [
+    ...(accessKey !== input.accessKey ? ["claveAcceso"] : []),
+    ...(authorization.number !== accessKey ? ["numeroAutorizacion"] : []),
+    ...(authorization.environment !== (environment === "1" ? "TEST" : "PRODUCTION")
+      ? ["ambiente"]
+      : []),
+  ];
+  if (mismatches.length > 0) {
+    throw new RideRejectedError("RIDE_AUTHORIZATION_MISMATCH", mismatches);
+  }
+
+  if (supports.length === 0) throw invalid("MISSING:docsSustento.docSustento");
+  const labels = input.withholdingLabels;
+  const readSupports = supports.map(({ support, taxes, withholdings }) => {
+    const documentType = required(support, "codDocSustento", "docSustento");
+    if (withholdings.length === 0) throw invalid("MISSING:retenciones.retencion");
+    return {
+      documentType,
+      documentTypeLabel: labels?.documentTypes[documentType] ?? null,
+      number: required(support, "numDocSustento", "docSustento"),
+      issueDate: required(support, "fechaEmisionDocSustento", "docSustento"),
+      taxes: taxes.map((tax) => {
+        const taxCode = required(tax, "codImpuestoDocSustento", "impuestoDocSustento");
+        return {
+          taxCode,
+          taxLabel: labels?.supportTaxes[taxCode] ?? null,
+          rateCode: required(tax, "codigoPorcentaje", "impuestoDocSustento"),
+          base: required(tax, "baseImponible", "impuestoDocSustento"),
+          tariff: required(tax, "tarifa", "impuestoDocSustento"),
+          amount: required(tax, "valorImpuesto", "impuestoDocSustento"),
+        };
+      }),
+      withholdings: withholdings.map((item) => {
+        const taxCode = required(item, "codigo", "retencion");
+        return {
+          taxCode,
+          taxLabel: labels?.taxes[taxCode] ?? null,
+          code: required(item, "codigoRetencion", "retencion"),
+          base: required(item, "baseImponible", "retencion"),
+          percentage: required(item, "porcentajeRetener", "retencion"),
+          amount: required(item, "valorRetenido", "retencion"),
+        };
+      }),
+    };
+  });
+
+  return {
+    kind: "WITHHOLDING_RECEIPT",
+    environment,
+    emissionType: required(tributaria, "tipoEmision", "infoTributaria"),
+    legalName: required(tributaria, "razonSocial", "infoTributaria"),
+    tradeName: text(tributaria, "nombreComercial", "infoTributaria"),
+    ruc: required(tributaria, "ruc", "infoTributaria"),
+    accessKey,
+    establishment: required(tributaria, "estab", "infoTributaria"),
+    emissionPoint: required(tributaria, "ptoEmi", "infoTributaria"),
+    sequential: required(tributaria, "secuencial", "infoTributaria"),
+    headOfficeAddress: required(tributaria, "dirMatriz", "infoTributaria"),
+    establishmentAddress: text(info, "dirEstablecimiento", "infoCompRetencion"),
+    specialTaxpayer: text(info, "contribuyenteEspecial", "infoCompRetencion"),
+    accountingRequired: required(info, "obligadoContabilidad", "infoCompRetencion"),
+    withholdingAgentResolution: text(tributaria, "agenteRetencion", "infoTributaria"),
+    rimpeLegend: text(tributaria, "contribuyenteRimpe", "infoTributaria"),
+    issueDate: required(info, "fechaEmision", "infoCompRetencion"),
+    subject: {
+      identificationType: required(info, "tipoIdentificacionSujetoRetenido", "infoCompRetencion"),
+      identification: required(info, "identificacionSujetoRetenido", "infoCompRetencion"),
+      legalName: required(info, "razonSocialSujetoRetenido", "infoCompRetencion"),
+    },
+    fiscalPeriod: required(info, "periodoFiscal", "infoCompRetencion"),
+    supports: readSupports,
+    authorization,
+  };
+}
+
+/**
+ * Elige la lectura por la raíz del XML: la factura, la nota de crédito, la nota de débito o el
+ * comprobante de retención que el sistema emite.
  */
 export function readRideDocument(input: RideSourceInput): RideDocumentData {
   const parsed = parseSource(input);
   const root = parsed.roots.length === 1 ? parsed.roots[0] : undefined;
   if (root === "notaCredito") return readCreditNote(parsed, input);
   if (root === "notaDebito") return readDebitNote(parsed, input);
+  if (root === "comprobanteRetencion") return readWithholdingReceipt(parsed, input);
   return readInvoice(parsed, input);
 }
 

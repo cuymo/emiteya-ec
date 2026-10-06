@@ -13,6 +13,14 @@
 // se modifica y su fecha; la tabla de razones y valores de la modificación; la forma de pago con su
 // denominación del snapshot; y los subtotales por tratamiento con el IVA y el valor total.
 //
+// El comprobante de retención 2.0.0 tiene la suya (add-withholding-receipts, design D19; anexo 2,
+// página 63, que la ficha manda usar para la versión 2.0.0): "COMPROBANTE DE RETENCIÓN" con su
+// autorización y el Code128 de su clave; el sujeto retenido con la fecha de emisión; una fila por
+// retención con el tipo, el número y la fecha de su documento sustento, el ejercicio fiscal, la base,
+// el impuesto, el porcentaje y el valor retenido; y, como datos adicionales (anexo 2, página 60), un
+// bloque por documento con sus impuestos declarados. Sin totales: el XML no trae un total retenido y
+// el RIDE no suma.
+//
 // La lectura y la distribución se eligen por la raíz y la versión del XML.
 //
 // - Fuentes embebidas desde memoria (Noto Sans 2.015, OFL 1.1), con subconjunto; antes de dibujar
@@ -40,6 +48,7 @@ import {
   type RideRenderOutcome,
   type RideRenderer,
   type RideVersions,
+  type RideWithholdingReceipt,
 } from "../../application/ride.ts";
 import { RIDE_FONTS_MANIFEST, type RideFonts } from "./ride-assets.ts";
 import { readRideDocument } from "./ride-source.ts";
@@ -83,6 +92,13 @@ export const DEBIT_NOTE_RIDE_RENDERER_VERSION = "nota-debito-1";
 export const DEBIT_NOTE_RIDE_VERSIONS: RideVersions = {
   ...RIDE_VERSIONS,
   rendererVersion: DEBIT_NOTE_RIDE_RENDERER_VERSION,
+};
+
+/** Versión de la distribución del comprobante de retención: cambia con cualquier cambio de su salida. */
+export const WITHHOLDING_RIDE_RENDERER_VERSION = "retencion-1";
+export const WITHHOLDING_RIDE_VERSIONS: RideVersions = {
+  ...RIDE_VERSIONS,
+  rendererVersion: WITHHOLDING_RIDE_RENDERER_VERSION,
 };
 
 /** Tablas normativas fijas de la ficha (no son estado mutable). */
@@ -146,17 +162,25 @@ const rateOf = (rate: string | null) => FiscalDecimal.parse("tarifa", rate ?? "0
 const isCreditNote = (ride: RideDocumentData): ride is RideCreditNote =>
   ride.kind === "CREDIT_NOTE";
 const isDebitNote = (ride: RideDocumentData): ride is RideDebitNote => ride.kind === "DEBIT_NOTE";
+const isWithholding = (ride: RideDocumentData): ride is RideWithholdingReceipt =>
+  ride.kind === "WITHHOLDING_RECEIPT";
 const isInvoice = (ride: RideDocumentData): ride is RideInvoice =>
-  !isCreditNote(ride) && !isDebitNote(ride);
+  !isCreditNote(ride) && !isDebitNote(ride) && !isWithholding(ride);
 /** Denominación del comprobante modificado por su código (tabla 3 de la ficha). */
 const MODIFIED_TYPES: Readonly<Record<string, string>> = { "01": "FACTURA" };
 const modifiedTypeText = (ride: RideCreditNote | RideDebitNote) =>
   MODIFIED_TYPES[ride.modified.documentType] ?? ride.modified.documentType;
 const titleOf = (ride: RideDocumentData) =>
-  isCreditNote(ride) ? "NOTA DE CRÉDITO" : isDebitNote(ride) ? "NOTA DE DÉBITO" : "FACTURA";
+  isCreditNote(ride)
+    ? "NOTA DE CRÉDITO"
+    : isDebitNote(ride)
+      ? "NOTA DE DÉBITO"
+      : isWithholding(ride)
+        ? "COMPROBANTE DE RETENCIÓN"
+        : "FACTURA";
 
 /** Subtotales en el orden del anexo 2; solo los que el comprobante llenó. */
-export function totalRows(ride: RideDocumentData): [string, string][] {
+export function totalRows(ride: RideInvoice | RideCreditNote | RideDebitNote): [string, string][] {
   const withRate = ride.totals.taxes
     .filter((tax) => ![ZERO_RATE, NOT_SUBJECT, EXEMPT].includes(tax.rateCode))
     // Solo para ordenar de menor a mayor tarifa; lo dibujado es el texto del XML.
@@ -190,6 +214,7 @@ const emissionText = (ride: RideDocumentData) =>
 export function drawnStrings(ride: RideDocumentData): string[] {
   if (isCreditNote(ride)) return creditNoteStrings(ride);
   if (isDebitNote(ride)) return debitNoteStrings(ride);
+  if (isWithholding(ride)) return withholdingStrings(ride);
   return [
     documentNumber(ride),
     ride.authorization.number,
@@ -287,6 +312,57 @@ function debitNoteStrings(ride: RideDebitNote): string[] {
   ];
 }
 
+type WithholdingSupport = RideWithholdingReceipt["supports"][number];
+/** `numDocSustento` de 15 dígitos con el formato establecimiento-punto-secuencial. */
+const supportNumber = (number: string) =>
+  /^\d{15}$/.test(number)
+    ? `${number.slice(0, 3)}-${number.slice(3, 6)}-${number.slice(6)}`
+    : number;
+const supportTypeText = (support: WithholdingSupport) =>
+  support.documentTypeLabel ?? support.documentType;
+const coded = (code: string, name: string | null) => (name === null ? code : `${code} - ${name}`);
+
+function withholdingStrings(ride: RideWithholdingReceipt): string[] {
+  return [
+    documentNumber(ride),
+    ride.authorization.number,
+    environmentText(ride),
+    emissionText(ride),
+    ride.accessKey,
+    ride.legalName,
+    ride.tradeName ?? "",
+    ride.headOfficeAddress,
+    ride.establishmentAddress ?? "",
+    ride.specialTaxpayer ?? "",
+    ride.accountingRequired,
+    ride.withholdingAgentResolution ?? "",
+    ride.rimpeLegend ?? "",
+    ride.ruc,
+    ride.issueDate,
+    ride.subject.legalName,
+    ride.subject.identification,
+    ride.fiscalPeriod,
+    ...ride.supports.flatMap((support) => [
+      supportTypeText(support),
+      supportNumber(support.number),
+      support.issueDate,
+      ...support.withholdings.flatMap((item) => [
+        item.base,
+        item.taxLabel ?? item.taxCode,
+        item.percentage,
+        item.amount,
+      ]),
+      ...support.taxes.flatMap((tax) => [
+        coded(tax.taxCode, tax.taxLabel),
+        tax.rateCode,
+        tax.base,
+        tax.tariff,
+        tax.amount,
+      ]),
+    ]),
+  ];
+}
+
 const label = (text: string) => ({ text, style: "label" });
 const value = (text: string | null) => ({ text: text ?? "", style: "value" });
 const amountCell = (text: string) => ({ text, alignment: "right", style: "cell" });
@@ -361,6 +437,115 @@ function authorizationSection(ride: RideDocumentData, number: string): Content {
     barcode(ride.accessKey),
     { text: ride.accessKey, style: "key", alignment: "center" },
   ]);
+}
+
+/** Sujeto retenido con su identificación y la fecha de emisión (anexo 2, página 63). */
+function subjectSection(ride: RideWithholdingReceipt): Content {
+  return box(
+    [
+      row(150, "Razón Social / Nombres y Apellidos:", ride.subject.legalName, [0, 0, 0, 0]),
+      {
+        columns: [
+          { width: 150, ...label("Identificación:") },
+          { width: "*", ...value(ride.subject.identification) },
+          { width: 70, ...label("Fecha Emisión:") },
+          { width: 70, ...value(ride.issueDate) },
+        ],
+        margin: [0, 3, 0, 0],
+      },
+    ],
+    [0, 8, 0, 8],
+  );
+}
+
+/**
+ * Una fila por retención con los datos de su documento sustento (anexo 2, página 63). El
+ * encabezado se repite en cada página y ninguna fila se parte entre dos.
+ */
+function withholdingsSection(ride: RideWithholdingReceipt): Content {
+  const headers = [
+    "Comprobante",
+    "Número",
+    "Fecha Emisión",
+    "Ejercicio Fiscal",
+    "Base Imponible para la Retención",
+    "Impuesto",
+    "Porcentaje Retención",
+    "Valor Retenido",
+  ];
+  const body: TableCell[][] = [
+    headers.map((text) => ({ text, style: "tableHeader" })),
+    ...ride.supports.flatMap((support) =>
+      support.withholdings.map((item) => [
+        { text: supportTypeText(support), style: "cell" },
+        { text: supportNumber(support.number), style: "cell" },
+        { text: support.issueDate, style: "cell" },
+        { text: ride.fiscalPeriod, style: "cell" },
+        amountCell(item.base),
+        { text: item.taxLabel ?? item.taxCode, style: "cell" },
+        amountCell(item.percentage),
+        amountCell(item.amount),
+      ]),
+    ),
+  ];
+  return {
+    table: {
+      headerRows: 1,
+      dontBreakRows: true,
+      widths: ["*", 74, 50, 44, 66, 44, 50, 56],
+      body,
+    },
+    layout: "grid",
+  };
+}
+
+/**
+ * Datos adicionales (anexo 2, página 60): un bloque por documento sustento con sus impuestos
+ * declarados, cada uno con su código, su código de porcentaje, su base, su tarifa y su valor, tal
+ * como los declaró el usuario. Un bloque nunca se parte entre dos páginas.
+ */
+function supportTaxesSection(ride: RideWithholdingReceipt): Content[] {
+  const blocks = ride.supports
+    .filter((support) => support.taxes.length > 0)
+    .map((support): Content => ({
+      stack: [
+        {
+          text: `${supportTypeText(support)} ${supportNumber(support.number)}`,
+          style: "label",
+          margin: [0, 0, 0, 2],
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: ["*", 70, 70, 50, 64],
+            body: [
+              ["Impuesto", "Código Porcentaje", "Base Imponible", "Tarifa", "Valor"].map(
+                (text) => ({ text, style: "tableHeader" }),
+              ),
+              ...support.taxes.map((tax) => [
+                { text: coded(tax.taxCode, tax.taxLabel), style: "cell" },
+                { text: tax.rateCode, style: "cell", alignment: "center" },
+                amountCell(tax.base),
+                amountCell(tax.tariff),
+                amountCell(tax.amount),
+              ]),
+            ],
+          },
+          layout: "grid",
+        },
+      ],
+      margin: [0, 6, 0, 0],
+      unbreakable: true,
+    }));
+  if (blocks.length === 0) return [];
+  return [
+    {
+      text: "DATOS ADICIONALES: IMPUESTOS DECLARADOS DE LOS DOCUMENTOS SUSTENTO",
+      style: "label",
+      margin: [0, 10, 0, 0],
+    },
+    ...blocks,
+  ];
 }
 
 function buyerSection(ride: RideInvoice): Content {
@@ -632,7 +817,9 @@ export function rideDocument(
           ]
         : isDebitNote(ride)
           ? [modifiedDocumentSection(ride, []), debitNoteReasonsSection(ride), closingSection(ride)]
-          : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
+          : isWithholding(ride)
+            ? [subjectSection(ride), withholdingsSection(ride), ...supportTaxesSection(ride)]
+            : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
     ],
     images: logo
       ? { logo: `data:${logo.mediaType};base64,${Buffer.from(logo.bytes).toString("base64")}` }
@@ -758,7 +945,9 @@ export function createInProcessRideRenderer(fonts: RideFonts): RideRenderer {
             ? CREDIT_NOTE_RIDE_VERSIONS
             : isDebitNote(ride)
               ? DEBIT_NOTE_RIDE_VERSIONS
-              : RIDE_VERSIONS,
+              : isWithholding(ride)
+                ? WITHHOLDING_RIDE_VERSIONS
+                : RIDE_VERSIONS,
           renderMs: performance.now() - started,
         };
       } catch (error) {

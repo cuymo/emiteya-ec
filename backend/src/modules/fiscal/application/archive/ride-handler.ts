@@ -20,6 +20,7 @@ import {
   RideRenderUnavailableError,
   type RideLogo,
   type RideRenderer,
+  type RideWithholdingLabels,
 } from "../../../sri-engine/application/ride.ts";
 import type {
   ArtifactStore,
@@ -97,16 +98,51 @@ function verified(artifact: StoredArtifact | null): StoredArtifact {
 type SnapshotFacts = Readonly<{
   configVersionId: string | null;
   paymentLabels: Readonly<Record<string, string>>;
+  /** Solo el comprobante de retención (`07`): las denominaciones de sus documentos sustento. */
+  withholdingLabels: RideWithholdingLabels | null;
 }>;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
- * Lo que el XML no trae, del snapshot inmutable del comprobante: la versión de la configuración
- * (para el logo) y la denominación de cada forma de pago (design D3).
+ * Denominaciones de un comprobante de retención (add-withholding-receipts, design D19): el tipo de
+ * cada documento sustento, el impuesto de cada retención y el de cada impuesto declarado, tal como
+ * los congeló su snapshot. Se leen sin importar `withholding-receipts`.
  */
-function snapshotFacts(snapshot: unknown): SnapshotFacts {
+function withholdingLabelsOf(supports: readonly unknown[]): RideWithholdingLabels {
+  const documentTypes: Record<string, string> = {};
+  const taxes: Record<string, string> = {};
+  const supportTaxes: Record<string, string> = {};
+  const labelled = (
+    target: Record<string, string>,
+    item: unknown,
+    codeKey: string,
+    labelKey: string,
+  ) => {
+    if (isRecord(item) && typeof item[codeKey] === "string" && typeof item[labelKey] === "string") {
+      target[item[codeKey]] = item[labelKey];
+    }
+  };
+  for (const support of supports) {
+    if (!isRecord(support)) continue;
+    labelled(documentTypes, support.documentType, "code", "label");
+    for (const item of Array.isArray(support.withholdings) ? support.withholdings : []) {
+      labelled(taxes, item, "tax", "taxLabel");
+    }
+    for (const tax of Array.isArray(support.taxes) ? support.taxes : []) {
+      labelled(supportTaxes, tax, "taxCode", "taxLabel");
+    }
+  }
+  return { documentTypes, taxes, supportTaxes };
+}
+
+/**
+ * Lo que el XML no trae, del snapshot inmutable del comprobante: la versión de la configuración
+ * (para el logo), la denominación de cada forma de pago (design D3) y, en un comprobante de
+ * retención, las de sus documentos sustento.
+ */
+function snapshotFacts(snapshot: unknown, documentType: string): SnapshotFacts {
   if (!isRecord(snapshot)) throw new RideStop("RIDE_SOURCE_INVALID", ["snapshot"]);
   const config = snapshot.taxpayerConfig;
   const configVersionId =
@@ -122,7 +158,11 @@ function snapshotFacts(snapshot: unknown): SnapshotFacts {
       paymentLabels[payment.code] = payment.officialLabel;
     }
   }
-  return { configVersionId, paymentLabels };
+  const withholdingLabels =
+    documentType === "07" && Array.isArray(snapshot.supports)
+      ? withholdingLabelsOf(snapshot.supports)
+      : null;
+  return { configVersionId, paymentLabels, withholdingLabels };
 }
 
 const LOGO_TYPES = new Set(["image/png", "image/jpeg"]);
@@ -197,7 +237,7 @@ export function createRideHandler(deps: RideHandlerDependencies): JobHandler {
 
     let prepared;
     try {
-      const facts = snapshotFacts(document.snapshot);
+      const facts = snapshotFacts(document.snapshot, document.documentType);
       const { artifact, provenance } = await source(document);
       const logo = await logoOf(document, facts.configVersionId);
       prepared = { facts, artifact, provenance, logo };
@@ -219,6 +259,9 @@ export function createRideHandler(deps: RideHandlerDependencies): JobHandler {
           environment: document.authorization.environment,
         },
         paymentLabels: prepared.facts.paymentLabels,
+        ...(prepared.facts.withholdingLabels
+          ? { withholdingLabels: prepared.facts.withholdingLabels }
+          : {}),
         logo: prepared.logo?.logo ?? null,
       });
     } catch (error) {

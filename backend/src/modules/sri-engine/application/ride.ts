@@ -20,6 +20,21 @@ export type RideSourceInput = Readonly<{
   authorization: RideAuthorization;
   /** Denominación oficial de cada forma de pago (`formaPago`), del snapshot del comprobante. */
   paymentLabels: Readonly<Record<string, string>>;
+  /** Denominaciones del comprobante de retención, de su snapshot; ausentes en los demás tipos. */
+  withholdingLabels?: RideWithholdingLabels;
+}>;
+
+/**
+ * Denominaciones que el XML del comprobante de retención no trae (add-withholding-receipts, design
+ * D19): las congeló su snapshot al reservar y nunca se leen del catálogo vigente.
+ */
+export type RideWithholdingLabels = Readonly<{
+  /** Tipo de documento sustento por su `codDocSustento` (tabla 4 del Catálogo ATS). */
+  documentTypes: Readonly<Record<string, string>>;
+  /** Impuesto a retener por el `codigo` de la retención (tabla 19 de la ficha). */
+  taxes: Readonly<Record<string, string>>;
+  /** Impuesto declarado del documento sustento por su `codImpuestoDocSustento`. */
+  supportTaxes: Readonly<Record<string, string>>;
 }>;
 
 export type RideTax = Readonly<{
@@ -109,8 +124,50 @@ export type RideDebitNote = Omit<RideInvoice, "kind" | "buyer" | "totals" | "lin
     reasons: readonly Readonly<{ reason: string; value: string }>[];
   }>;
 
+/**
+ * Contenido del comprobante de retención 2.0.0 que el sistema emite (add-withholding-receipts, design
+ * D19): la cabecera y el emisor de la factura, el sujeto retenido, el período fiscal y cada documento
+ * sustento con sus impuestos declarados y sus retenciones, con las denominaciones del snapshot.
+ */
+export type RideWithholdingReceipt = Omit<
+  RideInvoice,
+  "kind" | "buyer" | "totals" | "payments" | "lines"
+> &
+  Readonly<{
+    kind: "WITHHOLDING_RECEIPT";
+    subject: Readonly<{ identificationType: string; identification: string; legalName: string }>;
+    /** `periodoFiscal`, `MM/AAAA`: el ejercicio fiscal de cada fila. */
+    fiscalPeriod: string;
+    supports: readonly Readonly<{
+      /** `codDocSustento` con la denominación del snapshot; null si no la trae. */
+      documentType: string;
+      documentTypeLabel: string | null;
+      /** `numDocSustento`, 15 dígitos. */
+      number: string;
+      /** `dd/mm/aaaa`. */
+      issueDate: string;
+      taxes: readonly Readonly<{
+        taxCode: string;
+        taxLabel: string | null;
+        rateCode: string;
+        base: string;
+        tariff: string;
+        amount: string;
+      }>[];
+      withholdings: readonly Readonly<{
+        taxCode: string;
+        taxLabel: string | null;
+        code: string;
+        base: string;
+        percentage: string;
+        amount: string;
+      }>[];
+    }>[];
+  }>;
+
 /** Un comprobante que el RIDE dibuja, elegido por la raíz y la versión de su XML. */
-export type RideDocumentData = RideInvoice | RideCreditNote | RideDebitNote;
+export type RideDocumentData =
+  RideInvoice | RideCreditNote | RideDebitNote | RideWithholdingReceipt;
 
 /**
  * Motivos deterministas por los que el RIDE no se genera: reintentar da lo mismo, así que la

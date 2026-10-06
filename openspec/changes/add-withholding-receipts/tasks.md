@@ -133,7 +133,7 @@
 
 ## 10. RIDE del comprobante de retención
 
-- [ ] 10.1 Implementar la lectura `comprobanteRetencion` 2.0.0 con su lista blanca y el modelo `RideWithholdingReceipt`, la distribución de la ficha v2.34 (anexo 2, página 63) con el renderer `retencion-1`, las denominaciones desde el snapshot y la selección por raíz y versión sin duplicar el pool (design D19). Verificar con golden propios:
+- [x] 10.1 Implementar la lectura `comprobanteRetencion` 2.0.0 con su lista blanca y el modelo `RideWithholdingReceipt`, la distribución de la ficha v2.34 (anexo 2, página 63) con el renderer `retencion-1`, las denominaciones desde el snapshot y la selección por raíz y versión sin duplicar el pool (design D19). Verificar con golden propios:
   - texto de las páginas con una fila por retención y los datos de su documento;
   - el bloque adicional con los impuestos declarados de cada documento (IVA, ICE e IRBPNR);
   - varios documentos y varias retenciones;
@@ -142,7 +142,7 @@
   - contenido no emitido que detiene la generación;
   - mismos bytes en dos procesos;
   - el RIDE de los demás tipos sin cambios
-- [ ] 10.2 Comprobar el RIDE en el job, el pool y la bandeja. Verificar con una prueba de integración que una retención autorizada programa su RIDE en la misma operación, que se guarda una vez con su procedencia y que se descarga verificado. Documentar la lectura y la distribución en `fiscal-emission.md`
+- [x] 10.2 Comprobar el RIDE en el job, el pool y la bandeja. Verificar con una prueba de integración que una retención autorizada programa su RIDE en la misma operación, que se guarda una vez con su procedencia y que se descarga verificado. Documentar la lectura y la distribución en `fiscal-emission.md`
 
 ## 11. Bandeja con comprobantes de retención
 
