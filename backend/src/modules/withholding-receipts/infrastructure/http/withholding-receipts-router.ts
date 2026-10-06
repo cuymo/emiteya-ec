@@ -19,8 +19,10 @@ import type { WithholdingReceipts } from "../../application/withholding-receipts
 import {
   toWithholdingDraftSummaryView,
   toWithholdingDraftView,
+  toWithholdingReceiptSummaryView,
   toWithholdingReceiptView,
   toWithholdingSupplierView,
+  toWithholdingTransmissionView,
 } from "./views.ts";
 
 function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
@@ -100,6 +102,33 @@ export function withholdingReceiptsRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  router.get("/withholding-receipts", async (req, res) => {
+    const { items, meta } = await withholdings.list(contextOf(res), req.query);
+    send(res, 200, items.map(toWithholdingReceiptSummaryView), meta);
+  });
+
+  router.get("/withholding-receipts/:withholdingReceiptId", async (req, res) => {
+    const details = await withholdings.get(contextOf(res), param(req.params.withholdingReceiptId));
+    send(res, 200, toWithholdingReceiptView(details));
+  });
+
+  router.get("/withholding-receipts/:withholdingReceiptId/transmission", async (req, res) => {
+    const view = await withholdings.transmission(
+      contextOf(res),
+      param(req.params.withholdingReceiptId),
+    );
+    send(res, 200, toWithholdingTransmissionView(view));
+  });
+
+  router.post("/withholding-receipts/:withholdingReceiptId/reconciliations", async (req, res) => {
+    const details = await withholdings.requestReconciliation(
+      contextOf(res),
+      param(req.params.withholdingReceiptId),
+      req.body,
+    );
+    send(res, 202, toWithholdingReceiptView(details));
   });
 
   router.post("/withholding-receipts/:withholdingReceiptId/signing-attempts", async (req, res) => {

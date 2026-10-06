@@ -164,6 +164,9 @@ import {
   updateDebitNoteDraftSchema,
 } from "../debit-notes.ts";
 import {
+  listWithholdingReceiptsQuerySchema,
+  withholdingReceiptSummaryViewSchema,
+  withholdingTransmissionViewSchema,
   emitWithholdingHeadersSchema,
   emitWithholdingReceiptSchema,
   withholdingReceiptIdParamsSchema,
@@ -2153,6 +2156,76 @@ export const apiRoutes: readonly RouteDefinition[] = [
       401: errors[401],
       403: errors[403],
       404: withholdingNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/withholding-receipts",
+    summary:
+      "Listar comprobantes de retención por estado y período fiscal y buscar por número o proveedor, los más recientes primero",
+    request: { query: listWithholdingReceiptsQuerySchema },
+    responses: {
+      200: {
+        description:
+          "Página de retenciones con su proveedor, su período, su total retenido y el total en `meta`.",
+        schema: z.strictObject({
+          data: z.array(withholdingReceiptSummaryViewSchema),
+          meta: withholdingListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/withholding-receipts/:withholdingReceiptId",
+    summary:
+      "Consultar un comprobante de retención desde su snapshot: sujeto, parte relacionada declarada por el usuario, período, documentos sustento con sus impuestos, pagos y retenciones, total retenido, diagnóstico y transmisión",
+    request: { params: withholdingReceiptIdParamsSchema },
+    responses: {
+      200: withholdingResponse("Comprobante de retención."),
+      401: errors[401],
+      403: errors[403],
+      404: withholdingNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/withholding-receipts/:withholdingReceiptId/transmission",
+    summary:
+      "Consultar el historial de la transmisión al SRI de un comprobante de retención, sin respuestas originales ni XML",
+    request: { params: withholdingReceiptIdParamsSchema },
+    responses: {
+      200: {
+        description: "Las 100 entradas más recientes del historial y el total.",
+        schema: successEnvelope(withholdingTransmissionViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: withholdingNotFound,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/withholding-receipts/:withholdingReceiptId/reconciliations",
+    summary:
+      "Pedir la reconciliación de un comprobante de retención con el SRI, con motivo (solo el administrador)",
+    request: { params: withholdingReceiptIdParamsSchema, body: requestReconciliationSchema },
+    responses: {
+      202: withholdingResponse(
+        "Reconciliación programada con las reglas de la transmisión; la retención con su estado actual.",
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: withholdingNotFound,
+      409: {
+        description:
+          "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (WITHHOLDING_NOT_RECONCILABLE).",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
 ];

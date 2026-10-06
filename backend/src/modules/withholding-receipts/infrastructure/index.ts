@@ -11,10 +11,13 @@ import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
 import {
   createArtifactStore,
   createDocumentRepository,
+  createReconciliationRequestUnitOfWork,
   createTransmissionReader,
   type SigningPipeline,
   type SigningProfile,
 } from "../../fiscal/infrastructure/index.ts";
+import type { JobStore } from "../../../platform/jobs/jobs.ts";
+import { createPrismaJobStore } from "../../../platform/jobs/prisma-job-store.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import type { AccessKeys, XsdValidator } from "../../sri-engine/application/ports.ts";
 import { createAccessKeys } from "../../sri-engine/infrastructure/access-keys.ts";
@@ -30,6 +33,7 @@ import { withholdingReceiptSigningProfile as createWithholdingSigningProfile } f
 import { createWithholdingReceipts } from "../application/withholding-receipts.ts";
 import { withholdingReceiptsRouter } from "./http/withholding-receipts-router.ts";
 import { registerWithholdingMetrics } from "./metrics.ts";
+import { createWithholdingReceiptListReader } from "./prisma-withholding-list.ts";
 import { createWithholdingDraftRepository } from "./prisma-drafts.ts";
 import { createWithholdingReads, type SigningReads } from "./reads.ts";
 import {
@@ -43,6 +47,8 @@ export const withholdingReceiptSigningProfile = (): SigningProfile =>
 
 export type WithholdingReceiptsModuleOptions = {
   prisma: PrismaClient;
+  /** Esquema de la base de la conexión: la cola durable lo nombra. */
+  schema: string;
   authorizer: Authorizer;
   /** Firma vigente sobre un cliente (`signingModule(...).reads`). */
   signingReads: SigningReads;
@@ -60,8 +66,14 @@ export type WithholdingReceiptsModuleOptions = {
   metrics?: Registry;
   /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión; nunca en producción. */
   stageTimings?: boolean;
+  /** Cola durable: la reconciliación manual encola su job. */
+  jobs?: Pick<JobStore, "enqueueIn">;
+  /** `SRI_CONCLUSION_WINDOW_HOURS` en milisegundos; 24 horas por defecto. */
+  conclusionWindowMs?: number;
   now?: () => Date;
 };
+
+const DEFAULT_CONCLUSION_WINDOW_MS = 24 * 3_600_000;
 
 export function withholdingReceiptsModule(options: WithholdingReceiptsModuleOptions) {
   const now = options.now ?? (() => new Date());
@@ -93,6 +105,13 @@ export function withholdingReceiptsModule(options: WithholdingReceiptsModuleOpti
     audit: createAuditLog(prisma),
     authorizer: options.authorizer,
     transmission: createTransmissionReader(prisma),
+    list: createWithholdingReceiptListReader(prisma),
+    reconciliations: createReconciliationRequestUnitOfWork(
+      prisma,
+      options.jobs ?? createPrismaJobStore(prisma, options.schema),
+    ),
+    conclusionWindowMs: options.conclusionWindowMs ?? DEFAULT_CONCLUSION_WINDOW_MS,
+    now,
   });
   const emission = createWithholdingEmission({
     uow: createWithholdingEmissionUnitOfWork(prisma, {

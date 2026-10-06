@@ -5,13 +5,20 @@ import type {
   SriMessageView,
   WithholdingDraftSummaryView,
   WithholdingDraftView,
+  WithholdingReceiptSummaryView,
   WithholdingReceiptView,
   WithholdingSupplierView,
+  WithholdingTransmissionView,
 } from "@facturador/contracts";
+import { roundHalfUp } from "../../../../platform/decimal/fiscal-decimal.ts";
 import { stopMessage } from "../../../invoices/application/transmission-messages.ts";
 import { isAttemptCode, withholdingDiagnosticMessage } from "../../application/diagnostics.ts";
 import type { WithholdingDraftDetails } from "../../application/drafts.ts";
-import type { WithholdingReceiptDetails } from "../../application/withholding-receipts.ts";
+import type {
+  WithholdingReceiptDetails,
+  WithholdingReceiptListItem,
+  WithholdingTransmission,
+} from "../../application/withholding-receipts.ts";
 import type { WithheldSubject } from "../../domain/evaluation.ts";
 import type { WithholdingSnapshot } from "../../domain/snapshot.ts";
 
@@ -237,5 +244,62 @@ export function toWithholdingReceiptView(
     transmission: transmissionView(details),
     createdAt: document.createdAt.toISOString(),
     signedAt: document.signedAt?.toISOString() ?? null,
+  };
+}
+
+export function toWithholdingReceiptSummaryView({
+  document,
+  transmissionStopped,
+}: WithholdingReceiptListItem): WithholdingReceiptSummaryView {
+  const snapshot = document.snapshot as WithholdingSnapshot;
+  const attempt = document.lastAttempt;
+  return {
+    id: document.id,
+    documentNumber: document.documentNumber,
+    environment: document.environment,
+    issueDate: document.issueDate,
+    fiscalPeriod: snapshot.fiscalPeriod,
+    subjectIdentification: document.buyerIdentification,
+    subjectName: document.buyerName,
+    supportCount: snapshot.supports.length,
+    total: roundHalfUp(document.total, 2),
+    state: document.state,
+    diagnosticCode:
+      document.state === "RESERVED" && attempt && isAttemptCode(attempt.code) ? attempt.code : null,
+    transmissionStopped,
+    createdAt: document.createdAt.toISOString(),
+  };
+}
+
+/** Historial de la transmisión: transiciones e intentos resumidos (design D18). */
+export function toWithholdingTransmissionView({
+  document,
+  events,
+  total,
+}: WithholdingTransmission): WithholdingTransmissionView {
+  return {
+    withholdingReceiptId: document.id,
+    state: document.state,
+    events: events.map((event) =>
+      event.kind === "TRANSITION"
+        ? {
+            kind: "TRANSITION",
+            at: event.at.toISOString(),
+            fromState: event.from,
+            toState: event.to,
+            cause: event.cause,
+            actor: event.actor,
+            actorName: event.actorName,
+          }
+        : {
+            kind: "ATTEMPT",
+            at: event.at.toISOString(),
+            operation: event.operation,
+            origin: event.origin,
+            outcome: event.outcome,
+            messages: messagesView(event.messages),
+          },
+    ),
+    total,
   };
 }

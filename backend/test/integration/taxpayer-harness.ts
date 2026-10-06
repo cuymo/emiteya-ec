@@ -334,6 +334,7 @@ export function buildTaxpayerApp(
       router.use(
         ...withholdingReceiptsModule({
           prisma: db.database.prisma,
+          schema: db.name,
           authorizer: withholdingAuthorizer,
           signingReads: signing
             ? signing.reads
@@ -342,6 +343,7 @@ export function buildTaxpayerApp(
           limits: { ...WITHHOLDING_LIMITS_DEFAULT, ...options.withholdingReceipts?.limits },
           xsd: options.invoices?.xsd ?? testXsdValidator(),
           signing: withholdingSigning.pipeline(withholdingReceiptSigningProfile()),
+          ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
           ...(options.withholdingReceipts?.signAfterReserve === false
             ? { signAfterReserve: false }
             : {}),

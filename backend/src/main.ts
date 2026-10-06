@@ -410,6 +410,7 @@ apiRouter.use(
 apiRouter.use(
   ...withholdingReceiptsModule({
     prisma: database.prisma,
+    schema: parseDatabaseUrl(env.DATABASE_URL).schema ?? "public",
     authorizer,
     signingReads: signing.reads,
     parties: supplierReader,
@@ -422,6 +423,8 @@ apiRouter.use(
     xsd: xsdValidator,
     signing: documentSigning.pipeline(withholdingReceiptSigningProfile()),
     metrics: metrics.registry,
+    jobs: jobStore,
+    conclusionWindowMs: transmissionSettings.poll.windowMs,
     stageTimings: env.EMISSION_STAGE_TIMINGS,
   }).routers,
 );

@@ -162,7 +162,10 @@ describe("generación de OpenAPI", () => {
       "/withholding-receipts/drafts/{draftId}",
       "/withholding-receipts/options",
       "/withholding-receipts/suppliers",
+      "/withholding-receipts/{withholdingReceiptId}",
+      "/withholding-receipts/{withholdingReceiptId}/reconciliations",
       "/withholding-receipts/{withholdingReceiptId}/signing-attempts",
+      "/withholding-receipts/{withholdingReceiptId}/transmission",
     ]);
     expect(Object.keys(paths["/users"] ?? {}).sort()).toEqual(["get", "post"]);
     // El RIDE solo se lee con GET; imprimir es una solicitud explícita con POST, sin bytes.

@@ -101,16 +101,20 @@ describe("rutas documentadas", () => {
       .map((route) => `${route.method} ${route.path}`)
       .sort();
     // La descarga del XML autorizado lee un artefacto guardado: no habla con el SRI.
-    expect(sri).toEqual([
-      "get /credit-notes/:creditNoteId/transmission",
-      "get /debit-notes/:debitNoteId/transmission",
-      "get /documents/:documentId/authorized-xml",
-      "get /fiscal-catalogs/sri-transmission-policy",
-      "get /invoices/:invoiceId/transmission",
-      "post /credit-notes/:creditNoteId/reconciliations",
-      "post /debit-notes/:debitNoteId/reconciliations",
-      "post /invoices/:invoiceId/reconciliations",
-    ]);
+    expect(sri).toEqual(
+      [
+        "get /credit-notes/:creditNoteId/transmission",
+        "get /debit-notes/:debitNoteId/transmission",
+        "get /documents/:documentId/authorized-xml",
+        "get /fiscal-catalogs/sri-transmission-policy",
+        "get /invoices/:invoiceId/transmission",
+        "post /credit-notes/:creditNoteId/reconciliations",
+        "post /debit-notes/:debitNoteId/reconciliations",
+        "post /invoices/:invoiceId/reconciliations",
+        "get /withholding-receipts/:withholdingReceiptId/transmission",
+        "post /withholding-receipts/:withholdingReceiptId/reconciliations",
+      ].sort(),
+    );
   });
 
   it("ninguna ruta permite bloquear ni desbloquear la identidad tributaria", () => {

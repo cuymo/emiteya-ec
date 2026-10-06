@@ -110,6 +110,11 @@ const COMPLETED_AUDIT: Readonly<Record<string, { action: AuditAction; idField: s
   "04": { action: "credit_note.reconciliation_completed", idField: "creditNoteId" },
   // add-debit-notes, design D2 y D17.
   "05": { action: "debit_note.reconciliation_completed", idField: "debitNoteId" },
+  // add-withholding-receipts, design D2 y D18.
+  "07": {
+    action: "withholding_receipt.reconciliation_completed",
+    idField: "withholdingReceiptId",
+  },
 };
 
 /** Estado final de una decisión, para la auditoría de la reconciliación manual. */
