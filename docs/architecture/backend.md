@@ -152,12 +152,14 @@ see `idempotency.md`.
 ## Emisión por tipo de comprobante
 
 La reserva, la firma y la reconciliación manual son de `fiscal` y las comparten todos los tipos que
-el sistema emite: factura, nota de crédito, nota de débito y comprobante de retención
-(`add-credit-notes`, design D2; `add-debit-notes`, design D2; `add-withholding-receipts`, design
-D2; detalle en `fiscal-emission.md`):
+el sistema emite: factura, nota de crédito, nota de débito, comprobante de retención y guía de
+remisión (`add-credit-notes`, design D2; `add-debit-notes`, design D2; `add-withholding-receipts`,
+design D2; `add-shipping-guides`, design D2; detalle en `fiscal-emission.md`):
 
 - `reserveDocumentIn` reserva el secuencial, bloquea la identidad tributaria, compone la clave e
   inserta el comprobante `RESERVED` con su transición, dentro de la transacción del módulo que emite.
+  Las columnas del receptor son un comprador con el total (`BUYER`) o, para la guía, sus
+  destinatarios en `electronic_document_recipient` sin total ni comprador (`RECIPIENTS`).
 - `createSigningPipeline` lleva el comprobante de `RESERVED` a `SIGNED` con el perfil de su tipo
   (`SigningProfile`: builder del XML desde el snapshot y auditoría del paso a `SIGNED`); `main.ts`
   compone `signingPipelines` una vez y entrega a cada módulo su pipeline.
@@ -227,6 +229,20 @@ de renta e IVA a un proveedor, con documentos sustento externos y sin capacidade
 - **Reserva.** Sin recursos compartidos que bloquear: los documentos sustento son externos y no consumen capacidad. El borrador y la configuración se bloquean; el registro del comprobante y sus líneas (`withholding_receipt`, `withholding_receipt_line`) se insertan con la reserva, con triggers que exigen un comprobante `07` de la misma empresa y otro, diferido, que impide confirmar un `07` sin su registro (`database.md`).
 - **Independencia.** Autorizada, devuelta o no autorizada, una retención no registra movimientos de inventario, no cambia las capacidades acreditables ni las devolvibles y no modifica ninguna factura ni nota; las reconciliaciones no informan diferencias (`test/integration/withholding-independence.test.ts`).
 - **Métricas.** `withholding_receipt_reservations_total` y `withholding_receipt_items_total{tax}` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
+
+## Guías de remisión
+
+El módulo `shipping-guides` (`add-shipping-guides`) emite guías de remisión 1.1.0 con uno o varios
+destinatarios, sin total monetario, sin inventario, capacidades ni roles:
+
+- **Capas.**
+  - `domain/`: el borrador, la evaluación pura en el orden de design D12 (`evaluateShippingGuide`), la vista previa y el snapshot autosuficiente con la declaración congelada por destinatario (`buildShippingGuideSnapshot`);
+  - `application/`: borradores (con la propuesta desde una factura), opciones y búsquedas, las mercancías sugeridas no autoritativas (`suggestedGoods`), el contexto de la evaluación, la emisión (comprobación previa, declaración y transacción de `RESERVED`), consultas, reintento de firma, reconciliación manual, diagnósticos, la proyección del XML y el perfil de la firma;
+  - `infrastructure/`: borradores, lecturas de la preparación de la empresa y de sus establecimientos, las facturas elegibles, la lista, unidades de trabajo, métricas y rutas.
+- **Dirección.** Ningún módulo importa `shipping-guides`, salvo `main.ts`, y `shipping-guides` no importa `inventory`, `invoices`, `parties`, `products` ni otro comprobante. `main.ts` compone los puertos `ShippingPartyReader` (`shippingPartyReader` de `parties`), `ShippingProductReader` (`productReader`) y `ShippingInvoiceReader` (`invoiceCreditSource`, sin cambios), y la firma compartida con `shippingGuideSigningProfile`. El builder XML (`shipping-guide-xml-builder.ts`) vive en `sri-engine` con su proyección del snapshot.
+- **Reserva.** Sin recursos compartidos que bloquear: una factura sustento no tiene capacidad que consumir. El borrador y la configuración se bloquean; la cabecera común (`electronic_document`, sin total ni comprador) y sus destinatarios (`electronic_document_recipient`), el registro de la guía y sus destinatarios (`shipping_guide`, `shipping_guide_recipient`) se insertan con la reserva, con triggers que exigen un `06` de la empresa, una factura `01` autorizada del mismo ambiente y un origen distinto del destino en un traslado propio, y otro, diferido, que impide confirmar un `06` sin sus registros (`database.md`).
+- **Independencia.** Autorizada, devuelta o no autorizada, una guía no registra movimientos de inventario, no cambia la factura sustento ni sus capacidades y no asigna roles; las reconciliaciones no informan diferencias (`test/integration/shipping-guide-independence.test.ts`).
+- **Métricas.** `shipping_guide_reservations_total` y `shipping_guide_recipients_total{support}` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
 
 ## Catálogos de retención y de sustento
 

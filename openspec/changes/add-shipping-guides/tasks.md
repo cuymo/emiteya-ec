@@ -90,8 +90,8 @@
 
 ## 9. Independencia y dirección de las dependencias
 
-- [ ] 9.1 Probar con PostgreSQL real que una guía autorizada, devuelta y no autorizada de un producto con control de stock no registra movimientos ni cambia saldos de inventario, no cambia la factura sustento ni su capacidad acreditable, y no asigna roles a sus terceros. Verificar que las reconciliaciones de capacidades y saldos no informan diferencias
-- [ ] 9.2 Añadir la prueba de arquitectura de design D1 (nadie importa `shipping-guides`, y `shipping-guides` no importa `inventory`, `invoices`, `parties`, `products` ni otro comprobante) y documentar el módulo en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba pasa y detecta cada violación en archivos de ejemplo
+- [x] 9.1 Probar con PostgreSQL real que una guía autorizada, devuelta y no autorizada de un producto con control de stock no registra movimientos ni cambia saldos de inventario, no cambia la factura sustento ni su capacidad acreditable, y no asigna roles a sus terceros. Verificar que las reconciliaciones de capacidades y saldos no informan diferencias
+- [x] 9.2 Añadir la prueba de arquitectura de design D1 (nadie importa `shipping-guides`, y `shipping-guides` no importa `inventory`, `invoices`, `parties`, `products` ni otro comprobante) y documentar el módulo en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba pasa y detecta cada violación en archivos de ejemplo
 
 ## 10. RIDE de la guía
 
