@@ -33,14 +33,14 @@ const IDENTIFICATION_ERRORS = new Set([
   "PARTY_IDENTIFICATION_TAKEN",
 ]);
 
-const toForm = (party: PartyView | null): FormInput => ({
+const toForm = (party: PartyView | null, initialRoles: readonly PartyRole[] = []): FormInput => ({
   identificationType: party?.identificationType ?? "04",
   identification: party?.identification ?? "",
   legalName: party?.legalName ?? "",
   address: party?.address ?? "",
   email: party?.email ?? "",
   phone: party?.phone ?? "",
-  roles: party?.roles ?? [],
+  roles: party?.roles ?? [...initialRoles],
 });
 
 export function PartyDialog({
@@ -48,6 +48,8 @@ export function PartyDialog({
   party,
   onClose,
   onShowExisting,
+  initialRoles,
+  onSaved,
 }: {
   open: boolean;
   /** Tercero que se corrige; null para un alta. */
@@ -55,6 +57,10 @@ export function PartyDialog({
   onClose: () => void;
   /** Lleva la lista al tercero que ya tiene esa identificación. */
   onShowExisting: (identification: string) => void;
+  /** Roles marcados en un alta, como el de proveedor desde una retención. */
+  initialRoles?: readonly PartyRole[];
+  /** El tercero guardado, para quien abrió el diálogo desde otro flujo. */
+  onSaved?: (party: PartyView) => void;
 }) {
   const rolesLabel = useId();
   const [error, setError] = useState<string>();
@@ -62,12 +68,12 @@ export function PartyDialog({
   const types = useIdentificationTypes(open);
   const form = useForm<FormInput, unknown, PartyData>({
     resolver: zodResolver(createPartySchema),
-    defaultValues: toForm(party),
+    defaultValues: toForm(party, initialRoles),
   });
   const { errors } = form.formState;
   useEffect(() => {
-    if (open) form.reset(toForm(party));
-  }, [open, party, form]);
+    if (open) form.reset(toForm(party, initialRoles));
+  }, [open, party, form, initialRoles]);
 
   const close = () => {
     setError(undefined);
@@ -75,7 +81,10 @@ export function PartyDialog({
     onClose();
   };
   const save = useSaveParty({
-    onSuccess: close,
+    onSuccess: (saved) => {
+      onSaved?.(saved);
+      close();
+    },
     onError: (cause) => {
       if (cause instanceof ApiError && IDENTIFICATION_ERRORS.has(cause.code)) {
         form.setError("identification", { message: cause.message }, { shouldFocus: true });

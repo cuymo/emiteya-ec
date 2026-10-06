@@ -15,6 +15,7 @@ import {
   Globe,
   ListOrdered,
   Package,
+  ReceiptText,
   Store,
   Users,
   Warehouse,
@@ -49,6 +50,13 @@ const GROUPS: Group[] = [
         label: "Notas de débito",
         icon: FilePlus,
         permission: "debitNotes.read",
+      },
+      // add-withholding-receipts, design D24.
+      {
+        href: "/retenciones",
+        label: "Retenciones",
+        icon: ReceiptText,
+        permission: "withholdings.read",
       },
       // add-document-archive, design D13: la bandeja documental.
       {

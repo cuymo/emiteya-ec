@@ -3,6 +3,9 @@
 // dónde salen. Decisión: qué tarifas y formas de pago habilitar. Acción: el Switch de cada entrada.
 // P0: IVA y formas de pago. P1: ICE, IRBPNR y la fuente. P2: identificación, consumidor final, límite
 // de tamaño del envío al SRI, matriz y esquemas, de solo lectura. P3 (historial de datasets): fuera.
+// Los catálogos de retención (add-withholding-receipts, design D24) muestran la clasificación de cada
+// entrada y, en las fuera de alcance, su razón, sin habilitación: solo los conceptos de renta y los
+// códigos de IVA soportados se habilitan por empresa.
 "use client";
 
 import {
@@ -10,6 +13,7 @@ import {
   type CatalogEntryView,
   type FiscalCatalogSummaryView,
   type FiscalCatalogType,
+  type ScopeClassification,
   type SpecialCaseCategory,
 } from "@facturador/contracts";
 import Link from "next/link";
@@ -26,6 +30,7 @@ import { useProductTaxSummary } from "@/features/products/products-api";
 import {
   entryLabel,
   formatIsoDate,
+  sourceName,
   startDescription,
   useCatalogEntries,
   useCatalogSummaries,
@@ -70,8 +75,45 @@ const normalize = (text: string) =>
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
 
+/** Clasificación de alcance de una entrada de retención y, si está fuera de alcance, su razón. */
+const SCOPE_LABELS: Record<ScopeClassification, { label: string; reason: string | null }> = {
+  SUPPORTED: { label: "Soportada", reason: null },
+  SUPPORTED_FIXED: { label: "Soportada", reason: null },
+  SUPPORTED_FIXED_RESIDENT: { label: "Soportada", reason: null },
+  OUT_OF_SCOPE_NON_RESIDENT: {
+    label: "Fuera de alcance",
+    reason: "Pago a no residentes: el sistema retiene solo a proveedores residentes.",
+  },
+  OUT_OF_SCOPE_VARIABLE: {
+    label: "Fuera de alcance",
+    reason: "La fuente publica un porcentaje variable o textual, no uno fijo.",
+  },
+  OUT_OF_SCOPE_SPECIAL_STRUCTURE: {
+    label: "Fuera de alcance",
+    reason: "Exige una estructura especial del comprobante que el sistema no emite.",
+  },
+  OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION: {
+    label: "Pendiente de evidencia",
+    reason:
+      "La fuente no establece la representación exacta de su código en el comprobante; soporte futuro.",
+  },
+  OUT_OF_SCOPE_PENDING_EVIDENCE: {
+    label: "Pendiente de evidencia",
+    reason: "Falta evidencia oficial para emitirla; soporte futuro.",
+  },
+  OUT_OF_SCOPE_MVP: { label: "Fuera de alcance", reason: "No forma parte del alcance actual." },
+  OUT_OF_SCOPE_EXPIRED: { label: "Fuera de alcance", reason: "Ya no está vigente." },
+};
+
 function SourceLine({ summary }: { summary: FiscalCatalogSummaryView | undefined }) {
   if (!summary) return null;
+  if (!summary.source.document.startsWith("Ficha técnica")) {
+    return (
+      <p className="text-xs text-foreground-muted">
+        Fuente: {sourceName(summary.source)}, versión {summary.datasetVersion} del catálogo.
+      </p>
+    );
+  }
   return (
     <p className="text-xs text-foreground-muted">
       Fuente: ficha técnica del SRI v{summary.source.version} (
@@ -83,13 +125,13 @@ function SourceLine({ summary }: { summary: FiscalCatalogSummaryView | undefined
 function EntryRow({
   catalogType,
   entry,
-  sourceVersion,
+  source,
   canManage,
   usage,
 }: {
   catalogType: FiscalCatalogType;
   entry: CatalogEntryView;
-  sourceVersion: string;
+  source: FiscalCatalogSummaryView["source"];
   canManage: boolean;
   /** Productos activos que usan la entrada (add-parties-and-products, design D17). */
   usage: number;
@@ -100,7 +142,13 @@ function EntryRow({
   const products = usage === 1 ? "1 producto activo" : `${usage} productos activos`;
   const version = entry.applicable ?? entry.versions.at(-1)!;
   const rate = rateDescription(entry);
-  const enableable = entry.enablement.source !== "NOT_ENABLEABLE";
+  const scope = version.withholding;
+  const scopeLabel = scope ? SCOPE_LABELS[scope.scopeClassification] : null;
+  const withholdingRate = scope?.percentage
+    ? formatPercentage(scope.percentage)
+    : (scope?.rateText ?? null);
+  // Una entrada de retención fuera de alcance no se elige ni se habilita: no lleva control.
+  const enableable = entry.enablement.source !== "NOT_ENABLEABLE" && (scope?.selectable ?? true);
   return (
     <li className="flex flex-col gap-1 px-1.5 py-1 sm:flex-row sm:items-center sm:justify-between sm:gap-1.5">
       <div className="flex min-w-0 flex-col gap-0.5 text-sm">
@@ -111,9 +159,23 @@ function EntryRow({
           Código <span className="tabular-nums">{entry.code}</span>
           {entry.entryKey !== entry.code ? ` · variante ${entry.entryKey}` : ""}
           {rate ? ` · ${rate}` : ""}
+          {withholdingRate ? ` · ${withholdingRate}` : ""}
         </span>
+        {scopeLabel && (
+          <span className="flex flex-col gap-0.5">
+            <span>
+              <StatusBadge
+                tone={scope?.selectable ? "success" : "neutral"}
+                label={scopeLabel.label}
+              />
+            </span>
+            {scopeLabel.reason && (
+              <span className="text-xs text-foreground-muted">{scopeLabel.reason}</span>
+            )}
+          </span>
+        )}
         <span className="text-xs text-foreground-muted">
-          {startDescription(version, sourceVersion)}
+          {startDescription(version, source)}
           {version.effectiveTo ? ` · hasta ${formatIsoDate(version.effectiveTo)}` : ""}
         </span>
         {usage > 0 && <span className="text-xs text-foreground-muted">Usada por {products}</span>}
@@ -201,7 +263,7 @@ function CatalogSection({
       {filterable && (
         <div className="flex max-w-sm flex-col gap-0.5">
           <label htmlFor={filterId} className="text-sm font-medium">
-            Filtrar por código o denominación
+            Filtrar por código o denominación<span className="sr-only"> en {title}</span>
           </label>
           <Input
             id={filterId}
@@ -227,7 +289,7 @@ function CatalogSection({
               key={entry.entryKey}
               catalogType={catalogType}
               entry={entry}
-              sourceVersion={entries.data.catalog.source.version}
+              source={entries.data.catalog.source}
               canManage={canManage}
               usage={usage.get(entry.entryKey) ?? 0}
             />
@@ -523,6 +585,49 @@ export function FiscalCatalogsScreen() {
         summary={summary("irbpnr-rate")}
         canManage={canManage}
         usage={usageOf("irbpnr-rate")}
+      />
+      <CatalogSection
+        catalogType="withholding-income-concept"
+        title="Conceptos de retención de la renta"
+        description="Del Catálogo ATS. Solo los conceptos de residentes con porcentaje fijo se pueden usar en una retención; los demás muestran por qué están fuera de alcance."
+        summary={summary("withholding-income-concept")}
+        canManage={canManage}
+        usage={none}
+        filterable
+      />
+      <CatalogSection
+        catalogType="withholding-iva-code"
+        title="Códigos de retención del IVA"
+        description="Habilita los códigos de retención del IVA que usa tu empresa."
+        summary={summary("withholding-iva-code")}
+        canManage={canManage}
+        usage={none}
+      />
+      <CatalogSection
+        catalogType="withholding-tax"
+        title="Impuestos a retener"
+        description="Renta e IVA se retienen; el ISD queda pendiente de evidencia."
+        summary={summary("withholding-tax")}
+        canManage={canManage}
+        usage={none}
+      />
+      <CatalogSection
+        catalogType="support-document-type"
+        title="Tipos de documento sustento"
+        description="Del Catálogo ATS. Una retención acepta facturas, notas de venta y liquidaciones de compra."
+        summary={summary("support-document-type")}
+        canManage={canManage}
+        usage={none}
+        filterable
+      />
+      <CatalogSection
+        catalogType="support-code"
+        title="Sustentos tributarios"
+        description="Del Catálogo ATS. Cada tipo de documento admite sus sustentos."
+        summary={summary("support-code")}
+        canManage={canManage}
+        usage={none}
+        filterable
       />
       <section aria-labelledby="mas-datos" className="flex flex-col gap-1">
         <h2 id="mas-datos" className="text-xl font-semibold">

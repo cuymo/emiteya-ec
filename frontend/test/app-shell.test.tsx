@@ -152,6 +152,19 @@ describe("shell autenticado", () => {
     }
   });
 
+  it("administrador y operador ven Retenciones en Operación (add-withholding-receipts)", async () => {
+    for (const me of [ADMIN_ME, OPERATOR_ME]) {
+      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
+      const view = renderShell();
+      await screen.findByText("contenido");
+      expect(screen.getByRole("link", { name: "Retenciones" }).getAttribute("href")).toBe(
+        "/retenciones",
+      );
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("sin sesión lleva al inicio de sesión conservando la URL, sin aviso de sesión vencida", async () => {
     mockApi({
       "GET /api/v1/me": () => ({

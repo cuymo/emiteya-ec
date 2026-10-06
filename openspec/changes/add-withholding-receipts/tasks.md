@@ -150,8 +150,8 @@
 
 ## 12. Pantallas de retenciones y catálogos
 
-- [ ] 12.1 Implementar Retenciones en `/retenciones`, dentro de "Operación" (design D24), con lista, búsqueda, filtros de estado y período en la URL, borradores en curso y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
-- [ ] 12.2 Implementar el borrador con los pasos de design D24:
+- [x] 12.1 Implementar Retenciones en `/retenciones`, dentro de "Operación" (design D24), con lista, búsqueda, filtros de estado y período en la URL, borradores en curso y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
+- [x] 12.2 Implementar el borrador con los pasos de design D24:
   - proveedor con selector y "Nuevo proveedor" con `PartyDialog`;
   - parte relacionada sin selección inicial;
   - período con aviso;
@@ -167,8 +167,8 @@
   - éxito que lleva al detalle;
   - doble clic que envía una sola emisión con la misma clave en el reintento;
   - los `409` explicados y el foco tras cada acción
-- [ ] 12.3 Implementar el detalle de la retención y los catálogos de retención en Catálogos fiscales (consulta con clasificación y fuente; habilitación de los soportados para el administrador). Verificar con pruebas de componente: documentos con sus retenciones, `parteRel` como declarada, reintento de firma, transmisión y documentos; catálogos con la clasificación y la razón de los fuera de alcance, sin control de habilitación en ellos. Documentar las pantallas en `fiscal-emission.md` con sus rutas y permisos
-- [ ] 12.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-withholding-receipts/ui-review.md`. Verificar que no quedan hallazgos abiertos
+- [x] 12.3 Implementar el detalle de la retención y los catálogos de retención en Catálogos fiscales (consulta con clasificación y fuente; habilitación de los soportados para el administrador). Verificar con pruebas de componente: documentos con sus retenciones, `parteRel` como declarada, reintento de firma, transmisión y documentos; catálogos con la clasificación y la razón de los fuera de alcance, sin control de habilitación en ellos. Documentar las pantallas en `fiscal-emission.md` con sus rutas y permisos
+- [x] 12.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-withholding-receipts/ui-review.md`. Verificar que no quedan hallazgos abiertos
 
 ## 13. Rendimiento y prueba end-to-end
 

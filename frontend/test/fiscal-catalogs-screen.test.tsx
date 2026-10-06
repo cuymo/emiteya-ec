@@ -20,10 +20,17 @@ const SOURCE = {
   url: "https://www.sri.gob.ec/facturacion-electronica",
   sha256: "a".repeat(64),
 };
-const summary = (catalogType: string, enablementPolicy: string) => ({
+const ATS_SOURCE = {
+  document: "Catálogo del Anexo Transaccional Simplificado (ATS)",
+  version: "2026-08-06",
+  publishedOn: "2026-08-06",
+  url: "https://www.sri.gob.ec/formularios-e-instructivos1",
+  sha256: "b".repeat(64),
+};
+const summary = (catalogType: string, enablementPolicy: string, source = SOURCE) => ({
   catalogType,
   datasetVersion: 1,
-  source: SOURCE,
+  source,
   enablementPolicy,
 });
 const SUMMARIES = [
@@ -33,6 +40,11 @@ const SUMMARIES = [
   summary("ice-rate", "DEFAULT_DISABLED"),
   summary("irbpnr-rate", "DEFAULT_DISABLED"),
   summary("payment-method", "DEFAULT_ENABLED"),
+  summary("withholding-tax", "NOT_ENABLEABLE"),
+  summary("withholding-iva-code", "DEFAULT_ENABLED"),
+  summary("withholding-income-concept", "DEFAULT_ENABLED", ATS_SOURCE),
+  summary("support-document-type", "NOT_ENABLEABLE", ATS_SOURCE),
+  summary("support-code", "NOT_ENABLEABLE", ATS_SOURCE),
 ];
 
 type Version = Record<string, unknown>;
@@ -68,6 +80,28 @@ const ivaRate = (code: string, label: string, percentage: string | null, rateKin
     id: `iva-${code}`,
     officialLabel: label,
     rate: { taxKind: "IVA", sriTaxCode: "2", rateKind, percentage },
+  });
+
+/** Una versión de un catálogo de retención con su clasificación de alcance. */
+const scoped = (
+  id: string,
+  officialLabel: string,
+  scopeClassification: string,
+  { percentage = null as string | null, rateText = null as string | null, ats = true } = {},
+) =>
+  version({
+    id,
+    officialLabel,
+    effectiveFrom: ats ? "2026-08-06" : "2026-07-27",
+    effectiveFromBasis: "PROJECT_BASELINE",
+    sourceRef: ats ? "Hoja TABLAS RETENCIONES, tabla 3.10" : "Tabla 20, página 33",
+    withholding: {
+      scopeClassification,
+      selectable: scopeClassification.startsWith("SUPPORTED"),
+      percentage,
+      rateText,
+      allowedSupportCodes: null,
+    },
   });
 
 const catalog = (catalogType: string, entries: unknown[]) => ({
@@ -134,6 +168,78 @@ function routes(overrides: Record<string, Route> = {}): Record<string, Route> {
           }),
           { enabled: false, applicable: false },
         ),
+      ]),
+    "GET /api/v1/fiscal-catalogs/withholding-income-concept/entries": () =>
+      catalog("withholding-income-concept", [
+        entry(
+          "312",
+          scoped("ic-312", "Transferencia de bienes muebles", "SUPPORTED_FIXED_RESIDENT", {
+            percentage: "1.75",
+          }),
+        ),
+        entry(
+          "410",
+          scoped("ic-410", "Pago a no residentes por servicios", "OUT_OF_SCOPE_NON_RESIDENT", {
+            percentage: "25",
+          }),
+          { source: "NOT_ENABLEABLE" },
+        ),
+        entry(
+          "323 M",
+          scoped(
+            "ic-323m",
+            "Rendimientos financieros: depósitos",
+            "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+            {
+              rateText: "según convenio",
+            },
+          ),
+          { source: "NOT_ENABLEABLE" },
+        ),
+      ]),
+    "GET /api/v1/fiscal-catalogs/withholding-iva-code/entries": () =>
+      catalog("withholding-iva-code", [
+        entry(
+          "7",
+          scoped("iva-7", "Retención en cero 0.00%", "SUPPORTED_FIXED", {
+            percentage: "0",
+            ats: false,
+          }),
+        ),
+        entry(
+          "8",
+          scoped("iva-8", "No procede retención 0.00%", "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION", {
+            percentage: "0",
+            ats: false,
+          }),
+          { source: "NOT_ENABLEABLE" },
+        ),
+      ]),
+    "GET /api/v1/fiscal-catalogs/withholding-tax/entries": () =>
+      catalog("withholding-tax", [
+        entry("1", scoped("wt-1", "RENTA", "SUPPORTED", { ats: false }), {
+          source: "NOT_ENABLEABLE",
+        }),
+        entry("6", scoped("wt-6", "ISD", "OUT_OF_SCOPE_PENDING_EVIDENCE", { ats: false }), {
+          source: "NOT_ENABLEABLE",
+        }),
+      ]),
+    "GET /api/v1/fiscal-catalogs/support-document-type/entries": () =>
+      catalog("support-document-type", [
+        entry("01", scoped("sd-01", "Factura", "SUPPORTED"), { source: "NOT_ENABLEABLE" }),
+        entry(
+          "41",
+          scoped("sd-41", "Comprobante de venta emitido por reembolso", "OUT_OF_SCOPE_MVP"),
+          {
+            source: "NOT_ENABLEABLE",
+          },
+        ),
+      ]),
+    "GET /api/v1/fiscal-catalogs/support-code/entries": () =>
+      catalog("support-code", [
+        entry("01", scoped("sc-01", "Crédito Tributario para declaración de IVA", "SUPPORTED"), {
+          source: "NOT_ENABLEABLE",
+        }),
       ]),
     "GET /api/v1/fiscal-catalogs/identification-type/entries": () =>
       catalog("identification-type", [
@@ -405,7 +511,7 @@ describe("Catálogos fiscales (design D17)", () => {
     expect(within(list).getAllByText(/no está en el catálogo/).length).toBe(2);
     await userEvent
       .setup()
-      .type(screen.getByLabelText("Filtrar por código o denominación"), "cerveza");
+      .type(screen.getByLabelText("Filtrar por código o denominación en ICE"), "cerveza");
     await waitFor(() => expect(within(list).queryByText("ICE Cigarrillos Rubios")).toBeNull());
     expect(within(list).getByText("ICE Cerveza Industrial Gran Escala")).toBeDefined();
   });
@@ -520,6 +626,62 @@ describe("Límite de tamaño del envío al SRI (add-sri-transmission, design D17
     await userEvent.setup().click(await screen.findByText("Límite de tamaño del envío al SRI"));
     const alert = await screen.findByRole("alert", undefined, { timeout: 5_000 });
     expect(within(alert).getByRole("button", { name: "Intentar de nuevo" })).toBeDefined();
+  });
+});
+
+describe("Catálogos de retención (add-withholding-receipts, design D24)", () => {
+  it("muestran la clasificación, la razón de los fuera de alcance y el control solo en los soportados", async () => {
+    renderScreen();
+    const list = screen.findByRole("list", { name: "Conceptos de retención de la renta" });
+    const supported = await row(list, "Transferencia de bienes muebles");
+    expect(within(supported).getByText("Soportada")).toBeDefined();
+    expect(supported.textContent).toContain("1,75 %");
+    expect(within(supported).getByRole("switch")).toBeDefined();
+    const nonResident = await row(list, "Pago a no residentes por servicios");
+    expect(within(nonResident).getByText("Fuera de alcance")).toBeDefined();
+    expect(nonResident.textContent).toContain("Pago a no residentes");
+    expect(within(nonResident).queryByRole("switch")).toBeNull();
+    const ambiguous = await row(list, "Rendimientos financieros: depósitos");
+    expect(within(ambiguous).getByText("Pendiente de evidencia")).toBeDefined();
+    expect(ambiguous.textContent).toContain("según convenio");
+    expect(ambiguous.textContent).toContain("soporte futuro");
+    expect(within(ambiguous).queryByRole("switch")).toBeNull();
+    // El código 8 se conserva con su razón y sin control; el 7 se habilita.
+    const iva = screen.findByRole("list", { name: "Códigos de retención del IVA" });
+    expect(within(await row(iva, "Retención en cero 0.00%")).getByRole("switch")).toBeDefined();
+    expect(within(await row(iva, "No procede retención 0.00%")).queryByRole("switch")).toBeNull();
+    // El ISD queda pendiente de evidencia; los sustentos no se habilitan.
+    const taxes = screen.findByRole("list", { name: "Impuestos a retener" });
+    expect(within(await row(taxes, "ISD")).getByText("Pendiente de evidencia")).toBeDefined();
+    const types = screen.findByRole("list", { name: "Tipos de documento sustento" });
+    expect(within(await row(types, "Factura")).queryByRole("switch")).toBeNull();
+  });
+
+  it("nombra el Catálogo ATS como fuente y como base del proyecto, no la ficha", async () => {
+    renderScreen();
+    const list = screen.findByRole("list", { name: "Conceptos de retención de la renta" });
+    const supported = await row(list, "Transferencia de bienes muebles");
+    expect(supported.textContent).toContain(
+      "Base del proyecto: Catálogo del Anexo Transaccional Simplificado (ATS) del 06/08/2026 (06/08/2026)",
+    );
+    expect(supported.textContent).not.toContain("ficha v2026");
+    expect(
+      screen.getAllByText(
+        "Fuente: Catálogo del Anexo Transaccional Simplificado (ATS) del 06/08/2026, versión 1 del catálogo.",
+      ).length,
+    ).toBeGreaterThan(0);
+    // La ficha sigue nombrada por su versión.
+    const iva = screen.findByRole("list", { name: "Códigos de retención del IVA" });
+    expect((await row(iva, "Retención en cero 0.00%")).textContent).toContain(
+      "Base del proyecto: ficha v2.34",
+    );
+  });
+
+  it("el operador ve los catálogos de retención sin poder cambiar la habilitación", async () => {
+    renderScreen({}, OPERATOR_ME);
+    const list = screen.findByRole("list", { name: "Conceptos de retención de la renta" });
+    const supported = await row(list, "Transferencia de bienes muebles");
+    expect((within(supported).getByRole("switch") as HTMLButtonElement).disabled).toBe(true);
   });
 });
 

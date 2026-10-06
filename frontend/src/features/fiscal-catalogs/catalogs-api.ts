@@ -14,6 +14,7 @@ import {
   sriTransmissionPolicyViewSchema,
   type CatalogEntryVersionView,
   type CatalogEntryView,
+  type CatalogSourceView,
   type FiscalCatalogType,
 } from "@facturador/contracts";
 import { z } from "zod";
@@ -31,14 +32,27 @@ const DATE = new Intl.DateTimeFormat("es-EC", {
 /** Fecha ISO de un catálogo (sin hora) en el formato de Ecuador. */
 export const formatIsoDate = (iso: string) => DATE.format(new Date(`${iso}T00:00:00Z`));
 
+/** La ficha técnica se nombra por su versión; las demás fuentes, por su nombre y su publicación. */
+const isTechnicalSheet = (source: CatalogSourceView) => source.document.startsWith("Ficha técnica");
+
+/** Nombre corto de la fuente: "ficha v2.34" o "Catálogo del Anexo … del 06/08/2026". */
+export const sourceName = (source: CatalogSourceView) =>
+  isTechnicalSheet(source)
+    ? `ficha v${source.version}`
+    : `${source.document} del ${formatIsoDate(source.publishedOn)}`;
+
 /**
  * Origen de la fecha de inicio (design D3): declarada por la fuente, o base del proyecto, que es la
- * publicación de la ficha y nunca se presenta como fecha legal de vigencia.
+ * publicación de la fuente (la ficha o el Catálogo ATS) y nunca se presenta como fecha legal de
+ * vigencia.
  */
-export function startDescription(version: CatalogEntryVersionView, sourceVersion: string): string {
+export function startDescription(
+  version: CatalogEntryVersionView,
+  source: CatalogSourceView,
+): string {
   return version.effectiveFromBasis === "SOURCE_STATED"
     ? `Desde ${formatIsoDate(version.effectiveFrom)} (declarada por la fuente)`
-    : `Base del proyecto: ficha v${sourceVersion} (${formatIsoDate(version.effectiveFrom)})`;
+    : `Base del proyecto: ${sourceName(source)} (${formatIsoDate(version.effectiveFrom)})`;
 }
 
 export const CATALOG_NOUNS: Record<FiscalCatalogType, string> = {
