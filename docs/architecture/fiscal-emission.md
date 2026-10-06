@@ -590,7 +590,7 @@ design del cambio las concretan. Las reglas de negocio están en `docs/product/d
 
 ## Implementación de `add-credit-notes`
 
-Cambio 10, en curso. Esta sección crece con cada grupo del cambio.
+Cambio 10, archivado el 2026-10-05.
 
 ### Reserva y firma compartidas por tipo
 
