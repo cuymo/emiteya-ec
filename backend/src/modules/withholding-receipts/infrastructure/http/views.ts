@@ -11,7 +11,7 @@ import type {
   WithholdingTransmissionView,
 } from "@facturador/contracts";
 import { roundHalfUp } from "../../../../platform/decimal/fiscal-decimal.ts";
-import { stopMessage } from "../../../invoices/application/transmission-messages.ts";
+import { stopMessage } from "../../../fiscal/application/transmission-messages.ts";
 import { isAttemptCode, withholdingDiagnosticMessage } from "../../application/diagnostics.ts";
 import type { WithholdingDraftDetails } from "../../application/drafts.ts";
 import type {

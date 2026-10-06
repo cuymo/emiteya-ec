@@ -1,11 +1,15 @@
 // Diagnóstico del último intento de firma de un comprobante de retención (add-withholding-receipts,
-// design D2): los mismos códigos y clases que la factura, con el comprobante nombrado como retención.
+// design D1 y D2): los mismos códigos, clases y mensajes compartidos de `fiscal` que la factura, con
+// el comprobante nombrado como retención.
 import type { SigningAttemptCode } from "@facturador/contracts";
-import { diagnosticMessage } from "../../invoices/application/diagnostics.ts";
+import {
+  signingDiagnosticMessage,
+  type DocumentDiagnosticMessages,
+} from "../../fiscal/application/signing-diagnostics.ts";
 
-export { isAttemptCode } from "../../invoices/application/diagnostics.ts";
+export { isAttemptCode } from "../../fiscal/application/signing-diagnostics.ts";
 
-const WITHHOLDING_MESSAGES: Partial<Record<SigningAttemptCode, string>> = {
+const WITHHOLDING_MESSAGES: DocumentDiagnosticMessages = {
   PERSIST_FAILED: "No se pudo guardar el comprobante de retención firmado. Reintenta la firma.",
   SCHEMA_UNAVAILABLE:
     "El esquema XSD del comprobante de retención no está disponible en la instalación. Contacta a soporte.",
@@ -24,11 +28,5 @@ export function withholdingDiagnosticMessage(
   code: SigningAttemptCode,
   detail: { line: number | null; element: string | null } | null,
 ): string {
-  const own = WITHHOLDING_MESSAGES[code];
-  if (!own) return diagnosticMessage(code, detail);
-  const where = [
-    detail?.line != null ? `línea ${detail.line}` : null,
-    detail?.element ? `elemento ${detail.element}` : null,
-  ].filter((part): part is string => part !== null);
-  return where.length > 0 ? `${own} (${where.join(", ")})` : own;
+  return signingDiagnosticMessage(WITHHOLDING_MESSAGES, code, detail);
 }

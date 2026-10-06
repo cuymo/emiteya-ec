@@ -128,8 +128,8 @@
 
 ## 9. Independencia y dirección de las dependencias
 
-- [ ] 9.1 Probar con PostgreSQL real que una retención autorizada, devuelta y no autorizada no registra movimientos de inventario, no cambia capacidades acreditables ni devolvibles, y no modifica ninguna factura ni nota. Verificar que las reconciliaciones de capacidades y saldos no informan diferencias
-- [ ] 9.2 Añadir la prueba de arquitectura de design D1 y documentar el módulo en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba pasa y detecta cada violación en archivos de ejemplo
+- [x] 9.1 Probar con PostgreSQL real que una retención autorizada, devuelta y no autorizada no registra movimientos de inventario, no cambia capacidades acreditables ni devolvibles, y no modifica ninguna factura ni nota. Verificar que las reconciliaciones de capacidades y saldos no informan diferencias
+- [x] 9.2 Añadir la prueba de arquitectura de design D1 y documentar el módulo en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba pasa y detecta cada violación en archivos de ejemplo
 
 ## 10. RIDE del comprobante de retención
 

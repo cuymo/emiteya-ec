@@ -152,8 +152,9 @@ see `idempotency.md`.
 ## Emisión por tipo de comprobante
 
 La reserva, la firma y la reconciliación manual son de `fiscal` y las comparten todos los tipos que
-el sistema emite: factura, nota de crédito y nota de débito (`add-credit-notes`, design D2;
-`add-debit-notes`, design D2; detalle en `fiscal-emission.md`):
+el sistema emite: factura, nota de crédito, nota de débito y comprobante de retención
+(`add-credit-notes`, design D2; `add-debit-notes`, design D2; `add-withholding-receipts`, design
+D2; detalle en `fiscal-emission.md`):
 
 - `reserveDocumentIn` reserva el secuencial, bloquea la identidad tributaria, compone la clave e
   inserta el comprobante `RESERVED` con su transición, dentro de la transacción del módulo que emite.
@@ -212,6 +213,20 @@ autorizadas, sin capacidades ni inventario:
 - **Reserva.** Sin bloqueo de la factura: la nota no consume ninguna capacidad suya y `AUTHORIZED` no tiene salida. El borrador y la configuración se bloquean; la factura de la nota se registra en `debit_note_support`, con un trigger que exige una factura autorizada de la misma empresa y del mismo ambiente y otro, diferido, que impide confirmar un comprobante `05` sin ella (`database.md`).
 - **Forma de pago.** Una sola, resuelta con `catalogs.availability` en la fecha de la reserva (vigencia y habilitación) y congelada en `snapshot.payments`; el XML y el RIDE la toman del snapshot.
 - **Métricas.** `debit_note_reservations_total` y `debit_note_concepts_total{cause}` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
+
+## Comprobantes de retención
+
+El módulo `withholding-receipts` (`add-withholding-receipts`) emite comprobantes de retención 2.0.0
+de renta e IVA a un proveedor, con documentos sustento externos y sin capacidades ni inventario:
+
+- **Capas.**
+  - `domain/`: el cálculo único y versionado (`calculateWithholdingAmounts`), la evaluación pura en el orden de design D15 (`evaluateWithholdingReceipt`), la vista previa y el snapshot autosuficiente (`buildWithholdingSnapshot`);
+  - `application/`: borradores, opciones, contexto de catálogos, emisión (comprobación previa y transacción de `RESERVED`), consultas, reintento de firma, reconciliación manual, diagnósticos, la proyección del XML y el perfil de la firma;
+  - `infrastructure/`: borradores, lecturas de la preparación de la empresa, la lista, unidades de trabajo, métricas y rutas.
+- **Dirección.** `fiscal`, `invoices`, `inventory`, `credit-notes` y `debit-notes` no importan `withholding-receipts`, y `withholding-receipts` no importa ninguno de ellos ni `parties`. `main.ts` compone la lectura de los proveedores (`supplierReader`, puerto `WithheldPartyReader`) y la firma compartida con `withholdingReceiptSigningProfile`. El diagnóstico compartido de la firma y el motivo de una transmisión detenida son de `fiscal` (`signing-diagnostics.ts`, `transmission-messages.ts`).
+- **Reserva.** Sin recursos compartidos que bloquear: los documentos sustento son externos y no consumen capacidad. El borrador y la configuración se bloquean; el registro del comprobante y sus líneas (`withholding_receipt`, `withholding_receipt_line`) se insertan con la reserva, con triggers que exigen un comprobante `07` de la misma empresa y otro, diferido, que impide confirmar un `07` sin su registro (`database.md`).
+- **Independencia.** Autorizada, devuelta o no autorizada, una retención no registra movimientos de inventario, no cambia las capacidades acreditables ni las devolvibles y no modifica ninguna factura ni nota; las reconciliaciones no informan diferencias (`test/integration/withholding-independence.test.ts`).
+- **Métricas.** `withholding_receipt_reservations_total` y `withholding_receipt_items_total{tax}` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
 
 ## Catálogos de retención y de sustento
 
