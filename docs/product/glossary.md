@@ -40,7 +40,7 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Liquidación de compra    | `purchaseSettlement` | `03`       | Compra de bienes o servicios en los casos que la normativa permite.                     |
 | Nota de crédito          | `creditNote`         | `04`       | Corrección o anulación permitida de un comprobante. En el MVP, contra una factura propia autorizada, por anulación total (`TOTAL_ANNULMENT`) o devolución (`RETURN`). |
 | Nota de débito           | `debitNote`          | `05`       | Cobro adicional asociado a un comprobante de venta: intereses de mora o costos y gastos posteriores (Reglamento de Comprobantes de Venta, art. 16). En el MVP, contra una factura propia autorizada del mismo ambiente; no aumenta la capacidad acreditable de la factura ni mueve inventario. |
-| Guía de remisión         | `shippingGuide`      | `06`       | Traslado de mercadería.                                                                 |
+| Guía de remisión         | `shippingGuide`      | `06`       | Documento que sustenta el traslado de mercadería dentro del país (Reglamento de Comprobantes de Venta, art. 27). En el MVP la emite la empresa como remitente, sin precios, total monetario ni inventario (Q-51). |
 | Comprobante de retención | `withholdingReceipt` | `07`       | Registro de retenciones efectuadas.                                                     |
 | Documento modificado     | `modifiedDocument`   | —          | Comprobante que una nota de crédito o de débito corrige o complementa.                  |
 | Retorno físico           | `physicalReturn`     | —          | Cantidad de una línea de una nota de crédito que regresó físicamente; va de cero a la cantidad acreditada, se declara por línea en la devolución y en la anulación total, y es la única que devuelve stock (`DEVOLUCION_NC`), al autorizar la nota. |
@@ -59,7 +59,9 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Capacidad devolvible     | `stockReturnCapacity` | —         | Lo que todavía puede volver al inventario por producto: lo que sacó la salida de la factura, menos lo reservado y lo aplicado por los retornos físicos de sus notas. Independiente de la capacidad acreditable. |
 | Reserva de crédito       | `creditReservation`  | —          | Lo que una nota toma de las capacidades al emitirse: `RESERVED` hasta su conclusión, `APPLIED` si el SRI la autoriza y `RELEASED` si la devuelve o no la autoriza. Nunca se libera por un problema operativo. |
 | Documento sustento       | `supportingDocument` | —          | Comprobante sobre el cual se practica una retención; normalmente lo emitió un proveedor. |
-| Comprobante relacionado  | `relatedDocument`    | —          | Comprobante de venta asociado a una guía de remisión.                                   |
+| Comprobante relacionado  | `relatedDocument`    | —          | Comprobante de venta asociado a una guía de remisión. En el MVP, una factura propia autorizada del mismo ambiente (`INTERNAL_INVOICE`). |
+| Excepción declarada      | `DECLARED_EXCEPTION` | —          | Sustento de un destinatario de la guía sin comprobante de venta: el usuario declara (`USER_DECLARED`) uno de los casos b), c), d) o e) del art. 30, numeral 8, del Reglamento, con su versión, actor y momento; no va en el XML. |
+| Remitente                | `sender`             | —          | Quien envía la mercadería de una guía. En el MVP, siempre la empresa emisora.           |
 | Borrador                 | `draft`              | —          | Comprobante editable, sin secuencial ni efectos fiscales.                               |
 | Emitir                   | `emit`               | —          | Acción que congela el borrador, reserva el secuencial e inicia el proceso fiscal.       |
 | Clave de acceso          | `accessKey`          | —          | Identificador de 49 dígitos del comprobante ante el SRI. El usuario lo ve: aparece en el RIDE. |
@@ -67,8 +69,8 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Tipo de emisión          | `emissionType`       | —          | Normal en el esquema off-line.                                                          |
 | Forma de pago            | `paymentMethod`      | —          | Código del catálogo fiscal de formas de pago.                                           |
 | Periodo fiscal           | `fiscalPeriod`       | —          | Mes y año de una retención (`MM/AAAA`), declarado en el comprobante (BR-36).            |
-| Transportista            | `carrier`            | —          | Tercero que traslada la mercadería de una guía.                                         |
-| Destinatario             | `consignee`          | —          | Tercero que recibe la mercadería trasladada.                                            |
+| Transportista            | `carrier`            | —          | Quien traslada la mercadería de una guía: la propia empresa (`SELF`) o un tercero con el rol `CARRIER` (`PARTY`), según su origen (`transporterSource`). |
+| Destinatario             | `consignee`          | —          | Quien recibe la mercadería trasladada: un tercero identificado o, en un traslado entre establecimientos propios, la propia empresa. Una guía tiene uno o más. |
 | Sujeto retenido          | `withheldParty`      | —          | Tercero al que se le practica una retención.                                            |
 | Parte relacionada        | `relatedParty`       | —          | Declaración SI/NO del usuario en una retención (`parteRel`) sobre su relación con el sujeto retenido. |
 | Concepto de retención    | `withholdingConcept` | —          | Entrada del catálogo con el código y el porcentaje de una retención de renta (`withholding-income-concept`, Catálogo ATS) o de IVA (`withholding-iva-code`, tabla 20 de la ficha). Solo los soportados se eligen. |

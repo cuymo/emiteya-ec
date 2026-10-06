@@ -23,14 +23,17 @@ documento no especifica comportamiento.
 | `invoices`             | Factura con consumidor final, líneas, pagos y totales; borradores editables antes de emitir.      | ERS RF-010, RF-201..206; CTX §12, §35                          | AC-02, AC-08  | Q-45, Q-46 (Q-18 y Q-19 resueltas) |
 | `credit-notes`         | Nota de crédito 1.1.0 contra una factura propia autorizada, con causas `TOTAL_ANNULMENT` y `RETURN` (parcial o total, por líneas de la factura), crédito acumulado nunca mayor que la factura con capacidades acreditable y devolvible independientes que fallan cerradas (reservadas al emitir, aplicadas o liberadas solo al concluir), un único cálculo versionado desde el snapshot de la factura, declaraciones del usuario sobre las exclusiones que el sistema no comprueba, devolución de stock opcional solo por el retorno físico declarado por línea al autorizar la nota, la transmisión y la reconciliación de la factura, su RIDE propio en la bandeja y sus pantallas. Sin descuentos ni bonificaciones ni documentos sustento externos. Medido con `bench:credit-notes`. | ERS RF-210..213, RF-212; CTX §13; Res. NAC-DGERCGC25-00000014 y 00000017 | AC-03         | — (Q-10 y Q-20 resueltas)      |
 | `credit-note-discounts-bonuses` | Notas de crédito por descuentos o bonificaciones posteriores a la venta, con su modelo de importes, su asignación tributaria y su redondeo. Capacidad futura, separada de `credit-notes`. | Reglamento de Comprobantes, art. 15 | — | — |
-| `external-supporting-documents` | Notas de crédito y de débito (y otros documentos relacionados) contra comprobantes emitidos fuera del sistema: externos, en papel o importados. Capacidad futura, solo si se necesita. No incluye los documentos sustento del comprobante de retención, que son referencias externas por diseño desde `add-withholding-receipts` (Q-50). | ERS RF-210; CTX §13.4 | — | — |
+| `external-supporting-documents` | Notas de crédito y de débito (y otros documentos relacionados) contra comprobantes emitidos fuera del sistema: externos, en papel o importados. Capacidad futura, solo si se necesita. No incluye los documentos sustento del comprobante de retención, que son referencias externas por diseño desde `add-withholding-receipts` (Q-50). Incluye el comprobante de venta externo como sustento de una guía de remisión (Q-51). | ERS RF-210, RF-243; CTX §13.4 | — | — |
 | `debit-notes`          | Nota de débito 1.0.0 contra una factura propia autorizada del mismo ambiente, por las causas oficiales del artículo 16 (intereses de mora y costos o gastos posteriores), con uno o más conceptos, cada uno con un tratamiento de IVA que ya existía en la factura y su impuesto exacto, la declaración del usuario sobre la factura comercial negociable, su transmisión, su RIDE en la bandeja y sus pantallas. No aumenta la capacidad acreditable de la factura ni mueve inventario. Sin facturas externas ni anulación de la nota. | ERS RF-220..222; CTX §14; Reglamento de Comprobantes de Venta, art. 16 | AC-03         | — (Q-49 resuelta)              |
 | `withholding-receipts` | Comprobante de retención 2.0.0 de renta (conceptos de residentes con porcentaje fijo del Catálogo ATS) e IVA (tabla 20), sin ISD, a un proveedor residente identificado, con `parteRel` declarado, período fiscal explícito y uno o más documentos sustento externos (factura, nota de venta o liquidación de compra) con sus impuestos y pagos; base ingresada por el usuario y valor retenido calculado por el servidor desde el porcentaje oficial congelado. Sin inventario ni pagos al exterior. | ERS RF-230..234; CTX §16; ficha v2.34, tablas 19 y 20 y anexo 10; Catálogo ATS; Reglamento de Comprobantes, arts. 8 y 40 | AC-03         | — (Q-50 resuelta)              |
 | `withholding-isd` | Retención del impuesto a la salida de divisas (código `6`). Capacidad futura, pendiente de una fuente oficial que determine cuándo aplica cada código y tarifa vigente (la ficha v2.34 publica 4580 al 5 % y 4586 al 2,5 %, ambos sin fecha de fin). | Ficha v2.34, tabla 20; Q-50 | — | Pendiente de evidencia |
 | `withholding-foreign-payments` | Retenciones por pagos al exterior: `pagoLocExt` 02, régimen fiscal, país del pago, convenios de doble tributación, sujeto con identificación del exterior y `tipoSujetoRetenido`, y los conceptos de renta para no residentes. Capacidad futura. | Ficha v2.34, anexo 10; Catálogo ATS, tablas 14 a 19 y 3.10; Q-50 | — | — |
 | `withholding-special-supports` | Retenciones con estructuras especiales del ATS: reembolsos (sustento 41), dividendos (sustento 10), compra de cajas de banano y autorretenciones (anexo 19). Capacidad futura. | Ficha v2.34, anexos 10 y 19; Q-50 | — | — |
 | `withholding-variable-rate-concepts` | Conceptos de renta cuyo porcentaje no es un número fijo en el Catálogo ATS (textuales, rangos, "varios porcentajes", por mil o dependientes de convenio), con su propia regla de selección. Capacidad futura. | Catálogo ATS, tabla 3.10; Q-50 | — | — |
-| `shipping-guides`      | Guía de remisión con transportista y destinatarios.                                               | ERS RF-240..243; CTX §15                                       | AC-03         | —                              |
+| `shipping-guide-additional-details` | `detallesAdicionales` en los detalles de la guía de remisión (hasta tres pares de nombre y valor por detalle), con su snapshot, su XML y su RIDE. Capacidad futura. | XSD `GuiaRemision_V1.1.0.xsd`; Q-51 | — | — |
+| `shipping-guide-multiple-vehicles` | Traslados con varios medios de transporte, placas o conductores (Reglamento de Comprobantes de Venta, art. 30). Capacidad futura: el XML 1.1.0 expresa un solo transportista y una sola placa. | Reglamento, art. 30; Q-51 | — | — |
+| `location-stock` | Stock por establecimiento o ubicación y logística de traslados. Capacidad futura: el inventario actual es stock fiscal agregado por empresa, y la guía de remisión no lo mueve. | ERS RF-315; Q-51 | — | — |
+| `shipping-guides`      | Guía de remisión 1.1.0 de la propia empresa como remitente: transportista propio (`SELF`) o tercero con el rol `CARRIER` (`PARTY`) y una placa; uno o más destinatarios con su dirección, su motivo y su detalle; por destinatario, una factura propia autorizada o una excepción declarada del artículo 30 del Reglamento. Sin precios, impuestos, total monetario ni inventario. | ERS RF-240..243; CTX §15; ficha v2.34, anexos 2 y 3; Reglamento, arts. 27–38 | AC-03 | — (Q-51 resuelta) |
 | `purchase-settlements` | Liquidación de compra separada de la factura.                                                     | ERS RF-250..253; CTX §17                                       | AC-03         | Q-12                           |
 | `inventory`            | Stock opcional contabilizado por hechos fiscales autorizados, no reserva de disponibilidad: inicialización única con `INICIAL`; la salida de una factura nace al entrar en `AUTHORIZED` con la decisión congelada en su snapshot (Q-18) y el saldo puede quedar negativo (Q-19); entradas y ajustes idempotentes; movimientos inmutables y kárdex; control fail-closed y no retroactivo; aviso orientativo en el borrador; la `DEVOLUCION_NC` de una nota de crédito autorizada por su retorno físico (`add-credit-notes`). Sin stock reservado ni comprometido. Medido con `bench:inventory`. | ERS RF-310..315, RF-205, RF-206, RF-212                        | AC-08         | — (Q-18, Q-19, Q-20 y Q-21 resueltas) |
 | `document-archive`     | Bandeja única de los comprobantes desde la reserva, con filtros; RIDE generado una vez desde el XML autorizado (o el firmado transmitido, con su procedencia) para la factura 1.1.0 y la nota de crédito 1.1.0 (`add-credit-notes`, con su propia distribución) que el sistema emite, con el filtro de tipo; descargas verificadas por hash del RIDE y de los XML; impresión como acción explícita; historial de entregas observables (`DOWNLOAD`, `PRINT_REQUESTED`). Sin correo (Q-24, P1). | ERS RF-401..409; CTX §30, §31, §45, §46                        | AC-07         | Q-16 (futura), Q-27 (go-live) (Q-24 y Q-39 resueltas; el PDF de Q-34, con S-4 y el ADR 0022) |
@@ -81,6 +84,9 @@ En la revisión de readiness del cambio 10 (2026-10-04) se suman `credit-note-di
 En la revisión de readiness del cambio 12 (2026-10-05) se suman `withholding-isd` (evidencia
 insuficiente para elegir la tarifa), `withholding-foreign-payments`, `withholding-special-supports` y
 `withholding-variable-rate-concepts`. Ninguna amplía `add-withholding-receipts`.
+En la revisión de readiness del cambio 13 (2026-10-06) se suman `shipping-guide-additional-details`,
+`shipping-guide-multiple-vehicles` y `location-stock`, y `external-supporting-documents` abarca
+también el comprobante de venta externo de una guía. Ninguna amplía `add-shipping-guides`.
 
 Obligaciones de `add-fiscal-catalogs` (5a) para `add-parties-and-products` (5b), que consume
 `fiscal-catalogs` como dependencia canónica sin duplicar datasets ni reglas de vigencia:
@@ -195,6 +201,32 @@ política del MVP.
 | `parteRel` declarado por el usuario | Requisito oficial (obligatorio en el XSD), declarado por el usuario | Q-50 |
 | Sin pagos al exterior, reembolsos, dividendos, banano ni autorretenciones | Política del MVP | Q-50; matriz de casos especiales (anexo 19 fuera del MVP) |
 | Sin inventario ni capacidad acreditable | Política del producto | Q-50 |
+
+## Trazabilidad de `shipping-guides`
+
+Fuentes del cambio 13 y qué fija cada una (Q-51). Los specs distinguirán el requisito oficial, la
+política del MVP y la defensa de recursos.
+
+| Regla | Origen | Fuente |
+| --- | --- | --- |
+| XML `guiaRemision` 1.1.0, codDoc `06` | Requisito oficial | `docs/product/sri-xsd/GuiaRemision_V1.1.0.xsd`, verificado contra el portal el 2026-10-06 (`sri-catalogs/fuentes/guia-remision-xsd-verificacion.txt`); ficha v2.34, tabla 3 y anexo 3 |
+| Un transportista (identificación de hasta 13 caracteres) y una placa (hasta 20) por guía | Requisito oficial | XSD y ficha v2.34, anexo 3, página 70 (`sri-catalogs/fuentes/ficha-v2.34-guia-de-remision.txt`) |
+| La fecha de inicio del transporte no es menor que la fecha de emisión de la guía | Requisito oficial | Ficha v2.34, página 38, error 82 (BR-37) |
+| La fecha de fin no es anterior a la de inicio; sin duración máxima | Validación del proyecto | Q-51 |
+| Destinatario identificado, partida, destinos, conductor, placa, mercadería con unidad y cantidad, motivo y fechas | Requisito oficial | Reglamento de Comprobantes de Venta, art. 30 (`sri-catalogs/fuentes/reglamento-comprobantes-arts-27-38.txt`) |
+| Comprobante de venta salvo las excepciones a) a e) del art. 30, numeral 8 | Requisito oficial | Reglamento, art. 30 |
+| Factura `01` propia, autorizada, del mismo ambiente, o excepción declarada b), c), d) o e); sin venta itinerante ni comprobantes externos | Política del MVP (P1) | Q-51 |
+| Traslado entre establecimientos propios con la empresa como destinataria | Política del MVP (P2) | Q-51 |
+| Destinatario externo: tercero activo 04, 05 o 06, sin rol obligatorio | Política del MVP (P3) sobre el art. 30 | Q-51 |
+| Transportista `SELF` (identidad tributaria) o `PARTY` (rol `CARRIER` obligatorio, 04, 05 o 06) | Política del MVP (P4) | Q-51 |
+| Placa como texto fiscal, sin formato vehicular | Política del MVP (P5); la tabla 29 es de facturas de combustibles | Ficha v2.34, anexo 12; Q-51 |
+| Sin `detallesAdicionales` | Política del MVP (P6) | Q-51 |
+| Cantidad mayor que cero, exacta, de hasta 6 decimales | Política del MVP (P7) sobre el XSD, que admite 0 | Q-51, `../architecture/decimal-policy.md` |
+| Sin movimientos de inventario | Política del producto (P8) | Q-51 |
+| 10/50 destinatarios, 50/100 detalles por destinatario y 100/300 detalles por guía (por defecto/máximo) | Defensa de recursos del producto (P9), nunca un límite del SRI ni del XSD | Q-51 |
+| Sin total monetario ni receptor único en la cabecera común | Política del producto (P10) | Q-51 |
+| RIDE propio con la distribución del anexo 2 | Requisito oficial | Ficha v2.34, página 64 |
+| Sin aduana, exterior, combustibles, máquina fiscal, factura sustitutiva, emisor itinerante, interrupción del transporte ni varios vehículos | Política del MVP | Reglamento, arts. 30 a 37; matriz de casos especiales; Q-51 |
 
 ## Huecos de trazabilidad
 
