@@ -1,0 +1,42 @@
+Verificación del XSD de la guía de remisión contra el portal del SRI (readiness de
+add-shipping-guides, 2026-10-06). El manifiesto `docs/product/sri-xsd/README.md` no se edita: el
+dataset schema-registry lo cita por su SHA-256.
+
+Portal: https://www.sri.gob.ec/facturacion-electronica
+- Ruta del paquete (la misma del manifiesto):
+  /o/sri-portlet-biblioteca-alfresco-internet/descargar/642ba34d-82d0-49d8-9622-5946f8eda268/XML%20y%20XSD%20Gu%c3%ada%20de%20Remisi%c3%b3n.zip
+- ZIP descargado el 2026-10-06: SHA-256 2830d06822b7110f0dd29364320071f5389b8c4471b2c842fe965e38d6c59ba2
+  (el mismo del manifiesto). Contiene, con fecha 2022-02-07:
+  - GuiaRemision_V1.1.0.xsd, SHA-256 4777fd94b5f7b108da3db0dd3d2c71d1539ced221cba246ebeaa40fb17f3dee1
+    (21 647 bytes), idéntico a docs/product/sri-xsd/GuiaRemision_V1.1.0.xsd y a la entrada 06 de las
+    versiones 1 y 2 del dataset schema-registry (`supported: true`);
+  - GuiaRemision_V1.1.0.xml, un ejemplo con valores de relleno (version="version0", codDoc 00): no
+    sirve como evidencia de la versión ni del código;
+  - GuiaRemision_V1.0.0.xsd y GuiaRemision_V1.0.0.xml, de la versión que el producto no usa.
+- La versión 1.1.0 es la del anexo 3 de la ficha v2.34 (páginas 70 y 71), la de CTX §3.1 y §15.1 y la
+  del registro de esquemas (Q-13, ADR 0008); codDoc 06 según la tabla 3 de la ficha (página 12).
+- Comprobación offline con xmllint (libxml2) contra la copia del repositorio y
+  w3c-xsd/xmldsig-core-schema.xsd: el esquema compila (declara `<?xml version="1.1"?>`, como
+  NotaCredito_V1.1.0.xsd, que el validador ya usa) y una guía sintética valida; una `cantidad` de 0
+  valida y una de 7 decimales no.
+
+Esquema 1.1.0:
+- Raíz `guiaRemision`, con `id` (solo "comprobante") y `version` obligatorios; un solo import:
+  xmldsig-core-schema.xsd (W3C, docs/product/w3c-xsd/). `codDoc` es `[0-9]{2}`: el XSD no fija el 06.
+- `infoTributaria`: la común de los seis comprobantes (README del manifiesto, "Campos del emisor").
+- `infoGuiaRemision`: `dirEstablecimiento` opcional, `dirPartida` (1 a 300), `razonSocialTransportista`
+  (1 a 300), `tipoIdentificacionTransportista` (patrón [0][4-8]), `rucTransportista` (1 a 20, sin
+  saltos de línea), `rise`, `obligadoContabilidad` y `contribuyenteEspecial` opcionales,
+  `fechaIniTransporte` y `fechaFinTransporte` (dd/mm/20aa) y `placa` (1 a 20). Un solo transportista
+  y una sola placa por guía. No hay `fechaEmision`.
+- `destinatarios/destinatario`, uno o más sin máximo: `identificacionDestinatario` (1 a 20, sin tipo
+  de identificación), `razonSocialDestinatario`, `dirDestinatario` y `motivoTraslado` (1 a 300 cada
+  uno), y opcionales `docAduaneroUnico` (1 a 20), `codEstabDestino` ([0-9]{3}), `ruta` (1 a 300),
+  `codDocSustento` ([0-9]{2}), `numDocSustento` ([0-9]{3}-[0-9]{3}-[0-9]{9}), `numAutDocSustento`
+  ([0-9]{10,49}) y `fechaEmisionDocSustento`; como máximo un documento sustento por destinatario.
+- `detalles/detalle`, uno o más sin máximo por destinatario: `codigoInterno` y `codigoAdicional`
+  opcionales (1 a 25), `descripcion` (1 a 300), `cantidad` (decimal, 18 dígitos, 6 decimales, mínimo
+  0) y `detallesAdicionales` opcional con 0 a 3 `detAdicional` (nombre y valor, 1 a 300).
+- `maquinaFiscal` e `infoAdicional` (1 a 15 `campoAdicional`) opcionales.
+- Sin precios, impuestos ni totales: los tipos `totalSinImpuestos`, `baseImponible`, `valor`, `moneda`,
+  `codigo` y `codigoPorcentaje` están declarados pero ningún elemento los usa.

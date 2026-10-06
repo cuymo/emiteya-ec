@@ -1,0 +1,217 @@
+Extracto literal de los artículos 27 a 38 (capítulo IV, "Del régimen de traslado de bienes") del
+Reglamento de Comprobantes de Venta, Retención y Documentos Complementarios, para la trazabilidad de
+la guía de remisión (readiness de add-shipping-guides, 2026-10-06; Q-51).
+
+Fuente: SRI, Dirección Nacional Jurídica, Departamento de Normativa. Texto con "ULTIMA REFORMA:
+Decreto 580, Registro Oficial 448, 28-Febrero-2015. Estado: Vigente" (Decreto No. 430).
+URL oficial: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/c3a2c922-5960-4c08-9a73-bde19fadce42/REGLAMENTO+DE+COMPROBANTES+DE+VENTA,+RETENCI%D3N+Y+DOCUMENTOS+COMPLEMENTARIOS.pdf
+SHA-256 del PDF descargado el 2026-10-06: a7d27c905f6054dfd77dd2da7ee3362c547d625b5b734e789e222ce286dc1997
+(el mismo de reglamento-comprobantes-arts-15-16.txt y reglamento-comprobantes-arts-3-8-40.txt).
+Extraído con pdftotext -layout; solo se quitan los encabezados y números de página, las sangrías y
+las líneas vacías.
+
+Capítulo IV
+DEL RÉGIMEN DE TRASLADO DE BIENES
+Art. 27.- Guía de remisión.- La guía de remisión es el documento que sustenta el traslado de
+mercaderías por cualquier motivo dentro del territorio nacional.
+Se entenderá que la guía de remisión acredita el origen lícito de la mercadería, cuando la
+información consignada en ella sea veraz, se refiera a documentos legítimos, válidos, y los datos
+expresados en la guía de remisión concuerden con la mercadería que efectivamente se traslade.
+Art. 28.- Obligados a emitir guías de remisión.- Están obligados a emitir guías de remisión toda
+sociedad, persona natural o sucesión indivisa que traslade mercadería, debiendo emitirlas en
+especial en los siguientes casos:
+1. El importador o el Agente de Aduanas, según el caso.
+2. En la movilización de mercaderías entre establecimientos del mismo contribuyente.
+3. El proveedor, cuando el contrato incluya la obligación de entrega de la mercadería en el sitio
+señalado por el adquirente o acordado por las partes.
+4. El adquirente, cuando el contrato determine la entrega de la mercadería en el establecimiento del
+proveedor.
+5. El exportador, en el transporte de las mercaderías entre sus establecimientos y el puerto de
+embarque.
+6. Quien acopia o almacena mercaderías en las actividades de recolección de éstas, destinadas a una
+o varias empresas de transformación o de exportación.
+7. El arrendador, en el caso que el contrato de alquiler de bienes incluya la entrega de los mismos en
+el sitio que señale el arrendatario; o, por este, en el caso que el contrato de alquiler señale como
+sitio de entrega de los bienes, cualquier establecimiento del arrendador.
+8. El proveedor o el adquirente, según el caso, en la devolución de mercaderías.
+9. El consignatario o el consignante, según el caso, en la consignación de mercaderías.
+10. La sociedad, persona natural o sucesión indivisa que traslade mercaderías para su exposición,
+exhibición o venta, en ferias nacionales o internacionales.
+11. La sociedad, persona natural o sucesión indivisa que traslade mercaderías para su reparación,
+mantenimiento u otro proceso especial.
+12. La Corporación Aduanera Ecuatoriana, en el caso de traslado de mercaderías desde un distrito
+aduanero a otro o de un distrito aduanero a un depósito industrial o comercial o de un depósito
+aduanero a otro, en el caso de mercaderías en tránsito.
+13. En el caso de traslado de los productos derivados de hidrocarburos, gas licuado de petróleo, gas
+natural y biocombustibles, adquiridos a las sociedades o personas naturales debidamente
+autorizadas por la Dirección Nacional de Hidrocarburos, la guía de remisión solo podrá ser emitida
+por PETROCOMERCIAL o por los sujetos de control que efectúen la venta, que fueren designados
+observando principios de generalidad mediante acuerdo ministerial, por parte del Ministerio de
+Recursos Naturales no Renovables.
+Supletoriamente, la guía de remisión deberá ser emitida por el transportista cuando quien remita la
+mercadería carezca de establecimiento de emisión en el punto de partida del transporte de las
+mercancías, así como en el caso que las mercancías sean transportadas por empresas de transporte
+público regular y no se haya emitido la guía por el remitente de las mercancías.
+Art. 29.- Requisitos pre impresos de la guía de remisión.- Las guías de remisión tendrán la siguiente
+información pre impresa relacionada con el emisor:
+1. Número, día, mes y año de la autorización de impresión del documento, otorgado por el Servicio
+de Rentas Internas;
+2. Número de registro único de contribuyentes;
+3. Apellidos y nombres, denominación o razón social en forma completa o abreviada conforme
+conste en el RUC. Podrá incluirse el nombre comercial o de fantasía, si lo tuviere;
+4. Denominación del documento: “Guía de Remisión”;
+5. Numeración de quince dígitos, que se distribuirá de la siguiente manera:
+a) Los tres primeros dígitos corresponden al código del establecimiento conforme consta en el
+registro único de contribuyentes;
+b) Separados por un guión (-), los siguientes tres dígitos corresponden al código asignado por el
+contribuyente a cada punto de emisión dentro de un mismo establecimiento; y,
+c) Separado también por un guión (-), constará el número secuencial de nueve dígitos. Podrá
+omitirse la impresión los ceros a la izquierda del número secuencial, pero deberán completarse los
+nueve dígitos antes de iniciar la nueva numeración.
+6. Dirección de la matriz y del establecimiento donde está localizado el punto de emisión.
+7. Fecha de caducidad del documento, expresada en día, mes y año, según autorización del Servicio
+de Rentas Internas.
+8. Número del registro único de contribuyente, nombres y apellidos, denominación o razón social y
+número de autorización otorgado por el Servicio de Rentas Internas, del establecimiento gráfico que
+realizó la impresión.
+9. Los destinatarios de los ejemplares: El original del documento que debe ser entregado al
+destinatario de la mercadería, contendrá la leyenda “DESTINATARIO”. La primera copia para el
+emisor con la leyenda “EMISOR”. La segunda copia se entregará al SRI cuando se la requiera. Se
+permitirá consignar en todos los ejemplares de las guías de remisión las leyendas: original -
+destinatario / copia - emisor / copia - SRI, siempre y cuando el original se diferencie claramente de
+las copias.
+10. Los contribuyentes designados por el SRI como especiales deberán imprimir en las guías de
+remisión las palabras: “Contribuyente Especial” y el número de la resolución con la que fueron
+calificados como tales. En el caso de contribuyentes especiales que a la fecha de su designación
+tuviesen guías de remisión vigentes en inventario, podrán imprimir la leyenda de “Contribuyente
+Especial” y el número de resolución con el cual fueron calificados mediante sello o cualquier otra
+forma de impresión.
+Si por cualquier motivo perdieran la designación de “Contribuyente Especial”, deberán dar de baja
+todas las guías de remisión con la leyenda indicada.
+11. Los contribuyentes que se inscriban en el Régimen Simplificado deberán imprimir en las guías
+de remisión la leyenda: “Contribuyente RISE o Contribuyente Régimen Simplificado”. Si estos
+contribuyentes, a la fecha de su inscripción, mantuviesen guías de remisión, deberán darlas de baja
+siguiendo el procedimiento establecido en este reglamento.
+Si por cualquier motivo fueran excluidos del Régimen Simplificado, los contribuyentes deberán dar
+de baja todas las guías de remisión para dicho régimen.
+12. Las personas naturales y las sucesiones indivisas, que de conformidad con la Ley de Régimen
+Tributario Interno y su reglamento de aplicación, estén obligadas a llevar contabilidad deberán
+imprimir en las guías de remisión la frase: “Obligado a Llevar Contabilidad”. En el caso de
+personas naturales y sucesiones indivisas que al inicio del ejercicio impositivo tuviesen guías de
+remisión vigentes, podrán imprimir la leyenda de “Obligado a Llevar Contabilidad” mediante sello
+o cualquier otra forma de impresión.
+Si de conformidad con la Ley de Régimen Tributario Interno y su reglamento de aplicación los
+contribuyentes dejasen de ser obligados a llevar contabilidad, deberán dar de baja todas las guías de
+remisión que contengan la leyenda antes indicada.
+Art. 30.- Requisitos de llenado de las guías de remisión.- En las guías de remisión se incluirá como
+información no pre impresa, la siguiente:
+1. Identificación del destinatario de la mercadería, para lo que se incluirá su número del registro
+único de contribuyentes, cédula de identidad o pasaporte, según el caso, apellidos y nombres,
+denominación o razón social.
+2. Dirección del punto de partida y del destino o destinos.
+3. Identificación del conductor que transporta la mercadería, para lo que se incluirá su número del
+registro único de contribuyentes, cédula de identidad o pasaporte según el caso, apellidos y
+nombres.
+4. Número de placas del vehículo en el que se realice el traslado.
+5. Identificación del remitente, cuando la guía de remisión ha sido emitida por el transportista o
+destinatario.
+6. Descripción detallada de las mercaderías transportadas, denominación, características, unidad de
+medida y cantidad. De ser necesario, esta información podrá constar en un anexo a la guía de
+remisión, en la cual se consignará el número de páginas del anexo.
+7. Motivo del traslado.
+8. Denominación, número de la autorización, fecha de emisión y numeración del comprobante de
+venta, salvo en los siguientes casos:
+a) Venta itinerante, en esta circunstancia los números de los comprobantes de venta respectivos se
+harán constar en la guía de remisión, al final de la jornada, indicando el saldo de mercadería que no
+fue vendida o entregada;
+b) Cuando el volumen o cantidad de la mercadería trasladada y el precio de la transacción pueda ser
+determinado solo cuando los bienes han sido efectivamente transferidos al adquirente;
+c) Traslado para ventas en consignación, excepto de productos gravados con el impuesto a los
+consumos especiales, cuando la transferencia la haga el sujeto pasivo del mismo;
+d) Traslado entre establecimientos de un mismo contribuyente; y,
+e) Traslado para exhibiciones o demostraciones.
+9. Número de la declaración aduanera, cuando corresponda.
+10. Fechas de inicio y terminación del traslado.
+Las guías de remisión se emitirán en original y copia, debiendo emitirse conjuntamente el original y
+sus copias o, en el caso utilización de sistemas computarizados autorizados, de manera consecutiva.
+Cuando se emplee más de un medio de transporte deberá consignarse este hecho en la guía de
+remisión, con la identificación de sus placas y de sus conductores.
+En las guías de remisión que sustenten el traslado de combustibles líquidos derivados de
+hidrocarburos y gas licuado de petróleo, se deberán agregar como requisitos adicionales de llenado
+no pre impresos, las rutas establecidas para el traslado y el código del establecimiento del
+destinatario del producto, según conste en el registro único de contribuyentes. Los productos antes
+indicados, que se encuentren siendo trasladados fuera de la ruta declarada en la guía de remisión,
+serán considerados carentes de documentación de sustento del traslado y, por ende, de conformidad
+con las disposiciones legales pertinentes, serán incautados, sin perjuicio de las demás acciones que
+correspondan.
+Art. 31.- Transporte de bienes importados a consumo.- Una vez cumplidas con todas las
+formalidades aduaneras que permiten la nacionalización de los bienes importados a consumo, el
+propietario, consignatario o consignante, según el caso, o el transportista contratado para el efecto,
+emitirá la guía de remisión, sin cuyo requisito, la Corporación Aduanera Ecuatoriana, CAE no
+permitirá la salida de las mercaderías.
+La CAE verificará la emisión de la guía de remisión y receptará una copia de esta, que adjuntará a
+los documentos que sustenten la nacionalización.
+Art. 32.- Transporte de mercaderías importadas bajo regímenes especiales.- Para el transporte de las
+mercaderías ingresadas al país bajo regímenes especiales, previstos en la Ley Orgánica de Aduanas,
+el propietario, consignatario, consignante o transportista emitirá la correspondiente guía de remisión
+indicando en ella que se trata de bienes importados bajo el correspondiente régimen especial.
+Art. 33.- Exportación de mercaderías.- En forma previa a la recepción en los recintos aduaneros de
+las mercaderías destinadas a la exportación, la Corporación Aduanera Ecuatoriana exigirá la
+presentación y entrega de la correspondiente guía de remisión.
+Art. 34.- Caso especial.- Únicamente cuando el proveedor se comprometa a entregar los bienes en el
+sitio que señale el adquirente, el comprobante de venta respectivo podrá amparar el transporte de las
+mercaderías, caso en el cual el comprobante de venta incluirá la información relacionada con el
+punto de partida y de llegada y las fechas en las que se vaya a efectuar el traslado.
+En estos casos, se emitirá una copia adicional del comprobante de venta, la misma que amparará el
+transporte de la mercadería. En tal copia se hará constar la leyenda "sustitutiva de guía de remisión"
+y no tendrá ningún valor tributario adicional.
+Art. 35.- Puntos de emisión itinerantes.- En el caso particular de los puntos móviles de ventas y
+emisión itinerante de comprobantes de venta, en la guía de remisión que sustente los bienes
+transportados, deberá constar la leyenda "Emisor Itinerante", en el lugar en el que corresponde
+consignar los datos de identificación del destinatario.
+Art. 36.- Normas complementarias para el traslado de mercaderías.-
+1. Las guías de remisión deberán ser emitidas en forma previa al traslado de mercaderías, en forma
+nítida, sin tachones ni enmendaduras y ser portada por cada unidad de transporte.
+2. En el caso de traslado de bienes por parte del adquirente que sea consumidor final, bastará la
+tenencia del comprobante de venta respectivo.
+3. En el caso de los contribuyentes cuya actividad económica es el servicio de transporte de
+documentos y paquetes, para ese solo efecto, podrán utilizar sus propias guías de transporte siempre
+que las mismas contengan la información especificada en este reglamento respecto de las guías de
+remisión.
+4. No se requerirá de guías de remisión en el traslado de recipientes vacíos cuando estos, por sí
+mismos, no constituyan mercadería.
+5. Las guías de remisión que sustenten el transporte de mercaderías quedarán en poder del
+destinatario de las mismas, quien está obligado a mantenerlas en un archivo ordenado
+secuencialmente, para los casos en que el Servicio de Rentas Internas lo solicite.
+Art. 37.- Interrupción de transporte.- Cuando el traslado de las mercaderías no pudiere culminar en
+la forma prevista originalmente, se procederá de la siguiente manera:
+1. Si la mercadería no pudo ser entregada a su destinatario y retorna al punto de partida, deberá
+hacerse constar este hecho en la guía de remisión.
+2. Si la mercadería no puede llegar al punto de destino originalmente previsto y se la entrega en otro
+punto, deberá hacerse constar este particular en la guía de remisión con la indicación clara del
+motivo del cambio de destino.
+3. En el caso que la llegada al punto de destino se haya producido en fecha distinta a la
+originalmente prevista, se hará constar el particular en la guía de remisión, con indicación clara del
+motivo.
+4. Si se modifica el transporte original de la mercadería se hará constar este particular en la guía de
+remisión.
+Art. 38.- Traslado de armas y municiones.- El transporte de mercadería constituida por armas,
+municiones y explosivos dentro del territorio nacional, deberá estar amparado por el permiso
+correspondiente otorgado por el Comando Conjunto de las Fuerzas Armadas.
+
+Observaciones (2026-10-06):
+- El artículo 28 enumera quiénes están obligados a emitir, no un catálogo de motivos: el motivo del
+  traslado (art. 30, numeral 7) es texto libre, como en el XSD.
+- Artículo 30, numeral 8: el comprobante de venta (denominación, autorización, fecha y numeración) se
+  consigna salvo en los literales a) a e). El MVP admite las excepciones b), c), d) y e) como
+  declaraciones explícitas del usuario; la venta itinerante (a) queda fuera (Q-51).
+- Artículo 30, numeral 5: la identificación del remitente cuando emite el transportista o el
+  destinatario no tiene campo en el XML 1.1.0; el MVP solo emite guías de la propia empresa como
+  remitente (Q-51).
+- Artículo 30, penúltimo inciso: varios medios de transporte exigen constar sus placas y conductores;
+  el XML 1.1.0 admite un solo transportista y una sola placa, y el MVP también (Q-51).
+- Las rutas y el código del establecimiento del destinatario son requisitos adicionales para
+  combustibles (art. 30, último inciso), fuera del MVP; en los demás traslados el XSD los deja
+  opcionales.
+- Artículos 31 a 35 y 37 (importación, regímenes especiales, exportación, factura sustitutiva, emisor
+  itinerante e interrupción del transporte) quedan fuera del MVP (Q-51).

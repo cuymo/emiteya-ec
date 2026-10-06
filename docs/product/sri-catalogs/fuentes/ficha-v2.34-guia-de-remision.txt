@@ -1,0 +1,367 @@
+Extracto literal para add-shipping-guides (readiness del 2026-10-06; Q-51).
+
+Fuente: Ficha técnica "Manual de usuario, catálogo y especificaciones técnicas. Emisión de
+Comprobantes Electrónicos. Método de autorización Off-line", versión 2.34, publicada el 2026-07-27.
+URL oficial (la del dataset consumer-final-policy/1.json):
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf
+SHA-256 del PDF descargado el 2026-10-06: 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9
+(el mismo de los extractos anteriores y de los datasets publicados). Extraído con pdftotext -layout,
+por página; cada sección indica su recorte. Se conservan las columnas y se quitan solo los espacios
+finales y las líneas vacías repetidas. El número de página del PDF coincide con el impreso.
+
+== Página 12, sección 5.4: tabla 3 (desde "5.4" hasta antes de "5.5") ==
+
+5.4 Los tipos de comprobantes que pueden generar los contribuyentes de manera
+    electrónica se detalla conforme al siguiente cuadro:
+
+TABLA 3
+
+                                                                                                     Etiqueta o tag en
+             No.             Nombre comprobante                        Código         Requisito
+                                                                                                       archivo XML
+              1      FACTURA                                               01
+                     LIQUIDACIÓN DE COMPRA DE
+              2      BIENES Y PRESTACIÓN DE                                03
+                     SERVICIOS
+              3      NOTA DE CRÉDITO                                       04         Obligatorio       <codDoc>
+              4      NOTA DE DÉBITO                                        05
+              5      GUÍA DE REMISIÓN                                      06
+              6      COMPROBANTE DE RETENCIÓN                              07
+
+== Página 13, sección 5.7: tabla 6 y sus notas (desde "5.7" hasta antes de "5.8") ==
+
+5.7 Conforme al tipo de transacción efectuada deberá señalar el tipo de cliente,
+    sujeto retenido o destinatario, según el detalle:
+
+TABLA 6
+
+           No.                  Tipo de identificación            Código            Requisito
+            1        RUC                                               04           Obligatorio
+            2        CÉDULA                                            05           Obligatorio
+            3        PASAPORTE                                         06           Obligatorio
+            4        VENTA A CONSUMIDOR FINAL*                         07           Obligatorio
+            5        IDENTIFICACIÓN DEL EXTERIOR*                      08           Obligatorio
+
+          *Venta a consumidor final: se consignará 13 dígitos de nueve en la identificación del cliente
+          (9999999999999).
+          *Identificación del exterior: corresponderá al número de Identificación otorgado por la
+          Administración Tributaria (AT) del país que es residente fiscal.
+          * En el caso de emisión de liquidaciones de compra de bienes y prestación de servicios no se
+          encuentra habilitado el uso del tipo de identificación venta a consumidor final
+          * En el caso de emisión de notas de crédito, notas de débito y comprobantes de retención, se
+          debe obligatoriamente identificar al receptor o sujeto retenido con el tipo de identificación
+          correspondiente (RUC, cédula, pasaporte o identificación del exterior).
+
+== Páginas 27 y 28, sección 9.7 y tabla 13 del facturador gratuito del SRI (desde "9.7" hasta antes de "9.8") ==
+
+9.7 De igual manera se podrá parametrizar a los clientes ya identificados, a
+    quienes van a transferir los bienes o realizar la prestación de servicios, así
+    también la información de los transportistas para el caso de guías de remisión y
+
+                                                                                                                27
+
+los agentes retenidos para los comprobantes de retención. Se podrá importar
+         los clientes a parametrizar en formato txt.
+
+     TABLA 13
+
+       No.                                  Descripción                                    Requisito
+
+        1    Identificación (Número de RUC, cédula o pasaporte)                            Obligatorio
+        2    Nombres y apellidos o razón social                                            Obligatorio
+        3    Dirección de correo electrónico                                               Obligatorio
+        4    Placa (para el caso de guías de remisión)                                     Obligatorio
+        5    Teléfono                                                                       Opcional
+        6    Dirección / ubicación                                                          Opcional
+
+== Página 29: tabla 15 del facturador gratuito del SRI (desde el título hasta antes de "9.10") ==
+
+TABLA 15: GUÍAS DE REMISIÓN:
+
+No.                   Descripción de Llenado                   Tipo de campo   Longitud   Requisito
+ 1    Número secuencial del comprobante                           Numérico        9       Obligatorio
+ 2    Razón social / nombres o apellidos (Destinatario)         Alfanumérico   Max. 300   Obligatorio
+      Identificación destinatario (RUC, cédula, pasaporte,
+3                                                               Alfanumérico   10 a 20    Obligatorio
+      identificación del exterior)
+4     Dirección del punto de partida                            Alfanumérico   Max. 300   Obligatorio
+5     Dirección del destinatario o destinos                     Alfanumérico   Max. 300   Obligatorio
+      Razón social / Nombres o apellidos (transportista o
+6                                                               Alfanumérico   Max. 300   Obligatorio
+      remitente)
+      Identificación transportista o remitente (ruc, cédula,
+7                                                               Alfanumérico   10 a 13    Obligatorio
+      pasaporte)
+8     Número de placa                                           Alfanumérico   Max. 20    Obligatorio
+9     Descripción de la mercadería transportada                 Alfanumérico   Max. 300   Obligatorio
+10    Cantidad de la mercadería transportada                    Alfanumérico    Libre     Obligatorio
+11    Motivo del traslado                                       Alfanumérico   Max. 300   Obligatorio
+12    Denominación del comprobante de venta                       Numérico        2        Opcional
+13    Número de autorización del comprobante de venta             Numérico     10 ó 37     Opcional
+14    Fecha de emisión del comprobante de venta                   Numérico        8        Opcional
+15    Numeración del comprobante de venta                         Numérico       15        Opcional
+16    Número de la declaración aduanera                           Numérico       20        Opcional
+17    Fecha de Inicio de transporte                              Numérico         8       Obligatorio
+18    Fecha de terminación del transporte                        Numérico         8       Obligatorio
+19    Ruta                                                      Alfanumérico   Max. 300   Opcional
+      Código del establecimiento del destinatario del
+20                                                               Numérico         3       Opcional
+      producto
+21    Código numérico                                            Numérico       8 / 23    Obligatorio
+22    Dígito verificador                                         Numérico          1      Obligatorio
+
+== Página 36: título de la sección 11 y encabezado de la tabla de errores ==
+
+11. Códigos de errores y advertencias de
+         validación
+                                                                                                                                       VALIDACIÓN:
+     CÓDIGO
+                                                                                                                                       RECEPCIÓN
+       DE                DESCRIPCIÓN                                        MOTIVO DE ERROR
+                                                                                                                                     /AUTORIZACIÓN/
+     ERROR
+                                                                                                                                         EMISOR
+
+== Página 38: fila del error 82 (desde la fila 82 hasta antes de la fila 92) ==
+
+            Error en la fecha de       Cuando la fecha de inicio de transporte es menor a la
+  82                                                                                                  RECEPCIÓN
+            inicio de transporte            fecha de emisión de la guía de remisión.
+
+== Página 64: anexo 2, "FORMATO DE REPRESENTACIONES IMPRESAS DE DOCUMENTOS ELECTRÓNICOS (RIDE)" ==
+
+El texto extraíble de la página es solo su título:
+
+GUÍA DE REMISIÓN
+
+La distribución del RIDE de la guía es una imagen sin texto extraíble. Rótulos visibles, transcritos
+de la página renderizada (no es texto extraído), en el orden en que aparecen:
+- Recuadro derecho: "R.U.C.:", "GUIA DE REMISIÓN", "No.", "NÚMERO DE AUTORIZACIÓN", "FECHA Y HORA DE
+  AUTORIZACIÓN", "AMBIENTE:", "EMISIÓN:", "CLAVE DE ACCESO" con el código de barras.
+- Recuadro izquierdo, bajo el logo: razón social, nombre comercial, "Dirección Matriz:", "Dirección
+  Sucursal:", "Contribuyente Especial Nro", "OBLIGADO A LLEVAR CONTABILIDAD".
+- Bloque del transporte: "Identificación (Transportista)", "Razón Social / Nombres y Apellidos:",
+  "Placa:", "Punto de Partida:", "Fecha inicio Transporte", "Fecha fin Transporte".
+- Bloque del destinatario: "Comprobante de Venta:" (denominación y número), "Fecha de Emisión:" (del
+  comprobante de venta), "Número de Autorización:", "Motivo Traslado:", "Destino(Punto de llegada)",
+  "Identificación (Destinatario)", "Razón Social/Nombres Apellidos", "Documento Aduanero", "Código
+  Establecimiento Destino", "Ruta:", y una tabla con las columnas "Cantidad", "Descripcion", "Código
+  Principal" y "Código Auxiliar".
+El modelo no tiene importes ni una fila con la fecha de emisión de la guía. Es la referencia de la
+distribución del renderer propio de la guía (Q-51).
+
+== Página 70: anexo 3, "FORMATO XML GUÍA DE REMISIÓN" versión 1.1.0 (hasta el pie de la página) ==
+
+FORMATO XML GUÍA DE REMISIÓN
+                                                                                               TIPO DE       LONGITUD /
+                                    ETIQUETAS O TAGS                           CARACTER
+                                                                                               CAMPO          FORMATO
+<?xml version="1.0" encoding="UTF-8" ?>                                        Obligatorio         -              -
+
+<guiaRemision id="comprobante" version="1.1.0">                                Obligatorio         -              -
+<infoTributaria>                                                               Obligatorio         -              -
+                                                                               Obligatorio,
+<ambiente>1</ambiente>                                                          conforme       Numérico           1
+                                                                                 tabla 4
+                                                                               Obligatorio,
+<tipoEmision>1</ tipoEmision>                                                   conforme       Numérico           1
+                                                                                 tabla 2
+<razonSocial> EMPRESA PUBLICA DE HIDROCARBUROS DEL ECUADOR EP
+                                                                               Obligatorio    Alfanumérico     Max 300
+PETROECUADOR </razonSocial>
+                                                                                Obligatorio
+<nombreComercial> EMPRESA PUBLICA DE HIDROCARBUROS DEL ECUADOR EP
+                                                                                 cuando       Alfanumérico     Max 300
+PETROECUADOR </ nombreComercial >
+                                                                               corresponda
+<ruc>1760013210001</ruc>                                                       Obligatorio     Numérico          13
+                                                                               Obligatorio,
+<claveAcceso>0603201306176001321000110015010000000081234567812</claveAcceso>    conforme       Numérico          49
+                                                                                 tabla 1
+                                                                               Obligatorio,
+<codDoc>06</codDoc>                                                             conforme       Numérico           2
+                                                                                 tabla 3
+<estab>001</estab>                                                             Obligatorio     Numérico           3
+<ptoEmi>501</ptoEmi>                                                           Obligatorio     Numérico           3
+<secuencial>000000008</secuencial>                                             Obligatorio     Numérico           9
+
+<dirMatriz>ALPALLANA</dirMatriz>                                               Obligatorio    Alfanumérico     Max 300
+
+</infoTributaria>                                                              Obligatorio         -              -
+<infoGuiaRemision>                                                             Obligatorio         -              -
+                                                                                Obligatorio
+<dirEstablecimiento>ALPALLANA</ dirEstablecimiento >                             cuando       Alfanumérico     Max 300
+                                                                               corresponda
+<dirPartida>Av. Eloy Alfaro 34 y Av. Libertad Esq.</dirPartida>                Obligatorio    Alfanumérico     Max 300
+
+<razonSocialTransportista>Transportes S.A.</razonSocialTransportista>          Obligatorio    Alfanumérico     Max 300
+                                                                               Obligatorio,
+<tipoIdentificacionTransportista>04</tipoIdentificacionTransportista>           conforme       Numérico           2
+                                                                                 tabla 6
+<rucTransportista>1796875790001</rucTransportista>                             Obligatorio    Alfanumérico     Max 13
+                                                                                Obligatorio
+<rise>Contribuyente Regimen Simplificado RISE</rise>                             cuando       Alfanumérico     Max 40
+                                                                               corresponda
+                                                                                Obligatorio
+<obligadoContabilidad>SI</ obligadoContabilidad >                                cuando          Texto         SI / NO
+                                                                               corresponda
+                                                                                Obligatorio
+<contribuyenteEspecial>5368</contribuyenteEspecial>                              cuando       Alfanumérico   Min 3 Max 13
+                                                                               corresponda
+<fechaIniTransporte>06/03/2013</fechaIniTransporte>                            Obligatorio       Fecha       dd/mm/aaaa
+
+<fechaFinTransporte>06/03/2013</fechaFinTransporte>                            Obligatorio       Fecha       dd/mm/aaaa
+
+<placa>MCL0827</placa>                                                         Obligatorio    Alfanumérico     Max 20
+
+</infoGuiaRemision>                                                            Obligatorio         -              -
+
+<destinatarios>                                                                Obligatorio         -              -
+
+<destinatario>                                                                 Obligatorio         -              -
+
+<identificacionDestinatario>1716849140001</identificacionDestinatario>         Obligatorio    Alfanumérico     Max 20
+
+<razonSocialDestinatario>Alvarez Mina John Henry</razonSocialDestinatario>     Obligatorio    Alfanumérico     Max 300
+
+<dirDestinatario>Av. Simón Bolívar S/N Intercambiador</dirDestinatario>        Obligatorio    Alfanumérico     Max 300
+
+<motivoTraslado>Venta de Maquinaria de Impresión</motivoTraslado>              Obligatorio    Alfanumérico     Max 300
+                                                                                Obligatorio
+<docAduaneroUnico>0041324846887</docAduaneroUnico>                               cuando       Alfanumérico     Max 20
+                                                                               corresponda
+                                                                                Obligatorio
+<codEstabDestino>001</codEstabDestino>                                           cuando        Numérico           3
+                                                                               corresponda
+
+                                                                                                                      70
+
+== Página 71 (continuación de la tabla, hasta el pie de la página) ==
+
+                                                                                                TIPO DE       LONGITUD /
+                                 ETIQUETAS O TAGS                              CARACTER
+                                                                                                CAMPO          FORMATO
+                                                                                Obligatorio
+<ruta>Quito – Cayambe - Otavalo</ruta>                                            cuando       Alfanumérico    Max 300
+                                                                               corresponda
+                                                                                Obligatorio
+                                                                                  cuando
+<codDocSustento>01</codDocSustento>                                            corresponda,     Numérico      Min 2 Max 3
+                                                                              conforme tabla
+                                                                                     3
+                                                                                Obligatorio
+<numDocSustento>002-001-000000001</numDocSustento>                                cuando        Numérico          15
+                                                                               corresponda
+                                                                                Obligatorio
+<numAutDocSustento>211020111630251792146739011234567891</numAutDocSustento>       cuando        Numérico      10 o 37 o 49
+                                                                               corresponda
+                                                                                Obligatorio
+<fechaEmisionDocSustento>21/10/2011</fechaEmisionDocSustento>                     cuando          Fecha       dd/mm/aaaa
+                                                                               corresponda
+<detalles>                                                                     Obligatorio          -              -
+<detalle>                                                                      Obligatorio          -              -
+
+<codigoInterno>125BJC-01</ codigoInterno >                                      Opcional1      Alfanumérico     Max 25
+                                                                                Obligatorio
+<codigoAdicional>1234D56789-A</codigoAdicional>                                  cuando        Alfanumérico     Max 25
+                                                                               corresponda
+<descripcion>DIESEL</descripcion>                                              Obligatorio     Alfanumérico    Max 300
+                                                                                                                Max 18,
+<cantidad>10.254632</cantidad>                                                 Obligatorio      Numérico        hasta 6
+                                                                                                               decimales
+                                                                                Obligatorio
+<detallesAdicionales>                                                            cuando             -              -
+                                                                               corresponda
+                                                                                Obligatorio
+<detAdicional nombre="ABCD" valor="EFGH"/>                                       cuando        Alfanumérico    Max 300
+                                                                               corresponda
+                                                                                Obligatorio
+<detAdicional nombre="ABCD" valor="EFGH"/>                                       cuando        Alfanumérico    Max 300
+                                                                               corresponda
+                                                                                Obligatorio
+<detAdicional nombre="ABCD" valor="EFHG"/>                                       cuando        Alfanumérico    Max 300
+                                                                               corresponda
+                                                                                Obligatorio
+</detallesAdicionales>                                                           cuando             -              -
+                                                                               corresponda
+</detalle>                                                                     Obligatorio          -              -
+</detalles>                                                                    Obligatorio          -              -
+</destinatario>                                                                Obligatorio          -              -
+</destinatarios>                                                               Obligatorio          -              -
+                                                                                Obligatorio
+<infoAdicional>                                                                  cuando             -              -
+                                                                               corresponda
+                                                                                Obligatorio
+<campoAdicional nombre="TELEFONO">098568541</campoAdicional>                     cuando        Alfanumérico    Max 300
+                                                                               corresponda
+                                                                                Obligatorio
+<campoAdicional nombre="E-MAIL">info@organizacion.com</campoAdicional>           cuando        Alfanumérico    Max 300
+                                                                               corresponda
+                                                                                Obligatorio
+<campoAdicional nombre="SUCURSAL 03">Guayaquil–12 de octubre y
+                                                                                 cuando        Alfanumérico    Max 300
+Universo</campoAdicional>
+                                                                               corresponda
+                                                                                Obligatorio
+</infoAdicional>                                                                 cuando             -              -
+                                                                               corresponda
+</guiaRemision>                                                                Obligatorio          -              -
+
+                                                                                                                       71
+
+== Página 110: anexo 12 (combustibles), desde el título hasta el encabezado de la tabla 29 ==
+
+ANEXO 12 – REQUISITO OBLIGATORIO PARA
+EL XML DE FACTURA EN VENTA DE
+COMBUSTIBLES LÍQUIDOS DERIVADOS DE
+HIDROCARBUROS Y BIOCOMBUSTIBLES.
+Las facturas electrónicas en venta de combustibles líquidos derivados de
+hidrocarburos (CLDH) y biocombustibles deberán contener el tag placa en la
+estructura del XML, esto entre los tags <moneda> y formas de pago para las
+versiones 1.0.0, 1.1.0, 2.0.0, 2.1.0;
+
+1.        Placa
+
+<moneda>DOLAR</moneda>
+<placa>PCM4567</placa>
+<pagos>
+
+Para mayor información respecto a facturas para ventas de combustibles líquidos
+derivados de hidrocarburos y biocombustibles, ingrese al siguiente link:
+http://www.sri.gob.ec/web/guest/facturacion-electronica#informaci%C3%B3n
+
+2.        Llenado del campo Placa
+
+El campo <placa> deberá llenarse considerando las siguientes especificaciones,
+según lo dispuesto por el organismo regulador16:
+
+TABLA 29: FORMATO DE LLENADO DEL CAMPO PLACA
+
+== Página 111: anexo 13 (máquina fiscal), primer párrafo ==
+
+ANEXO 13 – REQUISITO OBLIGATORIO PARA
+XML DE COMPROBANTES EMITIDOS DESDE
+UNA MÁQUINA FISCAL
+Los comprobantes factura, nota de crédito, nota de débito, guía de remisión y
+comprobante de retención para todas sus versiones deberán contener los
+siguientes tags: marca, modelo y serie en la estructura del XML como se muestra a
+continuación:
+
+== Observaciones (2026-10-06) ==
+
+- Rango de las fuentes: el XSD `GuiaRemision_V1.1.0.xsd` es el contrato estructural; la tabla del
+  anexo 3 (páginas 70 y 71) añade longitudes y condiciones. Donde difieren, el sistema cumple ambas:
+  `rucTransportista` admite 1 a 20 caracteres en el XSD y "Max 13" en el anexo 3, así que el máximo
+  efectivo es 13; `codDocSustento` es `[0-9]{2}` en el XSD y "Min 2 Max 3, conforme tabla 3" en el
+  anexo, así que tiene 2 dígitos; `numAutDocSustento` es `[0-9]{10,49}` en el XSD y "10 o 37 o 49"
+  en el anexo, así que tiene 10, 37 o 49 dígitos. `cantidad`: "Max 18, hasta 6 decimales", igual que
+  el XSD (que además admite 0; el producto exige más de 0 por política, Q-51).
+- Las tablas 13 y 15 (páginas 28 y 29) describen los datos del facturador gratuito del SRI (sección
+  9), no el XML. Se citan solo como apoyo de significado: la tabla 15 nombra el campo 6 "transportista
+  o remitente" y el 20 "Código del establecimiento del destinatario del producto" (`codEstabDestino`).
+- Error 82 (página 38), validación en RECEPCIÓN: la fecha de inicio del transporte no puede ser menor
+  que la fecha de emisión de la guía. El XML de la guía no tiene `fechaEmision`: la fecha de emisión
+  es la de la clave de acceso (tabla 1). Es la evidencia de BR-37.
+- La tabla 29 del anexo 12 (formato de la placa) es un requisito de las facturas en venta de
+  combustibles, fuera del MVP (matriz de casos especiales): la placa de la guía no la usa.
+- El anexo 13 (máquina fiscal) es `OUT_OF_MVP`: la guía nunca escribe `maquinaFiscal`.
