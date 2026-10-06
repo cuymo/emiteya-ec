@@ -694,7 +694,7 @@ Cambio 11, archivado el 2026-10-05.
 
 ## Implementación de `add-withholding-receipts`
 
-Cambio 12, en curso.
+Cambio 12, archivado el 2026-10-06.
 
 ### Cálculo, evaluación y snapshot de la retención
 
