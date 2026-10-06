@@ -146,7 +146,7 @@
 
 ## 11. Bandeja con comprobantes de retención
 
-- [ ] 11.1 Agregar el tipo `07` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` (design D20). Verificar con pruebas de componente: filtro con los cuatro tipos, tipo bajo el número, total retenido y sujeto, enlace al detalle de la retención, textos por tipo, documentos disponibles por estado, y los demás tipos sin cambios. Documentarlo en `fiscal-emission.md`
+- [x] 11.1 Agregar el tipo `07` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` (design D20). Verificar con pruebas de componente: filtro con los cuatro tipos, tipo bajo el número, total retenido y sujeto, enlace al detalle de la retención, textos por tipo, documentos disponibles por estado, y los demás tipos sin cambios. Documentarlo en `fiscal-emission.md`
 
 ## 12. Pantallas de retenciones y catálogos
 

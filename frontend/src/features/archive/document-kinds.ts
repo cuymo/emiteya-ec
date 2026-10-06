@@ -1,8 +1,8 @@
 // Lo que cambia entre los comprobantes que el sistema emite en la bandeja y en las secciones
-// compartidas del detalle (add-credit-notes, design D15; add-debit-notes, design D19): el nombre con
-// que se nombra al usuario, la ruta del detalle, la ruta de su API, su permiso de reconciliación y su
-// clave de caché. Las reglas de disponibilidad de los documentos no cambian por tipo: las decide el
-// servidor.
+// compartidas del detalle (add-credit-notes, design D15; add-debit-notes, design D19;
+// add-withholding-receipts, design D20): el nombre con que se nombra al usuario, la ruta del detalle,
+// la ruta de su API, su permiso de reconciliación y su clave de caché. Las reglas de disponibilidad
+// de los documentos no cambian por tipo: las decide el servidor.
 import {
   creditNoteTransmissionViewSchema,
   creditNoteViewSchema,
@@ -10,6 +10,8 @@ import {
   debitNoteViewSchema,
   invoiceTransmissionViewSchema,
   invoiceViewSchema,
+  withholdingReceiptViewSchema,
+  withholdingTransmissionViewSchema,
   type DocumentType,
   type TransmissionEventView,
 } from "@facturador/contracts";
@@ -18,9 +20,13 @@ import type { Permission } from "@/lib/permissions";
 import { CREDIT_NOTES_KEY } from "@/features/credit-notes/credit-notes-api";
 import { DEBIT_NOTES_KEY } from "@/features/debit-notes/debit-notes-api";
 import { INVOICES_KEY } from "@/features/invoices/invoices-api";
+import { WITHHOLDINGS_KEY } from "@/features/withholding-receipts/withholding-receipts-api";
 
 export type DocumentKind = Readonly<{
-  /** Sustantivo femenino en minúsculas: "factura", "nota de crédito", "nota de débito". */
+  /**
+   * Sustantivo femenino en minúsculas: "factura", "nota de crédito", "nota de débito", "retención".
+   * Las secciones compartidas lo concuerdan en femenino ("la", "esta", "firmada", "autorizada").
+   */
   noun: string;
   detailPath: string;
   apiPath: string;
@@ -32,7 +38,7 @@ export type DocumentKind = Readonly<{
 }>;
 
 /** Tipos que el sistema emite, en el orden del filtro de la bandeja. */
-export const EMITTED_DOCUMENT_TYPES = ["01", "04", "05"] as const;
+export const EMITTED_DOCUMENT_TYPES = ["01", "04", "05", "07"] as const;
 export type EmittedDocumentType = (typeof EMITTED_DOCUMENT_TYPES)[number];
 
 export const DOCUMENT_KINDS: Record<EmittedDocumentType, DocumentKind> = {
@@ -65,6 +71,17 @@ export const DOCUMENT_KINDS: Record<EmittedDocumentType, DocumentKind> = {
     notReconcilableCode: "DEBIT_NOTE_NOT_RECONCILABLE",
     viewSchema: debitNoteViewSchema,
     transmissionSchema: debitNoteTransmissionViewSchema,
+  },
+  // "Retención" y no "comprobante de retención": las secciones compartidas concuerdan en femenino.
+  "07": {
+    noun: "retención",
+    detailPath: "/retenciones",
+    apiPath: "/withholding-receipts",
+    queryKey: WITHHOLDINGS_KEY,
+    reconcilePermission: "withholdings.reconcile",
+    notReconcilableCode: "WITHHOLDING_NOT_RECONCILABLE",
+    viewSchema: withholdingReceiptViewSchema,
+    transmissionSchema: withholdingTransmissionViewSchema,
   },
 };
 

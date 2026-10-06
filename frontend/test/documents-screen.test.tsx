@@ -1,8 +1,8 @@
 // Comprobantes, la bandeja documental (add-document-archive, tarea 10.2, design D13): carga, vacío,
 // sin coincidencias, error, sin permiso, filtros en la URL, rango inválido y descarga del RIDE; con
-// la nota de crédito (add-credit-notes, tarea 12.1, design D15) y la nota de débito (add-debit-notes,
-// tarea 10.1, design D19): el filtro de tipo en la URL, el tipo bajo el número y el enlace al detalle
-// según el tipo.
+// la nota de crédito (add-credit-notes, tarea 12.1, design D15), la nota de débito (add-debit-notes,
+// tarea 10.1, design D19) y el comprobante de retención (add-withholding-receipts, tarea 11.1, design
+// D20): el filtro de tipo en la URL, el tipo bajo el número y el enlace al detalle según el tipo.
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -169,6 +169,36 @@ describe("Comprobantes", () => {
     ).toBeDefined();
   });
 
+  it("la retención muestra su tipo, el total retenido y el sujeto, y enlaza a su detalle", async () => {
+    render({
+      "GET /api/v1/documents": paged([
+        item(),
+        item({
+          id: "ret-1",
+          documentType: "07",
+          number: "001-001-000000004",
+          buyer: { name: "PROVEEDORA DEL SUR S.A.", identification: "1791234567001" },
+          total: "3.25",
+          state: "SIGNED",
+          documents: { ride: "NOT_APPLICABLE", authorizedXml: false, signedXml: true },
+        }),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Comprobantes emitidos" });
+    await within(table).findByText("001-001-000000004");
+    const row = within(table)
+      .getAllByRole("row")
+      .find((candidate) => within(candidate).queryByText("001-001-000000004"))!;
+    expect(within(row).getByText("Comprobante de retención")).toBeDefined();
+    expect(within(row).getByText("PROVEEDORA DEL SUR S.A.")).toBeDefined();
+    expect(within(row).getByText("USD 3,25")).toBeDefined();
+    expect(within(row).getByRole("link").getAttribute("href")).toBe("/retenciones/ret-1");
+    // Firmada sin autorizar: no hay RIDE que descargar.
+    expect(
+      within(row).queryByRole("button", { name: "Descargar el RIDE de 001-001-000000004" }),
+    ).toBeNull();
+  });
+
   it("el filtro de tipo vive en la URL y llega a la API", async () => {
     navigation.search = new URLSearchParams("tipo=04");
     const calls = render({ "GET /api/v1/documents": paged([]) });
@@ -184,7 +214,12 @@ describe("Comprobantes", () => {
       "Factura",
       "Nota de crédito",
       "Nota de débito",
+      "Comprobante de retención",
     ]);
+    fireEvent.change(select, { target: { value: "07" } });
+    expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=07", {
+      scroll: false,
+    });
     fireEvent.change(select, { target: { value: "01" } });
     expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=01", {
       scroll: false,
