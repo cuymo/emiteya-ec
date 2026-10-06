@@ -11,7 +11,13 @@ import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastr
 import type { DocumentTransitionFollower } from "../../src/modules/fiscal/application/document-transitions.ts";
 import { RIDE_JOB_TYPE } from "../../src/modules/fiscal/application/archive/ride-jobs.ts";
 import { createPrismaJobStore, type JobStore } from "../../src/platform/jobs/prisma-job-store.ts";
-import { failure, receptionResponse, response } from "../support/sri-responses.ts";
+import {
+  authorizationResponse,
+  failure,
+  receptionResponse,
+  response,
+  validityResponse,
+} from "../support/sri-responses.ts";
 import { insertAuthorizedInvoice } from "./credit-notes-harness.ts";
 import {
   creditNoteTransmission,
@@ -123,6 +129,82 @@ describe("transmisión de una nota de débito", () => {
     await sri.transmit().run(await sri.jobFor(doc, "sri.transmit"), sri.context());
     expect(await stateOf(doc.id)).toBe("SEND_UNKNOWN");
     expect((await jobsOf(doc)).map((job) => job.type)).toEqual(["sri.transmit", "sri.reconcile"]);
+    // Una autorización sin estado concluyente tampoco la deja no autorizada: sigue recibida.
+    const received = await note("RECEIVED");
+    sri.reply(received, [{ estado: "EN PROCESO", ambiente: "PRUEBAS" }]);
+    await sri.authorize().run(await sri.jobFor(received, "sri.authorize"), sri.context());
+    expect(await stateOf(received.id)).toBe("RECEIVED");
+  });
+
+  it("la reconciliación automática que agota su ventana sin conclusión la deja en revisión manual", async () => {
+    const doc = await note("SIGNED");
+    await prisma.electronicDocument.update({
+      where: { id: doc.id },
+      data: { state: "SEND_UNKNOWN" },
+    });
+    // El envío dejó evidencia de que el SRI tenía la clave en proceso.
+    const attempt = await prisma.sriAttempt.create({
+      data: {
+        companyId: doc.companyId,
+        documentId: doc.id,
+        attemptNumber: (await prisma.sriAttempt.count({ where: { documentId: doc.id } })) + 1,
+        operation: "RECEPTION",
+        environment: "TEST",
+        endpoint: "simulado:RECEPTION",
+        origin: "AUTOMATIC",
+        startedAt: new Date(),
+        completedAt: new Date(),
+        transportOutcome: "RESPONSE",
+        httpStatus: 200,
+        envelopeSha256: "a".repeat(64),
+        envelopeSize: 10,
+      },
+    });
+    await prisma.sriAttemptResult.create({
+      data: {
+        attemptId: attempt.id,
+        companyId: doc.companyId,
+        outcome: "KEY_IN_PROCESS",
+        messages: [],
+        classifierVersion: "reception/1",
+      },
+    });
+    // La consulta no conoce la clave y la validez no informa nada; la ventana ya se agotó.
+    sri.replies.push(
+      response(authorizationResponse(doc.accessKey, [], "0")),
+      response(
+        validityResponse({
+          accessKey: doc.accessKey,
+          estadoConsulta: "RECHAZADA",
+          messages: [{ identifier: "99", message: "ERROR AL CONSULTAR DATOS DEL SERVICIO WEB" }],
+        }),
+      ),
+    );
+    const job = await sri.jobFor(doc, "sri.reconcile");
+    await sri.reconcile().run({ ...job, deadlineAt: new Date(Date.now() - 1) }, sri.context());
+    expect(await stateOf(doc.id)).toBe("MANUAL_REVIEW");
+    expect(sri.calls).not.toContain("RECEPTION");
+  });
+
+  it("guarda la respuesta del envío antes de clasificar y la clasifica al retomar sin volver a enviar", async () => {
+    const doc = await note("SIGNED");
+    sri.replies.push(response(receptionResponse("RECIBIDA")));
+    let failed = false;
+    const flaky: DocumentTransitionFollower = () => {
+      if (failed) return Promise.resolve();
+      failed = true;
+      return Promise.reject(new Error("fallo local"));
+    };
+    const job = await sri.jobFor(doc, "sri.transmit");
+    await expect(sri.transmit([...sri.followers, flaky]).run(job, sri.context())).rejects.toThrow(
+      "fallo local",
+    );
+    // La respuesta de la recepción quedó guardada aunque la decisión local falló.
+    expect(await stateOf(doc.id)).toBe("SIGNED");
+    expect(await prisma.sriResponse.count({ where: { attempt: { documentId: doc.id } } })).toBe(1);
+    await sri.transmit([...sri.followers, flaky]).run(job, sri.context());
+    expect(sri.calls).toEqual(["RECEPTION"]);
+    expect(await stateOf(doc.id)).toBe("RECEIVED");
   });
 
   it("SEND_UNKNOWN: un tiempo agotado no reenvía; la reconciliación por clave la autoriza", async () => {

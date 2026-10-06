@@ -39,7 +39,10 @@ type Entry = {
   enablement: { enabled: boolean; source: string };
   usable: boolean;
 };
-type Body = { data: Record<string, unknown> & { entries?: Entry[] }; error: { code: string } };
+type Body = {
+  data: Record<string, unknown> & { entries?: Entry[] };
+  error: { code: string; message: string };
+};
 const bodyOf = (res: { body: unknown }) => res.body as Body;
 
 // 10:00 del 6 de octubre de 2026 en Ecuador.
@@ -274,9 +277,14 @@ describe("catálogos de retención y de sustento", () => {
       expect(await audits(companyA)).toEqual([]);
     });
 
-    it("habilitar o deshabilitar una entrada fuera de alcance se rechaza y nada cambia", async () => {
+    it("habilitar o deshabilitar una entrada fuera de alcance se rechaza siempre con el mismo motivo y nada cambia", async () => {
+      // Una entrada de cada clasificación fuera de alcance de la renta, y el código 8 del IVA.
+      const rejections: string[] = [];
       for (const [catalog, key, enabled] of [
-        ["withholding-income-concept", "323-M", true],
+        ["withholding-income-concept", "500", true], // no residente
+        ["withholding-income-concept", "346", true], // porcentaje variable
+        ["withholding-income-concept", "325", true], // estructura especial excluida
+        ["withholding-income-concept", "323-M", true], // representación ambigua
         ["withholding-income-concept", "323-M", false],
         ["withholding-income-concept", "500", false],
         ["withholding-iva-code", "8", true],
@@ -285,9 +293,25 @@ describe("catálogos de retención y de sustento", () => {
         const res = await setEnablement("adminA", catalog, key, enabled);
         expect(res.status, `${catalog} ${key}`).toBe(400);
         expect(bodyOf(res).error.code).toBe("CATALOG_ENTRY_NOT_SELECTABLE");
+        rejections.push(bodyOf(res).error.message);
       }
+      expect(new Set(rejections).size).toBe(1);
       expect(await audits(companyA)).toEqual([]);
       expect(await db.database.prisma.companyFiscalCatalogSetting.count()).toBe(0);
+      // Las entradas siguen en el catálogo, con su clasificación, sin poder usarse.
+      for (const [catalog, key, classification] of [
+        ["withholding-income-concept", "500", "OUT_OF_SCOPE_NON_RESIDENT"],
+        ["withholding-income-concept", "346", "OUT_OF_SCOPE_VARIABLE"],
+        ["withholding-income-concept", "325", "OUT_OF_SCOPE_SPECIAL_STRUCTURE"],
+        ["withholding-income-concept", "323-M", "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION"],
+        ["withholding-iva-code", "8", "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION"],
+      ] as const) {
+        const view = await entry("adminA", catalog, key);
+        expect([view.usable, view.applicable?.withholding?.scopeClassification], key).toEqual([
+          false,
+          classification,
+        ]);
+      }
     });
 
     it("los catálogos de impuestos a retener y de sustento no admiten habilitación", async () => {
@@ -332,7 +356,7 @@ describe("catálogos de retención y de sustento", () => {
       );
     });
 
-    it("un código del IVA soportado se habilita y deshabilita por empresa", async () => {
+    it("el código 7 de retención en cero se deshabilita y se vuelve a habilitar por empresa", async () => {
       expect(
         bodyOf(await setEnablement("adminB", "withholding-iva-code", "7", false)).data,
       ).toMatchObject({
@@ -340,6 +364,20 @@ describe("catálogos de retención y de sustento", () => {
         usable: false,
       });
       expect((await entry("adminA", "withholding-iva-code", "7")).usable).toBe(true);
+      const enabled = await setEnablement("adminB", "withholding-iva-code", "7", true);
+      expect(enabled.status).toBe(200);
+      const view = bodyOf(enabled).data as unknown as Entry;
+      expect([view.entryKey, view.enablement, view.usable]).toEqual([
+        "7",
+        { enabled: true, source: "COMPANY" },
+        true,
+      ]);
+      // Representa explícitamente una retención en cero: el 0 % del catálogo.
+      expect(view.applicable?.withholding).toMatchObject({
+        scopeClassification: "SUPPORTED_FIXED",
+        selectable: true,
+        percentage: "0",
+      });
     });
   });
 });

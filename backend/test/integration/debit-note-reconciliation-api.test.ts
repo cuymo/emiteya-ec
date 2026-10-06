@@ -40,8 +40,8 @@ describe("reconciliación manual de una nota de débito", () => {
     timeoutMs: 30_000,
   });
 
-  /** Nota emitida por la API y llevada a revisión manual: recibida y con dos autorizaciones. */
-  const inManualReview = async () => {
+  /** Nota emitida por la API, firmada y con su envío pendiente. */
+  const signedNote = async () => {
     const invoice = await insertAuthorizedInvoice(
       db.database.prisma,
       {
@@ -78,7 +78,11 @@ describe("reconciliación manual de una nota de débito", () => {
         declarations: DECLARATIONS,
       });
     expect(emitted.status, JSON.stringify(emitted.body)).toBe(201);
-    const note = bodyOf(emitted).data as unknown as TestDocument;
+    return bodyOf(emitted).data as unknown as TestDocument;
+  };
+  /** Nota emitida por la API y llevada a revisión manual: recibida y con dos autorizaciones. */
+  const inManualReview = async () => {
+    const note = await signedNote();
     sri.replies.push(response(receptionResponse("RECIBIDA")));
     await sri.transmit().run(await sri.leasePending(note.id, "sri.transmit"), sri.context());
     sri.reply(note, [sri.authorized(note), sri.authorized(note)]);
@@ -180,5 +184,45 @@ describe("reconciliación manual de una nota de débito", () => {
     ).toBe(jobs);
     const empty = await reconcile(note.id, a.cookies.admin, "  ");
     expect(empty.status).toBe(400);
+    // Devuelta o no autorizada tampoco se reconcilian, sin programar la reconciliación.
+    const returned = await signedNote();
+    sri.replies.push(
+      response(
+        receptionResponse("DEVUELTA", [
+          {
+            accessKey: returned.accessKey,
+            messages: [{ identifier: "35", message: "mensaje sintético", type: "ERROR" }],
+          },
+        ]),
+      ),
+    );
+    await sri.transmit().run(await sri.leasePending(returned.id, "sri.transmit"), sri.context());
+    const notAuthorized = await signedNote();
+    sri.replies.push(response(receptionResponse("RECIBIDA")));
+    await sri
+      .transmit()
+      .run(await sri.leasePending(notAuthorized.id, "sri.transmit"), sri.context());
+    sri.reply(notAuthorized, [
+      sri.authorized(notAuthorized, { estado: "NO AUTORIZADO", comprobante: undefined }),
+    ]);
+    await sri
+      .authorize()
+      .run(await sri.leasePending(notAuthorized.id, "sri.authorize"), sri.context());
+    for (const [concluded, state] of [
+      [returned, "RETURNED"],
+      [notAuthorized, "NOT_AUTHORIZED"],
+    ] as const) {
+      expect(await stateOf(concluded.id)).toBe(state);
+      const rejected = await reconcile(concluded.id, a.cookies.admin);
+      expect([rejected.status, bodyOf(rejected).error.code], state).toEqual([
+        409,
+        "DEBIT_NOTE_NOT_RECONCILABLE",
+      ]);
+      expect(
+        await db.database.prisma.job.count({
+          where: { documentId: concluded.id, type: "sri.reconcile" },
+        }),
+      ).toBe(0);
+    }
   });
 });
