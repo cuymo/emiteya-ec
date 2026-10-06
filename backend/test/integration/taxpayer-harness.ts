@@ -5,7 +5,11 @@ import { randomInt } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import type { Registry } from "@prometheus-io/client";
 import { Router } from "express";
-import { userSchemas } from "@facturador/contracts";
+import {
+  WITHHOLDING_LIMITS_DEFAULT,
+  userSchemas,
+  type WithholdingLimits,
+} from "@facturador/contracts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
 import { createUserAdministration } from "../../src/modules/identity/application/user-administration.ts";
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
@@ -19,7 +23,7 @@ import {
   catalogsModule,
   fiscalCatalogQueries,
 } from "../../src/modules/catalogs/infrastructure/index.ts";
-import { partiesModule } from "../../src/modules/parties/infrastructure/index.ts";
+import { partiesModule, supplierReader } from "../../src/modules/parties/infrastructure/index.ts";
 import { productsModule } from "../../src/modules/products/infrastructure/index.ts";
 import {
   inventoryInitialization,
@@ -40,6 +44,9 @@ import {
   debitNoteSigningProfile,
   debitNotesModule,
 } from "../../src/modules/debit-notes/infrastructure/index.ts";
+import { withholdingReceiptsModule } from "../../src/modules/withholding-receipts/infrastructure/index.ts";
+import type { Permission } from "../../src/modules/identity/domain/access-policy.ts";
+import { ForbiddenError } from "../../src/platform/http/errors.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
 import { createXmllintXsdValidator } from "../../src/modules/sri-engine/infrastructure/xmllint-xsd-validator.ts";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
@@ -106,6 +113,17 @@ export type DebitNotesHarnessOptions = {
   stageTimings?: boolean;
 };
 
+/** Comprobantes de retención (add-withholding-receipts): las opciones que la prueba fija. */
+export type WithholdingHarnessOptions = {
+  /** Límites efectivos de recursos; los valores por defecto del entorno si no se fijan. */
+  limits?: Partial<WithholdingLimits>;
+  /**
+   * Permisos que el autorizador de las retenciones niega: como los dos roles tienen los de la
+   * consulta, el borrador y la emisión, el `403` se prueba con una política que no los concede.
+   */
+  deny?: readonly Permission[];
+};
+
 /** Sin firma configurada: ningún comprobante se puede firmar. */
 const NO_SIGNER: DocumentSigner = {
   signDocument: () =>
@@ -128,6 +146,7 @@ export function buildTaxpayerApp(
     invoices?: InvoicesHarnessOptions;
     creditNotes?: CreditNotesHarnessOptions;
     debitNotes?: DebitNotesHarnessOptions;
+    withholdingReceipts?: WithholdingHarnessOptions;
     now?: () => Date;
   } = {},
 ) {
@@ -278,6 +297,29 @@ export function buildTaxpayerApp(
           ...(options.debitNotes?.accessKeys ? { accessKeys: options.debitNotes.accessKeys } : {}),
           ...(options.debitNotes?.metrics ? { metrics: options.debitNotes.metrics } : {}),
           ...(options.debitNotes?.stageTimings ? { stageTimings: true } : {}),
+          ...(invoicesNow ? { now: invoicesNow } : {}),
+        }).routers,
+      );
+      // Comprobantes de retención (add-withholding-receipts): los mismos puertos que compone `main.ts`.
+      const denied = new Set(options.withholdingReceipts?.deny ?? []);
+      const withholdingAuthorizer: typeof authorizer = denied.size
+        ? {
+            ...authorizer,
+            requirePermission: (ctx, permission) => {
+              if (denied.has(permission)) throw new ForbiddenError();
+              authorizer.requirePermission(ctx, permission);
+            },
+          }
+        : authorizer;
+      router.use(
+        ...withholdingReceiptsModule({
+          prisma: db.database.prisma,
+          authorizer: withholdingAuthorizer,
+          signingReads: signing
+            ? signing.reads
+            : () => ({ activeCertificate: () => Promise.resolve(null) }),
+          parties: supplierReader,
+          limits: { ...WITHHOLDING_LIMITS_DEFAULT, ...options.withholdingReceipts?.limits },
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

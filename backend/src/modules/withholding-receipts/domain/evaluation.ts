@@ -215,7 +215,9 @@ const issue = (
   withholding: position.withholding ?? null,
 });
 
-const SUPPORTED_IDENTIFICATIONS = new Set(["04", "05", "06"]);
+/** RUC, cédula y pasaporte: los tipos de identificación de un sujeto retenido del MVP (design D3). */
+export const WITHHELD_IDENTIFICATION_TYPES = ["04", "05", "06"] as const;
+const SUPPORTED_IDENTIFICATIONS: ReadonlySet<string> = new Set(WITHHELD_IDENTIFICATION_TYPES);
 const SUPPORT_TAX_CODES = new Set(["2", "3", "5"]);
 const TAX_LABELS: Record<string, string> = { "2": "IVA", "3": "ICE", "5": "IRBPNR" };
 

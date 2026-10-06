@@ -163,6 +163,18 @@ import {
   listDebitNoteDraftsQuerySchema,
   updateDebitNoteDraftSchema,
 } from "../debit-notes.ts";
+import {
+  createWithholdingDraftSchema,
+  listWithholdingDraftsQuerySchema,
+  listWithholdingSuppliersQuerySchema,
+  updateWithholdingDraftSchema,
+  withholdingDraftIdParamsSchema,
+  withholdingDraftSummaryViewSchema,
+  withholdingDraftViewSchema,
+  withholdingListMetaSchema,
+  withholdingOptionsViewSchema,
+  withholdingSupplierViewSchema,
+} from "../withholding-receipts.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -290,6 +302,23 @@ const debitDraftReferenceErrors = {
 const debitDraftInvoiceConflict = {
   description:
     "La factura no admite nota de débito: no está autorizada (DEBIT_NOTE_INVOICE_NOT_ELIGIBLE) o se emitió a consumidor final (DEBIT_NOTE_CONSUMER_FINAL, política del proyecto); o el borrador cambió (DEBIT_NOTE_DRAFT_CHANGED) o ya se emitió (DEBIT_NOTE_DRAFT_ALREADY_EMITTED).",
+  schema: errorEnvelopeSchema,
+};
+
+// Comprobantes de retención (add-withholding-receipts, design D21).
+const withholdingDraftNotFound = {
+  description:
+    "El borrador no existe en la empresa (WITHHOLDING_DRAFT_NOT_FOUND) o su proveedor no existe en la empresa (WITHHOLDING_SUBJECT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const withholdingDraftReferenceErrors = {
+  description:
+    "Datos inválidos (un período fuera de MM/AAAA, un documento sustento con su tipo, su número o su autorización fuera de formato, un impuesto o una retención fuera de los admitidos, una tarifa enviada para el IVA, una base que no es mayor que cero, un porcentaje, una denominación o un valor retenido en el cuerpo, o más elementos que los máximos absolutos) o un punto de emisión que no existe en la empresa (EMISSION_POINT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const withholdingDraftConflict = {
+  description:
+    "El borrador excede un límite de recursos del sistema (WITHHOLDING_RESOURCE_LIMIT, una defensa del sistema, no un límite del SRI), cambió (WITHHOLDING_DRAFT_CHANGED) o ya se emitió (WITHHOLDING_DRAFT_ALREADY_EMITTED).",
   schema: errorEnvelopeSchema,
 };
 
@@ -1943,6 +1972,131 @@ export const apiRoutes: readonly RouteDefinition[] = [
       401: errors[401],
       403: errors[403],
       404: debitNoteNotFound,
+    },
+  }),
+  // Comprobantes de retención (add-withholding-receipts, design D21).
+  defineRoute({
+    method: "get",
+    path: "/withholding-receipts/suppliers",
+    summary:
+      "Buscar proveedores que pueden ser sujeto retenido: activos, con RUC, cédula o pasaporte, por identificación o razón social",
+    request: { query: listWithholdingSuppliersQuerySchema },
+    responses: {
+      200: {
+        description: "Página de proveedores y el total en `meta`; nunca el consumidor final.",
+        schema: z.strictObject({
+          data: z.array(withholdingSupplierViewSchema),
+          meta: withholdingListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/withholding-receipts/options",
+    summary:
+      "Consultar las opciones del borrador de retención: conceptos de renta y códigos del IVA utilizables, tipos de documento y sustentos compatibles, códigos de porcentaje de los impuestos del documento, formas de pago y límites de recursos",
+    responses: {
+      200: {
+        description:
+          "Opciones resueltas con la fecha de hoy para la empresa: solo entradas soportadas, vigentes y habilitadas. Los códigos de porcentaje llevan sus vigencias, porque se resuelven con la fecha del documento sustento.",
+        schema: successEnvelope(withholdingOptionsViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/withholding-receipts/drafts",
+    summary: "Listar los borradores de retención pendientes, por última actualización",
+    request: { query: listWithholdingDraftsQuerySchema },
+    responses: {
+      200: {
+        description: "Página de borradores `DRAFT` con el total retenido de su vista previa.",
+        schema: z.strictObject({
+          data: z.array(withholdingDraftSummaryViewSchema),
+          meta: withholdingListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/withholding-receipts/drafts",
+    summary:
+      "Guardar un borrador de retención: proveedor, parte relacionada, período, punto y documentos sustento con sus impuestos, pagos y retenciones",
+    request: { body: createWithholdingDraftSchema },
+    responses: {
+      201: {
+        description:
+          "Borrador guardado (sin período, el del mes de hoy), con la vista previa del servidor: el código, la denominación, el porcentaje y el valor de cada retención, el total retenido, el aviso del período y los problemas por documento y por retención. No reserva nada.",
+        schema: successEnvelope(withholdingDraftViewSchema),
+      },
+      400: withholdingDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: withholdingDraftNotFound,
+      409: withholdingDraftConflict,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/withholding-receipts/drafts/:draftId",
+    summary: "Consultar un borrador de retención con su vista previa recalculada",
+    request: { params: withholdingDraftIdParamsSchema },
+    responses: {
+      200: {
+        description:
+          "Borrador con la vista previa calculada con la fecha del día y el catálogo vigente.",
+        schema: successEnvelope(withholdingDraftViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: withholdingDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (WITHHOLDING_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/withholding-receipts/drafts/:draftId",
+    summary: "Corregir un borrador de retención a partir de la versión consultada",
+    request: { params: withholdingDraftIdParamsSchema, body: updateWithholdingDraftSchema },
+    responses: {
+      200: {
+        description: "Borrador corregido.",
+        schema: successEnvelope(withholdingDraftViewSchema),
+      },
+      400: withholdingDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: withholdingDraftNotFound,
+      409: withholdingDraftConflict,
+    },
+  }),
+  defineRoute({
+    method: "delete",
+    path: "/withholding-receipts/drafts/:draftId",
+    summary: "Eliminar un borrador de retención sin emitir",
+    request: { params: withholdingDraftIdParamsSchema },
+    responses: {
+      204: { description: "Borrador eliminado, sin rastro fiscal." },
+      401: errors[401],
+      403: errors[403],
+      404: withholdingDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (WITHHOLDING_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
 ];

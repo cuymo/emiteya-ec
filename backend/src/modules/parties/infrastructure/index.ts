@@ -1,6 +1,7 @@
 // Composición del módulo de terceros para main.ts y las pruebas (add-parties-and-products).
 import type { PrismaClient } from "../../../generated/prisma/client.ts";
 import type { DbClient } from "../../../platform/db/database.ts";
+import { escapeLike, searchKey } from "../../../platform/search/search-key.ts";
 import { ecuadorDate } from "../../catalogs/infrastructure/index.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import type { CompanyInitializer } from "../../identity/infrastructure/better-auth/index.ts";
@@ -58,6 +59,74 @@ export async function ensureConsumerFinals({
 export function partyReader(db: DbClient) {
   const parties = createPartyRepository(db);
   return { find: (companyId: string, partyId: string) => parties.find(companyId, partyId) };
+}
+
+/**
+ * Proveedores de la empresa sobre un cliente, también en una transacción ajena: un tercero por
+ * `(company_id, id)` con sus roles y su estado, y la búsqueda de los proveedores activos con los tipos
+ * de identificación pedidos, por identificación o razón social, sin el consumidor final del sistema.
+ * La usa el comprobante de retención (add-withholding-receipts, design D3), compuesta por `main.ts`.
+ */
+export function supplierReader(db: DbClient) {
+  const view = (row: {
+    id: string;
+    status: string;
+    identificationType: string;
+    identification: string;
+    legalName: string;
+    roles: string[];
+    systemRecord: string | null;
+  }) => ({
+    id: row.id,
+    status: row.status,
+    identificationType: row.identificationType,
+    identification: row.identification,
+    legalName: row.legalName,
+    roles: row.roles,
+    consumerFinal: row.systemRecord === "CONSUMER_FINAL",
+  });
+  return {
+    async find(companyId: string, partyId: string) {
+      const row = await db.party.findFirst({ where: { id: partyId, companyId } });
+      return row ? view(row) : null;
+    },
+    async searchSuppliers(
+      companyId: string,
+      query: Readonly<{
+        search?: string | undefined;
+        identificationTypes: readonly string[];
+        page: number;
+        pageSize: number;
+      }>,
+    ) {
+      const key = query.search ? escapeLike(searchKey(query.search)) : "";
+      const where = {
+        companyId,
+        status: "ACTIVE",
+        systemRecord: null,
+        roles: { has: "SUPPLIER" },
+        identificationType: { in: [...query.identificationTypes] },
+        ...(key
+          ? {
+              OR: [
+                { searchIdentification: { startsWith: key } },
+                { searchName: { contains: key } },
+              ],
+            }
+          : {}),
+      };
+      const [rows, total] = await Promise.all([
+        db.party.findMany({
+          where,
+          orderBy: [{ searchName: "asc" }, { id: "asc" }],
+          skip: (query.page - 1) * query.pageSize,
+          take: query.pageSize,
+        }),
+        db.party.count({ where }),
+      ]);
+      return { items: rows.map(view), total };
+    },
+  };
 }
 
 export type PartiesModuleOptions = {

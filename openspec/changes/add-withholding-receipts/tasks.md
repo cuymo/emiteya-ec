@@ -93,8 +93,8 @@
 
 ## 6. Borradores, vista previa, proveedores y opciones
 
-- [ ] 6.1 Implementar el puerto `WithheldPartyReader` sobre la lectura de terceros, inyectado por `main.ts`, y la búsqueda `/withholding-receipts/suppliers` (design D3 y D21). Verificar con pruebas de integración que solo devuelve proveedores activos con identificación `04`, `05` o `06` de la empresa, sin el consumidor final, y que otra empresa no se filtra
-- [ ] 6.2 Implementar los borradores con su vista previa (`/withholding-receipts/drafts`) y las opciones (`/withholding-receipts/options`), con sus rutas en OpenAPI. Verificar con pruebas HTTP:
+- [x] 6.1 Implementar el puerto `WithheldPartyReader` sobre la lectura de terceros, inyectado por `main.ts`, y la búsqueda `/withholding-receipts/suppliers` (design D3 y D21). Verificar con pruebas de integración que solo devuelve proveedores activos con identificación `04`, `05` o `06` de la empresa, sin el consumidor final, y que otra empresa no se filtra
+- [x] 6.2 Implementar los borradores con su vista previa (`/withholding-receipts/drafts`) y las opciones (`/withholding-receipts/options`), con sus rutas en OpenAPI. Verificar con pruebas HTTP:
   - período propuesto con el mes de hoy;
   - vista previa con porcentajes y valores del servidor y el total retenido;
   - problemas por documento y por retención;

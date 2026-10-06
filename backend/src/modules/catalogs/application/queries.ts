@@ -61,6 +61,11 @@ export type FiscalCatalogQueries = CatalogResolver & {
   specialCases(): Promise<StoredSpecialCase[]>;
   /** Última versión aplicada de cada catálogo, para el snapshot de la emisión (add-invoice-emission, D4). */
   datasetVersions(): Promise<Record<string, number>>;
+  /**
+   * Todas las versiones de un catálogo, sin habilitación: los códigos de porcentaje de un documento
+   * sustento se ofrecen con sus vigencias y se resuelven con su fecha (add-withholding-receipts, D6).
+   */
+  versions(catalogType: FiscalCatalogType): Promise<StoredEntryVersion[]>;
 };
 
 export function createFiscalCatalogQueries({
@@ -83,6 +88,8 @@ export function createFiscalCatalogQueries({
     },
 
     schemaRegistry: () => reader.schemaEntries(),
+
+    versions: (catalogType) => reader.entryVersions(catalogType),
 
     specialCases: () => reader.specialCases(),
 

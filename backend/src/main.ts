@@ -35,6 +35,7 @@ import {
   consumerFinalInitializer,
   ensureConsumerFinals,
   partiesModule,
+  supplierReader,
 } from "./modules/parties/infrastructure/index.ts";
 import { productsModule } from "./modules/products/infrastructure/index.ts";
 import {
@@ -68,6 +69,7 @@ import {
   debitNoteSigningProfile,
   debitNotesModule,
 } from "./modules/debit-notes/infrastructure/index.ts";
+import { withholdingReceiptsModule } from "./modules/withholding-receipts/infrastructure/index.ts";
 import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
@@ -396,6 +398,24 @@ apiRouter.use(
     jobs: jobStore,
     conclusionWindowMs: transmissionSettings.poll.windowMs,
     stageTimings: env.EMISSION_STAGE_TIMINGS,
+  }).routers,
+);
+
+// Comprobantes de retención (add-withholding-receipts, design D1 y D21): los proveedores de `parties`
+// como puerto, sin inventario, capacidades ni facturas. Los límites de recursos son defensas del
+// sistema, no límites del SRI (design D25).
+apiRouter.use(
+  ...withholdingReceiptsModule({
+    prisma: database.prisma,
+    authorizer,
+    signingReads: signing.reads,
+    parties: supplierReader,
+    limits: {
+      supports: env.WITHHOLDING_MAX_SUPPORTS,
+      itemsPerSupport: env.WITHHOLDING_MAX_ITEMS_PER_SUPPORT,
+      taxesPerSupport: env.WITHHOLDING_MAX_TAXES_PER_SUPPORT,
+      paymentsPerSupport: env.WITHHOLDING_MAX_PAYMENTS_PER_SUPPORT,
+    },
   }).routers,
 );
 
