@@ -25,13 +25,14 @@ inventario que no sale de ningún XSD.
 | `importe` | `Money` | 14 | 2 | 0 | `99999999999999`, `999999999999.99` | Monto de la política de consumidor final; importes de la emisión |
 | `precioUnitario` | `UnitPrice` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Precio unitario de productos, sin impuestos |
 | `cantidad` | `Quantity` | 18 | 6 | 0 | `999999999999999999`, `999999999999.999999` | Cantidades de la emisión |
+| `porcentajeRetener` | — | 3 | 2 | 0 | `999`, `100`, `9.99`, `1.75` | Porcentaje de una retención (`porcentajeRetener` del comprobante de retención 2.0.0) y la `tarifa` del impuesto declarado de su documento sustento, que el mismo XSD define con la misma escala (design D6 y D13 de `add-withholding-receipts`). `100` cumple los 3 dígitos en su forma canónica; `100.00` no |
 | `existencia` | `StockQuantity` | 30 | 6 | Sin mínimo (con signo) | `999999999999999999999999.999999`, `-999999999999999999999999.999999` | Variaciones y saldos del inventario (design D3 de `add-minimal-inventory`): los decimales de `cantidad` y una parte entera que admite la salida de una factura de 1 000 líneas de cantidad máxima. Un saldo puede ser negativo (Q-19). |
 
 - **Regla del XSD (Q-43):** la parte entera usa los dígitos que no ocupan los decimales; nunca `totalDigits` enteros más `fractionDigits` decimales. La semántica de `NUMERIC(p, s)`, que limitaría la parte entera a `p - s`, no es la regla.
 - **Primitivos compartidos:** una especificación no lleva límites normativos de un impuesto o de un código.
   - `tarifa` no tiene un máximo de 100: la ficha v2.34 publica tarifas de ICE superiores.
   - Un límite así pertenece al catálogo del impuesto, con su fuente.
-- **Excepción conocida:** la retención 2.0.0 define `tarifa` y `porcentajeRetener` con 3 dígitos y 2 decimales. Esa escala llegará con su cambio.
+- **Excepción conocida:** la retención 2.0.0 define `tarifa` y `porcentajeRetener` con 3 dígitos y 2 decimales: es la especificación `porcentajeRetener` (`add-withholding-receipts`). El porcentaje de la retención y la tarifa de su documento sustento se escriben en su forma canónica sin ceros finales (`1.75`, `10`, `100`).
 
 ## Validación al recibir
 
@@ -51,7 +52,7 @@ inventario que no sale de ningún XSD.
   - Cada campo es `NUMERIC` sin precisión ni escala fijas, que guarda el valor exacto sin redondear. `NUMERIC(p, s)` no se usa: limitaría la parte entera a `p - s` dígitos y redondearía en silencio los decimales de más.
   - Un `CHECK` de dominio fija la especificación: mínimo, `scale(valor) <= fractionDigits` y `valor < 10^(totalDigits - scale(valor))`.
   - Se guarda la forma canónica (`toDatabase`), así que la escala guardada es la del valor.
-  - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`), `consumer_final_policy.max_amount` (`importe`) y, desde `add-invoice-emission`, `invoice_draft_line.quantity` (`cantidad`), `invoice_draft_line.discount`, `invoice_draft_payment.amount` y `electronic_document.total` (`importe`); desde `add-minimal-inventory`, `stock_balance.balance`, `stock_movement.delta` y `stock_movement.balance_after` (`existencia`), sin mínimo.
+  - Columnas: `product.unit_price` (`precioUnitario`), `fiscal_catalog_entry.percentage` (`tarifa`), `consumer_final_policy.max_amount` (`importe`) y, desde `add-invoice-emission`, `invoice_draft_line.quantity` (`cantidad`), `invoice_draft_line.discount`, `invoice_draft_payment.amount` y `electronic_document.total` (`importe`); desde `add-minimal-inventory`, `stock_balance.balance`, `stock_movement.delta` y `stock_movement.balance_after` (`existencia`), sin mínimo; desde `add-withholding-receipts`, `withholding_receipt_line.base` (`importe`, mayor que cero), `withholding_receipt_line.percentage` (`porcentajeRetener`) y `withholding_receipt_line.amount` (`importe`), con el porcentaje de los catálogos de retención en `fiscal_catalog_entry.percentage` acotado a 3 dígitos por su `CHECK` de atributos.
 - **Conversión:** con el `Decimal` de Prisma siempre por texto.
 - **Aritmética fiscal** (design D5 de `add-invoice-emission`):
   - **Primitivas exactas** de `platform/decimal`: `sumExact`, `subtractExact`, `multiplyExact` y `percentageOfExact`, sobre `DecimalString` y sin redondeo. La precisión de 40 dígitos cubre el producto de dos valores de 18 dígitos. Una operación que necesitara más dígitos lanza `InexactOperationError` en vez de redondear en silencio.
@@ -61,6 +62,7 @@ inventario que no sale de ningún XSD.
   - **Límite del esquema:** cada importe materializado se comprueba con `importe` (14/2). Un valor que no cabe es `AMOUNT_OUT_OF_RANGE`, antes de reservar.
   - **Descuento:** importe de 2 decimales entre 0 y el subtotal exacto de la línea (`DISCOUNT_EXCEEDS_SUBTOTAL`), sin redondear.
   - Ningún handler ni builder opera con `decimal.js`; el builder XML no calcula.
+  - **Retención** (design D13 de `add-withholding-receipts`): `calculateWithholdingAmounts` (`withholding-receipts/domain/amounts.ts`, versión `1`) materializa cada valor retenido HALF_UP a 2 decimales una sola vez (`base × porcentaje / 100`) y suma exactamente el total retenido; la base es un `importe` mayor que cero y el porcentaje un `porcentajeRetener`. A 2 decimales, el mayor importe que cabe es `999999999999.99`.
   - Una tabla dorada (`backend/test/invoices/amounts.test.ts`) fija los casos de la spec y de S-3: empates, totales desde valores materializados, varias líneas con descuento, consumidor final y regresiones de 17 y 18 dígitos. Una prueba de fuente impide `number` y `decimal.js` en el dominio.
 - **Redondeo (Q-14):** política del producto, no regla textual del SRI.
   - Los cálculos internos son exactos, sin redondeos intermedios.

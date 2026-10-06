@@ -59,21 +59,21 @@
 
 ## 4. Dominio de la retención
 
-- [ ] 4.1 Añadir el dominio decimal `porcentajeRetener` (3 dígitos totales, 2 decimales) e implementar `calculateWithholdingAmounts` versión 1 (design D13), sin `number`. Verificar con:
+- [x] 4.1 Añadir el dominio decimal `porcentajeRetener` (3 dígitos totales, 2 decimales) e implementar `calculateWithholdingAmounts` versión 1 (design D13), sin `number`. Verificar con:
   - los golden de design D13;
   - property tests con generador determinista;
   - la forma canónica del porcentaje y de la tarifa de 3 dígitos;
   - la prueba de que el módulo no usa `number` ni la librería decimal directamente.
 
   Documentar el dominio en `decimal-policy.md` y el cálculo en `fiscal-emission.md`, citando la función y su versión
-- [ ] 4.2 Implementar la evaluación en el orden de design D15 y la vista previa pura (design D3 a D6, D8, D9 y D12):
+- [x] 4.2 Implementar la evaluación en el orden de design D15 y la vista previa pura (design D3 a D6, D8, D9 y D12):
   - sujeto, parte relacionada y período (con el aviso de período distinto del mes de emisión);
   - documentos con tipo, sustento compatible, número, fecha, autorización y totales; impuestos de IVA, ICE e IRBPNR con su código de porcentaje vigente en la fecha del documento y la tarifa del catálogo (IVA) o declarada (ICE e IRBPNR); y pagos utilizables;
   - retenciones con impuesto, entrada soportada, vigente y habilitada, y base;
   - límites y contribuyente especial compatible.
 
   Verificar con pruebas unitarias: cada rechazo con su código y la posición del documento y de la retención; consumidor final citando la ficha; identificación del exterior; tercero sin rol de proveedor; período futuro; concepto variable, de no residente, de dividendos y de código ambiguo; código 8 de IVA; ISD; fecha del sustento posterior a la emisión; código de porcentaje de ICE no vigente en la fecha del documento; IVA diferenciado; importes declarados sin comparaciones ni recálculos; ninguna retención de código 7 u 8 creada sin que el usuario la elija
-- [ ] 4.3 Implementar el snapshot autosuficiente de design D14 y su construcción. Verificar con pruebas unitarias que guarda el sujeto, `relatedParty` como `USER_DECLARED` (nunca `SYSTEM_VERIFIED`), el período, cada documento con sus impuestos, pagos y retenciones anidadas con sus referencias de catálogo, la versión del cálculo y el total retenido
+- [x] 4.3 Implementar el snapshot autosuficiente de design D14 y su construcción. Verificar con pruebas unitarias que guarda el sujeto, `relatedParty` como `USER_DECLARED` (nunca `SYSTEM_VERIFIED`), el período, cada documento con sus impuestos, pagos y retenciones anidadas con sus referencias de catálogo, la versión del cálculo y el total retenido
 
 ## 5. XML del comprobante de retención
 
