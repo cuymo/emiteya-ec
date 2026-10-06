@@ -75,7 +75,7 @@ describe("API de los catálogos fiscales", () => {
   });
 
   describe("consulta", () => {
-    it("ambos roles ven los seis catálogos con su fuente y su política", async () => {
+    it("ambos roles ven los once catálogos con su fuente y su política", async () => {
       for (const who of ["adminA", "operatorA"]) {
         const res = await call(who, "get", "/fiscal-catalogs");
         expect(res.status).toBe(200);
@@ -91,8 +91,18 @@ describe("API de los catálogos fiscales", () => {
           ["ice-rate", "DEFAULT_DISABLED"],
           ["irbpnr-rate", "DEFAULT_DISABLED"],
           ["payment-method", "DEFAULT_ENABLED"],
+          ["withholding-tax", "NOT_ENABLEABLE"],
+          ["withholding-iva-code", "DEFAULT_ENABLED"],
+          ["withholding-income-concept", "DEFAULT_ENABLED"],
+          ["support-document-type", "NOT_ENABLEABLE"],
+          ["support-code", "NOT_ENABLEABLE"],
         ]);
-        expect(catalogs.every((c) => c.source.version === "2.34")).toBe(true);
+        expect(catalogs.map((c) => c.source.version)).toEqual([
+          ...Array<string>(8).fill("2.34"),
+          "2026-08-06",
+          "2026-08-06",
+          "2026-08-06",
+        ]);
       }
     });
 

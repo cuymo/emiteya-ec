@@ -213,6 +213,26 @@ autorizadas, sin capacidades ni inventario:
 - **Forma de pago.** Una sola, resuelta con `catalogs.availability` en la fecha de la reserva (vigencia y habilitación) y congelada en `snapshot.payments`; el XML y el RIDE la toman del snapshot.
 - **Métricas.** `debit_note_reservations_total` y `debit_note_concepts_total{cause}` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
 
+## Catálogos de retención y de sustento
+
+`add-withholding-receipts` (design D7 a D12) agrega al módulo `catalogs` cinco catálogos de
+entradas, con sus datasets versionados y la misma carga al arrancar:
+
+- **Catálogos.** `withholding-tax` (tabla 19 de la ficha), `withholding-iva-code` (tabla 20),
+  `withholding-income-concept` (tabla 3.10 del Catálogo ATS), `support-document-type` (tabla 4) y
+  `support-code` (tabla 5). Las fuentes y la derivación están en `../product/sri-catalogs/`.
+- **Clasificación.** Cada entrada guarda su `scopeClassification`. `isSelectableScope` (contratos)
+  decide si se puede elegir: solo `SUPPORTED`, `SUPPORTED_FIXED` y `SUPPORTED_FIXED_RESIDENT`. Las
+  entradas de los catálogos de la factura no tienen clasificación y siempre se pueden elegir.
+- **Utilizable.** `isUsable` exige versión aplicable, habilitación y clasificación soportada, así que
+  la consulta, `availability` y el resolver de la emisión aplican la misma regla.
+- **Habilitación.** `withholding-iva-code` y `withholding-income-concept` son habilitables y
+  habilitados por defecto. Habilitar o deshabilitar una entrada sin versión soportada responde
+  `400 CATALOG_ENTRY_NOT_SELECTABLE`.
+- **Consulta.** La vista de cada versión agrega `withholding`: la clasificación, si se puede elegir,
+  el porcentaje (`porcentajeRetener`), el texto literal y los sustentos admitidos. Los códigos se
+  ordenan con comparación numérica (`303`, `303A`, `323 M`, `3250`).
+
 ## Sensitive Operations
 
 A sensitive operation reads or changes private data, money, inventory, permissions, files,

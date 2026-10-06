@@ -2,26 +2,26 @@
 
 ## 1. Fuentes y catálogos de retención
 
-- [ ] 1.1 Archivar en `docs/product/sri-catalogs/fuentes/` (design D11):
+- [x] 1.1 Archivar en `docs/product/sri-catalogs/fuentes/` (design D11):
   - el extracto normalizado del Catálogo ATS oficial, con la URL, la fecha de actualización (06/08/2026), el SHA-256 del archivo (`bd3f7834…`) y el método de extracción;
   - en ese extracto, por cada tabla usada (la 3.10 con el bloque "DESDE 06/AGOSTO/2026" completo, y las tablas 4, 5, 11 y 13): la hoja y la sección de origen, las filas y los campos relevantes con los códigos RAW (incluidos `323 M` y los numéricos `1.0`), la transformación aplicada, la clasificación del MVP y las cantidades de filas de entrada y de salida;
   - el extracto de las tablas 19 y 20 de la ficha v2.34 (páginas 32 y 33, SHA-256 `7333aebf…`).
 
   El `.xls` no entra al repositorio ni es una dependencia de ejecución. Verificar que cada extracto cita su URL y su SHA-256 y permite auditar la derivación, y actualizar `sri-catalogs/README.md` con las fuentes nuevas
-- [ ] 1.2 Crear la migración de los catálogos (design D11 y D28):
+- [x] 1.2 Crear la migración de los catálogos (design D11 y D28):
   - los tipos nuevos en los `CHECK` de `catalog_type`;
   - el `CHECK` de `code` por catálogo, con el código literal de la renta;
   - las columnas `scope_classification`, `rate_text` y `allowed_support_codes`, con sus `CHECK` de atributos por catálogo.
 
   Verificar con `migrations.test.ts` sin deriva, con pruebas del esquema que rechazan una clasificación inválida, un código fuera de su formato y atributos de otro catálogo, y con los catálogos existentes sin cambios
-- [ ] 1.3 Agregar los tipos `withholding-tax`, `withholding-iva-code`, `withholding-income-concept`, `support-document-type` y `support-code` a `FISCAL_CATALOG_TYPES`, con sus esquemas de dataset estrictos, sus datasets versión 1 transcritos de los extractos y su carga (design D7 a D10). Verificar con:
+- [x] 1.3 Agregar los tipos `withholding-tax`, `withholding-iva-code`, `withholding-income-concept`, `support-document-type` y `support-code` a `FISCAL_CATALOG_TYPES`, con sus esquemas de dataset estrictos, sus datasets versión 1 transcritos de los extractos y su carga (design D7 a D10). Verificar con:
   - pruebas de datos que contrastan cada entrada con su extracto, como `ice-dataset-review.test.ts`;
   - la derivación de la renta reproducida desde el extracto por las reglas de design D7 (127 filas → 43 no residentes, 14 variables, 7 de estructura especial, 4 de representación ambigua con su código RAW → 59 soportados) y comparada con el dataset, sin ninguna constante con ese número ni una lista manual de soportados;
   - el código 8 de IVA conservado y fuera de alcance, y el 7 soportado con 0 %;
   - la compatibilidad tabla 4–tabla 5 (la nota de venta sin el sustento 01), la vigencia cerrada del sustento 00 y los tipos `"01"`, `"02"` y `"03"` como códigos de dos caracteres;
   - el test de contrato de equivalencia de design D6: el conjunto vigente de la tabla 13 del extracto y el de `payment-method`, iguales en códigos y denominaciones normalizadas para fechas desde el 01/09/2016, con las diferencias históricas documentadas;
   - arranques repetidos sin cambios y un dataset alterado que impide arrancar
-- [ ] 1.4 Extender la resolución y la habilitación de `catalogs` (design D11 y D12): utilizable si está soportada, vigente y habilitada; habilitables y habilitados por defecto `withholding-iva-code` y `withholding-income-concept`; habilitar o deshabilitar una entrada fuera de alcance rechazado con `CATALOG_ENTRY_NOT_SELECTABLE`; consulta con la clasificación, el texto literal y los sustentos admitidos. Verificar con pruebas de integración de la resolución por fecha, de la habilitación por empresa y su aislamiento, del `403` del operador y de la consulta de la API, y documentar los catálogos nuevos en `fiscal-catalogs` de `docs/architecture/` y en `glossary.md`
+- [x] 1.4 Extender la resolución y la habilitación de `catalogs` (design D11 y D12): utilizable si está soportada, vigente y habilitada; habilitables y habilitados por defecto `withholding-iva-code` y `withholding-income-concept`; habilitar o deshabilitar una entrada fuera de alcance rechazado con `CATALOG_ENTRY_NOT_SELECTABLE`; consulta con la clasificación, el texto literal y los sustentos admitidos. Verificar con pruebas de integración de la resolución por fecha, de la habilitación por empresa y su aislamiento, del `403` del operador y de la consulta de la API, y documentar los catálogos nuevos en `fiscal-catalogs` de `docs/architecture/` y en `glossary.md`
 
 ## 2. Esquema de la retención
 

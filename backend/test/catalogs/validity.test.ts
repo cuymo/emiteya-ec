@@ -77,6 +77,9 @@ describe("resolveCatalogEntry como puerto de aplicación", () => {
     percentage: "15",
     identificationPattern: null,
     identificationRule: null,
+    scopeClassification: null,
+    rateText: null,
+    allowedSupportCodes: null,
     reservedFor: null,
   });
 

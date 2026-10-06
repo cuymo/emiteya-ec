@@ -11,6 +11,9 @@ import {
 } from "../../src/modules/catalogs/domain/datasets.ts";
 
 const FICHA_SHA256 = "7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9";
+const ATS_SHA256 = "bd3f7834f2cd31187af39cd2f4c685a646d7e49316e92ee493da5f2dd9776e3e";
+/** Datasets transcritos del Catálogo ATS (add-withholding-receipts, design D7 y D10). */
+const ATS_DATASETS = ["withholding-income-concept", "support-document-type", "support-code"];
 const DOCS = new URL("../../../docs/product/", import.meta.url);
 const datasets = validateDatasets(DATASET_FILES);
 const byType = (type: string) => datasets.find((dataset) => dataset.catalogType === type)!;
@@ -21,7 +24,7 @@ const entries = (type: string) =>
   >[];
 
 describe("datasets de la versión instalada", () => {
-  it("los diez datasets validan y coinciden con el manifiesto", () => {
+  it("los quince datasets validan y coinciden con el manifiesto", () => {
     const manifest = readFileSync(new URL("sri-catalogs/README.md", DOCS), "utf8");
     const rows = [
       ...manifest.matchAll(/^\| `([a-z-]+)` \| (\d+) \| [^|]+ \| (\d+) \| `([0-9a-f]{64})` \|$/gm),
@@ -41,23 +44,27 @@ describe("datasets de la versión instalada", () => {
         }))
         .sort((a, b) => a.type.localeCompare(b.type)),
     ).toEqual(rows.sort((a, b) => a.type!.localeCompare(b.type!)));
-    expect(rows).toHaveLength(10);
+    expect(rows).toHaveLength(15);
   });
 
-  it("citan la ficha v2.34 por su hash, y el registro, el manifiesto de los XSD", () => {
+  it("citan la ficha v2.34 por su hash, el registro el manifiesto de los XSD y la renta y el sustento el Catálogo ATS", () => {
     const xsdManifest = readFileSync(new URL("sri-xsd/README.md", DOCS));
     for (const dataset of datasets) {
       const expected =
         dataset.catalogType === "schema-registry"
           ? createHash("sha256").update(xsdManifest).digest("hex")
-          : FICHA_SHA256;
+          : ATS_DATASETS.includes(dataset.catalogType)
+            ? ATS_SHA256
+            : FICHA_SHA256;
       expect(dataset.source.sha256, dataset.catalogType).toBe(expected);
     }
   });
 
-  it("solo las formas de pago declaran su fecha; el resto usa la base del proyecto, sin historia", () => {
+  it("en la ficha solo las formas de pago declaran su fecha; el resto usa la base del proyecto, sin historia", () => {
     for (const dataset of datasets) {
       if (!("entries" in dataset) || !("effectiveFrom" in (dataset.entries[0] ?? {}))) continue;
+      // Las fechas del Catálogo ATS las revisa withholding-datasets-review.test.ts.
+      if (ATS_DATASETS.includes(dataset.catalogType)) continue;
       for (const entry of entries(dataset.catalogType)) {
         if (dataset.catalogType === "payment-method") {
           expect(entry.effectiveFromBasis).toBe("SOURCE_STATED");

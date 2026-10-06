@@ -83,6 +83,9 @@ function immutable(entry: NewEntryVersion | StoredEntryVersion): string {
     identificationPattern: record.identificationPattern ?? null,
     identificationRule: record.identificationRule ?? null,
     reservedFor: record.reservedFor ?? null,
+    scopeClassification: record.scopeClassification ?? null,
+    rateText: record.rateText ?? null,
+    allowedSupportCodes: record.allowedSupportCodes ?? null,
   });
 }
 
@@ -124,6 +127,10 @@ function toNewVersion(dataset: ValidatedDataset, entry: DatasetEntry): NewEntryV
     identificationPattern: (record.identificationPattern as string | null | undefined) ?? null,
     identificationRule: (record.identificationRule as string | null | undefined) ?? null,
     reservedFor: (record.reservedFor as "CONSUMER_FINAL" | null | undefined) ?? null,
+    scopeClassification:
+      (record.scopeClassification as NewEntryVersion["scopeClassification"] | undefined) ?? null,
+    rateText: (record.rateText as string | null | undefined) ?? null,
+    allowedSupportCodes: (record.allowedSupportCodes as string[] | undefined) ?? null,
   };
 }
 

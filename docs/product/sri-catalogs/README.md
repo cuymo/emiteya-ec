@@ -13,6 +13,11 @@ niega a arrancar si un dataset altera lo ya publicado.
   - SHA-256 del PDF: `7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9`.
   - El PDF no se versiona; se citan su URL, su hash, la tabla y la página de cada entrada.
 - **Manifiesto de los XSD oficiales** (`docs/product/sri-xsd/README.md`), para el registro de esquemas.
+- **Catálogo del Anexo Transaccional Simplificado (ATS)** (actualizado el 06/08/2026), para los conceptos de la renta, los tipos de documento sustento y los códigos de sustento (`add-withholding-receipts`, Q-50).
+  - Página: https://www.sri.gob.ec/formularios-e-instructivos1 ("Anexos y guías").
+  - URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/e6a826af-b22c-40bb-8752-d711f293b8f9/Catalogo_ATS.xls
+  - SHA-256 del `.xls`: `bd3f7834f2cd31187af39cd2f4c685a646d7e49316e92ee493da5f2dd9776e3e`.
+  - El `.xls` no se versiona ni es una dependencia de ejecución. `fuentes/catalogo-ats-2026-08-06.txt` es su extracto normalizado, con el script que lo produce: hoja, filas, valores RAW, transformaciones, clasificación del MVP y cantidades de entrada y de salida de las tablas 3.10, 4, 5, 11 y 13.
 
 ## Datasets
 
@@ -28,6 +33,11 @@ niega a arrancar si un dataset altera lo ya publicado.
 | `schema-registry` | 1 | `docs/product/sri-xsd/README.md` | 6 | `55b7962770a7b6e614580e06681eb978909872874a6f0ca3ccb1acca598ab9c2` |
 | `schema-registry` | 2 | `docs/product/sri-xsd/README.md` y `docs/product/w3c-xsd/README.md`: los seis XSD con su ruta lógica y sus imports, y el import `xmldsig-core-schema.xsd` | 7 | `0dcfcaabcf155098b5d650f25399cd3b3d5a1a8a8e9189762f42f89cc174841b` |
 | `special-case-matrix` | 1 | Índice de anexos de la ficha (páginas 2 y 3); categorías del ADR 0014 | 26 | `508b57aee92202e4e7071126c240de481c3effdf9ce588bf209ebd8e5eca5da2` |
+| `withholding-tax` | 1 | Tabla 19 (página 32) | 3 | `4907c4e53ad42077c6e6d47f71b9d6a112e0bd19970af3b98c02f21b67ea742c` |
+| `withholding-iva-code` | 1 | Tabla 20, retención del IVA (página 33) | 8 | `fd427a28eaaff257467002d89070b9e936c4da28a0aaf54f60b8c982aa423686` |
+| `withholding-income-concept` | 1 | Catálogo ATS, tabla 3.10, bloque "DESDE 06/AGOSTO/2026" | 127 | `beb5376613e9e9f53ad128f9ffd74bb7514b3518d37d18e1eeb193c92b01d9b5` |
+| `support-document-type` | 1 | Catálogo ATS, tabla 4 | 40 | `41b306bcbc2e1d3c82db9d11addd5dce834f29eb4f644a71efe1bc311f937f25` |
+| `support-code` | 1 | Catálogo ATS, tabla 5 | 16 | `f4ca575b21da6707352bd48a9ac2a1880e93fe89137656bdffa193180f85aa66` |
 
 `backend/test/catalogs/datasets.test.ts` comprueba que esta tabla coincide con los archivos.
 
@@ -50,6 +60,19 @@ arnés (`backend/test/support/synthetic-size-policy.ts`), marcada como tal.
   - 3671 aparece dos veces idéntico (páginas 31 y 32): es la misma fila repetida y tiene una sola entrada.
   - Resultado: 75 entradas para las 76 filas de la fuente.
 - **Revisión.** `fuentes/ficha-v2.34-tabla-18.txt` es el extracto literal de la tabla 18 con el que se revisó cada fila; `backend/test/catalogs/ice-dataset-review.test.ts` contrasta el dataset con él.
+
+### Catálogos de retención y de sustento
+
+`add-withholding-receipts` (design D6 a D11). Cada entrada conserva la fila oficial completa y su clasificación de alcance; solo las soportadas se pueden elegir. `backend/test/catalogs/withholding-datasets-review.test.ts` contrasta cada dataset con su extracto y reproduce cada clasificación desde los valores RAW.
+
+- **Tablas 19 y 20 de la ficha** (`fuentes/ficha-v2.34-tablas-19-20.txt`), con la fecha base del proyecto (2026-07-27):
+  - `withholding-tax`: renta (1) e IVA (2) soportados; ISD (6) pendiente de evidencia (`withholding-isd`).
+  - `withholding-iva-code`: la tabla no tiene columna de denominación, así que se compone con el título literal de su bloque y el porcentaje literal (`RETENCIÓN DEL IVA 10%`, `Retención en cero 0.00%`, `No procede retención 0.00%`). La nota del código 7 va en su referencia. El 8 se conserva fuera de alcance (design D8). El ISD de la tabla 20 no se transcribe.
+- **Catálogo ATS** (`fuentes/catalogo-ats-2026-08-06.txt`):
+  - `withholding-income-concept`: las 127 filas del bloque vigente con el código literal (`323 M` conserva su espacio; su `entryKey` es `323-M`), el módulo, el porcentaje o el texto literal de la fuente y la vigencia que el bloque declara (`SOURCE_STATED`, 2026-08-06). La cantidad soportada sale de las reglas de design D7, nunca de un número fijado. Los bloques anteriores siguen en la fuente y no se transcriben: ninguna emisión del sistema puede resolverse con ellos.
+  - `support-document-type`: las 40 filas de la tabla 4 con sus sustentos admitidos, y los tipos como códigos de dos caracteres (`1.0` → `01`). La columna de vigencia dice "vacío": 364 y 375 toman la de sus notas (`SOURCE_STATED`) y las demás la fecha de actualización del catálogo (`PROJECT_BASELINE`, 2026-08-06).
+  - `support-code`: las 16 filas de la tabla 5 con sus fechas (`SOURCE_STATED`); el 00 cerró el 28/02/2015.
+  - Las tablas 11 y 13 no generan datasets: la 11 es evidencia de design D8 y la 13 sostiene la equivalencia con `payment-method` (design D6), comprobada por la misma prueba.
 
 ## Actualizar un catálogo
 

@@ -161,8 +161,8 @@
 
 ### D10. Tipos de documento sustento y códigos de sustento
 
-- **Dataset `support-document-type` versión 1:** la tabla 4 del Catálogo ATS completa (39 filas), con los códigos de sustento que admite cada tipo según su columna "Sustento tributario". Son `SUPPORTED` el 01 factura, el 02 nota o boleta de venta y el 03 liquidación de compra; el resto queda fuera de alcance.
-- **Dataset `support-code` versión 1:** la tabla 5 completa (17 códigos), con su vigencia literal (el 00 cerró el 28/02/2015):
+- **Dataset `support-document-type` versión 1:** la tabla 4 del Catálogo ATS completa (40 filas), con los códigos de sustento que admite cada tipo según su columna "Sustento tributario". Son `SUPPORTED` el 01 factura, el 02 nota o boleta de venta y el 03 liquidación de compra; el resto queda fuera de alcance.
+- **Dataset `support-code` versión 1:** la tabla 5 completa (16 códigos), con su vigencia literal (el 00 cerró el 28/02/2015):
   - `SUPPORTED`: 01 a 07, 14 y 15;
   - fuera de alcance: 08 y 09 (reembolsos, Q-50), 10 (dividendos), 11, 12 y 13 (tipos de documento fuera del MVP) y 00 (vencido).
 - **Compatibilidad:** un sustento solo es utilizable con un tipo que lo admite según la tabla 4, si ambos están soportados y el sustento está vigente en la fecha de emisión. Por ejemplo, la nota de venta admite 02, 04, 05, 07, 14 y 15, sin el 01 de crédito tributario del IVA.

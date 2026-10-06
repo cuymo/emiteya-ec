@@ -10,6 +10,13 @@ export const FISCAL_CATALOG_TYPES = [
   "ice-rate",
   "irbpnr-rate",
   "payment-method",
+  // add-withholding-receipts (design D7 a D11): impuestos a retener, retención del IVA, conceptos
+  // de la renta, tipos de documento sustento y códigos de sustento.
+  "withholding-tax",
+  "withholding-iva-code",
+  "withholding-income-concept",
+  "support-document-type",
+  "support-code",
 ] as const;
 export const fiscalCatalogTypeSchema = z.enum(FISCAL_CATALOG_TYPES, {
   error: "El catálogo no existe.",
@@ -52,6 +59,56 @@ export const RATE_KINDS = [
 ] as const;
 export const rateKindSchema = z.enum(RATE_KINDS);
 export type RateKind = z.infer<typeof rateKindSchema>;
+
+/**
+ * Clasificación de alcance de las entradas de los catálogos de retención (add-withholding-receipts,
+ * design D7 a D10). Solo las soportadas se pueden elegir; las demás conservan su fila oficial.
+ */
+export const SCOPE_CLASSIFICATIONS = [
+  "SUPPORTED",
+  "SUPPORTED_FIXED",
+  "SUPPORTED_FIXED_RESIDENT",
+  "OUT_OF_SCOPE_NON_RESIDENT",
+  "OUT_OF_SCOPE_VARIABLE",
+  "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+  "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+  "OUT_OF_SCOPE_PENDING_EVIDENCE",
+  "OUT_OF_SCOPE_MVP",
+  "OUT_OF_SCOPE_EXPIRED",
+] as const;
+export const scopeClassificationSchema = z.enum(SCOPE_CLASSIFICATIONS);
+export type ScopeClassification = z.infer<typeof scopeClassificationSchema>;
+
+/** Clasificaciones que admite cada catálogo de retención; los demás catálogos no tienen. */
+export const SCOPE_CLASSIFICATIONS_BY_CATALOG = {
+  "withholding-tax": ["SUPPORTED", "OUT_OF_SCOPE_PENDING_EVIDENCE"],
+  "withholding-iva-code": ["SUPPORTED_FIXED", "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION"],
+  "withholding-income-concept": [
+    "SUPPORTED_FIXED_RESIDENT",
+    "OUT_OF_SCOPE_NON_RESIDENT",
+    "OUT_OF_SCOPE_VARIABLE",
+    "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+    "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+  ],
+  "support-document-type": ["SUPPORTED", "OUT_OF_SCOPE_MVP"],
+  "support-code": [
+    "SUPPORTED",
+    "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+    "OUT_OF_SCOPE_MVP",
+    "OUT_OF_SCOPE_EXPIRED",
+  ],
+} as const satisfies Partial<Record<FiscalCatalogType, readonly ScopeClassification[]>>;
+export type ScopedCatalogType = keyof typeof SCOPE_CLASSIFICATIONS_BY_CATALOG;
+
+const SELECTABLE: ReadonlySet<ScopeClassification> = new Set([
+  "SUPPORTED",
+  "SUPPORTED_FIXED",
+  "SUPPORTED_FIXED_RESIDENT",
+]);
+
+/** Una entrada sin clasificación (los catálogos de la factura) o soportada se puede elegir. */
+export const isSelectableScope = (classification: ScopeClassification | null): boolean =>
+  classification === null || SELECTABLE.has(classification);
 
 const isoDate = z.iso.date();
 
@@ -101,6 +158,21 @@ export const catalogEntryVersionViewSchema = z.strictObject({
       pattern: z.string().nullable(),
       description: z.string(),
       reservedFor: z.literal("CONSUMER_FINAL").nullable(),
+    })
+    .nullable(),
+  /**
+   * Catálogos de retención y de sustento (add-withholding-receipts, design D7 a D11): clasificación
+   * de alcance, porcentaje o texto literal de la fuente y sustentos que admite un tipo de documento.
+   */
+  withholding: z
+    .strictObject({
+      scopeClassification: scopeClassificationSchema,
+      /** Soportada: se puede elegir y habilitar. */
+      selectable: z.boolean(),
+      percentage: decimalString(DECIMAL_SPECS.porcentajeRetener).nullable(),
+      /** Porcentaje que la fuente publica como texto (variable, rango, por mil o según convenio). */
+      rateText: z.string().nullable(),
+      allowedSupportCodes: z.array(z.string()).nullable(),
     })
     .nullable(),
 });

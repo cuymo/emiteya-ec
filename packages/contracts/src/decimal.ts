@@ -24,7 +24,8 @@ export type DecimalSpec = {
 /**
  * Especificaciones de los campos del producto. La escala no es una elección: es la del tipo XSD
  * equivalente en todos los documentos que lo definen, y una prueba lo comprueba contra los seis
- * XSD versionados. Excepción conocida: la retención 2.0.0 define `tarifa` con 3/2.
+ * XSD versionados. Excepción conocida: la retención 2.0.0 define `tarifa` con 3/2, la escala de
+ * `porcentajeRetener`.
  *
  * Son primitivos compartidos: los límites normativos de un impuesto o de un código (por ejemplo,
  * el porcentaje de una tarifa de IVA) pertenecen a su catálogo, no a la especificación (Q-43).
@@ -60,6 +61,17 @@ export const DECIMAL_SPECS = {
     fractionDigits: 6,
     min: "0",
     xsd: { types: ["cantidad"], documents: ["01", "03", "04", "06"] },
+  },
+  /**
+   * Porcentaje de la retención 2.0.0 (add-withholding-receipts, design D13): `porcentajeRetener`,
+   * 3/2 en `ComprobanteRetencion_V2.0.0.xsd`. La `tarifa` del impuesto de un documento sustento usa
+   * la misma escala en ese XSD. Un porcentaje de 100 cumple los 3 dígitos en su forma canónica (`100`).
+   */
+  porcentajeRetener: {
+    totalDigits: 3,
+    fractionDigits: 2,
+    min: "0",
+    xsd: { types: ["porcentajeRetener"], documents: ["07"] },
   },
   /**
    * Existencias del inventario (add-minimal-inventory, design D3): variaciones con signo y saldos.

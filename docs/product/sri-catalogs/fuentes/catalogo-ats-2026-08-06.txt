@@ -1,0 +1,645 @@
+# Extracto normalizado del Catálogo del Anexo Transaccional Simplificado (ATS) oficial del SRI.
+# Cambio: add-withholding-receipts (design D6, D7, D8, D10 y D11; Q-50).
+# Página oficial: https://www.sri.gob.ec/formularios-e-instructivos1 ("Anexos y guías"), que publica
+#   "Catálogo ATS - 3.58 MB (fecha actualización: 06 de agosto de 2026)".
+# Archivo: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/e6a826af-b22c-40bb-8752-d711f293b8f9/Catalogo_ATS.xls
+# Fecha de actualización publicada: 06/08/2026. Descargado el 2026-10-05.
+# SHA-256 del archivo: bd3f7834f2cd31187af39cd2f4c685a646d7e49316e92ee493da5f2dd9776e3e
+# El .xls no se versiona ni es una dependencia de ejecución: el SHA-256 permite verificar cualquier copia.
+#
+# Método: el script de abajo (Python 3.14, xlrd 2.0.2) lee el .xls y escribe, sin edición manual, las
+# secciones que siguen (`python extraer.py Catalogo_ATS.xls`). Cada sección declara su hoja, sus filas
+# (numeración de Excel, desde 1), sus columnas, los valores RAW (los textos entre comillas, como JSON;
+# los números como los guarda la hoja: 303.0, 1.0), las transformaciones, la clasificación del MVP y
+# las cantidades de entrada y de salida. Las columnas van separadas por tabuladores; "-" es vacío.
+# Revisión: backend/test/catalogs/withholding-datasets-review.test.ts contrasta los datasets con este
+# extracto y reproduce la clasificación de cada tabla.
+#
+# ---- extraer.py ----
+#| import hashlib
+#| import json
+#| import re
+#| import sys
+#|
+#| import xlrd
+#|
+#| PATH = sys.argv[1]
+#| SHA256 = hashlib.sha256(open(PATH, "rb").read()).hexdigest()
+#| book = xlrd.open_workbook(PATH)
+#| TYPES = {0: "EMPTY", 1: "TEXT", 2: "NUMBER", 3: "DATE", 4: "BOOLEAN", 5: "ERROR", 6: "BLANK"}
+#|
+#|
+#| def raw(sheet, r, c):
+#|     value = sheet.cell_value(r, c)
+#|     return repr(value) if isinstance(value, float) else json.dumps(value, ensure_ascii=False)
+#|
+#|
+#| def kind(sheet, r, c):
+#|     return TYPES[sheet.cell_type(r, c)]
+#|
+#|
+#| def text(value):
+#|     return re.sub(r"\s+", " ", value).strip()
+#|
+#|
+#| def number(value):
+#|     return format(value, "f").rstrip("0").rstrip(".") if "." in format(value, "f") else format(value, "f")
+#|
+#|
+#| def code(sheet, r, c, width):
+#|     value = sheet.cell_value(r, c)
+#|     if isinstance(value, float):
+#|         return str(int(value)).zfill(width)
+#|     return value.strip()
+#|
+#|
+#| def iso(sheet, r, c):
+#|     value = sheet.cell_value(r, c)
+#|     if sheet.cell_type(r, c) == 3:
+#|         y, m, d, *_ = xlrd.xldate_as_tuple(value, book.datemode)
+#|         return f"{y:04d}-{m:02d}-{d:02d}"
+#|     value = value.strip()
+#|     if value in ("-", ""):
+#|         return "-"
+#|     d, m, y = value.split("/")
+#|     return f"{y}-{m}-{d}"
+#|
+#|
+#| def codes(value):
+#|     value = value.strip()
+#|     if value == "ninguno":
+#|         return "-"
+#|     return ",".join(part.strip() for part in value.split(",") if part.strip())
+#|
+#|
+#| out = []
+#| emit = out.append
+#|
+#| # Tabla 3.10, bloque vigente: módulo (B), código (C), concepto (D) y porcentaje (E).
+#| sheet = book.sheet_by_name("TABLAS RETENCIONES")
+#| assert sheet.cell_value(1, 1) == "DESDE 06/AGOSTO/2026"
+#| SPECIAL = {
+#|     "325": "dividendos (sustento 10 y bloque dividendos)",
+#|     "3250": "dividendos (sustento 10 y bloque dividendos)",
+#|     "328": "dividendos (sustento 10 y bloque dividendos)",
+#|     "329": "dividendos (sustento 10 y bloque dividendos)",
+#|     "331": "dividendos (sustento 10 y bloque dividendos)",
+#|     "340": "banano (bloque compraCajBanano del anexo 10)",
+#|     "332H": "pago al exterior (pagoLocExt 02)",
+#| }
+#| rows = []
+#| module_raw = None
+#| r = 4
+#| while any(sheet.cell_type(r, c) not in (0, 6) for c in range(1, 5)):
+#|     if sheet.cell_type(r, 1) not in (0, 6):
+#|         module_raw = sheet.cell_value(r, 1)
+#|     module = "NON_RESIDENT" if "NO RESIDENTE" in module_raw else "RESIDENT"
+#|     concept_code = code(sheet, r, 2, 0)
+#|     pct_kind = kind(sheet, r, 4)
+#|     percentage = number(sheet.cell_value(r, 4)) if pct_kind == "NUMBER" else "-"
+#|     rate_text = text(sheet.cell_value(r, 4)) if pct_kind == "TEXT" else "-"
+#|     if module == "NON_RESIDENT":
+#|         classification = "OUT_OF_SCOPE_NON_RESIDENT"
+#|     elif pct_kind != "NUMBER":
+#|         classification = "OUT_OF_SCOPE_VARIABLE"
+#|     elif concept_code in SPECIAL:
+#|         classification = "OUT_OF_SCOPE_SPECIAL_STRUCTURE"
+#|     elif " " in concept_code:
+#|         classification = "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION"
+#|     else:
+#|         classification = "SUPPORTED_FIXED_RESIDENT"
+#|     rows.append(
+#|         [
+#|             str(r + 1),
+#|             raw(sheet, r, 1) if sheet.cell_type(r, 1) not in (0, 6) else "-",
+#|             module,
+#|             kind(sheet, r, 2),
+#|             raw(sheet, r, 2),
+#|             concept_code,
+#|             concept_code.replace(" ", "-"),
+#|             pct_kind,
+#|             raw(sheet, r, 4),
+#|             percentage,
+#|             rate_text,
+#|             classification,
+#|             text(sheet.cell_value(r, 3)),
+#|         ]
+#|     )
+#|     r += 1
+#|
+#| emit("## TABLA 3.10")
+#| emit('# Hoja "TABLAS RETENCIONES", celdas B1 a E2: ' + raw(sheet, 0, 1) + " / " + raw(sheet, 1, 1) + ".")
+#| emit("# Encabezados (fila 3): " + " | ".join(raw(sheet, 2, c) for c in range(1, 5)) + ".")
+#| emit(f"# Filas {rows[0][0]} a {rows[-1][0]}: el bloque termina en la primera fila vacía.")
+#| emit("# Transformaciones:")
+#| emit("#   módulo: el valor de la columna B rige hasta el siguiente; NON_RESIDENT si contiene \"NO RESIDENTE\".")
+#| emit("#   código: NUMBER sin decimales (303.0 → 303); TEXT sin espacios en los extremos, conservando el espacio interno.")
+#| emit("#   entryKey: el código con el espacio interno cambiado por \"-\" (\"323 M\" → 323-M).")
+#| emit("#   porcentaje: NUMBER en forma canónica (1.75, 10.0 → 10, 0.0 → 0); TEXT → texto del porcentaje.")
+#| emit("#   texto y denominación: espacios y saltos de línea reducidos a un espacio, sin espacios en los extremos.")
+#| emit("# Clasificación del MVP (design D7), en este orden:")
+#| emit("#   1. OUT_OF_SCOPE_NON_RESIDENT: módulo NON_RESIDENT.")
+#| emit("#   2. OUT_OF_SCOPE_VARIABLE: la celda del porcentaje no es NUMBER.")
+#| emit("#   3. OUT_OF_SCOPE_SPECIAL_STRUCTURE: residente con porcentaje fijo y una estructura excluida por Q-50:")
+#| for special, reason in SPECIAL.items():
+#|     emit(f"#      {special}: {reason}.")
+#| emit("#   4. OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION: el código lleva un espacio interno; la fuente no establece")
+#| emit("#      si codigoRetencion lo conserva. Pendiente de evidencia y de soporte futuro.")
+#| emit("#   5. SUPPORTED_FIXED_RESIDENT: el resto.")
+#| emit("# fila\tmódulo RAW\tmódulo\ttipo celda código\tcódigo RAW\tcódigo\tentryKey\ttipo celda porcentaje\tporcentaje RAW\tporcentaje\ttexto del porcentaje\tclasificación\tdenominación")
+#| for row in rows:
+#|     emit("\t".join(row))
+#| counts = {}
+#| for row in rows:
+#|     counts[row[11]] = counts.get(row[11], 0) + 1
+#| modules = {}
+#| for row in rows:
+#|     modules[row[2]] = modules.get(row[2], 0) + 1
+#| emit(f"# Entrada: {len(rows)} filas ({modules['RESIDENT']} RESIDENT, {modules['NON_RESIDENT']} NON_RESIDENT).")
+#| emit(
+#|     "# Salida: "
+#|     + "; ".join(
+#|         f"{name} {counts.get(name, 0)}"
+#|         for name in [
+#|             "OUT_OF_SCOPE_NON_RESIDENT",
+#|             "OUT_OF_SCOPE_VARIABLE",
+#|             "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+#|             "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+#|             "SUPPORTED_FIXED_RESIDENT",
+#|         ]
+#|     )
+#|     + "."
+#| )
+#| emit(f"# Dataset withholding-income-concept v1: {len(rows)} entradas, una por fila.")
+#| emit("")
+#|
+#| sheet = book.sheet_by_name("TABLAS REFERENCIALES")
+#|
+#|
+#| def locate(title):
+#|     for r in range(sheet.nrows):
+#|         value = sheet.cell_value(r, 1)
+#|         if isinstance(value, str) and value.strip().upper().startswith(title):
+#|             return r
+#|     raise SystemExit(f"no está {title}")
+#|
+#|
+#| def table_rows(start):
+#|     r = start
+#|     while any(sheet.cell_type(r, c) not in (0, 6) for c in range(1, 6)):
+#|         yield r
+#|         r += 1
+#|
+#|
+#| # Tabla 4: código (B), tipo de comprobante (C), secuenciales (D), vigencia (E) y sustento (F).
+#| start = locate("TABLA 4:")
+#| emit("## TABLA 4")
+#| emit('# Hoja "TABLAS REFERENCIALES", fila ' + str(start + 1) + ": " + raw(sheet, start, 1) + ".")
+#| emit("# Encabezados (filas " + str(start + 2) + " y " + str(start + 3) + "): " + " | ".join(raw(sheet, start + 1, c) for c in range(1, 6)) + ".")
+#| notes = []
+#| type_rows = []
+#| for r in table_rows(start + 3):
+#|     if sheet.cell_type(r, 1) == 1 and sheet.cell_value(r, 1).startswith("*"):
+#|         notes.append((r, sheet.cell_value(r, 1)))
+#|         continue
+#|     type_code = code(sheet, r, 1, 2)
+#|     classification = "SUPPORTED" if type_code in ("01", "02", "03") else "OUT_OF_SCOPE_MVP"
+#|     type_rows.append(
+#|         [
+#|             str(r + 1),
+#|             kind(sheet, r, 1),
+#|             raw(sheet, r, 1),
+#|             type_code,
+#|             raw(sheet, r, 4),
+#|             raw(sheet, r, 5),
+#|             codes(sheet.cell_value(r, 5)),
+#|             classification,
+#|             text(sheet.cell_value(r, 2)),
+#|         ]
+#|     )
+#| for r, note in notes:
+#|     emit(f"# Nota (fila {r + 1}): {json.dumps(note, ensure_ascii=False)}")
+#| emit("# Transformaciones:")
+#| emit("#   código: NUMBER a dos dígitos como mínimo (1.0 → 01, 41.0 → 41, 294.0 → 294).")
+#| emit("#   sustentos: la columna \"Sustento tributario\" separada por comas, sin espacios; \"ninguno\" → -.")
+#| emit("#   vigencia: la columna dice \"vacío\"; la de 364 y 375 sale de sus notas, y las demás no declaran fecha.")
+#| emit("#   denominación: espacios reducidos a uno, sin espacios en los extremos.")
+#| emit("# Clasificación del MVP (design D10): SUPPORTED los tipos 01, 02 y 03; OUT_OF_SCOPE_MVP el resto.")
+#| emit("# fila\ttipo celda código\tcódigo RAW\tcódigo\tvigencia RAW\tsustento RAW\tsustentos\tclasificación\tdenominación")
+#| for row in type_rows:
+#|     emit("\t".join(row))
+#| type_counts = {}
+#| for row in type_rows:
+#|     type_counts[row[7]] = type_counts.get(row[7], 0) + 1
+#| emit(f"# Entrada: {len(type_rows)} filas (más {len(notes)} notas).")
+#| emit(f"# Salida: SUPPORTED {type_counts.get('SUPPORTED', 0)}; OUT_OF_SCOPE_MVP {type_counts.get('OUT_OF_SCOPE_MVP', 0)}.")
+#| emit(f"# Dataset support-document-type v1: {len(type_rows)} entradas, una por fila.")
+#| emit("")
+#|
+#| # Tabla 5: código (B), sustento (C), tipos de comprobante (D), inicio (E) y fin (F).
+#| start = locate("TABLA 5:")
+#| emit("## TABLA 5")
+#| emit('# Hoja "TABLAS REFERENCIALES", fila ' + str(start + 1) + ": " + raw(sheet, start, 1) + ".")
+#| emit("# Encabezados (fila " + str(start + 2) + "): " + " | ".join(raw(sheet, start + 1, c) for c in range(1, 6)) + ".")
+#| SUPPORT_CLASSES = {
+#|     "08": "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+#|     "09": "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+#|     "10": "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+#|     "11": "OUT_OF_SCOPE_MVP",
+#|     "12": "OUT_OF_SCOPE_MVP",
+#|     "13": "OUT_OF_SCOPE_MVP",
+#|     "00": "OUT_OF_SCOPE_EXPIRED",
+#| }
+#| support_rows = []
+#| support_notes = []
+#| for r in table_rows(start + 2):
+#|     if sheet.cell_type(r, 1) == 1 and sheet.cell_value(r, 1).startswith("*"):
+#|         support_notes.append((r, sheet.cell_value(r, 1)))
+#|         continue
+#|     support_code = code(sheet, r, 1, 2)
+#|     support_rows.append(
+#|         [
+#|             str(r + 1),
+#|             kind(sheet, r, 1),
+#|             raw(sheet, r, 1),
+#|             support_code,
+#|             raw(sheet, r, 3),
+#|             kind(sheet, r, 4) + ":" + raw(sheet, r, 4),
+#|             iso(sheet, r, 4),
+#|             kind(sheet, r, 5) + ":" + raw(sheet, r, 5),
+#|             iso(sheet, r, 5),
+#|             SUPPORT_CLASSES.get(support_code, "SUPPORTED"),
+#|             text(sheet.cell_value(r, 2)),
+#|         ]
+#|     )
+#| for r, note in support_notes:
+#|     emit(f"# Nota (fila {r + 1}): {json.dumps(note, ensure_ascii=False)}")
+#| emit("# Transformaciones:")
+#| emit("#   código: TEXT tal cual; NUMBER a dos dígitos (10.0 → 10).")
+#| emit("#   fechas: DATE (número de serie de Excel, datemode 0) a AAAA-MM-DD; \"-\" sin fecha de fin.")
+#| emit("#   denominación: espacios reducidos a uno, sin espacios en los extremos.")
+#| emit("# Clasificación del MVP (design D10): SUPPORTED 01 a 07, 14 y 15; OUT_OF_SCOPE_SPECIAL_STRUCTURE 08 y 09")
+#| emit("#   (reembolsos) y 10 (dividendos); OUT_OF_SCOPE_MVP 11, 12 y 13; OUT_OF_SCOPE_EXPIRED 00 (cerrado el 28/02/2015).")
+#| emit("# fila\ttipo celda código\tcódigo RAW\tcódigo\ttipos de comprobante RAW\tinicio RAW\tinicio\tfin RAW\tfin\tclasificación\tdenominación")
+#| for row in support_rows:
+#|     emit("\t".join(row))
+#| support_counts = {}
+#| for row in support_rows:
+#|     support_counts[row[9]] = support_counts.get(row[9], 0) + 1
+#| emit(f"# Entrada: {len(support_rows)} filas (más {len(support_notes)} nota).")
+#| emit(
+#|     "# Salida: "
+#|     + "; ".join(
+#|         f"{name} {support_counts.get(name, 0)}"
+#|         for name in ["SUPPORTED", "OUT_OF_SCOPE_SPECIAL_STRUCTURE", "OUT_OF_SCOPE_MVP", "OUT_OF_SCOPE_EXPIRED"]
+#|     )
+#|     + "."
+#| )
+#| emit(f"# Dataset support-code v1: {len(support_rows)} entradas, una por fila.")
+#| emit("")
+#|
+#| # Tabla 11: código (B), porcentaje (C), inicio (D) y fin (E).
+#| start = locate("TABLA 11:")
+#| emit("## TABLA 11")
+#| emit('# Hoja "TABLAS REFERENCIALES", fila ' + str(start + 1) + ": " + raw(sheet, start, 1) + ".")
+#| emit("# Encabezados (fila " + str(start + 2) + "): " + " | ".join(raw(sheet, start + 1, c) for c in range(1, 5)) + ".")
+#| emit("# Uso: evidencia de design D8 (no lista los códigos 7 ni 8). No genera dataset.")
+#| emit("# fila\tcódigo RAW\tcódigo\tporcentaje RAW\tporcentaje\tinicio RAW\tinicio\tfin RAW\tfin")
+#| iva_rows = list(table_rows(start + 2))
+#| for r in iva_rows:
+#|     emit(
+#|         "\t".join(
+#|             [
+#|                 str(r + 1),
+#|                 raw(sheet, r, 1),
+#|                 code(sheet, r, 1, 0),
+#|                 raw(sheet, r, 2),
+#|                 number(sheet.cell_value(r, 2)),
+#|                 kind(sheet, r, 3) + ":" + raw(sheet, r, 3),
+#|                 iso(sheet, r, 3),
+#|                 kind(sheet, r, 4) + ":" + raw(sheet, r, 4),
+#|                 iso(sheet, r, 4),
+#|             ]
+#|         )
+#|     )
+#| emit(f"# Entrada: {len(iva_rows)} filas.")
+#| emit("")
+#|
+#| # Tabla 13: forma de pago (B), código (C), inicio (D) y fin (E).
+#| start = locate("TABLA 13:")
+#| emit("## TABLA 13")
+#| emit('# Hoja "TABLAS REFERENCIALES", fila ' + str(start + 1) + ": " + raw(sheet, start, 1) + ".")
+#| emit("# Encabezados (fila " + str(start + 2) + "): " + " | ".join(raw(sheet, start + 1, c) for c in range(1, 5)) + ".")
+#| emit("# Uso: test de contrato de equivalencia con payment-method (design D6). No genera dataset.")
+#| emit("# Transformaciones: código TEXT tal cual o NUMBER a dos dígitos (21.0 → 21); fechas como en la tabla 5;")
+#| emit("#   denominación con los espacios reducidos a uno.")
+#| emit("# fila\tcódigo RAW\tcódigo\tinicio RAW\tinicio\tfin RAW\tfin\tdenominación")
+#| payment_rows = list(table_rows(start + 2))
+#| for r in payment_rows:
+#|     emit(
+#|         "\t".join(
+#|             [
+#|                 str(r + 1),
+#|                 kind(sheet, r, 2) + ":" + raw(sheet, r, 2),
+#|                 code(sheet, r, 2, 2),
+#|                 kind(sheet, r, 3) + ":" + raw(sheet, r, 3),
+#|                 iso(sheet, r, 3),
+#|                 kind(sheet, r, 4) + ":" + raw(sheet, r, 4),
+#|                 iso(sheet, r, 4),
+#|                 text(sheet.cell_value(r, 1)),
+#|             ]
+#|         )
+#|     )
+#| emit(f"# Entrada: {len(payment_rows)} filas.")
+#|
+#| print(SHA256, file=sys.stderr)
+#| print("\n".join(out))
+# ---- fin de extraer.py ----
+
+## TABLA 3.10
+# Hoja "TABLAS RETENCIONES", celdas B1 a E2: "Tabla 3.10: CONCEPTOS DE RETENCIÓN EN LA FUENTE DE IMPUESTO A LA RENTA (AIR)" / "DESDE 06/AGOSTO/2026".
+# Encabezados (fila 3): "Módulo" | "Número de campo" | "Concepto Retención en la Fuente de Impuesto a la Renta" | "Desde 06/08/2026".
+# Filas 5 a 131: el bloque termina en la primera fila vacía.
+# Transformaciones:
+#   módulo: el valor de la columna B rige hasta el siguiente; NON_RESIDENT si contiene "NO RESIDENTE".
+#   código: NUMBER sin decimales (303.0 → 303); TEXT sin espacios en los extremos, conservando el espacio interno.
+#   entryKey: el código con el espacio interno cambiado por "-" ("323 M" → 323-M).
+#   porcentaje: NUMBER en forma canónica (1.75, 10.0 → 10, 0.0 → 0); TEXT → texto del porcentaje.
+#   texto y denominación: espacios y saltos de línea reducidos a un espacio, sin espacios en los extremos.
+# Clasificación del MVP (design D7), en este orden:
+#   1. OUT_OF_SCOPE_NON_RESIDENT: módulo NON_RESIDENT.
+#   2. OUT_OF_SCOPE_VARIABLE: la celda del porcentaje no es NUMBER.
+#   3. OUT_OF_SCOPE_SPECIAL_STRUCTURE: residente con porcentaje fijo y una estructura excluida por Q-50:
+#      325: dividendos (sustento 10 y bloque dividendos).
+#      3250: dividendos (sustento 10 y bloque dividendos).
+#      328: dividendos (sustento 10 y bloque dividendos).
+#      329: dividendos (sustento 10 y bloque dividendos).
+#      331: dividendos (sustento 10 y bloque dividendos).
+#      340: banano (bloque compraCajBanano del anexo 10).
+#      332H: pago al exterior (pagoLocExt 02).
+#   4. OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION: el código lleva un espacio interno; la fuente no establece
+#      si codigoRetencion lo conserva. Pendiente de evidencia y de soporte futuro.
+#   5. SUPPORTED_FIXED_RESIDENT: el resto.
+# fila	módulo RAW	módulo	tipo celda código	código RAW	código	entryKey	tipo celda porcentaje	porcentaje RAW	porcentaje	texto del porcentaje	clasificación	denominación
+5	"                                             CÓDIGOS   PARA PAGO A RESIDENTE"	RESIDENT	NUMBER	303.0	303	303	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Honorarios profesionales y demás pagos por servicios relacionados con el título profesional
+6	-	RESIDENT	TEXT	"303A"	303A	303A	NUMBER	5.0	5	-	SUPPORTED_FIXED_RESIDENT	Servicios profesionales prestados por sociedades residentes
+7	-	RESIDENT	NUMBER	304.0	304	304	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Servicios predomina el intelecto no relacionados con el título profesional
+8	-	RESIDENT	TEXT	"304A"	304A	304A	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Comisiones y demás pagos por servicios predomina intelecto no relacionados con el título profesional
+9	-	RESIDENT	TEXT	"304B"	304B	304B	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Pagos a notarios y registradores de la propiedad y mercantil por sus actividades ejercidas como tales
+10	-	RESIDENT	TEXT	"304C"	304C	304C	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Pagos a deportistas, entrenadores, árbitros, miembros del cuerpo técnico por sus actividades ejercidas como tales
+11	-	RESIDENT	TEXT	"304D"	304D	304D	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Pagos a artistas por sus actividades ejercidas como tales
+12	-	RESIDENT	TEXT	"304E"	304E	304E	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Honorarios y demás pagos por servicios de docencia
+13	-	RESIDENT	NUMBER	307.0	307	307	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Servicios predomina la mano de obra
+14	-	RESIDENT	NUMBER	308.0	308	308	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Utilización o aprovechamiento de la imagen o renombre (personas naturales, sociedades," influencers")
+15	-	RESIDENT	NUMBER	309.0	309	309	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Servicios prestados por medios de comunicación y agencias de publicidad
+16	-	RESIDENT	NUMBER	310.0	310	310	TEXT	"1 /0 según resolución NAC-DGERCGC26-00000028"	-	1 /0 según resolución NAC-DGERCGC26-00000028	OUT_OF_SCOPE_VARIABLE	Servicio de transporte privado de pasajeros o transporte público o privado de carga
+17	-	RESIDENT	NUMBER	311.0	311	311	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Pagos a través de liquidación de compra (nivel cultural o rusticidad)
+18	-	RESIDENT	NUMBER	312.0	312	312	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Transferencia de bienes muebles de naturaleza corporal
+19	-	RESIDENT	TEXT	"312A"	312A	312A	NUMBER	1.0	1	-	SUPPORTED_FIXED_RESIDENT	COMPRAS AL PRODUCTOR: de bienes de origen bioacuático, forestal y los descritos el art.27.1 de LRTI
+20	-	RESIDENT	TEXT	"312C"	312C	312C	NUMBER	1.75	1.75	-	SUPPORTED_FIXED_RESIDENT	COMPRAS AL COMERCIALIZADOR: de bienes de origen bioacuático, forestal y los descritos el art.27.1 de LRTI
+21	-	RESIDENT	TEXT	"314A"	314A	314A	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Regalías por concepto de franquicias de acuerdo al Código INGENIOS (COESCCI) - pago a personas naturales
+22	-	RESIDENT	TEXT	"314B"	314B	314B	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Cánones, derechos de autor, marcas, patentes y similares de acuerdo al Código INGENIOS (COESCCI) – pago a personas naturales
+23	-	RESIDENT	TEXT	"314C"	314C	314C	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Regalías por concepto de franquicias de acuerdo al Código INGENIOS (COESCCI) - pago a sociades
+24	-	RESIDENT	TEXT	"314D"	314D	314D	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Cánones, derechos de autor, marcas, patentes y similares de acuerdo al Código INGENIOS (COESCCI)
+25	-	RESIDENT	NUMBER	319.0	319	319	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Cuotas de arrendamiento mercantil (prestado por sociedades), inclusive la de opción de compra
+26	-	RESIDENT	NUMBER	320.0	320	320	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Arrendamiento bienes inmuebles
+27	-	RESIDENT	NUMBER	322.0	322	322	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Seguros y reaseguros (primas y cesiones)
+28	-	RESIDENT	NUMBER	323.0	323	323	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros pagados a naturales y sociedades (No a IFIs)
+29	-	RESIDENT	TEXT	"323A"	323A	323A	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros depósitos Cta. Corriente
+30	-	RESIDENT	TEXT	"323B1"	323B1	323B1	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros depósitos Cta. Ahorros Sociedades
+31	-	RESIDENT	TEXT	"323E"	323E	323E	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros depósito a plazo fijo gravados
+32	-	RESIDENT	TEXT	"323E2"	323E2	323E2	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros depósito a plazo fijo exentos
+33	-	RESIDENT	TEXT	"323F"	323F	323F	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros operaciones de reporto - repos
+34	-	RESIDENT	TEXT	"323G"	323G	323G	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Inversiones (captaciones) rendimientos distintos de aquellos pagados a IFIs
+35	-	RESIDENT	TEXT	"323H"	323H	323H	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros obligaciones
+36	-	RESIDENT	TEXT	"323I"	323I	323I	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros bonos convertible en acciones
+37	-	RESIDENT	TEXT	"323 M"	323 M	323-M	NUMBER	3.0	3	-	OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION	Rendimientos financieros : Inversiones en títulos valores en renta fija gravados
+38	-	RESIDENT	TEXT	"323 N"	323 N	323-N	NUMBER	0.0	0	-	OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION	Rendimientos financieros Inversiones en títulos valores en renta fija exentos
+39	-	RESIDENT	TEXT	"323 O"	323 O	323-O	NUMBER	0.0	0	-	OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION	Intereses y demás rendimientos financieros pagados a bancos y otras entidades sometidas al control de la Superintendencia de Bancos y de la Economía Popular y Solidaria
+40	-	RESIDENT	TEXT	"323 P"	323 P	323-P	NUMBER	3.0	3	-	OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION	Intereses pagados por entidades del sector público a favor de sujetos pasivos
+41	-	RESIDENT	TEXT	"323Q"	323Q	323Q	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Otros intereses y rendimientos financieros gravados
+42	-	RESIDENT	TEXT	"323R"	323R	323R	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Otros intereses y rendimientos financieros exentos
+43	-	RESIDENT	TEXT	"323S"	323S	323S	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Pagos y créditos en cuenta efectuados por el BCE y los depósitos centralizados de valores, en calidad de intermediarios, a instituciones del sistema financiero por cuenta de otras personas naturales y sociedades
+44	-	RESIDENT	TEXT	"323T"	323T	323T	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros originados en la deuda pública ecuatoriana
+45	-	RESIDENT	TEXT	"323U"	323U	323U	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Rendimientos financieros originados en títulos valores de obligaciones de 360 días o más para el financiamiento de proyectos públicos en asociación público-privada
+46	-	RESIDENT	TEXT	"324A"	324A	324A	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Intereses en operaciones de crédito entre instituciones del sistema financiero y entidades economía popular y solidaria.
+47	-	RESIDENT	TEXT	"324B"	324B	324B	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Inversiones entre instituciones del sistema financiero y entidades economía popular y solidaria
+48	-	RESIDENT	TEXT	"324C"	324C	324C	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Pagos y créditos en cuenta efectuados por el BCE y los depósitos centralizados de valores, en calidad de intermediarios, a instituciones del sistema financiero por cuenta de otras instituciones del sistema financiero
+49	-	RESIDENT	NUMBER	325.0	325	325	NUMBER	25.0	25	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Anticipo dividendos
+50	-	RESIDENT	TEXT	"325A"	325A	325A	NUMBER	25.0	25	-	SUPPORTED_FIXED_RESIDENT	Préstamos accionistas, beneficiarios o partícipes residentes o establecidos en el Ecuador
+51	-	RESIDENT	NUMBER	3250.0	3250	3250	NUMBER	0.0	0	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Dividendos exentos (por no llegar a franja exenta o beneficio de otras leyes)
+52	-	RESIDENT	NUMBER	326.0	326	326	TEXT	"12 o 14"	-	12 o 14	OUT_OF_SCOPE_VARIABLE	Dividendos distribuidos que correspondan al impuesto a la renta único establecido en el art. 27 de la LRTI
+53	-	RESIDENT	NUMBER	327.0	327	327	TEXT	"12 o 14"	-	12 o 14	OUT_OF_SCOPE_VARIABLE	Dividendos distribuidos a personas naturales residentes
+54	-	RESIDENT	NUMBER	328.0	328	328	NUMBER	0.0	0	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Dividendos distribuidos a sociedades residentes
+55	-	RESIDENT	NUMBER	329.0	329	329	NUMBER	0.0	0	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Dividendos distribuidos a fideicomisos residentes
+56	-	RESIDENT	NUMBER	331.0	331	331	NUMBER	0.0	0	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Dividendos en acciones (capitalización de utilidades)
+57	-	RESIDENT	NUMBER	332.0	332	332	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Otras compras de bienes y servicios no sujetas a retención (incluye régimen RIMPE - Negocios Populares, para este caso aplica con cualquier forma de pago inclusive los pagos que deban realizar las tarjetas de crédito/débito)
+58	-	RESIDENT	TEXT	"332B"	332B	332B	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Compra de bienes inmuebles
+59	-	RESIDENT	TEXT	"332C"	332C	332C	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Transporte público de pasajeros
+60	-	RESIDENT	TEXT	"332D"	332D	332D	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Pagos en el país por transporte de pasajeros o transporte internacional de carga, a compañías nacionales o extranjeras de aviación o marítimas
+61	-	RESIDENT	TEXT	"332E"	332E	332E	TEXT	"0 /1 según resolución NAC-DGERCGC26-00000028 "	-	0 /1 según resolución NAC-DGERCGC26-00000028	OUT_OF_SCOPE_VARIABLE	Valores entregados por las cooperativas de transporte a sus socios
+62	-	RESIDENT	TEXT	"332F"	332F	332F	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Compraventa de divisas distintas al dólar de los Estados Unidos de América
+63	-	RESIDENT	TEXT	"332G"	332G	332G	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Pagos con tarjeta de crédito
+64	-	RESIDENT	TEXT	"332H"	332H	332H	NUMBER	0.0	0	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Pago al exterior tarjeta de crédito reportada por la Emisora de tarjeta de crédito, solo recap
+65	-	RESIDENT	TEXT	"332I"	332I	332I	NUMBER	0.0	0	-	SUPPORTED_FIXED_RESIDENT	Pago a través de convenio de debito (Clientes IFI`s)
+66	-	RESIDENT	NUMBER	333.0	333	333	NUMBER	10.0	10	-	SUPPORTED_FIXED_RESIDENT	Ganancia en la enajenación de derechos representativos de capital u otros derechos que permitan la exploración, explotación, concesión o similares de sociedades, que se coticen en bolsa de valores del Ecuador
+67	-	RESIDENT	NUMBER	334.0	334	334	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Contraprestación producida por la enajenación de derechos representativos de capital u otros derechos que permitan la exploración, explotación, concesión o similares de sociedades, no cotizados en bolsa de valores del Ecuador
+68	-	RESIDENT	NUMBER	335.0	335	335	NUMBER	15.0	15	-	SUPPORTED_FIXED_RESIDENT	Loterías, rifas, pronósticos deportivos, apuestas y similares
+69	-	RESIDENT	NUMBER	336.0	336	336	TEXT	"2/mil"	-	2/mil	OUT_OF_SCOPE_VARIABLE	Venta de combustibles a comercializadoras
+70	-	RESIDENT	NUMBER	337.0	337	337	TEXT	"3/mil"	-	3/mil	OUT_OF_SCOPE_VARIABLE	Venta de combustibles a distribuidores
+71	-	RESIDENT	NUMBER	338.0	338	338	TEXT	"1 a 2"	-	1 a 2	OUT_OF_SCOPE_VARIABLE	Producción y venta local de banano producido o no por el mismo sujeto pasivo
+72	-	RESIDENT	NUMBER	340.0	340	340	NUMBER	3.0	3	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Impuesto único a la exportación de banano
+73	-	RESIDENT	NUMBER	343.0	343	343	NUMBER	1.0	1	-	SUPPORTED_FIXED_RESIDENT	Otras retenciones aplicables el 1% (incluye régimen RIMPE - Emprendedores, para este caso aplica con cualquier forma de pago inclusive los pagos que deban realizar las tarjetas de crédito/débito)
+74	-	RESIDENT	TEXT	"343A"	343A	343A	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Energía eléctrica
+75	-	RESIDENT	TEXT	"343B"	343B	343B	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Actividades de construcción de obra material inmueble, urbanización, lotización o actividades similares
+76	-	RESIDENT	TEXT	"343C"	343C	343C	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Recepción de botellas plásticas no retornables de PET
+77	-	RESIDENT	NUMBER	3440.0	3440	3440	NUMBER	3.0	3	-	SUPPORTED_FIXED_RESIDENT	Otras retenciones aplicables el 3% (incluye pago utilidades a extrabajadores)
+78	-	RESIDENT	TEXT	"344A"	344A	344A	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Pago local tarjeta de crédito /débito reportada por la Emisora de tarjeta de crédito / entidades del sistema financiero/sistemas auxiliares de pago
+79	-	RESIDENT	TEXT	"344B"	344B	344B	NUMBER	2.0	2	-	SUPPORTED_FIXED_RESIDENT	Adquisición de sustancias minerales dentro del territorio nacional
+80	-	RESIDENT	NUMBER	346.0	346	346	TEXT	"varios porcentajes"	-	varios porcentajes	OUT_OF_SCOPE_VARIABLE	Otras retenciones aplicables a otros porcentajes
+81	-	RESIDENT	TEXT	"346A"	346A	346A	TEXT	"varios porcentajes"	-	varios porcentajes	OUT_OF_SCOPE_VARIABLE	Otras ganancias de capital distintas de enajenación de derechos representativos de capital
+82	-	RESIDENT	TEXT	"346B"	346B	346B	TEXT	"Conforme Art 36 LRTI literal d)"	-	Conforme Art 36 LRTI literal d)	OUT_OF_SCOPE_VARIABLE	Donaciones en dinero -Impuesto a las donaciones
+83	-	RESIDENT	TEXT	"346C"	346C	346C	TEXT	" 0 a 10 (NAC-DGERCGC16-00000217 y sus reformas) "	-	0 a 10 (NAC-DGERCGC16-00000217 y sus reformas)	OUT_OF_SCOPE_VARIABLE	Retención a cargo del propio sujeto pasivo por la producción y/o comercialización de minerales y otros bienes
+84	-	RESIDENT	TEXT	"346D"	346D	346D	TEXT	" 0 o 10"	-	0 o 10	OUT_OF_SCOPE_VARIABLE	Retención a cargo del propio sujeto pasivo por la comercialización de productos forestales
+85	-	RESIDENT	NUMBER	350.0	350	350	TEXT	"1,50 o 1,75"	-	1,50 o 1,75	OUT_OF_SCOPE_VARIABLE	Otras autorretenciones (inciso 1 y 2 Art.92.1 RLRTI)
+86	-	RESIDENT	NUMBER	3480.0	3480	3480	NUMBER	15.0	15	-	SUPPORTED_FIXED_RESIDENT	Impuesto a la renta único sobre los ingresos percibidos por los operadores de pronósticos deportivos
+87	-	RESIDENT	NUMBER	3481.0	3481	3481	TEXT	"varios porcentajes (Conforme  RESOLUCIÓN No. NAC-DGERCGC24-00000024 y sus reformas)"	-	varios porcentajes (Conforme RESOLUCIÓN No. NAC-DGERCGC24-00000024 y sus reformas)	OUT_OF_SCOPE_VARIABLE	Autorretenciones Sociedades Grandes Contribuyentes
+88	-	RESIDENT	NUMBER	3482.0	3482	3482	NUMBER	5.0	5	-	SUPPORTED_FIXED_RESIDENT	Comisiones a sociedades, nacionales o extranjeras residentes y establecimientos permanentes domiciliados en el país
+89	"CÓDIGOS PARA PAGOS A NO RESIDENTE"	NON_RESIDENT	NUMBER	500.0	500	500	TEXT	"25 o 37"	-	25 o 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Rentas Inmobiliarias
+90	-	NON_RESIDENT	NUMBER	501.0	501	501	TEXT	"25 o 37"	-	25 o 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Beneficios/Servicios Empresariales
+91	-	NON_RESIDENT	TEXT	"501A"	501A	501A	TEXT	"3, 5, 8, 10, 15, 25, 37 (Las tarifas 3 y 8 solo en pagos de Regalías bajo el CDI con China)"	-	3, 5, 8, 10, 15, 25, 37 (Las tarifas 3 y 8 solo en pagos de Regalías bajo el CDI con China)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Servicios técnicos, administrativos o de consultoría y regalías
+92	-	NON_RESIDENT	NUMBER	503.0	503	503	TEXT	"0 o 25 o 37"	-	0 o 25 o 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes- Navegación Marítima y/o aérea
+93	-	NON_RESIDENT	NUMBER	504.0	504	504	TEXT	"3, 5, 8, 10  (5 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente  bajo el CDI con China)"	-	3, 5, 8, 10 (5 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes- Dividendos distribuidos a personas naturales (domiciliados o no en paraíso fiscal) o a sociedades sin beneficiario efectivo persona natural residente en Ecuador
+94	-	NON_RESIDENT	TEXT	"504A"	504A	504A	TEXT	"3, 5, 8, 10, 12  (5 y 10 es por la tarifa de CDI.\nLas tarifas 3 y 8 aplica únicamente  bajo el CDI con China"	-	3, 5, 8, 10, 12 (5 y 10 es por la tarifa de CDI. Las tarifas 3 y 8 aplica únicamente bajo el CDI con China	OUT_OF_SCOPE_NON_RESIDENT	Dividendos a sociedades con beneficiario efectivo persona natural residente en el Ecuador
+95	-	NON_RESIDENT	TEXT	"504B"	504B	504B	TEXT	"3, 5, 8, 10, 14  (5 y 10 es por la tarifa de CDI.\nLas tarifas 3 y 8 aplica únicamente  bajo el CDI con China"	-	3, 5, 8, 10, 14 (5 y 10 es por la tarifa de CDI. Las tarifas 3 y 8 aplica únicamente bajo el CDI con China	OUT_OF_SCOPE_NON_RESIDENT	Dividendos a no residentes incumpliendo el deber de informar la composición societaria
+96	-	NON_RESIDENT	TEXT	"504C"	504C	504C	TEXT	"3, 5, 8, 10, 14  (5 y 10 es por la tarifa de CDI.\nLas tarifas 3 y 8 aplica únicamente  bajo el CDI con China"	-	3, 5, 8, 10, 14 (5 y 10 es por la tarifa de CDI. Las tarifas 3 y 8 aplica únicamente bajo el CDI con China	OUT_OF_SCOPE_NON_RESIDENT	Dividendos a residentes o establecidos en paraísos fiscales o regímenes de menor imposición (con beneficiario Persona Natural residente en Ecuador)
+97	-	NON_RESIDENT	TEXT	"504D"	504D	504D	TEXT	"3, 5, 8, 10, 14  (5 y 10 es por la tarifa de CDI.\nLas tarifas 3 y 8 aplica únicamente  bajo el CDI con China"	-	3, 5, 8, 10, 14 (5 y 10 es por la tarifa de CDI. Las tarifas 3 y 8 aplica únicamente bajo el CDI con China	OUT_OF_SCOPE_NON_RESIDENT	Dividendos a fideicomisos o establecidos en paraísos fiscales o regímenes de menor imposición (con beneficiario Persona Natural residente en Ecuador)
+98	-	NON_RESIDENT	TEXT	"504E"	504E	504E	NUMBER	25.0	25	-	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Anticipo dividendos (no domiciliada en paraísos fiscales o regímenes de menor imposición)
+99	-	NON_RESIDENT	TEXT	"504F"	504F	504F	NUMBER	25.0	25	-	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Anticipo dividendos (domiciliadas en paraísos fiscales o regímenes de menor imposición)
+100	-	NON_RESIDENT	TEXT	"504G"	504G	504G	NUMBER	25.0	25	-	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Préstamos accionistas, beneficiarios o partícipes (no domiciliadas en paraísos fiscales o regímenes de menor imposición)
+101	-	NON_RESIDENT	TEXT	"504H"	504H	504H	NUMBER	25.0	25	-	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Préstamos accionistas, beneficiarios o partícipes (domiciliadas en paraísos fiscales o regímenes de menor imposición)
+102	-	NON_RESIDENT	TEXT	"504I"	504I	504I	NUMBER	25.0	25	-	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Préstamos no comerciales a partes relacionadas (no domiciliadas en paraísos fiscales o regímenes de menor imposición)
+103	-	NON_RESIDENT	TEXT	"504J"	504J	504J	NUMBER	25.0	25	-	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Préstamos no comerciales a partes relacionadas (domiciliadas en paraísos fiscales o regímenes de menor imposición)
+104	-	NON_RESIDENT	NUMBER	505.0	505	505	TEXT	"3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China)"	-	3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Rendimientos financieros
+105	-	NON_RESIDENT	TEXT	"505A"	505A	505A	TEXT	"0, 3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China; 0 o 25 art.13  LRTI)"	-	0, 3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China; 0 o 25 art.13 LRTI)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes – Intereses de créditos de Instituciones Financieras del exterior
+106	-	NON_RESIDENT	TEXT	"505B"	505B	505B	TEXT	"0, 3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China; 0 o 25 art.13  LRTI)"	-	0, 3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China; 0 o 25 art.13 LRTI)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes – Intereses de créditos de gobierno a gobierno
+107	-	NON_RESIDENT	TEXT	"505C"	505C	505C	TEXT	"0, 3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China; 0 o 25 art.13  LRTI)"	-	0, 3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China; 0 o 25 art.13 LRTI)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes – Intereses de créditos de organismos multilaterales
+108	-	NON_RESIDENT	TEXT	"505D"	505D	505D	TEXT	"3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China)"	-	3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Intereses por financiamiento de proveedores externos
+109	-	NON_RESIDENT	TEXT	"505E"	505E	505E	TEXT	"3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China)"	-	3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Intereses de otros créditos externos
+110	-	NON_RESIDENT	TEXT	"505F"	505F	505F	TEXT	"3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China)"	-	3,5,8,10,15,25 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Otros Intereses y Rendimientos Financieros
+111	-	NON_RESIDENT	NUMBER	509.0	509	509	TEXT	"3,5,8,10,15,25,37 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China)"	-	3,5,8,10,15,25,37 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes- Cánones, derechos de autor, marcas, patentes y similares
+112	-	NON_RESIDENT	TEXT	"509A"	509A	509A	TEXT	"3,5,8,10,15,25,37 (5, 10 y 15 es por la tarifa de CDI\nLas tarifas 3 y 8 aplica únicamente bajo el CDI con China)"	-	3,5,8,10,15,25,37 (5, 10 y 15 es por la tarifa de CDI Las tarifas 3 y 8 aplica únicamente bajo el CDI con China)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Regalías por concepto de franquicias
+113	-	NON_RESIDENT	NUMBER	510.0	510	510	TEXT	"0, 25, 37"	-	0, 25, 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Otras ganancias de capital distintas de enajenación de derechos representativos de capital
+114	-	NON_RESIDENT	NUMBER	511.0	511	511	TEXT	"0, 25, 37"	-	0, 25, 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Servicios profesionales independientes
+115	-	NON_RESIDENT	NUMBER	512.0	512	512	TEXT	"0, 25, 37"	-	0, 25, 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Servicios profesionales dependientes
+116	-	NON_RESIDENT	TEXT	"513A"	513A	513A	TEXT	"0, 25, 37"	-	0, 25, 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Deportistas
+117	-	NON_RESIDENT	NUMBER	514.0	514	514	TEXT	"25 o 37"	-	25 o 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Participación de consejeros
+118	-	NON_RESIDENT	NUMBER	515.0	515	515	TEXT	"15, 25, 37;  según Art. 39.3 LRTI y  la Resolución NAC-DGERCGC24-00000008"	-	15, 25, 37; según Art. 39.3 LRTI y la Resolución NAC-DGERCGC24-00000008	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes- Artistas y relacionados a organización, producción y espectáculos artísticos y culturales en Ecuador
+119	-	NON_RESIDENT	NUMBER	516.0	516	516	TEXT	"0, 25, 37 (0 por casuística de CDI)"	-	0, 25, 37 (0 por casuística de CDI)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Pensiones
+120	-	NON_RESIDENT	NUMBER	517.0	517	517	TEXT	"0 al 37"	-	0 al 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes- Reembolso de Gastos
+121	-	NON_RESIDENT	NUMBER	518.0	518	518	TEXT	"0, 25, 37 (0 por casuística de CDI)"	-	0, 25, 37 (0 por casuística de CDI)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes- Funciones Públicas
+122	-	NON_RESIDENT	NUMBER	519.0	519	519	TEXT	"25 o 37"	-	25 o 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Estudiantes
+123	-	NON_RESIDENT	TEXT	"520A"	520A	520A	TEXT	"25 o 37"	-	25 o 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Pago a proveedores de servicios hoteleros y turísticos en el exterior
+124	-	NON_RESIDENT	TEXT	"520B"	520B	520B	TEXT	"0, 25, 37"	-	0, 25, 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Arrendamientos mercantil internacional
+125	-	NON_RESIDENT	TEXT	"520D"	520D	520D	TEXT	"0, 25, 37"	-	0, 25, 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Comisiones por exportaciones y por promoción de turismo receptivo
+126	-	NON_RESIDENT	TEXT	"520E"	520E	520E	NUMBER	0.0	0	-	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Por las empresas de transporte marítimo o aéreo y por empresas pesqueras de alta mar, por su actividad.
+127	-	NON_RESIDENT	TEXT	"520F"	520F	520F	TEXT	"0, 25, 37"	-	0, 25, 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Por las agencias internacionales de prensa
+128	-	NON_RESIDENT	TEXT	"520G"	520G	520G	TEXT	"0, 25, 37"	-	0, 25, 37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Contratos de fletamento de naves para empresas de transporte aéreo o marítimo internacional
+129	-	NON_RESIDENT	NUMBER	521.0	521	521	TEXT	"0,  10 (0 por casuística de CDI)"	-	0, 10 (0 por casuística de CDI)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Enajenación de derechos representativos de capital u otros derechos que permitan la exploración, explotación, concesión o similares de sociedades
+130	-	NON_RESIDENT	TEXT	"523A"	523A	523A	TEXT	"0 ,25 ,37"	-	0 ,25 ,37	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes - Seguros y reaseguros (primas y cesiones)
+131	-	NON_RESIDENT	NUMBER	525.0	525	525	TEXT	"Según art 36 LRTI literal d)"	-	Según art 36 LRTI literal d)	OUT_OF_SCOPE_NON_RESIDENT	Pago a no residentes- Donaciones en dinero -Impuesto a las donaciones
+# Entrada: 127 filas (84 RESIDENT, 43 NON_RESIDENT).
+# Salida: OUT_OF_SCOPE_NON_RESIDENT 43; OUT_OF_SCOPE_VARIABLE 14; OUT_OF_SCOPE_SPECIAL_STRUCTURE 7; OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION 4; SUPPORTED_FIXED_RESIDENT 59.
+# Dataset withholding-income-concept v1: 127 entradas, una por fila.
+
+## TABLA 4
+# Hoja "TABLAS REFERENCIALES", fila 46: "Tabla 4: TIPOS COMPROBANTES AUTORIZADOS".
+# Encabezados (filas 47 y 48): "Código" | "Tipo de Comprobante " | "Código Secuenciales" | "Fecha de vigencia" | "Sustento tributario".
+# Nota (fila 89): "* Código 8   se lo utilizara en el registro de reembolsos  campo obligatorio a partir 01-01-2013"
+# Nota (fila 90): "* Código 6  únicamente aplica para el módulo de anulados"
+# Nota (fila 91): "* Código 364 vigente desde 01/04/2017"
+# Nota (fila 92): "* Código 375 vigente desde 01/12/2020 hasta el 31/12/2021: únicamente para sección de compras, se utilizará para los registros de liquidaciones de compra que se emitan para sustentar crédito tributario de compras a contribuyentes en el régimen RISE"
+# Transformaciones:
+#   código: NUMBER a dos dígitos como mínimo (1.0 → 01, 41.0 → 41, 294.0 → 294).
+#   sustentos: la columna "Sustento tributario" separada por comas, sin espacios; "ninguno" → -.
+#   vigencia: la columna dice "vacío"; la de 364 y 375 sale de sus notas, y las demás no declaran fecha.
+#   denominación: espacios reducidos a uno, sin espacios en los extremos.
+# Clasificación del MVP (design D10): SUPPORTED los tipos 01, 02 y 03; OUT_OF_SCOPE_MVP el resto.
+# fila	tipo celda código	código RAW	código	vigencia RAW	sustento RAW	sustentos	clasificación	denominación
+49	NUMBER	1.0	01	"vacío"	"01, 02, 03, 04, 05, 06, 07, 08, 09, 14, 15, 00"	01,02,03,04,05,06,07,08,09,14,15,00	SUPPORTED	Factura
+50	NUMBER	2.0	02	"vacío"	"02, 04, 05, 07, 08, 14, 15, 00 "	02,04,05,07,08,14,15,00	SUPPORTED	Nota o boleta de venta
+51	NUMBER	3.0	03	"vacío"	"01, 02, 03, 04, 05, 06, 07, 08, 14, 15"	01,02,03,04,05,06,07,08,14,15	SUPPORTED	Liquidación de compra de Bienes o Prestación de servicios
+52	NUMBER	4.0	04	"vacío"	"01, 02, 03, 04, 05, 06, 07, 08, 09, 14, 15, 00"	01,02,03,04,05,06,07,08,09,14,15,00	OUT_OF_SCOPE_MVP	Nota de crédito
+53	NUMBER	5.0	05	"vacío"	"01, 02, 03, 04, 05, 06, 07, 08, 09, 14, 15, 00"	01,02,03,04,05,06,07,08,09,14,15,00	OUT_OF_SCOPE_MVP	Nota de débito
+54	NUMBER	6.0	06	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Guías de Remisión
+55	NUMBER	7.0	07	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Comprobante de Retención
+56	NUMBER	8.0	08	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Boletos o entradas a espectáculos públicos
+57	NUMBER	9.0	09	"vacío"	"02"	02	OUT_OF_SCOPE_MVP	Tiquetes o vales emitidos por máquinas registradoras
+58	NUMBER	11.0	11	"vacío"	"01, 02, 05"	01,02,05	OUT_OF_SCOPE_MVP	Pasajes expedidos por empresas de aviación
+59	NUMBER	12.0	12	"vacío"	"01, 02, 11, 15"	01,02,11,15	OUT_OF_SCOPE_MVP	Documentos emitidos por instituciones financieras
+60	NUMBER	15.0	15	"vacío"	"02, 04, 05, 07, 15"	02,04,05,07,15	OUT_OF_SCOPE_MVP	Comprobante de venta emitido en el Exterior
+61	NUMBER	16.0	16	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Formulario Único de Exportación (FUE) o Declaración Aduanera Única (DAU) o Declaración Andina de Valor (DAV)
+62	NUMBER	18.0	18	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Documentos autorizados utilizados en ventas excepto N/C N/D
+63	NUMBER	19.0	19	"vacío"	"02, 10, 13, 00"	02,10,13,00	OUT_OF_SCOPE_MVP	Comprobantes de Pago de Cuotas o Aportes
+64	NUMBER	20.0	20	"vacío"	"02"	02	OUT_OF_SCOPE_MVP	Documentos por Servicios Administrativos emitidos por Inst. del Estado
+65	NUMBER	21.0	21	"vacío"	"01, 02, 08"	01,02,08	OUT_OF_SCOPE_MVP	Carta de Porte Aéreo
+66	NUMBER	22.0	22	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	RECAP
+67	NUMBER	23.0	23	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Nota de Crédito TC
+68	NUMBER	24.0	24	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Nota de Débito TC
+69	NUMBER	41.0	41	"vacío"	"01, 02, 03, 04, 05, 06, 07"	01,02,03,04,05,06,07	OUT_OF_SCOPE_MVP	Comprobante de venta emitido por reembolso
+70	NUMBER	42.0	42	"vacío"	"00, 12"	00,12	OUT_OF_SCOPE_MVP	Documento retención presuntiva y retención emitida por propio vendedor o por intermediario
+71	NUMBER	43.0	43	"vacío"	"01, 02, 06, 07"	01,02,06,07	OUT_OF_SCOPE_MVP	Liquidación para Explotación y Exploración de Hidrocarburos
+72	NUMBER	44.0	44	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Comprobante de Contribuciones y Aportes
+73	NUMBER	45.0	45	"vacío"	"09"	09	OUT_OF_SCOPE_MVP	Liquidación por reclamos de aseguradoras
+74	NUMBER	47.0	47	"vacío"	"01, 02, 03, 04, 06, 07"	01,02,03,04,06,07	OUT_OF_SCOPE_MVP	Nota de Crédito por Reembolso Emitida por Intermediario
+75	NUMBER	48.0	48	"vacío"	"01, 02, 03, 04, 06, 07"	01,02,03,04,06,07	OUT_OF_SCOPE_MVP	Nota de Débito por Reembolso Emitida por Intermediario
+76	NUMBER	49.0	49	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Proveedor Directo de Exportador Bajo Régimen Especial
+77	NUMBER	50.0	50	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	A Inst. Estado y Empr. Públicas que percibe ingreso exento de Imp. Renta
+78	NUMBER	51.0	51	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	N/C A Inst. Estado y Empr. Públicas que percibe ingreso exento de Imp. Renta
+79	NUMBER	52.0	52	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	N/D A Inst. Estado y Empr. Públicas que percibe ingreso exento de Imp. Renta
+80	NUMBER	294.0	294	"vacío"	"01, 02, 03, 04, 05, 06, 07, 08"	01,02,03,04,05,06,07,08	OUT_OF_SCOPE_MVP	Liquidación de compra de Bienes Muebles Usados
+81	NUMBER	344.0	344	"vacío"	"01, 02, 03, 04, 05, 06, 07, 08"	01,02,03,04,05,06,07,08	OUT_OF_SCOPE_MVP	Liquidación de compra de vehículos usados
+82	NUMBER	364.0	364	"vacío"	"02, 07"	02,07	OUT_OF_SCOPE_MVP	Acta Entrega-Recepción PET
+83	NUMBER	370.0	370	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Factura operadora transporte / socio
+84	NUMBER	371.0	371	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Comprobante socio a operadora de transporte
+85	NUMBER	372.0	372	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Nota de crédito operadora transporte / socio
+86	NUMBER	373.0	373	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Nota de débito operadora transporte / socio
+87	NUMBER	374.0	374	"vacío"	"ninguno"	-	OUT_OF_SCOPE_MVP	Nota de débito operadora transporte / socio
+88	NUMBER	375.0	375	"vacío"	"01, 02, 03, 04, 05, 06, 07, 08"	01,02,03,04,05,06,07,08	OUT_OF_SCOPE_MVP	Liquidación de compra RISE de bienes o prestación de servicios
+# Entrada: 40 filas (más 4 notas).
+# Salida: SUPPORTED 3; OUT_OF_SCOPE_MVP 37.
+# Dataset support-document-type v1: 40 entradas, una por fila.
+
+## TABLA 5
+# Hoja "TABLAS REFERENCIALES", fila 95: "Tabla 5:  SUSTENTO DEL COMPROBANTE".
+# Encabezados (fila 96): "Código" | "Tipo de sustento:" | "Código Tipo Comprobante" | "Fecha Inicio" | "Fecha Fin".
+# Nota (fila 113): "* Código 15: Los servicios digitales se reportaran en la sección de compras y se utilizará para todos los registro de consumos propios o de terceros para registrar servicios digitales"
+# Transformaciones:
+#   código: TEXT tal cual; NUMBER a dos dígitos (10.0 → 10).
+#   fechas: DATE (número de serie de Excel, datemode 0) a AAAA-MM-DD; "-" sin fecha de fin.
+#   denominación: espacios reducidos a uno, sin espacios en los extremos.
+# Clasificación del MVP (design D10): SUPPORTED 01 a 07, 14 y 15; OUT_OF_SCOPE_SPECIAL_STRUCTURE 08 y 09
+#   (reembolsos) y 10 (dividendos); OUT_OF_SCOPE_MVP 11, 12 y 13; OUT_OF_SCOPE_EXPIRED 00 (cerrado el 28/02/2015).
+# fila	tipo celda código	código RAW	código	tipos de comprobante RAW	inicio RAW	inicio	fin RAW	fin	clasificación	denominación
+97	TEXT	"01"	01	"1, 3, 4, 5, 11, 12, 21, 41, 43, 47, 48, 294, 344"	DATE:36526.0	2000-01-01	TEXT:"-"	-	SUPPORTED	Crédito Tributario para declaración de IVA (servicios y bienes distintos de inventarios y activos fijos)
+98	TEXT	"02"	02	"1, 2, 3, 4, 5,9, 11, 12, 15, 19, 20, 21, 41, 43, 47, 48 , 294, 344, 364"	DATE:36526.0	2000-01-01	TEXT:"-"	-	SUPPORTED	Costo o Gasto para declaración de IR (servicios y bienes distintos de inventarios y activos fijos)
+99	TEXT	"03"	03	"1, 3, 4, 5, 41, 47, 48, 294,344"	DATE:36526.0	2000-01-01	TEXT:"-"	-	SUPPORTED	Activo Fijo - Crédito Tributario para declaración de IVA
+100	TEXT	"04"	04	"1, 2, 3, 4, 5, 15, 41, 47, 48, 294,344"	DATE:36526.0	2000-01-01	TEXT:"-"	-	SUPPORTED	Activo Fijo - Costo o Gasto para declaración de IR
+101	TEXT	"05"	05	"1, 2, 3, 4, 5, 11, 15, 41, 294,344"	DATE:36526.0	2000-01-01	TEXT:"-"	-	SUPPORTED	Liquidación Gastos de Viaje, hospedaje y alimentación Gastos IR (a nombre de empleados y no de la empresa)
+102	TEXT	"06"	06	"1, 3, 4, 5, 41, 43, 47, 48, 294,344"	DATE:36526.0	2000-01-01	TEXT:"-"	-	SUPPORTED	Inventario - Crédito Tributario para declaración de IVA
+103	TEXT	"07"	07	"1, 2, 3, 4, 5, 15, 41, 43, 47, 48, 294, 344, 364"	DATE:36526.0	2000-01-01	TEXT:"-"	-	SUPPORTED	Inventario - Costo o Gasto para declaración de IR
+104	TEXT	"08"	08	"1, 2, 3, 4, 5, 21, 294,344"	DATE:36526.0	2000-01-01	TEXT:"-"	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Valor pagado para solicitar Reembolso de Gasto (intermediario)
+105	TEXT	"09"	09	"1, 4, 5, 45"	DATE:36526.0	2000-01-01	TEXT:"-"	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Reembolso por Siniestros
+106	NUMBER	10.0	10	19.0	DATE:36526.0	2000-01-01	TEXT:"-"	-	OUT_OF_SCOPE_SPECIAL_STRUCTURE	Distribución de Dividendos, Beneficios o Utilidades
+107	NUMBER	11.0	11	12.0	DATE:42064.0	2015-03-01	TEXT:"-"	-	OUT_OF_SCOPE_MVP	Convenios de débito o recaudación para IFI´s
+108	NUMBER	12.0	12	42.0	DATE:42064.0	2015-03-01	TEXT:"-"	-	OUT_OF_SCOPE_MVP	Impuestos y retenciones presuntivos
+109	NUMBER	13.0	13	19.0	DATE:42064.0	2015-03-01	TEXT:"-"	-	OUT_OF_SCOPE_MVP	Valores reconocidos por entidades del sector público a favor de sujetos pasivos
+110	NUMBER	14.0	14	"1,2,3,4,5"	DATE:43101.0	2018-01-01	TEXT:"-"	-	SUPPORTED	Valores facturados por socios a operadoras de transporte (que no constituyen gasto de dicha operadora)
+111	NUMBER	15.0	15	"1, 2, 3, 4, 5, 12, 15"	DATE:43983.0	2020-06-01	TEXT:"-"	-	SUPPORTED	Pagos efectuados por consumos propios y de terceros de servicios digitales
+112	TEXT	"00"	00	"1, 2, 4, 5,19, 42"	DATE:36526.0	2000-01-01	DATE:42063.0	2015-02-28	OUT_OF_SCOPE_EXPIRED	Casos especiales cuyo sustento no aplica en las opciones anteriores
+# Entrada: 16 filas (más 1 nota).
+# Salida: SUPPORTED 9; OUT_OF_SCOPE_SPECIAL_STRUCTURE 3; OUT_OF_SCOPE_MVP 3; OUT_OF_SCOPE_EXPIRED 1.
+# Dataset support-code v1: 16 entradas, una por fila.
+
+## TABLA 11
+# Hoja "TABLAS REFERENCIALES", fila 221: "Tabla 11: PORCENTAJES DE RETENCIÓN DE IVA".
+# Encabezados (fila 222): "Código" | "Descripción % Retenciones IVA" | "Fecha Inicio" | "Fecha Fin".
+# Uso: evidencia de design D8 (no lista los códigos 7 ni 8). No genera dataset.
+# fila	código RAW	código	porcentaje RAW	porcentaje	inicio RAW	inicio	fin RAW	fin
+223	9.0	9	10.0	10	DATE:42156.0	2015-06-01	TEXT:"-"	-
+224	10.0	10	20.0	20	DATE:42156.0	2015-06-01	TEXT:"-"	-
+225	1.0	1	30.0	30	DATE:37257.0	2002-01-01	TEXT:"-"	-
+226	11.0	11	50.0	50	DATE:42370.0	2016-01-01	TEXT:"-"	-
+227	2.0	2	70.0	70	DATE:37257.0	2002-01-01	TEXT:"-"	-
+228	3.0	3	100.0	100	DATE:37257.0	2002-01-01	TEXT:"-"	-
+# Entrada: 6 filas.
+
+## TABLA 13
+# Hoja "TABLAS REFERENCIALES", fila 239: "TABLA 13: FORMAS DE PAGO / COBRO".
+# Encabezados (fila 240): "Formas de Pago" | "Código" | "Fecha Inicio" | "Fecha Fin".
+# Uso: test de contrato de equivalencia con payment-method (design D6). No genera dataset.
+# Transformaciones: código TEXT tal cual o NUMBER a dos dígitos (21.0 → 21); fechas como en la tabla 5;
+#   denominación con los espacios reducidos a uno.
+# fila	código RAW	código	inicio RAW	inicio	fin RAW	fin	denominación
+241	TEXT:"01"	01	DATE:41275.0	2013-01-01	TEXT:"-"	-	SIN UTILIZACION DEL SISTEMA FINANCIERO
+242	TEXT:"02"	02	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	CHEQUE PROPIO
+243	TEXT:"03"	03	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	CHEQUE CERTIFICADO
+244	TEXT:"04"	04	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	CHEQUE DE GERENCIA
+245	TEXT:"05"	05	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	CHEQUE DEL EXTERIOR
+246	TEXT:"06"	06	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	DÉBITO DE CUENTA
+247	TEXT:"07"	07	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	TRANSFERENCIA PROPIO BANCO
+248	TEXT:"08"	08	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	TRANSFERENCIA OTRO BANCO NACIONAL
+249	TEXT:"09"	09	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	TRANSFERENCIA BANCO EXTERIOR
+250	TEXT:"10"	10	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	TARJETA DE CRÉDITO NACIONAL
+251	TEXT:"11"	11	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	TARJETA DE CRÉDITO INTERNACIONAL
+252	TEXT:"12"	12	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	GIRO
+253	TEXT:"13"	13	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	DEPOSITO EN CUENTA (CORRIENTE/AHORROS)
+254	TEXT:"14"	14	DATE:41275.0	2013-01-01	TEXT:"31/08/2016"	2016-08-31	ENDOSO DE INVERSIÒN
+255	TEXT:"15"	15	DATE:41275.0	2013-01-01	TEXT:"-"	-	COMPENSACIÓN DE DEUDAS
+256	TEXT:"16"	16	DATE:42491.0	2016-05-01	TEXT:"-"	-	TARJETA DE DÉBITO
+257	TEXT:"17"	17	DATE:42491.0	2016-05-01	TEXT:"-"	-	DINERO ELECTRÓNICO
+258	TEXT:"18"	18	DATE:42491.0	2016-05-01	TEXT:"-"	-	TARJETA PREPAGO
+259	TEXT:"19"	19	DATE:42522.0	2016-06-01	TEXT:"-"	-	TARJETA DE CRÉDITO
+260	TEXT:"20"	20	DATE:42522.0	2016-06-01	TEXT:"-"	-	OTROS CON UTILIZACION DEL SISTEMA FINANCIERO
+261	NUMBER:21.0	21	DATE:42522.0	2016-06-01	TEXT:"-"	-	ENDOSO DE TÍTULOS
+# Entrada: 21 filas.

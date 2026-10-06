@@ -48,6 +48,7 @@ const version = (overrides: Version = {}): Version => ({
   rate: null,
   taxKind: null,
   identificationRule: null,
+  withholding: null,
   ...overrides,
 });
 const entry = (
@@ -146,6 +147,7 @@ function routes(overrides: Record<string, Route> = {}): Record<string, Route> {
               description: "Reservado al consumidor final del sistema: 13 dígitos de nueve",
               reservedFor: "CONSUMER_FINAL",
             },
+            withholding: null,
           }),
           { source: "NOT_ENABLEABLE" },
         ),

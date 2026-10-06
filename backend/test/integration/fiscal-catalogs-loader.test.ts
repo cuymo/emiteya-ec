@@ -32,11 +32,13 @@ const counts = async (db: MigratedSchema) => {
     audit: await prisma.auditEvent.count(),
   };
 };
-// 5 tipos de identificación + 3 impuestos + 9 IVA + 75 ICE + 1 IRBPNR + 8 formas de pago.
+// 5 tipos de identificación + 3 impuestos + 9 IVA + 75 ICE + 1 IRBPNR + 8 formas de pago, y los
+// catálogos de retención: 3 impuestos a retener + 8 códigos del IVA + 127 conceptos de la renta +
+// 40 tipos de documento sustento + 16 códigos de sustento.
 const LOADED = {
-  datasets: 10,
-  keys: 101,
-  entries: 101,
+  datasets: 15,
+  keys: 295,
+  entries: 295,
   policy: 1,
   schemas: 13,
   cases: 26,
@@ -61,9 +63,9 @@ describe("cargador de catálogos fiscales", () => {
       await db.drop();
     });
 
-    it("aplica los diez datasets en una base vacía, sin auditoría", async () => {
+    it("aplica los quince datasets en una base vacía, sin auditoría", async () => {
       const report = await loadInstalledFiscalCatalogs(db.database.prisma);
-      expect(report.applied).toHaveLength(10);
+      expect(report.applied).toHaveLength(15);
       expect(report.alreadyApplied).toEqual([]);
       expect(await counts(db)).toEqual(LOADED);
     });
@@ -74,7 +76,7 @@ describe("cargador de catálogos fiscales", () => {
       });
       const report = await loadInstalledFiscalCatalogs(db.database.prisma);
       expect(report.applied).toEqual([]);
-      expect(report.alreadyApplied).toHaveLength(10);
+      expect(report.alreadyApplied).toHaveLength(15);
       expect(await counts(db)).toEqual(LOADED);
       expect(
         await db.database.prisma.fiscalCatalogDataset.findMany({ orderBy: { catalogType: "asc" } }),
@@ -101,6 +103,26 @@ describe("cargador de catálogos fiscales", () => {
           })
         )?.officialLabel,
       ).toBe("15%");
+    });
+
+    it("un catálogo de retención alterado impide arrancar sin modificar nada", async () => {
+      const altered = structuredClone(DATASET_FILES) as unknown[];
+      const concepts = altered.find(
+        (file) => (file as { catalogType: string }).catalogType === "withholding-income-concept",
+      ) as { entries: { entryKey: string; percentage: string | null }[] };
+      concepts.entries.find((entry) => entry.entryKey === "312C")!.percentage = "2";
+      await expect(loadInstalledFiscalCatalogs(db.database.prisma, altered)).rejects.toThrow(
+        "withholding-income-concept v1: ya aplicado con otro contenido o con otra fuente",
+      );
+      const reclassified = structuredClone(DATASET_FILES) as unknown[];
+      const iva = reclassified.find(
+        (file) => (file as { catalogType: string }).catalogType === "withholding-iva-code",
+      ) as { entries: { code: string; scopeClassification: string }[] };
+      iva.entries.find((entry) => entry.code === "8")!.scopeClassification = "SUPPORTED_FIXED";
+      await expect(loadInstalledFiscalCatalogs(db.database.prisma, reclassified)).rejects.toThrow(
+        "withholding-iva-code v1: ya aplicado con otro contenido o con otra fuente",
+      );
+      expect(await counts(db)).toEqual(LOADED);
     });
 
     it("un dataset inválido se rechaza antes de abrir la transacción", async () => {
@@ -182,8 +204,10 @@ describe("cargador de catálogos fiscales", () => {
         loadFiscalCatalogs({ uow: createDatasetUnitOfWork(db.database.prisma), datasets }),
         loadFiscalCatalogs({ uow: createDatasetUnitOfWork(second.prisma), datasets }),
       ]);
-      expect([a.applied.length, b.applied.length].sort()).toEqual([0, 10]);
-      expect([a.alreadyApplied.length, b.alreadyApplied.length].sort()).toEqual([0, 10]);
+      expect([a.applied.length, b.applied.length].sort((x, y) => x - y)).toEqual([0, 15]);
+      expect([a.alreadyApplied.length, b.alreadyApplied.length].sort((x, y) => x - y)).toEqual([
+        0, 15,
+      ]);
       expect(await counts(db)).toEqual(LOADED);
     } finally {
       await second.close();

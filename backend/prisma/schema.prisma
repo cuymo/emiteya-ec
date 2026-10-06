@@ -504,6 +504,10 @@ model FiscalCatalogEntry {
   identificationPattern         String?              @map("identification_pattern")
   identificationRule            String?              @map("identification_rule")
   reservedFor                   String?              @map("reserved_for")
+  /// Catálogos de retención y de sustento (add-withholding-receipts, design D11; CHECK en la migración).
+  scopeClassification           String?              @map("scope_classification")
+  rateText                      String?              @map("rate_text")
+  allowedSupportCodes           String[]             @map("allowed_support_codes")
 
   @@unique([catalogType, entryKey, effectiveFrom])
   @@map("fiscal_catalog_entry")

@@ -6,6 +6,9 @@ import {
   catalogEntryViewSchema,
   consumerFinalPolicyVersionViewSchema,
   fiscalCatalogSummaryViewSchema,
+  isSelectableScope,
+  SCOPE_CLASSIFICATIONS,
+  SCOPE_CLASSIFICATIONS_BY_CATALOG,
   setEnablementSchema,
 } from "../src/fiscal-catalogs.ts";
 
@@ -21,6 +24,7 @@ const version = {
   rate: { taxKind: "IVA", sriTaxCode: "2", rateKind: "PERCENTAGE", percentage: "15" },
   taxKind: null,
   identificationRule: null,
+  withholding: null,
 };
 
 describe("habilitación de una entrada (design D9 y D11)", () => {
@@ -110,5 +114,91 @@ describe("vistas (design D8 y D11)", () => {
         companyId: "c",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("catálogos de retención y de sustento (add-withholding-receipts, design D7 a D11)", () => {
+  const withholding = {
+    scopeClassification: "SUPPORTED_FIXED_RESIDENT",
+    selectable: true,
+    percentage: "1.75",
+    rateText: null,
+    allowedSupportCodes: null,
+  };
+
+  it("los tipos nuevos son catálogos fiscales y la entrada admite el código literal con guion", () => {
+    for (const catalogType of [
+      "withholding-tax",
+      "withholding-iva-code",
+      "withholding-income-concept",
+      "support-document-type",
+      "support-code",
+    ]) {
+      expect(catalogEntryParamsSchema.safeParse({ catalogType, entryKey: "323-M" }).success).toBe(
+        true,
+      );
+    }
+    expect(
+      catalogEntryParamsSchema.safeParse({
+        catalogType: "withholding-income-concept",
+        entryKey: "323 M",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("la vista lleva la clasificación, el porcentaje de 3 dígitos o el texto, y los sustentos", () => {
+    expect(
+      catalogEntryVersionViewSchema.safeParse({ ...version, rate: null, withholding }).success,
+    ).toBe(true);
+    expect(
+      catalogEntryVersionViewSchema.safeParse({
+        ...version,
+        rate: null,
+        withholding: { ...withholding, percentage: 1.75 },
+      }).success,
+    ).toBe(false);
+    expect(
+      catalogEntryVersionViewSchema.safeParse({
+        ...version,
+        rate: null,
+        withholding: { ...withholding, percentage: "100.00" },
+      }).success,
+    ).toBe(false);
+    expect(
+      catalogEntryVersionViewSchema.safeParse({
+        ...version,
+        rate: null,
+        withholding: { ...withholding, scopeClassification: "SUPPORTED_SOMETIMES" },
+      }).success,
+    ).toBe(false);
+    expect(
+      catalogEntryVersionViewSchema.safeParse({
+        ...version,
+        rate: null,
+        withholding: {
+          scopeClassification: "SUPPORTED",
+          selectable: true,
+          percentage: null,
+          rateText: null,
+          allowedSupportCodes: ["02", "04"],
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("solo las entradas sin clasificación o soportadas se pueden elegir", () => {
+    expect(isSelectableScope(null)).toBe(true);
+    for (const classification of SCOPE_CLASSIFICATIONS) {
+      expect(isSelectableScope(classification), classification).toBe(
+        classification.startsWith("SUPPORTED"),
+      );
+    }
+    expect(Object.keys(SCOPE_CLASSIFICATIONS_BY_CATALOG)).toEqual([
+      "withholding-tax",
+      "withholding-iva-code",
+      "withholding-income-concept",
+      "support-document-type",
+      "support-code",
+    ]);
   });
 });

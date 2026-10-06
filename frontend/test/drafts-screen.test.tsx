@@ -207,6 +207,7 @@ const PAYMENT_METHODS = ok({
       rate: null,
       taxKind: null,
       identificationRule: null,
+      withholding: null,
     };
     return {
       entryKey: code,

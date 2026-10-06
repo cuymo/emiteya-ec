@@ -48,6 +48,11 @@ export const CATALOG_NOUNS: Record<FiscalCatalogType, string> = {
   "ice-rate": "el código de ICE",
   "irbpnr-rate": "el código de IRBPNR",
   "payment-method": "la forma de pago",
+  "withholding-tax": "el impuesto a retener",
+  "withholding-iva-code": "el código de retención del IVA",
+  "withholding-income-concept": "el concepto de retención de la renta",
+  "support-document-type": "el tipo de documento sustento",
+  "support-code": "el código de sustento",
 };
 
 export function useCatalogSummaries(enabled: boolean) {

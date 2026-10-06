@@ -15,6 +15,14 @@ export const notEnableable = () =>
     "Este catálogo no admite habilitación por empresa: todas sus entradas oficiales están disponibles.",
   );
 
+/** Entrada fuera de alcance del MVP: su habilitación no tendría efecto (add-withholding-receipts, D11). */
+export const entryNotSelectable = () =>
+  new AppError(
+    "CATALOG_ENTRY_NOT_SELECTABLE",
+    400,
+    "Esta entrada está fuera del alcance del sistema: no se puede elegir, así que su habilitación no cambia.",
+  );
+
 export const entryNotInForce = () =>
   new AppError(
     "FISCAL_CATALOG_ENTRY_NOT_IN_FORCE",

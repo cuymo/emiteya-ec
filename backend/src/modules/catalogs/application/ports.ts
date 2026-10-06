@@ -5,6 +5,7 @@ import type {
   FiscalCatalogType,
   NormativeStatus,
   RateKind,
+  ScopeClassification,
   SpecialCaseCategory,
   TaxKind,
 } from "@facturador/contracts";
@@ -31,6 +32,10 @@ export type StoredEntryVersion = {
   identificationPattern: string | null;
   identificationRule: string | null;
   reservedFor: "CONSUMER_FINAL" | null;
+  /** Catálogos de retención y de sustento (add-withholding-receipts, design D11). */
+  scopeClassification: ScopeClassification | null;
+  rateText: string | null;
+  allowedSupportCodes: string[] | null;
 };
 
 export type AppliedDataset = {

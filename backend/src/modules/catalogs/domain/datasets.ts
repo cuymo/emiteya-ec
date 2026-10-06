@@ -8,6 +8,7 @@ import {
   effectiveFromBasisSchema,
   enablementPolicySchema,
   normativeStatusSchema,
+  SCOPE_CLASSIFICATIONS_BY_CATALOG,
   specialCaseCategorySchema,
   taxKindSchema,
 } from "@facturador/contracts";
@@ -55,6 +56,61 @@ const ivaEntry = z
   });
 // ICE, IRBPNR y formas de pago no tienen atributos propios: el esquema estricto no admite tarifas.
 const plainEntry = z.strictObject(versionFields);
+
+// Catálogos de retención y de sustento (add-withholding-receipts, design D7 a D11). Cada entrada
+// conserva la fila oficial completa y declara su clasificación de alcance.
+const scope = <T extends keyof typeof SCOPE_CLASSIFICATIONS_BY_CATALOG>(catalogType: T) =>
+  z.enum(SCOPE_CLASSIFICATIONS_BY_CATALOG[catalogType]);
+const withholdingPercentage = decimalString(DECIMAL_SPECS.porcentajeRetener);
+const withholdingTaxEntry = z.strictObject({
+  ...versionFields,
+  scopeClassification: scope("withholding-tax"),
+});
+const withholdingIvaEntry = z.strictObject({
+  ...versionFields,
+  percentage: withholdingPercentage,
+  scopeClassification: scope("withholding-iva-code"),
+});
+/**
+ * Código literal de la renta en el Catálogo ATS: 3 o 4 dígitos con un sufijo opcional (`303A`,
+ * `323B1`), o con un espacio y una letra (`323 M`); de 3 a 5 caracteres, como `codigoRetencion`.
+ */
+export const INCOME_CONCEPT_CODE_PATTERN = /^(?=.{3,5}$)([0-9]{3,4}([A-Z][0-9]?)?|[0-9]{3} [A-Z])$/;
+const incomeConceptEntry = z
+  .strictObject({
+    ...versionFields,
+    code: z.string().regex(INCOME_CONCEPT_CODE_PATTERN),
+    module: z.enum(["RESIDENT", "NON_RESIDENT"]),
+    percentage: withholdingPercentage.nullable(),
+    rateText: text.nullable(),
+    scopeClassification: scope("withholding-income-concept"),
+  })
+  .refine((entry) => (entry.percentage === null) !== (entry.rateText === null), {
+    message: "un concepto tiene un porcentaje numérico o el texto literal de la fuente",
+  })
+  .refine(
+    (entry) =>
+      (entry.module === "NON_RESIDENT") ===
+      (entry.scopeClassification === "OUT_OF_SCOPE_NON_RESIDENT"),
+    { message: "solo los conceptos de no residentes se clasifican como tales" },
+  )
+  .refine(
+    (entry) =>
+      entry.module === "NON_RESIDENT" ||
+      (entry.rateText !== null) === (entry.scopeClassification === "OUT_OF_SCOPE_VARIABLE"),
+    { message: "un concepto de residentes con porcentaje textual es variable, y solo ese" },
+  );
+const supportDocumentTypeEntry = z.strictObject({
+  ...versionFields,
+  code: z.string().regex(/^[0-9]{2,3}$/),
+  allowedSupportCodes: z.array(z.string().regex(/^[0-9]{2}$/)),
+  scopeClassification: scope("support-document-type"),
+});
+const supportCodeEntry = z.strictObject({
+  ...versionFields,
+  code: z.string().regex(/^[0-9]{2}$/),
+  scopeClassification: scope("support-code"),
+});
 
 // Registro de esquemas. La versión 1 publicó solo documentos, sin ruta ni imports: su forma se
 // conserva tal cual para que su checksum no cambie. Desde la versión 2 cada entrada declara su
@@ -108,6 +164,11 @@ export const datasetFileSchema = z.discriminatedUnion("catalogType", [
   entriesDataset("ice-rate", plainEntry),
   entriesDataset("irbpnr-rate", plainEntry),
   entriesDataset("payment-method", plainEntry),
+  entriesDataset("withholding-tax", withholdingTaxEntry),
+  entriesDataset("withholding-iva-code", withholdingIvaEntry),
+  entriesDataset("withholding-income-concept", incomeConceptEntry),
+  entriesDataset("support-document-type", supportDocumentTypeEntry),
+  entriesDataset("support-code", supportCodeEntry),
   z.strictObject({
     catalogType: z.literal("consumer-final-policy"),
     ...header,

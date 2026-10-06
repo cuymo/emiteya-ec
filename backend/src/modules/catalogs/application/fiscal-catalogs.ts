@@ -3,6 +3,7 @@
 // effectiveEnablement, de modo que la ausencia de una decisión signifique siempre lo mismo.
 import {
   catalogEntriesQuerySchema,
+  isSelectableScope,
   setEnablementSchema,
   type CatalogEntriesView,
   type CatalogEntryVersionView,
@@ -30,7 +31,13 @@ import {
   resolveCatalogEntry,
   type IsoDate,
 } from "../domain/validity.ts";
-import { catalogNotFound, entryNotFound, entryNotInForce, notEnableable } from "./errors.ts";
+import {
+  catalogNotFound,
+  entryNotFound,
+  entryNotInForce,
+  entryNotSelectable,
+  notEnableable,
+} from "./errors.ts";
 import type {
   AppliedDataset,
   CatalogReader,
@@ -93,17 +100,30 @@ function toVersionView(version: StoredEntryVersion): CatalogEntryVersionView {
             reservedFor: version.reservedFor,
           }
         : null,
+    withholding: version.scopeClassification
+      ? {
+          scopeClassification: version.scopeClassification,
+          selectable: isSelectableScope(version.scopeClassification),
+          percentage: version.rateKind === null ? version.percentage : null,
+          rateText: version.rateText,
+          allowedSupportCodes: version.allowedSupportCodes,
+        }
+      : null,
   };
 }
 
-/** Agrupa las versiones por entrada, en el orden de sus códigos fiscales. */
+/**
+ * Agrupa las versiones por entrada, en el orden de sus códigos fiscales. La comparación numérica
+ * ordena también los códigos literales de la renta (`303`, `303A`, `323 M`, `3250`).
+ */
 function groupEntries(versions: readonly StoredEntryVersion[]) {
   const groups = new Map<string, StoredEntryVersion[]>();
   for (const version of versions) {
     groups.set(version.entryKey, [...(groups.get(version.entryKey) ?? []), version]);
   }
   return [...groups.entries()].sort(
-    ([keyA, [a]], [keyB, [b]]) => Number(a!.code) - Number(b!.code) || keyA.localeCompare(keyB),
+    ([keyA, [a]], [keyB, [b]]) =>
+      a!.code.localeCompare(b!.code, "en", { numeric: true }) || keyA.localeCompare(keyB),
   );
 }
 
@@ -212,6 +232,13 @@ export function createFiscalCatalogs({
       return uow.run(async (scope) => {
         const versions = await scope.reader.entryVersions(catalogType, entryKey);
         if (versions.length === 0) throw entryNotFound();
+        // Fuera de alcance (add-withholding-receipts, design D11): ninguna versión vigente o futura,
+        // o ninguna si ya no las hay, está soportada; habilitarla o deshabilitarla no tendría efecto.
+        const inForce = versions.filter((v) => v.effectiveTo === null || v.effectiveTo >= date);
+        const candidates = inForce.length > 0 ? inForce : versions;
+        if (!candidates.some((v) => isSelectableScope(v.scopeClassification))) {
+          throw entryNotSelectable();
+        }
         if (enabled && !hasCurrentOrFutureVersion(versions, date)) throw entryNotInForce();
         const { policy } = await policyOf(catalogType);
         await scope.enablement.lockEntry(ctx.companyId, catalogType, entryKey);

@@ -61,8 +61,13 @@ describe("escalas decimales derivadas de los XSD soportados (design D10)", () =>
           const found = types.get(type);
           if (!found || spec.xsd.documents.includes(document)) continue;
           if (name === "tarifa" && document === "07") {
-            // Excepción documentada: la retención 2.0.0 usa 3/2, escala propia de su cambio.
+            // Excepción documentada: la retención 2.0.0 usa 3/2, la escala de porcentajeRetener.
             expect(found).toEqual({ totalDigits: 3, fractionDigits: 2, min: "0" });
+            expect(found).toEqual({
+              totalDigits: DECIMAL_SPECS.porcentajeRetener.totalDigits,
+              fractionDigits: DECIMAL_SPECS.porcentajeRetener.fractionDigits,
+              min: DECIMAL_SPECS.porcentajeRetener.min,
+            });
             continue;
           }
           expect([found.totalDigits, found.fractionDigits], `${type} en ${document}`).toEqual([
@@ -191,6 +196,26 @@ describe("tipos no negativos con su especificación (regla del XSD, Q-43)", () =
     expect(message("tarifa", "15.000")).toBe("Admite como máximo 2 decimales.");
     expect(message("tarifa", "100.50")).toBe("Admite como máximo 4 dígitos en total.");
     expect(message("importe", "0.50")).toBeUndefined();
+  });
+});
+
+describe("porcentaje de la retención 2.0.0 (add-withholding-receipts, design D13)", () => {
+  const schema = decimalString(DECIMAL_SPECS.porcentajeRetener);
+  const message = (text: string) => schema.safeParse(text).error?.issues[0]?.message;
+
+  it("admite los porcentajes del catálogo en su forma canónica, hasta 100 con 3 dígitos", () => {
+    for (const text of ["0", "1", "1.75", "2.5", "9.99", "10", "30", "100", "999"]) {
+      expect(message(text), text).toBeUndefined();
+    }
+  });
+
+  it("rechaza más de 3 dígitos como se escriben, 3 decimales y los negativos", () => {
+    expect(message("100.00")).toBe("Admite como máximo 3 dígitos en total.");
+    expect(message("10.25")).toBe("Admite como máximo 3 dígitos en total.");
+    expect(message("99.99")).toBe("Admite como máximo 3 dígitos en total.");
+    expect(message("1000")).toBe("Admite como máximo 3 dígitos en total.");
+    expect(message("1.755")).toBe("Admite como máximo 2 decimales.");
+    expect(message("-1")).toBe("Debe ser mayor o igual que 0.");
   });
 });
 

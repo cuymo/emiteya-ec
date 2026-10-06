@@ -16,6 +16,10 @@ import { insertMember } from "./fixtures.ts";
 import { insertDocument, type TestDocument } from "./transmission-harness.ts";
 
 const INVENTORY_MIGRATION = "20261007100000_add_minimal_inventory";
+// El cargador de esta versión lee las columnas de los catálogos de retención (add-withholding-receipts,
+// design D11): la instalación anterior carga sus datasets después de esa migración, que solo toca
+// las tablas de catálogos.
+const CATALOG_COLUMNS_MIGRATION = "20261010100000_add_withholding_catalogs";
 const MIGRATIONS = readdirSync(new URL("../../prisma/migrations/", import.meta.url))
   .filter((name) => /^\d{14}_/.test(name))
   .sort();
@@ -143,6 +147,7 @@ describe("inventario en la base de datos", () => {
     database = createDatabase(url);
     await database.prisma.$executeRawUnsafe(`CREATE SCHEMA "${name}"`);
     for (const migration of MIGRATIONS.filter((m) => m < INVENTORY_MIGRATION)) execute(migration);
+    execute(CATALOG_COLUMNS_MIGRATION);
 
     // Una instalación con un producto ya marcado como controlado antes del inventario.
     await loadInstalledFiscalCatalogs(database.prisma);

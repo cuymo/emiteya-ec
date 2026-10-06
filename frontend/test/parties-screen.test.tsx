@@ -78,6 +78,7 @@ const TYPES: Route = () => ({
           rate: null,
           taxKind: null,
           identificationRule: { pattern: null, description, reservedFor },
+          withholding: null,
         };
         return {
           entryKey: code,

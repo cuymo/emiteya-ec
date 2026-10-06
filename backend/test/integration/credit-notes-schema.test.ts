@@ -15,6 +15,10 @@ import { insertFiscalCompany, type FiscalCompany } from "./fiscal-harness.ts";
 import { insertDocument, type TestDocument } from "./transmission-harness.ts";
 
 const CREDIT_NOTES_MIGRATION = "20261008100000_add_credit_notes";
+// El cargador de esta versión lee las columnas de los catálogos de retención (add-withholding-receipts,
+// design D11): la instalación anterior carga sus datasets después de esa migración, que solo toca
+// las tablas de catálogos.
+const CATALOG_COLUMNS_MIGRATION = "20261010100000_add_withholding_catalogs";
 const MIGRATIONS = readdirSync(new URL("../../prisma/migrations/", import.meta.url))
   .filter((name) => /^\d{14}_/.test(name))
   .sort();
@@ -273,6 +277,7 @@ describe("notas de crédito en la base de datos", () => {
     for (const migration of MIGRATIONS.filter((m) => m < CREDIT_NOTES_MIGRATION)) {
       execute(migration);
     }
+    execute(CATALOG_COLUMNS_MIGRATION);
 
     // Una instalación con facturas autorizadas antes de las notas de crédito.
     await loadInstalledFiscalCatalogs(database.prisma);

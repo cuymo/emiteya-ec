@@ -1,6 +1,10 @@
 // Habilitación por empresa (add-fiscal-catalogs, design D9): una sola función decide qué significa
 // la ausencia de una decisión, para que todo lector la interprete igual.
-import type { EnablementPolicy } from "@facturador/contracts";
+import {
+  isSelectableScope,
+  type EnablementPolicy,
+  type ScopeClassification,
+} from "@facturador/contracts";
 
 export type Enablement = {
   enabled: boolean;
@@ -23,8 +27,16 @@ export function effectiveEnablement({
 }
 
 /**
- * Una entrada es utilizable si está habilitada y tiene versión aplicable en la fecha. Una entrada
- * vencida o retirada nunca es utilizable por más que la empresa la tuviera habilitada.
+ * Una entrada es utilizable si está habilitada y tiene versión aplicable en la fecha, y esa versión
+ * está soportada (add-withholding-receipts, design D11; las entradas sin clasificación lo están).
+ * Una entrada vencida, retirada o fuera de alcance nunca es utilizable por más que la empresa la
+ * tuviera habilitada.
  */
-export const isUsable = (applicable: unknown, enablement: Enablement): boolean =>
-  applicable !== null && applicable !== undefined && enablement.enabled;
+export const isUsable = (
+  applicable: { scopeClassification: ScopeClassification | null } | null | undefined,
+  enablement: Enablement,
+): boolean =>
+  applicable !== null &&
+  applicable !== undefined &&
+  enablement.enabled &&
+  isSelectableScope(applicable.scopeClassification);

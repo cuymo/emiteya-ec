@@ -1,0 +1,94 @@
+# Extracto literal de las tablas 19 y 20 (impuestos a retener y tablas de retenciones) de la ficha
+# técnica v2.34 del SRI, y del texto que remite la renta al Catálogo ATS.
+# Fuente: https://www.sri.gob.ec/facturacion-electronica (ficha técnica, esquema offline, versión 2.34, 27/07/2026).
+# SHA-256 del PDF: 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9
+# Método: pdftotext -layout (Poppler 26.07.0) de las páginas impresas 32 a 34, recortado desde el
+# numeral 9.14 de la página 32 hasta antes del numeral 9.16 de la página 34, sin los espacios finales
+# ni las líneas en blanco repetidas; las líneas no se editan.
+# Datasets: withholding-tax v1 (tabla 19) y withholding-iva-code v1 (tabla 20, retención del IVA). La
+# retención del ISD no se transcribe (withholding-isd, Q-50).
+# Revisión: backend/test/catalogs/withholding-datasets-review.test.ts.
+
+# ---- Página 32 ----
+9.14      Lista de códigos por impuestos asignados para la retención.
+
+TABLA 19
+                                 Impuesto a retener                  Código
+                                         RENTA                         1
+                                          IVA                          2
+                                          ISD                          6
+
+9.15 Se describe los códigos por impuesto de acuerdo con el porcentaje de
+    retención.
+
+                                                                                                            32
+# ---- Página 33 ----
+TABLA 20: TABLAS DE RETENCIONES
+
+RETENCIÓN DEL IVA
+
+                                                 Porcentaje IVA                      Código
+                                                         10%                             9
+                                                         20%                            10
+                                                         30%                             1
+                                                         50%                            11
+                                                         70%                             2
+                                                        100%                             3
+
+•          Retención en cero:
+
+                                                 Porcentaje IVA                      Código
+                                                       0.00%                             7
+     *Aplica de conformidad con la Disposición Transitoria Única de la Resolución NAC-DGERCGC15-00000284.
+
+•          No procede retención:
+
+                                                 Porcentaje IVA                      Código
+                                                       0.00%                             8
+
+RETENCIÓN DEL ISD
+
+          Porcentaje                                                             Vigencia
+                             Código
+             ISD                                            Desde                                         Hasta
+               5%              4580                             -                       Hasta el 31 de diciembre de 2021
+             4.75%             4580                 1 de enero de 2022                          31 de marzo de 20224
+             4.50%             4580                  1 de abril de 2022                          30 de junio de 2022
+             4.25%             4580                  1 de julio de 2022                      30 de septiembre de 2022
+             4.00%             4580                1 de octubre de 2022                       31 de diciembre de 2022
+             3.75%             4580                1 de febrero de 2023                          30 de junio de 20235
+             3.50%             4580                  1 de julio de 20236                        31 de marzo de 2024
+               5%              4580                 1 de abril del 20247
+
+4
+ Los porcentajes para el año 2022 se establecieron en el Decreto Ejecutivo No. 298 publicado en el Segundo Suplemento del Registro Oficial
+No. 604 del 23 de diciembre de 2021.
+
+5
+ Los porcentajes para el año 2023 se establecieron en el Decreto Ejecutivo No. 643 publicado en el Segundo Suplemento del Registro Oficial
+No. 235 del 23 de enero de 2023.
+
+6
+ El porcentaje para el año 2024 se establecieron en el Decreto Ejecutivo No. 98 publicado en el Segundo Suplemento del Registro Oficial No.
+467 del 29 de diciembre de 2023
+
+7
+ Ley Orgánica para Enfrentar el Conflicto Armado Interno, la Crisis Social y Económica publicada en el Registro Oficial No. 516 del 12 de
+marzo de 2024 que reforma el artículo 162 de la Ley. Reformatoria para la Equidad Tributaria en el Ecuador.
+
+                                                                                                                                        33
+# ---- Página 34 ----
+          Porcentaje                                                              Vigencia
+                             Código
+             ISD                                             Desde                                        Hasta
+              2.5%             4586                 1 de mayo de 20258
+
+RETENCIÓN DE RENTA:
+
+Los porcentajes de retención del Impuesto a la Renta se aplicarán conforme lo
+establecido en la normativa legal vigente, para lo cual se deberán considerar los
+porcentajes establecidos en las tablas del Catálogo de Anexo Transaccional
+Simplificado, publicado en la página web www.sri.gob.ec: Información sobre
+impuestos/Cómo declaro mis impuestos?/Anexos y guías o directamente a través
+del siguiente link: http://www.sri.gob.ec/web/guest/formularios-e-instructivos1.
+

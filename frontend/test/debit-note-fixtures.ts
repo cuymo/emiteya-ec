@@ -241,6 +241,7 @@ const paymentMethod = (code: string, officialLabel: string, usable: boolean) => 
     rate: null,
     taxKind: null,
     identificationRule: null,
+    withholding: null,
   };
   return {
     entryKey: code,

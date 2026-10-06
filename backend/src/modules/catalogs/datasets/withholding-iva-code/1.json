@@ -1,0 +1,110 @@
+{
+  "catalogType": "withholding-iva-code",
+  "version": 1,
+  "source": {
+    "document": "Ficha técnica: Manual de usuario, catálogo y especificaciones técnicas. Emisión de Comprobantes Electrónicos. Método de autorización Off-line",
+    "version": "2.34",
+    "publishedOn": "2026-07-27",
+    "url": "https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf",
+    "sha256": "7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9"
+  },
+  "enablementPolicy": "DEFAULT_ENABLED",
+  "entries": [
+    {
+      "entryKey": "9",
+      "code": "9",
+      "officialLabel": "RETENCIÓN DEL IVA 10%",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 20, página 33, retención del IVA",
+      "percentage": "10",
+      "scopeClassification": "SUPPORTED_FIXED"
+    },
+    {
+      "entryKey": "10",
+      "code": "10",
+      "officialLabel": "RETENCIÓN DEL IVA 20%",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 20, página 33, retención del IVA",
+      "percentage": "20",
+      "scopeClassification": "SUPPORTED_FIXED"
+    },
+    {
+      "entryKey": "1",
+      "code": "1",
+      "officialLabel": "RETENCIÓN DEL IVA 30%",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 20, página 33, retención del IVA",
+      "percentage": "30",
+      "scopeClassification": "SUPPORTED_FIXED"
+    },
+    {
+      "entryKey": "11",
+      "code": "11",
+      "officialLabel": "RETENCIÓN DEL IVA 50%",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 20, página 33, retención del IVA",
+      "percentage": "50",
+      "scopeClassification": "SUPPORTED_FIXED"
+    },
+    {
+      "entryKey": "2",
+      "code": "2",
+      "officialLabel": "RETENCIÓN DEL IVA 70%",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 20, página 33, retención del IVA",
+      "percentage": "70",
+      "scopeClassification": "SUPPORTED_FIXED"
+    },
+    {
+      "entryKey": "3",
+      "code": "3",
+      "officialLabel": "RETENCIÓN DEL IVA 100%",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 20, página 33, retención del IVA",
+      "percentage": "100",
+      "scopeClassification": "SUPPORTED_FIXED"
+    },
+    {
+      "entryKey": "7",
+      "code": "7",
+      "officialLabel": "Retención en cero 0.00%",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 20, página 33, retención en cero: *Aplica de conformidad con la Disposición Transitoria Única de la Resolución NAC-DGERCGC15-00000284.",
+      "percentage": "0",
+      "scopeClassification": "SUPPORTED_FIXED"
+    },
+    {
+      "entryKey": "8",
+      "code": "8",
+      "officialLabel": "No procede retención 0.00%",
+      "effectiveFrom": "2026-07-27",
+      "effectiveFromBasis": "PROJECT_BASELINE",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Tabla 20, página 33, no procede retención",
+      "percentage": "0",
+      "scopeClassification": "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION"
+    }
+  ]
+}

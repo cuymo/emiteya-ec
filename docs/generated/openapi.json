@@ -7626,7 +7626,12 @@
                               "iva-rate",
                               "ice-rate",
                               "irbpnr-rate",
-                              "payment-method"
+                              "payment-method",
+                              "withholding-tax",
+                              "withholding-iva-code",
+                              "withholding-income-concept",
+                              "support-document-type",
+                              "support-code"
                             ]
                           },
                           "datasetVersion": {
@@ -8866,7 +8871,12 @@
                 "iva-rate",
                 "ice-rate",
                 "irbpnr-rate",
-                "payment-method"
+                "payment-method",
+                "withholding-tax",
+                "withholding-iva-code",
+                "withholding-income-concept",
+                "support-document-type",
+                "support-code"
               ]
             }
           },
@@ -8918,7 +8928,12 @@
                                 "iva-rate",
                                 "ice-rate",
                                 "irbpnr-rate",
-                                "payment-method"
+                                "payment-method",
+                                "withholding-tax",
+                                "withholding-iva-code",
+                                "withholding-income-concept",
+                                "support-document-type",
+                                "support-code"
                               ]
                             },
                             "datasetVersion": {
@@ -9141,6 +9156,69 @@
                                           "type": "null"
                                         }
                                       ]
+                                    },
+                                    "withholding": {
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "scopeClassification": {
+                                              "type": "string",
+                                              "enum": [
+                                                "SUPPORTED",
+                                                "SUPPORTED_FIXED",
+                                                "SUPPORTED_FIXED_RESIDENT",
+                                                "OUT_OF_SCOPE_NON_RESIDENT",
+                                                "OUT_OF_SCOPE_VARIABLE",
+                                                "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+                                                "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+                                                "OUT_OF_SCOPE_PENDING_EVIDENCE",
+                                                "OUT_OF_SCOPE_MVP",
+                                                "OUT_OF_SCOPE_EXPIRED"
+                                              ]
+                                            },
+                                            "selectable": {
+                                              "type": "boolean"
+                                            },
+                                            "percentage": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ]
+                                            },
+                                            "rateText": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ]
+                                            },
+                                            "allowedSupportCodes": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "array",
+                                                  "items": {
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "scopeClassification",
+                                            "selectable",
+                                            "percentage",
+                                            "rateText",
+                                            "allowedSupportCodes"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
                                     }
                                   },
                                   "required": [
@@ -9154,7 +9232,8 @@
                                     "datasetVersion",
                                     "rate",
                                     "taxKind",
-                                    "identificationRule"
+                                    "identificationRule",
+                                    "withholding"
                                   ],
                                   "additionalProperties": false
                                 }
@@ -9309,6 +9388,69 @@
                                             "type": "null"
                                           }
                                         ]
+                                      },
+                                      "withholding": {
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "scopeClassification": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "SUPPORTED",
+                                                  "SUPPORTED_FIXED",
+                                                  "SUPPORTED_FIXED_RESIDENT",
+                                                  "OUT_OF_SCOPE_NON_RESIDENT",
+                                                  "OUT_OF_SCOPE_VARIABLE",
+                                                  "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+                                                  "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+                                                  "OUT_OF_SCOPE_PENDING_EVIDENCE",
+                                                  "OUT_OF_SCOPE_MVP",
+                                                  "OUT_OF_SCOPE_EXPIRED"
+                                                ]
+                                              },
+                                              "selectable": {
+                                                "type": "boolean"
+                                              },
+                                              "percentage": {
+                                                "type": [
+                                                  "string",
+                                                  "null"
+                                                ]
+                                              },
+                                              "rateText": {
+                                                "type": [
+                                                  "string",
+                                                  "null"
+                                                ]
+                                              },
+                                              "allowedSupportCodes": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "string"
+                                                    }
+                                                  },
+                                                  {
+                                                    "type": "null"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "scopeClassification",
+                                              "selectable",
+                                              "percentage",
+                                              "rateText",
+                                              "allowedSupportCodes"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
                                       }
                                     },
                                     "required": [
@@ -9322,7 +9464,8 @@
                                       "datasetVersion",
                                       "rate",
                                       "taxKind",
-                                      "identificationRule"
+                                      "identificationRule",
+                                      "withholding"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -9571,7 +9714,12 @@
                 "iva-rate",
                 "ice-rate",
                 "irbpnr-rate",
-                "payment-method"
+                "payment-method",
+                "withholding-tax",
+                "withholding-iva-code",
+                "withholding-income-concept",
+                "support-document-type",
+                "support-code"
               ]
             }
           },
@@ -9774,6 +9922,69 @@
                                     "type": "null"
                                   }
                                 ]
+                              },
+                              "withholding": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "scopeClassification": {
+                                        "type": "string",
+                                        "enum": [
+                                          "SUPPORTED",
+                                          "SUPPORTED_FIXED",
+                                          "SUPPORTED_FIXED_RESIDENT",
+                                          "OUT_OF_SCOPE_NON_RESIDENT",
+                                          "OUT_OF_SCOPE_VARIABLE",
+                                          "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+                                          "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+                                          "OUT_OF_SCOPE_PENDING_EVIDENCE",
+                                          "OUT_OF_SCOPE_MVP",
+                                          "OUT_OF_SCOPE_EXPIRED"
+                                        ]
+                                      },
+                                      "selectable": {
+                                        "type": "boolean"
+                                      },
+                                      "percentage": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "rateText": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "allowedSupportCodes": {
+                                        "anyOf": [
+                                          {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "scopeClassification",
+                                      "selectable",
+                                      "percentage",
+                                      "rateText",
+                                      "allowedSupportCodes"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
                               }
                             },
                             "required": [
@@ -9787,7 +9998,8 @@
                               "datasetVersion",
                               "rate",
                               "taxKind",
-                              "identificationRule"
+                              "identificationRule",
+                              "withholding"
                             ],
                             "additionalProperties": false
                           }
@@ -9942,6 +10154,69 @@
                                       "type": "null"
                                     }
                                   ]
+                                },
+                                "withholding": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "scopeClassification": {
+                                          "type": "string",
+                                          "enum": [
+                                            "SUPPORTED",
+                                            "SUPPORTED_FIXED",
+                                            "SUPPORTED_FIXED_RESIDENT",
+                                            "OUT_OF_SCOPE_NON_RESIDENT",
+                                            "OUT_OF_SCOPE_VARIABLE",
+                                            "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+                                            "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+                                            "OUT_OF_SCOPE_PENDING_EVIDENCE",
+                                            "OUT_OF_SCOPE_MVP",
+                                            "OUT_OF_SCOPE_EXPIRED"
+                                          ]
+                                        },
+                                        "selectable": {
+                                          "type": "boolean"
+                                        },
+                                        "percentage": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "rateText": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "allowedSupportCodes": {
+                                          "anyOf": [
+                                            {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "scopeClassification",
+                                        "selectable",
+                                        "percentage",
+                                        "rateText",
+                                        "allowedSupportCodes"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
@@ -9955,7 +10230,8 @@
                                 "datasetVersion",
                                 "rate",
                                 "taxKind",
-                                "identificationRule"
+                                "identificationRule",
+                                "withholding"
                               ],
                               "additionalProperties": false
                             },

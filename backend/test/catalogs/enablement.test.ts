@@ -36,8 +36,33 @@ describe("effectiveEnablement", () => {
 describe("isUsable", () => {
   const enabled = { enabled: true, source: "COMPANY" } as const;
   it("exige una versión aplicable y la habilitación", () => {
-    expect(isUsable({ id: "v1" }, enabled)).toBe(true);
+    expect(isUsable({ scopeClassification: null }, enabled)).toBe(true);
     expect(isUsable(null, enabled)).toBe(false);
-    expect(isUsable({ id: "v1" }, { enabled: false, source: "DEFAULT" })).toBe(false);
+    expect(isUsable({ scopeClassification: null }, { enabled: false, source: "DEFAULT" })).toBe(
+      false,
+    );
+  });
+
+  it("una entrada de retención además debe estar soportada (add-withholding-receipts, D11)", () => {
+    for (const classification of [
+      "SUPPORTED",
+      "SUPPORTED_FIXED",
+      "SUPPORTED_FIXED_RESIDENT",
+    ] as const) {
+      expect(isUsable({ scopeClassification: classification }, enabled)).toBe(true);
+    }
+    for (const classification of [
+      "OUT_OF_SCOPE_NON_RESIDENT",
+      "OUT_OF_SCOPE_VARIABLE",
+      "OUT_OF_SCOPE_SPECIAL_STRUCTURE",
+      "OUT_OF_SCOPE_AMBIGUOUS_REPRESENTATION",
+      "OUT_OF_SCOPE_PENDING_EVIDENCE",
+      "OUT_OF_SCOPE_MVP",
+      "OUT_OF_SCOPE_EXPIRED",
+    ] as const) {
+      expect(isUsable({ scopeClassification: classification }, enabled), classification).toBe(
+        false,
+      );
+    }
   });
 });

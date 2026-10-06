@@ -50,6 +50,11 @@ function toStoredEntry(row: EntryRow): StoredEntryVersion {
     identificationPattern: row.identificationPattern,
     identificationRule: row.identificationRule,
     reservedFor: row.reservedFor as StoredEntryVersion["reservedFor"],
+    scopeClassification: row.scopeClassification as StoredEntryVersion["scopeClassification"],
+    rateText: row.rateText,
+    // Una lista de PostgreSQL sin valor llega vacía o nula: solo los tipos de documento la tienen.
+    allowedSupportCodes:
+      row.catalogType === "support-document-type" ? (row.allowedSupportCodes ?? []) : null,
   };
 }
 
@@ -187,6 +192,9 @@ const toEntryRow = (version: NewEntryVersion) => ({
   identificationPattern: version.identificationPattern,
   identificationRule: version.identificationRule,
   reservedFor: version.reservedFor,
+  scopeClassification: version.scopeClassification,
+  rateText: version.rateText,
+  allowedSupportCodes: version.allowedSupportCodes ?? undefined,
 });
 
 const toPolicyRow = (version: NewPolicyVersion) => ({

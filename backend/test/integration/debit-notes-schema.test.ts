@@ -14,6 +14,10 @@ import { insertFiscalCompany, type FiscalCompany } from "./fiscal-harness.ts";
 import { insertDocument, type TestDocument } from "./transmission-harness.ts";
 
 const DEBIT_NOTES_MIGRATION = "20261009100000_add_debit_notes";
+// El cargador de esta versión lee las columnas de los catálogos de retención (add-withholding-receipts,
+// design D11): la instalación anterior carga sus datasets después de esa migración, que solo toca
+// las tablas de catálogos.
+const CATALOG_COLUMNS_MIGRATION = "20261010100000_add_withholding_catalogs";
 const MIGRATIONS = readdirSync(new URL("../../prisma/migrations/", import.meta.url))
   .filter((name) => /^\d{14}_/.test(name))
   .sort();
@@ -100,6 +104,7 @@ describe("notas de débito en la base de datos", () => {
     for (const migration of MIGRATIONS.filter((m) => m < DEBIT_NOTES_MIGRATION)) {
       execute(migration);
     }
+    execute(CATALOG_COLUMNS_MIGRATION);
 
     // Una instalación con una factura autorizada antes de las notas de débito.
     await loadInstalledFiscalCatalogs(database.prisma);

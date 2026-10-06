@@ -71,8 +71,10 @@ Las fuentes se citan con prefijo, porque ambos documentos usan los mismos identi
 | Destinatario             | `consignee`          | —          | Tercero que recibe la mercadería trasladada.                                            |
 | Sujeto retenido          | `withheldParty`      | —          | Tercero al que se le practica una retención.                                            |
 | Parte relacionada        | `relatedParty`       | —          | Declaración SI/NO del usuario en una retención (`parteRel`) sobre su relación con el sujeto retenido. |
-| Concepto de retención    | `withholdingConcept` | —          | Entrada del catálogo con el código y el porcentaje de una retención de renta o IVA.     |
+| Concepto de retención    | `withholdingConcept` | —          | Entrada del catálogo con el código y el porcentaje de una retención de renta (`withholding-income-concept`, Catálogo ATS) o de IVA (`withholding-iva-code`, tabla 20 de la ficha). Solo los soportados se eligen. |
 | Código de sustento       | `supportCode`        | —          | Motivo tributario del documento sustento (`codSustento`, tabla 5 del Catálogo ATS).      |
+| Tipo de documento sustento | `supportDocumentType` | —        | Tipo del comprobante sustento (`codDocSustento`, tabla 4 del Catálogo ATS), siempre como código de dos caracteres: `01` factura, `02` nota o boleta de venta y `03` liquidación de compra en el MVP. Cada tipo admite sus códigos de sustento. |
+| Clasificación de alcance | `scopeClassification` | —         | Indica si una entrada de un catálogo de retención o de sustento está soportada (se puede elegir) o queda fuera de alcance, y por qué: no residente, porcentaje variable, estructura especial, representación ambigua, pendiente de evidencia, fuera del MVP o vencida. La entrada oficial se conserva completa. |
 
 ## Proceso fiscal
 

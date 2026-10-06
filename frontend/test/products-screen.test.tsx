@@ -107,6 +107,7 @@ const entries =
             rate: null,
             taxKind: null,
             identificationRule: null,
+            withholding: null,
           };
           return {
             entryKey,

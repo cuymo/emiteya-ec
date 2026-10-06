@@ -1,0 +1,190 @@
+{
+  "catalogType": "support-code",
+  "version": 1,
+  "source": {
+    "document": "Catálogo del Anexo Transaccional Simplificado (ATS)",
+    "version": "2026-08-06",
+    "publishedOn": "2026-08-06",
+    "url": "https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/e6a826af-b22c-40bb-8752-d711f293b8f9/Catalogo_ATS.xls",
+    "sha256": "bd3f7834f2cd31187af39cd2f4c685a646d7e49316e92ee493da5f2dd9776e3e"
+  },
+  "enablementPolicy": "NOT_ENABLEABLE",
+  "entries": [
+    {
+      "entryKey": "01",
+      "code": "01",
+      "officialLabel": "Crédito Tributario para declaración de IVA (servicios y bienes distintos de inventarios y activos fijos)",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 97",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "02",
+      "code": "02",
+      "officialLabel": "Costo o Gasto para declaración de IR (servicios y bienes distintos de inventarios y activos fijos)",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 98",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "03",
+      "code": "03",
+      "officialLabel": "Activo Fijo - Crédito Tributario para declaración de IVA",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 99",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "04",
+      "code": "04",
+      "officialLabel": "Activo Fijo - Costo o Gasto para declaración de IR",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 100",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "05",
+      "code": "05",
+      "officialLabel": "Liquidación Gastos de Viaje, hospedaje y alimentación Gastos IR (a nombre de empleados y no de la empresa)",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 101",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "06",
+      "code": "06",
+      "officialLabel": "Inventario - Crédito Tributario para declaración de IVA",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 102",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "07",
+      "code": "07",
+      "officialLabel": "Inventario - Costo o Gasto para declaración de IR",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 103",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "08",
+      "code": "08",
+      "officialLabel": "Valor pagado para solicitar Reembolso de Gasto (intermediario)",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 104",
+      "scopeClassification": "OUT_OF_SCOPE_SPECIAL_STRUCTURE"
+    },
+    {
+      "entryKey": "09",
+      "code": "09",
+      "officialLabel": "Reembolso por Siniestros",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 105",
+      "scopeClassification": "OUT_OF_SCOPE_SPECIAL_STRUCTURE"
+    },
+    {
+      "entryKey": "10",
+      "code": "10",
+      "officialLabel": "Distribución de Dividendos, Beneficios o Utilidades",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 106",
+      "scopeClassification": "OUT_OF_SCOPE_SPECIAL_STRUCTURE"
+    },
+    {
+      "entryKey": "11",
+      "code": "11",
+      "officialLabel": "Convenios de débito o recaudación para IFI´s",
+      "effectiveFrom": "2015-03-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 107",
+      "scopeClassification": "OUT_OF_SCOPE_MVP"
+    },
+    {
+      "entryKey": "12",
+      "code": "12",
+      "officialLabel": "Impuestos y retenciones presuntivos",
+      "effectiveFrom": "2015-03-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 108",
+      "scopeClassification": "OUT_OF_SCOPE_MVP"
+    },
+    {
+      "entryKey": "13",
+      "code": "13",
+      "officialLabel": "Valores reconocidos por entidades del sector público a favor de sujetos pasivos",
+      "effectiveFrom": "2015-03-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 109",
+      "scopeClassification": "OUT_OF_SCOPE_MVP"
+    },
+    {
+      "entryKey": "14",
+      "code": "14",
+      "officialLabel": "Valores facturados por socios a operadoras de transporte (que no constituyen gasto de dicha operadora)",
+      "effectiveFrom": "2018-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 110",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "15",
+      "code": "15",
+      "officialLabel": "Pagos efectuados por consumos propios y de terceros de servicios digitales",
+      "effectiveFrom": "2020-06-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": null,
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 111",
+      "scopeClassification": "SUPPORTED"
+    },
+    {
+      "entryKey": "00",
+      "code": "00",
+      "officialLabel": "Casos especiales cuyo sustento no aplica en las opciones anteriores",
+      "effectiveFrom": "2000-01-01",
+      "effectiveFromBasis": "SOURCE_STATED",
+      "effectiveTo": "2015-02-28",
+      "normativeStatus": "OFFICIAL",
+      "sourceRef": "Hoja TABLAS REFERENCIALES, tabla 5, fila 112",
+      "scopeClassification": "OUT_OF_SCOPE_EXPIRED"
+    }
+  ]
+}
