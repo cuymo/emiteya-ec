@@ -350,9 +350,9 @@ describe("flujo completo de los comprobantes de retención", () => {
     // La factura propia queda intacta: su estado, su crédito, su inventario y las reconciliaciones.
     expect(await creditOf()).toEqual(creditBefore);
     const invoiceAfter = await invoiceRow();
-    expect([invoiceAfter.state, invoiceAfter.total.toFixed(), invoiceAfter.snapshot]).toEqual([
+    expect([invoiceAfter.state, invoiceAfter.total?.toFixed(), invoiceAfter.snapshot]).toEqual([
       invoiceBefore.state,
-      invoiceBefore.total.toFixed(),
+      invoiceBefore.total?.toFixed(),
       invoiceBefore.snapshot,
     ]);
     expect(await db.database.prisma.stockMovement.count()).toBe(movementsBefore);

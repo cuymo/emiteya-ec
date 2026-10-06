@@ -257,7 +257,7 @@ describe("emisión de comprobantes de retención", () => {
       buyerIdentification: "1791234567001",
       buyerName: "PROVEEDORA DEL SUR S.A.",
     });
-    expect(stored.total.toFixed()).toBe("6.27");
+    expect(stored.total?.toFixed()).toBe("6.27");
     const lines = await db.database.prisma.withholdingReceiptLine.findMany({
       where: { documentId: receipt.id },
       orderBy: [{ supportPosition: "asc" }, { position: "asc" }],

@@ -35,6 +35,7 @@ const summary = (
   issueDate: "2026-10-09",
   buyer: { name: "EL PERNO CIA. LTDA.", identification: "0992877878001" },
   total: "28.00",
+  recipients: null,
   state,
   transmissionStopped: false,
   documents,

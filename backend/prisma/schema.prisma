@@ -769,46 +769,47 @@ model InvoiceDraftPayment {
 // su secuencial confirmado y su clave de acceso. Solo pasa de RESERVED a SIGNED, y SIGNED exige su
 // artefacto firmado (trigger diferido). No se borra.
 model ElectronicDocument {
-  id                       String                    @id @default(uuid())
-  companyId                String                    @map("company_id")
-  company                  Organization              @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  documentType             String                    @map("document_type") @db.Char(2)
+  id                       String                        @id @default(uuid())
+  companyId                String                        @map("company_id")
+  company                  Organization                  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  documentType             String                        @map("document_type") @db.Char(2)
   environment              String
-  establishmentId          String                    @map("establishment_id")
-  emissionPointId          String                    @map("emission_point_id")
-  documentNumber           String                    @map("document_number") @db.Char(17)
+  establishmentId          String                        @map("establishment_id")
+  emissionPointId          String                        @map("emission_point_id")
+  documentNumber           String                        @map("document_number") @db.Char(17)
   sequential               Int
-  reservationId            String                    @unique @map("reservation_id")
-  reservation              FiscalSequenceReservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
-  accessKey                String                    @unique @map("access_key") @db.Char(49)
-  numericCode              String                    @map("numeric_code") @db.Char(8)
-  issueDate                DateTime                  @map("issue_date") @db.Date
+  reservationId            String                        @unique @map("reservation_id")
+  reservation              FiscalSequenceReservation     @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  accessKey                String                        @unique @map("access_key") @db.Char(49)
+  numericCode              String                        @map("numeric_code") @db.Char(8)
+  issueDate                DateTime                      @map("issue_date") @db.Date
   /// RESERVED o SIGNED (CHECK en la migración).
   state                    String
   snapshot                 Json
-  schemaVersion            String                    @map("schema_version")
-  buyerIdentification      String                    @map("buyer_identification")
-  buyerName                String                    @map("buyer_name")
-  /// Copia del importe total del snapshot, con el CHECK de `importe`.
-  total                    Decimal                   @db.Decimal
-  createdAt                DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
-  createdBy                String                    @map("created_by")
-  creator                  User                      @relation("DocumentCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  signedAt                 DateTime?                 @map("signed_at") @db.Timestamptz(3)
+  schemaVersion            String                        @map("schema_version")
+  /// Nulos solo en la guía de remisión (06), que tiene destinatarios (add-shipping-guides, D10).
+  buyerIdentification      String?                       @map("buyer_identification")
+  buyerName                String?                       @map("buyer_name")
+  /// Copia del importe total del snapshot, con el CHECK de `importe`; nulo solo en la guía (06).
+  total                    Decimal?                      @db.Decimal
+  createdAt                DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy                String                        @map("created_by")
+  creator                  User                          @relation("DocumentCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  signedAt                 DateTime?                     @map("signed_at") @db.Timestamptz(3)
   /// Diagnóstico del último intento, separado del estado fiscal (design D10).
-  lastAttemptStage         String?                   @map("last_attempt_stage")
-  lastAttemptCode          String?                   @map("last_attempt_code")
-  lastAttemptClass         String?                   @map("last_attempt_class")
-  lastAttemptAt            DateTime?                 @map("last_attempt_at") @db.Timestamptz(3)
+  lastAttemptStage         String?                       @map("last_attempt_stage")
+  lastAttemptCode          String?                       @map("last_attempt_code")
+  lastAttemptClass         String?                       @map("last_attempt_class")
+  lastAttemptAt            DateTime?                     @map("last_attempt_at") @db.Timestamptz(3)
   /// Para XSD_INVALID, la línea y el elemento (design D10); nunca el valor ni el XML.
-  lastAttemptDetail        Json?                     @map("last_attempt_detail")
+  lastAttemptDetail        Json?                         @map("last_attempt_detail")
   /// Autorización del SRI (add-sri-transmission, design D16): solo en AUTHORIZED e inmutable.
-  authorizationNumber      String?                   @map("authorization_number") @db.Char(49)
-  authorizationDate        DateTime?                 @map("authorization_date") @db.Timestamptz(3)
-  authorizationEnvironment String?                   @map("authorization_environment")
-  attemptCount             Int                       @default(0) @map("attempt_count")
-  attemptLeaseUntil        DateTime?                 @map("attempt_lease_until") @db.Timestamptz(3)
-  draft                    InvoiceDraft?             @relation("DraftDocument")
+  authorizationNumber      String?                       @map("authorization_number") @db.Char(49)
+  authorizationDate        DateTime?                     @map("authorization_date") @db.Timestamptz(3)
+  authorizationEnvironment String?                       @map("authorization_environment")
+  attemptCount             Int                           @default(0) @map("attempt_count")
+  attemptLeaseUntil        DateTime?                     @map("attempt_lease_until") @db.Timestamptz(3)
+  draft                    InvoiceDraft?                 @relation("DraftDocument")
   sriAttempts              SriAttempt[]
   jobs                     Job[]
   transitions              DocumentStateTransition[]
@@ -817,8 +818,8 @@ model ElectronicDocument {
   deliveries               DocumentDeliveryEvent[]
   stockMovements           StockMovement[]
   /// add-credit-notes: borradores de nota sobre esta factura, y el borrador que emitió esta nota.
-  creditDrafts             CreditNoteDraft[]         @relation("CreditNoteDraftInvoice")
-  creditDraft              CreditNoteDraft?          @relation("CreditNoteDraftDocument")
+  creditDrafts             CreditNoteDraft[]             @relation("CreditNoteDraftInvoice")
+  creditDraft              CreditNoteDraft?              @relation("CreditNoteDraftDocument")
   /// Capacidad acreditable y devolvible de esta factura, y las reservas de esta nota.
   creditCapacity           CreditCapacity?
   creditReservation        CreditReservation?
@@ -826,13 +827,15 @@ model ElectronicDocument {
   returnReservations       StockReturnReservation[]
   /// add-debit-notes: borradores de nota de débito sobre esta factura, el borrador que emitió esta
   /// nota, y la factura de esta nota de débito o las notas de débito de esta factura.
-  debitDrafts              DebitNoteDraft[]          @relation("DebitNoteDraftInvoice")
-  debitDraft               DebitNoteDraft?           @relation("DebitNoteDraftDocument")
-  debitSupport             DebitNoteSupport?         @relation("DebitNoteSupportNote")
-  debitNotes               DebitNoteSupport[]        @relation("DebitNoteSupportInvoice")
+  debitDrafts              DebitNoteDraft[]              @relation("DebitNoteDraftInvoice")
+  debitDraft               DebitNoteDraft?               @relation("DebitNoteDraftDocument")
+  debitSupport             DebitNoteSupport?             @relation("DebitNoteSupportNote")
+  debitNotes               DebitNoteSupport[]            @relation("DebitNoteSupportInvoice")
   /// add-withholding-receipts: el borrador que emitió esta retención y su registro.
-  withholdingDraft         WithholdingReceiptDraft?  @relation("WithholdingReceiptDraftDocument")
-  withholdingReceipt       WithholdingReceipt?       @relation("WithholdingReceiptDocument")
+  withholdingDraft         WithholdingReceiptDraft?      @relation("WithholdingReceiptDraftDocument")
+  withholdingReceipt       WithholdingReceipt?           @relation("WithholdingReceiptDocument")
+  /// add-shipping-guides: destinatarios de un comprobante sin comprador único (design D10).
+  recipients               ElectronicDocumentRecipient[]
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@unique([companyId, id])
@@ -842,6 +845,22 @@ model ElectronicDocument {
   @@index([companyId, issueDate, id])
   @@index([companyId, buyerIdentification])
   @@map("electronic_document")
+}
+
+// Destinatarios de un comprobante sin comprador único (add-shipping-guides, design D10): hoy solo la
+// guía de remisión. Inmutables, escritos en la reserva, con posiciones contiguas desde 1. Sirven a la
+// bandeja y a sus filtros; el XML y el RIDE salen del snapshot.
+model ElectronicDocumentRecipient {
+  companyId      String             @map("company_id")
+  documentId     String             @map("document_id")
+  document       ElectronicDocument @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  position       Int
+  identification String             @db.VarChar(20)
+  name           String             @db.VarChar(300)
+
+  @@id([companyId, documentId, position])
+  @@index([companyId, identification])
+  @@map("electronic_document_recipient")
 }
 
 // Historial de transiciones de un comprobante (ERS RF-525): solo de agregado.

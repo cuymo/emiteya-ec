@@ -35,6 +35,7 @@ const summary = (
   issueDate: "2026-10-06",
   buyer: { name: "PROVEEDORA DEL SUR S.A.", identification: "1791234567001" },
   total: "3.25",
+  recipients: null,
   state,
   transmissionStopped: false,
   documents,

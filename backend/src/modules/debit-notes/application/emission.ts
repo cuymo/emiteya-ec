@@ -266,6 +266,7 @@ export function createDebitNoteEmission(deps: DebitNoteEmissionDependencies) {
         correlationId: ctx.requestId,
         withKey: (built): DebitNoteSnapshot => withDebitNoteKey(draftSnapshot, built),
         columns: (built) => ({
+          receiver: "BUYER",
           schemaVersion: built.schema.version,
           buyerIdentification: built.buyer.identification,
           buyerName: built.buyer.legalName,

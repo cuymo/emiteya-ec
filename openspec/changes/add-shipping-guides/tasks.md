@@ -2,7 +2,7 @@
 
 ## 1. Cabecera común sin total ni comprador único (P10)
 
-- [ ] 1.1 Crear la migración aditiva `document_recipients_optional_totals` (design D10 y D26):
+- [x] 1.1 Crear la migración aditiva `document_recipients_optional_totals` (design D10 y D26):
   - `total`, `buyer_identification` y `buyer_name` de `electronic_document` admiten `NULL`;
   - `electronic_document_values_check` con `("document_type" = '06') = ("total" IS NULL)` y las mismas igualdades para el comprador, conservando el dominio `importe` cuando el total existe;
   - `electronic_document_recipient` (empresa, comprobante, posición, identificación y nombre), con FK compuesta, índice `(company_id, identification)` y la guarda que impide `UPDATE` y `DELETE`.
@@ -15,8 +15,8 @@
   - las filas existentes que cumplen el `CHECK` nuevo.
 
   Añadir la migración a `migrations.test.ts` sin deriva y documentar la invariante en `database.md`
-- [ ] 1.2 Cambiar `DocumentColumns` a la unión `BUYER` / `RECIPIENTS`, `StoredDocument` con comprador y total nulos posibles y la guarda `documentBuyer` de `fiscal`, y usarla en la factura, las notas y la retención donde hoy leen el comprador o el total (design D10). La reserva escribe los destinatarios en la misma transacción. Verificar con pruebas unitarias de la guarda y de la reserva con `RECIPIENTS`, y que los contratos y los golden del XML y del RIDE de la factura, las notas y la retención pasan sin cambios
-- [ ] 1.3 Cambiar la bandeja (design D10 y D21): `documentListItemSchema` con `buyer` y `total` nulos posibles y `recipients: { count, name | null }`, con la refinación por tipo; la lectura que arma el resumen; el filtro por identificación y la búsqueda por nombre con la rama de destinatarios; y en el frontend el receptor derivado (comprador, nombre del único destinatario o "N destinatarios") y el total "—" con el texto accesible "Sin total monetario". Verificar con pruebas de contrato (cada combinación prohibida), pruebas HTTP de la bandeja con un `06` sintético de uno y de varios destinatarios, filtro por la identificación del segundo destinatario y los demás tipos sin cambios, y pruebas de componente del receptor y del total. Regenerar `docs/generated/openapi.json` y documentar el cambio de la bandeja en `fiscal-emission.md`
+- [x] 1.2 Cambiar `DocumentColumns` a la unión `BUYER` / `RECIPIENTS`, `StoredDocument` con comprador y total nulos posibles y la guarda `documentBuyer` de `fiscal`, y usarla en la factura, las notas y la retención donde hoy leen el comprador o el total (design D10). La reserva escribe los destinatarios en la misma transacción. Verificar con pruebas unitarias de la guarda y de la reserva con `RECIPIENTS`, y que los contratos y los golden del XML y del RIDE de la factura, las notas y la retención pasan sin cambios
+- [x] 1.3 Cambiar la bandeja (design D10 y D21): `documentListItemSchema` con `buyer` y `total` nulos posibles y `recipients: { count, name | null }`, con la refinación por tipo; la lectura que arma el resumen; el filtro por identificación y la búsqueda por nombre con la rama de destinatarios; y en el frontend el receptor derivado (comprador, nombre del único destinatario o "N destinatarios") y el total "—" con el texto accesible "Sin total monetario". Verificar con pruebas de contrato (cada combinación prohibida), pruebas HTTP de la bandeja con un `06` sintético de uno y de varios destinatarios, filtro por la identificación del segundo destinatario y los demás tipos sin cambios, y pruebas de componente del receptor y del total. Regenerar `docs/generated/openapi.json` y documentar el cambio de la bandeja en `fiscal-emission.md`
 
 ## 2. Esquema de la guía
 

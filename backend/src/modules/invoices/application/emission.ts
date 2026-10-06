@@ -180,6 +180,7 @@ export function createEmission(deps: EmissionDependencies) {
         correlationId: ctx.requestId,
         withKey: (key): InvoiceSnapshot => withKey(draftSnapshot, key),
         columns: (snapshot) => ({
+          receiver: "BUYER",
           schemaVersion: snapshot.schema.version,
           buyerIdentification: snapshot.buyer.identification,
           buyerName: snapshot.buyer.legalName,

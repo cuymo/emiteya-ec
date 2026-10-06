@@ -67,18 +67,75 @@ export const documentAvailabilitySchema = z.strictObject({
 });
 export type DocumentAvailability = z.infer<typeof documentAvailabilitySchema>;
 
-export const documentListItemSchema = z.strictObject({
+/**
+ * Resumen de los destinatarios de un comprobante sin comprador único (add-shipping-guides, design D10
+ * y D21): cuántos son y el nombre del único, o `null` si son varios. La interfaz muestra el nombre o
+ * "N destinatarios".
+ */
+export const documentRecipientsSummarySchema = z.strictObject({
+  count: z.number().int().min(1),
+  name: z.string().nullable(),
+});
+export type DocumentRecipientsSummary = z.infer<typeof documentRecipientsSummarySchema>;
+
+const documentListItemShape = z.strictObject({
   id: z.string(),
   documentType: documentTypeSchema,
   number: z.string(),
   issueDate: z.string(),
-  buyer: z.strictObject({ name: z.string(), identification: z.string() }),
-  total: decimalString(DECIMAL_SPECS.importe),
+  /** Nulo solo en la guía de remisión, que tiene destinatarios (P10). */
+  buyer: z.strictObject({ name: z.string(), identification: z.string() }).nullable(),
+  /** Nulo solo en la guía de remisión: no tiene total monetario, nunca 0.00 (P10). */
+  total: decimalString(DECIMAL_SPECS.importe).nullable(),
+  /** Solo en la guía de remisión. */
+  recipients: documentRecipientsSummarySchema.nullable(),
   state: documentStateSchema,
   /** Transmisión detenida: la lectura del cambio 7. */
   transmissionStopped: z.boolean(),
   documents: documentAvailabilitySchema,
 });
+
+/**
+ * La guía de remisión (06) no tiene comprador ni total y sí destinatarios; los demás tipos, al revés.
+ * La refinación lo exige en las dos direcciones.
+ */
+const receiverMatchesType = (
+  item: Readonly<{
+    documentType: string;
+    buyer: unknown;
+    total: unknown;
+    recipients: Readonly<{ count: number; name: string | null }> | null;
+  }>,
+  ctx: z.RefinementCtx,
+) => {
+  const guide = item.documentType === "06";
+  if (guide !== (item.buyer === null)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["buyer"],
+      message: "El comprador no corresponde al tipo.",
+    });
+  }
+  if (guide !== (item.total === null)) {
+    ctx.addIssue({ code: "custom", path: ["total"], message: "El total no corresponde al tipo." });
+  }
+  if (guide !== (item.recipients !== null)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["recipients"],
+      message: "Los destinatarios no corresponden al tipo.",
+    });
+  }
+  if (item.recipients && (item.recipients.count === 1) !== (item.recipients.name !== null)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["recipients", "name"],
+      message: "El nombre es el del único destinatario.",
+    });
+  }
+};
+
+export const documentListItemSchema = documentListItemShape.superRefine(receiverMatchesType);
 export type DocumentListItem = z.infer<typeof documentListItemSchema>;
 
 export const documentListMetaSchema = listMetaSchema;
@@ -110,10 +167,12 @@ export const rideGenerationViewSchema = z.strictObject({
 });
 export type RideGenerationView = z.infer<typeof rideGenerationViewSchema>;
 
-export const documentSummaryViewSchema = documentListItemSchema.extend({
-  artifacts: z.array(documentArtifactViewSchema),
-  rideGeneration: rideGenerationViewSchema,
-});
+export const documentSummaryViewSchema = documentListItemShape
+  .extend({
+    artifacts: z.array(documentArtifactViewSchema),
+    rideGeneration: rideGenerationViewSchema,
+  })
+  .superRefine(receiverMatchesType);
 export type DocumentSummaryView = z.infer<typeof documentSummaryViewSchema>;
 
 /**

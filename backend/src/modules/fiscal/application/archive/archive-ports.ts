@@ -39,9 +39,12 @@ export type ArchiveDocument = Readonly<{
   documentType: DocumentType;
   documentNumber: string;
   issueDate: string;
-  buyerName: string;
-  buyerIdentification: string;
-  total: string;
+  /** Nulos solo en la guía de remisión (add-shipping-guides, design D10). */
+  buyerName: string | null;
+  buyerIdentification: string | null;
+  total: string | null;
+  /** Solo en la guía: cuántos destinatarios y el nombre del único, o null si son varios. */
+  recipients: Readonly<{ count: number; name: string | null }> | null;
   state: DocumentState;
   artifacts: readonly ArchiveArtifact[];
   rideJob: ArchiveRideJob | null;

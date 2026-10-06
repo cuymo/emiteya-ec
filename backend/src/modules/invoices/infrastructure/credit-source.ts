@@ -20,6 +20,7 @@ import {
   type SnapshotLine,
   type SnapshotTax,
 } from "../domain/snapshot.ts";
+import { documentBuyer } from "../../fiscal/application/ports.ts";
 
 export type InvoiceIntegrityProblem =
   | "SNAPSHOT_SHAPE"
@@ -152,7 +153,9 @@ export function invoiceCreditSource(db: DbClient) {
       ) {
         problems.push("SNAPSHOT_KEY");
       }
-      if (shaped && !consistentTotals(snapshot, document.total)) problems.push("SNAPSHOT_TOTALS");
+      if (shaped && !consistentTotals(snapshot, documentBuyer(document).total)) {
+        problems.push("SNAPSHOT_TOTALS");
+      }
       if (document.state !== "RESERVED") {
         const signed = await artifacts.read(companyId, document.id, "SIGNED_XML");
         if (!signed) {

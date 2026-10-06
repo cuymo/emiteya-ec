@@ -64,6 +64,7 @@ describe("detalle de la retención", () => {
         issueDate: "2026-10-06",
         buyer: { name: "PROVEEDORA DEL SUR S.A.", identification: "1791234567001" },
         total: "3.25",
+        recipients: null,
         state: "AUTHORIZED",
         transmissionStopped: false,
         documents: { ride: "AVAILABLE", authorizedXml: true, signedXml: true },

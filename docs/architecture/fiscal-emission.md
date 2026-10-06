@@ -780,6 +780,16 @@ el design del cambio las concretan. Las reglas de negocio están en `docs/produc
 - **Defensa de recursos (P9).** Límites configurables y compuestos de destinatarios por guía (10, hasta 50), detalles por destinatario (50, hasta 100) y detalles por guía (100, hasta 300), nunca límites del SRI, del XSD ni de Q-47. `bench:shipping-guides` mide CPU, memoria, latencia y RIDE antes de cerrar el apply.
 - **Fuera del cambio, sin campos parciales.** `detallesAdicionales`, `docAduaneroUnico`, `maquinaFiscal`, `infoAdicional` y `rise` no se escriben; tampoco hay exterior, combustibles, factura sustitutiva, emisor itinerante, interrupción del transporte ni varios vehículos. `SRI_TRANSMISSION_ENABLED` sigue apagado.
 
+## Implementación de `add-shipping-guides`
+
+Cambio 13, en curso. Las decisiones están en la sección anterior y en el design del cambio.
+
+### Cabecera común sin total ni comprador único
+
+- **Base de datos** (migración `document_recipients_optional_totals`): `electronic_document.total`, `buyer_identification` y `buyer_name` son nulos si y solo si el tipo es `06`; el `CHECK` lo exige en las dos direcciones y mantiene el dominio `importe` cuando el total existe. Los destinatarios de un comprobante sin comprador viven en `electronic_document_recipient` (de `fiscal`): se escriben en la misma transacción de la reserva, son inmutables, tienen posiciones contiguas desde 1 (trigger diferido) y no son autoridad del XML ni del RIDE, que salen del snapshot. Sin backfill: los demás tipos siguen con sus columnas de comprador.
+- **Reserva:** `DocumentColumns` es la unión `{ receiver: "BUYER", buyerIdentification, buyerName, total }` o `{ receiver: "RECIPIENTS", recipients }`. La factura, las notas y la retención usan `BUYER` sin otros cambios. `StoredDocument` expone el comprador y el total como nulos posibles, y `documentBuyer` (de `fiscal`) los devuelve no nulos para los tipos que los tienen o falla como invariante rota.
+- **Bandeja:** `documentListItemSchema` lleva `buyer` y `total` nulos solo en el `06`, y `recipients: { count, name | null }` solo en el `06`, con una refinación que lo exige en las dos direcciones. El filtro por identificación encuentra una guía por cualquiera de sus destinatarios, y la búsqueda por nombre también. El frontend deriva el receptor (el comprador, el nombre del único destinatario o "N destinatarios") y muestra el total de una guía como "—" con el texto accesible "Sin total monetario".
+
 ## Reserva del secuencial
 
 La implementa `add-fiscal-numbering` (módulo `fiscal`) como operación interna

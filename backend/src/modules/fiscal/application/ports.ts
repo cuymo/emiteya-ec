@@ -70,9 +70,14 @@ export type StoredDocument = Readonly<{
   /** Snapshot versionado: lo interpreta el módulo del tipo de comprobante. */
   snapshot: unknown;
   schemaVersion: string;
-  buyerIdentification: string;
-  buyerName: string;
-  total: string;
+  /**
+   * Comprador y total para listar: nulos solo en la guía de remisión (06), que no tiene total
+   * monetario ni comprador único (add-shipping-guides, design D10). Los tipos con comprador los leen
+   * con `documentBuyer`.
+   */
+  buyerIdentification: string | null;
+  buyerName: string | null;
+  total: string | null;
   createdAt: Date;
   createdBy: string;
   signedAt: Date | null;
@@ -89,6 +94,17 @@ export type DocumentAuthorization = Readonly<{
   environment: Environment;
 }>;
 
+/** Destinatario de un comprobante sin comprador único, en el orden del snapshot. */
+export type DocumentRecipient = Readonly<{ identification: string; name: string }>;
+
+/**
+ * Receptor del comprobante (add-shipping-guides, design D10): un comprador con el total, o los
+ * destinatarios de un comprobante sin total monetario ni comprador único (la guía de remisión).
+ */
+export type DocumentReceiver =
+  | Readonly<{ receiver: "BUYER"; buyerIdentification: string; buyerName: string; total: string }>
+  | Readonly<{ receiver: "RECIPIENTS"; recipients: readonly DocumentRecipient[] }>;
+
 export type NewReservedDocument = Omit<
   StoredDocument,
   | "id"
@@ -99,7 +115,36 @@ export type NewReservedDocument = Omit<
   | "attemptCount"
   | "attemptLeaseUntil"
   | "authorization"
->;
+  | "buyerIdentification"
+  | "buyerName"
+  | "total"
+> &
+  DocumentReceiver;
+
+/** Comprador y total de un comprobante que los tiene. */
+export type DocumentBuyer = Readonly<{ identification: string; name: string; total: string }>;
+
+/**
+ * El comprador y el total de un comprobante de un tipo que los tiene: la base garantiza que solo la
+ * guía de remisión los deja nulos (`electronic_document_values_check`), así que su ausencia en otro
+ * tipo es una invariante rota, no un caso de negocio.
+ */
+export function documentBuyer(document: StoredDocument): DocumentBuyer {
+  if (
+    document.buyerIdentification === null ||
+    document.buyerName === null ||
+    document.total === null
+  ) {
+    throw new Error(
+      `El comprobante ${document.id} de tipo ${document.documentType} no tiene comprador ni total.`,
+    );
+  }
+  return {
+    identification: document.buyerIdentification,
+    name: document.buyerName,
+    total: document.total,
+  };
+}
 
 export type DocumentListQuery = Readonly<{
   documentType: DocumentType;

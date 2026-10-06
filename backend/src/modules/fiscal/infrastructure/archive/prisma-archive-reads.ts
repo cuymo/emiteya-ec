@@ -25,6 +25,9 @@ const SELECT = {
   buyerIdentification: true,
   total: true,
   state: true,
+  // Los destinatarios de una guía (design D10): el nombre del único y el conteo, sin el snapshot.
+  recipients: { select: { name: true }, orderBy: { position: "asc" }, take: 2 },
+  _count: { select: { recipients: true } },
   artifacts: {
     select: { kind: true, sha256: true, sizeBytes: true, createdAt: true, metadata: true },
     orderBy: { createdAt: "asc" },
@@ -55,7 +58,14 @@ const toDocument = (row: Row, stopped: ReadonlySet<string>): ArchiveDocument => 
   issueDate: row.issueDate.toISOString().slice(0, 10),
   buyerName: row.buyerName,
   buyerIdentification: row.buyerIdentification,
-  total: FiscalDecimal.fromDatabase("importe", row.total).toString(),
+  total: row.total === null ? null : FiscalDecimal.fromDatabase("importe", row.total).toString(),
+  recipients:
+    row._count.recipients > 0
+      ? {
+          count: row._count.recipients,
+          name: row._count.recipients === 1 ? (row.recipients[0]?.name ?? null) : null,
+        }
+      : null,
   state: row.state as DocumentState,
   artifacts: row.artifacts.map((artifact) => ({
     kind: artifact.kind as ArtifactKind,
@@ -82,17 +92,37 @@ function whereOf(companyId: string, filters: ArchiveFilters): Prisma.ElectronicD
       : {}),
     ...(filters.documentType ? { documentType: filters.documentType } : {}),
     ...(filters.state ? { state: filters.state } : {}),
-    ...(filters.identification ? { buyerIdentification: filters.identification } : {}),
     ...(filters.establishmentId ? { establishmentId: filters.establishmentId } : {}),
     ...(filters.emissionPointId ? { emissionPointId: filters.emissionPointId } : {}),
-    ...(search
-      ? {
-          OR: [
-            { documentNumber: { contains: search } },
-            { buyerName: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
+    AND: [
+      // La identificación del receptor encuentra una guía por cualquiera de sus destinatarios
+      // (design D10), con el índice por identificación de cada tabla.
+      ...(filters.identification
+        ? [
+            {
+              OR: [
+                { buyerIdentification: filters.identification },
+                { recipients: { some: { identification: filters.identification } } },
+              ],
+            },
+          ]
+        : []),
+      ...(search
+        ? [
+            {
+              OR: [
+                { documentNumber: { contains: search } },
+                { buyerName: { contains: search, mode: "insensitive" as const } },
+                {
+                  recipients: {
+                    some: { name: { contains: search, mode: "insensitive" as const } },
+                  },
+                },
+              ],
+            },
+          ]
+        : []),
+    ],
   };
 }
 

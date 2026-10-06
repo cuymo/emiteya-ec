@@ -302,6 +302,7 @@ export function createCreditNoteEmission(deps: CreditNoteEmissionDependencies) {
         correlationId: ctx.requestId,
         withKey: (key): CreditNoteSnapshot => withCreditNoteKey(draftSnapshot, key),
         columns: (built) => ({
+          receiver: "BUYER",
           schemaVersion: built.schema.version,
           buyerIdentification: built.buyer.identification,
           buyerName: built.buyer.legalName,

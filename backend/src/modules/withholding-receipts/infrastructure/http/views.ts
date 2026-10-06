@@ -21,6 +21,7 @@ import type {
 } from "../../application/withholding-receipts.ts";
 import type { WithheldSubject } from "../../domain/evaluation.ts";
 import type { WithholdingSnapshot } from "../../domain/snapshot.ts";
+import { documentBuyer } from "../../../fiscal/application/ports.ts";
 
 export const toWithholdingSupplierView = (subject: WithheldSubject): WithholdingSupplierView => ({
   id: subject.id,
@@ -259,10 +260,10 @@ export function toWithholdingReceiptSummaryView({
     environment: document.environment,
     issueDate: document.issueDate,
     fiscalPeriod: snapshot.fiscalPeriod,
-    subjectIdentification: document.buyerIdentification,
-    subjectName: document.buyerName,
+    subjectIdentification: documentBuyer(document).identification,
+    subjectName: documentBuyer(document).name,
     supportCount: snapshot.supports.length,
-    total: roundHalfUp(document.total, 2),
+    total: roundHalfUp(documentBuyer(document).total, 2),
     state: document.state,
     diagnosticCode:
       document.state === "RESERVED" && attempt && isAttemptCode(attempt.code) ? attempt.code : null,

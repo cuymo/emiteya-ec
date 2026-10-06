@@ -7,6 +7,8 @@ import {
   DOCUMENT_STATES,
   INVOICE_STATES,
   RIDE_STATUSES,
+  documentListItemSchema,
+  documentSummaryViewSchema,
   listDocumentsQuerySchema,
 } from "@facturador/contracts";
 
@@ -88,5 +90,80 @@ describe("vocabulario de la bandeja", () => {
       "RIDE_GENERATION_IN_PROGRESS",
       "DOCUMENT_NOT_AUTHORIZED",
     ]);
+  });
+});
+
+describe("comprobante sin total ni comprador único en la bandeja (add-shipping-guides, P10)", () => {
+  const base = {
+    id: "doc-1",
+    number: "001-001-000000001",
+    issueDate: "2026-10-06",
+    state: "SIGNED",
+    transmissionStopped: false,
+    documents: { ride: "NOT_APPLICABLE", authorizedXml: false, signedXml: true },
+  };
+  const invoice = {
+    ...base,
+    documentType: "01",
+    buyer: { name: "EL PERNO CIA. LTDA.", identification: "0992877878001" },
+    total: "28.75",
+    recipients: null,
+  };
+  const guide = {
+    ...base,
+    documentType: "06",
+    buyer: null,
+    total: null,
+    recipients: { count: 2, name: null },
+  };
+
+  it("acepta una guía sin comprador ni total con sus destinatarios, y los demás tipos como antes", () => {
+    expect(documentListItemSchema.safeParse(guide).success).toBe(true);
+    expect(
+      documentListItemSchema.safeParse({ ...guide, recipients: { count: 1, name: "María Pérez" } })
+        .success,
+    ).toBe(true);
+    for (const documentType of ["01", "04", "05", "07"]) {
+      expect(documentListItemSchema.safeParse({ ...invoice, documentType }).success).toBe(true);
+    }
+  });
+
+  it("rechaza un tipo con total sin total, sin comprador o con destinatarios", () => {
+    for (const change of [
+      { total: null },
+      { buyer: null },
+      { recipients: { count: 1, name: "X" } },
+    ]) {
+      expect(
+        documentListItemSchema.safeParse({ ...invoice, ...change }).success,
+        JSON.stringify(change),
+      ).toBe(false);
+    }
+  });
+
+  it("rechaza una guía con total, con comprador, sin destinatarios o con un nombre que no es el único", () => {
+    for (const change of [
+      { total: "0.00" },
+      { buyer: { name: "Comercial Andina S.A.", identification: "1790012345001" } },
+      { recipients: null },
+      { recipients: { count: 2, name: "María Pérez" } },
+      { recipients: { count: 1, name: null } },
+    ]) {
+      expect(
+        documentListItemSchema.safeParse({ ...guide, ...change }).success,
+        JSON.stringify(change),
+      ).toBe(false);
+    }
+  });
+
+  it("el resumen del comprobante sigue la misma regla", () => {
+    const summary = {
+      artifacts: [],
+      rideGeneration: { status: "NOT_APPLICABLE", reason: null, stoppedAt: null, retryable: false },
+    };
+    expect(documentSummaryViewSchema.safeParse({ ...guide, ...summary }).success).toBe(true);
+    expect(
+      documentSummaryViewSchema.safeParse({ ...guide, ...summary, total: "0.00" }).success,
+    ).toBe(false);
   });
 });

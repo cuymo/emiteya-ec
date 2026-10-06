@@ -293,6 +293,7 @@ export function createWithholdingEmission(deps: WithholdingEmissionDependencies)
         correlationId: ctx.requestId,
         withKey: (built): WithholdingSnapshot => withWithholdingKey(draftSnapshot, built),
         columns: (built) => ({
+          receiver: "BUYER",
           schemaVersion: built.schema.version,
           buyerIdentification: built.subject.identification,
           buyerName: built.subject.legalName,

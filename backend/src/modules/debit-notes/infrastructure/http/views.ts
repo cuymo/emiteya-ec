@@ -22,6 +22,7 @@ import { debitNoteDiagnosticMessage, isAttemptCode } from "../../application/dia
 import type { DebitNoteDraftDetails } from "../../application/drafts.ts";
 import type { DebitEligibleInvoice } from "../../application/ports.ts";
 import type { DebitNoteSnapshot } from "../../domain/snapshot.ts";
+import { documentBuyer } from "../../../fiscal/application/ports.ts";
 
 export function toDebitNoteDraftView({
   draft,
@@ -252,9 +253,9 @@ export function toDebitNoteSummaryView({
     issueDate: document.issueDate,
     invoice: { id: snapshot.invoice.id, documentNumber: snapshot.invoice.documentNumber },
     causes: DEBIT_NOTE_CAUSES.filter((cause) => snapshot.concepts.some((c) => c.cause === cause)),
-    buyerIdentification: document.buyerIdentification,
-    buyerName: document.buyerName,
-    total: roundHalfUp(document.total, 2),
+    buyerIdentification: documentBuyer(document).identification,
+    buyerName: documentBuyer(document).name,
+    total: roundHalfUp(documentBuyer(document).total, 2),
     state: document.state,
     diagnosticCode:
       document.state === "RESERVED" && attempt && isAttemptCode(attempt.code) ? attempt.code : null,

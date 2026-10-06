@@ -5,7 +5,7 @@
 import type { AccessKeys } from "../../sri-engine/application/ports.ts";
 import type { Environment } from "../../taxpayer/domain/taxpayer-config.ts";
 import type { DocumentType } from "../domain/numbering.ts";
-import type { DocumentRepository, StoredDocument } from "./ports.ts";
+import type { DocumentReceiver, DocumentRepository, StoredDocument } from "./ports.ts";
 import type { Reservation, ReservationInput } from "./reservation.ts";
 
 /** Lo que la reserva necesita de la transacción abierta del módulo que emite. */
@@ -25,13 +25,11 @@ export type DocumentKey = Readonly<{
   accessKey: string;
 }>;
 
-/** Columnas del comprobante que salen de su snapshot. */
-export type DocumentColumns = Readonly<{
-  schemaVersion: string;
-  buyerIdentification: string;
-  buyerName: string;
-  total: string;
-}>;
+/**
+ * Columnas del comprobante que salen de su snapshot: la versión del esquema y el receptor, un
+ * comprador con el total o los destinatarios de un comprobante sin total (add-shipping-guides, D10).
+ */
+export type DocumentColumns = Readonly<{ schemaVersion: string }> & DocumentReceiver;
 
 export type DocumentReservationInput<S> = Readonly<{
   companyId: string;

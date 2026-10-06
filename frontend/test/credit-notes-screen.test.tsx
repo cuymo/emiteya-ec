@@ -212,6 +212,7 @@ describe("detalle de la nota de crédito", () => {
         issueDate: "2026-10-04",
         buyer: { name: "EL PERNO CIA. LTDA.", identification: "0992877878001" },
         total: "11.50",
+        recipients: null,
         state: "AUTHORIZED",
         transmissionStopped: false,
         documents: { ride: "AVAILABLE", authorizedXml: true, signedXml: true },

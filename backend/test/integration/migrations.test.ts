@@ -699,6 +699,31 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea los destinatarios de los comprobantes sin comprador único con sus restricciones y triggers", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "electronic_document_values_check",
+        "electronic_document_recipient_values_check",
+        "electronic_document_recipient_company_id_document_id_fkey",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "electronic_document_recipient_pkey",
+        "electronic_document_recipient_company_id_identification_idx",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "electronic_document_recipient_origin",
+        "electronic_document_recipient_immutable",
+        "electronic_document_recipient_no_truncate",
+        // Trigger de restricción diferido (add-shipping-guides, design D10).
+        "electronic_document_recipients_complete",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     // El único objeto sobre la empresa exige su consumidor final al confirmarla (trigger de
     // restricción de add-parties-and-products, design D5); no limita cuántas empresas hay.

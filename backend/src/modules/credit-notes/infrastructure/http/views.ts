@@ -28,6 +28,7 @@ import { creditNoteDiagnosticMessage, isAttemptCode } from "../../application/di
 import type { CreditNoteDraftDetails } from "../../application/drafts.ts";
 import type { EligibleInvoice } from "../../application/ports.ts";
 import type { CreditNoteSnapshot } from "../../domain/snapshot.ts";
+import { documentBuyer } from "../../../fiscal/application/ports.ts";
 
 export function toCreditNoteDraftView({
   draft,
@@ -257,9 +258,9 @@ export function toCreditNoteSummaryView({
     issueDate: document.issueDate,
     invoice: { id: snapshot.invoice.id, documentNumber: snapshot.invoice.documentNumber },
     cause: snapshot.cause,
-    buyerIdentification: document.buyerIdentification,
-    buyerName: document.buyerName,
-    total: money(document.total),
+    buyerIdentification: documentBuyer(document).identification,
+    buyerName: documentBuyer(document).name,
+    total: money(documentBuyer(document).total),
     state: document.state,
     diagnosticCode:
       document.state === "RESERVED" && attempt && isAttemptCode(attempt.code) ? attempt.code : null,

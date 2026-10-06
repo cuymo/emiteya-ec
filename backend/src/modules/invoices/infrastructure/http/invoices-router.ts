@@ -35,6 +35,7 @@ import type { InvoiceTotals } from "../../domain/amounts.ts";
 import type { InvoiceSnapshot } from "../../domain/snapshot.ts";
 import { stockWarnings } from "../../domain/stock-warnings.ts";
 import type { EmissionObserver, EmissionOutcome } from "../metrics.ts";
+import { documentBuyer } from "../../../fiscal/application/ports.ts";
 
 function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
   res.status(status).json(meta ? { data, meta } : { data });
@@ -282,9 +283,9 @@ export function toInvoiceSummaryView({
     documentNumber: document.documentNumber,
     environment: document.environment,
     issueDate: document.issueDate,
-    buyerIdentification: document.buyerIdentification,
-    buyerName: document.buyerName,
-    total: document.total,
+    buyerIdentification: documentBuyer(document).identification,
+    buyerName: documentBuyer(document).name,
+    total: documentBuyer(document).total,
     state: document.state,
     diagnosticCode: diagnostic?.code ?? null,
     transmissionStopped,

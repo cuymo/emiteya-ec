@@ -24,9 +24,9 @@ type Row = {
   state: string;
   snapshot: unknown;
   schemaVersion: string;
-  buyerIdentification: string;
-  buyerName: string;
-  total: { toFixed(): string };
+  buyerIdentification: string | null;
+  buyerName: string | null;
+  total: { toFixed(): string } | null;
   createdAt: Date;
   createdBy: string;
   signedAt: Date | null;
@@ -61,7 +61,7 @@ export const toStoredDocument = (row: Row): StoredDocument => ({
   schemaVersion: row.schemaVersion,
   buyerIdentification: row.buyerIdentification,
   buyerName: row.buyerName,
-  total: FiscalDecimal.fromDatabase("importe", row.total).toString(),
+  total: row.total === null ? null : FiscalDecimal.fromDatabase("importe", row.total).toString(),
   createdAt: row.createdAt,
   createdBy: row.createdBy,
   signedAt: row.signedAt,
@@ -90,6 +90,9 @@ export const toStoredDocument = (row: Row): StoredDocument => ({
 export function createDocumentRepository(db: DbClient): DocumentRepository {
   return {
     async insertReserved(document) {
+      if (document.receiver === "RECIPIENTS" && document.recipients.length === 0) {
+        throw new Error("Un comprobante sin comprador necesita al menos un destinatario.");
+      }
       const row = await db.electronicDocument.create({
         data: {
           companyId: document.companyId,
@@ -106,12 +109,28 @@ export function createDocumentRepository(db: DbClient): DocumentRepository {
           state: "RESERVED",
           snapshot: document.snapshot as object,
           schemaVersion: document.schemaVersion,
-          buyerIdentification: document.buyerIdentification,
-          buyerName: document.buyerName,
-          total: FiscalDecimal.parse("importe", document.total).toDatabase(),
+          ...(document.receiver === "BUYER"
+            ? {
+                buyerIdentification: document.buyerIdentification,
+                buyerName: document.buyerName,
+                total: FiscalDecimal.parse("importe", document.total).toDatabase(),
+              }
+            : { buyerIdentification: null, buyerName: null, total: null }),
           createdBy: document.createdBy,
         },
       });
+      // Los destinatarios, en la misma transacción y en el orden del snapshot (design D10).
+      if (document.receiver === "RECIPIENTS") {
+        await db.electronicDocumentRecipient.createMany({
+          data: document.recipients.map((recipient, index) => ({
+            companyId: document.companyId,
+            documentId: row.id,
+            position: index + 1,
+            identification: recipient.identification,
+            name: recipient.name,
+          })),
+        });
+      }
       return toStoredDocument(row);
     },
 

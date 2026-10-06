@@ -22654,23 +22654,61 @@
                             "type": "string"
                           },
                           "buyer": {
-                            "type": "object",
-                            "properties": {
-                              "name": {
-                                "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "identification": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "name",
+                                  "identification"
+                                ],
+                                "additionalProperties": false
                               },
-                              "identification": {
-                                "type": "string"
+                              {
+                                "type": "null"
                               }
-                            },
-                            "required": [
-                              "name",
-                              "identification"
-                            ],
-                            "additionalProperties": false
+                            ]
                           },
                           "total": {
-                            "type": "string"
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "recipients": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "count": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "name": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "count",
+                                  "name"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "state": {
                             "type": "string",
@@ -22722,6 +22760,7 @@
                           "issueDate",
                           "buyer",
                           "total",
+                          "recipients",
                           "state",
                           "transmissionStopped",
                           "documents"
@@ -22936,23 +22975,61 @@
                           "type": "string"
                         },
                         "buyer": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string"
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "identification": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "identification"
+                              ],
+                              "additionalProperties": false
                             },
-                            "identification": {
-                              "type": "string"
+                            {
+                              "type": "null"
                             }
-                          },
-                          "required": [
-                            "name",
-                            "identification"
-                          ],
-                          "additionalProperties": false
+                          ]
                         },
                         "total": {
-                          "type": "string"
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "recipients": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                },
+                                "name": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "count",
+                                "name"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "state": {
                           "type": "string",
@@ -23089,6 +23166,7 @@
                         "issueDate",
                         "buyer",
                         "total",
+                        "recipients",
                         "state",
                         "transmissionStopped",
                         "documents",
@@ -24291,23 +24369,61 @@
                           "type": "string"
                         },
                         "buyer": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string"
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "identification": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "identification"
+                              ],
+                              "additionalProperties": false
                             },
-                            "identification": {
-                              "type": "string"
+                            {
+                              "type": "null"
                             }
-                          },
-                          "required": [
-                            "name",
-                            "identification"
-                          ],
-                          "additionalProperties": false
+                          ]
                         },
                         "total": {
-                          "type": "string"
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "recipients": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                },
+                                "name": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "count",
+                                "name"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "state": {
                           "type": "string",
@@ -24444,6 +24560,7 @@
                         "issueDate",
                         "buyer",
                         "total",
+                        "recipients",
                         "state",
                         "transmissionStopped",
                         "documents",

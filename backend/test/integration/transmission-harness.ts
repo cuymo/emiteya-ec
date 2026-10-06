@@ -38,8 +38,13 @@ export async function insertDocument(
      * el tipo, el total y, en `alongside`, las reservas de una nota de crédito, la factura de una
      * nota de débito o el registro y las líneas de un comprobante de retención.
      */
-    documentType?: "01" | "04" | "05" | "07";
+    documentType?: "01" | "04" | "05" | "06" | "07";
     total?: string;
+    /**
+     * Destinatarios de una guía de remisión (add-shipping-guides, design D10): el tipo 06 no tiene
+     * total ni comprador, y sus destinatarios se escriben en la misma transacción.
+     */
+    recipients?: readonly { identification: string; name: string }[];
     /** Escrituras en la misma transacción que el comprobante, como las reservas de una nota. */
     alongside?: (tx: Prisma.TransactionClient, document: { id: string }) => Promise<void>;
   } = {},
@@ -68,9 +73,13 @@ export async function insertDocument(
         state,
         snapshot: { snapshotVersion: 1, key: { accessKey }, ...options.snapshot },
         schemaVersion: "1.1.0",
-        buyerIdentification: options.buyer?.identification ?? "9999999999999",
-        buyerName: options.buyer?.name ?? "CONSUMIDOR FINAL",
-        total: options.total ?? "11.50",
+        ...(documentType === "06"
+          ? { buyerIdentification: null, buyerName: null, total: null }
+          : {
+              buyerIdentification: options.buyer?.identification ?? "9999999999999",
+              buyerName: options.buyer?.name ?? "CONSUMIDOR FINAL",
+              total: options.total ?? "11.50",
+            }),
         createdBy: company.adminId,
         signedAt: state === "RESERVED" ? null : new Date("2026-10-04T14:00:00Z"),
         ...(state === "AUTHORIZED"
@@ -95,6 +104,19 @@ export async function insertDocument(
           sha256: sha256(content),
           metadata: { documentType, schemaVersion: "1.1.0" },
         },
+      });
+    }
+    if (documentType === "06") {
+      const recipients = options.recipients ?? [
+        { identification: "1790012345001", name: "Comercial Andina S.A." },
+      ];
+      await tx.electronicDocumentRecipient.createMany({
+        data: recipients.map((recipient, index) => ({
+          companyId: company.companyId,
+          documentId: document.id,
+          position: index + 1,
+          ...recipient,
+        })),
       });
     }
     await options.alongside?.(tx, document);

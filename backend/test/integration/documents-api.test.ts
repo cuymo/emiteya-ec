@@ -95,6 +95,20 @@ describe("bandeja de comprobantes sobre HTTP", () => {
     });
     docs.point2 = await insertDocument(prisma, a, "AUTHORIZED", { point: 1 });
     docs.point2signed = await insertDocument(prisma, a, "SIGNED", { point: 1 });
+    // Guías de remisión sin total ni comprador (add-shipping-guides, design D10): una con un solo
+    // destinatario y otra con tres.
+    docs.guideSingle = await insertDocument(prisma, a, "SIGNED", {
+      documentType: "06",
+      recipients: [{ identification: "0102030405", name: "María Pérez" }],
+    });
+    docs.guideMany = await insertDocument(prisma, a, "SIGNED", {
+      documentType: "06",
+      recipients: [
+        { identification: "1790012345001", name: "Comercial Andina S.A." },
+        { identification: "0991234567001", name: "Distribuidora del Litoral" },
+        { identification: "1712345678", name: "Juan Torres" },
+      ],
+    });
     // La empresa B tiene sus propios comprobantes.
     docs.other = await insertDocument(prisma, b, "AUTHORIZED", {
       buyer: { identification: "0992877878001", name: "FERRETERIA EL PERNO CIA. LTDA." },
@@ -130,6 +144,7 @@ describe("bandeja de comprobantes sobre HTTP", () => {
       issueDate: "2026-10-04",
       buyer: { name: "CONSUMIDOR FINAL", identification: "9999999999999" },
       total: "11.5",
+      recipients: null,
       state: "AUTHORIZED",
       transmissionStopped: false,
       documents: { ride: "AVAILABLE", authorizedXml: true, signedXml: true },
@@ -189,6 +204,47 @@ describe("bandeja de comprobantes sobre HTTP", () => {
     expect(ids(await list(a, { identification: "0992877878001" }))).toEqual([docs.buyer!.id]);
     expect(ids(await list(a, { search: docs.oct16!.documentNumber }))).toEqual([docs.oct16!.id]);
     expect(ids(await list(a, { search: "perno" }))).toEqual([docs.buyer!.id]);
+  });
+
+  it("muestra la guía sin total con su único destinatario o el número de destinatarios", async () => {
+    const res = await list(a, { documentType: "06" });
+    expect(res.status).toBe(200);
+    const byId = new Map(bodyOf(res).data.map((item) => [item.id, item]));
+    expect(byId.get(docs.guideSingle!.id)).toMatchObject({
+      buyer: null,
+      total: null,
+      recipients: { count: 1, name: "María Pérez" },
+    });
+    expect(byId.get(docs.guideMany!.id)).toMatchObject({
+      buyer: null,
+      total: null,
+      recipients: { count: 3, name: null },
+    });
+    // Los demás tipos siguen con su comprador y su total, sin destinatarios.
+    const invoices = bodyOf(await list(a, { documentType: "01", pageSize: "100" })).data;
+    expect(invoices.length).toBeGreaterThan(0);
+    for (const item of invoices) {
+      expect(item.buyer).not.toBeNull();
+      expect(item.total).not.toBeNull();
+      expect(item.recipients).toBeNull();
+    }
+    const summary = await request(api.app)
+      .get(`/api/v1/documents/${docs.guideMany!.id}`)
+      .set("Cookie", a.cookies.operator);
+    expect(summary.status).toBe(200);
+    expect(bodyOf(summary).data).toMatchObject({
+      total: null,
+      recipients: { count: 3, name: null },
+    });
+  });
+
+  it("la identificación y la búsqueda encuentran una guía por cualquiera de sus destinatarios", async () => {
+    // El segundo y el tercer destinatario, no solo el primero.
+    expect(ids(await list(a, { identification: "0991234567001" }))).toEqual([docs.guideMany!.id]);
+    expect(ids(await list(a, { identification: "1712345678" }))).toEqual([docs.guideMany!.id]);
+    expect(ids(await list(a, { identification: "0102030405" }))).toEqual([docs.guideSingle!.id]);
+    expect(ids(await list(a, { search: "juan torres" }))).toEqual([docs.guideMany!.id]);
+    expect(ids(await list(b, { identification: "1712345678" }))).toEqual([]);
   });
 
   it("rechaza un filtro inválido sin consultar", async () => {

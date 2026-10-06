@@ -37,7 +37,7 @@ import { pointLabel, useEstablishments } from "@/features/establishments/establi
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/invoices/invoices-screen";
 import { useDocuments, useDownloadDocument } from "./archive-api";
-import { RIDE_STATUS_LABELS } from "./archive-format";
+import { RIDE_STATUS_LABELS, receiverOf } from "./archive-format";
 import { EMITTED_DOCUMENT_TYPES, documentKind } from "./document-kinds";
 
 type StateFilter =
@@ -228,21 +228,33 @@ export function DocumentsScreen() {
       {
         id: "buyer",
         header: "Receptor",
-        cell: ({ row }) => (
-          <span className="flex flex-col">
-            <span className="break-words">{row.original.buyer.name}</span>
-            <span className="text-xs text-foreground-muted tabular-nums">
-              {row.original.buyer.identification}
+        cell: ({ row }) => {
+          const receiver = receiverOf(row.original);
+          return (
+            <span className="flex flex-col">
+              <span className="break-words">{receiver.name}</span>
+              {receiver.identification ? (
+                <span className="text-xs text-foreground-muted tabular-nums">
+                  {receiver.identification}
+                </span>
+              ) : null}
             </span>
-          </span>
-        ),
+          );
+        },
       },
       {
         id: "total",
         header: () => <span className="block text-right">Total</span>,
-        cell: ({ row }) => (
-          <span className="block text-right tabular-nums">{formatUsd(row.original.total)}</span>
-        ),
+        cell: ({ row }) =>
+          row.original.total === null ? (
+            // La guía de remisión no tiene total monetario (P10): nunca 0.00.
+            <span className="block text-right text-foreground-muted">
+              <span aria-hidden="true">—</span>
+              <span className="sr-only">Sin total monetario</span>
+            </span>
+          ) : (
+            <span className="block text-right tabular-nums">{formatUsd(row.original.total)}</span>
+          ),
       },
       {
         id: "state",
@@ -467,12 +479,14 @@ export function DocumentsScreen() {
                 </span>
                 <RideCell document={item} />
               </div>
-              <span className="break-words">{item.buyer.name}</span>
+              <span className="break-words">{receiverOf(item).name}</span>
               <span className="flex flex-wrap items-center justify-between gap-1 text-sm">
                 <span className="tabular-nums text-foreground-muted">
                   {formatIssueDate(item.issueDate)}
                 </span>
-                <span className="tabular-nums">{formatUsd(item.total)}</span>
+                {item.total === null ? null : (
+                  <span className="tabular-nums">{formatUsd(item.total)}</span>
+                )}
               </span>
               <StateCell state={item.state} stopped={item.transmissionStopped} />
             </div>

@@ -208,7 +208,7 @@ describe("API de borradores de factura", () => {
       const unchanged = await prisma.electronicDocument.findUniqueOrThrow({
         where: { id: document.id },
       });
-      expect([unchanged.state, unchanged.total.toFixed()]).toEqual(["RESERVED", "28.75"]);
+      expect([unchanged.state, unchanged.total?.toFixed()]).toEqual(["RESERVED", "28.75"]);
       const listed = bodyOf(await call(a.cookies.admin, "get", "/invoices/drafts")).data;
       expect(listed.map((item) => item.id)).not.toContain(draft.id);
     });

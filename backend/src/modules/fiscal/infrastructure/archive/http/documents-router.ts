@@ -29,8 +29,12 @@ export function toDocumentListItem(document: ArchiveDocument): DocumentListItem 
     documentType: document.documentType,
     number: document.documentNumber,
     issueDate: document.issueDate,
-    buyer: { name: document.buyerName, identification: document.buyerIdentification },
+    buyer:
+      document.buyerName !== null && document.buyerIdentification !== null
+        ? { name: document.buyerName, identification: document.buyerIdentification }
+        : null,
     total: document.total,
+    recipients: document.recipients,
     state: document.state,
     transmissionStopped: document.transmissionStopped,
     documents: availabilityOf(document),

@@ -136,7 +136,7 @@ describe("contrato de regresión de la factura", () => {
           schemaVersion: document.schemaVersion,
           buyerIdentification: document.buyerIdentification,
           buyerName: document.buyerName,
-          total: document.total.toFixed(),
+          total: document.total?.toFixed(),
         },
         null,
         2,
@@ -202,7 +202,7 @@ describe("contrato de regresión de la factura", () => {
           documentNumber: document.documentNumber,
           accessKey: document.accessKey,
           environment: document.environment,
-          total: document.total.toFixed(),
+          total: document.total?.toFixed(),
         },
       ],
       [

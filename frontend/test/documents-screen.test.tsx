@@ -25,6 +25,7 @@ const item = (overrides: Record<string, unknown> = {}) => ({
   issueDate: "2026-10-04",
   buyer: { name: "EL PERNO CIA. LTDA.", identification: "0992877878001" },
   total: "28.75",
+  recipients: null,
   state: "AUTHORIZED",
   transmissionStopped: false,
   documents: { ride: "AVAILABLE", authorizedXml: true, signedXml: true },
@@ -179,6 +180,7 @@ describe("Comprobantes", () => {
           number: "001-001-000000004",
           buyer: { name: "PROVEEDORA DEL SUR S.A.", identification: "1791234567001" },
           total: "3.25",
+          recipients: null,
           state: "SIGNED",
           documents: { ride: "NOT_APPLICABLE", authorizedXml: false, signedXml: true },
         }),
@@ -197,6 +199,43 @@ describe("Comprobantes", () => {
     expect(
       within(row).queryByRole("button", { name: "Descargar el RIDE de 001-001-000000004" }),
     ).toBeNull();
+  });
+
+  it("una guía sin total muestra su único destinatario o el número de destinatarios (P10)", async () => {
+    const guide = (overrides: Record<string, unknown>) =>
+      item({
+        documentType: "06",
+        buyer: null,
+        total: null,
+        state: "SIGNED",
+        documents: { ride: "NOT_APPLICABLE", authorizedXml: false, signedXml: true },
+        ...overrides,
+      });
+    render({
+      "GET /api/v1/documents": paged([
+        guide({
+          id: "gr-1",
+          number: "001-001-000000005",
+          recipients: { count: 1, name: "María Pérez" },
+        }),
+        guide({ id: "gr-2", number: "001-001-000000006", recipients: { count: 3, name: null } }),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Comprobantes emitidos" });
+    const rowOf = async (number: string) => {
+      await within(table).findByText(number);
+      return within(table)
+        .getAllByRole("row")
+        .find((candidate) => within(candidate).queryByText(number))!;
+    };
+    const single = await rowOf("001-001-000000005");
+    expect(within(single).getByText("María Pérez")).toBeDefined();
+    expect(within(single).getByText("Sin total monetario")).toBeDefined();
+    expect(within(single).queryByText(/USD/)).toBeNull();
+    const several = await rowOf("001-001-000000006");
+    expect(within(several).getByText("3 destinatarios")).toBeDefined();
+    expect(within(several).getByText("Sin total monetario")).toBeDefined();
+    expect(within(several).queryByText("USD 0,00")).toBeNull();
   });
 
   it("la bandeja muestra los cuatro tipos con su tipo bajo el número", async () => {

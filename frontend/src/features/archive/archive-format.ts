@@ -1,6 +1,6 @@
 // Presentación de la bandeja y de los documentos (add-document-archive, design D13): estados del
 // RIDE y motivos de una generación detenida en lenguaje de negocio, sin códigos internos.
-import type { RideStatus } from "@facturador/contracts";
+import type { DocumentListItem, RideStatus } from "@facturador/contracts";
 
 /** Qué significa cada motivo de detención para el usuario, en una frase. */
 const STOP_REASONS: Record<string, string> = {
@@ -27,3 +27,25 @@ export const RIDE_STATUS_LABELS: Record<RideStatus, string | null> = {
   STOPPED: "Detenido",
   NOT_APPLICABLE: null,
 };
+
+/** "1 destinatario", "3 destinatarios". */
+export const recipientCountLabel = (count: number) =>
+  count === 1 ? "1 destinatario" : `${count} destinatarios`;
+
+/**
+ * Receptor de un comprobante en la bandeja (add-shipping-guides, design D21): el comprador, o en una
+ * guía de remisión el nombre de su único destinatario o "N destinatarios". La guía nunca se presenta
+ * con uno de sus destinatarios como receptor único.
+ */
+export function receiverOf(item: Pick<DocumentListItem, "buyer" | "recipients">): {
+  name: string;
+  identification: string | null;
+} {
+  if (item.buyer) return { name: item.buyer.name, identification: item.buyer.identification };
+  const recipients = item.recipients;
+  if (!recipients) return { name: "Sin receptor", identification: null };
+  if (recipients.count === 1 && recipients.name) {
+    return { name: recipients.name, identification: null };
+  }
+  return { name: recipientCountLabel(recipients.count), identification: null };
+}

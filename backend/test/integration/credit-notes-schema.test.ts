@@ -97,7 +97,9 @@ describe("notas de crédito en la base de datos", () => {
       lines: { position: number; productId: string; quantity: string }[];
     };
     await tx.creditCapacity.createMany({
-      data: [{ companyId: company.companyId, invoiceId: target.id, originalTotal: target.total }],
+      data: [
+        { companyId: company.companyId, invoiceId: target.id, originalTotal: target.total ?? "0" },
+      ],
       skipDuplicates: true,
     });
     await tx.creditCapacityLine.createMany({
