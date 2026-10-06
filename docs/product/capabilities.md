@@ -151,6 +151,7 @@ política del MVP.
 | `pagos` obligatorio en la nota de débito, con su forma de pago y su total | Requisito oficial | Ficha v2.34, páginas 58 y 59 (`sri-catalogs/fuentes/ficha-v2.34-nota-de-debito.txt`) |
 | Exactamente un `pago`, por el valor total exacto, de una forma de pago vigente y habilitada del catálogo | Política del MVP del proyecto, no un límite del SRI; varias formas de pago serían una extensión compatible | Design D8 de `add-debit-notes` |
 | Distribución del RIDE de la nota de débito | Requisito oficial | Ficha v2.34, anexo 2, página 62 |
+| `infoAdicional` solo cuando corresponde un campo adicional definido por una fuente (hoy ninguno); nunca con contenido inventado | Requisito oficial: la fila "Obligatorio" de la página 59 es el contenedor de campos que la misma tabla marca "Obligatorio cuando corresponda" | Ficha v2.34, páginas 29, 51–59, 69–74 y 135 (`sri-catalogs/fuentes/ficha-v2.34-nota-de-debito.txt`, Resolución de `infoAdicional`); el anexo 26 sigue en Q-37 |
 | Sin plazo de emisión impuesto | Las fuentes oficiales vigentes revisadas no lo establecen; no se extrapola el art. 5 reformado de la NAC-DGERCGC25-00000017, que rige las notas de crédito | Q-49 |
 | Solo facturas propias autorizadas, del mismo ambiente, como documento modificado | Política del MVP | Q-11, Q-49 |
 | Causas cerradas `LATE_PAYMENT_INTEREST` y `POST_INVOICE_COST_EXPENSE`; cada concepto con un tratamiento de IVA de la factura | Política del MVP sobre el art. 16 | Q-49 |

@@ -169,9 +169,110 @@ página renderizada del mismo PDF en la tarea 9.1. El anexo 2 empieza en la pág
   en la nota y no los escribe (design D16).
 - El ejemplo escribe `<total>56,00</total>` con coma decimal; el XSD exige punto y el builder escribe
   el texto decimal exacto del snapshot con punto.
-- `<infoAdicional>` aparece como "Obligatorio" en la tabla de la nota de débito (página 59), con cada
-  `<campoAdicional>` "Obligatorio cuando corresponda"; en la de la nota de crédito (página 58) es
-  "Obligatorio cuando corresponda". El XSD lo declara con minOccurs="0" y exige al menos un
-  `campoAdicional` dentro. El design D16 no lo escribe; las respuestas del SRI de las pruebas son
-  sintéticas, así que la certificación contra el ambiente de Pruebas debe confirmarlo antes de
-  producción.
+- `<infoAdicional>`: la tabla de la nota de débito lo marca "Obligatorio" (página 59). La resolución,
+  con su evidencia literal, está en la sección siguiente.
+
+== Resolución de `infoAdicional` (2026-10-05) ==
+
+Pregunta: ¿"Obligatorio" exige que `infoAdicional` esté presente en el XML de NotaDebito 1.0.0 para
+el caso que implementa add-debit-notes?
+
+Respuesta: NO. En la ficha, `infoAdicional` es el contenedor de los campos adicionales y está
+presente cuando corresponde al menos uno. Ninguno corresponde hoy a la nota de débito que se
+implementa, así que el nodo no se escribe. La regla sale de la propia ficha v2.34; el XSD solo
+aporta la estructura del nodo, y el comportamiento del ambiente de Pruebas no interviene.
+
+1. La misma tabla, página 59, marca cada `campoAdicional` como "Obligatorio cuando corresponda"
+   (literal arriba). Ningún campo de la nota de débito es obligatorio sin condición, y los nombres de
+   la tabla ("Dirección", "Email", "Teléfono") son ejemplos: las tablas de los otros comprobantes
+   usan otros nombres ("Codigo Impuesto ISD", "ConvenioDobleTributacion", "TELEFONO", "E-MAIL").
+   Un `infoAdicional` presente lleva entre 1 y 15 `campoAdicional` (XSD NotaDebito_V1.0.0, citado
+   abajo, y el numeral 9.11). Leer el contenedor como presencia incondicional obligaría a escribir un
+   campo que la misma tabla declara condicional, sin decir cuál ni con qué contenido: solo se
+   cumpliría inventando un campo, que la ficha no define.
+
+2. El numeral 9.11, página 29, para cualquier comprobante:
+
+ 9.11 Se podrá ingresar información adicional por cada comprobante, como
+     máximo quince campos de hasta 300 caracteres alfanuméricos.
+
+3. El mismo anexo 1 (versión 1.0.0, la de la nota de débito) marca el mismo nodo "Obligatorio
+   cuando corresponda" en la factura (página 51), el comprobante de retención (página 53), la guía de
+   remisión (página 55) y la nota de crédito (página 58, sobre la tabla de la nota de débito); el
+   anexo 3 (1.1.0) hace lo mismo en la factura (página 69), la guía (página 71) y la nota de crédito
+   (página 74). La fila de la nota de débito es la única que dice "Obligatorio", y no nombra ningún
+   campo que la acompañe. Literal de cada fila, en el orden de las páginas:
+
+   Página 51 (factura 1.0.0):
+                                                                           Obligatorio
+     <infoAdicional>                                                        cuando            -               -
+                                                                          corresponda
+
+   Página 53 (comprobante de retención 1.0.0):
+                                                                                        Obligatorio
+ <infoAdicional>                                                                         cuando             -               -
+                                                                                       corresponda
+
+   Página 55 (guía de remisión 1.0.0):
+                                                                                       Obligatorio
+<infoAdicional>                                                                         cuando                -              -
+                                                                                      corresponda
+
+   Página 58 (nota de crédito 1.0.0):
+                                                                                Obligatorio
+<infoAdicional>                                                                  cuando            -              -
+                                                                               corresponda
+
+   Página 69 (factura 1.1.0):
+                                                                      Obligatorio
+<infoAdicional>                                                        cuando            -               -
+                                                                     corresponda
+
+   Página 71 (guía de remisión 1.1.0):
+                                                                                Obligatorio
+<infoAdicional>                                                                  cuando             -              -
+                                                                               corresponda
+
+   Página 74 (nota de crédito 1.1.0):
+                                                                                 Obligatorio
+<infoAdicional>                                                                   cuando                -           -
+                                                                                corresponda
+
+4. El único campo adicional obligatorio que la ficha v2.34 define con nombre y contenido es el del
+   anexo 26, página 135, y es condicional: rige para quien emite con un sistema o servicio de un
+   proveedor tercero, y se incluye "como campo en la sección de información adicional":
+
+Los contribuyentes emisores de comprobantes electrónico que utilicen sistemas de
+facturación electrónicos de terceros (proveedores detallados en la resolución 27 18)
+deberán incluir como requisito de llenado obligatorio en los comprobantes emitidos,
+la información del número de RUC del proveedor. Este requisito se incluirá como
+campo en la sección de información adicional, conforme el siguiente detalle:
+
+              Nodo:                              <infoAdicional>
+              Nombre tag:                        <CampoAdicional>
+              Formato:                           Alfanumérico
+              Caracteres:                        Máximo 300
+              Valor atributo “nombre”:           “RUC Proveedor”
+              Contenido tag campoAdicional:      Número del RUC del proveedor
+
+   Si una instalación queda obligada (Q-37), ese campo corresponde y `infoAdicional` se escribe en
+   la nota de débito como en la factura y la nota de crédito, con el RUC del proveedor configurado y
+   nunca con un valor ficticio. Hoy el anexo 26 está registrado como CONDITIONAL_GO_LIVE (ADR 0014,
+   Q-37), y su inserción en el XML no está implementada todavía para ningún tipo de comprobante.
+
+Estructura del nodo en el XSD oficial (docs/product/sri-xsd/NotaDebito_V1.0.0.xsd, líneas 487-499;
+`campoAdicional` sin minOccurs, es decir, al menos uno):
+
+  <xsd:element name="infoAdicional" minOccurs="0">
+    <xsd:complexType>
+      <xsd:sequence maxOccurs="1">
+        <xsd:element maxOccurs="15" name="campoAdicional">
+
+Consecuencias para add-debit-notes:
+- El builder no escribe `infoAdicional` y nunca escribe un campo adicional con contenido inventado
+  para que el nodo esté presente.
+- El snapshot no guarda campos adicionales y el RIDE no dibuja el bloque "Información Adicional":
+  la página 62 lo dibuja con los datos del ejemplo, y un RIDE solo muestra lo que lleva su XML.
+- Cuando una fuente oficial defina un campo que corresponda (el anexo 26 al resolverse Q-37, u otro
+  futuro), la nota lo escribe desde el dato configurado y congelado en su snapshot, en su propio
+  cambio OpenSpec, con sus pruebas de XSD y de RIDE.
