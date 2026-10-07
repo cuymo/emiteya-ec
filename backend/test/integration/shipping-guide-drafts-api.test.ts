@@ -43,6 +43,7 @@ describe("API de borradores de guía de remisión", () => {
   let db: MigratedSchema;
   let api: ReturnType<typeof buildTaxpayerApp>;
   let limited: ReturnType<typeof buildTaxpayerApp>;
+  let limitedDetails: ReturnType<typeof buildTaxpayerApp>;
   let denied: ReturnType<typeof buildTaxpayerApp>;
   let a: ReadyCompany;
   let b: ReadyCompany;
@@ -107,6 +108,12 @@ describe("API de borradores de guía de remisión", () => {
       signing: { pool, custody: CUSTODY },
       now,
       shippingGuides: { limits: { recipients: 1, detailsPerRecipient: 2, details: 2 } },
+    });
+    // Un máximo de detalles por guía menor que destinatarios por detalles por destinatario.
+    limitedDetails = buildTaxpayerApp(db, {
+      signing: { pool, custody: CUSTODY },
+      now,
+      shippingGuides: { limits: { recipients: 5, detailsPerRecipient: 5, details: 3 } },
     });
     denied = buildTaxpayerApp(db, { now, shippingGuides: { deny: ["shippingGuides.draft"] } });
     const p12Dir = inject("p12FixturesDir");
@@ -594,6 +601,94 @@ describe("API de borradores de guía de remisión", () => {
       expect(issue?.field).toBe("transportStart");
     });
 
+    it("guarda un destinatario sin motivo, una descripción vacía y una cantidad cero, y la vista previa los informa con su posición", async () => {
+      const draft = await createDraft(
+        draftBody({
+          recipients: [
+            recipientBody({
+              motive: null,
+              details: [
+                { productId: a.productId, description: "Cemento 50 kg", quantity: "0" },
+                { productId: null, description: "", quantity: "1" },
+              ],
+            }),
+          ],
+        }),
+      );
+      const issues = draft.preview.issues.map(({ code, recipient, detail }) => ({
+        code,
+        recipient,
+        detail,
+      }));
+      expect(issues).toEqual(
+        expect.arrayContaining([
+          { code: "SHIPPING_GUIDE_MOTIVE_REQUIRED", recipient: 1, detail: null },
+          { code: "SHIPPING_GUIDE_QUANTITY_INVALID", recipient: 1, detail: 1 },
+          { code: "SHIPPING_GUIDE_DESCRIPTION_INVALID", recipient: 1, detail: 2 },
+        ]),
+      );
+      expect(
+        draft.preview.issues.find((issue) => issue.code === "SHIPPING_GUIDE_QUANTITY_INVALID")
+          ?.message,
+      ).toContain("política del sistema");
+    });
+
+    it("un texto o un código fuera del contrato se rechaza al guardar nombrando su destinatario y su detalle", async () => {
+      const longDescription = await call(
+        a.cookies.operator,
+        "post",
+        "/shipping-guides/drafts",
+      ).send(
+        draftBody({
+          recipients: [
+            recipientBody(),
+            recipientBody({
+              details: [{ productId: null, description: "D".repeat(301), quantity: "1" }],
+            }),
+          ],
+        }),
+      );
+      expect(longDescription.status).toBe(400);
+      expect(errorOf(longDescription)).toMatchObject({
+        code: "VALIDATION_ERROR",
+        message: "Destinatario 2, detalle 1: La descripción admite como máximo 300 caracteres.",
+      });
+      const badCode = await call(a.cookies.operator, "post", "/shipping-guides/drafts").send(
+        draftBody({ recipients: [recipientBody({ destinationEstablishmentCode: "1A" })] }),
+      );
+      expect(badCode.status).toBe(400);
+      expect(errorOf(badCode)).toMatchObject({
+        code: "VALIDATION_ERROR",
+        message: "Destinatario 1: El código del establecimiento de destino tiene 3 dígitos.",
+      });
+      // Los espacios de los extremos no cuentan: una placa de 20 caracteres rodeada de espacios se
+      // guarda recortada.
+      const spaced = await createDraft(draftBody({ plate: `  ${"P".repeat(20)}  ` }));
+      expect(spaced.plate).toBe("P".repeat(20));
+    });
+
+    it("el máximo de detalles por guía configurado rige aunque los otros dos permitan más", async () => {
+      const twoByTwo = [recipientBody(), recipientBody()].map((recipient) => ({
+        ...recipient,
+        details: [
+          { productId: a.productId, description: "Cemento 50 kg", quantity: "1" },
+          { productId: null, description: "Varilla", quantity: "1" },
+        ],
+      }));
+      const res = await call(
+        a.cookies.operator,
+        "post",
+        "/shipping-guides/drafts",
+        limitedDetails,
+      ).send(draftBody({ recipients: twoByTwo }));
+      expect(res.status).toBe(409);
+      expect(errorOf(res)).toMatchObject({
+        code: "SHIPPING_GUIDE_RESOURCE_LIMIT",
+        message:
+          "El sistema admite como máximo 3 detalles por guía. Es una defensa de recursos del sistema, no un límite del SRI.",
+      });
+    });
+
     it("los límites configurados rechazan el borrador como defensa de recursos", async () => {
       const res = await call(a.cookies.operator, "post", "/shipping-guides/drafts", limited).send(
         draftBody({ recipients: [recipientBody(), recipientBody()] }),
@@ -706,6 +801,34 @@ describe("API de borradores de guía de remisión", () => {
         const anonymous = await request(api.app).get(`/api/v1${path}`);
         expect(anonymous.status, path).toBe(401);
       }
+    });
+
+    it("las escrituras del borrador sin el permiso son 403 y sin sesión 401, sin cambiarlo", async () => {
+      const draft = await createDraft();
+      const writes = [
+        ["post", "/shipping-guides/drafts", draftBody()],
+        [
+          "put",
+          `/shipping-guides/drafts/${draft.id}`,
+          { ...draftBody({ plate: "PZZ-9999" }), expectedVersion: draft.version },
+        ],
+        ["delete", `/shipping-guides/drafts/${draft.id}`, undefined],
+      ] as const;
+      for (const [method, path, body] of writes) {
+        const forbidden = await call(a.cookies.operator, method, path, denied).send(body);
+        expect(forbidden.status, `${method} ${path}`).toBe(403);
+        const anonymous = await request(api.app)[method](`/api/v1${path}`).send(body);
+        expect(anonymous.status, `${method} ${path}`).toBe(401);
+      }
+      const unchanged = await call(
+        a.cookies.operator,
+        "get",
+        `/shipping-guides/drafts/${draft.id}`,
+      );
+      expect([unchanged.status, dataOf<ShippingGuideDraftView>(unchanged).plate]).toEqual([
+        200,
+        "PAA-1234",
+      ]);
     });
 
     it("el borrador y las referencias de otra empresa responden 404", async () => {

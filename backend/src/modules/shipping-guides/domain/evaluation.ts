@@ -362,7 +362,7 @@ function dateIssues(input: ShippingGuideEvaluationInput): {
     issues.push(
       issue(
         "SHIPPING_GUIDE_END_BEFORE_START",
-        "La fecha de fin del transporte no puede ser anterior a la de inicio (validación del sistema).",
+        "La fecha de fin del transporte no puede ser anterior a la de inicio (validación del sistema, no del SRI).",
         { field: "transportEnd" },
       ),
     );
@@ -767,7 +767,7 @@ function recipientIssues(
       issues.push(
         issue(
           "SHIPPING_GUIDE_QUANTITY_INVALID",
-          "Indica la cantidad: un número mayor que cero, de hasta 6 decimales.",
+          "Indica la cantidad: un número mayor que cero, de hasta 6 decimales. El cero no se admite por política del sistema, aunque el XSD lo permita.",
           where,
         ),
       );

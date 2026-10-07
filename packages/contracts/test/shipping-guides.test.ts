@@ -11,6 +11,7 @@ import {
   createShippingGuideDraftSchema,
   emitShippingGuideSchema,
   shippingDetailSchema,
+  shippingQuantitySchema,
   shippingRecipientSchema,
   updateShippingGuideDraftSchema,
 } from "@facturador/contracts";
@@ -76,6 +77,22 @@ describe("borrador de la guía", () => {
     for (const body of [
       { ...draft, companyId: "otra" },
       { ...draft, plates: ["PAA-1234", "PBB-5678"] },
+      {
+        ...draft,
+        transporters: [{ source: "SELF" }, { source: "PARTY", partyId: "carrier-2" }],
+      },
+      { ...draft, transporter: { source: "PARTY", partyId: "carrier-1", driver: "Juan" } },
+      {
+        ...draft,
+        recipients: [
+          {
+            ...recipient,
+            supportNumber: "001-001-000000001",
+            supportAuthorization: "1".repeat(49),
+            supportIssueDate: "2026-10-01",
+          },
+        ],
+      },
       { ...draft, recipients: [{ ...recipient, customsDocument: "0041324846887" }] },
       { ...draft, recipients: [{ ...recipient, details: [{ ...detail, unitPrice: "1.00" }] }] },
       { ...draft, recipients: [{ ...recipient, details: [{ ...detail, tax: "2" }] }] },
@@ -100,6 +117,14 @@ describe("borrador de la guía", () => {
       expect(shippingRecipientSchema.safeParse({ ...recipient, support }).success).toBe(false);
     }
     expect(SHIPPING_EXCEPTION_CASES).not.toContain("ITINERANT_SALE");
+    expect(
+      messages(
+        shippingRecipientSchema.safeParse({
+          ...recipient,
+          support: { kind: "DECLARED_EXCEPTION", case: "ITINERANT_SALE" },
+        }),
+      ).join(" "),
+    ).toContain("La venta itinerante está fuera del alcance actual.");
   });
 
   it("rechaza los datos derivados: partida con origen, dirección o código de la propia empresa y códigos de un producto", () => {
@@ -123,12 +148,15 @@ describe("borrador de la guía", () => {
     ).toContain("Los códigos de un producto salen del producto: no se envían.");
   });
 
-  it("acepta una cantidad exacta de hasta 6 decimales y rechaza cero, negativos, números y más dígitos", () => {
+  it("acepta una cantidad exacta de hasta 6 decimales y rechaza negativos, números y más dígitos; el cero se guarda y lo informa la vista previa", () => {
     for (const quantity of ["10.254632", "1", "999999999999.999999"]) {
       expect(shippingDetailSchema.safeParse({ ...detail, quantity }).success, quantity).toBe(true);
     }
-    expect(messages(shippingDetailSchema.safeParse({ ...detail, quantity: "0" }))).toContain(
-      "La cantidad debe ser mayor que cero.",
+    // El borrador guarda una cantidad cero para que la vista previa la informe con su posición; la
+    // cantidad válida para emitir, la del formulario, la rechaza como política del sistema.
+    expect(shippingDetailSchema.safeParse({ ...detail, quantity: "0" }).success).toBe(true);
+    expect(messages(shippingQuantitySchema.safeParse("0"))).toContain(
+      "La cantidad debe ser mayor que cero: es una política del sistema, aunque el XSD admita cero.",
     );
     for (const quantity of ["-1", "1.1234567", "1234567890123.000001", 10]) {
       expect(
@@ -154,6 +182,12 @@ describe("borrador de la guía", () => {
     expect(createShippingGuideDraftSchema.safeParse({ ...draft, plate: "PAA\n1234" }).success).toBe(
       false,
     );
+    // Los espacios de los extremos no cuentan para la longitud y no se guardan.
+    const spaced = createShippingGuideDraftSchema.safeParse({
+      ...draft,
+      plate: `  ${"P".repeat(20)}  `,
+    });
+    expect([spaced.success, spaced.data?.plate]).toEqual([true, "P".repeat(20)]);
   });
 
   it("rechaza más elementos que los máximos absolutos, presentados como defensa de recursos", () => {

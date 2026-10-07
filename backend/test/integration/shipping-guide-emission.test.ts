@@ -195,6 +195,7 @@ describe("emisión de guías de remisión", () => {
   });
 
   it("una guía de un destinatario y otra de varios quedan firmadas con su propio contador", async () => {
+    const partiesBefore = await db.database.prisma.party.count();
     const single = await emit(api, await draft());
     expect(single.status, JSON.stringify(single.body)).toBe(201);
     const guide = bodyOf(single).data;
@@ -288,6 +289,42 @@ describe("emisión de guías de remisión", () => {
       [2, "1793333333001"],
       [3, COMPANY_RUC],
     ]);
+    // Ni el transporte propio ni el traslado entre establecimientos propios crean un tercero.
+    expect(await db.database.prisma.party.count()).toBe(partiesBefore);
+  });
+
+  it("una factura a consumidor final sustenta la guía de un destinatario identificado distinto del comprador", async () => {
+    const consumerInvoice = await insertAuthorizedInvoice(
+      db.database.prisma,
+      {
+        companyId: a.companyId,
+        adminId: a.adminId,
+        establishmentId: a.establishmentId,
+        emissionPointId: a.emissionPointId,
+      },
+      [{ productId: a.productId, quantity: "2", unitPrice: "8.75" }],
+      { consumerFinal: true },
+    );
+    const res = await emit(
+      api,
+      await draft({
+        recipients: [
+          invoiceRecipient({
+            recipient: { kind: "PARTY", partyId: plainPartyId },
+            support: { kind: "INTERNAL_INVOICE", invoiceId: consumerInvoice.id },
+          }),
+        ],
+      }),
+    );
+    expect(res.status, JSON.stringify(res.body)).toBe(201);
+    const [recipient] = bodyOf(res).data.recipients;
+    expect(recipient).toMatchObject({
+      identification: "1793333333001",
+      legalName: "DESTINATARIO SIN ROL S.A.",
+      support: { kind: "INTERNAL_INVOICE", invoice: { id: consumerInvoice.id } },
+    });
+    // El consumidor final nunca se copia como destinatario.
+    expect(await signedXml(bodyOf(res).data.id)).not.toContain("9999999999999");
   });
 
   it("la vista previa, el snapshot, el XML y la consulta llevan los mismos datos", async () => {
@@ -494,6 +531,56 @@ describe("emisión de guías de remisión", () => {
       .set("Idempotency-Key", randomUUID())
       .send({ draftId: consumer.id, expectedVersion: 1, exceptionDeclaration: null });
     expect(anonymous.status).toBe(401);
+    // Un problema dentro de un destinatario o de un detalle nombra su posición en el rechazo.
+    const noMotive = await rejected(
+      { recipients: [invoiceRecipient({ motive: null })] },
+      "SHIPPING_GUIDE_MOTIVE_REQUIRED",
+    );
+    expect(noMotive.message).toMatch(/^Destinatario 1: /);
+    const emptyDescription = await rejected(
+      {
+        recipients: [
+          invoiceRecipient(),
+          invoiceRecipient({ details: [{ productId: null, description: "", quantity: "1" }] }),
+        ],
+      },
+      "SHIPPING_GUIDE_DESCRIPTION_INVALID",
+    );
+    expect(emptyDescription.message).toMatch(/^Destinatario 2, detalle 1: /);
+    const zero = await rejected(
+      {
+        recipients: [
+          invoiceRecipient({
+            details: [
+              { productId: a.productId, description: "Cemento 50 kg", quantity: "1" },
+              { productId: null, description: "Varilla", quantity: "0" },
+            ],
+          }),
+        ],
+      },
+      "SHIPPING_GUIDE_QUANTITY_INVALID",
+    );
+    expect(zero.message).toMatch(/^Destinatario 1, detalle 2: .*política del sistema/);
+    // Un producto desactivado después de preparar el borrador.
+    const retiring = await createProduct(db, a, { unitPrice: "3.00", name: "Arena fina" });
+    const prepared = await draft({
+      recipients: [
+        invoiceRecipient({
+          details: [{ productId: retiring, description: "Arena fina, 3 m3", quantity: "3" }],
+        }),
+      ],
+    });
+    expect(prepared.preview.issues).toEqual([]);
+    await db.database.prisma.product.update({
+      where: { id: retiring },
+      data: { status: "INACTIVE" },
+    });
+    const inactive = await emit(api, prepared);
+    expect([inactive.status, bodyOf(inactive).error.code]).toEqual([
+      409,
+      "SHIPPING_GUIDE_PRODUCT_INACTIVE",
+    ]);
+    expect(bodyOf(inactive).error.message).toMatch(/^Destinatario 1, detalle 1: /);
     // Ningún rechazo reservó número ni dejó registro, idempotencia o auditoría.
     expect(await trace()).toEqual(before);
   });
@@ -537,6 +624,16 @@ describe("emisión de guías de remisión", () => {
       },
     });
     expect(guide.recipients[1]!.support.kind).toBe("INTERNAL_INVOICE");
+    // La auditoría de la reserva lleva la consignación declarada con su versión y el actor.
+    const reserved = (
+      await db.database.prisma.auditEvent.findMany({
+        where: { companyId: a.companyId, action: "shipping_guide.reserved" },
+      })
+    ).find((event) => (event.changes as { shippingGuideId?: string }).shippingGuideId === guide.id);
+    expect([reserved?.actorUserId, reserved?.changes]).toEqual([
+      a.operatorId,
+      expect.objectContaining({ exceptions: ["1:CONSIGNMENT"], exceptionPolicyVersion: 1 }),
+    ]);
     const rows = await db.database.prisma.shippingGuideRecipient.findMany({
       where: { documentId: guide.id },
       orderBy: { position: "asc" },
@@ -561,6 +658,29 @@ describe("emisión de guías de remisión", () => {
     expect(
       shippingGuideFingerprint({ ...input, exceptionDeclaration: DECLARED }, record!),
     ).not.toBe(shippingGuideFingerprint({ ...input, exceptionDeclaration: null }, record!));
+    // Otra versión del borrador u otros destinatarios también son otra huella.
+    const base = shippingGuideFingerprint({ ...input, exceptionDeclaration: DECLARED }, record!);
+    expect(
+      shippingGuideFingerprint(
+        { ...input, expectedVersion: input.expectedVersion + 1, exceptionDeclaration: DECLARED },
+        record!,
+      ),
+    ).not.toBe(base);
+    expect(
+      shippingGuideFingerprint(
+        { ...input, exceptionDeclaration: DECLARED },
+        { ...record!, recipients: [...record!.recipients].reverse() },
+      ),
+    ).not.toBe(base);
+    const otherVersionKey = await emit(
+      api,
+      { id: declared.id, version: declared.version + 1 },
+      { key, declaration: DECLARED },
+    );
+    expect([otherVersionKey.status, bodyOf(otherVersionKey).error.code]).toEqual([
+      409,
+      "IDEMPOTENCY_KEY_REUSED",
+    ]);
   });
 
   it("el doble envío secuencial y simultáneo deja una sola guía; otra solicitud con la clave es un conflicto", async () => {

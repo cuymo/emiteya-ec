@@ -13,6 +13,7 @@ import {
   type ShippingGuideLimits,
   type ShippingGuidePreviewView,
 } from "@facturador/contracts";
+import type { z } from "zod";
 import { parseInput, type Authorizer } from "../../identity/application/authorization.ts";
 import type { RequestContext } from "../../identity/application/request-context.ts";
 import type {
@@ -32,6 +33,7 @@ import {
   DraftAlreadyEmittedError,
   ShippingGuideRejectedError,
   draftChanged,
+  draftValidationError,
   draftNotFound,
   invalidReference,
   invoiceNotFound,
@@ -39,6 +41,13 @@ import {
 } from "./errors.ts";
 import { suggestedGoods } from "./goods.ts";
 import type { ShippingGuideDraftRepository, ShippingGuideDraftsUnitOfWork } from "./ports.ts";
+
+/** Valida el cuerpo del borrador; un problema dentro de un destinatario o un detalle lo nombra. */
+function parseDraft<S extends z.ZodType>(schema: S, body: unknown): z.output<S> {
+  const result = schema.safeParse(body);
+  if (!result.success) throw draftValidationError(result.error);
+  return result.data;
+}
 
 export type ShippingGuideDraftsDependencies = {
   drafts: ShippingGuideDraftRepository;
@@ -252,7 +261,7 @@ export function createShippingGuideDrafts(deps: ShippingGuideDraftsDependencies)
 
     async create(ctx: RequestContext, body: unknown): Promise<ShippingGuideDraftDetails> {
       authorizer.requirePermission(ctx, "shippingGuides.draft");
-      const { fromInvoiceId, ...data } = parseInput(createShippingGuideDraftSchema, body);
+      const { fromInvoiceId, ...data } = parseDraft(createShippingGuideDraftSchema, body);
       let content = contentOf(data);
       if (fromInvoiceId !== null) {
         content = {
@@ -287,7 +296,7 @@ export function createShippingGuideDrafts(deps: ShippingGuideDraftsDependencies)
       body: unknown,
     ): Promise<ShippingGuideDraftDetails> {
       authorizer.requirePermission(ctx, "shippingGuides.draft");
-      const { expectedVersion, ...data } = parseInput(updateShippingGuideDraftSchema, body);
+      const { expectedVersion, ...data } = parseDraft(updateShippingGuideDraftSchema, body);
       const current = await findDraft(ctx.companyId, draftId);
       if (current.version !== expectedVersion) throw draftChanged();
       const content = contentOf(data);

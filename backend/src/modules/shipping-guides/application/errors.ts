@@ -1,8 +1,47 @@
 // Errores de las guías de remisión con código estable para la API (add-shipping-guides, design D22).
-// Los rechazos antes de reservar son `409` con el código y el mensaje del primer problema; un recurso
-// de otra empresa es `404` igual que uno inexistente.
+// Los rechazos antes de reservar son `409` con el código y el mensaje del primer problema, que nombra
+// el destinatario y el detalle cuando el problema está en ellos; un recurso de otra empresa es `404`
+// igual que uno inexistente.
 import type { ShippingGuideIssue } from "@facturador/contracts";
-import { AppError, ConflictError, NotFoundError } from "../../../platform/http/errors.ts";
+import type { ZodError } from "zod";
+import {
+  AppError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "../../../platform/http/errors.ts";
+
+/** "Destinatario 2, detalle 3: " o "Destinatario 2: " delante del mensaje; nada sin posición. */
+export function locatedMessage(
+  recipient: number | null,
+  detail: number | null,
+  message: string,
+): string {
+  if (recipient === null) return message;
+  return detail === null
+    ? `Destinatario ${recipient}: ${message}`
+    : `Destinatario ${recipient}, detalle ${detail}: ${message}`;
+}
+
+/**
+ * Un cuerpo del borrador que no cumple el contrato: `400` con el mensaje del primer problema y, si
+ * está dentro de un destinatario o de un detalle, su posición (desde 1).
+ */
+export function draftValidationError(error: ZodError): ValidationError {
+  const first = error.issues[0];
+  if (!first) return new ValidationError(error);
+  const [root, recipient, child, detail] = first.path;
+  const position = (index: unknown) => (typeof index === "number" ? index + 1 : null);
+  const located =
+    root === "recipients" && position(recipient) !== null
+      ? locatedMessage(
+          position(recipient),
+          child === "details" ? position(detail) : null,
+          first.message,
+        )
+      : first.message;
+  return new ValidationError(error, located);
+}
 
 export const draftNotFound = () =>
   new NotFoundError("SHIPPING_GUIDE_DRAFT_NOT_FOUND", "El borrador de guía de remisión no existe.");
@@ -49,7 +88,7 @@ export const invalidReference = (code: "EMISSION_POINT_NOT_FOUND", message: stri
 export class ShippingGuideRejectedError extends ConflictError {
   readonly issue: ShippingGuideIssue;
   constructor(issue: ShippingGuideIssue) {
-    super(issue.code, issue.message);
+    super(issue.code, locatedMessage(issue.recipient, issue.detail, issue.message));
     this.issue = issue;
   }
 }

@@ -70,7 +70,7 @@ export const SHIPPING_EXCEPTION_CASES = [
 ] as const;
 export const shippingExceptionCaseSchema = z.enum(SHIPPING_EXCEPTION_CASES, {
   error:
-    "La excepción no es una de las admitidas: cantidad o precio después del traslado, consignación, traslado entre establecimientos propios o exhibición o demostración.",
+    "La excepción no es una de las admitidas: cantidad o precio después del traslado, consignación, traslado entre establecimientos propios o exhibición o demostración. La venta itinerante está fuera del alcance actual.",
 });
 export type ShippingExceptionCase = z.infer<typeof shippingExceptionCaseSchema>;
 
@@ -139,17 +139,21 @@ const idSchema = (message: string) => z.string({ error: message }).min(1, messag
 const isoDate = z.iso.date();
 const NO_LINE_BREAK = /^[^\r\n]*$/;
 
-/** Texto fiscal de 1 a `max` caracteres sin saltos de línea; el servidor recorta los extremos. */
+/**
+ * Texto fiscal de 1 a `max` caracteres sin saltos de línea. Los extremos se recortan antes de medir
+ * la longitud: unos espacios al inicio o al final no cuentan.
+ */
 const fiscalText = (max: number, label: string) =>
   z
     .string({ error: `${label} no es válido.` })
+    .trim()
     .max(max, `${label} admite como máximo ${max} caracteres.`)
     .regex(NO_LINE_BREAK, `${label} no admite saltos de línea.`);
 
 /** Cantidad del detalle: dominio `cantidad` (18/6) y mayor que cero (política del proyecto, P7). */
 export const shippingQuantitySchema = decimalString(DECIMAL_SPECS.cantidad).refine(
   (value) => compareDecimalStrings(value, "0") > 0,
-  "La cantidad debe ser mayor que cero.",
+  "La cantidad debe ser mayor que cero: es una política del sistema, aunque el XSD admita cero.",
 );
 
 const transporterSchema = z.discriminatedUnion(
@@ -191,7 +195,9 @@ export const shippingDetailSchema = strictBody({
   mainCode: nullable(fiscalText(25, "El código principal")),
   auxiliaryCode: nullable(fiscalText(25, "El código auxiliar")),
   description: nullable(fiscalText(300, "La descripción")),
-  quantity: nullable(shippingQuantitySchema),
+  // En el borrador basta el formato: una cantidad cero se guarda y la vista previa la informa junto a
+  // su destinatario y su detalle; la emisión la rechaza (política del proyecto).
+  quantity: nullable(decimalString(DECIMAL_SPECS.cantidad)),
 }).refine(
   (value) => value.productId === null || (value.mainCode === null && value.auxiliaryCode === null),
   {

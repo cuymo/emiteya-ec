@@ -109,6 +109,7 @@ function evaluate(
     ]),
     products: new Map([
       ["prod-1", product()],
+      ["aux-1", product({ id: "aux-1", mainCode: "VAR-12", auxiliaryCode: "AUX-12" })],
       ["svc-1", product({ id: "svc-1", kind: "SERVICE", name: "Instalación" })],
       ["old-1", product({ id: "old-1", status: "INACTIVE" })],
     ]),
@@ -187,6 +188,19 @@ describe("evaluación de la guía de remisión", () => {
     });
   });
 
+  it("una identificación de más de 13 caracteres se rechaza citando el máximo y su fuente", () => {
+    const parties = new Map([
+      ["c-1", { ...carrier, identificationType: "06", identification: "PAS12345678901" }],
+    ]);
+    const result = evaluate({ transporter: { source: "PARTY", partyId: "c-1" } }, { parties });
+    const issue = result.issues.find(
+      (candidate) => candidate.code === "SHIPPING_GUIDE_CARRIER_IDENTIFICATION_TOO_LONG",
+    );
+    expect(issue?.message).toBe(
+      "La identificación del transportista tiene 14 caracteres, y la guía admite como máximo 13 (Ficha técnica v2.34, anexo 3, página 70).",
+    );
+  });
+
   describe("placa y fechas", () => {
     it("recorta la placa, acepta cualquier formato y rechaza vacía o larga", () => {
       expect(evaluate({ plate: "  MAQN99999 " }).guide?.plate).toBe("MAQN99999");
@@ -215,11 +229,16 @@ describe("evaluación de la guía de remisión", () => {
         null,
       ]);
       expect(before.issues[0]?.message).toContain("error 82");
-      expect(codes(evaluate({ transportEnd: "2026-10-05" }))).toContainEqual([
+      const reversed = evaluate({ transportEnd: "2026-10-05" });
+      expect(codes(reversed)).toContainEqual([
         "SHIPPING_GUIDE_END_BEFORE_START",
         "transportEnd",
         null,
       ]);
+      // Es una validación del sistema, no del SRI.
+      expect(
+        reversed.issues.find((issue) => issue.code === "SHIPPING_GUIDE_END_BEFORE_START")?.message,
+      ).toContain("validación del sistema, no del SRI");
       for (const transportStart of ["2026-02-30", "1999-12-31", "2100-01-01"]) {
         expect(codes(evaluate({ transportStart, transportEnd: "2026-10-07" }))).toContainEqual([
           "SHIPPING_GUIDE_DATE_INVALID",
@@ -392,6 +411,43 @@ describe("evaluación de la guía de remisión", () => {
       ]);
     });
 
+    it("el mismo tercero puede ser destinatario dos veces con dos facturas distintas", () => {
+      const invoices = new Map([
+        ["inv-1", invoice()],
+        ["inv-2", invoice({ id: "inv-2", documentNumber: "001-001-000000124" })],
+      ]);
+      const result = evaluate(
+        {
+          recipients: [
+            recipient,
+            { ...recipient, support: { kind: "INTERNAL_INVOICE", invoiceId: "inv-2" } },
+          ],
+        },
+        { invoices },
+      );
+      expect(result.issues).toEqual([]);
+      expect(
+        result.guide?.recipients.map((r) => [
+          r.partyId,
+          r.support.kind === "INTERNAL_INVOICE" ? r.support.invoice.documentNumber : null,
+        ]),
+      ).toEqual([
+        ["p-1", "001-001-000000123"],
+        ["p-1", "001-001-000000124"],
+      ]);
+    });
+
+    it("el código de destino de un tercero es el declarado, sin verificarlo, y sin él no toma el del establecimiento emisor", () => {
+      const result = evaluate({
+        recipients: [{ ...recipient, destinationEstablishmentCode: "003" }, recipient],
+      });
+      expect(result.issues).toEqual([]);
+      expect(result.guide?.recipients.map((r) => r.destinationEstablishmentCode)).toEqual([
+        "003",
+        null,
+      ]);
+    });
+
     it("un tercero sin roles es destinatario y el mismo tercero puede repetirse", () => {
       const result = evaluate({
         recipients: [
@@ -401,6 +457,25 @@ describe("evaluación de la guía de remisión", () => {
       });
       expect(result.issues).toEqual([]);
       expect(result.guide?.recipients.map((r) => r.partyId)).toEqual(["p-1", "p-1"]);
+    });
+
+    it("rechaza una factura en cualquier estado distinto de autorizada", () => {
+      for (const state of [
+        "RESERVED",
+        "SIGNED",
+        "SEND_UNKNOWN",
+        "RECEIVED",
+        "RETURNED",
+        "NOT_AUTHORIZED",
+        "MANUAL_REVIEW",
+      ]) {
+        const invoices = new Map([["inv-1", invoice({ state, authorization: null })]]);
+        expect(codes(evaluate({}, { invoices })), state).toContainEqual([
+          "SHIPPING_GUIDE_INVOICE_NOT_AUTHORIZED",
+          1,
+          null,
+        ]);
+      }
     });
 
     it("rechaza una factura sin autorizar, de otro ambiente, alterada, inexistente o de otro tipo", () => {
@@ -435,6 +510,29 @@ describe("evaluación de la guía de remisión", () => {
   });
 
   describe("detalle", () => {
+    it("un producto de tipo bien lleva su código principal y su código auxiliar", () => {
+      const result = evaluate({
+        recipients: [
+          {
+            ...recipient,
+            details: [
+              {
+                productId: "aux-1",
+                mainCode: null,
+                auxiliaryCode: null,
+                description: "Varilla",
+                quantity: "1",
+              },
+            ],
+          },
+        ],
+      });
+      expect(result.issues).toEqual([]);
+      expect(
+        result.guide?.recipients[0]?.details.map((d) => [d.mainCode, d.auxiliaryCode]),
+      ).toEqual([["VAR-12", "AUX-12"]]);
+    });
+
     it("congela los códigos y el nombre de un producto de tipo bien y admite líneas libres", () => {
       const result = evaluate({
         recipients: [
