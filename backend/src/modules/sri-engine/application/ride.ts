@@ -165,9 +165,52 @@ export type RideWithholdingReceipt = Omit<
     }>[];
   }>;
 
+/**
+ * Contenido de la guía de remisión 1.1.0 que el sistema emite (add-shipping-guides, design D20): la
+ * cabecera y el emisor de la factura, sin fecha de emisión (el XML no la trae), el transporte con el
+ * transportista, la placa, el punto de partida y las fechas, y cada destinatario con su comprobante de
+ * venta (solo una factura `01`), su motivo, su destino, su ruta y su detalle de cantidades. Sin
+ * importes.
+ */
+export type RideShippingGuide = Omit<
+  RideInvoice,
+  "kind" | "buyer" | "totals" | "payments" | "lines" | "issueDate"
+> &
+  Readonly<{
+    kind: "SHIPPING_GUIDE";
+    carrier: Readonly<{ identificationType: string; identification: string; legalName: string }>;
+    plate: string;
+    departureAddress: string;
+    /** `dd/mm/aaaa`. */
+    transportStart: string;
+    transportEnd: string;
+    recipients: readonly Readonly<{
+      identification: string;
+      legalName: string;
+      address: string;
+      motive: string;
+      destinationEstablishmentCode: string | null;
+      route: string | null;
+      /** La factura sustento (`codDocSustento` 01), o null en una excepción declarada. */
+      support: Readonly<{
+        documentType: string;
+        number: string;
+        authorizationNumber: string;
+        /** `dd/mm/aaaa`. */
+        issueDate: string;
+      }> | null;
+      details: readonly Readonly<{
+        mainCode: string | null;
+        auxiliaryCode: string | null;
+        description: string;
+        quantity: string;
+      }>[];
+    }>[];
+  }>;
+
 /** Un comprobante que el RIDE dibuja, elegido por la raíz y la versión de su XML. */
 export type RideDocumentData =
-  RideInvoice | RideCreditNote | RideDebitNote | RideWithholdingReceipt;
+  RideInvoice | RideCreditNote | RideDebitNote | RideWithholdingReceipt | RideShippingGuide;
 
 /**
  * Motivos deterministas por los que el RIDE no se genera: reintentar da lo mismo, así que la

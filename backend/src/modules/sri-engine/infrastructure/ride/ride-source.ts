@@ -1,7 +1,8 @@
 // Lectura del XML de origen del RIDE (add-document-archive, design D3; add-credit-notes, design
-// D14; add-debit-notes, design D18; add-withholding-receipts, design D19): la factura 1.1.0, la nota
-// de crédito 1.1.0, la nota de débito 1.0.0 y el comprobante de retención 2.0.0 que el sistema
-// emite, elegidos por la raíz y la versión del XML, y nada más. Rechaza un XML peligroso (DTD o
+// D14; add-debit-notes, design D18; add-withholding-receipts, design D19; add-shipping-guides, design
+// D20): la factura 1.1.0, la nota de crédito 1.1.0, la nota de débito 1.0.0, el comprobante de
+// retención 2.0.0 y la guía de remisión 1.1.0 que el sistema emite, elegidos por la raíz y la versión
+// del XML, y nada más. Rechaza un XML peligroso (DTD o
 // entidades, demasiado grande o demasiado anidado), cualquier otro documento, y todo elemento que el
 // builder del sistema no escribe (ICE, IRBPNR, propina, información adicional…): el RIDE nunca omite
 // contenido en silencio ni afirma un soporte que la emisión no tiene. Los textos e importes salen tal
@@ -14,6 +15,7 @@ import {
   type RideDocumentData,
   type RideInvoice,
   type RideLine,
+  type RideShippingGuide,
   type RideSourceInput,
   type RideSourceReader,
   type RideTax,
@@ -32,6 +34,8 @@ export const RIDE_CREDIT_NOTE_VERSION = "1.1.0";
 export const RIDE_DEBIT_NOTE_VERSION = "1.0.0";
 /** La única versión que escribe el builder de add-withholding-receipts. */
 export const RIDE_WITHHOLDING_RECEIPT_VERSION = "2.0.0";
+/** La única versión que escribe el builder de add-shipping-guides (`SHIPPING_GUIDE_SCHEMA_VERSION`). */
+export const RIDE_SHIPPING_GUIDE_VERSION = "1.1.0";
 /** IVA, el único impuesto que la emisión produce: ICE e IRBPNR no tienen datos de cálculo. */
 const IVA = "2";
 
@@ -237,6 +241,59 @@ const WITHHOLDING_ALLOWED: Readonly<Record<string, readonly string[]>> = {
   [`${WITHHOLDING_SUPPORT}.pagos`]: ["pago"],
   [`${WITHHOLDING_SUPPORT}.pagos.pago`]: ["formaPago", "total"],
 };
+/**
+ * Elementos que el builder de la guía de remisión escribe, por ruta del padre (add-shipping-guides,
+ * design D16): sin `rise`, `docAduaneroUnico`, `detallesAdicionales`, `maquinaFiscal` ni
+ * `infoAdicional`.
+ */
+const SHIPPING_RECIPIENT = "guiaRemision.destinatarios.destinatario";
+const SHIPPING_GUIDE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
+  guiaRemision: ["infoTributaria", "infoGuiaRemision", "destinatarios", "Signature"],
+  "guiaRemision.infoTributaria": ALLOWED["factura.infoTributaria"]!,
+  "guiaRemision.infoGuiaRemision": [
+    "dirEstablecimiento",
+    "dirPartida",
+    "razonSocialTransportista",
+    "tipoIdentificacionTransportista",
+    "rucTransportista",
+    "obligadoContabilidad",
+    "contribuyenteEspecial",
+    "fechaIniTransporte",
+    "fechaFinTransporte",
+    "placa",
+  ],
+  "guiaRemision.destinatarios": ["destinatario"],
+  [SHIPPING_RECIPIENT]: [
+    "identificacionDestinatario",
+    "razonSocialDestinatario",
+    "dirDestinatario",
+    "motivoTraslado",
+    "codEstabDestino",
+    "ruta",
+    "codDocSustento",
+    "numDocSustento",
+    "numAutDocSustento",
+    "fechaEmisionDocSustento",
+    "detalles",
+  ],
+  [`${SHIPPING_RECIPIENT}.detalles`]: ["detalle"],
+  [`${SHIPPING_RECIPIENT}.detalles.detalle`]: [
+    "codigoInterno",
+    "codigoAdicional",
+    "descripcion",
+    "cantidad",
+  ],
+};
+/** El único comprobante de venta que la guía referencia: una factura propia (design D8). */
+const SHIPPING_SUPPORT_DOCUMENT = "01";
+/** Los cuatro datos del sustento: van todos o ninguno. */
+const SHIPPING_SUPPORT_FIELDS = [
+  "codDocSustento",
+  "numDocSustento",
+  "numAutDocSustento",
+  "fechaEmisionDocSustento",
+] as const;
+
 /** Impuestos a retener que la emisión produce (renta e IVA): sin ISD. */
 const WITHHOLDING_TAXES = new Set(["1", "2"]);
 /** Impuestos declarados del documento sustento: IVA, ICE e IRBPNR. */
@@ -272,6 +329,7 @@ const INVOICE_WHITELIST = whitelist("factura", ALLOWED);
 const CREDIT_NOTE_WHITELIST = whitelist("notaCredito", CREDIT_NOTE_ALLOWED);
 const DEBIT_NOTE_WHITELIST = whitelist("notaDebito", DEBIT_NOTE_ALLOWED);
 const WITHHOLDING_WHITELIST = whitelist("comprobanteRetencion", WITHHOLDING_ALLOWED);
+const SHIPPING_GUIDE_WHITELIST = whitelist("guiaRemision", SHIPPING_GUIDE_ALLOWED);
 const ARRAYS = new Set([
   "factura.detalles.detalle",
   "factura.detalles.detalle.impuestos.impuesto",
@@ -292,6 +350,10 @@ const ARRAYS = new Set([
   `${WITHHOLDING_SUPPORT}.retenciones.retencion`,
   `${WITHHOLDING_SUPPORT}.pagos`,
   `${WITHHOLDING_SUPPORT}.pagos.pago`,
+  "guiaRemision.destinatarios",
+  SHIPPING_RECIPIENT,
+  `${SHIPPING_RECIPIENT}.detalles`,
+  `${SHIPPING_RECIPIENT}.detalles.detalle`,
 ]);
 
 const parser = new XMLParser({
@@ -904,8 +966,131 @@ function readWithholdingReceipt(
 }
 
 /**
- * Elige la lectura por la raíz del XML: la factura, la nota de crédito, la nota de débito o el
- * comprobante de retención que el sistema emite.
+ * Lee la guía de remisión 1.1.0 que el sistema emite (add-shipping-guides, design D20): el transporte
+ * y cada destinatario con su comprobante de venta y su detalle. Un sustento distinto de una factura
+ * (`codDocSustento` 01), un sustento incompleto o un bloque repetido es contenido que el builder no
+ * escribe.
+ */
+function readShippingGuide(
+  { document, roots }: Readonly<{ document: unknown; roots: string[] }>,
+  input: RideSourceInput,
+): RideShippingGuide {
+  const { authorization } = input;
+  const guia = isNode(document) ? document.guiaRemision : undefined;
+  if (roots.length !== 1 || !isNode(guia)) throw invalid("NOT_SHIPPING_GUIDE");
+  if (guia["@_version"] !== RIDE_SHIPPING_GUIDE_VERSION) throw invalid("UNSUPPORTED_VERSION");
+  const tributaria = guia.infoTributaria;
+  const info = guia.infoGuiaRemision;
+  const blocks = list(guia.destinatarios);
+  if (!isNode(tributaria) || !isNode(info) || blocks.length === 0) {
+    throw invalid("NOT_SHIPPING_GUIDE");
+  }
+  if (required(tributaria, "codDoc", "infoTributaria") !== "06") {
+    throw invalid("NOT_SHIPPING_GUIDE");
+  }
+
+  const unsupported = new Set<string>();
+  unsupportedElements(guia, "guiaRemision", unsupported, SHIPPING_GUIDE_WHITELIST);
+  if (blocks.length > 1) unsupported.add("guiaRemision.destinatarios");
+  const recipientNodes = blocks.flatMap((block) => list(block.destinatario));
+  const recipients = recipientNodes.map((recipient) => {
+    const containers = list(recipient.detalles);
+    if (containers.length > 1) unsupported.add(`${SHIPPING_RECIPIENT}.detalles`);
+    return { recipient, details: containers.flatMap((block) => list(block.detalle)) };
+  });
+  for (const { recipient } of recipients) {
+    const present = SHIPPING_SUPPORT_FIELDS.filter((field) => recipient[field] !== undefined);
+    if (present.length > 0 && present.length < SHIPPING_SUPPORT_FIELDS.length) {
+      unsupported.add(`${SHIPPING_RECIPIENT}.sustento`);
+    }
+    const documentType = text(recipient, "codDocSustento", "destinatario");
+    if (documentType !== null && documentType !== SHIPPING_SUPPORT_DOCUMENT) {
+      unsupported.add(`destinatario.codDocSustento:${documentType}`);
+    }
+  }
+  if (unsupported.size > 0) {
+    throw new RideRejectedError("RIDE_SOURCE_UNSUPPORTED", [...unsupported].sort());
+  }
+
+  const accessKey = required(tributaria, "claveAcceso", "infoTributaria");
+  const environment = required(tributaria, "ambiente", "infoTributaria");
+  if (environment !== "1" && environment !== "2") throw invalid("infoTributaria.ambiente");
+  // El XML, la guía guardada y su autorización deben describir el mismo comprobante: la clave impresa
+  // y el código de barras son los de la guía, nunca los de una factura sustento.
+  const mismatches = [
+    ...(accessKey !== input.accessKey ? ["claveAcceso"] : []),
+    ...(authorization.number !== accessKey ? ["numeroAutorizacion"] : []),
+    ...(authorization.environment !== (environment === "1" ? "TEST" : "PRODUCTION")
+      ? ["ambiente"]
+      : []),
+  ];
+  if (mismatches.length > 0) {
+    throw new RideRejectedError("RIDE_AUTHORIZATION_MISMATCH", mismatches);
+  }
+
+  if (recipients.length === 0) throw invalid("MISSING:destinatarios.destinatario");
+  const readRecipients = recipients.map(({ recipient, details }) => {
+    if (details.length === 0) throw invalid("MISSING:detalles.detalle");
+    const documentType = text(recipient, "codDocSustento", "destinatario");
+    return {
+      identification: required(recipient, "identificacionDestinatario", "destinatario"),
+      legalName: required(recipient, "razonSocialDestinatario", "destinatario"),
+      address: required(recipient, "dirDestinatario", "destinatario"),
+      motive: required(recipient, "motivoTraslado", "destinatario"),
+      destinationEstablishmentCode: text(recipient, "codEstabDestino", "destinatario"),
+      route: text(recipient, "ruta", "destinatario"),
+      support:
+        documentType === null
+          ? null
+          : {
+              documentType,
+              number: required(recipient, "numDocSustento", "destinatario"),
+              authorizationNumber: required(recipient, "numAutDocSustento", "destinatario"),
+              issueDate: required(recipient, "fechaEmisionDocSustento", "destinatario"),
+            },
+      details: details.map((detalle) => ({
+        mainCode: text(detalle, "codigoInterno", "detalle"),
+        auxiliaryCode: text(detalle, "codigoAdicional", "detalle"),
+        description: required(detalle, "descripcion", "detalle"),
+        quantity: required(detalle, "cantidad", "detalle"),
+      })),
+    };
+  });
+
+  return {
+    kind: "SHIPPING_GUIDE",
+    environment,
+    emissionType: required(tributaria, "tipoEmision", "infoTributaria"),
+    legalName: required(tributaria, "razonSocial", "infoTributaria"),
+    tradeName: text(tributaria, "nombreComercial", "infoTributaria"),
+    ruc: required(tributaria, "ruc", "infoTributaria"),
+    accessKey,
+    establishment: required(tributaria, "estab", "infoTributaria"),
+    emissionPoint: required(tributaria, "ptoEmi", "infoTributaria"),
+    sequential: required(tributaria, "secuencial", "infoTributaria"),
+    headOfficeAddress: required(tributaria, "dirMatriz", "infoTributaria"),
+    establishmentAddress: text(info, "dirEstablecimiento", "infoGuiaRemision"),
+    specialTaxpayer: text(info, "contribuyenteEspecial", "infoGuiaRemision"),
+    accountingRequired: required(info, "obligadoContabilidad", "infoGuiaRemision"),
+    withholdingAgentResolution: text(tributaria, "agenteRetencion", "infoTributaria"),
+    rimpeLegend: text(tributaria, "contribuyenteRimpe", "infoTributaria"),
+    carrier: {
+      identificationType: required(info, "tipoIdentificacionTransportista", "infoGuiaRemision"),
+      identification: required(info, "rucTransportista", "infoGuiaRemision"),
+      legalName: required(info, "razonSocialTransportista", "infoGuiaRemision"),
+    },
+    plate: required(info, "placa", "infoGuiaRemision"),
+    departureAddress: required(info, "dirPartida", "infoGuiaRemision"),
+    transportStart: required(info, "fechaIniTransporte", "infoGuiaRemision"),
+    transportEnd: required(info, "fechaFinTransporte", "infoGuiaRemision"),
+    recipients: readRecipients,
+    authorization,
+  };
+}
+
+/**
+ * Elige la lectura por la raíz del XML: la factura, la nota de crédito, la nota de débito, el
+ * comprobante de retención o la guía de remisión que el sistema emite.
  */
 export function readRideDocument(input: RideSourceInput): RideDocumentData {
   const parsed = parseSource(input);
@@ -913,6 +1098,7 @@ export function readRideDocument(input: RideSourceInput): RideDocumentData {
   if (root === "notaCredito") return readCreditNote(parsed, input);
   if (root === "notaDebito") return readDebitNote(parsed, input);
   if (root === "comprobanteRetencion") return readWithholdingReceipt(parsed, input);
+  if (root === "guiaRemision") return readShippingGuide(parsed, input);
   return readInvoice(parsed, input);
 }
 

@@ -95,8 +95,8 @@
 
 ## 10. RIDE de la guía
 
-- [ ] 10.1 Implementar la lectura `guiaRemision` 1.1.0 con su lista blanca y el modelo `RideShippingGuide`, y la distribución de la ficha v2.34, anexo 2, página 64, con el renderer `guia-remision-1` (design D20). Verificar con golden del texto de las páginas y la lectura del Code128: varios destinatarios; destinatario sin factura con los rótulos vacíos; sin importes ni fila de fecha de emisión; paginación con el máximo de filas; los mismos bytes en dos procesos; `rise`, `docAduaneroUnico`, `detallesAdicionales`, `maquinaFiscal`, `infoAdicional` o un sustento distinto de `01` que detienen la generación; el RIDE de los demás tipos sin cambios. Comparar el resultado con la página 64 renderizada y registrarlo
-- [ ] 10.2 Comprobar el RIDE en el job, el pool y la bandeja. Verificar con una prueba de integración que una guía autorizada programa su RIDE en la misma operación, que se descarga verificado y que se imprime el mismo RIDE
+- [x] 10.1 Implementar la lectura `guiaRemision` 1.1.0 con su lista blanca y el modelo `RideShippingGuide`, y la distribución de la ficha v2.34, anexo 2, página 64, con el renderer `guia-remision-1` (design D20). Verificar con golden del texto de las páginas y la lectura del Code128: varios destinatarios; destinatario sin factura con los rótulos vacíos; sin importes ni fila de fecha de emisión; paginación con el máximo de filas; los mismos bytes en dos procesos; `rise`, `docAduaneroUnico`, `detallesAdicionales`, `maquinaFiscal`, `infoAdicional` o un sustento distinto de `01` que detienen la generación; el RIDE de los demás tipos sin cambios. Comparar el resultado con la página 64 renderizada y registrarlo
+- [x] 10.2 Comprobar el RIDE en el job, el pool y la bandeja. Verificar con una prueba de integración que una guía autorizada programa su RIDE en la misma operación, que se descarga verificado y que se imprime el mismo RIDE
 
 ## 11. Bandeja con guías de remisión
 

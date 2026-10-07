@@ -21,6 +21,14 @@
 // bloque por documento con sus impuestos declarados. Sin totales: el XML no trae un total retenido y
 // el RIDE no suma.
 //
+// La guía de remisión 1.1.0 tiene la suya (add-shipping-guides, design D20; anexo 2, página 64):
+// "GUÍA DE REMISIÓN" con su autorización y el Code128 de su clave; el bloque del transporte con el
+// transportista, la placa, el punto de partida y las fechas; y un bloque por destinatario con su
+// comprobante de venta, su fecha y su autorización, el motivo, el destino, la identificación, la
+// razón social, el documento aduanero, el código del establecimiento de destino y la ruta (los
+// rótulos sin dato quedan vacíos, como en el modelo), y la tabla de cantidad, descripción y códigos.
+// Sin importes ni una fila para la fecha de emisión de la guía, que el modelo no tiene.
+//
 // La lectura y la distribución se eligen por la raíz y la versión del XML.
 //
 // - Fuentes embebidas desde memoria (Noto Sans 2.015, OFL 1.1), con subconjunto; antes de dibujar
@@ -47,6 +55,7 @@ import {
   type RideRenderInput,
   type RideRenderOutcome,
   type RideRenderer,
+  type RideShippingGuide,
   type RideVersions,
   type RideWithholdingReceipt,
 } from "../../application/ride.ts";
@@ -99,6 +108,13 @@ export const WITHHOLDING_RIDE_RENDERER_VERSION = "retencion-1";
 export const WITHHOLDING_RIDE_VERSIONS: RideVersions = {
   ...RIDE_VERSIONS,
   rendererVersion: WITHHOLDING_RIDE_RENDERER_VERSION,
+};
+
+/** Versión de la distribución de la guía de remisión: cambia con cualquier cambio de su salida. */
+export const SHIPPING_GUIDE_RIDE_RENDERER_VERSION = "guia-remision-1";
+export const SHIPPING_GUIDE_RIDE_VERSIONS: RideVersions = {
+  ...RIDE_VERSIONS,
+  rendererVersion: SHIPPING_GUIDE_RIDE_RENDERER_VERSION,
 };
 
 /** Tablas normativas fijas de la ficha (no son estado mutable). */
@@ -164,9 +180,11 @@ const isCreditNote = (ride: RideDocumentData): ride is RideCreditNote =>
 const isDebitNote = (ride: RideDocumentData): ride is RideDebitNote => ride.kind === "DEBIT_NOTE";
 const isWithholding = (ride: RideDocumentData): ride is RideWithholdingReceipt =>
   ride.kind === "WITHHOLDING_RECEIPT";
+const isShippingGuide = (ride: RideDocumentData): ride is RideShippingGuide =>
+  ride.kind === "SHIPPING_GUIDE";
 const isInvoice = (ride: RideDocumentData): ride is RideInvoice =>
-  !isCreditNote(ride) && !isDebitNote(ride) && !isWithholding(ride);
-/** Denominación del comprobante modificado por su código (tabla 3 de la ficha). */
+  !isCreditNote(ride) && !isDebitNote(ride) && !isWithholding(ride) && !isShippingGuide(ride);
+/** Denominación del comprobante modificado o de venta por su código (tabla 3 de la ficha). */
 const MODIFIED_TYPES: Readonly<Record<string, string>> = { "01": "FACTURA" };
 const modifiedTypeText = (ride: RideCreditNote | RideDebitNote) =>
   MODIFIED_TYPES[ride.modified.documentType] ?? ride.modified.documentType;
@@ -177,7 +195,9 @@ const titleOf = (ride: RideDocumentData) =>
       ? "NOTA DE DÉBITO"
       : isWithholding(ride)
         ? "COMPROBANTE DE RETENCIÓN"
-        : "FACTURA";
+        : isShippingGuide(ride)
+          ? "GUÍA DE REMISIÓN"
+          : "FACTURA";
 
 /** Subtotales en el orden del anexo 2; solo los que el comprobante llenó. */
 export function totalRows(ride: RideInvoice | RideCreditNote | RideDebitNote): [string, string][] {
@@ -215,6 +235,7 @@ export function drawnStrings(ride: RideDocumentData): string[] {
   if (isCreditNote(ride)) return creditNoteStrings(ride);
   if (isDebitNote(ride)) return debitNoteStrings(ride);
   if (isWithholding(ride)) return withholdingStrings(ride);
+  if (isShippingGuide(ride)) return shippingGuideStrings(ride);
   return [
     documentNumber(ride),
     ride.authorization.number,
@@ -358,6 +379,52 @@ function withholdingStrings(ride: RideWithholdingReceipt): string[] {
         tax.base,
         tax.tariff,
         tax.amount,
+      ]),
+    ]),
+  ];
+}
+
+type ShippingRecipient = RideShippingGuide["recipients"][number];
+const saleDocumentText = (support: NonNullable<ShippingRecipient["support"]>) =>
+  `${MODIFIED_TYPES[support.documentType] ?? support.documentType} ${support.number}`;
+
+function shippingGuideStrings(ride: RideShippingGuide): string[] {
+  return [
+    documentNumber(ride),
+    ride.authorization.number,
+    environmentText(ride),
+    emissionText(ride),
+    ride.accessKey,
+    ride.legalName,
+    ride.tradeName ?? "",
+    ride.headOfficeAddress,
+    ride.establishmentAddress ?? "",
+    ride.specialTaxpayer ?? "",
+    ride.accountingRequired,
+    ride.withholdingAgentResolution ?? "",
+    ride.rimpeLegend ?? "",
+    ride.ruc,
+    ride.carrier.identification,
+    ride.carrier.legalName,
+    ride.plate,
+    ride.departureAddress,
+    ride.transportStart,
+    ride.transportEnd,
+    ...ride.recipients.flatMap((recipient) => [
+      recipient.support ? saleDocumentText(recipient.support) : "",
+      recipient.support?.issueDate ?? "",
+      recipient.support?.authorizationNumber ?? "",
+      recipient.motive,
+      recipient.address,
+      recipient.identification,
+      recipient.legalName,
+      recipient.destinationEstablishmentCode ?? "",
+      recipient.route ?? "",
+      ...recipient.details.flatMap((detail) => [
+        detail.quantity,
+        detail.description,
+        detail.mainCode ?? "",
+        detail.auxiliaryCode ?? "",
       ]),
     ]),
   ];
@@ -546,6 +613,88 @@ function supportTaxesSection(ride: RideWithholdingReceipt): Content[] {
     },
     ...blocks,
   ];
+}
+
+/**
+ * Transporte (anexo 2, página 64): la identificación y la razón social del transportista, la placa,
+ * el punto de partida y las fechas de inicio y fin del transporte.
+ */
+function transportSection(ride: RideShippingGuide): Content {
+  return box(
+    [
+      row(150, "Identificación (Transportista):", ride.carrier.identification, [0, 0, 0, 0]),
+      row(150, "Razón Social / Nombres y Apellidos:", ride.carrier.legalName),
+      row(150, "Placa:", ride.plate),
+      row(150, "Punto de Partida:", ride.departureAddress),
+      {
+        columns: [
+          { width: 150, ...label("Fecha inicio Transporte:") },
+          { width: "*", ...value(ride.transportStart) },
+          { width: 110, ...label("Fecha fin Transporte:") },
+          { width: 70, ...value(ride.transportEnd) },
+        ],
+        margin: [0, 3, 0, 0],
+      },
+    ],
+    [0, 8, 0, 0],
+  );
+}
+
+/**
+ * Un bloque por destinatario (anexo 2, página 64): su comprobante de venta con su fecha y su
+ * autorización, el motivo, el destino, la identificación, la razón social, el documento aduanero (el
+ * sistema no lo emite), el código del establecimiento de destino y la ruta, con los rótulos sin dato
+ * vacíos; y su tabla de cantidad, descripción y códigos. Los datos del destinatario y el encabezado
+ * son las filas de cabecera de la tabla: nunca se separan de su primera fila y se repiten en cada
+ * página que continúa el bloque; ninguna fila se parte entre dos.
+ */
+function recipientSection(recipient: ShippingRecipient): Content {
+  const { support } = recipient;
+  const data: Content = {
+    stack: [
+      {
+        columns: [
+          { width: 150, ...label("Comprobante de Venta:") },
+          { width: "*", ...value(support ? saleDocumentText(support) : null) },
+          { width: 90, ...label("Fecha de Emisión:") },
+          { width: 60, ...value(support?.issueDate ?? null) },
+        ],
+      },
+      row(150, "Número de Autorización:", support?.authorizationNumber ?? null),
+      row(150, "Motivo Traslado:", recipient.motive),
+      row(150, "Destino (Punto de llegada):", recipient.address),
+      row(150, "Identificación (Destinatario):", recipient.identification),
+      row(150, "Razón Social / Nombres y Apellidos:", recipient.legalName),
+      row(150, "Documento Aduanero:", null),
+      row(150, "Código Establecimiento Destino:", recipient.destinationEstablishmentCode),
+      row(150, "Ruta:", recipient.route),
+    ],
+    margin: [BOX_PADDING_PT - 3, BOX_PADDING_PT - 2, BOX_PADDING_PT - 3, BOX_PADDING_PT - 2],
+  };
+  const body: TableCell[][] = [
+    [{ ...data, colSpan: 4 }, {}, {}, {}],
+    ["Cantidad", "Descripción", "Código Principal", "Código Auxiliar"].map((text) => ({
+      text,
+      style: "tableHeader",
+    })),
+    ...recipient.details.map((detail) => [
+      amountCell(detail.quantity),
+      { text: detail.description, style: "cell" },
+      { text: detail.mainCode ?? "", style: "cell" },
+      { text: detail.auxiliaryCode ?? "", style: "cell" },
+    ]),
+  ];
+  return {
+    table: {
+      headerRows: 2,
+      keepWithHeaderRows: 1,
+      dontBreakRows: true,
+      widths: [70, "*", 80, 80],
+      body,
+    },
+    layout: "grid",
+    margin: [0, 8, 0, 0],
+  };
 }
 
 function buyerSection(ride: RideInvoice): Content {
@@ -819,7 +968,9 @@ export function rideDocument(
           ? [modifiedDocumentSection(ride, []), debitNoteReasonsSection(ride), closingSection(ride)]
           : isWithholding(ride)
             ? [subjectSection(ride), withholdingsSection(ride), ...supportTaxesSection(ride)]
-            : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
+            : isShippingGuide(ride)
+              ? [transportSection(ride), ...ride.recipients.map(recipientSection)]
+              : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
     ],
     images: logo
       ? { logo: `data:${logo.mediaType};base64,${Buffer.from(logo.bytes).toString("base64")}` }
@@ -947,7 +1098,9 @@ export function createInProcessRideRenderer(fonts: RideFonts): RideRenderer {
               ? DEBIT_NOTE_RIDE_VERSIONS
               : isWithholding(ride)
                 ? WITHHOLDING_RIDE_VERSIONS
-                : RIDE_VERSIONS,
+                : isShippingGuide(ride)
+                  ? SHIPPING_GUIDE_RIDE_VERSIONS
+                  : RIDE_VERSIONS,
           renderMs: performance.now() - started,
         };
       } catch (error) {
