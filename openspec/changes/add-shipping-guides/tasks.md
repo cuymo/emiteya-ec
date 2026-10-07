@@ -100,7 +100,7 @@
 
 ## 11. Bandeja con guías de remisión
 
-- [ ] 11.1 Agregar el tipo `06` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` (design D21). Verificar con pruebas de componente: filtro con los cinco tipos, tipo bajo el número, receptor derivado (nombre o "N destinatarios") y total "—" accesible, enlace al detalle de la guía, textos en femenino, documentos disponibles por estado, y los demás tipos sin cambios. Documentarlo en `fiscal-emission.md`
+- [x] 11.1 Agregar el tipo `06` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` (design D21). Verificar con pruebas de componente: filtro con los cinco tipos, tipo bajo el número, receptor derivado (nombre o "N destinatarios") y total "—" accesible, enlace al detalle de la guía, textos en femenino, documentos disponibles por estado, y los demás tipos sin cambios. Documentarlo en `fiscal-emission.md`
 
 ## 12. Pantallas de guías de remisión
 

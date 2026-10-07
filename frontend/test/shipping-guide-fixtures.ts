@@ -1,0 +1,132 @@
+// Datos de prueba de la guía de remisión con la forma exacta de los contratos (add-shipping-guides,
+// design D21, D22 y D25), para las pruebas de componente de la bandeja, el detalle, la lista y el
+// borrador.
+
+export const GUIDE_KEY = "0610202606179001234500110010010000000051234567817";
+
+export const GUIDE_TRANSMISSION = {
+  inProgress: false,
+  stopped: null,
+  reconcilable: false,
+  authorization: null,
+  lastResult: null,
+};
+
+export const guideDetail = (
+  state: string,
+  transmission: Record<string, unknown> = {},
+  overrides: Record<string, unknown> = {},
+) => ({
+  id: "gr-1",
+  documentType: "06",
+  environment: "TEST",
+  documentNumber: "001-001-000000005",
+  accessKey: GUIDE_KEY,
+  issueDate: "2026-10-06",
+  state,
+  issuer: {
+    ruc: "1790012345001",
+    legalName: "EMPRESA DE PRUEBA S.A.",
+    tradeName: null,
+    headOfficeAddress: "Quito",
+    establishmentAddress: "Av. 6 de Diciembre, Quito",
+    accountingRequired: true,
+    specialTaxpayerNumber: null,
+    withholdingAgentResolution: null,
+    rimpeCategory: null,
+  },
+  departure: {
+    source: "ESTABLISHMENT",
+    establishment: { id: "est-1", code: "001", address: "Av. 6 de Diciembre, Quito" },
+    address: "Av. 6 de Diciembre, Quito",
+  },
+  transporter: {
+    source: "PARTY",
+    partyId: "car-1",
+    identificationType: "04",
+    identification: "1791111111001",
+    legalName: "TRANSPORTES ANDINOS S.A.",
+  },
+  plate: "PAA-1234",
+  transportStart: "2026-10-06",
+  transportEnd: "2026-10-07",
+  recipients: [
+    {
+      position: 1,
+      kind: "PARTY",
+      partyId: "cli-1",
+      destinationEstablishment: null,
+      identificationType: "04",
+      identification: "0992877878001",
+      legalName: "EL PERNO CIA. LTDA.",
+      address: "Av. Quito y Guayaquil",
+      motive: "Venta",
+      route: "Quito - Guayaquil",
+      destinationEstablishmentCode: null,
+      support: {
+        kind: "INTERNAL_INVOICE",
+        invoice: {
+          id: "inv-1",
+          documentType: "01",
+          documentNumber: "001-001-000000123",
+          issueDate: "2026-10-05",
+          authorizationNumber: "0510202601179001234500110010010000001231234567815",
+        },
+      },
+      details: [
+        {
+          position: 1,
+          productId: "prod-1",
+          mainCode: "CEM-50",
+          auxiliaryCode: null,
+          description: "Cemento 50 kg",
+          quantity: "10",
+        },
+      ],
+    },
+    {
+      position: 2,
+      kind: "OWN_COMPANY",
+      partyId: null,
+      destinationEstablishment: { id: "est-2", code: "002", address: "Bodega sur, Quito" },
+      identificationType: "04",
+      identification: "1790012345001",
+      legalName: "EMPRESA DE PRUEBA S.A.",
+      address: "Bodega sur, Quito",
+      motive: "Reposición de bodega",
+      route: null,
+      destinationEstablishmentCode: "002",
+      support: {
+        kind: "DECLARED_EXCEPTION",
+        declaration: {
+          case: "OWN_ESTABLISHMENT_TRANSFER",
+          literal: "d",
+          label: "Traslado entre establecimientos propios",
+          policyVersion: 1,
+          basis: "USER_DECLARED",
+          declaredBy: "usr-op",
+          declaredByName: "Óscar Operador",
+          declaredAt: "2026-10-06T15:00:00.000Z",
+        },
+      },
+      details: [
+        {
+          position: 1,
+          productId: null,
+          mainCode: "VAR-12",
+          auxiliaryCode: null,
+          description: "Varilla 12 mm",
+          quantity: "2.5",
+        },
+      ],
+    },
+  ],
+  counts: { recipients: 2, details: 2 },
+  diagnostic: null,
+  artifact: state === "RESERVED" ? null : { sha256: "a".repeat(64), sizeBytes: 9876 },
+  authorizedArtifact: state === "AUTHORIZED" ? { sha256: "b".repeat(64), sizeBytes: 10234 } : null,
+  transmission: { ...GUIDE_TRANSMISSION, ...transmission },
+  createdAt: "2026-10-06T15:00:00.000Z",
+  signedAt: state === "RESERVED" ? null : "2026-10-06T15:00:01.000Z",
+  ...overrides,
+});
