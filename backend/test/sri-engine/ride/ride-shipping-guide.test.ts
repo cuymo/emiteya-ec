@@ -261,6 +261,21 @@ describe("RIDE de la guía de remisión (ficha v2.34, anexo 2, página 64)", () 
           xml.replace("<codDocSustento>01</codDocSustento>", "<codDocSustento>02</codDocSustento>"),
         ["destinatario.codDocSustento:02"],
       ],
+      [
+        "sustento-parcial",
+        (xml) => xml.replace(/<numAutDocSustento>[^<]*<\/numAutDocSustento>/, ""),
+        ["guiaRemision.destinatarios.destinatario.sustento"],
+      ],
+      [
+        "destinatarios-repetidos",
+        (xml) => xml.replace(/<destinatarios>[\s\S]*<\/destinatarios>/, (block) => block + block),
+        ["guiaRemision.destinatarios"],
+      ],
+      [
+        "detalles-repetidos",
+        (xml) => xml.replace(/<detalles>[\s\S]*?<\/detalles>/, (block) => block + block),
+        ["guiaRemision.destinatarios.destinatario.detalles"],
+      ],
     ];
     for (const [index, [name, tamper, detailPath]] of cases.entries()) {
       const tampered = await authorizedGuide(

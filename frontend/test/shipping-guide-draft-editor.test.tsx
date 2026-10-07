@@ -398,6 +398,11 @@ describe("borrador de guía de remisión", () => {
     expect(
       within(added).getByRole("textbox", { name: "Código principal (opcional)" }),
     ).toHaveProperty("value", "SRV-1");
+    expect(
+      within(added).getByRole("textbox", {
+        name: "Descripción (incluye unidad y características)",
+      }),
+    ).toHaveProperty("value", "Instalación en obra");
     expect(within(added).getByRole("textbox", { name: "Cantidad" })).toHaveProperty("value", "1");
   });
 

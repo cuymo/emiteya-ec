@@ -95,6 +95,9 @@ describe("concurrencia de la reserva de una guía de remisión", () => {
   });
 
   it("dos guías simultáneas sobre la misma factura son válidas y tienen secuenciales distintos", async () => {
+    const invoiceBefore = await db.database.prisma.electronicDocument.findUniqueOrThrow({
+      where: { id: invoiceId },
+    });
     for (let round = 0; round < ROUNDS; round++) {
       const [first, second] = await Promise.all([draft(), draft("5")]);
       const [one, two] = await Promise.all([emit(first), emit(second)]);
@@ -104,7 +107,18 @@ describe("concurrencia de la reserva de una guía de remisión", () => {
         const { support } = bodyOf(res).data.recipients[0]!;
         expect(support.kind === "INTERNAL_INVOICE" && support.invoice.id).toBe(invoiceId);
       }
+      // La cantidad reducida antes de emitir es la de la guía.
+      expect(bodyOf(two).data.recipients[0]!.details[0]!.quantity).toBe("5");
     }
+    // La factura no cambia: ni su estado, ni su total, ni su snapshot.
+    const invoiceAfter = await db.database.prisma.electronicDocument.findUniqueOrThrow({
+      where: { id: invoiceId },
+    });
+    expect([invoiceAfter.state, invoiceAfter.total?.toFixed(), invoiceAfter.snapshot]).toEqual([
+      invoiceBefore.state,
+      invoiceBefore.total?.toFixed(),
+      invoiceBefore.snapshot,
+    ]);
     // Los secuenciales de las guías no tienen huecos ni repetidos.
     const numbers = (
       await db.database.prisma.electronicDocument.findMany({

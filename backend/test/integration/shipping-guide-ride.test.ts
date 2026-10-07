@@ -227,6 +227,19 @@ describe("RIDE de una guía de remisión en el job y la bandeja", () => {
     expect(print.status, JSON.stringify(print.body)).toBe(201);
     const printed = await downloadRide(guide.id);
     expect(sha256(printed.body as Buffer)).toBe(rides[0]!.sha256);
+    // El historial de entregas de la guía registra las descargas y la solicitud de impresión.
+    const deliveries = await request(archive.app)
+      .get(`/api/v1/documents/${guide.id}/deliveries`)
+      .set("Cookie", a.cookies.operator);
+    expect(deliveries.status).toBe(200);
+    const { items } = (
+      deliveries.body as { data: { items: { event: string; artifactKind: string }[] } }
+    ).data;
+    expect(items.map((d) => `${d.event}:${d.artifactKind}`).sort()).toEqual([
+      "DOWNLOAD:RIDE_PDF",
+      "DOWNLOAD:RIDE_PDF",
+      "PRINT_REQUESTED:RIDE_PDF",
+    ]);
     const list = await request(archive.app)
       .get("/api/v1/documents?documentType=06")
       .set("Cookie", a.cookies.operator);

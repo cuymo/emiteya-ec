@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { SessionGate } from "@/components/session";
+import { formatDateTime } from "@/features/invoices/invoice-format";
 import { InvoiceShippingGuideAction } from "@/features/shipping-guides/invoice-shipping-guide-action";
 import { ShippingGuideDetailScreen } from "@/features/shipping-guides/shipping-guide-detail";
 import {
@@ -117,7 +118,11 @@ describe("detalle de la guía", () => {
       within(second).getByText(/Sin factura: Traslado entre establecimientos propios/),
     ).toBeDefined();
     // La excepción se presenta como declarada por el usuario, con su momento; nunca verificada.
-    expect(within(second).getByText(/Declarada por Óscar Operador/)).toBeDefined();
+    expect(
+      within(second).getByText(
+        `Declarada por Óscar Operador · ${formatDateTime("2026-10-06T15:00:00.000Z")}`,
+      ),
+    ).toBeDefined();
     expect(within(second).getByText(/el sistema no puede comprobarla/)).toBeDefined();
     expect(second.textContent).not.toMatch(/verificad/i);
     expect(within(within(second).getByRole("table")).getByText("Varilla 12 mm")).toBeDefined();

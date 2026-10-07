@@ -240,6 +240,20 @@ describe("bandeja de comprobantes sobre HTTP", () => {
       total: null,
       recipients: { count: 3, name: null },
     });
+    // Una guía firmada sin autorizar ofrece solo su XML firmado: ni RIDE ni XML autorizado.
+    const signed = await request(api.app)
+      .get(`/api/v1/documents/${docs.guideSingle!.id}`)
+      .set("Cookie", a.cookies.operator);
+    expect(bodyOf(signed).data).toMatchObject({
+      state: "SIGNED",
+      documents: { ride: "NOT_APPLICABLE", authorizedXml: false, signedXml: true },
+    });
+    for (const path of ["ride", "authorized-xml"]) {
+      const unavailable = await request(api.app)
+        .get(`/api/v1/documents/${docs.guideSingle!.id}/${path}`)
+        .set("Cookie", a.cookies.operator);
+      expect([path, unavailable.status], path).toEqual([path, 404]);
+    }
   });
 
   it("la identificación y la búsqueda encuentran una guía por cualquiera de sus destinatarios", async () => {

@@ -1,7 +1,9 @@
 // Contratos de la bandeja de comprobantes y de sus documentos (add-document-archive, design D2, D8
-// a D11). La bandeja es transversal a los seis comprobantes; hoy solo existe la factura. Las
-// consultas no son estrictas: un `companyId` en la consulta se ignora, porque la empresa sale
-// siempre de la sesión. Las vistas nunca llevan bytes ni XML.
+// a D11). La bandeja es transversal a los comprobantes emitidos: factura, notas de crédito y de
+// débito, guía de remisión y comprobante de retención. La guía no tiene total ni comprador único y
+// lleva el resumen de sus destinatarios (add-shipping-guides, design D10). Las consultas no son
+// estrictas: un `companyId` en la consulta se ignora, porque la empresa sale siempre de la sesión.
+// Las vistas nunca llevan bytes ni XML.
 import { z } from "zod";
 import { decimalString, DECIMAL_SPECS } from "./decimal.ts";
 import { documentTypeSchema } from "./fiscal-numbering.ts";

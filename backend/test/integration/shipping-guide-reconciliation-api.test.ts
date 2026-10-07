@@ -221,5 +221,28 @@ describe("reconciliación manual de una guía de remisión", () => {
         where: { documentId: returned.id, type: "sri.reconcile" },
       }),
     ).toBe(0);
+    // No autorizada tampoco.
+    const notAuthorized = await signedGuide();
+    sri.replies.push(response(receptionResponse("RECIBIDA")));
+    await sri
+      .transmit()
+      .run(await sri.leasePending(notAuthorized.id, "sri.transmit"), sri.context());
+    sri.reply(notAuthorized, [
+      sri.authorized(notAuthorized, { estado: "NO AUTORIZADO", comprobante: undefined }),
+    ]);
+    await sri
+      .authorize()
+      .run(await sri.leasePending(notAuthorized.id, "sri.authorize"), sri.context());
+    expect(await stateOf(notAuthorized.id)).toBe("NOT_AUTHORIZED");
+    const refused = await reconcile(notAuthorized.id, a.cookies.admin);
+    expect([refused.status, bodyOf(refused).error.code]).toEqual([
+      409,
+      "SHIPPING_GUIDE_NOT_RECONCILABLE",
+    ]);
+    expect(
+      await db.database.prisma.job.count({
+        where: { documentId: notAuthorized.id, type: "sri.reconcile" },
+      }),
+    ).toBe(0);
   });
 });
