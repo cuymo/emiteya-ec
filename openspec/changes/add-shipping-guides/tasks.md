@@ -130,7 +130,7 @@
 ## 13. Rendimiento y prueba end-to-end
 
 - [x] 13.1 Añadir `bench:shipping-guides` en `backend/scripts/` (design D28), con el barrido del RIDE apagado, y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005, que el RIDE tarda menos de 1 s, que la transacción de la reserva no incluye XML, firma ni red, que la bandeja filtrada por un destinatario cumple el objetivo, y que el CPU, la memoria y la latencia del peor caso confirman los valores por defecto de design D23 (o ajustarlos con `/opsx:update` y la evidencia). Registrar el tamaño del XML firmado del peor caso solo como medición, sin relacionarlo con Q-47
-- [ ] 13.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado aislado: una guía con transporte propio, origen en un establecimiento propio y dos destinatarios (una factura autorizada y un traslado a otro establecimiento propio distinto del origen), autorizada y con su RIDE en la bandeja; otra no autorizada; y el inventario, la factura y los roles sin cambios. Verificar que la prueba pasa
+- [x] 13.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado aislado: una guía con transporte propio, origen en un establecimiento propio y dos destinatarios (una factura autorizada y un traslado a otro establecimiento propio distinto del origen), autorizada y con su RIDE en la bandeja; otra no autorizada; y el inventario, la factura y los roles sin cambios. Verificar que la prueba pasa
 
 ## 14. Verificación
 
