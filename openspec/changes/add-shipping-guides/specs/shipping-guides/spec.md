@@ -352,7 +352,7 @@ La cantidad SHALL ser un decimal exacto mayor que cero, de hasta 18 dígitos en 
 - **THEN** el sistema la acepta y la escribe completa
 
 ### Requirement: Límites de recursos de la guía
-El sistema SHALL limitar los destinatarios por guía, los detalles por destinatario y los detalles por guía con valores configurables, y aplicar los tres a la vez. Son defensas de recursos del producto, no límites del SRI ni del XSD, y no se presentan como reglas fiscales. Las rutas que reciben el borrador completo (crearlo y actualizarlo) SHALL admitir un cuerpo JSON de hasta 2 MiB, como defensa de recursos HTTP del proyecto, para que un borrador dentro de los máximos absolutos llegue siempre a estos límites, que se aplican después de leer el cuerpo; el resto de la API conserva su límite de 100 KB. Ninguno de los dos tamaños es un límite del SRI, del XSD ni del XML, ni una interpretación de Q-47.
+El sistema SHALL limitar los destinatarios por guía, los detalles por destinatario y los detalles por guía con valores configurables, y aplicar los tres a la vez. Son defensas de recursos del producto, no límites del SRI ni del XSD, y no se presentan como reglas fiscales. Las rutas que reciben el borrador completo (crearlo y actualizarlo) SHALL admitir un cuerpo JSON de hasta 2 MiB, como defensa de recursos HTTP del proyecto, para que un borrador dentro de los máximos absolutos llegue siempre a estos límites, que se aplican después de leer el cuerpo; las demás rutas JSON sin límite propio conservan el límite global de 100 KB. Ninguno de los dos tamaños es un límite del SRI, del XSD ni del XML, ni una interpretación de Q-47.
 
 #### Scenario: Demasiados destinatarios
 - **WHEN** un borrador supera el máximo configurado de destinatarios
@@ -379,7 +379,7 @@ El sistema SHALL limitar los destinatarios por guía, los detalles por destinata
 - **THEN** el sistema lo rechaza por el límite de detalles por guía, no por el tamaño del cuerpo
 
 #### Scenario: Las demás rutas conservan su límite
-- **WHEN** una solicitud a otra ruta de la API, incluida la emisión de la guía, tiene un cuerpo de más de 100 KB
+- **WHEN** una solicitud a otra ruta JSON de la API sin límite propio, incluida la emisión de la guía, tiene un cuerpo de más de 100 KB
 - **THEN** el sistema la rechaza por tamaño
 
 ### Requirement: Borrador y vista previa de la guía
