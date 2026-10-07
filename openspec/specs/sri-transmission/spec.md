@@ -309,7 +309,7 @@ Un comprobante SHALL pasar a revisión manual solo cuando su resultado no puede 
 - **THEN** sigue en revisión manual, no se reenvía y no existe una acción para reenviarlo de todas formas
 
 ### Requirement: Reconciliación manual
-Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura, de una nota de crédito, de una nota de débito o de un comprobante de retención en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
+Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura, de una nota de crédito, de una nota de débito, de una guía de remisión o de un comprobante de retención en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
 
 #### Scenario: Reconciliación de una revisión manual
 - **WHEN** un administrador reconcilia una factura en revisión manual y el SRI la informa autorizada
@@ -353,6 +353,14 @@ Un administrador SHALL poder pedir, con un motivo, la reconciliación de una fac
 
 #### Scenario: Comprobante de retención en un estado que no se reconcilia
 - **WHEN** un administrador pide la reconciliación de un comprobante de retención autorizado, no autorizado o devuelto
+- **THEN** se rechaza la reconciliación sin programarla
+
+#### Scenario: Guía de remisión en revisión manual
+- **WHEN** un administrador reconcilia una guía de remisión en revisión manual y el SRI la informa autorizada
+- **THEN** la guía pasa a autorizada con las mismas reglas que una factura, sin cambiar inventario ni facturas
+
+#### Scenario: Guía de remisión en un estado que no se reconcilia
+- **WHEN** un administrador pide la reconciliación de una guía de remisión autorizada, no autorizada o devuelta
 - **THEN** se rechaza la reconciliación sin programarla
 
 ### Requirement: Número, clave y XML firmado invariables durante la transmisión
@@ -404,7 +412,7 @@ Los intentos, las respuestas, las transmisiones y las reconciliaciones de una em
 - **THEN** el sistema responde que no existe y no se programa nada
 
 ### Requirement: Transmisión de cada tipo emitido
-La transmisión SHALL tratar igual la factura, la nota de crédito, la nota de débito y el comprobante de retención: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
+La transmisión SHALL tratar igual la factura, la nota de crédito, la nota de débito, la guía de remisión y el comprobante de retención: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
 
 #### Scenario: Nota de crédito autorizada
 - **WHEN** una nota de crédito firmada se envía y el SRI la autoriza
@@ -484,4 +492,36 @@ La transmisión SHALL tratar igual la factura, la nota de crédito, la nota de d
 
 #### Scenario: Evidencia antes de clasificar una retención
 - **WHEN** el SRI responde a un envío o a una consulta de un comprobante de retención
+- **THEN** la respuesta queda guardada antes de clasificarla, y si la decisión local falla, el reintento clasifica la respuesta guardada sin volver a llamar al SRI
+
+#### Scenario: Guía recibida y autorizada
+- **WHEN** una guía de remisión firmada se envía, la recepción responde `RECIBIDA` y la consulta la informa autorizada
+- **THEN** pasa por recibida y queda autorizada con su número de autorización y su XML autorizado, como una factura
+
+#### Scenario: Guía devuelta por la fecha de inicio
+- **WHEN** la recepción responde `DEVUELTA` para una guía de remisión con el error 82 de la fecha de inicio del transporte
+- **THEN** la guía queda devuelta con todos los mensajes del SRI, como cualquier devolución
+
+#### Scenario: Guía no autorizada
+- **WHEN** la consulta informa no autorizada una guía de remisión
+- **THEN** queda no autorizada con sus mensajes
+
+#### Scenario: Errores 70, 43 y 45 en una guía
+- **WHEN** el SRI responde el error 70, el 43 o el 45 para una guía de remisión
+- **THEN** sigue las mismas reglas que una factura y se reconcilia por su clave sin reenviar a ciegas
+
+#### Scenario: Guía no enviada de forma comprobable
+- **WHEN** el envío de una guía de remisión falla de una forma que demuestra que la solicitud no salió
+- **THEN** se reintenta el envío como el de una factura, sin pasar a verificando
+
+#### Scenario: Guía con resultado incierto
+- **WHEN** el envío de una guía de remisión termina sin respuesta concluyente
+- **THEN** queda verificando con el SRI y se reconcilia por su clave, sin reenviarse antes de saber si el SRI la recibió
+
+#### Scenario: Guía en revisión manual
+- **WHEN** la reconciliación automática de una guía de remisión agota sus intentos sin conclusión
+- **THEN** queda en revisión manual, como una factura
+
+#### Scenario: Evidencia antes de clasificar una guía
+- **WHEN** el SRI responde a un envío o a una consulta de una guía de remisión
 - **THEN** la respuesta queda guardada antes de clasificarla, y si la decisión local falla, el reintento clasifica la respuesta guardada sin volver a llamar al SRI
