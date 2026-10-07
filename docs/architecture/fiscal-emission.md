@@ -261,7 +261,7 @@ Cambio 6. Código en `backend/src/modules/invoices/` y contratos en
 | --- | --- |
 | Borrador y vista previa del servidor | `invoices/domain/draft.ts`, `invoices/application/drafts.ts` |
 | Evaluación pura, con todos los problemas en el orden de D6 | `invoices/domain/evaluation.ts` |
-| Aritmética fiscal exacta y materialización HALF_UP | `invoices/domain/amounts.ts`, sobre `platform/decimal` |
+| Aritmética fiscal exacta y materialización HALF_UP | `fiscal/domain/document-amounts.ts` (reexportada por `invoices/domain/amounts.ts`, `add-purchase-settlements` design D8), sobre `platform/decimal` |
 | Snapshot versionado (`InvoiceSnapshotV1`) | `invoices/domain/snapshot.ts` |
 | Transacción de `RESERVED` | `invoices/application/emission.ts` y `invoices/infrastructure/emission-unit-of-work.ts`, con la reserva compartida `fiscal/application/document-reservation.ts` (`add-credit-notes`) |
 | Del snapshot al artefacto firmado | `fiscal/application/signing-pipeline.ts`, compartido por tipo desde `add-credit-notes`, con el perfil `invoices/application/signing-profile.ts` |

@@ -165,6 +165,10 @@ design D2; `add-shipping-guides`, design D2; detalle en `fiscal-emission.md`):
   compone `signingPipelines` una vez y entrega a cada módulo su pipeline.
 - `requestReconciliationIn` hace la solicitud manual; cada módulo pone su ruta, su permiso y su
   auditoría.
+- `fiscal/domain/document-amounts.ts` reúne las primitivas de los importes de un comprobante con
+  líneas e impuestos (subtotal, descuento, base, impuesto, materialización HALF_UP y totales), sin
+  conocer ningún tipo: la factura las reexporta con sus nombres y la liquidación de compra las usa
+  en su cálculo versionado, sin importar `invoices` (`add-purchase-settlements`, design D8).
 
 Por tipo quedan el borrador, la evaluación, el snapshot, el builder del XML, la distribución del
 RIDE, las rutas y las pantallas. Un tipo nuevo registra su perfil; no se agrega un conmutador por
