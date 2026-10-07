@@ -210,7 +210,7 @@ describe("Documentos de la nota de crédito", () => {
     const calls = render(
       <>
         <p>detalle</p>
-        <DocumentsSection document={{ id: "x-1", documentType: "06", state: "AUTHORIZED" }} />
+        <DocumentsSection document={{ id: "x-1", documentType: "03", state: "AUTHORIZED" }} />
       </>,
       {},
     );

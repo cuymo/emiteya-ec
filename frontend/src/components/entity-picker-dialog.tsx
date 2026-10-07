@@ -40,6 +40,7 @@ export function EntityPickerDialog<T>({
   getLabel,
   renderItem,
   onSelect,
+  isDisabled,
   quickOption,
   emptyTitle,
   emptyDescription,
@@ -60,6 +61,11 @@ export function EntityPickerDialog<T>({
   renderItem: (item: T) => ReactNode;
   /** Devuelve el registro elegido; el diálogo se cierra. */
   onSelect: (item: T) => void;
+  /**
+   * Un registro visible que no se puede elegir (por ejemplo, un transportista cuya identificación no
+   * cabe en la guía); `renderItem` muestra el motivo.
+   */
+  isDisabled?: (item: T) => boolean;
   quickOption?: QuickOption;
   emptyTitle: string;
   emptyDescription?: string;
@@ -95,7 +101,13 @@ export function EntityPickerDialog<T>({
   // La opción rápida solo acompaña a la primera página sin búsqueda, ni escrita ni aplicada.
   const pending = draft.trim() !== search;
   const showQuick = quickOption !== undefined && search === "" && !pending && page === 1;
-  const options: { key: string; label: string; select: () => void; content: ReactNode }[] = [
+  const options: {
+    key: string;
+    label: string;
+    select: () => void;
+    content: ReactNode;
+    disabled?: boolean;
+  }[] = [
     ...(showQuick
       ? [
           {
@@ -118,6 +130,7 @@ export function EntityPickerDialog<T>({
       label: getLabel(item),
       select: () => onSelect(item),
       content: renderItem(item),
+      disabled: isDisabled?.(item) ?? false,
     })),
   ];
   const activeIndex = Math.min(active, Math.max(0, options.length - 1));
@@ -134,7 +147,7 @@ export function EntityPickerDialog<T>({
 
   function choose(index: number) {
     const option = options[index];
-    if (!option) return;
+    if (!option || option.disabled) return;
     option.select();
     close(false);
   }
@@ -215,11 +228,13 @@ export function EntityPickerDialog<T>({
             id={optionId(index)}
             role="option"
             aria-selected={index === activeIndex}
+            aria-disabled={option.disabled || undefined}
             aria-label={option.label}
             onMouseEnter={() => setActive(index)}
             onClick={() => choose(index)}
             className={cn(
               "flex min-h-5.5 cursor-pointer items-center rounded-md px-1 py-0.5 text-sm",
+              option.disabled && "cursor-not-allowed text-foreground-muted",
               index === activeIndex
                 ? "bg-surface-subtle ring-1 ring-primary"
                 : "hover:bg-surface-subtle",

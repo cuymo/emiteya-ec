@@ -104,8 +104,8 @@
 
 ## 12. Pantallas de guías de remisión
 
-- [ ] 12.1 Implementar Guías de remisión en `/guias-remision`, dentro de "Operación" (design D25), con lista, búsqueda, filtro de estado en la URL, borradores en curso y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
-- [ ] 12.2 Implementar el borrador con los pasos de design D25:
+- [x] 12.1 Implementar Guías de remisión en `/guias-remision`, dentro de "Operación" (design D25), con lista, búsqueda, filtro de estado en la URL, borradores en curso y tarjetas por debajo de 768 px. Verificar con pruebas de componente: carga, vacío, error con reintento, sin permiso y filtros en la URL
+- [x] 12.2 Implementar el borrador con los pasos de design D25:
   - transporte propio o tercero, con el selector de transportistas, los no seleccionables con su motivo y "Nuevo transportista" con `PartyDialog` y el rol marcado; la placa;
   - fechas; partida desde un establecimiento propio elegido (sin selección inicial, dirección derivada de solo lectura) u otra dirección propuesta desde el punto;
   - destinatarios tercero o establecimiento propio de destino, que excluye el origen y pide elegir el origen si falta, con "Nuevo destinatario" con `PartyDialog` sin roles;
@@ -124,7 +124,7 @@
   - éxito que lleva al detalle;
   - doble clic que envía una sola emisión con la misma clave en el reintento;
   - los `409` explicados y el foco tras cada acción
-- [ ] 12.3 Implementar el detalle de la guía y la acción "Nueva guía de remisión" en el detalle de una factura autorizada (design D25). Verificar con pruebas de componente: todos los destinatarios con su sustento, la excepción "declarada por" el usuario con su momento, el detalle, el reintento de firma, la transmisión y los documentos; la acción visible solo con `shippingGuides.draft` en una factura autorizada y que abre el borrador propuesto. Documentar las pantallas en `fiscal-emission.md` con sus rutas y permisos
+- [x] 12.3 Implementar el detalle de la guía y la acción "Nueva guía de remisión" en el detalle de una factura autorizada (design D25). Verificar con pruebas de componente: todos los destinatarios con su sustento, la excepción "declarada por" el usuario con su momento, el detalle, el reintento de firma, la transmisión y los documentos; la acción visible solo con `shippingGuides.draft` en una factura autorizada y que abre el borrador propuesto. Documentar las pantallas en `fiscal-emission.md` con sus rutas y permisos
 - [ ] 12.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-shipping-guides/ui-review.md`. Verificar que no quedan hallazgos abiertos
 
 ## 13. Rendimiento y prueba end-to-end

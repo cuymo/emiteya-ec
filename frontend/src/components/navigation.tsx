@@ -17,6 +17,7 @@ import {
   Package,
   ReceiptText,
   Store,
+  Truck,
   Users,
   Warehouse,
   type LucideIcon,
@@ -57,6 +58,13 @@ const GROUPS: Group[] = [
         label: "Retenciones",
         icon: ReceiptText,
         permission: "withholdings.read",
+      },
+      // add-shipping-guides, design D25.
+      {
+        href: "/guias-remision",
+        label: "Guías de remisión",
+        icon: Truck,
+        permission: "shippingGuides.read",
       },
       // add-document-archive, design D13: la bandeja documental.
       {
