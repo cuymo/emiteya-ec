@@ -451,6 +451,30 @@ describe("borrador de guía de remisión", () => {
     expect(screen.getByText("Resuelve los problemas antes de emitir.")).toBeDefined();
   });
 
+  it("elegir el punto propone la partida con la dirección de su establecimiento, sin reemplazar una escrita", async () => {
+    render(<ShippingGuideDraftScreen draftId="grd-1" />, {
+      "GET /api/v1/shipping-guides/drafts/grd-1": ok(
+        guideDraft({ emissionPoint: null, departureAddress: null }),
+      ),
+      "GET /api/v1/me/default-emission-point": () => ({
+        status: 404,
+        body: errorBody("DEFAULT_EMISSION_POINT_NOT_FOUND", "x"),
+      }),
+    });
+    await findRecipient(1);
+    const user = userEvent.setup();
+    const departure = screen.getByRole("textbox", { name: "Dirección de partida" });
+    expect(departure).toHaveProperty("value", "");
+    await screen.findByRole("option", { name: /^001-001 · / });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Punto de emisión" }), "pto-1");
+    expect(departure).toHaveProperty("value", "Av. 6 de Diciembre, Quito");
+    await user.clear(departure);
+    await user.type(departure, "Bodega norte");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Punto de emisión" }), "");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Punto de emisión" }), "pto-1");
+    expect(departure).toHaveProperty("value", "Bodega norte");
+  });
+
   it("presenta los límites como defensa del sistema", async () => {
     render(<ShippingGuideDraftScreen draftId="grd-1" />, {
       "GET /api/v1/shipping-guides/drafts/grd-1": ok(guideDraft()),

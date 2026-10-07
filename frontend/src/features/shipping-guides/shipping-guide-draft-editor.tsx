@@ -23,7 +23,7 @@ import {
 import { ArrowLeft, Plus, Truck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -225,13 +225,34 @@ function DraftEditor({
   const originId = values.originEstablishmentId ?? "";
   const pointId = values.emissionPointId ?? "";
 
+  /**
+   * Con otra dirección vacía, la partida se propone con la del establecimiento del punto (design
+   * D6); el usuario la corrige si sale de otro lugar. Nunca reemplaza una dirección escrita.
+   */
+  const proposeDeparture = useCallback(
+    (point: string) => {
+      const establishment = establishments.data?.find((candidate) =>
+        candidate.emissionPoints.some((emissionPoint) => emissionPoint.id === point),
+      );
+      if (
+        establishment &&
+        form.getValues("departureMode") === "FREE_TEXT" &&
+        !form.getValues("departureAddress").trim()
+      ) {
+        form.setValue("departureAddress", establishment.address, { shouldDirty: true });
+      }
+    },
+    [establishments.data, form],
+  );
+
   // Un borrador sin punto empieza en el punto predeterminado del usuario, si sigue disponible.
   useEffect(() => {
     const point = defaultPoint.data?.available ? defaultPoint.data.emissionPoint.id : undefined;
     if (point && !form.getValues("emissionPointId")) {
       form.setValue("emissionPointId", point, { shouldDirty: true });
+      proposeDeparture(point);
     }
-  }, [defaultPoint.data, form]);
+  }, [defaultPoint.data, form, proposeDeparture]);
 
   useEffect(() => {
     if (operationError) alertRef.current?.focus();
@@ -584,7 +605,10 @@ function DraftEditor({
               <Select
                 {...fieldAria("punto", undefined)}
                 value={pointId}
-                onChange={(event) => set("emissionPointId", event.target.value)}
+                onChange={(event) => {
+                  set("emissionPointId", event.target.value);
+                  proposeDeparture(event.target.value);
+                }}
               >
                 <option value="">Elige un punto</option>
                 {points.map((point) => (

@@ -125,7 +125,7 @@
   - doble clic que envía una sola emisión con la misma clave en el reintento;
   - los `409` explicados y el foco tras cada acción
 - [x] 12.3 Implementar el detalle de la guía y la acción "Nueva guía de remisión" en el detalle de una factura autorizada (design D25). Verificar con pruebas de componente: todos los destinatarios con su sustento, la excepción "declarada por" el usuario con su momento, el detalle, el reintento de firma, la transmisión y los documentos; la acción visible solo con `shippingGuides.draft` en una factura autorizada y que abre el borrador propuesto. Documentar las pantallas en `fiscal-emission.md` con sus rutas y permisos
-- [ ] 12.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-shipping-guides/ui-review.md`. Verificar que no quedan hallazgos abiertos
+- [x] 12.4 Revisar las pantallas con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, tema claro y oscuro, contraste y teclado) y registrar la revisión en `openspec/changes/add-shipping-guides/ui-review.md`. Verificar que no quedan hallazgos abiertos
 
 ## 13. Rendimiento y prueba end-to-end
 

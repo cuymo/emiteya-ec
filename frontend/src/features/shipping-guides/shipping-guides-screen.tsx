@@ -313,7 +313,7 @@ export function ShippingGuidesScreen() {
               value={searchDraft}
               onChange={setSearchDraft}
               label="Buscar por número, transportista o destinatario"
-              placeholder="Número, transportista o identificación"
+              placeholder="Número o identificación"
             />
             <ChipGroup
               label="Estado"
