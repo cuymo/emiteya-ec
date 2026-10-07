@@ -30,11 +30,14 @@ documento no especifica comportamiento.
 | `withholding-foreign-payments` | Retenciones por pagos al exterior: `pagoLocExt` 02, régimen fiscal, país del pago, convenios de doble tributación, sujeto con identificación del exterior y `tipoSujetoRetenido`, y los conceptos de renta para no residentes. Capacidad futura. | Ficha v2.34, anexo 10; Catálogo ATS, tablas 14 a 19 y 3.10; Q-50 | — | — |
 | `withholding-special-supports` | Retenciones con estructuras especiales del ATS: reembolsos (sustento 41), dividendos (sustento 10), compra de cajas de banano y autorretenciones (anexo 19). Capacidad futura. | Ficha v2.34, anexos 10 y 19; Q-50 | — | — |
 | `withholding-variable-rate-concepts` | Conceptos de renta cuyo porcentaje no es un número fijo en el Catálogo ATS (textuales, rangos, "varios porcentajes", por mil o dependientes de convenio), con su propia regla de selección. Capacidad futura. | Catálogo ATS, tabla 3.10; Q-50 | — | — |
+| `purchase-settlement-other-cases` | Liquidación de compra en los demás casos oficiales: art. 13 a), b) y g) a j) (servicios de no residentes y sociedades extranjeras, servicios importados y digitales, arrendamientos al exterior), d) (reembolsos con `reembolsos`), e) y f) (sector público) y k) (economía popular y solidaria). Capacidad futura: cada caso tiene su identificación, sus datos y su retención. | Reglamento, art. 13; LRTI art. 70; RALRTI; Q-12 | — | — |
+| `internal-purchase-settlement-withholding-link` | Asociación interna entre un comprobante de retención y una liquidación de compra propia autorizada, con la precarga de sus datos inmutables. Capacidad futura: nunca reescribirá snapshots históricos. | Reglamento, art. 13; Q-50; Q-12 | — | — |
+| `inventory-entry-from-purchase-settlement` | Entrada de inventario por una liquidación de compra autorizada. Capacidad futura: el inventario mínimo no tiene una entrada por compra (ERS RF-311), y no se usará una entrada manual automática como atajo. | ERS RF-311; Q-12 | — | — |
 | `shipping-guide-additional-details` | `detallesAdicionales` en los detalles de la guía de remisión (hasta tres pares de nombre y valor por detalle), con su snapshot, su XML y su RIDE. Capacidad futura. | XSD `GuiaRemision_V1.1.0.xsd`; Q-51 | — | — |
 | `shipping-guide-multiple-vehicles` | Traslados con varios medios de transporte, placas o conductores (Reglamento de Comprobantes de Venta, art. 30). Capacidad futura: el XML 1.1.0 expresa un solo transportista y una sola placa. | Reglamento, art. 30; Q-51 | — | — |
 | `location-stock` | Stock por establecimiento o ubicación y logística de traslados. Capacidad futura: el inventario actual es stock fiscal agregado por empresa, y la guía de remisión no lo mueve. | ERS RF-315; Q-51 | — | — |
 | `shipping-guides`      | Guía de remisión 1.1.0 de la propia empresa como remitente: transportista propio (`SELF`) o tercero con el rol `CARRIER` (`PARTY`) y una placa; uno o más destinatarios con su dirección, su motivo y su detalle; por destinatario, una factura propia autorizada o una excepción declarada del artículo 30 del Reglamento. Sin precios, impuestos, total monetario ni inventario. | ERS RF-240..243; CTX §15; ficha v2.34, anexos 2 y 3; Reglamento, arts. 27–38 | AC-03 | — (Q-51 resuelta) |
-| `purchase-settlements` | Liquidación de compra separada de la factura.                                                     | ERS RF-250..253; CTX §17                                       | AC-03         | Q-12                           |
+| `purchase-settlements` | Liquidación de compra 1.1.0, separada de la factura, solo en el caso c) del artículo 13 del Reglamento vigente (Q-12): proveedor `SUPPLIER` con cédula o pasaporte y dirección, cuatro declaraciones del usuario, líneas con IVA, pagos con plazo; sin inventario, sin compras y sin emitir la retención. | ERS RF-250..253; CTX §17; Reglamento, arts. 13 y 22 | AC-03 | — |
 | `inventory`            | Stock opcional contabilizado por hechos fiscales autorizados, no reserva de disponibilidad: inicialización única con `INICIAL`; la salida de una factura nace al entrar en `AUTHORIZED` con la decisión congelada en su snapshot (Q-18) y el saldo puede quedar negativo (Q-19); entradas y ajustes idempotentes; movimientos inmutables y kárdex; control fail-closed y no retroactivo; aviso orientativo en el borrador; la `DEVOLUCION_NC` de una nota de crédito autorizada por su retorno físico (`add-credit-notes`). Sin stock reservado ni comprometido. Medido con `bench:inventory`. | ERS RF-310..315, RF-205, RF-206, RF-212                        | AC-08         | — (Q-18, Q-19, Q-20 y Q-21 resueltas) |
 | `document-archive`     | Bandeja única de los comprobantes desde la reserva, con filtros; RIDE generado una vez desde el XML autorizado (o el firmado transmitido, con su procedencia) para la factura 1.1.0 y la nota de crédito 1.1.0 (`add-credit-notes`, con su propia distribución) que el sistema emite, con el filtro de tipo; descargas verificadas por hash del RIDE y de los XML; impresión como acción explícita; historial de entregas observables (`DOWNLOAD`, `PRINT_REQUESTED`). Sin correo (Q-24, P1). | ERS RF-401..409; CTX §30, §31, §45, §46                        | AC-07         | Q-16 (futura), Q-27 (go-live) (Q-24 y Q-39 resueltas; el PDF de Q-34, con S-4 y el ADR 0022) |
 | `reports`              | Reportes filtrables exportados a XLSX.                                                            | ERS RF-501..505                                                | AC-09         | Q-26                           |
@@ -87,6 +90,9 @@ insuficiente para elegir la tarifa), `withholding-foreign-payments`, `withholdin
 En la revisión de readiness del cambio 13 (2026-10-06) se suman `shipping-guide-additional-details`,
 `shipping-guide-multiple-vehicles` y `location-stock`, y `external-supporting-documents` abarca
 también el comprobante de venta externo de una guía. Ninguna amplía `add-shipping-guides`.
+En la revisión de readiness del cambio 14 (2026-10-07) se suman `purchase-settlement-other-cases`,
+`internal-purchase-settlement-withholding-link` y `inventory-entry-from-purchase-settlement`. Ninguna
+amplía `add-purchase-settlements`.
 
 Obligaciones de `add-fiscal-catalogs` (5a) para `add-parties-and-products` (5b), que consume
 `fiscal-catalogs` como dependencia canónica sin duplicar datasets ni reglas de vigencia:
@@ -230,6 +236,30 @@ política del MVP y la defensa de recursos.
 | Sin total monetario ni receptor único en la cabecera común | Política del producto (P10) | Q-51 |
 | RIDE propio con la distribución del anexo 2 | Requisito oficial | Ficha v2.34, página 64 |
 | Sin aduana, exterior, combustibles, máquina fiscal, factura sustitutiva, emisor itinerante, interrupción del transporte ni varios vehículos | Política del MVP | Reglamento, arts. 30 a 37; matriz de casos especiales; Q-51 |
+
+## Trazabilidad de `purchase-settlements`
+
+Fuentes del cambio 14 y qué fija cada una (Q-12). Los specs distinguirán el requisito oficial, la
+política del MVP y la defensa de recursos.
+
+| Regla | Origen | Fuente |
+| --- | --- | --- |
+| XML `liquidacionCompra` 1.1.0, codDoc `03` | Requisito oficial | `docs/product/sri-xsd/LiquidacionCompra_V1.1.0.xsd`, verificado contra el portal el 2026-10-07 (`sri-catalogs/fuentes/liquidacion-compra-xsd-verificacion.txt`); ficha v2.34, tabla 3 y anexo 17 |
+| Sin consumidor final como proveedor | Requisito oficial | Ficha v2.34, tabla 6 (`sri-catalogs/fuentes/ficha-v2.34-liquidacion-de-compra.txt`) |
+| Casos de procedencia a) a f) | Requisito oficial | Reglamento de Comprobantes de Venta vigente (2023-12-29), art. 13 (`sri-catalogs/fuentes/reglamento-comprobantes-liquidacion-de-compra.txt`) |
+| Solo el caso c), con cuatro declaraciones del usuario (`PURCHASE_SETTLEMENT_ELIGIBILITY_V1`) | Política del MVP sobre el art. 13 c) | Q-12 |
+| Proveedor `SUPPLIER` con cédula (05) o pasaporte (06); 04, 07 y 08 rechazados | Política del MVP que materializa el caso c) | Reglamento, art. 22; Q-12 |
+| Dirección del proveedor obligatoria (1 a 300) | Requisito oficial (art. 22) más estricto que el XSD, que la deja opcional | Reglamento, art. 22; XSD |
+| Solo IVA en líneas y totales | Requisito oficial | XSD 1.1.0 (`codigo` 2) |
+| Descuento por línea siempre presente | Requisito oficial | XSD 1.1.0 |
+| Pagos 1..N con `plazo` y `unidadTiempo`, suma exacta igual al importe total | Requisito oficial (la ficha exige `pagos` y `plazo`) y política del MVP (suma exacta, `unidadTiempo` siempre) | Ficha v2.34, anexo 17; Q-12 |
+| Moneda `DOLAR` | Política monetaria del proyecto | Ficha v2.34, anexo 17 (`moneda` obligatoria); Q-12 |
+| Retención del 100 % del IVA y del 3 % de renta en el caso c), en un comprobante de retención separado que el cambio no emite | Requisito oficial; política del MVP (sin automatizar) | Reglamento, art. 13; NAC-DGERCGC20-00000061; NAC-DGERCGC26-00000009 (`normativa-liquidacion-retenciones.txt`); Q-12 |
+| Sin movimientos de inventario | Política del producto | ERS RF-311; Q-12 |
+| Sin compras, cuentas por pagar ni facturas recibidas | Política del producto | ERS §3 (fuera del alcance); Q-12 |
+| 100/1000 líneas (por defecto/máximo) y un máximo de pagos | Defensa de recursos del producto, nunca un límite del SRI ni del XSD | Q-12 |
+| RIDE propio con la distribución del anexo 2 | Requisito oficial | Ficha v2.34, página 65 |
+| Sin reembolsos, máquina fiscal, negociable, subsidios, ICE ni IRBPNR | Política del MVP | XSD 1.1.0; matriz de casos especiales; Q-12 |
 
 ## Huecos de trazabilidad
 
