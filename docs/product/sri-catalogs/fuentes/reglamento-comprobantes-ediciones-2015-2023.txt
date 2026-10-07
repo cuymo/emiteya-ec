@@ -1,0 +1,412 @@
+Comparación de los artículos del Reglamento de Comprobantes de Venta, Retención y Documentos
+Complementarios que citan los extractos anteriores del repositorio (reglamento-comprobantes-arts-3-8-40.txt,
+-arts-15-16.txt y -arts-27-38.txt, tomados de la edición de 2015) contra la edición vigente del SRI
+(readiness de add-purchase-settlements, 2026-10-07). Es evidencia para revisar la trazabilidad de
+add-withholding-receipts, add-debit-notes y add-shipping-guides; no cambia ningún comportamiento.
+
+Edición de 2015 ("ULTIMA REFORMA: Decreto 580, Registro Oficial 448, 28-Febrero-2015"):
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/c3a2c922-5960-4c08-9a73-bde19fadce42/REGLAMENTO+DE+COMPROBANTES+DE+VENTA,+RETENCI%D3N+Y+DOCUMENTOS+COMPLEMENTARIOS.pdf
+SHA-256 del PDF descargado el 2026-10-07: a7d27c905f6054dfd77dd2da7ee3362c547d625b5b734e789e222ce286dc1997
+
+Edición vigente ("Última modificación: Segundo Suplemento del Registro Oficial 467 de 29 de diciembre de 2023"):
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/9fb49475-f058-49a1-b08a-f31bf4deb074/Reglamento_Comprobantes_Venta_RetencionYDC_29122023.pdf
+SHA-256 del PDF descargado el 2026-10-07: 7828297fd49bda62e3edde8c4c8e56231348f5b1390018c885911a907e0b2334
+
+Método: pdftotext -layout de cada PDF; se quitan los encabezados de página de la edición de 2015
+("Dirección Nacional Jurídica" y "Departamento de Normativa") y los marcadores "Pág. N de 36" de la
+vigente; por artículo se unen las líneas y se compara el texto palabra por palabra. El texto se
+transcribe tal cual, solo reajustado a 100 columnas.
+
+Sin diferencias de texto: arts. 3, 4, 5, 7, 15, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38.
+Con diferencias: arts. 6, 8, 16, 28, 29, 40.
+
+== Art. 6 (retención) ==
+
+-- Edición de 2015 --
+Art. 6.- Período de vigencia de la autorización para imprimir y emitir comprobantes de venta,
+documentos complementarios y comprobantes de retención.- El período de vigencia de los comprobantes
+de venta, documentos complementarios y comprobantes de retención, será de un año para los sujetos
+pasivos, cuando cumplan las condiciones siguientes: 1. Haber presentado sus declaraciones
+tributarias y sus anexos cuando corresponda, y realizado el pago de las obligaciones declaradas o,
+de mantener concesión de facilidades para el pago de ellas, no estar en mora de las correspondientes
+cuotas. 2. No tener pendiente de pago, deuda firme alguna, por tributos administrados por el
+Servicio de Rentas Internas, multas e intereses provenientes de los mismos. Se exceptúan de esta
+disposición los casos en los cuales exista un convenio de facilidades de pago o se haya iniciado un
+recurso de revisión de oficio o a insinuación del contribuyente en relación al acto administrativo
+que contenga la obligación en firme. Por consiguiente, se mantendrán vigentes dentro del plazo
+autorizado por el SRI, los comprobantes de venta, documentos complementarios y comprobantes de
+retención, aún cuando se encuentren pendientes de resolución las impugnaciones en vía judicial o
+administrativa, presentadas por los sujetos pasivos, por las que no se encuentren en firme los
+respectivos actos administrativos. 3. (Reformado por el Art. único del D.E. 1063, R.O. 651,
+1-III-2012).- Que la información proporcionada por el sujeto pasivo en el Registro Único de
+Contribuyentes, en caso de comprobación realizada por la Administración Tributaria, sea correcta,
+conforme a lo establecido en la Ley de Registro Único de Contribuyentes. El Servicio de Rentas
+Internas, cuando el sujeto pasivo no hubiere presentado y pagado cuando corresponda, durante el
+último semestre alguna declaración, autorizará la impresión de los documentos con un plazo de
+vigencia improrrogable de tres meses, tiempo dentro del cual el contribuyente deberá cumplir con
+todas sus obligaciones pendientes. En ningún caso esta autorización podrá otorgarse de forma
+consecutiva. La autorización de los documentos referidos en el presente reglamento, mediante
+mensajes de datos firmados electrónicamente, será por cada comprobante, mismo que se validará en
+línea, de acuerdo a lo establecido en la resolución que para el efecto emitirá el Servicio de Rentas
+Internas.
+
+-- Edición vigente (2023-12-29) --
+Art. 6.- Período de vigencia de la autorización para imprimir y emitir comprobantes de venta,
+documentos complementarios y comprobantes de retención.- (Reformado por la Disposición Reformatoria
+Tercera del D.E. 1073, R.O. 774-S, 13-VI-2016); (Reformado por el Art. 102 del D.E. 1114, R.O.
+260-2S, 4-VIII-2020).- El período de vigencia de los comprobantes de venta, documentos
+complementarios y comprobantes de retención, será de hasta un año para los sujetos pasivos, cuando
+cumplan las condiciones siguientes: 1. Haber presentado sus declaraciones tributarias y sus anexos
+cuando corresponda, y realizado el pago de las obligaciones declaradas o, de mantener concesión de
+facilidades para el pago de ellas, no estar en mora de las correspondientes cuotas. 2. No tener
+pendiente de pago, deuda firme alguna, por tributos administrados por el Servicio de Rentas
+Internas, multas e intereses provenientes de los mismos. Se exceptúan de esta disposición los casos
+en los cuales exista un convenio de facilidades de pago o se haya iniciado un recurso de revisión de
+oficio o a insinuación del contribuyente en relación al acto administrativo que contenga la
+obligación en firme. Por consiguiente, se mantendrán vigentes dentro del plazo autorizado por el
+SRI, los comprobantes de venta, documentos complementarios y comprobantes de retención, aún cuando
+se encuentren pendientes de resolución las impugnaciones en vía judicial o administrativa,
+presentadas por los sujetos pasivos, por las que no se encuentren en firme los respectivos actos
+administrativos. 3. (Reformado por el Art. único del D.E. 1063, R.O. 651, 1-III-2012); (Reformado
+por el Art. 102 del D.E. 1114, R.O. 260-2S, 4-VIII-2020).- Que la información proporcionada por el
+sujeto pasivo en el Registro Único de Contribuyentes, en caso de comprobación realizada por la
+Administración Tributaria, sea correcta, conforme a lo establecido en la Ley de Registro Único de
+Contribuyentes. El Servicio de Rentas Internas, cuando el sujeto pasivo no hubiere presentado y
+pagado cuando corresponda, alguna declaración, autorizará la impresión de los documentos con un
+plazo de vigencia de hasta tres meses, tiempo dentro del cual el contribuyente deberá cumplir con
+todas sus obligaciones pendientes. Dicho plazo podrá ser ampliado hasta doce meses, en casos
+debidamente justifi cados, conforme las condiciones que para el efecto establezca el Servicio de
+Rentas Internas. La autorización de los documentos referidos en el presente reglamento, mediante
+mensajes de datos firmados electrónicamente, será por cada comprobante, mismo que se validará en
+línea, de acuerdo a lo establecido en la resolución que para el efecto emitirá el Servicio de Rentas
+Internas. Nota: El numeral 2 del Art. 102 del D.E. 1114 (R.O. 260-2S, 4-VIII-2020), indica que se
+incluya el siguiente texto en el inciso segundo del presente artículo: luego del texto "autorizará
+la impresión de los documentos con un plazo de vigencia de " inclúyase: "hasta", sin embargo su
+contenido es concordante con el inciso segundo del numeral 3, por ello se ha realizado la reforma al
+referido inciso.
+
+== Art. 8 (retención) ==
+
+-- Edición de 2015 --
+Art. 8.- Obligación de emisión de comprobantes de venta y comprobantes de retención.- Están
+obligados a emitir y entregar comprobantes de venta todos los sujetos pasivos de impuestos, a pesar
+de que el adquirente no los solicite o exprese que no los requiere. Dicha obligación nace con
+ocasión de la transferencia de bienes, aún cuando se realicen a título gratuito, autoconsumo o de la
+prestación de servicios de cualquier naturaleza, incluso si las operaciones se encuentren gravadas
+con tarifa cero (0%) del impuesto al valor agregado. La emisión de estos documentos será efectuada
+únicamente por transacciones propias del sujeto pasivo autorizado. El Servicio de Rentas Internas,
+mediante resolución, establecerá el monto sobre el cual las personas naturales no obligadas a llevar
+contabilidad y aquellas inscritas en el Régimen Impositivo Simplificado, deberán emitir comprobantes
+de venta. De igual manera, se establecerá la periodicidad de la emisión de un comprobante de venta
+resumen por las transacciones efectuadas correspondientes a valores inferiores a los establecidos en
+la mencionada resolución. No obstante lo señalado en el inciso anterior, a petición del adquirente
+del bien o servicio, se deberá emitir y entregar comprobantes de venta, por cualquier monto. En las
+transferencias de combustibles líquidos derivados de hidrocarburos y gas licuado de petróleo se
+deberá emitir comprobantes de venta por cualquier valor. Los sujetos pasivos inscritos en el régimen
+simplificado deberán sujetarse a las normas particulares de dicho régimen. Las sociedades y las
+personas naturales obligadas a llevar contabilidad deberán emitir comprobantes de venta de manera
+obligatoria en todas las transacciones que realicen, independientemente del monto de las mismas. En
+los casos en que se efectúen transacciones al exterior gravadas con Impuesto a la Salida de Divisas,
+el agente de percepción emitirá el comprobante de venta por el servicio prestado en el que además de
+los requisitos establecidos en este reglamento se deberá detallar el valor transferido y el monto
+del Impuesto a la Salida de Divisas percibido. Los trabajadores en relación de dependencia no están
+obligados a emitir comprobantes de venta por sus remuneraciones. Los agentes de retención en forma
+obligatoria emitirán el comprobante de retención en el momento que se realice el pago o se acredite
+en cuenta, lo que ocurra primero y estará disponible para la entrega al proveedor dentro de los
+cinco días hábiles siguientes al de presentación del comprobante de venta. Sin perjuicio de lo
+dispuesto en el inciso anterior, las instituciones del sistema financiero nacional, podrán emitir un
+solo comprobante de retención a sus clientes y proveedores, individualmente considerados, cuando
+realicen más de una transacción por mes. El comprobante de retención así emitido deberá estar
+disponible para la entrega dentro de los cinco primeros días del mes siguiente. Los agentes de
+retención del impuesto a la salida de divisas, cuando realicen la transferencia de valores gravados
+con el impuesto, emitirán el respectivo comprobante de retención al momento en que se realice la
+retención del impuesto, de conformidad a lo dispuesto en la Ley Reformatoria para la Equidad
+Tributaria del Ecuador y en su reglamento de aplicación. Los comprobantes de retención deberán estar
+a disposición de los contribuyentes del impuesto a la salida de divisas, dentro de los dos días
+hábiles siguientes a la fecha de retención.
+
+-- Edición vigente (2023-12-29) --
+Art. 8.- Obligación de emisión de comprobantes de venta y comprobantes de retención.- (Reformado por
+el Art. 83 del D.E. 304, R.O. 608-2S, 30-XII-2021).- Están obligados a emitir y entregar
+comprobantes de venta todos los sujetos pasivos de impuestos, a pesar de que el adquirente no los
+solicite o exprese que no los requiere. Dicha obligación nace con ocasión de la transferencia de
+bienes, aún cuando se realicen a título gratuito, autoconsumo o de la prestación de servicios de
+cualquier naturaleza, incluso si las operaciones se encuentren gravadas con tarifa cero (0%) del
+impuesto al valor agregado. La emisión de estos documentos será efectuada únicamente por
+transacciones propias del sujeto pasivo autorizado. El Servicio de Rentas Internas, mediante
+resolución, establecerá el monto sobre el cual las personas naturales no obligadas a llevar
+contabilidad y aquellas consideradas como negocios populares incluidas en el Régimen RIMPE, deberán
+emitir comprobantes de venta. De igual manera, se establecerá la periodicidad de la emisión de un
+comprobante de venta resumen por las transacciones efectuadas correspondientes a valores inferiores
+a los establecidos en la mencionada resolución. No obstante lo señalado en el inciso anterior, a
+petición del adquirente del bien o servicio, se deberá emitir y entregar comprobantes de venta, por
+cualquier monto. En las transferencias de combustibles líquidos derivados de hidrocarburos y gas
+licuado de petróleo se deberá emitir comprobantes de venta por cualquier valor. Los sujetos pasivos
+considerados como negocios populares incluidos en el Régimen RIMPE deberán sujetarse a las normas
+particulares de dicho régimen. Las sociedades y las personas naturales obligadas a llevar
+contabilidad deberán emitir comprobantes de venta de manera obligatoria en todas las transacciones
+que realicen, independientemente del monto de las mismas. En los casos en que se efectúen
+transacciones al exterior gravadas con Impuesto a la Salida de Divisas, el agente de percepción
+emitirá el comprobante de venta por el servicio prestado en el que además de los requisitos
+establecidos en este reglamento se deberá detallar el valor transferido y el monto del Impuesto a la
+Salida de Divisas percibido. Los trabajadores en relación de dependencia no están obligados a emitir
+comprobantes de venta por sus remuneraciones. Los agentes de retención en forma obligatoria emitirán
+el comprobante de retención en el momento que se realice el pago o se acredite en cuenta, lo que
+ocurra primero y estará disponible para la entrega al proveedor dentro de los cinco días hábiles
+siguientes al de presentación del comprobante de venta. Sin perjuicio de lo dispuesto en el inciso
+anterior, las instituciones del sistema financiero nacional, podrán emitir un solo comprobante de
+retención a sus clientes y proveedores, individualmente considerados, cuando realicen más de una
+transacción por mes. El comprobante de retención así emitido deberá estar disponible para la entrega
+dentro de los cinco primeros días del mes siguiente. Los agentes de retención del impuesto a la
+salida de divisas, cuando realicen la transferencia de valores gravados con el impuesto, emitirán el
+respectivo comprobante de retención al momento en que se realice la retención del impuesto, de
+conformidad a lo dispuesto en la Ley Reformatoria para la Equidad Tributaria del Ecuador y en su
+reglamento de aplicación. Los comprobantes de retención deberán estar a disposición de los
+contribuyentes del impuesto a la salida de divisas, dentro de los dos días hábiles siguientes a la
+fecha de retención.
+
+== Art. 16 (nota de débito) ==
+
+-- Edición de 2015 --
+Art. 16.- Notas de débito.- Las notas de débito se emitirán para el cobro de intereses de mora y
+para recuperar costos y gastos, incurridos por el vendedor con posterioridad a la emisión del
+comprobante de venta. Las notas de débito deberán consignar la denominación, serie y número de los
+comprobantes de venta a los cuales se refieren. Las facturas que tengan el carácter de “comercial
+negociables”, a las que se refiere el Código de Comercio y en efecto sean negociadas no podrán ser
+modificadas con notas de débito.
+
+-- Edición vigente (2023-12-29) --
+Art. 16.- Notas de débito.- (Reformado por el Art. 103 del D.E. 1114, R.O. 260-2S, 4-VIII- 2020).-
+Las notas de débito se emitirán para el cobro de intereses de mora y para recuperar costos y gastos,
+incurridos por el vendedor con posterioridad a la emisión del comprobante de venta así como para el
+cobro de tributos u otros recargos complementarios a la transacción cuando así lo disponga el
+Servicio de Rentas Internas mediante resolución de carácter general. Las notas de débito deberán
+consignar la denominación, serie y número de los comprobantes de venta a los cuales se refieren. Las
+facturas que tengan el carácter de “comercial negociables”, a las que se refiere el Código de
+Comercio y en efecto sean negociadas no podrán ser modificadas con notas de débito.
+
+== Art. 28 (guía de remisión) ==
+
+-- Edición de 2015 --
+Art. 28.- Obligados a emitir guías de remisión.- Están obligados a emitir guías de remisión toda
+sociedad, persona natural o sucesión indivisa que traslade mercadería, debiendo emitirlas en
+especial en los siguientes casos: 1. El importador o el Agente de Aduanas, según el caso. 2. En la
+movilización de mercaderías entre establecimientos del mismo contribuyente. 3. El proveedor, cuando
+el contrato incluya la obligación de entrega de la mercadería en el sitio señalado por el adquirente
+o acordado por las partes. 4. El adquirente, cuando el contrato determine la entrega de la
+mercadería en el establecimiento del proveedor. 5. El exportador, en el transporte de las
+mercaderías entre sus establecimientos y el puerto de embarque. 6. Quien acopia o almacena
+mercaderías en las actividades de recolección de éstas, destinadas a una o varias empresas de
+transformación o de exportación. 7. El arrendador, en el caso que el contrato de alquiler de bienes
+incluya la entrega de los mismos en el sitio que señale el arrendatario; o, por este, en el caso que
+el contrato de alquiler señale como sitio de entrega de los bienes, cualquier establecimiento del
+arrendador. 8. El proveedor o el adquirente, según el caso, en la devolución de mercaderías. 9. El
+consignatario o el consignante, según el caso, en la consignación de mercaderías. 10. La sociedad,
+persona natural o sucesión indivisa que traslade mercaderías para su exposición, exhibición o venta,
+en ferias nacionales o internacionales. 11. La sociedad, persona natural o sucesión indivisa que
+traslade mercaderías para su reparación, mantenimiento u otro proceso especial. 12. La Corporación
+Aduanera Ecuatoriana, en el caso de traslado de mercaderías desde un distrito aduanero a otro o de
+un distrito aduanero a un depósito industrial o comercial o de un depósito aduanero a otro, en el
+caso de mercaderías en tránsito. 13. En el caso de traslado de los productos derivados de
+hidrocarburos, gas licuado de petróleo, gas natural y biocombustibles, adquiridos a las sociedades o
+personas naturales debidamente autorizadas por la Dirección Nacional de Hidrocarburos, la guía de
+remisión solo podrá ser emitida por PETROCOMERCIAL o por los sujetos de control que efectúen la
+venta, que fueren designados observando principios de generalidad mediante acuerdo ministerial, por
+parte del Ministerio de Recursos Naturales no Renovables. Supletoriamente, la guía de remisión
+deberá ser emitida por el transportista cuando quien remita la mercadería carezca de establecimiento
+de emisión en el punto de partida del transporte de las mercancías, así como en el caso que las
+mercancías sean transportadas por empresas de transporte público regular y no se haya emitido la
+guía por el remitente de las mercancías.
+
+-- Edición vigente (2023-12-29) --
+Art. 28.- Obligados a emitir guías de remisión.- (Reformado por el Art. 4 del D.E. 1287, R.O. 918-S,
+09-I-2017).- Están obligados a emitir guías de remisión toda sociedad, persona natural o sucesión
+indivisa que traslade mercadería, debiendo emitirlas en especial en los siguientes casos: 1. El
+importador o el Agente de Aduanas, según el caso. 2. En la movilización de mercaderías entre
+establecimientos del mismo contribuyente. 3. El proveedor, cuando el contrato incluya la obligación
+de entrega de la mercadería en el sitio señalado por el adquirente o acordado por las partes. 4. El
+adquirente, cuando el contrato determine la entrega de la mercadería en el establecimiento del
+proveedor. 5. El exportador, en el transporte de las mercaderías entre sus establecimientos y el
+puerto de embarque. 6. Quien acopia o almacena mercaderías en las actividades de recolección de
+éstas, destinadas a una o varias empresas de transformación o de exportación. 7. El arrendador, en
+el caso que el contrato de alquiler de bienes incluya la entrega de los mismos en el sitio que
+señale el arrendatario; o, por este, en el caso que el contrato de alquiler señale como sitio de
+entrega de los bienes, cualquier establecimiento del arrendador. 8. El proveedor o el adquirente,
+según el caso, en la devolución de mercaderías. 9. El consignatario o el consignante, según el caso,
+en la consignación de mercaderías. 10. La sociedad, persona natural o sucesión indivisa que traslade
+mercaderías para su exposición, exhibición o venta, en ferias nacionales o internacionales. 11. La
+sociedad, persona natural o sucesión indivisa que traslade mercaderías para su reparación,
+mantenimiento u otro proceso especial. 12. La Corporación Aduanera Ecuatoriana, en el caso de
+traslado de mercaderías desde un distrito aduanero a otro o de un distrito aduanero a un depósito
+industrial o comercial o de un depósito aduanero a otro, en el caso de mercaderías en tránsito. 13.
+En el caso de traslado de los productos derivados de hidrocarburos, gas licuado de petróleo, gas
+natural y biocombustibles, adquiridos a las sociedades o personas naturales debidamente autorizadas
+por la Dirección Nacional de Hidrocarburos, la guía de remisión solo podrá ser emitida por
+PETROCOMERCIAL o por los sujetos de control que efectúen la venta, que fueren designados observando
+principios de generalidad mediante acuerdo ministerial, por parte del Ministerio de Recursos
+Naturales no Renovables. Supletoriamente, la guia de remisión deberá ser emitida por la operadora de
+transporte cuando quien remita la mercadería carezca de establecimiento de emisión en el punto de
+partida del transporte de las mercaderías o no se haya emitido la guía por parte del remitente de
+las mismas.
+
+== Art. 29 (guía de remisión) ==
+
+-- Edición de 2015 --
+Art. 29.- Requisitos pre impresos de la guía de remisión.- Las guías de remisión tendrán la
+siguiente información pre impresa relacionada con el emisor: 1. Número, día, mes y año de la
+autorización de impresión del documento, otorgado por el Servicio de Rentas Internas; 2. Número de
+registro único de contribuyentes; 3. Apellidos y nombres, denominación o razón social en forma
+completa o abreviada conforme conste en el RUC. Podrá incluirse el nombre comercial o de fantasía,
+si lo tuviere; 4. Denominación del documento: “Guía de Remisión”; 5. Numeración de quince dígitos,
+que se distribuirá de la siguiente manera: a) Los tres primeros dígitos corresponden al código del
+establecimiento conforme consta en el registro único de contribuyentes; b) Separados por un guión
+(-), los siguientes tres dígitos corresponden al código asignado por el contribuyente a cada punto
+de emisión dentro de un mismo establecimiento; y, c) Separado también por un guión (-), constará el
+número secuencial de nueve dígitos. Podrá omitirse la impresión los ceros a la izquierda del número
+secuencial, pero deberán completarse los nueve dígitos antes de iniciar la nueva numeración. 6.
+Dirección de la matriz y del establecimiento donde está localizado el punto de emisión. 7. Fecha de
+caducidad del documento, expresada en día, mes y año, según autorización del Servicio de Rentas
+Internas. 8. Número del registro único de contribuyente, nombres y apellidos, denominación o razón
+social y número de autorización otorgado por el Servicio de Rentas Internas, del establecimiento
+gráfico que realizó la impresión. 9. Los destinatarios de los ejemplares: El original del documento
+que debe ser entregado al destinatario de la mercadería, contendrá la leyenda “DESTINATARIO”. La
+primera copia para el emisor con la leyenda “EMISOR”. La segunda copia se entregará al SRI cuando se
+la requiera. Se permitirá consignar en todos los ejemplares de las guías de remisión las leyendas:
+original - destinatario / copia - emisor / copia - SRI, siempre y cuando el original se diferencie
+claramente de las copias. 10. Los contribuyentes designados por el SRI como especiales deberán
+imprimir en las guías de remisión las palabras: “Contribuyente Especial” y el número de la
+resolución con la que fueron calificados como tales. En el caso de contribuyentes especiales que a
+la fecha de su designación tuviesen guías de remisión vigentes en inventario, podrán imprimir la
+leyenda de “Contribuyente Especial” y el número de resolución con el cual fueron calificados
+mediante sello o cualquier otra forma de impresión. Si por cualquier motivo perdieran la designación
+de “Contribuyente Especial”, deberán dar de baja todas las guías de remisión con la leyenda
+indicada. 11. Los contribuyentes que se inscriban en el Régimen Simplificado deberán imprimir en las
+guías de remisión la leyenda: “Contribuyente RISE o Contribuyente Régimen Simplificado”. Si estos
+contribuyentes, a la fecha de su inscripción, mantuviesen guías de remisión, deberán darlas de baja
+siguiendo el procedimiento establecido en este reglamento. Si por cualquier motivo fueran excluidos
+del Régimen Simplificado, los contribuyentes deberán dar de baja todas las guías de remisión para
+dicho régimen. 12. Las personas naturales y las sucesiones indivisas, que de conformidad con la Ley
+de Régimen Tributario Interno y su reglamento de aplicación, estén obligadas a llevar contabilidad
+deberán imprimir en las guías de remisión la frase: “Obligado a Llevar Contabilidad”. En el caso de
+personas naturales y sucesiones indivisas que al inicio del ejercicio impositivo tuviesen guías de
+remisión vigentes, podrán imprimir la leyenda de “Obligado a Llevar Contabilidad” mediante sello o
+cualquier otra forma de impresión. Si de conformidad con la Ley de Régimen Tributario Interno y su
+reglamento de aplicación los contribuyentes dejasen de ser obligados a llevar contabilidad, deberán
+dar de baja todas las guías de remisión que contengan la leyenda antes indicada.
+
+-- Edición vigente (2023-12-29) --
+Art. 29.- Requisitos pre impresos de la guía de remisión.- Las guías de remisión tendrán la
+siguiente información pre impresa relacionada con el emisor: 1. Número, día, mes y año de la
+autorización de impresión del documento, otorgado por el Servicio de Rentas Internas; 2. Número de
+registro único de contribuyentes; 3. Apellidos y nombres, denominación o razón social en forma
+completa o abreviada conforme conste en el RUC. Podrá incluirse el nombre comercial o de fantasía,
+si lo tuviere; 4. Denominación del documento: “Guía de Remisión”; 5. Numeración de quince dígitos,
+que se distribuirá de la siguiente manera: a) Los tres primeros dígitos corresponden al código del
+establecimiento conforme consta en el registro único de contribuyentes; b) Separados por un guión
+(-), los siguientes tres dígitos corresponden al código asignado por el contribuyente a cada punto
+de emisión dentro de un mismo establecimiento; y, c) Separado también por un guión (-), constará el
+número secuencial de nueve dígitos. Podrá omitirse la impresión los ceros a la izquierda del número
+secuencial, pero deberán completarse los nueve dígitos antes de iniciar la nueva numeración. 6.
+Dirección de la matriz y del establecimiento donde está localizado el punto de emisión. 7. Fecha de
+caducidad del documento, expresada en día, mes y año, según autorización del Servicio de Rentas
+Internas. 8. Número del registro único de contribuyente, nombres y apellidos, denominación o razón
+social y número de autorización otorgado por el Servicio de Rentas Internas, del establecimiento
+gráfico que realizó la impresión. 9. Los destinatarios de los ejemplares: El original del documento
+que debe ser entregado al destinatario de la mercadería, contendrá la leyenda “DESTINATARIO”. La
+primera copia para el emisor con la leyenda “EMISOR”. La segunda copia se entregará al SRI cuando se
+la requiera. Se permitirá consignar en todos los ejemplares de las guías de remisión las leyendas:
+original - destinatario / copia - emisor / copia - SRI, siempre y cuando el original se diferencie
+claramente de las copias. 10. Los contribuyentes designados por el SRI como especiales deberán
+imprimir en las guías de remisión las palabras: “Contribuyente Especial” y el número de la
+resolución con la que fueron calificados como tales. En el caso de contribuyentes especiales que a
+la fecha de su designación tuviesen guías de remisión vigentes en inventario, podrán imprimir la
+leyenda de “Contribuyente Especial” y el número de resolución con el cual fueron calificados
+mediante sello o cualquier otra forma de impresión. Si por cualquier motivo perdieran la designación
+de “Contribuyente Especial”, deberán dar de baja todas las guías de remisión con la leyenda
+indicada. 11. (Sustituido por el Art. 86 del D.E. 304, R.O. 608-2S, 30-XII-2021).- Los
+contribuyentes que sean incluidos en el Régimen RIMPE deberán imprimir en las guías de remisión la
+leyenda: “Contribuyente Régimen RIMPE”. Si estos contribuyentes, a la fecha de su inscripción,
+mantuviesen guías de remisión, deberán darlas de baja siguiendo el procedimiento establecido en este
+reglamento. Si por cualquier motivo fueran excluidos del régimen, los contribuyentes deberán dar de
+baja todas las guías de remisión para el mismo. 12. Las personas naturales y las sucesiones
+indivisas, que de conformidad con la Ley de Régimen Tributario Interno y su reglamento de
+aplicación, estén obligadas a llevar contabilidad deberán imprimir en las guías de remisión la
+frase: “Obligado a Llevar Contabilidad”. En el caso de personas naturales y sucesiones indivisas que
+al inicio del ejercicio impositivo tuviesen guías de remisión vigentes, podrán imprimir la leyenda
+de “Obligado a Llevar Contabilidad” mediante sello o cualquier otra forma de impresión. Si de
+conformidad con la Ley de Régimen Tributario Interno y su reglamento de aplicación los
+contribuyentes dejasen de ser obligados a llevar contabilidad, deberán dar de baja todas las guías
+de remisión que contengan la leyenda antes indicada. 13. (Agregado por el Art. 106 del D.E. 1114,
+R.O. 260-2S, 4-VIII-2020; y, sustituido por el Art. 86 del D.E. 304, R.O. 608-2S, 30-XII-2021).- Los
+contribuyentes considerados como negocios populares incluidos en el Régimen RIMPE deberán imprimir
+en las guías de remisión la leyenda: "Contribuyente Negocio Popular - Régimen RIMPE". Si estos
+contribuyentes, a la fecha de su inscripción, mantuviesen guías de remisión vigentes, podrán
+imprimir la leyenda indicada mediante sello o cualquier otra forma de impresión. En estos casos no
+será aplicable la inclusión del requisito previsto en el numeral 11 del presente artículo. Si por
+cualquier motivo dejaren de tener la consideración de negocio popular, los contribuyentes deberán
+dar de baja todos aquellos documentos con la leyenda indicada. 14. (Agregado por el Art. 106 del
+D.E. 1114, R.O. 260-2S, 4-VIII-2020).- Los contribuyentes designados por el SRI como agentes de
+retención deberán imprimir en las guías de remisión la leyenda: "Agente de Retención" y el número de
+la resolución con la que fueron calificados como tales. En el caso de agentes de retención que a la
+fecha de su designación tuviesen guías de remisión vigentes, podrán imprimir la leyenda de "Agente
+de Retención" y el número de resolución con el cual fueron calificados mediante sello o cualquier
+otra forma de impresión. Si por cualquier motivo perdieran la designación de agente de retención,
+deberán dar de baja todas las guías de remisión con la leyenda indicada.
+
+== Art. 40 (retención) ==
+
+-- Edición de 2015 --
+Art. 40.- Requisitos de llenado para los comprobantes de retención.- Se incluirá en los comprobantes
+de retención como información no pre impresa la siguiente: 1. Apellidos y nombres, denominación o
+razón social de la persona natural o sociedad o sucesión indivisa a la cual se le efectuó la
+retención. 2. Número del registro único de contribuyentes o cédula de identidad o pasaporte del
+sujeto al que se le efectúa la retención. 3. Impuesto por el cual se efectúa la retención en la
+fuente: Impuesto a la Renta, Impuesto al Valor Agregado o Impuesto a la Salida de Divisas. 4.
+Denominación y número del comprobante de venta que motiva la retención, cuando corresponda. 5. El
+valor de la transacción o del monto de la transferencia de divisas al exterior que constituye la
+base para la retención. 6. El porcentaje aplicado para la retención. 7. Valor del impuesto retenido.
+8. El ejercicio fiscal al que corresponde la retención. 9. La fecha de emisión del comprobante de
+retención. 10. La firma del agente de retención. 11. Cuando corresponda, el convenio internacional
+para evitar la doble tributación en el cual se ampara la retención. Los comprobantes de retención se
+emitirán conjuntamente en original y copias o, en el caso de utilización de sistemas computarizados
+autorizados, de manera consecutiva. El comprobante de retención deberá ser emitido aún en los casos
+en los que el convenio internacional para evitar la doble tributación, exima de la retención. La
+información sobre los impuestos retenidos que se registre en los comprobantes respectivos podrá ser
+consolidada mensualmente, por cada sujeto al que se efectúen las retenciones, en los pagos o
+acreditaciones en cuenta por servicios, realizados con intermediación de instituciones del sistema
+financiero, en las que éstas sean agentes de retención. El detalle de la información de los
+comprobantes de venta que originaron la retención constará en este documento o en un anexo que
+constituirá parte integrante del mismo y será entregado al sujeto al que se le efectuó la retención.
+Cada comprobante de retención debe ser totalizado y cerrado individualmente. En el caso de
+comprobantes de retención emitidos por sistemas computarizados autorizados por el Servicio de Rentas
+Internas, que tuvieran más de una página, deberá numerarse cada una de ellas, especificando el
+número de la misma y el total de páginas que conforman el comprobante de retención.
+
+-- Edición vigente (2023-12-29) --
+Art. 40.- Requisitos de llenado para los comprobantes de retención.- Se incluirá en los comprobantes
+de retención como información no pre impresa la siguiente: 1. Apellidos y nombres, denominación o
+razón social de la persona natural o sociedad o sucesión indivisa a la cual se le efectuó la
+retención. 2. Número del registro único de contribuyentes o cédula de identidad o pasaporte del
+sujeto al que se le efectúa la retención. 3. Impuesto por el cual se efectúa la retención en la
+fuente: Impuesto a la Renta, Impuesto al Valor Agregado o Impuesto a la Salida de Divisas. 4.
+Denominación y número del comprobante de venta que motiva la retención, cuando corresponda. 5. El
+valor de la transacción o del monto de la transferencia de divisas al exterior que constituye la
+base para la retención. 6. El porcentaje aplicado para la retención. 7. Valor del impuesto retenido.
+8. El ejercicio fiscal al que corresponde la retención. 9. La fecha de emisión del comprobante de
+retención. 10. La firma del agente de retención. 11. (Reformado por el num. 1 del Art. 5 del D.E.
+1064, R.O. 771-S, 8-VI-2016).- Cuando corresponda, el convenio internacional para evitar la doble
+tributación en el cual se ampara la retención. Los comprobantes de retención se emitirán
+conjuntamente en original y copias o, en el caso de utilización de sistemas computarizados
+autorizados, de manera consecutiva. El comprobante de retención deberá ser emitido en todos los
+casos de aplicación de un convenio internacional para evitar la doble tributación, indicando la
+tarifa de la retención realizada, incluso la del 0%.” La información sobre los impuestos retenidos
+que se registre en los comprobantes respectivos podrá ser consolidada mensualmente, por cada sujeto
+al que se efectúen las retenciones, en los pagos o acreditaciones en cuenta por servicios,
+realizados con intermediación de instituciones del sistema financiero, en las que éstas sean agentes
+de retención. El detalle de la información de los comprobantes de venta que originaron la retención
+constará en este documento o en un anexo que constituirá parte integrante del mismo y será entregado
+al sujeto al que se le efectuó la retención. Cada comprobante de retención debe ser totalizado y
+cerrado individualmente. En el caso de comprobantes de retención emitidos por sistemas
+computarizados autorizados por el Servicio de Rentas Internas, que tuvieran más de una página,
+deberá numerarse cada una de ellas, especificando el número de la misma y el total de páginas que
+conforman el comprobante de retención.
