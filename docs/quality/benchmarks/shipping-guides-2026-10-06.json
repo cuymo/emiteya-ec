@@ -1,0 +1,721 @@
+{
+  "date": "2026-10-06",
+  "volume": {
+    "parties": 10000,
+    "carriers": 2000,
+    "products": 10000,
+    "invoices": 20000,
+    "guides": 100000,
+    "seedSeconds": 167.9,
+    "before": {
+      "party": {
+        "rows": 10052,
+        "totalSize": "8928 kB"
+      },
+      "product": {
+        "rows": 10000,
+        "totalSize": "9104 kB"
+      },
+      "electronic_document": {
+        "rows": 120002,
+        "totalSize": "373 MB"
+      },
+      "electronic_document_recipient": {
+        "rows": 200002,
+        "totalSize": "54 MB"
+      },
+      "shipping_guide": {
+        "rows": 100001,
+        "totalSize": "33 MB"
+      },
+      "shipping_guide_recipient": {
+        "rows": 200002,
+        "totalSize": "61 MB"
+      },
+      "shipping_guide_draft": {
+        "rows": 1,
+        "totalSize": "96 kB"
+      }
+    },
+    "after": {
+      "party": {
+        "rows": 10052,
+        "totalSize": "8928 kB"
+      },
+      "product": {
+        "rows": 10000,
+        "totalSize": "9104 kB"
+      },
+      "electronic_document": {
+        "rows": 120334,
+        "totalSize": "375 MB"
+      },
+      "electronic_document_recipient": {
+        "rows": 200972,
+        "totalSize": "54 MB"
+      },
+      "shipping_guide": {
+        "rows": 100333,
+        "totalSize": "33 MB"
+      },
+      "shipping_guide_recipient": {
+        "rows": 200972,
+        "totalSize": "62 MB"
+      },
+      "shipping_guide_draft": {
+        "rows": 393,
+        "totalSize": "1768 kB"
+      }
+    }
+  },
+  "warmup": 10,
+  "samples": 100,
+  "budgetMs": 2000,
+  "rideBudgetMs": 1000,
+  "limits": {
+    "default": {
+      "recipients": 10,
+      "detailsPerRecipient": 50,
+      "details": 100
+    },
+    "absolute": {
+      "recipients": 50,
+      "detailsPerRecipient": 100,
+      "details": 300
+    }
+  },
+  "backendBaseline": {
+    "rssMiB": 674,
+    "peakRssMiB": 674
+  },
+  "environment": {
+    "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "shared_buffers": "128MB",
+    "work_mem": "4MB",
+    "effective_cache_size": "4GB",
+    "jit": "on",
+    "node": "v24.15.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
+    "memory": "16 GiB",
+    "commit": "1d2940a"
+  },
+  "results": [
+    {
+      "name": "Transportistas: primera página, sin filtro",
+      "path": "/shipping-guides/carriers",
+      "results": 2001,
+      "p50": 8.8,
+      "p95": 12.4,
+      "max": 14.8,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Transportistas: búsqueda por identificación",
+      "path": "/shipping-guides/carriers?search=1700005",
+      "results": 200,
+      "p50": 8.3,
+      "p95": 11.7,
+      "max": 15.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Transportistas: búsqueda por razón social (todos coinciden)",
+      "path": "/shipping-guides/carriers?search=transportes",
+      "results": 2001,
+      "p50": 8.3,
+      "p95": 11.3,
+      "max": 12.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Destinatarios: primera página, sin filtro",
+      "path": "/shipping-guides/recipients",
+      "results": 10051,
+      "p50": 7.5,
+      "p95": 9.5,
+      "max": 11,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Destinatarios: búsqueda por identificación",
+      "path": "/shipping-guides/recipients?search=1700005",
+      "results": 1000,
+      "p50": 8,
+      "p95": 11.6,
+      "max": 16.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Destinatarios: búsqueda por razón social (casi todos coinciden)",
+      "path": "/shipping-guides/recipients?search=benchmark",
+      "results": 10000,
+      "p50": 8.5,
+      "p95": 11.2,
+      "max": 13.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas elegibles: primera página, sin filtro",
+      "path": "/shipping-guides/eligible-invoices",
+      "results": 20001,
+      "p50": 14.3,
+      "p95": 17.4,
+      "max": 18.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas elegibles: búsqueda por número",
+      "path": "/shipping-guides/eligible-invoices?search=000012345",
+      "results": 1,
+      "p50": 27.8,
+      "p95": 34.4,
+      "max": 40.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas elegibles: búsqueda por comprador",
+      "path": "/shipping-guides/eligible-invoices?search=BENCHMARK%2001234",
+      "results": 2,
+      "p50": 27.5,
+      "p95": 29.6,
+      "max": 37.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Mercancías sugeridas de una factura de 5 líneas",
+      "path": "/shipping-guides/eligible-invoices/bench-inv-12345/goods",
+      "results": 5,
+      "p50": 7.9,
+      "p95": 10.6,
+      "max": 14.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Mercancías sugeridas de una factura de 100 líneas",
+      "path": "/shipping-guides/eligible-invoices/bench-inv-big/goods",
+      "results": 100,
+      "p50": 76.7,
+      "p95": 95.1,
+      "max": 100.3,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Opciones del borrador (puntos y establecimientos)",
+      "path": "/shipping-guides/options",
+      "results": null,
+      "p50": 2.9,
+      "p95": 4.1,
+      "max": 8.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Creación del borrador del peor caso (límites por defecto: 10 destinatarios × 10 detalles, textos de 300)",
+      "path": "POST /shipping-guides/drafts",
+      "results": 20,
+      "p50": 82.9,
+      "p95": 92.3,
+      "max": 92.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Vista previa del borrador del peor caso (límites por defecto)",
+      "path": "/shipping-guides/drafts/{id}",
+      "results": null,
+      "p50": 15.2,
+      "p95": 22,
+      "max": 22.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (límites por defecto): total del servidor",
+      "path": "POST /shipping-guides",
+      "results": 10,
+      "p50": 310.3,
+      "p95": 422.5,
+      "max": 422.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (límites por defecto): transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 10,
+      "p50": 59.2,
+      "p95": 96.4,
+      "max": 96.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Creación del borrador del peor caso (máximos absolutos: 50 destinatarios × 6 detalles, textos de 100)",
+      "path": "POST /shipping-guides/drafts",
+      "results": 20,
+      "p50": 141.2,
+      "p95": 156.3,
+      "max": 163.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Vista previa del borrador del peor caso (máximos absolutos)",
+      "path": "/shipping-guides/drafts/{id}",
+      "results": null,
+      "p50": 44.3,
+      "p95": 49.8,
+      "max": 51.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (máximos absolutos): total del servidor",
+      "path": "POST /shipping-guides",
+      "results": 10,
+      "p50": 420,
+      "p95": 464.6,
+      "max": 464.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (máximos absolutos): transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 10,
+      "p50": 120.4,
+      "p95": 154.1,
+      "max": 154.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión con reserva: total del servidor",
+      "path": "POST /shipping-guides",
+      "results": 100,
+      "p50": 218.8,
+      "p95": 256.2,
+      "max": 273.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión con reserva: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 23.4,
+      "p95": 33.4,
+      "max": 47.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "La misma factura, 10 simultáneas: total del servidor",
+      "path": "POST /shipping-guides",
+      "results": 100,
+      "p50": 562.7,
+      "p95": 686.9,
+      "max": 706.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "La misma factura, 10 simultáneas: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 137.5,
+      "p95": 257.9,
+      "max": 307.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas distintas, 10 simultáneas: total del servidor",
+      "path": "POST /shipping-guides",
+      "results": 100,
+      "p50": 563.7,
+      "p95": 689.4,
+      "max": 732.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas distintas, 10 simultáneas: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 134.4,
+      "p95": 258,
+      "max": 295.8,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Guías: primera página, sin filtro",
+      "path": "/shipping-guides",
+      "results": 100333,
+      "p50": 23.5,
+      "p95": 29,
+      "max": 31.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Guías: búsqueda por número",
+      "path": "/shipping-guides?search=000054321",
+      "results": 1,
+      "p50": 534.9,
+      "p95": 552.4,
+      "max": 583.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Guías: búsqueda por identificación de un destinatario",
+      "path": "/shipping-guides?search=1700001234001",
+      "results": 20,
+      "p50": 552.3,
+      "p95": 569.6,
+      "max": 589.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Guías: búsqueda por transportista",
+      "path": "/shipping-guides?search=TRANSPORTES%20DEL%20BENCHMARK%2000500",
+      "results": 20,
+      "p50": 565,
+      "p95": 587.6,
+      "max": 602.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Guías: filtro por estado",
+      "path": "/shipping-guides?state=AUTHORIZED",
+      "results": 100000,
+      "p50": 37.7,
+      "p95": 38.9,
+      "max": 40.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Bandeja: filtro por identificación de un destinatario",
+      "path": "/documents?identification=1700001234001",
+      "results": 22,
+      "p50": 338.3,
+      "p95": 370.1,
+      "max": 437.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Bandeja: guías filtradas por identificación de un destinatario",
+      "path": "/documents?documentType=06&identification=1700001234001",
+      "results": 20,
+      "p50": 346.6,
+      "p95": 375.3,
+      "max": 390.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Render del RIDE de una guía (worker)",
+      "path": "RideWorkerPool",
+      "results": 30,
+      "pages": 1,
+      "p50": 84.8,
+      "p95": 97.4,
+      "max": 97.7,
+      "budgetMs": 1000,
+      "withinBudget": true
+    },
+    {
+      "name": "Render del RIDE del máximo de filas (50 destinatarios, 300 detalles, 26 páginas)",
+      "path": "RideWorkerPool",
+      "results": 30,
+      "pages": 26,
+      "p50": 503.6,
+      "p95": 560.7,
+      "max": 566.4,
+      "budgetMs": 1000,
+      "withinBudget": true
+    }
+  ],
+  "worstCase": {
+    "límites por defecto": {
+      "shape": "10 destinatarios × 10 detalles, textos de 300",
+      "recipients": 10,
+      "details": 100,
+      "textLength": 300,
+      "bodyBytes": 56062,
+      "fullTextBodyBytes": 56062,
+      "fullTextFitsBody": true,
+      "signedXmlBytes": 78827,
+      "signedXmlKiB": 77,
+      "largestId": "fff8c576-3465-45f4-b9bc-979dbee085f4",
+      "stages": {
+        "reservation_tx": {
+          "p50": 59.2,
+          "p95": 96.4,
+          "max": 96.4
+        },
+        "xml": {
+          "p50": 0.6,
+          "p95": 1.2,
+          "max": 1.2
+        },
+        "xsd": {
+          "p50": 132.6,
+          "p95": 172.8,
+          "max": 172.8
+        },
+        "sign": {
+          "p50": 76.3,
+          "p95": 89.2,
+          "max": 89.2
+        },
+        "persist": {
+          "p50": 13.7,
+          "p95": 26.8,
+          "max": 26.8
+        },
+        "total": {
+          "p50": 310.3,
+          "p95": 422.5,
+          "max": 422.5
+        }
+      },
+      "client": {
+        "p50": 314.9,
+        "p95": 426.3,
+        "max": 426.3
+      },
+      "backend": {
+        "cpuMsPerDraftRequest": 22.2,
+        "cpuMsPerDraftAndEmission": 530,
+        "rssBeforeMiB": 674,
+        "rssMiB": 753.4,
+        "peakRssMiB": 765.7
+      }
+    },
+    "máximos absolutos": {
+      "shape": "50 destinatarios × 6 detalles, textos de 100",
+      "recipients": 50,
+      "details": 300,
+      "textLength": 100,
+      "bodyBytes": 99702,
+      "fullTextBodyBytes": 189502,
+      "fullTextFitsBody": false,
+      "signedXmlBytes": 168062,
+      "signedXmlKiB": 164.1,
+      "largestId": "92fa2eb1-af80-40db-a31e-cbcfe1bfa2ab",
+      "stages": {
+        "reservation_tx": {
+          "p50": 120.4,
+          "p95": 154.1,
+          "max": 154.1
+        },
+        "xml": {
+          "p50": 1.4,
+          "p95": 1.9,
+          "max": 1.9
+        },
+        "xsd": {
+          "p50": 133.9,
+          "p95": 195.6,
+          "max": 195.6
+        },
+        "sign": {
+          "p50": 83.7,
+          "p95": 93.3,
+          "max": 93.3
+        },
+        "persist": {
+          "p50": 13.7,
+          "p95": 17.8,
+          "max": 17.8
+        },
+        "total": {
+          "p50": 420,
+          "p95": 464.6,
+          "max": 464.6
+        }
+      },
+      "client": {
+        "p50": 424.4,
+        "p95": 469.2,
+        "max": 469.2
+      },
+      "backend": {
+        "cpuMsPerDraftRequest": 62.3,
+        "cpuMsPerDraftAndEmission": 712.7,
+        "rssBeforeMiB": 753.4,
+        "rssMiB": 800.5,
+        "peakRssMiB": 816.1
+      }
+    }
+  },
+  "signedXmlMaxBytes": 168062,
+  "signedXmlNote": "Medición de recursos del peor caso; sin relación con Q-47 ni con ningún límite del SRI.",
+  "serialEmissions": {
+    "client": {
+      "p50": 222,
+      "p95": 260.1,
+      "max": 277.2
+    },
+    "stages": {
+      "reservation_tx": {
+        "p50": 23.4,
+        "p95": 33.4,
+        "max": 47.7
+      },
+      "xml": {
+        "p50": 0.1,
+        "p95": 0.1,
+        "max": 0.2
+      },
+      "xsd": {
+        "p50": 118.6,
+        "p95": 146.9,
+        "max": 162.9
+      },
+      "sign": {
+        "p50": 51.4,
+        "p95": 58.4,
+        "max": 65.9
+      },
+      "persist": {
+        "p50": 9.4,
+        "p95": 11.3,
+        "max": 23.3
+      },
+      "total": {
+        "p50": 218.8,
+        "p95": 256.2,
+        "max": 273.6
+      }
+    }
+  },
+  "contention": {
+    "La misma factura": {
+      "concurrent": 10,
+      "rounds": 10,
+      "reservationsPerSecond": 14.4,
+      "reservationTx": {
+        "p50": 137.5,
+        "p95": 257.9,
+        "max": 307.6
+      },
+      "lockWaitP95Ms": 234.5,
+      "stages": {
+        "reservation_tx": {
+          "p50": 137.5,
+          "p95": 257.9,
+          "max": 307.6
+        },
+        "xml": {
+          "p50": 0.1,
+          "p95": 0.1,
+          "max": 0.2
+        },
+        "xsd": {
+          "p50": 284.2,
+          "p95": 331.8,
+          "max": 359.7
+        },
+        "sign": {
+          "p50": 60.9,
+          "p95": 89.9,
+          "max": 157.4
+        },
+        "persist": {
+          "p50": 10.2,
+          "p95": 13.8,
+          "max": 24.5
+        },
+        "total": {
+          "p50": 562.7,
+          "p95": 686.9,
+          "max": 706.4
+        }
+      },
+      "client": {
+        "p50": 575,
+        "p95": 706.1,
+        "max": 722.6
+      }
+    },
+    "Facturas distintas": {
+      "concurrent": 10,
+      "rounds": 10,
+      "reservationsPerSecond": 14.3,
+      "reservationTx": {
+        "p50": 134.4,
+        "p95": 258,
+        "max": 295.8
+      },
+      "lockWaitP95Ms": 234.6,
+      "stages": {
+        "reservation_tx": {
+          "p50": 134.4,
+          "p95": 258,
+          "max": 295.8
+        },
+        "xml": {
+          "p50": 0.1,
+          "p95": 0.1,
+          "max": 0.4
+        },
+        "xsd": {
+          "p50": 285.9,
+          "p95": 345.1,
+          "max": 373.9
+        },
+        "sign": {
+          "p50": 60.6,
+          "p95": 71.8,
+          "max": 96.8
+        },
+        "persist": {
+          "p50": 10.4,
+          "p95": 15.3,
+          "max": 18.8
+        },
+        "total": {
+          "p50": 563.7,
+          "p95": 689.4,
+          "max": 732.1
+        }
+      },
+      "client": {
+        "p50": 575.7,
+        "p95": 704.3,
+        "max": 747.8
+      }
+    }
+  },
+  "independence": {
+    "emitted": 100333,
+    "stockMovements": {
+      "before": 0,
+      "after": 0
+    },
+    "stockBalancesUnchanged": true,
+    "invoicesUnchanged": true,
+    "invoiceArtifactsUnchanged": true,
+    "partyRolesUnchanged": true
+  }
+}
