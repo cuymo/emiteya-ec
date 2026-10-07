@@ -35,7 +35,7 @@ Orden de middleware de `createApp` (ADR 0016):
 4. Métricas HTTP por patrón de ruta.
 5. Endpoints operacionales: `/health/live`, `/health/ready` y `/metrics`, fuera de `/api` y fuera de la API pública. Restringir su exposición corresponde al despliegue (`deployment.md`).
 6. `mountBeforeBodyParser`: punto de montaje para routers que necesitan el cuerpo sin procesar. Monta Better Auth en `/api/auth/*`, precedido del middleware que escribe la IP del cliente y la correlación como cabeceras propias del servidor.
-7. `express.json` con límite de 100 KB.
+7. `express.json` con límite de 100 KB, salvo las rutas que `jsonBodyExceptions` declara con su propio parser: la carga de la firma electrónica (límite derivado de `CERTIFICATE_MAX_BYTES`) y crear y actualizar un borrador de guía de remisión (2 MiB, design D23 de `add-shipping-guides`). El límite global no cambia para el resto de la API.
 8. `/api/v1`: el router de aplicación que recibe `createApp` (ADR 0015).
 9. Manejador 404 y manejador de errores.
 

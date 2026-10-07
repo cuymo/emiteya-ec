@@ -58,6 +58,7 @@ import {
   withholdingReceiptsModule,
 } from "../../src/modules/withholding-receipts/infrastructure/index.ts";
 import {
+  isShippingGuideDraftBody,
   shippingGuideSigningProfile,
   shippingGuidesModule,
 } from "../../src/modules/shipping-guides/infrastructure/index.ts";
@@ -207,7 +208,10 @@ export function buildTaxpayerApp(
 ) {
   return buildAuthApp(db, {
     trustProxy: 1,
-    ...(options.signing ? { jsonBodyExceptions: isSigningCertificateUpload } : {}),
+    // Como main.ts: la carga de la firma y los borradores de guía traen su propio parser.
+    jsonBodyExceptions: (req) =>
+      (options.signing !== undefined && isSigningCertificateUpload(req)) ||
+      isShippingGuideDraftBody(req),
     apiRouter: ({ context, memberships, securityEvents, uow }) => {
       const authorizer = createAuthorizer({ memberships, securityEvents });
       const signing = options.signing

@@ -1,7 +1,8 @@
 // Rutas de las guías de remisión bajo /api/v1 (add-shipping-guides, design D22). La empresa, el rol y
 // el autor salen del contexto de la sesión; un recurso de otra empresa es `404`. Ninguna ruta envía
-// al SRI ni expone XML o respuestas originales.
-import { Router, type Response } from "express";
+// al SRI ni expone XML o respuestas originales. Crear y actualizar un borrador leen su cuerpo con un
+// límite propio de 2 MiB (design D23, segunda capa); el resto conserva el parser global de 100 KB.
+import express, { Router, type Request, type Response } from "express";
 import {
   IDEMPOTENCY_KEY_HEADER,
   type ListMeta,
@@ -25,6 +26,25 @@ import {
   toShippingGuideTransmissionView,
   toShippingGuideView,
 } from "./views.ts";
+
+/**
+ * Límite del cuerpo JSON de las rutas que reciben el borrador completo: 2 MiB, una defensa de
+ * recursos HTTP del proyecto (design D23). Hace alcanzables por HTTP los máximos absolutos de la guía
+ * con textos multibyte de longitud máxima; no es un límite del SRI, del XSD ni del XML, ni una
+ * interpretación de Q-47. Después de leer el cuerpo rigen el contrato y los límites estructurales.
+ */
+export const SHIPPING_GUIDE_DRAFT_BODY_LIMIT_BYTES = 2_097_152;
+
+const DRAFTS_PATH = "/api/v1/shipping-guides/drafts";
+const DRAFT_PATH = /^\/api\/v1\/shipping-guides\/drafts\/[^/]+$/;
+
+/**
+ * Crear (`POST /drafts`) y actualizar (`PUT /drafts/{id}`) un borrador traen su propio parser: el
+ * global se los salta (app.ts, jsonBodyExceptions). Ninguna otra ruta, tampoco la emisión.
+ */
+export const isShippingGuideDraftBody = (req: Request): boolean =>
+  (req.method === "POST" && req.path === DRAFTS_PATH) ||
+  (req.method === "PUT" && DRAFT_PATH.test(req.path));
 
 function send<T>(res: Response, status: number, data: T, meta?: ListMeta) {
   res.status(status).json(meta ? { data, meta } : { data });
@@ -52,6 +72,7 @@ export function shippingGuidesRouter({
   carrierName = () => Promise.resolve(null),
 }: ShippingGuidesRouterDependencies): Router {
   const router = Router();
+  const draftBody = express.json({ limit: SHIPPING_GUIDE_DRAFT_BODY_LIMIT_BYTES });
 
   router.get("/shipping-guides/carriers", async (req, res) => {
     const { items, meta } = await options.carriers(contextOf(res), req.query);
@@ -93,7 +114,7 @@ export function shippingGuidesRouter({
     send(res, 200, views, meta);
   });
 
-  router.post("/shipping-guides/drafts", async (req, res) => {
+  router.post("/shipping-guides/drafts", draftBody, async (req, res) => {
     send(res, 201, toShippingGuideDraftView(await drafts.create(contextOf(res), req.body)));
   });
 
@@ -105,7 +126,7 @@ export function shippingGuidesRouter({
     );
   });
 
-  router.put("/shipping-guides/drafts/:draftId", async (req, res) => {
+  router.put("/shipping-guides/drafts/:draftId", draftBody, async (req, res) => {
     const details = await drafts.update(contextOf(res), param(req.params.draftId), req.body);
     send(res, 200, toShippingGuideDraftView(details));
   });

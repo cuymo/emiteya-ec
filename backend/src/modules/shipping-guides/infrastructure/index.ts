@@ -38,6 +38,11 @@ import { createShippingGuides } from "../application/shipping-guides.ts";
 import { shippingGuideSigningProfile as createShippingGuideSigningProfile } from "../application/signing-profile.ts";
 import { createShippingEligibleInvoiceReader } from "./eligible-invoices.ts";
 import { shippingGuidesRouter } from "./http/shipping-guides-router.ts";
+
+export {
+  isShippingGuideDraftBody,
+  SHIPPING_GUIDE_DRAFT_BODY_LIMIT_BYTES,
+} from "./http/shipping-guides-router.ts";
 import { registerShippingGuideMetrics } from "./metrics.ts";
 import { createShippingGuideDraftRepository } from "./prisma-drafts.ts";
 import { createShippingGuideListReader } from "./prisma-shipping-guide-list.ts";

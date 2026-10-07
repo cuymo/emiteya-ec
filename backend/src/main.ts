@@ -75,6 +75,7 @@ import {
   withholdingReceiptsModule,
 } from "./modules/withholding-receipts/infrastructure/index.ts";
 import {
+  isShippingGuideDraftBody,
   shippingGuideSigningProfile,
   shippingGuidesModule,
 } from "./modules/shipping-guides/infrastructure/index.ts";
@@ -648,7 +649,8 @@ const app = createApp({
   trustProxy: env.TRUST_PROXY,
   apiRouter,
   mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
-  jsonBodyExceptions: isSigningCertificateUpload,
+  // Rutas con su propio parser: la carga de la firma y los borradores de guía (2 MiB, design D23).
+  jsonBodyExceptions: (req) => isSigningCertificateUpload(req) || isShippingGuideDraftBody(req),
 });
 
 const server = app.listen(env.PORT, () => {

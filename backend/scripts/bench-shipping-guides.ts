@@ -110,9 +110,11 @@ const TEXT_300 = (prefix: string) => TEXT(prefix);
 const CODE_25 = (prefix: string) => `${prefix}${"9".repeat(25)}`.slice(0, 25);
 const QUANTITY_MAX = "999999999999.999999";
 /**
- * Límite del cuerpo JSON de la plataforma (`JSON_BODY_LIMIT` de `app.ts`, 100 KB): una defensa
- * global que este change no cambia. Si el peor caso con textos de 300 caracteres no cabe, se mide con
- * el texto más largo que cabe y se registra.
+ * Tope del cuerpo del borrador con que se registró el benchmark del 2026-10-06: el límite global de
+ * 100 KB de `app.ts`, que entonces regía también para el borrador. Hoy crear y actualizar un borrador
+ * admiten 2 MiB (design D23, segunda capa); el script conserva este tope para que sus resultados
+ * sigan siendo comparables. Si el peor caso con textos de 300 caracteres no cabe, se mide con el
+ * texto más largo que cabe y se registra.
  */
 const BODY_LIMIT_BYTES = 100 * 1024;
 
@@ -1336,7 +1338,7 @@ try {
         .filter(([, entry]) => !entry.fullTextFitsBody)
         .map(
           ([label, entry]) =>
-            `- **Límite del cuerpo (${label}):** con todos los textos en 300 caracteres el cuerpo del borrador mediría ${round(entry.fullTextBodyBytes / 1024)} KiB, más que el límite global de ${BODY_LIMIT_BYTES / 1024} KiB del cuerpo JSON (\`JSON_BODY_LIMIT\`), y la API respondería \`413 PAYLOAD_TOO_LARGE\` antes de evaluar los límites de la guía. Se midió con textos de ${entry.textLength} caracteres (${round(entry.bodyBytes / 1024)} KiB). Ese límite de la plataforma no cambia en este change.`,
+            `- **Límite del cuerpo (${label}):** con todos los textos en 300 caracteres el cuerpo del borrador mediría ${round(entry.fullTextBodyBytes / 1024)} KiB, más que el tope de ${BODY_LIMIT_BYTES / 1024} KiB con que se registra este benchmark (el límite global de \`JSON_BODY_LIMIT\`, que regía para el borrador cuando se registró por primera vez; hoy crear y actualizar un borrador admiten 2 MiB). Se midió con textos de ${entry.textLength} caracteres (${round(entry.bodyBytes / 1024)} KiB), para que los resultados sigan siendo comparables.`,
         ),
       `- El tamaño del XML firmado del peor caso (${maxSigned} bytes como máximo) es **solo una medición de recursos**: no interpreta ni cumple el "320 Kb" de la ficha y no tiene relación con Q-47, que sigue abierta; la transmisión real sigue cerrada hasta resolverla.`,
       `- Los límites son una defensa de recursos del sistema. La memoria es la residente del proceso del backend (incluye sus pools de firma, de validación y del RIDE); antes del peor caso era de ${memoryBaseline.rssMiB} MiB, y la máxima es la de toda la ejecución hasta ese punto.`,
