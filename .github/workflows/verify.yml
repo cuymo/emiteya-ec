@@ -13,9 +13,9 @@ jobs:
     # Imagen fija para builds reproducibles; pasar a ubuntu-26.04 es un mantenimiento aparte
     # (docs/quality/technical-debt.md).
     runs-on: ubuntu-24.04
-    # Las pruebas tardan unos 14 minutos en un runner rápido y más de 18 en uno lento: 20 minutos no
-    # dejaban margen (docs/quality/technical-debt.md).
-    timeout-minutes: 30
+    # Mitigación temporal para runners lentos: el último job verde tardó 29 min 31 s y 30 minutos ya
+    # no dejaban margen. No se sube más; se perfila la suite (docs/quality/technical-debt.md).
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:17-alpine
