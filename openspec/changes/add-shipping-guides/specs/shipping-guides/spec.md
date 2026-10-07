@@ -352,7 +352,7 @@ La cantidad SHALL ser un decimal exacto mayor que cero, de hasta 18 dígitos en 
 - **THEN** el sistema la acepta y la escribe completa
 
 ### Requirement: Límites de recursos de la guía
-El sistema SHALL limitar los destinatarios por guía, los detalles por destinatario y los detalles por guía con valores configurables, y aplicar los tres a la vez. Son defensas de recursos del producto, no límites del SRI ni del XSD, y no se presentan como reglas fiscales.
+El sistema SHALL limitar los destinatarios por guía, los detalles por destinatario y los detalles por guía con valores configurables, y aplicar los tres a la vez. Son defensas de recursos del producto, no límites del SRI ni del XSD, y no se presentan como reglas fiscales. Las rutas que reciben el borrador completo (crearlo y actualizarlo) SHALL admitir un cuerpo JSON de hasta 2 MiB, como defensa de recursos HTTP del proyecto, para que un borrador dentro de los máximos absolutos llegue siempre a estos límites, que se aplican después de leer el cuerpo; el resto de la API conserva su límite de 100 KB. Ninguno de los dos tamaños es un límite del SRI, del XSD ni del XML, ni una interpretación de Q-47.
 
 #### Scenario: Demasiados destinatarios
 - **WHEN** un borrador supera el máximo configurado de destinatarios
@@ -365,6 +365,22 @@ El sistema SHALL limitar los destinatarios por guía, los detalles por destinata
 #### Scenario: Límite configurado
 - **WHEN** la instalación configura un máximo de detalles por guía distinto del valor por defecto
 - **THEN** el borrador y la emisión aplican el máximo configurado
+
+#### Scenario: Máximos absolutos alcanzables
+- **WHEN** la instalación configura los máximos absolutos y un usuario guarda un borrador con 50 destinatarios y 300 detalles, con sus textos en la longitud máxima y en caracteres multibyte
+- **THEN** el sistema lo recibe y lo evalúa con los límites de la guía, sin rechazarlo por el tamaño del cuerpo
+
+#### Scenario: Cuerpo demasiado grande
+- **WHEN** el cuerpo de una solicitud que guarda un borrador supera 2 MiB
+- **THEN** el sistema la rechaza por tamaño antes de evaluarla, como defensa de recursos HTTP
+
+#### Scenario: Límite estructural dentro del cuerpo admitido
+- **WHEN** un borrador de menos de 2 MiB tiene 301 detalles
+- **THEN** el sistema lo rechaza por el límite de detalles por guía, no por el tamaño del cuerpo
+
+#### Scenario: Las demás rutas conservan su límite
+- **WHEN** una solicitud a otra ruta de la API, incluida la emisión de la guía, tiene un cuerpo de más de 100 KB
+- **THEN** el sistema la rechaza por tamaño
 
 ### Requirement: Borrador y vista previa de la guía
 Un usuario SHALL preparar la guía en un borrador: el punto de emisión, el transportista, la placa, la dirección de partida, las fechas y los destinatarios con su sustento y su detalle. La vista previa del servidor muestra los problemas que bloquean junto a su destinatario o su detalle, y los datos de cada factura sustento. El borrador no reserva número.

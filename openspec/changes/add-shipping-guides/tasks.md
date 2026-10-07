@@ -64,6 +64,7 @@
 
 - [x] 6.1 Implementar los puertos `ShippingPartyReader`, `ShippingProductReader` y `ShippingInvoiceReader` (sobre `invoiceCreditSource`, sin cambiarla) compuestos por `main.ts`, y las rutas `/shipping-guides/carriers`, `/shipping-guides/recipients`, `/shipping-guides/eligible-invoices`, `/shipping-guides/eligible-invoices/{invoiceId}/goods` y `/shipping-guides/options` (design D9 y D22). Verificar con pruebas HTTP: transportistas con `selectable` y su motivo; destinatarios sin el consumidor final ni el `08`; facturas autorizadas del ambiente vigente con búsqueda; todas las líneas de una factura con sus datos históricos y su sugerencia (`PRODUCT` para las que hoy se resuelven como bien activo, `FREE_LINE` para las demás), sin rotular ninguna como servicio ni como no trasladable, y una factura sin líneas resolubles que sigue siendo elegible; las opciones con los casos, los establecimientos activos y los límites efectivos; `403`, `401` y `404` con referencias de otra empresa
 - [x] 6.2 Implementar los borradores con su vista previa (`/shipping-guides/drafts`, design D12), incluido `{ fromInvoiceId }` y la dirección de partida propuesta. Verificar con pruebas HTTP: borrador incompleto que se guarda sin reservar; vista previa con los problemas por destinatario y detalle; la propuesta desde la factura con su comprador, su sustento y solo las sugerencias `PRODUCT` como detalle; el origen sin valor por defecto y la partida derivada al elegirlo; versión del borrador; borrador emitido inmutable; aislamiento por empresa. Documentar las rutas en `fiscal-emission.md`
+- [ ] 6.3 Aplicar a `POST /shipping-guides/drafts` y `PUT /shipping-guides/drafts/{draftId}` un límite propio del cuerpo JSON de 2 MiB (design D23, segunda capa), sin cambiar el límite global de 100 KB, con el contrato y los límites estructurales aplicados después de leer el cuerpo. Verificar con pruebas HTTP sobre `main.ts`: un borrador dentro de los valores por defecto se acepta; uno en los máximos absolutos con textos multibyte de longitud máxima no recibe `413` y llega a la validación del dominio; un cuerpo de más de 2 MiB recibe `413`; uno de menos de 2 MiB con 301 detalles se rechaza por el límite de detalles, no por tamaño; la emisión y otras rutas conservan los 100 KB. Documentarlo en `fiscal-emission.md`, `backend.md` y `deployment.md`
 
 ## 7. Emisión de la guía
 
@@ -101,6 +102,7 @@
 ## 11. Bandeja con guías de remisión
 
 - [x] 11.1 Agregar el tipo `06` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` (design D21). Verificar con pruebas de componente: filtro con los cinco tipos, tipo bajo el número, receptor derivado (nombre o "N destinatarios") y total "—" accesible, enlace al detalle de la guía, textos en femenino, documentos disponibles por estado, y los demás tipos sin cambios. Documentarlo en `fiscal-emission.md`
+- [ ] 11.2 Añadir una prueba de backend de la bandeja con una factura, una nota de crédito, una nota de débito, una guía de remisión y un comprobante de retención. Verificar que devuelve los cinco con su tipo, el total nulo de la guía y los importes de los demás, y que el filtro por guía de remisión deja solo las guías
 
 ## 12. Pantallas de guías de remisión
 
@@ -134,4 +136,4 @@
 
 ## 14. Verificación
 
-- [x] 14.1 Ejecutar `corepack pnpm verify` y `openspec validate --all --strict`, y verificar que pasan formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo, build, `check:xsd-artifact`, `check:ride-assets` y la validación de los specs
+- [ ] 14.1 Ejecutar `corepack pnpm verify` y `openspec validate --all --strict`, y verificar que pasan formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo, build, `check:xsd-artifact`, `check:ride-assets` y la validación de los specs

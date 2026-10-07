@@ -223,7 +223,7 @@ Después de `RESERVED`, la verdad fiscal de la guía es su snapshot. Guarda:
 | `GET /api/v1/shipping-guides/recipients` | Terceros activos con tipo 04, 05 o 06, sin el consumidor final, con cualquier rol | `shippingGuides.draft` |
 | `GET /api/v1/shipping-guides/eligible-invoices` y `.../{invoiceId}/goods` | Facturas autorizadas de la empresa en su ambiente vigente, con búsqueda, y las líneas de una factura con su sugerencia no autoritativa (D9) | `shippingGuides.draft` |
 | `GET /api/v1/shipping-guides/options` | Casos de excepción con su texto y la versión de la política, establecimientos activos, identidad tributaria para `SELF`, límites efectivos y `evaluatedOn` | `shippingGuides.draft` |
-| `GET/POST /api/v1/shipping-guides/drafts`, `GET/PUT/DELETE /api/v1/shipping-guides/drafts/{draftId}` | Borradores con su vista previa | `shippingGuides.draft` |
+| `GET/POST /api/v1/shipping-guides/drafts`, `GET/PUT/DELETE /api/v1/shipping-guides/drafts/{draftId}` | Borradores con su vista previa; `POST` y `PUT` admiten un cuerpo de hasta 2 MiB (D23) | `shippingGuides.draft` |
 | `POST /api/v1/shipping-guides` | Emisión con `Idempotency-Key` (`201`, o `200` en la repetición) | `shippingGuides.emit` |
 | `GET /api/v1/shipping-guides`, `GET /api/v1/shipping-guides/{shippingGuideId}` | Consulta y detalle, con búsqueda por número, transportista o identificación de un destinatario, y filtro de estado | `shippingGuides.read` |
 | `GET /api/v1/shipping-guides/{shippingGuideId}/transmission` | Historial de la transmisión | `shippingGuides.read` |
@@ -252,7 +252,11 @@ Después de `RESERVED`, la verdad fiscal de la guía es su snapshot. Guarda:
 
 - Los máximos absolutos están en el contrato y los efectivos en el entorno, con el patrón de `INVOICE_MAX_LINES`. Los tres se aplican juntos: el global de detalles rige aunque destinatarios por detalles por destinatario permita más.
 - **Naturaleza:** defensa de recursos del proyecto y nada más; nunca un límite del SRI, del XSD ni una interpretación de Q-47. Los errores y la interfaz lo dicen así. `deployment.md` documenta las variables.
-- **Tamaño del XML como medición:** estimación previa con textos de longitud máxima, unos 65 KB con los valores por defecto y unos 230 KB con los máximos absolutos; el benchmark registra el valor real del XML firmado. Es solo una medición.
+- **Segunda capa, de transporte (aclaración de P9):** las dos rutas que reciben el borrador completo, `POST /api/v1/shipping-guides/drafts` y `PUT /api/v1/shipping-guides/drafts/{draftId}`, admiten un cuerpo JSON de hasta 2 MiB (2 097 152 bytes). Es una defensa de recursos HTTP del proyecto: nunca un límite del SRI, del XSD ni del XML, ni una interpretación de Q-47.
+  - **Por qué:** el límite global de 100 KB de `express.json` rechazaba con `413` un borrador válido en los máximos absolutos con textos largos (unos 185 KiB en ASCII) antes de que la guía aplicara sus límites. Con caracteres UTF-8 de 3 bytes en todos los textos el peor caso ronda 0,5 MB, y con escapes `\u` de JSON cerca de 1 MB; 2 MiB deja margen sin ser ilimitado.
+  - **Alcance exacto:** la composición de la aplicación omite el parser global solo para esas dos rutas y el router de la guía las lee con su propio límite. La lista y el detalle de los borradores, su eliminación, la emisión (`{ draftId, expectedVersion, exceptionDeclaration }`), las consultas, el reintento de firma, la reconciliación, las descargas y los demás tipos conservan los 100 KB, que no cambian.
+  - **Capas:** un cuerpo de más de 2 MiB recibe `413 PAYLOAD_TOO_LARGE` antes del dominio. Dentro de los 2 MiB, el contrato y los límites estructurales (por defecto 10/50/100, máximos 50/100/300) siguen siendo la defensa principal y se aplican después de leer el cuerpo: un borrador de menos de 2 MiB con 301 detalles se rechaza por el límite de detalles por guía, no por tamaño.
+- **Tamaño del XML como medición:** estimación previa con textos de longitud máxima, unos 65 KB con los valores por defecto y unos 230 KB con los máximos absolutos; el benchmark registra el valor real del XML firmado. Es solo una medición y no se relaciona con el tamaño del cuerpo JSON.
 - Si el benchmark muestra que un valor por defecto no es sano, se corrige con `/opsx:update` y su evidencia antes de cerrar el apply.
 
 ### D24. Permisos y auditoría
@@ -321,6 +325,7 @@ Dos migraciones aditivas, para que la cabecera común y la guía sean unidades s
   - CPU y memoria residente del backend;
   - al terminar, que ninguna guía creó movimientos de inventario ni cambió una factura.
 - **Objetivos:** ERS RNF-005 (P95 menor que 2 s por operación) y el P95 del render del RIDE menor que 1 s, en el entorno registrado. El resultado va a `docs/quality/benchmarks/` y a `performance.md`, y valida P9 antes de cerrar el apply.
+- La ejecución registrada del 2026-10-06 midió los máximos absolutos con textos de 100 caracteres, porque entonces regía el límite global de 100 KB para el borrador; sus resultados se conservan como medición. La segunda capa de D23 hace alcanzable el borrador con textos de 300.
 
 ### D29. Operaciones sensibles
 
