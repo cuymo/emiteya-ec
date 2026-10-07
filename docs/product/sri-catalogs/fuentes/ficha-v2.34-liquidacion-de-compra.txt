@@ -1,0 +1,1121 @@
+Extracto literal para add-purchase-settlements (readiness del 2026-10-07).
+
+Fuente: Ficha técnica "Manual de usuario, catálogo y especificaciones técnicas. Emisión de
+Comprobantes Electrónicos. Método de autorización Off-line", versión 2.34, publicada el 2026-07-27.
+URL oficial (la del dataset consumer-final-policy/1.json):
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf
+SHA-256 del PDF descargado el 2026-10-07: 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9
+(el mismo de los extractos anteriores y de los datasets publicados). Extraído con pdftotext -layout,
+por página; cada sección indica su recorte. Se conservan las columnas y se quitan solo los espacios
+finales y las líneas vacías repetidas. El número de página del PDF coincide con el impreso.
+
+== Página 5: control de versiones, fila 2.14 (la que incorpora el anexo 17) ==
+
+                         Anexo 17 – Formatos XML liquidación de compra de bienes y prestación de servicios en
+ 2.14      19/07/2019
+                         las versiones 1.0.0 y 1.1.0.
+
+== Página 6: control de versiones, fila 2.27 (la que actualiza el anexo 2, RIDE) ==
+
+ 2.27      28/03/2024    Anexo 2: Formato de representaciones impresas de documentos electrónicos (RIDE)
+
+== Página 7: título de la ficha y su alcance (desde el título hasta antes de "1. Introducción") ==
+
+   FICHA TÉCNICA: MANUAL DE USUARIO,
+   CATÁLOGO Y ESPECIFICACIONES TÉCNICAS
+   SOBRE EL PROCESO DE AUTORIZACIÓN Y
+   EMISIÓN DE DOCUMENTOS ELECTRÓNICOS
+       (Aplica para la ciudadanía que emite facturas, comprobantes de retención,
+         guías de remisión, notas de crédito, notas de débito y liquidaciones de
+         compra de bienes y prestación de servicios firmadas electrónicamente)
+
+== Página 12, sección 5.4: tabla 3 (desde "5.4" hasta antes de "5.5") ==
+
+5.4 Los tipos de comprobantes que pueden generar los contribuyentes de manera
+    electrónica se detalla conforme al siguiente cuadro:
+
+TABLA 3
+
+                                                                                                     Etiqueta o tag en
+             No.             Nombre comprobante                        Código         Requisito
+                                                                                                       archivo XML
+              1      FACTURA                                               01
+                     LIQUIDACIÓN DE COMPRA DE
+              2      BIENES Y PRESTACIÓN DE                                03
+                     SERVICIOS
+              3      NOTA DE CRÉDITO                                       04         Obligatorio       <codDoc>
+              4      NOTA DE DÉBITO                                        05
+              5      GUÍA DE REMISIÓN                                      06
+              6      COMPROBANTE DE RETENCIÓN                              07
+
+== Página 13, sección 5.6: tabla 5 (desde "5.6" hasta antes de "5.7") ==
+
+5.6 Los contribuyentes que generen sus comprobantes de venta, retención y
+    documentos complementarios firmados electrónicamente en el ambiente de
+    pruebas, pueden utilizar en el campo de la razón social del receptor,
+    destinatario y agente retenido la denominación PRUEBAS SERVICIO DE
+    RENTAS INTERNAS.
+
+TABLA 5
+
+                             Identificación
+                No.                                 Número                  Razón Social
+                               Receptor
+                 1        RUC                    xxxxxxxxxx001
+                                                                   PRUEBAS SERVICIO DE
+                 2        Cédula de identidad      xxxxxxxxxx
+                                                                     RENTAS INTERNAS
+                 3        Pasaporte              xxxxxxxxxxxxx
+
+== Página 13, sección 5.7: tabla 6 y sus notas (desde "5.7" hasta antes de "5.8") ==
+
+5.7 Conforme al tipo de transacción efectuada deberá señalar el tipo de cliente,
+    sujeto retenido o destinatario, según el detalle:
+
+TABLA 6
+
+           No.                  Tipo de identificación            Código            Requisito
+            1        RUC                                               04           Obligatorio
+            2        CÉDULA                                            05           Obligatorio
+            3        PASAPORTE                                         06           Obligatorio
+            4        VENTA A CONSUMIDOR FINAL*                         07           Obligatorio
+            5        IDENTIFICACIÓN DEL EXTERIOR*                      08           Obligatorio
+
+          *Venta a consumidor final: se consignará 13 dígitos de nueve en la identificación del cliente
+          (9999999999999).
+          *Identificación del exterior: corresponderá al número de Identificación otorgado por la
+          Administración Tributaria (AT) del país que es residente fiscal.
+          * En el caso de emisión de liquidaciones de compra de bienes y prestación de servicios no se
+          encuentra habilitado el uso del tipo de identificación venta a consumidor final
+          * En el caso de emisión de notas de crédito, notas de débito y comprobantes de retención, se
+          debe obligatoriamente identificar al receptor o sujeto retenido con el tipo de identificación
+          correspondiente (RUC, cédula, pasaporte o identificación del exterior).
+
+== Página 29, sección 9.12: tabla 16 (desde "9.12" hasta antes de "9.13") ==
+
+ 9.12      Se detalla a continuación los códigos de los impuestos.
+
+ TABLA 16
+
+                                          Impuesto              Código
+                                            IVA                   2
+                                             ICE                   3
+                                           IRBPNR                  5
+
+== Página 30: tabla 17 (desde el título hasta antes de "TABLA 18") y su nota al pie 3 ==
+
+TABLA 17: TARIFA DEL IVA
+
+                                                 Porcentaje de IVA                  Código
+                                                            0%                          0
+                                                            12%                         2
+                                                            14%                         3
+                                                            15%                         4
+                                                            5%                          5
+                                             No Objeto de Impuesto                      6
+                                                   Exento de IVA                        7
+                                                 IVA diferenciado3                      8
+                                                            13%                        10
+
+3 Mediante decreto ejecutivo el presidente de la República podrá aplicar una tafia de IVA diferenciada del 8% para el sector turístico hasta 12
+días al año según se establezca en el respectivo decreto.
+
+== Páginas 34 y 35, sección 9.17 (desde "9.17" hasta antes de "9.18", sin la nota al pie 8 de la página 34) ==
+
+9.17 El formato para todo campo correspondiente a valores será 123456.98
+     utilizando el punto como separador de decimales; se utilizará como máximo
+     dos decimales, a excepción de los campos de precio unitario y cantidad que
+     se podrá utilizar hasta 6 decimales, aplica para versión de comprobantes
+     1.1.0 (Anexo 3)
+
+== Página 36: título de la sección 11 y encabezado de la tabla de errores ==
+
+         11. Códigos de errores y advertencias de
+         validación
+                                                                                                                                       VALIDACIÓN:
+     CÓDIGO
+                                                                                                                                       RECEPCIÓN
+       DE                DESCRIPCIÓN                                        MOTIVO DE ERROR
+                                                                                                                                     /AUTORIZACIÓN/
+     ERROR
+                                                                                                                                         EMISOR
+
+== Página 37: filas de los errores 35 y 36 ==
+
+  35     Documento inválido            Cuando el XML no pasa validación de esquema.             RECEPCIÓN
+           Versión esquema
+  36                                   Cuando la versión del esquema no es la correcta.         RECEPCIÓN
+            descontinuada
+
+== Página 37: filas de los errores 47 y 48 ==
+
+         Tipo de comprobante        Cuando envían en el tipo de comprobante uno que no
+  47                                                                                            RECEPCIÓN
+               no existe           exista en el catálogo de nuestros tipos de comprobantes.
+
+          Esquema XSD no           Cuando el esquema para el tipo de comprobante enviado
+  48                                                                                            RECEPCIÓN
+               existe                                   no existe.
+
+== Página 37: fila del error 52 ==
+
+  52     Error en diferencias        Cuando existe error en los cálculos del comprobante.      AUTORIZACIÓN
+
+== Página 37: filas de los errores 65 y 67 ==
+
+                                      Cuando el comprobante emitido no fue enviado de
+          Fecha de emisión                                                                       EMISOR/
+  65                                acuerdo con el tiempo del tipo de emisión en el cual fue
+           extemporánea                                                                         RECEPCIÓN
+                                                          realizado.
+  67        Fecha inválida              Cuando existe errores en el formato de la fecha.        RECEPCIÓN
+
+== Página 38: tabla de advertencias (desde "CÓDIGO DE ADVERTENCIA" hasta antes de "Al momento de receptar") ==
+
+ CÓDIGO DE
+                          DESCRIPCIÓN                                    POSIBLE SOLUCIÓN
+ADVERTENCIA
+    59                Identificación no existe       Cuando el número de la identificación del adquirente no existe.
+                                                        Siempre que el comprobante sea emitido en ambiente de
+       60              Ambiente ejecución.           certificación o pruebas se enviará como parte de la autorización
+                                                                             esta advertencia.
+                                                         Cuando el número de la identificación del adquirente del
+       62             Identificación incorrecta      comprobante está incorrecto. Por ejemplo, cédulas no pasan el
+                                                                             dígito verificador.
+       68              Documento sustento            Cuando el comprobante relacionado no existe como electrónico.
+
+== Página 60: anexo 2, notas bajo el modelo de la factura (desde "Nota:" hasta el último punto) ==
+
+Nota:
+        • Para los contribuyentes comercializadores de derivados de petróleo, y, Editores, Distribuidores y Voceadores que
+          participan en la comercialización de periódicos y/o revistas, deberán ajustar el formato RIDE de acuerdo con la
+          información contenida en el comprobante electrónico con respecto a las retenciones. Se podrán imprimir datos
+          adicionales en el RIDE conforme lo requiera el contribuyente.
+        • Los RIDE que se descarguen del portal web del SRI contendrán hora y fecha de autorización, dicha información no
+          es obligatoria registrarla en el RIDE generado por los emisores de comprobantes electrónicos.
+        • El número de la clave de acceso corresponde al número de autorización.
+        • Conforme consta en el numeral 9.20, el código de barras es opcional.
+        • El campo “Subtotal tarifa especial” corresponde a la tarifa de IVA por actividades de turismo.
+        • Los contribuyentes podrán visualizar solo los subtotales que fueron llenados.
+
+== Página 65: anexo 2, "FORMATO DE REPRESENTACIONES IMPRESAS DE DOCUMENTOS ELECTRÓNICOS (RIDE)" ==
+
+El texto extraíble de la página es solo su título:
+
+LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE
+SERVICIOS
+
+La distribución del RIDE de la liquidación es una imagen sin texto extraíble (694 x 1026 px).
+Rótulos visibles, transcritos de la imagen (no es texto extraído), en el orden en que aparecen:
+- Recuadro derecho: "R.U.C.:", "LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE SERVICIOS", "No."
+  (001-001-910001280 en el modelo), "NÚMERO DE AUTORIZACIÓN", "FECHA Y HORA DE AUTORIZACIÓN:",
+  "AMBIENTE:", "EMISIÓN:", "CLAVE DE ACCESO" con el código de barras y la clave debajo.
+- Recuadro izquierdo, bajo el logo: razón social ("SERVICIO DE RENTAS INTERNAS"), nombre comercial
+  ("PRUEBA FANTASIA 2"), "Dirección Matriz:", "Dirección Sucursal:", "Contribuyente Especial Nro",
+  "OBLIGADO A LLEVAR CONTABILIDAD" (SI), "Agente de Retención Resolución No.".
+- Bloque del sujeto: "Razón Social / Nombres y Apellidos:", "Identificación:", "Fecha Emisión:"
+  (17/03/2024), "Placa / Matrícula:", "Guía Remisión:", "Direccion:". Los rótulos no dicen
+  "proveedor".
+- Tabla de detalles con las columnas "Cod. Principal", "Cod. Auxiliar", "Cantidad", "Descripción",
+  "Detalle Adicional", "Precio Unitario", "Subsidio", "Precio sin Subsidio", "Descuento" y "Precio
+  Total"; filas de ejemplo IVA5, IVA15 e IVA15ESP con cantidades "1,00".
+- Bajo la tabla, a la izquierda: "Información Adicional" (Telefono, Email) y "Forma de pago" /
+  "Valor" ("01 - SIN UTILIZACION DEL SISTEMA FINANCIERO", 369,50).
+- A la derecha, los totales: "SUBTOTAL TARIFA ESPECIAL", "SUBTOTAL 5%", "SUBTOTAL 15%", "SUBTOTAL
+  0%", "SUBTOTAL NO OBJETO DE IVA", "SUBTOTAL EXENTO DE IVA", "SUBTOTAL SIN IMPUESTOS", "IVA 5%",
+  "IVA 15%" y "VALOR TOTAL".
+El modelo no tiene filas de descuento total, ICE, IRBPNR ni propina, ni un bloque de reembolsos. Usa
+las tarifas de 5% y 15% y la fecha 17/03/2024; el control de versiones registra en la 2.27
+(28/03/2024, página 6) la actualización del anexo 2.
+
+== Página 79: tabla 24 (desde el título hasta el pie de la página) ==
+
+  TABLA 24: FORMAS DE PAGO
+
+                              FORMAS DE PAGO                          CÓDIGO FECHA INICIO FECHA FIN
+
+                  SIN UTILIZACION DEL SISTEMA FINANCIERO                01         01/01/2013               -
+
+                        COMPENSACIÓN DE DEUDAS                          15         01/01/2013               -
+                             TARJETA DE DÉBITO                          16         01/06/2016               -
+                           DINERO ELECTRÓNICO                           17         01/06/2016               -
+                             TARJETA PREPAGO                            18         01/06/2016               -
+                            TARJETA DE CRÉDITO                          19         01/06/2016               -
+
+          OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO                  20         01/06/2016               -
+
+                            ENDOSO DE TÍTULOS                           21         01/06/2016               -
+
+                                                                                                                          79
+
+== Página 80: nota de la tabla 24 y tabla 25 (desde el inicio hasta el pie de la página) ==
+
+Las formas de pago señaladas corresponden al Catálogo del Anexo Transaccional
+Simplificado, publicado en la página web www.sri.gob.ec: Información sobre
+impuestos/Cómo declaro mis impuestos? / Anexos y guías.
+
+TABLA 25: PAÍSES
+
+     CÓDIGO         DESCRIPCIÓN             CÓDIGO        DESCRIPCIÓN
+       016          AMERICAN SAMOA           334                 QATAR
+       074           BOUVET ISLAND           335               MALDIVAS
+       101              ARGENTINA            336                  NEPAL
+       102                BOLIVIA            337                  OMAN
+       103                 BRASIL            338               SINGAPUR
+       104                CANADÁ             339          SRI LANKA (CEILAN)
+       105              COLOMBIA             341                VIETNAM
+       106             COSTA RICA            342                 YEMEN
+       107                  CUBA             343      ISLAS HEARD Y MCDONALD
+       108                 CHILE             344         BRUNEI DARUSSALAM
+       109               ANGUILA             346                TURQUÍA
+       110          ESTADOS UNIDOS           347              AZERBAIJÁN
+       111             GUATEMALA             348              KAZAJSTÁN
+       112                  HAITÍ            349             KIRGUIZISTÁN
+       113              HONDURAS             350              TAJIKISTAN
+       114               JAMAICA             351            TURKMENISTÁN
+       115           MALVINAS ISLAS          352              UZBEKISTÁN
+       116                MÉXICO             353               PALESTINA
+       117             NICARAGUA             354              HONG KONG
+       118                PANAMÁ             355                 MACAO
+       119              PARAGUAY             356                ARMENIA
+       120                  PERÚ             382             MONTENEGRO
+       121            PUERTO RICO            402            BURKINA FASO
+       122       REPÚBLICA DOMINICANA        403                ARGELIA
+       123            EL SALVADOR            404                BURUNDÍ
+       124         TRINIDAD Y TOBAGO         405               CAMERÚN
+       125               URUGUAY             406                 CONGO
+       126             VENEZUELA             407                 ETIOPÍA
+       127               CURAZAO             408                 GAMBIA
+       129               BAHAMAS             409                 GUINEA
+       130              BARBADOS             410                 LIBERIA
+       131               GRANADA             412             MADAGASCAR
+       132                GUYANA             413                 MALAWI
+       133               SURINAM             414                   MALÍ
+       134        ANTIGUA Y BARBUDA          415             MARRUECOS
+       135                 BELICE            416              MAURITANIA
+       136               DOMINICA            417                NIGERIA
+       137       SAN CRISTOBAL Y NEVIS       419        ZIMBABWE (RHODESIA)
+       138             SANTA LUCÍA           420                SENEGAL
+       139     SAN VICENTE Y LAS GRANAD.     421                 SUDÁN
+       140       ANTILLAS HOLANDESAS         422          SUDAFRICA (CISKEI)
+       141                 ARUBA             423            SIERRA LEONA
+       142               BERMUDA             425               TANZANIA
+       143             GUADALUPE             426                UGANDA
+       144         GUYANA FRANCESA           427                 ZAMBIA
+       145            ISLAS CAIMÁN           428            ÅLAND ISLANDS
+       146    ISLAS VIRGENES (BRITANICAS)    429                  BENIN
+       147           JOHNSTON ISLA           430              BOTSWANA
+       148              MARTINICA            431     REPUBLICA CENTROAFRICANA
+       149          MONTSERRAT ISLA          432           COSTA DE MARFIL
+       151       TURCAS Y CAICOS ISLAS       433                  CHAD
+
+                                                                                80
+
+== Página 81 (continuación de la tabla 25, hasta el pie de la página) ==
+
+CÓDIGO          DESCRIPCIÓN              CÓDIGO       DESCRIPCIÓN
+ 152      VIRGENES, ISLAS (NORT.AMER.)    434               EGIPTO
+ 201                   ALBANIA            435               GABON
+ 202                 ALEMANIA             436               GHANA
+ 203                  AUSTRIA             437         GUINEA-BISSAU
+ 204                  BÉLGICA             438       GUINEA ECUATORIAL
+ 205                 BULGARIA             439                KENIA
+ 207           ALBORAN Y PEREJIL          440              LESOTHO
+ 208                DINAMARCA             441             MAURICIO
+ 209                   ESPAÑA             442           MOZAMBIQUE
+ 211                  FRANCIA             443              MAYOTTE
+ 212                 FINLANDIA            444                NIGER
+ 213              REINO UNIDO             445              RWANDA
+ 214                   GRECIA             446            SEYCHELLES
+ 215         PAISES BAJOS (HOLANDA)       447      SAHARA OCCIDENTAL
+ 216                  HUNGRÍA             448              SOMALIA
+ 217                  IRLANDA             449     SANTO TOME Y PRINCIPE
+ 218                  ISLANDIA            450           SWAZILANDIA
+ 219                    ITALIA            451                TOGO
+ 220              LUXEMBURGO              452                TUNEZ
+ 221                    MALTA             453                ZAIRE
+ 222                 NORUEGA              454               ANGOLA
+ 223                  POLONIA             456            CABO VERDE
+ 224                PORTUGAL              458             COMORAS
+ 225                  RUMANIA             459              DJIBOUTI
+ 226                   SUECIA             460               NAMIBIA
+ 227                    SUIZA             463              ERITREA
+ 228             CANARIAS ISLAS           464             MOROCCO
+ 229                  UCRANIA             465              REUNION
+ 230                    RUSIA             466           SANTA ELENA
+ 231               YUGOSLAVIA             499               JERSEY
+ 233                 ANDORRA              501             AUSTRALIA
+ 234             LIECHTENSTEIN            503         NUEVA ZELANDA
+ 235                  MÓNACO              504       SAMOA OCCIDENTAL
+ 237               SAN MARINO             506                 FIJI
+ 238         VATICANO (SANTA SEDE)        507      PAPUA NUEVA GUINEA
+ 239                GIBRALTAR             508               TONGA
+ 241                 BELARUS              509       PALAO (BELAU) ISLAS
+ 242         BOSNIA Y HERZEGOVINA         510               KIRIBATI
+ 243                  CROACIA             511         MARSHALL ISLAS
+ 244                ESLOVENIA             512            MICRONESIA
+ 245                  ESTONIA             513               NAURU
+ 246                 GEORGIA              514         SALOMON ISLAS
+ 247              GROENLANDIA             515               TUVALU
+ 248                   LETONIA            516              VANUATU
+ 249                  LITUANIA            517                GUAM
+ 250                 MOLDOVA              518     ISLAS COCOS (KEELING)
+ 251                MACEDONIA             519            ISLAS COOK
+ 252               ESLOVAQUIA             520          ISLAS NAVIDAD
+ 253               ISLAS FAROE            521           MIDWAY ISLAS
+ 260     FRENCH SOUTHERN TERRITORIES      522              NIUE ISLA
+ 301               AFGANISTAN             523           NORFOLK ISLA
+ 302             ARABIA SAUDITA           524        NUEVA CALEDONIA
+ 303            MYANMAR (BURMA)           525          PITCAIRN, ISLA
+ 304                 CAMBOYA              526      POLINESIA FRANCESA
+ 306              COREA NORTE             529         TIMOR DEL ESTE
+ 307             TAIWAN (CHINA)           530              TOKELAI
+ 308                 FILIPINAS            531             WAKE ISLA
+ 309                     INDIA            532     WALLIS Y FUTUNA, ISLAS
+
+                                                                           81
+
+== Página 82 (fin de la tabla 25 y su nota, hasta antes de "ANEXO 5") ==
+
+           CÓDIGO                   DESCRIPCIÓN              CÓDIGO                   DESCRIPCIÓN
+              310                   INDONESIA                   590              SAINT BARTHELEMY
+              311                       IRAK                    593                    ECUADOR
+              312           IRÁN (REPÚBLICA ISLÁMICA)           594           AGUAS INTERNACIONALES
+              313                      ISRAEL                   595                   ALTO VOLTA
+              314                      JAPÓN                    596                  BIELORRUSIA
+              315                    JORDANIA                   597                 COTE DÍVOIRE
+              316                     KUWAIT                    598                     CYPRUS
+              317             LAOS, REP. POP. DEMOC.            599               REPÚBLICA CHECA
+              318                      LIBANO                   600               FALKLAND ISLANDS
+              319                     MALASIA                   601                      LATVIA
+              321             MONGOLIA (MANCHURIA)              602                       LIBIA
+              322                    PAKISTÁN                   603            NORTHERN MARIANA ISL
+              323                       SIRIA                   604             ST. PIERRE AND MIQUE
+              325                    TAILANDIA                  605             SYRIAN ARAB REPUBLIC
+              327                     BAHREIN                   606        TERRITORIO ANTÁRTICO BRITÁNICO
+
+              328                    BANGLADESH                 607        TERRITORIO BRITÁNICO OCÉANO IN
+
+              329                   BUTÁN                       688                        SERBIA
+              330               COREA DEL SUR                   831                      GUERNSEY
+              331               CHINA POPULAR                   832                       JERSEY
+              332                   CHIPRE                      833                     ISLE OF MAN
+              333           EMIRATOS ARABES UNIDOS
+
+ Los códigos establecidos para países corresponden al Catálogo de Anexo
+ Transaccional Simplificado, publicado en la página web www.sri.gob.ec:
+ Información sobre impuestos / Cómo declaro mis impuestos? / Anexos y guías.
+
+== Página 88: tabla 26 (desde el título hasta el pie de la página) ==
+
+TABLA 26: Tipo Proveedor de Reembolso
+
+                                                TIPO           CÓDIGO
+
+                                           PERSONA NATURAL       01
+
+                                              SOCIEDAD           02
+
+                                                                                                                           88
+
+== Página 111: anexo 13 (máquina fiscal), primer párrafo ==
+
+ANEXO 13 – REQUISITO OBLIGATORIO PARA
+XML DE COMPROBANTES EMITIDOS DESDE
+UNA MÁQUINA FISCAL
+Los comprobantes factura, nota de crédito, nota de débito, guía de remisión y
+comprobante de retención para todas sus versiones deberán contener los
+siguientes tags: marca, modelo y serie en la estructura del XML como se muestra a
+continuación:
+
+== Página 115: anexo 17, "LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE SERVICIOS VERSIÓN 1.0.0" (hasta el pie de la página) ==
+
+    ANEXO 17 – FORMATOS XML LIQUIDACIÓN
+    DE COMPRA DE BIENES Y PRESTACIÓN DE
+    SERVICIOS EN LAS VERSIONES 1.0.0 Y 1.1.0
+    LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE
+    SERVICIOS VERSIÓN 1.0.0
+                                                                                                       TIPO DE      LONGITUD /
+                           ETIQUETAS O TAGS                                 CARACTER
+                                                                                                       CAMPO         FORMATO
+<?xml version="1.0" encoding="UTF-8"?>                                       Obligatorio                  -              -
+<liquidacionCompra id="comprobante" versión="1.0.0">                         Obligatorio                  -              -
+<infoTributaria>                                                             Obligatorio                  -              -
+                                                                    Obligatorio, conforme tabla 4
+<ambiente>1</ambiente>                                                                                Numérico           1
+                                                                     de la Ficha Técnica Offline
+                                                                    Obligatorio, conforme tabla 2
+<tipoEmision>1</tipoEmision>                                                                          Numérico           1
+                                                                     de la Ficha Técnica Offline
+<razonSocial>razonSocial0</razonSocial>                                      Obligatorio             Alfanumérico     Max 300
+<nombreComercial>nombreComercial0</nombreComercial>                           Opcional               Alfanumérico     Max 300
+<ruc>0000000000001</ruc>                                                     Obligatorio              Numérico          13
+<claveAcceso>0000000000000000000000000000000000000000000000000<
+                                                                             Obligatorio              Numérico          49
+/claveAcceso>
+                                                                    Obligatorio, conforme tabla 4
+<codDoc>03</codDoc>                                                 de la Catálogo Técnica Anexo      Numérico           2
+                                                                                 ATS
+<estab>000</estab>                                                           Obligatorio              Numérico           3
+<ptoEmi>000</ptoEmi>                                                         Obligatorio              Numérico           3
+<secuencial>000000000</secuencial>                                           Obligatorio              Numérico           9
+<dirMatriz>dirMatriz0</dirMatriz>                                            Obligatorio             Alfanumérico     Max 300
+</infoTributaria>                                                            Obligatorio                  -              -
+-<infoLiquidacionCompra>                                                     Obligatorio                  -              -
+<fechaEmision>01/01/2000</fechaEmision>                                      Obligatorio                Fecha       dd/mm/aaaa
+<dirEstablecimiento>dirEstablecimiento0</dirEstablecimiento>                  Opcional               Alfanumérico     Max 300
+<contribuyenteEspecial>contribuyente</contribuyenteEspecial>                  Opcional               Alfanumérico   Min 3 Max 13
+<obligadoContabilidad>SI</obligadoContabilidad>                               Opcional                  Texto          SI/NO
+                                                                   Opcional conforme tabla 6 de la
+<tipoIdentificacionProveedor>05</tipoIdentificacionProveedor>                                         Numérico           2
+                                                                        Ficha Técnica Offline
+<razonSocialProveedor>EMPRESA ABC</razonSocialComprador>                     Obligatorio             Alfanumérico     Max 300
+<identificacionProveedor>1794567890001</identificacionProveedor>             Obligatorio             Alfanumérico       20
+<direccionProveedor>direccionComprador0</direccionProveedor>                  Opcional               Alfanumérico     Max 300
+<totalSinImpuestos>50.00</totalSinImpuestos>                                 Obligatorio              Numérico        Max 14
+<totalDescuento>0.00</totalDescuento>                                        Obligatorio              Numérico        Max 14
+                                                                            Obligatorio, si
+<codDocReembolso>00</codDocReembolso>                              <codDocReembolso> es igual a       Numérico         Max 2
+                                                                                 41.
+                                                                            Obligatorio, si
+                                                                   <codDocReembolso> es igual a
+<totalComprobantesReembolso>56.00</totalComprobantesReembolso>      41, corresponde a la suma de      Numérico        Max 14
+                                                                   <totalBaseImponibleReembolso
+                                                                   > y <totalImpuestoReembolso>
+                                                                            Obligatorio, si
+<totalBaseImponibleReembolso>50.00</totalBaseImponibleReembolso>                                      Numérico        Max 14
+                                                                   <codDocReembolso> es igual a
+
+                                                                                                                         115
+
+== Página 116 (continuación de la tabla 1.0.0, hasta el pie de la página) ==
+
+                                                                                              TIPO DE       LONGITUD /
+                           ETIQUETAS O TAGS                       CARACTER
+                                                                                              CAMPO          FORMATO
+                                                          41, corresponde a la suma de
+                                                          <BaseImponibleReembolso>
+                                                                  Obligatorio, si
+                                                         <codDocReembolso> es igual a
+                                                         41, corresponde a la sumatoria
+<totalImpuestoReembolso>6.00</totalImpuestoReembolso>                                        Numérico         Max 14
+                                                                   de los tags
+                                                         <impuestoReembolso>, el cual
+                                                         es mayor o igual a la sumatoria.
+<totalConImpuestos>                                                Obligatorio
+<totalImpuesto>                                                    Obligatorio
+                                                         Obligatorio, conforme tabla 16
+<codigo>2</codigo>                                                                           Numérico          Max 2
+                                                           de la Ficha Técnica Offline
+                                                         Obligatorio, conforme tabla 17
+<codigoPorcentaje>2</codigoPorcentaje>                                                       Numérico          Max 2
+                                                           de la Ficha Técnica Offline
+<descuentoAdicional>0.00</descuentoAdicional>                       Opcional                 Numérico         Max 14
+<baseImponible>50.00</baseImponible>                               Obligatorio               Numérico         Max 14
+                                                                                                           Min 1 Max 4 / 2
+<tarifa>12</tarifa>                                                Obligatorio               Numérico        enteros, 2
+                                                                                                             decimales
+<valor>6.00</valor>                                                Obligatorio               Numérico         Max 14
+</totalImpuesto>                                                   Obligatorio                   -                -
+</totalConImpuestos>                                               Obligatorio                   -                -
+                                                          Obligatorio corresponde a la
+<importeTotal>56.00</importeTotal>                       sumatoria de bases imponibles       Numérico         Max 14
+                                                                 e impuestos.
+<moneda>moneda0</moneda>                                           Obligatorio              Alfanumérico      Max 14
+<pagos>                                                            Obligatorio
+<pago>                                                             Obligatorio
+                                                         Obligatorio. Conforme tabla 24
+<formaPago>01</formaPago>                                                                    Numérico          Max 2
+                                                           de la Ficha Técnica Offline
+<total>56.00</total>                                               Obligatorio               Numérico         Max 14
+<plazo>30</plazo>                                                  Obligatorio               Numérico         Max 14
+<unidadTiempo>unidadTiem</unidadTiempo>                             Opcional                   Texto          Max 10
+</pago>
+</pagos>                                                           Obligatorio                   -                -
+</infoLiquidacionCompra>                                           Obligatorio                   -                -
+<detalles>                                                         Obligatorio                   -                -
+<detalle>                                                          Obligatorio                   -                -
+<codigoPrincipal>codigoPrincipal0</codigoPrincipal>                Obligatorio              Alfanumérico      Max 25
+<codigoAuxiliar>codigoAuxiliar0</codigoAuxiliar>                    Opcional                Alfanumérico      Max 25
+<descripcion>descripcion0</descripcion>                            Obligatorio              Alfanumérico      Max 300
+<unidadMedida>unidadMedida0</unidadMedida>                          Opcional                Alfanumérico      Max 50
+<cantidad>1</cantidad>                                             Obligatorio               Numérico         Max 14
+<precioUnitario>50.00</precioUnitario>                             Obligatorio               Numérico         Max 14
+<descuento>0.00</descuento>                                         Opcional                 Numérico         Max 14
+                                                         Obligatorio, debe multiplicar el
+<precioTotalSinImpuesto>50.00</precioTotalSinImpuesto>                                       Numérico         Max 14
+                                                          campo precio por cantidad
+<detallesAdicionales>                                               Opcional                     -                -
+<detAdicional nombre="nombre0" valor="valor0"/>                     Opcional                Alfanumérico      Max 300
+<detAdicional nombre="nombre1" valor="valor1"/>                     Opcional                Alfanumérico      Max 300
+</detallesAdicionales>                                              Opcional                     -                -
+
+                                                                                                                 116
+
+== Página 117 (continuación de la tabla 1.0.0, hasta el pie de la página) ==
+
+                                                                                                              TIPO DE     LONGITUD /
+                           ETIQUETAS O TAGS                                         CARACTER
+                                                                                                              CAMPO        FORMATO
+<impuestos>                                                                          Obligatorio                 -              -
+<impuesto>                                                                           Obligatorio                 -              -
+                                                                           Obligatorio, conforme tabla 16
+<codigo>2</codigo>                                                                                            Numérico       Max 2
+                                                                             de la Ficha Técnica Offline
+                                                                           Obligatorio, conforme tabla 17
+<codigoPorcentaje>2</codigoPorcentaje>                                                                        Numérico       Max 2
+                                                                             de la Ficha Técnica Offline
+                                                                                                                         Min 1 Max 4 / 2
+<tarifa>12</tarifa>                                                                  Obligatorio              Numérico     enteros, 2
+                                                                                                                           decimales
+<baseImponible>50.00</baseImponible>                                                 Obligatorio              Numérico       Max 14
+<valor>6.00</valor>                                                                  Obligatorio              Numérico       Max 14
+</impuesto>                                                                          Obligatorio                 -              -
+</impuestos>                                                                         Obligatorio                 -              -
+</detalle>                                                                           Obligatorio                 -              -
+</detalles>                                                                          Obligatorio                 -              -
+                                                                                 Obligatorio cuando
+<reembolsos>                                                              <codDocReembolso> sea igual            -              -
+                                                                                         a 41
+                                                                                 Obligatorio cuando
+<reembolsoDetalle>                                                        <codDocReembolso> sea igual            -              -
+                                                                                         a 41
+                                                                                 Obligatorio cuando
+                                                                          <codDocReembolso> sea igual
+<tipoIdentificacionProveedorReembolso>04</tipoIdentificacionProveedorRee                 a 41
+                                                                                                              Numérico       Max 2
+mbolso>                                                                      Validar código de tipo de
+                                                                          identificación conforme tabla 6
+                                                                             de la Ficha Técnica Offline
+                                                                                 Obligatorio cuando
+                                                                          <codDocReembolso> sea igual
+<identificacionProveedorReembolso>identificacionProvee</identificacionPro                a 41
+                                                                                                              Numérico       Max 20
+veedorReembolso>                                                             Validar código de tipo de
+                                                                           identificación conforme tabla
+                                                                           26 de la Ficha Técnica Offline
+                                                                                 Obligatorio cuando
+                                                                          <codDocReembolso> sea igual
+<codPaisPagoProveedorReembolso>000</codPaisPagoProveedorReembolso>                       a 41                 Numérico       Max 3
+                                                                           Validar de acuerdo tabla 25 de
+                                                                               la Ficha Técnica Offline
+                                                                                  Obligatorio cuando
+                                                                           <codDocReembolso> sea igual
+<tipoProveedorReembolso>01</tipoProveedorReembolso>                                                           Numérico       Max 2
+                                                                           a 41, Validar con tabla 26 de la
+                                                                                 Ficha Técnica Offline
+                                                                                  Obligatorio cuando
+                                                                           <codDocReembolso> sea igual
+<codDocReembolso>00</codDocReembolso>                                                                         Numérico       Max 3
+                                                                               a 41, Validar tabla 4 de
+                                                                                 Catálogo Anexo ATS
+                                                                                Obligatorio cuando
+<estabDocReembolso>000</estabDocReembolso>                                 <codDocReembolso> sea igual        Numérico       Max 3
+                                                                                       a 41.
+                                                                                Obligatorio cuando
+<ptoEmiDocReembolso>000</ptoEmiDocReembolso>                               <codDocReembolso> sea igual        Numérico       Max 3
+                                                                                       a 41
+                                                                                Obligatorio cuando
+<secuencialDocReembolso>000000000</secuencialDocReembolso>                 <codDocReembolso> sea igual        Numérico       Max 9
+                                                                                       a 41
+                                                                                Obligatorio cuando
+<fechaEmisionDocReembolso>01/01/2000</fechaEmisionDocReembolso>            <codDocReembolso> sea igual         Fecha      dd/mm/aaaa
+                                                                                       a 41
+                                                                                Obligatorio cuando
+<numeroautorizacionDocReemb>0000000000</numeroautorizacionDocRee
+                                                                           <codDocReembolso> sea igual        Numérico   Max 10, 37 ó 49
+mb>
+                                                                                       a 41
+
+                                                                                                                               117
+
+== Página 118 (fin de la tabla 1.0.0, hasta el pie de la página) ==
+
+                                                                                                       TIPO DE       LONGITUD /
+                          ETIQUETAS O TAGS                                   CARACTER
+                                                                                                       CAMPO          FORMATO
+                                                                          Obligatorio cuando
+<detalleImpuestos>                                                  <codDocReembolso> sea igual           -                -
+                                                                                 a 41
+                                                                          Obligatorio cuando
+<detalleImpuesto>                                                   <codDocReembolso> sea igual           -                -
+                                                                                 a 41
+                                                                          Obligatorio cuando
+                                                                    <codDocReembolso> sea igual
+<codigo>2</codigo>                                                                                    Numérico          Max 2
+                                                                     a 41. Conforme tabla 16 de la
+                                                                         Ficha Técnica Offline
+                                                                          Obligatorio cuando
+                                                                    <codDocReembolso> sea igual
+<codigoPorcentaje>2</codigoPorcentaje>                                                                Numérico          Max 2
+                                                                     a 41, conforme tabla 17 de la
+                                                                         Ficha Técnica Offline
+                                                                          Obligatorio cuando
+                                                                    <codDocReembolso> sea igual                     Min 1 Max 4 / 2
+<tarifa>12</tarifa>                                                                                   Numérico        enteros, 2
+                                                                     a 41, conforme tabla 17 de la                    decimales
+                                                                         Ficha Técnica Offline
+                                                                         Obligatorio cuando
+<baseImponibleReembolso>50.00</baseImponibleReembolso>              <codDocReembolso> sea igual       Numérico         Max 14
+                                                                                a 41
+                                                                         Obligatorio cuando
+<impuestoReembolso>50.00</impuestoReembolso>                        <codDocReembolso> sea igual       Numérico         Max 14
+                                                                                a 41
+                                                                         Obligatorio cuando
+</detalleImpuesto>                                                  <codDocReembolso> sea igual           -                -
+                                                                                a 41
+                                                                         Obligatorio cuando
+</detalleImpuestos>                                                 <codDocReembolso> sea igual           -                -
+                                                                                a 41
+                                                                         Obligatorio cuando
+</reembolsoDetalle>                                                 <codDocReembolso> sea igual           -                -
+                                                                                a 41
+                                                                         Obligatorio cuando
+</reembolsos>                                                       <codDocReembolso> sea igual           -                -
+                                                                                a 41
+                                                                         Obligatorio cuando
+<maquinaFiscal>                                                                                           -                -
+                                                                            corresponda
+                                                                         Obligatorio cuando
+<marca>SISPAU</marca>                                                                                Alfanumérico   Min 1 Max 100
+                                                                            corresponda
+                                                                         Obligatorio cuando
+<modelo>ABC1234</modelo>                                                                             Alfanumérico   Min 1 Max 100
+                                                                            corresponda
+                                                                         Obligatorio cuando
+<serie>CGMC1405</serie>                                                                              Alfanumérico      Max 30
+                                                                            corresponda
+                                                                         Obligatorio cuando
+</maquinaFiscal>                                                                                          -                -
+                                                                            corresponda
+<infoAdicional>                                                               Opcional                    -                -
+<campoAdicional nombre="nombre4">campoAdicional0</campoAdicional>             Opcional               Alfanumérico      Max 300
+<campoAdicional nombre="nombre5">campoAdicional1</campoAdicional>             Opcional               Alfanumérico      Max 300
+</infoAdicional>                                                              Opcional                    -                -
+
+                                                                                                                          118
+
+== Página 119: anexo 17, "LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE SERVICIOS VERSIÓN 1.1.0" (hasta el pie de la página) ==
+
+    LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE
+    SERVICIOS VERSIÓN 1.1.0
+    En esta versión se podrá utilizar de 2 a 6 decimales en los campos de cantidad y
+    precio unitario para contribuyentes que lo requieran.
+
+                                                                                                       TIPO DE      LONGITUD /
+                           ETIQUETAS O TAGS                                 CARACTER
+                                                                                                       CAMPO         FORMATO
+<?xml version="1.1.0" encoding="UTF-8"?>                                     Obligatorio                  -              -
+<liquidacionCompra id="comprobante" versión=”1.1.0”>                         Obligatorio                  -              -
+<infoTributaria>                                                             Obligatorio                  -              -
+                                                                    Obligatorio, conforme tabla 4
+<ambiente>1</ambiente>                                                                                Numérico           1
+                                                                     de la Ficha Técnica Offline
+                                                                    Obligatorio, conforme tabla 2
+<tipoEmision>1</tipoEmision>                                                                          Numérico           1
+                                                                     de la Ficha Técnica Offline
+<razonSocial>razonSocial0</razonSocial>                                      Obligatorio             Alfanumérico     Max 300
+<nombreComercial>nombreComercial0</nombreComercial>                           Opcional               Alfanumérico     Max 300
+<ruc>0000000000001</ruc>                                                     Obligatorio              Numérico          13
+<claveAcceso>0000000000000000000000000000000000000000000000000</
+                                                                             Obligatorio              Numérico          49
+claveAcceso>
+                                                                    Obligatorio, conforme tabla 4
+<codDoc>03</codDoc>                                                                                   Numérico           2
+                                                                          del Catálogo ATS
+<estab>000</estab>                                                           Obligatorio              Numérico           3
+<ptoEmi>000</ptoEmi>                                                         Obligatorio              Numérico           3
+<secuencial>000000000</secuencial>                                           Obligatorio              Numérico           9
+<dirMatriz>dirMatriz0</dirMatriz>                                            Obligatorio             Alfanumérico     Max 300
+</infoTributaria>                                                            Obligatorio                  -              -
+<infoLiquidacionCompra>                                                      Obligatorio                  -              -
+<fechaEmision>01/01/2000</fechaEmision>                                      Obligatorio                Fecha       dd/mm/aaaa
+<dirEstablecimiento>dirEstablecimiento0</dirEstablecimiento>                  Opcional               Alfanumérico     Max 300
+<contribuyenteEspecial>contribuyente</contribuyenteEspecial>                  Opcional               Alfanumérico   Min 3 Max 13
+<obligadoContabilidad>SI</obligadoContabilidad>                               Opcional                  Texto          SI/NO
+                                                                   Opcional conforme tabla 6 de la
+<tipoIdentificacionProveedor>05</tipoIdentificacionProveedor>                                         Numérico           2
+                                                                        Ficha Técnica Offline
+<razonSocialProveedor>EMPRESA ABC</razonSocialProveedor>                     Obligatorio             Alfanumérico     Max 300
+<identificacionProveedor>1750863147</identificacionProveedor>                Obligatorio             Alfanumérico     Max 20
+<direccionProveedor>direccionProveedor</direccionProveedor>                   Opcional               Alfanumérico     Max 300
+                                                                   Obligatorio conforme sumatoria
+<totalSinImpuestos>50.00</totalSinImpuestos>                           de bases imponibles de         Numérico        Max 14
+                                                                               Detalles.
+                                                                    Opcional conforme sumatoria
+<totalDescuento>0.00</totalDescuento>                                de campos descuentos de          Numérico        Max 14
+                                                                               Detalles.
+                                                                          Obligatorio, si
+<codDocReembolso>00</codDocReembolso>                              <codDocReembolso> es igual a       Numérico         Max 2
+                                                                               41.
+                                                                            Obligatorio, si
+                                                                   <codDocReembolso> es igual a
+<totalComprobantesReembolso>56.00</totalComprobantesReembolso>      41, corresponde a la suma de      Numérico        Max 14
+                                                                   <totalBaseImponibleReembolso
+                                                                   > y <totalImpuestoReembolso>
+                                                                            Obligatorio, si
+                                                                   <codDocReembolso> es igual a
+<totalBaseImponibleReembolso>50.00</totalBaseImponibleReembolso>                                      Numérico        Max 14
+                                                                    41, corresponde a la suma de
+                                                                     <BaseImponibleReembolso>
+
+                                                                                                                         119
+
+== Página 120 (continuación de la tabla 1.1.0, hasta el pie de la página) ==
+
+                                                                                              TIPO DE       LONGITUD /
+                           ETIQUETAS O TAGS                       CARACTER
+                                                                                              CAMPO          FORMATO
+                                                                  Obligatorio, si
+                                                         <codDocReembolso> es igual a
+                                                         41, corresponde a la sumatoria
+<totalImpuestoReembolso>6.00</totalImpuestoReembolso>                                        Numérico         Max 14
+                                                                   de los tags
+                                                         <impuestoReembolso>, el cual
+                                                         es mayor o igual a la sumatoria.
+<totalConImpuestos>                                                Obligatorio                   -                -
+<totalImpuesto>                                                    Obligatorio                   -                -
+
+                                                         Obligatorio, conforme tabla 16
+                                                                                             Numérico          Max 2
+<codigo>2</codigo>                                         de la Ficha Técnica Offline
+
+                                                         Obligatorio, conforme tabla 17
+<codigoPorcentaje>2</codigoPorcentaje>                                                       Numérico          Max 2
+                                                           de la Ficha Técnica Offline
+<descuentoAdicional>0.00</descuentoAdicional>                       Opcional                 Numérico         Max 14
+<baseImponible>50.00</baseImponible>                               Obligatorio               Numérico         Max 14
+                                                                                                           Min 1 Max 4 / 2
+<tarifa>12</tarifa>                                                Obligatorio               Numérico        enteros, 2
+                                                                                                             decimales
+<valor>6.00</valor>                                                Obligatorio               Numérico         Max 14
+</totalImpuesto>                                                   Obligatorio                   -                -
+</totalConImpuestos>                                               Obligatorio                   -                -
+                                                          Obligatorio corresponde a la
+<importeTotal>56.00</importeTotal>                       sumatoria de bases imponibles       Numérico         Max 14
+                                                                 e impuestos.
+<moneda>moneda0</moneda>                                           Obligatorio              Alfanumérico      Max 14
+<pagos>                                                            Obligatorio                   -                -
+<pago>                                                             Obligatorio                   -                -
+                                                         Obligatorio. Conforme tabla 24
+<formaPago>01</formaPago>                                                                    Numérico          Max 2
+                                                           de la Ficha Técnica Offline
+<total>56.00</total>                                               Obligatorio               Numérico         Max 14
+<plazo>30</plazo>                                                  Obligatorio               Numérico         Max 14
+<unidadTiempo>unidadTiem</unidadTiempo>                             Opcional                   Texto          Max 10
+</pago>                                                            Obligatorio                   -                -
+</pagos>                                                           Obligatorio                   -                -
+</infoLiquidacionCompra>                                           Obligatorio                   -                -
+<detalles>                                                         Obligatorio                   -                -
+<detalle>                                                          Obligatorio                   -                -
+<codigoPrincipal>codigoPrincipal0</codigoPrincipal>                Obligatorio              Alfanumérico      Max 25
+<codigoAuxiliar>codigoAuxiliar0</codigoAuxiliar>                    Opcional                Alfanumérico      Max 25
+<descripcion>descripcion0</descripcion>                            Obligatorio              Alfanumérico      Max 300
+<unidadMedida>unidadMedida0</unidadMedida>                          Opcional                Alfanumérico      Max 50
+<cantidad>1.000000</cantidad>                                      Obligatorio               Numérico         Max 14
+<precioUnitario>50.000000</precioUnitario>                         Obligatorio               Numérico         Max 14
+<descuento>0.00</descuento>                                         Opcional                 Numérico         Max 14
+                                                         Obligatorio, debe multiplicar el
+<precioTotalSinImpuesto>50.00</precioTotalSinImpuesto>                                       Numérico         Max 14
+                                                          campo precio por cantidad
+<detallesAdicionales>                                               Opcional                     -                -
+<detAdicional nombre="nombre0" valor="valor0" />                    Opcional                Alfanumérico      Max 300
+<detAdicional nombre="nombre1" valor="valor1" />                    Opcional                Alfanumérico      Max 300
+</detallesAdicionales>                                              Opcional                     -                -
+<impuestos>                                                        Obligatorio                   -                -
+
+                                                                                                                 120
+
+== Página 121 (continuación de la tabla 1.1.0, hasta el pie de la página) ==
+
+                                                                                                              TIPO DE     LONGITUD /
+                           ETIQUETAS O TAGS                                         CARACTER
+                                                                                                              CAMPO        FORMATO
+<impuesto>                                                                           Obligatorio                 -              -
+                                                                           Obligatorio, conforme tabla 16
+<codigo>2</codigo>                                                                                            Numérico       Max 2
+                                                                             de la Ficha Técnica Offline
+                                                                           Obligatorio, conforme tabla 17
+<codigoPorcentaje>2</codigoPorcentaje>                                                                        Numérico       Max 2
+                                                                              de la Ficha Técnica Offline
+                                                                                  Obligatorio cuando
+                                                                           <codDocReembolso> sea igual                   Min 1 Max 4 / 2
+<tarifa>12</tarifa>                                                                                           Numérico     enteros, 2
+                                                                            a 41, conforme tabla 17 de la                  decimales
+                                                                                Ficha Técnica Offline
+<baseImponible>50.00</baseImponible>                                                 Obligatorio              Numérico       Max 14
+<valor>6.00</valor>                                                                  Obligatorio              Numérico       Max 14
+</impuesto>                                                                          Obligatorio                 -              -
+</impuestos>                                                                         Obligatorio                 -              -
+</detalle>                                                                           Obligatorio                 -              -
+</detalles>                                                                          Obligatorio                 -              -
+                                                                                 Obligatorio cuando
+<reembolsos>                                                              <codDocReembolso> sea igual            -              -
+                                                                                         a 41
+                                                                                 Obligatorio cuando
+<reembolsoDetalle>                                                        <codDocReembolso> sea igual            -              -
+                                                                                         a 41
+                                                                                 Obligatorio cuando
+                                                                          <codDocReembolso> sea igual
+<tipoIdentificacionProveedorReembolso>04</tipoIdentificacionProveedorRee                 a 41
+                                                                                                              Numérico       Max 2
+mbolso>                                                                      Validar código de tipo de
+                                                                          identificación conforme tabla 6
+                                                                             de la Ficha Técnica Offline
+                                                                                 Obligatorio cuando
+                                                                          <codDocReembolso> sea igual
+<identificacionProveedorReembolso>identificacionProvee</identificacionPro                a 41
+                                                                                                              Numérico       Max 20
+veedorReembolso>                                                             Validar código de tipo de
+                                                                           identificación conforme tabla
+                                                                           26 de la Ficha Técnica Offline
+                                                                                 Obligatorio cuando
+                                                                          <codDocReembolso> sea igual
+<codPaisPagoProveedorReembolso>000</codPaisPagoProveedorReembolso>                       a 41                 Numérico       Max 3
+                                                                           Validar de acuerdo tabla 25 de
+                                                                               la Ficha Técnica Offline
+                                                                                  Obligatorio cuando
+                                                                           <codDocReembolso> sea igual
+<tipoProveedorReembolso>01</tipoProveedorReembolso>                                                           Numérico       Max 2
+                                                                           a 41, Validar con tabla 26 de la
+                                                                                 Ficha Técnica Offline
+                                                                                  Obligatorio cuando
+                                                                           <codDocReembolso> sea igual
+<codDocReembolso>00</codDocReembolso>                                                                         Numérico       Max 3
+                                                                            a 41, Validar tabla 3 de Ficha
+                                                                                        Técnica
+                                                                                Obligatorio cuando
+<estabDocReembolso>000</estabDocReembolso>                                 <codDocReembolso> sea igual        Numérico       Max 3
+                                                                              a 41, conforme tabla 4
+                                                                                Obligatorio cuando
+<ptoEmiDocReembolso>000</ptoEmiDocReembolso>                               <codDocReembolso> sea igual        Numérico       Max 3
+                                                                                       a 41
+                                                                                Obligatorio cuando
+<secuencialDocReembolso>000000000</secuencialDocReembolso>                 <codDocReembolso> sea igual        Numérico       Max 9
+                                                                                       a 41
+                                                                                Obligatorio cuando
+<fechaEmisionDocReembolso>01/01/2000</fechaEmisionDocReembolso>            <codDocReembolso> sea igual         Fecha      dd/mm/aaaa
+                                                                                       a 41
+                                                                                Obligatorio cuando
+<numeroautorizacionDocReemb>0000000000</numeroautorizacionDocRee
+                                                                           <codDocReembolso> sea igual        Numérico   Max 10, 37 ó 49
+mb>
+                                                                                       a 41
+
+                                                                                                                               121
+
+== Página 122 (fin de la tabla 1.1.0, hasta el pie de la página) ==
+
+                                                                                                       TIPO DE       LONGITUD /
+                          ETIQUETAS O TAGS                                   CARACTER
+                                                                                                       CAMPO          FORMATO
+                                                                          Obligatorio cuando
+<detalleImpuestos>                                                  <codDocReembolso> sea igual           -                -
+                                                                                 a 41
+                                                                          Obligatorio cuando
+<detalleImpuesto>                                                   <codDocReembolso> sea igual           -                -
+                                                                                 a 41
+                                                                          Obligatorio cuando
+<codigo>2</codigo>                                                  <codDocReembolso> sea igual       Numérico          Max 2
+                                                                                 a 41
+                                                                          Obligatorio cuando
+                                                                    <codDocReembolso> sea igual
+<codigoPorcentaje>2</codigoPorcentaje>                                                                Numérico          Max 2
+                                                                    a 41, conforme tabla 17 de la
+                                                                        Ficha Técnica Offline
+                                                                    Obligatorio, conforme tabla 17                  Min 1 Max 4 / 2
+<tarifa>12</tarifa>                                                                                   Numérico        enteros, 2
+                                                                      de la Ficha Técnica Offline                     decimales
+                                                                         Obligatorio cuando
+<baseImponibleReembolso>50.00</baseImponibleReembolso>              <codDocReembolso> sea igual       Numérico         Max 14
+                                                                                a 41
+                                                                         Obligatorio cuando
+<impuestoReembolso>6.00</impuestoReembolso>                         <codDocReembolso> sea igual       Numérico         Max 14
+                                                                                a 41
+                                                                         Obligatorio cuando
+</detalleImpuesto>                                                  <codDocReembolso> sea igual           -                -
+                                                                                a 41
+                                                                         Obligatorio cuando
+</detalleImpuestos>                                                 <codDocReembolso> sea igual           -                -
+                                                                                a 41
+                                                                         Obligatorio cuando
+</reembolsoDetalle>                                                 <codDocReembolso> sea igual           -                -
+                                                                                a 41
+                                                                         Obligatorio cuando
+</reembolsos>                                                       <codDocReembolso> sea igual           -                -
+                                                                                a 41
+                                                                         Obligatorio cuando
+<maquinaFiscal>                                                                                           -                -
+                                                                            corresponda
+                                                                         Obligatorio cuando
+<marca>SISPAU</marca>                                                                                Alfanumérico   Min 1 Max 100
+                                                                            corresponda
+                                                                         Obligatorio cuando
+<modelo>ABC1234</modelo>                                                                             Alfanumérico   Min 1 Max 100
+                                                                            corresponda
+                                                                         Obligatorio cuando
+<serie>CGMC1405</serie>                                                                              Alfanumérico      Max 30
+                                                                            corresponda
+                                                                         Obligatorio cuando
+</maquinaFiscal>                                                                                          -                -
+                                                                            corresponda
+<infoAdicional>                                                               Opcional                    -                -
+<campoAdicional nombre="nombre4">campoAdicional0</campoAdicional>             Opcional               Alfanumérico      Max 300
+<campoAdicional nombre="nombre5">campoAdicional1</campoAdicional>             Opcional               Alfanumérico      Max 300
+</infoAdicional>                                                              Opcional                    -                -
+</liquidacionCompra>                                                         Obligatorio                  -                -
+
+                                                                                                                          122
+
+== Página 127: anexo 21 (agente de retención), título y primer párrafo (hasta el pie de la página) ==
+
+ANEXO 21 – REQUISITO OBLIGATORIO PARA
+COMPROBANTES ELECTRÓNICOS EMITIDOS
+POR CONTRIBUYENTES DESIGNADOS COMO
+AGENTES DE RETENCIÓN.
+Los comprobantes de venta, retención y documentos complementarios electrónicos
+deberán contener la leyenda Agente de Retención en la estructura del XML,
+conforme las siguientes especificaciones:
+
+                                                                               127
+
+== Página 128: especificación de <agenteRetencion> (hasta antes de los ejemplos) ==
+
+        •    Agente de retención
+
+            Nombre de la etiqueta:   <agenteRetencion>
+            Formato:                 Numérico
+            Caracteres:              Máximo 8
+                                     Número de la resolución, omitiendo los ceros a la
+            Contenido:
+                                     izquierda
+                                     Entre la etiqueta <regimenMicroempresas> y
+            Ubicación:
+                                     </infoTributaria>
+
+== Página 129: anexo 22 (RIMPE), título, primer párrafo y especificación (hasta antes de los ejemplos) ==
+
+ANEXO 22 – REQUISITO OBLIGATORIO PARA
+COMPROBANTES ELECTRÓNICOS EMITIDOS
+POR CONTRIBUYENTES RIMPE.
+Los comprobantes de venta, retención y documentos complementarios electrónicos
+deberán contener la leyenda CONTRIBUYENTE RÉGIMEN RIMPE o
+CONTRIBUYENTE NEGOCIO POPULAR - RÉGIMEN RIMPE, conforme las
+siguientes especificaciones:
+
+        •     RIMPE
+
+            Nombre de la etiqueta:   <contribuyenteRimpe>
+            Formato:                 Texto
+            Caracteres:              27 (Incluidos espacios)
+            Contenido:               CONTRIBUYENTE RÉGIMEN RIMPE
+            Ubicación:               Entre la etiqueta <agenteRetencion> y </infoTributaria>
+
+== Página 132: anexo 24 (grandes contribuyentes), título y primer párrafo ==
+
+ANEXO 24 – REQUISITO OBLIGATORIO PARA
+COMPROBANTES ELECTRÓNICOS EMITIDOS
+POR GRANDES CONTRIBUYENTES.
+Los comprobantes de venta, notas de crédito y notas de débito electrónicos
+deberán contener la leyenda “Gran Contribuyente” y el número de la resolución
+mediante la cual fueron calificados como tal, en la estructura del XML, conforme las
+siguientes especificaciones:
+
+== Página 135: anexo 26 (RUC del proveedor del sistema), hasta antes de los ejemplos ==
+
+ANEXO 26 – REQUISITO OBLIGATORIO DE
+INFORMACIÓN DE RUC DE PROVEEDOR DE
+SISTEMAS INFORMÁTICOS O SERVICIOS DE
+FACTURACIÓN ELECTRÓNICA
+Los contribuyentes emisores de comprobantes electrónico que utilicen sistemas de
+facturación electrónicos de terceros (proveedores detallados en la resolución 27 18)
+deberán incluir como requisito de llenado obligatorio en los comprobantes emitidos,
+la información del número de RUC del proveedor. Este requisito se incluirá como
+campo en la sección de información adicional, conforme el siguiente detalle:
+
+              Nodo:                              <infoAdicional>
+              Nombre tag:                        <CampoAdicional>
+              Formato:                           Alfanumérico
+              Caracteres:                        Máximo 300
+              Valor atributo “nombre”:           “RUC Proveedor”
+              Contenido tag campoAdicional:      Número del RUC del proveedor
+
+== Observaciones (2026-10-07) ==
+
+- Versión: el anexo 17 publica dos tablas, la 1.0.0 (páginas 115 a 118) y la 1.1.0 (páginas 119 a
+  122); la 1.1.0 solo añade "de 2 a 6 decimales en los campos de cantidad y precio unitario"
+  (página 119; la sección 9.17, páginas 34 y 35, dice lo mismo para "versión de comprobantes
+  1.1.0"). La ficha no declara una de las dos como la única vigente, y el portal publica el paquete
+  "Versión 1.0.0 – 1.1.0". El producto usa la 1.1.0 (registro de esquemas, `supported: true`). La
+  tabla de la página 119 tiene erratas: `<?xml version="1.1.0" ...?>` (la declaración XML es 1.0,
+  como en el XSD y el ejemplo oficial) y `versión=”1.1.0”` (el atributo es `version`).
+- Rango de las fuentes: el XSD `LiquidacionCompra_V1.1.0.xsd` es el contrato estructural; la tabla
+  del anexo 17 añade significado, catálogos y reglas de cálculo, pero contradice al XSD en varias
+  cardinalidades. Donde difieren, cumplir ambas (el criterio del extracto de la guía) significa
+  escribir el campo si alguna de las dos lo exige y respetar el máximo más estricto:
+  - Obligatorios en el XSD y "Opcional" en el anexo: `tipoIdentificacionProveedor` ("Opcional
+    conforme tabla 6"), `totalDescuento` (1.1.0: "Opcional conforme sumatoria de campos descuentos
+    de Detalles"; la 1.0.0 lo marca "Obligatorio") y `descuento` del detalle.
+  - Opcionales en el XSD y "Obligatorio" en el anexo: `moneda` (Max 14; el XSD admite 15), `pagos`,
+    `pago/plazo`, `codigoPrincipal`, `totalImpuesto/tarifa` y, con reembolso,
+    `codPaisPagoProveedorReembolso`.
+  - `impuesto/tarifa` del detalle: el XSD la exige; la 1.1.0 dice "Obligatorio cuando
+    <codDocReembolso> sea igual a 41" (página 121), una copia de la fila del reembolso: la 1.0.0
+    (página 117) dice "Obligatorio".
+  - `maquinaFiscal`: "Min 1 Max 100" para `marca` y `modelo` en el anexo, 1 a 30 en el XSD.
+- codDoc 03: tabla 3 (página 12). El anexo dice "conforme tabla 4 del Catálogo ATS". El XSD solo
+  exige `[0-9]{2}`: no fija el 03.
+- Identificación del proveedor: el XSD admite `[0][4-8]`, pero la nota de la tabla 6 (página 13)
+  excluye el 07: "En el caso de emisión de liquidaciones de compra de bienes y prestación de
+  servicios no se encuentra habilitado el uso del tipo de identificación venta a consumidor final".
+  Tipos admitidos: 04 RUC, 05 cédula, 06 pasaporte y 08 identificación del exterior.
+  `identificacionProveedor`: "Alfanumérico Max 20" (1.1.0; la 1.0.0 dice "20"), 1 a 20 caracteres
+  sin saltos de línea en el XSD. La ficha no fija para el 03 un formato por tipo. Las advertencias
+  59 y 62 (página 38) hablan de la identificación "del adquirente".
+- Impuestos: el anexo remite `codigo` a la tabla 16 (IVA 2, ICE 3, IRBPNR 5) y `codigoPorcentaje` a
+  la tabla 17, pero el tipo `codigo` del XSD es el patrón `[2]` en `impuesto` del detalle y en
+  `totalImpuesto`: la liquidación 1.1.0 solo admite IVA. ICE e IRBPNR solo caben en el
+  `detalleImpuesto` de un reembolso (`codigoReembolso`, patrón `[235]`). `codigoPorcentaje`: "Max
+  2" en el anexo, 1 a 4 dígitos en el XSD; la tabla 17 tiene el código 10 (13%).
+- Cálculos (anexo 17, 1.1.0): `totalSinImpuestos` "conforme sumatoria de bases imponibles de
+  Detalles"; `totalDescuento` "conforme sumatoria de campos descuentos de Detalles";
+  `precioTotalSinImpuesto` "debe multiplicar el campo precio por cantidad"; `importeTotal`
+  "corresponde a la sumatoria de bases imponibles e impuestos". Error 52 (página 37): "Cuando
+  existe error en los cálculos del comprobante". La estructura no tiene propina, retenciones
+  presuntivas, subsidio total ni compensaciones.
+- Pagos: el anexo marca `pagos` y `pago` "Obligatorio", `formaPago` "Obligatorio. Conforme tabla 24"
+  (01, 15 a 21; página 79, según el Catálogo ATS, página 80), `total` y `plazo` "Obligatorio" y
+  `unidadTiempo` "Opcional", Texto, Max 10. La ficha no publica un catálogo para `unidadTiempo`
+  (el valor del ejemplo, "unidadTiem", es de relleno). El XSD hace `pagos` opcional, con uno o más
+  `pago`, y admite en `formaPago` del 01 al 21 (también códigos que la tabla 24 no lista).
+- Reembolsos: todo el bloque y los cuatro totales de cabecera son "Obligatorio, si
+  <codDocReembolso> es igual a 41"; `totalComprobantesReembolso` es la suma de
+  `totalBaseImponibleReembolso` y `totalImpuestoReembolso`; el primero suma los
+  `baseImponibleReembolso` y el segundo "corresponde a la sumatoria de los tags
+  <impuestoReembolso>, el cual es mayor o igual a la sumatoria". Catálogos del detalle: tabla 6
+  (tipo de identificación), tabla 25 (país de pago, páginas 80 a 82), tabla 26 (tipo de proveedor:
+  01 persona natural, 02 sociedad; página 88), tabla 4 del Catálogo ATS (1.0.0) o tabla 3 de la
+  ficha (1.1.0) para `codDocReembolso`, y tablas 16 y 17 para los impuestos.
+  `numeroautorizacionDocReemb`: "Max 10, 37 ó 49" en el anexo, `[0-9]{10,49}` en el XSD. La fila de
+  `identificacionProveedorReembolso` dice "Validar código de tipo de identificación conforme tabla
+  26", que es la de tipo de proveedor.
+- Campos del XSD que el anexo 17 no lista: `agenteRetencion` y `contribuyenteRimpe` (los anexos 21 y
+  22, páginas 127 a 129, los exigen en "los comprobantes de venta, retención y documentos
+  complementarios electrónicos"; el anexo 21 ubica la etiqueta tras `<regimenMicroempresas>`, que
+  el XSD del 03 no tiene), `precioSinSubsidio` (el RIDE de la página 65 tiene las columnas
+  "Subsidio" y "Precio sin Subsidio"), `tipoNegociable` y `ds:Signature`.
+- Máquina fiscal: el anexo 13 (página 111) no nombra la liquidación, pero el anexo 17 y el XSD traen
+  `maquinaFiscal`.
+- `infoAdicional`: "Opcional", Max 300 por campo; el XSD admite de 1 a 15 `campoAdicional`. El
+  anexo 26 (página 135) rige para "los comprobantes emitidos" con un sistema de un proveedor tercero.
+- Fecha: `fechaEmision` es "Obligatorio", dd/mm/aaaa. No hay una regla de fecha propia del 03 (como
+  el error 82 de la guía). Rigen los errores generales 65 (fecha de emisión extemporánea) y 67
+  (fecha inválida), y la fecha de la clave de acceso (tabla 1, página 11) es la de emisión.
+- Errores: la sección 11 (páginas 36 a 38) no tiene códigos propios de la liquidación. Rigen los
+  generales; se citan arriba el 35, 36, 47, 48, 52, 65 y 67 y las advertencias 59, 60, 62 y 68.
+- Quién la emite: la ficha no lo dice. Solo describe el formato; las condiciones de emisión están
+  en el Reglamento de Comprobantes de Venta, fuera de esta ficha.
+- RIDE: página 65 (anexo 2), una imagen con rótulos propios de la factura ("Placa / Matrícula",
+  "Guía Remisión", "Subsidio"), sin bloque de reembolsos y sin la palabra "proveedor". Las notas de
+  la página 60 hacen opcional el código de barras y la fecha y hora de autorización, y permiten
+  mostrar solo los subtotales llenados.

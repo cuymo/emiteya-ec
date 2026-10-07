@@ -1,0 +1,1081 @@
+Extracto literal de la normativa tributaria vigente que regula la liquidación de compra de bienes y
+prestación de servicios (codDoc 03) fuera del Reglamento de Comprobantes: retenciones de IVA y de renta,
+sustento de crédito tributario y costos o gastos, pagos al exterior y emisión electrónica (readiness de
+add-purchase-settlements, 2026-10-07; Q-12). Complementa reglamento-comprobantes-liquidacion-de-compra.txt.
+
+Extraído con pdftotext -layout, salvo donde se indica; solo se quitan los encabezados y números de
+página, las sangrías, las líneas vacías y las notas de reforma y concordancias de las ediciones
+consolidadas, y se juntan los espacios repetidos. Los corchetes son del extracto. Todas las descargas
+son del 2026-10-07 desde sri.gob.ec.
+
+== 1. Ley de Régimen Tributario Interno (LRTI) ==
+
+Fuente: SRI, Dirección Nacional Jurídica, Departamento de Normativa y Consultas. "Ley de Régimen
+Tributario Interno. Publicado en: Suplemento del Registro Oficial No. 463, el 17 de noviembre de 2004.
+Última reforma: 28 de agosto de 2025" (162 páginas).
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/10fbf82c-1eff-4061-8538-de0341431461/Ley%20de%20R%C3%A9gimen%20Tributario%20Interno.pdf
+SHA-256: 1c37bdbd7be0449e39cecd3490924ada5c418cb64852482bbeafa8f02f61510a
+Contraste: el SRI aloja también una edición de LEXIS con "Fecha de última reforma: 2025-10-24"
+(https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/ba4df78b-a7ad-47b0-b667-c99632913bf3/3.%20LEY%20DEL%20REGIMEN%20TIBUTARIO%20INTERNO.pdf,
+SHA-256 7ee8bf7b5a436d401a982cf46e0ab74f640d99e19154a627286cd3475918c547). No es una edición del SRI;
+sus artículos 50 y 70 son iguales, palabra por palabra, a los transcritos aquí.
+
+Art. 4.1
+Residencia fiscal de personas naturales.- Serán considerados residentes fiscales del Ecuador, en
+referencia a un ejercicio impositivo, las personas naturales que se encuentren en alguna de las
+siguientes condiciones:
+a) Cuando su permanencia en el país, incluyendo ausencias esporádicas sea de ciento ochenta y tres
+(183) días calendario o más, consecutivos o no, en el mismo periodo fiscal;
+[Literales b) y c) omitidos: permanencia en dos periodos fiscales y núcleo principal de actividades o intereses económicos.]
+Art. 10
+Deducciones.- En general, con el propósito de determinar la base imponible sujeta a este impuesto se
+deducirán los gastos e inversiones que se efectúen con el propósito de obtener, mantener y mejorar
+los ingresos de fuente ecuatoriana que no estén exentos.
+En particular se aplicarán las siguientes deducciones:
+1 Los costos y gastos imputables al ingreso, que se encuentren debidamente sustentados en
+comprobantes de venta que cumplan los requisitos establecidos en el reglamento correspondiente;
+[Numerales 2 y siguientes omitidos.]
+Art. 13
+Pagos al exterior.- Son deducibles los gastos efectuados en el exterior que sean necesarios y estén
+relacionados con la generación de rentas gravadas, siempre y cuando se haya efectuado la retención
+en la fuente, si lo pagado constituye para el beneficiario un ingreso de fuente ecuatoriana, sin perjuicio
+de la deducibilidad de los gastos que se mencionan a continuación, que no se encuentran sujetos a
+retención en la fuente, así como de aquellos casos en que dicha retención no es procedente de
+conformidad con lo dispuesto en Convenios Internacionales suscritos por Ecuador.
+[Incisos y numerales siguientes omitidos.]
+Art. 48
+Retenciones en la fuente sobre pagos al exterior.- Quienes realicen pagos o créditos en cuenta al
+exterior, que constituyan rentas gravadas por esta Ley, directamente, mediante compensaciones o con
+la mediación de entidades financieras u otros intermediarios, actuarán como agentes de retención en
+la fuente del impuesto establecido en esta Ley.
+Los reembolsos de honorarios, comisiones y regalías serán objeto de retención en la fuente de
+impuesto a la renta.
+Art. 50
+Obligaciones de los agentes de retención.- La retención en la fuente deberá realizarse al momento del
+pago o crédito en cuenta, lo que suceda primero. Los agentes de retención están obligados a entregar
+el respectivo comprobante de retención, dentro del término no mayor de cinco días de recibido el
+comprobante de venta, a las personas a quienes deben efectuar la retención. En el caso de las
+retenciones por ingresos del trabajo en relación de dependencia, el comprobante de retención será
+entregado dentro del mes de enero de cada año en relación con las rentas del año precedente. Así
+mismo, están obligados a declarar y depositar mensualmente los valores retenidos en las entidades
+legalmente autorizadas para recaudar tributos, en las fechas y en la forma que determine el
+reglamento.
+[Inciso segundo y numerales 1 y 2 omitidos.]
+3 La falta de entrega del comprobante de retención al contribuyente será sancionada con una multa
+equivalente al cinco por ciento (5%) del monto de la retención.
+[Incisos finales omitidos.]
+Art. 63
+Sujetos pasivos.- Son sujetos pasivos del IVA:
+[Literal a) omitido.]
+b) En calidad de agentes de retención:
+[Numerales 1 a 5 omitidos.]
+6. Las personas naturales, sucesiones indivisas o sociedades, que importen servicios gravados, por la
+totalidad del IVA generado en tales servicios;
+[Numerales 7 y 8 omitidos.]
+Los agentes de retención del Impuesto al Valor Agregado (IVA), retendrán el impuesto en los
+porcentajes que, mediante resolución, establezca el Servicio de Rentas Internas. Los citados agentes
+declararán y pagarán el impuesto retenido mensualmente y entregarán a los establecimientos afiliados
+el correspondiente comprobante de retención del impuesto al valor agregado (IVA), el que le servirá
+como crédito tributario en las declaraciones del mes que corresponda.
+Los agentes de retención del IVA estarán sujetos a las obligaciones y sanciones establecidas para los
+agentes de retención del Impuesto a la Renta.
+[Inciso sobre tarjetas de crédito omitido.]
+Cuando el agente de retención sean las entidades y organismos del sector público del Gobierno Central
+y Descentralizado, sus órganos desconcentrados y sus empresas públicas, universidades y escuelas
+politécnicas del país, retendrán el cien por ciento (100%) del Impuesto al Valor Agregado -IVA-, los
+valores retenidos permanecerán en sus cuentas correspondientes y no se depositará en la cuenta del
+Servicio de Rentas Internas; al efecto las entidades y organismos del sector público del Gobierno
+Central y Descentralizado, sus órganos desconcentrados y sus empresas públicas, las universidades
+y escuelas politécnicas del país, deberán notificar en la declaración y anexos los valores retenidos que
+no han sido depositados en la cuenta del Servicio de Rentas Internas para mantener el respectivo
+registro contable.
+Art. 70
+Declaración, liquidación y pago del IVA para mercaderías y servicios importados.- [Incisos primero y segundo omitidos: importación de bienes.]
+En el caso de importaciones de servicios, excepto en el caso de servicios digitales cuando exista un
+intermediario en el proceso de pago, el IVA se liquidará y pagará en la declaración mensual que realice
+el sujeto pasivo. El adquirente del servicio importado está obligado a emitir la correspondiente
+liquidación de compra de bienes y prestación de servicios, y a efectuar la retención del 100% del IVA
+generado. Se entenderá como importación de servicios, a los que se presten por parte de una persona
+o sociedad no residente o domiciliada en el Ecuador a favor de una persona o sociedad residente o
+domiciliada en el Ecuador, cuya utilización o aprovechamiento tenga lugar íntegramente en el país,
+aunque la prestación se realice en el extranjero.
+Cuando el prestador del servicio digital no se encuentre registrado, y otros establecidos por el Servicio
+de Rentas Internas mediante resolución, el impuesto al valor agregado generado en la importación de
+servicios digitales será asumido por el importador del servicio, en calidad de contribuyente, debiendo
+actuar conforme lo previsto en el inciso anterior; y, en caso de existir un intermediario en el proceso de
+pago, éste último asumirá el carácter de agente de retención.
+Para efectos de sustentar costos y gastos para el impuesto a la renta por la importación de servicios
+digitales, el sujeto pasivo deberá emitir la correspondiente liquidación de compra de bienes y prestación
+de servicios.
+La forma y plazos para la declaración y pago del IVA en la importación de servicios digitales, se
+efectuará conforme lo previsto en el reglamento y de acuerdo con las resoluciones que para el efecto
+emita el Servicio de Rentas Internas.
+Art. 97.7
+Deberes formales.- Sin perjuicio de los demás deberes formales previstos en el artículo 96 del Código
+Tributario, los sujetos pasivos sujetos al régimen RIMPE tendrán los siguientes deberes formales:
+a. Los contribuyentes considerados negocios populares llevarán un registro de ingresos y gastos; y,
+pagarán el impuesto a la renta conforme a la tabla prevista para el efecto.
+b. Los contribuyentes considerados emprendedores estarán obligados a llevar contabilidad cuando la
+normativa así lo disponga, caso contrario, deberán llevar un registro de ingresos y gastos. En ambos
+casos, declararán los impuestos respectivos conforme a sus registros.
+c. Emitir comprobantes de venta conforme al Reglamento de Comprobantes de Venta, Retención y
+Documentos Complementarios. Los negocios populares podrán emitir notas de venta o facturas
+electrónicas a su elección.
+Los sujetos pasivos inscritos como RIMPE por el Servicio de Rentas Internas deberán cumplir con los
+deberes formales atribuibles a dicho régimen durante el ejercicio fiscal corriente.
+Los sujetos pasivos bajo este régimen no se encuentran obligados a actuar como agentes de retención
+del Impuesto a la Renta ni del Impuesto al Valor Agregado. Sin perjuicio de lo expuesto, observarán lo
+previsto en el artículo 92 numeral 2 del Reglamento para la Aplicación de la Ley de Régimen Tributario
+Interno, cuando corresponda.
+Art. 97.9
+Impuesto al Valor Agregado.- Los contribuyentes categorizados como emprendedores deberán gravar
+con Impuesto al Valor Agregado las transferencias de bienes, derechos y prestación de servicios,
+conforme a las disposiciones de la Ley. El impuesto generado deberá ser liquidado y pagado en los
+plazos previstos en el reglamento.
+La transferencia de dominio de bienes muebles de naturaleza corporal, derechos y la prestación de
+servicios efectuadas por negocios populares estarán gravadas con tarifa 0% del Impuesto al Valor
+Agregado. Los negocios populares no presentarán declaraciones de IVA.
+Art. 97.10
+Retenciones en la fuente.- No estarán sujetos a retención en la fuente del Impuesto a la Renta los
+pagos efectuados a contribuyentes categorizados como negocios populares.
+Los pagos efectuados a contribuyentes categorizados como emprendedores estarán sujetos a
+retención en la fuente de impuesto a la renta e impuesto al valor agregado en los porcentajes que
+mediante resolución establezca el Servicio de Rentas Internas.
+El valor de dichas retenciones constituirá crédito tributario para el pago del impuesto.
+Art. 103
+Emisión de Comprobantes de Venta.- Los sujetos pasivos de los impuestos al valor agregado y a los
+consumos especiales, obligatoriamente tienen que emitir comprobantes de venta por todas las
+operaciones mercantiles que realicen. Dichos documentos deben contener las especificaciones que se
+señalen en el reglamento.
+El contribuyente deberá consultar, en los medios que ponga a su disposición el Servicio de Rentas
+Internas, la validez de los mencionados comprobantes, sin que se pueda argumentar el
+desconocimiento del sistema de consulta para pretender aplicar crédito tributario o sustentar costos y
+gastos con documentos falsos o no autorizados.
+Sobre operaciones de más de quinientos dólares de los Estados Unidos de América (USD $ 500,00),
+gravadas con los impuestos a los que se refiere esta Ley se establece la obligatoriedad de utilizar a
+cualquier institución del sistema financiero para realizar el pago, a través de giros, transferencias de
+fondos, tarjetas de crédito y débito, cheques o cualquier otro medio de pago electrónico.
+Para que el costo o gasto por cada caso entendido superior a los quinientos dólares de los Estados
+Unidos de América (USD $ 500,00) sea deducible para el cálculo del Impuesto a la Renta y el crédito
+tributario para el Impuesto al Valor Agregado sea aplicable, se requiere la utilización de cualquiera de
+los medios de pago antes referidos, con cuya constancia y el comprobante de venta correspondiente
+a la adquisición se justificará la deducción o el crédito tributario.
+[Incisos siguientes omitidos.]
+
+== 2. Reglamento para la Aplicación de la LRTI (RALRTI, Decreto Ejecutivo 374) ==
+
+Fuente: SRI, Dirección Nacional Jurídica, Departamento de Normativa y Consultas. "ÚLTIMA REFORMA:
+2026-05-22" (246 páginas).
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/7169103f-f014-4bf2-bf24-fb29b34e8d07/REGLAMENTO_PARA_APLICACION_LEY_DE_REGIMEN_TRIBUTARIO_INTERNO.pdf
+SHA-256: 0d9d17940b98df7949d80837aee72770e9a44e4678db2d2df0f1c24a8e57b260
+(Ediciones anteriores del SRI revisadas: "Última Reforma: 2025-11-18", SHA-256
+197e08cca7e900fc00fba0c41cbb680b779cdd3af0ca8ed1ae76b9f763c9e68d, y la del 23-08-2024, SHA-256
+391dfbf6eebc5540b4beceedb0d11560a45efa45081de13044ea7b4f576b3b08.)
+
+Art. 35
+Gastos no deducibles.- No podrán deducirse de los ingresos brutos los siguientes gastos:
+[Numerales 1 a 6 omitidos.]
+7. Los costos y gastos no sustentados en los comprobantes de venta autorizados por el Reglamento
+de Comprobantes de Venta y de Retención.
+8. Los costos y gastos por los que no se hayan efectuado las correspondientes retenciones en la fuente,
+en los casos en los que la ley obliga a tal retención.
+[Numeral 9 omitido.]
+Art. 36
+Reembolso de gastos en el país.- No estarán sujetos a retención en la fuente los reembolsos de gastos,
+cuando los comprobantes de venta sean emitidos a nombre del intermediario, es decir, de la persona
+a favor de quien se hacen dichos reembolsos y cumplan los requisitos establecidos en el Reglamento
+de Comprobantes de Venta y de Retención. En el caso de gastos que no requieran de comprobantes
+de venta, los mismos serán justificados con los documentos que corresponda, sin perjuicio de la
+excepción establecida en este reglamento.
+Los intermediarios efectuarán la respectiva retención en la fuente del impuesto a la renta y del IVA
+cuando corresponda.
+Para los intermediarios, los gastos efectuados para reembolso no constituyen gastos propios ni el
+reembolso constituye ingreso propio; para el reembolsante el gasto es deducible y el IVA pagado
+constituye crédito tributario.
+Para obtener el reembolso el intermediario deberá emitir una factura por el reembolso de gastos, en la
+cual se detallarán los comprobantes de venta motivo del reembolso, con la especificación del RUC del
+emisor, número de la factura, valor neto e IVA y además se adjuntarán los originales de tales
+comprobantes. Esta factura por el reembolso no dará lugar a retenciones de renta ni de IVA. En el caso
+de que el intermediario del reembolso sea un empleado en relación de dependencia del reembolsante,
+éste podrá emitir una la liquidación de compra de bienes y prestación de servicios en sustitución de la
+factura por el reembolso.
+El pago por reembolso de gastos deberá estar sustentado en comprobantes de venta que cumplan con
+los requisitos previstos en el Reglamento de Comprobantes de Venta y Retención.
+Art. 52
+Ingresos de personas naturales por servicios ocasionales.- Se entiende por servicios ocasionales los
+que constan en contratos o convenios cuya duración sea inferior a seis meses. En este caso, los
+ingresos de fuente ecuatoriana percibidos por personas naturales sin residencia en el país por servicios
+ocasionalmente prestados en el Ecuador y pagados o acreditados por personas naturales, entidades
+y organismos del sector público o sociedades en general, estarán sujetos a tarifa general de impuesto
+a la renta prevista para sociedades sobre la totalidad del ingreso percibido y será sometido a retención
+en la fuente por la totalidad del impuesto. Si los ingresos referidos en este inciso son percibidos por
+personas naturales residentes en paraísos fiscales o jurisdicciones de menor imposición, o están
+sujetas a regímenes fiscales preferentes, se les aplicará una retención en la fuente equivalente a la
+máxima tarifa prevista para personas naturales. Quien efectúe dichos pagos o acreditaciones, deberá
+emitir la respectiva liquidación de compra y de prestación de servicios.
+[Inciso segundo omitido: servicios de más de seis meses.]
+Art. 92
+Agentes de Retención.- Serán agentes de retención del Impuesto a la Renta:
+1. Los sujetos pasivos designados como tales por el Servicio de Rentas Internas, por todos los pagos
+que realicen o acrediten en cuenta valores que constituyan ingresos gravados para quienes lo reciban,
+incluyendo los sujetos pasivos calificados como contribuyentes especiales.
+2. Los sujetos pasivos que no sean designados o calificados como agentes de retención o
+contribuyentes especiales, deberán efectuar la correspondiente retención en la fuente, únicamente por
+las operaciones y casos señalados a continuación:
+[Literales a) a k) omitidos.]
+l) Las sociedades, las personas naturales y las sucesiones indivisas, residentes o establecidas en el
+Ecuador, cuando emitan liquidaciones de compras de bienes y prestación de servicios, exclusivamente
+en las operaciones que sustenten tales comprobantes.
+[Literales m) y n) omitidos.]
+Sin perjuicio de lo señalado en este artículo, los límites, condiciones y excepciones, de las retenciones
+en la fuente del impuesto a la renta, deberán regirse a la Ley de Régimen Tributario Interno, este
+reglamento y demás normativa tributaria aplicable. El Servicio de Rentas Internas, mediante resolución
+de carácter general, podrá establecer condiciones, límites y términos adicionales para el cumplimiento
+de la retención.
+Las personas naturales que les corresponda actuar como agentes de retención, únicamente realizarán
+retenciones del impuesto a la renta por los pagos o acreditación en cuenta que realicen por sus
+adquisiciones de bienes y servicios que sean relacionados con la actividad generadora de renta.
+Art. 95
+Momento de la retención.- La retención en la fuente deberá realizarse al momento del pago o crédito
+en cuenta, lo que suceda primero. Se entenderá que la retención ha sido efectuada dentro del plazo
+de cinco días de que se ha presentado el correspondiente comprobante de venta. El agente de
+retención deberá depositar los valores retenidos en una entidad autorizada para recaudar tributos, de
+acuerdo a la forma y plazo establecidos en el presente reglamento.
+Para los efectos de la aplicación de la Ley de Régimen Tributario Interno y este Reglamento, se
+entenderá que se ha acreditado en cuenta, el momento en el que se realice el registro contable del
+respectivo comprobante de venta.
+Art. 97
+Comprobantes de retención por otros conceptos.- Los agentes de retención de impuestos deberán
+extender un comprobante de retención, dentro del plazo máximo de cinco días de recibido el
+comprobante de venta.
+El comprobante de retención debe ser impreso o emitido mediante sistemas de cómputo, previa
+autorización del Servicio de Rentas Internas y cumplirá con los requisitos establecidos en el
+Reglamento de Comprobantes de Venta y de Retención.
+Art. 146
+Pago por importación de servicios.- Las personas naturales y sociedades, en el pago por importación
+de servicios, deberán emitir una liquidación de adquisición de bienes y prestación de servicios, en la
+que indicarán el valor del servicio prestado y el Impuesto al Valor Agregado correspondiente. El emisor
+de la liquidación de adquisición de bienes y prestación de servicios tiene la calidad de contribuyente y
+retendrá el 100% del IVA generado, independiente de la forma de pago.
+El valor del IVA pagado por la importación del servicio servirá como crédito tributario para el
+contribuyente.
+Art. 146.1
+Pago por la importación de servicios digitales.- Los residentes fiscales en el Ecuador y los
+establecimientos permanentes de no residentes, en la adquisición de servicios digitales importados,
+para efectos de sustentar costos y gastos para el cálculo del impuesto a la renta, así como el crédito
+tributario del IVA, deberán emitir una liquidación de compra de bienes y prestación de servicios, en la
+que indicarán el valor del servicio digital importado y el Impuesto al Valor Agregado correspondiente.
+Cuando el prestador del servicio digital no se encuentre registrado ante el Servicio de Rentas Internas
+y no exista un intermediario en el proceso de pago, el importador del servicio digital tiene la calidad de
+contribuyente, y, además de emitir la liquidación de compras de bienes y prestación de servicios,
+retendrá el 100% del IVA generado.
+Cuando el prestador del servicio digital no se encuentre inscrito ante el Servicio de Rentas Internas y
+el pago se realice mediante un intermediario, el estado de cuenta generado por la empresa emisora
+de la tarjeta de crédito o débito constituirá el comprobante de retención.
+Art. 146.2
+Exoneración del IVA en los servicios digitales empleados para la creación de contenido audiovisual [...]
+[Resto del inciso primero e inciso segundo omitidos.]
+Cuando el pago sea realizado directamente, sin la utilización de intermediarios, el importador del
+servicio digital deberá emitir la liquidación de compra de bienes y aplicar directamente la exoneración
+del IVA.
+[Inciso cuarto omitido.]
+Art. 147
+Agentes de retención del Impuesto al Valor Agregado.- Serán agentes de retención del Impuesto al
+Valor Agregado:
+1. Los siguientes sujetos pasivos por todas las adquisiciones de bienes, derechos y/o servicios, que se
+encuentren gravadas con tarifa diferente de 0% del Impuesto al Valor Agregado:
+a) Los contribuyentes calificados como agentes de retención y contribuyentes especiales por el Servicio
+de Rentas Internas.
+b) Las entidades emisoras de tarjetas de crédito o débito, por los pagos que efectúen por concepto del
+IVA a sus proveedores de bienes, derechos y servicios, y por los que realicen a sus establecimientos
+afiliados.
+c) Las empresas de seguros y reaseguros, por todos los pagos que realicen a sus proveedores de
+bienes, derechos y servicios, y por los que realicen por cuenta de terceros en razón de sus obligaciones
+contractuales.
+d) Los establecidos en el inciso final del artículo 63 de la Ley de Régimen Tributario Interno.
+2. Los sujetos pasivos que no sean designados o calificados como agentes de retención o
+contribuyentes especiales, deberán efectuar la correspondiente retención en la fuente del Impuesto al
+Valor Agregado, únicamente por las operaciones y casos señalados a continuación:
+a) Las sociedades, las personas naturales y las sucesiones indivisas, residentes o establecidas en el
+Ecuador, en la importación de servicios; y en general, cuando emitan liquidaciones de compras de
+bienes y prestación de servicios, exclusivamente en las operaciones que sustenten tales
+comprobantes.
+b) Los sujetos pasivos que estén obligados a realizar retención sobre el IVA presuntivo de conformidad
+con lo establecido por la Ley de Régimen Tributario Interno, este reglamento, y las normas que expida
+para el efecto el Servicio de Rentas Internas mediante resolución de carácter general.
+c) Las entidades del sistema financiero, por los pagos, acreditaciones o créditos en cuenta que realicen,
+amparados en convenios de recaudación o de débito, de conformidad con lo establecido mediante
+resolución por el Servicio de Rentas Internas.
+Los agentes de retención del Impuesto al Valor Agregado realizarán su declaración y pago del impuesto
+de conformidad con lo dispuesto en la Ley de Régimen Tributario Interno y este reglamento.
+En el caso de importación de servicios el usuario o destinatario del servicio tendrá la condición de
+contribuyente; en tal virtud, los importadores de servicios declararán y pagarán el impuesto retenido
+dentro de su declaración de Impuesto al Valor Agregado correspondiente al periodo fiscal en el cual se
+hubiese realizado la importación de dicho servicio.
+Las personas naturales no obligadas a llevar contabilidad, que importen servicios, las obligaciones en
+su calidad de contribuyentes estarán ligadas únicamente al período en el cual realizaron la importación
+del servicio pagado.
+Los agentes de retención de IVA están sujetos a las mismas obligaciones y sanciones establecidas en
+la Ley de Régimen Tributario Interno para los agentes de Retención del Impuesto a la Renta.
+Art. 148
+Momento de la retención y declaraciones de las retenciones.- La retención deberá realizarse en el
+momento en el que se pague o acredite en cuenta el valor por concepto de IVA contenido en el
+respectivo comprobante de venta, lo que ocurra primero, en el mismo término previsto para la retención
+en la fuente de Impuesto a la Renta.
+[Incisos segundo a cuarto omitidos: sujetos a los que no se retiene IVA y sus excepciones.]
+Se expedirá un comprobante de retención por cada comprobante de venta que incluya transacciones
+sujetas a retención del Impuesto al Valor Agregado, el mismo que contendrá los requisitos previstos
+en el Reglamento de Comprobantes de Venta y de Retención.
+Las instituciones financieras podrán emitir un solo comprobante de retención por las operaciones
+realizadas durante un mes, respecto de un mismo cliente.
+Los contribuyentes especiales, Instituciones del Estado, y las empresas públicas reguladas por la Ley
+Orgánica de Empresas Públicas, podrán emitir un solo comprobante de retención por las operaciones
+realizadas durante cinco días consecutivos, respecto de un mismo cliente.
+[Incisos finales omitidos.]
+Art. 164
+Arrendamiento o arrendamiento mercantil.- [Inciso primero omitido.]
+En el arrendamiento simple o leasing desde el exterior, causará el IVA sobre el valor total de cada
+cuota o canon de arrendamiento que deberá declarar y pagar el arrendatario en el mes siguiente en el
+que se efectúe el crédito en cuenta o pago de cada cuota; cuando se nacionalice o se ejerza la opción
+de compra, el IVA se liquidará sobre el valor residual del bien. Quien pague o acredite en cuenta cuotas
+de arrendamiento al exterior se convierte en agente de retención por la totalidad del IVA causado,
+debiendo emitir la liquidación de compras por prestación de servicios, que servirá como sustento del
+crédito tributario, si es del caso.
+Art. 223
+Comprobantes de venta.- Los contribuyentes sujetos al Régimen RIMPE deberán emitir facturas,
+documentos complementarios de acuerdo con el Reglamento de Comprobantes de Venta, Retención
+y Documentos Complementarios, liquidaciones de compra de bienes y prestación de servicios, así
+como comprobantes de retención en los casos que proceda.
+[Incisos siguientes omitidos.]
+Art. 224
+Sustento de operaciones.- Los contribuyentes incorporados en el Régimen RIMPE solicitarán los
+comprobantes de venta que sustenten debidamente sus adquisiciones de bienes, cesión de derechos
+y contratación de servicios.
+Los contribuyentes deberán conservar los documentos que sustenten sus transacciones, por un
+periodo no inferior a siete años, conforme lo establecido en el Código Tributario. Durante este periodo
+la Administración Tributaria podrá requerir al sujeto pasivo la presentación de estos.
+[Notas del texto: "Artículo reformado por artículo 17 del Decreto Ejecutivo No. 586, publicado en
+Registro Oficial Suplemento 186 de 10 de Noviembre del 2022" y "Artículo sustituido por artículo 14
+de Decreto Ejecutivo No. 876, publicado en Registro Oficial Suplemento 401 de 21 de Septiembre del
+2023".]
+Título (...)
+RÉGIMEN SIMPLIFICADO DE LAS ORGANIZACIONES INTEGRANTES DE LA
+ECONOMÍA POPULAR Y SOLIDARIA
+[Capítulo I omitido.]
+Capítulo II
+COMPROBANTES DE VENTA, RETENCIÓN Y DOCUMENTOS COMPLEMENTARIOS
+Art. 2
+Sustento de operaciones.- Las organizaciones que se acojan al régimen previsto en este Título,
+sustentarán sus operaciones mediante la emisión de comprobantes de venta, retención y documentos
+complementarios.
+En las transacciones realizadas por las organizaciones integrantes de la economía popular y solidaria
+con sus miembros, que se constituyan en actos económicos solidarios por tener relación con su objeto
+social, se deberá emitir únicamente liquidaciones de compra, aunque dichos miembros se encuentren
+inscritos en el Registro Único de Contribuyentes, pudiendo consolidarse las transacciones por cada
+miembro de la organización de manera anual.
+[Capítulos III y IV omitidos.]
+Capítulo V
+RETENCIONES
+Art. 7
+Retenciones.- Las organizaciones de la economía popular y solidaria, no obligadas a llevar
+contabilidad, no se constituyen en agentes de retención de Impuesto a la Renta ni de IVA;
+excepcionalmente efectuarán retenciones de estos impuestos en los siguientes casos y según
+corresponda:
+a) Cuando efectúen pagos a no residentes o a sujetos pasivos por los que se deba emitir una
+liquidación de compras de bienes y prestación de servicios;
+b) Por los pagos a trabajadores en relación de dependencia, de conformidad con las reglas generales
+establecidas para el efecto, y;
+c) En otros casos expresamente previstos mediante resolución de carácter general que emita el
+Servicio de Rentas Internas.
+En estos casos se efectuará la declaración y pago correspondiente, en el formulario respectivo,
+únicamente por los meses en los cuales hayan efectuado retenciones.
+[Incisos finales omitidos.]
+
+== 3. Resolución NAC-DGERCGC20-00000061: porcentajes de retención del IVA (vigente, reformada) ==
+
+Registro Oficial, Edición Especial 1100, 30-09-2020 (dato de la NAC-DGERCGC23-00000026). Listada como
+vigente en https://www.sri.gob.ec/en/normativa-para-agentes-de-retencion-y-contribuyentes-especiales
+(consultada el 2026-10-07).
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/185c7087-f119-4f0d-8dcd-702c30ebd793/NAC-DGERCGC20-00000061.pdf
+(la misma descarga en .../944b4df4-641e-4fd1-b159-64fee8ac7a77/NAC-DGERCGC20-00000061.pdf)
+SHA-256: dd1f5c2890825d4eaf19db9c8aefeb16fc59a01fce0b32990504eb95bd1fac02
+Es el texto original de 2020; el SRI no publica una edición consolidada.
+
+Artículo 2. Agentes de retención.- Para efectos de la presente Resolución, se consideran agentes
+de retención de IVA:
+[Numerales 1 a 3 omitidos.]
+4. Los sujetos pasivos en la importación de servicios; y en general, cuando emitan liquidaciones de
+compras de bienes y prestación de servicios, exclusivamente en las operaciones que sustenten
+tales comprobantes.
+[Numerales 5 a 7 omitidos.]
+[Artículo 3 omitido: sustituido por la Resolución NAC-DGERCGC23-00000026, ver abajo.]
+Artículo 4. Porcentajes de retención de IVA en las adquisiciones y pagos efectuados por los
+agentes de retención a sujetos pasivos no calificados como contribuyentes especiales.- Salvo lo
+dispuesto en el artículo 3 de la presente Resolución, se establecen los siguientes porcentajes de
+retención en la fuente de IVA en las adquisiciones y pagos efectuados por los agentes de retención a
+sujetos pasivos no calificados como contribuyentes especiales por el Servicio de Rentas Internas:
+[Literales a) y b) omitidos: 30% y 70%.]
+c) Retención del cien por ciento (100%) del IVA causado:
+i. En la adquisición de servicios profesionales prestados por personas naturales con título de
+instrucción superior otorgado por establecimientos regulados por la Ley Orgánica de Educación
+Superior, salvo en los pagos por contratos de consultoría previstos en el numeral i del literal b) de
+este artículo.
+ii. En el arrendamiento de inmuebles de personas naturales o sucesiones indivisas no obligadas a
+llevar contabilidad.
+iii. Si al adquirir bienes, servicios o derechos, se emite una liquidación de compra de bienes y
+prestación de servicios, en los casos y de conformidad con las disposiciones previstas en la
+normativa tributaria vigente, incluyéndose en este caso los pagos que se efectúen a las personas
+privadas de la libertad y los pagos por las cuotas de arrendamiento a no residentes.
+iv. En los pagos de dietas, honorarios o cualquier otro emolumento, que las sociedades,
+residentes o establecidas en el Ecuador, reconozcan a los miembros de directorios y/o cuerpos
+colegiados por la asistencia a sesiones de tales entes.
+v. En los pagos que se efectúen a quienes han sido elegidos miembros de cuerpos colegiados de
+elección popular en entidades del sector público, exclusivamente en ejercicio de su función
+pública en el respectivo cuerpo colegiado.
+vi. Los operadores de turismo receptivo calificados como agentes de retención o contribuyentes
+especiales, que facturen paquetes de turismo receptivo dentro o fuera del país en las
+adquisiciones locales de los bienes y derechos que pasen a formar parte de su activo fijo; o de los
+derechos, bienes o insumos y de los servicios necesarios para la producción y comercialización
+de los bienes, derechos y servicios que integren el paquete de turismo receptivo facturado.
+[Artículos 5 a 7 omitidos.]
+Artículo 8. Retención en importación de servicios.- El importador de servicios efectuará la
+retención del cien por ciento (100%) del IVA generado, conforme lo establecido en la Ley de
+Régimen Tributario Interno y su reglamento de aplicación. Los valores retenidos por concepto de
+IVA deberán ser registrados en su declaración de impuesto al valor agregado correspondiente al
+periodo fiscal en el cual se realice la importación de dichos servicios.
+Los contratos de consultoría celebrados con personas naturales o jurídicas, no residentes ni
+establecidas en el Ecuador, serán considerados como importación de servicios.
+Las retenciones previstas en este artículo serán también aplicables por parte de las entidades del
+sistema financiero por los pagos, acreditaciones o créditos en cuenta que realicen amparados en
+convenios de recaudación o de débito.
+[Artículos 9 a 12 omitidos.]
+Artículo 13. Obligaciones de sujetos pasivos no calificadas como agentes de retención o
+contribuyentes especiales.- Las obligaciones tributarias y deberes formales en calidad de agente de
+retención que surjan por la emisión de liquidaciones de compra de bienes y prestación de servicios,
+por parte de sujetos pasivos no calificados como agentes de retención o contribuyentes especiales,
+deberán ser cumplidas por el periodo mensual o semestral en el cual se emitieron, según
+corresponda. En el Anexo Transaccional Simplificado, del periodo que corresponda, deberán
+reportar únicamente la información relativa a esas operaciones.
+[Artículo 14 omitido.]
+Artículo 15. Operaciones sujetas a distintos porcentajes de retención de IVA.- Cuando un
+agente de retención adquiera en una misma operación, bienes, derechos o servicios sujetos a
+diferentes porcentajes de retención de IVA, la misma se realizará sobre el valor del bien, derecho o
+servicio en el porcentaje que corresponda a cada uno de ellos, según lo previsto en esta Resolución,
+aunque tales bienes, derechos o servicios se incluyan en un mismo comprobante de venta.
+De no poderse diferenciar los porcentajes de retención, se aplicará el porcentaje mayor, que se
+presente en la operación.
+Artículo 16. Momento de la retención.- La retención deberá realizarse en el momento en el que
+se pague o acredite en cuenta el valor por concepto de IVA contenido en el respectivo comprobante
+de venta, lo que ocurra primero, en el mismo término previsto para la retención en la fuente de
+impuesto a la renta.
+En el caso de importación de servicios digitales, la retención se efectuará al momento del pago
+realizado por parte del un residente o un establecimiento permanente de un no residente en el
+Ecuador, a favor del prestador de servicios digitales no residente.
+Artículo 17. Emisión de comprobantes de retención.- Los agentes de retención de IVA
+expedirán un comprobante de retención por cada operación sujeta a retención de dicho impuesto,
+conforme a los requisitos previstos en el Reglamento de Comprobantes de Venta, Retención y
+Documentos Complementarios.
+Los agentes de retención, que emitan comprobantes de retención a través de mensajes de datos y
+firmados electrónicamente, deberán emitir el respectivo comprobante de retención, inclusive en los
+casos en los cuales no proceda la misma. En este caso, se podrá emitir un solo comprobante de
+retención por las operaciones realizadas en un mes en las que no haya procedido retención de IVA y
+de impuesto a la renta respecto de un mismo proveedor.
+Las instituciones financieras podrán emitir un solo comprobante de retención por las operaciones
+realizadas durante un mes, respecto de un mismo cliente.
+Los contribuyentes especiales, instituciones del Estado, y las empresas públicas reguladas por la Ley
+Orgánica de Empresas Públicas, podrán emitir un solo comprobante de retención por las operaciones
+realizadas durante cinco (5) días consecutivos, respecto de un mismo cliente.
+En la importación de servicios digitales, cuando el agente de retención sea una institución del
+sistema financiero, el estado de cuenta constituirá el comprobante de retención.
+DISPOSICIÓN DEROGATORIA ÚNICA.- Deróguese la Resolución Nro. NAC-DGERCGC15-
+00000284, publicada en el Suplemento del Registro Oficial Nro. 473, de 6 de abril 2015.
+DISPOSICIÓN FINAL.- La presente Resolución entrará en vigencia a partir de su publicación en
+el Registro Oficial.
+Dictó y firmó electrónicamente la Resolución que antecede, la Economista Marisol Andrade Hernández,
+Directora General del Servicio de Rentas Internas, el 29 de septiembre de 2020.
+
+-- Reforma: Resolución NAC-DGERCGC23-00000026 (firmada el 27-09-2023) --
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=77a369db-7955-44d9-8b2d-78100dba3488&nombre=NAC-DGERCGC23-00000026.pdf
+SHA-256: 53f5d98de0191a65e1a5e0362a06d7a1195638f5d5ca23792075f47929d2635c
+No modifica el artículo 2 numeral 4, el artículo 4 literal c), ni los artículos 8, 13, 16 y 17.
+
+REFORMAR LA RESOLUCIÓN No. NAC-DGERCGC20-00000061 PUBLICADA
+EN EL REGISTRO OFICIAL – EDICIÓN ESPECIAL NRO. 1100 DE 30 DE
+SEPTIEMBRE DE 2020 A TRAVÉS DE LA CUAL SE RESUELVE FIJAR LOS
+PORCENTAJES DE RETENCIÓN DEL IMPUESTO AL VALOR AGREGADO
+(IVA)
+[Artículo 1 omitido: agrega el numeral 8 del artículo 2 (sector público).]
+Artículo 2.- Sustitúyase el artículo 3 por el siguiente:
+“Artículo 3.- Sujetos pasivos a los que no se realiza retención de IVA.- No se
+realizará retenciones de IVA a los siguientes sujetos pasivos:
+1. Contribuyentes especiales, excepto en los casos previstos en esta Resolución.
+2. Instituciones del Estado.
+3. Empresas públicas reguladas por la Ley Orgánica de Empresas Públicas.
+4. Compañías de aviación.
+5. Agencias de viaje, únicamente por el IVA causado por concepto de venta de
+pasajes aéreos.
+6. Centros de distribución, comercializadoras, distribuidores finales y estaciones
+de servicio que comercialicen combustible, únicamente cuando se refieran a la
+adquisición de combustible derivado de petróleo.
+7. Instituciones del sistema financiero, únicamente respecto a los servicios
+financieros gravados con tarifa diferente de cero por ciento (0%) de IVA.
+8. Compañías emisoras de tarjetas de crédito, respecto de los descuentos que por
+concepto de su comisión efectúen de los pagos que realicen a sus
+establecimientos afiliados.
+9. Voceadores de periódicos y revistas, y distribuidores de estos productos,
+únicamente en la adquisición de periódicos y/o revistas.
+10. Sociedades creadas para el desarrollo de proyectos públicos bajo la
+modalidad de asociación público-privada, siempre y cuando este beneficio
+conste, total o parcialmente, en los pliegos de bases económicas y en el plan
+económico-financiero adjudicado, anexos al contrato de gestión delegada
+suscrito con el Estado.
+11. Personas naturales y sociedades categorizadas como emprendedores dentro
+del Régimen Simplificado para Emprendedores y Negocios Populares – RIMPE,
+cuando se pague a través de tarjeta de crédito, débito, transferencia o cualquier
+otro medio de pago electrónico, incluso cuando el pago lo realice una entidad
+del sistema financiero nacional, una empresa emisora de tarjetas de crédito o
+débito y/o un agregador de pago, según corresponda.
+12. Exportadores habituales de bienes y/o servicios calificados como agentes
+de retención o contribuyentes especiales.
+13. Las entidades consideradas agregadores de pago y/o mercados en línea,
+según lo establecido en la resolución emitida para el efecto, únicamente cuando
+el pago lo realice una entidad del sistema financiero nacional, una empresa
+emisora de tarjetas de crédito o débito y/o un agregador de pago, según
+corresponda.
+De conformidad con lo establecido en el último inciso de los artículos 62 y 63 de la Ley
+de Régimen Tributario, así como por el tercer inciso del artículo 148 del Reglamento
+para la Aplicación de la Ley de Régimen Tributario Interno, se exceptúa de lo previsto en
+este artículo, y en consecuencia aplican retención en la fuente de IVA, los pagos que
+realicen las entidades y organismos del sector público del Gobierno Central y
+Descentralizado, sus órganos desconcentrados y sus empresas públicas, universidades y
+escuelas politécnicas del país.”
+[Artículos 3 y 4 omitidos: exportadores habituales y derogatoria del artículo 12.1.]
+DISPOSICIÓN FINAL. - La presente Resolución entrará en vigencia a partir de su
+publicación en el Registro Oficial.
+Dictó y firmó la Resolución que antecede el Abogado Ricardo Daniel Flores Gallardo,
+Director General (S) del Servicio de Rentas Internas, el 27 de septiembre de 2023.
+
+== 4. Resolución NAC-DGERCGC26-00000009: porcentajes de retención en la fuente de renta (vigente) ==
+
+Listada como vigente en la misma página del SRI. Aplicable desde el 01-03-2026; deroga la
+NAC-DGERCGC24-00000008.
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/272ca6a9-d679-4b4e-8da0-fb4671cf5f8f/NAC-DGERCGC26-00000009_Ret_IR.pdf
+SHA-256: efff64e5b1937f75fb5cb7f95402c4ad5b913a87eb87d7d3a9e4cc5e29dec201
+
+EXPEDIR LOS PORCENTAJES DE RETENCIÓN EN LA FUENTE DE
+IMPUESTO A LA RENTA
+Art. 1.- Objeto.- Establecer los porcentajes de retención en la fuente de
+impuesto a la renta que deberán aplicar los sujetos pasivos que paguen, o
+acrediten en cuenta, ingresos que constituyan rentas gravadas para quien los
+perciba.
+Art. 2.- Porcentajes de retención.- Salvo los casos específicos previstos en la
+Ley de Régimen Tributario Interno y su respectivo reglamento, se establece los
+siguientes porcentajes de retención en la fuente de impuesto a la renta sobre los
+pagos o acreditaciones en cuenta detallados conforme la siguiente tabla:
+TABLA DE PORCENTAJES DE RETENCIÓN EN LA FUENTE DE IMPUESTO
+A LA RENTA
+1. Retención del cero por ciento (0 %):
+[Literal a) omitido.]
+b) Las transacciones efectuadas a través de liquidaciones de compra de bienes y
+prestación de servicios por las actividades económicas desarrolladas por las personas
+privadas de libertad que participen en los programas de reinserción laboral y
+económica del Sistema Nacional de Rehabilitación Social.
+[Literal c) y numerales 2 a 4 omitidos.]
+5. Retención del tres por ciento (3 %):
+[Literales a) a e) omitidos.]
+f) Los que se realicen a través de liquidaciones de compra de bienes y prestación de
+servicios a personas naturales no obligadas a llevar contabilidad, ni inscritos en el
+Registro Único de Contribuyentes RUC o que mantengan su RUC en estado
+suspendido, que por su nivel cultural o rusticidad no se encuentren en posibilidad de
+emitir comprobantes de venta, de conformidad con lo señalado en la resolución que el
+Servicio de Rentas Internas expida, para el efecto. En este caso el pagador deberá
+emitir la correspondiente liquidación de compra y deberá retener sobre el valor total
+del pago o acreditación en cuenta.
+[Numerales 6 y 7 omitidos.]
+Art. 3.- Retención en pagos sin un porcentaje específico.- Todos los pagos o
+créditos en cuenta no contemplados en los porcentajes específicos de retención
+señalados en esta Resolución, están sujetos a la retención del 3%.
+Art. 4.- Pagos a no residentes por servicios ocasionales.- Los montos
+pagados a personas naturales y sociedades no residentes ni domiciliados en el
+Ecuador, por servicios ocasionalmente prestados en el Ecuador que constituyan
+ingresos gravados, así como otros pagos distintos a utilidades o dividendos que
+se envíen, paguen o acrediten al exterior, directamente, mediante
+compensaciones o con la mediación de entidades financieras u otros
+intermediarios, estarán sujetos a retención en la fuente. En estos casos se
+aplicará la tarifa general de impuesto a la renta prevista para sociedades sobre el
+total de los pagos o créditos efectuados, conforme lo previsto en la Ley de
+Régimen Tributario Interno y las disposiciones reglamentarias concordantes. Si
+estos ingresos son percibidos por personas residentes, constituidas o ubicadas
+en paraísos fiscales o jurisdicciones de menor imposición, o están sujetas a
+regímenes fiscales preferentes, se les aplicará una retención en la fuente
+equivalente a la máxima tarifa prevista para personas naturales.
+Art. 5.- Pluralidad de porcentajes aplicables.- Cuando un contribuyente
+proveyere bienes o servicios sujetos a diferentes porcentajes de retención, la
+misma se realizará sobre el valor del bien o servicio en el porcentaje que
+corresponda a cada uno de ellos según lo previsto en esta Resolución, aunque
+tales bienes o servicios se incluyan en un mismo comprobante de venta válido.
+De no encontrarse separados los respectivos valores, se aplicará el porcentaje
+de retención más alto.
+Art. 6.- Excepciones.- No procede la retención en la fuente por concepto de
+impuesto a la renta en los siguientes casos:
+a) Respecto de aquellos pagos o créditos en cuenta que constituyen ingresos
+exentos para quien los percibe de conformidad con la Ley de Régimen Tributario
+Interno.
+b) En los ingresos provenientes del trabajo en relación de dependencia, por
+contar con un régimen específico de retención.
+[Literales c) a e) omitidos.]
+Art. 8.- Momento de la retención.- La retención se efectuará el momento en
+que se realice el pago o se acredite en cuenta, lo que ocurra primero.
+[Inciso segundo omitido: agregadores de pago.]
+Art. 9.- Normas para retenciones por pagos al exterior.- Previo a la aplicación
+del régimen previsto en un convenio internacional para evitar la doble imposición,
+el respectivo agente de retención debe verificar que el perceptor del ingreso
+tenga su residencia en el otro Estado contratante. Esto sin perjuicio del
+cumplimiento de los requisitos adicionales que para el efecto establezca el
+propio instrumento internacional.
+[Inciso segundo y artículo 10 omitidos.]
+DISPOSICIÓN TRANSITORIA ÚNICA.- Con el propósito de que los
+contribuyentes puedan adaptar los sistemas y mecanismos de registro y
+transmisión necesarios, los comprobantes de retención por las retenciones en la
+fuente de impuesto a la renta que deban realizarse entre el 1 y el 15 de marzo de
+2026, en los términos del artículo 50 de la Ley de Régimen Tributario Interno,
+podrán ser emitidos hasta el 31 de marzo de 2026.
+DISPOSICIÓN DEROGATORIA.- Deróguese la Resolución NAC-DGERCGC24-
+00000008, publicada en el suplemento del Registro Oficial 508, de 29 de febrero
+de 2024 y cualquier otro acto normativo que resulte incompatible con la presente
+resolución.
+DISPOSICIÓN FINAL.- La presente Resolución entrará en vigor a partir de su
+publicación en el Registro Oficial y será aplicable a partir del 01 de marzo de
+2026.
+Dictó y firmó electrónicamente la Resolución que antecede, Alexandra Verónica
+Navarrete Ricaurte, Directora General del Servicio de Rentas Internas, en Quito,
+D.M., a 27 de febrero de 2026.
+
+== 5. Resolución NAC-DGERCGC22-00000042: límites a la emisión por entidades del sector público ==
+
+Segundo Suplemento del Registro Oficial No. 157, 27-09-2022 (dato de la página "Facturación
+Electrónica" del SRI). Dictada con base en el inciso del artículo 13 del Reglamento de Comprobantes
+que permite fijar límites; sus considerandos citan el literal c) anterior al D.E. 586.
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=777f7584-654c-4018-b074-1a3538a606be&nombre=NAC-DGERCGC22-00000042.pdf
+SHA-256: 38f91a980d79360b61cecf102d236a89bfd506f04d0de47046904f04cdba5d55
+
+EXPEDIR LAS NORMAS QUE REGULAN LA EMISIÓN DE LIQUIDACIONES
+DE COMPRA DE BIENES Y PRESTACIÓN DE SERVICIOS POR PARTE DE
+LAS ENTIDADES DEL SECTOR PÚBLICO EN LA CONTRATACIÓN DE
+SERVICIOS DE CARÁCTER EXCEPCIONAL
+Artículo 1.- Emisores de las liquidaciones de compras de bienes y prestación de
+servicios. – Únicamente las entidades u organismos del sector público, conforme lo
+establecido por el artículo 225 de la Constitución de la República del Ecuador, podrán
+emitir liquidaciones de compras de bienes y prestación de servicios en la adquisición de
+servicios de carácter excepcional.
+Artículo 2.- Prestadores de servicios excepcionales. – A efectos de la emisión de
+liquidaciones de compra de bienes y prestación de servicios, se considera prestadores de
+servicios excepcionales de las entidades u organismos del sector público, exclusivamente,
+a los proveedores personas naturales no obligadas a llevar contabilidad, ni inscritos en el
+Registro Único de Contribuyentes (RUC).
+Artículo 3.- Carácter excepcional de los servicios. – Se entenderá que el servicio tiene la
+condición de excepcional cuando los proveedores señalados en el artículo 2 fueren
+contratados por la entidad u organismo del sector público hasta por dos ocasiones en el
+mismo ejercicio, sin que entre ambas se supere un plazo de 150 días, y que el honorario
+pagado no supere el 30% de una fracción básica desgravada de Impuesto a la Renta,
+respecto de un mismo proveedor.
+DISPOSICIONES DEROGATORIAS
+Primera. – Deróguese la Resolución No. NAC-DGERCGC17-00000022, publicada en el
+Segundo Suplemento del Registro Oficial No.923 de 16 de enero de 2017.
+Segunda. - Deróguese la Resolución No. NAC-DGERCGC17-00000208, publicada en el
+Suplemento del Registro Oficial No. 969 de 23 de marzo de 2017.
+DISPOSICIÓN FINAL. - La presente Resolución entrará en vigencia a partir de su
+publicación en el Registro Oficial.
+Dictó y firmó la Resolución que antecede el Economista Francisco Briones Rugel, Director
+General del Servicio de Rentas Internas, el 21 de septiembre de 2022.
+
+== 6. Resolución NAC-DGERCGC24-00000029: pronósticos deportivos (caso en que no se exige la liquidación) ==
+
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/a039468a-e898-4f36-9ae4-780728dffd3c/Resolucion%20NAC-DGERCGC24-00000029.pdf
+SHA-256: 2ed46ce2036ec23cbc5da00c34591893f5cbc11dc8684b23f8cc7135dc70f402
+
+Establecer los plazos y formas de declaración, reglas de emisión de comprobantes de
+venta y retención y requisitos para la inscripción en el Registro Único de Contribuyentes
+para la implementación del impuesto a la renta único a los operadores de pronósticos
+deportivos
+[...]
+Art. 9.- Emisión de comprobantes de retención sobre premios. - La retención de impuesto
+a la renta sobre los premios del jugador de pronósticos deportivos deberá efectuarse cuando
+nazca el derecho a recibir el premio a favor del jugador.
+El comprobante de retención electrónico deberá ser emitido al jugador hasta el quinto día hábil
+del mes siguiente del periodo sujeto a declaración y pago, y deberá consolidar la totalidad de
+los valores retenidos al jugador por premios obtenidos durante un periodo fiscal mensual.
+El comprobante de retención electrónico contendrá obligatoriamente el número de eventos
+deportivos y condiciones en los cuales se generaron premios, en la sección: ‘Información
+Adicional’ del comprobante de retención.
+No será obligatorio para el operador emitir una liquidación de compra al jugador en estos casos.
+Para el cálculo de la retención sobre el premio, se restará el valor correspondiente al pronóstico
+devengado pagado por el jugador.
+[...]
+Dictó y firmó electrónicamente la Resolución que antecede, el economista Damián Alberto
+Larco Guamán, Director General del Servicio de Rentas Internas, en Quito, D.M., el 31 de julio
+de 2024.
+
+== 7. Normas derogadas o sustituidas: negocios populares RIMPE (solo como historia; no vigentes) ==
+
+-- D.E. 586, artículo 17 (sustituyó el inciso cuarto del artículo 224 del RALRTI) --
+URL y SHA-256: los del D.E. 586 en reglamento-comprobantes-liquidacion-de-compra.txt (PDF alojado por
+el SRI, de edicioneslegales.com.ec).
+Art. 17.- Sustitúyase el inciso cuarto del artículo 224 según el siguiente texto:
+"Los sujetos pasivos que pertenecen a la categoría de negocios populares deben emitir la
+respectiva nota de venta a sus adquirientes de bienes o servicios.
+Para sustentar el IVA pagado y/o crédito tributario, según sea el caso, los contribuyentes
+que no sean consumidores finales, que realicen transacciones con negocios populares,
+deberán emitir una liquidación de compra de bienes y prestación de servicios, en la que se
+registre el IVA correspondiente considerando como base imponible el valor total de la
+transacción; y, retener el 100% del IVA generado.
+Las notas de venta en las que conste la identificación del usuario y de los bienes y servicios
+objeto de la transacción, podrán servir como elementos de prueba para el registro y
+deducibilidad de costos y gastos en la liquidación del Impuesto a la Renta. "
+Estado: el artículo 224 del RALRTI fue sustituido por el artículo 14 del D.E. 876 (R.O. Suplemento
+401, 21-09-2023); su texto vigente (sección 2) ya no contiene ese inciso.
+
+-- Resolución NAC-DGERCGC23-00000004 (normas del RIMPE), artículo 6 --
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=6edfa44e-9f73-4ee2-8df4-5ae6b3a72b73&nombre=NAC-DGERCGC23-00000004.pdf
+SHA-256: e25ec70927e0fde8476b9941ea13353105624a84944c523cc1d557b77b9eab37
+Art. 6.- Comprobantes de venta y retención emitidos dentro del RIMPE.- [...]
+[Resto del inciso primero e incisos segundo y tercero omitidos.]
+Cuando los adquirentes de bienes y servicios a negocios populares – que no sean
+consumidores finales - tengan derecho a crédito tributario de IVA o deban sustentar
+el IVA generado en los casos previstos en el último inciso del artículo 63 de la Ley
+de Régimen Tributario Interno, podrán emitir una liquidación de compras de bienes
+y prestación de servicios, en la cual se liquide el impuesto considerando como base
+imponible el valor total del bien transferido o servicio prestado; y, realizar la
+retención del 100% de IVA generado. El valor así retenido deberá ser declarado y
+pagado en la declaración mensual que realice el sujeto pasivo.
+Las retenciones de IVA efectuadas conforme las disposiciones de este artículo no
+constituyen crédito tributario, ni son objeto de devolución para los sujetos del
+RIMPE catalogados como negocios populares, toda vez que para este segmento de
+contribuyentes aplica un régimen del Impuesto al Valor Agregado presuntivo, de
+conformidad con el segundo inciso del artículo 97.9 de la Ley de Régimen
+Tributario Interno.
+[...]
+Dictó y firmó electrónicamente la Resolución que antecede, el Economista
+Francisco Briones Rugel, Director General del Servicio de Rentas Internas, el
+15 de febrero de 2023.
+
+-- Resolución NAC-DGERCGC24-00000027 (normas del RIMPE vigentes según la página RIMPE del SRI) --
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=7c3fb8dc-31a6-4fe3-a6c0-abe1def2c78a&nombre=NAC-DGERCGC24-00000027.pdf
+SHA-256: abde1ca1b7de28110f68429f175bf561bdaf5718eaf3faf1f396d8ccf0d64d80
+ESTABLECER LAS NORMAS PARA LA APLICACIÓN DEL RÉGIMEN
+SIMPLIFICADO PARA EMPRENDEDORES Y NEGOCIOS POPULARES
+(RIMPE)
+[...]
+Artículo 6. Comprobantes de venta, documentos complementarios y
+retención emitidos dentro del RIMPE.- Los contribuyentes considerados como
+emprendedores dentro del RIMPE emitirán comprobantes de venta, retención y
+documentos complementarios, obligatoriamente en el esquema electrónico.
+Únicamente los contribuyentes considerados como negocios populares dentro del
+RIMPE están autorizados a emitir notas de venta preimpresas al amparo de la
+normativa vigente. Sin embargo, de ser su elección, podrán emitir comprobantes de
+venta, documentos complementarios y comprobantes de retención, en el esquema
+electrónico, de ser el caso.
+Los comprobantes de venta que se autoricen y emitan, tanto en el esquema físico
+como electrónico, deberán incluir la leyenda “Contribuyente RIMPE -
+Emprendedor” o “Contribuyente RIMPE Negocio Popular”, según corresponda.
+[...]
+DISPOSICIÓN DEROGATORIA
+Única.- Deróguese la Resolución NAC-DGERCGC23-00000004 publicada en el
+segundo suplemento del Registro Oficial 257, de 27 de febrero de 2023.
+DISPOSICIÓN FINAL.- La presente Resolución entrará en vigencia a partir de
+su publicación en el Registro Oficial.
+Publíquese y cúmplase.
+Dictó y firmó electrónicamente la Resolución que antecede, el Economista Damián
+Alberto Larco Guamán, Director General del Servicio de Rentas Internas, el 31 de
+julio de 2024.
+El texto de la NAC-DGERCGC24-00000027 no menciona la liquidación de compra.
+
+-- Resolución NAC-DGERCGC15-00000284 (porcentajes de IVA anteriores), derogada por la
+NAC-DGERCGC20-00000061 --
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/0c0af5e6-ccbc-42f5-9f99-66cf396d5f74/NAC-DGERCGC15-00000284+S.R.O.+473+06-04-2015.pdf
+SHA-256: 0e77698efe9fc3e29b0b9df5c6e3321cfe35d40a083834bc5d9479307e46ec64
+(Su artículo 4, literal c), numeral iii, tenía el mismo supuesto de liquidación de compra con 100% de
+IVA, "incluyendose en este caso al pago de cuotas de arrendamiento al exterior".)
+
+== 8. Emisión electrónica de la liquidación de compra ==
+
+-- Resolución NAC-DGERCGC18-00000233: normas para la emisión, entrega y transmisión de comprobantes
+electrónicos (dada en Quito el 22-05-2018; Segundo Suplemento del R.O. 255, 05-06-2018) --
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/32be159b-8d66-47ad-86da-4d674321da7a/NAC-DGERCGC18-00000233.pdf
+SHA-256: 03813b55c4c38d084975d3216c1b20d266a78b264ef52bcf53ff897c59e3ef2f
+El PDF es una imagen escaneada sin capa de texto: lo que sigue es una TRANSCRIPCIÓN VISUAL de las
+páginas 2, 4, 5 y 6, renderizadas con pdftoppm a 110 ppp (sin OCR). Es el texto original de 2018, sin
+sus reformas, que se transcriben a continuación.
+
+Art. 2.- Tipos de comprobantes electrónicos.- Los sujetos pasivos de tributos podrán emitir como
+comprobantes electrónicos, entre otros, los siguientes comprobantes de venta, retención y documentos
+complementarios:
+1. Facturas;
+2. Comprobantes de Retención;
+3. Guías de Remisión;
+4. Notas de Crédito;
+5. Notas de Débito; y,
+6. Liquidaciones de Compra de Bienes y Prestación de Servicios.
+El Servicio de Rentas Internas podrá incorporar, mediante resolución y en los términos previstos en el
+Reglamento de Comprobantes de Venta, Retención y Documentos Complementarios, otros comprobantes
+de venta en el esquema electrónico, mismos que se publicarán en la respectiva "Ficha Técnica".
+[...]
+Art. 6.- Entrega de comprobantes electrónicos.- Se entenderá entregado el comprobante electrónico,
+cuando el emisor cumpla con una de las siguientes alternativas:
+1. Haber enviado exitosamente los archivos XML y la representación impresa del documento
+electrónico (RIDE) del comprobante electrónico, al correo electrónico proporcionado por el adquirente,
+receptor, usuario o consumidor. Adicionalmente, los emisores podrán poner a disposición del adquirente,
+receptor, usuario o consumidor; el acceso a un portal web que le permita obtener los archivos XML y
+RIDE del correspondiente comprobante electrónico.
+2. Imprima y entregue el RIDE, únicamente en los siguiente casos:
+a. Cuando no sea posible cumplir con las alternativas de entrega anteriormente señaladas;
+b. Cuando no se identifique al adquirente, receptor, usuario, consumidor;
+c. Cuando el adquirente, receptor, usuario o consumidor lo requiera; o,
+d. Cuando se trate de Liquidaciones de Bienes y Prestación de Servicios, se deberá emitir dos
+ejemplares del RIDE que deberán ser firmados por el receptor, a quien se entregará un ejemplar,
+mientras que el otro será conservado obligatoriamente por el receptor.
+La impresión del RIDE tendrá igual validez tributaria que el comprobante electrónico al cual representa y
+su contenido podrá ser verificado con la información que reposa en la base de datos de la Administración
+Tributaria, a través de la consulta de comprobantes electrónicos disponible en el portal web institucional.
+[Inciso final omitido.]
+Art. 7.- Trasmisión.- Los sujetos pasivos que emitan comprobantes electrónicos deberán transmitirlos a
+la Administración Tributaria en el momento mismo de realizarse la transacción, utilizando para ello los
+enlaces "web services" dispuestos en la "Ficha Técnica". A través de este mecanismo se realizará el
+envío, recepción y validación de los comprobantes electrónicos entre el emisor y la Administración
+Tributaria.
+Solamente en caso de que los sujetos pasivos, por la naturaleza de su actividad económica, emitan
+comprobantes electrónicos masivamente, podrán enviarlos al Servicio de Rentas Internas de forma
+conjunta o agrupada en las condiciones señaladas en la "Ficha Técnica", dentro de un máximo de veinte y
+cuatro horas de haberse realizado la transacción o generación del comprobante electrónico.
+[Incisos tercero y cuarto omitidos: exportaciones y obligación de entrega.]
+[...]
+DISPOSICIONES GENERALES
+[Primera a tercera omitidas.]
+Cuarta.- Los obligados al uso del esquema de emisión electrónica de comprobantes de venta, retención y
+documentos complementarios, a partir de 01 mayo de 2019 emitirán únicamente comprobantes
+electrónicos en toda transacción, inclusive las realizadas a consumidor final.
+Quinta.- El Servicio de Rentas Internas pondrá a disposición de los sujetos pasivos, a partir de enero de
+2019 las especificaciones detalladas en los archivos "XML" y "XSD" de las Liquidaciones de Compras
+de Bienes y Prestación de Servicios, para el desarrollo dentro de sus sistemas de comprobantes
+electrónicos. Únicamente para este tipo de comprobantes el plazo de implementación será hasta el 31 de
+mayo de 2019.
+[Sexta omitida.]
+
+-- Reformas del artículo 7 de la NAC-DGERCGC18-00000233, en orden --
+(a) Resolución NAC-DGERCGC22-00000064:
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=a85eee51-d15f-4af8-8599-649517bd5170&nombre=NAC-DGERCGC22-00000064.pdf
+SHA-256: e81b0881c6164a4a3b0f28683703acc838232f0e66d42d0da4a8fc3eabbff754
+Artículo único. – Efectúense las siguientes modificaciones en la Resolución No.
+NACDGERCGC18-00000233, publicada en el Segundo Suplemento del Registro
+Oficial No. 255 de 5 de junio del 2018, y sus reformas:
+1. Sustitúyase el primer inciso del artículo 7 por el siguiente:
+“Art. 7.- Transmisión. - Los sujetos pasivos que emitan comprobantes
+electrónicos deberán transmitirlos a la Administración Tributaria en el momento
+mismo de realizarse la generación del comprobante electrónico, o hasta dentro de
+un máximo de setenta y dos horas de haberse generado el mismo, utilizando para
+ello los enlaces "web services" dispuestos en la "Ficha Técnica de Comprobantes
+Electrónicos". A través de este mecanismo se realizará el envío, recepción y
+validación de los comprobantes electrónicos entre el emisor y la Administración
+Tributaria.”
+2. Elimínese el segundo inciso del artículo 7.
+[Numeral 3 omitido.]
+DISPOSICIÓN FINAL. - La presente Resolución entrará en vigencia a partir de su
+publicación en el Registro Oficial.
+Dictó y firmó la Resolución que antecede, el Economista Francisco Briones Rugel,
+Director General del Servicio de Rentas Internas, el 29 de diciembre de 2022.
+(b) Resolución NAC-DGERCGC24-00000035:
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=cc5462d4-45df-494e-97f4-00aa3eda851b&nombre=NAC-DGERCGC24-00000035.pdf
+SHA-256: 348819580eff9d32425f992be9187a70d9c46f6bfb18edcf56b65e9ef6a99ba7
+REFORMAR LA RESOLUCIÓN NAC-DGERCGC18- 00000233, REGULAR EL
+PLAZO PARA LA TRANSMISIÓN DE COMPROBANTES DE VENTA
+ELÉCTRÓNICOS Y AMPLIAR TEMPORALMENTE EL PORCENTAJE DE
+EMISIÓN DE COMPROBANTES DE VENTA EN LA MODALIDAD FÍSICA
+Art. Único. - Sustituyese el primer inciso del artículo 7 en la Resolución Nro. NAC-
+DGERCGC18- 00000233, publicada en el segundo suplemento del Registro Oficial 255,
+de 5 de junio del 2018, y sus reformas, por el siguiente:
+“Art. 7.- Trasmisión. - Los sujetos pasivos que emitan comprobantes electrónicos
+deberán transmitirlos a la Administración Tributaria en el momento mismo de
+realizarse la generación del comprobante electrónico, o hasta dentro de un
+máximo de cuatro días hábiles de haberse generado el mismo, utilizando para ello
+los enlaces "web services" dispuestos en la "Ficha Técnica de Comprobantes
+Electrónicos.”
+[...]
+Dictó y firmó la Resolución que antecede, el economista Damián Alberto Larco Guamán,
+Director General del Servicio de Rentas Internas, en Quito, D.M., el 30 de octubre de 2024.
+(c) Resolución NAC-DGERCGC25-00000014 (normas de anulación de comprobantes electrónicos):
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=137046a6-787c-47fb-a2d7-176595d292dc&nombre=NAC-DGERCGC25-00000014.pdf
+SHA-256: 9595047b1b0f97c1d1af77b105b37d9897e6803ace089f7b554b71b5026cefb7
+DISPOSICIONES REFORMATORIAS
+PRIMERA. - En la Resolución NAC-DGERCGC18-00000233, publicada en el
+segundo suplemento del Registro Oficial 255, de 05 de junio de 2018, y sus
+reformas, se realizan las siguientes modificaciones:
+1. Al final del artículo 5, agrégase el siguiente inciso:
+“Los emisores de comprobantes electrónicos deberán informar a los
+receptores de dichos comprobantes cualquier modificación que se realice al
+estado del comprobante electrónico.”
+2. En el primer inciso del artículo 7, elimínase la siguiente frase: “o hasta dentro
+de un máximo de cuatro días hábiles de haberse generado el mismo,”
+[Disposición reformatoria segunda omitida.]
+DISPOSICIÓN FINAL
+La presente Resolución entrará en vigor a partir de su publicación en el Registro
+Oficial y será aplicable desde el 01 de agosto de 2025.
+Dictó y firmó electrónicamente la Resolución que antecede, el economista Damián
+Alberto Larco Guamán, Director General del Servicio de Rentas Internas, en Quito,
+D.M., el 27 de junio de 2025.
+Resultado: desde el 01-08-2025 el primer inciso del artículo 7 queda "Los sujetos pasivos que emitan
+comprobantes electrónicos deberán transmitirlos a la Administración Tributaria en el momento mismo de
+realizarse la generación del comprobante electrónico, utilizando para ello los enlaces "web services"
+dispuestos en la "Ficha Técnica de Comprobantes Electrónicos." (composición de (b) y (c); el SRI no
+publica una edición consolidada de la NAC-DGERCGC18-00000233).
+La misma NAC-DGERCGC25-00000014, artículo 4, primera frase: "Los comprobantes de retención, notas de
+crédito y notas de débito requieren de la aceptación del receptor para proceder con su anulación;"
+(la liquidación de compra no está en esa lista).
+
+-- Resolución NAC-DGERCGC22-00000024 (Segundo Suplemento del R.O. 80, 09-06-2022): obligatoriedad
+general de la emisión electrónica --
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=c508d69a-4ea4-4940-8777-fbe89fef2fac&nombre=NAC-DGERCGC22-00000024.pdf
+SHA-256: 3947fae55a1558a3db42ed4b9107689743cd3c8f9d04979a7efc179d0517a340
+ESTABLECER DISPOSICIONES EN TORNO A LA EMISIÓN DE COMPROBANTES DE
+VENTA, RETENCIÓN Y DOCUMENTOS COMPLEMENTARIOS, DE MANERA
+ELECTRÓNICA, ASÍ COMO RESPECTO DE LA OBLIGATORIEDAD DE EMISIÓN DE
+LOS COMPROBANTES DE RETENCIÓN ELECTRÓNICOS EN LA “VERSIÓN ATS”
+Artículo 1. Los sujetos pasivos del Impuesto a la Renta obligados a facturar que, a la fecha de entrada
+en vigencia de la presente Resolución, todavía no se encuentren obligados a emitir comprobantes de venta,
+retención y documentos complementarios en la modalidad electrónica, deberán incorporar este tipo de
+esquema a su actividad hasta el 29 de noviembre de 2022, de conformidad con lo establecido en la
+Disposición Transitoria Cuarta de la Ley Orgánica para el Desarrollo Económico y Sostenibilidad Fiscal
+tras la Pandemia COVID-19.
+Artículo 2. Las personas naturales y sociedades que no sean considerados sujetos pasivos del Impuesto
+a la Renta pero que: i) se encuentren obligados a facturar, y ii) que a la fecha de entrada en vigencia de
+la presente Resolución, todavía no se encuentren obligados a emitir comprobantes de venta, retención y
+documentos complementarios en la modalidad electrónica, en aplicación de las respectivas resoluciones
+emitidas por el Servicio de Rentas Internas, también deberán incorporar este tipo de esquema a su
+actividad hasta el 29 de noviembre de 2022.
+[Artículo 3 y disposiciones generales primera y segunda omitidos.]
+TERCERA. - A partir del 30 de noviembre de 2022, los sujetos pasivos obligados a emitir comprobantes
+de venta, retención y documentos complementarios en la modalidad electrónica, únicamente podrán
+solicitar autorizaciones de documentos preimpresos cuando hayan obtenido la autorización para emisión
+de comprobantes electrónicos en ambiente de producción. El uso de documentos preimpresos será, no
+obstante, de carácter excepcional, ante casos de fuerza mayor o caso fortuito, que impidan la emisión de
+los referidos documentos de manera electrónica.
+[Inciso segundo omitido.]
+CUARTA. - Para efectos de la aplicación de la presente Resolución, entiéndase como sujetos obligados
+a facturar a todos los contribuyentes inscritos en el Registro Único de Contribuyentes (RUC), y que deban
+emitir y entregar comprobantes de venta, retención y documentos complementarios, según la normativa
+tributaria vigente.
+[...]
+DISPOSICIONES REFORMATORIAS
+PRIMERA. – En la Resolución Nro. NAC-DGERCGC18-00000233, publicada en el Segundo
+Suplemento del Registro Oficial Nro. 255 de 05 de junio de 2018, y sus reformas, realícense las siguientes
+modificaciones:
+1.- Sustitúyase el artículo 8 por el siguiente:
+“Artículo 8. Casos excepcionales. – Cuando por motivos de fuerza mayor o caso fortuito, los
+contribuyentes autorizados a emitir comprobantes bajo la modalidad electrónica no puedan
+generar un comprobante en dicha modalidad, podrán emitir un comprobante de venta, retención
+o documento complementario bajo el esquema preimpreso, conforme a los requisitos
+establecidos en el Reglamento de Comprobantes de Venta, Retención y Documentos
+Complementarios. No obstante, los comprobantes emitidos bajo la modalidad preimpresa no
+podrán exceder el 1% del total de comprobantes emitidos en el ejercicio fiscal anual anterior.”
+[Resto omitido.]
+
+-- Circular NAC-DGECCGC22-00000003 (Segundo Suplemento del R.O. 157, 27-09-2022) --
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=43dfea76-a457-4e1a-83d6-26a054412975&nombre=NAC-DGECCGC22-00000003.pdf
+SHA-256: f692b8c474e2e6e9d46bec4eaa5dfff698a0841e9100bda488a2bd0bc2f2e438
+3. Aquellas autorizaciones de comprobantes de venta, retención y documentos
+complementarios preimpresos concedidas a partir del 09 de junio de 2022
+tendrán vigencia únicamente hasta el 29 de noviembre de 2022, siempre
+que el sujeto pasivo no hubiere obtenido previamente la autorización para
+emisión de comprobantes electrónicos. Por lo tanto, a partir del 30 de
+noviembre de 2022 estos comprobantes preimpresos no sustentarán costos y
+gastos, crédito tributario, ni tendrán validez tributaria, independientemente de
+la fecha de caducidad que se indique en el comprobante.
+[Numeral 4 omitido.]
+5. Los documentos preimpresos serán utilizados excepcionalmente en casos de
+fuerza mayor o caso fortuito que impidan la emisión de los referidos
+documentos de manera electrónica. No obstante, los comprobantes emitidos
+bajo la modalidad preimpresa no podrán exceder el 1% del total de
+comprobantes emitidos en el ejercicio fiscal anual anterior. El
+incumplimiento de lo señalado anteriormente constituye el cometimiento de una
+infracción tributaria susceptible de las sanciones que contempla el
+ordenamiento tributario vigente.
+[...]
+Dictó y firmó electrónicamente la Circular que antecede, el economista Francisco
+Briones Rugel, Director General del Servicio de Rentas Internas, el 26 de
+septiembre de 2022.
+
+-- Guía oficial "Preguntas frecuentes de facturación electrónica" (PDF de 12 páginas, creado el
+13-06-2023) --
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/cef82829-f261-4374-a45c-96adb2c3ace8/Preguntas+frecuentes+facturaci%F3n+electr%F3nica.pdf
+SHA-256: 8ac2d7771c8ee2bba8aea18983a7d3c27ff5716b39786f32f61b974e83e527b2
+2. ¿Qué documentos se puede emitir electrónicamente?
+• Factura.
+• Liquidación de compra de bienes y prestación de servicios.
+• Comprobantes de retención.
+• Notas de crédito.
+• Notas de débito.
+• Guías de remisión.
+[...]
+15. ¿En qué casos se entrega el RIDE?
+1. Cuando no sea posible cumplir con la entrega del comprobante de venta a través
+del correo electrónico del adquirente, receptor, usuario o consumidor.
+2. Cuando no se identifique al adquirente, receptor, usuario o consumidor;
+3. Cuando el adquirente, receptor, usuario o consumidor lo requiera; o
+4. Cuando se trate de liquidaciones de bienes y prestación de servicios.
+[...]
+28. ¿Qué comprobantes electrónicos no requieren la confirmación del receptor
+para anulación en el sistema de comprobantes electrónicos?
+a. Facturas.
+b. Liquidación de compra de bienes y prestación de servicios
+c. Guías de remisión.
+
+-- Páginas web del SRI (consultadas el 2026-10-07; texto tomado del HTML descargado) --
+https://www.sri.gob.ec/en/rimpe (SHA-256 del HTML: 1605950598dfa23b8b181b091c926d7ce26f0091d6bfc6a722a926ce6a57b814):
+"Comprobantes de venta | Los contribuyentes sujetos al régimen RIMPE deberán emitir bajo el esquema de
+comprobantes electrónicos las facturas, documentos complementarios, liquidaciones de compra de bienes y
+prestación de servicios, así como comprobantes de retención en los casos que proceda."
+https://www.sri.gob.ec/en/facturacion-electronica (SHA-256 del HTML: 8e07ef73fda4dcbc90f3b39f74cfbd8720c95f810f2d3c90beadf2905fe84642):
+"Documentos que pueden emitirse electrónicamente | Facturas | Liquidaciones de compras de bienes y
+prestación de servicios | Notas de crédito [...]"; "Esquemas XSD Y XML Tipo de documento Liquidación –
+Versión 1.0.0 – 1.1.0 | / Actualizado a Febrero 2022"; "Resolución No. NAC-DGERCGC22-00000042
+publicada en el Segundo Suplemento del Registro Oficial No. 157 el 27 de septiembre de 2022 | Expídanse
+las normas que regulan la emisión de liquidaciones de compra de bienes y prestación de servicios por
+parte de las entidades del Sector Público en la contratación de servicios de carácter excepcional."
+(El hash de una página web cambia con cada carga; se registra solo como referencia de la consulta.)
+
+-- Ficha técnica v2.34 (ya preservada en el repositorio) --
+SHA-256 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9 (coincide con el repositorio).
+Tabla 6, nota: "En el caso de emisión de liquidaciones de compra de bienes y prestación de servicios no
+se encuentra habilitado el uso del tipo de identificación venta a consumidor final". Anexo 17
+(liquidación 1.1.0): <tipoIdentificacionProveedor> "Opcional conforme tabla 6 de la Ficha Técnica
+Offline"; <identificacionProveedor> "Obligatorio", "Alfanumérico", "Max 20"; campos de reembolso
+obligatorios "si <codDocReembolso> es igual a 41". El comprobante de retención 2.0.0 toma
+<codDocSustento> "conforme tabla 4 del Catálogo ATS", donde el código 03 es la liquidación de compra.
+
+Observaciones (2026-10-07):
+- Retención: la LRTI (art. 70) y el RALRTI (arts. 146, 146.1, 147 num. 2 lit. a, 92 num. 2 lit. l) hacen
+  agente de retención a quien emite la liquidación, aunque no esté calificado como tal, solo por las
+  operaciones que esta sustenta. El IVA se retiene al 100% (NAC-DGERCGC20-00000061, art. 4 lit. c
+  num. iii, y art. 8 para la importación de servicios). La renta tiene porcentajes por concepto:
+  3% en la liquidación del literal c) (NAC-DGERCGC26-00000009, num. 5 lit. f), 0% para personas privadas
+  de libertad en programas de reinserción (num. 1 lit. b), tarifa general de sociedades para servicios
+  ocasionales de no residentes (art. 4; RALRTI art. 52). En el resto, el porcentaje del concepto o el
+  3% residual (art. 3). El literal d) del artículo 13 del Reglamento excluye toda retención.
+- Momento: la retención se hace al pagar o acreditar en cuenta, lo que ocurra primero (LRTI art. 50;
+  RALRTI arts. 95 y 148; resoluciones 20-00000061 art. 16 y 26-00000009 art. 8). El comprobante de
+  retención se entrega o extiende dentro de cinco días de recibido el comprobante de venta (LRTI art.
+  50, "término"; RALRTI art. 97, "plazo máximo"). El Reglamento de Comprobantes, art. 8, dice "cinco
+  días hábiles". Ninguna norma fija un plazo distinto cuando el comprobante de venta es una
+  liquidación emitida por el propio agente.
+- El comprobante de retención es un documento distinto (RALRTI art. 148: "un comprobante de retención
+  por cada comprobante de venta"; NAC-DGERCGC20-00000061 art. 17). No se encontró una regla que permita
+  que la propia liquidación sustituya al comprobante de retención. La única excepción hallada en la otra
+  dirección es la NAC-DGERCGC24-00000029: un comprobante de retención sin liquidación de compra
+  (premios de pronósticos deportivos).
+- Emisión electrónica: la liquidación es comprobante electrónico desde la NAC-DGERCGC18-00000233
+  (implementación hasta el 31-05-2019). La NAC-DGERCGC22-00000024 obliga a todos los sujetos obligados a
+  facturar a emitir en el esquema electrónico desde el 29-11-2022, con el preimpreso solo como excepción
+  (máximo 1%). Para la liquidación, la entrega exige dos RIDE firmados por el receptor (art. 6, num. 2,
+  lit. d, texto original de 2018). No se encontró una reforma posterior de ese literal.
+- Historia que no debe tomarse como vigente: la liquidación "a negocios populares" (D.E. 586 art. 17 en
+  el RALRTI art. 224; NAC-DGERCGC23-00000004 art. 6) ya no está en el texto vigente. Hoy la LRTI art.
+  97.9 grava con tarifa 0% de IVA las ventas de los negocios populares.

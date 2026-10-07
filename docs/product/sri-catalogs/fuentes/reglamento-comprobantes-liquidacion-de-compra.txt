@@ -1,0 +1,491 @@
+Extracto literal de los artículos 1, 8, 9, 10, 13, 17, 18, 22, 40 y 41 y de las disposiciones
+generales sexta, décima y undécima del Reglamento de Comprobantes de Venta, Retención y Documentos
+Complementarios, para la trazabilidad de la liquidación de compra de bienes y prestación de servicios
+(codDoc 03) (readiness de add-purchase-settlements, 2026-10-07; Q-12).
+
+Fuente A (texto vigente que se transcribe): SRI, Dirección Nacional Jurídica, Departamento de
+Normativa y Consultas. "REGLAMENTO DE COMPROBANTES DE VENTA, RETENCIÓN Y DOCUMENTOS COMPLEMENTARIOS
+(Decreto No. 430). Publicado en: Registro Oficial No. 247 de 30 de julio de 2010. Última
+modificación: Segundo Suplemento del Registro Oficial 467 de 29 de diciembre de 2023" (36 páginas;
+fuentes de la edición: decretos 430, 1063, 1414, 539, 580, 1064, 1073, 1287, 1114, 304, 586 y 99).
+URL oficial: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/9fb49475-f058-49a1-b08a-f31bf4deb074/Reglamento_Comprobantes_Venta_RetencionYDC_29122023.pdf
+SHA-256 del PDF descargado el 2026-10-07: 7828297fd49bda62e3edde8c4c8e56231348f5b1390018c885911a907e0b2334
+
+Fuente B (texto de los extractos anteriores del repositorio, con "ULTIMA REFORMA: Decreto 580,
+Registro Oficial 448, 28-Febrero-2015. Estado: Vigente"):
+URL oficial: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/c3a2c922-5960-4c08-9a73-bde19fadce42/REGLAMENTO+DE+COMPROBANTES+DE+VENTA,+RETENCI%D3N+Y+DOCUMENTOS+COMPLEMENTARIOS.pdf
+SHA-256 del PDF descargado el 2026-10-07: a7d27c905f6054dfd77dd2da7ee3362c547d625b5b734e789e222ce286dc1997
+(coincide con el esperado y con reglamento-comprobantes-arts-15-16.txt, -arts-3-8-40.txt y
+-arts-27-38.txt). Ese PDF no recoge las reformas de los decretos 1064, 1073, 1287, 1114, 304, 586 y 99.
+
+Verificación de la reforma del artículo 13 contra el texto del decreto: "DECRETO No. 586 (REFORMAS A
+VARIOS CUERPOS NORMATIVOS EN MATERIA DE POLÍTICA COMERCIAL, INVERSIONES Y FISCAL PARA EL DESARROLLO
+ECONÓMICO)", Tercer Suplemento del Registro Oficial No. 186, 10 de noviembre de 2022, Título IV,
+artículo 30. El PDF lo aloja el SRI, pero su pie de página es de edicioneslegales.com.ec.
+URL: https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/83ca6811-3f17-4c02-b8b2-a2b03987437d/DECRETO%20No.%20586.pdf
+SHA-256 del PDF descargado el 2026-10-07: 88bc16e50e33cfebdf8591fe8d632be1cc063c377146c146e3bd5242a70d20eb
+El artículo 30, literal e, sustituye el último inciso del artículo 13 (RUC "en estado ACTIVO"); la
+edición consolidada del SRI no anota esa reforma junto al inciso, pero su texto coincide.
+
+Otras ediciones consolidadas del SRI revisadas (más antiguas que la fuente A, no se transcriben):
+- "Incluye reformas hasta el 04 de Agosto de 2020":
+  https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/1553b654-93dc-4545-ab0c-d2500eb3478b/Reglamento%20de%20Comprobantes-%C3%BAltima%20modificaci%C3%B3n%2004%20de%20agosto%20de%202020.pdf
+  SHA-256: b390ba5a3b8206c86a51f2a5c74aebb3a9311f3fd920a892e75fb7fd8cd71541 (su artículo 13 es igual
+  al de la fuente B).
+- Edición de 2015 (38 páginas), servida igual en dos URL:
+  https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f3650927-c9e2-4985-a138-2b9ca3194c06/REGLAMENTO+DE+COMPROBANTES+DE+VENTA+RETENCI%D3N+Y+DOCUMENTOS+COMPLEMENTARIOS.pdf
+  https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/b534cc74-4180-4e5e-a405-6da5f4120f2a/Reglamento_de_Comprobantes_de_Venta.pdf
+  SHA-256: 1fddaa27a60e76c748832e8c5e7d163d82af26edfd428e0959625ffe156b2dbf
+- Edición informativa de 2014 (fuentes hasta el R.O. 877 de 2013):
+  https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/142f0d6e-b156-4ac6-b804-0bd4938bc7b8/Reglamento+de+Comprobantes+de+Venta,+Retenci%F3n+y+Documentos+Complementarios.pdf
+  SHA-256: 1e5b2784e0c1de0073447e1fbac76c13905570427b45b2e4f2a1229bb73bc865
+No se encontró en sri.gob.ec una edición posterior a la del 29-12-2023 (búsquedas del 2026-10-07).
+
+Extraído con pdftotext -layout; solo se quitan los encabezados y números de página, las sangrías y
+las líneas vacías, y se juntan los espacios repetidos. Las notas de reforma entre paréntesis son del
+texto del SRI.
+
+== Texto vigente (fuente A) ==
+
+Capítulo I
+DE LOS COMPROBANTES DE VENTA, RETENCIÓN Y DOCUMENTOS COMPLEMENTARIOS
+Art. 1.-Comprobantes de venta.- Son comprobantes de venta los siguientes documentos
+que acreditan la transferencia de bienes o la prestación de servicios o la realización de otras
+transacciones gravadas con tributos:
+a) Facturas;
+b) (Sustituido por el Art. 82 del D.E. 304, R.O. 608-2S, 30-XII-2021).- Notas de venta -
+RIMPE;
+c) Liquidaciones de compra de bienes y prestación de servicios;
+d) Tiquetes emitidos por máquinas registradoras;
+e) Boletos o entradas a espectáculos públicos; y,
+f) Otros documentos autorizados en el presente reglamento.
+Art. 8.- Obligación de emisión de comprobantes de venta y comprobantes de retención.-
+(Reformado por el Art. 83 del D.E. 304, R.O. 608-2S, 30-XII-2021).- Están obligados a
+emitir y entregar comprobantes de venta todos los sujetos pasivos de impuestos, a pesar de
+que el adquirente no los solicite o exprese que no los requiere.
+Dicha obligación nace con ocasión de la transferencia de bienes, aún cuando se realicen a
+título gratuito, autoconsumo o de la prestación de servicios de cualquier naturaleza, incluso
+si las operaciones se encuentren gravadas con tarifa cero (0%) del impuesto al valor agregado.
+La emisión de estos documentos será efectuada únicamente por transacciones propias del
+sujeto pasivo autorizado.
+El Servicio de Rentas Internas, mediante resolución, establecerá el monto sobre el cual las
+personas naturales no obligadas a llevar contabilidad y aquellas consideradas como negocios
+populares incluidas en el Régimen RIMPE, deberán emitir comprobantes de venta.
+De igual manera, se establecerá la periodicidad de la emisión de un comprobante de venta
+resumen por las transacciones efectuadas correspondientes a valores inferiores a los
+establecidos en la mencionada resolución.
+No obstante lo señalado en el inciso anterior, a petición del adquirente del bien o servicio, se
+deberá emitir y entregar comprobantes de venta, por cualquier monto.
+En las transferencias de combustibles líquidos derivados de hidrocarburos y gas licuado de
+petróleo se deberá emitir comprobantes de venta por cualquier valor.
+Los sujetos pasivos considerados como negocios populares incluidos en el Régimen RIMPE
+deberán sujetarse a las normas particulares de dicho régimen.
+Las sociedades y las personas naturales obligadas a llevar contabilidad deberán emitir
+comprobantes de venta de manera obligatoria en todas las transacciones que realicen,
+independientemente del monto de las mismas.
+En los casos en que se efectúen transacciones al exterior gravadas con Impuesto a la Salida
+de Divisas, el agente de percepción emitirá el comprobante de venta por el servicio prestado
+en el que además de los requisitos establecidos en este reglamento se deberá detallar el valor
+transferido y el monto del Impuesto a la Salida de Divisas percibido.
+Los trabajadores en relación de dependencia no están obligados a emitir comprobantes de
+venta por sus remuneraciones.
+Los agentes de retención en forma obligatoria emitirán el comprobante de retención en el
+momento que se realice el pago o se acredite en cuenta, lo que ocurra primero y estará
+disponible para la entrega al proveedor dentro de los cinco días hábiles siguientes al de
+presentación del comprobante de venta.
+Sin perjuicio de lo dispuesto en el inciso anterior, las instituciones del sistema financiero
+nacional, podrán emitir un solo comprobante de retención a sus clientes y proveedores,
+individualmente considerados, cuando realicen más de una transacción por mes. El
+comprobante de retención así emitido deberá estar disponible para la entrega dentro de los
+cinco primeros días del mes siguiente.
+Los agentes de retención del impuesto a la salida de divisas, cuando realicen la transferencia
+de valores gravados con el impuesto, emitirán el respectivo comprobante de retención al
+momento en que se realice la retención del impuesto, de conformidad a lo dispuesto en la
+Ley Reformatoria para la Equidad Tributaria del Ecuador y en su reglamento de aplicación.
+Los comprobantes de retención deberán estar a disposición de los contribuyentes del
+impuesto a la salida de divisas, dentro de los dos días hábiles siguientes a la fecha de
+retención.
+Art. 9.- Sustento del crédito tributario.- Para ejercer el derecho al crédito tributario del
+impuesto al valor agregado por parte del adquirente de los bienes o servicios, se considerarán
+válidas las facturas, liquidaciones de compras de bienes y prestación de servicios y los
+documentos detallados en el Art. 4 de este reglamento, siempre que se identifique al
+comprador mediante su número de RUC, nombre o razón social, denominación o nombres y
+apellidos, se haga constar por separado el impuesto al valor agregado y se cumplan con los
+demás requisitos establecidos en este reglamento.
+Art. 10.- Sustento de costos y gastos.- Para sustentar costos y gastos del adquirente de
+bienes o servicios, a efectos de la determinación y liquidación del impuesto a la renta, se
+considerarán como comprobantes válidos los determinados en este reglamento, siempre que
+cumplan con los requisitos establecidos en el mismo y permitan una identificación precisa
+del adquirente o beneficiario.
+También sustentarán gastos, para efectos de la determinación y liquidación del impuesto a la
+renta, los documentos que se emitan por el pago de cuotas o aportes que realice el
+contribuyente a condominios, siempre que en los mismos esté plenamente identificado el
+condominio, número de RUC y dirección, y se identifique también a quien realiza el pago,
+con su nombre, razón social o denominación, número de RUC o cédula de identificación y
+dirección.
+Estos comprobantes deberán también ser pre impresos y pre numerados.
+Capítulo II
+DE LA EMISIÓN Y ENTREGA DE COMPROBANTES DE VENTA, NOTAS DE CRÉDITO Y NOTAS DE DÉBITO
+[Artículos 11 y 12 omitidos: facturas y notas de venta.]
+Art. 13.- Liquidaciones de compras de bienes y prestación de servicios.- Las
+liquidaciones de compras de bienes y prestación de servicios se emitirán y entregarán por los
+sujetos pasivos, en las siguientes adquisiciones:
+a) De servicios prestados en el Ecuador o en el exterior por personas naturales no residentes
+en el país, en los términos de la Ley de Régimen Tributario Interno, las que serán
+identificadas con sus nombres, apellidos y número de documento de identidad;
+b) De servicios prestados en el Ecuador o en el exterior por sociedades extranjeras que no
+posean domicilio ni establecimiento permanente en el país, las que serán identificadas con su
+nombre o razón social;
+c) (Sustituido por el Art. 30 lit. a del D.E. 586, R.O. 186-3S, 10-XI-2022).- De bienes
+muebles y de servicios a personas naturales no obligadas a llevar contabilidad que no se
+encuentren inscritos en el Registro Único de Contribuyentes (RUC) o mantengan su RUC en
+estado Suspendido; y, que por su nivel cultural o rusticidad no se encuentren en posibilidad
+de emitir comprobantes de venta;
+d) (Reformado por el Art. 30 lit. b del D.E. 586, R.O. 186-3S, 10-XI-2022).- De bienes
+muebles y servicios realizadas para el sujeto pasivo por uno de sus empleados en relación de
+dependencia, con comprobantes de venta a nombre del empleado. En este caso la liquidación
+se emitirá a nombre del empleado, sin que estos valores constituyan ingresos gravados para
+el mismo ni se realicen retenciones del impuesto a la renta ni de IVA;
+e) (Reformado por el Art. 30 lit. c del D.E. 586, R.O. 186-3S, 10-XI-2022).- De servicios
+prestados por quienes han sido elegidos como miembros de cuerpos colegiados de elección
+popular en entidades del sector público, exclusivamente en ejercicio de su función pública
+en el respectivo cuerpo colegiado y que no posean Registro Único de Contribuyentes (RUC)
+activo; y,
+f) (Agregado por el Art. 30 lit. d del D.E. 586, R.O. 186-3S, 10-XI-2022).- Otros casos que
+sean establecidos mediante resolución por el Servicio de Rentas Internas.
+Con excepción de lo previsto en la letra d) del presente artículo, para que la liquidación de
+compras de bienes y prestación de servicios, den lugar al crédito tributario y sustente costos
+y gastos, deberá efectuarse la retención de la totalidad del impuesto al valor agregado y el
+porcentaje respectivo del impuesto a la renta, declararse y pagarse dichos valores, en la forma
+y plazos establecidos en el Reglamento para la Aplicación de la Ley de Régimen Tributario
+Interno.
+Las personas naturales y las sucesiones indivisas no obligadas a llevar contabilidad, deberán
+actuar como agentes de retención en los términos establecidos en el inciso anterior, cuando
+emitan liquidaciones de compras de bienes y prestación de servicios.
+El Director General del Servicio de Rentas Internas, mediante resolución, podrá establecer
+límites a la emisión de liquidaciones de compra de bienes y prestación de servicios a las que
+hace referencia este artículo, tales como montos máximos por transacción y por proveedor,
+tipos de bienes y servicios, número de transacciones por período, entre otros.
+Las liquidaciones de compra emitidas a contribuyentes con Registro Único de
+Contribuyentes (RUC) en estado ACTIVO a la fecha de la transacción, no servirán para
+sustentar crédito tributario de IVA, ni costos y/o gastos deducibles para efectos de impuesto
+a la renta.
+[Artículos 14 a 16 omitidos: tiquetes y boletos, notas de crédito y notas de débito.]
+Art. 17.- Oportunidad de entrega de los comprobantes de venta y documentos
+autorizados.- (Reformado por el Art. 104 del D.E. 1114, R.O. 260-2S, 4-VIII-2020).- Los
+comprobantes de venta y los documentos autorizados, referidos en este reglamento, deberán
+ser entregados en las siguientes oportunidades:
+a) De manera general, los comprobantes de venta serán emitidos y entregados en el momento
+en el que se efectúe el acto o se celebre el contrato que tenga por objeto la transferencia de
+dominio de los bienes o la prestación de los servicios;
+b) En el caso de transferencia de bienes pactada por medios electrónicos, teléfono, telefax u
+otros medios similares, en que el pago se efectúe mediante tarjeta de crédito, débito, abono
+en cuenta o pago contra entrega, el comprobante de venta será entregado conjuntamente con
+el bien o a través de mensajes de datos, según corresponda;
+c) En el caso de pago de servicios a través de convenios de débito en cuentas corrientes,
+cuentas de ahorros o tarjetas de crédito, los comprobantes de venta emitidos por el prestador
+del servicio deberán ser obligatoriamente entregados al cliente por cualquier medio, pudiendo
+serlo conjuntamente con su estado de cuenta;
+d) Cuando el giro del negocio sea la transferencia de bienes inmuebles, el comprobante de
+venta se entregará en la fecha en que se perciba el ingreso o en la que se celebre la escritura
+pública, lo que ocurra primero;
+e) En el caso de los contratos de acuerdo con los cuales se realice la transferencia de bienes
+o la prestación de servicios por etapas, avance de obras o trabajos y, en general, aquellos que
+adopten la forma de tracto sucesivo, el comprobante de venta se entregará al cumplirse las
+condiciones para cada período, fase o etapa; y,
+f) En el caso de servicios prestados de manera continua, de telecomunicaciones, agua potable,
+alcantarillado, aseo de calles, recolección de basura, energía eléctrica, financieros y otros de
+naturaleza semejante, que mediante resolución de carácter general establezca el Servicio de
+Rentas Internas, el comprobante de venta deberá ser generado por el prestador del servicio
+en sus sistemas computarizados, emitido y entregado al adquirente o usuario cuando este lo
+requiera.
+Aquellos sujetos pasivos autorizados para emitir comprobantes de venta en los que no se
+requiera identificar al adquirente, deberán contar con comprobantes de venta en los que se lo
+pueda identificar, para el caso en el que este lo solicite con su identificación.
+El Servicio de Rentas Internas, mediante resolución de carácter general, podrá establecer
+plazos diferentes a los indicados en el presente reglamento para la emisión y entrega de
+comprobantes de venta, retención y documentos complementarios.
+Capítulo III
+DE LOS REQUISITOS Y CARACTERÍSTICAS DE LOS COMPROBANTES DE VENTA, NOTAS DE CRÉDITO Y NOTAS DE DEBITO
+Art. 18.- Requisitos pre impresos para las facturas, notas de venta, liquidaciones de
+compras de bienes y prestación de servicios, notas de crédito y notas de débito.- Estos
+documentos deberán contener los siguientes requisitos pre impresos:
+1. Número, día, mes y año de la autorización de impresión del documento, otorgado por el
+Servicio de Rentas Internas.
+2. Número del registro único de contribuyentes del emisor.
+3. Apellidos y nombres, denominación o razón social del emisor, en forma completa o
+abreviada conforme conste en el RUC. Adicionalmente podrá incluirse el nombre comercial
+o de fantasía, si lo hubiere.
+4. Denominación del documento.
+5. Numeración de quince dígitos, que se distribuirá de la siguiente manera:
+a) Los tres primeros dígitos corresponden al número del establecimiento conforme consta en
+el registro único de contribuyentes;
+b) Separados por un guión (-), los siguientes tres dígitos corresponden al código asignado por
+el contribuyente a cada punto de emisión dentro de un mismo establecimiento; y,
+c) Separado también por un guión (-), constará el número secuencial de nueve dígitos.
+Podrán omitirse la impresión de los ceros a la izquierda del número secuencial, pero deberán
+completarse los nueve dígitos antes de iniciar la nueva numeración.
+6. Dirección de la matriz y del establecimiento emisor cuando corresponda.
+7. Fecha de caducidad del documento, expresada en día, mes y año, según la autorización del
+Servicio de Rentas Internas.
+8. Número del registro único de contribuyentes, nombres y apellidos, denominación o razón
+social y número de autorización otorgado por el Servicio de Rentas Internas, del
+establecimiento gráfico que realizó la impresión.
+9. Los destinatarios de los ejemplares. El original del documento se entregará al adquirente,
+debiendo constar la indicación “ADQUIRENTE”, “COMPRADOR”, “USUARIO” o
+cualquier leyenda que haga referencia al adquirente. Una copia la conservará el emisor o
+vendedor, debiendo constar la identificación “EMISOR”, “VENDEDOR” o cualquier
+leyenda que haga referencia al emisor. Se permitirá consignar en todos los ejemplares de los
+comprobantes de venta la leyenda: original-adquirente/copia-emisor, siempre y cuando el
+original se diferencie claramente de la copia.
+Tratándose de facturas que, de conformidad con el Código de Comercio, sean de aquellas
+consideradas como “facturas comerciales negociables”, se emitirán junto con el original, una
+primera y una segunda copia, debiendo constar en el original y en la segunda copia la leyenda
+“no negociable”, toda vez que la primera copia será la única transferible. El original será
+entregado al adquirente y la segunda copia será conservada por el emisor.
+Para el caso de los comprobantes de venta que permiten sustentar crédito tributario, en las
+copias adicionales a la que corresponda al emisor deberá consignarse, además, la leyenda
+“copia sin derecho a crédito tributario”. Igual leyenda se hará constar en la primera copia de
+las facturas comerciales negociables.
+10. Los contribuyentes designados por el SRI como especiales deberán imprimir en los
+comprobantes de venta las palabras: “Contribuyente Especial” y el número de la resolución
+con la que fueron calificados. En el caso de contribuyentes especiales que a la fecha de su
+designación tuviesen comprobantes de venta vigentes en inventario, podrán imprimir la
+leyenda de “Contribuyente Especial” y el número de resolución con el cual fueron calificados
+mediante sello o cualquier otra forma de impresión.
+Si por cualquier motivo perdieran la designación de “Contribuyente Especial”, deberán dar
+de baja todos aquellos documentos con la leyenda indicada;
+11. (Sustituido por el Art. 85 del D.E. 304, R.O. 608-2S, 30-XII-2021).- Los contribuyentes
+que sean incluidos en el Régimen RIMPE deberán imprimir en los comprobantes de venta
+autorizados para este régimen la leyenda: “Contribuyente Régimen RIMPE”. Si estos
+contribuyentes, a la fecha de su inscripción, mantuviesen otros comprobantes de venta
+vigentes, deberán darlos de baja siguiendo el procedimiento establecido en este reglamento.
+Si por cualquier motivo fueran excluidos del régimen, los contribuyentes deberán dar de baja
+todos aquellos documentos autorizados para el mismo.
+12. Las personas naturales y las sucesiones indivisas, que de conformidad con la Ley de
+Régimen Tributario Interno y su reglamento de aplicación, estén obligadas a llevar
+contabilidad deberán imprimir en los comprobantes de venta la frase: “Obligado a Llevar
+Contabilidad”. En el caso de personas naturales y sucesiones indivisas que al inicio del
+ejercicio impositivo tuviesen comprobantes de venta vigentes, podrán imprimir la leyenda de
+“Obligado a Llevar Contabilidad” mediante sello o cualquier otra forma de impresión.
+Si de conformidad con la Ley de Régimen Tributario Interno y su reglamento de aplicación
+los contribuyentes dejasen de ser obligados a llevar contabilidad, deberán dar de baja todos
+aquellos documentos que contengan la leyenda antes indicada.
+13. (Agregado por el Art. 105 del D.E. 1114, R.O. 260-2S, 4-VIII-2020; y, sustituido por el
+Art. 85 del D.E. 304, R.O. 608-2S, 30-XII-2021).- Los contribuyentes considerados como
+negocios populares incluidos en el Régimen RIMPE deberán imprimir en los comprobantes
+de venta autorizados la leyenda: "Contribuyente Negocio Popular - Régimen RIMPE". Si
+estos contribuyentes, a la fecha de su inscripción, mantuviesen comprobantes de venta
+vigentes, podrán imprimir la leyenda indicada mediante sello o cualquier otra forma de
+impresión. En estos casos no será aplicable la inclusión del requisito previsto en el numeral
+11 del presente artículo.
+Si por cualquier motivo dejaren de tener la consideración de negocio popular, los
+contribuyentes deberán dar de baja todos aquellos documentos con la leyenda indicada.
+14. (Agregado por el Art. 105 del D.E. 1114, R.O. 260-2S, 4-VIII-2020).- Los contribuyentes
+designados por el SRI como agentes de retención deberán imprimir en los comprobantes de
+venta las palabras: "Agente de Retención " y el número de la resolución que fueron
+calificados. En el caso de agentes de retención que a la fecha de su designación tuviesen
+comprobantes de venta vigentes, podrán imprimir la leyenda de "Agente de Retención "y el
+número de resolución con el cual fueron calificados mediante sello o cualquier otra forma de
+impresión.
+Si por cualquier motivo perdieran la designación de agente de retención, deberán dar de baja
+todos aquellos documentos con la leyenda indicada.
+15. (Agregado por el Art. 2 num. 1 del D.E. 99, R.O. 467, 29-XII-2023).- Los sujetos pasivos
+calificados por la Administración Tributaria como Grandes Contribuyentes, deberán
+incorporar, mediante los medios pertinentes, en sus comprobantes de venta electrónicos, la
+leyenda: "Gran Contribuyente " y el número de la resolución mediante la cual fueron
+calificados como tal
+[Artículos 19 a 21 omitidos: requisitos de llenado de facturas, facturas comerciales negociables y notas de venta.]
+Art. 22.- Requisitos de llenado para liquidaciones de compras de bienes y prestación de
+servicios.- Las liquidaciones de compra de bienes y prestación de servicios contendrán la
+siguiente información no impresa sobre la transacción:
+1. Datos de identificación del proveedor, apellidos y nombres, número de cédula de identidad
+o pasaporte, domicilio con indicación de los datos necesarios para su ubicación, consignando
+la provincia, ciudad y lugar donde se realizó la operación.
+2. Descripción o concepto del bien transferido o del servicio prestado, indicando la cantidad
+y unidad de medida, cuando proceda. Tratándose de bienes que están identificados mediante
+códigos, número de serie o número de motor, deberá consignarse obligatoriamente dicha
+información.
+3. Precios unitarios de los bienes o precio del servicio.
+4. Valor subtotal de la transacción, sin incluir el IVA.
+5. Impuesto al valor agregado, con indicación de la tarifa respectiva.
+6. Importe total de la transacción, incluido impuestos.
+7. Fecha de emisión.
+Cada liquidación de compra de bienes y prestación de servicios debe ser cerrada o totalizada
+individualmente, debiendo emitirse conjuntamente el original y sus copias o, en el caso de
+utilización de sistemas computarizados autorizados, de manera consecutiva.
+En el caso de liquidaciones de compras emitidas por sistemas computarizados autorizados
+por el Servicio de Rentas Internas, que tuvieran más de una página, deberá numerarse cada
+una de las páginas que comprende la liquidación de compra de bienes y prestación de
+servicios, especificando en cada página el número de la misma y el total de páginas que
+conforman dicho comprobante.
+[Artículos 23 a 39 omitidos. Capítulo V, comprobantes de retención:]
+Art. 40.- Requisitos de llenado para los comprobantes de retención.- Se incluirá en los
+comprobantes de retención como información no pre impresa la siguiente:
+1. Apellidos y nombres, denominación o razón social de la persona natural o sociedad o
+sucesión indivisa a la cual se le efectuó la retención.
+2. Número del registro único de contribuyentes o cédula de identidad o pasaporte del sujeto
+al que se le efectúa la retención.
+3. Impuesto por el cual se efectúa la retención en la fuente: Impuesto a la Renta, Impuesto al
+Valor Agregado o Impuesto a la Salida de Divisas.
+4. Denominación y número del comprobante de venta que motiva la retención, cuando
+corresponda.
+5. El valor de la transacción o del monto de la transferencia de divisas al exterior que
+constituye la base para la retención.
+6. El porcentaje aplicado para la retención.
+7. Valor del impuesto retenido.
+8. El ejercicio fiscal al que corresponde la retención.
+9. La fecha de emisión del comprobante de retención.
+10. La firma del agente de retención.
+11. (Reformado por el num. 1 del Art. 5 del D.E. 1064, R.O. 771-S, 8-VI-2016).- Cuando
+corresponda, el convenio internacional para evitar la doble tributación en el cual se ampara
+la retención.
+Los comprobantes de retención se emitirán conjuntamente en original y copias o, en el caso
+de utilización de sistemas computarizados autorizados, de manera consecutiva.
+El comprobante de retención deberá ser emitido en todos los casos de aplicación de un
+convenio internacional para evitar la doble tributación, indicando la tarifa de la retención
+realizada, incluso la del 0%.”
+La información sobre los impuestos retenidos que se registre en los comprobantes respectivos
+podrá ser consolidada mensualmente, por cada sujeto al que se efectúen las retenciones, en
+los pagos o acreditaciones en cuenta por servicios, realizados con intermediación de
+instituciones del sistema financiero, en las que éstas sean agentes de retención.
+El detalle de la información de los comprobantes de venta que originaron la retención
+constará en este documento o en un anexo que constituirá parte integrante del mismo y será
+entregado al sujeto al que se le efectuó la retención.
+Cada comprobante de retención debe ser totalizado y cerrado individualmente. En el caso de
+comprobantes de retención emitidos por sistemas computarizados autorizados por el Servicio
+de Rentas Internas, que tuvieran más de una página, deberá numerarse cada una de ellas,
+especificando el número de la misma y el total de páginas que conforman el comprobante de
+retención.
+Art. 41.- Archivo de comprobantes de venta, documentos complementarios y
+comprobantes de retención.- (Reformado por el Art. 2 num. 2 del D.E. 99, R.O. 467, 29-
+XII-2023).- Los comprobantes de venta, documentos complementarios y comprobantes de
+retención, deberán conservarse durante el plazo mínimo de 7 años.
+Los sujetos pasivos que fueren autorizados a emitir e imprimir sus comprobantes de venta,
+documentos complementarios o comprobantes de retención, por medios electrónicos,
+deberán mantener obligatoriamente el archivo magnético de todos esos documentos en la
+forma que determine el Servicio de Rentas Internas.
+Dicha información estará disponible ante cualquier requerimiento de la Administración
+Tributaria.
+DISPOSICIONES GENERALES
+[Primera a quinta, séptima a novena omitidas.]
+Sexta.- El Servicio de Rentas Internas podrá autorizar la emisión de los documentos referidos
+en el presente reglamento mediante mensajes de datos (modalidad electrónica), en los
+términos y bajo las condiciones que establezca a través de la resolución general que se expida
+para el efecto y que guardará conformidad con las disposiciones pertinentes de la Ley de
+Comercio Electrónico y su reglamento. Los documentos emitidos electrónicamente deberán
+contener y cumplir, en esa modalidad, con todos los requisitos que se establecen en este
+reglamento para aquellos documentos que se emitan de forma física, en lo que corresponda,
+constarán con la firma electrónica de quien los emita y tendrán su mismo valor y efectos
+jurídicos.
+Décima.- (Agregada por el Art. 17 del D.E. 1414, R.O. 877, 23-I-2013).- Los sujetos pasivos
+que hayan sido autorizados para emitir comprobantes de venta, retención y documentos
+complementarios electrónicamente mediante mensajes de datos, no están obligados a emitir
+y entregar de manera física dichos documentos.
+Undécima.- (Reformado por el num. 1 del Art. 5 del D.E. 1064, R.O. 771-S, 8-VI-2016).-
+El Servicio de Rentas Internas, mediante resolución, podrá establecer nuevos requisitos de
+impresión y llenado en los comprobantes de venta, retención y documentos complementarios.
+
+== Artículo 13 en la fuente B (Decreto 580, 2015), para comparar ==
+
+Art. 13.- Liquidaciones de compras de bienes y prestación de servicios.- Las liquidaciones de
+compras de bienes y prestación de servicios se emitirán y entregarán por los sujetos pasivos, en las
+siguientes adquisiciones:
+a) De servicios prestados en el Ecuador o en el exterior por personas naturales no residentes en el
+país, en los términos de la Ley de Régimen Tributario Interno, las que serán identificadas con sus
+nombres, apellidos y número de documento de identidad;
+b) De servicios prestados en el Ecuador o en el exterior por sociedades extranjeras que no posean
+domicilio ni establecimiento permanente en el país, las que serán identificadas con su nombre o
+razón social;
+c) De bienes muebles y de servicios a personas naturales no obligadas a llevar contabilidad, ni
+inscritos en el Registro Único de Contribuyentes (RUC), que por su nivel cultural o rusticidad no se
+encuentren en posibilidad de emitir comprobantes de venta;
+d) De bienes muebles y servicios realizadas para el sujeto pasivo por uno de sus empleados en
+relación de dependencia, con comprobantes de venta a nombre del empleado. En este caso la
+liquidación se emitirá a nombre del empleado, sin que estos valores constituyan ingresos gravados
+para el mismo ni se realicen retenciones del impuesto a la renta ni de IVA; y,
+e) De servicios prestados por quienes han sido elegidos como miembros de cuerpos colegiados de
+elección popular en entidades del sector público, exclusivamente en ejercicio de su función pública
+en el respectivo cuerpo colegiado y que no posean Registro Único de Contribuyentes (RUC) activo.
+Con excepción de lo previsto en la letra d) del presente artículo, para que la liquidación de compras
+de bienes y prestación de servicios, den lugar al crédito tributario y sustente costos y gastos, deberá
+efectuarse la retención de la totalidad del impuesto al valor agregado y el porcentaje respectivo del
+impuesto a la renta, declararse y pagarse dichos valores, en la forma y plazos establecidos en el
+Reglamento para la Aplicación de la Ley de Régimen Tributario Interno.
+Las personas naturales y las sucesiones indivisas no obligadas a llevar contabilidad, deberán actuar
+como agentes de retención en los términos establecidos en el inciso anterior, cuando emitan
+liquidaciones de compras de bienes y prestación de servicios.
+El Director General del Servicio de Rentas Internas, mediante resolución, podrá establecer límites a
+la emisión de liquidaciones de compra de bienes y prestación de servicios a las que hace referencia
+este artículo, tales como montos máximos por transacción y por proveedor, tipos de bienes y
+servicios, número de transacciones por período, entre otros.
+Las liquidaciones de compra emitidas a contribuyentes que se encuentren inscritos en el Registro
+Único de Contribuyentes (RUC) a la fecha de la transacción, no servirán para sustentar crédito
+tributario y costos y/o gastos para efectos de impuesto a la renta e impuesto al valor agregado.
+
+== Diferencias literales entre la fuente B (2015) y la fuente A (2023) en estos artículos ==
+
+Comparación por palabras del texto normalizado (sin saltos de línea ni encabezados de página).
+- Art. 1, literal b): "Notas de venta - RISE;" pasa a "(Sustituido por el Art. 82 del D.E. 304,
+  R.O. 608-2S, 30-XII-2021).- Notas de venta - RIMPE;".
+- Art. 8 (Reformado por el Art. 83 del D.E. 304): "personas naturales no obligadas a llevar
+  contabilidad y aquellas inscritas en el Régimen Impositivo Simplificado" pasa a "...y aquellas
+  consideradas como negocios populares incluidas en el Régimen RIMPE"; "Los sujetos pasivos inscritos
+  en el régimen simplificado deberán sujetarse a las normas particulares de dicho régimen" pasa a "Los
+  sujetos pasivos considerados como negocios populares incluidos en el Régimen RIMPE deberán sujetarse
+  a las normas particulares de dicho régimen". Los incisos sobre los comprobantes de retención no
+  cambian.
+- Arts. 9, 10 y 22: idénticos.
+- Art. 13 (D.E. 586, art. 30):
+  * literal c): "De bienes muebles y de servicios a personas naturales no obligadas a llevar
+    contabilidad, ni inscritos en el Registro Único de Contribuyentes (RUC), que por su nivel cultural
+    o rusticidad no se encuentren en posibilidad de emitir comprobantes de venta;" pasa a "De bienes
+    muebles y de servicios a personas naturales no obligadas a llevar contabilidad que no se
+    encuentren inscritos en el Registro Único de Contribuyentes (RUC) o mantengan su RUC en estado
+    Suspendido; y, que por su nivel cultural o rusticidad no se encuentren en posibilidad de emitir
+    comprobantes de venta;".
+  * literal d): se elimina "y," al final; literal e): termina en "activo; y,".
+  * se agrega el literal "f) Otros casos que sean establecidos mediante resolución por el Servicio de
+    Rentas Internas."
+  * último inciso: "Las liquidaciones de compra emitidas a contribuyentes que se encuentren inscritos
+    en el Registro Único de Contribuyentes (RUC) a la fecha de la transacción, no servirán para
+    sustentar crédito tributario y costos y/o gastos para efectos de impuesto a la renta e impuesto al
+    valor agregado." pasa a "Las liquidaciones de compra emitidas a contribuyentes con Registro Único
+    de Contribuyentes (RUC) en estado ACTIVO a la fecha de la transacción, no servirán para sustentar
+    crédito tributario de IVA, ni costos y/o gastos deducibles para efectos de impuesto a la renta."
+- Art. 17 (Reformado por el Art. 104 del D.E. 1114): se agrega al final "El Servicio de Rentas
+  Internas, mediante resolución de carácter general, podrá establecer plazos diferentes a los
+  indicados en el presente reglamento para la emisión y entrega de comprobantes de venta, retención y
+  documentos complementarios."
+- Art. 18: numeral 11 sustituido (RISE por "Contribuyente Régimen RIMPE", D.E. 304); se agregan los
+  numerales 13 (negocio popular RIMPE), 14 ("Agente de Retención", D.E. 1114) y 15 ("Gran
+  Contribuyente", D.E. 99).
+- Art. 40 (Reformado por el D.E. 1064): "El comprobante de retención deberá ser emitido aún en los
+  casos en los que el convenio internacional para evitar la doble tributación, exima de la retención."
+  pasa a "El comprobante de retención deberá ser emitido en todos los casos de aplicación de un
+  convenio internacional para evitar la doble tributación, indicando la tarifa de la retención
+  realizada, incluso la del 0%.".
+- Art. 41 (D.E. 99): se elimina ", de acuerdo a lo establecido en el Código Tributario respecto de
+  los plazos de prescripción" tras "7 años".
+- Disposición general undécima: no existe en la fuente B; la agrega el D.E. 1064.
+
+Observaciones (2026-10-07):
+- El artículo 13 es la única regla del Reglamento que fija cuándo se emite una liquidación de compra:
+  los literales a) a e) y los "otros casos" del literal f), que remite a resoluciones del SRI. No hay
+  en el Reglamento una regla general que permita emitirla fuera de esos casos.
+- Para que la liquidación dé lugar a crédito tributario y sustente costos y gastos, el artículo 13
+  exige retener la totalidad del IVA y el porcentaje de renta, y declararlos y pagarlos, salvo en el
+  literal d), donde no se retiene. La liquidación a un proveedor con RUC ACTIVO a la fecha de la
+  transacción no sustenta crédito tributario de IVA ni costos o gastos deducibles.
+- El artículo 22 pide cédula o pasaporte del proveedor; no menciona RUC ni identificación del
+  exterior. El literal b) del artículo 13 identifica a la sociedad extranjera solo con su nombre o
+  razón social.
+- El Reglamento no regula los reembolsos de gastos. Los regula el artículo 36 del Reglamento para la
+  aplicación de la LRTI (ver normativa-liquidacion-retenciones.txt).
+- El artículo 8 fija el momento del comprobante de retención (pago o acreditación en cuenta, lo que
+  ocurra primero) y su disponibilidad dentro de cinco días hábiles desde la presentación del
+  comprobante de venta. No contiene una regla propia para la liquidación de compra, que emite el
+  mismo comprador que retiene.
+- Ninguna regla del Reglamento fija la fecha de emisión de la liquidación aparte del artículo 17,
+  literal a) (momento del acto o contrato) y sus casos especiales; el artículo 22, numeral 7, exige
+  consignarla.

@@ -1,0 +1,118 @@
+Verificación del XSD de la liquidación de compra contra el portal del SRI (readiness de
+add-purchase-settlements, 2026-10-07). El manifiesto `docs/product/sri-xsd/README.md` no se edita: el
+dataset schema-registry lo cita por su SHA-256.
+
+Portal: https://www.sri.gob.ec/facturacion-electronica
+- Publica, consultado el 2026-10-07, "Esquemas XSD Y XML Tipo de documento Liquidación – Versión
+  1.0.0 – 1.1.0 / Actualizado a Febrero 2022", con la ruta (la misma del manifiesto):
+  /o/sri-portlet-biblioteca-alfresco-internet/descargar/ee386507-04f8-4a45-b9cd-6d4e4c6ac1e6/XML%20y%20XSD%20Liquidaci%c3%b3n.zip
+  En la misma página, la ficha técnica sigue siendo la versión 2.34 ("Actualizado a Julio 2026").
+- ZIP descargado el 2026-10-07: SHA-256 4ecd62bb9be31469a4fa80d16b891ed8e1ee1afd8b4f9a799e3818e9d96dc329
+  (10 179 bytes, el mismo del manifiesto). Contiene la carpeta "XML y XSD Liquidación/" (2022-02-09)
+  con:
+  - LiquidacionCompra_V1.1.0.xsd (2022-02-07 14:01), SHA-256 58c9cd96edf93d92ef6692cd028e689080257c9ba2941fe04fe1d426ebc4b5b6
+    (28 338 bytes, fin de línea LF), idéntico byte a byte (cmp) a
+    docs/product/sri-xsd/LiquidacionCompra_V1.1.0.xsd y a la entrada 03 de las versiones 1 y 2 del
+    dataset schema-registry (raíz `liquidacionCompra`, `supported: true`; la versión 2 declara el
+    import w3c-xsd/xmldsig-core-schema.xsd);
+  - LiquidacionCompra_V1.1.0.xml (2022-02-07 16:25), SHA-256 49ec49669301f8cbafd91e1d569f0b7b4665956890564f8695d5a2012ba5c1eb
+    (9 626 bytes), un ejemplo con valores de relleno (version="version0", codDoc 00): no sirve como
+    evidencia de la versión ni del código;
+  - LiquidacionCompra_V1.0.0.xsd (2022-02-07 14:02), SHA-256 88794b18cf556cc127fd69c95df6d5f7a2da02e55b07f4c9680011a003c514e7
+    (29 081 bytes, CRLF), de la versión que el producto no usa. Sin contar los fines de línea y los
+    espacios, solo difiere de la 1.1.0 en `cantidad`, `precioUnitario` y `precioSinSubsidio`: 14
+    dígitos con 2 decimales en la 1.0.0, 18 con 6 en la 1.1.0;
+  - LiquidacionCompra_V1.0.0.xml (2022-02-07 16:24), SHA-256 993d6a221faa9c399e19245d40916635dbf4b4e1a3ac94cf2c45ec7fd902ce5a
+    (9 602 bytes), el mismo ejemplo con 2 decimales.
+- La versión 1.1.0 es la del anexo 17 de la ficha v2.34 (páginas 119 a 122, "En esta versión se podrá
+  utilizar de 2 a 6 decimales en los campos de cantidad y precio unitario para contribuyentes que lo
+  requieran") y la del registro de esquemas (Q-13, ADR 0008); codDoc 03 según la tabla 3 de la ficha
+  (página 12). La ficha publica también la tabla de la 1.0.0 (páginas 115 a 118) y no declara una de
+  las dos como la única vigente.
+- Comprobación offline con xmllint (libxml2 2.15.3) contra la copia del repositorio y
+  w3c-xsd/xmldsig-core-schema.xsd, copiados juntos a un directorio temporal: el esquema compila
+  (declara `<?xml version="1.0"?>`); una liquidación sintética mínima sin firma y otra con todos los
+  bloques habituales (dos detalles, IVA 15% y 0%, `pagos`, `infoAdicional`) validan, y también los
+  dos XML de ejemplo del paquete. Resultados de las variantes:
+  - validan: `tipoIdentificacionProveedor` 04, 06, 07 y 08; `cantidad` con 6 decimales y `cantidad`
+    0; `codDoc` 01; `fechaEmision` 31/02/2026; sin `pagos` ni `moneda`; `pago` sin `plazo` ni
+    `unidadTiempo`; `totalImpuesto` con y sin `tarifa`; sin los atributos `id` y `version`, y
+    `version="cualquiera"`; `totalDescuento` negativo; un reembolso completo (tipo de proveedor 02,
+    autorización de 37 dígitos) y otro sin `codPaisPagoProveedorReembolso`; un `detalleImpuesto` del
+    reembolso con código 3 (ICE); `tipoNegociable` y `precioSinSubsidio`;
+  - no validan: `tipoIdentificacionProveedor` 09, 03 y 5; `cantidad` y `precioUnitario` con 7
+    decimales; `cantidad` negativa o de 19 dígitos; `precioTotalSinImpuesto`, `totalSinImpuestos` y
+    `descuento` con 3 decimales significativos (100.000 valida: los ceros finales no cuentan);
+    `codigo` 3 (ICE) o 5 (IRBPNR) en el `impuesto` del detalle y 3 en `totalImpuesto`; el
+    `impuesto` del detalle sin `tarifa`; sin `totalDescuento`; el detalle sin `descuento`;
+    `tarifa` 100.25 y 12345 (más de 4 dígitos); `codigoPorcentaje` de 5 dígitos; `formaPago` 00 y
+    22; `pagos` vacío; `unidadTiempo` de 11 caracteres; `moneda` de 16; `identificacionProveedor`
+    de 21; `razonSocialProveedor` de 301; 4 `detAdicional`; 16 `campoAdicional`; `infoAdicional`
+    vacío; `id="otro"`; `tipoProveedorReembolso` 03; `detalleImpuesto` con código 4;
+    `numeroautorizacionDocReemb` de 9 dígitos; `marca` de 31 caracteres; `contribuyenteEspecial` de
+    2; un salto de línea en `dirEstablecimiento`.
+
+Esquema 1.1.0:
+- Raíz `liquidacionCompra`, con `id` (solo "comprobante") y `version` (sin tipo) opcionales, como en
+  factura_V1.1.0.xsd (la guía y la nota de crédito 1.1.0 los exigen); un solo import:
+  xmldsig-core-schema.xsd (W3C, docs/product/w3c-xsd/). `ds:Signature` opcional, al final, con la
+  anotación de que "debe cumplimentarse este bloque de firma electrónica para que se considere una
+  liquidacion de compras electronica valida legalmente frente a terceros". `codDoc` es `[0-9]{2}`:
+  el XSD no fija el 03.
+- Secuencia: `infoTributaria`, `infoLiquidacionCompra`, `detalles`, `reembolsos` (0..1),
+  `tipoNegociable` (0..1), `maquinaFiscal` (0..1), `infoAdicional` (0..1), `ds:Signature` (0..1).
+- `infoTributaria`: la común de los seis comprobantes (README del manifiesto, "Campos del emisor"),
+  con `agenteRetencion` y `contribuyenteRimpe` opcionales tras `dirMatriz`.
+- `infoLiquidacionCompra`, en orden:
+  - `fechaEmision` (dd/mm/20aa, solo patrón), `dirEstablecimiento` opcional (1 a 300, sin saltos de
+    línea), `contribuyenteEspecial` opcional (3 a 13 alfanuméricos), `obligadoContabilidad`
+    opcional (SI|NO);
+  - `tipoIdentificacionProveedor` (patrón [0][4-8]), `razonSocialProveedor` (1 a 300),
+    `identificacionProveedor` (1 a 20, sin saltos de línea) y `direccionProveedor` opcional (1 a
+    300);
+  - `totalSinImpuestos` (14 dígitos, 2 decimales, mínimo 0) y `totalDescuento` (14 dígitos, 2
+    decimales, sin mínimo), ambos obligatorios;
+  - opcionales `codDocReembolso` ([0-9]{2,3}), `totalComprobantesReembolso`,
+    `totalBaseImponibleReembolso` y `totalImpuestoReembolso` (14 dígitos, 2 decimales, mínimo 0);
+  - `totalConImpuestos` con uno o más `totalImpuesto`: `codigo` (patrón [2]: solo IVA),
+    `codigoPorcentaje` ([0-9]+, 1 a 4), `descuentoAdicional` opcional (14 dígitos, 2 decimales, sin
+    mínimo), `baseImponible` (14, 2, mínimo 0), `tarifa` opcional (4 dígitos, 2 decimales, mínimo 0)
+    y `valor` (14, 2, mínimo 0);
+  - `importeTotal` (14, 2, mínimo 0), `moneda` opcional (1 a 15) y `pagos` opcional: uno o más
+    `pago` con `formaPago` (01 a 21), `total` (14, 2, mínimo 0), `plazo` opcional (14, 2, mínimo 0)
+    y `unidadTiempo` opcional (1 a 10, texto libre).
+  - No hay propina, retenciones, subsidio total, compensaciones ni `valorDevolucionIva`.
+- `detalles/detalle`, uno o más sin máximo: `codigoPrincipal` y `codigoAuxiliar` opcionales (1 a
+  25), `descripcion` (1 a 300), `unidadMedida` opcional (1 a 50), `cantidad` y `precioUnitario`
+  (decimal, 18 dígitos, 6 decimales, mínimo 0), `precioSinSubsidio` opcional (18, 6, mínimo 0),
+  `descuento` obligatorio (14, 2, mínimo 0), `precioTotalSinImpuesto` (14, 2, mínimo 0),
+  `detallesAdicionales` opcional con 1 a 3 `detAdicional` (nombre y valor, 1 a 300) e `impuestos`
+  con uno o más `impuesto`: `codigo` (patrón [2]), `codigoPorcentaje` (1 a 4 dígitos), `tarifa`
+  obligatoria (4, 2, mínimo 0), `baseImponible` (14, 2, mínimo 0) y `valor` (14, 2, mínimo 0).
+- `reembolsos`, uno o más `reembolsoDetalle`: `tipoIdentificacionProveedorReembolso` ([0][4-8]),
+  `identificacionProveedorReembolso` (1 a 20), `codPaisPagoProveedorReembolso` opcional ([0-9]{3}),
+  `tipoProveedorReembolso` ([0][12]), `codDocReembolso` ([0-9]{2,3}), `estabDocReembolso` y
+  `ptoEmiDocReembolso` ([0-9]{3}), `secuencialDocReembolso` ([0-9]{9}), `fechaEmisionDocReembolso`
+  (dd/mm/20aa), `numeroautorizacionDocReemb` ([0-9]{10,49}) y `detalleImpuestos` con uno o más
+  `detalleImpuesto`: `codigo` ([235]), `codigoPorcentaje` ([0-9]{1,4}), `tarifa` (4, 2),
+  `baseImponibleReembolso` e `impuestoReembolso` (14, 2, mínimo 0). El XSD no ata el bloque a
+  `codDocReembolso` 41: la condición es de la ficha.
+- `tipoNegociable`: un `correo` (1 a 100). `maquinaFiscal`: `marca`, `modelo` y `serie` (1 a 30).
+  `infoAdicional`: 1 a 15 `campoAdicional` (valor 1 a 300, atributo `nombre` 1 a 300).
+- Tipos declarados que ningún elemento usa: `idCliente`, `numeroRucCedula`, `fechaType`,
+  `fechaAutorizacion`, `documento`, `codTipoDoc`, `codTipoDocModificado` y `autorizacion`.
+
+Fuera del XSD, la ficha v2.34 fija para este comprobante (extracto literal en
+ficha-v2.34-liquidacion-de-compra.txt):
+- Página 13, notas de la tabla 6: la liquidación no admite el tipo 07 (consumidor final), que el XSD
+  sí acepta. Tipos del proveedor: 04, 05, 06 y 08.
+- Páginas 29 y 30, tablas 16 y 17: códigos de impuesto y tarifas del IVA. El anexo 17 remite a la
+  tabla 16 completa (IVA, ICE, IRBPNR), pero el XSD solo acepta IVA fuera de los reembolsos.
+- Página 79, tabla 24: formas de pago 01 y 15 a 21 (Catálogo ATS, página 80); páginas 80 a 82,
+  tabla 25 (países) y página 88, tabla 26 (tipo de proveedor del reembolso), para los reembolsos.
+- Anexo 17, páginas 119 a 122: obligatoriedad, longitudes, catálogos y reglas de suma de cada campo
+  de la 1.1.0, con contradicciones de cardinalidad frente al XSD (detalladas en las observaciones del
+  extracto) y la condición "Obligatorio cuando <codDocReembolso> sea igual a 41" para los
+  reembolsos.
+- Página 65 (anexo 2): el modelo del RIDE de la liquidación, una imagen.
+- Sección 11 (páginas 36 a 38): no hay errores propios de la liquidación; rigen los generales.
