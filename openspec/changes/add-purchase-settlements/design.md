@@ -279,7 +279,7 @@ Guarda: `snapshotVersion: 1`; el esquema (`03`, `1.1.0`, ruta, hash e imports); 
 - [Una liquidación sin su retención no sustenta crédito ni costos] → el aviso lo recuerda; automatizar la retención es otra capacidad.
 - [El dibujo del RIDE de la página 65 hereda campos de la factura] → se imprimen solo los datos que la liquidación 1.1.0 tiene.
 - [Las columnas del comprador guardan al proveedor] → rótulo "Proveedor" en la interfaz y deuda técnica registrada.
-- [La CI está en su límite: el job de `main` en `6a34bc4` tardó 29 min 31 s de los 30 permitidos, con 1557 s de pruebas, y el cambio agrega pruebas de integración con PostgreSQL real] → decidir antes del apply, como mantenimiento separado de este cambio, partir o paralelizar la suite o ajustar el límite (deuda técnica "Duración de la CI cerca de su límite").
+- [La CI está en su límite: el job de `main` en `6a34bc4` tardó 29 min 31 s de los 30 permitidos, con 1557 s de pruebas, y el cambio agrega pruebas de integración con PostgreSQL real] → el mantenimiento `31029ca`, separado de este cambio, subió el límite a 45 minutos como mitigación temporal, sin tocar las pruebas; después del change 16 se perfila la suite y, si las corridas rondan los 40 minutos, se parte o paraleliza (deuda técnica "Duración de la CI cerca de su límite").
 
 ## Migration Plan
 
