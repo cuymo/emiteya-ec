@@ -102,7 +102,7 @@
 ## 11. Bandeja con guías de remisión
 
 - [x] 11.1 Agregar el tipo `06` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` (design D21). Verificar con pruebas de componente: filtro con los cinco tipos, tipo bajo el número, receptor derivado (nombre o "N destinatarios") y total "—" accesible, enlace al detalle de la guía, textos en femenino, documentos disponibles por estado, y los demás tipos sin cambios. Documentarlo en `fiscal-emission.md`
-- [ ] 11.2 Añadir una prueba de backend de la bandeja con una factura, una nota de crédito, una nota de débito, una guía de remisión y un comprobante de retención. Verificar que devuelve los cinco con su tipo, el total nulo de la guía y los importes de los demás, y que el filtro por guía de remisión deja solo las guías
+- [x] 11.2 Añadir una prueba de backend de la bandeja con una factura, una nota de crédito, una nota de débito, una guía de remisión y un comprobante de retención. Verificar que devuelve los cinco con su tipo, el total nulo de la guía y los importes de los demás, y que el filtro por guía de remisión deja solo las guías
 
 ## 12. Pantallas de guías de remisión
 
