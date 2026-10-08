@@ -63,6 +63,16 @@ export const DECIMAL_SPECS = {
     xsd: { types: ["cantidad"], documents: ["01", "03", "04", "06"] },
   },
   /**
+   * Plazo de un pago (add-purchase-settlements, design D9): `plazo` de factura, liquidación y nota de
+   * débito, 14/2 y no negativo. La liquidación lo exige en cada pago (ficha v2.34, anexo 17).
+   */
+  plazo: {
+    totalDigits: 14,
+    fractionDigits: 2,
+    min: "0",
+    xsd: { types: ["plazo"], documents: ["01", "03", "05"] },
+  },
+  /**
    * Porcentaje de la retención 2.0.0 (add-withholding-receipts, design D13): `porcentajeRetener`,
    * 3/2 en `ComprobanteRetencion_V2.0.0.xsd`. La `tarifa` del impuesto de un documento sustento usa
    * la misma escala en ese XSD. Un porcentaje de 100 cumple los 3 dígitos en su forma canónica (`100`).
