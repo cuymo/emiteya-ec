@@ -21,3 +21,4 @@ export * from "./withholding-receipts.ts";
 export * from "./shipping-guides.ts";
 export * from "./purchase-settlements.ts";
 export * from "./reports.ts";
+export * from "./data-portability.ts";

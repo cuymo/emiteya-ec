@@ -26,7 +26,7 @@
 
 ## 2. Registro, cola, contratos, permisos, entorno y auditoría
 
-- [ ] 2.1 Crear la migración de `data_export` (design D10 y D24):
+- [x] 2.1 Crear la migración de `data_export` (design D10 y D24):
   - los estados y las fases con su `CHECK`;
   - los campos que exige cada estado;
   - el índice único parcial de una generación activa por empresa y el de un `READY` por empresa;
@@ -49,8 +49,8 @@
   - sus rutas en `api/routes.ts`, con la descarga como respuesta binaria.
 
   Verificar con pruebas de contrato el `companyId` rechazado, cada estado y el OpenAPI regenerado
-- [ ] 2.4 Añadir `dataPortability.export` solo para el administrador en `access-policy.ts`, su espejo del frontend y `access-control.md`, confirmando la fila "Exportar todos los datos del contribuyente" (design D18). Verificar con las pruebas de la política y la del documento
-- [ ] 2.5 Añadir al esquema de entorno las variables de design D20, marcadas como hipótesis del benchmark, y documentarlas en `deployment.md` como defensas de recursos, con `DATA_EXPORT_DIRECTORY` como volumen persistente y privado en producción. Las variables son:
+- [x] 2.4 Añadir `dataPortability.export` solo para el administrador en `access-policy.ts`, su espejo del frontend y `access-control.md`, confirmando la fila "Exportar todos los datos del contribuyente" (design D18). Verificar con las pruebas de la política y la del documento
+- [x] 2.5 Añadir al esquema de entorno las variables de design D20, marcadas como hipótesis del benchmark, y documentarlas en `deployment.md` como defensas de recursos, con `DATA_EXPORT_DIRECTORY` como volumen persistente y privado en producción. Las variables son:
   - `DATA_EXPORT_DIRECTORY`;
   - `DATA_EXPORT_MAX_CONCURRENT`;
   - `DATA_EXPORT_TTL_HOURS`;
@@ -59,7 +59,7 @@
   - `DATA_EXPORT_SWEEP_INTERVAL_SECONDS`.
 
   Verificar con pruebas del entorno
-- [ ] 2.6 Añadir las acciones `data_export.requested`, `data_export.completed`, `data_export.failed` y `data_export.download_started` al dominio de la auditoría (design D19) y documentarlas, con las métricas de design D21, en `observability.md`. Verificar con la prueba de las acciones de auditoría y la de `assertNoSecrets` con las claves de D19
+- [x] 2.6 Añadir las acciones `data_export.requested`, `data_export.completed`, `data_export.failed` y `data_export.download_started` al dominio de la auditoría (design D19) y documentarlas, con las métricas de design D21, en `observability.md`. Verificar con la prueba de las acciones de auditoría y la de `assertNoSecrets` con las claves de D19
 
 ## 3. Fuentes de portabilidad de los módulos dueños
 

@@ -64,6 +64,7 @@ model User {
   purchaseDraftsCreated       PurchaseSettlementDraft[]       @relation("PurchaseSettlementDraftCreator")
   purchaseDraftsUpdated       PurchaseSettlementDraft[]       @relation("PurchaseSettlementDraftUpdater")
   purchaseDeclarations        PurchaseSettlementDeclaration[] @relation("PurchaseSettlementDeclarant")
+  dataExportsRequested        DataExport[]                    @relation("DataExportRequester")
 
   @@unique([email])
   @@map("user")
@@ -149,6 +150,7 @@ model Organization {
   withholdingReceiptDrafts   WithholdingReceiptDraft[]
   shippingGuideDrafts        ShippingGuideDraft[]
   purchaseSettlementDrafts   PurchaseSettlementDraft[]
+  dataExports                DataExport[]
 
   @@unique([slug])
   @@map("organization")
@@ -1651,4 +1653,47 @@ model PurchaseSettlementDeclaration {
 
   @@id([companyId, documentId, statementId])
   @@map("purchase_settlement_declaration")
+}
+
+// Exportación de portabilidad (add-data-portability, design D10): la solicitud, su generación, el
+// paquete listo y su caducidad. Los estados son explícitos y un CHECK exige los campos de cada uno.
+// `active_company_id` y `ready_company_id` son la empresa solo mientras la exportación está activa
+// (en cola o generándose) o lista: su unicidad deja una generación activa y un paquete vigente por
+// empresa. Un trigger fija las transiciones; las filas no se borran.
+model DataExport {
+  id              String       @id @default(uuid())
+  companyId       String       @map("company_id")
+  company         Organization @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  requestedBy     String       @map("requested_by")
+  requester       User         @relation("DataExportRequester", fields: [requestedBy], references: [id], onDelete: Restrict)
+  /// QUEUED, GENERATING, READY, FAILED o EXPIRED (CHECK en la migración).
+  status          String
+  activeCompanyId String?      @unique @map("active_company_id")
+  readyCompanyId  String?      @unique @map("ready_company_id")
+  /// SNAPSHOT, ARTIFACTS o PUBLISHING, solo mientras se genera (CHECK en la migración).
+  phase           String?
+  progressDone    Int?         @map("progress_done")
+  progressTotal   Int?         @map("progress_total")
+  /// El intento del job que generó o genera el paquete: parte del nombre interno del archivo.
+  attempt         Int          @default(0)
+  formatVersion   String       @default("1") @map("format_version")
+  snapshotAt      DateTime?    @map("snapshot_at") @db.Timestamptz(3)
+  generatedAt     DateTime?    @map("generated_at") @db.Timestamptz(3)
+  expiresAt       DateTime?    @map("expires_at") @db.Timestamptz(3)
+  /// Nombre interno del paquete en el directorio privado; nunca sale en la API.
+  fileName        String?      @map("file_name")
+  sizeBytes       BigInt?      @map("size_bytes")
+  sha256          String?      @db.Char(64)
+  counts          Json?
+  errorCode       String?      @map("error_code")
+  /// TTL o REPLACED (CHECK en la migración).
+  expiredReason   String?      @map("expired_reason")
+  requestedAt     DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
+  startedAt       DateTime?    @map("started_at") @db.Timestamptz(3)
+  finishedAt      DateTime?    @map("finished_at") @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([companyId, id])
+  @@index([companyId, requestedAt])
+  @@map("data_export")
 }

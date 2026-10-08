@@ -560,3 +560,42 @@ describe("exportación de los reportes (add-reports-export, design D11)", () => 
     }
   });
 });
+
+describe("portabilidad de datos (add-data-portability, design D14 y D20)", () => {
+  const PORTABILITY = {
+    DATA_EXPORT_MAX_CONCURRENT: [1, 2, 1],
+    DATA_EXPORT_TTL_HOURS: [1, 168, 24],
+    DATA_EXPORT_DISK_HEADROOM_PERCENT: [0, 100, 10],
+    DATA_EXPORT_DISK_RESERVE_MIB: [64, 65_536, 512],
+    DATA_EXPORT_SWEEP_INTERVAL_SECONDS: [10, 86_400, 300],
+  } as const;
+
+  it("aplica las hipótesis iniciales y deja el directorio sin valor por defecto", () => {
+    const env = loadEnv(valid);
+    for (const [name, [, , value]] of Object.entries(PORTABILITY))
+      expect([name, env[name as keyof typeof env]]).toEqual([name, value]);
+    expect(env.DATA_EXPORT_DIRECTORY).toBeUndefined();
+  });
+
+  it("acepta los bordes y rechaza lo que sale de cada rango", () => {
+    for (const [name, [min, max]] of Object.entries(PORTABILITY)) {
+      expect(loadEnv({ ...valid, [name]: String(min) })).toMatchObject({ [name]: min });
+      expect(loadEnv({ ...valid, [name]: String(max) })).toMatchObject({ [name]: max });
+      for (const value of [String(min - 1), String(max + 1), "2.5", "nada"])
+        expect([name, value, envError({ ...valid, [name]: value })?.variables]).toEqual([
+          name,
+          value,
+          [name],
+        ]);
+    }
+  });
+
+  it("exige un directorio absoluto para el paquete", () => {
+    expect(loadEnv({ ...valid, DATA_EXPORT_DIRECTORY: "/srv/facturador/exports" })).toMatchObject({
+      DATA_EXPORT_DIRECTORY: "/srv/facturador/exports",
+    });
+    expect(envError({ ...valid, DATA_EXPORT_DIRECTORY: "exports" })?.variables).toEqual([
+      "DATA_EXPORT_DIRECTORY",
+    ]);
+  });
+});

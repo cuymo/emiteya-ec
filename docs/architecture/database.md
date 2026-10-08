@@ -56,6 +56,7 @@ Modelo objetivo derivado de `../product/domain-model.md`. La columna de tenant e
 | `job` | `platform` | Yes | Cola durable propia con deduplicación, arriendo e intentos (ADR 0012, aceptado). Sus estados no son estados fiscales. |
 | `audit_event` | `audit` | Yes | Solo agregado. |
 | `report_export` | `reports` | Yes | Opcional (ERS §13). |
+| `data_export` | `data-portability` | Yes | Registro de cada exportación de portabilidad: estado explícito, fase y progreso, intento, momento del snapshot, caducidad y el SHA-256 y tamaño del paquete, que vive en un directorio privado y nunca en la base (design D10 y D14 de `add-data-portability`). Las filas no se borran. |
 
 ## Migration Rules
 
@@ -237,6 +238,7 @@ nombres que fija Better Auth (`organizationId`, `userId`).
 | `purchase_settlement_draft` | Propia (`purchase-settlements`) | Borrador de liquidación con FK compuestas por empresa al punto, al proveedor y a su comprobante: `supplier_address`, `lines` y `payments` JSON, `status`, `version` y autoría. |
 | `purchase_settlement` | Propia (`purchase-settlements`) | Registro de una liquidación, `(company_id, document_id)` con FK compuestas al comprobante y al tercero proveedor: caso de procedencia, política, versión de la política y conteos de líneas y pagos. Índice por proveedor. |
 | `purchase_settlement_declaration` | Propia (`purchase-settlements`) | Declaración de procedencia de una liquidación, `(company_id, document_id, statement_id)` con FK al registro y al usuario que declaró: versión de la política, base y momento. |
+| `data_export` | Propia (`data-portability`) | Exportación de portabilidad con FK a la empresa y a quien la pidió: `status` (`QUEUED`, `GENERATING`, `READY`, `FAILED`, `EXPIRED`), `active_company_id` y `ready_company_id` (la empresa solo mientras está activa o lista, únicas), `phase`, `progress_done`/`progress_total`, `attempt`, `format_version`, `snapshot_at`, `generated_at`, `expires_at`, `file_name` (interno), `size_bytes`, `sha256`, `counts` JSON, `error_code`, `expired_reason` y los momentos de solicitud, inicio y fin. |
 | `withholding_receipt` | Propia (`withholding-receipts`) | Registro de un comprobante de retención, `(company_id, document_id)` con FK compuestas al comprobante y al proveedor: `party_id`, `related_party`, `fiscal_period` y `created_at`. Índices por período y por proveedor. |
 | `withholding_receipt_line` | Propia (`withholding-receipts`) | Retención del comprobante, `(company_id, document_id, support_position, position)`: tipo (`01`, `02`, `03`), sustento, número de 15 dígitos y fecha de su documento sustento; `tax` (`1` renta, `2` IVA), `withholding_code`, `entry_key`, `base`, `percentage` y `amount`. |
 
@@ -376,6 +378,7 @@ Restricciones de la migración, incluidas las que Prisma no expresa (verificadas
 | `purchase_settlement_values_check`, `purchase_settlement_origin`, `purchase_settlement_immutable`, `purchase_settlement_no_truncate` | `purchase_settlement` | Solo `ART_13_C` con `PURCHASE_SETTLEMENT_ELIGIBILITY_V1` en la versión 1; de 1 a 500 líneas y de 1 a 20 pagos. Trigger `BEFORE INSERT`: el comprobante es un `03` de la empresa. Sin cambios, borrado ni truncado | SQL de la migración |
 | `purchase_settlement_declaration_values_check`, `purchase_settlement_declaration_immutable`, `purchase_settlement_declaration_no_truncate` | `purchase_settlement_declaration` | Uno de los cuatro identificadores de la política, versión 1 y base `USER_DECLARED`; la clave primaria impide repetir un identificador. Sin cambios, borrado ni truncado | SQL de la migración |
 | `purchase_settlement_complete` | `electronic_document` | Trigger de restricción diferido: un comprobante `03` no se confirma sin su registro ni sin exactamente las cuatro declaraciones de la versión de su política | SQL de la migración |
+| `data_export_values_check`, `data_export_active_company_id_key`, `data_export_ready_company_id_key`, `data_export_guard`, `data_export_no_truncate` | `data_export` | Estados explícitos con los campos que exige cada uno (un `READY` completo, `FAILED` con un código seguro, `EXPIRED` solo por `TTL` o `REPLACED` desde un `READY`); una generación activa y un paquete vigente por empresa; solo las transiciones `QUEUED` → `GENERATING` o `FAILED`, `GENERATING` → `READY` o `FAILED`, y `READY` → `EXPIRED` o `FAILED`, sin cambiar lo publicado; sin `DELETE` ni `TRUNCATE` (design D10 y D24 de `add-data-portability`). |
 | `withholding_receipt_complete` | `electronic_document` | Trigger de restricción diferido: un comprobante `07` no se confirma sin su registro en `withholding_receipt` y al menos una línea | SQL de la migración |
 
 - Ninguna restricción limita el número de empresas: una sola empresa es política del aprovisionamiento (ADR 0009, design de `add-user-access`).
@@ -426,6 +429,7 @@ actual y que migraciones y esquema coinciden.
 | Auditoría por fecha                                               | `(company_id, occurred_at)`                                    |
 | Membresía activa del usuario de la sesión (cada petición, D3)     | `member (userId)`                                              |
 | Usuarios de la empresa                                            | `member (organizationId)` y el único `(organizationId, userId)` |
+| Exportaciones de portabilidad de la empresa, la más reciente primero | `data_export (company_id, requested_at)` |
 
 Los índices de búsqueda por nombre (`pg_trgm` u otro) se añaden solo si la medición con el
 volumen de referencia (Q-26) no cumple ERS RNF-005. Las claves de búsqueda por prefijo usan la

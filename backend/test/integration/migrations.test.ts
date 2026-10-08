@@ -824,6 +824,28 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea el registro de las exportaciones de portabilidad con sus restricciones y triggers", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "data_export_values_check",
+        "data_export_company_id_fkey",
+        "data_export_requested_by_fkey",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "data_export_pkey",
+        "data_export_active_company_id_key",
+        "data_export_ready_company_id_key",
+        "data_export_company_id_id_key",
+        "data_export_company_id_requested_at_idx",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining(["data_export_guard", "data_export_no_truncate"]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     // El único objeto sobre la empresa exige su consumidor final al confirmarla (trigger de
     // restricción de add-parties-and-products, design D5); no limita cuántas empresas hay.

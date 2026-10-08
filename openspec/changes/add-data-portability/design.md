@@ -327,7 +327,7 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL o REPLACED)
 - **Lectura y verificación:** cada artefacto, respuesta o logo se lee por identificador y empresa, se recalculan su tamaño y su SHA-256, y se comparan con los del inventario.
 - **Si no coinciden:**
   - la generación aborta, borra su parcial y queda `FAILED` con `DATA_EXPORT_ARTIFACT_INTEGRITY`;
-  - suma a `artifact_integrity_failures_total` y deja un log con la clave de acceso y el tipo, nunca los bytes;
+  - suma a `data_export_failures_total{code="DATA_EXPORT_ARTIFACT_INTEGRITY"}` y deja un log con la clave de acceso y el tipo, nunca los bytes. No reutiliza la métrica `artifact_integrity_failures_total` del archivo: es de otro módulo;
   - registra `data_export.failed` con solo el código.
 - **Ausentes legítimos:** se declaran en `absent` del manifiesto y nunca se generan.
   - RIDE de un comprobante `AUTHORIZED` sin RIDE: `RIDE_PENDING` o `RIDE_STOPPED`, según el job del RIDE en `snapshotAt`;
@@ -453,8 +453,7 @@ Todos son defensas de recursos del proyecto, hipótesis hasta medirlas con `benc
   - `data_export_failures_total{code}`;
   - `data_export_phase_duration_seconds{phase}` y `data_export_size_bytes`;
   - `data_export_downloads_total{result}` (`started`, `not_ready`, `expired`, `integrity_failed`);
-  - `data_export_lease_renewals_failed_total`;
-  - `artifact_integrity_failures_total`, que ya existe.
+  - `data_export_lease_renewals_failed_total`.
 - **Logs:** el identificador de la exportación, la fase, los conteos y las duraciones. Nunca rutas del sistema de archivos, nombres de archivos interiores ni contenido.
 
 ### D22. Rendimiento

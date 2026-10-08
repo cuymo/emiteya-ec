@@ -1,5 +1,6 @@
 // Configuración por entorno, validada al arrancar (docs/architecture/deployment.md).
 import { readFileSync } from "node:fs";
+import { isAbsolute } from "node:path";
 import {
   CERTIFICATE_MAX_BYTES_DEFAULT,
   CERTIFICATE_MAX_BYTES_LIMIT,
@@ -196,6 +197,22 @@ export const envSchema = z
     // simultáneas se cuentan por instancia: con más de 4, la CPU de la instancia las alarga todas.
     REPORT_EXPORT_MAX_ROWS: int(1, 250_000).default(100_000),
     REPORT_EXPORT_MAX_CONCURRENT: int(1, 4).default(2),
+    // Portabilidad de datos (add-data-portability, design D14 y D20): defensas de recursos del
+    // proyecto, hipótesis hasta `bench:data-portability`, nunca límites del ERS. El directorio del
+    // paquete es privado (0700) y absoluto; en producción, un volumen persistente que sobreviva un
+    // reinicio durante la vigencia del paquete. Sin valor, un subdirectorio del temporal del sistema.
+    // La vigencia cuenta desde que el paquete queda listo. La reserva de disco se comprueba antes de
+    // cada fase: el tamaño sin comprimir más el margen, más la reserva fija.
+    DATA_EXPORT_DIRECTORY: z
+      .string()
+      .min(1)
+      .refine((value) => isAbsolute(value), "debe ser una ruta absoluta")
+      .optional(),
+    DATA_EXPORT_MAX_CONCURRENT: int(1, 2).default(1),
+    DATA_EXPORT_TTL_HOURS: int(1, 168).default(24),
+    DATA_EXPORT_DISK_HEADROOM_PERCENT: int(0, 100).default(10),
+    DATA_EXPORT_DISK_RESERVE_MIB: int(64, 65_536).default(512),
+    DATA_EXPORT_SWEEP_INTERVAL_SECONDS: int(10, 86_400).default(300),
     // Endpoints opcionales; sin valor rigen los del módulo central de sri-engine (design D10).
     SRI_ENDPOINT_TEST_RECEPTION: endpoint,
     SRI_ENDPOINT_TEST_AUTHORIZATION: endpoint,

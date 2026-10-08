@@ -245,6 +245,24 @@ Q-26 (`../quality/benchmarks/reports-2026-10-08.md`):
   - Con 2 lugares, las dos generadas tardaron 5,8 s y las otras ocho se rechazaron al instante.
   - Más de 4 lugares solo alargan cada exportación y sus transacciones.
 
+### Portabilidad de datos
+
+Variables de `add-data-portability` (design D14 y D20). Son defensas de recursos del proyecto, no
+límites del ERS, e hipótesis hasta que `bench:data-portability` las confirme:
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `DATA_EXPORT_DIRECTORY` | En producción, sí | Un subdirectorio del temporal del sistema | Directorio privado (`0700`) y absoluto de los paquetes de portabilidad, fuera de cualquier directorio público o estático. Debe ser un volumen persistente que sobreviva un reinicio durante la vigencia del paquete: el temporal del sistema puede ser `tmpfs` o vaciarse al reiniciar. |
+| `DATA_EXPORT_MAX_CONCURRENT` | No | 1 | Generaciones a la vez por instancia (1 a 2). Las demás esperan en la cola durable; cada empresa tiene como máximo una generación activa. |
+| `DATA_EXPORT_TTL_HOURS` | No | 24 | Vigencia de un paquete listo (1 a 168 horas), contada desde que queda listo y no desde la solicitud. Al caducar se borra el paquete, nunca los datos de la empresa. |
+| `DATA_EXPORT_DISK_HEADROOM_PERCENT` | No | 10 | Margen sobre el tamaño sin comprimir del paquete (0 a 100) que el disco debe tener libre antes de copiar los artefactos. |
+| `DATA_EXPORT_DISK_RESERVE_MIB` | No | 512 | Reserva fija de disco (64 a 65 536 MiB) que se suma al margen; también se exige antes de leer la base. |
+| `DATA_EXPORT_SWEEP_INTERVAL_SECONDS` | No | 300 | Intervalo del barrido de caducidad y recuperación (10 a 86 400 s), que también corre al arrancar. |
+
+- **Disco:** el paquete puede pesar varios GB (unos 2.6 GB con el volumen de Q-26). Con una exportación por instancia, cada empresa ocupa como máximo un paquete vigente y una generación en curso.
+- **Varias instancias:** el MVP tiene una (ver "Número de instancias"). Con varias, `DATA_EXPORT_DIRECTORY` debe ser compartido o la descarga debe llegar a la instancia que generó el paquete.
+- **No es un respaldo:** el paquete no contiene la firma, los secretos ni los datos internos de autenticación, y no se restaura (ver "Respaldo y restauración").
+
 ### Actualizaciones y reversión
 
 - **Invariante de esquema.** Desde `add-parties-and-products`, el esquema exige que cada empresa tenga exactamente un consumidor final. La migración `20261003210000_require_consumer_final` lo hace cumplir con un trigger de restricción diferido sobre `organization`.

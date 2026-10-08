@@ -33,4 +33,29 @@ describe("acciones de auditoría", () => {
     ).not.toThrow();
     expect(() => assertNoSecrets({ sessionToken: "x" })).toThrow(AuditSecretError);
   });
+
+  it("incluye las cuatro acciones de la portabilidad, sin un downloaded ni eventos por comprobante", () => {
+    expect(AUDIT_ACTIONS.filter((action) => action.startsWith("data_export."))).toEqual([
+      "data_export.requested",
+      "data_export.completed",
+      "data_export.failed",
+      "data_export.download_started",
+    ]);
+  });
+
+  it("admite los datos de los eventos de portabilidad", () => {
+    expect(() =>
+      assertNoSecrets({
+        exportId: "e1",
+        formatVersion: "1",
+        documents: 102_000,
+        files: 520_000,
+        environments: ["TEST", "PRODUCTION"],
+        sizeBytes: "2600000000",
+        sha256: "a".repeat(64),
+      }),
+    ).not.toThrow();
+    expect(() => assertNoSecrets({ exportId: "e1", code: "DATA_EXPORT_FAILED" })).not.toThrow();
+    expect(() => assertNoSecrets({ packageHash: "x" })).toThrow(AuditSecretError);
+  });
 });

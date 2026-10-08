@@ -260,6 +260,36 @@ escribir, no se entrega el archivo. Una exportación rechazada o fallida no se a
 reporte tampoco. Los logs de la exportación llevan el reporte, las filas y la duración, nunca los
 filtros con datos personales ni la ruta temporal.
 
+## Portabilidad de datos
+
+Señales de `add-data-portability` (design D21), en `/metrics` y sin la empresa, los usuarios, las
+rutas ni el contenido en las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `data_exports_total{result}` | Counter | Exportaciones por resultado: `ready` (paquete listo), `failed` (fallida, incluido un paquete listo que se perdió o se alteró) y `expired` (caducada por vencimiento o reemplazo). |
+| `data_export_failures_total{code}` | Counter | Fallas por código seguro (`DATA_EXPORT_*`). |
+| `data_export_phase_duration_seconds{phase}` | Histogram | Duración de cada fase de la generación: `SNAPSHOT` (la lectura consistente y los libros), `ARTIFACTS` (los artefactos) y `PUBLISHING` (el cierre, la publicación y la transacción final). |
+| `data_export_size_bytes` | Histogram | Tamaño de cada paquete listo. |
+| `data_export_downloads_total{result}` | Counter | Descargas por resultado: `started` (verificada, auditada y en envío), `not_ready`, `expired` e `integrity_failed`. |
+| `data_export_lease_renewals_failed_total` | Counter | Renovaciones del *lease* rechazadas: el worker perdió el job y su generación se abortó sin publicar. |
+
+Alertas propuestas: cualquier `data_export_failures_total{code=~"DATA_EXPORT_(ARTIFACT|PACKAGE)_INTEGRITY"}`,
+que es un incidente de integridad, y `data_export_lease_renewals_failed_total` sostenido, que pide
+revisar la carga de la instancia.
+
+Los eventos de auditoría de la portabilidad (design D19) son cuatro:
+
+- `data_export.requested`: el administrador que la pide, con la referencia de la exportación.
+- `data_export.completed`: el sistema, cuando el paquete queda listo, con los conteos, el tamaño y el SHA-256, en la misma transacción que lo publica.
+- `data_export.failed`: el sistema, con solo el código seguro, también cuando un paquete listo se pierde o se altera antes de caducar.
+- `data_export.download_started`: el administrador, registrado después de verificar el paquete y antes del primer byte. Si no se puede escribir, no se entrega nada. No afirma que recibió el archivo completo.
+
+Ningún evento lleva rutas, nombres de archivos interiores, contenido, XML, respuestas del SRI ni
+datos personales, y no hay eventos ni entregas por comprobante. Una solicitud o una descarga
+rechazadas no se auditan. Los logs de la portabilidad llevan la referencia de la exportación, la
+fase, los conteos y las duraciones, nunca rutas del sistema de archivos ni contenido.
+
 ## Logging Rules
 
 - Do not log secrets.

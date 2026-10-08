@@ -70,6 +70,7 @@ export const PERMISSIONS = [
   "purchaseSettlements.reconcile",
   "reports.read",
   "reports.export",
+  "dataPortability.export",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -161,6 +162,9 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     // add-reports-export, design D14: "Ver reportes y exportar XLSX".
     "reports.read",
     "reports.export",
+    // add-data-portability, design D18: "Exportar todos los datos del contribuyente", solo el
+    // administrador: solicitar, listar, consultar y descargar las exportaciones de portabilidad.
+    "dataPortability.export",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.

@@ -1,6 +1,7 @@
 // Evento del rastro de auditoría del tenant (audit-trail; design D11 y D13). Cambios exitosos de un
 // actor conocido y, desde add-reports-export, cada exportación de un reporte que el servidor generó;
-// nunca secretos ni direcciones IP.
+// desde add-data-portability, la solicitud, la generación y el inicio de cada descarga de una
+// exportación de portabilidad. Nunca secretos ni direcciones IP.
 
 export type AuditActor =
   { type: "USER"; userId: string } | { type: "SYSTEM" } | { type: "TECHNICAL_ADMIN" };
@@ -89,6 +90,15 @@ export const AUDIT_ACTIONS = [
   // add-reports-export, design D13: el XLSX quedó generado y autorizado para entregarse; no afirma
   // que el usuario lo recibió. Con el reporte, las filas y los filtros sin datos personales.
   "report.exported",
+  // add-data-portability, design D19: la solicitud de una exportación de portabilidad (el
+  // administrador), su paquete listo con los conteos, el tamaño y el SHA-256 (el sistema), su falla
+  // con solo el código seguro (el sistema) y el inicio de una descarga, registrado antes del primer
+  // byte: no afirma que el administrador recibió el archivo completo. Nunca rutas, nombres de
+  // archivos interiores, contenido, XML, respuestas del SRI ni datos personales.
+  "data_export.requested",
+  "data_export.completed",
+  "data_export.failed",
+  "data_export.download_started",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
