@@ -10,11 +10,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Decimal } from "decimal.js";
 import { afterAll, describe, expect, it } from "vitest";
-import {
-  dateSerial,
-  dateTimeSerial,
-  XlsxValueError,
-} from "../../src/platform/xlsx/cells.ts";
+import { dateSerial, dateTimeSerial, XlsxValueError } from "../../src/platform/xlsx/cells.ts";
 import {
   writeXlsx,
   type XlsxColumn,

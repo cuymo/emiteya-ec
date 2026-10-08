@@ -1,10 +1,6 @@
 // Libro de prueba del escritor XLSX (ADR 0023): las celdas difíciles del reporte de documentos
 // emitidos, repetidas de forma determinista para cualquier número de filas.
-import type {
-  XlsxColumn,
-  XlsxSheet,
-  XlsxValue,
-} from "../../src/platform/xlsx/xlsx-writer.ts";
+import type { XlsxColumn, XlsxSheet, XlsxValue } from "../../src/platform/xlsx/xlsx-writer.ts";
 
 export const FIXTURE_COLUMNS: readonly XlsxColumn[] = [
   { header: "Fecha", kind: "date", width: 11 },
