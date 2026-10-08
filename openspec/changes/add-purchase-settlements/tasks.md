@@ -75,7 +75,7 @@
 ## 14. Rendimiento y prueba end-to-end
 
 - [ ] 14.1 Añadir `bench:purchase-settlements` en `backend/scripts/` (design D27), con el barrido del RIDE apagado y la base asentada, y registrar su resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada P95 cumple ERS RNF-005, que el RIDE tarda menos de 1 s, que la transacción de la reserva no incluye XML, firma ni red, y que el CPU, la memoria y la latencia confirman los valores por defecto de design D22 (o ajustarlos con `/opsx:update` y la evidencia). Registrar el tamaño del XML firmado del peor caso solo como medición, sin relacionarlo con Q-47
-- [ ] 14.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado aislado: una liquidación con cédula, una línea con producto y otra libre, dos pagos con plazo y las cuatro declaraciones, autorizada y con su RIDE en la bandeja con el proveedor; otra no autorizada; y el inventario, los terceros y la ausencia de comprobantes de retención sin cambios. Verificar que la prueba pasa
+- [x] 14.2 Añadir la prueba end-to-end sobre `main.ts` con el SRI simulado aislado: una liquidación con cédula, una línea con producto y otra libre, dos pagos con plazo y las cuatro declaraciones, autorizada y con su RIDE en la bandeja con el proveedor; otra no autorizada; y el inventario, los terceros y la ausencia de comprobantes de retención sin cambios. Verificar que la prueba pasa
 
 ## 15. Verificación
 

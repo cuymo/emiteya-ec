@@ -1,0 +1,666 @@
+{
+  "date": "2026-10-07",
+  "volume": {
+    "parties": 10000,
+    "suppliers": 5000,
+    "products": 10000,
+    "settlements": 100000,
+    "seedSeconds": 119.3,
+    "before": {
+      "party": {
+        "rows": 10002,
+        "totalSize": "9568 kB"
+      },
+      "product": {
+        "rows": 10000,
+        "totalSize": "9104 kB"
+      },
+      "electronic_document": {
+        "rows": 100001,
+        "totalSize": "407 MB"
+      },
+      "document_artifact": {
+        "rows": 200001,
+        "totalSize": "124 MB"
+      },
+      "purchase_settlement": {
+        "rows": 100001,
+        "totalSize": "28 MB"
+      },
+      "purchase_settlement_declaration": {
+        "rows": 400004,
+        "totalSize": "149 MB"
+      },
+      "purchase_settlement_draft": {
+        "rows": 1,
+        "totalSize": "96 kB"
+      }
+    },
+    "after": {
+      "party": {
+        "rows": 10002,
+        "totalSize": "9568 kB"
+      },
+      "product": {
+        "rows": 10000,
+        "totalSize": "9104 kB"
+      },
+      "electronic_document": {
+        "rows": 100333,
+        "totalSize": "409 MB"
+      },
+      "document_artifact": {
+        "rows": 200333,
+        "totalSize": "126 MB"
+      },
+      "purchase_settlement": {
+        "rows": 100333,
+        "totalSize": "28 MB"
+      },
+      "purchase_settlement_declaration": {
+        "rows": 401332,
+        "totalSize": "149 MB"
+      },
+      "purchase_settlement_draft": {
+        "rows": 393,
+        "totalSize": "2592 kB"
+      }
+    }
+  },
+  "warmup": 10,
+  "samples": 100,
+  "budgetMs": 2000,
+  "rideBudgetMs": 1000,
+  "limits": {
+    "default": {
+      "lines": 100,
+      "payments": 10
+    },
+    "absolute": {
+      "lines": 1000,
+      "payments": 20
+    }
+  },
+  "draftBodyLimitBytes": 4194304,
+  "backendBaseline": {
+    "rssMiB": 669.8,
+    "peakRssMiB": 669.8
+  },
+  "environment": {
+    "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "shared_buffers": "128MB",
+    "work_mem": "4MB",
+    "effective_cache_size": "4GB",
+    "jit": "on",
+    "node": "v24.15.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
+    "memory": "16 GiB",
+    "commit": "f6e7896"
+  },
+  "results": [
+    {
+      "name": "Proveedores: primera página, sin filtro",
+      "path": "/purchase-settlements/suppliers",
+      "results": 5001,
+      "p50": 7.6,
+      "p95": 10,
+      "max": 12,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Proveedores: búsqueda por identificación",
+      "path": "/purchase-settlements/suppliers?search=1700001234",
+      "results": 1,
+      "p50": 7.7,
+      "p95": 9.1,
+      "max": 12.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Proveedores: búsqueda por nombre (todos coinciden)",
+      "path": "/purchase-settlements/suppliers?search=proveedor",
+      "results": 5001,
+      "p50": 7.4,
+      "p95": 9.6,
+      "max": 10.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Productos activos: primera página",
+      "path": "/products?status=ACTIVE",
+      "results": 10000,
+      "p50": 9.8,
+      "p95": 13.7,
+      "max": 17.3,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Productos activos: búsqueda por código",
+      "path": "/products?status=ACTIVE&search=P001234",
+      "results": 1,
+      "p50": 12.2,
+      "p95": 15.5,
+      "max": 18.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Opciones del borrador",
+      "path": "/purchase-settlements/options",
+      "results": null,
+      "p50": 4.3,
+      "p95": 5.3,
+      "max": 9.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Cálculo versionado de 100 líneas (en el proceso)",
+      "path": "calculatePurchaseSettlementAmounts",
+      "results": 100,
+      "p50": 1.63,
+      "p95": 2.1,
+      "max": 2.92,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Cálculo versionado de 1000 líneas (en el proceso)",
+      "path": "calculatePurchaseSettlementAmounts",
+      "results": 1000,
+      "p50": 17.22,
+      "p95": 18.95,
+      "max": 23.39,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Creación del borrador del peor caso (valores por defecto: 100 líneas y 10 pagos, textos multibyte de longitud máxima)",
+      "path": "POST /purchase-settlements/drafts",
+      "results": 20,
+      "p50": 22.9,
+      "p95": 29.7,
+      "max": 31.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Vista previa del borrador del peor caso (valores por defecto)",
+      "path": "/purchase-settlements/drafts/{id}",
+      "results": 100,
+      "p50": 14.1,
+      "p95": 19.6,
+      "max": 22.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (valores por defecto): total del servidor",
+      "path": "POST /purchase-settlements",
+      "results": 10,
+      "p50": 299.4,
+      "p95": 326.7,
+      "max": 326.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (valores por defecto): transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 10,
+      "p50": 44.3,
+      "p95": 52.6,
+      "max": 52.6,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Creación del borrador del peor caso (máximos absolutos: 1000 líneas y 20 pagos, textos multibyte de longitud máxima)",
+      "path": "POST /purchase-settlements/drafts",
+      "results": 20,
+      "p50": 122.7,
+      "p95": 140.6,
+      "max": 161.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Vista previa del borrador del peor caso (máximos absolutos)",
+      "path": "/purchase-settlements/drafts/{id}",
+      "results": 1000,
+      "p50": 58.2,
+      "p95": 63.6,
+      "max": 79.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (máximos absolutos): total del servidor",
+      "path": "POST /purchase-settlements",
+      "results": 10,
+      "p50": 814.3,
+      "p95": 836.7,
+      "max": 836.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión del peor caso (máximos absolutos): transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 10,
+      "p50": 140.4,
+      "p95": 168.1,
+      "max": 168.1,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión con reserva: total del servidor",
+      "path": "POST /purchase-settlements",
+      "results": 100,
+      "p50": 219.4,
+      "p95": 245.8,
+      "max": 261.2,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Emisión con reserva: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 26.6,
+      "p95": 32.2,
+      "max": 33.8,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Proveedores distintos, 10 simultáneas: total del servidor",
+      "path": "POST /purchase-settlements",
+      "results": 100,
+      "p50": 572,
+      "p95": 696.1,
+      "max": 738.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Proveedores distintos, 10 simultáneas: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 155.8,
+      "p95": 283.5,
+      "max": 361.3,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "El mismo proveedor, 10 simultáneas: total del servidor",
+      "path": "POST /purchase-settlements",
+      "results": 100,
+      "p50": 577.7,
+      "p95": 708.5,
+      "max": 741.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "El mismo proveedor, 10 simultáneas: transacción de la reserva",
+      "path": "reservation_tx",
+      "results": 100,
+      "p50": 159.9,
+      "p95": 284.2,
+      "max": 313.9,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Liquidaciones: primera página, sin filtro",
+      "path": "/purchase-settlements",
+      "results": 100333,
+      "p50": 17.3,
+      "p95": 26.2,
+      "max": 27.4,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Liquidaciones: búsqueda por número",
+      "path": "/purchase-settlements?search=000054321",
+      "results": 1,
+      "p50": 61.3,
+      "p95": 69.4,
+      "max": 75,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Liquidaciones: búsqueda por identificación del proveedor",
+      "path": "/purchase-settlements?search=1700001234",
+      "results": 20,
+      "p50": 58.8,
+      "p95": 66.2,
+      "max": 72.9,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Liquidaciones: búsqueda por nombre del proveedor",
+      "path": "/purchase-settlements?search=PROVEEDOR%20DEL%20BENCHMARK%2001234",
+      "results": 20,
+      "p50": 64.3,
+      "p95": 75.1,
+      "max": 80.5,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Liquidaciones: filtro por estado",
+      "path": "/purchase-settlements?state=AUTHORIZED",
+      "results": 100000,
+      "p50": 38.1,
+      "p95": 40,
+      "max": 42,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Bandeja: liquidaciones filtradas por identificación del proveedor",
+      "path": "/documents?documentType=03&identification=1700001234",
+      "results": 20,
+      "p50": 161,
+      "p95": 177.6,
+      "max": 189.7,
+      "budgetMs": 2000,
+      "withinBudget": true
+    },
+    {
+      "name": "Render del RIDE de una liquidación (worker)",
+      "path": "RideWorkerPool",
+      "results": 30,
+      "pages": 1,
+      "p50": 86.1,
+      "p95": 95.5,
+      "max": 95.8,
+      "budgetMs": 1000,
+      "withinBudget": true
+    },
+    {
+      "name": "Render del RIDE del máximo de líneas (1000 líneas, 102 páginas)",
+      "path": "RideWorkerPool",
+      "results": 30,
+      "pages": 102,
+      "p50": 1036.9,
+      "p95": 1073.1,
+      "max": 1074.6,
+      "budgetMs": 1000,
+      "withinBudget": false
+    }
+  ],
+  "worstCase": {
+    "valores por defecto": {
+      "shape": "100 líneas y 10 pagos, textos multibyte de longitud máxima",
+      "lines": 100,
+      "payments": 10,
+      "bodyBytes": 103309,
+      "signedXmlBytes": 156132,
+      "signedXmlKiB": 152.5,
+      "largestId": "3bdb0c1c-fd19-40d4-9e4d-966bc7d584d0",
+      "stages": {
+        "reservation_tx": {
+          "p50": 44.3,
+          "p95": 52.6,
+          "max": 52.6
+        },
+        "xml": {
+          "p50": 1.5,
+          "p95": 2.2,
+          "max": 2.2
+        },
+        "xsd": {
+          "p50": 127.8,
+          "p95": 154.9,
+          "max": 154.9
+        },
+        "sign": {
+          "p50": 79.8,
+          "p95": 94.4,
+          "max": 94.4
+        },
+        "persist": {
+          "p50": 12.9,
+          "p95": 19.2,
+          "max": 19.2
+        },
+        "total": {
+          "p50": 299.4,
+          "p95": 326.7,
+          "max": 326.7
+        }
+      },
+      "client": {
+        "p50": 304.7,
+        "p95": 332.6,
+        "max": 332.6
+      },
+      "backend": {
+        "cpuMsPerDraftRequest": 18.1,
+        "cpuMsPerDraftAndEmission": 532.7,
+        "rssBeforeMiB": 669.8,
+        "rssMiB": 736.9,
+        "peakRssMiB": 745.1
+      }
+    },
+    "máximos absolutos": {
+      "shape": "1000 líneas y 20 pagos, textos multibyte de longitud máxima",
+      "lines": 1000,
+      "payments": 20,
+      "bodyBytes": 1010568,
+      "signedXmlBytes": 1467936,
+      "signedXmlKiB": 1433.5,
+      "largestId": "5c5078fc-4354-4c33-8ad6-e8f1c4d50ff5",
+      "stages": {
+        "reservation_tx": {
+          "p50": 140.4,
+          "p95": 168.1,
+          "max": 168.1
+        },
+        "xml": {
+          "p50": 15.8,
+          "p95": 22,
+          "max": 22
+        },
+        "xsd": {
+          "p50": 224.8,
+          "p95": 257.2,
+          "max": 257.2
+        },
+        "sign": {
+          "p50": 288.6,
+          "p95": 319.4,
+          "max": 319.4
+        },
+        "persist": {
+          "p50": 53.2,
+          "p95": 74.7,
+          "max": 74.7
+        },
+        "total": {
+          "p50": 814.3,
+          "p95": 836.7,
+          "max": 836.7
+        }
+      },
+      "client": {
+        "p50": 827.4,
+        "p95": 854.2,
+        "max": 854.2
+      },
+      "backend": {
+        "cpuMsPerDraftRequest": 72.2,
+        "cpuMsPerDraftAndEmission": 1187.3,
+        "rssBeforeMiB": 736.9,
+        "rssMiB": 1070.6,
+        "peakRssMiB": 1150.5
+      }
+    }
+  },
+  "signedXmlMaxBytes": 1467936,
+  "signedXmlNote": "Medición de recursos del peor caso; sin relación con Q-47 ni con ningún límite del SRI.",
+  "serialEmissions": {
+    "client": {
+      "p50": 222.5,
+      "p95": 249.7,
+      "max": 264.3
+    },
+    "stages": {
+      "reservation_tx": {
+        "p50": 26.6,
+        "p95": 32.2,
+        "max": 33.8
+      },
+      "xml": {
+        "p50": 0.1,
+        "p95": 0.1,
+        "max": 0.2
+      },
+      "xsd": {
+        "p50": 119.3,
+        "p95": 141.2,
+        "max": 158.6
+      },
+      "sign": {
+        "p50": 50.5,
+        "p95": 55.5,
+        "max": 63.1
+      },
+      "persist": {
+        "p50": 8.8,
+        "p95": 11.5,
+        "max": 13.7
+      },
+      "total": {
+        "p50": 219.4,
+        "p95": 245.8,
+        "max": 261.2
+      }
+    }
+  },
+  "contention": {
+    "Proveedores distintos": {
+      "concurrent": 10,
+      "rounds": 10,
+      "reservationsPerSecond": 13.9,
+      "reservationTx": {
+        "p50": 155.8,
+        "p95": 283.5,
+        "max": 361.3
+      },
+      "lockWaitP95Ms": 256.9,
+      "stages": {
+        "reservation_tx": {
+          "p50": 155.8,
+          "p95": 283.5,
+          "max": 361.3
+        },
+        "xml": {
+          "p50": 0.1,
+          "p95": 0.2,
+          "max": 0.3
+        },
+        "xsd": {
+          "p50": 269.2,
+          "p95": 325,
+          "max": 359
+        },
+        "sign": {
+          "p50": 60.1,
+          "p95": 72.8,
+          "max": 154.3
+        },
+        "persist": {
+          "p50": 10,
+          "p95": 13.6,
+          "max": 14.8
+        },
+        "total": {
+          "p50": 572,
+          "p95": 696.1,
+          "max": 738.5
+        }
+      },
+      "client": {
+        "p50": 585.4,
+        "p95": 728.8,
+        "max": 783.8
+      }
+    },
+    "El mismo proveedor": {
+      "concurrent": 10,
+      "rounds": 10,
+      "reservationsPerSecond": 13.9,
+      "reservationTx": {
+        "p50": 159.9,
+        "p95": 284.2,
+        "max": 313.9
+      },
+      "lockWaitP95Ms": 257.6,
+      "stages": {
+        "reservation_tx": {
+          "p50": 159.9,
+          "p95": 284.2,
+          "max": 313.9
+        },
+        "xml": {
+          "p50": 0.1,
+          "p95": 0.1,
+          "max": 0.2
+        },
+        "xsd": {
+          "p50": 273,
+          "p95": 331.6,
+          "max": 350
+        },
+        "sign": {
+          "p50": 59.5,
+          "p95": 69,
+          "max": 72.5
+        },
+        "persist": {
+          "p50": 9.3,
+          "p95": 14,
+          "max": 42
+        },
+        "total": {
+          "p50": 577.7,
+          "p95": 708.5,
+          "max": 741.4
+        }
+      },
+      "client": {
+        "p50": 592.4,
+        "p95": 725.8,
+        "max": 758.9
+      }
+    }
+  },
+  "independence": {
+    "emitted": 100333,
+    "stockMovements": {
+      "before": 0,
+      "after": 0
+    },
+    "stockBalancesUnchanged": true,
+    "withholdings": {
+      "before": 0,
+      "after": 0
+    },
+    "partiesUnchanged": true,
+    "productsUnchanged": true
+  }
+}

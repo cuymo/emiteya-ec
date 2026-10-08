@@ -22,6 +22,7 @@
     "bench:debit-notes": "node --conditions=development scripts/bench-debit-notes.ts",
     "bench:withholding-receipts": "node --conditions=development scripts/bench-withholding-receipts.ts",
     "bench:shipping-guides": "node --conditions=development scripts/bench-shipping-guides.ts",
+    "bench:purchase-settlements": "node --conditions=development scripts/bench-purchase-settlements.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:auth-schema": "auth generate --config src/modules/identity/infrastructure/better-auth/cli.config.ts --output prisma/schema.prisma -y && prisma format",
