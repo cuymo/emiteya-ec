@@ -504,6 +504,12 @@ se repiten aquí.
 - **BR-50** Una entrega fallida no cambia el estado fiscal del comprobante (CTX §46).
 - **BR-51** El XLSX exporta las identificaciones como texto y los importes como números con formato monetario, y respeta los filtros aplicados (ERS RF-502..504).
 - **BR-52** Los reportes no reemplazan obligaciones contables ni anexos tributarios (ERS RF-505).
+- **BR-57** Hay cinco reportes, todos listados: Documentos emitidos, Facturas, Retenciones, Inventario (Existencias y Movimientos) y Terceros. Nunca compensan una nota contra su factura ni suman ventas o impuestos netos (ERS §11, RF-505; readiness del cambio 15).
+- **BR-58** El mismo reporte con los mismos filtros exporta exactamente los registros de su lista completa, en el mismo orden, y nunca un archivo truncado (ERS RF-504, AC-09).
+- **BR-59** Documentos emitidos muestra por defecto todos los estados desde la reserva del número; Facturas y Retenciones, solo las autorizadas. Ningún reporte incluye borradores (readiness del cambio 15).
+- **BR-60** Los reportes filtran por ambiente y, por defecto, muestran el ambiente vigente de la empresa; Pruebas y Producción solo se mezclan por elección explícita (ERS RF-004; readiness del cambio 15).
+- **BR-61** Un reporte fiscal sale del comprobante congelado y de sus registros inmutables, nunca del tercero, el producto ni el catálogo vigentes (ERS §13.1; BR-47).
+- **BR-62** Cada exportación generada se audita sin datos personales ni contenido del archivo (readiness del cambio 15).
 - **BR-53** Se audita todo cambio de configuración tributaria, firma, secuenciales y ambiente, y toda transición de estado de un comprobante (ERS RF-003, RF-105, RF-525, SEC-007).
 
 ### Usuarios

@@ -264,6 +264,35 @@ política del MVP y la defensa de recursos.
 | RIDE propio con la distribución del anexo 2 | Requisito oficial | Ficha v2.34, página 65 |
 | Sin reembolsos, máquina fiscal, negociable, subsidios, ICE ni IRBPNR | Política del MVP | XSD 1.1.0; matriz de casos especiales; Q-12 |
 
+## Trazabilidad de `reports`
+
+Decisiones de la revisión de readiness del cambio 15 (`add-reports-export`, 2026-10-08). Los specs
+distinguirán el requisito del ERS, la política del MVP y la defensa de recursos.
+
+| Regla | Origen | Fuente |
+| --- | --- | --- |
+| Exactamente cinco reportes: Documentos emitidos, Facturas, Retenciones, Inventario y Terceros, con sus filtros mínimos y sus columnas orientativas | Requisito del ERS | ERS §11 |
+| Exportación solo a XLSX; sin CSV, PDF, JSON exportado ni ZIP | Requisito del ERS (XLSX) y política del MVP (nada más) | ERS RF-501 |
+| Identificaciones, claves, autorizaciones y números formateados como texto | Requisito del ERS | ERS RF-502 |
+| Importes como números con formato monetario, y como texto canónico cuando superan la precisión segura de la hoja (unos 15 dígitos significativos): nunca un decimal exacto convertido a binario aproximado | Requisito del ERS y política del proyecto (exactitud antes que conveniencia) | ERS RF-503; política decimal |
+| La exportación respeta los filtros: el mismo tipo de reporte con los mismos filtros da exactamente los registros de la lista completa paginada, en el mismo orden; el atajo mensual solo fija el rango de fechas | Requisito del ERS | ERS RF-504, AC-09 |
+| Listados, no contabilidad: sin totales netos, sin compensar notas contra facturas, sin ventas netas, impuestos agregados, ATS, declaraciones, compras ni cartera | Requisito del ERS | ERS RF-505, §2.3, §21 |
+| Notas de crédito y de débito, guías y liquidaciones de compra solo como filas de Documentos emitidos, con sus propios importes; Facturas solo factura; Retenciones, una fila por línea de retención | Política del MVP | ERS §11 |
+| Documentos emitidos: por defecto, todos los estados desde que el comprobante reserva su número (nunca borradores), con el estado en cada fila | Política del MVP | Revisión de readiness del cambio 15 |
+| Facturas y Retenciones: por defecto, solo las autorizadas; el usuario puede elegir otro estado | Política del MVP (semántica fiscal) | Revisión de readiness del cambio 15 |
+| Columna y filtro de ambiente; por defecto, el ambiente vigente de la empresa, derivado en el servidor; Pruebas, Producción o todos solo por elección explícita, y la exportación usa el mismo filtro que la lista | Política del MVP | ERS RF-004; revisión de readiness del cambio 15 |
+| Fuente histórica: el comprobante congelado y su snapshot por tipo; las tablas inmutables de la retención; el saldo y el kárdex del inventario; los datos vigentes de los terceros. Nunca el tercero, el producto ni el catálogo vigentes para reconstruir historia fiscal | Política del proyecto | ERS §13.1; BR-47 |
+| Inventario en dos vistas: Existencias (saldo de los productos con inventario inicializado) y Movimientos (kárdex de la empresa, por producto, fechas y tipo de movimiento) | Política del MVP | ERS §11 |
+| Exportación síncrona por streaming, sin job, artefacto, TTL ni URL firmada, con memoria acotada | Política del proyecto | Revisión de readiness del cambio 15 |
+| `REPORT_EXPORT_MAX_ROWS` y `REPORT_EXPORT_MAX_CONCURRENT`, con sus valores fijados por el benchmark; superar el tope de filas pide acotar los filtros y nunca entrega un archivo truncado | Defensa de recursos del proyecto, nunca un límite del ERS | Q-26; revisión de readiness del cambio 15 |
+| El texto escrito por el usuario va en celdas de texto, nunca como fórmula, sin alterar el valor visible | Seguridad del proyecto | `../security/threat-model.md` (archivos generados y exportaciones) |
+| Toda exportación generada se audita (`report.exported`) con el actor, el tipo de reporte, el momento, el número de filas y los filtros no sensibles; de un filtro con un dato personal solo se registra que estuvo presente. Sin tabla `report_export` | Política del proyecto | ERS §13 (`report_export` opcional), RNF-006; revisión de readiness del cambio 15 |
+| Ver reportes y exportar XLSX: administrador y operador | Política del MVP | `../security/access-control.md`; Q-22 |
+| La portabilidad completa (XML, RIDE, artefactos, ZIP, todos los datos) es del cambio 16 | Frontera con `data-portability` | ERS SEC-010, AC-10; Q-28 |
+
+La revisión de readiness del cambio 15 no suma capacidades futuras: los dashboards, los indicadores,
+los gráficos y los reportes agregados quedan fuera del MVP.
+
 ## Huecos de trazabilidad
 
 El ERS §19 no asigna criterio de aceptación a estos requisitos. Cada cambio que los
