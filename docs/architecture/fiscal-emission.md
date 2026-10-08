@@ -882,7 +882,8 @@ BR-95), con su origen oficial, de política del MVP o de defensa de recursos en
 
 ## Implementación de `add-purchase-settlements`
 
-Cambio 14, en curso.
+Cambio 14, archivado el 2026-10-08. Las decisiones están en la sección anterior y en el design del
+cambio (`openspec/changes/archive/2026-10-08-add-purchase-settlements/`).
 
 ### Cálculo, evaluación y snapshot de la liquidación
 

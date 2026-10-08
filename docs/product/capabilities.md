@@ -239,7 +239,10 @@ política del MVP y la defensa de recursos.
 
 ## Trazabilidad de `purchase-settlements`
 
-Fuentes del cambio 14 y qué fija cada una (Q-12). Los specs distinguirán el requisito oficial, la
+Estado: `add-purchase-settlements` archivado el 2026-10-08
+(`openspec/changes/archive/2026-10-08-add-purchase-settlements/`).
+
+Fuentes del cambio 14 y qué fija cada una (Q-12). Los specs distinguen el requisito oficial, la
 política del MVP y la defensa de recursos.
 
 | Regla | Origen | Fuente |
