@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-08",
+  "change": "add-data-portability",
+  "task": "1.1",
+  "environment": {
+    "node": "v24.15.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 hilos)",
+    "memory": "16 GiB",
+    "disk": "disco mecánico local (ext4)",
+    "readers": {
+      "python": "3.14.6 zipfile (testzip: CRC de cada entrada)",
+      "unzip": "Info-ZIP UnZip 6.00 (unzip -tqq)",
+      "7z": "7-Zip 26.02 (7z t)",
+      "bsdtar": "bsdtar 3.8.9, libarchive 3.8.9 (bsdtar -tf)"
+    }
+  },
+  "options": {
+    "A": "Contenedor ZIP64 propio sobre node:zlib: tamaño y CRC conocidos antes de cada cabecera local, sin descriptor de datos; STORE o DEFLATE por entrada; directorio central volcado a un temporal",
+    "B1": "yazl 3.3.1 (MIT, 1 dependencia)",
+    "B2": "zip-stream 7.0.5 (MIT, compress-commons)",
+    "B3": "@zip.js/zip.js 2.23.0 (BSD-3-Clause, sin dependencias)",
+    "B4": "fflate 0.8.3 (MIT, sin dependencias)"
+  },
+  "scenarios": {
+    "mixed": "4002 entradas (snapshot JSON en DEFLATE y PDF incompresible de 25 KB en STORE), unos 50 MB",
+    "many": "600 000 entradas: por comprobante firmado.xml y autorizado.xml en DEFLATE y ride.pdf de 1 KB en STORE",
+    "big": "una entrada STORE de 4.5 GiB desde un archivo, seguida de 5 entradas con desplazamientos por encima de 4 GiB"
+  },
+  "results": [
+    { "impl": "A", "scenario": "mixed", "entries": 4002, "ms": 857, "peakRssMiB": 137, "readers": "all ok" },
+    { "impl": "B1", "scenario": "mixed", "entries": 4002, "ms": 512, "peakRssMiB": 435, "readers": "all ok", "note": "sin contrapresión" },
+    { "impl": "B2", "scenario": "mixed", "entries": 4002, "ms": 565, "peakRssMiB": 233, "readers": "all ok" },
+    { "impl": "B3", "scenario": "mixed", "entries": 4002, "ms": 1830, "peakRssMiB": 365, "readers": "all ok" },
+    { "impl": "B4", "scenario": "mixed", "entries": 4002, "ms": 650, "peakRssMiB": 299, "readers": "all ok" },
+    { "impl": "A", "scenario": "many", "entries": 60000, "ms": 3348, "peakRssMiB": 280 },
+    { "impl": "A", "scenario": "many", "entries": 200001, "ms": 9806, "peakRssMiB": 310 },
+    { "impl": "A", "scenario": "many", "entries": 600000, "ms": 26478, "peakRssMiB": 357, "sizeBytes": 419878999, "readers": "all ok" },
+    { "impl": "A", "scenario": "many", "entries": 600000, "ms": 32699, "peakRssMiB": 179, "heapCapMiB": 48, "note": "mismos bytes que sin límite de heap" },
+    { "impl": "B1", "scenario": "many", "entries": 60000, "ms": 18271, "peakRssMiB": 542, "note": "con contrapresión por entrada" },
+    { "impl": "B1", "scenario": "many", "entries": 200001, "ms": 488025, "peakRssMiB": 1420, "readers": "all ok", "note": "tiempo superlineal; sin contrapresión no terminó 600 000 en 15 min" },
+    { "impl": "B2", "scenario": "many", "entries": 60000, "ms": 4689, "peakRssMiB": 792 },
+    { "impl": "B2", "scenario": "many", "entries": 200001, "ms": 14881, "peakRssMiB": 1960 },
+    { "impl": "B2", "scenario": "many", "entries": 600000, "ms": 46245, "peakRssMiB": 5213, "readers": "all ok" },
+    { "impl": "B3", "scenario": "many", "entries": 60000, "ms": 19983, "peakRssMiB": 844 },
+    { "impl": "B3", "scenario": "many", "entries": 200001, "ms": 66000, "peakRssMiB": 1730 },
+    { "impl": "B3", "scenario": "many", "entries": 600000, "ms": 238754, "peakRssMiB": 4200, "readers": "all ok" },
+    { "impl": "B4", "scenario": "many", "entries": 70002, "ms": 16811, "peakRssMiB": 624, "note": "sin ZIP64: el cierre dice 4466 entradas y no hay registro ZIP64; los lectores lo toleran recorriendo el directorio" },
+    { "impl": "A", "scenario": "big", "entries": 6, "ms": 41529, "peakRssMiB": 172, "sizeBytes": 4831840726, "readers": "all ok" },
+    { "impl": "B2", "scenario": "big", "entries": 6, "ms": 77265, "peakRssMiB": 174, "readers": "python, 7z y bsdtar ok; unzip: error: invalid zip file with overlapped components (possible zip bomb)" },
+    { "impl": "B3", "scenario": "big", "entries": 6, "ms": 78487, "peakRssMiB": 2938, "readers": "python, 7z y bsdtar ok; unzip falla (código 12)" }
+  ],
+  "determinism": "A: dos corridas de 600 000 entradas, con y sin límite de heap, dieron el mismo SHA-256 (3c3137473d937f81e5a97b5be23cc6b62e25357ab0633dc9767248c4278eb1d0)",
+  "utf8Names": "A: documentos/ñandú-ünïcode.txt leído igual por los cuatro lectores",
+  "symlinks": "A: todos los registros con atributos externos de archivo regular (0o100644); ninguno de enlace simbólico según Python zipfile",
+  "decision": "A"
+}

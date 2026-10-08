@@ -2,7 +2,7 @@
 
 ## 1. Contenedor ZIP64 y capa neutral del XLSX
 
-- [ ] 1.1 Primera tarea técnica (design D9): hacer un spike corto, fuera del código de producción, que compare ampliar el contenedor ZIP propio con ZIP64 (A) y una biblioteca de producción mantenida con ZIP64 y streaming real (B).
+- [x] 1.1 Primera tarea técnica (design D9): hacer un spike corto, fuera del código de producción, que compare ampliar el contenedor ZIP propio con ZIP64 (A) y una biblioteca de producción mantenida con ZIP64 y streaming real (B).
   - Criterios obligatorios:
     - ZIP64 con más de 65 535 entradas y más de 4 GiB;
     - entradas binarias desde streams con memoria acotada;
