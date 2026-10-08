@@ -206,7 +206,13 @@ Lo que ya existe y este cambio reutiliza, sin cambiar su comportamiento:
   - acción principal: "Exportar XLSX".
   - P0: el reporte, los filtros, el número de registros y "Exportar XLSX"; P1: la tabla; P2: los filtros secundarios y el aviso de RF-505; P3 (identificadores internos): no se muestran.
 - **Ruta y navegación:** `/reportes`, en el grupo Operación, con `reports.read`.
-- **Componentes:** un `Select` o `SegmentedControl` para el reporte, y otro para la vista del inventario; `DatePickerField` con el atajo mensual; `ChipGroup` para los estados; `AppDataTable` paginada con tarjetas por debajo de 768 px; `NoticeStrip` para el aviso de RF-505.
+- **Componentes:**
+  - `Select` para el reporte y `SegmentedControl` para la vista del inventario;
+  - `DatePickerField` con el atajo mensual (un `Select` de meses);
+  - `Select` para los estados: los nueve no caben como `ChipGroup` en móvil;
+  - `EntityPickerDialog` para el producto;
+  - `AppDataTable` paginada con tarjetas por debajo de 768 px;
+  - el aviso de RF-505 como texto con icono bajo los controles. No es una condición persistente de la instalación, así que no va en `NoticeStrip`.
 - **Exportación:** "Exportar XLSX" descarga con `apiFetchFile` y los mismos filtros de la URL. Muestra el progreso mientras se genera y explica el `409` del máximo de filas (acotar los filtros) y el `503` de la concurrencia (intentar después).
 - **Estados:** carga, vacío, sin coincidencias, error con reintento y sin permiso; escritorio, 375 y 320 px, temas claro y oscuro y teclado. Sin dashboard, gráficos ni indicadores.
 
