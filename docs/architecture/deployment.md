@@ -308,6 +308,7 @@ AC-10):
 - Los respaldos se cifran (ERS SEC-008) y nunca incluyen el P12 sin cifrar (CTX §20.4).
 - El procedimiento de restauración se prueba antes de cada release (ERS §20).
 - El SRI no es un sistema de respaldo (CTX §31).
+- La exportación de portabilidad (`data-portability`) no es un respaldo: no contiene la firma, los secretos ni los datos internos de autenticación, y no se restaura. AC-10 se verifica restaurando este respaldo.
 
 ### Responsabilidades del operador
 

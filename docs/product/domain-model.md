@@ -510,6 +510,12 @@ se repiten aquí.
 - **BR-60** Los reportes filtran por ambiente y, por defecto, muestran el ambiente vigente de la empresa; Pruebas y Producción solo se mezclan por elección explícita (ERS RF-004; readiness del cambio 15).
 - **BR-61** Un reporte fiscal sale del comprobante congelado y de sus registros inmutables, nunca del tercero, el producto ni el catálogo vigentes (ERS §13.1; BR-47).
 - **BR-62** Cada exportación generada se audita sin datos personales ni contenido del archivo (readiness del cambio 15).
+- **BR-96** La portabilidad exporta los datos y artefactos del contribuyente en un paquete autodescriptivo y versionado (`PORTABILITY_FORMAT_V1`). No es un respaldo, no contiene la firma, los secretos ni los datos internos de autenticación, y no se importa ni se restaura (ERS SEC-010; Q-28).
+- **BR-97** El paquete contiene los dos ambientes, separados, y los artefactos y las respuestas del SRI con sus bytes persistidos exactos, verificados por tamaño y SHA-256; nunca regenera un artefacto ni consulta al SRI (ERS RF-407, SEC-010; BR-47).
+- **BR-98** Un artefacto alterado hace fallar la exportación sin entregar un paquete parcial; uno legítimamente ausente se declara con su motivo (readiness del cambio 16).
+- **BR-99** Los borradores quedan fuera del paquete de la versión 1, y la exclusión no borra nada (readiness del cambio 16).
+- **BR-100** Solo el administrador genera y descarga la exportación de los datos de su empresa; el paquete caduca y se borra, nunca los datos del sistema (readiness del cambio 16).
+- **BR-101** Se auditan la solicitud, la generación completada o fallida y el inicio de cada descarga, sin rutas, contenido ni datos personales (readiness del cambio 16).
 - **BR-53** Se audita todo cambio de configuración tributaria, firma, secuenciales y ambiente, y toda transición de estado de un comprobante (ERS RF-003, RF-105, RF-525, SEC-007).
 
 ### Usuarios

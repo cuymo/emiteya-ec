@@ -34,7 +34,7 @@ la forma de verificarlo. Aplican a todos los cambios OpenSpec.
 | SEC-007 | Auditoría de firma, secuencial, ambiente y datos tributarios.                 | Eventos de auditoría con valores anteriores y nuevos redactados.                                       | `../product/domain-model.md` BR-53        | Pruebas por operación.                         |
 | SEC-008 | Respaldo cifrado o cómo implementarlo.                                        | Procedimiento de respaldo cifrado documentado.                                                         | `deployment.md`                           | Restauración desde respaldo cifrado.           |
 | SEC-009 | Ubicación de datos y responsabilidades en self-hosted.                        | Sección de responsabilidades del operador en la documentación de instalación.                          | `deployment.md`                           | Revisión de la documentación de release.       |
-| SEC-010 | Exportar datos y artefactos del contribuyente.                                | Capacidad `data-portability` (Q-28).                                                                   | `../product/capabilities.md`              | Exportación y reimportación de prueba.         |
+| SEC-010 | Exportar datos y artefactos del contribuyente. | Capacidad `data-portability`: paquete `PORTABILITY_FORMAT_V1` (Q-28 resuelta). | `../product/capabilities.md` | Verificación independiente del paquete: `SHA256SUMS`, lectores ZIP, XLSX y JSON independientes, y los XSD para los XML; sin reimportación (AC-10 se verifica con la restauración del respaldo operativo). |
 
 ## API (ERS §17)
 

@@ -42,7 +42,7 @@ documento no especifica comportamiento.
 | `document-archive`     | Bandeja única de los comprobantes desde la reserva, con filtros; RIDE generado una vez desde el XML autorizado (o el firmado transmitido, con su procedencia) para la factura 1.1.0 y la nota de crédito 1.1.0 (`add-credit-notes`, con su propia distribución) que el sistema emite, con el filtro de tipo; descargas verificadas por hash del RIDE y de los XML; impresión como acción explícita; historial de entregas observables (`DOWNLOAD`, `PRINT_REQUESTED`). Sin correo (Q-24, P1). | ERS RF-401..409; CTX §30, §31, §45, §46                        | AC-07         | Q-16 (futura), Q-27 (go-live) (Q-24 y Q-39 resueltas; el PDF de Q-34, con S-4 y el ADR 0022) |
 | `reports`              | Reportes filtrables exportados a XLSX.                                                            | ERS RF-501..505                                                | AC-09         | Q-26                           |
 | `audit-trail`          | Auditoría de cambios críticos y de transiciones de estado.                                        | ERS RF-003, RF-105, RF-525, SEC-007, RNF-006                   | Falta (Q-32)  | —                              |
-| `data-portability`     | Exportar los datos y artefactos del contribuyente.                                                | ERS SEC-010, RNF-007                                           | AC-10         | Q-28                           |
+| `data-portability`     | Exportar los datos y artefactos del contribuyente en un paquete autodescriptivo y versionado (`PORTABILITY_FORMAT_V1`), solo el administrador. No es un respaldo ni se importa. | ERS SEC-010 | Falta (Q-32); AC-10 es del respaldo operativo | — (Q-28 resuelta) |
 
 Requisitos transversales que no forman una capacidad propia y aplican a todos los cambios:
 API (ERS API-001..006, CTX §40–41), seguridad (ERS SEC-003, SEC-004, SEC-006, SEC-008,
@@ -75,7 +75,7 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 13  | `add-shipping-guides`      | `shipping-guides`                                     | 7              | AC-03 parcial |
 | 14  | `add-purchase-settlements` | `purchase-settlements`                                | 7              | AC-03         |
 | 15  | `add-reports-export`       | `reports`                                             | 8              | AC-09         |
-| 16  | `add-data-portability`     | `data-portability`                                    | 8              | AC-10         |
+| 16  | `add-data-portability`     | `data-portability`                                    | 8              | SEC-010 (AC-10 es del respaldo operativo) |
 
 Capacidades futuras sin número en la secuencia, decididas en la revisión de readiness del cambio 7
 (2026-10-03): `correct-returned-document` (corrección de un devuelto, BR-28) y
@@ -291,10 +291,39 @@ distinguen el requisito del ERS, la política del MVP y la defensa de recursos.
 | El texto escrito por el usuario va en celdas de texto, nunca como fórmula, sin alterar el valor visible | Seguridad del proyecto | `../security/threat-model.md` (archivos generados y exportaciones) |
 | Toda exportación generada se audita (`report.exported`) con el actor, el tipo de reporte, el momento, el número de filas y los filtros no sensibles; de un filtro con un dato personal solo se registra que estuvo presente. Sin tabla `report_export` | Política del proyecto | ERS §13 (`report_export` opcional), RNF-006; revisión de readiness del cambio 15 |
 | Ver reportes y exportar XLSX: administrador y operador | Política del MVP | `../security/access-control.md`; Q-22 |
-| La portabilidad completa (XML, RIDE, artefactos, ZIP, todos los datos) es del cambio 16 | Frontera con `data-portability` | ERS SEC-010, AC-10; Q-28 |
+| La portabilidad completa (XML, RIDE, artefactos, ZIP, todos los datos) es del cambio 16 | Frontera con `data-portability` | ERS SEC-010; Q-28 |
 
 La revisión de readiness del cambio 15 no suma capacidades futuras: los dashboards, los indicadores,
 los gráficos y los reportes agregados quedan fuera del MVP.
+
+## Trazabilidad de `data-portability`
+
+Decisiones de la revisión de readiness del cambio 16 (`add-data-portability`, 2026-10-08), aprobadas
+por el dueño del producto como D1 a D9. El ERS pide "un mecanismo para exportar datos y artefactos del
+contribuyente" (SEC-010) y ni el ERS ni el CTX fijan su formato: el formato es diseño de portabilidad
+del proyecto (Q-28). Los specs distinguirán el requisito del ERS, la política del proyecto y la
+defensa de recursos.
+
+| Regla | Origen | Fuente |
+| --- | --- | --- |
+| D1. El cambio 16 cierra SEC-010. No cierra AC-10, RNF-007 ni SEC-008: la restauración se verifica con el respaldo operativo (volcado, artefactos y clave maestra por separado) como compuerta de operación y del go-live. El paquete no se importa ni se restaura, y no hay ida y vuelta por la aplicación | Requisito del ERS (SEC-010) y política del proyecto: la portabilidad no es un respaldo | ERS SEC-010, AC-10, RNF-007, SEC-008; `../architecture/deployment.md` |
+| D2. `PORTABILITY_FORMAT_V1`: `datos-AAAAMMDD-HHMMSS.zip` con `manifest.json`, `SHA256SUMS`, `LEEME.txt`, `data/` (empresa, terceros, productos, comprobantes, inventario y auditoría en XLSX), `documents/<produccion\|pruebas>/<tipo>/<documento>/` (el `snapshot.json` y los artefactos) y `assets/logos/`. Sin volcado de PostgreSQL. Las rutas salen solo de componentes generados y validados por el servidor: nunca el RUC, nombres de terceros, correos ni texto escrito por un usuario | Diseño de portabilidad del proyecto | Q-28 |
+| El manifiesto contiene `formatVersion` ("1"), `generatedAt`, `snapshotAt`, la identidad fiscal de la empresa, el alcance, los conteos, los ambientes, las versiones de los formatos y de los snapshots, las exclusiones y los artefactos esperados pero ausentes con su motivo, nunca el inventario de archivos. `SHA256SUMS`, compatible con las herramientas estándar, es la autoridad del inventario y cubre todos los archivos interiores salvo él mismo. El SHA-256 del ZIP se calcula aparte y queda en el registro de la exportación, en la pantalla y en la auditoría | Diseño de portabilidad del proyecto | Q-28 |
+| D3. Las respuestas originales del SRI se exportan como archivos separados, con sus bytes persistidos exactos, el orden del intento, si son de recepción o de autorización, su SHA-256, su tamaño y si se truncaron, verificadas antes de incluirlas. Nunca en celdas, nunca regeneradas ni consultadas otra vez al SRI, y sin el sobre SOAP saliente, que no se persiste | Requisito del ERS (artefactos del contribuyente) y diseño de portabilidad | ERS SEC-010, §1.2, §2.1; CTX §31; glosario (Artefacto) |
+| D4. La auditoría entra en `data/auditoria.xlsx` con lo que su política conserva; nunca IP, user agent, secretos, XML o SOAP ni contraseñas o sus hashes | Política del proyecto | ERS §2.1; `../security/access-control.md` |
+| D5. Los usuarios entran solo como metadatos de la organización (nombre, correo, rol y estado); nunca hashes de contraseña, cuentas internas de Better Auth, sesiones ni tokens | Seguridad del proyecto | spec `audit-trail`; `../architecture/authentication.md` |
+| D6. Los borradores quedan fuera de la versión 1: el paquete exporta el estado fiscal y operativo durable y sus artefactos, no el espacio de trabajo incompleto. No afirma que los borradores no sean datos; se declara en el manifiesto, en `LEEME.txt` y en la pantalla, el paquete nunca se describe como un respaldo completo y la exclusión no borra nada | Política de portabilidad del proyecto | Readiness del cambio 16 |
+| Excluidos siempre: el P12, cifrado o no, su contraseña, la clave de datos envuelta y sus datos de cifrado, y la clave maestra. De las firmas solo salen sus metadatos, y el paquete no permite reconstruir la firma | Seguridad del proyecto | spec `signing-certificate`; ADR 0011 |
+| D7. Siempre los dos ambientes cuando tienen datos, separados en las rutas, las columnas y los conteos; nunca el ambiente vigente por defecto de los reportes | Política del proyecto | ERS RF-004 |
+| D8. Job durable y registro de la exportación con estados explícitos (`QUEUED`, `GENERATING`, `READY`, `FAILED`, `EXPIRED`), paquete en un directorio privado del sistema de archivos (nunca en PostgreSQL), caducidad, descarga autenticada y el permiso `dataPortability.export` solo del administrador, verificado en el servidor al crear, listar, consultar y descargar; la empresa sale de la sesión. El job renueva su *lease* en lugar de usar uno enorme | Política del proyecto | Readiness del cambio 16; ADR 0012 |
+| `DATA_EXPORT_TTL_HOURS` 24, `DATA_EXPORT_MAX_CONCURRENT` 1 por instancia, una generación activa por empresa, sin paquetes vigentes ilimitados y una reserva de disco antes de copiar los artefactos. Sin máximo de filas: el paquete está completo o falla | Defensa de recursos del proyecto, hipótesis hasta `bench:data-portability` | Q-26 |
+| D9. ZIP64 obligatorio (más de 65 535 entradas y más de 4 GiB). La primera tarea del apply es un spike y el ADR 0024 entre ampliar el contenedor propio y una biblioteca de producción mantenida; la dependencia queda preautorizada si el ADR demuestra todos sus criterios. El escritor XLSX pasa a una capa neutral sin cambiar su comportamiento | Decisión de arquitectura | ADR 0023; readiness del cambio 16 |
+| Consistencia en dos fases: una transacción `REPEATABLE READ, READ ONLY` genera los XLSX y fija el inventario inmutable de artefactos con su tamaño y su SHA-256 (`snapshotAt`); después, fuera de transacción, se copian solo esos artefactos comprobando su tamaño y su hash. Un artefacto alterado hace fallar la exportación sin paquete parcial; uno legítimamente ausente se declara con su motivo | Política del proyecto | ERS RF-407; spec `document-archive` |
+| Eventos `data_export.requested`, `data_export.completed`, `data_export.failed` y `data_export.download_started`, este justo antes del primer byte (si no se registra, no se entrega). Nunca un evento por comprobante ni un `downloaded` | Política del proyecto | ERS RNF-006 |
+| Verificación del paquete con `SHA256SUMS` y lectores independientes (ZIP, XLSX, JSON y XSD), nunca con una reimportación | Política del proyecto | ERS SEC-010 |
+
+La revisión de readiness del cambio 16 no suma capacidades futuras: la importación, la restauración
+desde el paquete y la portabilidad de los borradores quedan fuera del MVP.
 
 ## Huecos de trazabilidad
 
@@ -308,6 +337,7 @@ implemente define escenarios propios en sus specs (Q-32):
 - Validación previa a la firma, decimal exacto, autoría y borradores (ERS RF-006..010): los escenarios de `document-emission` e `invoices` de `add-invoice-emission`.
 - Alertas de vencimiento de la firma (ERS RF-135).
 - API y OpenAPI (ERS API-001..006), cubiertos solo por "pruebas de contrato".
+- Portabilidad de datos (ERS SEC-010): el ERS §18.2 no le asigna criterio; AC-10 es la restauración del respaldo operativo.
 
 CTX sí aporta criterios verificables para el motor fiscal: invariantes I-01..I-20 (§61),
 casos de recuperación A–E (§52), pruebas de propiedades (§51) y la matriz de certificación

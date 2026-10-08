@@ -61,7 +61,7 @@ qué se necesita del dueño del producto para cada paso pendiente.
 
 | # | Cambio | Capacidad | Cierra | Bloqueante antes de proponer |
 | --- | --- | --- | --- | --- |
-| 16 | `add-data-portability` | Portabilidad de datos | AC-10 | Q-28 (abierta); empieza por su revisión de readiness |
+| 16 | `add-data-portability` | Portabilidad de datos | SEC-010 | Ninguno: Q-28 resuelta y readiness aprobado (2026-10-08) |
 
 Capacidades futuras sin número, ya decididas fuera del MVP actual: `correct-returned-document`
 (BR-28), `cancellation-observation` (Q-16), `credit-note-discounts-bonuses`,
@@ -94,6 +94,7 @@ Ninguna bloquea proponer cambios; todas bloquean producción (`docs/quality/sri-
 | RIDE de la liquidación firmado por el proveedor (Q-53) | Abierta: confirmar la fuente oficial; el sistema no implementa firma manuscrita ni carga del RIDE firmado |
 | Licencia open source (Q-33) | Abierta; decidir antes del primer release |
 | Conservación de artefactos (Q-27) | Parcial: nunca purgar en v1 |
+| Restauración probada del respaldo operativo (AC-10, RNF-007, SEC-008) | Pendiente: volcado, artefactos y clave maestra por separado (`docs/architecture/deployment.md`); la portabilidad no la reemplaza |
 | Registro de cambios normativos (Q-40) | Abierta, sin bloquear cambios |
 
 ### 3. Preguntas abiertas que no bloquean el siguiente cambio
@@ -122,5 +123,4 @@ Ninguno de estos datos se guarda en el repositorio, la CI ni los registros.
 | Certificación S-3 online | Después de cerrar el cambio 16, en el entorno del operador: un P12 ecuatoriano real y su contraseña, un RUC habilitado en Pruebas y la clave maestra de la custodia (`CERTIFICATE_MASTER_KEY`); después, ejecutar `docs/quality/sri-certification.md` con los seis tipos de comprobante, incluida una liquidación de compra | Las respuestas del SRI de las pruebas son sintéticas; solo Pruebas confirma la autorización real. Las reglas de la fuente, como `infoAdicional`, ya están resueltas y no dependen de ese resultado |
 | Política de tamaño (Q-47) | El texto oficial del SRI que fije la cifra en bytes (o la unidad de "320 Kb"), con su URL | No se infiere ni se inventa la conversión; se publica en un cambio OpenSpec pequeño |
 | Aviso del cambio de tarifa del 14 % al 12 % (opcional) | Su URL o PDF oficial del SRI, si se tiene | No se encontró en el portal; la regla ya tiene su evidencia primaria en la ficha v2.34 |
-| Proponer `add-data-portability` (16) | Aprobar su revisión de readiness, que resuelve Q-28 (alcance y formato de la exportación) | Define la portabilidad real fuera del sistema |
 | Primer release | Decisión sobre Q-33: licencia open source | La exigen ERS API-006 y el go-live |
