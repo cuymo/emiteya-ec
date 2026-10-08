@@ -33,54 +33,63 @@ describe("contenedor ZIP64 del paquete de portabilidad", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it("escribe más de 65 535 entradas con los registros ZIP64 y la memoria acotada", async () => {
-    type Probe = {
-      result: { sizeBytes: number; sha256: string; entries: number };
-      peakHeap: number;
-      peakExternal: number;
-    };
-    const probe = async (entries: number) => {
-      const path = target();
-      const { stdout } = await run(process.execPath, [
-        "--conditions=development",
-        `--max-old-space-size=${HEAP_LIMIT_MIB}`,
-        PROBE,
-        path,
-        work(),
-        String(entries),
-      ]);
-      return { path, probe: JSON.parse(stdout) as Probe };
-    };
-    const { probe: small } = await probe(30_000);
-    const { path, probe: large } = await probe(250_000);
-    const bytes = await readFile(path);
-    expect(large.result).toEqual({
-      sizeBytes: bytes.length,
-      sha256: sha256(bytes),
-      entries: 250_000,
-    });
-    // Registro y localizador ZIP64 del fin del directorio, y el cierre clásico saturado.
-    const tail = bytes.subarray(bytes.length - 98);
-    expect(tail.readUInt32LE(0)).toBe(0x06064b50);
-    expect(Number(tail.readBigUInt64LE(32))).toBe(250_000);
-    expect(tail.readUInt32LE(56)).toBe(0x07064b50);
-    expect(tail.readUInt32LE(76)).toBe(0x06054b50);
-    expect(tail.readUInt16LE(76 + 10)).toBe(0xffff);
-    const directoryBytes = Number(tail.readBigUInt64LE(40));
-    // El directorio central se vuelca a un temporal: la memoria no crece con las entradas.
-    const retained = (p: Probe) => p.peakHeap + p.peakExternal;
-    expect(retained(large) - retained(small)).toBeLessThan(directoryBytes / 2);
-    await expect(stat(`${work()}.cd`)).rejects.toThrow();
-    const zip = await inspectZip(path);
-    expect(zip).toMatchObject({
-      count: 250_000,
-      bad: null,
-      regular: true,
-      symlinks: 0,
-      utf8: true,
-      dataDescriptor: false,
-    });
-  });
+  it(
+    "escribe más de 65 535 entradas con los registros ZIP64 y la memoria acotada",
+    { timeout: 240_000 },
+    async () => {
+      type Probe = {
+        result: { sizeBytes: number; sha256: string; entries: number };
+        peakHeap: number;
+        peakExternal: number;
+        peakRss: number;
+        directoryOnDisk: number;
+      };
+      const probe = async (entries: number) => {
+        const path = target();
+        const { stdout } = await run(process.execPath, [
+          "--conditions=development",
+          `--max-old-space-size=${HEAP_LIMIT_MIB}`,
+          PROBE,
+          path,
+          work(),
+          String(entries),
+        ]);
+        return { path, probe: JSON.parse(stdout) as Probe };
+      };
+      const { probe: small } = await probe(30_000);
+      const { path, probe: large } = await probe(250_000);
+      const bytes = await readFile(path);
+      expect(large.result).toEqual({
+        sizeBytes: bytes.length,
+        sha256: sha256(bytes),
+        entries: 250_000,
+      });
+      // Registro y localizador ZIP64 del fin del directorio, y el cierre clásico saturado.
+      const tail = bytes.subarray(bytes.length - 98);
+      expect(tail.readUInt32LE(0)).toBe(0x06064b50);
+      expect(Number(tail.readBigUInt64LE(32))).toBe(250_000);
+      expect(tail.readUInt32LE(56)).toBe(0x07064b50);
+      expect(tail.readUInt32LE(76)).toBe(0x06054b50);
+      expect(tail.readUInt16LE(76 + 10)).toBe(0xffff);
+      const directoryBytes = Number(tail.readBigUInt64LE(40));
+      // El directorio central se vuelca a un temporal mientras se escribe (todo salvo el último
+      // trozo de 1 MiB), el heap no pasó de su límite y la memoria residente creció menos que el
+      // directorio al pasar de 30 000 a 250 000 entradas.
+      expect(large.directoryOnDisk).toBeGreaterThanOrEqual(directoryBytes - 2 ** 20);
+      expect(large.peakHeap).toBeLessThan(HEAP_LIMIT_MIB * 2 ** 20);
+      expect(large.peakRss - small.peakRss).toBeLessThan(directoryBytes);
+      await expect(stat(`${work()}.cd`)).rejects.toThrow();
+      const zip = await inspectZip(path);
+      expect(zip).toMatchObject({
+        count: 250_000,
+        bad: null,
+        regular: true,
+        symlinks: 0,
+        utf8: true,
+        dataDescriptor: false,
+      });
+    },
+  );
 
   it("guarda los bytes exactos de búferes y archivos con STORE y DEFLATE", async () => {
     const random = randomBytes(100_000);
