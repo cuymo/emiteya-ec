@@ -58,7 +58,7 @@
 
   Registrar el resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada lista cumple ERS RNF-005, y fijar con la evidencia los valores por defecto y los rangos de `REPORT_EXPORT_MAX_ROWS` y `REPORT_EXPORT_MAX_CONCURRENT`, actualizando el entorno y `deployment.md`. Si la exportación síncrona o la transacción `REPEATABLE READ` no son sanas, corregir el design con `/opsx:update`
 - [x] 6.2 Si el benchmark lo justifica, crear una migración solo de índices de lectura, con su prueba en `migrations.test.ts` y su documentación en `database.md`. Verificar que el benchmark mejora con ella
-- [ ] 6.3 Añadir la prueba end-to-end sobre `main.ts`: comprobantes sintéticos de los seis tipos en los dos ambientes, retenciones, inventario y terceros. Debe exportar cada reporte por HTTP, leer el XLSX y compararlo con todas las páginas de la API, y comprobar el evento `report.exported` y que el inventario, los comprobantes y los terceros no cambian. Verificar que la prueba pasa
+- [x] 6.3 Añadir la prueba end-to-end sobre `main.ts`: comprobantes sintéticos de los seis tipos en los dos ambientes, retenciones, inventario y terceros. Debe exportar cada reporte por HTTP, leer el XLSX y compararlo con todas las páginas de la API, y comprobar el evento `report.exported` y que el inventario, los comprobantes y los terceros no cambian. Verificar que la prueba pasa
 
 ## 7. Verificación
 

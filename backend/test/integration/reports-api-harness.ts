@@ -39,7 +39,9 @@ import { randomUUID } from "node:crypto";
 import { archiveCompany, type ArchiveCompany } from "./archive-api-harness.ts";
 import { buildAuthApp } from "./auth-harness.ts";
 import { insertAuthorizedInvoice, insertCreditNote } from "./credit-notes-harness.ts";
+import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import type { MigratedSchema } from "./database.ts";
+import type { FiscalCompany } from "./fiscal-harness.ts";
 import { insertDebitNote } from "./debit-notes-harness.ts";
 import { insertProduct } from "./inventory-harness.ts";
 import { insertPurchaseSettlement, insertPurchaseSupplier } from "./purchase-settlement-harness.ts";
@@ -145,10 +147,22 @@ export async function seededCompany(
   app: Pick<Parameters<typeof archiveCompany>[1], "app" | "uow">,
   name: string,
 ): Promise<SeededCompany> {
-  const prisma = db.database.prisma;
-  await loadInstalledFiscalCatalogs(prisma);
+  await loadInstalledFiscalCatalogs(db.database.prisma);
   // El arnés del archivo solo usa la aplicación y la unidad de trabajo para los usuarios.
   const company = await archiveCompany(db, app as Parameters<typeof archiveCompany>[1], name);
+  return { ...company, ids: await seedReportData(db.database.prisma, company) };
+}
+
+/**
+ * Datos de los cinco reportes en una empresa con dos puntos: comprobantes de los seis tipos en los
+ * dos ambientes, retenciones, inventario con un saldo de 18 dígitos y terceros. Devuelve los
+ * identificadores sembrados.
+ */
+export async function seedReportData(
+  prisma: PrismaClient,
+  company: FiscalCompany,
+): Promise<Record<string, string>> {
+  await loadInstalledFiscalCatalogs(prisma);
   const ids: Record<string, string> = {};
   const p0 = company.points[0]!;
   const productId = await insertProduct(prisma, company, { name: "Tornillo", mainCode: "T-1" });
@@ -347,5 +361,5 @@ export async function seededCompany(
     legalName: '=HYPERLINK("http://ejemplo.invalid")',
     roles: ["CUSTOMER"],
   });
-  return { ...company, ids };
+  return ids;
 }

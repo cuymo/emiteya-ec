@@ -160,4 +160,6 @@ En este orden, sin job, artefacto durable, TTL ni URL firmada:
 - **Fuentes de cada módulo dueño:** `backend/test/integration/report-sources-*.test.ts`.
 - **Lista por HTTP:** `backend/test/integration/report-list-api.test.ts`.
 - **Exportación por HTTP, con AC-09 en cada reporte:** `backend/test/integration/report-exports-api.test.ts`.
+- **End-to-end sobre `main.ts`:** `backend/test/integration/e2e-reports.test.ts`.
+- **Rendimiento:** `bench:reports` (`../quality/benchmarks/reports-2026-10-08.md`).
 - **Pantalla:** `frontend/test/reports-screen.test.tsx`, y la entrada de la navegación en `frontend/test/app-shell.test.tsx`.
