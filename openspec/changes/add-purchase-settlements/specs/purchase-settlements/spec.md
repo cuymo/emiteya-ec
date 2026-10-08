@@ -231,7 +231,7 @@ Después de la vista previa y en el detalle de una liquidación, el sistema SHAL
 - **THEN** la liquidación se emite normalmente y no se crea ningún comprobante de retención
 
 ### Requirement: Límites de recursos de la liquidación
-El sistema SHALL limitar las líneas por liquidación (100 por defecto, configurable hasta 1000) y los pagos por liquidación (10 por defecto, configurable hasta 20). Son defensas de recursos del producto, no límites del SRI ni del XSD, y no se presentan como reglas fiscales.
+El sistema SHALL limitar las líneas por liquidación (100 por defecto, configurable hasta 500) y los pagos por liquidación (10 por defecto, configurable hasta 20). Son defensas de recursos del producto, no límites del SRI ni del XSD, y no se presentan como reglas fiscales.
 
 #### Scenario: Demasiadas líneas
 - **WHEN** un borrador supera el máximo configurado de líneas
@@ -245,7 +245,7 @@ El sistema SHALL limitar las líneas por liquidación (100 por defecto, configur
 Las solicitudes que guardan el borrador completo (crearlo y actualizarlo) SHALL admitir un cuerpo JSON de hasta 4 MiB, para que un borrador dentro de los máximos llegue siempre a los límites de recursos, que se aplican después de leer el cuerpo. Las demás rutas JSON sin límite propio, también la emisión, conservan el límite global de 100 KB. Es una defensa de recursos HTTP del proyecto, no un límite del SRI, del XSD ni del XML, ni una interpretación de Q-47.
 
 #### Scenario: Máximos alcanzables
-- **WHEN** la instalación configura los máximos y un usuario guarda un borrador con 1000 líneas y 20 pagos, con sus textos en la longitud máxima y en caracteres multibyte
+- **WHEN** la instalación configura los máximos y un usuario guarda un borrador con 500 líneas y 20 pagos, con sus textos en la longitud máxima y en caracteres multibyte
 - **THEN** el sistema lo recibe y lo evalúa con los límites de recursos, sin rechazarlo por el tamaño del cuerpo
 
 #### Scenario: Cuerpo demasiado grande

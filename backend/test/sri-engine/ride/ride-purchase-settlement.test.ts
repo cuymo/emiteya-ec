@@ -274,7 +274,7 @@ describe("RIDE de la liquidación de compra (ficha v2.34, anexo 2, página 65)",
     const rendered = await renderOk(largest.input, "maximo");
     const pages = await pageTexts(rendered.pdf);
     expect(rendered.pages).toBe(pages.length);
-    expect(pages.length).toBeGreaterThanOrEqual(15);
+    expect(pages.length).toBeGreaterThanOrEqual(8);
     pages.forEach((page, index) => {
       expect(page, `página ${index + 1}`).toContain(`Página ${index + 1} de ${pages.length}`);
       if (index > 0) {
@@ -294,8 +294,8 @@ describe("RIDE de la liquidación de compra (ficha v2.34, anexo 2, página 65)",
     }
     // Los pagos y los totales quedan juntos en la última página; la autorización, en la primera.
     const last = pages.at(-1)!;
-    expect(last).toContain("20 - OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO 90 días 1000.00");
-    expect(last).toContain("VALOR TOTAL 1000.00");
+    expect(last).toContain(`20 - OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO 90 días ${count}.00`);
+    expect(last).toContain(`VALOR TOTAL ${count}.00`);
     expect(pages[0]).toContain("NÚMERO DE AUTORIZACIÓN");
     expect(pages[0]).toContain("CLAVE DE ACCESO");
   }, 180_000);

@@ -257,7 +257,7 @@ política del MVP y la defensa de recursos.
 | Retención del 100 % del IVA y del 3 % de renta en el caso c), en un comprobante de retención separado que el cambio no emite | Requisito oficial; política del MVP (sin automatizar) | Reglamento, art. 13; NAC-DGERCGC20-00000061; NAC-DGERCGC26-00000009 (`normativa-liquidacion-retenciones.txt`); Q-12 |
 | Sin movimientos de inventario | Política del producto | ERS RF-311; Q-12 |
 | Sin compras, cuentas por pagar ni facturas recibidas | Política del producto | ERS §3 (fuera del alcance); Q-12 |
-| 100/1000 líneas (por defecto/máximo) y un máximo de pagos | Defensa de recursos del producto, nunca un límite del SRI ni del XSD | Q-12 |
+| 100/500 líneas y 10/20 pagos (por defecto/máximo) | Defensa de recursos del producto, nunca un límite del SRI ni del XSD | Q-12 |
 | RIDE propio con la distribución del anexo 2 | Requisito oficial | Ficha v2.34, página 65 |
 | Sin reembolsos, máquina fiscal, negociable, subsidios, ICE ni IRBPNR | Política del MVP | XSD 1.1.0; matriz de casos especiales; Q-12 |
 

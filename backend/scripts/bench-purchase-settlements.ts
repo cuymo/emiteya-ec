@@ -5,7 +5,7 @@
 //   corepack pnpm --filter @facturador/backend bench:purchase-settlements
 //
 // Arranca main.ts con EMISSION_STAGE_TIMINGS=1, la custodia habilitada y los límites de recursos en
-// sus máximos absolutos (1000 líneas y 20 pagos) sobre un esquema aislado de la base de pruebas, con
+// sus máximos absolutos (500 líneas y 20 pagos) sobre un esquema aislado de la base de pruebas, con
 // la transmisión apagada (las liquidaciones quedan SIGNED) y el barrido del RIDE apagado. Prepara por
 // la API la empresa, su establecimiento y su punto, la firma sintética, un proveedor de nombre y
 // dirección máximos y 10 operadores. Siembra por SQL 10 000 terceros (la mitad con el rol SUPPLIER,
@@ -17,9 +17,9 @@
 //
 // - la búsqueda de proveedores y de productos, y las opciones del borrador;
 // - la creación y la vista previa de un borrador con el peor caso de los límites por defecto (100
-//   líneas y 10 pagos) y con los máximos absolutos (1000 líneas y 20 pagos), con textos multibyte de
+//   líneas y 10 pagos) y con los máximos absolutos (500 líneas y 20 pagos), con textos multibyte de
 //   longitud máxima;
-// - el cálculo versionado de 100 y de 1000 líneas, en el proceso;
+// - el cálculo versionado de 100 y de 500 líneas, en el proceso;
 // - la emisión con su reserva en serie, con las etapas de `Server-Timing` (`reservation_tx` aparte
 //   del XML, el XSD y la firma), y la del peor caso por defecto y la del máximo absoluto;
 // - 10 rondas de 10 emisiones simultáneas a proveedores distintos y al mismo proveedor;
@@ -83,7 +83,7 @@ const RIDE_BUDGET_MS = 1_000;
 const BATCH = 10_000;
 /** Los valores por defecto de design D22 y los máximos absolutos del contrato. */
 const DEFAULT_LIMITS = { lines: 100, payments: 10 };
-const MAX_LIMITS = { lines: 1000, payments: 20 };
+const MAX_LIMITS = { lines: 500, payments: 20 };
 /** Cuerpo del borrador admitido por la ruta (design D22): defensa de recursos HTTP del proyecto. */
 const DRAFT_BODY_LIMIT_BYTES = 4 * 1024 * 1024;
 /** La liquidación de plantilla tiene el secuencial 1 de su contador: lo sembrado sigue. */
@@ -1112,7 +1112,7 @@ try {
       "",
       `- El peor caso usa el proveedor con nombre y dirección de 300 caracteres, y en cada línea códigos de 25, descripción de 300 y unidad de 50 caracteres multibyte (de 2 y 3 bytes en UTF-8, con glifo en las fuentes del RIDE), cantidad y precio con 6 decimales y la mitad de las líneas al 15 %; los pagos llevan la unidad de tiempo de 10 caracteres y el plazo más largo, y suman exactamente el importe total. Todos los cuerpos caben en el límite de ${DRAFT_BODY_LIMIT_BYTES / 1024 / 1024} MiB de la ruta del borrador (design D22).`,
       `- El tamaño del XML firmado del peor caso (${maxSigned} bytes como máximo) es **solo una medición de recursos**: no interpreta ni cumple el "320 Kb" de la ficha y no tiene relación con Q-47, que sigue abierta; la transmisión real sigue cerrada hasta resolverla.`,
-      `- Los límites (100 líneas y 10 pagos por defecto; 1000 y 20 como máximos absolutos) son una defensa de recursos del sistema, no límites del SRI ni del XSD. La memoria es la residente del proceso del backend (incluye sus pools de firma, de validación y del RIDE); antes del peor caso era de ${memoryBaseline.rssMiB} MiB, y la máxima es la de toda la ejecución hasta ese punto.`,
+      `- Los límites (100 líneas y 10 pagos por defecto; 500 y 20 como máximos absolutos) son una defensa de recursos del sistema, no límites del SRI ni del XSD. La memoria es la residente del proceso del backend (incluye sus pools de firma, de validación y del RIDE); antes del peor caso era de ${memoryBaseline.rssMiB} MiB, y la máxima es la de toda la ejecución hasta ese punto.`,
       "",
       "## Contención",
       "",

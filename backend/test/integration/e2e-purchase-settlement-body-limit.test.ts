@@ -1,6 +1,6 @@
 // Límite del cuerpo de los borradores de liquidación de compra contra el backend real
 // (add-purchase-settlements, tarea 6.3, design D22): main.ts como proceso, con los límites de la
-// liquidación en sus máximos absolutos (1000 líneas y 20 pagos). Crear y actualizar un borrador
+// liquidación en sus máximos absolutos (500 líneas y 20 pagos). Crear y actualizar un borrador
 // admiten un cuerpo de hasta 4 MiB, de modo que un borrador en los máximos absolutos con textos
 // multibyte de longitud máxima, también escapados como `\u`, llega a la validación del dominio; un
 // cuerpo mayor recibe 413 antes de ella; dentro de los 4 MiB rigen el contrato y los límites de
@@ -46,13 +46,13 @@ describe("límite del cuerpo de los borradores de liquidación de compra", () =>
     payments,
   });
   /**
-   * El peor caso de los máximos absolutos: 1000 líneas con códigos, unidad y descripción multibyte en
+   * El peor caso de los máximos absolutos: 500 líneas con códigos, unidad y descripción multibyte en
    * su longitud máxima, y 20 pagos con la unidad de tiempo al máximo. Cada línea vale 1.00 al 0 %, y
-   * los pagos de 50.00 suman el importe total de 1000.00.
+   * los pagos de 25.00 suman el importe total de 500.00.
    */
   const maximal = () =>
     draftBody(
-      Array.from({ length: 1000 }, (_, index) => ({
+      Array.from({ length: 500 }, (_, index) => ({
         productId: index === 0 ? ids.product : null,
         mainCode: multibyte(`M${index}`, 25),
         auxiliaryCode: multibyte(`A${index}`, 25),
@@ -65,7 +65,7 @@ describe("límite del cuerpo de los borradores de liquidación de compra", () =>
       })),
       Array.from({ length: 20 }, (_, index) => ({
         paymentMethod: index % 2 === 0 ? "01" : "20",
-        total: "50.00",
+        total: "25.00",
         term: "99999999999999",
         timeUnit: multibyte(`${index}`, 10),
       })),
@@ -84,7 +84,7 @@ describe("límite del cuerpo de los borradores de liquidación de compra", () =>
       env: {
         CERTIFICATE_CUSTODY: "enabled",
         CERTIFICATE_MASTER_KEY: randomBytes(32).toString("base64"),
-        PURCHASE_SETTLEMENT_MAX_LINES: "1000",
+        PURCHASE_SETTLEMENT_MAX_LINES: "500",
         PURCHASE_SETTLEMENT_MAX_PAYMENTS: "20",
         RIDE_SWEEP_INTERVAL_SECONDS: "86400",
       },
@@ -169,7 +169,7 @@ describe("límite del cuerpo de los borradores de liquidación de compra", () =>
     const heavy = escaped(body);
     const bytes = (text: string) => Buffer.byteLength(text);
     // Muy por encima del límite global y dentro del de los borradores, también con escapes.
-    expect(bytes(raw)).toBeGreaterThan(10 * GLOBAL_LIMIT);
+    expect(bytes(raw)).toBeGreaterThan(5 * GLOBAL_LIMIT);
     expect(bytes(heavy)).toBeGreaterThan(bytes(raw));
     expect(bytes(heavy)).toBeLessThan(DRAFT_LIMIT);
 
@@ -177,9 +177,9 @@ describe("límite del cuerpo de los borradores de liquidación de compra", () =>
     expect(created.status).toBe(201);
     const draft = (await json(created)).data;
     expect(draft.preview.issues).toEqual([]);
-    expect(draft.lines).toHaveLength(1000);
+    expect(draft.lines).toHaveLength(500);
     expect(draft.payments).toHaveLength(20);
-    expect(draft.preview.totals?.total).toBe("1000.00");
+    expect(draft.preview.totals?.total).toBe("500.00");
     // El texto multibyte llega intacto al borrador.
     expect(draft.lines[1]!.description).toBe(multibyte("Línea 1", 300));
     expect(draft.supplierAddress).toBe(multibyte("Dirección", 300));
@@ -216,7 +216,7 @@ describe("límite del cuerpo de los borradores de liquidación de compra", () =>
     const payment = { paymentMethod: "01", total: "1.00", term: "0", timeUnit: "días" };
     const tooManyLines = JSON.stringify(
       draftBody(
-        Array.from({ length: 1001 }, () => line),
+        Array.from({ length: 501 }, () => line),
         [payment],
       ),
     );
@@ -227,7 +227,7 @@ describe("límite del cuerpo de los borradores de liquidación de compra", () =>
     expect((await json(lines)).error).toMatchObject({
       code: "VALIDATION_ERROR",
       message:
-        "La liquidación admite como máximo 1000 líneas. Es una defensa de recursos del sistema, no un límite del SRI.",
+        "La liquidación admite como máximo 500 líneas. Es una defensa de recursos del sistema, no un límite del SRI.",
     });
     const tooManyPayments = JSON.stringify(
       draftBody(

@@ -29,7 +29,7 @@ import {
 /**
  * Límite del cuerpo JSON de las rutas que reciben el borrador completo: 4 MiB, una defensa de
  * recursos HTTP del proyecto (design D22). Hace alcanzables por HTTP los máximos absolutos de la
- * liquidación (1000 líneas y 20 pagos) con textos multibyte de longitud máxima, también escapados como
+ * liquidación (500 líneas y 20 pagos) con textos multibyte de longitud máxima, también escapados como
  * `\u`; no es un límite del SRI, del XSD ni del XML, ni una interpretación de Q-47. Después de leer el
  * cuerpo rigen el contrato y los límites de recursos.
  */

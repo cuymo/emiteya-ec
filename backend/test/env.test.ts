@@ -323,13 +323,13 @@ describe("emisión de facturas (add-invoice-emission, design D2 y D11)", () => {
     expect(
       loadEnv({
         ...valid,
-        PURCHASE_SETTLEMENT_MAX_LINES: "1000",
+        PURCHASE_SETTLEMENT_MAX_LINES: "500",
         PURCHASE_SETTLEMENT_MAX_PAYMENTS: "20",
       }),
-    ).toMatchObject({ PURCHASE_SETTLEMENT_MAX_LINES: 1000, PURCHASE_SETTLEMENT_MAX_PAYMENTS: 20 });
+    ).toMatchObject({ PURCHASE_SETTLEMENT_MAX_LINES: 500, PURCHASE_SETTLEMENT_MAX_PAYMENTS: 20 });
     const error = envError({
       ...valid,
-      PURCHASE_SETTLEMENT_MAX_LINES: "1001",
+      PURCHASE_SETTLEMENT_MAX_LINES: "501",
       PURCHASE_SETTLEMENT_MAX_PAYMENTS: "0",
     });
     expect(error?.variables).toEqual([

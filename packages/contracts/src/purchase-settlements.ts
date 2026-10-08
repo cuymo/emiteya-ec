@@ -27,7 +27,7 @@ import { environmentSchema, rimpeCategorySchema, strictBody } from "./taxpayer.t
  * efectivo es configurable por entorno, con estos valores por defecto. Son defensas de recursos del
  * producto, nunca límites del SRI ni del XSD, ni una interpretación de Q-47.
  */
-export const PURCHASE_SETTLEMENT_LIMITS_MAX = { lines: 1000, payments: 20 } as const;
+export const PURCHASE_SETTLEMENT_LIMITS_MAX = { lines: 500, payments: 20 } as const;
 export const PURCHASE_SETTLEMENT_LIMITS_DEFAULT = { lines: 100, payments: 10 } as const;
 export type PurchaseSettlementLimits = {
   [K in keyof typeof PURCHASE_SETTLEMENT_LIMITS_MAX]: number;

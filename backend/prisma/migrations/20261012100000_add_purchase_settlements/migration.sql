@@ -102,7 +102,7 @@ ALTER TABLE "purchase_settlement_declaration" ADD CONSTRAINT "purchase_settlemen
 -- Borradores (design D5, D12 y D25): estado cerrado, EMITTED si y solo si tiene su comprobante; la
 -- dirección del proveedor de 1 a 300 caracteres sin saltos de línea, opcional mientras se prepara.
 -- Las líneas y los pagos son arreglos JSON que valida el contrato; la base solo defiende su forma y su
--- tamaño (a lo sumo 1000 líneas y 20 pagos, los máximos absolutos del contrato, y 4 MiB, el límite
+-- tamaño (a lo sumo 500 líneas y 20 pagos, los máximos absolutos del contrato, y 4 MiB, el límite
 -- del cuerpo del borrador).
 ALTER TABLE "purchase_settlement_draft" ADD CONSTRAINT "purchase_settlement_draft_values_check" CHECK (
   "status" IN ('DRAFT', 'EMITTED')
@@ -112,19 +112,19 @@ ALTER TABLE "purchase_settlement_draft" ADD CONSTRAINT "purchase_settlement_draf
   AND "version" >= 1);
 ALTER TABLE "purchase_settlement_draft" ADD CONSTRAINT "purchase_settlement_draft_content_check" CHECK (
   jsonb_typeof("lines") = 'array'
-  AND jsonb_array_length("lines") <= 1000
+  AND jsonb_array_length("lines") <= 500
   AND octet_length("lines"::text) <= 4194304
   AND jsonb_typeof("payments") = 'array'
   AND jsonb_array_length("payments") <= 20
   AND octet_length("payments"::text) <= 65536);
 
 -- El registro de la liquidación (design D3): solo el caso c) del art. 13 con la versión 1 de su
--- política, y conteos dentro de los máximos absolutos (1 a 1000 líneas, 1 a 20 pagos).
+-- política, y conteos dentro de los máximos absolutos (1 a 500 líneas, 1 a 20 pagos).
 ALTER TABLE "purchase_settlement" ADD CONSTRAINT "purchase_settlement_values_check" CHECK (
   "eligibility_case" = 'ART_13_C'
   AND "eligibility_policy" = 'PURCHASE_SETTLEMENT_ELIGIBILITY_V1'
   AND "policy_version" = 1
-  AND "line_count" BETWEEN 1 AND 1000
+  AND "line_count" BETWEEN 1 AND 500
   AND "payment_count" BETWEEN 1 AND 20);
 
 -- Las declaraciones (design D3): uno de los cuatro identificadores de la política, su versión y la

@@ -182,12 +182,12 @@ describe("borrador de la liquidación", () => {
 
   it("los máximos absolutos son defensas del sistema, no límites del SRI", () => {
     expect(PURCHASE_SETTLEMENT_LIMITS_DEFAULT).toEqual({ lines: 100, payments: 10 });
-    expect(PURCHASE_SETTLEMENT_LIMITS_MAX).toEqual({ lines: 1000, payments: 20 });
+    expect(PURCHASE_SETTLEMENT_LIMITS_MAX).toEqual({ lines: 500, payments: 20 });
     const lines = createPurchaseSettlementDraftSchema.safeParse({
       ...draft,
-      lines: Array.from({ length: 1001 }, () => line),
+      lines: Array.from({ length: 501 }, () => line),
     });
-    expect(messages(lines).join(" ")).toMatch(/1000 líneas\. Es una defensa de recursos/);
+    expect(messages(lines).join(" ")).toMatch(/500 líneas\. Es una defensa de recursos/);
     const payments = createPurchaseSettlementDraftSchema.safeParse({
       ...draft,
       payments: Array.from({ length: 21 }, () => payment),
@@ -196,7 +196,7 @@ describe("borrador de la liquidación", () => {
     expect(
       createPurchaseSettlementDraftSchema.safeParse({
         ...draft,
-        lines: Array.from({ length: 1000 }, () => line),
+        lines: Array.from({ length: 500 }, () => line),
         payments: Array.from({ length: 20 }, () => payment),
       }).success,
     ).toBe(true);

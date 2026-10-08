@@ -330,7 +330,7 @@ describe("liquidaciones de compra en la base de datos", () => {
       { eligibilityPolicy: "PURCHASE_SETTLEMENT_ELIGIBILITY_V2" },
       { policyVersion: 2 },
       { lineCount: 0 },
-      { lineCount: 1001 },
+      { lineCount: 501 },
       { paymentCount: 0 },
       { paymentCount: 21 },
     ];
@@ -342,7 +342,7 @@ describe("liquidaciones de compra en la base de datos", () => {
     }
     expect(
       await fails(
-        settlement(companyA, supplierA, { record: { lineCount: 1000, paymentCount: 20 } }),
+        settlement(companyA, supplierA, { record: { lineCount: 500, paymentCount: 20 } }),
       ),
     ).toBeNull();
   });
@@ -420,7 +420,7 @@ describe("liquidaciones de compra en la base de datos", () => {
     }
     for (const data of [
       { lines: { description: "x" } },
-      { lines: Array.from({ length: 1001 }, () => ({})) },
+      { lines: Array.from({ length: 501 }, () => ({})) },
       { lines: [{ blob: "x".repeat(4_194_304) }] },
       { payments: "01" },
       { payments: Array.from({ length: 21 }, () => ({})) },
@@ -434,7 +434,7 @@ describe("liquidaciones de compra en la base de datos", () => {
       await fails(
         draft(companyA, {
           supplierAddress: "á".repeat(300),
-          lines: Array.from({ length: 1000 }, () => ({ description: "Cacao" })),
+          lines: Array.from({ length: 500 }, () => ({ description: "Cacao" })),
           payments: Array.from({ length: 20 }, () => ({ paymentMethod: "01" })),
         }),
       ),
