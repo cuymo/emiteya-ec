@@ -47,6 +47,8 @@ import { purchaseSettlementsRouter } from "../../src/modules/purchase-settlement
 import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
 import { inventoryRouter } from "../../src/modules/inventory/infrastructure/http/inventory-router.ts";
 import type { JobStore } from "../../src/platform/jobs/jobs.ts";
+import type { Reports } from "../../src/modules/reports/application/reports.ts";
+import { reportsRouter } from "../../src/modules/reports/infrastructure/http/reports-router.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -109,6 +111,7 @@ describe("rutas documentadas", () => {
         jobs: {} as JobStore,
         rideSettings: { maxAttempts: 1, backoff: { baseMs: 1, capMs: 1, minMs: 1 } },
       }),
+      reportsRouter({} as Reports),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);

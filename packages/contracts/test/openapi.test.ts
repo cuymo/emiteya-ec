@@ -156,6 +156,18 @@ describe("generación de OpenAPI", () => {
       "/purchase-settlements/{purchaseSettlementId}/reconciliations",
       "/purchase-settlements/{purchaseSettlementId}/signing-attempts",
       "/purchase-settlements/{purchaseSettlementId}/transmission",
+      "/reports/inventory-balances",
+      "/reports/inventory-balances/export",
+      "/reports/inventory-movements",
+      "/reports/inventory-movements/export",
+      "/reports/invoices",
+      "/reports/invoices/export",
+      "/reports/issued-documents",
+      "/reports/issued-documents/export",
+      "/reports/parties",
+      "/reports/parties/export",
+      "/reports/withholdings",
+      "/reports/withholdings/export",
       "/shipping-guides",
       "/shipping-guides/carriers",
       "/shipping-guides/drafts",
@@ -196,6 +208,32 @@ describe("generación de OpenAPI", () => {
       responses: Record<string, { content?: Record<string, unknown> }>;
     };
     expect(Object.keys(ride.responses["200"]?.content ?? {})).toEqual(["application/pdf"]);
+    // La exportación de un reporte es un XLSX binario, con los filtros de la lista y sin página.
+    const exported = paths["/reports/issued-documents/export"]?.get as {
+      parameters: { name: string }[];
+      responses: Record<string, { content?: Record<string, unknown> }>;
+    };
+    expect(Object.keys(exported.responses["200"]?.content ?? {})).toEqual([
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ]);
+    expect(exported.parameters.map((p) => p.name)).toEqual([
+      "from",
+      "to",
+      "documentType",
+      "state",
+      "establishmentId",
+      "emissionPointId",
+      "environment",
+    ]);
+    expect(Object.keys(exported.responses).sort()).toEqual([
+      "200",
+      "400",
+      "401",
+      "403",
+      "409",
+      "500",
+      "503",
+    ]);
     // Ningún cuerpo de escritura documenta companyId: los esquemas son estrictos.
     expect(JSON.stringify(paths)).not.toContain("companyId");
   });

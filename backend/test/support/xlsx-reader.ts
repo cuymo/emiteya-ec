@@ -73,8 +73,9 @@ function centralDirectory(zip: Buffer): Map<string, number> {
   return entries;
 }
 
-export function readXlsx(path: string): XlsxBook {
-  const zip = readFileSync(path);
+/** Lee un libro desde su archivo o desde sus bytes, como los de una respuesta HTTP. */
+export function readXlsx(source: string | Uint8Array): XlsxBook {
+  const zip = typeof source === "string" ? readFileSync(source) : Buffer.from(source);
   const files = unzipSync(zip);
   const crcs = centralDirectory(zip);
   for (const [name, bytes] of Object.entries(files)) {

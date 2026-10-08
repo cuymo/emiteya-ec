@@ -224,6 +224,13 @@ import {
   purchaseSettlementSupplierViewSchema,
   updatePurchaseSettlementDraftSchema,
 } from "../purchase-settlements.ts";
+import {
+  REPORT_CONTRACTS,
+  REPORT_EXPORT_CONTENT_TYPES,
+  REPORT_IDS,
+  REPORT_LABELS,
+  reportListViewSchemas,
+} from "../reports.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -2844,4 +2851,54 @@ export const apiRoutes: readonly RouteDefinition[] = [
       },
     },
   }),
+  // Reportes (add-reports-export, design D12): la lista y su exportación con los mismos filtros.
+  ...REPORT_IDS.flatMap((report) => [
+    defineRoute({
+      method: "get",
+      path: `/reports/${report}`,
+      summary: `Listar el reporte ${REPORT_LABELS[report]} con sus filtros, por páginas y en su orden total`,
+      request: { query: REPORT_CONTRACTS[report].queries.list },
+      responses: {
+        200: {
+          description:
+            "Página del reporte con el total y el ambiente efectivo en `meta` (nulo si el reporte no tiene ambiente).",
+          schema: reportListViewSchemas[report],
+        },
+        400: errors[400],
+        401: errors[401],
+        403: errors[403],
+      },
+    }),
+    defineRoute({
+      method: "get",
+      path: `/reports/${report}/export`,
+      summary: `Exportar a XLSX el reporte ${REPORT_LABELS[report]}: exactamente las filas de su lista completa con los mismos filtros, en el mismo orden`,
+      request: { query: REPORT_CONTRACTS[report].queries.export },
+      responses: {
+        200: {
+          description:
+            "El XLSX, como adjunto, con la hoja de datos y la hoja Filtros; no se guarda en el servidor.",
+          binaryContentTypes: REPORT_EXPORT_CONTENT_TYPES,
+        },
+        400: errors[400],
+        401: errors[401],
+        403: errors[403],
+        409: {
+          description:
+            "El reporte tiene más filas que el máximo de la exportación (REPORT_EXPORT_ROW_LIMIT): hay que acotar los filtros. No se genera nada.",
+          schema: errorEnvelopeSchema,
+        },
+        500: {
+          description:
+            "La generación o su auditoría fallaron: no se entrega ningún archivo ni se registra la exportación.",
+          schema: errorEnvelopeSchema,
+        },
+        503: {
+          description:
+            "La instancia ya tiene el máximo de exportaciones en curso (REPORT_EXPORT_BUSY); la cabecera Retry-After indica cuándo intentar de nuevo.",
+          schema: errorEnvelopeSchema,
+        },
+      },
+    }),
+  ]),
 ];

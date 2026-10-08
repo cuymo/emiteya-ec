@@ -39,10 +39,19 @@ import {
   shippingPartyReader,
   supplierReader,
 } from "./modules/parties/infrastructure/index.ts";
-import { productReader, productsModule } from "./modules/products/infrastructure/index.ts";
+import { createPartiesReportSource } from "./modules/parties/infrastructure/index.ts";
+import { registerReportMetrics, reportsModule } from "./modules/reports/infrastructure/index.ts";
 import {
+  createReportProductsSource,
+  productReader,
+  productsModule,
+  reportProductLabels,
+} from "./modules/products/infrastructure/index.ts";
+import {
+  createInventoryMovementsReportSource,
   createStockRepository,
   creditNoteReturnFollower,
+  inventoryBalanceReads,
   inventoryInitialization,
   inventoryModule,
   inventoryOutflowFollower,
@@ -53,6 +62,8 @@ import {
 } from "./modules/inventory/infrastructure/index.ts";
 import {
   invoiceCreditSource,
+  invoiceReportAmounts,
+  invoiceReportTaxes,
   invoiceSigningProfile,
   invoiceStockLines,
   invoicesModule,
@@ -60,28 +71,36 @@ import {
 import {
   createCreditCapacityRepository,
   creditCapacityFollower,
+  creditNoteReportAmounts,
   creditNoteSigningProfile,
   creditNotesModule,
 } from "./modules/credit-notes/infrastructure/index.ts";
 import {
   createConfigurationLogoReader,
+  currentEnvironment,
+  reportPointCodes,
   taxpayerRouters,
 } from "./modules/taxpayer/infrastructure/index.ts";
 import {
+  debitNoteReportAmounts,
   debitNoteSigningProfile,
   debitNotesModule,
 } from "./modules/debit-notes/infrastructure/index.ts";
 import {
+  createWithholdingsReportSource,
   withholdingReceiptSigningProfile,
   withholdingReceiptsModule,
+  withholdingReportAmounts,
 } from "./modules/withholding-receipts/infrastructure/index.ts";
 import {
   isShippingGuideDraftBody,
+  shippingGuideReportAmounts,
   shippingGuideSigningProfile,
   shippingGuidesModule,
 } from "./modules/shipping-guides/infrastructure/index.ts";
 import {
   isPurchaseSettlementDraftBody,
+  purchaseSettlementReportAmounts,
   purchaseSettlementSigningProfile,
   purchaseSettlementsModule,
 } from "./modules/purchase-settlements/infrastructure/index.ts";
@@ -90,6 +109,8 @@ import {
   SRI_JOB_TYPES,
   createArtifactStore,
   createAuthorizeHandler,
+  createInvoicesReportSource,
+  createIssuedDocumentsReportSource,
   createDocumentRepository,
   createReconcileHandler,
   createSriEvidenceRepository,
@@ -488,6 +509,42 @@ apiRouter.use(
     jobs: jobStore,
     conclusionWindowMs: transmissionSettings.poll.windowMs,
     stageTimings: env.EMISSION_STAGE_TIMINGS,
+  }).routers,
+);
+
+// Reportes (add-reports-export, design D1, D10 y D11): la fuente de cada reporte la exporta su módulo
+// dueño y se compone aquí como puerto, con la proyección de importes que declara cada tipo de
+// comprobante; `reports` no lee tablas. Los límites son defensas de recursos, por instancia.
+const reportSchema = parseDatabaseUrl(env.DATABASE_URL).schema ?? "public";
+apiRouter.use(
+  ...reportsModule({
+    prisma: database.prisma,
+    authorizer,
+    sources: {
+      issuedDocuments: createIssuedDocumentsReportSource(reportSchema, [
+        invoiceReportAmounts,
+        purchaseSettlementReportAmounts,
+        creditNoteReportAmounts,
+        debitNoteReportAmounts,
+        shippingGuideReportAmounts,
+        withholdingReportAmounts,
+      ]),
+      invoices: createInvoicesReportSource(reportSchema, invoiceReportTaxes),
+      withholdings: createWithholdingsReportSource(reportSchema),
+      inventoryMovements: createInventoryMovementsReportSource(reportSchema),
+      products: createReportProductsSource(reportSchema),
+      productLabels: reportProductLabels,
+      initializedProductIds: inventoryBalanceReads.initializedProductIds,
+      balances: inventoryBalanceReads.balances,
+      parties: createPartiesReportSource(reportSchema),
+      currentEnvironment,
+      pointCodes: reportPointCodes,
+    },
+    limits: {
+      maxRows: env.REPORT_EXPORT_MAX_ROWS,
+      maxConcurrent: env.REPORT_EXPORT_MAX_CONCURRENT,
+    },
+    observer: registerReportMetrics(metrics.registry),
   }).routers,
 );
 

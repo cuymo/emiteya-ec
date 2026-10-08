@@ -101,6 +101,32 @@ describe("dirección de las dependencias de los reportes", () => {
     expect(dirname(owners[0]!)).toBe("modules/fiscal/infrastructure/reports");
   });
 
+  it("el arranque compone cada fuente como puerto de reports", () => {
+    const main = readFileSync(join(SRC, "main.ts"), "utf8");
+    for (const composed of [
+      "reportsModule(",
+      "createIssuedDocumentsReportSource(",
+      "createInvoicesReportSource(",
+      "createWithholdingsReportSource(",
+      "createInventoryMovementsReportSource(",
+      "createReportProductsSource(",
+      "reportProductLabels",
+      "inventoryBalanceReads.initializedProductIds",
+      "inventoryBalanceReads.balances",
+      "createPartiesReportSource(",
+      "currentEnvironment",
+      "reportPointCodes",
+      "invoiceReportAmounts",
+      "purchaseSettlementReportAmounts",
+      "creditNoteReportAmounts",
+      "debitNoteReportAmounts",
+      "shippingGuideReportAmounts",
+      "withholdingReportAmounts",
+    ]) {
+      expect(main, composed).toContain(composed);
+    }
+  });
+
   it("detecta cada violación en archivos de ejemplo", () => {
     expect(
       reportsOffenders(

@@ -73,11 +73,11 @@ export function createInventoryMovementsReportSource(
 /** Lecturas de Existencias: los productos inicializados y sus saldos registrados. */
 export const inventoryBalanceReads = {
   /** Productos con inventario inicializado, opcionalmente solo uno. */
-  async initializedProductIds(
+  initializedProductIds: async (
     db: DbClient,
     companyId: string,
     productId?: string,
-  ): Promise<string[]> {
+  ): Promise<string[]> => {
     const rows = await db.stockBalance.findMany({
       where: { companyId, ...(productId ? { productId } : {}) },
       select: { productId: true },
@@ -86,11 +86,11 @@ export const inventoryBalanceReads = {
   },
 
   /** Saldo registrado de cada producto pedido, en su forma canónica. */
-  async balances(
+  balances: async (
     db: DbClient,
     companyId: string,
     productIds: readonly string[],
-  ): Promise<Map<string, string>> {
+  ): Promise<Map<string, string>> => {
     if (productIds.length === 0) return new Map();
     const rows = await db.stockBalance.findMany({
       where: { companyId, productId: { in: [...productIds] } },

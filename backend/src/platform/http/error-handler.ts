@@ -1,7 +1,7 @@
 // Manejador 404 y manejador de errores con el sobre { error: { code, message, requestId } }.
 import type { ErrorRequestHandler, RequestHandler } from "express";
 import type { ErrorEnvelope } from "@facturador/contracts";
-import { AppError, NotFoundError } from "./errors.ts";
+import { AppError, NotFoundError, ServiceUnavailableError } from "./errors.ts";
 
 type BodyParserError = Error & { type?: string };
 
@@ -23,6 +23,9 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
   const known = toAppError(error);
   if (!known) req.log.error({ err: error }, "error no controlado");
   const status = known?.status ?? 500;
+  if (known instanceof ServiceUnavailableError) {
+    res.set("Retry-After", String(known.retryAfterSeconds));
+  }
   const body: ErrorEnvelope = {
     error: {
       code: known?.code ?? "INTERNAL_ERROR",

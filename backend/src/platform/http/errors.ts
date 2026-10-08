@@ -25,6 +25,16 @@ export class ConflictError extends AppError {
   }
 }
 
+/** `503` con la espera sugerida, que el manejador de errores envía en `Retry-After`. */
+export class ServiceUnavailableError extends AppError {
+  readonly retryAfterSeconds: number;
+
+  constructor(code: string, message: string, retryAfterSeconds: number) {
+    super(code, 503, message);
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
 export class ValidationError extends AppError {
   readonly fields: string[];
 
