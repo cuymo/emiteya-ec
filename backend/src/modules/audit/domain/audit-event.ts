@@ -1,5 +1,6 @@
-// Evento del rastro de auditoría del tenant (audit-trail; design D11 y D13). Solo cambios
-// exitosos de un actor conocido; nunca secretos ni direcciones IP.
+// Evento del rastro de auditoría del tenant (audit-trail; design D11 y D13). Cambios exitosos de un
+// actor conocido y, desde add-reports-export, cada exportación de un reporte que el servidor generó;
+// nunca secretos ni direcciones IP.
 
 export type AuditActor =
   { type: "USER"; userId: string } | { type: "SYSTEM" } | { type: "TECHNICAL_ADMIN" };
@@ -85,6 +86,9 @@ export const AUDIT_ACTIONS = [
   "inventory.initialized",
   "inventory.tracking_disabled",
   "inventory.tracking_enabled",
+  // add-reports-export, design D13: el XLSX quedó generado y autorizado para entregarse; no afirma
+  // que el usuario lo recibió. Con el reporte, las filas y los filtros sin datos personales.
+  "report.exported",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

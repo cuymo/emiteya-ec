@@ -31,7 +31,7 @@ El proyecto separa dos conceptos que la plantilla agrupa:
 
 | Concepto | Qué registra | Empresa | Almacenamiento | Retención |
 | --- | --- | --- | --- | --- |
-| Rastro de auditoría del tenant | Cambios exitosos de un actor conocido: administración de accesos y, en cambios futuros, configuración tributaria, firma, secuenciales y comprobantes (ERS RF-003, SEC-007). | Siempre conocida | Tabla de solo agregado en PostgreSQL, escrita en la misma transacción que la acción | Indefinida, como evidencia |
+| Rastro de auditoría del tenant | Cambios exitosos de un actor conocido: administración de accesos y, en cambios futuros, configuración tributaria, firma, secuenciales y comprobantes (ERS RF-003, SEC-007). Además, cada exportación de un reporte que el servidor terminó de generar (`report.exported`), aunque no cambie datos. | Siempre conocida | Tabla de solo agregado en PostgreSQL, escrita en la misma transacción que la acción | Indefinida, como evidencia |
 | Eventos de seguridad | Inicios de sesión fallidos, cuentas inexistentes, límites de intentos alcanzados y denegaciones de autorización, aunque el actor sea conocido. | Opcional: puede no existir | Logs estructurados y métricas; no se guardan en el rastro de auditoría | La del sistema de logs del operador; por defecto se propone 90 días |
 
 - Los intentos denegados se registran como eventos de seguridad, no en el rastro de auditoría: siguen siendo revisables y detectan enumeraciones, sin llenar de ruido una tabla inmutable.
@@ -234,6 +234,31 @@ la liquidación, su número y su clave; la reserva añade el caso de procedencia
 versión, los identificadores de las cuatro declaraciones, el número de líneas y de pagos y el importe
 total; nunca descripciones, direcciones, XML, SOAP ni la clave del certificado. Los borradores, las
 consultas, la transmisión automática y las entregas no se auditan.
+
+## Reportes
+
+Señales de `add-reports-export` (design D17), en `/metrics` y sin la empresa, los usuarios ni los
+filtros en las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `report_exports_total{report,result}` | Counter | Exportaciones por reporte y resultado: `generated` (generada, auditada y en entrega), `row_limit` (`409`, más filas que el máximo), `busy` (`503`, sin lugar en el semáforo) y `failed` (falló la generación o su auditoría). |
+| `report_export_duration_seconds{report}` | Histogram | Duración de la generación de un XLSX, desde el conteo hasta que el archivo queda auditado, sin la entrega al cliente. |
+| `report_export_rows` | Histogram | Filas de cada XLSX generado. |
+
+Alerta propuesta: `busy` crece de forma sostenida, por ejemplo `rate(report_exports_total{result="busy"}[15m]) > 0`
+durante una hora, que pide revisar `REPORT_EXPORT_MAX_CONCURRENT` con `bench:reports`.
+
+El evento de auditoría `report.exported` se escribe después de generar el libro y antes de
+entregarlo: afirma que el servidor generó un XLSX y lo autorizó para entregarlo, no que el usuario lo
+recibió, lo abrió o lo guardó. Lleva el actor, el reporte, el número de filas y los filtros sin datos
+personales (`from`, `to`, `documentType`, `state`, `environment`, `establishmentId`,
+`emissionPointId`, `fiscalPeriod`, `productId`, `movementType`, `role`, `status`); de un filtro con un
+dato personal (`customerIdentification`, `supplierIdentification`, `identification`) solo que estuvo
+presente. Nunca lleva filas, celdas, el archivo, la ruta temporal, XML ni RIDE. Si no se puede
+escribir, no se entrega el archivo. Una exportación rechazada o fallida no se audita, y consultar un
+reporte tampoco. Los logs de la exportación llevan el reporte, las filas y la duración, nunca los
+filtros con datos personales ni la ruta temporal.
 
 ## Logging Rules
 

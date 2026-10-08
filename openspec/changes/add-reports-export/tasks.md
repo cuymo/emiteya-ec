@@ -8,9 +8,9 @@
 ## 2. Contratos, permisos, entorno y auditoría
 
 - [ ] 2.1 Crear `packages/contracts/src/reports.ts` (design D3, D4 y D12): los seis identificadores de reporte (cinco reportes, con el inventario en dos vistas), los filtros estrictos de cada uno con sus valores por defecto (`state` con `ALL`, `environment` con `TEST`, `PRODUCTION` y `ALL`, `fiscalPeriod` `AAAA-MM`, rango con `from <= to`), las filas de cada vista con los importes como texto decimal, la vista paginada con el ambiente efectivo y los códigos `REPORT_EXPORT_ROW_LIMIT` y `REPORT_EXPORT_BUSY`, y sus rutas en `api/routes.ts` con la exportación como respuesta binaria. Verificar con pruebas de contrato los valores por defecto, el rango inválido, el filtro de otro reporte, el `companyId` rechazado y el OpenAPI regenerado
-- [ ] 2.2 Añadir `reports.read` y `reports.export` para administrador y operador en `access-policy.ts`, su espejo del frontend y `access-control.md`, confirmando la fila "Ver reportes y exportar XLSX" (design D14). Verificar con pruebas de la política
-- [ ] 2.3 Añadir `REPORT_EXPORT_MAX_ROWS` y `REPORT_EXPORT_MAX_CONCURRENT` al esquema de entorno con los valores iniciales de design D11, marcados como hipótesis que fija el benchmark, y documentarlas en `deployment.md` como defensas de recursos del proyecto. Verificar con pruebas del entorno
-- [ ] 2.4 Añadir la acción `report.exported` al dominio de la auditoría (design D13) y documentarla en `audit` y en `observability.md` con las métricas de design D17. Verificar con la prueba de las acciones de auditoría
+- [x] 2.2 Añadir `reports.read` y `reports.export` para administrador y operador en `access-policy.ts`, su espejo del frontend y `access-control.md`, confirmando la fila "Ver reportes y exportar XLSX" (design D14). Verificar con pruebas de la política
+- [x] 2.3 Añadir `REPORT_EXPORT_MAX_ROWS` y `REPORT_EXPORT_MAX_CONCURRENT` al esquema de entorno con los valores iniciales de design D11, marcados como hipótesis que fija el benchmark, y documentarlas en `deployment.md` como defensas de recursos del proyecto. Verificar con pruebas del entorno
+- [x] 2.4 Añadir la acción `report.exported` al dominio de la auditoría (design D13) y documentarla en `audit` y en `observability.md` con las métricas de design D17. Verificar con la prueba de las acciones de auditoría
 
 ## 3. Fuentes de reporte de los módulos dueños
 
