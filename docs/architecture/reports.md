@@ -1,8 +1,9 @@
 # Reportes
 
 Los cinco reportes del ERS (§11, RF-501 a RF-505) como listados filtrables y su exportación a XLSX
-con los mismos registros (AC-09). Cambio `add-reports-export`; decisiones en su design, en el ADR 0023
-y en "Trazabilidad de `reports`" de `../product/capabilities.md` (BR-57 a BR-62 de
+con los mismos registros (AC-09). Cambio `add-reports-export`, archivado el 2026-10-08; decisiones en
+su design (`openspec/changes/archive/2026-10-08-add-reports-export/`), en el ADR 0023 y en
+"Trazabilidad de `reports`" de `../product/capabilities.md` (BR-57 a BR-62 de
 `../product/domain-model.md`).
 
 ## Módulo `reports`

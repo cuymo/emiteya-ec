@@ -1,8 +1,8 @@
 # Estado del proyecto
 
-Corte: 2026-10-08. `main` incluye los cambios 0 a 14, el último `add-purchase-settlements`. El
-detalle de cada decisión vive en `docs/` y en `openspec/`; este archivo resume dónde estamos, qué
-falta y qué se necesita del dueño del producto para cada paso pendiente.
+Corte: 2026-10-08. `main` incluye los cambios 0 a 15, el último `add-reports-export`. El detalle
+de cada decisión vive en `docs/` y en `openspec/`; este archivo resume dónde estamos, qué falta y
+qué se necesita del dueño del producto para cada paso pendiente.
 
 ## Hecho
 
@@ -26,34 +26,34 @@ falta y qué se necesita del dueño del producto para cada paso pendiente.
 | 12 | `add-withholding-receipts` | 2026-10-06 | AC-03 parcial |
 | 13 | `add-shipping-guides` | 2026-10-07 | AC-03 parcial |
 | 14 | `add-purchase-settlements` | 2026-10-08 | AC-03 (los seis comprobantes off-line) |
+| 15 | `add-reports-export` | 2026-10-08 | AC-09 |
 
-### Cambio 14 `add-purchase-settlements`
+### Cambio 15 `add-reports-export`
 
-- Archivado en `openspec/changes/archive/2026-10-08-add-purchase-settlements/` y su spec en
-  `openspec/specs/purchase-settlements/`. Resumen en `docs/product/capabilities.md` (Trazabilidad de
-  `purchase-settlements`) y detalle en `docs/architecture/fiscal-emission.md`.
-- Liquidación de compra 1.1.0 (`codDoc` 03) solo en el caso c) del art. 13 del Reglamento de
-  Comprobantes de Venta (Q-12, política `PURCHASE_SETTLEMENT_ELIGIBILITY_V1`): cuatro declaraciones
-  del usuario, separadas y congeladas como `USER_DECLARED`, nunca verificadas ni escritas en el XML;
-  proveedor con cédula o pasaporte y el rol de proveedor (RUC, consumidor final y exterior quedan
-  fuera como restricción del MVP); líneas con producto opcional (solo propone código y descripción,
-  nunca el precio) o libres; solo IVA; pagos con plazo y unidad de tiempo obligatorios y suma exacta;
-  aviso de la retención sin automatizar el comprobante 07; sin efectos en el inventario.
-- Pipeline compartido: reserva, firma (contrato del firmador para el 03 con
-  `ec-sri-invoice-signer@1.8.2`), transmisión, reconciliación, RIDE propio (ficha v2.34, página 65),
-  bandeja con la contraparte rotulada "Proveedor" y pantallas.
-- Límites de recursos del proyecto: 100 líneas por defecto y 500 como máximo absoluto (corregido
-  desde 1000 con la evidencia del benchmark: el RIDE de 1000 líneas con textos máximos superaba
-  1 s), 10 pagos por defecto y 20 como máximo, y un cuerpo de 4 MiB solo para las rutas que guardan
-  el borrador. Ninguno es un límite del SRI ni del XSD, ni guarda relación con Q-47.
-- Cierre: 36/36 tareas, 35/35 requisitos y 196/196 escenarios, `/opsx:verify` sin problemas,
-  `corepack pnpm verify` en verde sobre el HEAD final (2 859 pruebas en 339 archivos, más AC-04),
-  revisión de la interfaz 94/94 (`ui-review.md` del cambio archivado), prueba end-to-end sobre
-  `main.ts` con el SRI simulado, prueba de secuenciales independientes (01, 03, 04, 05, 06 y 07) y
-  `bench:purchase-settlements` con todos los P95 dentro del objetivo
-  (`docs/quality/benchmarks/purchase-settlements-2026-10-07.md`).
-- Corrección documental sin cambio de comportamiento: la liquidación de compra usada como documento
-  sustento de una retención la emite el adquirente (glosario y texto del editor de la retención).
+- Archivado en `openspec/changes/archive/2026-10-08-add-reports-export/`, con su spec en
+  `openspec/specs/reports/` y el requisito de su auditoría en `openspec/specs/audit-trail/`. Resumen
+  en `docs/product/capabilities.md` (Trazabilidad de `reports`) y detalle en
+  `docs/architecture/reports.md`.
+- Cinco reportes del ERS §11 como listados, sin totales ni compensación: Documentos emitidos,
+  Facturas, Retenciones, Inventario (Existencias y Movimientos) y Terceros. Filtros mínimos en la
+  URL, todos los estados por defecto en Documentos emitidos y los autorizados en Facturas y
+  Retenciones, y el ambiente vigente de la empresa por defecto. Las fuentes viven en sus módulos
+  dueños y leen lo congelado por cada comprobante; el inventario lee su saldo y su kárdex.
+- Exportación a XLSX, único formato, con los mismos registros que la lista completa (AC-09):
+  escritor OOXML propio sobre `node:zlib` (ADR 0023), sin dependencias de producción nuevas;
+  identificaciones y números como texto; importes como números hasta 15 dígitos significativos y,
+  por encima, como texto decimal canónico; texto de los usuarios sin fórmulas; fechas fiscales sin
+  zona horaria y momentos en America/Guayaquil. La generación termina en un temporal privado `0600`
+  dentro de una transacción `REPEATABLE READ, READ ONLY`, se audita (`report.exported`) y solo
+  después se entrega; el temporal se borra siempre y no queda ningún artefacto permanente.
+- Límites de recursos del proyecto, fijados por `bench:reports`: 100 000 filas por exportación
+  (rango de 1 a 250 000, `409` al superarlo) y 2 exportaciones simultáneas por instancia (rango de 1
+  a 4, `503` con `Retry-After`). Ninguno es un límite fiscal ni del ERS.
+- Cierre: 22/22 tareas, 17/17 requisitos y 54/54 escenarios, `/opsx:verify` sin problemas críticos
+  ni advertencias (dos sugerencias aceptadas como cobertura opcional), `corepack pnpm verify` en
+  verde sobre el HEAD final (2 967 pruebas en 353 archivos, más AC-04), revisión de la interfaz
+  166/166 (`ui-review.md` del cambio archivado), prueba end-to-end sobre `main.ts` y `bench:reports`
+  con todas las listas dentro de RNF-005 (`docs/quality/benchmarks/reports-2026-10-08.md`).
 
 ## Falta
 
@@ -61,8 +61,7 @@ falta y qué se necesita del dueño del producto para cada paso pendiente.
 
 | # | Cambio | Capacidad | Cierra | Bloqueante antes de proponer |
 | --- | --- | --- | --- | --- |
-| 15 | `add-reports-export` | Reportes y exportación | AC-09 | Ninguno; empieza por su revisión de readiness |
-| 16 | `add-data-portability` | Portabilidad de datos | AC-10 | Q-28 (abierta) |
+| 16 | `add-data-portability` | Portabilidad de datos | AC-10 | Q-28 (abierta); empieza por su revisión de readiness |
 
 Capacidades futuras sin número, ya decididas fuera del MVP actual: `correct-returned-document`
 (BR-28), `cancellation-observation` (Q-16), `credit-note-discounts-bonuses`,
@@ -110,8 +109,8 @@ normativa, después del cambio 16), Q-53 (antes del go-live), Q-22 y Q-26 (parci
   pruebas sensibles a la carga, runner de CI, paginación de establecimientos, entre otras).
 - `bench:credit-notes` no fija `RIDE_SWEEP_INTERVAL_SECONDS` (registrado en la deuda técnica).
 - La base de pruebas conserva esquemas temporales: `nd_ddl_scratch` (creado durante
-  `add-debit-notes` para generar el DDL) y tres `t_bench_ride_*` de ejecuciones anteriores de
-  `bench:ride`.
+  `add-debit-notes` para generar el DDL), tres `t_bench_ride_*` de ejecuciones anteriores de
+  `bench:ride` y otros 17 `t_*` de pruebas interrumpidas en sesiones anteriores.
 
 ## Lo que se necesita del dueño del producto
 
@@ -119,10 +118,9 @@ Ninguno de estos datos se guarda en el repositorio, la CI ni los registros.
 
 | Paso | Qué se necesita | Por qué |
 | --- | --- | --- |
-| Borrar los esquemas temporales de la base de pruebas | Consentimiento para `DROP SCHEMA` de `nd_ddl_scratch` y de los tres `t_bench_ride_*` | Es una operación destructiva |
+| Borrar los esquemas temporales de la base de pruebas | Consentimiento para `DROP SCHEMA` de `nd_ddl_scratch` y de los `t_*` sobrantes | Es una operación destructiva |
 | Certificación S-3 online | Después de cerrar el cambio 16, en el entorno del operador: un P12 ecuatoriano real y su contraseña, un RUC habilitado en Pruebas y la clave maestra de la custodia (`CERTIFICATE_MASTER_KEY`); después, ejecutar `docs/quality/sri-certification.md` con los seis tipos de comprobante, incluida una liquidación de compra | Las respuestas del SRI de las pruebas son sintéticas; solo Pruebas confirma la autorización real. Las reglas de la fuente, como `infoAdicional`, ya están resueltas y no dependen de ese resultado |
 | Política de tamaño (Q-47) | El texto oficial del SRI que fije la cifra en bytes (o la unidad de "320 Kb"), con su URL | No se infiere ni se inventa la conversión; se publica en un cambio OpenSpec pequeño |
 | Aviso del cambio de tarifa del 14 % al 12 % (opcional) | Su URL o PDF oficial del SRI, si se tiene | No se encontró en el portal; la regla ya tiene su evidencia primaria en la ficha v2.34 |
-| Proponer `add-data-portability` (16) | Decisión sobre Q-28: formato de la exportación | Define la portabilidad real fuera del sistema |
+| Proponer `add-data-portability` (16) | Aprobar su revisión de readiness, que resuelve Q-28 (alcance y formato de la exportación) | Define la portabilidad real fuera del sistema |
 | Primer release | Decisión sobre Q-33: licencia open source | La exigen ERS API-006 y el go-live |
-| Siguiente cambio (15) | Aprobar la revisión de readiness de `add-reports-export` antes de proponerlo | El alcance de AC-09 se cierra antes del proposal |

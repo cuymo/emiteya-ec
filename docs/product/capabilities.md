@@ -266,8 +266,11 @@ política del MVP y la defensa de recursos.
 
 ## Trazabilidad de `reports`
 
+Estado: `add-reports-export` archivado el 2026-10-08
+(`openspec/changes/archive/2026-10-08-add-reports-export/`).
+
 Decisiones de la revisión de readiness del cambio 15 (`add-reports-export`, 2026-10-08). Los specs
-distinguirán el requisito del ERS, la política del MVP y la defensa de recursos.
+distinguen el requisito del ERS, la política del MVP y la defensa de recursos.
 
 | Regla | Origen | Fuente |
 | --- | --- | --- |
