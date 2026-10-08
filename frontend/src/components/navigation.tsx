@@ -22,6 +22,7 @@ import {
   Users,
   Warehouse,
   type LucideIcon,
+  FileSpreadsheet,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -90,6 +91,13 @@ const GROUPS: Group[] = [
         label: "Inventario",
         icon: Warehouse,
         permission: "inventory.read",
+      },
+      // add-reports-export, design D16: los cinco reportes y su exportación XLSX.
+      {
+        href: "/reportes",
+        label: "Reportes",
+        icon: FileSpreadsheet,
+        permission: "reports.read",
       },
     ],
   },

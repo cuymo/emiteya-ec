@@ -112,6 +112,17 @@ describe("shell autenticado", () => {
     }
   });
 
+  it("administrador y operador ven Reportes en Operación (add-reports-export)", async () => {
+    for (const me of [ADMIN_ME, OPERATOR_ME]) {
+      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
+      const view = renderShell();
+      await screen.findByText("contenido");
+      expect(screen.getByRole("link", { name: "Reportes" }).getAttribute("href")).toBe("/reportes");
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("administrador y operador ven Facturas y Borradores en Operación (add-invoice-emission)", async () => {
     for (const me of [ADMIN_ME, OPERATOR_ME]) {
       mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
