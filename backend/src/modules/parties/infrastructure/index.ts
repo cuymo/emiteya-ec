@@ -230,3 +230,68 @@ export function shippingPartyReader(db: DbClient) {
     ) => search(companyId, query, false),
   };
 }
+
+/**
+ * Proveedores para la liquidación de compra (add-purchase-settlements, design D4 y D21), sobre un
+ * cliente: la lectura por identificador con su dirección y sus roles, y la búsqueda de los terceros
+ * activos con el rol `SUPPLIER`, sin el consumidor final, con cualquier identificación (la
+ * liquidación decide cuáles son seleccionables). La liquidación nunca asigna roles.
+ */
+export function purchaseSupplierReader(db: DbClient) {
+  type Row = {
+    id: string;
+    status: string;
+    identificationType: string;
+    identification: string;
+    legalName: string;
+    address: string | null;
+    roles: string[];
+    systemRecord: string | null;
+  };
+  const view = (row: Row) => ({
+    id: row.id,
+    status: row.status,
+    identificationType: row.identificationType,
+    identification: row.identification,
+    legalName: row.legalName,
+    address: row.address,
+    roles: row.roles,
+    consumerFinal: row.systemRecord === "CONSUMER_FINAL",
+  });
+  return {
+    async find(companyId: string, partyId: string) {
+      const row = await db.party.findFirst({ where: { id: partyId, companyId } });
+      return row ? view(row) : null;
+    },
+    async searchSuppliers(
+      companyId: string,
+      query: Readonly<{ search?: string | undefined; page: number; pageSize: number }>,
+    ) {
+      const key = query.search ? escapeLike(searchKey(query.search)) : "";
+      const where = {
+        companyId,
+        status: "ACTIVE",
+        systemRecord: null,
+        roles: { has: "SUPPLIER" },
+        ...(key
+          ? {
+              OR: [
+                { searchIdentification: { startsWith: key } },
+                { searchName: { contains: key } },
+              ],
+            }
+          : {}),
+      };
+      const [rows, total] = await Promise.all([
+        db.party.findMany({
+          where,
+          orderBy: [{ searchName: "asc" }, { id: "asc" }],
+          skip: (query.page - 1) * query.pageSize,
+          take: query.pageSize,
+        }),
+        db.party.count({ where }),
+      ]);
+      return { items: rows.map(view), total };
+    },
+  };
+}

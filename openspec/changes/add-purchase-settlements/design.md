@@ -77,7 +77,7 @@ Lo que ya existe y este cambio reutiliza: el contador `03` (`add-fiscal-numberin
 
 ### D6. Líneas
 
-- Cada línea: `{ productId | null, mainCode, auxiliaryCode, description, unit, quantity, unitPrice, discount, ivaRateCode }`.
+- Cada línea: `{ productId | null, mainCode, auxiliaryCode, description, unit, quantity, unitPrice, discount, ivaRate }`.
 - **Producto opcional:** activo y de la empresa (bien o servicio; la procedencia cubre ambos). Solo sugiere en la interfaz su código y su nombre como descripción, y su tarifa de IVA; los datos de la línea son los que el usuario confirma. El servidor congela el `productId` como referencia y no lee su precio (`PURCHASE_SETTLEMENT_PRODUCT_INACTIVE`, `404` si no existe).
 - **Textos:** `mainCode` y `auxiliaryCode` opcionales (1 a 25), `description` obligatoria (1 a 300), `unit` opcional (1 a 50), sin saltos de línea y recortados (XSD; art. 22, num. 2, con la serie o el motor dentro de la descripción).
 - **Números** (`decimalString`): `quantity` mayor que cero (`cantidad`, 18/6; política del proyecto), `unitPrice` desde cero (`precioUnitario`, 18/6), `discount` desde 0.00 hasta el subtotal (`importe`, 14/2), siempre materializado.
@@ -85,7 +85,7 @@ Lo que ya existe y este cambio reutiliza: el contador `03` (`add-fiscal-numberin
 
 ### D7. IVA
 
-- `ivaRateCode` es la clave de entrada del catálogo `iva-rate`; el servidor resuelve la entrada vigente en la fecha de emisión (la vista previa con la de hoy y la reserva con la suya) y congela `{ taxCode: "2", rateCode, percentage, catalogType: "iva-rate", entryKey, versionId, officialLabel }`.
+- `ivaRate` es la clave de entrada del catálogo `iva-rate`; el servidor resuelve la entrada vigente en la fecha de emisión (la vista previa con la de hoy y la reserva con la suya) y congela `{ taxCode: "2", rateCode, percentage, catalogType: "iva-rate", entryKey, versionId, officialLabel }`.
 - Una tarifa no vigente en esa fecha rechaza la emisión (`PURCHASE_SETTLEMENT_IVA_RATE_NOT_EFFECTIVE`). El 0 %, no objeto y exento conservan su código propio y su subtotal separado, como en la factura.
 - Sin ICE ni IRBPNR: el XSD admite solo `codigo` 2 en líneas y totales.
 
@@ -169,9 +169,8 @@ Guarda: `snapshotVersion: 1`; el esquema (`03`, `1.1.0`, ruta, hash e imports); 
 
 | Método y ruta | Uso | Permiso |
 | --- | --- | --- |
-| `GET /api/v1/purchase-settlements/suppliers` | Terceros activos con el rol `SUPPLIER` y tipo 05 o 06, cada uno con `selectable` y su motivo | `purchaseSettlements.draft` |
-| `GET /api/v1/purchase-settlements/products` | Productos activos de la empresa con sus códigos, su nombre y su tarifa de IVA como sugerencia | `purchaseSettlements.draft` |
-| `GET /api/v1/purchase-settlements/options` | Política de procedencia con sus declaraciones y su versión, tarifas de IVA y formas de pago vigentes, límites efectivos, puntos utilizables y `evaluatedOn` | `purchaseSettlements.draft` |
+| `GET /api/v1/purchase-settlements/suppliers` | Terceros activos con el rol `SUPPLIER`, sin el consumidor final; `selectable` solo para 05 y 06, y el motivo para los demás | `purchaseSettlements.draft` |
+| `GET /api/v1/purchase-settlements/options` | Política de procedencia con sus declaraciones y su versión, aviso de la retención, moneda, tarifas de IVA con tarifa de cálculo y formas de pago vigentes, límites efectivos y `evaluatedOn` | `purchaseSettlements.draft` |
 | `GET/POST /api/v1/purchase-settlements/drafts`, `GET/PUT/DELETE /api/v1/purchase-settlements/drafts/{draftId}` | Borradores con su vista previa; `POST` y `PUT` admiten un cuerpo de hasta 4 MiB (D22) | `purchaseSettlements.draft` |
 | `POST /api/v1/purchase-settlements` | Emisión con `Idempotency-Key` (`201`, o `200` en la repetición) | `purchaseSettlements.emit` |
 | `GET /api/v1/purchase-settlements`, `GET /api/v1/purchase-settlements/{purchaseSettlementId}` | Consulta y detalle, con búsqueda por número o por la identificación o el nombre del proveedor, y filtro de estado | `purchaseSettlements.read` |
@@ -183,6 +182,7 @@ Guarda: `snapshotVersion: 1`; el esquema (`03`, `1.1.0`, ruta, hash e imports); 
 - **Borrador:** `{ emissionPointId, supplierPartyId, supplierAddress, lines, payments }`. **Emisión:** `{ draftId, expectedVersion, declarations: { policyVersion, statements } }`.
 - **Códigos de error** (además de los compartidos de la emisión): `PURCHASE_SETTLEMENT_NOT_FOUND`, `PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND`, `PURCHASE_SETTLEMENT_SUPPLIER_REQUIRED`, `PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND`, `PURCHASE_SETTLEMENT_SUPPLIER_INACTIVE`, `PURCHASE_SETTLEMENT_SUPPLIER_ROLE_REQUIRED`, `PURCHASE_SETTLEMENT_SUPPLIER_IDENTIFICATION_NOT_ALLOWED`, `PURCHASE_SETTLEMENT_SUPPLIER_CONSUMER_FINAL`, `PURCHASE_SETTLEMENT_ADDRESS_REQUIRED`, `PURCHASE_SETTLEMENT_LINES_REQUIRED`, `PURCHASE_SETTLEMENT_DESCRIPTION_INVALID`, `PURCHASE_SETTLEMENT_CODE_INVALID`, `PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND`, `PURCHASE_SETTLEMENT_PRODUCT_INACTIVE`, `PURCHASE_SETTLEMENT_QUANTITY_INVALID`, `PURCHASE_SETTLEMENT_PRICE_INVALID`, `PURCHASE_SETTLEMENT_DISCOUNT_EXCEEDS_SUBTOTAL`, `PURCHASE_SETTLEMENT_IVA_RATE_NOT_EFFECTIVE`, `PURCHASE_SETTLEMENT_AMOUNT_OUT_OF_RANGE`, `PURCHASE_SETTLEMENT_PAYMENTS_REQUIRED`, `PURCHASE_SETTLEMENT_PAYMENT_METHOD_INVALID`, `PURCHASE_SETTLEMENT_PAYMENT_TERM_REQUIRED`, `PURCHASE_SETTLEMENT_PAYMENTS_MISMATCH`, `PURCHASE_SETTLEMENT_DECLARATION_REQUIRED`, `PURCHASE_SETTLEMENT_DECLARATION_VERSION_MISMATCH`, `PURCHASE_SETTLEMENT_RESOURCE_LIMIT`, `PURCHASE_SETTLEMENT_DRAFT_INCOMPLETE`, `PURCHASE_SETTLEMENT_DRAFT_CHANGED`, `PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED` y `PURCHASE_SETTLEMENT_NOT_RECONCILABLE`. El rechazo nombra la línea o el pago cuando el problema está en ellos.
 - **Prueba de tipos emitidos:** `emitted-document-types.test.ts` exige los seis prefijos, con `/purchase-settlements`.
+- **Productos y punto:** los productos se eligen con `GET /api/v1/products` (`products.read`, que tienen el administrador y el operador), como en la factura y en la guía, y el punto de emisión con el punto predeterminado y los establecimientos de la empresa, como en los demás borradores: no hay rutas propias para ellos.
 
 ### D22. Límites de recursos y cuerpo del borrador
 

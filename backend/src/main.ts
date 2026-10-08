@@ -35,6 +35,7 @@ import {
   consumerFinalInitializer,
   ensureConsumerFinals,
   partiesModule,
+  purchaseSupplierReader,
   shippingPartyReader,
   supplierReader,
 } from "./modules/parties/infrastructure/index.ts";
@@ -79,6 +80,10 @@ import {
   shippingGuideSigningProfile,
   shippingGuidesModule,
 } from "./modules/shipping-guides/infrastructure/index.ts";
+import {
+  isPurchaseSettlementDraftBody,
+  purchaseSettlementsModule,
+} from "./modules/purchase-settlements/infrastructure/index.ts";
 import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
 import {
   SRI_JOB_TYPES,
@@ -461,6 +466,23 @@ apiRouter.use(
   }).routers,
 );
 
+// Liquidaciones de compra (add-purchase-settlements, design D1, D2 y D21): los proveedores de
+// `parties` y los productos de `products` como puertos, sin inventario, capacidades, compras ni
+// retenciones. Los límites de recursos son defensas del sistema, no límites del SRI (design D22).
+apiRouter.use(
+  ...purchaseSettlementsModule({
+    prisma: database.prisma,
+    authorizer,
+    signingReads: signing.reads,
+    suppliers: purchaseSupplierReader,
+    products: productReader,
+    limits: {
+      lines: env.PURCHASE_SETTLEMENT_MAX_LINES,
+      payments: env.PURCHASE_SETTLEMENT_MAX_PAYMENTS,
+    },
+  }).routers,
+);
+
 // Transmisión al SRI (add-sri-transmission, design D5): nace deshabilitada. El estado se registra
 // sin secretos ni URLs; habilitada, la readiness exige sus precondiciones.
 const sriEndpoints = resolveSriEndpoints(env);
@@ -649,8 +671,12 @@ const app = createApp({
   trustProxy: env.TRUST_PROXY,
   apiRouter,
   mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
-  // Rutas con su propio parser: la carga de la firma y los borradores de guía (2 MiB, design D23).
-  jsonBodyExceptions: (req) => isSigningCertificateUpload(req) || isShippingGuideDraftBody(req),
+  // Rutas con su propio parser: la carga de la firma, los borradores de guía (2 MiB, design D23 de
+  // add-shipping-guides) y los de liquidación de compra (4 MiB, design D22 de add-purchase-settlements).
+  jsonBodyExceptions: (req) =>
+    isSigningCertificateUpload(req) ||
+    isShippingGuideDraftBody(req) ||
+    isPurchaseSettlementDraftBody(req),
 });
 
 const server = app.listen(env.PORT, () => {

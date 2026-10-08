@@ -63897,6 +63897,3968 @@
           }
         }
       }
+    },
+    "/purchase-settlements/suppliers": {
+      "get": {
+        "summary": "Buscar proveedores: terceros activos con el rol de proveedor, por identificación o razón social",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 25,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de proveedores y el total en `meta`; nunca el consumidor final. Solo la cédula y el pasaporte son seleccionables; los demás vienen con su motivo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "identificationType": {
+                            "type": "string"
+                          },
+                          "identification": {
+                            "type": "string"
+                          },
+                          "legalName": {
+                            "type": "string"
+                          },
+                          "address": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "selectable": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "identificationType",
+                          "identification",
+                          "legalName",
+                          "address",
+                          "selectable",
+                          "reason"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "pageSize",
+                        "total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos; el mensaje indica el campo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/purchase-settlements/options": {
+      "get": {
+        "summary": "Consultar las opciones del borrador de liquidación: la política de procedencia con sus cuatro declaraciones, el aviso de la retención, la moneda, las tarifas de IVA y las formas de pago vigentes, y los límites de recursos",
+        "responses": {
+          "200": {
+            "description": "Opciones resueltas con la fecha de hoy para la empresa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "evaluatedOn": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "limits": {
+                          "type": "object",
+                          "properties": {
+                            "lines": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "payments": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "lines",
+                            "payments"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "policy": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "const": "PURCHASE_SETTLEMENT_ELIGIBILITY_V1"
+                            },
+                            "rule": {
+                              "type": "string",
+                              "const": "ART_13_C_RUSTICITY_NO_ACTIVE_RUC"
+                            },
+                            "case": {
+                              "type": "string",
+                              "const": "ART_13_C"
+                            },
+                            "version": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "source": {
+                              "type": "string"
+                            },
+                            "statements": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "enum": [
+                                      "NATURAL_PERSON_NOT_REQUIRED_TO_KEEP_ACCOUNTING",
+                                      "NO_RUC_OR_SUSPENDED_RUC",
+                                      "UNABLE_TO_ISSUE_DUE_TO_CULTURAL_LEVEL_OR_RUSTICITY",
+                                      "MOVABLE_GOODS_OR_SERVICES_TRANSACTION"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "text"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "rule",
+                            "case",
+                            "version",
+                            "source",
+                            "statements"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "withholdingNotice": {
+                          "type": "string",
+                          "const": "Esta operación requiere la retención correspondiente conforme a la normativa aplicable."
+                        },
+                        "currency": {
+                          "type": "string",
+                          "const": "DOLAR"
+                        },
+                        "ivaRates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "entryKey": {
+                                "type": "string"
+                              },
+                              "code": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "rateKind": {
+                                "type": "string",
+                                "enum": [
+                                  "PERCENTAGE",
+                                  "NOT_SUBJECT",
+                                  "EXEMPT",
+                                  "DIFFERENTIATED",
+                                  "PER_NORMATIVE",
+                                  "PER_UNIT"
+                                ]
+                              },
+                              "percentage": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "entryKey",
+                              "code",
+                              "label",
+                              "rateKind",
+                              "percentage"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "paymentMethods": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "entryKey": {
+                                "type": "string"
+                              },
+                              "code": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "entryKey",
+                              "code",
+                              "label"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "evaluatedOn",
+                        "limits",
+                        "policy",
+                        "withholdingNotice",
+                        "currency",
+                        "ivaRates",
+                        "paymentMethods"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/purchase-settlements/drafts": {
+      "get": {
+        "summary": "Listar los borradores de liquidación pendientes, por última actualización",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "default": 25,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de borradores `DRAFT` con su proveedor, su cantidad de líneas y el importe de la vista previa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "supplierName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "lineCount": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "previewTotal": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "version",
+                          "supplierName",
+                          "lineCount",
+                          "previewTotal",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "pageSize",
+                        "total"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos; el mensaje indica el campo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Guardar un borrador de liquidación: punto, proveedor con su dirección, líneas con producto opcional o libres y pagos con su plazo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "emissionPointId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "supplierPartyId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "supplierAddress": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300,
+                        "pattern": "^[^\\r\\n]*$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lines": {
+                    "maxItems": 1000,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "mainCode": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 25,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "auxiliaryCode": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 25,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "unit": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 50,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "quantity": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "unitPrice": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "discount": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "ivaRate": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[0-9A-Z][0-9A-Z-]{0,63}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "payments": {
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "paymentMethod": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[0-9A-Z][0-9A-Z-]{0,63}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "total": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "term": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "timeUnit": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 10,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Borrador guardado con la vista previa del servidor: importes calculados, problemas por línea o pago, las cuatro declaraciones que se confirmarán al emitir y el aviso de la retención. Con un proveedor y sin dirección, propone la del tercero. No reserva nada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "emissionPoint": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "establishmentCode": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string"
+                                },
+                                "available": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "establishmentCode",
+                                "code",
+                                "available"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "supplier": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "identificationType": {
+                                  "type": "string"
+                                },
+                                "identification": {
+                                  "type": "string"
+                                },
+                                "legalName": {
+                                  "type": "string"
+                                },
+                                "address": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "selectable": {
+                                  "type": "boolean"
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "identificationType",
+                                "identification",
+                                "legalName",
+                                "address",
+                                "selectable",
+                                "reason"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "supplierAddress": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "productId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "productName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "mainCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "auxiliaryCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "unit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "quantity": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "unitPrice": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "discount": {
+                                "type": "string"
+                              },
+                              "ivaRate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "productId",
+                              "productName",
+                              "mainCode",
+                              "auxiliaryCode",
+                              "description",
+                              "unit",
+                              "quantity",
+                              "unitPrice",
+                              "discount",
+                              "ivaRate"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "payments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "paymentMethod": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "total": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "term": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "timeUnit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "paymentMethod",
+                              "total",
+                              "term",
+                              "timeUnit"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "preview": {
+                          "type": "object",
+                          "properties": {
+                            "evaluatedOn": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "calculationVersion": {
+                              "type": "string"
+                            },
+                            "supplier": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "identificationType": {
+                                      "type": "string"
+                                    },
+                                    "identification": {
+                                      "type": "string"
+                                    },
+                                    "legalName": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "identificationType",
+                                    "identification",
+                                    "legalName"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lines": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "position": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "subtotal": {
+                                    "type": "string"
+                                  },
+                                  "discount": {
+                                    "type": "string"
+                                  },
+                                  "taxableBase": {
+                                    "type": "string"
+                                  },
+                                  "tax": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "taxCode": {
+                                            "type": "string",
+                                            "const": "2"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "rateKind": {
+                                            "type": "string",
+                                            "enum": [
+                                              "PERCENTAGE",
+                                              "NOT_SUBJECT",
+                                              "EXEMPT",
+                                              "DIFFERENTIATED",
+                                              "PER_NORMATIVE",
+                                              "PER_UNIT"
+                                            ]
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "taxCode",
+                                          "rateCode",
+                                          "rateKind",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "position",
+                                  "subtotal",
+                                  "discount",
+                                  "taxableBase",
+                                  "tax"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "totals": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "withoutTaxes": {
+                                      "type": "string"
+                                    },
+                                    "discount": {
+                                      "type": "string"
+                                    },
+                                    "taxes": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "taxCode": {
+                                            "type": "string",
+                                            "const": "2"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "rateKind": {
+                                            "type": "string",
+                                            "enum": [
+                                              "PERCENTAGE",
+                                              "NOT_SUBJECT",
+                                              "EXEMPT",
+                                              "DIFFERENTIATED",
+                                              "PER_NORMATIVE",
+                                              "PER_UNIT"
+                                            ]
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "taxCode",
+                                          "rateCode",
+                                          "rateKind",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "withoutTaxes",
+                                    "discount",
+                                    "taxes",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "paymentsTotal": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "policy": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "const": "PURCHASE_SETTLEMENT_ELIGIBILITY_V1"
+                                },
+                                "rule": {
+                                  "type": "string",
+                                  "const": "ART_13_C_RUSTICITY_NO_ACTIVE_RUC"
+                                },
+                                "case": {
+                                  "type": "string",
+                                  "const": "ART_13_C"
+                                },
+                                "version": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "source": {
+                                  "type": "string"
+                                },
+                                "statements": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "enum": [
+                                          "NATURAL_PERSON_NOT_REQUIRED_TO_KEEP_ACCOUNTING",
+                                          "NO_RUC_OR_SUSPENDED_RUC",
+                                          "UNABLE_TO_ISSUE_DUE_TO_CULTURAL_LEVEL_OR_RUSTICITY",
+                                          "MOVABLE_GOODS_OR_SERVICES_TRANSACTION"
+                                        ]
+                                      },
+                                      "text": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "text"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "rule",
+                                "case",
+                                "version",
+                                "source",
+                                "statements"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "withholdingNotice": {
+                              "type": "string",
+                              "const": "Esta operación requiere la retención correspondiente conforme a la normativa aplicable."
+                            },
+                            "issues": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "PURCHASE_SETTLEMENT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_INACTIVE",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_ROLE_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_IDENTIFICATION_NOT_ALLOWED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_CONSUMER_FINAL",
+                                      "PURCHASE_SETTLEMENT_ADDRESS_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_LINES_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_DESCRIPTION_INVALID",
+                                      "PURCHASE_SETTLEMENT_CODE_INVALID",
+                                      "PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_PRODUCT_INACTIVE",
+                                      "PURCHASE_SETTLEMENT_QUANTITY_INVALID",
+                                      "PURCHASE_SETTLEMENT_PRICE_INVALID",
+                                      "PURCHASE_SETTLEMENT_DISCOUNT_EXCEEDS_SUBTOTAL",
+                                      "PURCHASE_SETTLEMENT_IVA_RATE_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_IVA_RATE_NOT_EFFECTIVE",
+                                      "PURCHASE_SETTLEMENT_AMOUNT_OUT_OF_RANGE",
+                                      "PURCHASE_SETTLEMENT_PAYMENTS_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_METHOD_INVALID",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_TOTAL_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_TERM_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENTS_MISMATCH",
+                                      "PURCHASE_SETTLEMENT_DECLARATION_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_DECLARATION_VERSION_MISMATCH",
+                                      "PURCHASE_SETTLEMENT_RESOURCE_LIMIT",
+                                      "PURCHASE_SETTLEMENT_DRAFT_INCOMPLETE",
+                                      "PURCHASE_SETTLEMENT_DRAFT_CHANGED",
+                                      "PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED",
+                                      "PURCHASE_SETTLEMENT_NOT_RECONCILABLE",
+                                      "IDEMPOTENCY_KEY_REQUIRED",
+                                      "IDEMPOTENCY_KEY_REUSED",
+                                      "TAXPAYER_NOT_CONFIGURED",
+                                      "EMISSION_POINT_NOT_FOUND",
+                                      "EMISSION_POINT_UNAVAILABLE",
+                                      "SIGNING_CERTIFICATE_NOT_USABLE",
+                                      "SCHEMA_NOT_AVAILABLE",
+                                      "SEQUENCE_EXHAUSTED",
+                                      "SRI_INTERACTION_IN_PROGRESS"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "field": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "line": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "payment": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "message",
+                                  "field",
+                                  "line",
+                                  "payment"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "evaluatedOn",
+                            "calculationVersion",
+                            "supplier",
+                            "lines",
+                            "totals",
+                            "paymentsTotal",
+                            "policy",
+                            "withholdingNotice",
+                            "issues"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "updatedBy": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "version",
+                        "emissionPoint",
+                        "supplier",
+                        "supplierAddress",
+                        "lines",
+                        "payments",
+                        "preview",
+                        "createdAt",
+                        "createdBy",
+                        "updatedAt",
+                        "updatedBy"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos (un decimal fuera de su dominio, un texto demasiado largo o con saltos de línea, un campo no permitido como un total, un impuesto distinto del IVA, un reembolso, un subsidio o detalles adicionales, o más líneas o pagos que los máximos absolutos) o un punto de emisión que no existe en la empresa (EMISSION_POINT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND), o su proveedor o un producto no existe en la empresa (PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND o PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El borrador excede un límite de recursos del sistema (PURCHASE_SETTLEMENT_RESOURCE_LIMIT, una defensa del sistema, no un límite del SRI), cambió (PURCHASE_SETTLEMENT_DRAFT_CHANGED) o ya se emitió (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "El cuerpo supera 4 MiB, el límite propio del borrador de liquidación (una defensa de recursos HTTP del sistema, no un límite del SRI).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/purchase-settlements/drafts/{draftId}": {
+      "get": {
+        "summary": "Consultar un borrador de liquidación con su vista previa recalculada",
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Borrador con la vista previa calculada con la fecha del día.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "emissionPoint": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "establishmentCode": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string"
+                                },
+                                "available": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "establishmentCode",
+                                "code",
+                                "available"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "supplier": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "identificationType": {
+                                  "type": "string"
+                                },
+                                "identification": {
+                                  "type": "string"
+                                },
+                                "legalName": {
+                                  "type": "string"
+                                },
+                                "address": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "selectable": {
+                                  "type": "boolean"
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "identificationType",
+                                "identification",
+                                "legalName",
+                                "address",
+                                "selectable",
+                                "reason"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "supplierAddress": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "productId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "productName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "mainCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "auxiliaryCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "unit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "quantity": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "unitPrice": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "discount": {
+                                "type": "string"
+                              },
+                              "ivaRate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "productId",
+                              "productName",
+                              "mainCode",
+                              "auxiliaryCode",
+                              "description",
+                              "unit",
+                              "quantity",
+                              "unitPrice",
+                              "discount",
+                              "ivaRate"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "payments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "paymentMethod": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "total": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "term": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "timeUnit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "paymentMethod",
+                              "total",
+                              "term",
+                              "timeUnit"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "preview": {
+                          "type": "object",
+                          "properties": {
+                            "evaluatedOn": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "calculationVersion": {
+                              "type": "string"
+                            },
+                            "supplier": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "identificationType": {
+                                      "type": "string"
+                                    },
+                                    "identification": {
+                                      "type": "string"
+                                    },
+                                    "legalName": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "identificationType",
+                                    "identification",
+                                    "legalName"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lines": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "position": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "subtotal": {
+                                    "type": "string"
+                                  },
+                                  "discount": {
+                                    "type": "string"
+                                  },
+                                  "taxableBase": {
+                                    "type": "string"
+                                  },
+                                  "tax": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "taxCode": {
+                                            "type": "string",
+                                            "const": "2"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "rateKind": {
+                                            "type": "string",
+                                            "enum": [
+                                              "PERCENTAGE",
+                                              "NOT_SUBJECT",
+                                              "EXEMPT",
+                                              "DIFFERENTIATED",
+                                              "PER_NORMATIVE",
+                                              "PER_UNIT"
+                                            ]
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "taxCode",
+                                          "rateCode",
+                                          "rateKind",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "position",
+                                  "subtotal",
+                                  "discount",
+                                  "taxableBase",
+                                  "tax"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "totals": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "withoutTaxes": {
+                                      "type": "string"
+                                    },
+                                    "discount": {
+                                      "type": "string"
+                                    },
+                                    "taxes": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "taxCode": {
+                                            "type": "string",
+                                            "const": "2"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "rateKind": {
+                                            "type": "string",
+                                            "enum": [
+                                              "PERCENTAGE",
+                                              "NOT_SUBJECT",
+                                              "EXEMPT",
+                                              "DIFFERENTIATED",
+                                              "PER_NORMATIVE",
+                                              "PER_UNIT"
+                                            ]
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "taxCode",
+                                          "rateCode",
+                                          "rateKind",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "withoutTaxes",
+                                    "discount",
+                                    "taxes",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "paymentsTotal": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "policy": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "const": "PURCHASE_SETTLEMENT_ELIGIBILITY_V1"
+                                },
+                                "rule": {
+                                  "type": "string",
+                                  "const": "ART_13_C_RUSTICITY_NO_ACTIVE_RUC"
+                                },
+                                "case": {
+                                  "type": "string",
+                                  "const": "ART_13_C"
+                                },
+                                "version": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "source": {
+                                  "type": "string"
+                                },
+                                "statements": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "enum": [
+                                          "NATURAL_PERSON_NOT_REQUIRED_TO_KEEP_ACCOUNTING",
+                                          "NO_RUC_OR_SUSPENDED_RUC",
+                                          "UNABLE_TO_ISSUE_DUE_TO_CULTURAL_LEVEL_OR_RUSTICITY",
+                                          "MOVABLE_GOODS_OR_SERVICES_TRANSACTION"
+                                        ]
+                                      },
+                                      "text": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "text"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "rule",
+                                "case",
+                                "version",
+                                "source",
+                                "statements"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "withholdingNotice": {
+                              "type": "string",
+                              "const": "Esta operación requiere la retención correspondiente conforme a la normativa aplicable."
+                            },
+                            "issues": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "PURCHASE_SETTLEMENT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_INACTIVE",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_ROLE_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_IDENTIFICATION_NOT_ALLOWED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_CONSUMER_FINAL",
+                                      "PURCHASE_SETTLEMENT_ADDRESS_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_LINES_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_DESCRIPTION_INVALID",
+                                      "PURCHASE_SETTLEMENT_CODE_INVALID",
+                                      "PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_PRODUCT_INACTIVE",
+                                      "PURCHASE_SETTLEMENT_QUANTITY_INVALID",
+                                      "PURCHASE_SETTLEMENT_PRICE_INVALID",
+                                      "PURCHASE_SETTLEMENT_DISCOUNT_EXCEEDS_SUBTOTAL",
+                                      "PURCHASE_SETTLEMENT_IVA_RATE_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_IVA_RATE_NOT_EFFECTIVE",
+                                      "PURCHASE_SETTLEMENT_AMOUNT_OUT_OF_RANGE",
+                                      "PURCHASE_SETTLEMENT_PAYMENTS_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_METHOD_INVALID",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_TOTAL_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_TERM_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENTS_MISMATCH",
+                                      "PURCHASE_SETTLEMENT_DECLARATION_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_DECLARATION_VERSION_MISMATCH",
+                                      "PURCHASE_SETTLEMENT_RESOURCE_LIMIT",
+                                      "PURCHASE_SETTLEMENT_DRAFT_INCOMPLETE",
+                                      "PURCHASE_SETTLEMENT_DRAFT_CHANGED",
+                                      "PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED",
+                                      "PURCHASE_SETTLEMENT_NOT_RECONCILABLE",
+                                      "IDEMPOTENCY_KEY_REQUIRED",
+                                      "IDEMPOTENCY_KEY_REUSED",
+                                      "TAXPAYER_NOT_CONFIGURED",
+                                      "EMISSION_POINT_NOT_FOUND",
+                                      "EMISSION_POINT_UNAVAILABLE",
+                                      "SIGNING_CERTIFICATE_NOT_USABLE",
+                                      "SCHEMA_NOT_AVAILABLE",
+                                      "SEQUENCE_EXHAUSTED",
+                                      "SRI_INTERACTION_IN_PROGRESS"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "field": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "line": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "payment": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "message",
+                                  "field",
+                                  "line",
+                                  "payment"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "evaluatedOn",
+                            "calculationVersion",
+                            "supplier",
+                            "lines",
+                            "totals",
+                            "paymentsTotal",
+                            "policy",
+                            "withholdingNotice",
+                            "issues"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "updatedBy": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "version",
+                        "emissionPoint",
+                        "supplier",
+                        "supplierAddress",
+                        "lines",
+                        "payments",
+                        "preview",
+                        "createdAt",
+                        "createdBy",
+                        "updatedAt",
+                        "updatedBy"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND), o su proveedor o un producto no existe en la empresa (PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND o PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El borrador ya se emitió (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Corregir un borrador de liquidación a partir de la versión consultada",
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "emissionPointId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "supplierPartyId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "supplierAddress": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 300,
+                        "pattern": "^[^\\r\\n]*$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lines": {
+                    "maxItems": 1000,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "mainCode": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 25,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "auxiliaryCode": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 25,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 300,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "unit": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 50,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "quantity": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "unitPrice": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "discount": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "ivaRate": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[0-9A-Z][0-9A-Z-]{0,63}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "payments": {
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "paymentMethod": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "pattern": "^[0-9A-Z][0-9A-Z-]{0,63}$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "total": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "term": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "timeUnit": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 10,
+                              "pattern": "^[^\\r\\n]*$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "expectedVersion"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Borrador corregido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "emissionPoint": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "establishmentCode": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string"
+                                },
+                                "available": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "establishmentCode",
+                                "code",
+                                "available"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "supplier": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "identificationType": {
+                                  "type": "string"
+                                },
+                                "identification": {
+                                  "type": "string"
+                                },
+                                "legalName": {
+                                  "type": "string"
+                                },
+                                "address": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "selectable": {
+                                  "type": "boolean"
+                                },
+                                "reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "identificationType",
+                                "identification",
+                                "legalName",
+                                "address",
+                                "selectable",
+                                "reason"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "supplierAddress": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "productId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "productName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "mainCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "auxiliaryCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "description": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "unit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "quantity": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "unitPrice": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "discount": {
+                                "type": "string"
+                              },
+                              "ivaRate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "productId",
+                              "productName",
+                              "mainCode",
+                              "auxiliaryCode",
+                              "description",
+                              "unit",
+                              "quantity",
+                              "unitPrice",
+                              "discount",
+                              "ivaRate"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "payments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "paymentMethod": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "total": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "term": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "timeUnit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "paymentMethod",
+                              "total",
+                              "term",
+                              "timeUnit"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "preview": {
+                          "type": "object",
+                          "properties": {
+                            "evaluatedOn": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "calculationVersion": {
+                              "type": "string"
+                            },
+                            "supplier": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "identificationType": {
+                                      "type": "string"
+                                    },
+                                    "identification": {
+                                      "type": "string"
+                                    },
+                                    "legalName": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "identificationType",
+                                    "identification",
+                                    "legalName"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "lines": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "position": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "subtotal": {
+                                    "type": "string"
+                                  },
+                                  "discount": {
+                                    "type": "string"
+                                  },
+                                  "taxableBase": {
+                                    "type": "string"
+                                  },
+                                  "tax": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "taxCode": {
+                                            "type": "string",
+                                            "const": "2"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "rateKind": {
+                                            "type": "string",
+                                            "enum": [
+                                              "PERCENTAGE",
+                                              "NOT_SUBJECT",
+                                              "EXEMPT",
+                                              "DIFFERENTIATED",
+                                              "PER_NORMATIVE",
+                                              "PER_UNIT"
+                                            ]
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "taxCode",
+                                          "rateCode",
+                                          "rateKind",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "position",
+                                  "subtotal",
+                                  "discount",
+                                  "taxableBase",
+                                  "tax"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "totals": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "withoutTaxes": {
+                                      "type": "string"
+                                    },
+                                    "discount": {
+                                      "type": "string"
+                                    },
+                                    "taxes": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "taxCode": {
+                                            "type": "string",
+                                            "const": "2"
+                                          },
+                                          "rateCode": {
+                                            "type": "string"
+                                          },
+                                          "rateKind": {
+                                            "type": "string",
+                                            "enum": [
+                                              "PERCENTAGE",
+                                              "NOT_SUBJECT",
+                                              "EXEMPT",
+                                              "DIFFERENTIATED",
+                                              "PER_NORMATIVE",
+                                              "PER_UNIT"
+                                            ]
+                                          },
+                                          "percentage": {
+                                            "type": "string"
+                                          },
+                                          "label": {
+                                            "type": "string"
+                                          },
+                                          "base": {
+                                            "type": "string"
+                                          },
+                                          "amount": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "taxCode",
+                                          "rateCode",
+                                          "rateKind",
+                                          "percentage",
+                                          "label",
+                                          "base",
+                                          "amount"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "total": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "withoutTaxes",
+                                    "discount",
+                                    "taxes",
+                                    "total"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "paymentsTotal": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "policy": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "const": "PURCHASE_SETTLEMENT_ELIGIBILITY_V1"
+                                },
+                                "rule": {
+                                  "type": "string",
+                                  "const": "ART_13_C_RUSTICITY_NO_ACTIVE_RUC"
+                                },
+                                "case": {
+                                  "type": "string",
+                                  "const": "ART_13_C"
+                                },
+                                "version": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "source": {
+                                  "type": "string"
+                                },
+                                "statements": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "enum": [
+                                          "NATURAL_PERSON_NOT_REQUIRED_TO_KEEP_ACCOUNTING",
+                                          "NO_RUC_OR_SUSPENDED_RUC",
+                                          "UNABLE_TO_ISSUE_DUE_TO_CULTURAL_LEVEL_OR_RUSTICITY",
+                                          "MOVABLE_GOODS_OR_SERVICES_TRANSACTION"
+                                        ]
+                                      },
+                                      "text": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "text"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "rule",
+                                "case",
+                                "version",
+                                "source",
+                                "statements"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "withholdingNotice": {
+                              "type": "string",
+                              "const": "Esta operación requiere la retención correspondiente conforme a la normativa aplicable."
+                            },
+                            "issues": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "code": {
+                                    "type": "string",
+                                    "enum": [
+                                      "PURCHASE_SETTLEMENT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_INACTIVE",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_ROLE_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_IDENTIFICATION_NOT_ALLOWED",
+                                      "PURCHASE_SETTLEMENT_SUPPLIER_CONSUMER_FINAL",
+                                      "PURCHASE_SETTLEMENT_ADDRESS_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_LINES_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_DESCRIPTION_INVALID",
+                                      "PURCHASE_SETTLEMENT_CODE_INVALID",
+                                      "PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND",
+                                      "PURCHASE_SETTLEMENT_PRODUCT_INACTIVE",
+                                      "PURCHASE_SETTLEMENT_QUANTITY_INVALID",
+                                      "PURCHASE_SETTLEMENT_PRICE_INVALID",
+                                      "PURCHASE_SETTLEMENT_DISCOUNT_EXCEEDS_SUBTOTAL",
+                                      "PURCHASE_SETTLEMENT_IVA_RATE_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_IVA_RATE_NOT_EFFECTIVE",
+                                      "PURCHASE_SETTLEMENT_AMOUNT_OUT_OF_RANGE",
+                                      "PURCHASE_SETTLEMENT_PAYMENTS_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_METHOD_INVALID",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_TOTAL_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENT_TERM_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_PAYMENTS_MISMATCH",
+                                      "PURCHASE_SETTLEMENT_DECLARATION_REQUIRED",
+                                      "PURCHASE_SETTLEMENT_DECLARATION_VERSION_MISMATCH",
+                                      "PURCHASE_SETTLEMENT_RESOURCE_LIMIT",
+                                      "PURCHASE_SETTLEMENT_DRAFT_INCOMPLETE",
+                                      "PURCHASE_SETTLEMENT_DRAFT_CHANGED",
+                                      "PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED",
+                                      "PURCHASE_SETTLEMENT_NOT_RECONCILABLE",
+                                      "IDEMPOTENCY_KEY_REQUIRED",
+                                      "IDEMPOTENCY_KEY_REUSED",
+                                      "TAXPAYER_NOT_CONFIGURED",
+                                      "EMISSION_POINT_NOT_FOUND",
+                                      "EMISSION_POINT_UNAVAILABLE",
+                                      "SIGNING_CERTIFICATE_NOT_USABLE",
+                                      "SCHEMA_NOT_AVAILABLE",
+                                      "SEQUENCE_EXHAUSTED",
+                                      "SRI_INTERACTION_IN_PROGRESS"
+                                    ]
+                                  },
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "field": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "line": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "payment": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "code",
+                                  "message",
+                                  "field",
+                                  "line",
+                                  "payment"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "evaluatedOn",
+                            "calculationVersion",
+                            "supplier",
+                            "lines",
+                            "totals",
+                            "paymentsTotal",
+                            "policy",
+                            "withholdingNotice",
+                            "issues"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "updatedBy": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "version",
+                        "emissionPoint",
+                        "supplier",
+                        "supplierAddress",
+                        "lines",
+                        "payments",
+                        "preview",
+                        "createdAt",
+                        "createdBy",
+                        "updatedAt",
+                        "updatedBy"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos (un decimal fuera de su dominio, un texto demasiado largo o con saltos de línea, un campo no permitido como un total, un impuesto distinto del IVA, un reembolso, un subsidio o detalles adicionales, o más líneas o pagos que los máximos absolutos) o un punto de emisión que no existe en la empresa (EMISSION_POINT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND), o su proveedor o un producto no existe en la empresa (PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND o PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El borrador excede un límite de recursos del sistema (PURCHASE_SETTLEMENT_RESOURCE_LIMIT, una defensa del sistema, no un límite del SRI), cambió (PURCHASE_SETTLEMENT_DRAFT_CHANGED) o ya se emitió (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "El cuerpo supera 4 MiB, el límite propio del borrador de liquidación (una defensa de recursos HTTP del sistema, no un límite del SRI).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar un borrador de liquidación sin emitir",
+        "parameters": [
+          {
+            "name": "draftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Borrador eliminado, sin rastro fiscal."
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El borrador no existe en la empresa (PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND), o su proveedor o un producto no existe en la empresa (PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND o PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El borrador ya se emitió (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

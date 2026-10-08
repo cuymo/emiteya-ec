@@ -39,6 +39,9 @@ import type { ShippingGuideOptions } from "../../src/modules/shipping-guides/app
 import type { ShippingGuides } from "../../src/modules/shipping-guides/application/shipping-guides.ts";
 import { shippingGuidesRouter } from "../../src/modules/shipping-guides/infrastructure/http/shipping-guides-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
+import type { PurchaseSettlementDrafts } from "../../src/modules/purchase-settlements/application/drafts.ts";
+import type { PurchaseSettlementOptions } from "../../src/modules/purchase-settlements/application/options.ts";
+import { purchaseSettlementsRouter } from "../../src/modules/purchase-settlements/infrastructure/http/purchase-settlements-router.ts";
 import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
 import { inventoryRouter } from "../../src/modules/inventory/infrastructure/http/inventory-router.ts";
 import type { JobStore } from "../../src/platform/jobs/jobs.ts";
@@ -91,6 +94,10 @@ describe("rutas documentadas", () => {
         options: {} as ShippingGuideOptions,
         emission: {} as ShippingGuideEmission,
         guides: {} as ShippingGuides,
+      }),
+      purchaseSettlementsRouter({
+        drafts: {} as PurchaseSettlementDrafts,
+        options: {} as PurchaseSettlementOptions,
       }),
       ...archiveRouters({
         prisma: {} as PrismaClient,

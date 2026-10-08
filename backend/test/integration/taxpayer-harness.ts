@@ -6,9 +6,11 @@ import { fileURLToPath } from "node:url";
 import type { Registry } from "@prometheus-io/client";
 import { Router } from "express";
 import {
+  PURCHASE_SETTLEMENT_LIMITS_DEFAULT,
   SHIPPING_GUIDE_LIMITS_DEFAULT,
   WITHHOLDING_LIMITS_DEFAULT,
   userSchemas,
+  type PurchaseSettlementLimits,
   type ShippingGuideLimits,
   type WithholdingLimits,
 } from "@facturador/contracts";
@@ -30,6 +32,7 @@ import {
 } from "../../src/modules/catalogs/infrastructure/index.ts";
 import {
   partiesModule,
+  purchaseSupplierReader,
   shippingPartyReader,
   supplierReader,
 } from "../../src/modules/parties/infrastructure/index.ts";
@@ -62,6 +65,10 @@ import {
   shippingGuideSigningProfile,
   shippingGuidesModule,
 } from "../../src/modules/shipping-guides/infrastructure/index.ts";
+import {
+  isPurchaseSettlementDraftBody,
+  purchaseSettlementsModule,
+} from "../../src/modules/purchase-settlements/infrastructure/index.ts";
 import type { Permission } from "../../src/modules/identity/domain/access-policy.ts";
 import { ForbiddenError } from "../../src/platform/http/errors.ts";
 import type { AccessKeys, XsdValidator } from "../../src/modules/sri-engine/application/ports.ts";
@@ -165,6 +172,14 @@ export type ShippingGuidesHarnessOptions = {
   stageTimings?: boolean;
 };
 
+/** Liquidaciones de compra (add-purchase-settlements): las opciones que la prueba fija. */
+export type PurchaseSettlementsHarnessOptions = {
+  /** Límites efectivos de recursos; los valores por defecto del entorno si no se fijan. */
+  limits?: Partial<PurchaseSettlementLimits>;
+  /** Permisos que el autorizador de las liquidaciones niega, para probar el `403`. */
+  deny?: readonly Permission[];
+};
+
 /** Un autorizador que niega además los permisos dados (los dos roles tienen los del borrador). */
 function denying(authorizer: Authorizer, deny: readonly Permission[] | undefined): Authorizer {
   const denied = new Set(deny ?? []);
@@ -203,15 +218,18 @@ export function buildTaxpayerApp(
     debitNotes?: DebitNotesHarnessOptions;
     withholdingReceipts?: WithholdingHarnessOptions;
     shippingGuides?: ShippingGuidesHarnessOptions;
+    purchaseSettlements?: PurchaseSettlementsHarnessOptions;
     now?: () => Date;
   } = {},
 ) {
   return buildAuthApp(db, {
     trustProxy: 1,
-    // Como main.ts: la carga de la firma y los borradores de guía traen su propio parser.
+    // Como main.ts: la carga de la firma y los borradores de guía y de liquidación traen su propio
+    // parser.
     jsonBodyExceptions: (req) =>
       (options.signing !== undefined && isSigningCertificateUpload(req)) ||
-      isShippingGuideDraftBody(req),
+      isShippingGuideDraftBody(req) ||
+      isPurchaseSettlementDraftBody(req),
     apiRouter: ({ context, memberships, securityEvents, uow }) => {
       const authorizer = createAuthorizer({ memberships, securityEvents });
       const signing = options.signing
@@ -435,6 +453,21 @@ export function buildTaxpayerApp(
           ...(shipping?.accessKeys ? { accessKeys: shipping.accessKeys } : {}),
           ...(shipping?.metrics ? { metrics: shipping.metrics } : {}),
           ...(shipping?.stageTimings ? { stageTimings: true } : {}),
+          ...(invoicesNow ? { now: invoicesNow } : {}),
+        }).routers,
+      );
+      // Liquidaciones de compra (add-purchase-settlements): los mismos puertos que compone `main.ts`.
+      const purchase = options.purchaseSettlements;
+      router.use(
+        ...purchaseSettlementsModule({
+          prisma: db.database.prisma,
+          authorizer: denying(authorizer, purchase?.deny),
+          signingReads: signing
+            ? signing.reads
+            : () => ({ activeCertificate: () => Promise.resolve(null) }),
+          suppliers: purchaseSupplierReader,
+          products: productReader,
+          limits: { ...PURCHASE_SETTLEMENT_LIMITS_DEFAULT, ...purchase?.limits },
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

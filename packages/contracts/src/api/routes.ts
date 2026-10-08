@@ -205,6 +205,18 @@ import {
   shippingRecipientPartyViewSchema,
   updateShippingGuideDraftSchema,
 } from "../shipping-guides.ts";
+import {
+  createPurchaseSettlementDraftSchema,
+  listPurchaseSettlementDraftsQuerySchema,
+  listPurchaseSettlementSuppliersQuerySchema,
+  purchaseSettlementDraftIdParamsSchema,
+  purchaseSettlementDraftSummaryViewSchema,
+  purchaseSettlementDraftViewSchema,
+  purchaseSettlementListMetaSchema,
+  purchaseSettlementOptionsViewSchema,
+  purchaseSettlementSupplierViewSchema,
+  updatePurchaseSettlementDraftSchema,
+} from "../purchase-settlements.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -389,6 +401,32 @@ const shippingGuideResponse = (description: string) => ({
 const shippingLookup = <T extends z.ZodType>(description: string, item: T) => ({
   description,
   schema: z.strictObject({ data: z.array(item), meta: shippingGuideListMetaSchema }),
+});
+
+// Liquidaciones de compra (add-purchase-settlements, design D21).
+const purchaseDraftNotFound = {
+  description:
+    "El borrador no existe en la empresa (PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND), o su proveedor o un producto no existe en la empresa (PURCHASE_SETTLEMENT_SUPPLIER_NOT_FOUND o PURCHASE_SETTLEMENT_PRODUCT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const purchaseDraftReferenceErrors = {
+  description:
+    "Datos inválidos (un decimal fuera de su dominio, un texto demasiado largo o con saltos de línea, un campo no permitido como un total, un impuesto distinto del IVA, un reembolso, un subsidio o detalles adicionales, o más líneas o pagos que los máximos absolutos) o un punto de emisión que no existe en la empresa (EMISSION_POINT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const purchaseDraftConflict = {
+  description:
+    "El borrador excede un límite de recursos del sistema (PURCHASE_SETTLEMENT_RESOURCE_LIMIT, una defensa del sistema, no un límite del SRI), cambió (PURCHASE_SETTLEMENT_DRAFT_CHANGED) o ya se emitió (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED).",
+  schema: errorEnvelopeSchema,
+};
+const purchaseBodyTooLarge = {
+  description:
+    "El cuerpo supera 4 MiB, el límite propio del borrador de liquidación (una defensa de recursos HTTP del sistema, no un límite del SRI).",
+  schema: errorEnvelopeSchema,
+};
+const purchasePage = <T extends z.ZodType>(description: string, item: T) => ({
+  description,
+  schema: z.strictObject({ data: z.array(item), meta: purchaseSettlementListMetaSchema }),
 });
 
 const debitNoteNotFound = {
@@ -2554,6 +2592,128 @@ export const apiRoutes: readonly RouteDefinition[] = [
       409: {
         description:
           "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (SHIPPING_GUIDE_NOT_RECONCILABLE).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  // Liquidaciones de compra (add-purchase-settlements, design D21).
+  defineRoute({
+    method: "get",
+    path: "/purchase-settlements/suppliers",
+    summary:
+      "Buscar proveedores: terceros activos con el rol de proveedor, por identificación o razón social",
+    request: { query: listPurchaseSettlementSuppliersQuerySchema },
+    responses: {
+      200: purchasePage(
+        "Página de proveedores y el total en `meta`; nunca el consumidor final. Solo la cédula y el pasaporte son seleccionables; los demás vienen con su motivo.",
+        purchaseSettlementSupplierViewSchema,
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/purchase-settlements/options",
+    summary:
+      "Consultar las opciones del borrador de liquidación: la política de procedencia con sus cuatro declaraciones, el aviso de la retención, la moneda, las tarifas de IVA y las formas de pago vigentes, y los límites de recursos",
+    responses: {
+      200: {
+        description: "Opciones resueltas con la fecha de hoy para la empresa.",
+        schema: successEnvelope(purchaseSettlementOptionsViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/purchase-settlements/drafts",
+    summary: "Listar los borradores de liquidación pendientes, por última actualización",
+    request: { query: listPurchaseSettlementDraftsQuerySchema },
+    responses: {
+      200: purchasePage(
+        "Página de borradores `DRAFT` con su proveedor, su cantidad de líneas y el importe de la vista previa.",
+        purchaseSettlementDraftSummaryViewSchema,
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/purchase-settlements/drafts",
+    summary:
+      "Guardar un borrador de liquidación: punto, proveedor con su dirección, líneas con producto opcional o libres y pagos con su plazo",
+    request: { body: createPurchaseSettlementDraftSchema },
+    responses: {
+      201: {
+        description:
+          "Borrador guardado con la vista previa del servidor: importes calculados, problemas por línea o pago, las cuatro declaraciones que se confirmarán al emitir y el aviso de la retención. Con un proveedor y sin dirección, propone la del tercero. No reserva nada.",
+        schema: successEnvelope(purchaseSettlementDraftViewSchema),
+      },
+      400: purchaseDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: purchaseDraftNotFound,
+      409: purchaseDraftConflict,
+      413: purchaseBodyTooLarge,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/purchase-settlements/drafts/:draftId",
+    summary: "Consultar un borrador de liquidación con su vista previa recalculada",
+    request: { params: purchaseSettlementDraftIdParamsSchema },
+    responses: {
+      200: {
+        description: "Borrador con la vista previa calculada con la fecha del día.",
+        schema: successEnvelope(purchaseSettlementDraftViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: purchaseDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/purchase-settlements/drafts/:draftId",
+    summary: "Corregir un borrador de liquidación a partir de la versión consultada",
+    request: {
+      params: purchaseSettlementDraftIdParamsSchema,
+      body: updatePurchaseSettlementDraftSchema,
+    },
+    responses: {
+      200: {
+        description: "Borrador corregido.",
+        schema: successEnvelope(purchaseSettlementDraftViewSchema),
+      },
+      400: purchaseDraftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+      404: purchaseDraftNotFound,
+      409: purchaseDraftConflict,
+      413: purchaseBodyTooLarge,
+    },
+  }),
+  defineRoute({
+    method: "delete",
+    path: "/purchase-settlements/drafts/:draftId",
+    summary: "Eliminar un borrador de liquidación sin emitir",
+    request: { params: purchaseSettlementDraftIdParamsSchema },
+    responses: {
+      204: { description: "Borrador eliminado, sin rastro fiscal." },
+      401: errors[401],
+      403: errors[403],
+      404: purchaseDraftNotFound,
+      409: {
+        description: "El borrador ya se emitió (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED).",
         schema: errorEnvelopeSchema,
       },
     },
