@@ -63,23 +63,23 @@
 
 ## 3. Fuentes de portabilidad de los módulos dueños
 
-- [ ] 3.1 Exportar desde `taxpayer` las versiones de la configuración, los logos por identificador con su tamaño y su SHA-256, los establecimientos, los puntos y el punto predeterminado de cada membresía. Exportar desde `fiscal` los secuenciales, desde `catalogs` las habilitaciones de la empresa y desde `signing` solo los metadatos de las firmas (design D1). Verificar con pruebas de integración:
+- [x] 3.1 Exportar desde `taxpayer` las versiones de la configuración, los logos por identificador con su tamaño y su SHA-256, los establecimientos, los puntos y el punto predeterminado de cada membresía. Exportar desde `fiscal` los secuenciales, desde `catalogs` las habilitaciones de la empresa y desde `signing` solo los metadatos de las firmas (design D1). Verificar con pruebas de integración:
   - cada versión y cada estado;
   - el aislamiento por empresa;
   - que ninguna fuente expone columnas de `signing_certificate_secret`.
-- [ ] 3.2 Exportar desde `identity` los miembros de la empresa con nombre, correo, rol, estado y desde cuándo, sin ninguna columna de `account`, `session`, `verification` ni `invitation`, y desde `parties`, `products` (con sus impuestos), `inventory` (existencias y kárdex) y `audit` sus conjuntos completos en todos sus estados, por lotes con cursor y en un orden total. Verificar con pruebas de integración:
+- [x] 3.2 Exportar desde `identity` los miembros de la empresa con nombre, correo, rol, estado y desde cuándo, sin ninguna columna de `account`, `session`, `verification` ni `invitation`, y desde `parties`, `products` (con sus impuestos), `inventory` (existencias y kárdex) y `audit` sus conjuntos completos en todos sus estados, por lotes con cursor y en un orden total. Verificar con pruebas de integración:
   - los inactivos;
   - el saldo registrado sin recalcular;
   - los eventos de auditoría sin IP;
   - el aislamiento por empresa.
-- [ ] 3.3 Exportar desde `fiscal` el inventario de comprobantes de los seis tipos desde la reserva, en los dos ambientes y en todos sus estados. Incluye la fila de cada comprobante con la proyección de importes por tipo del cambio 15, sus transiciones, sus intentos con el SRI, sus entregas, los identificadores, tamaños y SHA-256 de sus artefactos y respuestas, y el estado del job del RIDE. Exportar también las lecturas por identificador del snapshot, de los artefactos y de las respuestas, y desde `withholding-receipts` y `shipping-guides` las líneas de retención y los destinatarios. Verificar con pruebas de integración:
+- [x] 3.3 Exportar desde `fiscal` el inventario de comprobantes de los seis tipos desde la reserva, en los dos ambientes y en todos sus estados. Incluye la fila de cada comprobante con la proyección de importes por tipo del cambio 15, sus transiciones, sus intentos con el SRI, sus entregas, los identificadores, tamaños y SHA-256 de sus artefactos y respuestas, y el estado del job del RIDE. Exportar también las lecturas por identificador del snapshot, de los artefactos y de las respuestas, y desde `withholding-receipts` y `shipping-guides` las líneas de retención y los destinatarios. Verificar con pruebas de integración:
   - los seis tipos;
   - ningún borrador;
   - el tercero congelado tras corregirlo;
   - el intento sin respuesta;
   - la respuesta truncada;
   - el aislamiento por empresa.
-- [ ] 3.4 Añadir la prueba de arquitectura de `data-portability`: nadie lo importa, no importa `reports` ni lee tablas de otros módulos, y solo usa las fuentes que compone `main.ts`. Documentar las fuentes y la dirección en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba detecta cada violación en archivos de ejemplo
+- [x] 3.4 Añadir la prueba de arquitectura de `data-portability`: nadie lo importa, no importa `reports` ni lee tablas de otros módulos, y solo usa las fuentes que compone `main.ts`. Documentar las fuentes y la dirección en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba detecta cada violación en archivos de ejemplo
 
 ## 4. Generación del paquete
 

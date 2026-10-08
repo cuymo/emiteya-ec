@@ -53,7 +53,7 @@ function commonWhere(
 const and = (conditions: readonly Prisma.Sql[]) => Prisma.join(conditions, " AND ");
 
 /** `CASE` por tipo compuesto desde las proyecciones; un tipo sin la expresión da NULL. */
-function byType(
+export function byType(
   projections: readonly ReportAmountProjection[],
   pick: (projection: ReportAmountProjection) => ReportAmountProjection["subtotal"],
 ): Prisma.Sql {
@@ -69,7 +69,7 @@ function byType(
 }
 
 /** Exige exactamente una proyección por cada uno de los seis tipos de comprobante. */
-function checkProjections(projections: readonly ReportAmountProjection[]): void {
+export function checkProjections(projections: readonly ReportAmountProjection[]): void {
   const types = projections.map((projection) => projection.documentType).sort();
   if (JSON.stringify(types) !== JSON.stringify([...DOCUMENT_TYPES].sort())) {
     throw new Error("Cada tipo de comprobante necesita exactamente una proyección de importes.");

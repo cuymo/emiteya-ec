@@ -154,3 +154,5 @@ export function withholdingReceiptsModule(options: WithholdingReceiptsModuleOpti
     withholdings,
   };
 }
+// Fuente de portabilidad (add-data-portability, design D1).
+export { createWithholdingPortabilitySources } from "./portability-sources.ts";

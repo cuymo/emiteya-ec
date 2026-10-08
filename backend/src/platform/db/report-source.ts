@@ -84,3 +84,25 @@ export function sqlReportSource<F, Raw, R>(definition: {
     },
   };
 }
+
+/** Lotes de una fuente sin filtros (add-data-portability, design D1): toda la empresa, en orden. */
+export type CompanyBatches<R> = (
+  db: DbClient,
+  companyId: string,
+  size: number,
+) => AsyncIterable<R[]>;
+
+/**
+ * Una sola consulta ordenada de toda la empresa, recorrida por lotes con un cursor de la
+ * transacción en curso: la fase 1 de la portabilidad, en `REPEATABLE READ` de solo lectura.
+ */
+export function sqlCompanyBatches<Raw, R>(definition: {
+  query(companyId: string): ReportQuery;
+  map(raw: Raw): R;
+}): CompanyBatches<R> {
+  const source = sqlReportSource<undefined, Raw, R>({
+    query: (companyId) => definition.query(companyId),
+    map: (raw) => definition.map(raw),
+  });
+  return (db, companyId, size) => source.batches(db, companyId, undefined, size);
+}

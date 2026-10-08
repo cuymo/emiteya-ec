@@ -66,3 +66,5 @@ export function signingModule(options: SigningModuleOptions) {
       activeCertificateReader({ certificates: createCertificateRepository(db), vault, now }),
   };
 }
+// Fuente de portabilidad (add-data-portability, design D1).
+export { createSigningPortabilitySources } from "./portability-sources.ts";

@@ -26,6 +26,8 @@ export { createConfigurationLogoReader } from "./prisma-configuration-assets.ts"
 // Ambiente vigente de la empresa para los reportes (add-reports-export, design D4).
 export { currentEnvironment } from "./current-environment.ts";
 export { reportPointCodes } from "./report-point-codes.ts";
+// Fuentes de portabilidad (add-data-portability, design D1).
+export { createTaxpayerPortabilitySources } from "./portability-sources.ts";
 
 export type TaxpayerModuleOptions = {
   prisma: PrismaClient;

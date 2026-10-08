@@ -284,6 +284,30 @@ leer tablas: cada módulo dueño exporta la fuente de su reporte y `main.ts` la 
 - **Ambiente.** `taxpayer` exporta `currentEnvironment`, el de la configuración vigente de la empresa, leído en cada solicitud.
 - **Dirección.** Ningún módulo importa `reports`, salvo `main.ts`, y `reports` solo importa `identity` y `audit`; `test/architecture/reports-dependency-direction.test.ts` lo comprueba.
 
+## Portabilidad de datos
+
+El módulo `data-portability` (`add-data-portability`) genera el paquete de portabilidad sin leer
+tablas de otros módulos: cada dueño exporta sus conjuntos y `main.ts` los compone como puertos
+(`data-portability/application/ports.ts`). Detalle del módulo en `data-portability.md` y del formato
+en `data-portability-format.md`.
+
+- **Fuentes.** Cada conjunto es una sola consulta ordenada de toda la empresa (`sqlCompanyBatches`), recorrida por lotes con un cursor dentro de la transacción `REPEATABLE READ, READ ONLY` de la fase 1. Cada fuente proyecta solo sus columnas permitidas: ninguna lee `signing_certificate_secret` ni las tablas internas de Better Auth.
+
+  | Conjunto | Módulo dueño | Lee |
+  | --- | --- | --- |
+  | Configuración, logos, establecimientos, puntos y puntos predeterminados | `taxpayer` (`createTaxpayerPortabilitySources`) | `company_config_version` con `company_config`, `configuration_asset` (sin los bytes), `establishment`, `emission_point` y `member_default_emission_point` |
+  | Comprobantes, transiciones, intentos, destinatarios, entregas y secuenciales | `fiscal` (`createFiscalPortabilitySources`) | `electronic_document` con la proyección de importes de cada tipo, el inventario de `document_artifact` y de `sri_response`, el job del RIDE, `document_state_transition`, `sri_attempt` con su resultado, `electronic_document_recipient`, `document_delivery_event` y `fiscal_sequence` |
+  | Habilitaciones de catálogos | `catalogs` (`createCatalogPortabilitySources`) | `company_fiscal_catalog_setting` con el código de `fiscal_catalog_key` |
+  | Firmas | `signing` (`createSigningPortabilitySources`) | Solo los metadatos de `signing_certificate` |
+  | Usuarios | `identity` (`createIdentityPortabilitySources`) | `member` con el nombre y el correo de `user` |
+  | Terceros, productos e impuestos | `parties`, `products` | `party`, `product` y `product_tax` |
+  | Existencias y kárdex | `inventory` (`createInventoryPortabilitySources`) | `stock_balance` y `stock_movement` |
+  | Auditoría | `audit` (`createAuditPortabilitySources`) | `audit_event` |
+  | Líneas de retención | `withholding-receipts` (`createWithholdingPortabilitySources`) | `withholding_receipt_line` con la clave de acceso del comprobante |
+
+- **Lecturas por identificador.** La fase 2 lee el snapshot inmutable, los artefactos, las respuestas del SRI y los logos por identificador y empresa (`readSnapshot`, `readArtifact`, `readSriResponse`, `readLogo`), con su tamaño y su SHA-256 conservados, que recalcula antes de escribirlos.
+- **Dirección.** Ningún módulo importa `data-portability`, salvo `main.ts`, y `data-portability` solo importa `identity` y `audit`; `test/architecture/data-portability-dependency-direction.test.ts` lo comprueba.
+
 ## Catálogos de retención y de sustento
 
 `add-withholding-receipts` (design D7 a D12) agrega al módulo `catalogs` cinco catálogos de

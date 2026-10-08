@@ -82,3 +82,5 @@ export {
   type IssuedDocumentsSourceFilters,
 } from "./reports/document-sources.ts";
 export type { InvoiceTaxProjection, ReportAmountProjection } from "./reports/amount-projections.ts";
+// Fuentes de portabilidad (add-data-portability, design D1).
+export { createFiscalPortabilitySources } from "./portability/portability-sources.ts";

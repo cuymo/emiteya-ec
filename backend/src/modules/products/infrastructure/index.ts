@@ -82,3 +82,5 @@ export function productsModule({
   });
   return { routers: [productsRouter(service)], service };
 }
+// Fuente de portabilidad (add-data-portability, design D1).
+export { createProductsPortabilitySources } from "./portability-sources.ts";

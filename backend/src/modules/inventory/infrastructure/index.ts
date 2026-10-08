@@ -122,3 +122,5 @@ export function inventoryModule({
   });
   return { routers: [inventoryRouter(service)], service };
 }
+// Fuente de portabilidad (add-data-portability, design D1).
+export { createInventoryPortabilitySources } from "./portability-sources.ts";

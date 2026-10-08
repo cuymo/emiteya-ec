@@ -73,3 +73,5 @@ export function catalogsModule(options: CatalogsModuleOptions) {
     queries: fiscalCatalogQueries(options.prisma),
   };
 }
+// Fuente de portabilidad (add-data-portability, design D1).
+export { createCatalogPortabilitySources } from "./portability-sources.ts";
