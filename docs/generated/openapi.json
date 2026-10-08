@@ -64718,7 +64718,7 @@
                     ]
                   },
                   "lines": {
-                    "maxItems": 1000,
+                    "maxItems": 500,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -66635,7 +66635,7 @@
                     ]
                   },
                   "lines": {
-                    "maxItems": 1000,
+                    "maxItems": 500,
                     "type": "array",
                     "items": {
                       "type": "object",
