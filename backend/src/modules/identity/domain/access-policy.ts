@@ -63,6 +63,11 @@ export const PERMISSIONS = [
   "shippingGuides.emit",
   "shippingGuides.retrySigning",
   "shippingGuides.reconcile",
+  "purchaseSettlements.read",
+  "purchaseSettlements.draft",
+  "purchaseSettlements.emit",
+  "purchaseSettlements.retrySigning",
+  "purchaseSettlements.reconcile",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -144,6 +149,13 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "shippingGuides.emit",
     "shippingGuides.retrySigning",
     "shippingGuides.reconcile",
+    // add-purchase-settlements, design D23: consultar, preparar, emitir, reintentar la firma y pedir
+    // la reconciliación de una liquidación de compra.
+    "purchaseSettlements.read",
+    "purchaseSettlements.draft",
+    "purchaseSettlements.emit",
+    "purchaseSettlements.retrySigning",
+    "purchaseSettlements.reconcile",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -203,6 +215,12 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "shippingGuides.draft",
     "shippingGuides.emit",
     "shippingGuides.retrySigning",
+    // add-purchase-settlements, design D23: consulta, prepara, emite y reintenta la firma de una
+    // liquidación de compra, como el administrador; la reconciliación es solo del administrador.
+    "purchaseSettlements.read",
+    "purchaseSettlements.draft",
+    "purchaseSettlements.emit",
+    "purchaseSettlements.retrySigning",
   ]),
 };
 

@@ -188,6 +188,11 @@ denegado por defecto;
 | `shippingGuides.emit` | Emitir una guía de remisión desde un borrador, con la confirmación de las excepciones declaradas: reserva el número y la firma localmente | Sí | Sí |
 | `shippingGuides.retrySigning` | Reintentar la firma de una guía reservada, con el mismo número y la misma clave | Sí | Sí |
 | `shippingGuides.reconcile` | Pedir la reconciliación de una guía de remisión con el SRI, con motivo, como la de una factura | Sí | No |
+| `purchaseSettlements.read` | Consultar y buscar liquidaciones de compra, con sus declaraciones, su diagnóstico y su transmisión | Sí | Sí |
+| `purchaseSettlements.draft` | Buscar proveedores, consultar las opciones (política de procedencia, tarifas de IVA y formas de pago) y crear, consultar, corregir y eliminar borradores de liquidación | Sí | Sí |
+| `purchaseSettlements.emit` | Emitir una liquidación de compra desde un borrador, confirmando las cuatro declaraciones de procedencia: reserva el número y la firma localmente | Sí | Sí |
+| `purchaseSettlements.retrySigning` | Reintentar la firma de una liquidación reservada, con el mismo número y la misma clave | Sí | Sí |
+| `purchaseSettlements.reconcile` | Pedir la reconciliación de una liquidación de compra con el SRI, con motivo, como la de una factura | Sí | No |
 
 Nadie cambia su propio rol, se desactiva a sí mismo ni establece su propia contraseña por la vía
 de administración (`409`).
