@@ -461,8 +461,9 @@ function DraftEditor({
 
           <Section title="Documentos sustento">
             <p className="text-sm text-foreground-muted">
-              Cada documento es una factura, nota de venta o liquidación de compra del proveedor,
-              con las retenciones que le hiciste. Los documentos son externos: el sistema no los
+              Cada documento es una factura o nota de venta del proveedor, o una liquidación de
+              compra que la empresa emitió en los casos que la normativa permite, con las
+              retenciones que le hiciste. Los documentos son declaraciones tuyas: el sistema no los
               busca ni los modifica.
             </p>
             <ol className="flex flex-col gap-1.5">

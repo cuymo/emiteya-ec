@@ -70,7 +70,7 @@
 
 ## 13. Corrección documental del documento sustento 03
 
-- [ ] 13.1 Corregir la fila "Documento sustento" de `glossary.md` y el texto de "Documentos sustento" en `withholding-draft-editor.tsx`, que atribuyen la liquidación de compra al proveedor: la emite el adquirente en los casos que la normativa permite (design D29). Verificar que la retención no cambia de comportamiento (sus pruebas pasan sin cambios)
+- [x] 13.1 Corregir la fila "Documento sustento" de `glossary.md` y el texto de "Documentos sustento" en `withholding-draft-editor.tsx`, que atribuyen la liquidación de compra al proveedor: la emite el adquirente en los casos que la normativa permite (design D29). Verificar que la retención no cambia de comportamiento (sus pruebas pasan sin cambios)
 
 ## 14. Rendimiento y prueba end-to-end
 
