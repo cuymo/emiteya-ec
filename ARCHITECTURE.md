@@ -111,6 +111,13 @@ Rules:
   - sus importes usan las primitivas neutrales de `fiscal/domain/document-amounts.ts`, que la factura reexporta; nunca los importes de `invoices` (ADR 0002);
   - `main.ts` compone los proveedores (`purchaseSupplierReader` de `parties`) y los productos (`productReader` de `products`) como puertos, y la firma compartida con `purchaseSettlementSigningProfile`; los seguidores existentes no hacen nada para un comprobante `03`;
   - `test/architecture/purchase-settlements-dependency-direction.test.ts` comprueba ambas direcciones.
+- Los reportes dependen de las fuentes que exportan los módulos dueños, nunca al revés (design D1 de `add-reports-export`):
+  - ningún módulo importa `reports` (solo `main.ts`), y `reports` no lee tablas ni importa otros módulos, salvo `identity` (la autorización) y `audit` (el evento de la exportación);
+  - cada dueño exporta una fuente de solo lectura sobre una sola consulta ordenada (`platform/db/report-source.ts`): la página con `LIMIT` y `OFFSET`, el conteo con el mismo filtro y los lotes con un cursor de la transacción de la exportación;
+  - `fiscal` exporta Documentos emitidos y Facturas, y cada módulo de comprobante declara la proyección de importes de su propio snapshot (`invoiceReportAmounts`, `creditNoteReportAmounts`, `debitNoteReportAmounts`, `purchaseSettlementReportAmounts`, `withholdingReportAmounts` y `shippingGuideReportAmounts`), que la fuente compone por tipo;
+  - `withholding-receipts` exporta Retenciones; `inventory`, Movimientos y los saldos de Existencias; `products`, el orden por nombre y el código y el nombre de los productos; `parties`, Terceros; y `taxpayer`, el ambiente vigente;
+  - `main.ts` las compone como puertos de `reports`;
+  - `test/architecture/reports-dependency-direction.test.ts` comprueba ambas direcciones, con los delegados y las tablas del esquema de Prisma.
 - El archivo documental depende de la transmisión, nunca al revés (design D1 y D5 de `add-document-archive`):
   - la transmisión solo conoce el puerto genérico de seguidores de las transiciones (`fiscal/application/document-transitions.ts`) y los invoca en la misma transacción que guarda cada transición;
   - el seguidor del archivo encola `document.render_ride` al llegar a `AUTHORIZED`, y `main.ts` lo compone al arrancar;

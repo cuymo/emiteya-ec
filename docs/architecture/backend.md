@@ -264,6 +264,26 @@ sin inventario, compras ni retenciones:
 - **Independencia.** Autorizada, devuelta o no autorizada, una liquidación no registra movimientos de inventario ni cambia saldos, capacidades, facturas, productos ni roles, y no crea compras, cuentas por pagar, facturas recibidas ni retenciones (`test/integration/purchase-settlement-independence.test.ts`).
 - **Métricas.** `purchase_settlement_reservations_total` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
 
+## Reportes
+
+El módulo `reports` (`add-reports-export`) lista y exporta a XLSX los cinco reportes del ERS sin
+leer tablas: cada módulo dueño exporta la fuente de su reporte y `main.ts` la compone como puerto.
+
+- **Fuentes.** Una fuente (`platform/db/report-source.ts`) es una sola consulta ordenada, con las tablas calificadas por el esquema: la página la recorre con `LIMIT` y `OFFSET`, la exportación con un cursor (`DECLARE … CURSOR`, `FETCH`) dentro de su transacción, y el conteo usa el mismo `FROM` y el mismo `WHERE`. La lista y el XLSX no pueden divergir.
+
+  | Reporte | Módulo dueño | Lee | Orden total |
+  | --- | --- | --- | --- |
+  | Documentos emitidos | `fiscal` (`createIssuedDocumentsReportSource`) | `electronic_document` con sus columnas congeladas, sus destinatarios y la proyección de importes de cada tipo | Emisión, creación e identificador, descendentes |
+  | Facturas | `fiscal` (`createInvoicesReportSource`) | Las facturas, con el IVA y los otros impuestos de su snapshot | El mismo |
+  | Retenciones | `withholding-receipts` (`createWithholdingsReportSource`) | `withholding_receipt_line`, `withholding_receipt` y el comprobante, con la denominación del impuesto de su snapshot | El del comprobante, el sustento y la línea |
+  | Existencias | `inventory` (`inventoryBalanceReads`) y `products` (`createReportProductsSource`) | Los productos con `stock_balance` y su saldo registrado, ordenados por `products` | Nombre normalizado e identificador |
+  | Movimientos | `inventory` (`createInventoryMovementsReportSource`) y `products` (`reportProductLabels`) | `stock_movement` de toda la empresa, con el código y el nombre vigentes del producto | Momento e identificador, descendentes |
+  | Terceros | `parties` (`createPartiesReportSource`) | `party`, con los datos vigentes | Razón social normalizada e identificador |
+
+- **Importes.** Cada módulo de comprobante declara la proyección de su snapshot (`fiscal/infrastructure/reports/amount-projections.ts`): el subtotal y la suma de los impuestos en SQL con `NUMERIC`. La fuente las compone en un `CASE` por tipo y exige una por cada uno de los seis tipos. La retención solo tiene su total retenido y la guía ninguno: nunca un 0.00 inventado.
+- **Ambiente.** `taxpayer` exporta `currentEnvironment`, el de la configuración vigente de la empresa, leído en cada solicitud.
+- **Dirección.** Ningún módulo importa `reports`, salvo `main.ts`, y `reports` solo importa `identity` y `audit`; `test/architecture/reports-dependency-direction.test.ts` lo comprueba.
+
 ## Catálogos de retención y de sustento
 
 `add-withholding-receipts` (design D7 a D12) agrega al módulo `catalogs` cinco catálogos de
