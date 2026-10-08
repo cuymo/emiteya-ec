@@ -1,7 +1,7 @@
 // node --conditions=development test/support/xlsx-probe.ts <archivo> <filas>
 // Escribe el libro de prueba en un proceso propio (otra zona horaria o un heap limitado) y imprime
 // los picos de memoria muestreados mientras escribe.
-import { writeXlsx } from "../../src/modules/reports/infrastructure/xlsx/xlsx-writer.ts";
+import { writeXlsx } from "../../src/platform/xlsx/xlsx-writer.ts";
 import { fixtureSheets } from "./xlsx-fixture.ts";
 
 const [path, rows] = process.argv.slice(2);

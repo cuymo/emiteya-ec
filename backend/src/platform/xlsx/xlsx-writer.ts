@@ -1,8 +1,9 @@
-// Escritor XLSX de los reportes (ADR 0023; design D6, D7 y D8 de add-reports-export). Solo el
-// subconjunto que necesitan los cinco reportes: hojas con una fila de encabezados fija y celdas de
-// texto, numéricas, de fecha y de momento. No es un motor de hojas de cálculo: no lee libros ni
-// escribe fórmulas, cadenas compartidas, temas ni propiedades del documento. Escribe por streaming
-// a un archivo nuevo y privado; la memoria no depende del número de filas.
+// Escritor XLSX compartido (ADR 0023; design D6, D7 y D8 de add-reports-export), en la plataforma
+// para los reportes y la portabilidad (design D8 de add-data-portability). Solo el subconjunto que
+// necesitan: hojas con una fila de encabezados fija y celdas de texto, numéricas, de fecha y de
+// momento. No es un motor de hojas de cálculo: no lee libros ni escribe fórmulas, cadenas
+// compartidas, temas ni propiedades del documento. Escribe por streaming a un archivo nuevo y
+// privado; la memoria no depende del número de filas.
 import { createWriteStream } from "node:fs";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";

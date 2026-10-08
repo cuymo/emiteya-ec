@@ -42,7 +42,7 @@ implementación llega con el mismo cambio (tarea 1.2).
 
 ## Decision
 
-- **Escritor propio, solo con el subconjunto de los cinco reportes**, en `reports/infrastructure`. No es un motor de hojas de cálculo: no lee libros, no evalúa nada y no escribe fórmulas, cadenas compartidas, temas, propiedades del documento, tablas, filtros, validaciones ni hojas ocultas.
+- **Escritor propio, solo con el subconjunto de los cinco reportes**, en `reports/infrastructure`. Desde `add-data-portability` (design D8) vive en `platform/xlsx/`, sin cambiar su comportamiento, para que la portabilidad lo use sin importar `reports`. No es un motor de hojas de cálculo: no lee libros, no evalúa nada y no escribe fórmulas, cadenas compartidas, temas, propiedades del documento, tablas, filtros, validaciones ni hojas ocultas.
   - **Partes del paquete:** `[Content_Types].xml`, `_rels/.rels`, `xl/workbook.xml`, `xl/_rels/workbook.xml.rels`, `xl/styles.xml` y una `xl/worksheets/sheetN.xml` por hoja.
   - **Hoja:** la fila de encabezados en negrita y fija, y un ancho por columna.
 - **Celdas de texto.** Son siempre `t="inlineStr"`, con el estilo `quotePrefix` y el formato `@`. Ningún camino del escritor produce `<f>`.

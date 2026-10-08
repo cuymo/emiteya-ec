@@ -14,7 +14,7 @@ import { createReports, type ReportsLimits } from "../application/reports.ts";
 import { reportsRouter } from "./http/reports-router.ts";
 import { createReportsDatabase } from "./prisma-reports-database.ts";
 import { createTemporaryFiles } from "./temporary-files.ts";
-import { writeXlsx } from "./xlsx/xlsx-writer.ts";
+import { writeXlsx } from "../../../platform/xlsx/xlsx-writer.ts";
 
 export { registerReportMetrics } from "./metrics.ts";
 export type { ReportSources, ReportsObserver } from "../application/ports.ts";

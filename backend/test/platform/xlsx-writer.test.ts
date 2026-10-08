@@ -14,13 +14,13 @@ import {
   dateSerial,
   dateTimeSerial,
   XlsxValueError,
-} from "../../src/modules/reports/infrastructure/xlsx/cells.ts";
+} from "../../src/platform/xlsx/cells.ts";
 import {
   writeXlsx,
   type XlsxColumn,
   type XlsxSheet,
   type XlsxValue,
-} from "../../src/modules/reports/infrastructure/xlsx/xlsx-writer.ts";
+} from "../../src/platform/xlsx/xlsx-writer.ts";
 import { fixtureRow, fixtureSheets } from "../support/xlsx-fixture.ts";
 import { readXlsx, serialToWallClock, type XlsxCell } from "../support/xlsx-reader.ts";
 

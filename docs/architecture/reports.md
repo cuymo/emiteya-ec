@@ -19,7 +19,7 @@ su design (`openspec/changes/archive/2026-10-08-add-reports-export/`), en el ADR
   - la transacción de solo lectura;
   - los temporales;
   - las métricas;
-  - el escritor XLSX (`xlsx/`, ADR 0023).
+  - el escritor XLSX, que desde `add-data-portability` vive en `backend/src/platform/xlsx/` para compartirlo con la portabilidad (ADR 0023).
 - **Dirección.** `reports` no lee tablas. Cada módulo dueño exporta la fuente de su reporte y `main.ts` la compone como puerto (`backend.md`, "Reportes"). Nadie importa `reports`, y `reports` solo importa `identity` y `audit`. Lo comprueba `backend/test/architecture/reports-dependency-direction.test.ts`.
 - **Una definición por reporte.** La lista y la exportación usan:
   - los mismos filtros de `packages/contracts/src/reports.ts`;

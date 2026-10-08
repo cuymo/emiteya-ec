@@ -22,7 +22,7 @@
   - los atributos de archivo regular;
   - los bytes deterministas;
   - la memoria acotada.
-- [ ] 1.3 Mover `reports/infrastructure/xlsx/` a `platform/xlsx/` y `readOnlySnapshot` a `platform/db/` sin cambiar su comportamiento (design D8). Actualizar las importaciones de `reports` y sus pruebas. Verificar que la prueba de bytes deterministas del escritor da los mismos bytes, que las pruebas de los reportes pasan y que la prueba de arquitectura de `reports` sigue en verde
+- [x] 1.3 Mover `reports/infrastructure/xlsx/` a `platform/xlsx/` y `readOnlySnapshot` a `platform/db/` sin cambiar su comportamiento (design D8). Actualizar las importaciones de `reports` y sus pruebas. Verificar que la prueba de bytes deterministas del escritor da los mismos bytes, que las pruebas de los reportes pasan y que la prueba de arquitectura de `reports` sigue en verde
 
 ## 2. Registro, cola, contratos, permisos, entorno y auditoría
 

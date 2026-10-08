@@ -13,7 +13,7 @@ import { REPORT_IDS, type ReportId, type ReportListMeta } from "@facturador/cont
 import { REPORT_DEFINITIONS } from "../../src/modules/reports/domain/definitions.ts";
 import { expectSameRows } from "./reports-xlsx-assertions.ts";
 import type { XlsxWriter } from "../../src/modules/reports/application/ports.ts";
-import { writeXlsx } from "../../src/modules/reports/infrastructure/xlsx/xlsx-writer.ts";
+import { writeXlsx } from "../../src/platform/xlsx/xlsx-writer.ts";
 import { readXlsx } from "../support/xlsx-reader.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { deferred } from "./fiscal-harness.ts";

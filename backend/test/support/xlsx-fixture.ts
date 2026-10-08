@@ -4,7 +4,7 @@ import type {
   XlsxColumn,
   XlsxSheet,
   XlsxValue,
-} from "../../src/modules/reports/infrastructure/xlsx/xlsx-writer.ts";
+} from "../../src/platform/xlsx/xlsx-writer.ts";
 
 export const FIXTURE_COLUMNS: readonly XlsxColumn[] = [
   { header: "Fecha", kind: "date", width: 11 },
