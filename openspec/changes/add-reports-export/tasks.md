@@ -46,7 +46,7 @@
   - los mensajes del `409` y del `503`;
   - la entrada de la navegación
 - [x] 5.2 Documentar la pantalla, su ruta y sus permisos en `docs/architecture/reports.md`. Verificar que coincide con la navegación implementada
-- [ ] 5.3 Revisar la pantalla con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, temas claro y oscuro, teclado y contraste) con datos sintéticos en un esquema aislado, abrir un XLSX exportado y comprobar sus tipos de celda, y registrar la revisión en `openspec/changes/add-reports-export/ui-review.md`. Verificar que no quedan hallazgos abiertos
+- [x] 5.3 Revisar la pantalla con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, temas claro y oscuro, teclado y contraste) con datos sintéticos en un esquema aislado, abrir un XLSX exportado y comprobar sus tipos de celda, y registrar la revisión en `openspec/changes/add-reports-export/ui-review.md`. Verificar que no quedan hallazgos abiertos
 
 ## 6. Rendimiento y prueba end-to-end
 
