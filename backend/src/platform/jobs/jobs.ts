@@ -108,6 +108,18 @@ export type JobStore = {
   ): Promise<JobStatus>;
   /** `STOPPED` con su motivo: queda visible hasta una decisión humana. */
   stop(db: DbClient, job: Job, error: JobError, now: Date): Promise<void>;
+  /**
+   * Extiende el arriendo vigente de este intento (add-data-portability, design D11). La identidad
+   * del arriendo es el job, su dueño y su `attemptCount`, que `claim` incrementa en cada toma: un
+   * intento obsoleto con el mismo dueño tampoco renueva. Sin arriendo vigente, `LeaseLostError`.
+   */
+  renew(db: DbClient, job: Job, options: Readonly<{ leaseMs: number; now: Date }>): Promise<Date>;
+  /**
+   * Comprueba, dentro de la transacción en curso, que este intento conserva el arriendo vigente y
+   * bloquea la fila del job hasta el commit: `claim` (`SKIP LOCKED`) no puede tomarlo antes de
+   * que la decisión final se confirme. Sin arriendo vigente, `LeaseLostError`.
+   */
+  fence(db: DbClient, job: Job, now: Date): Promise<void>;
   /** Vence los arriendos de un worker para que otro los retome (apagado ordenado). */
   release(owner: string, now: Date): Promise<number>;
 };

@@ -264,4 +264,93 @@ describe("cola durable de jobs", () => {
       expect(retaken).toMatchObject({ leaseOwner: "w3", attemptCount: 2 });
     });
   });
+
+  describe("renovación y fencing del arriendo (add-data-portability, design D11)", () => {
+    it("renovar extiende el arriendo vigente y nadie lo toma mientras dura", async () => {
+      await store.enqueueIn(prisma, newJob());
+      const job = (await claimOne("w1"))!;
+      const until = await store.renew(prisma, job, { leaseMs: 60_000, now: at(20) });
+      expect(until).toEqual(at(80));
+      expect((await row(job.id)).leaseExpiresAt).toEqual(at(80));
+      expect(await claimOne("w2", at(70))).toBeUndefined();
+      await store.renew(prisma, job, { leaseMs: 60_000, now: at(70) });
+      expect(await claimOne("w2", at(100))).toBeUndefined();
+    });
+
+    it("un arriendo vencido no se renueva ni pasa el fencing, aunque nadie lo haya tomado", async () => {
+      await store.enqueueIn(prisma, newJob());
+      const job = (await claimOne("w1"))!;
+      await expect(store.renew(prisma, job, { leaseMs: 60_000, now: at(61) })).rejects.toThrow(
+        LeaseLostError,
+      );
+      await expect(prisma.$transaction((tx) => store.fence(tx, job, at(61)))).rejects.toThrow(
+        LeaseLostError,
+      );
+    });
+
+    it("el intento obsoleto con el mismo dueño no renueva ni pasa el fencing", async () => {
+      await store.enqueueIn(prisma, newJob());
+      const first = (await claimOne("w1"))!;
+      const second = (await claimOne("w1", at(61)))!;
+      expect(second).toMatchObject({ id: first.id, leaseOwner: "w1", attemptCount: 2 });
+      await expect(store.renew(prisma, first, { leaseMs: 60_000, now: at(62) })).rejects.toThrow(
+        LeaseLostError,
+      );
+      await expect(prisma.$transaction((tx) => store.fence(tx, first, at(62)))).rejects.toThrow(
+        LeaseLostError,
+      );
+      await store.renew(prisma, second, { leaseMs: 60_000, now: at(62) });
+    });
+
+    it("el fencing bloquea la fila: nadie la toma antes del commit de la decisión", async () => {
+      await store.enqueueIn(prisma, newJob());
+      const job = (await claimOne("w1"))!;
+      const taken = await prisma.$transaction(async (tx) => {
+        await store.fence(tx, job, at(59));
+        // Otro worker, con el arriendo ya vencido según su reloj, no puede tomar la fila bloqueada.
+        const others = await store.claim({
+          owner: "w2",
+          types: ["demo.run"],
+          limit: 1,
+          leaseMs: 60_000,
+          now: at(61),
+        });
+        await store.complete(tx, job, at(59));
+        return others;
+      });
+      expect(taken).toEqual([]);
+      expect(await row(job.id)).toMatchObject({ status: "DONE", leaseOwner: null });
+      expect(await claimOne("w2", at(120))).toBeUndefined();
+    });
+
+    it("A pausado pierde el arriendo, B lo toma y completa, y A al volver no cambia nada", async () => {
+      await store.enqueueIn(prisma, newJob());
+      const a = (await claimOne("worker-a"))!;
+      // A queda pausado sin renovar; su arriendo vence y B toma el job.
+      const b = (await claimOne("worker-b", at(61)))!;
+      expect(b).toMatchObject({ id: a.id, leaseOwner: "worker-b", attemptCount: 2 });
+      await store.renew(prisma, b, { leaseMs: 60_000, now: at(81) });
+      await prisma.$transaction(async (tx) => {
+        await store.fence(tx, b, at(90));
+        await store.complete(tx, b, at(90));
+      });
+      const done = await row(a.id);
+      // A vuelve: ni renueva, ni pasa el fencing, ni completa, ni falla, ni se detiene.
+      await expect(store.renew(prisma, a, { leaseMs: 60_000, now: at(95) })).rejects.toThrow(
+        LeaseLostError,
+      );
+      await expect(
+        prisma.$transaction(async (tx) => {
+          await store.fence(tx, a, at(95));
+          await store.complete(tx, a, at(95));
+        }),
+      ).rejects.toThrow(LeaseLostError);
+      await expect(store.complete(prisma, a, at(95))).rejects.toThrow(LeaseLostError);
+      await expect(
+        store.stop(prisma, a, { code: "STALE", errorClass: "DETERMINISTIC" }, at(95)),
+      ).rejects.toThrow(LeaseLostError);
+      expect(await row(a.id)).toEqual(done);
+      expect(done).toMatchObject({ status: "DONE", attemptCount: 2 });
+    });
+  });
 });

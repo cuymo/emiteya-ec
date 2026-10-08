@@ -195,6 +195,36 @@ export function createPrismaJobStore(prisma: PrismaClient, schema = "public"): J
 
     stop,
 
+    async renew(db, job, { leaseMs, now }) {
+      const leaseExpiresAt = new Date(now.getTime() + leaseMs);
+      const { count } = await db.job.updateMany({
+        where: {
+          id: job.id,
+          status: "LEASED",
+          leaseOwner: job.leaseOwner,
+          attemptCount: job.attemptCount,
+          leaseExpiresAt: { gt: now },
+        },
+        data: { leaseExpiresAt },
+      });
+      if (count !== 1) throw new LeaseLostError(job.id);
+      return leaseExpiresAt;
+    },
+
+    async fence(db, job, now) {
+      const rows = await db.$queryRawUnsafe<{ id: string }[]>(
+        `SELECT "id" FROM ${table}
+          WHERE "id" = $1 AND "status" = 'LEASED' AND "lease_owner" = $2
+            AND "attempt_count" = $3 AND "lease_expires_at" > $4
+          FOR UPDATE`,
+        job.id,
+        job.leaseOwner,
+        job.attemptCount,
+        now,
+      );
+      if (rows.length !== 1) throw new LeaseLostError(job.id);
+    },
+
     async release(owner, now) {
       const { count } = await prisma.job.updateMany({
         where: { status: "LEASED", leaseOwner: owner },

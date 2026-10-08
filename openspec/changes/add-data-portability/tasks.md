@@ -33,7 +33,7 @@
   - las FK y el índice por empresa y fecha.
 
   Documentarla en `docs/architecture/database.md`. Verificar con `migrations.test.ts` los `CHECK`, los dos índices únicos y el rechazo de un `READY` incompleto
-- [ ] 2.2 Añadir `renew` al `JobStore` (design D11), guardado por el dueño, el estado `LEASED` y el *lease* vigente, sin cambiar los demás métodos.
+- [x] 2.2 Añadir `renew` al `JobStore` (design D11), guardado por el dueño, el estado `LEASED` y el *lease* vigente, sin cambiar los demás métodos.
   - Si el cambio resultara inseguro para los jobs existentes, detener el apply y reportar el bloqueo.
   - Añadir también `fence`, con la identidad del arriendo (`id`, dueño y `attempt_count` como token monótono) y el *lease* vigente, bloqueando la fila en la transacción en curso (design D11).
   - Verificar con pruebas de integración de la cola:
