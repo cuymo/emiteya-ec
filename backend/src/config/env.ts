@@ -190,11 +190,12 @@ export const envSchema = z
     // en el build y `assets/fonts/noto-sans/` en desarrollo y pruebas.
     RIDE_FONTS_DIRECTORY: z.string().min(1).optional(),
     // Exportación de los reportes (add-reports-export, design D11): defensas de recursos del
-    // proyecto, nunca límites del ERS. Valores iniciales como hipótesis, que fija `bench:reports`.
-    // Las filas nunca pasan de las de una hoja de Excel sin el encabezado (ADR 0023), y las
-    // exportaciones simultáneas se cuentan por instancia.
-    REPORT_EXPORT_MAX_ROWS: int(1, 1_048_575).default(100_000),
-    REPORT_EXPORT_MAX_CONCURRENT: int(1, 16).default(2),
+    // proyecto, nunca límites del ERS, fijadas por `bench:reports` del 2026-10-08. Con 100 000 filas
+    // la exportación tarda unos 4 s con su transacción `REPEATABLE READ`; el máximo de 250 000 la
+    // acota a unos 10 s (y queda bajo las filas de una hoja de Excel, ADR 0023). Las exportaciones
+    // simultáneas se cuentan por instancia: con más de 4, la CPU de la instancia las alarga todas.
+    REPORT_EXPORT_MAX_ROWS: int(1, 250_000).default(100_000),
+    REPORT_EXPORT_MAX_CONCURRENT: int(1, 4).default(2),
     // Endpoints opcionales; sin valor rigen los del módulo central de sri-engine (design D10).
     SRI_ENDPOINT_TEST_RECEPTION: endpoint,
     SRI_ENDPOINT_TEST_AUTHORIZATION: endpoint,

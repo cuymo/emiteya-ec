@@ -148,10 +148,14 @@ Lo que ya existe y este cambio reutiliza, sin cambiar su comportamiento:
 
 | Variable | Valor inicial del benchmark | Significado |
 | --- | --- | --- |
-| `REPORT_EXPORT_MAX_ROWS` | 100 000 (el volumen de Q-26), con un rango a fijar con el benchmark | Filas por exportación |
-| `REPORT_EXPORT_MAX_CONCURRENT` | 2, con un rango a fijar con el benchmark | Exportaciones simultáneas por instancia |
+| `REPORT_EXPORT_MAX_ROWS` | 100 000 (el volumen de Q-26); fijado en 100 000, con el rango de 1 a 250 000 | Filas por exportación |
+| `REPORT_EXPORT_MAX_CONCURRENT` | 2; fijado en 2, con el rango de 1 a 4 | Exportaciones simultáneas por instancia |
 
-- Son defensas de recursos del proyecto, nunca límites del ERS. Los valores de la tabla son hipótesis de partida: `bench:reports` fija los valores por defecto y los rangos antes del archive, o los corrige con `/opsx:update` y su evidencia.
+- Son defensas de recursos del proyecto, nunca límites del ERS. Los valores iniciales eran hipótesis de partida.
+- **`bench:reports` del 2026-10-08** confirmó los valores por defecto y fijó los rangos (`docs/quality/benchmarks/reports-2026-10-08.md`):
+  - 100 000 filas se exportan en unos 4 s, con una transacción de la misma duración y unos 11 MiB más de memoria;
+  - 250 000 acotan la transacción a unos 10 s;
+  - más de 4 exportaciones simultáneas solo alargan cada una, porque comparten la CPU de la instancia.
 - **Más filas que el máximo:** el conteo previo lo detecta antes de generar y responde `409 REPORT_EXPORT_ROW_LIMIT`, con el máximo y el conteo, pidiendo acotar los filtros. Nunca se genera ni se entrega un archivo truncado.
 - **Concurrencia llena:** un semáforo por instancia; una exportación de más responde `503 REPORT_EXPORT_BUSY` con `Retry-After`, sin esperar ni afectar a las que están en curso. La lista paginada no tiene estos límites.
 

@@ -228,13 +228,22 @@ Variables de `add-document-archive` (design D6). Son configuración operativa, n
 ### Exportación de los reportes
 
 Variables de `add-reports-export` (design D11). Son defensas de recursos del proyecto, no límites
-del ERS. Los valores por defecto son hipótesis de partida hasta que `bench:reports` los fije con su
-evidencia:
+del ERS. `bench:reports` fijó los valores por defecto y los rangos el 2026-10-08, con el volumen de
+Q-26 (`../quality/benchmarks/reports-2026-10-08.md`):
 
 | Variable | Obligatoria | Default | Uso |
 | --- | --- | --- | --- |
-| `REPORT_EXPORT_MAX_ROWS` | No | 100000 | Filas de una exportación (1 a 1048575, las de una hoja de Excel sin el encabezado; ADR 0023). Si el reporte tiene más, la exportación responde `409 REPORT_EXPORT_ROW_LIMIT` antes de generar nada y pide acotar los filtros; nunca entrega un archivo truncado. La lista paginada no tiene este límite. |
-| `REPORT_EXPORT_MAX_CONCURRENT` | No | 2 | Exportaciones simultáneas por instancia (1 a 16), con un semáforo local, sin cola. Una exportación de más responde `503 REPORT_EXPORT_BUSY` con `Retry-After` sin afectar a las que están en curso. Con varias instancias, el total es este valor por instancia. |
+| `REPORT_EXPORT_MAX_ROWS` | No | 100000 | Filas de una exportación (1 a 250000). Si el reporte tiene más, la exportación responde `409 REPORT_EXPORT_ROW_LIMIT` antes de generar nada y pide acotar los filtros; nunca entrega un archivo truncado. La lista paginada no tiene este límite. |
+| `REPORT_EXPORT_MAX_CONCURRENT` | No | 2 | Exportaciones simultáneas por instancia (1 a 4), con un semáforo local, sin cola. Una exportación de más responde `503 REPORT_EXPORT_BUSY` con `Retry-After` sin afectar a las que están en curso. Con varias instancias, el total es este valor por instancia. |
+
+- **Valores medidos:**
+  - con 100 000 filas, la exportación tarda unos 4 s, con 2,7 s de CPU de la API y unos 11 MiB más de memoria residente;
+  - su transacción `REPEATABLE READ` dura lo mismo que la generación (unos 4 s);
+  - a unos 40 µs por fila, el máximo de 250 000 acota la transacción a unos 10 s y queda lejos de las 1 048 575 filas de una hoja de Excel.
+- **Concurrencia:** la generación usa la CPU de la instancia.
+  - Con 10 exportaciones de 100 000 filas a la vez, todas tardaron 16 s, con 16 s de transacción cada una.
+  - Con 2 lugares, las dos generadas tardaron 5,8 s y las otras ocho se rechazaron al instante.
+  - Más de 4 lugares solo alargan cada exportación y sus transacciones.
 
 ### Actualizaciones y reversión
 

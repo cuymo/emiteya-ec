@@ -75,7 +75,7 @@ En este orden, sin job, artefacto durable, TTL ni URL firmada:
 - **Si el cliente se va mientras se genera,** la generación se detiene en el siguiente lote: no audita ni entrega nada.
 - **Si se va durante la entrega,** el evento ya registró que el archivo se generó y se autorizó para entregarse, no que llegó.
 
-**Defensas de recursos** (`deployment.md`): `REPORT_EXPORT_MAX_ROWS` y `REPORT_EXPORT_MAX_CONCURRENT` son hipótesis de partida que fija `bench:reports`, nunca límites del ERS. La lista no tiene esos límites.
+**Defensas de recursos** (`deployment.md`): `REPORT_EXPORT_MAX_ROWS` (100 000 por defecto, de 1 a 250 000) y `REPORT_EXPORT_MAX_CONCURRENT` (2 por defecto, de 1 a 4), fijados por `bench:reports` del 2026-10-08; nunca límites del ERS. La lista no tiene esos límites.
 
 ## Formato del XLSX
 

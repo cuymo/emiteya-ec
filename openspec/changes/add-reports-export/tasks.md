@@ -50,14 +50,14 @@
 
 ## 6. Rendimiento y prueba end-to-end
 
-- [ ] 6.1 Añadir `bench:reports` en `backend/scripts/` (design D18), con el barrido del RIDE apagado y la base asentada. Debe medir:
+- [x] 6.1 Añadir `bench:reports` en `backend/scripts/` (design D18), con el barrido del RIDE apagado y la base asentada. Debe medir:
   - el P95 de cada lista y de su conteo;
   - la exportación mensual y la del máximo de filas, con tiempo, memoria máxima, CPU, tamaño y duración de la transacción;
   - 10 exportaciones simultáneas, con tiempo de reloj, memoria máxima, CPU, conexiones y duración de las transacciones en la base;
   - el rechazo por el máximo de filas.
 
   Registrar el resultado en `docs/quality/benchmarks/` y en `performance.md`. Verificar que cada lista cumple ERS RNF-005, y fijar con la evidencia los valores por defecto y los rangos de `REPORT_EXPORT_MAX_ROWS` y `REPORT_EXPORT_MAX_CONCURRENT`, actualizando el entorno y `deployment.md`. Si la exportación síncrona o la transacción `REPEATABLE READ` no son sanas, corregir el design con `/opsx:update`
-- [ ] 6.2 Si el benchmark lo justifica, crear una migración solo de índices de lectura, con su prueba en `migrations.test.ts` y su documentación en `database.md`. Verificar que el benchmark mejora con ella
+- [x] 6.2 Si el benchmark lo justifica, crear una migración solo de índices de lectura, con su prueba en `migrations.test.ts` y su documentación en `database.md`. Verificar que el benchmark mejora con ella
 - [ ] 6.3 Añadir la prueba end-to-end sobre `main.ts`: comprobantes sintéticos de los seis tipos en los dos ambientes, retenciones, inventario y terceros. Debe exportar cada reporte por HTTP, leer el XLSX y compararlo con todas las páginas de la API, y comprobar el evento `report.exported` y que el inventario, los comprobantes y los terceros no cambian. Verificar que la prueba pasa
 
 ## 7. Verificación
