@@ -20,3 +20,4 @@ export * from "./debit-notes.ts";
 export * from "./withholding-receipts.ts";
 export * from "./shipping-guides.ts";
 export * from "./purchase-settlements.ts";
+export * from "./reports.ts";
