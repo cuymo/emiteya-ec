@@ -6,6 +6,7 @@ import { execFile } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Decimal } from "decimal.js";
 import { afterAll, describe, expect, it } from "vitest";
@@ -24,6 +25,8 @@ import { fixtureRow, fixtureSheets } from "../support/xlsx-fixture.ts";
 import { readXlsx, serialToWallClock, type XlsxCell } from "../support/xlsx-reader.ts";
 
 const run = promisify(execFile);
+/** El escritor en un proceso propio; absoluto, porque la suite corre desde cualquier directorio. */
+const PROBE = fileURLToPath(new URL("../support/xlsx-probe.ts", import.meta.url));
 const dir = mkdtempSync(join(tmpdir(), "xlsx-writer-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 let next = 0;
@@ -307,11 +310,9 @@ describe("fechas y momentos", () => {
     await writeXlsx(local, fixtureSheets(200));
     for (const TZ of ["Pacific/Kiritimati", "America/Los_Angeles", "UTC"]) {
       const path = target();
-      await run(
-        process.execPath,
-        ["--conditions=development", "test/support/xlsx-probe.ts", path, "200"],
-        { env: { ...process.env, TZ, LC_ALL: "C", LANG: "C" } },
-      );
+      await run(process.execPath, ["--conditions=development", PROBE, path, "200"], {
+        env: { ...process.env, TZ, LC_ALL: "C", LANG: "C" },
+      });
       expect(readFileSync(path).equals(readFileSync(local)), TZ).toBe(true);
     }
     const row = readXlsx(local).sheets[0]!.rows.get(2)!;
@@ -328,7 +329,7 @@ describe("memoria", () => {
     const { stdout } = await run(process.execPath, [
       "--conditions=development",
       `--max-old-space-size=${HEAP_LIMIT_MIB}`,
-      "test/support/xlsx-probe.ts",
+      PROBE,
       path,
       "100000",
     ]);
