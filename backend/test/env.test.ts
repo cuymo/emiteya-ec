@@ -526,3 +526,37 @@ describe("RIDE (add-document-archive, design D6)", () => {
     expect(envError({ ...valid, RIDE_QUEUE: "0" })?.variables).toEqual(["RIDE_QUEUE"]);
   });
 });
+
+describe("exportación de los reportes (add-reports-export, design D11)", () => {
+  const REPORTS = {
+    REPORT_EXPORT_MAX_ROWS: [1, 1_048_575, 100_000],
+    REPORT_EXPORT_MAX_CONCURRENT: [1, 16, 2],
+  } as const;
+
+  it("aplica los valores iniciales del benchmark", () => {
+    expect(loadEnv(valid)).toMatchObject({
+      REPORT_EXPORT_MAX_ROWS: 100_000,
+      REPORT_EXPORT_MAX_CONCURRENT: 2,
+    });
+  });
+
+  it("acepta los bordes de cada rango", () => {
+    for (const [name, [min, max]] of Object.entries(REPORTS)) {
+      expect(loadEnv({ ...valid, [name]: String(min) })).toMatchObject({ [name]: min });
+      expect(loadEnv({ ...valid, [name]: String(max) })).toMatchObject({ [name]: max });
+    }
+  });
+
+  it("rechaza más filas que una hoja de Excel, cero y valores que no son enteros", () => {
+    for (const value of ["0", "1048576", "2.5", "muchas"]) {
+      expect(envError({ ...valid, REPORT_EXPORT_MAX_ROWS: value })?.variables).toEqual([
+        "REPORT_EXPORT_MAX_ROWS",
+      ]);
+    }
+    for (const value of ["0", "17"]) {
+      expect(envError({ ...valid, REPORT_EXPORT_MAX_CONCURRENT: value })?.variables).toEqual([
+        "REPORT_EXPORT_MAX_CONCURRENT",
+      ]);
+    }
+  });
+});

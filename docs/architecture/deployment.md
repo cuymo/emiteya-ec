@@ -225,6 +225,17 @@ Variables de `add-document-archive` (design D6). Son configuración operativa, n
 - El build copia las fuentes Noto Sans 2.015 (Regular y Bold), su licencia OFL y `manifest.json` a `dist/assets/fonts/noto-sans/`, y `check:ride-assets` comprueba cada archivo con el hash que fija el código. Es una comprobación distinta de `check:xsd-artifact`; `verify` ejecuta las dos.
 - Al arrancar, la API verifica las fuentes. Si falta un archivo, el manifiesto no coincide o un hash no coincide, registra qué archivo falla (sin rutas absolutas), `ride_assets_available` vale 0 y `/health/ready` responde `503` con `rideAssets: "unavailable"`, un detalle propio distinto del de los XSD. El RIDE nunca usa fuentes del sistema.
 
+### Exportación de los reportes
+
+Variables de `add-reports-export` (design D11). Son defensas de recursos del proyecto, no límites
+del ERS. Los valores por defecto son hipótesis de partida hasta que `bench:reports` los fije con su
+evidencia:
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `REPORT_EXPORT_MAX_ROWS` | No | 100000 | Filas de una exportación (1 a 1048575, las de una hoja de Excel sin el encabezado; ADR 0023). Si el reporte tiene más, la exportación responde `409 REPORT_EXPORT_ROW_LIMIT` antes de generar nada y pide acotar los filtros; nunca entrega un archivo truncado. La lista paginada no tiene este límite. |
+| `REPORT_EXPORT_MAX_CONCURRENT` | No | 2 | Exportaciones simultáneas por instancia (1 a 16), con un semáforo local, sin cola. Una exportación de más responde `503 REPORT_EXPORT_BUSY` con `Retry-After` sin afectar a las que están en curso. Con varias instancias, el total es este valor por instancia. |
+
 ### Actualizaciones y reversión
 
 - **Invariante de esquema.** Desde `add-parties-and-products`, el esquema exige que cada empresa tenga exactamente un consumidor final. La migración `20261003210000_require_consumer_final` lo hace cumplir con un trigger de restricción diferido sobre `organization`.
