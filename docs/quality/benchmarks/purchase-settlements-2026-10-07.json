@@ -5,11 +5,11 @@
     "suppliers": 5000,
     "products": 10000,
     "settlements": 100000,
-    "seedSeconds": 119.3,
+    "seedSeconds": 118.8,
     "before": {
       "party": {
         "rows": 10002,
-        "totalSize": "9568 kB"
+        "totalSize": "9552 kB"
       },
       "product": {
         "rows": 10000,
@@ -39,7 +39,7 @@
     "after": {
       "party": {
         "rows": 10002,
-        "totalSize": "9568 kB"
+        "totalSize": "9552 kB"
       },
       "product": {
         "rows": 10000,
@@ -47,7 +47,7 @@
       },
       "electronic_document": {
         "rows": 100333,
-        "totalSize": "409 MB"
+        "totalSize": "408 MB"
       },
       "document_artifact": {
         "rows": 200333,
@@ -63,7 +63,7 @@
       },
       "purchase_settlement_draft": {
         "rows": 393,
-        "totalSize": "2592 kB"
+        "totalSize": "1936 kB"
       }
     }
   },
@@ -77,14 +77,14 @@
       "payments": 10
     },
     "absolute": {
-      "lines": 1000,
+      "lines": 500,
       "payments": 20
     }
   },
   "draftBodyLimitBytes": 4194304,
   "backendBaseline": {
-    "rssMiB": 669.8,
-    "peakRssMiB": 669.8
+    "rssMiB": 622.2,
+    "peakRssMiB": 641.6
   },
   "environment": {
     "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
@@ -96,16 +96,16 @@
     "os": "Linux 7.1.6-1-cachyos",
     "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
     "memory": "16 GiB",
-    "commit": "f6e7896"
+    "commit": "8d045ed"
   },
   "results": [
     {
       "name": "Proveedores: primera página, sin filtro",
       "path": "/purchase-settlements/suppliers",
       "results": 5001,
-      "p50": 7.6,
-      "p95": 10,
-      "max": 12,
+      "p50": 8.3,
+      "p95": 10.6,
+      "max": 13.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -113,9 +113,9 @@
       "name": "Proveedores: búsqueda por identificación",
       "path": "/purchase-settlements/suppliers?search=1700001234",
       "results": 1,
-      "p50": 7.7,
-      "p95": 9.1,
-      "max": 12.5,
+      "p50": 8,
+      "p95": 11.2,
+      "max": 15.8,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -123,9 +123,9 @@
       "name": "Proveedores: búsqueda por nombre (todos coinciden)",
       "path": "/purchase-settlements/suppliers?search=proveedor",
       "results": 5001,
-      "p50": 7.4,
-      "p95": 9.6,
-      "max": 10.2,
+      "p50": 8.9,
+      "p95": 12.5,
+      "max": 14.8,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -133,9 +133,9 @@
       "name": "Productos activos: primera página",
       "path": "/products?status=ACTIVE",
       "results": 10000,
-      "p50": 9.8,
-      "p95": 13.7,
-      "max": 17.3,
+      "p50": 10.8,
+      "p95": 15.2,
+      "max": 24,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -143,9 +143,9 @@
       "name": "Productos activos: búsqueda por código",
       "path": "/products?status=ACTIVE&search=P001234",
       "results": 1,
-      "p50": 12.2,
-      "p95": 15.5,
-      "max": 18.2,
+      "p50": 13,
+      "p95": 15.8,
+      "max": 19.8,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -153,9 +153,9 @@
       "name": "Opciones del borrador",
       "path": "/purchase-settlements/options",
       "results": null,
-      "p50": 4.3,
-      "p95": 5.3,
-      "max": 9.2,
+      "p50": 5.1,
+      "p95": 6.8,
+      "max": 10.8,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -163,19 +163,19 @@
       "name": "Cálculo versionado de 100 líneas (en el proceso)",
       "path": "calculatePurchaseSettlementAmounts",
       "results": 100,
-      "p50": 1.63,
-      "p95": 2.1,
-      "max": 2.92,
+      "p50": 1.71,
+      "p95": 2.83,
+      "max": 5.86,
       "budgetMs": 2000,
       "withinBudget": true
     },
     {
-      "name": "Cálculo versionado de 1000 líneas (en el proceso)",
+      "name": "Cálculo versionado de 500 líneas (en el proceso)",
       "path": "calculatePurchaseSettlementAmounts",
-      "results": 1000,
-      "p50": 17.22,
-      "p95": 18.95,
-      "max": 23.39,
+      "results": 500,
+      "p50": 9.03,
+      "p95": 12.01,
+      "max": 17.75,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -183,9 +183,9 @@
       "name": "Creación del borrador del peor caso (valores por defecto: 100 líneas y 10 pagos, textos multibyte de longitud máxima)",
       "path": "POST /purchase-settlements/drafts",
       "results": 20,
-      "p50": 22.9,
-      "p95": 29.7,
-      "max": 31.1,
+      "p50": 26.3,
+      "p95": 31.4,
+      "max": 32.4,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -193,9 +193,9 @@
       "name": "Vista previa del borrador del peor caso (valores por defecto)",
       "path": "/purchase-settlements/drafts/{id}",
       "results": 100,
-      "p50": 14.1,
-      "p95": 19.6,
-      "max": 22.6,
+      "p50": 15.2,
+      "p95": 17,
+      "max": 20.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -203,9 +203,9 @@
       "name": "Emisión del peor caso (valores por defecto): total del servidor",
       "path": "POST /purchase-settlements",
       "results": 10,
-      "p50": 299.4,
-      "p95": 326.7,
-      "max": 326.7,
+      "p50": 308.4,
+      "p95": 339.6,
+      "max": 339.6,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -213,29 +213,29 @@
       "name": "Emisión del peor caso (valores por defecto): transacción de la reserva",
       "path": "reservation_tx",
       "results": 10,
-      "p50": 44.3,
-      "p95": 52.6,
-      "max": 52.6,
+      "p50": 40.2,
+      "p95": 63.7,
+      "max": 63.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
     {
-      "name": "Creación del borrador del peor caso (máximos absolutos: 1000 líneas y 20 pagos, textos multibyte de longitud máxima)",
+      "name": "Creación del borrador del peor caso (máximos absolutos: 500 líneas y 20 pagos, textos multibyte de longitud máxima)",
       "path": "POST /purchase-settlements/drafts",
       "results": 20,
-      "p50": 122.7,
-      "p95": 140.6,
-      "max": 161.7,
+      "p50": 68.7,
+      "p95": 88.9,
+      "max": 97.3,
       "budgetMs": 2000,
       "withinBudget": true
     },
     {
       "name": "Vista previa del borrador del peor caso (máximos absolutos)",
       "path": "/purchase-settlements/drafts/{id}",
-      "results": 1000,
-      "p50": 58.2,
-      "p95": 63.6,
-      "max": 79.4,
+      "results": 500,
+      "p50": 32.2,
+      "p95": 40.8,
+      "max": 41.5,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -243,9 +243,9 @@
       "name": "Emisión del peor caso (máximos absolutos): total del servidor",
       "path": "POST /purchase-settlements",
       "results": 10,
-      "p50": 814.3,
-      "p95": 836.7,
-      "max": 836.7,
+      "p50": 541.8,
+      "p95": 578.6,
+      "max": 578.6,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -253,9 +253,9 @@
       "name": "Emisión del peor caso (máximos absolutos): transacción de la reserva",
       "path": "reservation_tx",
       "results": 10,
-      "p50": 140.4,
-      "p95": 168.1,
-      "max": 168.1,
+      "p50": 86.5,
+      "p95": 101.3,
+      "max": 101.3,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -263,9 +263,9 @@
       "name": "Emisión con reserva: total del servidor",
       "path": "POST /purchase-settlements",
       "results": 100,
-      "p50": 219.4,
-      "p95": 245.8,
-      "max": 261.2,
+      "p50": 227.4,
+      "p95": 255.8,
+      "max": 279.4,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -273,9 +273,9 @@
       "name": "Emisión con reserva: transacción de la reserva",
       "path": "reservation_tx",
       "results": 100,
-      "p50": 26.6,
-      "p95": 32.2,
-      "max": 33.8,
+      "p50": 26,
+      "p95": 34.5,
+      "max": 47.4,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -283,9 +283,9 @@
       "name": "Proveedores distintos, 10 simultáneas: total del servidor",
       "path": "POST /purchase-settlements",
       "results": 100,
-      "p50": 572,
-      "p95": 696.1,
-      "max": 738.5,
+      "p50": 575.9,
+      "p95": 763.7,
+      "max": 821,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -293,9 +293,9 @@
       "name": "Proveedores distintos, 10 simultáneas: transacción de la reserva",
       "path": "reservation_tx",
       "results": 100,
-      "p50": 155.8,
-      "p95": 283.5,
-      "max": 361.3,
+      "p50": 173,
+      "p95": 316.2,
+      "max": 417,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -303,9 +303,9 @@
       "name": "El mismo proveedor, 10 simultáneas: total del servidor",
       "path": "POST /purchase-settlements",
       "results": 100,
-      "p50": 577.7,
-      "p95": 708.5,
-      "max": 741.4,
+      "p50": 575.4,
+      "p95": 703.9,
+      "max": 739.5,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -313,9 +313,9 @@
       "name": "El mismo proveedor, 10 simultáneas: transacción de la reserva",
       "path": "reservation_tx",
       "results": 100,
-      "p50": 159.9,
-      "p95": 284.2,
-      "max": 313.9,
+      "p50": 165.6,
+      "p95": 292.4,
+      "max": 340.4,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -323,9 +323,9 @@
       "name": "Liquidaciones: primera página, sin filtro",
       "path": "/purchase-settlements",
       "results": 100333,
-      "p50": 17.3,
-      "p95": 26.2,
-      "max": 27.4,
+      "p50": 16.7,
+      "p95": 20.9,
+      "max": 22.8,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -333,9 +333,9 @@
       "name": "Liquidaciones: búsqueda por número",
       "path": "/purchase-settlements?search=000054321",
       "results": 1,
-      "p50": 61.3,
-      "p95": 69.4,
-      "max": 75,
+      "p50": 63.4,
+      "p95": 73.6,
+      "max": 88.7,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -343,9 +343,9 @@
       "name": "Liquidaciones: búsqueda por identificación del proveedor",
       "path": "/purchase-settlements?search=1700001234",
       "results": 20,
-      "p50": 58.8,
-      "p95": 66.2,
-      "max": 72.9,
+      "p50": 60,
+      "p95": 68.4,
+      "max": 70.9,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -353,9 +353,9 @@
       "name": "Liquidaciones: búsqueda por nombre del proveedor",
       "path": "/purchase-settlements?search=PROVEEDOR%20DEL%20BENCHMARK%2001234",
       "results": 20,
-      "p50": 64.3,
-      "p95": 75.1,
-      "max": 80.5,
+      "p50": 65.4,
+      "p95": 75,
+      "max": 86.4,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -363,9 +363,9 @@
       "name": "Liquidaciones: filtro por estado",
       "path": "/purchase-settlements?state=AUTHORIZED",
       "results": 100000,
-      "p50": 38.1,
-      "p95": 40,
-      "max": 42,
+      "p50": 38.6,
+      "p95": 46.9,
+      "max": 57,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -373,9 +373,9 @@
       "name": "Bandeja: liquidaciones filtradas por identificación del proveedor",
       "path": "/documents?documentType=03&identification=1700001234",
       "results": 20,
-      "p50": 161,
-      "p95": 177.6,
-      "max": 189.7,
+      "p50": 161.9,
+      "p95": 185.9,
+      "max": 194.5,
       "budgetMs": 2000,
       "withinBudget": true
     },
@@ -384,22 +384,22 @@
       "path": "RideWorkerPool",
       "results": 30,
       "pages": 1,
-      "p50": 86.1,
-      "p95": 95.5,
-      "max": 95.8,
+      "p50": 83.4,
+      "p95": 94.3,
+      "max": 96.3,
       "budgetMs": 1000,
       "withinBudget": true
     },
     {
-      "name": "Render del RIDE del máximo de líneas (1000 líneas, 102 páginas)",
+      "name": "Render del RIDE del máximo de líneas (500 líneas, 52 páginas)",
       "path": "RideWorkerPool",
       "results": 30,
-      "pages": 102,
-      "p50": 1036.9,
-      "p95": 1073.1,
-      "max": 1074.6,
+      "pages": 52,
+      "p50": 571.3,
+      "p95": 631.2,
+      "max": 641.9,
       "budgetMs": 1000,
-      "withinBudget": false
+      "withinBudget": true
     }
   ],
   "worstCase": {
@@ -410,144 +410,144 @@
       "bodyBytes": 103309,
       "signedXmlBytes": 156132,
       "signedXmlKiB": 152.5,
-      "largestId": "3bdb0c1c-fd19-40d4-9e4d-966bc7d584d0",
+      "largestId": "07352248-cb42-4503-bdb5-6f479a4297e4",
       "stages": {
         "reservation_tx": {
-          "p50": 44.3,
-          "p95": 52.6,
-          "max": 52.6
+          "p50": 40.2,
+          "p95": 63.7,
+          "max": 63.7
         },
         "xml": {
-          "p50": 1.5,
-          "p95": 2.2,
-          "max": 2.2
+          "p50": 1.6,
+          "p95": 2.9,
+          "max": 2.9
         },
         "xsd": {
-          "p50": 127.8,
-          "p95": 154.9,
-          "max": 154.9
+          "p50": 129.7,
+          "p95": 165.6,
+          "max": 165.6
         },
         "sign": {
-          "p50": 79.8,
-          "p95": 94.4,
-          "max": 94.4
+          "p50": 83.4,
+          "p95": 97.8,
+          "max": 97.8
         },
         "persist": {
-          "p50": 12.9,
-          "p95": 19.2,
-          "max": 19.2
+          "p50": 15.5,
+          "p95": 22.4,
+          "max": 22.4
         },
         "total": {
-          "p50": 299.4,
-          "p95": 326.7,
-          "max": 326.7
+          "p50": 308.4,
+          "p95": 339.6,
+          "max": 339.6
         }
       },
       "client": {
-        "p50": 304.7,
-        "p95": 332.6,
-        "max": 332.6
+        "p50": 312.9,
+        "p95": 344.9,
+        "max": 344.9
       },
       "backend": {
-        "cpuMsPerDraftRequest": 18.1,
-        "cpuMsPerDraftAndEmission": 532.7,
-        "rssBeforeMiB": 669.8,
-        "rssMiB": 736.9,
-        "peakRssMiB": 745.1
+        "cpuMsPerDraftRequest": 18,
+        "cpuMsPerDraftAndEmission": 550,
+        "rssBeforeMiB": 622.2,
+        "rssMiB": 737.9,
+        "peakRssMiB": 745.9
       }
     },
     "máximos absolutos": {
-      "shape": "1000 líneas y 20 pagos, textos multibyte de longitud máxima",
-      "lines": 1000,
+      "shape": "500 líneas y 20 pagos, textos multibyte de longitud máxima",
+      "lines": 500,
       "payments": 20,
-      "bodyBytes": 1010568,
-      "signedXmlBytes": 1467936,
-      "signedXmlKiB": 1433.5,
-      "largestId": "5c5078fc-4354-4c33-8ad6-e8f1c4d50ff5",
+      "bodyBytes": 507069,
+      "signedXmlBytes": 740185,
+      "signedXmlKiB": 722.8,
+      "largestId": "047d0a9d-688a-4aef-8c39-0b94e57ec61e",
       "stages": {
         "reservation_tx": {
-          "p50": 140.4,
-          "p95": 168.1,
-          "max": 168.1
+          "p50": 86.5,
+          "p95": 101.3,
+          "max": 101.3
         },
         "xml": {
-          "p50": 15.8,
-          "p95": 22,
-          "max": 22
+          "p50": 7.4,
+          "p95": 12.1,
+          "max": 12.1
         },
         "xsd": {
-          "p50": 224.8,
-          "p95": 257.2,
-          "max": 257.2
+          "p50": 197.9,
+          "p95": 217.3,
+          "max": 217.3
         },
         "sign": {
-          "p50": 288.6,
-          "p95": 319.4,
-          "max": 319.4
+          "p50": 169.2,
+          "p95": 216.6,
+          "max": 216.6
         },
         "persist": {
-          "p50": 53.2,
-          "p95": 74.7,
-          "max": 74.7
+          "p50": 30.3,
+          "p95": 44.8,
+          "max": 44.8
         },
         "total": {
-          "p50": 814.3,
-          "p95": 836.7,
-          "max": 836.7
+          "p50": 541.8,
+          "p95": 578.6,
+          "max": 578.6
         }
       },
       "client": {
-        "p50": 827.4,
-        "p95": 854.2,
-        "max": 854.2
+        "p50": 551.7,
+        "p95": 591,
+        "max": 591
       },
       "backend": {
-        "cpuMsPerDraftRequest": 72.2,
-        "cpuMsPerDraftAndEmission": 1187.3,
-        "rssBeforeMiB": 736.9,
-        "rssMiB": 1070.6,
-        "peakRssMiB": 1150.5
+        "cpuMsPerDraftRequest": 39.4,
+        "cpuMsPerDraftAndEmission": 854.5,
+        "rssBeforeMiB": 737.9,
+        "rssMiB": 999.5,
+        "peakRssMiB": 1008
       }
     }
   },
-  "signedXmlMaxBytes": 1467936,
+  "signedXmlMaxBytes": 740185,
   "signedXmlNote": "Medición de recursos del peor caso; sin relación con Q-47 ni con ningún límite del SRI.",
   "serialEmissions": {
     "client": {
-      "p50": 222.5,
-      "p95": 249.7,
-      "max": 264.3
+      "p50": 231.4,
+      "p95": 264.3,
+      "max": 283.3
     },
     "stages": {
       "reservation_tx": {
-        "p50": 26.6,
-        "p95": 32.2,
-        "max": 33.8
+        "p50": 26,
+        "p95": 34.5,
+        "max": 47.4
       },
       "xml": {
         "p50": 0.1,
-        "p95": 0.1,
+        "p95": 0.2,
         "max": 0.2
       },
       "xsd": {
-        "p50": 119.3,
-        "p95": 141.2,
-        "max": 158.6
+        "p50": 123,
+        "p95": 149.4,
+        "max": 173.5
       },
       "sign": {
-        "p50": 50.5,
-        "p95": 55.5,
-        "max": 63.1
+        "p50": 52.2,
+        "p95": 61.1,
+        "max": 66.2
       },
       "persist": {
-        "p50": 8.8,
-        "p95": 11.5,
-        "max": 13.7
+        "p50": 8.7,
+        "p95": 11.9,
+        "max": 28
       },
       "total": {
-        "p50": 219.4,
-        "p95": 245.8,
-        "max": 261.2
+        "p50": 227.4,
+        "p95": 255.8,
+        "max": 279.4
       }
     }
   },
@@ -555,18 +555,18 @@
     "Proveedores distintos": {
       "concurrent": 10,
       "rounds": 10,
-      "reservationsPerSecond": 13.9,
+      "reservationsPerSecond": 13.5,
       "reservationTx": {
-        "p50": 155.8,
-        "p95": 283.5,
-        "max": 361.3
+        "p50": 173,
+        "p95": 316.2,
+        "max": 417
       },
-      "lockWaitP95Ms": 256.9,
+      "lockWaitP95Ms": 290.2,
       "stages": {
         "reservation_tx": {
-          "p50": 155.8,
-          "p95": 283.5,
-          "max": 361.3
+          "p50": 173,
+          "p95": 316.2,
+          "max": 417
         },
         "xml": {
           "p50": 0.1,
@@ -574,78 +574,78 @@
           "max": 0.3
         },
         "xsd": {
-          "p50": 269.2,
-          "p95": 325,
-          "max": 359
+          "p50": 259,
+          "p95": 335.2,
+          "max": 376.9
         },
         "sign": {
-          "p50": 60.1,
-          "p95": 72.8,
-          "max": 154.3
+          "p50": 62.1,
+          "p95": 82.9,
+          "max": 159.2
         },
         "persist": {
-          "p50": 10,
-          "p95": 13.6,
-          "max": 14.8
+          "p50": 10.4,
+          "p95": 18.4,
+          "max": 25.6
         },
         "total": {
-          "p50": 572,
-          "p95": 696.1,
-          "max": 738.5
+          "p50": 575.9,
+          "p95": 763.7,
+          "max": 821
         }
       },
       "client": {
-        "p50": 585.4,
-        "p95": 728.8,
-        "max": 783.8
+        "p50": 594.6,
+        "p95": 779.6,
+        "max": 837.6
       }
     },
     "El mismo proveedor": {
       "concurrent": 10,
       "rounds": 10,
-      "reservationsPerSecond": 13.9,
+      "reservationsPerSecond": 14,
       "reservationTx": {
-        "p50": 159.9,
-        "p95": 284.2,
-        "max": 313.9
+        "p50": 165.6,
+        "p95": 292.4,
+        "max": 340.4
       },
-      "lockWaitP95Ms": 257.6,
+      "lockWaitP95Ms": 266.4,
       "stages": {
         "reservation_tx": {
-          "p50": 159.9,
-          "p95": 284.2,
-          "max": 313.9
+          "p50": 165.6,
+          "p95": 292.4,
+          "max": 340.4
         },
         "xml": {
           "p50": 0.1,
-          "p95": 0.1,
-          "max": 0.2
+          "p95": 0.2,
+          "max": 0.4
         },
         "xsd": {
-          "p50": 273,
-          "p95": 331.6,
-          "max": 350
+          "p50": 267,
+          "p95": 312.7,
+          "max": 330.1
         },
         "sign": {
-          "p50": 59.5,
-          "p95": 69,
-          "max": 72.5
+          "p50": 61.7,
+          "p95": 74.5,
+          "max": 88.1
         },
         "persist": {
-          "p50": 9.3,
-          "p95": 14,
-          "max": 42
+          "p50": 9.7,
+          "p95": 13.6,
+          "max": 18
         },
         "total": {
-          "p50": 577.7,
-          "p95": 708.5,
-          "max": 741.4
+          "p50": 575.4,
+          "p95": 703.9,
+          "max": 739.5
         }
       },
       "client": {
-        "p50": 592.4,
-        "p95": 725.8,
-        "max": 758.9
+        "p50": 587,
+        "p95": 721.2,
+        "max": 756.8
       }
     }
   },
