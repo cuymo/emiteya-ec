@@ -39,6 +39,8 @@ describe("emisión de liquidaciones de compra", () => {
   let db: MigratedSchema;
   let api: App;
   let denied: App;
+  /** El mismo backend un día antes: el borrador se prepara el 6 y se emite el 7. */
+  let yesterday: App;
   let a: ReadyCompany;
   let b: ReadyCompany;
   let supplierId: string;
@@ -146,6 +148,10 @@ describe("emisión de liquidaciones de compra", () => {
       purchaseSettlements: { deny: ["purchaseSettlements.emit"] },
       now,
     });
+    yesterday = buildTaxpayerApp(db, {
+      signing: { pool, custody: CUSTODY },
+      now: () => new Date("2026-10-06T15:00:00Z"),
+    });
     const p12Dir = inject("p12FixturesDir");
     a = await readyCompany(api, db, { slug: "emision-liquidacion", pool, p12Dir });
     b = await readyCompany(api, db, { slug: "emision-liquidacion-b", pool, p12Dir });
@@ -223,6 +229,26 @@ describe("emisión de liquidaciones de compra", () => {
     expect(xml).toContain("<importeTotal>106.00</importeTotal>");
     expect(xml).toContain("<plazo>30</plazo><unidadTiempo>días</unidadTiempo>");
     expect(xml).toContain("<descuento>0.00</descuento>");
+  });
+
+  it("un borrador preparado un día y emitido al siguiente lleva la fecha de la reserva, la de su clave", async () => {
+    const prepared = await request(yesterday.app)
+      .post("/api/v1/purchase-settlements/drafts")
+      .set("Cookie", a.cookies.operator)
+      .send({
+        emissionPointId: a.emissionPointId,
+        supplierPartyId: supplierId,
+        lines: lines(),
+        payments: payments(),
+      });
+    expect(prepared.status, JSON.stringify(prepared.body)).toBe(201);
+    expect(bodyOf(prepared).data.preview.evaluatedOn).toBe("2026-10-06");
+    const res = await emit(api, bodyOf(prepared).data);
+    expect(res.status, JSON.stringify(res.body)).toBe(201);
+    const settlement = bodyOf(res).data;
+    expect(settlement.issueDate).toBe("2026-10-07");
+    expect(settlement.accessKey.slice(0, 8)).toBe("07102026");
+    expect(await signedXml(settlement.id)).toContain("<fechaEmision>07/10/2026</fechaEmision>");
   });
 
   it("congela las cuatro declaraciones con su autor y su momento, fuera del XML", async () => {
