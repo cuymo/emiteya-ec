@@ -35,10 +35,12 @@
   Documentarla en `docs/architecture/database.md`. Verificar con `migrations.test.ts` los `CHECK`, los dos índices únicos y el rechazo de un `READY` incompleto
 - [ ] 2.2 Añadir `renew` al `JobStore` (design D11), guardado por el dueño, el estado `LEASED` y el *lease* vigente, sin cambiar los demás métodos.
   - Si el cambio resultara inseguro para los jobs existentes, detener el apply y reportar el bloqueo.
+  - Añadir también `fence`, con la identidad del arriendo (`id`, dueño y `attempt_count` como token monótono) y el *lease* vigente, bloqueando la fila en la transacción en curso (design D11).
   - Verificar con pruebas de integración de la cola:
     - la renovación extiende el *lease*;
     - una renovación tras perderlo lanza `LeaseLostError`;
-    - `claim` no toma un job con el *lease* renovado;
+    - `claim` no toma un job con el *lease* renovado ni uno bloqueado por `fence`;
+    - el caso obligatorio: A toma el job, queda pausado, su *lease* vence, B lo toma y completa, y A vuelve: `renew` y `fence` de A fallan y A no cambia nada;
     - los jobs del SRI y del RIDE no cambian de comportamiento.
 - [ ] 2.3 Crear `packages/contracts/src/data-portability.ts` (design D17):
   - el cuerpo estricto vacío del `POST`;
@@ -91,6 +93,9 @@
 
   Verificar con pruebas unitarias:
   - una razón social `../../etc/passwd` nunca llega a una ruta;
+  - la gramática rechaza `/` inicial, `\`, `..`, rutas absolutas y caracteres de control o de salto de línea;
+  - una ruta repetida falla, nunca se acepta en silencio;
+  - el orden de `SHA256SUMS` es estable y no se incluye a sí mismo;
   - el mismo número en los dos ambientes no colisiona;
   - el nombre sin RUC;
   - el manifiesto sin inventario;
@@ -102,7 +107,7 @@
 
   Verificar con pruebas de integración:
   - los tipos de celda (identificación como texto, 106.00 como número exacto, el valor que excede la precisión como texto, `=HYPERLINK` como texto sin fórmula y la fecha sin desplazamiento);
-  - la división de una hoja con un límite de filas reducido para la prueba;
+  - la división de una hoja en máximo menos uno, máximo y máximo más uno filas de datos, con el encabezado repetido y sin perder ni repetir filas en el límite, con el límite real en la escritura y con uno reducido inyectado;
   - un comprobante emitido y un tercero editado después de `snapshotAt` que no entran.
 - [ ] 4.3 Implementar la fase 2 (design D7, D12 y D13):
   - la lectura por lotes de los snapshots, los artefactos, las respuestas y los logos del inventario;
@@ -114,15 +119,20 @@
   - un artefacto, una respuesta y un logo alterados fallan cerrado sin paquete;
   - un XML autorizado faltante en un `AUTHORIZED` falla con `DATA_EXPORT_ARTIFACT_MISSING`;
   - un comprobante autorizado durante la generación sale firmado y sin XML autorizado;
-  - sin espacio, falla con `DATA_EXPORT_INSUFFICIENT_SPACE` sin parcial;
+  - sin espacio, falla con `DATA_EXPORT_INSUFFICIENT_SPACE` antes de la fase 2, sin parcial;
+  - un `ENOSPC` inesperado a mitad del ZIP falla con el mismo código, borra el parcial y no publica;
   - el XML autorizado del paquete es idéntico al de la descarga de la bandeja;
   - `sha256sum -c` sobre el paquete descomprimido pasa.
-- [ ] 4.4 Implementar la prueba de contenido de design D6: sembrar una firma, contraseñas, sesiones, tokens y borradores con marcadores conocidos, generar el paquete y buscar los marcadores, en claro y en base64, en cada entrada descomprimida. Verificar que ninguno aparece y que el manifiesto y `LEEME.txt` declaran las exclusiones
+- [ ] 4.4 Implementar las dos capas de design D6:
+  - **A:** una prueba de las proyecciones que enumera las columnas de cada fuente y comprueba que ninguna es de `signing_certificate_secret`, `account`, `session`, `verification` ni `invitation`, ni `user.password`, IP o user agent;
+  - **B:** una prueba del paquete completo que siembra marcadores en una firma de prueba (archivo y contraseña), en los campos cifrados y la clave envuelta, en un hash de contraseña, una sesión, una verificación, una invitación, un análogo del secreto de autenticación, una IP, un user agent y un borrador, y los busca en claro y en base64 en cada entrada descomprimida, sin descifrar nada.
+
+  Verificar que ninguno aparece y que el manifiesto y `LEEME.txt` declaran las exclusiones
 - [ ] 4.5 Implementar el job `portability.export` (design D10, D11 y D14):
   - el runner propio con `DATA_EXPORT_MAX_CONCURRENT` lazos;
   - el heartbeat de renovación con aborto al perder el *lease*;
   - los archivos por intento con `0600`, `fsync`, el renombrado y `0400`;
-  - la publicación de `READY` en la misma transacción que `complete`, con el anterior pasado a `EXPIRED` (`SUPERSEDED`);
+  - el orden de completar de design D11: ZIP cerrado con su SHA-256 y tamaño, `fsync`, renombrado atómico, `fsync` del directorio, y una sola transacción con `fence`, el anterior a `EXPIRED` (`REPLACED`), `READY` con `expires_at` desde ese momento, `data_export.completed` y `complete`;
   - los fallos reintentables y deterministas con sus códigos;
   - `data_export.completed` y `data_export.failed`.
 
@@ -131,9 +141,13 @@
   - un worker perdido que no publica;
   - dos runners con una sola generación publicada;
   - la generación fallida que conserva el `READY` anterior;
+  - el worker obsoleto: A pausado tras el *lease*, B completa, A vuelve y no publica, no marca `READY`, no completa ni registra `completed`, y su intento se limpia;
+  - una transacción final fallida que no deja `READY` ni `completed` y cuyo archivo borra el barrido;
+  - `expires_at` contado desde `READY`, no desde la solicitud;
   - los eventos sin rutas.
 - [ ] 4.6 Implementar el barrido y la recuperación al arrancar (design D14 y D15):
-  - los `READY` vencidos y los de archivo faltante pasan a `EXPIRED`;
+  - los `READY` vencidos pasan a `EXPIRED` (`TTL`);
+  - los `READY` vigentes con el archivo faltante o de otro tamaño pasan a `FAILED` (`DATA_EXPORT_PACKAGE_MISSING` o `DATA_EXPORT_PACKAGE_INTEGRITY`) con `data_export.failed`, nunca a `EXPIRED`;
   - se borran los parciales, los directorios de trabajo y los archivos sin fila válida;
   - solo se borran nombres de la gramática, sin seguir enlaces.
 
@@ -152,7 +166,7 @@
 ## 5. API y descarga
 
 - [ ] 5.1 Implementar `POST /api/v1/data-exports` (`202`), `GET /api/v1/data-exports` y `GET /api/v1/data-exports/{id}` con `dataPortability.export` (design D10 y D17), con `data_export.requested` en la transacción de la solicitud. Verificar con pruebas de integración por HTTP:
-  - la solicitud en cola;
+  - la solicitud en cola, con la fila, el job y el evento creados juntos, y nada de los tres si la transacción falla;
   - la segunda solicitud con `409 DATA_EXPORT_IN_PROGRESS`;
   - dos solicitudes simultáneas con una sola generación;
   - la generación de otra empresa en cola;
@@ -171,7 +185,8 @@
 
   Verificar con pruebas de integración:
   - la descarga con el SHA-256 de la vista;
-  - el paquete alterado en el disco, sin ningún byte y con `500`;
+  - el paquete alterado en el disco, sin ningún byte, con `500 DATA_EXPORT_PACKAGE_INTEGRITY` y la exportación `FAILED`;
+  - el paquete borrado del disco, con `500 DATA_EXPORT_PACKAGE_MISSING` y la exportación `FAILED`;
   - `409` en cola o generándose;
   - `410` caducado;
   - la auditoría que falla, sin entregar;
@@ -199,6 +214,7 @@
 - [ ] 6.2 Documentar la pantalla, su ruta y su permiso en `docs/architecture/data-portability.md`. Verificar que coincide con la navegación implementada
 - [ ] 6.3 Revisar la pantalla con `docs/quality/frontend-checklist.md` contra el backend real, a través de la reescritura `/api/*` del frontend, con datos sintéticos en un esquema y un directorio aislados. La revisión cubre escritorio, 375 y 320 px, los temas claro y oscuro, el teclado y el contraste.
   - Descargar un paquete por el navegador y verificarlo con `sha256sum -c`, Python `zipfile` y openpyxl.
+  - Gate del streaming (design D16): descargar un paquete de varios GB a través de la reescritura `/api/*` midiendo la memoria residente del backend y del proceso de Next. Si Next lo almacena, corregir el enrutado con una ruta del mismo origen que preserve el streaming y la sesión antes de cerrar.
   - Registrar la revisión en `openspec/changes/add-data-portability/ui-review.md`.
   - Verificar que no quedan hallazgos abiertos.
 
@@ -209,7 +225,9 @@
   - la duración y la presión MVCC de la transacción de la fase 1;
   - el costo de la verificación previa a la descarga;
   - el P95 de una lista de la API durante la generación;
-  - la cola entre empresas, el `409`, la recuperación tras matar el proceso, la renovación del *lease* y la caducidad con el barrido.
+  - la memoria residente del proceso de Next durante la descarga a través de `/api/*`;
+  - el costo del heartbeat y de la renovación;
+  - la cola entre empresas, el `409`, la recuperación tras matar el proceso, el worker obsoleto y la caducidad con el barrido.
 
   Registrar el resultado en `docs/quality/benchmarks/` y en `performance.md`, y fijar con la evidencia los valores de design D20 en el entorno y en `deployment.md`. Si la fase 1, la verificación previa o la generación en el proceso de la API no son sanas, corregir el design con `/opsx:update`. Verificar que el paquete del benchmark pasa `unzip -t`, `sha256sum -c` y la lectura con Python `zipfile` y openpyxl
 - [ ] 7.2 Añadir la prueba end-to-end sobre `main.ts`:
