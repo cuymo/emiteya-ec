@@ -6,6 +6,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DocumentType } from "@facturador/contracts";
 import { useState, type ReactNode } from "react";
 import { SessionGate } from "@/components/session";
 import { DocumentsSection } from "@/features/archive/documents-section";
@@ -207,10 +208,13 @@ describe("Documentos de la nota de crédito", () => {
   });
 
   it("un tipo que el sistema no emite no muestra la sección", async () => {
+    // Desde add-purchase-settlements el sistema emite todos los tipos del contrato: un tipo ajeno
+    // (la nota de venta, 02) prueba la defensa.
+    const foreign = "02" as unknown as DocumentType;
     const calls = render(
       <>
         <p>detalle</p>
-        <DocumentsSection document={{ id: "x-1", documentType: "03", state: "AUTHORIZED" }} />
+        <DocumentsSection document={{ id: "x-1", documentType: foreign, state: "AUTHORIZED" }} />
       </>,
       {},
     );

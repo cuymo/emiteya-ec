@@ -4,11 +4,12 @@
 // número, fecha, receptor, total, estado y si el RIDE está disponible. Acción principal: abrir el
 // comprobante. P0: número, estado y RIDE; P1: fecha, receptor y total; P2: filtros avanzados
 // (fechas, identificación, establecimiento, punto y tipo); P3 (identificadores y hashes): no se
-// muestra. La factura, la nota de crédito, la nota de débito, la guía de remisión y el comprobante de
-// retención conviven con su tipo bajo el número (add-credit-notes, design D15; add-debit-notes,
-// design D19; add-shipping-guides, design D21; add-withholding-receipts, design D20); en la
-// retención, el total es el retenido y el receptor el sujeto retenido; la guía no tiene total y su
-// receptor es su único destinatario o "N destinatarios".
+// muestra. La factura, la liquidación de compra, la nota de crédito, la nota de débito, la guía de
+// remisión y el comprobante de retención conviven con su tipo bajo el número (add-credit-notes,
+// design D15; add-debit-notes, design D19; add-shipping-guides, design D21; add-withholding-receipts,
+// design D20; add-purchase-settlements, design D20); en la retención, el total es el retenido y el
+// receptor el sujeto retenido; la guía no tiene total y su receptor es su único destinatario o "N
+// destinatarios"; en la liquidación, la contraparte es su proveedor y se rotula "Proveedor".
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -72,6 +73,9 @@ const TYPE_FILTERS = [
 const isTypeFilter = (value: string | null): value is (typeof EMITTED_DOCUMENT_TYPES)[number] =>
   EMITTED_DOCUMENT_TYPES.some((type) => type === value);
 const detailPath = (item: DocumentListItem) => documentKind(item.documentType)?.detailPath;
+/** "Proveedor" cuando la contraparte no es un comprador (la liquidación de compra). */
+const counterpartyLabel = (item: DocumentListItem) =>
+  documentKind(item.documentType)?.counterpartyLabel ?? null;
 
 function useUrlState() {
   const params = useSearchParams();
@@ -231,12 +235,13 @@ export function DocumentsScreen() {
         header: "Receptor",
         cell: ({ row }) => {
           const receiver = receiverOf(row.original);
+          const role = counterpartyLabel(row.original);
           return (
             <span className="flex flex-col">
               <span className="break-words">{receiver.name}</span>
-              {receiver.identification ? (
+              {receiver.identification || role ? (
                 <span className="text-xs text-foreground-muted tabular-nums">
-                  {receiver.identification}
+                  {[role, receiver.identification].filter(Boolean).join(" · ")}
                 </span>
               ) : null}
             </span>
@@ -480,7 +485,12 @@ export function DocumentsScreen() {
                 </span>
                 <RideCell document={item} />
               </div>
-              <span className="break-words">{receiverOf(item).name}</span>
+              <span className="break-words">
+                {counterpartyLabel(item) ? (
+                  <span className="text-foreground-muted">{counterpartyLabel(item)}: </span>
+                ) : null}
+                {receiverOf(item).name}
+              </span>
               <span className="flex flex-wrap items-center justify-between gap-1 text-sm">
                 <span className="tabular-nums text-foreground-muted">
                   {formatIssueDate(item.issueDate)}

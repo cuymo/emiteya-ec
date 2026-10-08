@@ -58,8 +58,8 @@
 
 ## 11. Bandeja con liquidaciones de compra
 
-- [ ] 11.1 Agregar el tipo `03` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` con la contraparte rotulada "Proveedor" (design D20). Verificar con pruebas de componente y de API: filtro con los seis tipos, tipo bajo el número, proveedor e importe total, enlace al detalle y documentos disponibles por estado; y una prueba de backend que lista juntos los seis tipos
-- [ ] 11.2 Documentar la liquidación en la bandeja en `fiscal-emission.md`
+- [x] 11.1 Agregar el tipo `03` a `EMITTED_DOCUMENT_TYPES` y `DOCUMENT_KINDS` con la contraparte rotulada "Proveedor" (design D20). Verificar con pruebas de componente y de API: filtro con los seis tipos, tipo bajo el número, proveedor e importe total, enlace al detalle y documentos disponibles por estado; y una prueba de backend que lista juntos los seis tipos
+- [x] 11.2 Documentar la liquidación en la bandeja en `fiscal-emission.md`
 
 ## 12. Pantallas de liquidaciones de compra
 

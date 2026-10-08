@@ -2,8 +2,10 @@
 // sin coincidencias, error, sin permiso, filtros en la URL, rango inválido y descarga del RIDE; con
 // la nota de crédito (add-credit-notes, tarea 12.1, design D15), la nota de débito (add-debit-notes,
 // tarea 10.1, design D19), el comprobante de retención (add-withholding-receipts, tarea 11.1, design
-// D20) y la guía de remisión (add-shipping-guides, tarea 11.1, design D21): el filtro de tipo en la
-// URL, el tipo bajo el número y el enlace al detalle según el tipo.
+// D20), la guía de remisión (add-shipping-guides, tarea 11.1, design D21) y la liquidación de compra
+// (add-purchase-settlements, tarea 11.1, design D20): el filtro de tipo en la URL, el tipo bajo el
+// número, la contraparte (el proveedor, rotulado "Proveedor", en la liquidación) y el enlace al
+// detalle según el tipo.
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -283,10 +285,59 @@ describe("Comprobantes", () => {
     ).toBeNull();
   });
 
-  it("la bandeja muestra los cinco tipos con su tipo bajo el número", async () => {
+  it("la liquidación muestra su tipo, su proveedor rotulado y su importe, enlaza a su detalle y ofrece su RIDE autorizada", async () => {
+    const settlement = (overrides: Record<string, unknown>) =>
+      item({
+        documentType: "03",
+        buyer: { name: "María Quishpe", identification: "0102030405" },
+        total: "106.00",
+        ...overrides,
+      });
+    render({
+      "GET /api/v1/documents": paged([
+        settlement({ id: "lc-1", number: "001-001-000000003" }),
+        settlement({
+          id: "lc-2",
+          number: "001-001-000000008",
+          state: "SIGNED",
+          documents: { ride: "NOT_APPLICABLE", authorizedXml: false, signedXml: true },
+        }),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Comprobantes emitidos" });
+    await within(table).findByText("001-001-000000003");
+    const row = (number: string) =>
+      within(table)
+        .getAllByRole("row")
+        .find((candidate) => within(candidate).queryByText(number))!;
+    const authorized = row("001-001-000000003");
+    expect(within(authorized).getByText("Liquidación de compra")).toBeDefined();
+    expect(within(authorized).getByText("María Quishpe")).toBeDefined();
+    // La contraparte es el proveedor, nunca un comprador.
+    expect(within(authorized).getByText("Proveedor · 0102030405")).toBeDefined();
+    expect(within(authorized).queryByText(/Comprador/)).toBeNull();
+    expect(within(authorized).getByText("USD 106,00")).toBeDefined();
+    expect(within(authorized).getByRole("link").getAttribute("href")).toBe(
+      "/liquidaciones-compra/lc-1",
+    );
+    expect(
+      within(authorized).getByRole("button", { name: "Descargar el RIDE de 001-001-000000003" }),
+    ).toBeDefined();
+    // Firmada sin autorizar: no hay RIDE que descargar.
+    const signed = row("001-001-000000008");
+    expect(within(signed).getByRole("link").getAttribute("href")).toBe(
+      "/liquidaciones-compra/lc-2",
+    );
+    expect(
+      within(signed).queryByRole("button", { name: "Descargar el RIDE de 001-001-000000008" }),
+    ).toBeNull();
+  });
+
+  it("la bandeja muestra los seis tipos con su tipo bajo el número", async () => {
     render({
       "GET /api/v1/documents": paged([
         item(),
+        item({ id: "lc-1", documentType: "03", number: "001-001-000000006" }),
         item({ id: "nc-1", documentType: "04", number: "001-001-000000002" }),
         item({ id: "nd-1", documentType: "05", number: "001-001-000000003" }),
         item({ id: "ret-1", documentType: "07", number: "001-001-000000004" }),
@@ -313,6 +364,7 @@ describe("Comprobantes", () => {
     expect(typeOf("001-001-000000003").getByText("Nota de débito")).toBeDefined();
     expect(typeOf("001-001-000000004").getByText("Comprobante de retención")).toBeDefined();
     expect(typeOf("001-001-000000005").getByText("Guía de remisión")).toBeDefined();
+    expect(typeOf("001-001-000000006").getByText("Liquidación de compra")).toBeDefined();
   });
 
   it("el filtro de tipo vive en la URL y llega a la API", async () => {
@@ -328,11 +380,16 @@ describe("Comprobantes", () => {
     expect([...select.options].map((option) => option.textContent)).toEqual([
       "Todos",
       "Factura",
+      "Liquidación de compra",
       "Nota de crédito",
       "Nota de débito",
       "Guía de remisión",
       "Comprobante de retención",
     ]);
+    fireEvent.change(select, { target: { value: "03" } });
+    expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=03", {
+      scroll: false,
+    });
     fireEvent.change(select, { target: { value: "06" } });
     expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=06", {
       scroll: false,
