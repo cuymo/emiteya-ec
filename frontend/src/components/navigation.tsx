@@ -16,6 +16,7 @@ import {
   ListOrdered,
   Package,
   ReceiptText,
+  ShoppingBasket,
   Store,
   Truck,
   Users,
@@ -38,6 +39,13 @@ const GROUPS: Group[] = [
     placement: "main",
     destinations: [
       { href: "/facturas", label: "Facturas", icon: FileText, permission: "invoices.read" },
+      // add-purchase-settlements, design D24.
+      {
+        href: "/liquidaciones-compra",
+        label: "Liquidaciones de compra",
+        icon: ShoppingBasket,
+        permission: "purchaseSettlements.read",
+      },
       // add-credit-notes, design D19.
       {
         href: "/notas-credito",
