@@ -226,7 +226,7 @@ El paquete SHALL contener siempre los comprobantes de Pruebas y de Producción q
 - **THEN** el paquete contiene solo la carpeta de Pruebas y el manifiesto declara cero comprobantes de Producción
 
 ### Requirement: Generación asíncrona de la exportación
-La exportación SHALL generarse fuera de la solicitud que la pide: queda en cola (`QUEUED`), se genera (`GENERATING`) y termina lista (`READY`) o fallida (`FAILED`) con un código seguro; un paquete listo caduca (`EXPIRED`). El administrador consulta su estado y su progreso, y una generación interrumpida por un reinicio se retoma sin duplicarse.
+La exportación SHALL generarse fuera de la solicitud que la pide: queda en cola (`QUEUED`), se genera (`GENERATING`) y termina lista (`READY`) o fallida (`FAILED`) con un código seguro. Un paquete listo caduca (`EXPIRED`) solo por vencimiento o reemplazo. El administrador consulta su estado y su progreso por fase, y una generación interrumpida por un reinicio se retoma sin duplicarse.
 
 #### Scenario: Solicitud aceptada
 - **WHEN** un administrador solicita una exportación
@@ -234,7 +234,7 @@ La exportación SHALL generarse fuera de la solicitud que la pide: queda en cola
 
 #### Scenario: Progreso visible
 - **WHEN** una exportación se está generando
-- **THEN** el administrador ve su fase y cuántos comprobantes lleva de su total
+- **THEN** el administrador ve su fase y, cuando se conoce, cuántos comprobantes lleva de su total, sin un porcentaje estimado
 
 #### Scenario: Reinicio durante la generación
 - **WHEN** el sistema se reinicia mientras genera una exportación
@@ -256,7 +256,7 @@ El sistema SHALL permitir una sola generación activa, en cola o generándose, p
 - **THEN** el sistema crea una sola generación y rechaza la otra solicitud
 
 ### Requirement: Un paquete vigente por empresa y su caducidad
-Cada empresa SHALL tener a lo sumo un paquete listo vigente. Al generar de nuevo con uno vigente, el anterior sigue descargable hasta que el nuevo queda listo, y entonces caduca y se borra. Un paquete listo caduca a las 24 horas; al caducar se borra el paquete, nunca los datos ni los artefactos de la empresa.
+Cada empresa SHALL tener a lo sumo un paquete listo vigente. Al generar de nuevo con uno vigente, el anterior sigue descargable hasta que el nuevo queda listo, y entonces caduca por reemplazo. Un paquete caduca 24 horas después de quedar listo, no de solicitarse; al caducar se borra el paquete, nunca los datos ni los artefactos de la empresa.
 
 #### Scenario: Generar de nuevo
 - **WHEN** un administrador genera de nuevo con un paquete listo vigente
@@ -266,9 +266,28 @@ Cada empresa SHALL tener a lo sumo un paquete listo vigente. Al generar de nuevo
 - **WHEN** la nueva generación falla
 - **THEN** el paquete anterior sigue listo y vigente hasta su caducidad
 
+#### Scenario: Caducidad desde que quedó listo
+- **WHEN** una exportación esperó dos horas en cola antes de quedar lista
+- **THEN** su paquete caduca 24 horas después de quedar listo
+
 #### Scenario: Paquete caducado
 - **WHEN** un administrador intenta descargar un paquete caducado
 - **THEN** el sistema responde que el paquete caducó, no entrega nada y ofrece generar uno nuevo
+
+### Requirement: Paquete listo perdido o alterado
+Si el archivo de un paquete listo falta, no tiene su tamaño o no coincide con su SHA-256 antes de caducar, el sistema SHALL dejar la exportación fallida con un código seguro de paquete faltante o de integridad, nunca caducada, y no entregar el archivo. El error no expone rutas internas. La caducidad queda solo para el vencimiento y el reemplazo por un paquete nuevo.
+
+#### Scenario: Archivo perdido antes de caducar
+- **WHEN** el archivo de un paquete listo desaparece antes de su caducidad
+- **THEN** la exportación queda fallida con el código de paquete faltante y ofrece generar de nuevo
+
+#### Scenario: Archivo alterado antes de caducar
+- **WHEN** el archivo de un paquete listo no coincide con su tamaño o su SHA-256
+- **THEN** la exportación queda fallida con el código de integridad y el archivo nunca se entrega
+
+#### Scenario: Paquete vencido
+- **WHEN** un paquete listo llega a su caducidad con su archivo intacto
+- **THEN** la exportación queda caducada, no fallida
 
 ### Requirement: Descarga autenticada del paquete
 El paquete SHALL descargarse solo por la ruta autenticada de la aplicación, nunca por un enlace público ni firmado. Antes del primer byte, el sistema comprueba la sesión, el permiso, la empresa, que el paquete está listo y vigente, y su tamaño y su SHA-256 completos; si algo no coincide, no entrega nada. Lo entrega como adjunto, con un nombre ASCII y sin caché.
@@ -279,7 +298,7 @@ El paquete SHALL descargarse solo por la ruta autenticada de la aplicación, nun
 
 #### Scenario: Paquete alterado en el servidor
 - **WHEN** el paquete guardado no coincide con su tamaño o su SHA-256
-- **THEN** el sistema no envía ningún byte, responde con un error de integridad y registra el problema
+- **THEN** el sistema no envía ningún byte, responde con un error de integridad, deja la exportación fallida y registra el problema
 
 #### Scenario: Paquete todavía en generación
 - **WHEN** un administrador intenta descargar una exportación en cola o generándose

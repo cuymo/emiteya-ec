@@ -17,6 +17,10 @@ El sistema SHALL registrar `data_export.requested` cuando un administrador solic
 - **WHEN** una exportación falla por integridad, por falta de espacio o por cualquier otra causa
 - **THEN** existe un evento `data_export.failed` con solo el código de la falla, sin rutas ni detalles internos
 
+#### Scenario: Paquete listo perdido o alterado
+- **WHEN** un paquete listo queda fallido porque su archivo falta o no coincide antes de caducar
+- **THEN** existe un evento `data_export.failed` con solo el código, sin rutas
+
 #### Scenario: Solicitud rechazada
 - **WHEN** una solicitud se rechaza por permisos, por datos no permitidos o porque ya hay una generación en curso
 - **THEN** no se registra ningún evento de portabilidad

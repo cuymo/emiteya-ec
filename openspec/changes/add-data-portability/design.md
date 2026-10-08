@@ -105,7 +105,11 @@ datos-AAAAMMDD-HHMMSS.zip
 - **Validación de cada ruta antes de escribirla:**
   - debe cumplir la gramática `^[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)*$`;
   - sin `..`, sin `/` inicial, sin barra invertida y con un máximo de 200 caracteres.
-- **Unicidad:** la garantizan las claves (ambiente, tipo, número), que la base ya hace únicas. Una prueba la comprueba con dos ambientes que comparten números.
+- **Unicidad:** la garantizan las claves (ambiente, tipo, número), que la base ya hace únicas, y el escritor la comprueba sin memoria creciente:
+  - cada carpeta de comprobante debe ser estrictamente mayor que la anterior en el orden de las entradas;
+  - cada archivo de una carpeta debe ser único dentro de ella;
+  - una ruta repetida falla la generación, nunca se acepta en silencio.
+  - Pruebas: dos ambientes que comparten números, una ruta repetida, `/` y `\`, `..`, una ruta absoluta y los caracteres de control o de salto de línea, que la gramática hace imposibles.
 - **Orden de las entradas, determinista:** manifiesto, `LEEME.txt`, `data/`, `documents/` por ambiente, tipo y número, `assets/` y, al final, `SHA256SUMS`.
 - **Nombre del paquete:** sale de `generatedAt` en hora de Ecuador. Nunca lleva el RUC: el de una persona natural contiene su cédula.
 
@@ -127,7 +131,7 @@ datos-AAAAMMDD-HHMMSS.zip
   - Nunca lleva el inventario de archivos.
 - **`SHA256SUMS`:**
   - una línea `<sha256 en minúsculas><dos espacios><ruta>\n` por cada entrada interior salvo él mismo, incluidos el manifiesto y `LEEME.txt`;
-  - en el orden de las entradas, en UTF-8 con `\n`;
+  - en el orden determinista de las entradas, con rutas relativas generadas por el servidor, en UTF-8 con `\n`;
   - compatible con `sha256sum -c` y `shasum -a 256 -c`;
   - se escribe por streaming a un temporal mientras se agregan las entradas.
 - **SHA-256 del paquete:** se calcula mientras se escribe el ZIP y se guarda con su tamaño en el registro de la exportación (D10), en la pantalla y en `data_export.completed`.
@@ -186,6 +190,12 @@ datos-AAAAMMDD-HHMMSS.zip
 - **Cómo se garantiza:**
   - las fuentes de D1 no exponen esas columnas;
   - una prueba de contenido siembra una firma, contraseñas, sesiones y borradores con marcadores conocidos, genera el paquete y busca esos marcadores, en claro y en base64, en cada entrada descomprimida: ninguno aparece.
+- **Dos capas de prueba:**
+  - **A, la proyección:** una prueba enumera las columnas de cada fuente de portabilidad y comprueba que no incluyen ninguna columna de `signing_certificate_secret`, `account`, `session`, `verification` ni `invitation`, ni `user.password`, IP o user agent.
+  - **B, el paquete completo:**
+    - siembra marcadores en el archivo y la contraseña de una firma de prueba, en los campos cifrados y en la clave envuelta, en un hash de contraseña, una sesión, una verificación y una invitación, en un análogo del secreto de autenticación y en una IP y un user agent;
+    - busca cada marcador, en claro y en base64 cuando tiene sentido, en cada entrada descomprimida del paquete.
+  - Nunca se intenta descifrar un secreto para probar su ausencia.
 - **La exclusión de la firma** se justifica en la spec `signing-certificate` ("no devolverlos nunca, a ningún rol y por ninguna vía") y en el ADR 0011.
 
 ### D7. Respuestas originales del SRI
@@ -200,9 +210,10 @@ datos-AAAAMMDD-HHMMSS.zip
 
 - `reports/infrastructure/xlsx/` pasa a `platform/xlsx/` (escritor, celdas, ZIP interno y sus pruebas) sin cambiar su comportamiento: la prueba de bytes deterministas existente debe seguir dando los mismos bytes. `reports` lo importa desde ahí.
 - `readOnlySnapshot` pasa a `platform/db/`.
-- **Hojas divididas:** cuando un conjunto supera 1 048 575 filas de datos, sigue en hojas sucesivas.
-  - Los nombres son `<Hoja>`, `<Hoja> (2)`, `<Hoja> (3)`…, con el mismo orden total y sin perder ni repetir filas.
+- **Hojas divididas:** una hoja admite 1 048 576 filas: el encabezado más 1 048 575 de datos. Cuando un conjunto las supera, sigue en hojas sucesivas.
+  - Los nombres son `<Hoja>`, `<Hoja> (2)`, `<Hoja> (3)`…, con el encabezado repetido en cada una, el mismo orden total y sin perder ni repetir filas en el límite.
   - El manifiesto nombra las hojas de cada conjunto.
+  - Pruebas con el límite real en la escritura y con uno reducido inyectado: máximo menos uno, máximo y máximo más uno.
 - **Libros:** cada libro se escribe como archivo temporal y entra en el paquete sin recomprimir (D9).
 - **Límite del ZIP interno:** un libro que superara los 4 GiB sin comprimir falla con `DATA_EXPORT_LIMIT`. Con el volumen de Q-26, el mayor libro queda muy por debajo, y el benchmark lo mide.
 - **Sin extensiones:** solo los tipos de celda existentes (texto, importe, decimal, fecha y momento).
@@ -238,10 +249,14 @@ datos-AAAAMMDD-HHMMSS.zip
 - **Estados explícitos** con un `CHECK`, nunca deducidos de nulos:
 
 ```
-QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL, SUPERSEDED o FILE_MISSING)
-                │
-                └──────► FAILED   (con código)
+QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL o REPLACED)
+                │            │
+                │            └──► FAILED   (PACKAGE_MISSING o PACKAGE_INTEGRITY)
+                └──────────────► FAILED   (con su código)
 ```
+
+- `EXPIRED` es solo la indisponibilidad intencional: el vencimiento (`TTL`) o el reemplazo por un paquete nuevo (`REPLACED`).
+- Un `READY` cuyo archivo falta, no tiene su tamaño o no coincide con su SHA-256 antes de caducar pasa a `FAILED`, con `DATA_EXPORT_PACKAGE_MISSING` o `DATA_EXPORT_PACKAGE_INTEGRITY`, registra `data_export.failed` y nunca se entrega. El error no expone rutas.
 
 - **`CHECK` por estado:**
   - `READY` exige `snapshot_at`, `generated_at`, `expires_at`, tamaño, SHA-256 y archivo;
@@ -250,31 +265,45 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL, SUPERSEDED
 - **Índices únicos parciales:**
   - una generación activa por empresa (`status IN ('QUEUED','GENERATING')`);
   - un `READY` por empresa.
-- **Solicitud** (`POST`): en una transacción, inserta la fila `QUEUED`, encola el job `portability.export` (clave `portability.export:<exportId>`, carga `{exportId}`) y registra `data_export.requested`.
+- **Solicitud** (`POST`): en una sola transacción, inserta la fila `QUEUED`, encola el job `portability.export` (clave `portability.export:<exportId>`, carga `{exportId}`) y registra `data_export.requested`. Nunca queda una fila sin job, un job sin fila ni un evento sin solicitud: si cualquiera falla, se revierte todo.
   - El índice de la generación activa convierte una solicitud repetida o simultánea en `409 DATA_EXPORT_IN_PROGRESS`, sin segundo efecto. No hace falta `Idempotency-Key`.
 - **Runner propio** del prefijo `portability.`, con `DATA_EXPORT_MAX_CONCURRENT` lazos. No lo pausa el interruptor de la transmisión. Las exportaciones de otras empresas esperan en la cola durable.
 - **Al tomar el job:** la fila pasa a `GENERATING` con el intento del job. Los fallos:
   - reintentables (worker caído, *lease* perdido, error transitorio de la base): vuelven a generar desde el principio, con `maxAttempts` de 3;
   - deterministas (integridad, artefacto faltante, espacio insuficiente, límite del formato, plazo de la fase 1): detienen el job y dejan la fila `FAILED` con su código.
-- **Códigos de falla:** `DATA_EXPORT_ARTIFACT_INTEGRITY`, `DATA_EXPORT_ARTIFACT_MISSING`, `DATA_EXPORT_INSUFFICIENT_SPACE`, `DATA_EXPORT_SNAPSHOT_TIMEOUT`, `DATA_EXPORT_LIMIT` y `DATA_EXPORT_FAILED` (intentos agotados).
+- **Códigos de falla:**
+  - de la generación: `DATA_EXPORT_ARTIFACT_INTEGRITY`, `DATA_EXPORT_ARTIFACT_MISSING`, `DATA_EXPORT_INSUFFICIENT_SPACE` (también ante un `ENOSPC` inesperado), `DATA_EXPORT_SNAPSHOT_TIMEOUT`, `DATA_EXPORT_LIMIT` y `DATA_EXPORT_FAILED` (intentos agotados);
+  - del paquete listo: `DATA_EXPORT_PACKAGE_MISSING` y `DATA_EXPORT_PACKAGE_INTEGRITY`.
 
 ### D11. Renovación del *lease*
 
-- **El `JobStore` gana `renew(db, job, { leaseMs, now })`:**
-  - `UPDATE job SET lease_expires_at = now + leaseMs WHERE id = $id AND status = 'LEASED' AND lease_owner = $owner AND lease_expires_at > now`;
-  - sin fila, lanza `LeaseLostError`.
-  - Es un método nuevo: no cambia `claim`, `complete`, `reschedule`, `fail` ni `stop`, y los jobs del SRI y del RIDE no lo usan.
-  - La evaluación del readiness lo considera seguro. Si el apply encuentra lo contrario, se detiene y lo reporta antes de seguir.
+- **Fencing:** el `attempt_count` del job, que `claim` incrementa en la misma sentencia que da el *lease*, es el token monótono de cada arriendo. La identidad del arriendo es (`id`, `lease_owner`, `attempt_count`); el dueño solo no basta.
+- **El `JobStore` gana dos métodos**, sin cambiar `claim`, `complete`, `reschedule`, `fail` ni `stop`, que los jobs del SRI y del RIDE siguen usando igual:
+  - `renew(db, job, { leaseMs, now })`: `UPDATE job SET lease_expires_at = now + leaseMs WHERE id = $id AND status = 'LEASED' AND lease_owner = $owner AND attempt_count = $attempt AND lease_expires_at > now`. Sin fila, lanza `LeaseLostError`;
+  - `fence(db, job, now)`: la misma condición, que además bloquea la fila del job dentro de la transacción en curso. Sin fila, lanza `LeaseLostError`. Con la fila bloqueada, `claim` (`SKIP LOCKED`) no puede tomarla antes del commit.
+  - Si el apply encuentra que esto no es seguro para la cola genérica, se detiene y lo reporta antes de seguir.
 - **El handler de la portabilidad:**
   - toma un *lease* base de 60 s (hipótesis del benchmark) y lo renueva cada 20 s con un heartbeat;
   - si una renovación falla, aborta la generación con su `AbortSignal`, borra su parcial y no confirma nada.
-- **Publicación:** marcar `READY` ocurre en la misma transacción que `complete` del job, que falla sin el *lease*. Un worker que lo perdió nunca publica.
+- **Completar, en este orden:**
+  1. el ZIP cerrado, con su SHA-256 y su tamaño conocidos;
+  2. el `fsync` del archivo, el renombrado atómico dentro del mismo sistema de archivos a `<exportId>-<intento>.zip` con `0400`, y el `fsync` del directorio;
+  3. una sola transacción que:
+     - hace `fence`;
+     - comprueba que `data_export` sigue `GENERATING` con ese intento;
+     - pasa el `READY` anterior de la empresa a `EXPIRED` (`REPLACED`);
+     - pasa la exportación a `READY` con su tamaño, su SHA-256, `generated_at` y `expires_at`;
+     - registra `data_export.completed`;
+     - hace `complete` del job.
+  - Si esa transacción falla, nada queda `READY` y no hay evento `completed`. El archivo publicado queda huérfano y lo borra el barrido (D14).
+- **Un worker obsoleto nunca publica:** si A pierde el *lease* (pausado, sin heartbeat) y B toma el job con otro `attempt_count`, la transacción final de A falla en `fence`, porque cambiaron el dueño o el intento. A no marca `READY`, no completa el job, no registra `completed` ni reemplaza el `READY` vigente.
 - **Archivos por intento:** el paquete se escribe como `<exportId>-<intento>.partial` y se publica como `<exportId>-<intento>.zip`. Dos intentos nunca escriben el mismo archivo, y el de un worker perdido queda huérfano para el barrido (D14).
 - **Pruebas:**
   - una generación más larga que el *lease* base que termina gracias a la renovación;
   - la renovación rechazada tras perder el *lease*;
   - un worker matado a mitad de la generación y la recuperación por otro, con un solo `READY` y sin parciales;
   - dos runners compitiendo por el mismo job, con una sola generación publicada;
+  - el caso obligatorio: A toma el job, queda pausado, su *lease* vence, B lo toma, genera y completa, y A vuelve. A no puede publicar ni cambiar el estado final, y su intento se limpia;
   - los jobs existentes, intactos.
 
 ### D12. Consistencia en dos fases
@@ -319,9 +348,11 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL, SUPERSEDED
   - el trabajo se borra siempre.
 - **Barrido** al arrancar, antes de iniciar el runner, y cada `DATA_EXPORT_SWEEP_INTERVAL_SECONDS`:
   1. un `READY` vencido pasa a `EXPIRED` (`TTL`) y se borra su archivo;
-  2. un `READY` cuyo archivo no existe o no tiene su tamaño pasa a `EXPIRED` (`FILE_MISSING`), con métrica y log;
-  3. se borran los archivos y directorios de trabajo que no pertenecen a un `READY` ni a un `GENERATING` con el *lease* vigente;
-  4. un `EXPIRED` cuyo archivo sigue existiendo pierde el archivo.
+  2. un `READY` todavía vigente cuyo archivo no existe o no tiene su tamaño pasa a `FAILED` (`DATA_EXPORT_PACKAGE_MISSING` o `DATA_EXPORT_PACKAGE_INTEGRITY`), con `data_export.failed`, métrica y log. Si ya venció, pasa a `EXPIRED` (`TTL`);
+  3. se borran los archivos y directorios de trabajo que no pertenecen a un `READY` ni a un `GENERATING` con el *lease* vigente: los parciales, los intentos obsoletos y los publicados que no llegaron a `READY`;
+  4. un `EXPIRED` o `FAILED` cuyo archivo sigue existiendo pierde el archivo.
+  - El barrido comprueba la existencia y el tamaño. El SHA-256 completo lo comprueba la descarga (D16), porque es caro.
+  - Si una plataforma no permite el `fsync` del directorio, la recuperación es esta misma reconciliación: un renombrado perdido deja un `.partial` o un archivo sin `READY`, que se borran, y la exportación vuelve a generarse o queda fallida.
 - **Seguridad del barrido:**
   - solo borra hijos directos del directorio, o de `work/`, cuyo nombre es `<uuid>-<intento>.partial`, `<uuid>-<intento>.zip` o `<uuid>-<intento>`;
   - nunca sigue enlaces y nunca toca los artefactos fiscales, que viven en PostgreSQL.
@@ -329,9 +360,9 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL, SUPERSEDED
 
 ### D15. Caducidad y paquete vigente
 
-- **Caducidad:** `DATA_EXPORT_TTL_HOURS` = 24 (rango de 1 a 168), y `expires_at = generated_at + TTL`.
+- **Caducidad:** `DATA_EXPORT_TTL_HOURS` = 24 (rango de 1 a 168), y `expires_at = generated_at + TTL`, donde `generated_at` es el momento en que pasó a `READY`. Una exportación que esperó dos horas en cola no pierde esas dos horas de descarga.
 - **Generar de nuevo** se permite con un `READY` vigente si no hay una generación activa.
-  - Cuando el nuevo queda `READY`, en la misma transacción el anterior pasa a `EXPIRED` (`SUPERSEDED`); su archivo se borra después del commit, con el barrido como respaldo.
+  - Cuando el nuevo queda `READY`, en la misma transacción el anterior pasa a `EXPIRED` (`REPLACED`); su archivo se borra después del commit, con el barrido como respaldo.
   - Si el nuevo falla, el anterior sigue vigente.
 - **Disco acotado por empresa:** como máximo un paquete `READY` y una generación con su parcial.
 
@@ -346,7 +377,9 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL, SUPERSEDED
      - `EXPIRED`: `410 DATA_EXPORT_EXPIRED`;
      - `READY` con `expires_at <= now`: `410`.
 - **Integridad, antes de cualquier cabecera:** abre el archivo una vez y comprueba su tamaño y su **SHA-256 completo** sobre ese mismo descriptor.
-  - Si no coinciden: `500 DATA_EXPORT_PACKAGE_INTEGRITY` sin cuerpo binario, métrica, log y la fila `EXPIRED` (`FILE_MISSING`).
+  - Si el archivo falta: la fila pasa a `FAILED` (`DATA_EXPORT_PACKAGE_MISSING`) y responde `500` con ese código.
+  - Si no coinciden: la fila pasa a `FAILED` (`DATA_EXPORT_PACKAGE_INTEGRITY`) y responde `500` con ese código, sin cuerpo binario.
+  - En ambos casos hay métrica, log y `data_export.failed`, nunca una ruta en la respuesta.
   - El costo de esta verificación lo mide el benchmark.
 - **Auditoría:** después de la verificación se registra `data_export.download_started`. Si falla, responde `500` y no entrega nada.
 - **Entrega:**
@@ -356,7 +389,10 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL, SUPERSEDED
   - el cuerpo sale por streaming desde el mismo descriptor, con contrapresión.
 - **Lo que no se ofrece:** `HEAD` responde `405`, no hay rangos ni enlaces firmados o públicos.
 - **Lo que no se afirma:** un hash calculado durante el envío no evita servir datos corruptos, así que la garantía es la verificación previa. El residuo (cambiar el archivo `0400` entre la verificación y el envío) exige acceso al sistema de archivos del servidor y queda documentado.
-- **Frontend:** descarga navegando a la ruta (un enlace con `download`), nunca con `Blob`. El navegador escribe a disco a través de la reescritura `/api/*`.
+- **Frontend:** descarga navegando a la ruta (un enlace con `download`), nunca con `fetch(...).blob()`. El navegador escribe a disco a través de la reescritura `/api/*`.
+- **Gate de verificación del streaming:** la revisión de la interfaz y el benchmark descargan un paquete de varios GB a través de la reescritura `/api/*` y miden la memoria residente del backend y del proceso de Next.
+  - Si Next almacena el ZIP, se corrige el enrutado antes de cerrar el cambio: una ruta del mismo origen que preserve el streaming y la sesión, nunca una URL pública sin autenticación.
+  - Un diseño que solo funciona con archivos pequeños no se acepta.
 
 ### D17. API y contratos
 
@@ -456,7 +492,7 @@ Todos son defensas de recursos del proyecto, hipótesis hasta medirlas con `benc
   - la explicación como texto con dos listas, incluido y excluido. No es una condición de la instalación, así que no va en `NoticeStrip`;
   - "Generar exportación" con `AsyncButton`;
   - un `ConfirmDialog` al generar de nuevo con un paquete vigente, que explica que el anterior caducará cuando el nuevo esté listo;
-  - el estado con `StatusBadge` y el progreso con la fase y "N de M comprobantes", consultado cada 2 s mientras está en cola o generándose;
+  - el estado con `StatusBadge` (En cola, Generando, Lista, Fallida, Expirada) y el progreso por fase, con "N de M comprobantes" solo cuando se conoce el total y nunca un porcentaje estimado, consultado cada 2 s mientras está en cola o generándose;
   - el SHA-256 en monoespaciado, partido y con copia;
   - la descarga como enlace con el aspecto de un botón;
   - la historia en `AppDataTable` paginada, con tarjetas por debajo de 768 px.
@@ -503,9 +539,9 @@ Todos son defensas de recursos del proyecto, hipótesis hasta medirlas con `benc
 
 - [La fase 1 dura demasiado con el volumen real] → la mide el benchmark, y D12 prevé `/opsx:update` en lugar de degradar la consistencia.
 - [La verificación completa antes de cada descarga cuesta segundos con varios GB] → el benchmark la mide; solo el administrador descarga, con un paquete vigente por empresa.
-- [La reescritura `/api/*` de Next.js podría almacenar la descarga] → la revisión de la interfaz y el benchmark descargan a través de ella. Un despliegue con proxy inverso puede enrutar `/api` al backend directamente.
+- [La reescritura `/api/*` de Next.js podría almacenar la descarga] → es un gate de verificación (D16): se mide la memoria de Next con un paquete de varios GB y se corrige el enrutado si almacena.
 - [Varias instancias de API sin un directorio compartido] → fuera de alcance: el MVP tiene una instancia (`deployment.md`). Con varias, el directorio debe compartirse o la descarga fijarse a la instancia que generó.
-- [El directorio por defecto en `os.tmpdir()` no sobrevive a un reinicio] → `deployment.md` exige un volumen persistente en producción. Un paquete perdido pasa a `EXPIRED` (`FILE_MISSING`) y se genera de nuevo.
+- [El directorio por defecto en `os.tmpdir()` no sobrevive a un reinicio] → `deployment.md` exige un volumen persistente en producción. Un paquete perdido antes de caducar pasa a `FAILED` (`DATA_EXPORT_PACKAGE_MISSING`) y se genera de nuevo.
 - [Un artefacto alterado bloquea toda portabilidad] → es deliberado: fallar cerrado. El incidente se trata con el respaldo operativo, y el log identifica el comprobante.
 - [El directorio central de cientos de miles de entradas] → criterio del ADR 0024: memoria acotada, volcando a un temporal.
 - [El snapshot sale como valor JSON, no como bytes originales] → `jsonb` no conserva bytes; la autoridad fiscal en bytes son los XML.
