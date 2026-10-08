@@ -35,7 +35,7 @@ export function Amount({ value }: { value: string | null }) {
       <span className="sr-only">Sin importe</span>
     </span>
   ) : (
-    <span className="block text-right tabular-nums">{formatUsd(value)}</span>
+    <span className="block text-right whitespace-nowrap tabular-nums">{formatUsd(value)}</span>
   );
 }
 
@@ -74,7 +74,7 @@ const issuedDocuments: Presentation<IssuedDocumentRow> = {
       header: "Número",
       cell: ({ row }) => (
         <span className="flex flex-col">
-          <span className="font-medium tabular-nums">{row.original.number}</span>
+          <span className="font-medium whitespace-nowrap tabular-nums">{row.original.number}</span>
           <span className="text-xs text-foreground-muted">
             {DOCUMENT_TYPE_LABELS[row.original.documentType]}
           </span>
@@ -118,7 +118,7 @@ const issuedDocuments: Presentation<IssuedDocumentRow> = {
   card: (row) => (
     <div className="flex flex-col gap-1">
       <span className="flex flex-col">
-        <span className="font-medium tabular-nums">{row.number}</span>
+        <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
           {DOCUMENT_TYPE_LABELS[row.documentType]} · {formatIssueDate(row.issueDate)} ·{" "}
           {environmentLabel(row.environment)}
@@ -150,7 +150,9 @@ const invoices: Presentation<InvoiceRow> = {
     {
       id: "number",
       header: "Número",
-      cell: ({ row }) => <span className="font-medium tabular-nums">{row.original.number}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium whitespace-nowrap tabular-nums">{row.original.number}</span>
+      ),
     },
     {
       id: "date",
@@ -186,7 +188,7 @@ const invoices: Presentation<InvoiceRow> = {
   card: (row) => (
     <div className="flex flex-col gap-1">
       <span className="flex flex-col">
-        <span className="font-medium tabular-nums">{row.number}</span>
+        <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
           {formatIssueDate(row.issueDate)} · {environmentLabel(row.environment)}
         </span>
@@ -221,7 +223,9 @@ const withholdings: Presentation<WithholdingRow> = {
     {
       id: "number",
       header: "Número",
-      cell: ({ row }) => <span className="font-medium tabular-nums">{row.original.number}</span>,
+      cell: ({ row }) => (
+        <span className="font-medium whitespace-nowrap tabular-nums">{row.original.number}</span>
+      ),
     },
     {
       id: "date",
@@ -277,7 +281,7 @@ const withholdings: Presentation<WithholdingRow> = {
   card: (row) => (
     <div className="flex flex-col gap-1">
       <span className="flex flex-col">
-        <span className="font-medium tabular-nums">{row.number}</span>
+        <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
           {formatIssueDate(row.issueDate)} · Período {formatPeriod(row.fiscalPeriod)} ·{" "}
           {environmentLabel(row.environment)}

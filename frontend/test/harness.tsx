@@ -40,16 +40,19 @@ export function mockApi(routes: Record<string, Route>) {
 }
 
 export function renderApp(ui: ReactNode) {
-  return render(
+  const wrap = (node: ReactNode) => (
     <ThemeProvider>
       <QueryProvider>
         <TooltipProvider delayDuration={0}>
-          {ui}
+          {node}
           <SemanticToaster />
         </TooltipProvider>
       </QueryProvider>
-    </ThemeProvider>,
+    </ThemeProvider>
   );
+  const view = render(wrap(ui));
+  /** Vuelve a dibujar con los mismos proveedores y la misma caché, como tras navegar. */
+  return Object.assign(view, { rerenderApp: (next: ReactNode) => view.rerender(wrap(next)) });
 }
 
 export const ADMIN_ME = { name: "Ana Admin", email: "ana@empresa.ec", role: "ADMIN" } as const;

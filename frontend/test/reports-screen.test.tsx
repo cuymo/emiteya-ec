@@ -132,6 +132,64 @@ describe("Reportes", () => {
     expect((await screen.findAllByText("Todavía no hay registros")).length).toBeGreaterThan(0);
   });
 
+  it("al cambiar de reporte nunca muestra las filas del anterior con las columnas nuevas", async () => {
+    navigation.search = new URLSearchParams("reporte=retenciones");
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => (release = resolve));
+    mockApi({
+      "GET /api/v1/me": () => ({ status: 200, body: { data: OPERATOR_ME } }),
+      "GET /api/v1/establishments": () => ({ status: 200, body: { data: [] } }),
+      "GET /api/v1/reports/withholdings": paged([
+        {
+          documentId: "ret-1",
+          supportPosition: 1,
+          position: 1,
+          issueDate: "2026-10-03",
+          number: "001-001-000000009",
+          supplier: { identification: "1792345678001", name: "SERVICIOS ANDINOS S.A." },
+          fiscalPeriod: "09/2026",
+          tax: "1",
+          taxLabel: "RENTA",
+          code: "303",
+          base: "100",
+          percentage: "10",
+          amount: "10",
+          state: "AUTHORIZED",
+          environment: "TEST",
+        },
+      ]),
+    });
+    const fetchMock = vi.mocked(fetch);
+    const original = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (input, init) => {
+      if (String(input).startsWith("/api/v1/reports/inventory-balances")) {
+        await pending;
+        return new Response(
+          JSON.stringify({
+            data: [{ productId: "p-1", code: "ARE-01", name: "Arena", balance: "-3.5" }],
+            meta: { page: 1, pageSize: 25, total: 1, environment: null },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return original(input, init);
+    });
+    const screenTree = () => (
+      <SessionGate fallback={<p>cargando</p>}>
+        <ReportsScreen />
+      </SessionGate>
+    );
+    const view = renderApp(screenTree());
+    const withholdings = await screen.findByRole("table", { name: "Retenciones" });
+    await within(withholdings).findByText("001-001-000000009");
+    navigation.search = new URLSearchParams("reporte=inventario");
+    view.rerenderApp(screenTree());
+    const balances = await screen.findByRole("table", { name: "Existencias" });
+    expect(within(balances).queryByText("001-001-000000009")).toBeNull();
+    release();
+    expect((await within(balances).findAllByText("Saldo negativo")).length).toBeGreaterThan(0);
+  });
+
   it("ofrece exactamente los cinco reportes, con las dos vistas del inventario", async () => {
     navigation.search = new URLSearchParams("reporte=inventario");
     render({ "GET /api/v1/reports/inventory-balances": paged([], null) });

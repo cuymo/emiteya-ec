@@ -3,7 +3,7 @@
 // la exportación (`409` y `503`) los explica la pantalla junto al botón.
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   REPORT_CONTRACTS,
   reportListMetaSchema,
@@ -15,6 +15,9 @@ import { useMutationFeedback } from "@/components/feedback";
 import { apiFetchFile, apiFetchPage } from "@/lib/api";
 
 export const REPORTS_KEY = ["reports"] as const;
+
+/** Una página de un reporte: sus filas, en la forma de su contrato, y su total. */
+export type ReportPage = { data: Record<string, unknown>[]; meta: ReportListMeta };
 
 /** Filtros del reporte como los recibe la API; los vacíos no se envían. */
 export type ReportFilters = Readonly<Record<string, string | undefined>>;
@@ -35,16 +38,19 @@ export function useReport(
   page: { page: number; pageSize: number },
   enabled: boolean,
 ) {
-  return useQuery({
+  return useQuery<ReportPage>({
     queryKey: [...REPORTS_KEY, report, filters, page],
     enabled,
-    placeholderData: keepPreviousData,
+    // Las filas anteriores solo se conservan dentro del mismo reporte (otra página u otros filtros):
+    // las de otro reporte tienen otra forma y sus columnas no las sabrían leer.
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[1] === report ? previous : undefined,
     queryFn: ({ signal }) =>
       apiFetchPage(`/reports/${report}?${queryString(filters, page)}`, {
         schema: z.array(REPORT_CONTRACTS[report].row as z.ZodType<Record<string, unknown>>),
         meta: reportListMetaSchema,
         signal,
-      }) as Promise<{ data: Record<string, unknown>[]; meta: ReportListMeta }>,
+      }) as Promise<ReportPage>,
   });
 }
 
