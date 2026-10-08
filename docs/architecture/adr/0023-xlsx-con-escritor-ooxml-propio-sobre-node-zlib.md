@@ -96,7 +96,7 @@ implementación llega con el mismo cambio (tarea 1.2).
 
 ## Consequences
 
-- **Sin dependencias de runtime nuevas.** El costo es código propio: el subconjunto OOXML y un contenedor ZIP de unas 70 líneas, con sus pruebas contra un lector independiente.
+- **Sin dependencias de runtime nuevas.** El costo es código propio: unas 480 líneas, de las que el contenedor ZIP ocupa unas 120, con sus pruebas contra un lector independiente.
 - **El hilo principal** solo arma el XML, en trozos y con esperas entre lotes. La compresión corre en el pool de libuv, que comparte con el sistema de archivos y la criptografía, en tareas de pocos milisegundos. `bench:reports` mide la exportación real con la base, sus transacciones y su concurrencia.
 - **Otros lectores:** un libro abierto con openpyxl o exceljs muestra el escape `_xHHHH_` de los textos con caracteres de control o con un `_xHHHH_` literal, porque esos lectores no lo decodifican. Las razones sociales ya no admiten saltos de línea (`fiscalText`).
 - **Excel y LibreOffice:** el spike no los tenía. La revisión de la pantalla (tarea 5.3) abre un XLSX exportado y comprueba sus tipos de celda.
