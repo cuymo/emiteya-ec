@@ -209,7 +209,10 @@ import {
   createPurchaseSettlementDraftSchema,
   emitPurchaseSettlementHeadersSchema,
   emitPurchaseSettlementSchema,
+  listPurchaseSettlementsQuerySchema,
   purchaseSettlementIdParamsSchema,
+  purchaseSettlementSummaryViewSchema,
+  purchaseSettlementTransmissionViewSchema,
   purchaseSettlementViewSchema,
   listPurchaseSettlementDraftsQuerySchema,
   listPurchaseSettlementSuppliersQuerySchema,
@@ -2771,6 +2774,74 @@ export const apiRoutes: readonly RouteDefinition[] = [
       401: errors[401],
       403: errors[403],
       404: purchaseSettlementNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/purchase-settlements",
+    summary:
+      "Listar liquidaciones de compra por estado y buscar por número o por la identificación o el nombre del proveedor, las más recientes primero",
+    request: { query: listPurchaseSettlementsQuerySchema },
+    responses: {
+      200: purchasePage(
+        "Página de liquidaciones con su proveedor, su fecha, su importe total, su estado y el total en `meta`.",
+        purchaseSettlementSummaryViewSchema,
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/purchase-settlements/:purchaseSettlementId",
+    summary:
+      "Consultar una liquidación de compra desde su snapshot: proveedor, líneas, IVA, pagos, declaraciones, aviso de la retención, diagnóstico y transmisión",
+    request: { params: purchaseSettlementIdParamsSchema },
+    responses: {
+      200: purchaseSettlementResponse(
+        "La liquidación tal como se emitió, sin releer el tercero, los productos ni los catálogos. Las declaraciones figuran como declaradas por el usuario.",
+      ),
+      401: errors[401],
+      403: errors[403],
+      404: purchaseSettlementNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/purchase-settlements/:purchaseSettlementId/transmission",
+    summary:
+      "Consultar el historial de la transmisión al SRI de una liquidación de compra, sin respuestas originales ni XML",
+    request: { params: purchaseSettlementIdParamsSchema },
+    responses: {
+      200: {
+        description: "Las 100 entradas más recientes del historial y el total.",
+        schema: successEnvelope(purchaseSettlementTransmissionViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: purchaseSettlementNotFound,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/purchase-settlements/:purchaseSettlementId/reconciliations",
+    summary:
+      "Pedir la reconciliación de una liquidación de compra con el SRI, con motivo (solo el administrador)",
+    request: { params: purchaseSettlementIdParamsSchema, body: requestReconciliationSchema },
+    responses: {
+      202: purchaseSettlementResponse(
+        "Reconciliación programada con las reglas de la transmisión; la liquidación con su estado actual.",
+      ),
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      404: purchaseSettlementNotFound,
+      409: {
+        description:
+          "Hay una interacción con el SRI en curso (SRI_INTERACTION_IN_PROGRESS) o el estado no admite una reconciliación (PURCHASE_SETTLEMENT_NOT_RECONCILABLE).",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
 ];

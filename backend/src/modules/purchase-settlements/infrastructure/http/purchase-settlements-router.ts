@@ -21,6 +21,8 @@ import type { PurchaseSettlements } from "../../application/purchase-settlements
 import {
   toPurchaseSettlementDraftSummaryView,
   toPurchaseSettlementDraftView,
+  toPurchaseSettlementSummaryView,
+  toPurchaseSettlementTransmissionView,
   toPurchaseSettlementView,
 } from "./views.ts";
 
@@ -119,6 +121,33 @@ export function purchaseSettlementsRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  router.get("/purchase-settlements", async (req, res) => {
+    const { items, meta } = await settlements.list(contextOf(res), req.query);
+    send(res, 200, items.map(toPurchaseSettlementSummaryView), meta);
+  });
+
+  router.get("/purchase-settlements/:purchaseSettlementId", async (req, res) => {
+    const details = await settlements.get(contextOf(res), param(req.params.purchaseSettlementId));
+    send(res, 200, toPurchaseSettlementView(details));
+  });
+
+  router.get("/purchase-settlements/:purchaseSettlementId/transmission", async (req, res) => {
+    const view = await settlements.transmission(
+      contextOf(res),
+      param(req.params.purchaseSettlementId),
+    );
+    send(res, 200, toPurchaseSettlementTransmissionView(view));
+  });
+
+  router.post("/purchase-settlements/:purchaseSettlementId/reconciliations", async (req, res) => {
+    const details = await settlements.requestReconciliation(
+      contextOf(res),
+      param(req.params.purchaseSettlementId),
+      req.body,
+    );
+    send(res, 202, toPurchaseSettlementView(details));
   });
 
   router.post("/purchase-settlements/:purchaseSettlementId/signing-attempts", async (req, res) => {

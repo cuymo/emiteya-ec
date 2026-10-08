@@ -117,6 +117,11 @@ const COMPLETED_AUDIT: Readonly<Record<string, { action: AuditAction; idField: s
   },
   // add-shipping-guides, design D18.
   "06": { action: "shipping_guide.reconciliation_completed", idField: "shippingGuideId" },
+  // add-purchase-settlements, design D2 y D18.
+  "03": {
+    action: "purchase_settlement.reconciliation_completed",
+    idField: "purchaseSettlementId",
+  },
 };
 
 /** Estado final de una decisión, para la auditoría de la reconciliación manual. */

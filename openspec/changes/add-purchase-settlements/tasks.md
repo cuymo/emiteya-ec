@@ -42,9 +42,9 @@
 
 ## 8. Consulta, transmisión y reconciliación
 
-- [ ] 8.1 Implementar la consulta (`/purchase-settlements`, `/{id}`, `/{id}/transmission`) con búsqueda por número o por la identificación o el nombre del proveedor y filtro de estado, desde el snapshot. Verificar con pruebas HTTP la lista, la búsqueda, el detalle con las declaraciones "declaradas por" el usuario y el aislamiento
-- [ ] 8.2 Implementar la reconciliación manual (`/{id}/reconciliations`, `purchase_settlement.reconciliation_requested`) y `"03"` en `COMPLETED_AUDIT`. Verificar con pruebas HTTP la reconciliación de una liquidación en revisión manual, los estados que no se reconcilian y el `403` para el operador
-- [ ] 8.3 Repetir con una liquidación los casos de la transmisión de design D18 con respuestas SINTÉTICAS: `RECIBIDA`, `DEVUELTA`, `AUTORIZADO`, `NO AUTORIZADO`, errores 70, 43 y 45, `NOT_SENT`, `SEND_UNKNOWN`, revisión manual, respuesta guardada antes de clasificar y reconciliación automática
+- [x] 8.1 Implementar la consulta (`/purchase-settlements`, `/{id}`, `/{id}/transmission`) con búsqueda por número o por la identificación o el nombre del proveedor y filtro de estado, desde el snapshot. Verificar con pruebas HTTP la lista, la búsqueda, el detalle con las declaraciones "declaradas por" el usuario y el aislamiento
+- [x] 8.2 Implementar la reconciliación manual (`/{id}/reconciliations`, `purchase_settlement.reconciliation_requested`) y `"03"` en `COMPLETED_AUDIT`. Verificar con pruebas HTTP la reconciliación de una liquidación en revisión manual, los estados que no se reconcilian y el `403` para el operador
+- [x] 8.3 Repetir con una liquidación los casos de la transmisión de design D18 con respuestas SINTÉTICAS: `RECIBIDA`, `DEVUELTA`, `AUTORIZADO`, `NO AUTORIZADO`, errores 70, 43 y 45, `NOT_SENT`, `SEND_UNKNOWN`, revisión manual, respuesta guardada antes de clasificar y reconciliación automática
 
 ## 9. Independencia y dirección de las dependencias
 

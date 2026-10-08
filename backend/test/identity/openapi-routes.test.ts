@@ -137,6 +137,8 @@ describe("rutas documentadas", () => {
         "post /withholding-receipts/:withholdingReceiptId/reconciliations",
         "get /shipping-guides/:shippingGuideId/transmission",
         "post /shipping-guides/:shippingGuideId/reconciliations",
+        "get /purchase-settlements/:purchaseSettlementId/transmission",
+        "post /purchase-settlements/:purchaseSettlementId/reconciliations",
       ].sort(),
     );
   });
