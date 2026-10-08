@@ -529,9 +529,16 @@ function DraftEditor({
               </p>
             ) : (
               <>
+                {/* El nombre, que puede ser largo, sobre su propio renglón: no comprime los importes. */}
+                <p className="flex flex-col text-sm">
+                  <span className="text-foreground-muted">Proveedor</span>
+                  <span className="break-words">
+                    {preview.supplier
+                      ? `${preview.supplier.legalName} · ${preview.supplier.identification}`
+                      : "—"}
+                  </span>
+                </p>
                 <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
-                  <dt>Proveedor</dt>
-                  <dd className="text-right break-words">{preview.supplier?.legalName ?? "—"}</dd>
                   {totals ? (
                     <>
                       {totals.taxes.map((tax) => (
@@ -671,9 +678,8 @@ function DraftEditor({
         }
       >
         <fieldset className="mt-1 flex flex-col gap-1 text-sm">
-          <legend className="mb-0.5 font-semibold">
-            Declaraciones de procedencia ({policy.source})
-          </legend>
+          <legend className="mb-0.5 font-semibold">Declaraciones de procedencia</legend>
+          <p className="text-xs text-foreground-muted">Fuente: {policy.source}.</p>
           <p
             role="note"
             className="rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-foreground"

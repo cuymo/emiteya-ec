@@ -312,7 +312,7 @@ export function PurchaseSettlementsScreen() {
               value={searchDraft}
               onChange={setSearchDraft}
               label="Buscar por número o proveedor"
-              placeholder="Número, identificación o nombre"
+              placeholder="Número o proveedor"
             />
             <ChipGroup
               label="Estado"
