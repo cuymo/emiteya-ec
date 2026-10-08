@@ -38,14 +38,14 @@
 
 ## 5. Pantalla Reportes
 
-- [ ] 5.1 Implementar Reportes en `/reportes`, dentro de "Operación", con `reports.read` (design D16): el selector de los cinco reportes y de las vistas del inventario, los filtros de cada reporte en la URL con el atajo mensual, el ambiente efectivo visible, la tabla paginada con tarjetas por debajo de 768 px, el aviso de RF-505 y "Exportar XLSX" con `reports.export`, que descarga con los mismos filtros, muestra el progreso y explica el `409` y el `503`. Verificar con pruebas de componente:
+- [x] 5.1 Implementar Reportes en `/reportes`, dentro de "Operación", con `reports.read` (design D16): el selector de los cinco reportes y de las vistas del inventario, los filtros de cada reporte en la URL con el atajo mensual, el ambiente efectivo visible, la tabla paginada con tarjetas por debajo de 768 px, el aviso de RF-505 y "Exportar XLSX" con `reports.export`, que descarga con los mismos filtros, muestra el progreso y explica el `409` y el `503`. Verificar con pruebas de componente:
   - la carga, el vacío, sin coincidencias, el error y sin permiso;
   - los filtros en la URL y el atajo mensual;
   - los estados por defecto y el ambiente;
   - la exportación con los filtros de la URL;
   - los mensajes del `409` y del `503`;
   - la entrada de la navegación
-- [ ] 5.2 Documentar la pantalla, su ruta y sus permisos en `docs/architecture/reports.md`. Verificar que coincide con la navegación implementada
+- [x] 5.2 Documentar la pantalla, su ruta y sus permisos en `docs/architecture/reports.md`. Verificar que coincide con la navegación implementada
 - [ ] 5.3 Revisar la pantalla con `docs/quality/frontend-checklist.md` contra el backend real (escritorio, 375 y 320 px, temas claro y oscuro, teclado y contraste) con datos sintéticos en un esquema aislado, abrir un XLSX exportado y comprobar sus tipos de celda, y registrar la revisión en `openspec/changes/add-reports-export/ui-review.md`. Verificar que no quedan hallazgos abiertos
 
 ## 6. Rendimiento y prueba end-to-end

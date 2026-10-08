@@ -127,6 +127,32 @@ En este orden, sin job, artefacto durable, TTL ni URL firmada:
 - **Métricas:** `report_exports_total{report,result}`, `report_export_duration_seconds{report}` y `report_export_rows` (`../quality/observability.md`).
 - **Log:** el de la exportación lleva el reporte, las filas y la duración, nunca los filtros ni la ruta temporal.
 
+## Pantalla Reportes
+
+- **Ruta y permisos:** `/reportes`, en el grupo "Operación" de la navegación, con `reports.read`. "Exportar XLSX" solo aparece con `reports.export`. Sin el permiso, o ante un `403`, la pantalla lo explica sin listar nada.
+- **Elegir el reporte:**
+  - el selector "Reporte" con los cinco reportes;
+  - en Inventario, la vista Existencias o Movimientos.
+
+  Cambiar de reporte o de vista limpia los filtros.
+- **Filtros en la URL:** `reporte`, `vista`, `desde`, `hasta`, `tipo`, `estado`, `establecimiento`, `punto`, `ambiente` (`pruebas`, `produccion` o `todos`), `cliente`, `sujeto`, `periodo` (`AAAA-MM`), `producto`, `movimiento`, `rol`, `identificacion`, `pagina` y `filas`.
+  - El atajo "Mes" solo fija `desde` y `hasta`, con el mes en curso y los once anteriores.
+  - El producto se elige con un buscador, nunca escribiendo un identificador.
+  - Las identificaciones se aplican 300 ms después de dejar de escribir.
+  - Un rango invertido se explica en el campo y no se consulta.
+- **Valores por defecto:** el estado "Todos" en Documentos emitidos, "Autorizado" en Facturas y Retenciones, y "Activos" en Terceros. Sin elegirlo, el estado no viaja y lo aplica el servidor.
+- **Encabezado de la tabla:** el número de registros y, en los reportes de comprobantes, el ambiente efectivo que devuelve la lista. El aviso de RF-505 va bajo los controles.
+- **Tabla:** paginada (`AppDataTable`), con tarjetas por debajo de 768 px.
+  - Los importes van con `USD` y dos decimales, sin pasar por `number`.
+  - La guía muestra "—" (con "Sin importe" para lectores de pantalla) y, con varios destinatarios, "N destinatarios".
+  - El saldo negativo de Existencias lleva icono y texto.
+  - Un texto que parece una fórmula se muestra tal cual.
+- **Exportación:**
+  - "Exportar XLSX" descarga con los filtros de la URL y el ambiente efectivo de la lista, de modo que el archivo y la lista coinciden aunque la empresa cambie de ambiente entre ambas.
+  - Mientras se genera, el botón muestra "Generando XLSX…".
+  - Un `409` (acotar los filtros) o un `503` (intentar en unos segundos) se explica junto al botón hasta que cambian el reporte o los filtros.
+- **Estados:** carga, vacío, sin coincidencias con "Limpiar filtros", error con "Intentar de nuevo" y sin permiso (`frontend/test/reports-screen.test.tsx`).
+
 ## Pruebas
 
 - **Escritor XLSX:** `backend/test/reports/xlsx-writer.test.ts`.
@@ -134,3 +160,4 @@ En este orden, sin job, artefacto durable, TTL ni URL firmada:
 - **Fuentes de cada módulo dueño:** `backend/test/integration/report-sources-*.test.ts`.
 - **Lista por HTTP:** `backend/test/integration/report-list-api.test.ts`.
 - **Exportación por HTTP, con AC-09 en cada reporte:** `backend/test/integration/report-exports-api.test.ts`.
+- **Pantalla:** `frontend/test/reports-screen.test.tsx`, y la entrada de la navegación en `frontend/test/app-shell.test.tsx`.
