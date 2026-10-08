@@ -183,7 +183,7 @@ export function buildPurchaseSettlementSnapshot(args: {
     payments: payments.map((payment) => ({
       position: payment.position,
       code: payment.entry.code,
-      label: payment.entry.officialLabel,
+      officialLabel: payment.entry.officialLabel,
       ref: ref(payment.entry),
       total: payment.total,
       term: payment.term,

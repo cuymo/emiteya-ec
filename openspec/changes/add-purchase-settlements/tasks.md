@@ -53,8 +53,8 @@
 
 ## 10. RIDE de la liquidación
 
-- [ ] 10.1 Implementar la lectura `liquidacionCompra` 1.1.0 con su lista blanca y el modelo del RIDE, y la distribución de la ficha v2.34, anexo 2, página 65 (`liquidacion-compra-1`, design D19), sin "Placa / Matrícula", "Guía Remisión", "Detalle Adicional" ni subsidios. Verificar con golden del texto de las páginas, el Code128, la paginación del máximo de líneas y el rechazo de contenido no admitido. Documentarlo en `fiscal-emission.md`
-- [ ] 10.2 Comprobar el RIDE en el job, el pool y la bandeja. Verificar con una prueba de integración que una liquidación autorizada programa su RIDE, se genera una vez y se descarga e imprime con su historial de entregas
+- [x] 10.1 Implementar la lectura `liquidacionCompra` 1.1.0 con su lista blanca y el modelo del RIDE, y la distribución de la ficha v2.34, anexo 2, página 65 (`liquidacion-compra-1`, design D19), sin "Placa / Matrícula", "Guía Remisión", "Detalle Adicional" ni subsidios. Verificar con golden del texto de las páginas, el Code128, la paginación del máximo de líneas y el rechazo de contenido no admitido. Documentarlo en `fiscal-emission.md`
+- [x] 10.2 Comprobar el RIDE en el job, el pool y la bandeja. Verificar con una prueba de integración que una liquidación autorizada programa su RIDE, se genera una vez y se descarga e imprime con su historial de entregas
 
 ## 11. Bandeja con liquidaciones de compra
 

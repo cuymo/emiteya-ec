@@ -182,6 +182,8 @@ describe("snapshot de la liquidación de compra (design D11)", () => {
       { code: "01", total: "50.00", term: "0", timeUnit: "días" },
       { code: "20", total: "56.00", term: "30", timeUnit: "días" },
     ]);
+    // La denominación oficial congelada es la que el RIDE imprime (`ride-handler.ts`).
+    expect(snapshot.payments.every((payment) => payment.officialLabel.length > 0)).toBe(true);
   });
 
   it("es JSON puro y autosuficiente, y la clave se añade al reservar", () => {

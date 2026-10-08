@@ -29,6 +29,15 @@
 // rótulos sin dato quedan vacíos, como en el modelo), y la tabla de cantidad, descripción y códigos.
 // Sin importes ni una fila para la fecha de emisión de la guía, que el modelo no tiene.
 //
+// La liquidación de compra 1.1.0 tiene la suya (add-purchase-settlements, design D19; anexo 2,
+// página 65): "LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE SERVICIOS" con su autorización y el
+// Code128 de su clave; el proveedor con su identificación, la fecha de emisión y su dirección; el
+// detalle con códigos, cantidad, descripción, la unidad de medida cuando alguna línea la trae, precio
+// unitario, descuento y precio total; cada forma de pago con su plazo y su valor; y los subtotales
+// llenados, el IVA por tarifa y el valor total. Sin "Placa / Matrícula", "Guía Remisión", "Detalle
+// Adicional", "Subsidio" ni "Precio sin Subsidio", que el dibujo hereda de la factura y la
+// liquidación 1.1.0 del sistema no tiene; tampoco el total de descuentos, que el modelo no lleva.
+//
 // La lectura y la distribución se eligen por la raíz y la versión del XML.
 //
 // - Fuentes embebidas desde memoria (Noto Sans 2.015, OFL 1.1), con subconjunto; antes de dibujar
@@ -52,6 +61,7 @@ import {
   type RideDocumentData,
   type RideInvoice,
   type RideLogo,
+  type RidePurchaseSettlement,
   type RideRenderInput,
   type RideRenderOutcome,
   type RideRenderer,
@@ -115,6 +125,13 @@ export const SHIPPING_GUIDE_RIDE_RENDERER_VERSION = "guia-remision-1";
 export const SHIPPING_GUIDE_RIDE_VERSIONS: RideVersions = {
   ...RIDE_VERSIONS,
   rendererVersion: SHIPPING_GUIDE_RIDE_RENDERER_VERSION,
+};
+
+/** Versión de la distribución de la liquidación de compra: cambia con cualquier cambio de su salida. */
+export const PURCHASE_SETTLEMENT_RIDE_RENDERER_VERSION = "liquidacion-compra-1";
+export const PURCHASE_SETTLEMENT_RIDE_VERSIONS: RideVersions = {
+  ...RIDE_VERSIONS,
+  rendererVersion: PURCHASE_SETTLEMENT_RIDE_RENDERER_VERSION,
 };
 
 /** Tablas normativas fijas de la ficha (no son estado mutable). */
@@ -182,8 +199,14 @@ const isWithholding = (ride: RideDocumentData): ride is RideWithholdingReceipt =
   ride.kind === "WITHHOLDING_RECEIPT";
 const isShippingGuide = (ride: RideDocumentData): ride is RideShippingGuide =>
   ride.kind === "SHIPPING_GUIDE";
+const isPurchaseSettlement = (ride: RideDocumentData): ride is RidePurchaseSettlement =>
+  ride.kind === "PURCHASE_SETTLEMENT";
 const isInvoice = (ride: RideDocumentData): ride is RideInvoice =>
-  !isCreditNote(ride) && !isDebitNote(ride) && !isWithholding(ride) && !isShippingGuide(ride);
+  !isCreditNote(ride) &&
+  !isDebitNote(ride) &&
+  !isWithholding(ride) &&
+  !isShippingGuide(ride) &&
+  !isPurchaseSettlement(ride);
 /** Denominación del comprobante modificado o de venta por su código (tabla 3 de la ficha). */
 const MODIFIED_TYPES: Readonly<Record<string, string>> = { "01": "FACTURA" };
 const modifiedTypeText = (ride: RideCreditNote | RideDebitNote) =>
@@ -197,10 +220,14 @@ const titleOf = (ride: RideDocumentData) =>
         ? "COMPROBANTE DE RETENCIÓN"
         : isShippingGuide(ride)
           ? "GUÍA DE REMISIÓN"
-          : "FACTURA";
+          : isPurchaseSettlement(ride)
+            ? "LIQUIDACIÓN DE COMPRA DE BIENES Y PRESTACIÓN DE SERVICIOS"
+            : "FACTURA";
 
 /** Subtotales en el orden del anexo 2; solo los que el comprobante llenó. */
-export function totalRows(ride: RideInvoice | RideCreditNote | RideDebitNote): [string, string][] {
+export function totalRows(
+  ride: RideInvoice | RideCreditNote | RideDebitNote | RidePurchaseSettlement,
+): [string, string][] {
   const withRate = ride.totals.taxes
     .filter((tax) => ![ZERO_RATE, NOT_SUBJECT, EXEMPT].includes(tax.rateCode))
     // Solo para ordenar de menor a mayor tarifa; lo dibujado es el texto del XML.
@@ -214,14 +241,15 @@ export function totalRows(ride: RideInvoice | RideCreditNote | RideDebitNote): [
   for (const tax of byCode(NOT_SUBJECT)) rows.push(["SUBTOTAL NO OBJETO DE IVA", tax.base]);
   for (const tax of byCode(EXEMPT)) rows.push(["SUBTOTAL EXENTO DE IVA", tax.base]);
   rows.push(["SUBTOTAL SIN IMPUESTOS", ride.totals.withoutTaxes]);
-  // Las notas de crédito y de débito no traen el total de descuentos en su XML: no se calcula.
+  // Las notas de crédito y de débito no traen el total de descuentos en su XML: no se calcula. El
+  // modelo de la liquidación de compra (página 65) no tiene esa fila.
   if (isInvoice(ride)) rows.push(["TOTAL DESCUENTO", ride.totals.discount]);
   for (const tax of withRate) rows.push([`IVA ${rateLabel(tax)}`, tax.amount]);
   rows.push(["VALOR TOTAL", ride.totals.total]);
   return rows;
 }
 
-const paymentText = (payment: RideInvoice["payments"][number]) =>
+const paymentText = (payment: Readonly<{ method: string; label: string | null }>) =>
   payment.label === null ? payment.method : `${payment.method} - ${payment.label}`;
 const documentNumber = (ride: RideDocumentData) =>
   `${ride.establishment}-${ride.emissionPoint}-${ride.sequential}`;
@@ -236,6 +264,7 @@ export function drawnStrings(ride: RideDocumentData): string[] {
   if (isDebitNote(ride)) return debitNoteStrings(ride);
   if (isWithholding(ride)) return withholdingStrings(ride);
   if (isShippingGuide(ride)) return shippingGuideStrings(ride);
+  if (isPurchaseSettlement(ride)) return purchaseSettlementStrings(ride);
   return [
     documentNumber(ride),
     ride.authorization.number,
@@ -265,6 +294,44 @@ export function drawnStrings(ride: RideDocumentData): string[] {
       line.total,
     ]),
     ...ride.payments.flatMap((payment) => [paymentText(payment), payment.total]),
+    ...totalRows(ride).flat(),
+  ];
+}
+
+const termText = (payment: RidePurchaseSettlement["payments"][number]) =>
+  `${payment.term} ${payment.timeUnit}`;
+
+function purchaseSettlementStrings(ride: RidePurchaseSettlement): string[] {
+  return [
+    documentNumber(ride),
+    ride.authorization.number,
+    environmentText(ride),
+    emissionText(ride),
+    ride.accessKey,
+    ride.legalName,
+    ride.tradeName ?? "",
+    ride.headOfficeAddress,
+    ride.establishmentAddress ?? "",
+    ride.specialTaxpayer ?? "",
+    ride.accountingRequired,
+    ride.withholdingAgentResolution ?? "",
+    ride.rimpeLegend ?? "",
+    ride.ruc,
+    ride.issueDate,
+    ride.supplier.legalName,
+    ride.supplier.identification,
+    ride.supplier.address,
+    ...ride.lines.flatMap((line) => [
+      line.mainCode ?? "",
+      line.auxiliaryCode ?? "",
+      line.description,
+      line.unit ?? "",
+      line.quantity,
+      line.unitPrice,
+      line.discount,
+      line.total,
+    ]),
+    ...ride.payments.flatMap((payment) => [paymentText(payment), termText(payment), payment.total]),
     ...totalRows(ride).flat(),
   ];
 }
@@ -745,28 +812,96 @@ function detailSection(ride: RideInvoice): Content {
   return { table: { headerRows: 1, dontBreakRows: true, widths, body }, layout: "grid" };
 }
 
-function closingSection(ride: RideInvoice | RideDebitNote): Content {
-  const payments: Content[] =
-    ride.payments.length === 0
-      ? []
-      : [
-          {
-            table: {
-              widths: ["*", 64],
-              body: [
-                [
-                  { text: "Forma de pago", style: "tableHeader" },
-                  { text: "Valor", style: "tableHeader" },
-                ],
-                ...ride.payments.map((payment) => [
-                  { text: paymentText(payment), style: "cell" },
-                  amountCell(payment.total),
-                ]),
-              ],
-            },
-            layout: "grid",
-          },
-        ];
+/** Proveedor con su identificación, la fecha de emisión y su dirección (anexo 2, página 65). */
+function supplierSection(ride: RidePurchaseSettlement): Content {
+  return box(
+    [
+      row(150, "Razón Social / Nombres y Apellidos:", ride.supplier.legalName, [0, 0, 0, 0]),
+      {
+        columns: [
+          { width: 150, ...label("Identificación:") },
+          { width: "*", ...value(ride.supplier.identification) },
+          { width: 70, ...label("Fecha Emisión:") },
+          { width: 70, ...value(ride.issueDate) },
+        ],
+        margin: [0, 3, 0, 0],
+      },
+      row(150, "Dirección:", ride.supplier.address),
+    ],
+    [0, 8, 0, 8],
+  );
+}
+
+/** Detalle con la unidad de medida solo cuando alguna línea la trae (anexo 2, página 65). */
+function purchaseSettlementDetailSection(ride: RidePurchaseSettlement): Content {
+  const hasMain = ride.lines.some((line) => line.mainCode);
+  const hasAuxiliary = ride.lines.some((line) => line.auxiliaryCode);
+  const hasUnit = ride.lines.some((line) => line.unit);
+  const headers = [
+    ...(hasMain ? ["Cod. Principal"] : []),
+    ...(hasAuxiliary ? ["Cod. Auxiliar"] : []),
+    "Cantidad",
+    "Descripción",
+    ...(hasUnit ? ["Unidad"] : []),
+    "Precio Unitario",
+    "Descuento",
+    "Precio Total",
+  ];
+  const widths = [
+    ...(hasMain ? [52] : []),
+    ...(hasAuxiliary ? [52] : []),
+    58,
+    "*",
+    ...(hasUnit ? [48] : []),
+    58,
+    48,
+    56,
+  ];
+  const body: TableCell[][] = [
+    headers.map((text) => ({ text, style: "tableHeader" })),
+    ...ride.lines.map((line) => [
+      ...(hasMain ? [{ text: line.mainCode ?? "", style: "cell" }] : []),
+      ...(hasAuxiliary ? [{ text: line.auxiliaryCode ?? "", style: "cell" }] : []),
+      amountCell(line.quantity),
+      { text: line.description, style: "cell" },
+      ...(hasUnit ? [{ text: line.unit ?? "", style: "cell" }] : []),
+      amountCell(line.unitPrice),
+      amountCell(line.discount),
+      amountCell(line.total),
+    ]),
+  ];
+  // El encabezado se repite en cada página y ninguna fila se parte entre dos.
+  return { table: { headerRows: 1, dontBreakRows: true, widths, body }, layout: "grid" };
+}
+
+/** Cada forma de pago con su plazo y su valor, y los subtotales con el valor total. */
+function purchaseSettlementClosingSection(ride: RidePurchaseSettlement): Content {
+  const payments: Content = {
+    table: {
+      widths: ["*", 56, 64],
+      body: [
+        [
+          { text: "Forma de pago", style: "tableHeader" },
+          { text: "Plazo", style: "tableHeader" },
+          { text: "Valor", style: "tableHeader" },
+        ],
+        ...ride.payments.map((payment) => [
+          { text: paymentText(payment), style: "cell" },
+          { text: termText(payment), style: "cell" },
+          amountCell(payment.total),
+        ]),
+      ],
+    },
+    layout: "grid",
+  };
+  return closingColumns(payments, ride);
+}
+
+/** Las formas de pago y los totales nunca se parten: si no caben, pasan juntos a otra página. */
+function closingColumns(
+  payments: Content | null,
+  ride: RideInvoice | RideDebitNote | RidePurchaseSettlement,
+): Content {
   const totals: Content = {
     table: {
       widths: ["*", 64],
@@ -780,16 +915,38 @@ function closingSection(ride: RideInvoice | RideDebitNote): Content {
     },
     layout: "grid",
   };
-  // Las formas de pago y los totales nunca se parten: si no caben, pasan juntos a otra página.
   return {
     columns: [
-      { width: "*", stack: payments },
+      { width: "*", stack: payments === null ? [] : [payments] },
       { width: 200, stack: [totals] },
     ],
     columnGap: COLUMN_GAP_PT,
     margin: [0, 8, 0, 0],
     unbreakable: true,
   };
+}
+
+function closingSection(ride: RideInvoice | RideDebitNote): Content {
+  const payments: Content | null =
+    ride.payments.length === 0
+      ? null
+      : {
+          table: {
+            widths: ["*", 64],
+            body: [
+              [
+                { text: "Forma de pago", style: "tableHeader" },
+                { text: "Valor", style: "tableHeader" },
+              ],
+              ...ride.payments.map((payment) => [
+                { text: paymentText(payment), style: "cell" },
+                amountCell(payment.total),
+              ]),
+            ],
+          },
+          layout: "grid",
+        };
+  return closingColumns(payments, ride);
 }
 
 /**
@@ -970,7 +1127,13 @@ export function rideDocument(
             ? [subjectSection(ride), withholdingsSection(ride), ...supportTaxesSection(ride)]
             : isShippingGuide(ride)
               ? [transportSection(ride), ...ride.recipients.map(recipientSection)]
-              : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
+              : isPurchaseSettlement(ride)
+                ? [
+                    supplierSection(ride),
+                    purchaseSettlementDetailSection(ride),
+                    purchaseSettlementClosingSection(ride),
+                  ]
+                : [buyerSection(ride), detailSection(ride), closingSection(ride)]),
     ],
     images: logo
       ? { logo: `data:${logo.mediaType};base64,${Buffer.from(logo.bytes).toString("base64")}` }
@@ -1100,7 +1263,9 @@ export function createInProcessRideRenderer(fonts: RideFonts): RideRenderer {
                 ? WITHHOLDING_RIDE_VERSIONS
                 : isShippingGuide(ride)
                   ? SHIPPING_GUIDE_RIDE_VERSIONS
-                  : RIDE_VERSIONS,
+                  : isPurchaseSettlement(ride)
+                    ? PURCHASE_SETTLEMENT_RIDE_VERSIONS
+                    : RIDE_VERSIONS,
           renderMs: performance.now() - started,
         };
       } catch (error) {

@@ -1,8 +1,8 @@
 // Lectura del XML de origen del RIDE (add-document-archive, design D3; add-credit-notes, design
 // D14; add-debit-notes, design D18; add-withholding-receipts, design D19; add-shipping-guides, design
-// D20): la factura 1.1.0, la nota de crédito 1.1.0, la nota de débito 1.0.0, el comprobante de
-// retención 2.0.0 y la guía de remisión 1.1.0 que el sistema emite, elegidos por la raíz y la versión
-// del XML, y nada más. Rechaza un XML peligroso (DTD o
+// D20; add-purchase-settlements, design D19): la factura 1.1.0, la liquidación de compra 1.1.0, la
+// nota de crédito 1.1.0, la nota de débito 1.0.0, el comprobante de retención 2.0.0 y la guía de
+// remisión 1.1.0 que el sistema emite, elegidos por la raíz y la versión del XML, y nada más. Rechaza un XML peligroso (DTD o
 // entidades, demasiado grande o demasiado anidado), cualquier otro documento, y todo elemento que el
 // builder del sistema no escribe (ICE, IRBPNR, propina, información adicional…): el RIDE nunca omite
 // contenido en silencio ni afirma un soporte que la emisión no tiene. Los textos e importes salen tal
@@ -15,6 +15,7 @@ import {
   type RideDocumentData,
   type RideInvoice,
   type RideLine,
+  type RidePurchaseSettlement,
   type RideShippingGuide,
   type RideSourceInput,
   type RideSourceReader,
@@ -36,6 +37,8 @@ export const RIDE_DEBIT_NOTE_VERSION = "1.0.0";
 export const RIDE_WITHHOLDING_RECEIPT_VERSION = "2.0.0";
 /** La única versión que escribe el builder de add-shipping-guides (`SHIPPING_GUIDE_SCHEMA_VERSION`). */
 export const RIDE_SHIPPING_GUIDE_VERSION = "1.1.0";
+/** La única versión que escribe el builder de add-purchase-settlements. */
+export const RIDE_PURCHASE_SETTLEMENT_VERSION = "1.1.0";
 /** IVA, el único impuesto que la emisión produce: ICE e IRBPNR no tienen datos de cálculo. */
 const IVA = "2";
 
@@ -284,6 +287,62 @@ const SHIPPING_GUIDE_ALLOWED: Readonly<Record<string, readonly string[]>> = {
     "cantidad",
   ],
 };
+/**
+ * Elementos que el builder de la liquidación de compra escribe, por ruta del padre
+ * (add-purchase-settlements, design D15): sin reembolsos ni sus totales, `codDocReembolso`,
+ * `descuentoAdicional`, `precioSinSubsidio`, `detallesAdicionales`, `tipoNegociable`, `maquinaFiscal`
+ * ni `infoAdicional`.
+ */
+const PURCHASE_SETTLEMENT_ALLOWED: Readonly<Record<string, readonly string[]>> = {
+  liquidacionCompra: ["infoTributaria", "infoLiquidacionCompra", "detalles", "Signature"],
+  "liquidacionCompra.infoTributaria": ALLOWED["factura.infoTributaria"]!,
+  "liquidacionCompra.infoLiquidacionCompra": [
+    "fechaEmision",
+    "dirEstablecimiento",
+    "contribuyenteEspecial",
+    "obligadoContabilidad",
+    "tipoIdentificacionProveedor",
+    "razonSocialProveedor",
+    "identificacionProveedor",
+    "direccionProveedor",
+    "totalSinImpuestos",
+    "totalDescuento",
+    "totalConImpuestos",
+    "importeTotal",
+    "moneda",
+    "pagos",
+  ],
+  "liquidacionCompra.infoLiquidacionCompra.totalConImpuestos": ["totalImpuesto"],
+  "liquidacionCompra.infoLiquidacionCompra.totalConImpuestos.totalImpuesto": [
+    "codigo",
+    "codigoPorcentaje",
+    "baseImponible",
+    "tarifa",
+    "valor",
+  ],
+  "liquidacionCompra.infoLiquidacionCompra.pagos": ["pago"],
+  "liquidacionCompra.infoLiquidacionCompra.pagos.pago": [
+    "formaPago",
+    "total",
+    "plazo",
+    "unidadTiempo",
+  ],
+  "liquidacionCompra.detalles": ["detalle"],
+  "liquidacionCompra.detalles.detalle": [
+    "codigoPrincipal",
+    "codigoAuxiliar",
+    "descripcion",
+    "unidadMedida",
+    "cantidad",
+    "precioUnitario",
+    "descuento",
+    "precioTotalSinImpuesto",
+    "impuestos",
+  ],
+  "liquidacionCompra.detalles.detalle.impuestos": ["impuesto"],
+  "liquidacionCompra.detalles.detalle.impuestos.impuesto":
+    ALLOWED["factura.detalles.detalle.impuestos.impuesto"]!,
+};
 /** El único comprobante de venta que la guía referencia: una factura propia (design D8). */
 const SHIPPING_SUPPORT_DOCUMENT = "01";
 /** Los cuatro datos del sustento: van todos o ninguno. */
@@ -330,6 +389,7 @@ const CREDIT_NOTE_WHITELIST = whitelist("notaCredito", CREDIT_NOTE_ALLOWED);
 const DEBIT_NOTE_WHITELIST = whitelist("notaDebito", DEBIT_NOTE_ALLOWED);
 const WITHHOLDING_WHITELIST = whitelist("comprobanteRetencion", WITHHOLDING_ALLOWED);
 const SHIPPING_GUIDE_WHITELIST = whitelist("guiaRemision", SHIPPING_GUIDE_ALLOWED);
+const PURCHASE_SETTLEMENT_WHITELIST = whitelist("liquidacionCompra", PURCHASE_SETTLEMENT_ALLOWED);
 const ARRAYS = new Set([
   "factura.detalles.detalle",
   "factura.detalles.detalle.impuestos.impuesto",
@@ -354,6 +414,10 @@ const ARRAYS = new Set([
   SHIPPING_RECIPIENT,
   `${SHIPPING_RECIPIENT}.detalles`,
   `${SHIPPING_RECIPIENT}.detalles.detalle`,
+  "liquidacionCompra.detalles.detalle",
+  "liquidacionCompra.detalles.detalle.impuestos.impuesto",
+  "liquidacionCompra.infoLiquidacionCompra.totalConImpuestos.totalImpuesto",
+  "liquidacionCompra.infoLiquidacionCompra.pagos.pago",
 ]);
 
 const parser = new XMLParser({
@@ -1089,8 +1153,132 @@ function readShippingGuide(
 }
 
 /**
- * Elige la lectura por la raíz del XML: la factura, la nota de crédito, la nota de débito, el
- * comprobante de retención o la guía de remisión que el sistema emite.
+ * Lee la liquidación de compra 1.1.0 que el sistema emite (add-purchase-settlements, design D19): el
+ * proveedor, las líneas con su único impuesto (el IVA), los pagos con su plazo y los totales. Un
+ * impuesto distinto del IVA o un elemento que el builder no escribe se rechaza.
+ */
+function readPurchaseSettlement(
+  { document, roots }: Readonly<{ document: unknown; roots: string[] }>,
+  input: RideSourceInput,
+): RidePurchaseSettlement {
+  const { authorization } = input;
+  const liquidacion = isNode(document) ? document.liquidacionCompra : undefined;
+  if (roots.length !== 1 || !isNode(liquidacion)) throw invalid("NOT_PURCHASE_SETTLEMENT");
+  if (liquidacion["@_version"] !== RIDE_PURCHASE_SETTLEMENT_VERSION) {
+    throw invalid("UNSUPPORTED_VERSION");
+  }
+  const tributaria = liquidacion.infoTributaria;
+  const info = liquidacion.infoLiquidacionCompra;
+  const detalles = liquidacion.detalles;
+  if (!isNode(tributaria) || !isNode(info) || !isNode(detalles)) {
+    throw invalid("NOT_PURCHASE_SETTLEMENT");
+  }
+  if (required(tributaria, "codDoc", "infoTributaria") !== "03") {
+    throw invalid("NOT_PURCHASE_SETTLEMENT");
+  }
+
+  const unsupported = new Set<string>();
+  unsupportedElements(liquidacion, "liquidacionCompra", unsupported, PURCHASE_SETTLEMENT_WHITELIST);
+  const totalNodes = list(
+    isNode(info.totalConImpuestos) ? info.totalConImpuestos.totalImpuesto : undefined,
+  );
+  const detalleNodes = list(detalles.detalle);
+  const taxNodes = [
+    ...totalNodes,
+    ...detalleNodes.flatMap((detalle) =>
+      list(isNode(detalle.impuestos) ? detalle.impuestos.impuesto : undefined),
+    ),
+  ];
+  for (const tax of taxNodes) {
+    const code = text(tax, "codigo", "impuesto");
+    if (code !== IVA) unsupported.add(`impuesto.codigo:${code ?? ""}`);
+  }
+  if (unsupported.size > 0) {
+    throw new RideRejectedError("RIDE_SOURCE_UNSUPPORTED", [...unsupported].sort());
+  }
+
+  const accessKey = required(tributaria, "claveAcceso", "infoTributaria");
+  const environment = required(tributaria, "ambiente", "infoTributaria");
+  if (environment !== "1" && environment !== "2") throw invalid("infoTributaria.ambiente");
+  const mismatches = [
+    ...(accessKey !== input.accessKey ? ["claveAcceso"] : []),
+    ...(authorization.number !== accessKey ? ["numeroAutorizacion"] : []),
+    ...(authorization.environment !== (environment === "1" ? "TEST" : "PRODUCTION")
+      ? ["ambiente"]
+      : []),
+  ];
+  if (mismatches.length > 0) {
+    throw new RideRejectedError("RIDE_AUTHORIZATION_MISMATCH", mismatches);
+  }
+
+  const lines = detalleNodes.map((detalle) => ({
+    mainCode: text(detalle, "codigoPrincipal", "detalle"),
+    auxiliaryCode: text(detalle, "codigoAuxiliar", "detalle"),
+    description: required(detalle, "descripcion", "detalle"),
+    unit: text(detalle, "unidadMedida", "detalle"),
+    quantity: required(detalle, "cantidad", "detalle"),
+    unitPrice: required(detalle, "precioUnitario", "detalle"),
+    discount: required(detalle, "descuento", "detalle"),
+    total: required(detalle, "precioTotalSinImpuesto", "detalle"),
+  }));
+  if (lines.length === 0) throw invalid("MISSING:detalles.detalle");
+  const taxes = totalNodes.map((tax): RideTax => ({
+    rateCode: required(tax, "codigoPorcentaje", "totalImpuesto"),
+    rate: text(tax, "tarifa", "totalImpuesto"),
+    base: required(tax, "baseImponible", "totalImpuesto"),
+    amount: required(tax, "valor", "totalImpuesto"),
+  }));
+  const payments = list(isNode(info.pagos) ? info.pagos.pago : undefined).map((pago) => {
+    const method = required(pago, "formaPago", "pago");
+    return {
+      method,
+      label: input.paymentLabels[method] ?? null,
+      total: required(pago, "total", "pago"),
+      term: required(pago, "plazo", "pago"),
+      timeUnit: required(pago, "unidadTiempo", "pago"),
+    };
+  });
+  if (payments.length === 0) throw invalid("MISSING:pagos.pago");
+
+  return {
+    kind: "PURCHASE_SETTLEMENT",
+    environment,
+    emissionType: required(tributaria, "tipoEmision", "infoTributaria"),
+    legalName: required(tributaria, "razonSocial", "infoTributaria"),
+    tradeName: text(tributaria, "nombreComercial", "infoTributaria"),
+    ruc: required(tributaria, "ruc", "infoTributaria"),
+    accessKey,
+    establishment: required(tributaria, "estab", "infoTributaria"),
+    emissionPoint: required(tributaria, "ptoEmi", "infoTributaria"),
+    sequential: required(tributaria, "secuencial", "infoTributaria"),
+    headOfficeAddress: required(tributaria, "dirMatriz", "infoTributaria"),
+    establishmentAddress: text(info, "dirEstablecimiento", "infoLiquidacionCompra"),
+    specialTaxpayer: text(info, "contribuyenteEspecial", "infoLiquidacionCompra"),
+    accountingRequired: required(info, "obligadoContabilidad", "infoLiquidacionCompra"),
+    withholdingAgentResolution: text(tributaria, "agenteRetencion", "infoTributaria"),
+    rimpeLegend: text(tributaria, "contribuyenteRimpe", "infoTributaria"),
+    issueDate: required(info, "fechaEmision", "infoLiquidacionCompra"),
+    supplier: {
+      identificationType: required(info, "tipoIdentificacionProveedor", "infoLiquidacionCompra"),
+      identification: required(info, "identificacionProveedor", "infoLiquidacionCompra"),
+      legalName: required(info, "razonSocialProveedor", "infoLiquidacionCompra"),
+      address: required(info, "direccionProveedor", "infoLiquidacionCompra"),
+    },
+    totals: {
+      withoutTaxes: required(info, "totalSinImpuestos", "infoLiquidacionCompra"),
+      discount: required(info, "totalDescuento", "infoLiquidacionCompra"),
+      taxes,
+      total: required(info, "importeTotal", "infoLiquidacionCompra"),
+    },
+    payments,
+    lines,
+    authorization,
+  };
+}
+
+/**
+ * Elige la lectura por la raíz del XML: la factura, la liquidación de compra, la nota de crédito, la
+ * nota de débito, el comprobante de retención o la guía de remisión que el sistema emite.
  */
 export function readRideDocument(input: RideSourceInput): RideDocumentData {
   const parsed = parseSource(input);
@@ -1099,6 +1287,7 @@ export function readRideDocument(input: RideSourceInput): RideDocumentData {
   if (root === "notaDebito") return readDebitNote(parsed, input);
   if (root === "comprobanteRetencion") return readWithholdingReceipt(parsed, input);
   if (root === "guiaRemision") return readShippingGuide(parsed, input);
+  if (root === "liquidacionCompra") return readPurchaseSettlement(parsed, input);
   return readInvoice(parsed, input);
 }
 

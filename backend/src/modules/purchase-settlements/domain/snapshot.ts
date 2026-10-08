@@ -62,7 +62,8 @@ export type PurchaseSettlementSnapshotPayment = Readonly<{
   position: number;
   /** El `formaPago` del XML. */
   code: string;
-  label: string;
+  /** Denominación oficial, la que imprime el RIDE (como en la factura). */
+  officialLabel: string;
   ref: PurchaseCatalogRef;
   total: string;
   /** `plazo`, en su forma canónica. */

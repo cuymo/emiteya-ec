@@ -234,7 +234,7 @@ export function toPurchaseSettlementView(
     payments: snapshot.payments.map((payment) => ({
       position: payment.position,
       code: payment.code,
-      label: payment.label,
+      label: payment.officialLabel,
       total: payment.total,
       term: payment.term,
       timeUnit: payment.timeUnit,

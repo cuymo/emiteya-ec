@@ -208,9 +208,40 @@ export type RideShippingGuide = Omit<
     }>[];
   }>;
 
+/**
+ * Contenido de la liquidación de compra 1.1.0 que el sistema emite (add-purchase-settlements, design
+ * D19): la cabecera y el emisor de la factura, el proveedor con su identificación y su dirección, la
+ * fecha de emisión, cada línea con su unidad de medida cuando la tiene, cada pago con su plazo y su
+ * unidad de tiempo, y los totales de IVA. Sin reembolsos, subsidios, detalles adicionales ni
+ * información adicional.
+ */
+export type RidePurchaseSettlement = Omit<RideInvoice, "kind" | "buyer" | "payments" | "lines"> &
+  Readonly<{
+    kind: "PURCHASE_SETTLEMENT";
+    supplier: Readonly<{
+      identificationType: string;
+      identification: string;
+      legalName: string;
+      address: string;
+    }>;
+    lines: readonly (RideLine & Readonly<{ unit: string | null }>)[];
+    payments: readonly Readonly<{
+      method: string;
+      label: string | null;
+      total: string;
+      term: string;
+      timeUnit: string;
+    }>[];
+  }>;
+
 /** Un comprobante que el RIDE dibuja, elegido por la raíz y la versión de su XML. */
 export type RideDocumentData =
-  RideInvoice | RideCreditNote | RideDebitNote | RideWithholdingReceipt | RideShippingGuide;
+  | RideInvoice
+  | RideCreditNote
+  | RideDebitNote
+  | RideWithholdingReceipt
+  | RideShippingGuide
+  | RidePurchaseSettlement;
 
 /**
  * Motivos deterministas por los que el RIDE no se genera: reintentar da lo mismo, así que la
