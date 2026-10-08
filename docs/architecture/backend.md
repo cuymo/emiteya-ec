@@ -152,9 +152,10 @@ see `idempotency.md`.
 ## Emisión por tipo de comprobante
 
 La reserva, la firma y la reconciliación manual son de `fiscal` y las comparten todos los tipos que
-el sistema emite: factura, nota de crédito, nota de débito, comprobante de retención y guía de
-remisión (`add-credit-notes`, design D2; `add-debit-notes`, design D2; `add-withholding-receipts`,
-design D2; `add-shipping-guides`, design D2; detalle en `fiscal-emission.md`):
+el sistema emite: factura, liquidación de compra, nota de crédito, nota de débito, comprobante de
+retención y guía de remisión (`add-credit-notes`, design D2; `add-debit-notes`, design D2;
+`add-withholding-receipts`, design D2; `add-shipping-guides`, design D2; `add-purchase-settlements`,
+design D2; detalle en `fiscal-emission.md`):
 
 - `reserveDocumentIn` reserva el secuencial, bloquea la identidad tributaria, compone la clave e
   inserta el comprobante `RESERVED` con su transición, dentro de la transacción del módulo que emite.
@@ -247,6 +248,21 @@ destinatarios, sin total monetario, sin inventario, capacidades ni roles:
 - **Reserva.** Sin recursos compartidos que bloquear: una factura sustento no tiene capacidad que consumir. El borrador y la configuración se bloquean; la cabecera común (`electronic_document`, sin total ni comprador) y sus destinatarios (`electronic_document_recipient`), el registro de la guía y sus destinatarios (`shipping_guide`, `shipping_guide_recipient`) se insertan con la reserva, con triggers que exigen un `06` de la empresa, una factura `01` autorizada del mismo ambiente y un origen distinto del destino en un traslado propio, y otro, diferido, que impide confirmar un `06` sin sus registros (`database.md`).
 - **Independencia.** Autorizada, devuelta o no autorizada, una guía no registra movimientos de inventario, no cambia la factura sustento ni sus capacidades y no asigna roles; las reconciliaciones no informan diferencias (`test/integration/shipping-guide-independence.test.ts`).
 - **Métricas.** `shipping_guide_reservations_total` y `shipping_guide_recipients_total{support}` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
+
+## Liquidaciones de compra
+
+El módulo `purchase-settlements` (`add-purchase-settlements`) emite liquidaciones de compra 1.1.0 de
+la empresa como adquirente, solo en el caso c) del art. 13 del Reglamento de Comprobantes de Venta,
+sin inventario, compras ni retenciones:
+
+- **Capas.**
+  - `domain/`: el borrador, el cálculo versionado (`calculatePurchaseSettlementAmounts`, sobre `fiscal/domain/document-amounts.ts`), la evaluación pura en el orden de design D12 (`evaluatePurchaseSettlement`), la vista previa y el snapshot autosuficiente con las cuatro declaraciones congeladas (`buildPurchaseSettlementSnapshot`);
+  - `application/`: borradores, opciones y proveedores, el contexto de la evaluación, la emisión (comprobación previa, declaraciones y transacción de `RESERVED`), consultas, reintento de firma, reconciliación manual, diagnósticos, la proyección del XML y el perfil de la firma;
+  - `infrastructure/`: borradores, lecturas de la preparación de la empresa y de los catálogos, la lista, unidades de trabajo, métricas y rutas, con el parser propio de 4 MiB de los borradores.
+- **Dirección.** Ningún módulo importa `purchase-settlements`, salvo `main.ts`, y `purchase-settlements` no importa `inventory`, `invoices`, `parties`, `products` ni otro comprobante. `main.ts` compone los puertos `PurchaseSupplierReader` (`purchaseSupplierReader` de `parties`) y `PurchaseProductReader` (`productReader`), y la firma compartida con `purchaseSettlementSigningProfile`. El builder XML (`purchase-settlement-xml-builder.ts`) vive en `sri-engine` con su proyección del snapshot.
+- **Reserva.** Sin recursos compartidos que bloquear. El borrador y la configuración se bloquean; el comprobante con el proveedor como contraparte genérica y el importe total, el registro de la liquidación y sus cuatro declaraciones (`purchase_settlement`, `purchase_settlement_declaration`) se insertan con la reserva, con un trigger que exige un `03` de la empresa y otro, diferido, que impide confirmar un `03` sin su registro ni sus cuatro declaraciones (`database.md`).
+- **Independencia.** Autorizada, devuelta o no autorizada, una liquidación no registra movimientos de inventario ni cambia saldos, capacidades, facturas, productos ni roles, y no crea compras, cuentas por pagar, facturas recibidas ni retenciones (`test/integration/purchase-settlement-independence.test.ts`).
+- **Métricas.** `purchase_settlement_reservations_total` (`../quality/observability.md`). Con `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing`.
 
 ## Catálogos de retención y de sustento
 

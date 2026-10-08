@@ -48,8 +48,8 @@
 
 ## 9. Independencia y dirección de las dependencias
 
-- [ ] 9.1 Probar con PostgreSQL real que una liquidación autorizada con una línea de un producto bien con control de stock no cambia saldos ni movimientos de inventario, y que no crea compras, cuentas por pagar, facturas recibidas ni comprobantes de retención
-- [ ] 9.2 Añadir la prueba de arquitectura de design D1 (nadie importa `purchase-settlements`, y `purchase-settlements` no importa `invoices`, `inventory`, `parties`, `products` ni otro comprobante) y extender la prueba de secuenciales independientes a 01, 03, 04, 05, 06 y 07 en el mismo punto; documentar el módulo en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba de arquitectura pasa y detecta cada violación en archivos de ejemplo
+- [x] 9.1 Probar con PostgreSQL real que una liquidación autorizada con una línea de un producto bien con control de stock no cambia saldos ni movimientos de inventario, y que no crea compras, cuentas por pagar, facturas recibidas ni comprobantes de retención
+- [x] 9.2 Añadir la prueba de arquitectura de design D1 (nadie importa `purchase-settlements`, y `purchase-settlements` no importa `invoices`, `inventory`, `parties`, `products` ni otro comprobante) y extender la prueba de secuenciales independientes a 01, 03, 04, 05, 06 y 07 en el mismo punto; documentar el módulo en `ARCHITECTURE.md` y `backend.md`. Verificar que la prueba de arquitectura pasa y detecta cada violación en archivos de ejemplo
 
 ## 10. RIDE de la liquidación
 

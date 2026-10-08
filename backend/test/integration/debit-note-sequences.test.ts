@@ -1,12 +1,12 @@
 // Secuenciales independientes por tipo en el mismo ámbito de numeración (add-debit-notes,
-// add-withholding-receipts y add-shipping-guides, spec document-emission "Secuenciales
-// independientes"; ADR 0003): en un mismo ambiente, establecimiento y punto, factura → nota de
-// crédito → nota de débito → retención → guía de remisión → factura, y después guía → retención →
-// nota de débito → nota de crédito → factura. Cada tipo sigue su propio contador, sin huecos, y
-// ninguno consume ni salta el de otro; el número, la columna, la clave de acceso y el XML firmado
-// dicen lo mismo. La primera factura es autorizada por el arnés con la reserva real del secuencial
-// (las notas y la guía exigen una factura autorizada y la transmisión está apagada); las demás se
-// emiten por HTTP.
+// add-withholding-receipts, add-shipping-guides y add-purchase-settlements, spec document-emission
+// "Secuenciales independientes"; ADR 0003): en un mismo ambiente, establecimiento y punto, factura →
+// nota de crédito → nota de débito → retención → guía de remisión → liquidación de compra → factura,
+// y después guía → liquidación → retención → nota de débito → nota de crédito → factura. Cada tipo
+// (01, 03, 04, 05, 06 y 07) sigue su propio contador, sin huecos, y ninguno consume ni salta el de
+// otro; el número, la columna, la clave de acceso y el XML firmado dicen lo mismo. La primera factura
+// es autorizada por el arnés con la reserva real del secuencial (las notas y la guía exigen una
+// factura autorizada y la transmisión está apagada); las demás se emiten por HTTP.
 import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
@@ -16,6 +16,7 @@ import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker
 import { insertAuthorizedInvoice } from "./credit-notes-harness.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { CUSTODY, readyCompany, type ReadyCompany } from "./emission-harness.ts";
+import { insertPurchaseSupplier } from "./purchase-settlement-harness.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
 
 type Emitted = { id: string; documentNumber: string; accessKey: string; state: string };
@@ -25,15 +26,25 @@ const CREDIT_DECLARATIONS = {
   version: 1,
   statements: ["NOT_NEGOTIATED_COMMERCIAL_INVOICE", "NOT_TAX_REFUND_SUPPORT"],
 };
+const PURCHASE_DECLARATIONS = {
+  policyVersion: 1,
+  statements: [
+    "NATURAL_PERSON_NOT_REQUIRED_TO_KEEP_ACCOUNTING",
+    "NO_RUC_OR_SUSPENDED_RUC",
+    "UNABLE_TO_ISSUE_DUE_TO_CULTURAL_LEVEL_OR_RUSTICITY",
+    "MOVABLE_GOODS_OR_SERVICES_TRANSACTION",
+  ],
+};
 const DEBIT_DECLARATIONS = {
   version: 1,
   statements: ["NOT_EFFECTIVELY_NEGOTIATED_COMMERCIAL_INVOICE"],
 };
 
-describe("secuenciales independientes de la factura, las notas, la retención y la guía", () => {
+describe("secuenciales independientes de la factura, la liquidación, las notas, la retención y la guía", () => {
   let db: MigratedSchema;
   let api: ReturnType<typeof buildTaxpayerApp>;
   let a: ReadyCompany;
+  let ruralSupplierId: string;
   const pool = createCryptoWorkerPool({
     entry: certificateTasksEntry(),
     size: 2,
@@ -139,6 +150,20 @@ describe("secuenciales independientes de la factura, las notas, la retención y 
     );
   };
 
+  const emitPurchaseSettlement = async () => {
+    const draft = await post("/purchase-settlements/drafts", {
+      emissionPointId: a.emissionPointId,
+      supplierPartyId: ruralSupplierId,
+      lines: [{ description: "Cacao en grano", quantity: "10", unitPrice: "4.50", ivaRate: "0" }],
+      payments: [{ paymentMethod: "01", total: "45.00", term: "0", timeUnit: "días" }],
+    });
+    return post(
+      "/purchase-settlements",
+      { draftId: draft.id, expectedVersion: draft.version, declarations: PURCHASE_DECLARATIONS },
+      randomUUID(),
+    );
+  };
+
   /** Tipo y secuencial según el número, la columna, la clave de acceso y el XML firmado. */
   const numbering = async (document: { id: string }) => {
     const stored = await db.database.prisma.electronicDocument.findUniqueOrThrow({
@@ -186,6 +211,7 @@ describe("secuenciales independientes de la factura, las notas, la retención y 
       pool,
       p12Dir: inject("p12FixturesDir"),
     });
+    ruralSupplierId = await insertPurchaseSupplier(db.database.prisma, a);
   }, 180_000);
 
   afterAll(async () => {
@@ -193,7 +219,7 @@ describe("secuenciales independientes de la factura, las notas, la retención y 
     await db?.drop();
   });
 
-  it("factura, nota de crédito, nota de débito, retención, guía y factura siguen cada una su propio contador", async () => {
+  it("factura, nota de crédito, nota de débito, retención, guía, liquidación y factura siguen cada una su propio contador", async () => {
     // Factura 1, autorizada con la reserva real del secuencial de facturas.
     const firstInvoice = await insertAuthorizedInvoice(
       db.database.prisma,
@@ -209,9 +235,11 @@ describe("secuenciales independientes de la factura, las notas, la retención y 
     const firstDebit = await emitDebitNote(firstInvoice.id);
     const firstWithholding = await emitWithholding();
     const firstGuide = await emitShippingGuide(firstInvoice.id);
+    const firstSettlement = await emitPurchaseSettlement();
     const secondInvoice = await emitInvoice();
-    // Segunda ronda en otro orden: la guía primero.
+    // Segunda ronda en otro orden: la guía y la liquidación primero.
     const secondGuide = await emitShippingGuide(firstInvoice.id);
+    const secondSettlement = await emitPurchaseSettlement();
     const secondWithholding = await emitWithholding();
     const secondDebit = await emitDebitNote(firstInvoice.id);
     const secondCredit = await emitCreditNote(firstInvoice.id);
@@ -240,8 +268,10 @@ describe("secuenciales independientes de la factura, las notas, la retención y 
       [firstDebit, "05", 1],
       [firstWithholding, "07", 1],
       [firstGuide, "06", 1],
+      [firstSettlement, "03", 1],
       [secondInvoice, "01", 2],
       [secondGuide, "06", 2],
+      [secondSettlement, "03", 2],
       [secondWithholding, "07", 2],
       [secondDebit, "05", 2],
       [secondCredit, "04", 2],
@@ -264,6 +294,7 @@ describe("secuenciales independientes de la factura, las notas, la retención y 
     });
     expect(counters.map((c) => [c.documentType, c.nextNumber])).toEqual([
       ["01", 4],
+      ["03", 3],
       ["04", 3],
       ["05", 3],
       ["06", 3],
@@ -277,6 +308,8 @@ describe("secuenciales independientes de la factura, las notas, la retención y 
       ["01", 1],
       ["01", 2],
       ["01", 3],
+      ["03", 1],
+      ["03", 2],
       ["04", 1],
       ["04", 2],
       ["05", 1],
