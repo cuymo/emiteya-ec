@@ -1,0 +1,432 @@
+{
+  "date": "2026-10-08",
+  "volume": {
+    "documents": {
+      "01": 70000,
+      "03": 6000,
+      "04": 8000,
+      "05": 4000,
+      "06": 6000,
+      "07": 6000
+    },
+    "testInvoices": 2000,
+    "parties": 10000,
+    "products": 10000,
+    "movements": 300000,
+    "tables": {
+      "electronic_document": {
+        "rows": 102000,
+        "totalSize": "273 MB"
+      },
+      "electronic_document_recipient": {
+        "rows": 9000,
+        "totalSize": "3136 kB"
+      },
+      "withholding_receipt_line": {
+        "rows": 18000,
+        "totalSize": "5248 kB"
+      },
+      "party": {
+        "rows": 10001,
+        "totalSize": "9896 kB"
+      },
+      "product": {
+        "rows": 10000,
+        "totalSize": "8040 kB"
+      },
+      "stock_movement": {
+        "rows": 300000,
+        "totalSize": "224 MB"
+      },
+      "stock_balance": {
+        "rows": 10000,
+        "totalSize": "2816 kB"
+      }
+    }
+  },
+  "seedSeconds": 39,
+  "warmup": 5,
+  "samples": 60,
+  "budgetMs": 2000,
+  "environment": {
+    "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "shared_buffers": "128MB",
+    "work_mem": "4MB",
+    "effective_cache_size": "4GB",
+    "jit": "on",
+    "node": "v24.15.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
+    "memory": "16 GiB",
+    "commit": "0253a3e"
+  },
+  "lists": [
+    {
+      "name": "Documentos emitidos: primera página",
+      "path": "/reports/issued-documents",
+      "results": 100000,
+      "p50": 52.8,
+      "p95": 56.5,
+      "max": 65.5,
+      "withinBudget": true
+    },
+    {
+      "name": "Documentos emitidos: mes",
+      "path": "/reports/issued-documents?from=2026-09-01&to=2026-09-30",
+      "results": 8280,
+      "p50": 8.8,
+      "p95": 10.4,
+      "max": 13.3,
+      "withinBudget": true
+    },
+    {
+      "name": "Documentos emitidos: año",
+      "path": "/reports/issued-documents?from=2025-10-09&to=2026-10-08",
+      "results": 100000,
+      "p50": 33.5,
+      "p95": 34.5,
+      "max": 35.9,
+      "withinBudget": true
+    },
+    {
+      "name": "Documentos emitidos: año, los dos ambientes",
+      "path": "/reports/issued-documents?from=2025-10-09&to=2026-10-08&environment=ALL",
+      "results": 102000,
+      "p50": 46.5,
+      "p95": 48.6,
+      "max": 51.9,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas: primera página",
+      "path": "/reports/invoices",
+      "results": 64400,
+      "p50": 32.9,
+      "p95": 34.3,
+      "max": 38,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas: mes",
+      "path": "/reports/invoices?from=2026-09-01&to=2026-09-30",
+      "results": 5298,
+      "p50": 9.4,
+      "p95": 10.9,
+      "max": 15.3,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas: año",
+      "path": "/reports/invoices?from=2025-10-09&to=2026-10-08&state=ALL",
+      "results": 70000,
+      "p50": 31.7,
+      "p95": 36.4,
+      "max": 41.5,
+      "withinBudget": true
+    },
+    {
+      "name": "Facturas: identificación del cliente",
+      "path": "/reports/invoices?customerIdentification=1700000123001",
+      "results": 7,
+      "p50": 4.5,
+      "p95": 5.8,
+      "max": 11,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: primera página",
+      "path": "/reports/withholdings",
+      "results": 16560,
+      "p50": 31,
+      "p95": 31.9,
+      "max": 37.2,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: mes",
+      "path": "/reports/withholdings?from=2026-09-01&to=2026-09-30",
+      "results": 1407,
+      "p50": 93.1,
+      "p95": 97.9,
+      "max": 103.5,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: año",
+      "path": "/reports/withholdings?from=2025-10-09&to=2026-10-08&state=ALL",
+      "results": 18000,
+      "p50": 32.8,
+      "p95": 33.7,
+      "max": 34.4,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: período fiscal",
+      "path": "/reports/withholdings?fiscalPeriod=2026-08",
+      "results": 1458,
+      "p50": 13.5,
+      "p95": 15.2,
+      "max": 18.8,
+      "withinBudget": true
+    },
+    {
+      "name": "Retenciones: identificación del sujeto",
+      "path": "/reports/withholdings?supplierIdentification=1700000123001",
+      "results": 3,
+      "p50": 5.2,
+      "p95": 6.3,
+      "max": 6.6,
+      "withinBudget": true
+    },
+    {
+      "name": "Existencias: primera página",
+      "path": "/reports/inventory-balances",
+      "results": 10000,
+      "p50": 40.5,
+      "p95": 49.3,
+      "max": 53.2,
+      "withinBudget": true
+    },
+    {
+      "name": "Existencias: un producto",
+      "path": "/reports/inventory-balances?productId=bench-prod-123",
+      "results": 1,
+      "p50": 3.1,
+      "p95": 3.6,
+      "max": 4.1,
+      "withinBudget": true
+    },
+    {
+      "name": "Movimientos: primera página",
+      "path": "/reports/inventory-movements",
+      "results": 300000,
+      "p50": 69.3,
+      "p95": 75.7,
+      "max": 85.2,
+      "withinBudget": true
+    },
+    {
+      "name": "Movimientos: mes",
+      "path": "/reports/inventory-movements?from=2026-09-01&to=2026-09-30",
+      "results": 30000,
+      "p50": 38.4,
+      "p95": 40.9,
+      "max": 48.9,
+      "withinBudget": true
+    },
+    {
+      "name": "Movimientos: año",
+      "path": "/reports/inventory-movements?from=2025-10-09&to=2026-10-08",
+      "results": 290000,
+      "p50": 72.7,
+      "p95": 84.9,
+      "max": 88.7,
+      "withinBudget": true
+    },
+    {
+      "name": "Movimientos: un producto",
+      "path": "/reports/inventory-movements?productId=bench-prod-123",
+      "results": 30,
+      "p50": 3.1,
+      "p95": 3.9,
+      "max": 8.1,
+      "withinBudget": true
+    },
+    {
+      "name": "Terceros: primera página",
+      "path": "/reports/parties",
+      "results": 9001,
+      "p50": 5.3,
+      "p95": 5.9,
+      "max": 6,
+      "withinBudget": true
+    },
+    {
+      "name": "Terceros: todos",
+      "path": "/reports/parties?status=ALL",
+      "results": 10001,
+      "p50": 10.1,
+      "p95": 13.3,
+      "max": 18.7,
+      "withinBudget": true
+    },
+    {
+      "name": "Terceros: identificación",
+      "path": "/reports/parties?identification=1700000123001",
+      "results": 1,
+      "p50": 3.9,
+      "p95": 5,
+      "max": 9.3,
+      "withinBudget": true
+    }
+  ],
+  "counts": [
+    {
+      "name": "Documentos emitidos, año",
+      "total": 100000,
+      "p50": 28.5,
+      "p95": 29.3,
+      "max": 30
+    },
+    {
+      "name": "Retenciones, año",
+      "total": 18000,
+      "p50": 27.8,
+      "p95": 29.7,
+      "max": 29.8
+    },
+    {
+      "name": "Movimientos, año",
+      "total": 290000,
+      "p50": 35.4,
+      "p95": 36.5,
+      "max": 37.8
+    },
+    {
+      "name": "Terceros, todos",
+      "total": 10001,
+      "p50": 1.1,
+      "p95": 1.3,
+      "max": 1.6
+    }
+  ],
+  "exports": {
+    "monthly": {
+      "path": "/reports/issued-documents/export?from=2026-09-01&to=2026-09-30",
+      "samples": 5,
+      "p50": 429.7,
+      "p95": 477.7,
+      "max": 477.7,
+      "cpuMsMax": 320,
+      "peakRssMiBMax": 800.3,
+      "rssBeforeMiB": 796.5,
+      "rssGrowthMiBMax": 2.5,
+      "sizeMiB": 0.4,
+      "transactionSecondsMax": 0.3,
+      "connectionsMax": 4
+    },
+    "maximum": {
+      "path": "/reports/issued-documents/export?from=2025-10-09&to=2026-10-08",
+      "samples": 3,
+      "p50": 3972.2,
+      "p95": 3999.1,
+      "max": 3999.1,
+      "cpuMsMax": 2740,
+      "peakRssMiBMax": 815.1,
+      "rssBeforeMiB": 800.3,
+      "rssGrowthMiBMax": 10.6,
+      "sizeMiB": 4.9,
+      "transactionSecondsMax": 3.9,
+      "connectionsMax": 4
+    },
+    "otherMaximums": [
+      {
+        "path": "/reports/withholdings/export?from=2025-10-09&to=2026-10-08&state=ALL",
+        "samples": 1,
+        "p50": 653.5,
+        "p95": 653.5,
+        "max": 653.5,
+        "cpuMsMax": 520,
+        "peakRssMiBMax": 815.3,
+        "rssBeforeMiB": 815.1,
+        "rssGrowthMiBMax": 0.2,
+        "sizeMiB": 0.9,
+        "transactionSecondsMax": 0.6,
+        "connectionsMax": 3
+      },
+      {
+        "path": "/reports/parties/export?status=ALL",
+        "samples": 1,
+        "p50": 160.3,
+        "p95": 160.3,
+        "max": 160.3,
+        "cpuMsMax": 170,
+        "peakRssMiBMax": 815.4,
+        "rssBeforeMiB": 815.3,
+        "rssGrowthMiBMax": 0.1,
+        "sizeMiB": 0.3,
+        "transactionSecondsMax": 0.1,
+        "connectionsMax": 3
+      },
+      {
+        "path": "/reports/inventory-balances/export",
+        "samples": 1,
+        "p50": 230.3,
+        "p95": 230.3,
+        "max": 230.3,
+        "cpuMsMax": 240,
+        "peakRssMiBMax": 815.7,
+        "rssBeforeMiB": 815.4,
+        "rssGrowthMiBMax": 0.3,
+        "sizeMiB": 0.2,
+        "transactionSecondsMax": 0,
+        "connectionsMax": 3
+      },
+      {
+        "path": "/reports/inventory-movements/export?from=2026-07-01&to=2026-10-08",
+        "samples": 1,
+        "p50": 2224,
+        "p95": 2224,
+        "max": 2224,
+        "cpuMsMax": 2230,
+        "peakRssMiBMax": 816,
+        "rssBeforeMiB": 815.7,
+        "rssGrowthMiBMax": 0.3,
+        "sizeMiB": 2.1,
+        "transactionSecondsMax": 1.1,
+        "connectionsMax": 3
+      }
+    ],
+    "rowLimit": {
+      "path": "/reports/issued-documents/export?from=2025-10-09&to=2026-10-08&environment=ALL",
+      "p50": 46.6,
+      "p95": 51.2,
+      "max": 51.2
+    },
+    "concurrentMonthly": {
+      "path": "/reports/issued-documents/export?from=2026-09-01&to=2026-09-30",
+      "requests": 10,
+      "generated": 10,
+      "busy": 0,
+      "other": [],
+      "wallMs": 1397.5,
+      "slowestMs": 1397.1,
+      "cpuMs": 2090,
+      "rssBeforeMiB": 816,
+      "peakRssMiB": 819.7,
+      "transactionSecondsMax": 1.3,
+      "concurrentTransactions": 10,
+      "connectionsMax": 11
+    },
+    "concurrentMaximum": {
+      "path": "/reports/issued-documents/export?from=2025-10-09&to=2026-10-08",
+      "requests": 10,
+      "generated": 10,
+      "busy": 0,
+      "other": [],
+      "wallMs": 16164.7,
+      "slowestMs": 16164.1,
+      "cpuMs": 25110,
+      "rssBeforeMiB": 819.7,
+      "peakRssMiB": 893.8,
+      "transactionSecondsMax": 16,
+      "concurrentTransactions": 10,
+      "connectionsMax": 18
+    },
+    "concurrentDefault": {
+      "path": "/reports/issued-documents/export?from=2025-10-09&to=2026-10-08",
+      "requests": 10,
+      "generated": 2,
+      "busy": 8,
+      "other": [],
+      "wallMs": 5771.9,
+      "slowestMs": 5771.9,
+      "cpuMs": 7130,
+      "rssBeforeMiB": 572.5,
+      "peakRssMiB": 738.9,
+      "transactionSecondsMax": 5.7,
+      "concurrentTransactions": 2,
+      "connectionsMax": 13
+    }
+  }
+}

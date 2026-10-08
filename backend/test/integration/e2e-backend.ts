@@ -10,6 +10,8 @@ export const E2E_ORIGIN = "http://localhost:3000";
 export type E2eBackend = {
   db: MigratedSchema;
   base: string;
+  /** Proceso de main.ts, para medir su memoria y su CPU en los benchmarks. */
+  pid: number;
   /** Salida estándar y de errores acumulada del proceso. */
   output: () => string;
   /** Detiene el proceso con SIGTERM y borra el esquema si lo creó este arranque. */
@@ -93,6 +95,7 @@ export async function startE2eBackend(options: {
   return {
     db,
     base,
+    pid: backend.pid!,
     output: () => output,
     stop,
     async crash() {
