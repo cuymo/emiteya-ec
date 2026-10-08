@@ -83,7 +83,7 @@
 
 ## 4. Generación del paquete
 
-- [ ] 4.1 Implementar el dominio (design D2, D3 y D13):
+- [x] 4.1 Implementar el dominio (design D2, D3 y D13):
   - la gramática y la construcción de las rutas;
   - el nombre del paquete desde `generatedAt` en Ecuador;
   - el manifiesto con su versión, sus conteos, sus formatos, sus exclusiones y los ausentes con su motivo;
@@ -100,7 +100,7 @@
   - el nombre sin RUC;
   - el manifiesto sin inventario;
   - `RIDE_PENDING`, `RIDE_STOPPED` y el `RESERVED` sin ausentes.
-- [ ] 4.2 Implementar la fase 1 (design D12):
+- [x] 4.2 Implementar la fase 1 (design D12):
   - la transacción `REPEATABLE READ, READ ONLY` con `snapshotAt`;
   - los seis libros con las hojas de design D4, divididas por encima de 1 048 575 filas de forma determinista;
   - el inventario del paquete a un temporal.
@@ -109,7 +109,7 @@
   - los tipos de celda (identificación como texto, 106.00 como número exacto, el valor que excede la precisión como texto, `=HYPERLINK` como texto sin fórmula y la fecha sin desplazamiento);
   - la división de una hoja en máximo menos uno, máximo y máximo más uno filas de datos, con el encabezado repetido y sin perder ni repetir filas en el límite, con el límite real en la escritura y con uno reducido inyectado;
   - un comprobante emitido y un tercero editado después de `snapshotAt` que no entran.
-- [ ] 4.3 Implementar la fase 2 (design D7, D12 y D13):
+- [x] 4.3 Implementar la fase 2 (design D7, D12 y D13):
   - la lectura por lotes de los snapshots, los artefactos, las respuestas y los logos del inventario;
   - la verificación de su tamaño y su SHA-256 antes de agregarlos;
   - el paquete con `SHA256SUMS` al final;
@@ -123,12 +123,12 @@
   - un `ENOSPC` inesperado a mitad del ZIP falla con el mismo código, borra el parcial y no publica;
   - el XML autorizado del paquete es idéntico al de la descarga de la bandeja;
   - `sha256sum -c` sobre el paquete descomprimido pasa.
-- [ ] 4.4 Implementar las dos capas de design D6:
+- [x] 4.4 Implementar las dos capas de design D6:
   - **A:** una prueba de las proyecciones que enumera las columnas de cada fuente y comprueba que ninguna es de `signing_certificate_secret`, `account`, `session`, `verification` ni `invitation`, ni `user.password`, IP o user agent;
   - **B:** una prueba del paquete completo que siembra marcadores en una firma de prueba (archivo y contraseña), en los campos cifrados y la clave envuelta, en un hash de contraseña, una sesión, una verificación, una invitación, un análogo del secreto de autenticación, una IP, un user agent y un borrador, y los busca en claro y en base64 en cada entrada descomprimida, sin descifrar nada.
 
   Verificar que ninguno aparece y que el manifiesto y `LEEME.txt` declaran las exclusiones
-- [ ] 4.5 Implementar el job `portability.export` (design D10, D11 y D14):
+- [x] 4.5 Implementar el job `portability.export` (design D10, D11 y D14):
   - el runner propio con `DATA_EXPORT_MAX_CONCURRENT` lazos;
   - el heartbeat de renovación con aborto al perder el *lease*;
   - los archivos por intento con `0600`, `fsync`, el renombrado y `0400`;
@@ -145,14 +145,14 @@
   - una transacción final fallida que no deja `READY` ni `completed` y cuyo archivo borra el barrido;
   - `expires_at` contado desde `READY`, no desde la solicitud;
   - los eventos sin rutas.
-- [ ] 4.6 Implementar el barrido y la recuperación al arrancar (design D14 y D15):
+- [x] 4.6 Implementar el barrido y la recuperación al arrancar (design D14 y D15):
   - los `READY` vencidos pasan a `EXPIRED` (`TTL`);
   - los `READY` vigentes con el archivo faltante o de otro tamaño pasan a `FAILED` (`DATA_EXPORT_PACKAGE_MISSING` o `DATA_EXPORT_PACKAGE_INTEGRITY`) con `data_export.failed`, nunca a `EXPIRED`;
   - se borran los parciales, los directorios de trabajo y los archivos sin fila válida;
   - solo se borran nombres de la gramática, sin seguir enlaces.
 
   Verificar con pruebas de integración cada caso, que un enlace simbólico en el directorio no se sigue y que ningún dato de la empresa cambia
-- [ ] 4.7 Documentar el formato `PORTABILITY_FORMAT_V1` en `docs/architecture/data-portability-format.md`:
+- [x] 4.7 Documentar el formato `PORTABILITY_FORMAT_V1` en `docs/architecture/data-portability-format.md`:
   - la estructura y las rutas;
   - el manifiesto;
   - `SHA256SUMS`;

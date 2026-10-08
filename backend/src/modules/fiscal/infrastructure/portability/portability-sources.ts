@@ -35,6 +35,8 @@ type DocumentRaw = {
   authorization_number: string | null;
   authorization_date: Date | null;
   snapshot_version: number | null;
+  schema_version: string;
+  snapshot_bytes: number;
   artifacts: { id: string; kind: ArtifactKind; sizeBytes: number; sha256: string }[];
   responses: {
     attemptId: string;
@@ -121,7 +123,8 @@ export function createFiscalPortabilitySources(
           r.recipient_count, r.recipient_identification, r.recipient_name,
           (${subtotal})::text AS subtotal, (${taxes})::text AS taxes, d.total::text AS total,
           d.authorization_number, d.authorization_date,
-          (d.snapshot ->> 'snapshotVersion')::int AS snapshot_version,
+          (d.snapshot ->> 'snapshotVersion')::int AS snapshot_version, d.schema_version,
+          octet_length(d.snapshot::text) AS snapshot_bytes,
           COALESCE(a.artifacts, '[]'::json) AS artifacts,
           COALESCE(t.responses, '[]'::json) AS responses,
           j.status AS ride_job_status`,
@@ -157,7 +160,7 @@ export function createFiscalPortabilitySources(
             LIMIT 1
           ) j ON d.state = 'AUTHORIZED'
           WHERE d.company_id = ${companyId}`,
-        orderBy: Prisma.sql`d.environment, d.document_type, d.document_number, d.id`,
+        orderBy: Prisma.sql`d.environment, d.document_type, d.document_number COLLATE "C", d.id`,
       }),
       map: (raw: DocumentRaw) => {
         const guide = raw.document_type === "06";
@@ -183,6 +186,8 @@ export function createFiscalPortabilitySources(
           authorizationNumber: raw.authorization_number,
           authorizationDate: raw.authorization_date,
           snapshotVersion: raw.snapshot_version,
+          schemaVersion: raw.schema_version,
+          snapshotBytes: raw.snapshot_bytes,
           artifacts: raw.artifacts,
           responses: raw.responses,
           rideJobStatus: raw.ride_job_status,

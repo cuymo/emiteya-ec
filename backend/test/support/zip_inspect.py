@@ -7,6 +7,13 @@ import json
 import sys
 import zipfile
 
+if sys.argv[1] == "--extract":
+    # python3 -I zip_inspect.py --extract <zip> <destino>: extrae todo y lista las entradas en orden.
+    with zipfile.ZipFile(sys.argv[2]) as archive:
+        archive.extractall(sys.argv[3])
+        print(json.dumps([info.filename for info in archive.infolist()]))
+    sys.exit(0)
+
 path, wanted = sys.argv[1], sys.argv[2:]
 with zipfile.ZipFile(path) as archive:
     infos = archive.infolist()

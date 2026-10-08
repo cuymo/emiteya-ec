@@ -17,6 +17,12 @@ import { createSigningPortabilitySources } from "../../src/modules/signing/infra
 import { createTaxpayerPortabilitySources } from "../../src/modules/taxpayer/infrastructure/index.ts";
 import { createWithholdingPortabilitySources } from "../../src/modules/withholding-receipts/infrastructure/index.ts";
 import { readOnlySnapshot } from "../../src/platform/db/read-only-snapshot.ts";
+import type { GeneratorDeps } from "../../src/modules/data-portability/application/generate.ts";
+import { createPackageFiles } from "../../src/modules/data-portability/infrastructure/package-files.ts";
+import { createPortabilityDatabase } from "../../src/modules/data-portability/infrastructure/prisma-portability-database.ts";
+import { openZip64 } from "../../src/modules/data-portability/infrastructure/zip64.ts";
+import { writeXlsx } from "../../src/platform/xlsx/xlsx-writer.ts";
+import type { MigratedSchema } from "./database.ts";
 import type { CompanyBatches } from "../../src/platform/db/report-source.ts";
 import type { FiscalCompany } from "./fiscal-harness.ts";
 import { REPORT_PROJECTIONS } from "./reports-harness.ts";
@@ -50,7 +56,9 @@ export function collect<R>(
 ): Promise<R[]> {
   return readOnlySnapshot(prisma, async (db) => {
     const rows: R[] = [];
-    for await (const batch of batches(db, companyId, size)) rows.push(...batch);
+    for await (const batch of batches.batches(db, companyId, size)) rows.push(...batch);
+    // El conteo usa la misma consulta: coincide con las filas recorridas.
+    if ((await batches.count(db, companyId)) !== rows.length) throw new Error("conteo distinto");
     return rows;
   });
 }
@@ -216,7 +224,7 @@ export async function seedPortabilityExtras(
   await prisma.session.create({
     data: {
       id: randomUUID(),
-      token: SECRET_MARKERS.sessionToken,
+      token: `${SECRET_MARKERS.sessionToken}-${companyId}`,
       userId: adminId,
       expiresAt: new Date("2027-01-01T00:00:00Z"),
       ipAddress: SECRET_MARKERS.ipAddress,
@@ -355,4 +363,50 @@ export async function seedPortabilityExtras(
     },
   });
   return ids;
+}
+
+/** Los artefactos autorizados que los arneses de los reportes no escriben: el XML autorizado. */
+export async function completeAuthorizedArtifacts(prisma: PrismaClient, companyId: string) {
+  const documents = await prisma.electronicDocument.findMany({
+    where: { companyId, state: "AUTHORIZED" },
+    select: { id: true, accessKey: true, artifacts: { select: { kind: true } } },
+  });
+  for (const document of documents) {
+    if (document.artifacts.some((artifact) => artifact.kind === "AUTHORIZED_XML")) continue;
+    const content = AUTHORIZED_XML(document.accessKey);
+    await prisma.documentArtifact.create({
+      data: {
+        companyId,
+        documentId: document.id,
+        kind: "AUTHORIZED_XML",
+        mediaType: "application/xml",
+        content: new Uint8Array(content),
+        sizeBytes: content.length,
+        sha256: sha256(content),
+        metadata: {},
+      },
+    });
+  }
+}
+
+/** Las dependencias de la generación sobre el esquema de la prueba y un directorio privado. */
+export function generatorDeps(
+  db: MigratedSchema,
+  root: string,
+  overrides: Partial<GeneratorDeps> = {},
+): GeneratorDeps & { packages: ReturnType<typeof createPackageFiles> } {
+  const packages = createPackageFiles(root);
+  return {
+    sources: portabilitySources(db.name),
+    database: createPortabilityDatabase(db.database.prisma),
+    writeXlsx,
+    openZip: openZip64,
+    files: packages.files,
+    limits: { headroomPercent: 10, reserveBytes: 1024 * 1024, snapshotTimeoutMs: 120_000 },
+    applicationVersion: "pruebas",
+    now: () => new Date(),
+    batchSize: 3,
+    ...overrides,
+    packages,
+  };
 }

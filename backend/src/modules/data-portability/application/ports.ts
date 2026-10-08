@@ -198,6 +198,10 @@ export type DocumentRow = Readonly<{
   authorizationNumber: string | null;
   authorizationDate: Date | null;
   snapshotVersion: number | null;
+  /** Versión del XSD con que se construyó su XML. */
+  schemaVersion: string;
+  /** Tamaño del snapshot serializado, para la reserva de disco de la fase 2. */
+  snapshotBytes: number;
   artifacts: readonly ArtifactRef[];
   responses: readonly ResponseRef[];
   /** Estado del job del RIDE de un comprobante autorizado sin RIDE (pendiente o detenido). */
@@ -296,3 +300,27 @@ export type PortabilitySources = Readonly<{
   readSriResponse(db: DbClient, companyId: string, attemptId: string): Promise<StoredBytes | null>;
   readLogo(db: DbClient, companyId: string, assetId: string): Promise<StoredBytes | null>;
 }>;
+
+/** La base: la transacción de solo lectura de la fase 1, con su momento, y las escrituras. */
+export type PortabilityDatabase = Readonly<{
+  db: DbClient;
+  readOnlySnapshot<T>(
+    work: (db: DbClient, snapshotAt: Date) => Promise<T>,
+    timeoutMs: number,
+  ): Promise<T>;
+  transaction<T>(work: (tx: DbClient) => Promise<T>): Promise<T>;
+}>;
+
+export type XlsxWriter = (
+  path: string,
+  sheets: readonly import("../../../platform/xlsx/xlsx-writer.ts").XlsxSheet[],
+) => Promise<number[]>;
+
+export type ZipMethod = "store" | "deflate";
+export type ZipPackage = Readonly<{
+  addBuffer(path: string, data: Uint8Array, method: ZipMethod): Promise<void>;
+  addFile(path: string, source: string, method: ZipMethod): Promise<void>;
+  close(): Promise<Readonly<{ sizeBytes: number; sha256: string; entries: number }>>;
+  abort(): Promise<void>;
+}>;
+export type ZipOpener = (path: string, workPath: string) => Promise<ZipPackage>;

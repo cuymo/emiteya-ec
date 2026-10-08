@@ -85,17 +85,16 @@ export function sqlReportSource<F, Raw, R>(definition: {
   };
 }
 
-/** Lotes de una fuente sin filtros (add-data-portability, design D1): toda la empresa, en orden. */
-export type CompanyBatches<R> = (
-  db: DbClient,
-  companyId: string,
-  size: number,
-) => AsyncIterable<R[]>;
-
 /**
- * Una sola consulta ordenada de toda la empresa, recorrida por lotes con un cursor de la
- * transacción en curso: la fase 1 de la portabilidad, en `REPEATABLE READ` de solo lectura.
+ * Un conjunto de toda la empresa (add-data-portability, design D1 y D12): su conteo y sus lotes en
+ * orden, con un cursor de la transacción en curso, la de la fase 1 en `REPEATABLE READ` de solo
+ * lectura. El conteo y los lotes usan la misma consulta: las hojas se dividen sin perder filas.
  */
+export type CompanyBatches<R> = Readonly<{
+  count(db: DbClient, companyId: string): Promise<number>;
+  batches(db: DbClient, companyId: string, size: number): AsyncIterable<R[]>;
+}>;
+
 export function sqlCompanyBatches<Raw, R>(definition: {
   query(companyId: string): ReportQuery;
   map(raw: Raw): R;
@@ -104,5 +103,8 @@ export function sqlCompanyBatches<Raw, R>(definition: {
     query: (companyId) => definition.query(companyId),
     map: (raw) => definition.map(raw),
   });
-  return (db, companyId, size) => source.batches(db, companyId, undefined, size);
+  return {
+    count: (db, companyId) => source.count(db, companyId, undefined),
+    batches: (db, companyId, size) => source.batches(db, companyId, undefined, size),
+  };
 }

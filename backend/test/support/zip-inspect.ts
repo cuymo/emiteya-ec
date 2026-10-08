@@ -26,3 +26,11 @@ export async function inspectZip(path: string, names: readonly string[] = []) {
   });
   return JSON.parse(stdout) as ZipInspection;
 }
+
+/** Extrae el paquete con zipfile de Python y devuelve sus entradas en el orden del archivo. */
+export async function extractZip(path: string, destination: string): Promise<string[]> {
+  const { stdout } = await run("python3", ["-I", SCRIPT, "--extract", path, destination], {
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  return JSON.parse(stdout) as string[];
+}
