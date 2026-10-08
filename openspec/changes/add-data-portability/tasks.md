@@ -15,7 +15,7 @@
   - Registrar la elección y su evidencia en `docs/architecture/adr/0024-*.md` y en `docs/architecture/stack.md`.
   - Si la elegida es una biblioteca de producción que cumple todos los criterios, añadirla (preautorizado). Si ninguna opción cumple, detener el apply y reportar el bloqueo.
   - Verificar que el ADR recoge las mediciones de las dos opciones con un paquete de más de 65 535 entradas y más de 4 GiB.
-- [ ] 1.2 Implementar el contenedor elegido en `data-portability/infrastructure`: escritura a un archivo con contrapresión, SHA-256 del paquete al vuelo, STORE para PDF, XLSX, PNG y JPEG, y DEFLATE para XML, JSON y texto. Verificar con pruebas que leen el paquete con un lector independiente:
+- [x] 1.2 Implementar el contenedor elegido en `data-portability/infrastructure`: escritura a un archivo con contrapresión, SHA-256 del paquete al vuelo, STORE para PDF, XLSX, PNG y JPEG, y DEFLATE para XML, JSON y texto. Verificar con pruebas que leen el paquete con un lector independiente:
   - más de 65 535 entradas;
   - una entrada y un total por encima de 4 GiB, en una prueba marcada como lenta;
   - las entradas binarias exactas;

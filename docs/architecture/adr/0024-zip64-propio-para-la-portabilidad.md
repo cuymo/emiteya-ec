@@ -64,7 +64,7 @@ implementación llega con el mismo cambio (tarea 1.2).
     - los atributos de archivo regular;
     - los bytes deterministas;
     - la memoria acotada con el heap limitado.
-  - Una prueba opcional y lenta (`PORTABILITY_ZIP64_LARGE=1`) escribe una entrada y un total de más de 4 GiB y los lee con los cuatro lectores. Se ejecuta en el apply y en el benchmark, fuera de `verify`, porque escribe unos 5 GB.
+  - Una prueba opcional y lenta (`PORTABILITY_ZIP64_LARGE=1`, con `PORTABILITY_ZIP64_LARGE_DIR` en un disco que no sea tmpfs) escribe una entrada y un total de más de 4 GiB y los lee con los cuatro lectores. Se ejecuta en el apply y en el benchmark, fuera de `verify`, porque escribe unos 5 GB. En el apply pasó en 179 s.
 
 ### Dependencias
 
