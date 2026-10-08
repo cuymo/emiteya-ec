@@ -1,0 +1,200 @@
+{
+  "date": "2026-10-08",
+  "purpose": "Spike de la tarea 1.1 de add-reports-export (design D9): escritor XLSX para los reportes",
+  "environment": {
+    "node": "v24.15.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 hilos)",
+    "memory": "16 GiB",
+    "versions": {
+      "fflate": "0.8.3",
+      "exceljs": "4.4.0",
+      "fast-xml-parser": "5.11.2",
+      "openpyxl": "3.1.5"
+    }
+  },
+  "options": {
+    "A": "escritor OOXML propio + ZIP con streaming de fflate 0.8.3 (deflate en JavaScript, nivel 6)",
+    "A2": "escritor OOXML propio + contenedor ZIP propio sobre node:zlib (createDeflateRaw nivel 6, crc32)",
+    "B": "exceljs 4.4.0, stream.xlsx.WorkbookWriter con estilos y sin cadenas compartidas"
+  },
+  "data": "13 columnas de Documentos emitidos y la hoja Filtros; filas sintéticas deterministas generadas en lotes de 1000; el tiempo incluye generar los datos (~1.3 s por 100 000 filas)",
+  "baselineRssMiB": 120,
+  "measures": [
+    {
+      "option": "A",
+      "ms": 4040,
+      "cpuMs": 4149,
+      "peakRssMiB": 214.6,
+      "peakHeapMiB": 62.8,
+      "peakExternalMiB": 51.8,
+      "loopP99Ms": 54.7,
+      "loopMaxMs": 70.1,
+      "sizeMiB": 6.22,
+      "dataRows": 100000
+    },
+    {
+      "option": "A2",
+      "ms": 2040,
+      "cpuMs": 2856,
+      "peakRssMiB": 160.4,
+      "peakHeapMiB": 41.1,
+      "peakExternalMiB": 11.6,
+      "loopP99Ms": 7.3,
+      "loopMaxMs": 15,
+      "sizeMiB": 5.74,
+      "dataRows": 100000
+    },
+    {
+      "option": "B",
+      "ms": 6634,
+      "cpuMs": 6857,
+      "peakRssMiB": 231.7,
+      "peakHeapMiB": 48.4,
+      "peakExternalMiB": 137.3,
+      "loopP99Ms": 69.9,
+      "loopMaxMs": 119.6,
+      "sizeMiB": 8.83,
+      "dataRows": 100000
+    },
+    {
+      "option": "A",
+      "ms": 11724,
+      "cpuMs": 11670,
+      "peakRssMiB": 226.9,
+      "peakHeapMiB": 70.8,
+      "peakExternalMiB": 53,
+      "loopP99Ms": 51.9,
+      "loopMaxMs": 64.4,
+      "sizeMiB": 18.62,
+      "dataRows": 300000
+    },
+    {
+      "option": "A2",
+      "ms": 5972,
+      "cpuMs": 8180,
+      "peakRssMiB": 201.2,
+      "peakHeapMiB": 67.5,
+      "peakExternalMiB": 13.9,
+      "loopP99Ms": 7.2,
+      "loopMaxMs": 8.8,
+      "sizeMiB": 17.28,
+      "dataRows": 300000
+    },
+    {
+      "option": "B",
+      "ms": 19634,
+      "cpuMs": 20494,
+      "peakRssMiB": 472.4,
+      "peakHeapMiB": 94.4,
+      "peakExternalMiB": 380.1,
+      "loopP99Ms": 89.7,
+      "loopMaxMs": 115.9,
+      "sizeMiB": 26.32,
+      "dataRows": 300000
+    }
+  ],
+  "boundedMemory": [
+    {
+      "option": "A2",
+      "ms": 36968,
+      "cpuMs": 102744,
+      "peakRssMiB": 150.5,
+      "peakHeapMiB": 27.1,
+      "peakExternalMiB": 11.3,
+      "loopP99Ms": 11.5,
+      "loopMaxMs": 99.9,
+      "sizeMiB": 57.65,
+      "dataRows": 1000000,
+      "maxOldSpaceMiB": 48
+    },
+    {
+      "option": "A",
+      "ms": 49125,
+      "cpuMs": 68633,
+      "peakRssMiB": 270.8,
+      "peakHeapMiB": 38.4,
+      "peakExternalMiB": 37.3,
+      "loopP99Ms": 61.3,
+      "loopMaxMs": 67.8,
+      "sizeMiB": 62.04,
+      "dataRows": 1000000,
+      "maxOldSpaceMiB": 48
+    },
+    {
+      "option": "B",
+      "ms": 21652,
+      "cpuMs": 36522,
+      "peakRssMiB": 417.3,
+      "peakHeapMiB": 62.7,
+      "peakExternalMiB": 366.4,
+      "loopP99Ms": 81.1,
+      "loopMaxMs": 89.1,
+      "sizeMiB": 26.32,
+      "dataRows": 300000,
+      "maxOldSpaceMiB": 48
+    },
+    {
+      "option": "B",
+      "ms": 89281,
+      "cpuMs": 147739,
+      "peakRssMiB": 893.6,
+      "peakHeapMiB": 73.6,
+      "peakExternalMiB": 1203.5,
+      "loopP99Ms": 89.6,
+      "loopMaxMs": 101.5,
+      "sizeMiB": 87.54,
+      "dataRows": 1000000,
+      "maxOldSpaceMiB": 48
+    }
+  ],
+  "fidelity": {
+    "rows": 2000,
+    "cells": {
+      "text": 13200,
+      "number": 8800,
+      "date": 4000,
+      "decimalAsText": 1200
+    },
+    "readers": [
+      "openpyxl 3.1.5 con decodificación ST_Xstring",
+      "lector de pruebas fflate.unzipSync + fast-xml-parser",
+      "exceljs 4.4.0 (lectura)",
+      "zipfile de Python (testzip)",
+      "Info-ZIP unzip -t"
+    ],
+    "differences": {
+      "A": 0,
+      "A2": 0,
+      "B": 64
+    },
+    "bDifferences": [
+      "retorno de carro leído como salto de línea",
+      "_x0041_ literal decodificado como 'A'",
+      "U+0001, U+000B, U+001F y U+007F descartados",
+      "CRLF leído como LF"
+    ],
+    "formulas": {
+      "A": 0,
+      "A2": 0,
+      "B": 0
+    },
+    "quotePrefixCells": {
+      "A": 13200,
+      "A2": 13200,
+      "B": 0
+    },
+    "deterministicBytes": {
+      "A": true,
+      "A2": true,
+      "B": false
+    },
+    "timeZonesChecked": [
+      "UTC",
+      "Pacific/Kiritimati",
+      "America/Los_Angeles",
+      "Asia/Kolkata (lectura)"
+    ],
+    "schemaValidation": "xmllint contra ECMA-376 5.ª ed. Parte 4 (sml.xsd de transición) y Parte 2 (OPC): A y A2 válidos salvo xml:space en 110 <t> con espacios en los bordes"
+  }
+}

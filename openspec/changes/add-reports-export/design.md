@@ -111,8 +111,8 @@ Lo que ya existe y este cambio reutiliza, sin cambiar su comportamiento:
 
 - **Texto:** identificaciones, números de comprobante, claves de acceso, autorizaciones, códigos y períodos, siempre (RF-502).
 - **Números exactos:** un importe, una cantidad, una base o un porcentaje se escriben como celda numérica, con el texto decimal canónico en el XML de la hoja, solo si tienen como máximo 15 dígitos significativos; si tienen más, como texto canónico. Nunca pasan por `number` de JavaScript.
-- **Formatos:** importes con `#,##0.00`, cantidades con `#,##0.######` y porcentajes con `0.##`. La presentación del separador depende de la configuración regional de quien abre el archivo; el valor no.
-- **Fechas:** las fechas de emisión como fecha (número de serie desde el 1899-12-30, calculado desde la fecha ISO sin zona horaria) con `dd/mm/yyyy`; los momentos de los movimientos convertidos explícitamente a `America/Guayaquil` con `dd/mm/yyyy hh:mm`. Nunca se usa la zona ni la configuración regional del servidor.
+- **Formatos:** importes con `#,##0.00`; cantidades y porcentajes con los decimales de su valor canónico, de `#,##0` a `#,##0.000000` (ADR 0023: `#,##0.######` y `0.##` muestran un punto final en los enteros). La presentación del separador depende de la configuración regional de quien abre el archivo; el valor no.
+- **Fechas:** las fechas de emisión como fecha (número de serie desde el 1899-12-30, calculado desde la fecha ISO sin zona horaria) con `dd/mm/yyyy`; los momentos de los movimientos convertidos explícitamente a `America/Guayaquil`, con sus milisegundos y el formato `dd/mm/yyyy hh:mm:ss`. Nunca se usa la zona ni la configuración regional del servidor.
 - **Pruebas:** un lector de XLSX en las pruebas comprueba el tipo de cada celda y el viaje de ida y vuelta exacto del texto decimal.
 
 ### D8. Texto sin fórmulas
@@ -129,6 +129,11 @@ Lo que ya existe y este cambio reutiliza, sin cambiar su comportamiento:
 - **Criterios:** streaming real y memoria acotada con el máximo de filas; tipos de celda exactos de cadena y numérico; `quotePrefix` y ausencia de fórmulas; fechas; estilos mínimos; bytes deterministas para pruebas con un momento fijo; licencia, mantenimiento y tamaño del paquete; lectura de los libros en las pruebas.
 - Se elige la opción más pequeña y mantenible que cumpla todo, y se registra en `docs/architecture/adr/0023-...md` con la evidencia del spike. El cambio 16 puede reutilizar el escritor.
 - Si la opción elegida es propia, su alcance es solo ese subconjunto: no es un motor de hojas de cálculo.
+- **Resultado (2026-10-08, ADR 0023):** la opción A, con la capa ZIP evaluada de dos formas.
+  - Se elige el escritor OOXML propio sobre `node:zlib`: el deflate nativo por streaming, fuera del hilo principal, con un contenedor ZIP mínimo propio sin ZIP64.
+  - El ZIP de fflate también cumplía, pero comprime en el hilo de la API con el doble de CPU.
+  - exceljs (B) se descarta: su memoria crece con las filas y altera textos con caracteres de control.
+  - Las pruebas descomprimen el libro con fflate, solo de desarrollo.
 
 ### D10. Ejecución de la exportación
 
