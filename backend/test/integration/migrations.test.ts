@@ -778,6 +778,52 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
+  it("crea los borradores, el registro y las declaraciones de las liquidaciones con sus restricciones y triggers", async () => {
+    expect(await constraints()).toEqual(
+      expect.arrayContaining([
+        "purchase_settlement_draft_values_check",
+        "purchase_settlement_draft_content_check",
+        "purchase_settlement_draft_company_id_fkey",
+        "purchase_settlement_draft_company_id_emission_point_id_fkey",
+        "purchase_settlement_draft_company_id_supplier_party_id_fkey",
+        "purchase_settlement_draft_company_id_document_id_fkey",
+        "purchase_settlement_draft_created_by_fkey",
+        "purchase_settlement_draft_updated_by_fkey",
+        "purchase_settlement_values_check",
+        "purchase_settlement_company_id_document_id_fkey",
+        "purchase_settlement_company_id_supplier_party_id_fkey",
+        "purchase_settlement_declaration_values_check",
+        "purchase_settlement_declaration_company_id_document_id_fkey",
+        "purchase_settlement_declaration_declared_by_fkey",
+        "idempotency_record_values_check",
+      ]),
+    );
+    expect(await indexes()).toEqual(
+      expect.arrayContaining([
+        "purchase_settlement_draft_pkey",
+        "purchase_settlement_draft_document_id_key",
+        "purchase_settlement_draft_company_id_id_key",
+        "purchase_settlement_draft_company_id_document_id_key",
+        "purchase_settlement_draft_company_id_status_updated_at_idx",
+        "purchase_settlement_pkey",
+        "purchase_settlement_company_id_supplier_party_id_idx",
+        "purchase_settlement_declaration_pkey",
+      ]),
+    );
+    expect(await triggers()).toEqual(
+      expect.arrayContaining([
+        "purchase_settlement_draft_guard",
+        "purchase_settlement_origin",
+        "purchase_settlement_immutable",
+        "purchase_settlement_no_truncate",
+        "purchase_settlement_declaration_immutable",
+        "purchase_settlement_declaration_no_truncate",
+        // Trigger de restricción diferido (add-purchase-settlements, design D25).
+        "purchase_settlement_complete",
+      ]),
+    );
+  });
+
   it("no limita el número de empresas con ninguna restricción", async () => {
     // El único objeto sobre la empresa exige su consumidor final al confirmarla (trigger de
     // restricción de add-parties-and-products, design D5); no limita cuántas empresas hay.

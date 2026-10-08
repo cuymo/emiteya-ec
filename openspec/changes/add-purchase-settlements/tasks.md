@@ -7,8 +7,8 @@
 
 ## 2. Esquema de la liquidación
 
-- [ ] 2.1 Crear la migración aditiva `add_purchase_settlements` (design D25): `purchase_settlement_draft`, `purchase_settlement` y `purchase_settlement_declaration` con sus FK compuestas por empresa, `CHECK`, triggers de inmutabilidad y de origen, el trigger de restricción diferido que exige el registro y exactamente las cuatro declaraciones de la política para un comprobante `03`, y `purchase_settlement.emit` en el `CHECK` de `idempotency_record`. Verificar con pruebas de base de datos cada restricción, la inmutabilidad, el diferido (sin registro, con tres declaraciones, con una repetida) y que los comprobantes existentes no cambian
-- [ ] 2.2 Añadir las tablas a `migrations.test.ts` y documentarlas en `database.md`, con el acoplamiento intencional del trigger diferido
+- [x] 2.1 Crear la migración aditiva `add_purchase_settlements` (design D25): `purchase_settlement_draft`, `purchase_settlement` y `purchase_settlement_declaration` con sus FK compuestas por empresa, `CHECK`, triggers de inmutabilidad y de origen, el trigger de restricción diferido que exige el registro y exactamente las cuatro declaraciones de la política para un comprobante `03`, y `purchase_settlement.emit` en el `CHECK` de `idempotency_record`. Verificar con pruebas de base de datos cada restricción, la inmutabilidad, el diferido (sin registro, con tres declaraciones, con una repetida) y que los comprobantes existentes no cambian
+- [x] 2.2 Añadir las tablas a `migrations.test.ts` y documentarlas en `database.md`, con el acoplamiento intencional del trigger diferido
 
 ## 3. Contratos, permisos y límites
 

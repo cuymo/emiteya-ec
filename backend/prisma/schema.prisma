@@ -16,51 +16,54 @@ datasource db {
 }
 
 model User {
-  id                          String                        @id
+  id                          String                          @id
   name                        String
   email                       String
-  emailVerified               Boolean                       @default(false)
+  emailVerified               Boolean                         @default(false)
   image                       String?
-  createdAt                   DateTime                      @default(now())
-  updatedAt                   DateTime                      @updatedAt
+  createdAt                   DateTime                        @default(now())
+  updatedAt                   DateTime                        @updatedAt
   role                        String?
-  banned                      Boolean?                      @default(false)
+  banned                      Boolean?                        @default(false)
   banReason                   String?
   banExpires                  DateTime?
   sessions                    Session[]
   accounts                    Account[]
   members                     Member[]
   invitations                 Invitation[]
-  auditActions                AuditEvent[]                  @relation("AuditActor")
-  auditTargets                AuditEvent[]                  @relation("AuditTarget")
-  configVersionsCreated       CompanyConfigVersion[]        @relation("ConfigVersionCreator")
-  configAssetsCreated         ConfigurationAsset[]          @relation("ConfigAssetCreator")
-  sequenceReservations        FiscalSequenceReservation[]   @relation("SequenceReserver")
-  signingCertificatesUploaded SigningCertificate[]          @relation("SigningCertificateUploader")
-  fiscalCatalogDecisions      CompanyFiscalCatalogSetting[] @relation("FiscalCatalogDecider")
-  partiesCreated              Party[]                       @relation("PartyCreator")
-  partiesUpdated              Party[]                       @relation("PartyUpdater")
-  productsCreated             Product[]                     @relation("ProductCreator")
-  productsUpdated             Product[]                     @relation("ProductUpdater")
-  invoiceDraftsCreated        InvoiceDraft[]                @relation("InvoiceDraftCreator")
-  invoiceDraftsUpdated        InvoiceDraft[]                @relation("InvoiceDraftUpdater")
-  documentsCreated            ElectronicDocument[]          @relation("DocumentCreator")
-  documentTransitions         DocumentStateTransition[]     @relation("DocumentTransitionActor")
-  idempotencyRecords          IdempotencyRecord[]           @relation("IdempotencyCreator")
-  jobsRequested               Job[]                         @relation("JobRequester")
-  sriAttemptsInitiated        SriAttempt[]                  @relation("SriAttemptInitiator")
-  documentDeliveries          DocumentDeliveryEvent[]       @relation("DocumentDeliveryActor")
-  stockInitializations        StockBalance[]                @relation("StockInitializer")
-  stockMovements              StockMovement[]               @relation("StockMovementActor")
-  creditNoteDraftsCreated     CreditNoteDraft[]             @relation("CreditNoteDraftCreator")
-  creditNoteDraftsUpdated     CreditNoteDraft[]             @relation("CreditNoteDraftUpdater")
-  debitNoteDraftsCreated      DebitNoteDraft[]              @relation("DebitNoteDraftCreator")
-  debitNoteDraftsUpdated      DebitNoteDraft[]              @relation("DebitNoteDraftUpdater")
-  withholdingDraftsCreated    WithholdingReceiptDraft[]     @relation("WithholdingReceiptDraftCreator")
-  withholdingDraftsUpdated    WithholdingReceiptDraft[]     @relation("WithholdingReceiptDraftUpdater")
-  shippingGuideDraftsCreated  ShippingGuideDraft[]          @relation("ShippingGuideDraftCreator")
-  shippingGuideDraftsUpdated  ShippingGuideDraft[]          @relation("ShippingGuideDraftUpdater")
-  shippingGuideDeclarations   ShippingGuideRecipient[]      @relation("ShippingGuideDeclarant")
+  auditActions                AuditEvent[]                    @relation("AuditActor")
+  auditTargets                AuditEvent[]                    @relation("AuditTarget")
+  configVersionsCreated       CompanyConfigVersion[]          @relation("ConfigVersionCreator")
+  configAssetsCreated         ConfigurationAsset[]            @relation("ConfigAssetCreator")
+  sequenceReservations        FiscalSequenceReservation[]     @relation("SequenceReserver")
+  signingCertificatesUploaded SigningCertificate[]            @relation("SigningCertificateUploader")
+  fiscalCatalogDecisions      CompanyFiscalCatalogSetting[]   @relation("FiscalCatalogDecider")
+  partiesCreated              Party[]                         @relation("PartyCreator")
+  partiesUpdated              Party[]                         @relation("PartyUpdater")
+  productsCreated             Product[]                       @relation("ProductCreator")
+  productsUpdated             Product[]                       @relation("ProductUpdater")
+  invoiceDraftsCreated        InvoiceDraft[]                  @relation("InvoiceDraftCreator")
+  invoiceDraftsUpdated        InvoiceDraft[]                  @relation("InvoiceDraftUpdater")
+  documentsCreated            ElectronicDocument[]            @relation("DocumentCreator")
+  documentTransitions         DocumentStateTransition[]       @relation("DocumentTransitionActor")
+  idempotencyRecords          IdempotencyRecord[]             @relation("IdempotencyCreator")
+  jobsRequested               Job[]                           @relation("JobRequester")
+  sriAttemptsInitiated        SriAttempt[]                    @relation("SriAttemptInitiator")
+  documentDeliveries          DocumentDeliveryEvent[]         @relation("DocumentDeliveryActor")
+  stockInitializations        StockBalance[]                  @relation("StockInitializer")
+  stockMovements              StockMovement[]                 @relation("StockMovementActor")
+  creditNoteDraftsCreated     CreditNoteDraft[]               @relation("CreditNoteDraftCreator")
+  creditNoteDraftsUpdated     CreditNoteDraft[]               @relation("CreditNoteDraftUpdater")
+  debitNoteDraftsCreated      DebitNoteDraft[]                @relation("DebitNoteDraftCreator")
+  debitNoteDraftsUpdated      DebitNoteDraft[]                @relation("DebitNoteDraftUpdater")
+  withholdingDraftsCreated    WithholdingReceiptDraft[]       @relation("WithholdingReceiptDraftCreator")
+  withholdingDraftsUpdated    WithholdingReceiptDraft[]       @relation("WithholdingReceiptDraftUpdater")
+  shippingGuideDraftsCreated  ShippingGuideDraft[]            @relation("ShippingGuideDraftCreator")
+  shippingGuideDraftsUpdated  ShippingGuideDraft[]            @relation("ShippingGuideDraftUpdater")
+  shippingGuideDeclarations   ShippingGuideRecipient[]        @relation("ShippingGuideDeclarant")
+  purchaseDraftsCreated       PurchaseSettlementDraft[]       @relation("PurchaseSettlementDraftCreator")
+  purchaseDraftsUpdated       PurchaseSettlementDraft[]       @relation("PurchaseSettlementDraftUpdater")
+  purchaseDeclarations        PurchaseSettlementDeclaration[] @relation("PurchaseSettlementDeclarant")
 
   @@unique([email])
   @@map("user")
@@ -145,6 +148,7 @@ model Organization {
   debitNoteDrafts            DebitNoteDraft[]
   withholdingReceiptDrafts   WithholdingReceiptDraft[]
   shippingGuideDrafts        ShippingGuideDraft[]
+  purchaseSettlementDrafts   PurchaseSettlementDraft[]
 
   @@unique([slug])
   @@map("organization")
@@ -319,6 +323,7 @@ model EmissionPoint {
   debitDrafts         DebitNoteDraft[]
   withholdingDrafts   WithholdingReceiptDraft[]
   shippingGuideDrafts ShippingGuideDraft[]
+  purchaseDrafts      PurchaseSettlementDraft[]
 
   @@unique([establishmentId, code])
   @@unique([companyId, id])
@@ -652,6 +657,9 @@ model Party {
   shippingGuideDraftCarriers ShippingGuideDraft[]      @relation("ShippingGuideDraftCarrier")
   shippingGuideCarriers      ShippingGuide[]           @relation("ShippingGuideCarrier")
   shippingGuideRecipients    ShippingGuideRecipient[]  @relation("ShippingGuideRecipientParty")
+  /// add-purchase-settlements: borradores y liquidaciones de compra con este proveedor.
+  purchaseDrafts             PurchaseSettlementDraft[] @relation("PurchaseSettlementDraftSupplier")
+  purchaseSettlements        PurchaseSettlement[]      @relation("PurchaseSettlementSupplier")
 
   @@unique([companyId, identificationType, identification])
   // Destino de la referencia del comprador de un borrador, en la misma empresa (add-invoice-emission).
@@ -853,6 +861,9 @@ model ElectronicDocument {
   shippingGuideDraft       ShippingGuideDraft?           @relation("ShippingGuideDraftDocument")
   shippingGuide            ShippingGuide?                @relation("ShippingGuideDocument")
   shippingGuideSupports    ShippingGuideRecipient[]      @relation("ShippingGuideSupportInvoice")
+  /// add-purchase-settlements: el borrador que emitió esta liquidación y su registro.
+  purchaseSettlementDraft  PurchaseSettlementDraft?      @relation("PurchaseSettlementDraftDocument")
+  purchaseSettlement       PurchaseSettlement?           @relation("PurchaseSettlementDocument")
 
   @@unique([companyId, environment, establishmentId, emissionPointId, documentType, sequential])
   @@unique([companyId, id])
@@ -1562,4 +1573,82 @@ model ShippingGuideRecipient {
   @@id([companyId, documentId, position])
   @@index([companyId, invoiceId])
   @@map("shipping_guide_recipient")
+}
+
+// Borrador de liquidación de compra (add-purchase-settlements, design D12 y D25): editable hasta
+// emitir, con las líneas y los pagos como JSON que valida el contrato. No es fiscal: la verdad es el
+// snapshot.
+model PurchaseSettlementDraft {
+  id              String              @id @default(uuid())
+  companyId       String              @map("company_id")
+  company         Organization        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  emissionPointId String?             @map("emission_point_id")
+  emissionPoint   EmissionPoint?      @relation(fields: [companyId, emissionPointId], references: [companyId, id], onDelete: Restrict)
+  supplierPartyId String?             @map("supplier_party_id")
+  supplier        Party?              @relation("PurchaseSettlementDraftSupplier", fields: [companyId, supplierPartyId], references: [companyId, id], onDelete: Restrict)
+  /// Dirección del proveedor, propuesta desde el tercero y corregible (design D5).
+  supplierAddress String?             @map("supplier_address") @db.VarChar(300)
+  lines           Json                @default("[]")
+  payments        Json                @default("[]")
+  /// DRAFT o EMITTED (CHECK en la migración).
+  status          String              @default("DRAFT")
+  documentId      String?             @unique @map("document_id")
+  document        ElectronicDocument? @relation("PurchaseSettlementDraftDocument", fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  version         Int                 @default(1)
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdBy       String              @map("created_by")
+  creator         User                @relation("PurchaseSettlementDraftCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy       String              @map("updated_by")
+  updater         User                @relation("PurchaseSettlementDraftUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, id])
+  @@unique([companyId, documentId])
+  @@index([companyId, status, updatedAt])
+  @@map("purchase_settlement_draft")
+}
+
+// Registro inmutable de una liquidación de compra (design D3 y D25): su proveedor, el caso de
+// procedencia con la versión de su política y los conteos. Un trigger exige que el comprobante sea un
+// 03 de la empresa, y otro, diferido, que un 03 no se confirme sin este registro y sus cuatro
+// declaraciones.
+model PurchaseSettlement {
+  companyId         String                          @map("company_id")
+  documentId        String                          @map("document_id")
+  document          ElectronicDocument              @relation("PurchaseSettlementDocument", fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  supplierPartyId   String                          @map("supplier_party_id")
+  supplier          Party                           @relation("PurchaseSettlementSupplier", fields: [companyId, supplierPartyId], references: [companyId, id], onDelete: Restrict)
+  /// ART_13_C (CHECK en la migración).
+  eligibilityCase   String                          @map("eligibility_case")
+  /// PURCHASE_SETTLEMENT_ELIGIBILITY_V1 (CHECK en la migración).
+  eligibilityPolicy String                          @map("eligibility_policy")
+  policyVersion     Int                             @map("policy_version")
+  lineCount         Int                             @map("line_count")
+  paymentCount      Int                             @map("payment_count")
+  createdAt         DateTime                        @default(now()) @map("created_at") @db.Timestamptz(3)
+  declarations      PurchaseSettlementDeclaration[]
+
+  @@id([companyId, documentId])
+  @@index([companyId, supplierPartyId])
+  @@map("purchase_settlement")
+}
+
+// Una declaración de procedencia de la liquidación (design D3): su identificador de la política, la
+// versión, la base declarada por el usuario, quién la confirmó y cuándo. Nunca una verificación del
+// sistema. Inmutable.
+model PurchaseSettlementDeclaration {
+  companyId     String             @map("company_id")
+  documentId    String             @map("document_id")
+  settlement    PurchaseSettlement @relation(fields: [companyId, documentId], references: [companyId, documentId], onDelete: Restrict)
+  /// Uno de los cuatro identificadores de la política (CHECK en la migración).
+  statementId   String             @map("statement_id")
+  policyVersion Int                @map("policy_version")
+  /// USER_DECLARED (CHECK en la migración).
+  basis         String
+  declaredBy    String             @map("declared_by")
+  declarant     User               @relation("PurchaseSettlementDeclarant", fields: [declaredBy], references: [id], onDelete: Restrict)
+  declaredAt    DateTime           @map("declared_at") @db.Timestamptz(3)
+
+  @@id([companyId, documentId, statementId])
+  @@map("purchase_settlement_declaration")
 }

@@ -34,11 +34,12 @@ export async function insertDocument(
     /** Para el inventario: campos del snapshot, por ejemplo la versión 2 con sus líneas. */
     snapshot?: Record<string, unknown>;
     /**
-     * Para las notas y las retenciones (add-credit-notes, add-debit-notes, add-withholding-receipts):
-     * el tipo, el total y, en `alongside`, las reservas de una nota de crédito, la factura de una
-     * nota de débito o el registro y las líneas de un comprobante de retención.
+     * Para las notas, las retenciones y las liquidaciones (add-credit-notes, add-debit-notes,
+     * add-withholding-receipts, add-purchase-settlements): el tipo, el total y, en `alongside`, las
+     * reservas de una nota de crédito, la factura de una nota de débito, el registro y las líneas de
+     * un comprobante de retención o el registro y las declaraciones de una liquidación de compra.
      */
-    documentType?: "01" | "04" | "05" | "06" | "07";
+    documentType?: "01" | "03" | "04" | "05" | "06" | "07";
     total?: string;
     /**
      * Destinatarios de una guía de remisión (add-shipping-guides, design D10): el tipo 06 no tiene
