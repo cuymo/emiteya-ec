@@ -7,7 +7,7 @@
 
 ## 2. Contratos, permisos, entorno y auditoría
 
-- [ ] 2.1 Crear `packages/contracts/src/reports.ts` (design D3, D4 y D12): los seis identificadores de reporte (cinco reportes, con el inventario en dos vistas), los filtros estrictos de cada uno con sus valores por defecto (`state` con `ALL`, `environment` con `TEST`, `PRODUCTION` y `ALL`, `fiscalPeriod` `AAAA-MM`, rango con `from <= to`), las filas de cada vista con los importes como texto decimal, la vista paginada con el ambiente efectivo y los códigos `REPORT_EXPORT_ROW_LIMIT` y `REPORT_EXPORT_BUSY`, y sus rutas en `api/routes.ts` con la exportación como respuesta binaria. Verificar con pruebas de contrato los valores por defecto, el rango inválido, el filtro de otro reporte, el `companyId` rechazado y el OpenAPI regenerado
+- [x] 2.1 Crear `packages/contracts/src/reports.ts` (design D3, D4 y D12): los seis identificadores de reporte (cinco reportes, con el inventario en dos vistas), los filtros estrictos de cada uno con sus valores por defecto (`state` con `ALL`, `environment` con `TEST`, `PRODUCTION` y `ALL`, `fiscalPeriod` `AAAA-MM`, rango con `from <= to`), las filas de cada vista con los importes como texto decimal, la vista paginada con el ambiente efectivo y los códigos `REPORT_EXPORT_ROW_LIMIT` y `REPORT_EXPORT_BUSY`, y sus rutas en `api/routes.ts` con la exportación como respuesta binaria. Verificar con pruebas de contrato los valores por defecto, el rango inválido, el filtro de otro reporte, el `companyId` rechazado y el OpenAPI regenerado
 - [x] 2.2 Añadir `reports.read` y `reports.export` para administrador y operador en `access-policy.ts`, su espejo del frontend y `access-control.md`, confirmando la fila "Ver reportes y exportar XLSX" (design D14). Verificar con pruebas de la política
 - [x] 2.3 Añadir `REPORT_EXPORT_MAX_ROWS` y `REPORT_EXPORT_MAX_CONCURRENT` al esquema de entorno con los valores iniciales de design D11, marcados como hipótesis que fija el benchmark, y documentarlas en `deployment.md` como defensas de recursos del proyecto. Verificar con pruebas del entorno
 - [x] 2.4 Añadir la acción `report.exported` al dominio de la auditoría (design D13) y documentarla en `audit` y en `observability.md` con las métricas de design D17. Verificar con la prueba de las acciones de auditoría
@@ -22,9 +22,9 @@
 
 ## 4. Consulta y exportación
 
-- [ ] 4.1 Implementar el dominio de `reports` (design D2, D3 y D4): la definición de cada reporte con sus filtros, sus valores por defecto, su ambiente efectivo, su orden y sus columnas con el tipo de celda de cada una. Verificar con pruebas unitarias los valores por defecto de cada reporte y que la lista y la exportación usan la misma definición
-- [ ] 4.2 Implementar la consulta paginada `GET /api/v1/reports/{report}` con `reports.read`. Verificar con pruebas de integración por HTTP las filas, `meta.total`, el ambiente efectivo (vigente por defecto, `ALL` solo explícito), los estados por defecto (todos en Documentos emitidos, autorizados en Facturas y Retenciones), `403`, `401`, `companyId` rechazado y el aislamiento por empresa
-- [ ] 4.3 Implementar la exportación `GET /api/v1/reports/{report}/export` con `reports.export` (design D10, D11 y D13). Debe hacer, en orden: el semáforo por instancia; el conteo y el rechazo `409 REPORT_EXPORT_ROW_LIMIT` antes de generar; la generación por lotes en una transacción `REPEATABLE READ` de solo lectura hacia un archivo temporal privado; la auditoría `report.exported` antes de entregar, sin entregar si falla; y la entrega con sus cabeceras, borrando el temporal siempre. Verificar con pruebas de integración:
+- [x] 4.1 Implementar el dominio de `reports` (design D2, D3 y D4): la definición de cada reporte con sus filtros, sus valores por defecto, su ambiente efectivo, su orden y sus columnas con el tipo de celda de cada una. Verificar con pruebas unitarias los valores por defecto de cada reporte y que la lista y la exportación usan la misma definición
+- [x] 4.2 Implementar la consulta paginada `GET /api/v1/reports/{report}` con `reports.read`. Verificar con pruebas de integración por HTTP las filas, `meta.total`, el ambiente efectivo (vigente por defecto, `ALL` solo explícito), los estados por defecto (todos en Documentos emitidos, autorizados en Facturas y Retenciones), `403`, `401`, `companyId` rechazado y el aislamiento por empresa
+- [x] 4.3 Implementar la exportación `GET /api/v1/reports/{report}/export` con `reports.export` (design D10, D11 y D13). Debe hacer, en orden: el semáforo por instancia; el conteo y el rechazo `409 REPORT_EXPORT_ROW_LIMIT` antes de generar; la generación por lotes en una transacción `REPEATABLE READ` de solo lectura hacia un archivo temporal privado; la auditoría `report.exported` antes de entregar, sin entregar si falla; y la entrega con sus cabeceras, borrando el temporal siempre. Verificar con pruebas de integración:
   - AC-09 en cada reporte: todas las páginas de la API concatenadas en orden son exactamente las filas del XLSX;
   - el XLSX vacío con encabezados;
   - el `409` sin archivo ni evento;
@@ -34,7 +34,7 @@
   - dos exportaciones, dos eventos;
   - el temporal borrado al terminar, al fallar y con el cliente desconectado;
   - `403`, `401` y el aislamiento por empresa
-- [ ] 4.4 Documentar el módulo `reports`, sus rutas, el formato del XLSX, la política de precisión, la defensa contra fórmulas, la ejecución en dos fases y la auditoría en `docs/architecture/reports.md`, enlazado desde `ARCHITECTURE.md`. Verificar que la documentación cita las rutas y las variables reales
+- [x] 4.4 Documentar el módulo `reports`, sus rutas, el formato del XLSX, la política de precisión, la defensa contra fórmulas, la ejecución en dos fases y la auditoría en `docs/architecture/reports.md`, enlazado desde `ARCHITECTURE.md`. Verificar que la documentación cita las rutas y las variables reales
 
 ## 5. Pantalla Reportes
 
