@@ -218,7 +218,7 @@ El sistema SHALL registrar un evento cuando una emisión deja una factura reserv
 - **THEN** el evento no contiene el XML, los bytes firmados ni datos de la firma electrónica
 
 ### Requirement: Auditoría de la reconciliación manual
-El sistema SHALL registrar un evento cuando un administrador pide la reconciliación de una factura, de una nota de crédito, de una nota de débito, de una guía de remisión o de un comprobante de retención con el SRI, y otro cuando esa reconciliación termina. Llevan el actor, la empresa, el comprobante y su tipo, el número, el motivo y el resultado, nunca la respuesta del SRI. Las transmisiones, consultas y reconciliaciones automáticas no generan eventos de auditoría: su evidencia son los intentos y las transiciones.
+El sistema SHALL registrar un evento cuando un administrador pide la reconciliación de una factura, de una liquidación de compra, de una nota de crédito, de una nota de débito, de una guía de remisión o de un comprobante de retención con el SRI, y otro cuando esa reconciliación termina. Llevan el actor, la empresa, el comprobante y su tipo, el número, el motivo y el resultado, nunca la respuesta del SRI. Las transmisiones, consultas y reconciliaciones automáticas no generan eventos de auditoría: su evidencia son los intentos y las transiciones.
 
 #### Scenario: Reconciliación pedida y completada
 - **WHEN** un administrador pide la reconciliación de una factura y la reconciliación termina
@@ -251,6 +251,10 @@ El sistema SHALL registrar un evento cuando un administrador pide la reconciliac
 #### Scenario: Reconciliación de una guía de remisión
 - **WHEN** un administrador pide la reconciliación de una guía de remisión y la reconciliación termina
 - **THEN** existen los eventos de solicitud y de finalización de guía de remisión con la guía, su número y su tipo, sin la respuesta del SRI
+
+#### Scenario: Reconciliación de una liquidación de compra
+- **WHEN** un administrador pide la reconciliación de una liquidación de compra y la reconciliación termina
+- **THEN** existen los eventos de solicitud y de finalización de liquidación de compra con la liquidación, su número y su tipo, sin la respuesta del SRI
 
 ### Requirement: Auditoría de la configuración del inventario
 El sistema SHALL registrar un evento por cada inicialización del inventario de un producto y por cada desactivación o reactivación de su control, con actor, empresa, producto, acción, estado anterior y nuevo del control y momento. Las entradas manuales, los ajustes y las salidas no generan eventos: el movimiento inmutable, con su actor, su motivo y su momento, es su evidencia.
@@ -346,3 +350,22 @@ El sistema SHALL registrar un evento cuando una guía de remisión queda reserva
 #### Scenario: Sin duplicar otras evidencias
 - **WHEN** una guía de remisión se prepara en borrador, se transmite, se autoriza y se descarga su RIDE
 - **THEN** esas acciones no generan eventos de auditoría: su evidencia son los intentos, las transiciones y el historial de entregas
+
+### Requirement: Auditoría de la emisión de liquidaciones de compra
+El sistema SHALL registrar un evento cuando una liquidación de compra queda reservada, cuando queda firmada y cuando comienza un reintento de firma válido. El de reserva lleva la liquidación, su número, su clave, el ambiente, el caso de procedencia, la versión de la política y los identificadores de las cuatro declaraciones con su actor, el número de líneas, el número de pagos y el importe total. Ninguno lleva descripciones, direcciones, el XML, la respuesta del SRI ni secretos.
+
+#### Scenario: Liquidación reservada y firmada
+- **WHEN** un usuario emite una liquidación de compra que llega a firmada
+- **THEN** existen un evento de reserva con el caso de procedencia, la versión de la política y las cuatro declaraciones, y un evento de firma, ambos con el usuario como actor
+
+#### Scenario: Reintento de firma auditado
+- **WHEN** un usuario reintenta la firma de una liquidación que quedó reservada
+- **THEN** existe un evento de reintento de firma con el usuario como actor
+
+#### Scenario: Emisión rechazada sin auditoría
+- **WHEN** una emisión se rechaza antes de reservar, por una declaración faltante o por pagos que no suman
+- **THEN** no se registra ningún evento
+
+#### Scenario: Sin datos sensibles en la auditoría
+- **WHEN** se registra un evento de una liquidación de compra
+- **THEN** no contiene descripciones de las líneas, la dirección del proveedor, el XML ni la respuesta del SRI

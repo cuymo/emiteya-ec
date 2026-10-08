@@ -60,7 +60,7 @@ Cada comprobante SHALL llevar un período fiscal explícito `MM/AAAA`, obligator
 - **THEN** el sistema lo rechaza indicando el formato
 
 ### Requirement: Documentos sustento de la retención
-Un comprobante SHALL tener uno o más documentos sustento, cada uno una referencia estructurada a un comprobante emitido por el proveedor, de los tipos factura (01), nota de venta (02) o liquidación de compra (03) como política del MVP. Son declaraciones del usuario: el sistema no verifica su existencia en el SRI ni crea facturas recibidas, compras ni cuentas por pagar.
+Un comprobante SHALL tener uno o más documentos sustento, cada uno una referencia estructurada a un comprobante de los tipos factura (01) o nota de venta (02), emitidos por el proveedor, o liquidación de compra (03), que emite el adquirente en los casos que la normativa permite, como política del MVP. Son declaraciones del usuario: el sistema no verifica su existencia en el SRI ni crea facturas recibidas, compras ni cuentas por pagar.
 
 #### Scenario: Varios documentos sustento
 - **WHEN** un usuario prepara una retención con dos facturas del mismo proveedor

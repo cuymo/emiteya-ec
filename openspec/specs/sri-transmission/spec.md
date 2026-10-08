@@ -309,7 +309,7 @@ Un comprobante SHALL pasar a revisión manual solo cuando su resultado no puede 
 - **THEN** sigue en revisión manual, no se reenvía y no existe una acción para reenviarlo de todas formas
 
 ### Requirement: Reconciliación manual
-Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura, de una nota de crédito, de una nota de débito, de una guía de remisión o de un comprobante de retención en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
+Un administrador SHALL poder pedir, con un motivo, la reconciliación de una factura, de una liquidación de compra, de una nota de crédito, de una nota de débito, de una guía de remisión o de un comprobante de retención en revisión manual, en resultado incierto, o firmada o recibida con su transmisión detenida. La reconciliación manual sigue las reglas de la automática, y el historial guarda quién la pidió, el motivo y el resultado.
 
 #### Scenario: Reconciliación de una revisión manual
 - **WHEN** un administrador reconcilia una factura en revisión manual y el SRI la informa autorizada
@@ -363,6 +363,14 @@ Un administrador SHALL poder pedir, con un motivo, la reconciliación de una fac
 - **WHEN** un administrador pide la reconciliación de una guía de remisión autorizada, no autorizada o devuelta
 - **THEN** se rechaza la reconciliación sin programarla
 
+#### Scenario: Liquidación de compra en revisión manual
+- **WHEN** un administrador reconcilia una liquidación de compra en revisión manual y el SRI la informa autorizada
+- **THEN** la liquidación pasa a autorizada con las mismas reglas que una factura, sin cambiar inventario ni crear un comprobante de retención
+
+#### Scenario: Liquidación de compra en un estado que no se reconcilia
+- **WHEN** un administrador pide la reconciliación de una liquidación de compra autorizada, no autorizada o devuelta
+- **THEN** se rechaza la reconciliación sin programarla
+
 ### Requirement: Número, clave y XML firmado invariables durante la transmisión
 La transmisión SHALL usar siempre el número, la clave, el snapshot y el XML firmado del comprobante. Ningún reintento, reconciliación ni respuesta del SRI crea otro comprobante, otro número u otra clave, regenera el XML ni libera el secuencial. Un comprobante devuelto no tiene corrección en esta versión.
 
@@ -412,7 +420,7 @@ Los intentos, las respuestas, las transmisiones y las reconciliaciones de una em
 - **THEN** el sistema responde que no existe y no se programa nada
 
 ### Requirement: Transmisión de cada tipo emitido
-La transmisión SHALL tratar igual la factura, la nota de crédito, la nota de débito, la guía de remisión y el comprobante de retención: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
+La transmisión SHALL tratar igual la factura, la liquidación de compra, la nota de crédito, la nota de débito, la guía de remisión y el comprobante de retención: el mismo envío, la misma consulta de autorización, la evidencia guardada antes de clasificar, los errores 70, 43 y 45, el resultado incierto, la revisión manual y la reconciliación por clave. No existe otra transmisión por tipo.
 
 #### Scenario: Nota de crédito autorizada
 - **WHEN** una nota de crédito firmada se envía y el SRI la autoriza
@@ -524,4 +532,36 @@ La transmisión SHALL tratar igual la factura, la nota de crédito, la nota de d
 
 #### Scenario: Evidencia antes de clasificar una guía
 - **WHEN** el SRI responde a un envío o a una consulta de una guía de remisión
+- **THEN** la respuesta queda guardada antes de clasificarla, y si la decisión local falla, el reintento clasifica la respuesta guardada sin volver a llamar al SRI
+
+#### Scenario: Liquidación recibida y autorizada
+- **WHEN** una liquidación de compra firmada se envía, la recepción responde `RECIBIDA` y la consulta la informa autorizada
+- **THEN** pasa por recibida y queda autorizada con su número de autorización y su XML autorizado, como una factura
+
+#### Scenario: Liquidación devuelta
+- **WHEN** la recepción responde `DEVUELTA` para una liquidación de compra
+- **THEN** la liquidación queda devuelta con todos los mensajes del SRI, como cualquier devolución
+
+#### Scenario: Liquidación no autorizada
+- **WHEN** la consulta informa no autorizada una liquidación de compra
+- **THEN** queda no autorizada con sus mensajes
+
+#### Scenario: Errores 70, 43 y 45 en una liquidación
+- **WHEN** el SRI responde el error 70, el 43 o el 45 para una liquidación de compra
+- **THEN** sigue las mismas reglas que una factura y se reconcilia por su clave sin reenviar a ciegas
+
+#### Scenario: Liquidación no enviada de forma comprobable
+- **WHEN** el envío de una liquidación de compra falla de una forma que demuestra que la solicitud no salió
+- **THEN** se reintenta el envío como el de una factura, sin pasar a verificando
+
+#### Scenario: Liquidación con resultado incierto
+- **WHEN** el envío de una liquidación de compra termina sin respuesta concluyente
+- **THEN** queda verificando con el SRI y se reconcilia por su clave, sin reenviarse antes de saber si el SRI la recibió
+
+#### Scenario: Liquidación en revisión manual
+- **WHEN** la reconciliación automática de una liquidación de compra agota sus intentos sin conclusión
+- **THEN** queda en revisión manual, como una factura
+
+#### Scenario: Evidencia antes de clasificar una liquidación
+- **WHEN** el SRI responde a un envío o a una consulta de una liquidación de compra
 - **THEN** la respuesta queda guardada antes de clasificarla, y si la decisión local falla, el reintento clasifica la respuesta guardada sin volver a llamar al SRI
