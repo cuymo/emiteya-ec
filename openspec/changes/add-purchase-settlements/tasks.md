@@ -18,9 +18,9 @@
 
 ## 4. Dominio de la liquidación
 
-- [ ] 4.1 Implementar la evaluación pura en el orden de design D12: proveedor (activo, `SUPPLIER`, 05 o 06, sin consumidor final), dirección, límites, líneas (producto activo opcional, textos, cantidades, precios y descuentos), IVA vigente en la fecha de emisión y pagos (forma de pago del catálogo, plazo, unidad de tiempo y suma exacta). Verificar con pruebas unitarias cada regla y la posición de la línea o del pago en cada problema; y que BR-88 a BR-95 de `domain-model.md` y la trazabilidad de `capabilities.md` describen lo implementado (corregirlos si no)
-- [ ] 4.2 Implementar `calculatePurchaseSettlementAmounts` (versión `purchase-settlement-amounts-1`) sobre las primitivas compartidas (design D8). Verificar con pruebas los importes del spec, el redondeo HALF_UP en sus tres puntos, los 6 decimales exactos, el 0 %, no objeto y exento separados, y el importe fuera del rango del XSD. Documentar el cálculo versionado en `decimal-policy.md`
-- [ ] 4.3 Implementar el snapshot autosuficiente de design D11 con `eligibility` y sus cuatro declaraciones. Verificar con pruebas que el snapshot es suficiente para el XML y el RIDE sin leer datos vigentes
+- [x] 4.1 Implementar la evaluación pura en el orden de design D12: proveedor (activo, `SUPPLIER`, 05 o 06, sin consumidor final), dirección, límites, líneas (producto activo opcional, textos, cantidades, precios y descuentos), IVA vigente en la fecha de emisión y pagos (forma de pago del catálogo, plazo, unidad de tiempo y suma exacta). Verificar con pruebas unitarias cada regla y la posición de la línea o del pago en cada problema; y que BR-88 a BR-95 de `domain-model.md` y la trazabilidad de `capabilities.md` describen lo implementado (corregirlos si no)
+- [x] 4.2 Implementar `calculatePurchaseSettlementAmounts` (versión `purchase-settlement-amounts-1`) sobre las primitivas compartidas (design D8). Verificar con pruebas los importes del spec, el redondeo HALF_UP en sus tres puntos, los 6 decimales exactos, el 0 %, no objeto y exento separados, y el importe fuera del rango del XSD. Documentar el cálculo versionado en `decimal-policy.md`
+- [x] 4.3 Implementar el snapshot autosuficiente de design D11 con `eligibility` y sus cuatro declaraciones. Verificar con pruebas que el snapshot es suficiente para el XML y el RIDE sin leer datos vigentes
 
 ## 5. XML de la liquidación
 
