@@ -67,7 +67,9 @@ export type Permission =
   | "purchaseSettlements.draft"
   | "purchaseSettlements.emit"
   | "purchaseSettlements.retrySigning"
-  | "purchaseSettlements.reconcile";
+  | "purchaseSettlements.reconcile"
+  | "reports.read"
+  | "reports.export";
 
 const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -136,6 +138,8 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "purchaseSettlements.emit",
     "purchaseSettlements.retrySigning",
     "purchaseSettlements.reconcile",
+    "reports.read",
+    "reports.export",
   ]),
   OPERATOR: new Set<Permission>([
     "account.read",
@@ -178,6 +182,8 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "purchaseSettlements.draft",
     "purchaseSettlements.emit",
     "purchaseSettlements.retrySigning",
+    "reports.read",
+    "reports.export",
   ]),
 };
 

@@ -83,6 +83,8 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "purchaseSettlements.emit": { ADMIN: true, OPERATOR: true },
   "purchaseSettlements.retrySigning": { ADMIN: true, OPERATOR: true },
   "purchaseSettlements.reconcile": { ADMIN: true, OPERATOR: false },
+  "reports.read": { ADMIN: true, OPERATOR: true },
+  "reports.export": { ADMIN: true, OPERATOR: true },
 };
 
 describe("política de autorización central", () => {

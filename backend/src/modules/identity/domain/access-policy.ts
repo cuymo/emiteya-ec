@@ -68,6 +68,8 @@ export const PERMISSIONS = [
   "purchaseSettlements.emit",
   "purchaseSettlements.retrySigning",
   "purchaseSettlements.reconcile",
+  "reports.read",
+  "reports.export",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -156,6 +158,9 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "purchaseSettlements.emit",
     "purchaseSettlements.retrySigning",
     "purchaseSettlements.reconcile",
+    // add-reports-export, design D14: "Ver reportes y exportar XLSX".
+    "reports.read",
+    "reports.export",
   ]),
   // add-taxpayer-setup, design D10: el operador consulta lo necesario para emitir y elegir su
   // punto predeterminado, pero no ve ni cambia la configuración tributaria.
@@ -221,6 +226,10 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "purchaseSettlements.draft",
     "purchaseSettlements.emit",
     "purchaseSettlements.retrySigning",
+    // add-reports-export, design D14: ve los reportes y los exporta, como el administrador; no ve
+    // más de lo que ya consulta en los comprobantes, el inventario y los terceros.
+    "reports.read",
+    "reports.export",
   ]),
 };
 
