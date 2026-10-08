@@ -382,6 +382,68 @@ export interface ShippingGuideXmlBuilder {
   build(snapshot: ShippingGuideXmlSnapshot): string;
 }
 
+/**
+ * Snapshot de una liquidación de compra 1.1.0 para su builder (add-purchase-settlements, design D15):
+ * los importes los calculó `calculatePurchaseSettlementAmounts` y los congeló la reserva; el
+ * proveedor, las líneas y los pagos con su plazo son los del snapshot. Las declaraciones de
+ * procedencia no llegan al builder: no van en el XML. El builder solo transcribe.
+ */
+export type PurchaseSettlementXmlSnapshot = Readonly<{
+  /** Versión del XSD registrado con que se construye. */
+  schemaVersion: string;
+  environment: "1" | "2";
+  issueDate: string;
+  accessKey: string;
+  sequential: string;
+  issuer: InvoiceSnapshot["issuer"];
+  supplier: Readonly<{
+    identificationType: string;
+    identification: string;
+    legalName: string;
+    address: string;
+  }>;
+  lines: readonly Readonly<{
+    mainCode: string | null;
+    auxiliaryCode: string | null;
+    description: string;
+    unit: string | null;
+    quantity: string;
+    unitPrice: string;
+    discount: string;
+    /** `precioTotalSinImpuesto`. */
+    taxableBase: string;
+    tax: Readonly<{
+      taxCode: string;
+      rateCode: string;
+      rate: string;
+      base: string;
+      amount: string;
+    }>;
+  }>[];
+  totals: Readonly<{
+    withoutTaxes: string;
+    discount: string;
+    taxes: readonly Readonly<{
+      taxCode: string;
+      rateCode: string;
+      rate: string;
+      base: string;
+      amount: string;
+    }>[];
+    total: string;
+  }>;
+  /** `moneda`. */
+  currency: string;
+  /** `pago`: `formaPago`, `total`, `plazo` y `unidadTiempo`. */
+  payments: readonly Readonly<{ method: string; total: string; term: string; timeUnit: string }>[];
+}>;
+
+/** XML sin firmar de una liquidación de compra: función pura y determinista de su snapshot. */
+export interface PurchaseSettlementXmlBuilder {
+  readonly version: string;
+  build(snapshot: PurchaseSettlementXmlSnapshot): string;
+}
+
 export const INVOICE_XML_ERRORS = [
   "UNSUPPORTED_SCHEMA_VERSION",
   "INVALID_SNAPSHOT_AMOUNT",
@@ -435,6 +497,16 @@ export class ShippingGuideXmlError extends Error {
   constructor(code: InvoiceXmlErrorCode) {
     super(code);
     this.name = "ShippingGuideXmlError";
+    this.code = code;
+  }
+}
+
+/** Snapshot de una liquidación de compra que no se puede escribir, con los mismos códigos. */
+export class PurchaseSettlementXmlError extends Error {
+  readonly code: InvoiceXmlErrorCode;
+  constructor(code: InvoiceXmlErrorCode) {
+    super(code);
+    this.name = "PurchaseSettlementXmlError";
     this.code = code;
   }
 }

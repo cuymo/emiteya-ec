@@ -74,6 +74,13 @@ export const AUDIT_ACTIONS = [
   "shipping_guide.signing_retried",
   "shipping_guide.reconciliation_requested",
   "shipping_guide.reconciliation_completed",
+  // add-purchase-settlements, design D23: la reserva con las declaraciones de procedencia, la firma,
+  // el reintento y la reconciliación manual de una liquidación de compra.
+  "purchase_settlement.reserved",
+  "purchase_settlement.signed",
+  "purchase_settlement.signing_retried",
+  "purchase_settlement.reconciliation_requested",
+  "purchase_settlement.reconciliation_completed",
   // add-minimal-inventory, design D12: la configuración del inventario; nunca los movimientos.
   "inventory.initialized",
   "inventory.tracking_disabled",

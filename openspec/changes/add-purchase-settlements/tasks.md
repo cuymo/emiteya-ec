@@ -24,8 +24,8 @@
 
 ## 5. XML de la liquidación
 
-- [ ] 5.1 Crear `purchase-settlement-xml-builder.ts` para `liquidacionCompra` 1.1.0 desde el snapshot (design D15), con `infoTributaria` compartida, `moneda` `DOLAR` y `pagos` con `plazo` y `unidadTiempo`. Verificar con golden de bytes exactos validados contra el XSD oficial: cédula y pasaporte, producto y línea libre, varias tarifas incluido el 0 %, descuentos, 6 decimales, varios pagos, caracteres especiales y longitudes máximas; y que el XML no escribe reembolsos, subsidios, detalles adicionales, negociable, máquina fiscal, información adicional ni declaraciones. Documentar el snapshot y el builder en `fiscal-emission.md`
-- [ ] 5.2 Crear `purchaseSettlementSigningProfile` y firmar con el tipo `03`, con el XSD antes y después de firmar. Verificar que una liquidación reservada queda firmada con su artefacto de tipo 03 y la auditoría `purchase_settlement.signed`
+- [x] 5.1 Crear `purchase-settlement-xml-builder.ts` para `liquidacionCompra` 1.1.0 desde el snapshot (design D15), con `infoTributaria` compartida, `moneda` `DOLAR` y `pagos` con `plazo` y `unidadTiempo`. Verificar con golden de bytes exactos validados contra el XSD oficial: cédula y pasaporte, producto y línea libre, varias tarifas incluido el 0 %, descuentos, 6 decimales, varios pagos, caracteres especiales y longitudes máximas; y que el XML no escribe reembolsos, subsidios, detalles adicionales, negociable, máquina fiscal, información adicional ni declaraciones. Documentar el snapshot y el builder en `fiscal-emission.md`
+- [x] 5.2 Crear `purchaseSettlementSigningProfile` y firmar con el tipo `03`, con el XSD antes y después de firmar. Verificar que una liquidación reservada queda firmada con su artefacto de tipo 03 y la auditoría `purchase_settlement.signed`
 
 ## 6. Lecturas, borradores, vista previa y opciones
 

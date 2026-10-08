@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<liquidacionCompra id="comprobante" version="1.1.0">
+  <infoTributaria>
+    <ambiente>1</ambiente>
+    <tipoEmision>1</tipoEmision>
+    <razonSocial>DISTRIBUIDORA NACIONAL S.A.</razonSocial>
+    <ruc>1790012345001</ruc>
+    <claveAcceso>0710202603179001234500110010020000000011234567813</claveAcceso>
+    <codDoc>03</codDoc>
+    <estab>001</estab>
+    <ptoEmi>002</ptoEmi>
+    <secuencial>000000001</secuencial>
+    <dirMatriz>Av. Amazonas N24-03, Quito</dirMatriz>
+  </infoTributaria>
+  <infoLiquidacionCompra>
+    <fechaEmision>07/10/2026</fechaEmision>
+    <dirEstablecimiento>Av. 6 de Diciembre N33-55, Quito</dirEstablecimiento>
+    <obligadoContabilidad>SI</obligadoContabilidad>
+    <tipoIdentificacionProveedor>05</tipoIdentificacionProveedor>
+    <razonSocialProveedor>María Quishpe</razonSocialProveedor>
+    <identificacionProveedor>0102030405</identificacionProveedor>
+    <direccionProveedor>Comunidad San Pablo, Cayambe</direccionProveedor>
+    <totalSinImpuestos>100.00</totalSinImpuestos>
+    <totalDescuento>5.00</totalDescuento>
+    <totalConImpuestos>
+      <totalImpuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>0</codigoPorcentaje>
+        <baseImponible>60.00</baseImponible>
+        <tarifa>0</tarifa>
+        <valor>0.00</valor>
+      </totalImpuesto>
+      <totalImpuesto>
+        <codigo>2</codigo>
+        <codigoPorcentaje>4</codigoPorcentaje>
+        <baseImponible>40.00</baseImponible>
+        <tarifa>15</tarifa>
+        <valor>6.00</valor>
+      </totalImpuesto>
+    </totalConImpuestos>
+    <importeTotal>106.00</importeTotal>
+    <moneda>DOLAR</moneda>
+    <pagos>
+      <pago>
+        <formaPago>01</formaPago>
+        <total>50.00</total>
+        <plazo>0</plazo>
+        <unidadTiempo>días</unidadTiempo>
+      </pago>
+      <pago>
+        <formaPago>20</formaPago>
+        <total>56.00</total>
+        <plazo>30</plazo>
+        <unidadTiempo>días</unidadTiempo>
+      </pago>
+    </pagos>
+  </infoLiquidacionCompra>
+  <detalles>
+    <detalle>
+      <codigoPrincipal>CAC-01</codigoPrincipal>
+      <descripcion>Saco de cacao en grano, 45 kg</descripcion>
+      <unidadMedida>saco</unidadMedida>
+      <cantidad>10</cantidad>
+      <precioUnitario>4.5</precioUnitario>
+      <descuento>5.00</descuento>
+      <precioTotalSinImpuesto>40.00</precioTotalSinImpuesto>
+      <impuestos>
+        <impuesto>
+          <codigo>2</codigo>
+          <codigoPorcentaje>4</codigoPorcentaje>
+          <tarifa>15</tarifa>
+          <baseImponible>40.00</baseImponible>
+          <valor>6.00</valor>
+        </impuesto>
+      </impuestos>
+    </detalle>
+    <detalle>
+      <codigoPrincipal>JOR-01</codigoPrincipal>
+      <descripcion>Jornal de cosecha</descripcion>
+      <cantidad>2</cantidad>
+      <precioUnitario>30</precioUnitario>
+      <descuento>0.00</descuento>
+      <precioTotalSinImpuesto>60.00</precioTotalSinImpuesto>
+      <impuestos>
+        <impuesto>
+          <codigo>2</codigo>
+          <codigoPorcentaje>0</codigoPorcentaje>
+          <tarifa>0</tarifa>
+          <baseImponible>60.00</baseImponible>
+          <valor>0.00</valor>
+        </impuesto>
+      </impuestos>
+    </detalle>
+  </detalles>
+</liquidacionCompra>
