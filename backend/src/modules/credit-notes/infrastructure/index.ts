@@ -43,6 +43,8 @@ import {
 export { createCreditCapacityRepository } from "./prisma-credit-capacity.ts";
 export { creditCapacityFollower } from "../application/followers.ts";
 export { reconcileCreditCapacity, type CreditCapacityDifference } from "./reconciliation.ts";
+// Importes de la nota de crédito en los reportes (add-reports-export, design D5).
+export { creditNoteReportAmounts } from "./report-amounts.ts";
 
 /** Perfil de la nota de crédito para la firma compartida, con el builder `notaCredito` 1.1.0. */
 export const creditNoteSigningProfile = (): SigningProfile =>

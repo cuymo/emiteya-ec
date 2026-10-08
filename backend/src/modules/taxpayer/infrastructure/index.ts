@@ -23,6 +23,10 @@ export { lockTaxIdentityIn } from "../application/tax-identity-lock.ts";
 // Logo de una versión de la configuración, para el RIDE (add-document-archive, design D3).
 export { createConfigurationLogoReader } from "./prisma-configuration-assets.ts";
 
+// Ambiente vigente de la empresa para los reportes (add-reports-export, design D4).
+export { currentEnvironment } from "./current-environment.ts";
+export { reportPointCodes } from "./report-point-codes.ts";
+
 export type TaxpayerModuleOptions = {
   prisma: PrismaClient;
   authorizer: Authorizer;

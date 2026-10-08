@@ -13,6 +13,13 @@ import { productsRouter } from "./http/products-router.ts";
 import { createProductRepository } from "./prisma-products.ts";
 import { createProductsUnitOfWork } from "./unit-of-work.ts";
 
+// Código, nombre y orden de los productos en los reportes del inventario (add-reports-export, D1).
+export {
+  createReportProductsSource,
+  reportProductLabels,
+  type ReportProduct,
+} from "./report-products.ts";
+
 /**
  * Lectura de un producto de la empresa, con sus referencias fiscales, sobre un cliente: la emisión
  * de facturas la usa dentro de su transacción (add-invoice-emission, design D1).

@@ -35,6 +35,8 @@ export {
   type InvoiceIntegrityProblem,
 } from "./credit-source.ts";
 export type { StockReads } from "../application/ports.ts";
+// Importes de la factura en los reportes (add-reports-export, design D5).
+export { invoiceReportAmounts, invoiceReportTaxes } from "./report-amounts.ts";
 import { registerEmissionMetrics } from "./metrics.ts";
 import { createDraftRepository } from "./prisma-drafts.ts";
 import { createDraftsUnitOfWork } from "./unit-of-work.ts";

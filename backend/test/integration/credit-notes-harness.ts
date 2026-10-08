@@ -357,6 +357,8 @@ export async function insertCreditNote(
     cause?: "RETURN" | "TOTAL_ANNULMENT";
     /** Valor de la reserva en lugar del calculado: un estado cuyas sumas cuadran pero que agota el total. */
     amount?: string;
+    /** Congela en el snapshot los importes calculados, como la emisión (add-reports-export). */
+    freezeTotals?: boolean;
   },
 ): Promise<TestDocument> {
   // Los importes del cálculo único con lo acreditado vigente (las pruebas reservan en serie).
@@ -385,6 +387,7 @@ export async function insertCreditNote(
   return insertDocument(prisma, company, input.state ?? "RECEIVED", {
     documentType: "04",
     total: amount,
+    ...(input.freezeTotals ? { snapshot: { totals } } : {}),
     alongside: async (tx, document) => {
       const capacity = createCreditCapacityRepository(tx);
       await capacity.lock(company.companyId, invoice.id);

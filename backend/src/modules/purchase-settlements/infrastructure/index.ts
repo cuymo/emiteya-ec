@@ -47,6 +47,9 @@ export {
   PURCHASE_SETTLEMENT_DRAFT_BODY_LIMIT_BYTES,
 } from "./http/purchase-settlements-router.ts";
 
+// Importes de la liquidación de compra en los reportes (add-reports-export, design D5).
+export { purchaseSettlementReportAmounts } from "./report-amounts.ts";
+
 /** Perfil de la liquidación de compra para la firma compartida, con el builder 1.1.0. */
 export const purchaseSettlementSigningProfile = (): SigningProfile =>
   createPurchaseSettlementSigningProfile(createPurchaseSettlementXmlBuilder());

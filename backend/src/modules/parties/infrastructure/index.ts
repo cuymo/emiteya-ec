@@ -17,6 +17,9 @@ import { createConsumerFinalStore } from "./prisma-consumer-final.ts";
 import { createPartyRepository } from "./prisma-parties.ts";
 import { createPartiesUnitOfWork } from "./unit-of-work.ts";
 
+// Fuente del reporte de Terceros (add-reports-export, design D1).
+export { createPartiesReportSource } from "./report-source.ts";
+
 /**
  * Iniciador de empresa: crea su consumidor final en la transacción que crea la empresa, con la
  * política vigente hoy en Ecuador (design D5, caso B). Sin política aplicable falla y la

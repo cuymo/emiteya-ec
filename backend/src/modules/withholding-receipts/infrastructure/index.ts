@@ -41,6 +41,10 @@ import {
   createWithholdingEmissionUnitOfWork,
 } from "./units-of-work.ts";
 
+// Importes de la retención y fuente del reporte de Retenciones (add-reports-export, design D1 y D5).
+export { withholdingReportAmounts } from "./report-amounts.ts";
+export { createWithholdingsReportSource, type WithholdingsSourceFilters } from "./report-source.ts";
+
 /** Perfil del comprobante de retención para la firma compartida, con el builder 2.0.0. */
 export const withholdingReceiptSigningProfile = (): SigningProfile =>
   createWithholdingSigningProfile(createWithholdingReceiptXmlBuilder());

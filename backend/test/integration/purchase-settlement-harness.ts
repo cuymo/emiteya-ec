@@ -48,12 +48,22 @@ export function insertPurchaseSettlement(
   company: FiscalCompany,
   partyId: string,
   state: string,
-  options: { total?: string; buyer?: { identification: string; name: string } } = {},
+  options: {
+    total?: string;
+    buyer?: { identification: string; name: string };
+    /** Para los reportes (add-reports-export): los importes del snapshot, la fecha y el ambiente. */
+    snapshot?: Record<string, unknown>;
+    issueDate?: string;
+    environment?: "TEST" | "PRODUCTION";
+  } = {},
 ): Promise<TestDocument> {
   return insertDocument(prisma, company, state, {
     documentType: "03",
     total: options.total ?? "106.00",
     buyer: options.buyer ?? { identification: "0102030405", name: "María Quishpe" },
+    ...(options.snapshot ? { snapshot: options.snapshot } : {}),
+    ...(options.issueDate ? { issueDate: options.issueDate } : {}),
+    ...(options.environment ? { environment: options.environment } : {}),
     alongside: async (tx, document) => {
       await tx.purchaseSettlement.create({
         data: {

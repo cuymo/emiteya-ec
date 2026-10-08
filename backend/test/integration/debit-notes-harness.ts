@@ -11,11 +11,20 @@ export function insertDebitNote(
   company: FiscalCompany,
   invoiceId: string,
   state: string,
-  options: { total?: string } = {},
+  options: {
+    total?: string;
+    /** Para los reportes (add-reports-export): los importes del snapshot, la fecha y el ambiente. */
+    snapshot?: Record<string, unknown>;
+    issueDate?: string;
+    environment?: "TEST" | "PRODUCTION";
+  } = {},
 ): Promise<TestDocument> {
   return insertDocument(prisma, company, state, {
     documentType: "05",
     total: options.total ?? "23.00",
+    ...(options.snapshot ? { snapshot: options.snapshot } : {}),
+    ...(options.issueDate ? { issueDate: options.issueDate } : {}),
+    ...(options.environment ? { environment: options.environment } : {}),
     alongside: async (tx, document) => {
       await tx.debitNoteSupport.create({
         data: { companyId: company.companyId, debitNoteId: document.id, invoiceId },

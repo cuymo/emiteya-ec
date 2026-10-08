@@ -39,6 +39,9 @@ import {
   createDebitNoteEmissionUnitOfWork,
 } from "./units-of-work.ts";
 
+// Importes de la nota de débito en los reportes (add-reports-export, design D5).
+export { debitNoteReportAmounts } from "./report-amounts.ts";
+
 /** Perfil de la nota de débito para la firma compartida, con el builder `notaDebito` 1.0.0. */
 export const debitNoteSigningProfile = (): SigningProfile =>
   createDebitNoteSigningProfile(createDebitNoteXmlBuilder());

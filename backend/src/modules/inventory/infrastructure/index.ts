@@ -33,6 +33,13 @@ export {
 export { stockReturnCapacity, stockReturnReservations } from "./prisma-return-capacity.ts";
 export { creditNoteReturnFollower } from "../application/credit-note-return.ts";
 
+// Fuentes de Existencias y Movimientos para los reportes (add-reports-export, design D1).
+export {
+  createInventoryMovementsReportSource,
+  inventoryBalanceReads,
+  type InventoryMovementSourceRow,
+} from "./report-sources.ts";
+
 /**
  * Saldo de los productos con inventario inicializado, sobre un cliente: `invoices` lo recibe como
  * `StockReads` para congelar la decisión de inventario de cada línea al reservar (design D4).

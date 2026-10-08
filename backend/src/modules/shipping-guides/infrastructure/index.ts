@@ -52,6 +52,9 @@ import {
   createShippingGuideEmissionUnitOfWork,
 } from "./units-of-work.ts";
 
+// La guía no tiene importes en los reportes (add-reports-export, design D5).
+export { shippingGuideReportAmounts } from "./report-amounts.ts";
+
 /** Perfil de la guía de remisión para la firma compartida, con el builder 1.1.0. */
 export const shippingGuideSigningProfile = (): SigningProfile =>
   createShippingGuideSigningProfile(createShippingGuideXmlBuilder());
