@@ -18,6 +18,7 @@ export const IDEMPOTENT_OPERATIONS = [
   "debit_note.emit",
   "withholding_receipt.emit",
   "shipping_guide.emit",
+  "purchase_settlement.emit",
 ] as const;
 export type IdempotentOperation = (typeof IDEMPOTENT_OPERATIONS)[number];
 

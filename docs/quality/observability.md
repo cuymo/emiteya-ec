@@ -214,6 +214,27 @@ su origen, los conteos, las clases de sustento y cada excepción declarada con s
 la política; nunca direcciones, descripciones, la placa, XML, SOAP ni la clave del certificado. Los
 borradores, las consultas, la transmisión automática y las entregas no se auditan.
 
+## Liquidaciones de compra
+
+Señales de `add-purchase-settlements` (design D26), en `/metrics` y sin la empresa, los terceros ni la
+liquidación en las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `purchase_settlement_reservations_total` | Counter | Liquidaciones de compra reservadas al emitir. Una repetición con la misma `Idempotency-Key` no cuenta. |
+
+La liquidación no tiene capacidades ni movimientos de inventario: una liquidación en revisión manual o
+con resultado incierto se ve en `fiscal_documents{state}`. La transmisión, la reconciliación y el
+RIDE usan las señales vigentes sin una etiqueta de tipo. Los logs registran identificadores, estados
+y códigos; nunca direcciones, descripciones, identificaciones ni declaraciones con datos del
+proveedor (SEC-003). Los eventos de auditoría (`purchase_settlement.reserved`,
+`purchase_settlement.signed`, `purchase_settlement.signing_retried`,
+`purchase_settlement.reconciliation_requested`, `purchase_settlement.reconciliation_completed`) llevan
+la liquidación, su número y su clave; la reserva añade el caso de procedencia, la política y su
+versión, los identificadores de las cuatro declaraciones, el número de líneas y de pagos y el importe
+total; nunca descripciones, direcciones, XML, SOAP ni la clave del certificado. Los borradores, las
+consultas, la transmisión automática y las entregas no se auditan.
+
 ## Logging Rules
 
 - Do not log secrets.

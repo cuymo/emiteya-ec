@@ -18,7 +18,7 @@ const EMITTED_PREFIXES = [
 const PURCHASE = /purchase|settlement|liquidaci/i;
 
 describe("tipos de comprobante emitidos", () => {
-  it("la factura, la nota de crédito, la nota de débito, la retención y la guía tienen una operación de emisión", () => {
+  it("la factura, la liquidación, las notas, la retención y la guía tienen una operación de emisión", () => {
     const emissions = apiRoutes
       .filter(
         (route) =>
@@ -32,6 +32,7 @@ describe("tipos de comprobante emitidos", () => {
       "/credit-notes",
       "/debit-notes",
       "/invoices",
+      "/purchase-settlements",
       "/shipping-guides",
       "/withholding-receipts",
     ]);

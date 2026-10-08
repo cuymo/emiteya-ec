@@ -207,6 +207,10 @@ import {
 } from "../shipping-guides.ts";
 import {
   createPurchaseSettlementDraftSchema,
+  emitPurchaseSettlementHeadersSchema,
+  emitPurchaseSettlementSchema,
+  purchaseSettlementIdParamsSchema,
+  purchaseSettlementViewSchema,
   listPurchaseSettlementDraftsQuerySchema,
   listPurchaseSettlementSuppliersQuerySchema,
   purchaseSettlementDraftIdParamsSchema,
@@ -424,6 +428,14 @@ const purchaseBodyTooLarge = {
     "El cuerpo supera 4 MiB, el límite propio del borrador de liquidación (una defensa de recursos HTTP del sistema, no un límite del SRI).",
   schema: errorEnvelopeSchema,
 };
+const purchaseSettlementNotFound = {
+  description: "La liquidación de compra no existe en la empresa (PURCHASE_SETTLEMENT_NOT_FOUND).",
+  schema: errorEnvelopeSchema,
+};
+const purchaseSettlementResponse = (description: string) => ({
+  description,
+  schema: successEnvelope(purchaseSettlementViewSchema),
+});
 const purchasePage = <T extends z.ZodType>(description: string, item: T) => ({
   description,
   schema: z.strictObject({ data: z.array(item), meta: purchaseSettlementListMetaSchema }),
@@ -2716,6 +2728,49 @@ export const apiRoutes: readonly RouteDefinition[] = [
         description: "El borrador ya se emitió (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED).",
         schema: errorEnvelopeSchema,
       },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/purchase-settlements",
+    summary:
+      "Emitir un borrador de liquidación de compra confirmando las cuatro declaraciones de procedencia: reserva el número y la clave, congela el snapshot y firma localmente (sin el SRI)",
+    request: { headers: emitPurchaseSettlementHeadersSchema, body: emitPurchaseSettlementSchema },
+    responses: {
+      200: purchaseSettlementResponse(
+        "Repetición con la misma Idempotency-Key y la misma solicitud: la misma liquidación. Si seguía `RESERVED`, se intenta firmar otra vez.",
+      ),
+      201: purchaseSettlementResponse(
+        "Liquidación emitida: `SIGNED` con su artefacto, o `RESERVED` con el diagnóstico del intento. Las declaraciones figuran como declaradas por el usuario, nunca como verificadas, y no van en el XML.",
+      ),
+      400: {
+        description:
+          "Datos inválidos (una declaración desconocida o un campo no permitido) o falta la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: purchaseDraftNotFound,
+      409: {
+        description:
+          "La emisión se rechazó antes de reservar el número, con el código del primer problema (por ejemplo PURCHASE_SETTLEMENT_SUPPLIER_IDENTIFICATION_NOT_ALLOWED, PURCHASE_SETTLEMENT_ADDRESS_REQUIRED, PURCHASE_SETTLEMENT_PAYMENTS_MISMATCH, PURCHASE_SETTLEMENT_IVA_RATE_NOT_EFFECTIVE, PURCHASE_SETTLEMENT_DECLARATION_REQUIRED o PURCHASE_SETTLEMENT_DECLARATION_VERSION_MISMATCH); el borrador cambió (PURCHASE_SETTLEMENT_DRAFT_CHANGED) o ya se emitió con otra clave (PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED); o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/purchase-settlements/:purchaseSettlementId/signing-attempts",
+    summary:
+      "Reintentar la firma de una liquidación de compra reservada, con el mismo número, la misma clave y la misma fecha de emisión",
+    request: { params: purchaseSettlementIdParamsSchema },
+    responses: {
+      200: purchaseSettlementResponse(
+        "Liquidación tras el intento: `SIGNED`, o `RESERVED` con el diagnóstico. Una liquidación ya firmada se devuelve sin cambios.",
+      ),
+      401: errors[401],
+      403: errors[403],
+      404: purchaseSettlementNotFound,
     },
   }),
 ];

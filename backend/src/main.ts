@@ -82,6 +82,7 @@ import {
 } from "./modules/shipping-guides/infrastructure/index.ts";
 import {
   isPurchaseSettlementDraftBody,
+  purchaseSettlementSigningProfile,
   purchaseSettlementsModule,
 } from "./modules/purchase-settlements/infrastructure/index.ts";
 import { fiscalRouters, signingPipelines } from "./modules/fiscal/infrastructure/index.ts";
@@ -472,6 +473,7 @@ apiRouter.use(
 apiRouter.use(
   ...purchaseSettlementsModule({
     prisma: database.prisma,
+    schema: parseDatabaseUrl(env.DATABASE_URL).schema ?? "public",
     authorizer,
     signingReads: signing.reads,
     suppliers: purchaseSupplierReader,
@@ -480,6 +482,12 @@ apiRouter.use(
       lines: env.PURCHASE_SETTLEMENT_MAX_LINES,
       payments: env.PURCHASE_SETTLEMENT_MAX_PAYMENTS,
     },
+    xsd: xsdValidator,
+    signing: documentSigning.pipeline(purchaseSettlementSigningProfile()),
+    metrics: metrics.registry,
+    jobs: jobStore,
+    conclusionWindowMs: transmissionSettings.poll.windowMs,
+    stageTimings: env.EMISSION_STAGE_TIMINGS,
   }).routers,
 );
 

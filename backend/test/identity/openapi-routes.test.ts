@@ -40,7 +40,9 @@ import type { ShippingGuides } from "../../src/modules/shipping-guides/applicati
 import { shippingGuidesRouter } from "../../src/modules/shipping-guides/infrastructure/http/shipping-guides-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import type { PurchaseSettlementDrafts } from "../../src/modules/purchase-settlements/application/drafts.ts";
+import type { PurchaseSettlementEmission } from "../../src/modules/purchase-settlements/application/emission.ts";
 import type { PurchaseSettlementOptions } from "../../src/modules/purchase-settlements/application/options.ts";
+import type { PurchaseSettlements } from "../../src/modules/purchase-settlements/application/purchase-settlements.ts";
 import { purchaseSettlementsRouter } from "../../src/modules/purchase-settlements/infrastructure/http/purchase-settlements-router.ts";
 import type { Inventory } from "../../src/modules/inventory/application/inventory.ts";
 import { inventoryRouter } from "../../src/modules/inventory/infrastructure/http/inventory-router.ts";
@@ -98,6 +100,8 @@ describe("rutas documentadas", () => {
       purchaseSettlementsRouter({
         drafts: {} as PurchaseSettlementDrafts,
         options: {} as PurchaseSettlementOptions,
+        emission: {} as PurchaseSettlementEmission,
+        settlements: {} as PurchaseSettlements,
       }),
       ...archiveRouters({
         prisma: {} as PrismaClient,

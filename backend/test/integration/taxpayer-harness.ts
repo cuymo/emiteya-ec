@@ -67,6 +67,7 @@ import {
 } from "../../src/modules/shipping-guides/infrastructure/index.ts";
 import {
   isPurchaseSettlementDraftBody,
+  purchaseSettlementSigningProfile,
   purchaseSettlementsModule,
 } from "../../src/modules/purchase-settlements/infrastructure/index.ts";
 import type { Permission } from "../../src/modules/identity/domain/access-policy.ts";
@@ -178,6 +179,14 @@ export type PurchaseSettlementsHarnessOptions = {
   limits?: Partial<PurchaseSettlementLimits>;
   /** Permisos que el autorizador de las liquidaciones niega, para probar el `403`. */
   deny?: readonly Permission[];
+  accessKeys?: AccessKeys;
+  /** false: la emisión se detiene en RESERVED (caída simulada después del commit). */
+  signAfterReserve?: boolean;
+  /** Firma de comprobantes; por defecto, la del módulo de firma configurado. */
+  signer?: DocumentSigner;
+  metrics?: Registry;
+  /** `EMISSION_STAGE_TIMINGS`: cabecera `Server-Timing` en la emisión. */
+  stageTimings?: boolean;
 };
 
 /** Un autorizador que niega además los permisos dados (los dos roles tienen los del borrador). */
@@ -458,9 +467,19 @@ export function buildTaxpayerApp(
       );
       // Liquidaciones de compra (add-purchase-settlements): los mismos puertos que compone `main.ts`.
       const purchase = options.purchaseSettlements;
+      const purchaseSigning = purchase?.signer
+        ? signingPipelines({
+            prisma: db.database.prisma,
+            xsd: options.invoices?.xsd ?? testXsdValidator(),
+            signer: purchase.signer,
+            ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
+            ...(invoicesNow ? { now: invoicesNow } : {}),
+          })
+        : documentSigning;
       router.use(
         ...purchaseSettlementsModule({
           prisma: db.database.prisma,
+          schema: db.name,
           authorizer: denying(authorizer, purchase?.deny),
           signingReads: signing
             ? signing.reads
@@ -468,6 +487,13 @@ export function buildTaxpayerApp(
           suppliers: purchaseSupplierReader,
           products: productReader,
           limits: { ...PURCHASE_SETTLEMENT_LIMITS_DEFAULT, ...purchase?.limits },
+          xsd: options.invoices?.xsd ?? testXsdValidator(),
+          signing: purchaseSigning.pipeline(purchaseSettlementSigningProfile()),
+          ...(options.invoices?.jobs ? { jobs: options.invoices.jobs } : {}),
+          ...(purchase?.signAfterReserve === false ? { signAfterReserve: false } : {}),
+          ...(purchase?.accessKeys ? { accessKeys: purchase.accessKeys } : {}),
+          ...(purchase?.metrics ? { metrics: purchase.metrics } : {}),
+          ...(purchase?.stageTimings ? { stageTimings: true } : {}),
           ...(invoicesNow ? { now: invoicesNow } : {}),
         }).routers,
       );

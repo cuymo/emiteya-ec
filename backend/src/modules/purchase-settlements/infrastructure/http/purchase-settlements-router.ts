@@ -4,11 +4,25 @@
 // leen su cuerpo con un límite propio de 4 MiB (design D22); el resto, también la emisión, conserva el
 // parser global de 100 KB.
 import express, { Router, type Request, type Response } from "express";
-import type { ListMeta } from "@facturador/contracts";
+import {
+  IDEMPOTENCY_KEY_HEADER,
+  type ListMeta,
+  type PurchaseSettlementView,
+} from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
+import {
+  createStageTimings,
+  serverTimingHeader,
+} from "../../../../platform/metrics/stage-timings.ts";
 import type { PurchaseSettlementDrafts } from "../../application/drafts.ts";
+import type { PurchaseSettlementEmission } from "../../application/emission.ts";
 import type { PurchaseSettlementOptions } from "../../application/options.ts";
-import { toPurchaseSettlementDraftSummaryView, toPurchaseSettlementDraftView } from "./views.ts";
+import type { PurchaseSettlements } from "../../application/purchase-settlements.ts";
+import {
+  toPurchaseSettlementDraftSummaryView,
+  toPurchaseSettlementDraftView,
+  toPurchaseSettlementView,
+} from "./views.ts";
 
 /**
  * Límite del cuerpo JSON de las rutas que reciben el borrador completo: 4 MiB, una defensa de
@@ -39,11 +53,18 @@ const param = (value: unknown) => String(value);
 export type PurchaseSettlementsRouterDependencies = {
   drafts: PurchaseSettlementDrafts;
   options: PurchaseSettlementOptions;
+  emission: PurchaseSettlementEmission;
+  settlements: PurchaseSettlements;
+  /** EMISSION_STAGE_TIMINGS: cabecera `Server-Timing` en la emisión. */
+  serverTiming?: boolean;
 };
 
 export function purchaseSettlementsRouter({
   drafts,
   options,
+  emission,
+  settlements,
+  serverTiming = false,
 }: PurchaseSettlementsRouterDependencies): Router {
   const router = Router();
   const draftBody = express.json({ limit: PURCHASE_SETTLEMENT_DRAFT_BODY_LIMIT_BYTES });
@@ -79,6 +100,33 @@ export function purchaseSettlementsRouter({
   router.delete("/purchase-settlements/drafts/:draftId", async (req, res) => {
     await drafts.remove(contextOf(res), param(req.params.draftId));
     res.status(204).end();
+  });
+
+  router.post("/purchase-settlements", async (req, res) => {
+    const timings = createStageTimings();
+    let result: { view: PurchaseSettlementView; replayed: boolean };
+    try {
+      result = await timings.envelope("total", async () => {
+        const { document, replayed } = await emission.emit(
+          contextOf(res),
+          req.header(IDEMPOTENCY_KEY_HEADER),
+          req.body,
+          timings,
+        );
+        return { view: toPurchaseSettlementView(await settlements.details(document)), replayed };
+      });
+    } finally {
+      if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
+    }
+    send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  router.post("/purchase-settlements/:purchaseSettlementId/signing-attempts", async (req, res) => {
+    const details = await settlements.retrySigning(
+      contextOf(res),
+      param(req.params.purchaseSettlementId),
+    );
+    send(res, 200, toPurchaseSettlementView(details));
   });
 
   return router;
