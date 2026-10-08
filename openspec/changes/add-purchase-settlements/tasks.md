@@ -12,9 +12,9 @@
 
 ## 3. Contratos, permisos y límites
 
-- [ ] 3.1 Crear `packages/contracts/src/purchase-settlements.ts` (design D3, D6, D9, D21, D22): la política de procedencia con sus cuatro declaraciones, el borrador estricto (proveedor, dirección, líneas con producto opcional o libres, pagos con plazo y unidad de tiempo), la emisión con `declarations`, las vistas, los códigos de error y los máximos absolutos. Verificar con pruebas de contrato los campos no permitidos (total, impuesto distinto del IVA, reembolso, subsidio, detalles adicionales, `companyId`, declaración desconocida), las longitudes medidas ya recortadas, los decimales y los máximos
-- [ ] 3.2 Añadir `purchaseSettlements.read`, `.draft`, `.emit` y `.retrySigning` para administrador y operador, y `.reconcile` solo para el administrador, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D23). Verificar con pruebas de la política
-- [ ] 3.3 Añadir `PURCHASE_SETTLEMENT_MAX_LINES` y `PURCHASE_SETTLEMENT_MAX_PAYMENTS` al esquema de entorno con sus valores por defecto y rangos, y documentarlas en `deployment.md` como defensa de recursos (design D22). Verificar con pruebas del entorno
+- [x] 3.1 Crear `packages/contracts/src/purchase-settlements.ts` (design D3, D6, D9, D21, D22): la política de procedencia con sus cuatro declaraciones, el borrador estricto (proveedor, dirección, líneas con producto opcional o libres, pagos con plazo y unidad de tiempo), la emisión con `declarations`, las vistas, los códigos de error y los máximos absolutos. Verificar con pruebas de contrato los campos no permitidos (total, impuesto distinto del IVA, reembolso, subsidio, detalles adicionales, `companyId`, declaración desconocida), las longitudes medidas ya recortadas, los decimales y los máximos
+- [x] 3.2 Añadir `purchaseSettlements.read`, `.draft`, `.emit` y `.retrySigning` para administrador y operador, y `.reconcile` solo para el administrador, en `access-policy.ts`, su espejo del frontend y `access-control.md` (design D23). Verificar con pruebas de la política
+- [x] 3.3 Añadir `PURCHASE_SETTLEMENT_MAX_LINES` y `PURCHASE_SETTLEMENT_MAX_PAYMENTS` al esquema de entorno con sus valores por defecto y rangos, y documentarlas en `deployment.md` como defensa de recursos (design D22). Verificar con pruebas del entorno
 
 ## 4. Dominio de la liquidación
 

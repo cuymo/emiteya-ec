@@ -5,6 +5,8 @@ import {
   CERTIFICATE_MAX_BYTES_LIMIT,
   emailSchema,
   passwordSchema,
+  PURCHASE_SETTLEMENT_LIMITS_DEFAULT,
+  PURCHASE_SETTLEMENT_LIMITS_MAX,
   SHIPPING_GUIDE_LIMITS_DEFAULT,
   SHIPPING_GUIDE_LIMITS_MAX,
   WITHHOLDING_LIMITS_DEFAULT,
@@ -138,6 +140,15 @@ export const envSchema = z
     ).default(SHIPPING_GUIDE_LIMITS_DEFAULT.detailsPerRecipient),
     SHIPPING_GUIDE_MAX_DETAILS: int(1, SHIPPING_GUIDE_LIMITS_MAX.details).default(
       SHIPPING_GUIDE_LIMITS_DEFAULT.details,
+    ),
+    // Liquidación de compra (add-purchase-settlements, design D22): líneas y pagos por liquidación.
+    // Defensas de recursos del sistema, nunca límites del SRI ni del XSD ni una lectura de Q-47; el
+    // máximo de cada rango es el máximo absoluto del contrato.
+    PURCHASE_SETTLEMENT_MAX_LINES: int(1, PURCHASE_SETTLEMENT_LIMITS_MAX.lines).default(
+      PURCHASE_SETTLEMENT_LIMITS_DEFAULT.lines,
+    ),
+    PURCHASE_SETTLEMENT_MAX_PAYMENTS: int(1, PURCHASE_SETTLEMENT_LIMITS_MAX.payments).default(
+      PURCHASE_SETTLEMENT_LIMITS_DEFAULT.payments,
     ),
     // Cabecera `Server-Timing` con las etapas de la emisión (design D16): solo para el benchmark y
     // el diagnóstico local; prohibida en producción.

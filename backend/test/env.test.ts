@@ -315,6 +315,30 @@ describe("emisión de facturas (add-invoice-emission, design D2 y D11)", () => {
     expect(error?.message).not.toContain("301");
   });
 
+  it("los límites de la liquidación tienen sus valores por defecto, se configuran y se acotan (add-purchase-settlements, D22)", () => {
+    expect(loadEnv(valid)).toMatchObject({
+      PURCHASE_SETTLEMENT_MAX_LINES: 100,
+      PURCHASE_SETTLEMENT_MAX_PAYMENTS: 10,
+    });
+    expect(
+      loadEnv({
+        ...valid,
+        PURCHASE_SETTLEMENT_MAX_LINES: "1000",
+        PURCHASE_SETTLEMENT_MAX_PAYMENTS: "20",
+      }),
+    ).toMatchObject({ PURCHASE_SETTLEMENT_MAX_LINES: 1000, PURCHASE_SETTLEMENT_MAX_PAYMENTS: 20 });
+    const error = envError({
+      ...valid,
+      PURCHASE_SETTLEMENT_MAX_LINES: "1001",
+      PURCHASE_SETTLEMENT_MAX_PAYMENTS: "0",
+    });
+    expect(error?.variables).toEqual([
+      "PURCHASE_SETTLEMENT_MAX_LINES",
+      "PURCHASE_SETTLEMENT_MAX_PAYMENTS",
+    ]);
+    expect(error?.message).not.toContain("1001");
+  });
+
   it("los límites de la retención tienen sus valores por defecto, se configuran y se acotan (add-withholding-receipts, D25)", () => {
     expect(loadEnv(valid)).toMatchObject({
       WITHHOLDING_MAX_SUPPORTS: 10,
