@@ -80,6 +80,7 @@ de integración SRI de CTX §59:
 - Los certificados custodiados pueden rotarse o volver a cifrarse con una clave maestra nueva, o existe un procedimiento operativo documentado y probado para sustituirlos de forma segura (ADR 0011).
 - Los comprobantes firmados y autorizados tienen archivo durable con hash.
 - Un respaldo completo se restaura con éxito.
+- El proxy de producción que enruta `/api` permite el tiempo de verificación previo al primer byte de una descarga de portabilidad: al menos 120 s de espera de la respuesta en esa ruta, sin almacenar el cuerpo, con el tiempo medido de nuevo sobre el almacenamiento real de producción (`../architecture/deployment.md`, "Proxy inverso y descarga"). Es un requisito operativo, no fiscal ni del ERS.
 - Los reportes XLSX principales funcionan.
 - Los WSDL de Pruebas y Producción están verificados, y el reloj del servidor está sincronizado.
 - Las reglas de consumidor final vigentes y el Anexo 26 están revisados (Q-37), y los casos especiales no soportados están bloqueados.

@@ -1,6 +1,7 @@
 # Estado del proyecto
 
-Corte: 2026-10-08. `main` incluye los cambios 0 a 15, el último `add-reports-export`. El detalle
+Corte: 2026-10-08. `main` incluye los cambios 0 a 16, el último `add-data-portability`: la secuencia
+del MVP está completa. El detalle
 de cada decisión vive en `docs/` y en `openspec/`; este archivo resume dónde estamos, qué falta y
 qué se necesita del dueño del producto para cada paso pendiente.
 
@@ -27,41 +28,43 @@ qué se necesita del dueño del producto para cada paso pendiente.
 | 13 | `add-shipping-guides` | 2026-10-07 | AC-03 parcial |
 | 14 | `add-purchase-settlements` | 2026-10-08 | AC-03 (los seis comprobantes off-line) |
 | 15 | `add-reports-export` | 2026-10-08 | AC-09 |
+| 16 | `add-data-portability` | 2026-10-08 | SEC-010 |
 
-### Cambio 15 `add-reports-export`
+### Cambio 16 `add-data-portability`
 
-- Archivado en `openspec/changes/archive/2026-10-08-add-reports-export/`, con su spec en
-  `openspec/specs/reports/` y el requisito de su auditoría en `openspec/specs/audit-trail/`. Resumen
-  en `docs/product/capabilities.md` (Trazabilidad de `reports`) y detalle en
-  `docs/architecture/reports.md`.
-- Cinco reportes del ERS §11 como listados, sin totales ni compensación: Documentos emitidos,
-  Facturas, Retenciones, Inventario (Existencias y Movimientos) y Terceros. Filtros mínimos en la
-  URL, todos los estados por defecto en Documentos emitidos y los autorizados en Facturas y
-  Retenciones, y el ambiente vigente de la empresa por defecto. Las fuentes viven en sus módulos
-  dueños y leen lo congelado por cada comprobante; el inventario lee su saldo y su kárdex.
-- Exportación a XLSX, único formato, con los mismos registros que la lista completa (AC-09):
-  escritor OOXML propio sobre `node:zlib` (ADR 0023), sin dependencias de producción nuevas;
-  identificaciones y números como texto; importes como números hasta 15 dígitos significativos y,
-  por encima, como texto decimal canónico; texto de los usuarios sin fórmulas; fechas fiscales sin
-  zona horaria y momentos en America/Guayaquil. La generación termina en un temporal privado `0600`
-  dentro de una transacción `REPEATABLE READ, READ ONLY`, se audita (`report.exported`) y solo
-  después se entrega; el temporal se borra siempre y no queda ningún artefacto permanente.
-- Límites de recursos del proyecto, fijados por `bench:reports`: 100 000 filas por exportación
-  (rango de 1 a 250 000, `409` al superarlo) y 2 exportaciones simultáneas por instancia (rango de 1
-  a 4, `503` con `Retry-After`). Ninguno es un límite fiscal ni del ERS.
-- Cierre: 22/22 tareas, 17/17 requisitos y 54/54 escenarios, `/opsx:verify` sin problemas críticos
-  ni advertencias (dos sugerencias aceptadas como cobertura opcional), `corepack pnpm verify` en
-  verde sobre el HEAD final (2 967 pruebas en 353 archivos, más AC-04), revisión de la interfaz
-  166/166 (`ui-review.md` del cambio archivado), prueba end-to-end sobre `main.ts` y `bench:reports`
-  con todas las listas dentro de RNF-005 (`docs/quality/benchmarks/reports-2026-10-08.md`).
+- Archivado en `openspec/changes/archive/2026-10-08-add-data-portability/`, con su spec en
+  `openspec/specs/data-portability/` y los requisitos de su auditoría en
+  `openspec/specs/audit-trail/`. Resumen en `docs/product/capabilities.md` (Trazabilidad de
+  `data-portability`), formato en `docs/architecture/data-portability-format.md` y detalle en
+  `docs/architecture/data-portability.md`. Cierra SEC-010 y resuelve Q-28.
+- Paquete `PORTABILITY_FORMAT_V1`: un ZIP64 propio sobre `node:zlib` (ADR 0024), sin dependencias
+  nuevas, con `manifest.json`, `LEEME.txt`, seis libros XLSX, una carpeta por comprobante con su
+  snapshot, sus XML, su RIDE y las respuestas originales del SRI con sus bytes exactos, los logos y
+  `SHA256SUMS`. Contiene los dos ambientes; excluye la firma y todos los secretos, los datos
+  internos de autenticación y los borradores. No es un respaldo y no se importa ni se restaura.
+- Generación por un job durable con *lease* renovado y fencing (un worker obsoleto nunca publica),
+  en dos fases: una lectura consistente de solo lectura y la copia verificada de cada artefacto, que
+  falla cerrada ante cualquier diferencia. Estados explícitos (`QUEUED`, `GENERATING`, `READY`,
+  `FAILED`, `EXPIRED`); el paquete caduca 24 horas después de quedar listo o al ser reemplazado, y uno
+  perdido o alterado queda fallido. Solo el administrador, con cuatro eventos de auditoría.
+- Descarga autenticada que verifica el SHA-256 completo del paquete antes del primer byte, mantenida
+  por decisión del dueño del producto, por streaming y por una ruta propia del frontend sin el plazo
+  de 30 s del reenvío general. El proxy de producción debe esperar al menos 120 s en esa ruta
+  (compuerta del go-live, abajo).
+- Cierre: 29/29 tareas, 28/28 requisitos y 81/81 escenarios, `/opsx:verify` sin problemas críticos,
+  advertencias ni coberturas parciales; `corepack pnpm verify` en verde; revisión de la interfaz
+  57/57 con el gate del streaming (`ui-review.md` del cambio archivado); prueba end-to-end sobre
+  `main.ts`; y `bench:data-portability` con el volumen de Q-26: un paquete de 3.68 GB y 592 630
+  entradas en unos 10 min, sin afectar a la API, validado con lectores independientes
+  (`docs/quality/benchmarks/data-portability-2026-10-08.md`).
 
 ## Falta
 
-### 1. Cambios pendientes de la secuencia
+### 1. Después de la secuencia
 
-| # | Cambio | Capacidad | Cierra | Bloqueante antes de proponer |
-| --- | --- | --- | --- | --- |
-| 16 | `add-data-portability` | Portabilidad de datos | SEC-010 | Ninguno: Q-28 resuelta y readiness aprobado (2026-10-08) |
+La secuencia de cambios del MVP (0 a 16) está completa. El siguiente paso es la revisión manual
+integral de la aplicación; después, la certificación con el SRI en Pruebas (S-3 online) y las
+compuertas del go-live de la sección 2. Ningún cambio nuevo de funcionalidad está en curso.
 
 Capacidades futuras sin número, ya decididas fuera del MVP actual: `correct-returned-document`
 (BR-28), `cancellation-observation` (Q-16), `credit-note-discounts-bonuses`,
@@ -74,7 +77,7 @@ Capacidades futuras sin número, ya decididas fuera del MVP actual: `correct-ret
 Seguimientos separados, que no reabren los cambios archivados:
 
 - Q-52 `regulatory-source-refresh`: revisar la trazabilidad de los cambios 11 a 13 con la edición
-  vigente del Reglamento de Comprobantes de Venta, después del cambio 16.
+  vigente del Reglamento de Comprobantes de Venta; con el cambio 16 cerrado, ya puede abordarse.
 - Q-53: confirmar con la fuente oficial si la liquidación de compra se entrega en dos ejemplares del
   RIDE firmados por el proveedor, en la revisión operativa previa al go-live.
 - Rendimiento: medir el RIDE de la factura por encima de 120 líneas (admite hasta 1000); no bloquea
@@ -95,20 +98,24 @@ Ninguna bloquea proponer cambios; todas bloquean producción (`docs/quality/sri-
 | Licencia open source (Q-33) | Abierta; decidir antes del primer release |
 | Conservación de artefactos (Q-27) | Parcial: nunca purgar en v1 |
 | Restauración probada del respaldo operativo (AC-10, RNF-007, SEC-008) | Pendiente: volcado, artefactos y clave maestra por separado (`docs/architecture/deployment.md`); la portabilidad no la reemplaza |
+| Proxy de producción para la descarga de portabilidad | Pendiente: al menos 120 s de espera de la respuesta antes del primer byte en `/api/v1/data-exports/{id}/download`, sin almacenar el cuerpo, y medir de nuevo con el almacenamiento real (`docs/architecture/deployment.md`). Requisito operativo, no fiscal ni del ERS |
 | Registro de cambios normativos (Q-40) | Abierta, sin bloquear cambios |
 
 ### 3. Preguntas abiertas que no bloquean el siguiente cambio
 
 Q-16 (observación de anulaciones), Q-32 (criterios de aceptación fuera del ERS §19, se escriben en
 cada cambio), Q-45 (precio unitario editable), Q-46 (línea manual sin producto), Q-52 (revisión
-normativa, después del cambio 16), Q-53 (antes del go-live), Q-22 y Q-26 (parciales). Detalle en
-`docs/product/open-questions.md`.
+normativa, ya abordable), Q-53 (antes del go-live), Q-22 y Q-26 (parciales). Q-28 quedó resuelta con
+el cambio 16. Detalle en `docs/product/open-questions.md`.
 
 ### 4. Deuda técnica y mantenimiento
 
 - Deuda activa registrada en `docs/quality/technical-debt.md` (lint de accesibilidad para JSX,
   pruebas sensibles a la carga, runner de CI, paginación de establecimientos, entre otras).
 - `bench:credit-notes` no fija `RIDE_SWEEP_INTERVAL_SECONDS` (registrado en la deuda técnica).
+- El arranque del backend de las pruebas end-to-end puede superar el plazo de conexión de 2 s con la
+  suite completa en paralelo (observado una vez en `e2e-parties-products`; registrado en la deuda
+  técnica).
 - La base de pruebas conserva esquemas temporales: `nd_ddl_scratch` (creado durante
   `add-debit-notes` para generar el DDL), tres `t_bench_ride_*` de ejecuciones anteriores de
   `bench:ride` y otros 17 `t_*` de pruebas interrumpidas en sesiones anteriores.
@@ -120,7 +127,8 @@ Ninguno de estos datos se guarda en el repositorio, la CI ni los registros.
 | Paso | Qué se necesita | Por qué |
 | --- | --- | --- |
 | Borrar los esquemas temporales de la base de pruebas | Consentimiento para `DROP SCHEMA` de `nd_ddl_scratch` y de los `t_*` sobrantes | Es una operación destructiva |
-| Certificación S-3 online | Después de cerrar el cambio 16, en el entorno del operador: un P12 ecuatoriano real y su contraseña, un RUC habilitado en Pruebas y la clave maestra de la custodia (`CERTIFICATE_MASTER_KEY`); después, ejecutar `docs/quality/sri-certification.md` con los seis tipos de comprobante, incluida una liquidación de compra | Las respuestas del SRI de las pruebas son sintéticas; solo Pruebas confirma la autorización real. Las reglas de la fuente, como `infoAdicional`, ya están resueltas y no dependen de ese resultado |
+| Revisión manual integral | Probar la aplicación completa como la usará un contribuyente, con datos de prueba y la transmisión deshabilitada | Es el paso siguiente a la secuencia 0 a 16, antes de la certificación |
+| Certificación S-3 online | Después de la revisión manual integral, en el entorno del operador: un P12 ecuatoriano real y su contraseña, un RUC habilitado en Pruebas y la clave maestra de la custodia (`CERTIFICATE_MASTER_KEY`); después, ejecutar `docs/quality/sri-certification.md` con los seis tipos de comprobante, incluida una liquidación de compra | Las respuestas del SRI de las pruebas son sintéticas; solo Pruebas confirma la autorización real. Las reglas de la fuente, como `infoAdicional`, ya están resueltas y no dependen de ese resultado |
 | Política de tamaño (Q-47) | El texto oficial del SRI que fije la cifra en bytes (o la unidad de "320 Kb"), con su URL | No se infiere ni se inventa la conversión; se publica en un cambio OpenSpec pequeño |
 | Aviso del cambio de tarifa del 14 % al 12 % (opcional) | Su URL o PDF oficial del SRI, si se tiene | No se encontró en el portal; la regla ya tiene su evidencia primaria en la ficha v2.34 |
 | Primer release | Decisión sobre Q-33: licencia open source | La exigen ERS API-006 y el go-live |

@@ -1,8 +1,9 @@
 # Portabilidad de datos
 
-El módulo `data-portability` (`add-data-portability`) exporta los datos y artefactos de la empresa
-en el paquete `PORTABILITY_FORMAT_V1` (ERS SEC-010; Q-28). El formato se documenta en
-`data-portability-format.md`; las decisiones, en el design del cambio, el ADR 0024 y "Trazabilidad
+El módulo `data-portability` (`add-data-portability`, archivado el 2026-10-08) exporta los datos y
+artefactos de la empresa en el paquete `PORTABILITY_FORMAT_V1` (ERS SEC-010; Q-28). El formato se
+documenta en `data-portability-format.md`; las decisiones, en el design del cambio
+(`openspec/changes/archive/2026-10-08-add-data-portability/`), el ADR 0024 y "Trazabilidad
 de `data-portability`" de `../product/capabilities.md` (BR-96 a BR-101 de
 `../product/domain-model.md`). No es un respaldo: la restauración es la del respaldo operativo
 (`deployment.md`, AC-10).
@@ -61,7 +62,7 @@ de `data-portability`" de `../product/capabilities.md` (BR-96 a BR-101 de
 
 ## Rendimiento
 
-`bench:data-portability` (design D22; `../quality/benchmarks/data-portability-2026-10-08.md`) genera el paquete de una empresa con el volumen de Q-26 en unos 10 min: 3.68 GB y 592 630 entradas, con unos 0,9 núcleos, 723 MiB de memoria residente y un pico de 3,7 GiB de disco, sin afectar a las listas de la API. La verificación previa a la descarga tarda de 2,5 a 7,6 s en un SSD con ese paquete, y de 8 a 11 s por GiB en un disco giratorio (`openspec/changes/add-data-portability/ui-review.md`).
+`bench:data-portability` (design D22; `../quality/benchmarks/data-portability-2026-10-08.md`) genera el paquete de una empresa con el volumen de Q-26 en unos 10 min: 3.68 GB y 592 630 entradas, con unos 0,9 núcleos, 723 MiB de memoria residente y un pico de 3,7 GiB de disco, sin afectar a las listas de la API. La verificación previa a la descarga tarda de 2,5 a 7,6 s en un SSD con ese paquete, y de 8 a 11 s por GiB en un disco giratorio (`openspec/changes/archive/2026-10-08-add-data-portability/ui-review.md`). El dueño del producto decidió mantener la verificación completa antes de cada descarga (2026-10-08): es preferible esperar a entregar un paquete que ya no coincide con el que quedó listo.
 
 ## Sistema de archivos y barrido
 
@@ -116,7 +117,7 @@ Las rutas exigen `dataPortability.export`, que solo tiene el administrador, y la
 
 ## Descarga
 
-`GET /api/v1/data-exports/{id}/download` comprueba todo antes del primer byte, en este orden:
+`GET /api/v1/data-exports/{id}/download` comprueba todo antes del primer byte, en este orden: la sesión, el permiso, la empresa, el estado listo y la vigencia, la existencia, el tamaño y el SHA-256 completo, la auditoría, las cabeceras y el cuerpo. Una verificación anterior nunca sustituye la del archivo que se va a entregar:
 
 1. la sesión, el permiso, la empresa (`404`), el estado `READY` (`409`) y la vigencia (`410`);
 2. abre el paquete sin seguir enlaces y calcula su tamaño y su SHA-256 completos sobre ese mismo descriptor:

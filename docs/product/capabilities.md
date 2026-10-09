@@ -77,6 +77,10 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 15  | `add-reports-export`       | `reports`                                             | 8              | AC-09         |
 | 16  | `add-data-portability`     | `data-portability`                                    | 8              | SEC-010 (AC-10 es del respaldo operativo) |
 
+La secuencia 0 a 16 del MVP está completa: el cambio 16 se archivó el 2026-10-08. Lo que sigue no
+es un cambio de la secuencia: la revisión manual integral, la certificación con el SRI en Pruebas
+(S-3 online) y las compuertas del go-live (`../quality/definition-of-done.md`, Go-Live v1.0).
+
 Capacidades futuras sin número en la secuencia, decididas en la revisión de readiness del cambio 7
 (2026-10-03): `correct-returned-document` (corrección de un devuelto, BR-28) y
 `cancellation-observation` (observación de anulaciones, Q-16). Ninguna amplía `add-sri-transmission`.
@@ -298,10 +302,14 @@ los gráficos y los reportes agregados quedan fuera del MVP.
 
 ## Trazabilidad de `data-portability`
 
+Estado: `add-data-portability` archivado el 2026-10-08
+(`openspec/changes/archive/2026-10-08-add-data-portability/`). Cierra SEC-010; AC-10, RNF-007 y
+SEC-008 siguen como compuertas del go-live del respaldo operativo.
+
 Decisiones de la revisión de readiness del cambio 16 (`add-data-portability`, 2026-10-08), aprobadas
 por el dueño del producto como D1 a D9. El ERS pide "un mecanismo para exportar datos y artefactos del
 contribuyente" (SEC-010) y ni el ERS ni el CTX fijan su formato: el formato es diseño de portabilidad
-del proyecto (Q-28). Los specs distinguirán el requisito del ERS, la política del proyecto y la
+del proyecto (Q-28). Los specs distinguen el requisito del ERS, la política del proyecto y la
 defensa de recursos.
 
 | Regla | Origen | Fuente |

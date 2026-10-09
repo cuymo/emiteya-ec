@@ -46,6 +46,8 @@ documento de arquitectura que corresponda, marca aquí el estado y no reutilices
 
 Antes del go-live, sin bloquear ningún cambio: Q-27, Q-33, Q-37, Q-40 y Q-53, y la parte online de S-3.
 
+Con el cambio 16 archivado (2026-10-08), la secuencia 0 a 16 está completa y Q-52 puede abordarse en su revisión normativa separada.
+
 El ADR 0009 se aceptó el 2026-10-02 con la alternativa A. El ADR 0010 se aceptó el 2026-10-03 (Q-39).
 
 ## ADRs pendientes

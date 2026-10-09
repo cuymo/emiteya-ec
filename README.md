@@ -4,8 +4,11 @@ Facturador electrónico self-hosted para contribuyentes ecuatorianos: configura 
 contribuyente y emite, conserva y exporta los seis comprobantes electrónicos del SRI en el
 esquema off-line. No es un ERP, un POS ni un sistema contable.
 
-Estado: base técnica (`bootstrap-application`). Ninguna funcionalidad de producto está
-implementada todavía. El contexto del producto está en `docs/product/` y la arquitectura en
+Estado: la secuencia del MVP (cambios 0 a 16) está implementada: configuración del contribuyente,
+numeración, firma, catálogos, terceros y productos, los seis comprobantes off-line, transmisión al
+SRI (deshabilitada por defecto), archivo, inventario, reportes y portabilidad de datos. Todavía no
+está certificada con el SRI ni lista para producción: las compuertas pendientes están en
+`ESTADO-DEL-PROYECTO.md`. El contexto del producto está en `docs/product/` y la arquitectura en
 `ARCHITECTURE.md` y `docs/architecture/`.
 
 ## Requisitos
