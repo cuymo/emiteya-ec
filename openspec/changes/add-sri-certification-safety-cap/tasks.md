@@ -105,3 +105,10 @@
     de 2 s. Aislada pasa 3/3 en esta rama y en `main`.
   - **Diagnóstico.** Con la misma carga, `main` (verde en la CI) falló en local otra prueba de
     integración. Es entorno, no código: el cambio no toca la numeración ni las reservas.
+  - **Estado:** GLOBAL VERIFICATION EXECUTED · CHANGE REGRESSION CHECK: PASS · HOST-LOAD FLAKE:
+    DOCUMENTED.
+  - `corepack pnpm verify` NO terminó con salida 0. Se ejecutó dos veces y todas las suites
+    funcionales y comprobaciones del repositorio pasaron. AC-04 solo falla por la carga del equipo:
+    pasa 3/3 aislada en esta rama y en `main`, y `main` también muestra fallos no relacionados con la
+    misma carga. Se clasifica como inestabilidad conocida de infraestructura y carga, no como
+    regresión del cambio. Lo autorizó el dueño del producto el 2026-10-09.
