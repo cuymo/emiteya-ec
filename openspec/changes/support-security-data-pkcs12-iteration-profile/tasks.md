@@ -92,5 +92,25 @@
 
   La ausencia del RUC es un problema distinto, fuera del alcance de este change: lo resuelve una
   reemisión externa del certificado (`docs/quality/sri-certification.md`, sección 5).
-- [ ] 4.3 Verificación global del proyecto (`corepack pnpm verify`) en la pasada completa del final
-  del proyecto, antes de archivar.
+- [x] 4.3 Verificación global del proyecto (`corepack pnpm verify`) antes de archivar.
+
+  Estado 2026-10-09:
+  - **GLOBAL VERIFICATION EXECUTED.** `corepack pnpm verify` se ejecutó una vez y salió con **código
+    1**.
+    - Pasaron format, versiones, `prisma generate`, lint y typecheck.
+    - La suite principal tuvo 1 fallo en 371 archivos (3122 pruebas pasadas, 1 fallida, 1 omitida):
+      `job-runner.test.ts`, «interruptor por prefijo de tipo». Su ventana fija de 400 ms quedó vacía.
+    - `verify` se detuvo ahí, así que no ejecutó AC-04 ni los pasos siguientes.
+  - **CHANGE REGRESSION CHECK: PASS.**
+    - Ni la prueba ni `platform/jobs` difieren de `main`.
+    - Aislada pasó 3/3.
+    - Con 14 procesos ocupando la CPU pasó 3/3 en la rama y 3/3 en `main` (`0eef607`).
+    - Falló igual el 2026-10-07 en `db6d899`, ancestro de `main`.
+  - **Evidencia compuesta**, cada paso ejecutado una vez, sin cambiar pruebas, plazos ni `maxWait`:
+    - suite principal: 371/371 archivos, 3123 pruebas pasadas y 1 omitida;
+    - AC-04: 3/3;
+    - `openapi:check`, `check:dev-start`, `build`, `check:xsd-artifact` y `check:ride-assets` en
+      verde.
+  - Las pruebas propias del change (lector, inspector, pool, seguridad y API de la firma) pasaron
+    59/59.
+  - **HOST-LOAD FLAKE: DOCUMENTED** en `docs/quality/technical-debt.md`.
