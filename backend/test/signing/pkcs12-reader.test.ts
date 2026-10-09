@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, inject, it } from "vitest";
 import {
   CertificateInspectionError,
+  MAX_PKCS12_ITERATIONS,
   inspectPkcs12,
 } from "../../src/modules/signing/infrastructure/pkcs12/pkcs12-reader.ts";
 import {
@@ -12,6 +13,7 @@ import {
   FIXTURE_OTHER_RUC,
   FIXTURE_PASSWORD,
   FIXTURE_RUC,
+  iterationCountsOf,
   readFixture,
 } from "../support/p12-fixtures.ts";
 
@@ -27,6 +29,17 @@ const codeOf = (file: string, password = FIXTURE_PASSWORD) => {
     return error instanceof CertificateInspectionError ? error.code : `otro: ${String(error)}`;
   }
 };
+/** "CODIGO" o "CODIGO:CAUSA" del rechazo, comprobando que no repite la contraseña. */
+const rejectionOf = (file: string, password = FIXTURE_PASSWORD) => {
+  try {
+    inspect(file, password);
+    return null;
+  } catch (error) {
+    expect(String((error as Error).message)).not.toContain(password);
+    return error instanceof CertificateInspectionError ? error.message : `otro: ${String(error)}`;
+  }
+};
+const countsOf = (file: string) => iterationCountsOf(readFixture(dir, file));
 const fingerprintOf = (name: string) =>
   new X509Certificate(readFileSync(join(dir, `${name}.crt`))).fingerprint256
     .replaceAll(":", "")
@@ -74,10 +87,6 @@ describe("lector de PKCS#12 (design D3)", () => {
     expect(codeOf("corrupt-random.p12")).toBe("CERTIFICATE_UNREADABLE");
   });
 
-  it("rechaza más de 100 000 iteraciones antes de descifrar", () => {
-    expect(codeOf("sd-utf8.iter150000.p12")).toBe("CERTIFICATE_INCOMPATIBLE");
-  });
-
   it("exige una clave RSA de 2048 bits o más que corresponda a un certificado", () => {
     expect(inspect("rsa4096.modern.p12").keyBits).toBe(4096);
     for (const file of ["rsa1024.modern.p12", "ec.modern.p12", "mismatch.p12", "nokey.p12"]) {
@@ -92,6 +101,52 @@ describe("lector de PKCS#12 (design D3)", () => {
   it("devuelve las fechas de vigencia sin decidir: la carga compara con el reloj del servidor", () => {
     expect(inspect("expired.modern.p12").notAfter).toBe("2024-01-01T00:00:00.000Z");
     expect(inspect("future.modern.p12").notBefore).toBe("2030-01-01T00:00:00.000Z");
+  });
+});
+
+describe("techo de iteraciones (support-security-data-pkcs12-iteration-profile)", () => {
+  const OVER = "CERTIFICATE_INCOMPATIBLE:ITERATIONS";
+
+  it("el techo es 131 072 por contador", () => {
+    expect(MAX_PKCS12_ITERATIONS).toBe(131_072);
+  });
+
+  it("la forma de Security Data, MAC 102 400 y contenidos cifrados 51 200, pasa el techo y se abre", () => {
+    expect(countsOf("sd-profile.p12")).toEqual([102_400, 51_200, 51_200]);
+    expect(inspect("sd-profile.p12")).toMatchObject({
+      keyBits: 2048,
+      detectedRuc: FIXTURE_RUC,
+      fingerprint: fingerprintOf("sd-printable"),
+    });
+  });
+
+  it("una contraseña incorrecta con la forma de Security Data es una contraseña incorrecta", () => {
+    expect(rejectionOf("sd-profile.p12", "otra-clave-incorrecta")).toBe(
+      "CERTIFICATE_PASSWORD_INVALID",
+    );
+  });
+
+  it("un contador igual al techo se admite", () => {
+    expect(Math.max(...countsOf("iter-limit.p12"))).toBe(MAX_PKCS12_ITERATIONS);
+    expect(inspect("iter-limit.p12").detectedRuc).toBe(FIXTURE_RUC);
+  });
+
+  it("un contador por encima del techo, en el MAC o en un cifrado, se rechaza antes de comprobar la contraseña", () => {
+    expect(countsOf("iter-over-mac.p12")[0]).toBe(MAX_PKCS12_ITERATIONS + 1);
+    expect(countsOf("iter-over-container.p12").slice(1)).toContain(MAX_PKCS12_ITERATIONS + 1);
+    for (const file of ["iter-over-mac.p12", "iter-over-container.p12", "sd-utf8.iter150000.p12"]) {
+      expect(rejectionOf(file), file).toBe(OVER);
+      // Con una contraseña incorrecta el motivo sigue siendo el techo: no llegó a comprobarla.
+      expect(rejectionOf(file, "otra-clave-incorrecta"), file).toBe(OVER);
+    }
+  });
+
+  it("un contador absurdo se rechaza sin intentar abrir el archivo", () => {
+    expect(countsOf("iter-absurd.p12")[0]).toBe(2 ** 31 - 1);
+    const started = performance.now();
+    expect(rejectionOf("iter-absurd.p12")).toBe(OVER);
+    // Verificar ese MAC llevaría horas: el rechazo no lo intenta.
+    expect(performance.now() - started).toBeLessThan(1_000);
   });
 });
 

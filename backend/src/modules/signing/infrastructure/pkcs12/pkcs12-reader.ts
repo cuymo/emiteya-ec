@@ -11,8 +11,13 @@ import type {
 } from "../../application/ports.ts";
 import { detectRuc } from "./ruc-extractors.ts";
 
-/** Límite de iteraciones del MAC y de cada cifrado: defensa de recursos (S-6, ADR 0019). */
-export const MAX_PKCS12_ITERATIONS = 100_000;
+/**
+ * Techo de iteraciones por contador, comprobado antes de descifrar: defensa de recursos (S-6,
+ * ADR 0019). Se aplica al mayor de los contadores, el del MAC y el de cada cifrado, sin sumarlos, y
+ * el borde se admite. Admite el perfil de Security Data (MAC 102 400, cifrado 51 200) con margen
+ * (support-security-data-pkcs12-iteration-profile). El timeout del pool acota el coste total.
+ */
+export const MAX_PKCS12_ITERATIONS = 131_072;
 export const MIN_RSA_BITS = 2048;
 
 export class CertificateInspectionError extends Error {

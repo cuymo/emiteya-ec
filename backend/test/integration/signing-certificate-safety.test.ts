@@ -82,6 +82,9 @@ describe("seguridad de la custodia de la firma", () => {
     );
     responses.push((await upload("noruc.modern.p12", FIXTURE_PASSWORD, currentId)).body);
     responses.push(
+      (await upload("sd-profile.p12", "contraseña-equivocada-secreta", currentId)).body,
+    );
+    responses.push(
       (await request(api.app).get("/api/v1/signing-certificate").set("Cookie", cookie)).body,
     );
 
@@ -196,5 +199,43 @@ describe("seguridad de la custodia de la firma", () => {
       pool,
     });
     expect((await other.service.unopenable()).map((c) => c.companyId)).toEqual([companyId]);
+  });
+
+  it("la firma con el perfil de Security Data se carga; una apertura que excede el plazo es 503 y no cambia nada", async () => {
+    // support-security-data-pkcs12-iteration-profile: MAC 102 400 y contenidos cifrados 51 200.
+    const before = await createCertificateRepository(db.database.prisma).findActive(companyId);
+    const loaded = await upload("sd-profile.p12", FIXTURE_PASSWORD, before!.id);
+    expect(loaded.status).toBe(200);
+    const loadedId = (loaded.body as { data: { certificate: { id: string } } }).data.certificate.id;
+    expect(loadedId).not.toBe(before!.id);
+
+    // Contadores dentro del techo y contenidos repetidos: solo el timeout del pool lo corta.
+    const slowPool = createCryptoWorkerPool({
+      entry: certificateTasksEntry(),
+      size: 1,
+      timeoutMs: 300,
+    });
+    try {
+      const slow = buildTaxpayerApp(db, { signing: { pool: slowPool, custody } });
+      const slowCookie = await sessionCookie(slow.app, "admin@a.ec");
+      const timedOut = await request(slow.app)
+        .put("/api/v1/signing-certificate")
+        .set("Cookie", slowCookie)
+        .send({
+          file: readFixture(dir, "many-containers.p12").toString("base64"),
+          password: FIXTURE_PASSWORD,
+          expectedCurrentId: loadedId,
+        });
+      expect(timedOut.status).toBe(503);
+      expect((timedOut.body as { error: { code: string } }).error.code).toBe("CRYPTO_TIMEOUT");
+      expect(JSON.stringify(timedOut.body) + slow.logs()).not.toContain(FIXTURE_PASSWORD);
+    } finally {
+      await slowPool.close();
+    }
+    const after = await request(api.app).get("/api/v1/signing-certificate").set("Cookie", cookie);
+    expect(after.status).toBe(200);
+    expect((after.body as { data: { certificate: { id: string } } }).data.certificate.id).toBe(
+      loadedId,
+    );
   });
 });
