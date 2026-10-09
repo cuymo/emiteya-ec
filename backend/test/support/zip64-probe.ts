@@ -1,4 +1,4 @@
-// node --conditions=development test/support/zip64-probe.ts <zip> <trabajo> <entradas>
+// node --conditions=development --expose-gc test/support/zip64-probe.ts <zip> <trabajo> <entradas>
 // Escribe un paquete de prueba en un proceso propio (con el heap limitado) e imprime el resultado
 // del contenedor y los picos de memoria muestreados mientras escribe.
 import { randomBytes } from "node:crypto";
@@ -29,9 +29,19 @@ for (let i = 0; i < Number(count); i++) {
 // Justo antes de cerrar, el directorio central ya está en su temporal, salvo el último trozo sin
 // volcar: si el contenedor lo guardara en memoria, el temporal estaría vacío.
 const directoryOnDisk = (await stat(`${work!}.cd`)).size;
+// Lo que el contenedor retiene tras una recolección completa: no depende del asignador ni del
+// momento en que el recolector libera los búferes ya soltados.
+const gc = (globalThis as { gc?: () => void }).gc;
+gc?.();
+await new Promise((resolve) => setTimeout(resolve, 200));
+gc?.();
+const retained = process.memoryUsage();
+const retainedExternal = retained.external + retained.arrayBuffers;
 const result = await zip.close();
 sample();
 clearInterval(timer);
 const peakRss =
   Number(/VmHWM:\s+(\d+) kB/.exec(readFileSync("/proc/self/status", "utf8"))?.[1] ?? 0) * 1024;
-console.log(JSON.stringify({ result, peakHeap, peakExternal, peakRss, directoryOnDisk }));
+console.log(
+  JSON.stringify({ result, peakHeap, peakExternal, peakRss, directoryOnDisk, retainedExternal }),
+);

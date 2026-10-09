@@ -43,11 +43,13 @@ describe("contenedor ZIP64 del paquete de portabilidad", () => {
         peakExternal: number;
         peakRss: number;
         directoryOnDisk: number;
+        retainedExternal: number;
       };
       const probe = async (entries: number) => {
         const path = target();
         const { stdout } = await run(process.execPath, [
           "--conditions=development",
+          "--expose-gc",
           `--max-old-space-size=${HEAP_LIMIT_MIB}`,
           PROBE,
           path,
@@ -73,11 +75,14 @@ describe("contenedor ZIP64 del paquete de portabilidad", () => {
       expect(tail.readUInt16LE(76 + 10)).toBe(0xffff);
       const directoryBytes = Number(tail.readBigUInt64LE(40));
       // El directorio central se vuelca a un temporal mientras se escribe (todo salvo el último
-      // trozo de 1 MiB), el heap no pasó de su límite y la memoria residente creció menos que el
-      // directorio al pasar de 30 000 a 250 000 entradas.
+      // trozo de 1 MiB), el heap no pasó de su límite, y la memoria fuera del heap que el
+      // contenedor retiene tras una recolección completa no crece al pasar de 30 000 a 250 000
+      // entradas: un directorio en memoria le sumaría sus ~24 MB. No se compara la memoria
+      // residente: depende del asignador del sistema y falló así en el runner de la CI.
       expect(large.directoryOnDisk).toBeGreaterThanOrEqual(directoryBytes - 2 ** 20);
       expect(large.peakHeap).toBeLessThan(HEAP_LIMIT_MIB * 2 ** 20);
-      expect(large.peakRss - small.peakRss).toBeLessThan(directoryBytes);
+      expect(directoryBytes).toBeGreaterThan(16 * 2 ** 20);
+      expect(large.retainedExternal - small.retainedExternal).toBeLessThan(8 * 2 ** 20);
       await expect(stat(`${work()}.cd`)).rejects.toThrow();
       const zip = await inspectZip(path);
       expect(zip).toMatchObject({
