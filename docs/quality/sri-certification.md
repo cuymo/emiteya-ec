@@ -23,8 +23,9 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Q-47 sigue abierta y bloquea la transmisión general y el go-live (sección 2).
 - Para certificar solo en Pruebas ya existe la sesión de certificación con su tope de seguridad
   conservador (sección 2.1). Su verificación global sigue pendiente.
-- El P12 real del operador abre con el techo de iteraciones nuevo, pero su certificado no trae el RUC
-  (sección 5, «Ensayos offline»): hace falta una decisión del dueño.
+- El P12 real del operador es criptográficamente compatible, pero su certificado no trae el RUC: no
+  sirve para certificar con esta empresa. **EXTERNAL CERTIFICATE REISSUE REQUIRED** (sección 5,
+  «Ensayos offline»).
 - Faltan también la lista del RUC, la salida de red y las decisiones de la sección 1. Hasta entonces
   no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
 
@@ -36,7 +37,7 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 | Tope de seguridad de la certificación | Implementado el 2026-10-09 (`add-sri-certification-safety-cap`); verificación global pendiente | Los siete documentos miden como máximo 13 532 bytes (sección 2) |
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, secciones 5.2 y 7.2.3, en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
 | Endpoints y WSDL de Pruebas | Verificados el 2026-10-04; se vuelven a verificar al empezar la sesión | `docs/product/sri-wsdl/` con su SHA-256 (`wsdl-manifest.test.ts`) y `backend/src/modules/sri-engine/infrastructure/endpoints.ts` (sección 3) |
-| P12 ecuatoriano real compatible | **BLOQUEADA: certificado sin RUC.** El contenedor ya es compatible (techo de 131 072) | Security Data es SUPPORTED por evidencia pública (ADR 0019). El P12 real abre y firma la prueba, pero su certificado no trae el OID `1.3.6.1.4.1.37746.3.11`: la carga lo rechazaría con `CERTIFICATE_RUC_NOT_FOUND`. Decisión del dueño (sección 5) |
+| P12 ecuatoriano real compatible | **BLOQUEADA: EXTERNAL CERTIFICATE REISSUE REQUIRED.** Responsable: externo (Security Data) | El P12 actual es `CRYPTOGRAPHICALLY_COMPATIBLE` pero `NOT_SRI_CERTIFICATION_ELIGIBLE_FOR_THIS_COMPANY` (`CERTIFICATE_RUC_NOT_FOUND`): su certificado no trae el OID `1.3.6.1.4.1.37746.3.11`. Hace falta un certificado reemitido con el RUC (sección 5) |
 | RUC habilitado en Pruebas | Pendiente | La lista de la sección 4 la comprueba el operador |
 | Salida de red solo hacia Pruebas | Pendiente | Hace falta una lista de permitidos solo hacia `celcer.sri.gob.ec:443` (secciones 3 y 14) |
 | Contrapartes de prueba | Pendiente: decisión del dueño | Sin identidades reales de terceros (sección 6) |
@@ -392,10 +393,52 @@ red. Solo se registran datos no sensibles.
       certificado no contiene RUC.
   - **No se ejecutaron** el XSD ni la medición de los siete documentos: el ensayo se detiene en la
     compuerta del RUC.
-  - **Decisión del dueño.** Lo que sigue la regla vigente es obtener un certificado de Security Data
-    que traiga el RUC. La alternativa es un change propio, con evidencia oficial de que el SRI acepta
-    ese certificado cuando el RUC es la cédula seguida de `001`, con su fixture y su prueba. No se
-    modifica la empresa ni se agrega un extractor sin esa evidencia.
+  - **Resultado: `BLOCKED_BY_CERTIFICATE_PROFILE` / `CERTIFICATE_RUC_NOT_FOUND`.**
+
+    | Comprobación | Resultado |
+    | --- | --- |
+    | Inspección del contenedor | PASS |
+    | Descifrado e importación | PASS |
+    | Firma de prueba y su verificación | PASS |
+    | Emisor Security Data | PASS |
+    | Vigencia | PASS |
+    | Requisito del RUC | FAIL |
+    | Elegible para la certificación | FAIL |
+
+    - PKCS12 CONTAINER COMPATIBLE: YES.
+    - CRYPTOGRAPHICALLY USABLE: YES.
+    - SRI IDENTITY REQUIREMENT SATISFIED: NO.
+    - REAL P12 CERTIFICATION READY: NO.
+
+    El P12 se clasifica como `CRYPTOGRAPHICALLY_COMPATIBLE` pero
+    `NOT_SRI_CERTIFICATION_ELIGIBLE_FOR_THIS_COMPANY`. No es un defecto de la aplicación.
+- **Decisión del dueño sobre el certificado sin RUC (2026-10-09).** Se mantiene la regla vigente: el
+  certificado para facturación electrónica debe contener el RUC. Fuentes en el ADR 0019, «Certificados
+  sin RUC».
+  - No se deriva el RUC como la cédula seguida de `001`.
+  - No se modifica el extractor de identidad.
+  - No se abre un change para aceptar certificados sin RUC.
+  - No se modifica la empresa, y no se prueba contra el SRI con este certificado.
+- **EXTERNAL CERTIFICATE REISSUE REQUIRED.** Responsable: externo, Security Data.
+  - El operador consulta a Security Data, fuera de la aplicación, por la reemisión o corrección de un
+    certificado para facturación electrónica que incluya el RUC. Esa gestión no se automatiza.
+  - El P12 nuevo o reexportado usa una **contraseña nueva**: la actual no se reutiliza porque quedó
+    expuesta. Debe ser ASCII y suficientemente fuerte, por la limitación conocida de PKCS#12 moderno
+    con contraseñas no ASCII. Nunca se pide ni se comparte por chat.
+- **Cuando llegue el P12 nuevo**, se repite exactamente el ensayo offline:
+  1. el techo de iteraciones;
+  2. la importación del PKCS#12;
+  3. el emisor;
+  4. el OID `1.3.6.1.4.1.37746.3.11`;
+  5. la lectura del RUC;
+  6. RUC igual al de la empresa;
+  7. la vigencia;
+  8. la firma y su verificación;
+  9. el XSD de los siete documentos;
+  10. la medición del XML firmado, su base64 y el SOAP;
+  11. el tope de seguridad de la certificación (< 40 000 bytes).
+
+  Solo después: READY FOR SRI TEST ENVIRONMENT CHECKLIST.
 - **Acción local pendiente del operador: MOVE REAL P12 OUTSIDE REPOSITORY TREE.**
   - El P12 real está hoy dentro del árbol de trabajo, ignorado por Git y sin seguimiento.
   - Debe moverse fuera del repositorio, y el archivo local de secretos del ensayo debe quedar solo

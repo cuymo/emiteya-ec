@@ -109,3 +109,33 @@ sintéticos (`docs/quality/benchmarks/pkcs12-iterations-2026-10-09.md`).
 hasta el timeout por carga con un archivo de muchos contenidos cifrados. Para rechazar ese caso de
 forma barata haría falta un límite de contenidos o un presupuesto de derivaciones, que requiere una
 decisión propia.
+
+## Certificados sin RUC (2026-10-09)
+
+El P12 real de Security Data del operador es criptográficamente compatible con el techo nuevo, pero
+su certificado no trae la extensión `1.3.6.1.4.1.37746.3.11`. Trae `1.3.6.1.4.1.37746.3.1`, la cédula,
+que coincide con los diez primeros dígitos del RUC de la empresa. La carga lo rechaza con
+`CERTIFICATE_RUC_NOT_FOUND`.
+
+**Decisión del dueño del producto: se mantiene la regla vigente.** El certificado que se usa para la
+facturación electrónica debe contener el RUC (requisito «Identidad tributaria de la firma» de
+`signing-certificate`).
+- No se deriva el RUC como la cédula seguida de `001`.
+- No se modifica el extractor de identidad.
+- No se abre un change para aceptar certificados sin RUC.
+
+El P12 se clasifica como `CRYPTOGRAPHICALLY_COMPATIBLE` pero
+`NOT_SRI_CERTIFICATION_ELIGIBLE_FOR_THIS_COMPANY`. No es un defecto de la aplicación: hace falta un
+certificado reemitido con el RUC (`../../quality/sri-certification.md`, sección 5).
+
+**Fuentes.** Las dos del SRI las aportó el dueño del producto el 2026-10-09; no hay copia ni hash en el
+repositorio.
+1. SRI, «Guía para emisión de comprobantes electrónicos»: requisito «Certificado digital de firma
+   electrónica obtenido con RUC».
+2. Documentación técnica histórica del SRI: el procedimiento de inspección del certificado indica
+   revisar el tag que contiene el RUC.
+3. Security Data, «OIDs: Objetos Identificadores Únicos de los Certificados», el documento registrado
+   en «Compatibilidad por proveedor»:
+   - `1.3.6.1.4.1.37746.3.1` es la cédula o el pasaporte;
+   - `1.3.6.1.4.1.37746.3.11` es el RUC.
+
