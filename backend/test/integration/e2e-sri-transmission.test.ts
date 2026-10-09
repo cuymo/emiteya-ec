@@ -233,6 +233,12 @@ describe("flujo completo de la transmisión al SRI", () => {
       status: "ready",
       sriTransmission: "disabled",
       rideAssets: "available",
+      sriSizeGate: {
+        certificationSafetyCapEnabled: false,
+        capBytes: 40_000,
+        effectiveSizePolicySource: "MISSING",
+        lastCertificationCheck: null,
+      },
     });
     expect(await metric("sri_transmission_enabled")).toBe("sri_transmission_enabled 0");
     await new Promise((resolve) => setTimeout(resolve, 2_000));
@@ -254,6 +260,12 @@ describe("flujo completo de la transmisión al SRI", () => {
       status: "ready",
       sriTransmission: "enabled",
       rideAssets: "available",
+      sriSizeGate: {
+        certificationSafetyCapEnabled: false,
+        capBytes: 40_000,
+        effectiveSizePolicySource: "SRI_OFFICIAL_POLICY",
+        lastCertificationCheck: null,
+      },
     });
     expect(await metric("sri_transmission_enabled")).toBe("sri_transmission_enabled 1");
     await waitForState(first.id, "AUTHORIZED", 30_000);

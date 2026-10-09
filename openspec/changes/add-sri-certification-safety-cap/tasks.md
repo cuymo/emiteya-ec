@@ -53,7 +53,7 @@
 
 ## 3. Readiness, métrica y registro de arranque
 
-- [ ] 3.1 Ampliar `createTransmissionGate` con la sesión (design D6): la precondición de tamaño se
+- [x] 3.1 Ampliar `createTransmissionGate` con la sesión (design D6): la precondición de tamaño se
   cumple con una política o con la sesión, y el estado lleva `sizeGate`
   (`certificationSafetyCapEnabled`, `capBytes` y `effectiveSizePolicySource`). Verificar con
   `test/fiscal/transmission-gate.test.ts` las cuatro fuentes:
@@ -61,7 +61,7 @@
   - `CERTIFICATION_CONSERVATIVE_CAP`;
   - `SRI_OFFICIAL_AND_CERTIFICATION_CAP`;
   - `MISSING`.
-- [ ] 3.2 Cablear en `main.ts`:
+- [x] 3.2 Cablear en `main.ts`:
   - la bandera;
   - `sriSizeGate` en `/health/ready`;
   - las métricas `sri_certification_safety_cap_enabled` y `sri_certification_gate_blocks_total`

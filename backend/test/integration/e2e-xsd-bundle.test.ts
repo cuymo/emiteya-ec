@@ -65,6 +65,12 @@ describe("paquete de XSD al arrancar", () => {
       status: "ready",
       sriTransmission: "disabled",
       rideAssets: "available",
+      sriSizeGate: {
+        certificationSafetyCapEnabled: false,
+        capBytes: 40_000,
+        effectiveSizePolicySource: "MISSING",
+        lastCertificationCheck: null,
+      },
     });
     expect(result.metrics).toMatch(/^sri_transmission_enabled 0$/m);
     expect(result.output).toContain('"sriTransmission":"disabled"');
@@ -78,6 +84,12 @@ describe("paquete de XSD al arrancar", () => {
       status: "unavailable",
       sriTransmission: "enabled",
       rideAssets: "available",
+      sriSizeGate: {
+        certificationSafetyCapEnabled: false,
+        capBytes: 40_000,
+        effectiveSizePolicySource: "MISSING",
+        lastCertificationCheck: null,
+      },
     });
     expect(result.metrics).toMatch(/^sri_transmission_enabled 1$/m);
     expect(result.output).toContain("transmisión al SRI habilitada sin sus precondiciones");
@@ -123,6 +135,12 @@ describe("paquete de XSD al arrancar", () => {
       status: "unavailable",
       sriTransmission: "disabled",
       rideAssets: "unavailable",
+      sriSizeGate: {
+        certificationSafetyCapEnabled: false,
+        capBytes: 40_000,
+        effectiveSizePolicySource: "MISSING",
+        lastCertificationCheck: null,
+      },
     });
     expect(result.metrics).toMatch(/^ride_assets_available 0$/m);
     expect(result.metrics).toMatch(/^xsd_registry_available 1$/m);

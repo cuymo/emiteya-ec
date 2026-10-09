@@ -73,6 +73,7 @@ export { SRI_JOB_TYPES } from "../domain/transmission.ts";
 export { createAuthorizeHandler } from "../application/authorize-handler.ts";
 export { createReconcileHandler } from "../application/reconcile-handler.ts";
 export { registerTransmissionMetrics } from "./transmission-metrics.ts";
+export { createCertificationSession } from "./certification-session.ts";
 // Fuentes de Documentos emitidos y de Facturas, y la proyección de importes que declara cada tipo
 // (add-reports-export, design D1 y D5).
 export {
