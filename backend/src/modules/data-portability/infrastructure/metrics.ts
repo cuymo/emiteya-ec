@@ -3,7 +3,7 @@
 // empresa, usuario, rutas ni contenido en las etiquetas.
 import { Counter, Histogram, type Registry } from "@prometheus-io/client";
 
-export type DownloadResult = "started" | "not_ready" | "expired" | "integrity_failed";
+export type DownloadResult = "started" | "not_ready" | "expired" | "integrity_failed" | "aborted";
 
 export type PortabilityMetrics = Readonly<{
   ready(sizeBytes: number): void;
@@ -42,7 +42,7 @@ export function registerPortabilityMetrics(registry: Registry): PortabilityMetri
   });
   const downloads = new Counter({
     name: "data_export_downloads_total",
-    help: "Descargas de paquetes por resultado: started, not_ready, expired o integrity_failed.",
+    help: "Descargas de paquetes por resultado: started, not_ready, expired, integrity_failed o aborted.",
     labelNames: ["result"] as const,
     registers: [registry],
   });

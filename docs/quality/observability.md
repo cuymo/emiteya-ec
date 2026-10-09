@@ -271,7 +271,7 @@ rutas ni el contenido en las etiquetas.
 | `data_export_failures_total{code}` | Counter | Fallas por código seguro (`DATA_EXPORT_*`). |
 | `data_export_phase_duration_seconds{phase}` | Histogram | Duración de cada fase de la generación: `SNAPSHOT` (la lectura consistente y los libros), `ARTIFACTS` (los artefactos) y `PUBLISHING` (el cierre, la publicación y la transacción final). |
 | `data_export_size_bytes` | Histogram | Tamaño de cada paquete listo. |
-| `data_export_downloads_total{result}` | Counter | Descargas por resultado: `started` (verificada, auditada y en envío), `not_ready`, `expired` e `integrity_failed`. |
+| `data_export_downloads_total{result}` | Counter | Descargas por resultado: `started` (verificada, auditada y en envío), `not_ready`, `expired`, `integrity_failed` y `aborted` (el cliente se desconectó durante la verificación, sin evento). |
 | `data_export_lease_renewals_failed_total` | Counter | Renovaciones del *lease* rechazadas: el worker perdió el job y su generación se abortó sin publicar. |
 
 Alertas propuestas: cualquier `data_export_failures_total{code=~"DATA_EXPORT_(ARTIFACT|PACKAGE)_INTEGRITY"}`,

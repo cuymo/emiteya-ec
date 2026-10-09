@@ -36,6 +36,17 @@ export class DataExportExpiredError extends AppError {
   }
 }
 
+/**
+ * El cliente se desconectó durante la verificación, antes del primer byte: no hay respuesta que
+ * enviar ni una descarga que registrar.
+ */
+export class DownloadAbortedError extends Error {
+  constructor() {
+    super("el cliente abandonó la descarga antes del primer byte");
+    this.name = "DownloadAbortedError";
+  }
+}
+
 /** El paquete listo falta o no coincide: no se envía ningún byte y la exportación queda fallida. */
 export class DataExportPackageError extends AppError {
   constructor(code: "DATA_EXPORT_PACKAGE_MISSING" | "DATA_EXPORT_PACKAGE_INTEGRITY") {

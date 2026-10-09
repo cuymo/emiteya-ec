@@ -6,6 +6,7 @@ import { pipeline } from "node:stream/promises";
 import { Router } from "express";
 import { DATA_EXPORT_CONTENT_TYPES } from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
+import { DownloadAbortedError } from "../../application/errors.ts";
 import type { DataExports } from "../../application/service.ts";
 
 export function dataPortabilityRouter(exports: DataExports): Router {
@@ -31,11 +32,17 @@ export function dataPortabilityRouter(exports: DataExports): Router {
       res.status(405).set("Allow", "GET").end();
       return;
     }
+    // Una desconexión antes de terminar aborta la verificación: no hay descarga que registrar.
+    const disconnected = new AbortController();
+    res.on("close", () => {
+      if (!res.writableFinished) disconnected.abort();
+    });
     let downloadable;
     try {
-      downloadable = await exports.download(contextOf(res), req.params);
+      downloadable = await exports.download(contextOf(res), req.params, disconnected.signal);
     } catch (error) {
-      next(error);
+      if (error instanceof DownloadAbortedError) res.destroy();
+      else next(error);
       return;
     }
     const { handle, sizeBytes, fileName } = downloadable;

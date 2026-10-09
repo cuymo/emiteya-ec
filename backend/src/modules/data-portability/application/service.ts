@@ -4,7 +4,8 @@
 //   generación activa de la empresa responde `409` sin segundo efecto.
 // - Descargar: el estado y la vigencia; el tamaño y el SHA-256 completos del paquete, sobre el mismo
 //   descriptor y antes de cualquier cabecera; `data_export.download_started` antes del primer byte.
-//   Un paquete listo perdido o alterado queda `FAILED` y nunca se entrega.
+//   Un paquete listo perdido o alterado queda `FAILED` y nunca se entrega. Si el cliente se
+//   desconecta durante la verificación, se abandona sin registrar una descarga que no empezó.
 import type { FileHandle } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import {
@@ -22,6 +23,7 @@ import type { DbClient } from "../../../platform/db/database.ts";
 import type { NewJob } from "../../../platform/jobs/jobs.ts";
 import { packageFileName } from "../domain/format.ts";
 import {
+  DownloadAbortedError,
   DataExportExpiredError,
   DataExportNotFoundError,
   DataExportNotReadyError,
@@ -74,7 +76,7 @@ export type DataExportsRepository = Readonly<{
 }>;
 
 export type DownloadObserver = Readonly<{
-  download(result: "started" | "not_ready" | "expired" | "integrity_failed"): void;
+  download(result: "started" | "not_ready" | "expired" | "integrity_failed" | "aborted"): void;
   failed(code: string): void;
 }>;
 
@@ -117,14 +119,16 @@ export function toView(row: DataExportRecordView): DataExportView {
   };
 }
 
-async function hashOf(handle: FileHandle): Promise<string> {
+async function hashOf(handle: FileHandle, signal: AbortSignal | undefined): Promise<string> {
   const hash = createHash("sha256");
   for await (const chunk of handle.createReadStream({
     start: 0,
     autoClose: false,
     highWaterMark: 1 << 20,
-  }))
+  })) {
+    if (signal?.aborted) throw new DownloadAbortedError();
     hash.update(chunk as Buffer);
+  }
   return hash.digest("hex");
 }
 
@@ -214,9 +218,14 @@ export function createDataExports(deps: DataExportsDeps) {
 
     /**
      * Verifica el paquete completo y registra el inicio de la descarga; el llamador envía el cuerpo
-     * desde el descriptor devuelto y lo cierra. Nada se envía si algo de esto falla.
+     * desde el descriptor devuelto y lo cierra. Nada se envía si algo de esto falla. `signal` se
+     * aborta cuando el cliente se desconecta: la verificación se abandona sin registrar nada.
      */
-    async download(ctx: RequestContext, params: unknown): Promise<DownloadablePackage> {
+    async download(
+      ctx: RequestContext,
+      params: unknown,
+      signal?: AbortSignal,
+    ): Promise<DownloadablePackage> {
       authorizer.requirePermission(ctx, permission);
       const { id } = parseInput(dataExportIdParamsSchema, params);
       const row = await find(ctx, id);
@@ -234,9 +243,10 @@ export function createDataExports(deps: DataExportsDeps) {
         const { size } = await handle.stat();
         if (BigInt(size) !== row.sizeBytes)
           return await failReady(row, "DATA_EXPORT_PACKAGE_INTEGRITY");
-        if ((await hashOf(handle)) !== row.sha256) {
+        if ((await hashOf(handle, signal)) !== row.sha256) {
           return await failReady(row, "DATA_EXPORT_PACKAGE_INTEGRITY");
         }
+        if (signal?.aborted) throw new DownloadAbortedError();
         await deps.audit(database.db).append({
           companyId: ctx.companyId,
           actor: { type: "USER", userId: ctx.userId },
@@ -248,6 +258,7 @@ export function createDataExports(deps: DataExportsDeps) {
         return { handle, sizeBytes: size, fileName: packageFileName(row.generatedAt!) };
       } catch (error) {
         await handle.close();
+        if (error instanceof DownloadAbortedError) observer.download("aborted");
         throw error;
       }
     },

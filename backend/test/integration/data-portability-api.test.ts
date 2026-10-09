@@ -22,6 +22,7 @@ import {
 } from "@facturador/contracts";
 import { createAuditLog } from "../../src/modules/audit/infrastructure/prisma-audit-log.ts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
+import { DownloadAbortedError } from "../../src/modules/data-portability/application/errors.ts";
 import { dataPortabilityModule } from "../../src/modules/data-portability/infrastructure/index.ts";
 import { createDataExportStore } from "../../src/modules/data-portability/infrastructure/prisma-data-exports.ts";
 import { createPrismaJobStore } from "../../src/platform/jobs/prisma-job-store.ts";
@@ -498,6 +499,31 @@ describe("portabilidad por HTTP", () => {
         expect((await download(company.cookies.admin, view.id)).status).toBe(409);
         expect(await portabilityEvents(company.companyId)).toHaveLength(2);
       }
+    });
+
+    it("abandona la verificación si el cliente se desconecta, sin registrar la descarga", async () => {
+      const company = await archiveCompany(db, api as never, "Portabilidad Desconexión");
+      const view = await requested(company);
+      await ready(view, company.companyId, randomBytes(4096));
+      const [row] = await rowsOf(company.companyId);
+      const ctx = {
+        userId: row!.requestedBy,
+        companyId: company.companyId,
+        role: "ADMIN" as const,
+        requestId: "req-desconexion",
+      };
+      await expect(
+        api.portability.service.download(ctx, { id: view.id }, AbortSignal.abort()),
+      ).rejects.toBeInstanceOf(DownloadAbortedError);
+      expect(await actions(company.companyId)).toEqual(["data_export.requested"]);
+      expect(viewOf(await detail(company.cookies.admin, view.id)).status).toBe("READY");
+      // Sin desconexión, la misma descarga se verifica y se registra.
+      const done = await api.portability.service.download(ctx, { id: view.id });
+      await done.handle.close();
+      expect(await actions(company.companyId)).toEqual([
+        "data_export.download_started",
+        "data_export.requested",
+      ]);
     });
 
     it("no entrega nada si no puede registrar el inicio de la descarga", async () => {
