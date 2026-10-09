@@ -220,7 +220,7 @@
 
 ## 7. Rendimiento, end-to-end y verificación
 
-- [ ] 7.1 Añadir `bench:data-portability` en `backend/scripts/` (design D22), con el volumen de Q-26, artefactos de tamaño real, respuestas del SRI, auditoría y kárdex. Debe medir:
+- [x] 7.1 Añadir `bench:data-portability` en `backend/scripts/` (design D22), con el volumen de Q-26, artefactos de tamaño real, respuestas del SRI, auditoría y kárdex. Debe medir:
   - el reloj de cada fase y el total, la CPU, la memoria máxima, el disco temporal máximo, el tamaño del ZIP y sus entradas;
   - la duración y la presión MVCC de la transacción de la fase 1;
   - el costo de la verificación previa a la descarga;
@@ -230,7 +230,7 @@
   - la cola entre empresas, el `409`, la recuperación tras matar el proceso, el worker obsoleto y la caducidad con el barrido.
 
   Registrar el resultado en `docs/quality/benchmarks/` y en `performance.md`, y fijar con la evidencia los valores de design D20 en el entorno y en `deployment.md`. Si la fase 1, la verificación previa o la generación en el proceso de la API no son sanas, corregir el design con `/opsx:update`. Verificar que el paquete del benchmark pasa `unzip -t`, `sha256sum -c` y la lectura con Python `zipfile` y openpyxl
-- [ ] 7.2 Añadir la prueba end-to-end sobre `main.ts`:
+- [x] 7.2 Añadir la prueba end-to-end sobre `main.ts`:
   - comprobantes sintéticos de los seis tipos en los dos ambientes, con sus artefactos y respuestas, configuración con logo y varias versiones, terceros, productos, inventario, auditoría, una firma cargada y borradores;
   - solicitar la exportación por HTTP, esperar `READY`, descargarla y verificar `SHA256SUMS`, el manifiesto, los libros, los snapshots y los bytes de cada artefacto;
   - comprobar la ausencia de los secretos y de los borradores;
@@ -238,4 +238,4 @@
   - comprobar que un reinicio a mitad de la generación termina con un solo paquete.
 
   Verificar que la prueba pasa
-- [ ] 7.3 Ejecutar `corepack pnpm verify` y `openspec validate --all --strict`, y verificar que pasan formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo, build, `check:xsd-artifact`, `check:ride-assets` y la validación de los specs
+- [x] 7.3 Ejecutar `corepack pnpm verify` y `openspec validate --all --strict`, y verificar que pasan formato, versiones, lint, pruebas, typecheck, OpenAPI, arranque de desarrollo, build, `check:xsd-artifact`, `check:ride-assets` y la validación de los specs
