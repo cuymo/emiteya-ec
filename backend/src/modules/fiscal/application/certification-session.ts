@@ -8,8 +8,7 @@ import type {
 } from "../domain/certification-safety-cap.ts";
 
 export type CertificationBlockReason =
-  | "CERTIFICATION_SIZE_CAP_EXCEEDED"
-  | "CERTIFICATION_ENVIRONMENT_NOT_TEST";
+  "CERTIFICATION_SIZE_CAP_EXCEEDED" | "CERTIFICATION_ENVIRONMENT_NOT_TEST";
 
 /**
  * Una comprobación de la sesión, sin identificar el comprobante: ni clave, ni RUC, ni número, ni

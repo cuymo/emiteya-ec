@@ -27,7 +27,9 @@ export function resolveSizePolicySource(
   input: Readonly<{ officialPolicy: boolean; certificationSession: boolean }>,
 ): EffectiveSizePolicySource {
   if (input.officialPolicy)
-    return input.certificationSession ? "SRI_OFFICIAL_AND_CERTIFICATION_CAP" : "SRI_OFFICIAL_POLICY";
+    return input.certificationSession
+      ? "SRI_OFFICIAL_AND_CERTIFICATION_CAP"
+      : "SRI_OFFICIAL_POLICY";
   return input.certificationSession ? "CERTIFICATION_CONSERVATIVE_CAP" : "MISSING";
 }
 
