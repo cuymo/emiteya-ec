@@ -27,7 +27,7 @@ export type TransmitHandlerDependencies = StepDependencies &
     documents: Pick<DocumentRepository, "find">;
     artifacts: Pick<ArtifactStore, "read">;
     sizePolicy: SizePolicyReader;
-    gateway: Pick<SriGateway, "submit">;
+    gateway: Pick<SriGateway, "prepareReception" | "submit">;
     classifiers: SriClassifiers;
     settings: TransmissionSettings;
     /** Fecha del envío en Ecuador, para resolver la política de tamaño (design D17). */
@@ -243,13 +243,15 @@ export function createTransmitHandler(deps: TransmitHandlerDependencies): JobHan
         }
       }
       const sent = artifact;
+      // El cuerpo final se construye una sola vez: es el que se mide y el que recibe el transporte.
+      const prepared = sent ? deps.gateway.prepareReception(sent.content) : null;
       await executeSriStep(
         deps,
         {
           operation: "RECEPTION",
           call: (target) => {
             callStarted = true;
-            return deps.gateway.submit(target.environment, sent!.content);
+            return deps.gateway.submit(target.environment, prepared!);
           },
           ...(sent
             ? { sentArtifact: { sha256: sha256(sent.content), sizeBytes: sent.content.length } }

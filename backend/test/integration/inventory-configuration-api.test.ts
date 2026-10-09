@@ -24,13 +24,14 @@ import { invoiceStockLines } from "../../src/modules/invoices/infrastructure/ind
 import { createProductRepository } from "../../src/modules/products/infrastructure/prisma-products.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
 import type {
+  PreparedReception,
   SriExchange,
   TransportOutcome,
 } from "../../src/modules/sri-engine/application/transport.ts";
 import { sriClassifiers } from "../../src/modules/sri-engine/infrastructure/index.ts";
 import {
   authorizationEnvelope,
-  receptionEnvelope,
+  prepareReception,
 } from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
 import type { Job } from "../../src/platform/jobs/jobs.ts";
 import { createPrismaJobStore, type JobStore } from "../../src/platform/jobs/prisma-job-store.ts";
@@ -117,12 +118,13 @@ describe("inicialización y control del inventario sobre HTTP", () => {
 
   // Autorización con el SRI simulado: el envío recibido y la autorización con el XML firmado.
   const gateway = {
-    submit: (environment: "TEST" | "PRODUCTION", xml: Buffer) =>
+    prepareReception,
+    submit: (environment: "TEST" | "PRODUCTION", prepared: PreparedReception) =>
       Promise.resolve<SriExchange>({
         service: "RECEPTION",
         environment,
         endpoint: "simulado:RECEPTION",
-        envelope: receptionEnvelope(xml),
+        envelope: prepared.envelope,
         outcome: replies.shift() ?? failure("CONNECTION_LOST"),
       }),
     queryAuthorization: (environment: "TEST" | "PRODUCTION", key: string) =>

@@ -17,6 +17,7 @@ import { createDocumentRepository } from "../../src/modules/fiscal/infrastructur
 import { createSriEvidenceRepository } from "../../src/modules/fiscal/infrastructure/prisma-sri-evidence.ts";
 import { createTransmissionUnitOfWork } from "../../src/modules/fiscal/infrastructure/transmission-unit-of-work.ts";
 import type {
+  PreparedReception,
   SriExchange,
   SriService,
   TransportOutcome,
@@ -24,6 +25,7 @@ import type {
 import { sriClassifiers } from "../../src/modules/sri-engine/infrastructure/index.ts";
 import {
   authorizationEnvelope,
+  prepareReception,
   receptionEnvelope,
   validityEnvelope,
 } from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
@@ -79,8 +81,9 @@ describe("reconciliación por clave", () => {
     return Promise.resolve(result);
   }
   const gateway = {
-    submit: (environment: "TEST" | "PRODUCTION", xml: Buffer) =>
-      exchange("RECEPTION", environment, receptionEnvelope(xml)),
+    prepareReception,
+    submit: (environment: "TEST" | "PRODUCTION", prepared: PreparedReception) =>
+      exchange("RECEPTION", environment, prepared.envelope),
     queryAuthorization: (environment: "TEST" | "PRODUCTION", key: string) =>
       exchange("AUTHORIZATION", environment, authorizationEnvelope(key)),
     queryValidity: (environment: "TEST" | "PRODUCTION", key: string) =>

@@ -18,13 +18,14 @@ import { createDocumentRepository } from "../../src/modules/fiscal/infrastructur
 import { createSriEvidenceRepository } from "../../src/modules/fiscal/infrastructure/prisma-sri-evidence.ts";
 import { createTransmissionUnitOfWork } from "../../src/modules/fiscal/infrastructure/transmission-unit-of-work.ts";
 import type {
+  PreparedReception,
   SriExchange,
   TransportOutcome,
 } from "../../src/modules/sri-engine/application/transport.ts";
 import { sriClassifiers } from "../../src/modules/sri-engine/infrastructure/index.ts";
 import {
   authorizationEnvelope,
-  receptionEnvelope,
+  prepareReception,
 } from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import type { Job } from "../../src/platform/jobs/jobs.ts";
@@ -73,8 +74,9 @@ describe("handler sri.authorize", () => {
       return Promise.resolve(result);
     };
     return {
-      submit: (environment: "TEST" | "PRODUCTION", xml: Buffer) =>
-        exchange("RECEPTION", environment, receptionEnvelope(xml)),
+      prepareReception,
+      submit: (environment: "TEST" | "PRODUCTION", prepared: PreparedReception) =>
+        exchange("RECEPTION", environment, prepared.envelope),
       queryAuthorization: (environment: "TEST" | "PRODUCTION", key: string) =>
         exchange("AUTHORIZATION", environment, authorizationEnvelope(key)),
     };

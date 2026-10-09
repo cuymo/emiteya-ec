@@ -51,13 +51,26 @@ afterAll(async () => {
 });
 
 describe("operaciones con el SRI", () => {
+  it("la recepción entrega al transporte exactamente el cuerpo preparado y medido (add-sri-certification-safety-cap)", async () => {
+    const { transport, calls } = recording();
+    const gateway = createSriGateway({
+      transport,
+      breaker: createCircuitBreaker({ failures: 3, cooldownMs: 1_000 }),
+    });
+    const prepared = gateway.prepareReception(Buffer.from("<factura>Peña</factura>"));
+    await gateway.submit("TEST", prepared);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.envelope).toBe(prepared.envelope);
+    expect(calls[0]!.envelope.length).toBe(prepared.sizes.soapRequestBytes);
+  });
+
   it("cada operación usa su servicio y su sobre", async () => {
     const { transport, calls } = recording();
     const gateway = createSriGateway({
       transport,
       breaker: createCircuitBreaker({ failures: 3, cooldownMs: 1_000 }),
     });
-    await gateway.submit("TEST", Buffer.from("<factura/>"));
+    await gateway.submit("TEST", gateway.prepareReception(Buffer.from("<factura/>")));
     await gateway.queryAuthorization("PRODUCTION", KEY);
     await gateway.queryValidity("TEST", KEY);
     expect(calls.map((call) => [call.environment, call.service])).toEqual([
@@ -78,9 +91,10 @@ describe("operaciones con el SRI", () => {
       transport,
       breaker: createCircuitBreaker({ failures: 2, cooldownMs: 60_000 }),
     });
-    await gateway.submit("TEST", Buffer.from("x"));
-    await gateway.submit("TEST", Buffer.from("x"));
-    const blocked = await gateway.submit("TEST", Buffer.from("x"));
+    const prepared = gateway.prepareReception(Buffer.from("x"));
+    await gateway.submit("TEST", prepared);
+    await gateway.submit("TEST", prepared);
+    const blocked = await gateway.submit("TEST", prepared);
     expect(isBreakerOpen(blocked)).toBe(true);
     expect(calls).toHaveLength(2);
     // El circuito es por servicio: la autorización sigue llamando.

@@ -2,18 +2,18 @@
 
 ## 1. Cuerpo de la recepción construido una sola vez
 
-- [ ] 1.1 Implementar `prepareReception(signedXml)` en `sri-engine/infrastructure/soap-envelopes.ts`
+- [x] 1.1 Implementar `prepareReception(signedXml)` en `sri-engine/infrastructure/soap-envelopes.ts`
   (design D2). Calcula el base64 una sola vez, arma el sobre con ese mismo texto y devuelve el sobre y
   sus tres medidas (`signedXmlBytes`, `base64PayloadBytes`, `soapRequestBytes`). `receptionEnvelope`
   sigue dando los mismos bytes. Verificar con pruebas unitarias:
   - las medidas coinciden con las longitudes reales;
   - el sobre preparado es igual byte a byte al de `receptionEnvelope`.
-- [ ] 1.2 Cambiar `SriGateway` para que exponga la preparación y para que
+- [x] 1.2 Cambiar `SriGateway` para que exponga la preparación y para que
   `submit(environment, prepared)` entregue al transporte exactamente `prepared.envelope`, después del
   circuit breaker, sin volver a armarlo. Verificar con una prueba unitaria y un transporte espía:
   - el `Buffer` que recibe el transporte es el mismo objeto preparado;
   - el circuit breaker sigue funcionando.
-- [ ] 1.3 Adaptar el handler `sri.transmit` y las pruebas de integración que simulan el gateway
+- [x] 1.3 Adaptar el handler `sri.transmit` y las pruebas de integración que simulan el gateway
   (`transmit-handler.test.ts` y los arneses de transmisión) a la nueva firma, sin cambiar su
   comportamiento. Verificar con el typecheck del backend. Las pruebas de integración corren en la
   verificación global con PostgreSQL.

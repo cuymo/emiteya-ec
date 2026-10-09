@@ -20,7 +20,10 @@ import type {
   TransportOutcome,
 } from "../../src/modules/sri-engine/application/transport.ts";
 import { sriClassifiers } from "../../src/modules/sri-engine/infrastructure/index.ts";
-import { receptionEnvelope } from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
+import {
+  prepareReception,
+  receptionEnvelope,
+} from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { LeaseLostError, type Job } from "../../src/platform/jobs/jobs.ts";
 import { createPrismaJobStore, type JobStore } from "../../src/platform/jobs/prisma-job-store.ts";
@@ -58,14 +61,17 @@ describe("handler sri.transmit", () => {
       artifacts: createArtifactStore(prisma),
       sizePolicy: () => Promise.resolve(policy),
       gateway: {
-        submit: (environment, signedXml) => {
-          sent.push(signedXml);
+        prepareReception,
+        submit: (environment, prepared) => {
+          // Los bytes firmados que lleva el cuerpo preparado, tal como se enviaron.
+          const base64 = /<xml>([^<]+)<\/xml>/.exec(prepared.envelope.toString("utf8"))![1]!;
+          sent.push(Buffer.from(base64, "base64"));
           const outcome = replies.shift() ?? response(receptionResponse("RECIBIDA"));
           const exchange: SriExchange = {
             service: "RECEPTION",
             environment,
             endpoint: "https://sri-simulado.invalid/recepcion",
-            envelope: receptionEnvelope(signedXml),
+            envelope: prepared.envelope,
             outcome,
           };
           return Promise.resolve(exchange);

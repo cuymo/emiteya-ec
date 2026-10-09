@@ -72,12 +72,31 @@ export interface SriTransport {
 export type BreakerOpen = Readonly<{ breakerOpen: true; service: SriService; retryAt: Date }>;
 
 /**
+ * Cuerpo final del envío a la recepción, construido una sola vez, con sus tres medidas
+ * (add-sri-certification-safety-cap, design D2): el `envelope` medido es el que recibe el
+ * transporte, sin volver a armarlo.
+ */
+export type PreparedReception = Readonly<{
+  envelope: Buffer;
+  sizes: Readonly<{
+    /** Bytes UTF-8 del XML firmado. */
+    signedXmlBytes: number;
+    /** Bytes del base64 del XML firmado dentro del sobre. */
+    base64PayloadBytes: number;
+    /** Bytes del cuerpo SOAP completo de la petición. */
+    soapRequestBytes: number;
+  }>;
+}>;
+
+/**
  * Operaciones con el SRI que usan los handlers de la transmisión. Las consultas por clave forman
  * el `SriInquiryPort` de la reconciliación (design D15).
  */
 export interface SriGateway {
-  /** `validarComprobante` con los bytes firmados exactos. */
-  submit(environment: Environment, signedXml: Buffer): Promise<SriExchange | BreakerOpen>;
+  /** El cuerpo de `validarComprobante` con los bytes firmados exactos, construido una sola vez. */
+  prepareReception(signedXml: Buffer): PreparedReception;
+  /** `validarComprobante` con exactamente el cuerpo preparado. */
+  submit(environment: Environment, prepared: PreparedReception): Promise<SriExchange | BreakerOpen>;
   /** `autorizacionComprobante` por la clave de acceso. */
   queryAuthorization(
     environment: Environment,

@@ -28,13 +28,14 @@ import {
 } from "../../src/modules/inventory/infrastructure/index.ts";
 import { invoiceStockLines } from "../../src/modules/invoices/infrastructure/index.ts";
 import type {
+  PreparedReception,
   SriExchange,
   TransportOutcome,
 } from "../../src/modules/sri-engine/application/transport.ts";
 import { sriClassifiers } from "../../src/modules/sri-engine/infrastructure/index.ts";
 import {
   authorizationEnvelope,
-  receptionEnvelope,
+  prepareReception,
   validityEnvelope,
 } from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
 import type { Job, JobStore } from "../../src/platform/jobs/jobs.ts";
@@ -69,8 +70,9 @@ export function creditNoteTransmission(prisma: PrismaClient, store: JobStore) {
       return Promise.resolve(result);
     };
     return {
-      submit: (environment: "TEST" | "PRODUCTION", xml: Buffer) =>
-        exchange("RECEPTION", environment, receptionEnvelope(xml)),
+      prepareReception,
+      submit: (environment: "TEST" | "PRODUCTION", prepared: PreparedReception) =>
+        exchange("RECEPTION", environment, prepared.envelope),
       queryAuthorization: (environment: "TEST" | "PRODUCTION", key: string) =>
         exchange("AUTHORIZATION", environment, authorizationEnvelope(key)),
       queryValidity: (environment: "TEST" | "PRODUCTION", key: string) =>

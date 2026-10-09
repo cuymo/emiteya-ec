@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import {
   authorizationEnvelope,
+  prepareReception,
   receptionEnvelope,
   validityEnvelope,
 } from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
@@ -25,6 +26,22 @@ describe("sobres SOAP del SRI", () => {
         "</soapenv:Body></soapenv:Envelope>",
     );
     const base64 = /<xml>([^<]+)<\/xml>/.exec(envelope.toString("utf8"))![1]!;
+    expect(Buffer.from(base64, "base64").equals(signed)).toBe(true);
+  });
+
+  it("el cuerpo preparado de la recepción mide sus propios bytes y es el mismo sobre (add-sri-certification-safety-cap)", () => {
+    const signed = Buffer.from(
+      '<?xml version="1.0" encoding="UTF-8"?><factura>Peña & Cía ✓</factura>',
+    );
+    const prepared = prepareReception(signed);
+    const base64 = /<xml>([^<]+)<\/xml>/.exec(prepared.envelope.toString("utf8"))![1]!;
+    expect(prepared.sizes).toEqual({
+      signedXmlBytes: signed.length,
+      base64PayloadBytes: base64.length,
+      soapRequestBytes: prepared.envelope.length,
+    });
+    expect(prepared.sizes.base64PayloadBytes).toBe(signed.toString("base64").length);
+    expect(prepared.envelope.equals(receptionEnvelope(signed))).toBe(true);
     expect(Buffer.from(base64, "base64").equals(signed)).toBe(true);
   });
 

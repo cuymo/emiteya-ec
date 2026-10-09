@@ -10,7 +10,7 @@ import type {
   SriTransport,
 } from "../application/transport.ts";
 import type { CircuitBreaker } from "./circuit-breaker.ts";
-import { authorizationEnvelope, receptionEnvelope, validityEnvelope } from "./soap-envelopes.ts";
+import { authorizationEnvelope, prepareReception, validityEnvelope } from "./soap-envelopes.ts";
 
 export function createSriGateway(deps: {
   transport: SriTransport;
@@ -29,8 +29,9 @@ export function createSriGateway(deps: {
   }
 
   return {
-    submit: (environment, signedXml) =>
-      call(environment, "RECEPTION", () => receptionEnvelope(signedXml)),
+    prepareReception,
+    // El cuerpo ya preparado y medido: se entrega tal cual, sin volver a armarlo (design D2).
+    submit: (environment, prepared) => call(environment, "RECEPTION", () => prepared.envelope),
     queryAuthorization: (environment, accessKey) =>
       call(environment, "AUTHORIZATION", () => authorizationEnvelope(accessKey)),
     queryValidity: (environment, accessKey) =>

@@ -4,6 +4,8 @@
 // (`elementFormDefault="unqualified"`). Se construyen como bytes: el comprobante firmado va en el
 // base64 de su `Buffer` exacto, sin pasar por texto, y nunca se reconstruye.
 
+import type { PreparedReception } from "../application/transport.ts";
+
 const SOAP_ENV = "http://schemas.xmlsoap.org/soap/envelope/";
 export const SRI_NAMESPACES = {
   RECEPTION: "http://ec.gob.sri.ws.recepcion",
@@ -27,12 +29,30 @@ function accessKey(value: string): string {
   return value;
 }
 
+/**
+ * `validarComprobante(xml)` preparado una sola vez (add-sri-certification-safety-cap, design D2): el
+ * base64 de los bytes firmados exactos se calcula una vez y el sobre se arma con ese mismo texto. Las
+ * medidas son las de esos mismos bytes, y el sobre devuelto es el que se envía.
+ */
+export function prepareReception(signedXml: Buffer): PreparedReception {
+  const base64 = signedXml.toString("base64");
+  const body = envelope(
+    SRI_NAMESPACES.RECEPTION,
+    `<ec:validarComprobante><xml>${base64}</xml></ec:validarComprobante>`,
+  );
+  return {
+    envelope: body,
+    sizes: {
+      signedXmlBytes: signedXml.length,
+      base64PayloadBytes: Buffer.byteLength(base64, "utf8"),
+      soapRequestBytes: body.length,
+    },
+  };
+}
+
 /** `validarComprobante(xml)`: los bytes firmados exactos en base64 (ficha v2.34, §7.2.3). */
 export function receptionEnvelope(signedXml: Buffer): Buffer {
-  return envelope(
-    SRI_NAMESPACES.RECEPTION,
-    `<ec:validarComprobante><xml>${signedXml.toString("base64")}</xml></ec:validarComprobante>`,
-  );
+  return prepareReception(signedXml).envelope;
 }
 
 /** `autorizacionComprobante(claveAccesoComprobante)` (ficha v2.34, §7.2.3). */
