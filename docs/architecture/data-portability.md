@@ -129,5 +129,21 @@ Las rutas exigen `dataPortability.export`, que solo tiene el administrador, y la
 5. el cuerpo, por streaming desde el mismo descriptor en bloques de 1 MiB, y el descriptor se cierra al terminar.
 
 - `HEAD` responde `405` con `Allow: GET`: nunca verifica ni audita una descarga. No hay rangos ni enlaces firmados o públicos.
+- **En el frontend:** el reenvío general de `/api` (`next.config.ts`) corta una respuesta que no empieza en 30 s, y la verificación de un paquete de varios GB dura más. La descarga tiene su ruta del mismo origen, `frontend/src/app/api/v1/data-exports/[id]/download/route.ts`, que reenvía la cookie al backend (`API_INTERNAL_URL`, leída en cada descarga) sin plazo y devuelve su respuesta por streaming, sin almacenarla. El reenvío general es `fallback` para que esa ruta dinámica tenga prioridad. La autenticación, el permiso y la verificación siguen siendo del backend. Para el proxy de producción, ver "Proxy inverso y descarga" en `deployment.md`.
+- Una desconexión durante la verificación la abandona: no registra `data_export.download_started` ni responde, porque la descarga no empezó.
 - Una desconexión durante el envío no es un error del servidor. `data_export.download_started` registra que la descarga empezó, no que llegó completa; dos descargas son dos eventos.
-- La métrica `data_export_downloads_total` cuenta cada resultado (`started`, `not_ready`, `expired`, `integrity_failed`).
+- La métrica `data_export_downloads_total` cuenta cada resultado (`started`, `not_ready`, `expired`, `integrity_failed`, `aborted`).
+
+## Pantalla
+
+Portabilidad de datos, en `/configuracion/portabilidad`, en el grupo Configuración de la navegación y solo con `dataPortability.export` (design D23; `frontend/src/features/data-portability/`). El operador no ve la entrada y, si abre la ruta, ve que no tiene acceso, sin consultar exportaciones.
+
+- **P0:** el estado de la exportación vigente con su acción:
+  - "Generar exportación" sin una en curso. Con un paquete vigente es la acción secundaria y pide confirmar: el actual sigue disponible y caduca cuando el nuevo queda listo;
+  - "Descargar paquete" con un paquete listo y vigente.
+- **El estado:** En cola, Generando, Lista, Fallida o Expirada, con la fase y, solo cuando se conoce el total, "N de M comprobantes", nunca un porcentaje. Se consulta cada 2 s mientras hay una en cola o generándose, y cada minuto con un paquete listo; uno cuya caducidad pasó se muestra expirado aunque el barrido todavía no pasó.
+- **P1:** el momento de los datos (`snapshotAt`), la caducidad, el tamaño y el SHA-256 en monoespaciado, partido y con un botón para copiarlo.
+- **La descarga** es un enlace del mismo origen con el aspecto de un botón (`download`), que el navegador sigue: el paquete nunca pasa por `fetch` ni por un `Blob`. Después del clic, la pantalla vuelve a consultar, y un paquete que no pasó la verificación aparece fallido con su explicación.
+- **Mensajes:** cada código de falla y la caducidad se explican sin detalles internos, con lo que se puede hacer. El `409` de una exportación ya en curso lo explica un aviso y la pantalla muestra la que está en curso. Una falla más reciente que el paquete vigente se explica junto a él.
+- **P2:** lo incluido y lo excluido, como texto con dos listas: los dos ambientes, sin la firma ni los secretos, sin los datos de autenticación ni los borradores, que no es un respaldo y que caduca 24 horas después de quedar listo; y la historia paginada en `AppDataTable`, con tarjetas por debajo de 768 px.
+- **P3:** los identificadores internos, que no se muestran.

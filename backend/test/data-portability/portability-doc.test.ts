@@ -18,6 +18,7 @@ const ENV = read("../../src/config/env.ts");
 const POLICY = read("../../src/modules/identity/domain/access-policy.ts");
 const METRICS = read("../../src/modules/data-portability/infrastructure/metrics.ts");
 const OBSERVABILITY = read("../../../docs/quality/observability.md");
+const NAVIGATION = read("../../../frontend/src/components/navigation.tsx");
 
 describe("docs/architecture/data-portability.md", () => {
   it("cita cada ruta registrada de la portabilidad", () => {
@@ -50,6 +51,26 @@ describe("docs/architecture/data-portability.md", () => {
     const metrics = [...METRICS.matchAll(/name: "([a-z_]+)"/g)].map((match) => match[1]!);
     expect(metrics.length).toBeGreaterThan(0);
     for (const metric of metrics) expect(OBSERVABILITY).toContain(metric);
+  });
+
+  it("la pantalla documentada coincide con la navegación implementada", () => {
+    const entry =
+      /\{\s*href: "(\/configuracion\/portabilidad)",\s*label: "([^"]+)",\s*icon: \w+,\s*permission: "([^"]+)",?\s*\}/.exec(
+        NAVIGATION,
+      );
+    expect(entry?.slice(1)).toEqual([
+      "/configuracion/portabilidad",
+      "Portabilidad de datos",
+      "dataPortability.export",
+    ]);
+    // En el grupo Configuración: después de su etiqueta y de la entrada de Usuarios.
+    const group = NAVIGATION.indexOf('label: "Configuración"');
+    expect(group).toBeGreaterThan(-1);
+    expect(NAVIGATION.indexOf('href: "/configuracion/portabilidad"')).toBeGreaterThan(group);
+    const screen = DOC.slice(DOC.indexOf("## Pantalla"));
+    expect(screen).toContain("Portabilidad de datos, en `/configuracion/portabilidad`");
+    expect(screen).toContain("grupo Configuración");
+    expect(screen).toContain("`dataPortability.export`");
   });
 
   it("backend.md declara el dueño del job y que no se cancela", () => {

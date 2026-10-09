@@ -63,7 +63,7 @@ corepack pnpm dev
 | Backend directo | http://localhost:4000 |
 | Salud y métricas del backend (operacionales; no son API pública) | http://localhost:4000/health/live, /health/ready, /metrics |
 
-- El frontend reenvía `/api/*` al backend; cambia el destino con `API_INTERNAL_URL` en `frontend/.env.local` (ver `frontend/.env.example`).
+- El frontend reenvía `/api/*` al backend; cambia el destino con `API_INTERNAL_URL` en `frontend/.env.local` (ver `frontend/.env.example`). La descarga del paquete de portabilidad tiene su propia ruta del mismo origen, que lee la misma variable.
 - El backend corre con el soporte nativo de TypeScript de Node 24 y se reinicia al guardar. Respeta las restricciones de ADR 0016: sin `enum`, `namespace` con contenido, propiedades de parámetro ni alias de `paths`, e imports relativos con extensión `.ts`.
 
 El primer arranque del backend crea la empresa y el administrador inicial con

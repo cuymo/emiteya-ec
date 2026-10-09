@@ -104,13 +104,30 @@ export type PortabilityIds = Record<string, string>;
  * Suma a una empresa con los datos de los reportes lo que solo exporta la portabilidad. `invoiceId`
  * es una factura autorizada: recibe su XML autorizado, su RIDE, tres intentos (dos con respuesta,
  * uno truncado) y una entrega.
+ *
+ * Con `configured`, la empresa ya tiene su configuración y su logo, cargados por la API: no se
+ * siembran. `authUserId` es el usuario cuyos datos de autenticación se marcan, por defecto el
+ * administrador; un usuario que inicia sesión por HTTP necesita conservar los suyos.
  */
 export async function seedPortabilityExtras(
   prisma: PrismaClient,
   company: FiscalCompany,
   invoiceId: string,
+  options: Readonly<{ configured?: boolean; authUserId?: string }> = {},
 ): Promise<PortabilityIds> {
   const ids: PortabilityIds = {};
+  const authUserId = options.authUserId ?? company.adminId;
+  if (!options.configured) await seedConfiguration(prisma, company, ids);
+  await seedSettingsAndSecrets(prisma, company, ids, authUserId);
+  await seedInvoiceEvidence(prisma, company, invoiceId, ids);
+  return ids;
+}
+
+async function seedConfiguration(
+  prisma: PrismaClient,
+  company: FiscalCompany,
+  ids: PortabilityIds,
+) {
   const { companyId, adminId } = company;
   const logo = await prisma.configurationAsset.create({
     data: {
@@ -156,15 +173,27 @@ export async function seedPortabilityExtras(
   await prisma.companyConfig.create({
     data: { companyId, currentVersionId: current.id, currentVersion: 2, updatedAt: new Date() },
   });
+}
+
+async function seedSettingsAndSecrets(
+  prisma: PrismaClient,
+  company: FiscalCompany,
+  ids: PortabilityIds,
+  authUserId: string,
+) {
+  const { companyId, adminId } = company;
   // Un punto inactivo y el punto predeterminado del administrador.
   const second = company.points[1]!;
   await prisma.emissionPoint.update({
     where: { id: second.emissionPointId },
     data: { active: false },
   });
-  await prisma.memberDefaultEmissionPoint.create({
-    data: { companyId, userId: adminId, emissionPointId: company.points[0]!.emissionPointId },
-  });
+  if (
+    !(await prisma.memberDefaultEmissionPoint.findFirst({ where: { companyId, userId: adminId } }))
+  )
+    await prisma.memberDefaultEmissionPoint.create({
+      data: { companyId, userId: adminId, emissionPointId: company.points[0]!.emissionPointId },
+    });
   await prisma.companyFiscalCatalogSetting.create({
     data: { companyId, catalogType: "iva-rate", entryKey: "4", enabled: false, updatedBy: adminId },
   });
@@ -211,13 +240,13 @@ export async function seedPortabilityExtras(
     },
   });
   ids.certificate = active.id;
-  // Datos internos de autenticación del administrador, marcados.
+  // Datos internos de autenticación, marcados.
   await prisma.account.create({
     data: {
       id: randomUUID(),
-      accountId: adminId,
+      accountId: authUserId,
       providerId: "credential",
-      userId: adminId,
+      userId: authUserId,
       password: SECRET_MARKERS.passwordHash,
     },
   });
@@ -225,7 +254,7 @@ export async function seedPortabilityExtras(
     data: {
       id: randomUUID(),
       token: `${SECRET_MARKERS.sessionToken}-${companyId}`,
-      userId: adminId,
+      userId: authUserId,
       expiresAt: new Date("2027-01-01T00:00:00Z"),
       ipAddress: SECRET_MARKERS.ipAddress,
       userAgent: SECRET_MARKERS.userAgent,
@@ -235,7 +264,7 @@ export async function seedPortabilityExtras(
   await prisma.verification.create({
     data: {
       id: randomUUID(),
-      identifier: `reset:${adminId}`,
+      identifier: `reset:${authUserId}`,
       value: SECRET_MARKERS.verification,
       expiresAt: new Date("2027-01-01T00:00:00Z"),
     },
@@ -250,6 +279,15 @@ export async function seedPortabilityExtras(
       inviterId: adminId,
     },
   });
+}
+
+async function seedInvoiceEvidence(
+  prisma: PrismaClient,
+  company: FiscalCompany,
+  invoiceId: string,
+  ids: PortabilityIds,
+) {
+  const { companyId, adminId } = company;
   // La factura autorizada: su XML autorizado, su RIDE, sus intentos y una entrega.
   const invoice = await prisma.electronicDocument.findUniqueOrThrow({ where: { id: invoiceId } });
   const artifact = (kind: string, mediaType: string, content: Buffer) =>
@@ -362,7 +400,6 @@ export async function seedPortabilityExtras(
       correlationId: "req-portabilidad-0002",
     },
   });
-  return ids;
 }
 
 /** Los artefactos autorizados que los arneses de los reportes no escriben: el XML autorizado. */

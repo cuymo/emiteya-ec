@@ -262,6 +262,7 @@ límites del ERS, e hipótesis hasta que `bench:data-portability` las confirme:
 - **Disco:** el paquete puede pesar varios GB (unos 2.6 GB con el volumen de Q-26). Con una exportación por instancia, cada empresa ocupa como máximo un paquete vigente y una generación en curso.
 - **Varias instancias:** el MVP tiene una (ver "Número de instancias"). Con varias, `DATA_EXPORT_DIRECTORY` debe ser compartido o la descarga debe llegar a la instancia que generó el paquete.
 - **No es un respaldo:** el paquete no contiene la firma, los secretos ni los datos internos de autenticación, y no se restaura (ver "Respaldo y restauración").
+- **Proxy inverso y descarga:** el backend calcula el SHA-256 completo del paquete antes de enviar la primera cabecera, así que la respuesta de `GET /api/v1/data-exports/{id}/download` tarda en empezar. Medido en un disco giratorio: entre 40 y 56 s para 5 GiB, unos 8 a 11 s por GiB (`openspec/changes/add-data-portability/ui-review.md`). El proxy que enruta `/api` al backend debe esperar la respuesta al menos ese tiempo en esa ruta (por ejemplo, `proxy_read_timeout` de nginx, cuyo valor por defecto es 60 s), sin almacenar el cuerpo (`proxy_buffering off`, o el equivalente del proxy). El reenvío de Next.js del desarrollo corta a los 30 s; por eso el frontend atiende esa ruta en `app/api/v1/data-exports/[id]/download/route.ts`, sin plazo y por streaming.
 
 ### Actualizaciones y reversión
 

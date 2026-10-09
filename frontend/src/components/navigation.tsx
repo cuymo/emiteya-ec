@@ -23,6 +23,7 @@ import {
   Warehouse,
   type LucideIcon,
   FileSpreadsheet,
+  HardDriveDownload,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -142,6 +143,13 @@ const GROUPS: Group[] = [
         permission: "sequences.read",
       },
       { href: "/configuracion/usuarios", label: "Usuarios", icon: Users, permission: "users.read" },
+      // add-data-portability, design D23: el paquete con los datos de la empresa.
+      {
+        href: "/configuracion/portabilidad",
+        label: "Portabilidad de datos",
+        icon: HardDriveDownload,
+        permission: "dataPortability.export",
+      },
     ],
   },
 ];

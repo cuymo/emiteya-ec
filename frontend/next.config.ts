@@ -7,7 +7,14 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ["@facturador/contracts"],
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${apiInternalUrl}/api/:path*` }];
+    // `fallback`: después de las rutas dinámicas, para que la descarga del paquete de portabilidad
+    // (app/api/v1/data-exports/[id]/download) se atienda en su ruta propia, sin el plazo de 30 s
+    // del reenvío (add-data-portability, design D16).
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [{ source: "/api/:path*", destination: `${apiInternalUrl}/api/:path*` }],
+    };
   },
 };
 

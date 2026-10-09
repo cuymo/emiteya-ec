@@ -45,9 +45,11 @@ export async function startE2eBackend(options: {
   env?: Record<string, string>;
   db?: MigratedSchema;
   waitFor?: "ready" | "live";
+  /** Un puerto fijo, para un frontend que reenvía `/api` a una dirección conocida. */
+  port?: number;
 }): Promise<E2eBackend> {
   const db = options.db ?? (await createMigratedSchema(options.label));
-  const port = await freePort();
+  const port = options.port ?? (await freePort());
   const base = `http://127.0.0.1:${port}`;
   const backend = spawn(process.execPath, ["--conditions=development", "src/main.ts"], {
     cwd: BACKEND_DIR,

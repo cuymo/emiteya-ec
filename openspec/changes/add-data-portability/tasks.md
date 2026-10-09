@@ -196,7 +196,7 @@
 
 ## 6. Pantalla Portabilidad de datos
 
-- [ ] 6.1 Implementar Portabilidad de datos en `/configuracion/portabilidad`, en el grupo Configuración, con `dataPortability.export` (design D23):
+- [x] 6.1 Implementar Portabilidad de datos en `/configuracion/portabilidad`, en el grupo Configuración, con `dataPortability.export` (design D23):
   - la explicación de lo incluido y lo excluido: no es un respaldo, sin la firma, con Pruebas y Producción y sin los borradores;
   - "Generar exportación", con la confirmación al generar de nuevo con un paquete vigente;
   - el estado y el progreso consultados mientras está en cola o generándose;
@@ -211,8 +211,8 @@
   - la confirmación;
   - el enlace de descarga;
   - la entrada de la navegación, solo para el administrador.
-- [ ] 6.2 Documentar la pantalla, su ruta y su permiso en `docs/architecture/data-portability.md`. Verificar que coincide con la navegación implementada
-- [ ] 6.3 Revisar la pantalla con `docs/quality/frontend-checklist.md` contra el backend real, a través de la reescritura `/api/*` del frontend, con datos sintéticos en un esquema y un directorio aislados. La revisión cubre escritorio, 375 y 320 px, los temas claro y oscuro, el teclado y el contraste.
+- [x] 6.2 Documentar la pantalla, su ruta y su permiso en `docs/architecture/data-portability.md`. Verificar que coincide con la navegación implementada
+- [x] 6.3 Revisar la pantalla con `docs/quality/frontend-checklist.md` contra el backend real, a través de la reescritura `/api/*` del frontend, con datos sintéticos en un esquema y un directorio aislados. La revisión cubre escritorio, 375 y 320 px, los temas claro y oscuro, el teclado y el contraste.
   - Descargar un paquete por el navegador y verificarlo con `sha256sum -c`, Python `zipfile` y openpyxl.
   - Gate del streaming (design D16): descargar un paquete de varios GB a través de la reescritura `/api/*` midiendo la memoria residente del backend y del proceso de Next. Si Next lo almacena, corregir el enrutado con una ruta del mismo origen que preserve el streaming y la sesión antes de cerrar.
   - Registrar la revisión en `openspec/changes/add-data-portability/ui-review.md`.

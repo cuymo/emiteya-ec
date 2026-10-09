@@ -67,6 +67,10 @@ describe("shell autenticado", () => {
     expect(screen.getByRole("link", { name: "Catálogos fiscales" }).getAttribute("href")).toBe(
       "/configuracion/catalogos-fiscales",
     );
+    // add-data-portability, design D23.
+    expect(screen.getByRole("link", { name: "Portabilidad de datos" }).getAttribute("href")).toBe(
+      "/configuracion/portabilidad",
+    );
   });
 
   it("el operador solo ve Catálogos fiscales en Configuración, que consulta (add-fiscal-catalogs)", async () => {
@@ -79,6 +83,7 @@ describe("shell autenticado", () => {
     expect(screen.queryByRole("link", { name: "Establecimientos" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Secuenciales" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Firma electrónica" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Portabilidad de datos" })).toBeNull();
     expect(
       (await screen.findByRole("link", { name: "Catálogos fiscales" })).getAttribute("href"),
     ).toBe("/configuracion/catalogos-fiscales");
