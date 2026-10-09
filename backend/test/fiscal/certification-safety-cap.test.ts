@@ -79,6 +79,8 @@ type Harness = {
   submits: { environment: string; prepared: PreparedReception }[];
   prepared: PreparedReception[];
   checks: CertificationCheck[];
+  /** Lo registrado (logs y alertas), para comprobar que no lleva contenido. */
+  logs: object[];
   attempts: number;
   transitions: number;
   run: () => Promise<void>;
@@ -96,6 +98,7 @@ function harness(options: {
     submits: [],
     prepared: [],
     checks: [],
+    logs: [],
     attempts: 0,
     transitions: 0,
     run: async () => {},
@@ -145,7 +148,10 @@ function harness(options: {
       },
     },
     jobs,
-    logger: { info: () => {}, warn: () => {} },
+    logger: {
+      info: (details) => void h.logs.push(details),
+      warn: (details) => void h.logs.push(details),
+    },
     followers: [],
     certification: session,
     documents: { find: () => Promise.resolve(documentIn(options.environment ?? "TEST")) },
@@ -155,7 +161,7 @@ function harness(options: {
     classifiers: sriClassifiers,
     settings: DEFAULT_TRANSMISSION_SETTINGS,
     today: () => "2026-10-09",
-    alert: () => {},
+    alert: (details) => void h.logs.push(details),
   });
   h.run = () => handler.run(job, { signal: new AbortController().signal, now: () => new Date(0) });
   return h;
@@ -222,6 +228,31 @@ describe("recepción con el tope de seguridad de la certificación", () => {
         sizes: { signedXmlBytes: 39_999, base64PayloadBytes: 39_999, soapRequestBytes: 39_999 },
       }),
     ]);
+  });
+
+  it("cada envío o bloqueo de la sesión registra el ambiente y las tres medidas, sin XML, base64 ni SOAP", async () => {
+    const passed = harness({ certification: true, policy: null });
+    await passed.run();
+    const blocked = harness({
+      certification: true,
+      policy: null,
+      prepare: () => sized(40_000, 1, 1),
+    });
+    await blocked.run();
+    for (const h of [passed, blocked]) {
+      const entry = h.logs.find((log) => "soapRequestBytes" in log);
+      expect(entry).toMatchObject({
+        fiscalEnvironment: "TEST",
+        capBytes: CAP,
+        effectiveSizePolicySource: "CERTIFICATION_CONSERVATIVE_CAP",
+      });
+      expect(entry).toHaveProperty("signedXmlBytes");
+      expect(entry).toHaveProperty("base64PayloadBytes");
+      const text = JSON.stringify(h.logs);
+      expect(text).not.toContain(KEY.slice(0, 20));
+      expect(text).not.toContain(signedXml.toString("base64").slice(0, 40));
+      expect(text).not.toMatch(/<factura|Envelope|validarComprobante/);
+    }
   });
 
   it("C. exactamente 40 000: CERTIFICATION_SIZE_CAP_EXCEEDED, sin llamada, intento ni transición", async () => {

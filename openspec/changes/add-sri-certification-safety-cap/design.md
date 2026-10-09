@@ -143,7 +143,9 @@ antes de `step.call` si el comprobante no es del ambiente de Pruebas.
     las tres medidas, si se permitió, su motivo y su instante. No identifica el comprobante: ni
     clave, ni RUC, ni número, ni tercero.
 
-  `/health/ready` lo publica en `sriSizeGate`.
+  `/health/ready` lo publica en `sriSizeGate`. Para eso, los detalles de la readiness
+  (`platform/health`) pasan de admitir solo textos a admitir valores serializables. El cuerpo sigue
+  sin secretos ni configuración.
 - **Métricas:**
   - `sri_certification_safety_cap_enabled` (gauge);
   - `sri_certification_gate_blocks_total` (contador), con una sola etiqueta `reason` de dos valores:
