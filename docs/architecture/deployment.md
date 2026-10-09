@@ -189,6 +189,7 @@ normativas:
 | Variable | Obligatoria | Default | Uso |
 | --- | --- | --- | --- |
 | `SRI_TRANSMISSION_ENABLED` | No | 0 | `1` habilita la transmisión. Nace apagada: un despliegue nunca transmite por accidente. |
+| `SRI_CERTIFICATION_SAFETY_CAP_ENABLED` | No | 0 | `1` activa la sesión de certificación en Pruebas (`add-sri-certification-safety-cap`). No habilita la transmisión. El sistema solo habla con el SRI sobre comprobantes de Pruebas, y uno de Producción se detiene sin llamada. Cada envío a la recepción exige el XML firmado, su base64 y el SOAP por debajo del tope de seguridad de 40 000 bytes, una constante del código que no es un límite oficial del SRI (Q-47 abierta). Sin política oficial, permite certificar en Pruebas. Se apaga al cerrar la sesión (`docs/quality/sri-certification.md`). |
 | `SRI_JOB_WORKERS` | No | 2 | Workers de la cola en el proceso de la API (0 a 8; 0 los desactiva). |
 | `SRI_JOB_LEASE_SECONDS` | No | 120 | Duración del arriendo de un job (30 a 3600). Debe superar el presupuesto del transporte (10 s de conexión, más los plazos de cabeceras y cuerpo) con 10 s de margen; si no, la API no arranca. |
 | `SRI_JOB_POLL_INTERVAL_MS` | No | 2000 | Sondeo de la cola sin trabajo (100 a 60000), con jitter de ±50 %. |
@@ -205,8 +206,9 @@ normativas:
 | `SRI_ENDPOINT_{TEST,PRODUCTION}_{RECEPTION,AUTHORIZATION,VALIDITY}` | No | Módulo central de endpoints (CTX §7) | Sobrescriben un endpoint. En producción exigen `https`. |
 
 - **Deshabilitada** (por defecto): el runner no toma jobs `sri.*`, que siguen `PENDING` sin arriendo, sin consumir intentos y sin ninguna llamada de red. La firma y el barrido siguen creándolos, de modo que al habilitarla avanzan los existentes. La instalación puede estar lista, y lo deja ver: `/health/ready` responde `sriTransmission: "disabled"`, la métrica `sri_transmission_enabled` vale 0 y el arranque registra el estado sin secretos ni URLs.
-- **Habilitada:** exige sus precondiciones técnicas, endpoints válidos, una política de tamaño vigente (Q-47), al menos un worker y la base de datos. Si falta una, `/health/ready` responde `503`, el log nombra la precondición que falta y los jobs `sri.*` siguen pausados. El interruptor nunca salta una invariante fiscal: la integridad, el tamaño y la evidencia previa se comprueban en cada envío.
+- **Habilitada:** exige sus precondiciones técnicas, endpoints válidos, una política de tamaño vigente (Q-47) o la sesión de certificación de Pruebas, al menos un worker y la base de datos. Si falta una, `/health/ready` responde `503`, el log nombra la precondición que falta y los jobs `sri.*` siguen pausados. El interruptor nunca salta una invariante fiscal: la integridad, el tamaño y la evidencia previa se comprueban en cada envío.
 - **Apagado:** el runner deja de tomar trabajo, espera hasta 8 s a los jobs en curso y vence los arriendos de los que no terminaron, para que otra instancia los retome. El plazo de parada del orquestador debe cubrirlo.
+- **Sesión de certificación:** con `SRI_CERTIFICATION_SAFETY_CAP_ENABLED=1`, la readiness acepta la falta de una política oficial y publica `sriSizeGate`: la sesión, el tope, la fuente efectiva y la última comprobación, sin identificar el comprobante. Nunca relaja una política oficial ni deja pasar Producción.
 - **Habilitación:** solo después de las compuertas previas a la transmisión real (la cifra exacta en bytes de Q-47 publicada en su política, y S-3 online con un P12 ecuatoriano real validado y un RUC habilitado en Pruebas; el vector oficial de la clave se cumplió el 2026-10-04), y primero en Pruebas. El procedimiento y el estado de cada compuerta están en `docs/quality/sri-certification.md`.
 
 ### RIDE y archivo documental

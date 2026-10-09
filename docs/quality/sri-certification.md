@@ -18,19 +18,20 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Producción no forma parte de este runbook. El go-live es otra compuerta, con sus propios requisitos
   (sección 15 y `definition-of-done.md`, Go-Live v1.0).
 
-**Estado al 2026-10-09: no se puede ejecutar.**
+**Estado al 2026-10-09: todavía no se ejecuta.**
 
-- Q-47 sigue abierta y bloquea la transmisión general (sección 2).
-- Para certificar solo en Pruebas se propone un tope de seguridad conservador (sección 2.1), todavía
-  sin implementar.
-- Hasta entonces no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
+- Q-47 sigue abierta y bloquea la transmisión general y el go-live (sección 2).
+- Para certificar solo en Pruebas ya existe la sesión de certificación con su tope de seguridad
+  conservador (sección 2.1). Su verificación global sigue pendiente.
+- Faltan el ensayo offline del P12, la lista del RUC, la salida de red y las decisiones de la sección
+  1. Hasta entonces no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
 
 ## 1. Compuertas
 
 | Compuerta | Estado | Evidencia o acción |
 | --- | --- | --- |
 | Q-47: límite de tamaño en bytes | **Abierta, BLOCKER para la transmisión general** | La ficha dice «320 Kb» sin definir la unidad (sección 2). Sin una política vigente, la aplicación no envía nada (falla cerrada) |
-| Tope de seguridad de la certificación | Propuesto el 2026-10-09; sin implementar | Es técnicamente viable: los siete documentos miden como máximo 13 532 bytes (sección 2.1) |
+| Tope de seguridad de la certificación | Implementado el 2026-10-09 (`add-sri-certification-safety-cap`); verificación global pendiente | Los siete documentos miden como máximo 13 532 bytes (sección 2) |
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, secciones 5.2 y 7.2.3, en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
 | Endpoints y WSDL de Pruebas | Verificados el 2026-10-04; se vuelven a verificar al empezar la sesión | `docs/product/sri-wsdl/` con su SHA-256 (`wsdl-manifest.test.ts`) y `backend/src/modules/sri-engine/infrastructure/endpoints.ts` (sección 3) |
 | P12 ecuatoriano real compatible | Entidad: Security Data, **SUPPORTED** por evidencia pública | El OID `1.3.6.1.4.1.37746.3.11` coincide con el extractor existente (ADR 0019, «Compatibilidad por proveedor»). Falta el ensayo offline con el P12 real (sección 5) |
@@ -95,6 +96,8 @@ quedarían en juego según cómo se lea «320 Kb».
 
 ### Los siete documentos de la certificación (medición offline del 2026-10-09)
 
+Es evidencia de readiness para la sesión de certificación, no una prueba del límite oficial del SRI.
+
 Se miden con `corepack pnpm --filter @facturador/backend measure:certification-payloads`
 (`backend/test/manual/measure-certification-payloads.ts`), sin red, sin SRI y sin base de datos. Cada
 documento de la sección 7:
@@ -130,58 +133,6 @@ unos 280 caracteres.
   certificado real puede ser hasta 14 887 bytes DER mayor que el sintético de 4096 antes de alcanzar
   el tope en el peor caso. El tamaño exacto se ve en el ensayo offline con el P12 real (sección 5).
 
-## 2.1 Tope de seguridad de la certificación (propuesta, sin implementar)
-
-**CERTIFICATION SAFETY CAP: 40 000 bytes.** Se deriva de la lectura convencional más restrictiva del
-texto oficial ambiguo: «320 Kb» leídos como 320 000 bits, que son 40 000 bytes. Las demás lecturas
-razonables dan cifras mayores.
-
-**Qué no es.** No resuelve Q-47 y no es:
-- el límite oficial del SRI;
-- el límite de Producción;
-- un límite general de documento;
-- una defensa de recursos;
-- una regla del XSD.
-
-Q-47 sigue abierta para el go-live.
-
-**Regla.** Solo en una sesión explícita de certificación, solo en Pruebas, un documento se transmite
-únicamente si se cumplen a la vez estas tres condiciones, con comparación estricta (`<`, no `<=`)
-para no discutir el borde mientras Q-47 siga sin aclarar:
-
-- `signedXmlUtf8Bytes < 40000`;
-- `base64PayloadBytes < 40000`;
-- `completeSoapRequestBytes < 40000`.
-
-Si cualquiera llega a 40 000 o lo supera, el documento no se transmite y la sesión se detiene. No se
-reduce el documento automáticamente.
-
-**Implementación mínima propuesta.** Necesita su propio cambio OpenSpec y la autorización del dueño:
-
-- **Activación.** Una variable explícita de la sesión, por ejemplo `SRI_CERTIFICATION_SESSION=1`,
-  apagada por defecto. Sin ella, el comportamiento no cambia: sin una política oficial no hay
-  transmisión.
-- **Comprobaciones con la variable encendida,** en el handler de la recepción y antes del envío:
-  - el documento es del ambiente de Pruebas. Si no lo es, el job se detiene con un error
-    determinista y no se llama al SRI;
-  - las tres representaciones están por debajo del tope, que es una constante del código y no una
-    configuración. Si no, el job se detiene con un error determinista que registra los tres tamaños.
-- **Política oficial.** Si alguna vez existe una política oficial vigente, también se aplica. Rige la
-  más estricta.
-- **Readiness y métricas.** Con la variable, la readiness de la transmisión habilitada acepta la falta
-  de una política oficial. `/health/ready` y las métricas indican que rige el tope de la
-  certificación. Los logs nombran el tope como *certification safety cap*, nunca como límite del SRI.
-- **Pruebas:**
-  - un documento por debajo del tope se envía;
-  - exactamente 40 000 bytes se detiene;
-  - XML por debajo pero base64 o SOAP por encima se detiene;
-  - un documento de Producción con la sesión encendida se detiene sin llamada;
-  - sin la variable y sin política: `SIZE_POLICY_MISSING`, igual que hoy.
-- **Documentación:** `deployment.md`, este runbook y la nota en Q-47.
-
-Con la variable, «Qué no se hace» se precisa: el tope es una comprobación más estricta que solo existe
-en Pruebas, no una ruta que salte invariantes.
-
 - **Documentos de certificación** (pocas líneas, como los de la sección 7): rondan los 8 a 10 KB.
   Quedan por debajo de todas las lecturas.
 - **Lecturas en kilobits:** con los límites por defecto, la retención de peor caso (46 614 bytes), la
@@ -202,9 +153,68 @@ aplicación.
    conservadora del producto, registrada como decisión propia y no como cifra oficial, en su propio
    cambio OpenSpec. No se toma por defecto ni de forma implícita.
 
-Hasta entonces, Q-47 es un BLOCKER: no hay transmisión real. Sin política vigente,
-`SRI_TRANSMISSION_ENABLED=1` deja `/health/ready` en `503` y el job se detiene con
+Hasta entonces, Q-47 es un BLOCKER para la transmisión general: sin política vigente y sin la sesión
+de certificación, `SRI_TRANSMISSION_ENABLED=1` deja `/health/ready` en `503` y el job se detiene con
 `SIZE_POLICY_MISSING`.
+
+## 2.1 Tope de seguridad de la certificación (sesión de certificación)
+
+Lo implementó `add-sri-certification-safety-cap` el 2026-10-09.
+
+**CERTIFICATION SAFETY CAP: 40 000 bytes.** Se deriva de la lectura convencional más restrictiva del
+texto oficial ambiguo: «320 Kb» leídos como 320 000 bits, que son 40 000 bytes. Las demás lecturas
+razonables dan cifras mayores. Es una constante del código, no una configuración.
+
+**Qué no es.** No resuelve Q-47 y no es:
+- el límite oficial del SRI;
+- el límite de Producción;
+- un límite general de documento;
+- una defensa de recursos;
+- una regla del XSD.
+
+Q-47 sigue abierta como compuerta del go-live.
+
+**Activación.** `SRI_CERTIFICATION_SAFETY_CAP_ENABLED=1`, apagada por defecto.
+- No habilita la transmisión: sigue haciendo falta `SRI_TRANSMISSION_ENABLED=1`.
+- Con la bandera, el sistema solo habla con el SRI sobre comprobantes del ambiente de Pruebas. Un
+  comprobante de Producción se detiene con `CERTIFICATION_ENVIRONMENT_NOT_TEST` antes de cualquier
+  llamada (envío, autorización o consulta), sin redirigirlo ni corregir su ambiente.
+
+**Regla.** Justo antes de enviar a la recepción, el sistema construye una sola vez el cuerpo final
+y mide tres cosas. Ese mismo cuerpo es el que recibe el transporte:
+
+- `signedXmlBytes`;
+- `base64PayloadBytes`;
+- `soapRequestBytes`.
+
+Solo envía si las tres son menores que 40 000 (39 999 pasa; 40 000 y 40 001 no). Si alguna llega al
+tope, el job se detiene con `CERTIFICATION_SIZE_CAP_EXCEEDED`:
+
+- sin llamada, sin intento con el SRI y sin respuesta;
+- sin transición fiscal;
+- distinto de un `RETURNED` y del código 26 del SRI.
+
+El documento nunca se recorta, comprime ni altera.
+
+**Composición con la política oficial.** El tope solo restringe:
+
+| Política oficial | Sesión | Fuente efectiva | Resultado |
+| --- | --- | --- | --- |
+| Presente | Apagada | `SRI_OFFICIAL_POLICY` | Rige solo la oficial |
+| Presente | Encendida | `SRI_OFFICIAL_AND_CERTIFICATION_CAP` | Deben permitirlo las dos |
+| Ausente | Encendida | `CERTIFICATION_CONSERVATIVE_CAP` | Un comprobante de Pruebas bajo el tope puede enviarse |
+| Ausente | Apagada | `MISSING` | `SIZE_POLICY_MISSING`, sin red |
+
+**Diagnóstico sin secretos.**
+- `/health/ready` publica `sriSizeGate`:
+  - si la sesión está activa;
+  - el tope;
+  - la fuente efectiva;
+  - la última comprobación: ambiente fiscal, las tres medidas, si se permitió y su motivo, sin clave,
+    RUC, número ni terceros.
+- Métricas: `sri_certification_safety_cap_enabled` y `sri_certification_gate_blocks_total`, esta
+  con una sola etiqueta, `reason`.
+- Cada envío o bloqueo deja un registro con las medidas, sin el XML, el base64 ni el SOAP.
 
 ## 3. Endpoints y salida de red
 
@@ -247,6 +257,7 @@ aplica tres capas:
   cualquier otro despliegue, arranca con un archivo de entorno fuera del repositorio:
   - `NODE_ENV=production`;
   - `SRI_TRANSMISSION_ENABLED=1`;
+  - `SRI_CERTIFICATION_SAFETY_CAP_ENABLED=1`, la sesión de certificación de la sección 2.1;
   - `SRI_JOB_WORKERS=1`;
   - las tres sobrescrituras de Producción;
   - el proxy de la lista de permitidos;
@@ -255,11 +266,13 @@ aplica tres capas:
   Antes de emitir se comprueba lo siguiente. Si la readiness da `503`, se corrige la precondición
   que nombra el log; no se rodea.
   - `/health/ready` responde `200` con `"sriTransmission": "enabled"`;
-  - `sri_transmission_enabled` vale `1` en `/metrics`.
+  - `sriSizeGate` informa `certificationSafetyCapEnabled: true` y, sin política oficial, la fuente
+    `CERTIFICATION_CONSERVATIVE_CAP`, nunca `SRI_OFFICIAL_POLICY`;
+  - `sri_transmission_enabled` y `sri_certification_safety_cap_enabled` valen `1` en `/metrics`.
 - **Vuelta a fallar cerrado.** Hay tres formas, de la más suave a la más inmediata:
   1. Parar el proceso (`SIGTERM`): el runner espera hasta 8 s a los jobs en curso y vence los
      arriendos.
-  2. Reiniciarlo con `SRI_TRANSMISSION_ENABLED=0`.
+  2. Reiniciarlo con `SRI_TRANSMISSION_ENABLED=0` y `SRI_CERTIFICATION_SAFETY_CAP_ENABLED=0`.
   3. Si hay prisa, cortar el proxy de la lista de permitidos: toda llamada falla en el transporte y
      nada sale.
 
@@ -306,7 +319,8 @@ nada en el SRI.
   documentados (`ruc-extractors.ts`).
   - **Security Data está SUPPORTED** por su documentación pública (ADR 0019, «Compatibilidad por
     proveedor»): OID `1.3.6.1.4.1.37746.3.11` en los certificados de firma de persona natural con
-    RUC, miembro de empresa y representante legal.
+    RUC, miembro de empresa y representante legal. Esto no afirma que el P12 concreto del operador
+    sea compatible: se valida en el ensayo offline de esta sección.
   - Se rechazan con `CERTIFICATE_RUC_NOT_FOUND`:
     - un certificado de persona natural sin RUC;
     - un **sello electrónico**, que lleva el RUC en `2.5.4.97` como `VATEC-<RUC>`.
@@ -530,9 +544,8 @@ Con los seis tipos en `AUTHORIZED`, S-3 online y AC-03 pasan a cumplidos aquí y
 - **Política de tamaño (Q-47).** Publicar `sri-transmission-policy` versión 1 en su cambio OpenSpec,
   solo con evidencia oficial. Es necesaria para la transmisión general y el go-live; para la
   certificación la sustituye el tope de la sección 2.1.
-- **Tope de seguridad de la certificación.** Implementar la propuesta de la sección 2.1 en su cambio
-  OpenSpec, con la autorización del dueño. Es la vía para certificar en Pruebas mientras Q-47 siga
-  abierta.
+- **Tope de seguridad de la certificación.** Implementado en `add-sri-certification-safety-cap`.
+  Falta su verificación global (`corepack pnpm verify` con PostgreSQL) antes de integrarlo.
 - **Lista de permitidos de salida.** Un proxy `CONNECT` local de herramientas, fuera del runtime de la
   aplicación, que solo admita `celcer.sri.gob.ec:443`, o la regla equivalente del firewall,
   documentada.
@@ -566,11 +579,20 @@ Se resuelven después de la certificación y antes de habilitar Producción
 
 ## Qué no se hace
 
-- No hay rutas, banderas ni modos especiales para la certificación.
+- **Prohibido en la certificación:**
+  - atajos fiscales;
+  - manipular la base de datos;
+  - saltar validaciones o la firma;
+  - rutas que finjan un `AUTHORIZED`;
+  - relajar la seguridad.
+- **Permitido:** controles adicionales que solo hacen más restrictiva la sesión de Pruebas. El tope
+  de seguridad de la certificación (sección 2.1) pertenece a esta categoría: no salta la integridad
+  ni la política oficial, y fuera de Pruebas no deja hablar con el SRI.
 - El interruptor de la transmisión no salta invariantes fiscales: con él encendido rigen la integridad
   del artefacto, el límite de tamaño y la máquina de estados.
 - No se reintenta «de todas formas» un comprobante en revisión manual: solo sale con la
   reconciliación y evidencia concluyente.
 - No se suben al repositorio el P12, su contraseña, el RUC real, la clave maestra ni respuestas sin
   anonimizar.
-- No se usa Producción ni se cambia el valor por defecto de `SRI_TRANSMISSION_ENABLED`.
+- No se usa Producción ni se cambia el valor por defecto de `SRI_TRANSMISSION_ENABLED` ni el de
+  `SRI_CERTIFICATION_SAFETY_CAP_ENABLED`.

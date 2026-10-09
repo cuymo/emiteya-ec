@@ -73,7 +73,7 @@
 
 ## 4. Documentación
 
-- [ ] 4.1 Documentar la bandera en `docs/architecture/deployment.md`: una variable de la sesión de
+- [x] 4.1 Documentar la bandera en `docs/architecture/deployment.md`: una variable de la sesión de
   certificación, apagada por defecto, con el tope no configurable y sin que sea un límite oficial.
   Actualizar `docs/quality/sri-certification.md`:
   - la sesión y su habilitación;
