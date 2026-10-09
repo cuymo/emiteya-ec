@@ -6,7 +6,7 @@ import { access, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Registry } from "@prometheus-io/client";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { AuditLog } from "../../src/modules/audit/application/audit-log.ts";
 import { createAuditLog } from "../../src/modules/audit/infrastructure/prisma-audit-log.ts";
 import type { GeneratorDeps } from "../../src/modules/data-portability/application/generate.ts";
@@ -122,6 +122,26 @@ describe("job de la portabilidad", () => {
     await generatorDeps(db, root).packages.init();
   }
 
+  // Cada prueba toma solo su job: los que una prueba fallida deje pendientes o arrendados se
+  // detienen, para que la siguiente no los tome en lugar del suyo.
+  afterEach(async () => {
+    const later = new Date(Date.now() + 3_600_000);
+    const leftovers = await jobs.claim({
+      owner: "limpieza",
+      types: [EXPORT_JOB_TYPE],
+      limit: 100,
+      leaseMs: 60_000,
+      now: later,
+    });
+    for (const leftover of leftovers)
+      await jobs.stop(
+        db.database.prisma,
+        leftover,
+        { code: "TEST_CLEANUP", errorClass: "DETERMINISTIC" },
+        later,
+      );
+  });
+
   afterAll(async () => {
     await rm(root, { recursive: true, force: true });
     await db?.drop();
@@ -152,15 +172,17 @@ describe("job de la portabilidad", () => {
   it("renueva el lease en una generación más larga que el lease base", async () => {
     const b = await company("Empresa B");
     const queued = await request(b);
-    const leaseMs = 1_500;
+    // Seis libros de 1 s cada uno superan el lease base de 5 s. El heartbeat de 500 ms deja 4.5 s
+    // de margen a cada renovación, también con la base cargada por el resto de la suite.
+    const leaseMs = 5_000;
     const job = (await claim("worker-b", leaseMs))!;
     let stolen: unknown;
     const slow = handler({
       leaseMs,
-      heartbeatMs: 300,
+      heartbeatMs: 500,
       generator: {
         writeXlsx: async (path, sheets) => {
-          await new Promise((resolve) => setTimeout(resolve, 600));
+          await new Promise((resolve) => setTimeout(resolve, 1_000));
           // Otro worker intenta tomar el job con el lease base ya vencido: no puede.
           stolen ??= await claim("ladron", leaseMs);
           const { writeXlsx } = await import("../../src/platform/xlsx/xlsx-writer.ts");
