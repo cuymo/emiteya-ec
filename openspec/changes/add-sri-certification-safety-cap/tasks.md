@@ -94,5 +94,14 @@
   - el typecheck y el lint del backend;
   - `openspec validate add-sri-certification-safety-cap --strict`;
   - `/opsx:verify add-sri-certification-safety-cap`.
-- [ ] 5.2 Verificación global (`corepack pnpm verify`), con PostgreSQL disponible, antes de integrar
+- [x] 5.2 Verificación global (`corepack pnpm verify`), con PostgreSQL disponible, antes de integrar
   en `main`. La ejecuta el cierre del cambio, no este apply.
+  - **Evidencia del 2026-10-09,** aceptada por el dueño como evidencia compuesta:
+    - dos `verify` completos. La suite principal pasa en ambos (371 archivos, 3114 pruebas, 1
+      saltada), igual que formato, lint, typecheck, OpenAPI, arranque, build y artefactos;
+    - las 139 pruebas de los 13 archivos del cambio, con PostgreSQL, pasan.
+  - **AC-04.** Falló las dos veces justo después de la suite, con una carga de 7 a 10 causada por
+    aplicaciones de escritorio ajenas: «Unable to start a transaction in the given time», el `maxWait`
+    de 2 s. Aislada pasa 3/3 en esta rama y en `main`.
+  - **Diagnóstico.** Con la misma carga, `main` (verde en la CI) falló en local otra prueba de
+    integración. Es entorno, no código: el cambio no toca la numeración ni las reservas.
