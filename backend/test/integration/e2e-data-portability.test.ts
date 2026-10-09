@@ -48,6 +48,9 @@ const COMPANY_TABLES = [
   "configuration_asset",
   "signing_certificate",
   "signing_certificate_secret",
+  // Ni una entrega por comprobante ni un cambio en los borradores, que siguen editables.
+  "document_delivery_event",
+  "purchase_settlement_draft",
 ];
 
 async function walk(dir: string): Promise<string[]> {
@@ -92,6 +95,15 @@ describe("flujo completo de la portabilidad", () => {
       })
     ).filter((event) => (event.changes as { exportId?: string } | null)?.exportId === id);
 
+  /** Los eventos de auditoría de la empresa que no son de la portabilidad. */
+  const otherAudit = () =>
+    prisma().auditEvent.count({
+      where: {
+        companyId: installation.company.companyId,
+        NOT: { action: { startsWith: "data_export." } },
+      },
+    });
+
   /** Huella de cada tabla de la empresa: su número de filas y el hash de su contenido. */
   async function fingerprints() {
     const result: Record<string, string> = {};
@@ -133,6 +145,7 @@ describe("flujo completo de la portabilidad", () => {
 
   it("genera, descarga y verifica el paquete completo sin cambiar la empresa", async () => {
     const before = await fingerprints();
+    const auditBefore = await otherAudit();
     expect((await api("POST", "/data-exports", installation.cookies.operator, {})).status).toBe(
       403,
     );
@@ -246,8 +259,29 @@ describe("flujo completo de la portabilidad", () => {
           ]);
     }
 
-    // Los datos de la empresa no cambiaron.
+    // Los datos de la empresa no cambiaron, y la auditoría solo sumó los eventos de la exportación.
     expect(await fingerprints()).toEqual(before);
+    expect(await otherAudit()).toBe(auditBefore);
+
+    // Un archivo alterado después de descargar: la verificación lo señala.
+    const tampered = join(
+      out,
+      documentFolder({
+        ...rows[0]!,
+        environment: rows[0]!.environment as Parameters<typeof documentFolder>[0]["environment"],
+      }),
+      "snapshot.json",
+    );
+    await writeFile(tampered, "{}\n");
+    const recheck = await run("sha256sum", ["-c", "--quiet", "SHA256SUMS"], {
+      cwd: out,
+      env: { ...process.env, LC_ALL: "C" },
+      maxBuffer: 64 * 2 ** 20,
+    }).then(
+      () => "",
+      (error: { stdout?: string }) => error.stdout ?? "",
+    );
+    expect(recheck.trim().split("\n")).toEqual([expect.stringMatching(/snapshot\.json: FAILED$/)]);
 
     // Un paquete alterado en el disco no se entrega y deja la exportación fallida.
     const fileName = (await prisma().dataExport.findUniqueOrThrow({ where: { id } })).fileName!;

@@ -60,6 +60,11 @@ describe("fuentes de portabilidad de los módulos dueños", () => {
       roles: ["CUSTOMER"],
     });
     await prisma.party.update({ where: { id: ids.corrected }, data: { status: "INACTIVE" } });
+    // Un producto desactivado y un comprobante en revisión manual: se exportan con su estado.
+    await prisma.product.update({ where: { id: ids.hugeProduct }, data: { status: "INACTIVE" } });
+    ids.manualReview = (
+      await insertDocument(prisma, a, "MANUAL_REVIEW", { issueDate: "2026-09-27" })
+    ).id;
     // Una factura autorizada sin RIDE con su generación detenida.
     ids.stopped = (await insertDocument(prisma, a, "AUTHORIZED", { issueDate: "2026-09-26" })).id;
     await prisma.job.create({
@@ -210,9 +215,10 @@ describe("fuentes de portabilidad de los módulos dueños", () => {
     });
 
     it("da los productos con su precio exacto y sus impuestos", async () => {
-      const products = await rows<{ id: string; name: string; unitPrice: string }>(
+      const products = await rows<{ id: string; name: string; unitPrice: string; status: string }>(
         sources.products,
       );
+      expect(products.find((p) => p.id === ids.hugeProduct)).toMatchObject({ status: "INACTIVE" });
       expect(products.map((p) => p.name)).toEqual(
         expect.arrayContaining(["Tornillo", "Arena a granel"]),
       );
@@ -281,6 +287,15 @@ describe("fuentes de portabilidad de los módulos dueños", () => {
       expect(keys).toEqual([...keys].sort());
       expect(new Set(keys).size).toBe(keys.length);
       expect(documents.map((d) => d.id)).not.toContain(ids.other);
+    });
+
+    it("da cada comprobante con su estado, también el que está en revisión manual", async () => {
+      const documents = await rows<{ id: string; state: string }>(sources.documents);
+      expect(documents.find((d) => d.id === ids.manualReview)).toMatchObject({
+        state: "MANUAL_REVIEW",
+      });
+      for (const state of ["RESERVED", "SIGNED", "AUTHORIZED", "RETURNED", "NOT_AUTHORIZED"])
+        expect([state, documents.some((d) => d.state === state)]).toEqual([state, true]);
     });
 
     it("conserva el tercero congelado y los importes por tipo, sin inventar los de la guía", async () => {

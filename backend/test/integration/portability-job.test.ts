@@ -24,6 +24,7 @@ import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { insertFiscalCompany, type FiscalCompany } from "./fiscal-harness.ts";
 import { completeAuthorizedArtifacts, generatorDeps } from "./portability-harness.ts";
 import { insertDocument } from "./transmission-harness.ts";
+import { extractZip } from "../support/zip-inspect.ts";
 
 const TTL_MS = 24 * 3_600_000;
 const silent = { info: () => {}, warn: () => {}, error: () => {} };
@@ -167,6 +168,16 @@ describe("job de la portabilidad", () => {
       "DONE",
     );
     expect((await readdir(join(root, "work"))).length).toBe(0);
+    // Una empresa que solo emitió en Pruebas: solo su carpeta, y cero de Producción declarados.
+    const out = join(root, "extraido-solo-pruebas");
+    const entries = await extractZip(file, out);
+    expect(entries.some((name) => name.startsWith("documents/pruebas/"))).toBe(true);
+    expect(entries.some((name) => name.startsWith("documents/produccion/"))).toBe(false);
+    const manifest = JSON.parse(await readFile(join(out, "manifest.json"), "utf8")) as {
+      counts: { documents: { TEST: number; PRODUCTION: number } };
+    };
+    expect(manifest.counts.documents).toMatchObject({ TEST: 3, PRODUCTION: 0 });
+    await rm(out, { recursive: true, force: true });
   });
 
   it("renueva el lease en una generación más larga que el lease base", async () => {
