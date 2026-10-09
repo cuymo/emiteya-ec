@@ -109,6 +109,10 @@ Con la sesión de certificación activa, el sistema SHALL construir una sola vez
 ### Requirement: Sesión de certificación solo en Pruebas
 Con la sesión de certificación activa, el sistema SHALL interactuar con el SRI solo sobre comprobantes del ambiente de Pruebas. La interacción con un comprobante de Producción SHALL detenerse antes de cualquier llamada de red. El sistema no redirige el comprobante a Pruebas ni corrige su ambiente.
 
+#### Scenario: Producción sin política vigente en la sesión de certificación
+- **WHEN** la sesión de certificación está activa, no hay una política vigente y el comprobante es de Producción
+- **THEN** no se envía, no hay ninguna llamada al SRI y la transmisión se detiene con el motivo de la sesión de certificación, no con el de la política ausente
+
 #### Scenario: Comprobante de Producción en la sesión de certificación
 - **WHEN** la sesión de certificación está activa y toca enviar o consultar un comprobante de Producción
 - **THEN** no hay ninguna llamada al SRI, la transmisión se detiene con el motivo de la sesión de certificación y el estado fiscal no cambia
@@ -122,7 +126,7 @@ Con la sesión de certificación activa, el sistema SHALL interactuar con el SRI
 - **THEN** se usan los servicios de Pruebas del ambiente del comprobante, sin cambiar sus endpoints, su ambiente ni su clave
 
 ### Requirement: Diagnóstico de la sesión de certificación
-El sistema SHALL informar, sin secretos, si la sesión de certificación está activa, el valor del tope y la fuente efectiva del límite de tamaño. Cada envío o bloqueo en la sesión SHALL registrar el ambiente fiscal y las tres medidas. Nunca registra el XML, el base64 ni el cuerpo SOAP.
+El sistema SHALL informar, sin secretos, si la sesión de certificación está activa, el valor del tope, la fuente efectiva del límite de tamaño y la última comprobación de la sesión con su ambiente fiscal y sus tres medidas, sin identificar el comprobante. Cada envío o bloqueo en la sesión SHALL registrarse y los bloqueos se cuentan por motivo. Nunca registra el XML, el base64 ni el cuerpo SOAP.
 
 #### Scenario: Estado de salud con la sesión activa sin política vigente
 - **WHEN** la sesión de certificación está activa y no hay una política vigente
@@ -130,7 +134,15 @@ El sistema SHALL informar, sin secretos, si la sesión de certificación está a
 
 #### Scenario: Estado de salud con política vigente y sesión activa
 - **WHEN** hay una política vigente y la sesión de certificación está activa
-- **THEN** el estado de salud informa que rigen las dos
+- **THEN** el estado de salud informa que rigen la política oficial y el tope de la certificación, como fuentes distintas
+
+#### Scenario: Última comprobación en el estado de salud
+- **WHEN** la sesión de certificación comprobó un comprobante
+- **THEN** el estado de salud informa su ambiente fiscal, sus tres medidas, si se permitió y el motivo, sin su clave, su número, su RUC ni sus terceros
+
+#### Scenario: Bloqueos contados por motivo
+- **WHEN** la sesión de certificación bloquea comprobantes por el tope o por el ambiente
+- **THEN** las métricas cuentan los bloqueos por motivo, sin identificar comprobantes, contribuyentes ni terceros
 
 #### Scenario: Registro de un envío en la sesión
 - **WHEN** la sesión de certificación está activa y se envía o se bloquea un comprobante

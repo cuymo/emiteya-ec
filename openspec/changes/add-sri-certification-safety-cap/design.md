@@ -73,20 +73,39 @@ La motivación está en `proposal.md`. Estado actual, verificado en el código:
     resultado «bloqueado» nuevo.
   - Medir una reconstrucción del sobre. Podría divergir de lo enviado.
 
-### D3. El orden de las comprobaciones en la recepción
+### D3. La resolución del límite efectivo y el orden en la recepción
 
-1. **Ambiente** (D4). Con la sesión encendida, un comprobante que no es de Pruebas se detiene con
-   `CERTIFICATION_ENVIRONMENT_NOT_TEST`.
+**Resolución.** Antes de preparar el cuerpo, la recepción resuelve la fuente efectiva del límite de
+tamaño (`effectiveSizePolicySource`) con una función pura de `fiscal/domain`. Toma tres entradas:
+la política oficial vigente (presente o ausente), si la sesión está encendida y el ambiente del
+comprobante.
+
+| Política oficial | Sesión | Ambiente | Resultado |
+| --- | --- | --- | --- |
+| Cualquiera | Encendida | No es Pruebas | Bloqueo `CERTIFICATION_ENVIRONMENT_NOT_TEST`, sin red |
+| Presente | Apagada | Cualquiera | `SRI_OFFICIAL_POLICY`: rige solo la oficial, como hoy |
+| Presente | Encendida | Pruebas | `SRI_OFFICIAL_AND_CERTIFICATION_CAP`: deben permitirlo la oficial y el tope |
+| Ausente | Encendida | Pruebas | `CERTIFICATION_CONSERVATIVE_CAP`: se construye el cuerpo exacto y rige solo el tope |
+| Ausente | Apagada | Cualquiera | `MISSING`: `SIZE_POLICY_MISSING`, sin red, como hoy |
+
+`SIZE_POLICY_MISSING` es terminal **solo** en el resultado `MISSING`. Nunca se evalúa antes de saber
+si hay una sesión de certificación válida de Pruebas. El nombre `CERTIFICATION_CONSERVATIVE_CAP`
+nunca se confunde con `SRI_OFFICIAL_POLICY`: el tope no es la política oficial.
+
+**Orden en la recepción:**
+
+1. **Ambiente** (D4): con la sesión encendida, un comprobante que no es de Pruebas se detiene.
 2. **Integridad.**
-3. **Política oficial.** Si existe, rige como hoy: `TOO_LARGE` si el XML firmado la supera. Si no
-   existe, la sesión apagada da `SIZE_POLICY_MISSING`, como hoy; la sesión encendida continúa.
-4. **Preparación del cuerpo** (D2).
-5. **Tope**, solo con la sesión encendida: `CERTIFICATION_SIZE_CAP_EXCEEDED` si alguna medida es
-   mayor o igual que 40 000.
+3. **Resolución:** `MISSING` detiene con `SIZE_POLICY_MISSING`.
+4. **Política oficial**, si interviene: `TOO_LARGE` si el XML firmado la supera, con su borde `<=`
+   de hoy.
+5. **Preparación del cuerpo** (D2), una sola vez.
+6. **Tope**, si interviene: `CERTIFICATION_SIZE_CAP_EXCEEDED` si alguna medida es mayor o igual que
+   40 000.
+7. **Envío del cuerpo medido.**
 
-La composición solo restringe:
-- la sesión nunca salta la integridad ni la política oficial;
-- sin la sesión, el paso 5 no existe.
+La composición solo restringe: el tope nunca relaja la política oficial, y fuera de la sesión no
+existe.
 
 ### D4. La guarda del ambiente en el punto común
 
@@ -113,16 +132,23 @@ antes de `step.call` si el comprobante no es del ambiente de Pruebas.
 
 ### D6. La readiness, la métrica y los registros
 
-- **Readiness.** `TransmissionPreconditions` suma `certificationSafetyCap: boolean`. La precondición
-  `size-policy` se cumple con una política vigente o con la sesión encendida.
+- **Readiness.** `TransmissionPreconditions` suma `certificationSafetyCap: boolean`, y la
+  precondición `size-policy` se cumple con una política vigente o con la sesión encendida.
   `TransmissionState.sizeGate` lleva:
   - `certificationSafetyCapEnabled`;
   - `capBytes`;
-  - `effectiveSizePolicySource`, que es `SRI_OFFICIAL_POLICY`, `CERTIFICATION_CONSERVATIVE_CAP`,
-    `SRI_OFFICIAL_POLICY+CERTIFICATION_CONSERVATIVE_CAP` o `NONE`.
+  - `effectiveSizePolicySource` global: `SRI_OFFICIAL_POLICY`, `CERTIFICATION_CONSERVATIVE_CAP`,
+    `SRI_OFFICIAL_AND_CERTIFICATION_CAP` o `MISSING`, para un comprobante de Pruebas;
+  - `lastCertificationCheck`, la última comprobación de la sesión en este proceso: ambiente fiscal,
+    las tres medidas, si se permitió, su motivo y su instante. No identifica el comprobante: ni
+    clave, ni RUC, ni número, ni tercero.
 
   `/health/ready` lo publica en `sriSizeGate`.
-- **Métrica.** Una nueva, `sri_certification_safety_cap_enabled`.
+- **Métricas:**
+  - `sri_certification_safety_cap_enabled` (gauge);
+  - `sri_certification_gate_blocks_total` (contador), con una sola etiqueta `reason` de dos valores:
+    `SIZE_CAP_EXCEEDED` y `ENVIRONMENT_NOT_TEST`. Sin clave, RUC, número, tercero ni contenido, y sin
+    etiquetas de cardinalidad alta.
 - **Registro de arranque.** Informa la sesión y la fuente efectiva.
 - **Cada envío o bloqueo en la sesión** registra el ambiente, las tres medidas, el tope y la fuente,
   sin el XML, el base64 ni el SOAP.

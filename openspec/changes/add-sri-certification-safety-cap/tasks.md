@@ -29,9 +29,9 @@
 - [ ] 2.2 Añadir los motivos de parada `CERTIFICATION_SIZE_CAP_EXCEEDED` y
   `CERTIFICATION_ENVIRONMENT_NOT_TEST`, con sus mensajes de negocio (design D5). Verificar con una
   prueba de `stopMessage`.
-- [ ] 2.3 Implementar la guarda del ambiente en `executeSriStep`, antes de llamar al SRI y solo con la
-  sesión encendida (design D4), y el orden de comprobaciones de la recepción (design D3) con su
-  registro sin contenido (design D6). Verificar con pruebas unitarias del handler, con dobles en
+- [ ] 2.3 Implementar la resolución pura de `effectiveSizePolicySource` (design D3), la guarda del
+  ambiente en `executeSriStep`, antes de llamar al SRI y solo con la sesión encendida (design D4), y
+  el orden de comprobaciones de la recepción (design D3), con su registro sin contenido (design D6). Verificar con pruebas unitarias del handler, con dobles en
   memoria y un gateway espía:
   - sesión apagada y sin política: `SIZE_POLICY_MISSING` y 0 llamadas;
   - Pruebas, sesión encendida y máximo de 39 999 bytes: pasa el tope;
@@ -57,12 +57,14 @@
   `test/fiscal/transmission-gate.test.ts` las cuatro fuentes:
   - `SRI_OFFICIAL_POLICY`;
   - `CERTIFICATION_CONSERVATIVE_CAP`;
-  - las dos juntas;
-  - `NONE`.
+  - `SRI_OFFICIAL_AND_CERTIFICATION_CAP`;
+  - `MISSING`.
 - [ ] 3.2 Cablear en `main.ts`:
   - la bandera;
   - `sriSizeGate` en `/health/ready`;
-  - la métrica `sri_certification_safety_cap_enabled`;
+  - las métricas `sri_certification_safety_cap_enabled` y `sri_certification_gate_blocks_total`
+    (etiqueta `reason`);
+  - la última comprobación de la sesión en la readiness;
   - el registro de arranque.
 
   Verificar con el typecheck y una prueba de la métrica en el interruptor.
