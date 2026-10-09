@@ -39,7 +39,7 @@ legado de OpenSSL y con P12 sintéticos:
   - exige una clave RSA de al menos 2048 bits que corresponda a un certificado del P12;
   - exige que ese certificado sea el primero, porque el firmador usa el primero;
   - rechaza un P12 que no puede descifrar aunque el MAC verifique (cifrado moderno con contraseña no ASCII);
-  - lee los contadores de iteraciones antes de descifrar y rechaza los que superan 100 000.
+  - lee los contadores de iteraciones antes de descifrar y rechaza los que superan 131 072 (sección «Techo de iteraciones»).
 - **RUC.** Se extrae con un registro de extractores por estructura u OID documentado (design D4), nunca por el emisor ni por texto del sujeto.
 - **Firma de prueba.** La firma de prueba con `XmlSigner` sigue siendo la comprobación final de compatibilidad.
 - **Política de actualización.** `node-forge` y el firmador se actualizan juntos, con los fixtures del spike como pruebas de contrato.
@@ -50,7 +50,7 @@ legado de OpenSSL y con P12 sintéticos:
 - **Rechazos:**
   - un P12 con cifrado PBES2 (AES con PBKDF2) y contraseña con caracteres fuera de ASCII. El firmador tampoco puede usarlo. Con los formatos legados las contraseñas no ASCII funcionan, y la puntuación ASCII nunca es un problema. El mensaje es: "Este archivo PKCS#12 utiliza una combinación de formato y contraseña que no podemos procesar. Intenta exportarlo nuevamente usando una contraseña con caracteres ASCII.". Es una limitación conocida hasta validarla con certificados reales;
   - una cadena con el certificado de la CA primero.
-- **Coste de CPU.** La inspección y la firma son JavaScript síncrono: de 18 a 120 ms con 2048 iteraciones, y unos 1,3 s con 100 000. Por eso la inspección y la firma corren en un pool de `worker_threads` acotado y con timeout (design D18 de `add-signing-certificate`), que la emisión reutilizará.
+- **Coste de CPU.** La inspección y la firma son JavaScript síncrono: de 18 a 120 ms con 2048 iteraciones, y unos 1,3 s con 100 000 (spike S-6; el benchmark de la sección «Techo de iteraciones» da las cifras por perfil). Por eso la inspección y la firma corren en un pool de `worker_threads` acotado y con timeout (design D18 de `add-signing-certificate`), que la emisión reutilizará.
 - La compatibilidad con P12 reales de cada proveedor sigue requiriendo un P12 real (requisito del go-live).
 
 ## Compatibilidad por proveedor (2026-10-09)
@@ -78,3 +78,34 @@ pendiente (procedimiento offline de `../../quality/sri-certification.md`, secci�
     SHA-256 `44a8cc1667cdaba2d30f1d53fcc150033f1832e088c1a34a692f7ec577a60292`) lleva el RUC en
     `2.5.4.97` con la forma `VATEC-<RUC>`, que el extractor no lee. Soportarlo sería otro extractor
     con su evidencia, su fixture y su prueba.
+
+## Techo de iteraciones (2026-10-09)
+
+El ensayo offline del P12 real de Security Data falló con `CERTIFICATE_INCOMPATIBLE:ITERATIONS`. El
+archivo es un PKCS#12 legado: MAC SHA-1 con 102 400 iteraciones, y clave 3DES y certificados RC2-40
+con 51 200. Superaba el techo de 100 000, que se había fijado con P12 sintéticos.
+
+**Decisión** (`support-security-data-pkcs12-iteration-profile`, design D2 a D4):
+- **Techo de 131 072 iteraciones.** Se compara con el mayor de los contadores, el del MAC y el de
+  cada cifrado, sin sumarlos. El borde se admite. La comprobación ocurre antes de verificar el MAC o
+  descifrar nada.
+- **Qué deja pasar y qué no:**
+  - el perfil de Security Data entra con un 28 % de margen;
+  - un P12 con un contador mayor se rechaza en menos de 1 ms con el mensaje de `ITERATIONS`.
+- **El pool criptográfico acotado con timeout se mantiene** como segunda defensa. Un archivo que repite
+  contenidos cifrados dentro del tamaño máximo de subida pasa el techo, y su coste total solo lo acota
+  el timeout, que responde `CRYPTO_TIMEOUT`.
+
+**Evidencia.** Benchmark con el importador y la firma reales en el pool de producción, y P12
+sintéticos (`docs/quality/benchmarks/pkcs12-iterations-2026-10-09.md`).
+- El coste es lineal en las iteraciones.
+- La importación del perfil de Security Data tarda menos de 1 s: 954 ms de mediana.
+- La del peor perfil legítimo en el techo, moderno uniforme, tarda 3,34 s. Con el techo anterior
+  ya eran 2,56 s.
+- 150 000 o 200 000 encarecerían ese peor caso sin evidencia de un perfil que lo necesite. No se
+  encontró documentación pública de Security Data con un perfil mayor.
+
+**Riesgo residual, igual que antes del cambio.** Un administrador autenticado puede ocupar un worker
+hasta el timeout por carga con un archivo de muchos contenidos cifrados. Para rechazar ese caso de
+forma barata haría falta un límite de contenidos o un presupuesto de derivaciones, que requiere una
+decisión propia.

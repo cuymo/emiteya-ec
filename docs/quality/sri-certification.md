@@ -23,8 +23,10 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Q-47 sigue abierta y bloquea la transmisión general y el go-live (sección 2).
 - Para certificar solo en Pruebas ya existe la sesión de certificación con su tope de seguridad
   conservador (sección 2.1). Su verificación global sigue pendiente.
-- Faltan el ensayo offline del P12, la lista del RUC, la salida de red y las decisiones de la sección
-  1. Hasta entonces no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
+- El P12 real del operador abre con el techo de iteraciones nuevo, pero su certificado no trae el RUC
+  (sección 5, «Ensayos offline»): hace falta una decisión del dueño.
+- Faltan también la lista del RUC, la salida de red y las decisiones de la sección 1. Hasta entonces
+  no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
 
 ## 1. Compuertas
 
@@ -34,7 +36,7 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 | Tope de seguridad de la certificación | Implementado el 2026-10-09 (`add-sri-certification-safety-cap`); verificación global pendiente | Los siete documentos miden como máximo 13 532 bytes (sección 2) |
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, secciones 5.2 y 7.2.3, en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
 | Endpoints y WSDL de Pruebas | Verificados el 2026-10-04; se vuelven a verificar al empezar la sesión | `docs/product/sri-wsdl/` con su SHA-256 (`wsdl-manifest.test.ts`) y `backend/src/modules/sri-engine/infrastructure/endpoints.ts` (sección 3) |
-| P12 ecuatoriano real compatible | Entidad: Security Data, **SUPPORTED** por evidencia pública | El OID `1.3.6.1.4.1.37746.3.11` coincide con el extractor existente (ADR 0019, «Compatibilidad por proveedor»). Falta el ensayo offline con el P12 real (sección 5) |
+| P12 ecuatoriano real compatible | **BLOQUEADA: certificado sin RUC.** El contenedor ya es compatible (techo de 131 072) | Security Data es SUPPORTED por evidencia pública (ADR 0019). El P12 real abre y firma la prueba, pero su certificado no trae el OID `1.3.6.1.4.1.37746.3.11`: la carga lo rechazaría con `CERTIFICATE_RUC_NOT_FOUND`. Decisión del dueño (sección 5) |
 | RUC habilitado en Pruebas | Pendiente | La lista de la sección 4 la comprueba el operador |
 | Salida de red solo hacia Pruebas | Pendiente | Hace falta una lista de permitidos solo hacia `celcer.sri.gob.ec:443` (secciones 3 y 14) |
 | Contrapartes de prueba | Pendiente: decisión del dueño | Sin identidades reales de terceros (sección 6) |
@@ -313,6 +315,9 @@ nada en el SRI.
 - **Formatos.** PKCS#12 moderno (PBES2, AES-256, MAC SHA-256), legado (RC2-40 y 3DES) o solo 3DES.
   Una clave RSA de al menos 2048 bits. El certificado del titular debe ir primero en la cadena. El
   archivo decodificado no puede superar `CERTIFICATE_MAX_BYTES` (64 KiB por defecto, configurable).
+- **Iteraciones.** La inspección admite hasta 131 072 iteraciones por contador (el MAC y cada
+  cifrado), antes de descifrar nada. El perfil observado en Security Data entra: MAC 102 400,
+  cifrado 51 200. Ver ADR 0019, «Techo de iteraciones».
 - **Contraseña no ASCII.** Funciona con los formatos legados. Con PBES2, el P12 se rechaza al cargarlo,
   con un mensaje que pide exportarlo de nuevo con una contraseña ASCII (limitación de S-6).
 - **RUC del certificado: compatibilidad por proveedor.** El RUC se extrae solo con extractores
@@ -358,6 +363,44 @@ logs.
    extemporánea».
 5. **Certificación real** en una instalación nueva (sección 6), con el mismo P12 cargado de la misma
    forma.
+
+**Ensayos offline del P12 real (2026-10-09).** Se usaron los módulos reales de la aplicación, sin
+red. Solo se registran datos no sensibles.
+
+- **Ensayo 1: rechazado.**
+  - Motivo: `CERTIFICATE_INCOMPATIBLE:ITERATIONS`, antes de comprobar la contraseña.
+  - El P12 es un PKCS#12 legado: MAC SHA-1 con 102 400 iteraciones, y clave 3DES y certificados
+    RC2-40 con 51 200 cada uno. Superaba el techo anterior de 100 000.
+  - Se resolvió con `support-security-data-pkcs12-iteration-profile` (techo de 131 072), sin
+    convertir ni reexportar el archivo.
+  - Incidente: DNS lookup occurred; no TCP/HTTP/SOAP connection.
+- **Ensayo 2 (con el techo de 131 072): el contenedor es compatible, el certificado no trae el RUC.**
+  - Sin red, en un espacio de nombres de red sin interfaces, con `SRI_TRANSMISSION_ENABLED=0` y la
+    contraseña leída de la configuración local.
+  - Los contadores son [102 400, 51 200, 51 200]. El lector abre el P12.
+  - El importador real en el pool de producción pasa: inspección, firma de prueba, verificación de la
+    firma y certificado embebido igual al inspeccionado.
+  - Emisor Security Data, vigente, clave RSA de 2048 bits y cadena de tres certificados.
+  - **Se detiene en el RUC.**
+    - El certificado del titular no trae la extensión `1.3.6.1.4.1.37746.3.11`.
+    - Trae en `1.3.6.1.4.1.37746.3.1` un valor de 10 dígitos que coincide con los diez primeros del
+      RUC de la empresa.
+    - El RUC de la empresa no aparece en ningún campo del certificado, y no es un sello electrónico
+      (sin `2.5.4.97`).
+    - Es un certificado de persona natural sin el campo RUC. La carga lo rechazaría con
+      `CERTIFICATE_RUC_NOT_FOUND`, como fija la especificación, porque el SRI rechaza las firmas cuyo
+      certificado no contiene RUC.
+  - **No se ejecutaron** el XSD ni la medición de los siete documentos: el ensayo se detiene en la
+    compuerta del RUC.
+  - **Decisión del dueño.** Lo que sigue la regla vigente es obtener un certificado de Security Data
+    que traiga el RUC. La alternativa es un change propio, con evidencia oficial de que el SRI acepta
+    ese certificado cuando el RUC es la cédula seguida de `001`, con su fixture y su prueba. No se
+    modifica la empresa ni se agrega un extractor sin esa evidencia.
+- **Acción local pendiente del operador: MOVE REAL P12 OUTSIDE REPOSITORY TREE.**
+  - El P12 real está hoy dentro del árbol de trabajo, ignorado por Git y sin seguimiento.
+  - Debe moverse fuera del repositorio, y el archivo local de secretos del ensayo debe quedar solo
+    con la ruta externa.
+  - No forma parte del change.
 
 ## 6. Instalación y datos de la certificación
 
