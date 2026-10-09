@@ -98,3 +98,13 @@
     @apply outline-2 outline-offset-2 outline-ring;
   }
 }
+
+/* Avisos de sonner con richColors en el tema claro: el texto de cada tipo con al menos 4.5:1
+   sobre su fondo (frontend-checklist.md). Los valores de la biblioteca quedan entre 3.1 y 4.4:1.
+   Fuera de una capa y con más especificidad que los estilos que sonner inyecta. */
+:root [data-sonner-toaster][data-sonner-theme="light"] {
+  --success-text: hsl(140, 100%, 25%);
+  --info-text: hsl(210, 92%, 42%);
+  --warning-text: hsl(31, 92%, 34%);
+  --error-text: hsl(360, 100%, 42%);
+}
