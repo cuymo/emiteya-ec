@@ -89,7 +89,7 @@
 
 ## 5. Verificación
 
-- [ ] 5.1 Verificación focalizada:
+- [x] 5.1 Verificación focalizada:
   - las pruebas unitarias de los grupos 1 a 3;
   - el typecheck y el lint del backend;
   - `openspec validate add-sri-certification-safety-cap --strict`;
