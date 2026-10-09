@@ -64,7 +64,7 @@ implementación llega con el mismo cambio (tarea 1.2).
     - los atributos de archivo regular;
     - los bytes deterministas;
     - la memoria acotada con el heap limitado.
-  - Una prueba opcional y lenta (`PORTABILITY_ZIP64_LARGE=1`, con `PORTABILITY_ZIP64_LARGE_DIR` en un disco que no sea tmpfs) escribe una entrada y un total de más de 4 GiB y los lee con los cuatro lectores. Se ejecuta en el apply y en el benchmark, fuera de `verify`, porque escribe unos 5 GB. En el apply pasó en 179 s.
+  - Una prueba opcional y lenta (`PORTABILITY_ZIP64_LARGE=1`, con `PORTABILITY_ZIP64_LARGE_DIR` en un disco que no sea tmpfs) escribe una entrada y un total de más de 4 GiB y los lee con los cuatro lectores. Es la única prueba que `verify` omite a propósito: escribe unos 5 GB, así que se ejecuta a mano. Pasó en 179 s durante el apply (disco giratorio) y en 63 s al cerrar el cambio (SSD). El paquete de Q-26 de `bench:data-portability` mide 3.43 GiB y tiene 592 630 entradas: prueba la parte de más de 65 535 entradas, y esta prueba, la de más de 4 GiB.
 
 ### Dependencias
 
