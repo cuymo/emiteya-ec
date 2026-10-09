@@ -72,14 +72,32 @@ describe("barrido de la portabilidad", () => {
       now: () => now,
     });
 
-  /** Huella de los datos de la empresa que el barrido nunca toca. */
-  const fingerprint = async () =>
-    JSON.stringify(
-      await db.database.prisma.$queryRawUnsafe(
-        `SELECT (SELECT md5(string_agg(t::text, '|' ORDER BY t::text)) FROM "${db.name}"."electronic_document" t) AS documents,
-                (SELECT md5(string_agg(t::text, '|' ORDER BY t::text)) FROM "${db.name}"."document_artifact" t) AS artifacts`,
-      ),
+  /** Huella de los datos de la empresa que el barrido nunca toca, salvo los eventos de la exportación. */
+  const fingerprint = async () => {
+    const tables = [
+      "electronic_document",
+      "document_artifact",
+      "sri_response",
+      "party",
+      "product",
+      "stock_movement",
+      "stock_balance",
+      "company_config_version",
+      "purchase_settlement_draft",
+    ];
+    const hashes: Record<string, unknown> = {};
+    for (const table of tables) {
+      const [row] = await db.database.prisma.$queryRawUnsafe<{ hash: string | null }[]>(
+        `SELECT md5(string_agg(t::text, '|' ORDER BY t::text)) AS hash FROM "${db.name}"."${table}" t`,
+      );
+      hashes[table] = row?.hash ?? null;
+    }
+    const [audit] = await db.database.prisma.$queryRawUnsafe<{ hash: string | null }[]>(
+      `SELECT md5(string_agg(t::text, '|' ORDER BY t::text)) AS hash FROM "${db.name}"."audit_event" t WHERE t.action NOT LIKE 'data_export.%'`,
     );
+    hashes.audit_event = audit?.hash ?? null;
+    return JSON.stringify(hashes);
+  };
 
   beforeAll(async () => {
     db = await createMigratedSchema("portability_sweeper");

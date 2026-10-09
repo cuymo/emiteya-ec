@@ -105,6 +105,19 @@ describe("generación del paquete de portabilidad", () => {
       const documents = book.sheets.find((s) => s.name === "Comprobantes")!;
       const invoice = [...documents.rows.values()].find((row) => row.get("L")?.type === "number");
       expect(invoice?.get("L")).toMatchObject({ type: "number", numFmt: "#,##0.00" });
+      // El total vale exactamente el del comprobante.
+      const stored = await db.database.prisma.electronicDocument.findFirstOrThrow({
+        where: { accessKey: invoice!.get("D")!.text },
+      });
+      expect(Number(invoice!.get("L")!.text).toFixed(2)).toBe(Number(stored.total).toFixed(2));
+      // Un saldo que excede la precisión segura de la hoja, como su texto exacto.
+      const stock = readXlsx(join(out, "data/inventario.xlsx")).sheets.find(
+        (s) => s.name === "Existencias",
+      )!;
+      const huge = [...stock.rows.values()].find(
+        (row) => row.get("C")?.text === "999999999999.999999",
+      );
+      expect(huge?.get("C")).toMatchObject({ type: "string" });
       expect(serialToWallClock(invoice!.get("E")!.text)).toMatch(
         /^2026-\d{2}-\d{2}T00:00:00\.000$/,
       );
@@ -127,6 +140,15 @@ describe("generación del paquete de portabilidad", () => {
       ] as const) {
         const { out } = await generate({ maxSheetRows: max });
         const book = readXlsx(join(out, "data/terceros.xlsx"));
+        // El manifiesto nombra las hojas del conjunto.
+        const manifest = JSON.parse(await readFile(join(out, "manifest.json"), "utf8")) as {
+          datasets: { workbook: string; sheets: string[] }[];
+        };
+        expect(
+          manifest.datasets
+            .filter((d) => d.workbook.endsWith("terceros.xlsx"))
+            .flatMap((d) => d.sheets),
+        ).toEqual(book.sheets.map((s) => s.name));
         expect([max, book.sheets.map((s) => s.name)]).toEqual([
           max,
           sheets.length === 1 ? ["Terceros"] : ["Terceros", "Terceros (2)"],

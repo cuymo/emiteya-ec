@@ -6,7 +6,7 @@ import { access, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Registry } from "@prometheus-io/client";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { AuditLog } from "../../src/modules/audit/application/audit-log.ts";
 import { createAuditLog } from "../../src/modules/audit/infrastructure/prisma-audit-log.ts";
 import type { GeneratorDeps } from "../../src/modules/data-portability/application/generate.ts";
@@ -20,6 +20,7 @@ import { createPortabilityDatabase } from "../../src/modules/data-portability/in
 import type { DbClient } from "../../src/platform/db/database.ts";
 import type { Job } from "../../src/platform/jobs/jobs.ts";
 import { createPrismaJobStore } from "../../src/platform/jobs/prisma-job-store.ts";
+import { createJobRunner } from "../../src/platform/jobs/runner.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { insertFiscalCompany, type FiscalCompany } from "./fiscal-harness.ts";
 import { completeAuthorizedArtifacts, generatorDeps } from "./portability-harness.ts";
@@ -78,6 +79,21 @@ describe("job de la portabilidad", () => {
 
   const claim = async (owner: string, leaseMs: number, now = new Date()) =>
     (await jobs.claim({ owner, types: [EXPORT_JOB_TYPE], limit: 1, leaseMs, now }))[0];
+
+  /** El handler del job, como lo compone el módulo. */
+  const exportHandler = (generator = generatorDeps(db, root)) =>
+    createExportJobHandler({
+      generator,
+      database: createPortabilityDatabase(db.database.prisma),
+      store,
+      jobs,
+      files: generator.packages,
+      audit: createAuditLog,
+      metrics: registerPortabilityMetrics(new Registry()),
+      ttlMs: TTL_MS,
+      logger: silent,
+      now: () => new Date(),
+    });
 
   function handler(
     overrides: {
@@ -164,6 +180,14 @@ describe("job de la portabilidad", () => {
     const completed = await events(a.companyId, "data_export.completed");
     expect(completed).toHaveLength(1);
     expect(JSON.stringify(completed[0]!.changes)).not.toMatch(/\/|\.zip|partial|work/);
+    // El evento lleva los conteos, el tamaño y el SHA-256 del paquete.
+    expect(completed[0]!.changes).toMatchObject({
+      exportId: queued.id,
+      documentsTest: 3,
+      documentsProduction: 0,
+      sizeBytes: String(row.sizeBytes),
+      sha256: row.sha256,
+    });
     expect((await db.database.prisma.job.findUniqueOrThrow({ where: { id: job.id } })).status).toBe(
       "DONE",
     );
@@ -178,6 +202,37 @@ describe("job de la portabilidad", () => {
     };
     expect(manifest.counts.documents).toMatchObject({ TEST: 3, PRODUCTION: 0 });
     await rm(out, { recursive: true, force: true });
+  });
+
+  it("con una generación por instancia, la de otra empresa espera a que termine la primera", async () => {
+    const first = await request(await company("Empresa Cola A"));
+    const second = await request(await company("Empresa Cola B"));
+    const runner = createJobRunner({
+      store: jobs,
+      db: db.database.prisma,
+      handlers: { [EXPORT_JOB_TYPE]: exportHandler() },
+      workers: 1,
+      pollIntervalMs: 50,
+      leaseMs: 60_000,
+      pausedPrefixes: () => [],
+      logger: silent,
+      now: () => new Date(),
+    });
+    runner.start();
+    try {
+      await vi.waitFor(
+        async () => {
+          for (const id of [first.id, second.id])
+            expect((await exportRow(id)).status).toBe("READY");
+        },
+        { timeout: 60_000, interval: 200 },
+      );
+    } finally {
+      await runner.close();
+    }
+    const [a, b] = [await exportRow(first.id), await exportRow(second.id)];
+    const [earlier, later] = a.startedAt! <= b.startedAt! ? [a, b] : [b, a];
+    expect(later.startedAt!.getTime()).toBeGreaterThanOrEqual(earlier.generatedAt!.getTime());
   });
 
   it("renueva el lease en una generación más larga que el lease base", async () => {
