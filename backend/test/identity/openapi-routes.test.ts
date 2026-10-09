@@ -38,6 +38,8 @@ import type { ShippingGuideEmission } from "../../src/modules/shipping-guides/ap
 import type { ShippingGuideOptions } from "../../src/modules/shipping-guides/application/options.ts";
 import type { ShippingGuides } from "../../src/modules/shipping-guides/application/shipping-guides.ts";
 import { shippingGuidesRouter } from "../../src/modules/shipping-guides/infrastructure/http/shipping-guides-router.ts";
+import type { DataExports } from "../../src/modules/data-portability/application/service.ts";
+import { dataPortabilityRouter } from "../../src/modules/data-portability/infrastructure/http/data-portability-router.ts";
 import { archiveRouters } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import type { PurchaseSettlementDrafts } from "../../src/modules/purchase-settlements/application/drafts.ts";
 import type { PurchaseSettlementEmission } from "../../src/modules/purchase-settlements/application/emission.ts";
@@ -112,6 +114,7 @@ describe("rutas documentadas", () => {
         rideSettings: { maxAttempts: 1, backoff: { baseMs: 1, capMs: 1, minMs: 1 } },
       }),
       reportsRouter({} as Reports),
+      dataPortabilityRouter({} as DataExports),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);
@@ -158,8 +161,12 @@ describe("rutas documentadas", () => {
       "put /signing-certificate",
       "put /signing-certificate/expiry-alert",
     ]);
+    // La descarga del paquete de portabilidad nunca lleva la firma, su archivo ni su contraseña
+    // (spec data-portability, "Exclusión de la firma y los secretos").
     expect(apiRoutes.filter((route) => /p12|pfx|password|download|file/i.test(route.path))).toEqual(
-      apiRoutes.filter((route) => /\/users\/:userId\/password/.test(route.path)),
+      apiRoutes.filter((route) =>
+        /\/users\/:userId\/password|^\/data-exports\/:id\/download$/.test(route.path),
+      ),
     );
   });
 

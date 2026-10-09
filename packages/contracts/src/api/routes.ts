@@ -231,6 +231,14 @@ import {
   REPORT_LABELS,
   reportListViewSchemas,
 } from "../reports.ts";
+import {
+  DATA_EXPORT_CONTENT_TYPES,
+  createDataExportSchema,
+  dataExportIdParamsSchema,
+  dataExportListViewSchema,
+  dataExportViewSchema,
+  listDataExportsQuerySchema,
+} from "../data-portability.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -2901,4 +2909,92 @@ export const apiRoutes: readonly RouteDefinition[] = [
       },
     }),
   ]),
+  // Portabilidad de datos (add-data-portability, design D16 y D17): solo el administrador, con la
+  // empresa de la sesión.
+  defineRoute({
+    method: "post",
+    path: "/data-exports",
+    summary:
+      "Solicitar una exportación de portabilidad de los datos y artefactos de la empresa; queda en cola y se genera fuera de la solicitud",
+    request: { body: createDataExportSchema },
+    responses: {
+      202: {
+        description: "La exportación en cola (QUEUED), sin esperar a generarla.",
+        schema: successEnvelope(dataExportViewSchema),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      409: {
+        description:
+          "Ya hay una exportación de la empresa en cola o generándose (DATA_EXPORT_IN_PROGRESS); no se crea otra.",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/data-exports",
+    summary: "Listar las exportaciones de portabilidad de la empresa, la más reciente primero",
+    request: { query: listDataExportsQuerySchema },
+    responses: {
+      200: {
+        description: "Página de exportaciones con su total.",
+        schema: dataExportListViewSchema,
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/data-exports/:id",
+    summary:
+      "Consultar una exportación: su estado, su fase, su progreso, el momento del snapshot, su caducidad, su tamaño y su SHA-256",
+    request: { params: dataExportIdParamsSchema },
+    responses: {
+      200: { description: "La exportación.", schema: successEnvelope(dataExportViewSchema) },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "La exportación no existe en la empresa (DATA_EXPORT_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/data-exports/:id/download",
+    summary:
+      "Descargar el paquete listo y vigente, verificado completo por tamaño y SHA-256 antes del primer byte; registra el inicio de la descarga",
+    request: { params: dataExportIdParamsSchema },
+    responses: {
+      200: {
+        description:
+          "El paquete ZIP64 como adjunto, por streaming y sin caché (datos-AAAAMMDD-HHMMSS.zip).",
+        binaryContentTypes: DATA_EXPORT_CONTENT_TYPES,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: {
+        description: "La exportación no existe en la empresa (DATA_EXPORT_NOT_FOUND).",
+        schema: errorEnvelopeSchema,
+      },
+      409: {
+        description:
+          "La exportación todavía no está lista o falló (DATA_EXPORT_NOT_READY); no se entrega nada.",
+        schema: errorEnvelopeSchema,
+      },
+      410: {
+        description: "El paquete caducó (DATA_EXPORT_EXPIRED); hay que generar uno nuevo.",
+        schema: errorEnvelopeSchema,
+      },
+      500: {
+        description:
+          "El paquete falta (DATA_EXPORT_PACKAGE_MISSING) o no tiene su tamaño o su SHA-256 (DATA_EXPORT_PACKAGE_INTEGRITY): no se envía ningún byte y la exportación queda fallida.",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
 ];

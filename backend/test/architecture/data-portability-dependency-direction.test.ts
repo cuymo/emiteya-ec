@@ -105,6 +105,38 @@ describe("dirección de las dependencias de la portabilidad", () => {
     }
   });
 
+  it("main.ts compone el módulo con las fuentes de cada dueño, sus rutas, su cierre y su arranque", () => {
+    const main = readFileSync(join(SRC, "main.ts"), "utf8");
+    for (const factory of [
+      "createTaxpayerPortabilitySources",
+      "createFiscalPortabilitySources",
+      "createCatalogPortabilitySources",
+      "createSigningPortabilitySources",
+      "createIdentityPortabilitySources",
+      "createPartiesPortabilitySources",
+      "createProductsPortabilitySources",
+      "createInventoryPortabilitySources",
+      "createAuditPortabilitySources",
+      "createWithholdingPortabilitySources",
+    ]) {
+      expect(main).toContain(`...${factory}(reportSchema`);
+    }
+    for (const variable of [
+      "DATA_EXPORT_DIRECTORY",
+      "DATA_EXPORT_MAX_CONCURRENT",
+      "DATA_EXPORT_TTL_HOURS",
+      "DATA_EXPORT_DISK_HEADROOM_PERCENT",
+      "DATA_EXPORT_DISK_RESERVE_MIB",
+      "DATA_EXPORT_SWEEP_INTERVAL_SECONDS",
+    ]) {
+      expect(main).toContain(`env.${variable}`);
+    }
+    expect(main).toContain("apiRouter.use(...portability.routers);");
+    expect(main).toContain("await portability.files.init();");
+    expect(main).toMatch(/closers\.unshift\(\{ name: "data-portability"/);
+    expect(main).toMatch(/void portability\s*\.start\(\)/);
+  });
+
   it("detecta cada violación en archivos de ejemplo", () => {
     expect(
       portabilityOffenders(

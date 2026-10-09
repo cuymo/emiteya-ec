@@ -29,10 +29,10 @@
 - [x] 2.1 Crear la migración de `data_export` (design D10 y D24):
   - los estados y las fases con su `CHECK`;
   - los campos que exige cada estado;
-  - el índice único parcial de una generación activa por empresa y el de un `READY` por empresa;
+  - la unicidad de una generación activa por empresa y la de un `READY` por empresa (columnas únicas por estado, design D10);
   - las FK y el índice por empresa y fecha.
 
-  Documentarla en `docs/architecture/database.md`. Verificar con `migrations.test.ts` los `CHECK`, los dos índices únicos y el rechazo de un `READY` incompleto
+  Documentarla en `docs/architecture/database.md`. Verificar con `migrations.test.ts` los `CHECK`, las dos columnas únicas y el rechazo de un `READY` incompleto
 - [x] 2.2 Añadir `renew` al `JobStore` (design D11), guardado por el dueño, el estado `LEASED` y el *lease* vigente, sin cambiar los demás métodos.
   - Si el cambio resultara inseguro para los jobs existentes, detener el apply y reportar el bloqueo.
   - Añadir también `fence`, con la identidad del arriendo (`id`, dueño y `attempt_count` como token monótono) y el *lease* vigente, bloqueando la fila en la transacción en curso (design D11).
@@ -42,7 +42,7 @@
     - `claim` no toma un job con el *lease* renovado ni uno bloqueado por `fence`;
     - el caso obligatorio: A toma el job, queda pausado, su *lease* vence, B lo toma y completa, y A vuelve: `renew` y `fence` de A fallan y A no cambia nada;
     - los jobs del SRI y del RIDE no cambian de comportamiento.
-- [ ] 2.3 Crear `packages/contracts/src/data-portability.ts` (design D17):
+- [x] 2.3 Crear `packages/contracts/src/data-portability.ts` (design D17):
   - el cuerpo estricto vacío del `POST`;
   - la vista de una exportación con estado, fase, progreso, `snapshotAt`, caducidad, tamaño como texto, SHA-256, conteos y código;
   - la lista paginada y los códigos de error;
@@ -165,7 +165,7 @@
 
 ## 5. API y descarga
 
-- [ ] 5.1 Implementar `POST /api/v1/data-exports` (`202`), `GET /api/v1/data-exports` y `GET /api/v1/data-exports/{id}` con `dataPortability.export` (design D10 y D17), con `data_export.requested` en la transacción de la solicitud. Verificar con pruebas de integración por HTTP:
+- [x] 5.1 Implementar `POST /api/v1/data-exports` (`202`), `GET /api/v1/data-exports` y `GET /api/v1/data-exports/{id}` con `dataPortability.export` (design D10 y D17), con `data_export.requested` en la transacción de la solicitud. Verificar con pruebas de integración por HTTP:
   - la solicitud en cola, con la fila, el job y el evento creados juntos, y nada de los tres si la transacción falla;
   - la segunda solicitud con `409 DATA_EXPORT_IN_PROGRESS`;
   - dos solicitudes simultáneas con una sola generación;
@@ -175,7 +175,7 @@
   - otra empresa con `404`;
   - `companyId` rechazado;
   - ningún evento ante un rechazo.
-- [ ] 5.2 Implementar `GET /api/v1/data-exports/{id}/download` (design D16), en este orden:
+- [x] 5.2 Implementar `GET /api/v1/data-exports/{id}/download` (design D16), en este orden:
   - el estado y la vigencia;
   - el tamaño y el SHA-256 completos sobre el mismo descriptor antes de cualquier cabecera;
   - `data_export.download_started` antes del primer byte, sin entregar si falla;
@@ -192,7 +192,7 @@
   - la auditoría que falla, sin entregar;
   - dos descargas, dos eventos;
   - `403`, `401` y otra empresa con `404`.
-- [ ] 5.3 Documentar las rutas, los estados, los códigos y la descarga en `docs/architecture/data-portability.md`, y actualizar "Background Jobs" de `backend.md` (design D25). Verificar con una prueba que el documento cita cada ruta registrada, las variables reales, el permiso y las acciones
+- [x] 5.3 Documentar las rutas, los estados, los códigos y la descarga en `docs/architecture/data-portability.md`, y actualizar "Background Jobs" de `backend.md` (design D25). Verificar con una prueba que el documento cita cada ruta registrada, las variables reales, el permiso y las acciones
 
 ## 6. Pantalla Portabilidad de datos
 

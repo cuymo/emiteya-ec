@@ -262,11 +262,12 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL o REPLACED)
   - `READY` exige `snapshot_at`, `generated_at`, `expires_at`, tamaño, SHA-256 y archivo;
   - `FAILED` exige un código;
   - `EXPIRED` exige un motivo.
-- **Índices únicos parciales:**
-  - una generación activa por empresa (`status IN ('QUEUED','GENERATING')`);
-  - un `READY` por empresa.
+- **Unicidad parcial**, con columnas únicas que solo tienen valor en su estado (el `CHECK` lo fija), como `signing_certificate.active_company_id`: Prisma 7.10 no expresa un índice único parcial sin una función en preview.
+  - una generación activa por empresa: `active_company_id`, la empresa solo en `QUEUED` o `GENERATING`;
+  - un `READY` por empresa: `ready_company_id`, la empresa solo en `READY`.
+- **Transiciones** fijadas por el trigger `data_export_guard`: `QUEUED` → `GENERATING` o `FAILED`; `GENERATING` → `GENERATING` (un nuevo intento), `READY` o `FAILED`; `READY` → `EXPIRED` o `FAILED`. `FAILED` y `EXPIRED` son finales, lo publicado no cambia, y la tabla no admite `DELETE` ni `TRUNCATE`.
 - **Solicitud** (`POST`): en una sola transacción, inserta la fila `QUEUED`, encola el job `portability.export` (clave `portability.export:<exportId>`, carga `{exportId}`) y registra `data_export.requested`. Nunca queda una fila sin job, un job sin fila ni un evento sin solicitud: si cualquiera falla, se revierte todo.
-  - El índice de la generación activa convierte una solicitud repetida o simultánea en `409 DATA_EXPORT_IN_PROGRESS`, sin segundo efecto. No hace falta `Idempotency-Key`.
+  - La unicidad de la generación activa convierte una solicitud repetida o simultánea en `409 DATA_EXPORT_IN_PROGRESS`, sin segundo efecto. No hace falta `Idempotency-Key`.
 - **Runner propio** del prefijo `portability.`, con `DATA_EXPORT_MAX_CONCURRENT` lazos. No lo pausa el interruptor de la transmisión. Las exportaciones de otras empresas esperan en la cola durable.
 - **Al tomar el job:** la fila pasa a `GENERATING` con el intento del job. Los fallos:
   - reintentables (worker caído, *lease* perdido, error transitorio de la base): vuelven a generar desde el principio, con `maxAttempts` de 3;
@@ -503,11 +504,11 @@ Todos son defensas de recursos del proyecto, hipótesis hasta medirlas con `benc
 - Una migración crea `data_export` con:
   - las FK a `organization` y `user`;
   - los `CHECK` de estado, fase, código y motivo, y los campos que exige cada estado;
-  - los dos índices únicos parciales de D10;
+  - las dos columnas únicas de D10 (`active_company_id` y `ready_company_id`);
   - el índice por empresa y fecha de solicitud.
-  - Sin triggers de solo agregado: la fila cambia de estado.
+  - el trigger de las transiciones de D10 y el que rechaza `TRUNCATE`; no es de solo agregado, porque la fila cambia de estado.
 - **El tipo `portability.export`** cumple el `CHECK` existente de `job.type`.
-- **`migrations.test.ts`** prueba los `CHECK`, los índices únicos parciales y el rechazo de un `READY` incompleto.
+- **`migrations.test.ts`** y `data-export-schema.test.ts` prueban los `CHECK`, la unicidad por empresa, las transiciones y el rechazo de un `READY` incompleto.
 
 ### D25. Frontera del cambio
 
@@ -527,9 +528,9 @@ Todos son defensas de recursos del proyecto, hipótesis hasta medirlas con `benc
 | Validación de la propiedad | Búsqueda por identificador y empresa; otra empresa responde `404` |
 | ¿Cambiar un identificador alcanza datos ajenos? | No: ninguna consulta omite la empresa, y los esquemas estrictos rechazan `companyId` |
 | ¿Dos veces? | La segunda solicitud responde `409 DATA_EXPORT_IN_PROGRESS`; dos descargas son dos `download_started` |
-| ¿A la vez? | El índice único parcial deja una sola generación activa por empresa; el runner acota las generaciones por instancia; el *lease* renovado impide dos generaciones del mismo job |
+| ¿A la vez? | La columna única `active_company_id` deja una sola generación activa por empresa; el runner acota las generaciones por instancia; el *lease* renovado impide dos generaciones del mismo job |
 | Idempotencia | La fila activa única y la clave del job `portability.export:<exportId>`; el handler regenera desde el principio |
-| Restricciones de la base | `CHECK` de estados y campos requeridos, índices únicos parciales, FK |
+| Restricciones de la base | `CHECK` de estados y campos requeridos, columnas únicas por estado, el trigger de las transiciones, FK |
 | Auditoría | Las cuatro acciones de D19 |
 | Pruebas de autorización | Operador `403` en las cuatro rutas; sin sesión `401`; otra empresa `404`; `companyId` rechazado; el paquete sin datos de otra empresa |
 | Fugas | Sin enlaces públicos ni firmados; nombres sin datos personales; rutas solo de componentes del servidor; secretos excluidos por proyección y probados por contenido; `no-store`; logs sin rutas |

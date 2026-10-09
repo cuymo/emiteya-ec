@@ -1,5 +1,6 @@
 // Arranque y apagado del backend. Desarrollo: node --conditions=development src/main.ts (ADR 0016).
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { userSchemas } from "@facturador/contracts";
 import { Router } from "express";
@@ -41,6 +42,17 @@ import {
 } from "./modules/parties/infrastructure/index.ts";
 import { createPartiesReportSource } from "./modules/parties/infrastructure/index.ts";
 import { registerReportMetrics, reportsModule } from "./modules/reports/infrastructure/index.ts";
+import { createCatalogPortabilitySources } from "./modules/catalogs/infrastructure/index.ts";
+import { createFiscalPortabilitySources } from "./modules/fiscal/infrastructure/index.ts";
+import { createInventoryPortabilitySources } from "./modules/inventory/infrastructure/index.ts";
+import { createPartiesPortabilitySources } from "./modules/parties/infrastructure/index.ts";
+import { createProductsPortabilitySources } from "./modules/products/infrastructure/index.ts";
+import { createSigningPortabilitySources } from "./modules/signing/infrastructure/index.ts";
+import { createTaxpayerPortabilitySources } from "./modules/taxpayer/infrastructure/index.ts";
+import { createWithholdingPortabilitySources } from "./modules/withholding-receipts/infrastructure/index.ts";
+import { dataPortabilityModule } from "./modules/data-portability/infrastructure/index.ts";
+import { createAuditPortabilitySources } from "./modules/audit/infrastructure/portability-sources.ts";
+import { createIdentityPortabilitySources } from "./modules/identity/infrastructure/portability-sources.ts";
 import {
   createReportProductsSource,
   productReader,
@@ -548,6 +560,55 @@ apiRouter.use(
   }).routers,
 );
 
+// Portabilidad de datos (add-data-portability, design D1, D10, D14 y D20): cada conjunto lo exporta
+// su módulo dueño y se compone aquí como puerto, con las mismas proyecciones de importes por tipo que
+// los reportes; `data-portability` no lee tablas de otros módulos. Solo el administrador; los límites
+// son defensas de recursos, por instancia.
+const portabilityProjections = [
+  invoiceReportAmounts,
+  purchaseSettlementReportAmounts,
+  creditNoteReportAmounts,
+  debitNoteReportAmounts,
+  shippingGuideReportAmounts,
+  withholdingReportAmounts,
+];
+const portability = dataPortabilityModule({
+  prisma: database.prisma,
+  authorizer,
+  sources: {
+    ...createTaxpayerPortabilitySources(reportSchema),
+    ...createFiscalPortabilitySources(reportSchema, portabilityProjections),
+    ...createCatalogPortabilitySources(reportSchema),
+    ...createSigningPortabilitySources(reportSchema),
+    ...createIdentityPortabilitySources(reportSchema),
+    ...createPartiesPortabilitySources(reportSchema),
+    ...createProductsPortabilitySources(reportSchema),
+    ...createInventoryPortabilitySources(reportSchema),
+    ...createAuditPortabilitySources(reportSchema),
+    ...createWithholdingPortabilitySources(reportSchema),
+  },
+  jobs: jobStore,
+  limits: {
+    directory: env.DATA_EXPORT_DIRECTORY,
+    maxConcurrent: env.DATA_EXPORT_MAX_CONCURRENT,
+    ttlHours: env.DATA_EXPORT_TTL_HOURS,
+    headroomPercent: env.DATA_EXPORT_DISK_HEADROOM_PERCENT,
+    reserveMib: env.DATA_EXPORT_DISK_RESERVE_MIB,
+    sweepIntervalSeconds: env.DATA_EXPORT_SWEEP_INTERVAL_SECONDS,
+  },
+  registry: metrics.registry,
+  logger,
+  applicationVersion: (
+    JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+      version: string;
+    }
+  ).version,
+});
+apiRouter.use(...portability.routers);
+// El directorio privado debe poder asegurarse antes de aceptar tráfico (design D14).
+await portability.files.init();
+closers.unshift({ name: "data-portability", close: () => portability.close() });
+
 // Transmisión al SRI (add-sri-transmission, design D5): nace deshabilitada. El estado se registra
 // sin secretos ni URLs; habilitada, la readiness exige sus precondiciones.
 const sriEndpoints = resolveSriEndpoints(env);
@@ -763,6 +824,10 @@ void rideSweeper.sweep().then(
   (error: unknown) => logger.error({ err: error }, "el barrido del RIDE falló"),
 );
 rideSweeper.start(rideSettings.sweepIntervalMs);
+// Portabilidad: el barrido reconcilia el directorio y el registro antes de iniciar su runner.
+void portability
+  .start()
+  .catch((error: unknown) => logger.error({ err: error }, "no se pudo iniciar la portabilidad"));
 
 // Firmas vigentes que la clave de custodia configurada no abre: figuran como no disponibles hasta
 // volver a cargarlas (design D8). Sin secretos en el registro.

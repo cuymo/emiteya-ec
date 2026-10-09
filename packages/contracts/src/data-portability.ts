@@ -41,9 +41,9 @@ export const DATA_EXPORT_FAILURE_CODES = [
   "DATA_EXPORT_LIMIT",
   // Se agotaron los intentos de la generación.
   "DATA_EXPORT_FAILED",
-  // El paquete listo desapareció o no tiene su tamaño antes de caducar.
+  // El paquete listo desapareció antes de caducar.
   "DATA_EXPORT_PACKAGE_MISSING",
-  // El paquete listo no coincide con su SHA-256 antes de caducar.
+  // El paquete listo no tiene su tamaño o no coincide con su SHA-256 antes de caducar.
   "DATA_EXPORT_PACKAGE_INTEGRITY",
 ] as const;
 export type DataExportFailureCode = (typeof DATA_EXPORT_FAILURE_CODES)[number];
