@@ -72,8 +72,9 @@
   - typecheck del backend;
   - lint y Prettier de los archivos tocados;
   - `openspec validate support-security-data-pkcs12-iteration-profile --strict`.
-- [ ] 4.2 Repetir el ensayo offline con el P12 real (design D6). Sin red, con el importador real y la
-  contraseña de la configuración, sin imprimirla. Se comprueba:
+- [x] 4.2 Ejecutar y evaluar el ensayo offline con el P12 real (design D6). Sin red, con el importador
+  real y la contraseña de la configuración, sin imprimirla. El ensayo se detiene en la primera
+  compuerta que falla, en este orden:
   - que se abre y el emisor es Security Data;
   - el OID del RUC y que el RUC coincide con el de la empresa;
   - la vigencia, y el algoritmo y el tamaño de la clave;
@@ -81,12 +82,15 @@
   - el XSD;
   - los siete documentos bajo el tope de la certificación.
 
-  Estado 2026-10-09: ejecutado.
-  - Contenedor compatible: contadores [102 400, 51 200, 51 200]. El importador en el pool pasa, con
-    la firma de prueba y su verificación.
-  - Emisor Security Data, vigente, RSA 2048.
-  - **Se detiene en el RUC:** el certificado no trae el OID `1.3.6.1.4.1.37746.3.11`. El XSD y los
-    siete documentos **no se ejecutaron**.
-  - Queda abierta hasta que el dueño decida (`docs/quality/sri-certification.md`, sección 5).
+  Resultado 2026-10-09: **`BLOCKED_BY_CERTIFICATE_PROFILE` / `CERTIFICATE_RUC_NOT_FOUND`**.
+  - El objetivo de este change se cumple: contadores [102 400, 51 200, 51 200], el contenedor abre y el
+    importador en el pool pasa con la firma de prueba y su verificación.
+  - PKCS12 CONTAINER COMPATIBLE: YES.
+  - CRYPTOGRAPHICALLY USABLE: YES.
+  - SRI IDENTITY REQUIREMENT SATISFIED: NO.
+  - REAL P12 CERTIFICATION READY: NO.
+
+  La ausencia del RUC es un problema distinto, fuera del alcance de este change: lo resuelve una
+  reemisión externa del certificado (`docs/quality/sri-certification.md`, sección 5).
 - [ ] 4.3 Verificación global del proyecto (`corepack pnpm verify`) en la pasada completa del final
   del proyecto, antes de archivar.
