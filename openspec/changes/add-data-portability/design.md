@@ -33,7 +33,7 @@ Lo que ya existe y este cambio reutiliza:
   - las descargas actuales cargan el archivo en un `Blob` (`apiFetchFile`), algo que no sirve para varios GB.
 - **Volumen** (Q-26 y benchmarks previos), estimado en el readiness:
   - 100 000 comprobantes de unos 57 KB cada uno sin comprimir;
-  - unos 5,7 GB sin comprimir y unos 2,6 GB comprimidos;
+  - unos 5,7 GB sin comprimir y unos 2,6 GB comprimidos (medido después: 3,68 GB comprimidos, porque el RIDE se guarda sin comprimir);
   - de 500 000 a 600 000 entradas en el ZIP.
 
 ## Goals / Non-Goals
@@ -284,7 +284,7 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL o REPLACED)
   - `fence(db, job, now)`: la misma condición, que además bloquea la fila del job dentro de la transacción en curso. Sin fila, lanza `LeaseLostError`. Con la fila bloqueada, `claim` (`SKIP LOCKED`) no puede tomarla antes del commit.
   - Si el apply encuentra que esto no es seguro para la cola genérica, se detiene y lo reporta antes de seguir.
 - **El handler de la portabilidad:**
-  - toma un *lease* base de 60 s (hipótesis del benchmark) y lo renueva cada 20 s con un heartbeat;
+  - toma un *lease* base de 60 s y lo renueva cada 20 s con un heartbeat (en el benchmark, la renovación tardó 1,9 ms de mediana y 4,9 s como máximo bajo la E/S de la generación, dentro de los 40 s de margen);
   - si una renovación falla, aborta la generación con su `AbortSignal`, borra su parcial y no confirma nada.
 - **Completar, en este orden:**
   1. el ZIP cerrado, con su SHA-256 y su tamaño conocidos;
@@ -390,9 +390,10 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL o REPLACED)
   - el cuerpo sale por streaming desde el mismo descriptor, con contrapresión.
 - **Lo que no se ofrece:** `HEAD` responde `405`, no hay rangos ni enlaces firmados o públicos.
 - **Lo que no se afirma:** un hash calculado durante el envío no evita servir datos corruptos, así que la garantía es la verificación previa. El residuo (cambiar el archivo `0400` entre la verificación y el envío) exige acceso al sistema de archivos del servidor y queda documentado.
-- **Frontend:** descarga navegando a la ruta (un enlace con `download`), nunca con `fetch(...).blob()`. El navegador escribe a disco a través de la reescritura `/api/*`.
+- **Frontend:** descarga navegando a la ruta (un enlace con `download`), nunca con `fetch(...).blob()`. El navegador escribe a disco a través de una ruta del mismo origen del frontend, `app/api/v1/data-exports/[id]/download/route.ts`, que reenvía la cookie al backend sin plazo de espera y devuelve su respuesta por streaming; el reenvío general `/api/*` es `fallback` para que esa ruta tenga prioridad.
 - **Gate de verificación del streaming:** la revisión de la interfaz y el benchmark descargan un paquete de varios GB a través de la reescritura `/api/*` y miden la memoria residente del backend y del proceso de Next.
   - Si Next almacena el ZIP, se corrige el enrutado antes de cerrar el cambio: una ruta del mismo origen que preserve el streaming y la sesión, nunca una URL pública sin autenticación.
+  - Resultado (`ui-review.md`): Next no almacenaba, pero su reenvío corta a los 30 s una respuesta que no empieza, y la verificación previa de 5 GiB tarda más; de ahí la ruta del mismo origen de arriba. Una desconexión durante la verificación la abandona sin registrar `data_export.download_started`.
   - Un diseño que solo funciona con archivos pequeños no se acepta.
 
 ### D17. API y contratos
@@ -431,7 +432,7 @@ QUEUED ──► GENERATING ──► READY ──► EXPIRED   (TTL o REPLACED)
 
 ### D20. Defensa de recursos
 
-Todos son defensas de recursos del proyecto, hipótesis hasta medirlas con `bench:data-portability`.
+Todos son defensas de recursos del proyecto. `bench:data-portability` confirmó los valores iniciales el 2026-10-08 (`docs/quality/benchmarks/data-portability-2026-10-08.md`): una generación de Q-26 usa unos 0,9 núcleos y 723 MiB durante 10 min sin afectar a la API, y la reserva exige más que el pico medido del disco (3,7 GiB con un paquete de 3,68 GB).
 
 | Variable | Valor inicial | Significado |
 | --- | --- | --- |
@@ -453,7 +454,7 @@ Todos son defensas de recursos del proyecto, hipótesis hasta medirlas con `benc
   - `data_exports_total{result}` (`ready`, `failed`, `expired`);
   - `data_export_failures_total{code}`;
   - `data_export_phase_duration_seconds{phase}` y `data_export_size_bytes`;
-  - `data_export_downloads_total{result}` (`started`, `not_ready`, `expired`, `integrity_failed`);
+  - `data_export_downloads_total{result}` (`started`, `not_ready`, `expired`, `integrity_failed`, `aborted`);
   - `data_export_lease_renewals_failed_total`.
 - **Logs:** el identificador de la exportación, la fase, los conteos y las duraciones. Nunca rutas del sistema de archivos, nombres de archivos interiores ni contenido.
 

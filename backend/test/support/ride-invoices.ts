@@ -170,7 +170,7 @@ export function snapshotOf(invoice: InvoiceCase): InvoiceSnapshot {
 }
 
 let schema: RegisteredSchema | undefined;
-function invoiceSchema(): RegisteredSchema {
+export function invoiceSchema(): RegisteredSchema {
   if (schema) return schema;
   const entries = (
     JSON.parse(

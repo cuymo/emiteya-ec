@@ -248,7 +248,8 @@ Q-26 (`../quality/benchmarks/reports-2026-10-08.md`):
 ### Portabilidad de datos
 
 Variables de `add-data-portability` (design D14 y D20). Son defensas de recursos del proyecto, no
-límites del ERS, e hipótesis hasta que `bench:data-portability` las confirme:
+límites del ERS. `bench:data-portability` confirmó sus valores por defecto el 2026-10-08
+(`../quality/benchmarks/data-portability-2026-10-08.md`):
 
 | Variable | Obligatoria | Default | Uso |
 | --- | --- | --- | --- |
@@ -259,10 +260,11 @@ límites del ERS, e hipótesis hasta que `bench:data-portability` las confirme:
 | `DATA_EXPORT_DISK_RESERVE_MIB` | No | 512 | Reserva fija de disco (64 a 65 536 MiB) que se suma al margen; también se exige antes de leer la base. |
 | `DATA_EXPORT_SWEEP_INTERVAL_SECONDS` | No | 300 | Intervalo del barrido de caducidad y recuperación (10 a 86 400 s), que también corre al arrancar. |
 
-- **Disco:** el paquete puede pesar varios GB (unos 2.6 GB con el volumen de Q-26). Con una exportación por instancia, cada empresa ocupa como máximo un paquete vigente y una generación en curso.
+- **Disco:** el paquete puede pesar varios GB: 3.68 GB y 592 630 entradas con el volumen de Q-26, con un pico de 3.7 GiB en el directorio durante la generación. Antes de copiar los artefactos, la generación exige el tamaño sin comprimir más el margen y la reserva, más que ese pico. Con una exportación por instancia, cada empresa ocupa como máximo un paquete vigente y una generación en curso.
+- **CPU y memoria:** con el volumen de Q-26, una generación tarda unos 10 min (54 s de la lectura consistente y 530 s de los artefactos), usa unos 0,9 núcleos y llega a 723 MiB de memoria residente en el proceso de la API, sin afectar a sus listas (P95 de 20,5 ms durante la generación). Por eso `DATA_EXPORT_MAX_CONCURRENT` es 1: dos generaciones duplican la lectura de la base y la escritura del disco.
 - **Varias instancias:** el MVP tiene una (ver "Número de instancias"). Con varias, `DATA_EXPORT_DIRECTORY` debe ser compartido o la descarga debe llegar a la instancia que generó el paquete.
 - **No es un respaldo:** el paquete no contiene la firma, los secretos ni los datos internos de autenticación, y no se restaura (ver "Respaldo y restauración").
-- **Proxy inverso y descarga:** el backend calcula el SHA-256 completo del paquete antes de enviar la primera cabecera, así que la respuesta de `GET /api/v1/data-exports/{id}/download` tarda en empezar. Medido en un disco giratorio: entre 40 y 56 s para 5 GiB, unos 8 a 11 s por GiB (`openspec/changes/add-data-portability/ui-review.md`). El proxy que enruta `/api` al backend debe esperar la respuesta al menos ese tiempo en esa ruta (por ejemplo, `proxy_read_timeout` de nginx, cuyo valor por defecto es 60 s), sin almacenar el cuerpo (`proxy_buffering off`, o el equivalente del proxy). El reenvío de Next.js del desarrollo corta a los 30 s; por eso el frontend atiende esa ruta en `app/api/v1/data-exports/[id]/download/route.ts`, sin plazo y por streaming.
+- **Proxy inverso y descarga:** el backend calcula el SHA-256 completo del paquete antes de enviar la primera cabecera, así que la respuesta de `GET /api/v1/data-exports/{id}/download` tarda en empezar. Medido en un disco giratorio: entre 40 y 56 s para 5 GiB, unos 8 a 11 s por GiB (`openspec/changes/add-data-portability/ui-review.md`); en un SSD, entre 2.5 y 7.6 s para el paquete de Q-26, de caché caliente a fría (`bench:data-portability`). El proxy que enruta `/api` al backend debe esperar la respuesta al menos ese tiempo en esa ruta (por ejemplo, `proxy_read_timeout` de nginx, cuyo valor por defecto es 60 s), sin almacenar el cuerpo (`proxy_buffering off`, o el equivalente del proxy). El reenvío de Next.js del desarrollo corta a los 30 s; por eso el frontend atiende esa ruta en `app/api/v1/data-exports/[id]/download/route.ts`, sin plazo y por streaming.
 
 ### Actualizaciones y reversión
 

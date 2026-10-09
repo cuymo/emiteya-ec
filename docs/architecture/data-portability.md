@@ -59,6 +59,10 @@ de `data-portability`" de `../product/capabilities.md` (BR-96 a BR-101 de
   - una determinista (integridad, artefacto faltante, espacio, límite del formato o plazo de la fase 1) deja `FAILED` con su código y `data_export.failed`, y detiene el job;
   - una inesperada se reintenta desde el principio hasta `EXPORT_MAX_ATTEMPTS` (3), y entonces queda `DATA_EXPORT_FAILED`.
 
+## Rendimiento
+
+`bench:data-portability` (design D22; `../quality/benchmarks/data-portability-2026-10-08.md`) genera el paquete de una empresa con el volumen de Q-26 en unos 10 min: 3.68 GB y 592 630 entradas, con unos 0,9 núcleos, 723 MiB de memoria residente y un pico de 3,7 GiB de disco, sin afectar a las listas de la API. La verificación previa a la descarga tarda de 2,5 a 7,6 s en un SSD con ese paquete, y de 8 a 11 s por GiB en un disco giratorio (`openspec/changes/add-data-portability/ui-review.md`).
+
 ## Sistema de archivos y barrido
 
 - **Directorio:** `DATA_EXPORT_DIRECTORY` (`0700`), con `work/<exportId>-<intento>/` (`0700`) para los libros, el inventario y `SHA256SUMS` temporales. Se borra siempre al terminar.

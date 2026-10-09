@@ -1,0 +1,263 @@
+{
+  "seedSeconds": 483,
+  "environment": {
+    "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "shared_buffers": "128MB",
+    "work_mem": "4MB",
+    "jit": "on",
+    "node": "v24.15.0",
+    "os": "Linux 7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor (12 núcleos)",
+    "memory": "16 GiB",
+    "directory": "/dev/sdb2      btrfs",
+    "commit": "3725dd3"
+  },
+  "volume": {
+    "electronic_document": {
+      "rows": 102011,
+      "totalSize": "273 MB"
+    },
+    "document_artifact": {
+      "rows": 289698,
+      "totalSize": "3614 MB"
+    },
+    "sri_attempt": {
+      "rows": 200944,
+      "totalSize": "141 MB"
+    },
+    "sri_response": {
+      "rows": 200942,
+      "totalSize": "672 MB"
+    },
+    "document_state_transition": {
+      "rows": 306001,
+      "totalSize": "117 MB"
+    },
+    "document_delivery_event": {
+      "rows": 9345,
+      "totalSize": "4424 kB"
+    },
+    "audit_event": {
+      "rows": 300010,
+      "totalSize": "98 MB"
+    },
+    "party": {
+      "rows": 10009,
+      "totalSize": "9904 kB"
+    },
+    "product": {
+      "rows": 10002,
+      "totalSize": "8040 kB"
+    },
+    "stock_movement": {
+      "rows": 300004,
+      "totalSize": "224 MB"
+    }
+  },
+  "templateBytes": {
+    "signed": 8533,
+    "ride": 24400
+  },
+  "sameCompany409": 409,
+  "generation": {
+    "totalSeconds": 590.6,
+    "queuedToReadySeconds": 587.7,
+    "phases": {
+      "SNAPSHOT": 54.4,
+      "ARTIFACTS": 529.5,
+      "PUBLISHING": 3.8
+    },
+    "phaseTimeline": [
+      {
+        "phase": "SNAPSHOT",
+        "at": 1134,
+        "done": null,
+        "total": null
+      },
+      {
+        "phase": "ARTIFACTS",
+        "at": 55142,
+        "done": 0,
+        "total": 102000
+      },
+      {
+        "phase": "PUBLISHING",
+        "at": 584456,
+        "done": null,
+        "total": null
+      }
+    ],
+    "cpuSeconds": 508.8,
+    "rssStartMiB": 196.6,
+    "rssPeakMiB": 723.2,
+    "diskPeakMiB": 3743.8,
+    "freeMinGiB": 113.3,
+    "zipBytes": 3683362811,
+    "zipMiB": 3512.7,
+    "entries": 592630,
+    "counts": {
+      "files": 592630,
+      "users": 13,
+      "parties": 10001,
+      "products": 10000,
+      "auditEvents": 300010,
+      "documentsTest": 2000,
+      "stockMovements": 300000,
+      "documentsProduction": 100000
+    }
+  },
+  "snapshot": {
+    "longestTransactionSeconds": 54,
+    "maxXminAge": 891,
+    "churnUpdatesPerSecond": 20,
+    "maxDeadTuplesRetained": 841
+  },
+  "lists": {
+    "budgetMs": 2000,
+    "idle": {
+      "samples": 60,
+      "p50": 14.8,
+      "p95": 26.4,
+      "max": 81
+    },
+    "duringGeneration": {
+      "samples": 47858,
+      "p50": 12.4,
+      "p95": 20.5,
+      "max": 988.8
+    }
+  },
+  "lease": {
+    "renewalsObserved": 29,
+    "renewStatement": {
+      "samples": 527,
+      "p50": 1.9,
+      "p95": 384.4,
+      "max": 4910.6
+    }
+  },
+  "crossCompanyQueue": {
+    "otherStartedAfterFirstFinishedSeconds": 0.1,
+    "otherWaitedSeconds": 587.8
+  },
+  "download": {
+    "directCold": {
+      "status": 200,
+      "received": 3683362811,
+      "sha256Matches": true,
+      "headersMs": 7578,
+      "totalMs": 14361,
+      "throughputMiBs": 245,
+      "rssGrowthMiB": {
+        "backend": 94.7,
+        "next": 0
+      }
+    },
+    "directWarm": {
+      "status": 200,
+      "received": 3683362811,
+      "sha256Matches": true,
+      "headersMs": 2608,
+      "totalMs": 8958,
+      "throughputMiBs": 392,
+      "rssGrowthMiB": {
+        "backend": 31,
+        "next": 0
+      }
+    },
+    "nextCold": {
+      "status": 200,
+      "received": 3683362811,
+      "sha256Matches": true,
+      "headersMs": 6966,
+      "totalMs": 14820,
+      "throughputMiBs": 237,
+      "rssGrowthMiB": {
+        "backend": 94.9,
+        "next": 120.4
+      }
+    },
+    "nextWarm": {
+      "status": 200,
+      "received": 3683362811,
+      "sha256Matches": true,
+      "headersMs": 2537,
+      "totalMs": 10195,
+      "throughputMiBs": 345,
+      "rssGrowthMiB": {
+        "backend": 29.8,
+        "next": 16
+      }
+    }
+  },
+  "validation": {
+    "unzipTest": "sin errores",
+    "pythonZipfile": "592630 ok",
+    "sha256sum": "592629 archivos, todos OK",
+    "openpyxl": "auditoria.xlsx:Eventos:300011;comprobantes.xlsx:Comprobantes:102001;comprobantes.xlsx:Transiciones:306000;comprobantes.xlsx:Intentos SRI:200942;comprobantes.xlsx:Retenciones:18001;comprobantes.xlsx:Destinatarios:9001;comprobantes.xlsx:Entregas:9345;empresa.xlsx:Configuración:3;empresa.xlsx:Establecimientos:3;empresa.xlsx:Puntos de emisión:3;empresa.xlsx:Secuenciales:1;empresa.xlsx:Catálogos habilitados:2;empresa.xlsx:Firmas:3;empresa.xlsx:Usuarios:14;inventario.xlsx:Existencias:10001;inventario.xlsx:Movimientos:300001;productos.xlsx:Productos:10001;productos.xlsx:Impuestos:10001;terceros.xlsx:Terceros:10002",
+    "manifest": {
+      "formatVersion": "1",
+      "counts": {
+        "documents": {
+          "TEST": 2000,
+          "PRODUCTION": 100000,
+          "byType": {
+            "01": 72000,
+            "03": 6000,
+            "04": 8000,
+            "05": 4000,
+            "06": 6000,
+            "07": 6000
+          },
+          "byState": {
+            "AUTHORIZED": 93840,
+            "NOT_AUTHORIZED": 5100,
+            "RETURNED": 3060
+          }
+        },
+        "artifacts": {
+          "signedXml": 102000,
+          "authorizedXml": 93840,
+          "ride": 93840,
+          "sriResponses": 200940,
+          "logos": 1
+        },
+        "files": 592630
+      }
+    },
+    "validationSeconds": 470
+  },
+  "xsd": {
+    "sample": 20,
+    "valid": 20
+  },
+  "recovery": {
+    "killedAtProgress": {
+      "done": 25500,
+      "total": 102000
+    },
+    "filesLeftByCrash": 1,
+    "restartReadySeconds": 5.7,
+    "reclaimSeconds": 50.4,
+    "readyAfterRestartSeconds": 636.9,
+    "finalAttempt": 2,
+    "previousStatus": "EXPIRED REPLACED",
+    "directoryAfterSweep": 2,
+    "workAfterSweep": 0,
+    "completedEvents": 1
+  },
+  "staleWorker": {
+    "takeoverSeconds": 63.5,
+    "finalAttempt": 2,
+    "status": "READY",
+    "completedEvents": 1,
+    "failedEvents": 0,
+    "staleRenewalsRejected": 1,
+    "staleFilesLeft": 0
+  },
+  "ttlSweep": {
+    "sweepIntervalSeconds": 10,
+    "expiredAndRemovedSeconds": 0.5
+  },
+  "failures": []
+}

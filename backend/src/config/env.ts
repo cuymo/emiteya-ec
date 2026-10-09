@@ -198,7 +198,9 @@ export const envSchema = z
     REPORT_EXPORT_MAX_ROWS: int(1, 250_000).default(100_000),
     REPORT_EXPORT_MAX_CONCURRENT: int(1, 4).default(2),
     // Portabilidad de datos (add-data-portability, design D14 y D20): defensas de recursos del
-    // proyecto, hipótesis hasta `bench:data-portability`, nunca límites del ERS. El directorio del
+    // proyecto, nunca límites del ERS, confirmadas con `bench:data-portability` (2026-10-08): una
+    // generación del volumen de Q-26 usa unos 0,9 núcleos y 723 MiB de memoria residente durante
+    // 10 min sin afectar a la API, y la reserva de disco exige más que el pico medido. El directorio del
     // paquete es privado (0700) y absoluto; en producción, un volumen persistente que sobreviva un
     // reinicio durante la vigencia del paquete. Sin valor, un subdirectorio del temporal del sistema.
     // La vigencia cuenta desde que el paquete queda listo. La reserva de disco se comprueba antes de
