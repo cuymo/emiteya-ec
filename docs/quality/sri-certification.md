@@ -18,17 +18,22 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Producción no forma parte de este runbook. El go-live es otra compuerta, con sus propios requisitos
   (sección 15 y `definition-of-done.md`, Go-Live v1.0).
 
-**Estado al 2026-10-09: no se puede ejecutar.** Q-47 bloquea cualquier transmisión real (sección 2).
-Hasta resolverla no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
+**Estado al 2026-10-09: no se puede ejecutar.**
+
+- Q-47 sigue abierta y bloquea la transmisión general (sección 2).
+- Para certificar solo en Pruebas se propone un tope de seguridad conservador (sección 2.1), todavía
+  sin implementar.
+- Hasta entonces no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
 
 ## 1. Compuertas
 
 | Compuerta | Estado | Evidencia o acción |
 | --- | --- | --- |
-| Q-47: límite de tamaño en bytes | **BLOCKER** | La ficha dice «320 Kb» sin definir la unidad (sección 2). Sin una política vigente, la aplicación no envía nada (falla cerrada) |
+| Q-47: límite de tamaño en bytes | **Abierta, BLOCKER para la transmisión general** | La ficha dice «320 Kb» sin definir la unidad (sección 2). Sin una política vigente, la aplicación no envía nada (falla cerrada) |
+| Tope de seguridad de la certificación | Propuesto el 2026-10-09; sin implementar | Es técnicamente viable: los siete documentos miden como máximo 13 532 bytes (sección 2.1) |
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, secciones 5.2 y 7.2.3, en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
 | Endpoints y WSDL de Pruebas | Verificados el 2026-10-04; se vuelven a verificar al empezar la sesión | `docs/product/sri-wsdl/` con su SHA-256 (`wsdl-manifest.test.ts`) y `backend/src/modules/sri-engine/infrastructure/endpoints.ts` (sección 3) |
-| P12 ecuatoriano real compatible | Pendiente, y condicionado al proveedor | Hoy solo se extrae el RUC del OID de Security Data (sección 5). Lo aporta el operador; nunca entra al repositorio |
+| P12 ecuatoriano real compatible | Entidad: Security Data, **SUPPORTED** por evidencia pública | El OID `1.3.6.1.4.1.37746.3.11` coincide con el extractor existente (ADR 0019, «Compatibilidad por proveedor»). Falta el ensayo offline con el P12 real (sección 5) |
 | RUC habilitado en Pruebas | Pendiente | La lista de la sección 4 la comprueba el operador |
 | Salida de red solo hacia Pruebas | Pendiente | Hace falta una lista de permitidos solo hacia `celcer.sri.gob.ec:443` (secciones 3 y 14) |
 | Contrapartes de prueba | Pendiente: decisión del dueño | Sin identidades reales de terceros (sección 6) |
@@ -87,6 +92,95 @@ quedarían en juego según cómo se lea «320 Kb».
 | 03 | Máximos absolutos | 740 185 | ídem |
 | 03 | Configurado a 1000 líneas | 1 467 936 | `benchmarks/purchase-settlements-2026-10-07-maximo-1000` |
 | 01 de 100 líneas, 04 de 100 líneas, 05 de 100 conceptos | Sin medir | — | Pendiente (sección 14) |
+
+### Los siete documentos de la certificación (medición offline del 2026-10-09)
+
+Se miden con `corepack pnpm --filter @facturador/backend measure:certification-payloads`
+(`backend/test/manual/measure-certification-payloads.ts`), sin red, sin SRI y sin base de datos. Cada
+documento de la sección 7:
+
+- se construye con el builder real;
+- se valida contra el XSD registrado;
+- se firma con los P12 sintéticos del repositorio (RSA 2048 y RSA 4096).
+
+Se miden tres representaciones:
+
+- el XML firmado en UTF-8;
+- su base64 en `validarComprobante`;
+- el sobre SOAP completo de la recepción, que es el cuerpo de la petición HTTP sin sus cabeceras.
+
+Hay dos perfiles de datos: el típico, y el de textos largos, con la razón social y las direcciones de
+unos 280 caracteres.
+
+| Documento | Típico, RSA 2048: XML / base64 / SOAP | Textos largos, RSA 4096: XML / base64 / SOAP |
+| --- | --- | --- |
+| 01 consumidor final | 6 968 / 9 292 / 9 572 | 8 849 / 11 800 / 12 080 |
+| 01 comprador identificado | 7 626 / 10 168 / 10 448 | 9 938 / 13 252 / **13 532** |
+| 04 nota de crédito | 7 090 / 9 456 / 9 736 | 9 227 / 12 304 / 12 584 |
+| 05 nota de débito | 6 620 / 8 828 / 9 108 | 8 757 / 11 676 / 11 956 |
+| 06 guía de remisión | 6 891 / 9 188 / 9 468 | 9 598 / 12 800 / 13 080 |
+| 07 retención | 7 520 / 10 028 / 10 308 | 9 657 / 12 876 / 13 156 |
+| 03 liquidación de compra | 7 168 / 9 560 / 9 840 | 9 477 / 12 636 / 12 916 |
+
+- **Máximo observado:** 13 532 bytes (el SOAP de la factura con comprador identificado, con textos
+  largos y RSA 4096).
+- **Margen hasta 40 000:** 26 468 bytes.
+- **El certificado real.** El certificado embebido sintético mide 947 bytes DER con RSA 2048 y 1 203
+  con RSA 4096. Cada byte más del certificado real suma 4/3 en el XML y 16/9 en el SOAP. Por eso el
+  certificado real puede ser hasta 14 887 bytes DER mayor que el sintético de 4096 antes de alcanzar
+  el tope en el peor caso. El tamaño exacto se ve en el ensayo offline con el P12 real (sección 5).
+
+## 2.1 Tope de seguridad de la certificación (propuesta, sin implementar)
+
+**CERTIFICATION SAFETY CAP: 40 000 bytes.** Se deriva de la lectura convencional más restrictiva del
+texto oficial ambiguo: «320 Kb» leídos como 320 000 bits, que son 40 000 bytes. Las demás lecturas
+razonables dan cifras mayores.
+
+**Qué no es.** No resuelve Q-47 y no es:
+- el límite oficial del SRI;
+- el límite de Producción;
+- un límite general de documento;
+- una defensa de recursos;
+- una regla del XSD.
+
+Q-47 sigue abierta para el go-live.
+
+**Regla.** Solo en una sesión explícita de certificación, solo en Pruebas, un documento se transmite
+únicamente si se cumplen a la vez estas tres condiciones, con comparación estricta (`<`, no `<=`)
+para no discutir el borde mientras Q-47 siga sin aclarar:
+
+- `signedXmlUtf8Bytes < 40000`;
+- `base64PayloadBytes < 40000`;
+- `completeSoapRequestBytes < 40000`.
+
+Si cualquiera llega a 40 000 o lo supera, el documento no se transmite y la sesión se detiene. No se
+reduce el documento automáticamente.
+
+**Implementación mínima propuesta.** Necesita su propio cambio OpenSpec y la autorización del dueño:
+
+- **Activación.** Una variable explícita de la sesión, por ejemplo `SRI_CERTIFICATION_SESSION=1`,
+  apagada por defecto. Sin ella, el comportamiento no cambia: sin una política oficial no hay
+  transmisión.
+- **Comprobaciones con la variable encendida,** en el handler de la recepción y antes del envío:
+  - el documento es del ambiente de Pruebas. Si no lo es, el job se detiene con un error
+    determinista y no se llama al SRI;
+  - las tres representaciones están por debajo del tope, que es una constante del código y no una
+    configuración. Si no, el job se detiene con un error determinista que registra los tres tamaños.
+- **Política oficial.** Si alguna vez existe una política oficial vigente, también se aplica. Rige la
+  más estricta.
+- **Readiness y métricas.** Con la variable, la readiness de la transmisión habilitada acepta la falta
+  de una política oficial. `/health/ready` y las métricas indican que rige el tope de la
+  certificación. Los logs nombran el tope como *certification safety cap*, nunca como límite del SRI.
+- **Pruebas:**
+  - un documento por debajo del tope se envía;
+  - exactamente 40 000 bytes se detiene;
+  - XML por debajo pero base64 o SOAP por encima se detiene;
+  - un documento de Producción con la sesión encendida se detiene sin llamada;
+  - sin la variable y sin política: `SIZE_POLICY_MISSING`, igual que hoy.
+- **Documentación:** `deployment.md`, este runbook y la nota en Q-47.
+
+Con la variable, «Qué no se hace» se precisa: el tope es una comprobación más estricta que solo existe
+en Pruebas, no una ruta que salte invariantes.
 
 - **Documentos de certificación** (pocas líneas, como los de la sección 7): rondan los 8 a 10 KB.
   Quedan por debajo de todas las lecturas.
@@ -209,10 +303,14 @@ nada en el SRI.
 - **Contraseña no ASCII.** Funciona con los formatos legados. Con PBES2, el P12 se rechaza al cargarlo,
   con un mensaje que pide exportarlo de nuevo con una contraseña ASCII (limitación de S-6).
 - **RUC del certificado: compatibilidad por proveedor.** El RUC se extrae solo con extractores
-  documentados (`ruc-extractors.ts`). Hoy solo existe el de Security Data (OID
-  `1.3.6.1.4.1.37746.3.11`). Un P12 de otra entidad certificadora se rechaza con
-  `CERTIFICATE_RUC_NOT_FOUND` hasta que se añada su extractor (con documentación pública, fixture y
-  prueba; sección 14). El RUC extraído debe coincidir con el de la empresa.
+  documentados (`ruc-extractors.ts`).
+  - **Security Data está SUPPORTED** por su documentación pública (ADR 0019, «Compatibilidad por
+    proveedor»): OID `1.3.6.1.4.1.37746.3.11` en los certificados de firma de persona natural con
+    RUC, miembro de empresa y representante legal.
+  - Se rechazan con `CERTIFICATE_RUC_NOT_FOUND`:
+    - un certificado de persona natural sin RUC;
+    - un **sello electrónico**, que lleva el RUC en `2.5.4.97` como `VATEC-<RUC>`.
+  - El RUC extraído debe coincidir con el de la empresa.
 - **Firma.** XAdES-BES con los parámetros del ADR 0013.
 - **Metadatos seguros que muestra la interfaz:**
   - titular y emisor;
@@ -223,12 +321,9 @@ nada en el SRI.
   - RUC detectado y si coincide con el de la empresa;
   - si la firma es utilizable.
 
-**Antes de abrir el P12 real**, el operador informa, sin secretos:
-- la entidad certificadora;
-- el formato si lo conoce;
-- si la contraseña tiene caracteres fuera de ASCII.
-
-Si la entidad no es Security Data, primero se agrega su extractor.
+**Antes de abrir el P12 real**, el operador ya informó la entidad: Security Data. Si el P12 es un
+PKCS#12 moderno y la carga falla por una contraseña no ASCII, se detiene y se pide exportarlo de
+nuevo con una contraseña ASCII. El P12 original nunca se transforma en silencio.
 
 **Procedimiento, cuando el dueño lo autorice.** Nunca se imprime la contraseña, los bytes, el base64
 ni la clave privada; no se usa `cat`, `printenv`, volcados de `process.env`, base64, `hexdump` ni
@@ -433,9 +528,11 @@ Con los seis tipos en `AUTHORIZED`, S-3 online y AC-03 pasan a cumplidos aquí y
 ## 14. Cambios del repositorio antes de la primera transmisión real
 
 - **Política de tamaño (Q-47).** Publicar `sri-transmission-policy` versión 1 en su cambio OpenSpec,
-  con evidencia oficial o una decisión explícita del dueño. Bloqueado.
-- **Extractor del RUC.** Agregar el de la entidad del P12 real si no es Security Data: con su
-  documentación pública, un fixture que reproduzca la estructura y su prueba.
+  solo con evidencia oficial. Es necesaria para la transmisión general y el go-live; para la
+  certificación la sustituye el tope de la sección 2.1.
+- **Tope de seguridad de la certificación.** Implementar la propuesta de la sección 2.1 en su cambio
+  OpenSpec, con la autorización del dueño. Es la vía para certificar en Pruebas mientras Q-47 siga
+  abierta.
 - **Lista de permitidos de salida.** Un proxy `CONNECT` local de herramientas, fuera del runtime de la
   aplicación, que solo admita `celcer.sri.gob.ec:443`, o la regla equivalente del firewall,
   documentada.
