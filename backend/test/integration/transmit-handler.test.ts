@@ -8,6 +8,10 @@ import {
   createTransmitHandler,
   integrityProblem,
 } from "../../src/modules/fiscal/application/transmit-handler.ts";
+import type {
+  CertificationCheck,
+  CertificationSession,
+} from "../../src/modules/fiscal/application/certification-session.ts";
 import { DocumentStateChangedError } from "../../src/modules/fiscal/application/transmission-step.ts";
 import { DEFAULT_TRANSMISSION_SETTINGS } from "../../src/modules/fiscal/application/transmission-settings.ts";
 import { createArtifactStore } from "../../src/modules/fiscal/infrastructure/prisma-artifacts.ts";
@@ -48,6 +52,9 @@ describe("handler sri.transmit", () => {
   const replies: TransportOutcome[] = [];
   const alerts: string[] = [];
   let policy: { maxSignedDocumentBytes: number } | null;
+  /** Sesión de certificación de Pruebas (add-sri-certification-safety-cap); apagada por defecto. */
+  let certification: CertificationSession | undefined;
+  const certificationChecks: CertificationCheck[] = [];
 
   const handler = (classifiers = sriClassifiers) =>
     createTransmitHandler({
@@ -57,6 +64,7 @@ describe("handler sri.transmit", () => {
       jobs: store,
       logger: { info: () => {}, warn: () => {} },
       followers: [],
+      ...(certification ? { certification } : {}),
       documents: createDocumentRepository(prisma),
       artifacts: createArtifactStore(prisma),
       sizePolicy: () => Promise.resolve(policy),
@@ -133,6 +141,8 @@ describe("handler sri.transmit", () => {
     replies.length = 0;
     alerts.length = 0;
     policy = { maxSignedDocumentBytes: SYNTHETIC_POLICY_BYTES };
+    certification = undefined;
+    certificationChecks.length = 0;
   });
 
   afterEach(() => {
@@ -265,6 +275,41 @@ describe("handler sri.transmit", () => {
       await run(over.job);
       expect(sent).toHaveLength(1);
       expect((await jobsOf(over.document.id))[0]!.lastErrorCode).toBe("TOO_LARGE");
+    });
+
+    it("sesión de certificación sin política oficial: un comprobante de Pruebas bajo el tope se envía con el cuerpo medido (add-sri-certification-safety-cap)", async () => {
+      policy = null;
+      certification = { enabled: true, observe: (check) => void certificationChecks.push(check) };
+      const { document, job } = await signedWithJob();
+      await run(job);
+      expect(sent).toHaveLength(1);
+      expect(await stateOf(document.id)).toBe("RECEIVED");
+      const measured = prepareReception(signedXmlOf(document.accessKey));
+      const [attempt] = await prisma.sriAttempt.findMany({ where: { documentId: document.id } });
+      expect(attempt!.envelopeSize).toBe(measured.sizes.soapRequestBytes);
+      expect(attempt!.envelopeSha256).toBe(sha256(measured.envelope));
+      expect(certificationChecks).toEqual([
+        expect.objectContaining({
+          allowed: true,
+          fiscalEnvironment: "TEST",
+          effectiveSizePolicySource: "CERTIFICATION_CONSERVATIVE_CAP",
+          sizes: measured.sizes,
+        }),
+      ]);
+    });
+
+    it("sesión de certificación: un comprobante de Producción se detiene sin llamada ni intento (add-sri-certification-safety-cap)", async () => {
+      policy = null;
+      certification = { enabled: true, observe: (check) => void certificationChecks.push(check) };
+      const { document, job } = await signedWithJob("SIGNED", { environment: "PRODUCTION" });
+      await run(job);
+      expect(sent).toEqual([]);
+      expect((await jobsOf(document.id))[0]).toMatchObject({
+        status: "STOPPED",
+        lastErrorCode: "CERTIFICATION_ENVIRONMENT_NOT_TEST",
+      });
+      expect(await prisma.sriAttempt.count({ where: { documentId: document.id } })).toBe(0);
+      expect(await stateOf(document.id)).toBe("SIGNED");
     });
 
     it("un envío que empezó y no dejó evidencia se reconcilia antes de reenviar", async () => {

@@ -20,16 +20,16 @@
 
 ## 2. Sesión de certificación en la transmisión
 
-- [ ] 2.1 Añadir la constante `CERTIFICATION_SAFETY_CAP_BYTES = 40_000` en
+- [x] 2.1 Añadir la constante `CERTIFICATION_SAFETY_CAP_BYTES = 40_000` en
   `fiscal/domain/certification-safety-cap.ts`, con su origen documentado. Añadir la bandera
   `SRI_CERTIFICATION_SAFETY_CAP_ENABLED` (`0`/`1`, por defecto `0`) en `config/env.ts` y en la
   configuración de la transmisión (design D1). Verificar con una prueba del esquema de entorno:
   - por defecto la bandera está apagada;
   - no existe ninguna variable para el valor.
-- [ ] 2.2 Añadir los motivos de parada `CERTIFICATION_SIZE_CAP_EXCEEDED` y
+- [x] 2.2 Añadir los motivos de parada `CERTIFICATION_SIZE_CAP_EXCEEDED` y
   `CERTIFICATION_ENVIRONMENT_NOT_TEST`, con sus mensajes de negocio (design D5). Verificar con una
   prueba de `stopMessage`.
-- [ ] 2.3 Implementar la resolución pura de `effectiveSizePolicySource` (design D3), la guarda del
+- [x] 2.3 Implementar la resolución pura de `effectiveSizePolicySource` (design D3), la guarda del
   ambiente en `executeSriStep`, antes de llamar al SRI y solo con la sesión encendida (design D4), y
   el orden de comprobaciones de la recepción (design D3), con su registro sin contenido (design D6). Verificar con pruebas unitarias del handler, con dobles en
   memoria y un gateway espía:
@@ -46,8 +46,10 @@
   - política más permisiva: el tope sigue bloqueando a partir de 40 000;
   - el bloqueo no crea intento con el SRI ni transición;
   - el cuerpo enviado es el medido.
-- [ ] 2.4 Sumar a `transmit-handler.test.ts` (PostgreSQL) el camino feliz de la sesión sin política
-  y la guarda de Producción. Verificar en la verificación global con PostgreSQL.
+- [x] 2.4 Sumar a `transmit-handler.test.ts` (PostgreSQL) el camino feliz de la sesión sin política
+  y la guarda de Producción. Verificar en la verificación global con PostgreSQL. Estado
+  2026-10-09: escritas y con typecheck; **NOT RUN** porque Docker no está disponible. Se ejecutan en
+  la 5.2.
 
 ## 3. Readiness, métrica y registro de arranque
 

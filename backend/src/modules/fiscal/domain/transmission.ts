@@ -67,5 +67,9 @@ export const TRANSMISSION_STOP_CODES = [
   "SIZE_POLICY_MISSING",
   "SRI_UNAVAILABLE",
   "HANDLER_ERROR",
+  // Sesión de certificación (add-sri-certification-safety-cap, design D5): bloqueos internos antes
+  // de cualquier llamada, nunca una respuesta del SRI.
+  "CERTIFICATION_SIZE_CAP_EXCEEDED",
+  "CERTIFICATION_ENVIRONMENT_NOT_TEST",
 ] as const;
 export type TransmissionStopCode = (typeof TRANSMISSION_STOP_CODES)[number];

@@ -16,6 +16,15 @@ describe("motivo de una transmisión detenida", () => {
     );
   });
 
+  it("los bloqueos de la sesión de certificación dicen que no hubo envío ni respuesta del SRI (add-sri-certification-safety-cap)", () => {
+    expect(stopMessage("CERTIFICATION_SIZE_CAP_EXCEEDED")).toBe(
+      "El comprobante supera el tope de seguridad de la sesión de certificación en Pruebas, que no es un límite del SRI. No se envió nada al SRI.",
+    );
+    expect(stopMessage("CERTIFICATION_ENVIRONMENT_NOT_TEST")).toBe(
+      "La sesión de certificación solo se comunica con el SRI sobre comprobantes del ambiente de Pruebas. No se envió nada al SRI.",
+    );
+  });
+
   it("un código desconocido recibe el mensaje genérico", () => {
     expect(stopMessage("ALGO_NUEVO")).toBe("La transmisión se detuvo.");
   });

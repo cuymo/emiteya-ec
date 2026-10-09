@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { CERTIFICATION_SAFETY_CAP_BYTES } from "../src/modules/fiscal/domain/certification-safety-cap.ts";
 import {
   EXAMPLE_AUTH_SECRET,
   EXAMPLE_CERTIFICATE_MASTER_KEY,
@@ -416,6 +417,22 @@ describe("transmisión al SRI (add-sri-transmission, design D5 y D22)", () => {
       SRI_BREAKER_COOLDOWN_SECONDS: 60,
     });
     for (const name of SRI_ENDPOINT_VARIABLES) expect(loadEnv(valid)[name]).toBeUndefined();
+  });
+
+  it("la sesión de certificación nace apagada, no habilita la transmisión y su tope no es configurable (add-sri-certification-safety-cap)", () => {
+    expect(loadEnv(valid).SRI_CERTIFICATION_SAFETY_CAP_ENABLED).toBe(false);
+    const enabled = loadEnv({ ...valid, SRI_CERTIFICATION_SAFETY_CAP_ENABLED: "1" });
+    expect(enabled.SRI_CERTIFICATION_SAFETY_CAP_ENABLED).toBe(true);
+    expect(enabled.SRI_TRANSMISSION_ENABLED).toBe(false);
+    expect(envError({ ...valid, SRI_CERTIFICATION_SAFETY_CAP_ENABLED: "true" })?.variables).toEqual(
+      ["SRI_CERTIFICATION_SAFETY_CAP_ENABLED"],
+    );
+    // No existe una variable para el valor: una inventada se ignora y el tope sigue en 40 000.
+    const tampered = loadEnv({ ...valid, SRI_CERTIFICATION_SAFETY_CAP_BYTES: "999999" });
+    expect(Object.keys(tampered).filter((name) => name.startsWith("SRI_CERTIFICATION"))).toEqual([
+      "SRI_CERTIFICATION_SAFETY_CAP_ENABLED",
+    ]);
+    expect(CERTIFICATION_SAFETY_CAP_BYTES).toBe(40_000);
   });
 
   it("solo se habilita con SRI_TRANSMISSION_ENABLED=1", () => {
