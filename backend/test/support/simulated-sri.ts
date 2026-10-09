@@ -17,9 +17,15 @@ export const SRI_HOST = "sri-simulado.test";
 export const FOREIGN_KEY = "1".repeat(49);
 
 export type SriCall = { operation: "RECEPTION" | "AUTHORIZATION" | "VALIDITY"; key: string };
-export type ReceptionBehavior = "RECEIVED" | "HOLD" | "FOREIGN_KEY";
+/**
+ * `RETURNED` devuelve el propio comprobante (`DEVUELTA` con su clave y un error de estructura), que
+ * el clasificador real concluye como devuelto.
+ */
+export type ReceptionBehavior = "RECEIVED" | "HOLD" | "FOREIGN_KEY" | "RETURNED";
 
 const sequentialOf = (key: string) => Number(key.slice(30, 39));
+/** El ambiente que declara la clave de acceso (posición 24): `2` es Producción. */
+const environmentOf = (key: string) => (key[23] === "2" ? "PRODUCCION" : "PRUEBAS");
 /** Tipo y secuencial de la clave (`04:2`): la factura y la nota numeran por separado. */
 export const documentOf = (key: string) => `${key.slice(8, 10)}:${sequentialOf(key)}`;
 
@@ -57,6 +63,22 @@ export function simulatedSri() {
         onHold?.(key);
         return;
       }
+      if (behavior === "RETURNED")
+        return respond(
+          res,
+          receptionResponse("DEVUELTA", [
+            {
+              accessKey: key,
+              messages: [
+                {
+                  identifier: "35",
+                  message: "ARCHIVO NO CUMPLE ESTRUCTURA XML (sintético)",
+                  type: "ERROR",
+                },
+              ],
+            },
+          ]),
+        );
       if (behavior === "FOREIGN_KEY")
         return respond(
           res,
@@ -80,7 +102,7 @@ export function simulatedSri() {
             {
               estado: "NO AUTORIZADO",
               fechaAutorizacion: new Date().toISOString(),
-              ambiente: "PRUEBAS",
+              ambiente: environmentOf(key),
               messages: [
                 {
                   identifier: "65",
@@ -99,7 +121,7 @@ export function simulatedSri() {
                 estado: "AUTORIZADO",
                 numeroAutorizacion: key,
                 fechaAutorizacion: new Date().toISOString(),
-                ambiente: "PRUEBAS",
+                ambiente: environmentOf(key),
                 ...(withoutXml.has(sequentialOf(key))
                   ? {}
                   : { comprobante: `<![CDATA[${signed.toString("utf8")}]]>` }),
