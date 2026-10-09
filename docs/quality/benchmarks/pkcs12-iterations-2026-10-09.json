@@ -1,0 +1,649 @@
+{
+  "measuredAt": "2026-10-09T21:46:56.774Z",
+  "environment": {
+    "node": "v24.15.0",
+    "os": "7.1.6-1-cachyos",
+    "cpu": "AMD Ryzen 5 3600 6-Core Processor",
+    "cpuCount": 12,
+    "memoryGiB": 16,
+    "loadAverage": [1.41, 1.74, 1.71]
+  },
+  "pool": {
+    "size": 2,
+    "timeoutMs": 30000
+  },
+  "maxPkcs12Iterations": 131072,
+  "certificateMaxBytes": 65536,
+  "repetitions": 7,
+  "mainThreadEventLoopMaxDelayMs": 43,
+  "rows": [
+    {
+      "profile": "sd-100000",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 100000,
+      "encryptionIterations": 50000,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 941,
+          "max": 957
+        },
+        "cpuMs": {
+          "median": 1292,
+          "max": 1362
+        },
+        "twoConcurrentWallMs": 951
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 470,
+          "max": 487
+        },
+        "cpuMs": {
+          "median": 622,
+          "max": 673
+        }
+      },
+      "peakRssMiB": 585
+    },
+    {
+      "profile": "legado-uniforme-100000",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 100000,
+      "encryptionIterations": 100000,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 1416,
+          "max": 1441
+        },
+        "cpuMs": {
+          "median": 1455,
+          "max": 1489
+        },
+        "twoConcurrentWallMs": 1478
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 716,
+          "max": 729
+        },
+        "cpuMs": {
+          "median": 715,
+          "max": 768
+        }
+      },
+      "peakRssMiB": 595
+    },
+    {
+      "profile": "moderno-uniforme-100000",
+      "key": "sd-utf8",
+      "scheme": "PBES2 (AES-256-CBC, PBKDF2-HMAC-SHA256), MAC SHA-256",
+      "macIterations": 100000,
+      "encryptionIterations": 100000,
+      "bytes": 3630,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 2556,
+          "max": 2614
+        },
+        "cpuMs": {
+          "median": 2555,
+          "max": 2644
+        },
+        "twoConcurrentWallMs": 2619
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 1292,
+          "max": 1310
+        },
+        "cpuMs": {
+          "median": 1300,
+          "max": 1363
+        }
+      },
+      "peakRssMiB": 378
+    },
+    {
+      "profile": "sd-102400",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 102400,
+      "encryptionIterations": 51200,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 954,
+          "max": 987
+        },
+        "cpuMs": {
+          "median": 1290,
+          "max": 1353
+        },
+        "twoConcurrentWallMs": 976
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 487,
+          "max": 507
+        },
+        "cpuMs": {
+          "median": 668,
+          "max": 713
+        }
+      },
+      "peakRssMiB": 595
+    },
+    {
+      "profile": "legado-uniforme-102400",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 102400,
+      "encryptionIterations": 102400,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 1442,
+          "max": 1476
+        },
+        "cpuMs": {
+          "median": 1429,
+          "max": 1522
+        },
+        "twoConcurrentWallMs": 1508
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 739,
+          "max": 752
+        },
+        "cpuMs": {
+          "median": 735,
+          "max": 811
+        }
+      },
+      "peakRssMiB": 597
+    },
+    {
+      "profile": "moderno-uniforme-102400",
+      "key": "sd-utf8",
+      "scheme": "PBES2 (AES-256-CBC, PBKDF2-HMAC-SHA256), MAC SHA-256",
+      "macIterations": 102400,
+      "encryptionIterations": 102400,
+      "bytes": 3630,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 2623,
+          "max": 2634
+        },
+        "cpuMs": {
+          "median": 2622,
+          "max": 2638
+        },
+        "twoConcurrentWallMs": 2657
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 1330,
+          "max": 1336
+        },
+        "cpuMs": {
+          "median": 1330,
+          "max": 1381
+        }
+      },
+      "peakRssMiB": 377
+    },
+    {
+      "profile": "sd-120000",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 120000,
+      "encryptionIterations": 60000,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 999,
+          "max": 1003
+        },
+        "cpuMs": {
+          "median": 1017,
+          "max": 1050
+        },
+        "twoConcurrentWallMs": 1062
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 510,
+          "max": 522
+        },
+        "cpuMs": {
+          "median": 511,
+          "max": 545
+        }
+      },
+      "peakRssMiB": 349
+    },
+    {
+      "profile": "legado-uniforme-120000",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 120000,
+      "encryptionIterations": 120000,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 1707,
+          "max": 1735
+        },
+        "cpuMs": {
+          "median": 1734,
+          "max": 1768
+        },
+        "twoConcurrentWallMs": 1759
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 857,
+          "max": 870
+        },
+        "cpuMs": {
+          "median": 859,
+          "max": 880
+        }
+      },
+      "peakRssMiB": 348
+    },
+    {
+      "profile": "moderno-uniforme-120000",
+      "key": "sd-utf8",
+      "scheme": "PBES2 (AES-256-CBC, PBKDF2-HMAC-SHA256), MAC SHA-256",
+      "macIterations": 120000,
+      "encryptionIterations": 120000,
+      "bytes": 3630,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 3040,
+          "max": 3079
+        },
+        "cpuMs": {
+          "median": 3032,
+          "max": 3063
+        },
+        "twoConcurrentWallMs": 3142
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 1532,
+          "max": 1554
+        },
+        "cpuMs": {
+          "median": 1526,
+          "max": 1633
+        }
+      },
+      "peakRssMiB": 347
+    },
+    {
+      "profile": "sd-131072",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 131072,
+      "encryptionIterations": 65536,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 1079,
+          "max": 1093
+        },
+        "cpuMs": {
+          "median": 1076,
+          "max": 1128
+        },
+        "twoConcurrentWallMs": 1148
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 546,
+          "max": 587
+        },
+        "cpuMs": {
+          "median": 547,
+          "max": 678
+        }
+      },
+      "peakRssMiB": 359
+    },
+    {
+      "profile": "legado-uniforme-131072",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 131072,
+      "encryptionIterations": 131072,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 1824,
+          "max": 1857
+        },
+        "cpuMs": {
+          "median": 1831,
+          "max": 1871
+        },
+        "twoConcurrentWallMs": 1952
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 920,
+          "max": 935
+        },
+        "cpuMs": {
+          "median": 922,
+          "max": 938
+        }
+      },
+      "peakRssMiB": 357
+    },
+    {
+      "profile": "moderno-uniforme-131072",
+      "key": "sd-utf8",
+      "scheme": "PBES2 (AES-256-CBC, PBKDF2-HMAC-SHA256), MAC SHA-256",
+      "macIterations": 131072,
+      "encryptionIterations": 131072,
+      "bytes": 3630,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 3336,
+          "max": 3363
+        },
+        "cpuMs": {
+          "median": 3330,
+          "max": 3345
+        },
+        "twoConcurrentWallMs": 3398
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 1673,
+          "max": 1692
+        },
+        "cpuMs": {
+          "median": 1670,
+          "max": 1788
+        }
+      },
+      "peakRssMiB": 357
+    },
+    {
+      "profile": "sd-150000",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 150000,
+      "encryptionIterations": 75000,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "CERTIFICATE_INCOMPATIBLE:ITERATIONS",
+        "wallMs": {
+          "median": 0,
+          "max": 0
+        },
+        "cpuMs": {
+          "median": 0,
+          "max": 4
+        },
+        "twoConcurrentWallMs": 1
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 638,
+          "max": 681
+        },
+        "cpuMs": {
+          "median": 658,
+          "max": 805
+        }
+      },
+      "peakRssMiB": 357
+    },
+    {
+      "profile": "legado-uniforme-150000",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 150000,
+      "encryptionIterations": 150000,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "CERTIFICATE_INCOMPATIBLE:ITERATIONS",
+        "wallMs": {
+          "median": 0,
+          "max": 0
+        },
+        "cpuMs": {
+          "median": 0,
+          "max": 2
+        },
+        "twoConcurrentWallMs": 1
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 1059,
+          "max": 1110
+        },
+        "cpuMs": {
+          "median": 1076,
+          "max": 1277
+        }
+      },
+      "peakRssMiB": 356
+    },
+    {
+      "profile": "moderno-uniforme-150000",
+      "key": "sd-utf8",
+      "scheme": "PBES2 (AES-256-CBC, PBKDF2-HMAC-SHA256), MAC SHA-256",
+      "macIterations": 150000,
+      "encryptionIterations": 150000,
+      "bytes": 3630,
+      "importer": {
+        "outcome": "CERTIFICATE_INCOMPATIBLE:ITERATIONS",
+        "wallMs": {
+          "median": 0,
+          "max": 1
+        },
+        "cpuMs": {
+          "median": 1,
+          "max": 3
+        },
+        "twoConcurrentWallMs": 1
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 1913,
+          "max": 1962
+        },
+        "cpuMs": {
+          "median": 1921,
+          "max": 2075
+        }
+      },
+      "peakRssMiB": 355
+    },
+    {
+      "profile": "sd-200000",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 200000,
+      "encryptionIterations": 100000,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "CERTIFICATE_INCOMPATIBLE:ITERATIONS",
+        "wallMs": {
+          "median": 0,
+          "max": 0
+        },
+        "cpuMs": {
+          "median": 0,
+          "max": 1
+        },
+        "twoConcurrentWallMs": 1
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 847,
+          "max": 899
+        },
+        "cpuMs": {
+          "median": 863,
+          "max": 1025
+        }
+      },
+      "peakRssMiB": 313
+    },
+    {
+      "profile": "legado-uniforme-200000",
+      "key": "sd-utf8",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 200000,
+      "encryptionIterations": 200000,
+      "bytes": 3535,
+      "importer": {
+        "outcome": "CERTIFICATE_INCOMPATIBLE:ITERATIONS",
+        "wallMs": {
+          "median": 0,
+          "max": 1
+        },
+        "cpuMs": {
+          "median": 0,
+          "max": 3
+        },
+        "twoConcurrentWallMs": 1
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 1458,
+          "max": 1522
+        },
+        "cpuMs": {
+          "median": 1463,
+          "max": 1610
+        }
+      },
+      "peakRssMiB": 312
+    },
+    {
+      "profile": "moderno-uniforme-200000",
+      "key": "sd-utf8",
+      "scheme": "PBES2 (AES-256-CBC, PBKDF2-HMAC-SHA256), MAC SHA-256",
+      "macIterations": 200000,
+      "encryptionIterations": 200000,
+      "bytes": 3630,
+      "importer": {
+        "outcome": "CERTIFICATE_INCOMPATIBLE:ITERATIONS",
+        "wallMs": {
+          "median": 0,
+          "max": 0
+        },
+        "cpuMs": {
+          "median": 0,
+          "max": 1
+        },
+        "twoConcurrentWallMs": 1
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 2552,
+          "max": 2577
+        },
+        "cpuMs": {
+          "median": 2559,
+          "max": 2695
+        }
+      },
+      "peakRssMiB": 310
+    },
+    {
+      "profile": "sd-102400-rsa4096",
+      "key": "rsa4096",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 102400,
+      "encryptionIterations": 51200,
+      "bytes": 4943,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 955,
+          "max": 961
+        },
+        "cpuMs": {
+          "median": 972,
+          "max": 1012
+        },
+        "twoConcurrentWallMs": 981
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 546,
+          "max": 565
+        },
+        "cpuMs": {
+          "median": 546,
+          "max": 572
+        }
+      },
+      "peakRssMiB": 346
+    },
+    {
+      "profile": "sd-131072-rsa4096",
+      "key": "rsa4096",
+      "scheme": "legado: MAC SHA-1, clave 3DES, certificados RC2-40",
+      "macIterations": 131072,
+      "encryptionIterations": 65536,
+      "bytes": 4943,
+      "importer": {
+        "outcome": "ACCEPTED",
+        "wallMs": {
+          "median": 1317,
+          "max": 1341
+        },
+        "cpuMs": {
+          "median": 1733,
+          "max": 1793
+        },
+        "twoConcurrentWallMs": 1341
+      },
+      "signXml": {
+        "wallMs": {
+          "median": 722,
+          "max": 737
+        },
+        "cpuMs": {
+          "median": 950,
+          "max": 974
+        }
+      },
+      "peakRssMiB": 565
+    }
+  ],
+  "abusive": {
+    "iterations": 131072,
+    "copies": 31,
+    "bytes": 65335,
+    "outcome": "ACCEPTED",
+    "wallMs": 20017,
+    "poolServesAfter": true
+  }
+}

@@ -25,6 +25,7 @@
     "bench:purchase-settlements": "node --conditions=development scripts/bench-purchase-settlements.ts",
     "bench:reports": "node --conditions=development scripts/bench-reports.ts",
     "bench:data-portability": "node --conditions=development scripts/bench-data-portability.ts",
+    "bench:pkcs12-iterations": "node --conditions=development scripts/bench-pkcs12-iterations.ts",
     "sandbox:mvp": "node --conditions=development test/manual/mvp-sandbox.ts",
     "measure:certification-payloads": "node --conditions=development test/manual/measure-certification-payloads.ts",
     "postinstall": "prisma generate",
