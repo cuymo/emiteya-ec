@@ -46,6 +46,17 @@ describe("shell autenticado", () => {
     expect(screen.getByText("Configuración")).toBeDefined();
   });
 
+  it("la navegación de la barra lateral se desplaza dentro de ella con la ventana baja", async () => {
+    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
+    renderShell();
+    await screen.findByRole("link", { name: "Portabilidad de datos" });
+    const sidebar = screen.getByRole("complementary", { name: "Barra lateral" });
+    const sticky = sidebar.firstElementChild as HTMLElement;
+    expect(sticky.className).toContain("sticky");
+    expect(sticky.className).toContain("overflow-y-auto");
+    expect(sticky.contains(screen.getByRole("link", { name: "Portabilidad de datos" }))).toBe(true);
+  });
+
   it("el administrador ve Empresa, Ambiente, Establecimientos y Secuenciales en Configuración", async () => {
     mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
     renderShell();

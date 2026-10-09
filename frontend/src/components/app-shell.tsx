@@ -144,7 +144,9 @@ export function AppShell({
             aria-label="Barra lateral"
             className="hidden w-32 shrink-0 border-r border-border bg-surface md:block"
           >
-            <div className="sticky top-8 h-[calc(100dvh-4rem)]">
+            {/* Con la ventana baja, la navegación se desplaza dentro de la barra: los últimos
+                destinos de Configuración siguen alcanzables. */}
+            <div className="sticky top-8 h-[calc(100dvh-4rem)] overflow-y-auto">
               <NavigationLinks role={me.role} />
             </div>
           </aside>
