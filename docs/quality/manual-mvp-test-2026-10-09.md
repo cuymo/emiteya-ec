@@ -79,9 +79,9 @@ Notas del entorno:
 | Id | Caso | Severidad | Descripción | Estado |
 | --- | --- | --- | --- | --- |
 | H-01 | MVT-076 | MINOR | Con la ventana baja (por ejemplo 1280×720 en `/facturas`), el último destino de la barra lateral («Portabilidad de datos») quedaba fuera de la ventana y no se podía pulsar. El contenedor fijo de la navegación no se desplazaba. | Corregido en `089835f` (`overflow-y-auto`, prueba en `frontend/test/app-shell.test.tsx`). Reprobado a 1366×768, 1280×720 y 1280×600: PASS |
-| H-02 | MVT-068 | MINOR, `NEEDS_USER_DECISION` | Las páginas del frontend no envían CSP, `X-Frame-Options`, `X-Content-Type-Options` ni `Referrer-Policy`, que pide `docs/security/hardening.md`. La API sí las envía (helmet). Con la cookie `SameSite=Lax`, la sesión no viaja en un iframe entre sitios. | Pendiente: decidir si las pone Next.js (CSP con nonces) o el proxy de producción |
-| H-03 | MVT-068 | Observación, `NEEDS_USER_DECISION` | `/api/v1` no valida el `Origin` por sí misma: un POST JSON con un Origin ajeno y la cookie inyectada fuera del navegador llega al handler. Desde un navegador no hay vía de CSRF: cookie `SameSite=Lax`, `text/plain` y formularios rechazados con 400, preflight sin CORS e inicio de sesión con Origin ajeno rechazado con 403. | Pendiente: decidir si se agrega la comprobación de `Origin` como defensa en profundidad |
-| H-04 | MVT-011 | COSMETIC | El mismo estado sin permiso tiene dos redacciones: «No tienes acceso a Usuarios» (también en Reportes y Comprobantes) frente a «No tienes permiso para ver esta sección». | Sin corrección (COSMETIC) |
+| H-02 | MVT-068 | MINOR, `NEEDS_USER_DECISION` | Las páginas del frontend no envían CSP, `X-Frame-Options`, `X-Content-Type-Options` ni `Referrer-Policy`, que pide `docs/security/hardening.md`. La API sí las envía (helmet). Con la cookie `SameSite=Lax`, la sesión no viaja en un iframe entre sitios. | Decidido: compuerta de seguridad del go-live; no se implementa en el MVP. La autoridad (Next.js o el proxy) se decide en el hardening del go-live |
+| H-03 | MVT-068 | Observación, `NEEDS_USER_DECISION` | `/api/v1` no valida el `Origin` por sí misma: un POST JSON con un Origin ajeno y la cookie inyectada fuera del navegador llega al handler. Desde un navegador no hay vía de CSRF: cookie `SameSite=Lax`, `text/plain` y formularios rechazados con 400, preflight sin CORS e inicio de sesión con Origin ajeno rechazado con 403. | Decidido: defensa en profundidad, a revisar en el go-live con la política de proxy, CORS y CSRF del despliegue real; no se modifica ahora |
+| H-04 | MVT-011 | COSMETIC | El mismo estado sin permiso tiene dos redacciones: «No tienes acceso a Usuarios» (también en Reportes y Comprobantes) frente a «No tienes permiso para ver esta sección». | Decidido: COSMETIC, no se corrige ahora |
 
 Observaciones que no son defectos:
 
@@ -92,16 +92,39 @@ Observaciones que no son defectos:
 - **Sin sesión, `/facturas` responde 200.** Es el shell de la aplicación, que lleva al inicio de sesión
   sin exponer datos; la API responde 401.
 
+## Cierre
+
+El dueño del producto aprobó el informe el 2026-10-09 y autorizó el cierre final del MVP:
+
+- CHANGES 0–16 COMPLETE: YES.
+- MVP CODE COMPLETE: YES.
+- MVP AUTONOMOUS FULL TEST: PASS.
+
+No es una certificación con el SRI ni declara el producto listo para producción ni para el go-live:
+quedan las compuertas externas.
+
+Decisiones sobre los hallazgos:
+
+- H-02: compuerta de seguridad del go-live, registrada en `definition-of-done.md` (Go-Live v1.0).
+  Conserva CSP, `frame-ancestors` o `X-Frame-Options`, `nosniff` y `Referrer-Policy`, con una sola
+  autoridad.
+- H-03: defensa en profundidad, a revisar en el go-live con la política de proxy, CORS y CSRF del
+  despliegue real (registrada en `definition-of-done.md`).
+- H-04: COSMETIC, sin corrección por ahora.
+
 ## Pendientes
 
-- H-02 y H-03: decisión del dueño del producto antes del go-live.
-- H-04: queda para una pasada de redacción.
+- Lo siguiente es la preparación de la certificación con el SRI en Pruebas y, por separado, el
+  hardening del go-live.
 - Fuera del alcance de esta pasada:
   - la certificación con el SRI de Pruebas (`sri-certification.md`);
   - las compuertas del go-live ya registradas (AC-10, RNF-007, SEC-008 y el plazo del proxy de al
     menos 120 s para la descarga de la portabilidad).
 
-## Datos que quedaron en el sandbox
+## Datos que creó la pasada
+
+Eran temporales y sintéticos: el esquema del sandbox y los archivos de la pasada se eliminan al
+cerrar el MVP.
 
 - **Terceros:** siguen los cinco iniciales. «CLIENTE SINTÉTICO UNO S.A.» quedó renombrado por la prueba
   de inmutabilidad (MVT-026).

@@ -81,6 +81,8 @@ de integración SRI de CTX §59:
 - Los comprobantes firmados y autorizados tienen archivo durable con hash.
 - Un respaldo completo se restaura con éxito.
 - El proxy de producción que enruta `/api` permite el tiempo de verificación previo al primer byte de una descarga de portabilidad: al menos 120 s de espera de la respuesta en esa ruta, sin almacenar el cuerpo, con el tiempo medido de nuevo sobre el almacenamiento real de producción (`../architecture/deployment.md`, "Proxy inverso y descarga"). Es un requisito operativo, no fiscal ni del ERS.
+- Las páginas del frontend envían una Content Security Policy (con `frame-ancestors`, o `X-Frame-Options` como equivalente), `X-Content-Type-Options: nosniff` y `Referrer-Policy`, con una sola autoridad, Next.js o el proxy inverso, sin políticas duplicadas ni contradictorias. Es una compuerta de seguridad del go-live (H-02 de `manual-mvp-test-2026-10-09.md`); la API ya las envía con helmet.
+- La política de proxy, CORS y CSRF del despliegue real está revisada, incluida la comprobación del `Origin` en `/api/v1` como defensa en profundidad (H-03 de `manual-mvp-test-2026-10-09.md`; no se encontró una vía de CSRF desde un navegador).
 - Los reportes XLSX principales funcionan.
 - Los WSDL de Pruebas y Producción están verificados, y el reloj del servidor está sincronizado.
 - Las reglas de consumidor final vigentes y el Anexo 26 están revisados (Q-37), y los casos especiales no soportados están bloqueados.
