@@ -26,6 +26,7 @@
     "bench:reports": "node --conditions=development scripts/bench-reports.ts",
     "bench:data-portability": "node --conditions=development scripts/bench-data-portability.ts",
     "sandbox:mvp": "node --conditions=development test/manual/mvp-sandbox.ts",
+    "measure:certification-payloads": "node --conditions=development test/manual/measure-certification-payloads.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:auth-schema": "auth generate --config src/modules/identity/infrastructure/better-auth/cli.config.ts --output prisma/schema.prisma -y && prisma format",
