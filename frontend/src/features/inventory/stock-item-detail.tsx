@@ -13,6 +13,7 @@ import {
   PAGE_SIZE_DEFAULT,
   compareDecimalStrings,
   type StockItemDetailView,
+  type StockMovementType,
   type StockMovementView,
 } from "@facturador/contracts";
 import { ArrowLeft, PackagePlus, Power, PowerOff, SlidersHorizontal } from "lucide-react";
@@ -56,16 +57,26 @@ function Note({ children }: { children: ReactNode }) {
   );
 }
 
-/** Detalle del movimiento: la factura con su enlace, el motivo o la nota y quién lo registró. */
+/**
+ * El comprobante que originó un movimiento, según su tipo: la factura de una salida y la nota de
+ * crédito de una devolución. Los demás tipos no tienen comprobante.
+ */
+const SOURCE_DOCUMENTS: Partial<Record<StockMovementType, { label: string; path: string }>> = {
+  SALIDA_FACTURA: { label: "Factura", path: "/facturas" },
+  DEVOLUCION_NC: { label: "Nota de crédito", path: "/notas-credito" },
+};
+
+/** Detalle del movimiento: el comprobante con su enlace, el motivo o la nota y quién lo registró. */
 function MovementDetail({ movement }: { movement: StockMovementView }) {
+  const source = SOURCE_DOCUMENTS[movement.type];
   return (
     <span className="flex flex-col">
-      {movement.documentNumber && movement.documentId ? (
+      {source && movement.documentNumber && movement.documentId ? (
         <Link
-          href={`/facturas/${encodeURIComponent(movement.documentId)}`}
+          href={`${source.path}/${encodeURIComponent(movement.documentId)}`}
           className="tabular-nums underline-offset-2 hover:underline"
         >
-          Factura {movement.documentNumber}
+          {source.label} {movement.documentNumber}
         </Link>
       ) : null}
       {movement.reason && <span className="break-words">{movement.reason}</span>}

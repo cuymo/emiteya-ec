@@ -292,6 +292,51 @@ describe("detalle del inventario", () => {
     expect(screen.getAllByText("Saldo negativo").length).toBeGreaterThan(0);
   });
 
+  it("el kárdex enlaza el comprobante según el tipo del movimiento", async () => {
+    render({
+      "GET /api/v1/inventory/items/prod-1": itemRoute("TRACKED_INITIALIZED"),
+      "GET /api/v1/inventory/items/prod-1/movements": paged([
+        movement({
+          id: "mov-3",
+          position: 3,
+          type: "DEVOLUCION_NC",
+          delta: "1",
+          balanceAfter: "4",
+          origin: "SYSTEM",
+          actorName: null,
+          documentId: "nc-1",
+          documentNumber: "001-001-000000003",
+          reason: null,
+        }),
+        movement({
+          id: "mov-2",
+          position: 2,
+          type: "SALIDA_FACTURA",
+          delta: "-2",
+          balanceAfter: "3",
+          origin: "SYSTEM",
+          actorName: null,
+          documentId: "doc-1",
+          documentNumber: "001-001-000000007",
+          reason: null,
+        }),
+        movement(),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Movimientos del producto" });
+    // La devolución enlaza a su nota de crédito, nunca a una factura.
+    const note = await within(table).findByRole("link", {
+      name: "Nota de crédito 001-001-000000003",
+    });
+    expect(note.getAttribute("href")).toBe("/notas-credito/nc-1");
+    // La salida conserva su factura.
+    const invoice = within(table).getByRole("link", { name: "Factura 001-001-000000007" });
+    expect(invoice.getAttribute("href")).toBe("/facturas/doc-1");
+    // El saldo inicial no tiene comprobante: ningún enlace más en la tabla.
+    expect(within(table).getAllByRole("link")).toHaveLength(2);
+    expect(within(table).queryByRole("link", { name: /Factura 001-001-000000003/ })).toBeNull();
+  });
+
   it("el kárdex muestra la factura y el sistema, y un rango invertido no consulta", async () => {
     const calls = render({
       "GET /api/v1/inventory/items/prod-1": itemRoute("TRACKED_INITIALIZED"),
