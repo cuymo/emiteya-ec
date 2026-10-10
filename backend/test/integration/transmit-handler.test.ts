@@ -272,6 +272,14 @@ describe("handler sri.transmit", () => {
         });
         expect(await prisma.sriAttempt.count({ where: { documentId: document.id } })).toBe(0);
         expect(await transitionsOf(document.id)).toEqual([]);
+        // El XML firmado guardado no se recorta ni se altera.
+        const stored = await createArtifactStore(prisma).read(
+          company.companyId,
+          document.id,
+          "SIGNED_XML",
+        );
+        expect(stored!.content.equals(padded(document.accessKey))).toBe(true);
+        expect(stored!.sha256).toBe(sha256(padded(document.accessKey)));
       }
       expect(sent).toEqual([]);
       expect(alerts.filter((a) => a.includes("política conservadora de tamaño"))).toHaveLength(2);
