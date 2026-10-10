@@ -6,7 +6,7 @@ Use this directory as the project knowledge base.
 
 - `product/`: what the system does and why.
 - `architecture/`: how the system is built and constrained.
-- `quality/`: change lifecycle, testing, review, version control, performance, observability, technical debt, done criteria, and the SRI certification procedure (`sri-certification.md`).
+- `quality/`: change lifecycle, testing, review, version control, performance, observability, technical debt, done criteria, the SRI certification procedure (`sri-certification.md`) and its checklist for the Pruebas environment (`sri-test-environment-checklist.md`).
 - `security/`: security principles, access control, hardening controls, and threat model.
 - `generated/`: generated or derived references.
 
