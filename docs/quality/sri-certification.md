@@ -587,6 +587,42 @@ Si un error ocurre de verdad, se sigue esta tabla:
 | `NO AUTORIZADO` | Terminal (Q-07) | Detener y analizar |
 | `MANUAL_REVIEW` | La transmisión espera una decisión humana | El administrador usa «Reconciliar con el SRI» con un motivo, que consulta por clave y aplica la evidencia. Nunca reenvía «de todas formas» |
 
+### Observación: el primer envío de cada sesión (2026-10-10)
+
+En las facturas 300 y 301 (sección 13) se dio la misma secuencia en las dos sesiones nuevas:
+1. El primer envío a Recepción terminó a los 4,1 s en `CONNECTION_LOST` (`UND_ERR_SOCKET`), sin
+   cabeceras.
+2. La aplicación siguió la tabla de arriba: `SEND_UNKNOWN`, la misma clave sin evidencia en el SRI y
+   el reenvío del mismo XML, que quedó `RECIBIDA` y `AUTORIZADO`.
+
+No hubo secuencial nuevo ni duplicado. La investigación se hizo sin contactar el SRI, con un SRI
+simulado (`improve-sri-transport-failure-diagnostics`).
+
+- **Conocido.**
+  - El fallo ocurrió con el túnel y el TLS ya establecidos y la solicitud en curso. Solo ahí la
+    aplicación ve `UND_ERR_SOCKET`; un corte durante el TLS o justo tras el `CONNECT` da `ECONNRESET`.
+  - El proxy y los puentes no cierran por su cuenta. La primera solicitud de un proceso nuevo pasa por
+    la cadena completa.
+  - Solo falló el primer envío grande con el TLS en frío. Los intentos con el TLS reanudado tardaron
+    entre 69 y 236 ms.
+  - El SRI no tenía la clave tras el primer intento.
+- **Inferido.** Cerró el lado lejano, el SRI o un equipo del camino, unos segundos después de recibir
+  la solicitud, sin responder. Un SRI simulado que calla y cierra a los 4 s reproduce la misma firma.
+- **Desconocido.** La causa. Hay tres hipótesis:
+  - un plazo del servidor sobre una primera conexión;
+  - un equipo intermedio;
+  - la MTU del camino en el primer envío grande.
+- **Defecto local encontrado y corregido (no era la causa).** Si el destino fallaba con el túnel
+  abierto, el proxy escribía `HTTP/1.1 502` dentro del túnel TLS.
+- **Qué mirar en el próximo envío autorizado.**
+  - En `egress.log`, el `TUNNEL_CLOSED` del primer túnel: quién cerró, si fue `FIN` o un error, los
+    bytes en cada sentido y `clientIdleBeforeCloseMs`.
+  - En el log de la aplicación, el `transportDiagnostic` del intento: la fase y los bytes escritos y
+    leídos.
+
+  No se hace ningún sondeo ni calentamiento contra el SRI para explicarlo, y la recuperación no
+  cambia.
+
 ## 10. Condiciones de parada
 
 La sesión se detiene de inmediato, con la transmisión vuelta a fallar cerrado (sección 3.1), si

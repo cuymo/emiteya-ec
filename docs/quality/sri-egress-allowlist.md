@@ -29,8 +29,11 @@ Vive fuera del runtime de la aplicación, en `scripts/sri-egress/`, y se ejecuta
   - decide sobre el nombre pedido antes de resolver DNS o de abrir una conexión, así que un destino
     rechazado no genera tráfico;
   - no reenvía peticiones HTTP en claro;
-  - registra cada decisión en `egress.log`, sin contenido; el tráfico admitido es TLS de extremo a
-    extremo y no se inspecciona.
+  - registra en `egress.log` cada decisión y el ciclo de vida de cada túnel admitido, sin contenido
+    (ver «Registro de salida»). El tráfico admitido es TLS de extremo a extremo y no se inspecciona;
+  - responde `502 UPSTREAM_FAILED` solo si no pudo conectar con el destino. Con el túnel ya
+    establecido nunca escribe una respuesta HTTP dentro de él: un fallo del destino solo cierra la
+    conexión del cliente.
 - **Puentes locales.** Los sockets Unix con ruta cruzan los espacios de nombres de red. Así el proceso
   aislado alcanza el proxy, la base de datos y la exposición de su propia API al anfitrión, y nada más.
 - **Identidad de la sesión.** `apply` genera un identificador aleatorio, `SRI_EGRESS_SESSION_ID`.
@@ -59,6 +62,37 @@ Decisiones de la política (`scripts/sri-egress/policy.ts`):
 | Otro nombre, otro subdominio de `sri.gob.ec` o una dirección IP literal | `HOST_NOT_ALLOWED` |
 | Una petición HTTP de proxy que no es Producción | `METHOD_NOT_ALLOWED` |
 | Un destino malformado o un literal IPv6 | `MALFORMED_TARGET` |
+
+## Registro de salida (`egress.log`)
+
+Una línea JSON por evento, sin contenido, direcciones ni puertos del destino
+(`improve-sri-transport-failure-diagnostics`):
+
+- **Decisión:** `method`, `host`, `port`, `allowed` y `reason`. Un `CONNECT` admitido lleva además
+  `tunnel`, un número secuencial del proceso que comparten sus eventos.
+- **`UPSTREAM_CONNECTED`:** `connectMs` y `family` (`IPv4` o `IPv6`).
+- **`UPSTREAM_CONNECT_FAILED`:** `code` y `connectMs`. El cliente recibe `502 UPSTREAM_FAILED`.
+- **`TUNNEL_CLOSED`:**
+  - `closedFirstBy` (`upstream` o `client`);
+  - `upstreamEnd` (`FIN`, `ERROR` o `null`) y `upstreamError`;
+  - `clientError`;
+  - `bytesToUpstream` y `bytesToClient`;
+  - `durationMs`;
+  - `clientIdleBeforeCloseMs`: el tiempo entre el último byte del cliente y el primer cierre.
+
+Con estos eventos y el diagnóstico del intento de la aplicación (`observability.md`) se sabe en qué
+fase falló un envío y qué lado cerró.
+
+Cómo ve la aplicación cada fallo del túnel. La clasificación conservadora no cambia: solo lo que
+prueba que nada salió es `NOT_SENT`. Lo fijan `backend/test/sri-engine/soap-transport-proxy.contract.test.ts`
+y `scripts/sri-egress/proxy.test.ts`:
+
+| Fallo | Código en la aplicación | Clase |
+| --- | --- | --- |
+| El destino cierra o resetea con la solicitud en curso | `UND_ERR_SOCKET` | Incierto: `SEND_UNKNOWN` y reconciliación |
+| Corte durante el TLS o justo tras el `CONNECT` | `ECONNRESET` | Incierto |
+| El proxy responde `502` o `403` | `UND_ERR_ABORTED` | Incierto: no se alcanzó el destino, pero el código no lo prueba |
+| El proxy no escucha | `ECONNREFUSED` | `NOT_SENT` |
 
 ## Archivo de entorno de la sesión
 

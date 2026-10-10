@@ -40,7 +40,7 @@
 
 ## 3. Documentación
 
-- [ ] 3.1 Actualizar:
+- [x] 3.1 Actualizar:
   - `docs/quality/observability.md`: el diagnóstico del intento;
   - `docs/quality/sri-egress-allowlist.md`: los eventos del túnel y el `502` solo antes de
     establecerlo;

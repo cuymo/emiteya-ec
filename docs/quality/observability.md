@@ -72,6 +72,16 @@ Los logs de cada intento llevan el comprobante, la clave, la operación, el inte
 la duración y la correlación; nunca el XML, el SOAP, secretos ni contraseñas (CTX §47). Las
 respuestas originales viven en `sri_response`, no en los logs ni en la auditoría.
 
+Un fallo de transporte sin respuesta añade `transportDiagnostic` al log «intento con el SRI
+clasificado» (`improve-sri-transport-failure-diagnostics`):
+- `phase`: `BEFORE_HEADERS` o `BODY`;
+- `causes`: hasta cinco eslabones de la cadena de causas, cada uno con su `name`, `code` y `syscall`;
+- `socket`: los `bytesWritten` y `bytesRead` del socket, cuando el error los trae. Por ejemplo, el
+  `SocketError` de undici dice si la solicitud llegó a escribirse completa y si llegó algo.
+
+Nunca lleva el mensaje del error, direcciones, puertos ni contenido. No se guarda en la base y no
+cambia la clasificación. Una respuesta lleva `transportDiagnostic: null`.
+
 ## RIDE y archivo documental
 
 Señales de `add-document-archive` (design D14), en `/metrics` y sin la empresa en las etiquetas.
