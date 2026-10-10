@@ -119,10 +119,31 @@
 
 ## 5. Verificación
 
-- [ ] 5.1 Verificación focalizada:
+- [x] 5.1 Verificación focalizada:
   - pruebas de la política, de la transmisión, de la readiness, del entorno, de los catálogos, del
     frontend y la integración afectada;
   - lint, typecheck y `openapi:check`;
   - `openspec validate adopt-conservative-sri-transmission-size-policy-v1 --strict`.
-- [ ] 5.2 Verificación global del proyecto (`corepack pnpm verify`), con la política acordada para
+- [x] 5.2 Verificación global del proyecto (`corepack pnpm verify`), con la política acordada para
   las pruebas sensibles a la carga del host.
+
+  Estado 2026-10-10:
+  - **GLOBAL VERIFICATION EXECUTED.** `corepack pnpm verify` se ejecutó una vez y salió con **código
+    1**.
+    - Pasaron format, versiones, `prisma generate`, lint y typecheck.
+    - La suite principal tuvo 1 fallo en 371 archivos (3108 pruebas pasadas, 1 fallida, 1 omitida):
+      `e2e-document-archive.test.ts`, «al rearrancar…», con un inicio de sesión `401` justo después
+      del rearranque.
+    - `verify` se detuvo ahí, así que no ejecutó AC-04 ni los pasos siguientes.
+  - **CHANGE REGRESSION CHECK: PASS.**
+    - En ese archivo el change solo quitó la carga de la política sintética; no toca la autenticación
+      ni el arranque.
+    - Aislada pasó 3/3, y ya había pasado en la corrida focalizada de los siete e2e.
+    - El mismo tipo de fallo (`401` al iniciar sesión bajo carga) ocurrió en `main` (`0eef607`) el
+      2026-10-09.
+  - **Evidencia compuesta**, cada paso ejecutado una vez, sin cambiar pruebas, plazos ni `maxWait`:
+    - suite principal: 371/371 archivos, 3109 pruebas pasadas y 1 omitida;
+    - AC-04: 3/3;
+    - `openapi:check`, `check:dev-start`, `build`, `check:xsd-artifact` y `check:ride-assets` en
+      verde.
+  - **HOST-LOAD FLAKE: DOCUMENTED** en `docs/quality/technical-debt.md`.
