@@ -146,4 +146,7 @@
     - AC-04: 3/3;
     - `openapi:check`, `check:dev-start`, `build`, `check:xsd-artifact` y `check:ride-assets` en
       verde.
-  - **HOST-LOAD FLAKE: DOCUMENTED** en `docs/quality/technical-debt.md`.
+  - **KNOWN HOST-LOAD FLAKE: DOCUMENTED** en `docs/quality/technical-debt.md`.
+  - `/opsx:verify`: 0 críticos, 0 avisos y 0 parciales. El dueño del producto aceptó la evidencia
+    compuesta el 2026-10-10.
+  - **No se afirma que `corepack pnpm verify` pasara:** terminó con código 1.
