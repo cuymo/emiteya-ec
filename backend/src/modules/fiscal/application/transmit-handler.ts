@@ -1,18 +1,19 @@
-// Handler `sri.transmit` (add-sri-transmission, design D9, D11, D13, D14 y D17): envía los bytes
-// exactos del `SIGNED_XML` guardado, después de comprobar su integridad y el límite de tamaño, y
-// decide según la respuesta de recepción. Los reenvíos usan el mismo procedimiento. Nunca
-// reconstruye el XML ni reserva otro número.
+// Handler `sri.transmit` (add-sri-transmission, design D9, D11, D13 y D14): envía los bytes exactos
+// del `SIGNED_XML` guardado, después de comprobar su integridad y la política conservadora de tamaño
+// (adopt-conservative-sri-transmission-size-policy-v1, design D2), y decide según la respuesta de
+// recepción. Los reenvíos usan el mismo procedimiento. Nunca reconstruye el XML ni reserva otro número.
 import { createHash } from "node:crypto";
 import type { JobHandler } from "../../../platform/jobs/runner.ts";
 import type { Job, JobError } from "../../../platform/jobs/jobs.ts";
 import type { PreparedReception, SriGateway } from "../../sri-engine/application/transport.ts";
 import {
-  CERTIFICATION_SAFETY_CAP_BYTES,
-  certificationAllows,
-  resolveSizePolicySource,
-  withinCertificationSafetyCap,
-} from "../domain/certification-safety-cap.ts";
-import { CERTIFICATION_SESSION_OFF } from "./certification-session.ts";
+  TRANSMISSION_SIZE_POLICY,
+  withinTransmissionSizePolicy,
+} from "../domain/transmission-size-policy.ts";
+import {
+  TRANSMISSION_SIZE_OBSERVER_OFF,
+  type TransmissionSizeObserver,
+} from "./transmission-size-diagnostics.ts";
 import type { ArtifactStore, DocumentRepository, StoredArtifact, StoredDocument } from "./ports.ts";
 import { authorizeJob, reconcileJob } from "./transmission-jobs.ts";
 import type { TransmissionSettings } from "./transmission-settings.ts";
@@ -27,19 +28,16 @@ import type {
   SriClassifiers,
 } from "../../sri-engine/application/classification.ts";
 
-export type SizePolicyReader = (date: string) => Promise<{ maxSignedDocumentBytes: number } | null>;
-
 export type TransmitHandlerDependencies = StepDependencies &
   Readonly<{
     documents: Pick<DocumentRepository, "find">;
     artifacts: Pick<ArtifactStore, "read">;
-    sizePolicy: SizePolicyReader;
     gateway: Pick<SriGateway, "prepareReception" | "submit">;
     classifiers: SriClassifiers;
     settings: TransmissionSettings;
-    /** Fecha del envío en Ecuador, para resolver la política de tamaño (design D17). */
-    today: (now: Date) => string;
     alert: (details: object, message: string) => void;
+    /** Diagnóstico de la política de tamaño (design D4). Sin él, nadie lo observa. */
+    sizeDiagnostics?: TransmissionSizeObserver;
   }>;
 
 const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
@@ -204,37 +202,6 @@ export function createTransmitHandler(deps: TransmitHandlerDependencies): JobHan
           });
           return;
         }
-        // Sesión de certificación (design D3 y D4): fuera de Pruebas no hay envío, antes que
-        // cualquier otra comprobación y sin redirigir ni corregir el ambiente.
-        const certification = deps.certification ?? CERTIFICATION_SESSION_OFF;
-        if (certification.enabled && !certificationAllows(document.environment)) {
-          certification.observe({
-            fiscalEnvironment: document.environment,
-            allowed: false,
-            reason: "CERTIFICATION_ENVIRONMENT_NOT_TEST",
-            sizes: null,
-            capBytes: CERTIFICATION_SAFETY_CAP_BYTES,
-            effectiveSizePolicySource: null,
-            at: context.now(),
-          });
-          deps.alert(
-            {
-              jobId: job.id,
-              documentId: document.id,
-              fiscalEnvironment: document.environment,
-            },
-            "sesión de certificación: comprobante fuera de Pruebas, sin llamada al SRI",
-          );
-          await deps.jobs.stop(
-            deps.db,
-            job,
-            stopError("CERTIFICATION_ENVIRONMENT_NOT_TEST", "DETERMINISTIC", {
-              fiscalEnvironment: document.environment,
-            }),
-            context.now(),
-          );
-          return;
-        }
         artifact = await deps.artifacts.read(document.companyId, document.id, "SIGNED_XML");
         const problem = integrityProblem(document, artifact);
         if (problem) {
@@ -250,80 +217,39 @@ export function createTransmitHandler(deps: TransmitHandlerDependencies): JobHan
           );
           return;
         }
-        // Resolución del límite efectivo (design D3): sin política oficial, solo la sesión de
-        // certificación de Pruebas continúa; `MISSING` es el único resultado terminal.
-        const policy = await deps.sizePolicy(deps.today(context.now()));
-        const source = resolveSizePolicySource({
-          officialPolicy: policy !== null,
-          certificationSession: certification.enabled,
-        });
-        if (source === "MISSING") {
-          deps.alert(
-            { jobId: job.id, documentId: document.id },
-            "sin política de tamaño vigente: no se envió",
-          );
-          await deps.jobs.stop(
-            deps.db,
-            job,
-            stopError("SIZE_POLICY_MISSING", "DETERMINISTIC"),
-            context.now(),
-          );
-          return;
-        }
-        if (policy && artifact!.content.length > policy.maxSignedDocumentBytes) {
-          deps.alert(
-            { jobId: job.id, documentId: document.id },
-            "el XML firmado supera el límite de tamaño: no se envió",
-          );
-          await deps.jobs.stop(
-            deps.db,
-            job,
-            stopError("TOO_LARGE", "DETERMINISTIC", {
-              sizeBytes: artifact!.content.length,
-              maxBytes: policy.maxSignedDocumentBytes,
-            }),
-            context.now(),
-          );
-          return;
-        }
-        // El cuerpo final se construye una sola vez: es el que se mide y el que recibe el
-        // transporte (design D2).
+        // Política conservadora de tamaño, la misma en Pruebas y en Producción (design D2): el cuerpo
+        // final se construye una sola vez y es el que se mide y el que recibe el transporte. Nunca se
+        // trunca, comprime ni modifica el comprobante.
         prepared = deps.gateway.prepareReception(artifact!.content);
-        if (certification.enabled) {
-          const allowed = withinCertificationSafetyCap(prepared.sizes);
-          const diagnostic = {
-            fiscalEnvironment: document.environment,
-            ...prepared.sizes,
-            capBytes: CERTIFICATION_SAFETY_CAP_BYTES,
-            effectiveSizePolicySource: source,
-          };
-          certification.observe({
-            fiscalEnvironment: document.environment,
-            allowed,
-            reason: allowed ? null : "CERTIFICATION_SIZE_CAP_EXCEEDED",
-            sizes: prepared.sizes,
-            capBytes: CERTIFICATION_SAFETY_CAP_BYTES,
-            effectiveSizePolicySource: source,
-            at: context.now(),
-          });
-          if (!allowed) {
-            deps.alert(
-              { jobId: job.id, documentId: document.id, ...diagnostic },
-              "sesión de certificación: el comprobante llega al tope de seguridad, no se envió",
-            );
-            await deps.jobs.stop(
-              deps.db,
-              job,
-              stopError("CERTIFICATION_SIZE_CAP_EXCEEDED", "DETERMINISTIC", diagnostic),
-              context.now(),
-            );
-            return;
-          }
-          deps.logger.info(
+        const allowed = withinTransmissionSizePolicy(prepared.sizes);
+        const diagnostic = {
+          fiscalEnvironment: document.environment,
+          ...prepared.sizes,
+          limitBytes: TRANSMISSION_SIZE_POLICY.limitBytes,
+          policyId: TRANSMISSION_SIZE_POLICY.id,
+        };
+        (deps.sizeDiagnostics ?? TRANSMISSION_SIZE_OBSERVER_OFF).observe({
+          ...prepared.sizes,
+          allowed,
+          blockReason: allowed ? null : "TRANSMISSION_SIZE_POLICY_EXCEEDED",
+        });
+        if (!allowed) {
+          deps.alert(
             { jobId: job.id, documentId: document.id, ...diagnostic },
-            "sesión de certificación: el comprobante queda por debajo del tope de seguridad",
+            "el comprobante excede la política conservadora de tamaño de EmiteYa: no se envió",
           );
+          await deps.jobs.stop(
+            deps.db,
+            job,
+            stopError("TRANSMISSION_SIZE_POLICY_EXCEEDED", "DETERMINISTIC", diagnostic),
+            context.now(),
+          );
+          return;
         }
+        deps.logger.info(
+          { jobId: job.id, documentId: document.id, ...diagnostic },
+          "el comprobante cumple la política conservadora de tamaño de EmiteYa",
+        );
       }
       const sent = artifact;
       await executeSriStep(

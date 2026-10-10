@@ -39,7 +39,6 @@ import {
   validityEnvelope,
 } from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
 import type { Job, JobStore } from "../../src/platform/jobs/jobs.ts";
-import { SYNTHETIC_POLICY_BYTES } from "../support/synthetic-size-policy.ts";
 import {
   authorizationResponse,
   failure,
@@ -113,8 +112,6 @@ export function creditNoteTransmission(prisma: PrismaClient, store: JobStore) {
         ...base(chosen),
         artifacts: createArtifactStore(prisma),
         // Múltiplo de la cifra SINTÉTICA de pruebas: el XML firmado real de una nota la supera.
-        sizePolicy: () => Promise.resolve({ maxSignedDocumentBytes: SYNTHETIC_POLICY_BYTES * 16 }),
-        today: () => "2026-10-05",
         alert: () => {},
       }),
     reconcile: (chosen: readonly DocumentTransitionFollower[] = followers) =>

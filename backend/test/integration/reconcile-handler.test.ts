@@ -32,7 +32,6 @@ import {
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import type { Job, NewJob } from "../../src/platform/jobs/jobs.ts";
 import { createPrismaJobStore, type JobStore } from "../../src/platform/jobs/prisma-job-store.ts";
-import { SYNTHETIC_POLICY_BYTES } from "../support/synthetic-size-policy.ts";
 import {
   authorizationResponse,
   failure,
@@ -106,9 +105,7 @@ describe("reconciliación por clave", () => {
     createTransmitHandler({
       ...base(),
       artifacts: createArtifactStore(prisma),
-      sizePolicy: () => Promise.resolve({ maxSignedDocumentBytes: SYNTHETIC_POLICY_BYTES }),
       gateway,
-      today: () => "2026-10-04",
       alert: () => {},
     });
   const context = () => ({ signal: new AbortController().signal, now: () => new Date() });

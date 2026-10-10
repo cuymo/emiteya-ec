@@ -163,13 +163,6 @@ export const envSchema = z
       .enum(["0", "1"])
       .default("0")
       .transform((value) => value === "1"),
-    // Sesión de certificación en Pruebas (add-sri-certification-safety-cap, design D1): solo la
-    // bandera es configurable; el tope de 40 000 bytes es una constante del código y no es un límite
-    // oficial del SRI (Q-47 abierta). No habilita la transmisión ni ningún comprobante de Producción.
-    SRI_CERTIFICATION_SAFETY_CAP_ENABLED: z
-      .enum(["0", "1"])
-      .default("0")
-      .transform((value) => value === "1"),
     SRI_JOB_WORKERS: int(0, 8).default(2),
     SRI_JOB_LEASE_SECONDS: int(30, 3_600).default(120),
     SRI_JOB_POLL_INTERVAL_MS: int(100, 60_000).default(2_000),

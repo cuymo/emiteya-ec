@@ -28,7 +28,6 @@ import { requireContext } from "./modules/identity/infrastructure/http/request-c
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
 import {
   catalogsModule,
-  ecuadorDate,
   fiscalCatalogQueries,
   loadInstalledFiscalCatalogs,
 } from "./modules/catalogs/infrastructure/index.ts";
@@ -128,7 +127,7 @@ import {
   createSriEvidenceRepository,
   createTransmissionSweeper,
   createTransmissionUnitOfWork,
-  createCertificationSession,
+  createTransmissionSizeDiagnostics,
   createTransmitHandler,
   registerTransmissionMetrics,
 } from "./modules/fiscal/infrastructure/index.ts";
@@ -613,22 +612,16 @@ closers.unshift({ name: "data-portability", close: () => portability.close() });
 // Transmisión al SRI (add-sri-transmission, design D5): nace deshabilitada. El estado se registra
 // sin secretos ni URLs; habilitada, la readiness exige sus precondiciones.
 const sriEndpoints = resolveSriEndpoints(env);
-// Sesión de certificación en Pruebas (add-sri-certification-safety-cap): apagada por defecto; su
-// tope de 40 000 bytes es una salvaguarda de la certificación, no un límite oficial del SRI.
-const certificationSession = createCertificationSession({
-  enabled: env.SRI_CERTIFICATION_SAFETY_CAP_ENABLED,
-  registry: metrics.registry,
-});
+// Política conservadora de tamaño de EmiteYa (adopt-conservative-sri-transmission-size-policy-v1):
+// la misma en Pruebas y en Producción, fija en el código y no es un límite oficial del SRI. Su
+// diagnóstico no identifica comprobantes.
+const sizeDiagnostics = createTransmissionSizeDiagnostics({ registry: metrics.registry });
 const transmissionGate = createTransmissionGate(
   {
     enabled: env.SRI_TRANSMISSION_ENABLED,
     workers: env.SRI_JOB_WORKERS,
     endpointsValid: () => endpointsValid(sriEndpoints, env.NODE_ENV === "production"),
-    // La política de tamaño se resuelve con la fecha del envío; aquí, con la de hoy (design D17).
-    sizePolicyAvailable: async () =>
-      (await catalogQueries.sriTransmissionSizePolicy(ecuadorDate(new Date()))) !== null,
-    certificationSafetyCap: certificationSession.enabled,
-    lastCertificationCheck: certificationSession.lastCheck,
+    lastSizeCheck: sizeDiagnostics.lastCheck,
   },
   { logger, registry: metrics.registry },
 );
@@ -638,8 +631,7 @@ logger.info(
     sriTransmission: env.SRI_TRANSMISSION_ENABLED ? "enabled" : "disabled",
     workers: env.SRI_JOB_WORKERS,
     endpointOverrides: SRI_ENDPOINT_VARIABLES.filter((name) => env[name] !== undefined).length,
-    certificationSafetyCap: certificationSession.enabled ? "enabled" : "disabled",
-    effectiveSizePolicySource: initialTransmission.sizeGate.effectiveSizePolicySource,
+    sizePolicy: initialTransmission.sizePolicy.source,
   },
   "transmisión al SRI",
 );
@@ -686,7 +678,6 @@ const stepDependencies = {
       onReturn: () => inventoryMetrics.movement("DEVOLUCION_NC"),
     }),
   ],
-  certification: certificationSession,
   observer: registerTransmissionMetrics(metrics.registry, {
     prisma: database.prisma,
     breakerState: (environment, service) => sriBreaker.state(environment, service),
@@ -696,12 +687,11 @@ const transmitHandler = createTransmitHandler({
   ...stepDependencies,
   documents: createDocumentRepository(database.prisma),
   artifacts: createArtifactStore(database.prisma),
-  sizePolicy: (date) => catalogQueries.sriTransmissionSizePolicy(date),
   gateway: sriGateway,
   classifiers: sriClassifiers,
   settings: transmissionSettings,
-  today: ecuadorDate,
   alert: (details, message) => logger.error(details, message),
+  sizeDiagnostics,
 });
 const authorizeHandler = createAuthorizeHandler({
   ...stepDependencies,
@@ -803,7 +793,7 @@ const app = createApp({
       details: {
         sriTransmission: transmission.enabled ? "enabled" : "disabled",
         rideAssets: rideAssetsAvailable ? "available" : "unavailable",
-        sriSizeGate: transmission.sizeGate,
+        sriSizePolicy: transmission.sizePolicy,
       },
     };
   },

@@ -27,12 +27,7 @@ import {
   type SriExchange,
   type TransportOutcome,
 } from "../../sri-engine/application/transport.ts";
-import {
-  CERTIFICATION_SAFETY_CAP_BYTES,
-  certificationAllows,
-} from "../domain/certification-safety-cap.ts";
 import type { DocumentState, TransitionActor, TransitionCause } from "../domain/document.ts";
-import type { CertificationSession } from "./certification-session.ts";
 import type { SriMessage, SriOperation, SriOutcome } from "../domain/transmission.ts";
 import type { DocumentTransitionFollower } from "./document-transitions.ts";
 import type { ArtifactStore, DocumentRepository, StoredDocument } from "./ports.ts";
@@ -141,11 +136,6 @@ export type StepDependencies = Readonly<{
    * pero nunca se compone sin decidirlos.
    */
   followers: readonly DocumentTransitionFollower[];
-  /**
-   * Sesión de certificación en Pruebas (add-sri-certification-safety-cap, design D4). Sin ella, o
-   * apagada, no cambia nada.
-   */
-  certification?: CertificationSession;
 }>;
 
 export const UNPARSEABLE_VERSION = "unparseable/1";
@@ -158,7 +148,7 @@ export class DocumentStateChangedError extends Error {
   }
 }
 
-export type StepResult = "DECIDED" | "BREAKER_OPEN" | "SHUTTING_DOWN" | "CERTIFICATION_BLOCKED";
+export type StepResult = "DECIDED" | "BREAKER_OPEN" | "SHUTTING_DOWN";
 
 /** Aplica la decisión en la TX B. El job actual termina antes de que nazca el siguiente. */
 export async function applyDecision(
@@ -274,41 +264,6 @@ export async function executeSriStep<C>(
       const now = input.now();
       await deps.jobs.reschedule(deps.db, job, { at: now, now, consumeAttempt: false });
       return "SHUTTING_DOWN";
-    }
-    // Con la sesión de certificación encendida, un comprobante que no es de Pruebas no llega al SRI:
-    // ni envío ni consulta. No se redirige ni se corrige su ambiente (design D4).
-    const certification = deps.certification;
-    if (certification?.enabled && !certificationAllows(document.environment)) {
-      const now = input.now();
-      certification.observe({
-        fiscalEnvironment: document.environment,
-        allowed: false,
-        reason: "CERTIFICATION_ENVIRONMENT_NOT_TEST",
-        sizes: null,
-        capBytes: CERTIFICATION_SAFETY_CAP_BYTES,
-        effectiveSizePolicySource: null,
-        at: now,
-      });
-      deps.logger.warn(
-        {
-          jobId: job.id,
-          documentId: document.id,
-          operation: step.operation,
-          fiscalEnvironment: document.environment,
-        },
-        "sesión de certificación: comprobante fuera de Pruebas, sin llamada al SRI",
-      );
-      await deps.jobs.stop(
-        deps.db,
-        job,
-        {
-          code: "CERTIFICATION_ENVIRONMENT_NOT_TEST",
-          errorClass: "DETERMINISTIC",
-          detail: { fiscalEnvironment: document.environment, operation: step.operation },
-        },
-        now,
-      );
-      return "CERTIFICATION_BLOCKED";
     }
     const exchange = await step.call(document);
     if (isBreakerOpen(exchange)) {

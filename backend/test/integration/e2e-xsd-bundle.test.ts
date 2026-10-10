@@ -65,11 +65,10 @@ describe("paquete de XSD al arrancar", () => {
       status: "ready",
       sriTransmission: "disabled",
       rideAssets: "available",
-      sriSizeGate: {
-        certificationSafetyCapEnabled: false,
-        capBytes: 40_000,
-        effectiveSizePolicySource: "MISSING",
-        lastCertificationCheck: null,
+      sriSizePolicy: {
+        source: "PRODUCT_CONSERVATIVE_POLICY_V1",
+        limitBytes: 40_000,
+        lastCheck: null,
       },
     });
     expect(result.metrics).toMatch(/^sri_transmission_enabled 0$/m);
@@ -77,23 +76,23 @@ describe("paquete de XSD al arrancar", () => {
     expect(result.output).not.toMatch(/celcer|sri\.gob\.ec|postgres(ql)?:\/\//);
   }, 120_000);
 
-  it("con la transmisión habilitada sin política de tamaño no se declara listo", async () => {
-    const result = await startWith({ SRI_TRANSMISSION_ENABLED: "1" });
+  it("con la transmisión habilitada sin workers no se declara listo; la política de tamaño nunca es una precondición", async () => {
+    const result = await startWith({ SRI_TRANSMISSION_ENABLED: "1", SRI_JOB_WORKERS: "0" });
     expect(result.ready).toBe(503);
     expect(result.body).toEqual({
       status: "unavailable",
       sriTransmission: "enabled",
       rideAssets: "available",
-      sriSizeGate: {
-        certificationSafetyCapEnabled: false,
-        capBytes: 40_000,
-        effectiveSizePolicySource: "MISSING",
-        lastCertificationCheck: null,
+      sriSizePolicy: {
+        source: "PRODUCT_CONSERVATIVE_POLICY_V1",
+        limitBytes: 40_000,
+        lastCheck: null,
       },
     });
     expect(result.metrics).toMatch(/^sri_transmission_enabled 1$/m);
     expect(result.output).toContain("transmisión al SRI habilitada sin sus precondiciones");
-    expect(result.output).toContain('"missing":["size-policy"]');
+    expect(result.output).toContain('"missing":["workers"]');
+    expect(result.output).not.toContain("size-policy");
   }, 120_000);
 
   it("con un XSD alterado no se declara listo", async () => {
@@ -135,11 +134,10 @@ describe("paquete de XSD al arrancar", () => {
       status: "unavailable",
       sriTransmission: "disabled",
       rideAssets: "unavailable",
-      sriSizeGate: {
-        certificationSafetyCapEnabled: false,
-        capBytes: 40_000,
-        effectiveSizePolicySource: "MISSING",
-        lastCertificationCheck: null,
+      sriSizePolicy: {
+        source: "PRODUCT_CONSERVATIVE_POLICY_V1",
+        limitBytes: 40_000,
+        lastCheck: null,
       },
     });
     expect(result.metrics).toMatch(/^ride_assets_available 0$/m);

@@ -16,13 +16,24 @@ describe("motivo de una transmisión detenida", () => {
     );
   });
 
-  it("los bloqueos de la sesión de certificación dicen que no hubo envío ni respuesta del SRI (add-sri-certification-safety-cap)", () => {
-    expect(stopMessage("CERTIFICATION_SIZE_CAP_EXCEEDED")).toBe(
-      "El comprobante supera el tope de seguridad de la sesión de certificación en Pruebas, que no es un límite del SRI. No se envió nada al SRI.",
+  it("la política de tamaño habla del límite de EmiteYa, nunca de un límite del SRI (adopt-conservative-sri-transmission-size-policy-v1)", () => {
+    const message = stopMessage("TRANSMISSION_SIZE_POLICY_EXCEEDED");
+    expect(message).toBe(
+      "El comprobante excede el límite de seguridad de transmisión de EmiteYa. Reduzca el contenido antes de enviarlo.",
     );
-    expect(stopMessage("CERTIFICATION_ENVIRONMENT_NOT_TEST")).toBe(
-      "La sesión de certificación solo se comunica con el SRI sobre comprobantes del ambiente de Pruebas. No se envió nada al SRI.",
-    );
+    expect(message).not.toMatch(/SRI|KB|40/);
+  });
+
+  it("los motivos retirados ya no existen y reciben el mensaje genérico", () => {
+    for (const code of [
+      "TOO_LARGE",
+      "SIZE_POLICY_MISSING",
+      "CERTIFICATION_SIZE_CAP_EXCEEDED",
+      "CERTIFICATION_ENVIRONMENT_NOT_TEST",
+    ]) {
+      expect(TRANSMISSION_STOP_CODES).not.toContain(code);
+      expect(stopMessage(code)).toBe("La transmisión se detuvo.");
+    }
   });
 
   it("un código desconocido recibe el mensaje genérico", () => {

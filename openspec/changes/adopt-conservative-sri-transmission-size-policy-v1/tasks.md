@@ -2,7 +2,7 @@
 
 ## 1. Política de dominio y motivo de parada
 
-- [ ] 1.1 Crear `fiscal/domain/transmission-size-policy.ts` con `TRANSMISSION_SIZE_POLICY`
+- [x] 1.1 Crear `fiscal/domain/transmission-size-policy.ts` con `TRANSMISSION_SIZE_POLICY`
   (`PRODUCT_CONSERVATIVE_POLICY_V1`, 40 000 bytes), `TransmissionSizes` y
   `withinTransmissionSizePolicy` (design D1). Eliminar `fiscal/domain/certification-safety-cap.ts`.
   Verificar con `test/fiscal/transmission-size-policy.test.ts`:
@@ -10,7 +10,7 @@
   - 40 000 y 40 001 se bloquean;
   - el bloqueo ocurre por el XML, por el base64 o por el SOAP, cada uno solo;
   - el identificador y el límite no cambian.
-- [ ] 1.2 Reemplazar en `TRANSMISSION_STOP_CODES` y en `transmission-messages.ts` los cuatro motivos
+- [x] 1.2 Reemplazar en `TRANSMISSION_STOP_CODES` y en `transmission-messages.ts` los cuatro motivos
   retirados por `TRANSMISSION_SIZE_POLICY_EXCEEDED`, con su mensaje de negocio (design D5). Verificar
   con `test/invoices/transmission-messages.test.ts`:
   - el texto exacto;
@@ -19,10 +19,10 @@
 
 ## 2. Transmisión con la política v1
 
-- [ ] 2.1 Crear `fiscal/infrastructure/transmission-size-diagnostics.ts`, con `observe` y `lastCheck`,
+- [x] 2.1 Crear `fiscal/infrastructure/transmission-size-diagnostics.ts`, con `observe` y `lastCheck`,
   y el contador `sri_transmission_size_policy_blocks_total`, sin identidad (design D4). Eliminar los
   dos `certification-session.ts` y sus métricas.
-- [ ] 2.2 Cambiar `transmit-handler` (design D2): integridad, `prepareReception` una vez, la política
+- [x] 2.2 Cambiar `transmit-handler` (design D2): integridad, `prepareReception` una vez, la política
   en los dos ambientes y la parada `TRANSMISSION_SIZE_POLICY_EXCEEDED` con el detalle sin contenido.
   `submit` recibe el cuerpo preparado. Quitar `sizePolicy`, `today` y las ramas `MISSING`,
   `TOO_LARGE` y `CERTIFICATION_*`. Quitar de `executeSriStep` el bloqueo de Producción y
@@ -34,7 +34,7 @@
   - el `Buffer` enviado es el medido;
   - un bloqueo no deja intento ni transición;
   - el registro no contiene el XML, el base64 ni el SOAP.
-- [ ] 2.3 Quitar de `transmission-gate` la precondición de tamaño y reemplazar `sizeGate` por
+- [x] 2.3 Quitar de `transmission-gate` la precondición de tamaño y reemplazar `sizeGate` por
   `sizePolicy` (`source`, `limitBytes` y `lastCheck`). La readiness de `main.ts` lo publica como
   `sriSizePolicy` (design D4).
   Verificar con `test/fiscal/transmission-gate.test.ts`:
@@ -42,21 +42,21 @@
   - habilitada con endpoints y workers: lista sin ninguna política cargada;
   - falta un endpoint o un worker: no lista;
   - la fuente es siempre `PRODUCT_CONSERVATIVE_POLICY_V1` y nunca `SRI_OFFICIAL_POLICY`.
-- [ ] 2.4 Quitar `SRI_CERTIFICATION_SAFETY_CAP_ENABLED` de `config/env.ts` y su cableado de
+- [x] 2.4 Quitar `SRI_CERTIFICATION_SAFETY_CAP_ENABLED` de `config/env.ts` y su cableado de
   `main.ts`: sesión, registro de arranque y dependencias del paso (design D3). El registro de arranque
   informa la fuente de la política.
   Verificar con `test/env.test.ts`:
   - no hay ninguna variable para el límite;
   - la bandera retirada no tiene efecto;
   - `SRI_TRANSMISSION_ENABLED` sigue naciendo apagada.
-- [ ] 2.5 Quitar `sizePolicy` y `today` de los arneses que construyen el handler:
+- [x] 2.5 Quitar `sizePolicy` y `today` de los arneses que construyen el handler:
   - `credit-note-transmission-harness.ts`;
   - `reconcile-handler.test.ts`, `authorize-handler.test.ts` e `inventory-outflow.test.ts`;
   - `inventory-configuration-api.test.ts`.
 
   Adaptar a `sriSizePolicy` las aserciones de la readiness de `e2e-xsd-bundle.test.ts` y
   `e2e-sri-transmission.test.ts`. Verificar con el typecheck.
-- [ ] 2.6 Adaptar `test/integration/transmit-handler.test.ts` (PostgreSQL):
+- [x] 2.6 Adaptar `test/integration/transmit-handler.test.ts` (PostgreSQL):
   - camino feliz bajo el límite en Pruebas y en Producción;
   - un comprobante que llega al límite se detiene con `TRANSMISSION_SIZE_POLICY_EXCEEDED`, sin fila
     en `sri_attempt` ni transición;

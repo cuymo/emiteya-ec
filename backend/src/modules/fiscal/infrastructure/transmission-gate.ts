@@ -2,15 +2,16 @@
 // y la instalación puede estar lista, pero lo deja ver en la readiness, en una métrica y en el log
 // de arranque. Habilitada, exige sus precondiciones técnicas; si falta una, la readiness es 503,
 // el motivo va al log y los jobs `sri.*` siguen pausados. Nunca salta una invariante fiscal: los
-// handlers comprueban igual la integridad, el tamaño y la evidencia previa.
+// handlers comprueban igual la integridad, la política de tamaño y la evidencia previa. La política
+// conservadora de tamaño siempre existe y no es una precondición
+// (adopt-conservative-sri-transmission-size-policy-v1, design D4).
 import { Gauge, type Registry } from "@prometheus-io/client";
 import type { Logger } from "pino";
-import type { CertificationCheck } from "../application/certification-session.ts";
+import type { TransmissionSizeCheck } from "../application/transmission-size-diagnostics.ts";
 import {
-  CERTIFICATION_SAFETY_CAP_BYTES,
-  resolveSizePolicySource,
-  type EffectiveSizePolicySource,
-} from "../domain/certification-safety-cap.ts";
+  TRANSMISSION_SIZE_POLICY,
+  type TransmissionSizePolicyId,
+} from "../domain/transmission-size-policy.ts";
 
 export const SRI_JOB_PREFIX = "sri.";
 
@@ -19,30 +20,25 @@ export type TransmissionPreconditions = Readonly<{
   workers: number;
   /** Endpoints por ambiente y servicio resueltos y válidos. */
   endpointsValid: () => boolean;
-  /** Hay una política de tamaño vigente (design D17). */
-  sizePolicyAvailable: () => Promise<boolean>;
-  /**
-   * Sesión de certificación en Pruebas (add-sri-certification-safety-cap, design D6): con ella, la
-   * precondición de tamaño se cumple también con el tope de seguridad, que no es la política oficial.
-   */
-  certificationSafetyCap?: boolean;
-  /** Última comprobación de la sesión, sin identificar el comprobante. */
-  lastCertificationCheck?: () => CertificationCheck | null;
+  /** Última comprobación de la política de tamaño, sin identificar el comprobante. */
+  lastSizeCheck?: () => TransmissionSizeCheck | null;
 }>;
 
-/** Fuente efectiva del límite de tamaño y estado de la sesión de certificación, sin secretos. */
-export type SizeGateState = Readonly<{
-  certificationSafetyCapEnabled: boolean;
-  capBytes: number;
-  effectiveSizePolicySource: EffectiveSizePolicySource;
-  lastCertificationCheck: CertificationCheck | null;
+/**
+ * La política de tamaño vigente y su última comprobación, sin secretos: nunca el XML, el base64 ni
+ * el cuerpo SOAP. Su fuente es la política del producto, nunca una política oficial del SRI.
+ */
+export type SizePolicyState = Readonly<{
+  source: TransmissionSizePolicyId;
+  limitBytes: number;
+  lastCheck: TransmissionSizeCheck | null;
 }>;
 
 export type TransmissionState = Readonly<{
   enabled: boolean;
   ready: boolean;
   missing: readonly string[];
-  sizeGate: SizeGateState;
+  sizePolicy: SizePolicyState;
 }>;
 
 export type TransmissionGate = {
@@ -66,27 +62,19 @@ export function createTransmissionGate(
   let open = false;
   let lastMissing: string | undefined;
 
-  async function refresh(): Promise<TransmissionState> {
-    const certificationSafetyCap = preconditions.certificationSafetyCap ?? false;
-    const officialPolicy = await preconditions.sizePolicyAvailable().catch(() => false);
-    const sizeGate: SizeGateState = {
-      certificationSafetyCapEnabled: certificationSafetyCap,
-      capBytes: CERTIFICATION_SAFETY_CAP_BYTES,
-      effectiveSizePolicySource: resolveSizePolicySource({
-        officialPolicy,
-        certificationSession: certificationSafetyCap,
-      }),
-      lastCertificationCheck: preconditions.lastCertificationCheck?.() ?? null,
+  function refresh(): Promise<TransmissionState> {
+    const sizePolicy: SizePolicyState = {
+      source: TRANSMISSION_SIZE_POLICY.id,
+      limitBytes: TRANSMISSION_SIZE_POLICY.limitBytes,
+      lastCheck: preconditions.lastSizeCheck?.() ?? null,
     };
     if (!preconditions.enabled) {
       open = false;
-      return { enabled: false, ready: true, missing: [], sizeGate };
+      return Promise.resolve({ enabled: false, ready: true, missing: [], sizePolicy });
     }
     const missing: string[] = [];
     if (preconditions.workers < 1) missing.push("workers");
     if (!preconditions.endpointsValid()) missing.push("endpoints");
-    // Sin política oficial, solo la sesión de certificación cumple la precondición (design D3).
-    if (sizeGate.effectiveSizePolicySource === "MISSING") missing.push("size-policy");
     open = missing.length === 0;
     const key = missing.join(",");
     if (key !== lastMissing) {
@@ -94,7 +82,7 @@ export function createTransmissionGate(
       else deps.logger.warn({ missing }, "transmisión al SRI habilitada sin sus precondiciones");
       lastMissing = key;
     }
-    return { enabled: true, ready: open, missing, sizeGate };
+    return Promise.resolve({ enabled: true, ready: open, missing, sizePolicy });
   }
 
   return {

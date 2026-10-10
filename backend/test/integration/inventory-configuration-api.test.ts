@@ -172,8 +172,6 @@ describe("inicialización y control del inventario sobre HTTP", () => {
       ...handlerBase(),
       artifacts: createArtifactStore(prisma),
       // Límite SINTÉTICO amplio: el XML firmado real supera el de las pruebas unitarias.
-      sizePolicy: () => Promise.resolve({ maxSignedDocumentBytes: 1_000_000 }),
-      today: () => "2026-10-07",
       alert: () => {},
     }).run(await leaseActive(`sri.transmit:${documentId}`), context());
     const signed = await prisma.documentArtifact.findFirstOrThrow({

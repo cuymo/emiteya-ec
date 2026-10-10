@@ -1,17 +1,17 @@
 // Handler `sri.transmit` con un SRI simulado (add-sri-transmission, tareas 8.1 y 8.2, design D6,
-// D9, D11, D13, D14 y D17): integridad y tamaño antes de llamar, los bytes exactos en el sobre, la
-// decisión de la recepción con su traspaso atómico al siguiente job, dos workers sobre la misma
-// factura, el barrido y el contador del punto intacto. Las respuestas son SINTÉTICAS con la
-// estructura oficial y la política de tamaño es la SINTÉTICA del arnés.
+// D9, D11, D13 y D14). Cubre:
+// - la integridad y la política conservadora de tamaño antes de llamar
+//   (adopt-conservative-sri-transmission-size-policy-v1);
+// - los bytes exactos en el sobre;
+// - la decisión de la recepción con su traspaso atómico al siguiente job;
+// - dos workers sobre la misma factura, el barrido y el contador del punto intacto.
+// Las respuestas son SINTÉTICAS con la estructura oficial.
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createTransmitHandler,
   integrityProblem,
 } from "../../src/modules/fiscal/application/transmit-handler.ts";
-import type {
-  CertificationCheck,
-  CertificationSession,
-} from "../../src/modules/fiscal/application/certification-session.ts";
+import type { TransmissionSizeCheck } from "../../src/modules/fiscal/application/transmission-size-diagnostics.ts";
 import { DocumentStateChangedError } from "../../src/modules/fiscal/application/transmission-step.ts";
 import { DEFAULT_TRANSMISSION_SETTINGS } from "../../src/modules/fiscal/application/transmission-settings.ts";
 import { createArtifactStore } from "../../src/modules/fiscal/infrastructure/prisma-artifacts.ts";
@@ -31,7 +31,6 @@ import {
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { LeaseLostError, type Job } from "../../src/platform/jobs/jobs.ts";
 import { createPrismaJobStore, type JobStore } from "../../src/platform/jobs/prisma-job-store.ts";
-import { SYNTHETIC_POLICY_BYTES } from "../support/synthetic-size-policy.ts";
 import { failure, receptionResponse, response, soapFault } from "../support/sri-responses.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { insertFiscalCompany, type FiscalCompany } from "./fiscal-harness.ts";
@@ -51,10 +50,7 @@ describe("handler sri.transmit", () => {
   const sent: Buffer[] = [];
   const replies: TransportOutcome[] = [];
   const alerts: string[] = [];
-  let policy: { maxSignedDocumentBytes: number } | null;
-  /** Sesión de certificación de Pruebas (add-sri-certification-safety-cap); apagada por defecto. */
-  let certification: CertificationSession | undefined;
-  const certificationChecks: CertificationCheck[] = [];
+  const sizeChecks: TransmissionSizeCheck[] = [];
 
   const handler = (classifiers = sriClassifiers) =>
     createTransmitHandler({
@@ -64,10 +60,8 @@ describe("handler sri.transmit", () => {
       jobs: store,
       logger: { info: () => {}, warn: () => {} },
       followers: [],
-      ...(certification ? { certification } : {}),
       documents: createDocumentRepository(prisma),
       artifacts: createArtifactStore(prisma),
-      sizePolicy: () => Promise.resolve(policy),
       gateway: {
         prepareReception,
         submit: (environment, prepared) => {
@@ -87,8 +81,8 @@ describe("handler sri.transmit", () => {
       },
       classifiers,
       settings: DEFAULT_TRANSMISSION_SETTINGS,
-      today: () => "2026-10-04",
       alert: (_details, message) => void alerts.push(message),
+      sizeDiagnostics: { observe: (check) => void sizeChecks.push(check) },
     });
 
   const transmitJob = (document: TestDocument, owner?: string) =>
@@ -140,9 +134,7 @@ describe("handler sri.transmit", () => {
     sent.length = 0;
     replies.length = 0;
     alerts.length = 0;
-    policy = { maxSignedDocumentBytes: SYNTHETIC_POLICY_BYTES };
-    certification = undefined;
-    certificationChecks.length = 0;
+    sizeChecks.length = 0;
   });
 
   afterEach(() => {
@@ -228,88 +220,62 @@ describe("handler sri.transmit", () => {
       expect(integrityProblem(document, null)).toBe("MISSING_ARTIFACT");
     });
 
-    it("sobre el límite o sin política vigente, se detiene sin llamar", async () => {
-      const big = await signedWithJob("SIGNED", {
-        signedXml: (key) =>
-          Buffer.concat([signedXmlOf(key), Buffer.alloc(SYNTHETIC_POLICY_BYTES, 0x20)]),
-      });
-      await run(big.job);
-      expect((await jobsOf(big.document.id))[0]).toMatchObject({
-        status: "STOPPED",
-        lastErrorCode: "TOO_LARGE",
-        lastErrorClass: "DETERMINISTIC",
-        lastErrorDetail: {
-          sizeBytes: signedXmlOf(big.document.accessKey).length + SYNTHETIC_POLICY_BYTES,
-          maxBytes: SYNTHETIC_POLICY_BYTES,
-        },
-      });
-      expect(
-        await prisma.electronicDocument.findUniqueOrThrow({ where: { id: big.document.id } }),
-      ).toMatchObject({
-        state: "SIGNED",
-        documentNumber: big.document.documentNumber,
-        accessKey: big.document.accessKey,
-      });
-      policy = null;
-      const missing = await signedWithJob();
-      await run(missing.job);
-      expect((await jobsOf(missing.document.id))[0]).toMatchObject({
-        status: "STOPPED",
-        lastErrorCode: "SIZE_POLICY_MISSING",
-      });
+    it("bajo el límite, Pruebas y Producción envían el cuerpo medido y la evidencia registra su tamaño", async () => {
+      for (const environment of ["TEST", "PRODUCTION"] as const) {
+        sizeChecks.length = 0;
+        const { document, job } = await signedWithJob("SIGNED", { environment });
+        await run(job);
+        expect(await stateOf(document.id)).toBe("RECEIVED");
+        const measured = prepareReception(signedXmlOf(document.accessKey));
+        const [attempt] = await prisma.sriAttempt.findMany({ where: { documentId: document.id } });
+        expect(attempt).toMatchObject({
+          environment,
+          envelopeSize: measured.sizes.soapRequestBytes,
+          envelopeSha256: sha256(measured.envelope),
+        });
+        expect(sizeChecks).toEqual([{ ...measured.sizes, allowed: true, blockReason: null }]);
+      }
+    });
+
+    it("un comprobante que llega al límite se detiene antes de la red, sin intento ni transición, en los dos ambientes", async () => {
+      // XML de 30 000 bytes: él mismo queda debajo del límite, pero su base64 mide 40 000.
+      const padded = (key: string) => {
+        const xml = signedXmlOf(key);
+        return Buffer.concat([xml, Buffer.alloc(30_000 - xml.length, 0x20)]);
+      };
+      for (const environment of ["TEST", "PRODUCTION"] as const) {
+        const { document, job } = await signedWithJob("SIGNED", {
+          environment,
+          signedXml: padded,
+        });
+        await run(job);
+        const measured = prepareReception(padded(document.accessKey));
+        expect(measured.sizes.signedXmlBytes).toBe(30_000);
+        expect(measured.sizes.base64PayloadBytes).toBe(40_000);
+        expect((await jobsOf(document.id))[0]).toMatchObject({
+          status: "STOPPED",
+          lastErrorCode: "TRANSMISSION_SIZE_POLICY_EXCEEDED",
+          lastErrorClass: "DETERMINISTIC",
+          lastErrorDetail: {
+            fiscalEnvironment: environment,
+            ...measured.sizes,
+            limitBytes: 40_000,
+            policyId: "PRODUCT_CONSERVATIVE_POLICY_V1",
+          },
+        });
+        expect(
+          await prisma.electronicDocument.findUniqueOrThrow({ where: { id: document.id } }),
+        ).toMatchObject({
+          state: "SIGNED",
+          documentNumber: document.documentNumber,
+          accessKey: document.accessKey,
+        });
+        expect(await prisma.sriAttempt.count({ where: { documentId: document.id } })).toBe(0);
+        expect(await transitionsOf(document.id)).toEqual([]);
+      }
       expect(sent).toEqual([]);
-      expect(await stateOf(missing.document.id)).toBe("SIGNED");
-    });
-
-    it("el límite exacto de la política se envía y un byte más no", async () => {
-      const base = signedXmlOf("0".repeat(49)).length;
-      policy = { maxSignedDocumentBytes: base + 100 };
-      const exact = await signedWithJob("SIGNED", {
-        signedXml: (key) => Buffer.concat([signedXmlOf(key), Buffer.alloc(100, 0x20)]),
-      });
-      await run(exact.job);
-      expect(sent).toHaveLength(1);
-      const over = await signedWithJob("SIGNED", {
-        signedXml: (key) => Buffer.concat([signedXmlOf(key), Buffer.alloc(101, 0x20)]),
-      });
-      await run(over.job);
-      expect(sent).toHaveLength(1);
-      expect((await jobsOf(over.document.id))[0]!.lastErrorCode).toBe("TOO_LARGE");
-    });
-
-    it("sesión de certificación sin política oficial: un comprobante de Pruebas bajo el tope se envía con el cuerpo medido (add-sri-certification-safety-cap)", async () => {
-      policy = null;
-      certification = { enabled: true, observe: (check) => void certificationChecks.push(check) };
-      const { document, job } = await signedWithJob();
-      await run(job);
-      expect(sent).toHaveLength(1);
-      expect(await stateOf(document.id)).toBe("RECEIVED");
-      const measured = prepareReception(signedXmlOf(document.accessKey));
-      const [attempt] = await prisma.sriAttempt.findMany({ where: { documentId: document.id } });
-      expect(attempt!.envelopeSize).toBe(measured.sizes.soapRequestBytes);
-      expect(attempt!.envelopeSha256).toBe(sha256(measured.envelope));
-      expect(certificationChecks).toEqual([
-        expect.objectContaining({
-          allowed: true,
-          fiscalEnvironment: "TEST",
-          effectiveSizePolicySource: "CERTIFICATION_CONSERVATIVE_CAP",
-          sizes: measured.sizes,
-        }),
-      ]);
-    });
-
-    it("sesión de certificación: un comprobante de Producción se detiene sin llamada ni intento (add-sri-certification-safety-cap)", async () => {
-      policy = null;
-      certification = { enabled: true, observe: (check) => void certificationChecks.push(check) };
-      const { document, job } = await signedWithJob("SIGNED", { environment: "PRODUCTION" });
-      await run(job);
-      expect(sent).toEqual([]);
-      expect((await jobsOf(document.id))[0]).toMatchObject({
-        status: "STOPPED",
-        lastErrorCode: "CERTIFICATION_ENVIRONMENT_NOT_TEST",
-      });
-      expect(await prisma.sriAttempt.count({ where: { documentId: document.id } })).toBe(0);
-      expect(await stateOf(document.id)).toBe("SIGNED");
+      expect(alerts.filter((a) => a.includes("política conservadora de tamaño"))).toHaveLength(2);
+      expect(alerts.join(" ")).not.toMatch(/<|soap|claveAcceso/i);
     });
 
     it("un envío que empezó y no dejó evidencia se reconcilia antes de reenviar", async () => {

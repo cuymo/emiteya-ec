@@ -58,18 +58,15 @@ export const RECONCILABLE_STATES: ReadonlySet<DocumentState> = new Set([
 ]);
 
 /**
- * Motivos con que se detiene un job del SRI (design D5, D9 y D17). El estado fiscal no cambia: el
+ * Motivos con que se detiene un job del SRI (design D5 y D9). El estado fiscal no cambia: el
  * comprobante queda visible, alertado y reconciliable por el administrador.
  */
 export const TRANSMISSION_STOP_CODES = [
   "INTEGRITY_FAILED",
-  "TOO_LARGE",
-  "SIZE_POLICY_MISSING",
+  // Política conservadora de tamaño (adopt-conservative-sri-transmission-size-policy-v1, design
+  // D5): bloqueo interno antes de cualquier llamada, nunca una respuesta del SRI.
+  "TRANSMISSION_SIZE_POLICY_EXCEEDED",
   "SRI_UNAVAILABLE",
   "HANDLER_ERROR",
-  // Sesión de certificación (add-sri-certification-safety-cap, design D5): bloqueos internos antes
-  // de cualquier llamada, nunca una respuesta del SRI.
-  "CERTIFICATION_SIZE_CAP_EXCEEDED",
-  "CERTIFICATION_ENVIRONMENT_NOT_TEST",
 ] as const;
 export type TransmissionStopCode = (typeof TRANSMISSION_STOP_CODES)[number];

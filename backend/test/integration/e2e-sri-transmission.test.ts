@@ -12,10 +12,7 @@ import type { DraftView, InvoiceSummaryView, InvoiceView } from "@facturador/con
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { FIXTURE_PASSWORD, FIXTURE_RUC, readFixture } from "../support/p12-fixtures.ts";
 import { SRI_HOST, listen, outboundProxy, simulatedSri } from "../support/simulated-sri.ts";
-import {
-  installSyntheticSizePolicy,
-  syntheticSizePolicy,
-} from "../support/synthetic-size-policy.ts";
+import { prepareReception } from "../../src/modules/sri-engine/infrastructure/soap-envelopes.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { E2E_ORIGIN, startE2eBackend, type E2eBackend } from "./e2e-backend.ts";
 
@@ -233,11 +230,10 @@ describe("flujo completo de la transmisión al SRI", () => {
       status: "ready",
       sriTransmission: "disabled",
       rideAssets: "available",
-      sriSizeGate: {
-        certificationSafetyCapEnabled: false,
-        capBytes: 40_000,
-        effectiveSizePolicySource: "MISSING",
-        lastCertificationCheck: null,
+      sriSizePolicy: {
+        source: "PRODUCT_CONSERVATIVE_POLICY_V1",
+        limitBytes: 40_000,
+        lastCheck: null,
       },
     });
     expect(await metric("sri_transmission_enabled")).toBe("sri_transmission_enabled 0");
@@ -249,23 +245,16 @@ describe("flujo completo de la transmisión al SRI", () => {
     expect(await db.database.prisma.sriAttempt.count()).toBe(0);
     expect([sri.calls, proxy.destinations]).toEqual([[], []]);
 
-    // 3. Política de tamaño SINTÉTICA (Q-47 sigue abierta) y rearranque con la transmisión
-    //    habilitada: la factura pendiente se envía con sus bytes exactos y queda autorizada.
+    // 3. Rearranque con la transmisión habilitada, sin cargar ninguna política: la política
+    //    conservadora de tamaño siempre existe (adopt-conservative-sri-transmission-size-policy-v1).
+    //    La factura pendiente se envía con sus bytes exactos y queda autorizada.
     await backend.stop();
-    await installSyntheticSizePolicy(db.database.prisma, [
-      syntheticSizePolicy({ maxSignedDocumentBytes: 1_000_000 }),
-    ]);
     backend = await start(enabledEnv());
-    expect(await (await fetch(`${backend.base}/health/ready`)).json()).toEqual({
+    expect(await (await fetch(`${backend.base}/health/ready`)).json()).toMatchObject({
       status: "ready",
       sriTransmission: "enabled",
       rideAssets: "available",
-      sriSizeGate: {
-        certificationSafetyCapEnabled: false,
-        capBytes: 40_000,
-        effectiveSizePolicySource: "SRI_OFFICIAL_POLICY",
-        lastCertificationCheck: null,
-      },
+      sriSizePolicy: { source: "PRODUCT_CONSERVATIVE_POLICY_V1", limitBytes: 40_000 },
     });
     expect(await metric("sri_transmission_enabled")).toBe("sri_transmission_enabled 1");
     await waitForState(first.id, "AUTHORIZED", 30_000);
@@ -274,6 +263,18 @@ describe("flujo completo de la transmisión al SRI", () => {
     });
     expect(sri.received.get(first.accessKey)?.equals(Buffer.from(signed.content))).toBe(true);
     expect(callsFor(first.accessKey)).toEqual(["RECEPTION", "AUTHORIZATION"]);
+    // La readiness muestra la última comprobación de tamaño, sin identificar el comprobante.
+    const checked = (await (await fetch(`${backend.base}/health/ready`)).json()) as {
+      sriSizePolicy: { lastCheck: Record<string, unknown> | null };
+    };
+    expect(checked.sriSizePolicy.lastCheck).toEqual({
+      signedXmlBytes: signed.content.length,
+      base64PayloadBytes: Buffer.from(signed.content).toString("base64").length,
+      soapRequestBytes: prepareReception(Buffer.from(signed.content)).sizes.soapRequestBytes,
+      allowed: true,
+      blockReason: null,
+    });
+    expect(JSON.stringify(checked)).not.toContain(first.accessKey);
     const authorizedXml = await db.database.prisma.documentArtifact.findFirstOrThrow({
       where: { documentId: first.id, kind: "AUTHORIZED_XML" },
     });

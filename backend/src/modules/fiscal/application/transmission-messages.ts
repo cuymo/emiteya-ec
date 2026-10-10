@@ -7,15 +7,10 @@ import type { TransmissionStopCode } from "../domain/transmission.ts";
 const STOP_MESSAGES: Readonly<Record<TransmissionStopCode, string>> = {
   INTEGRITY_FAILED:
     "El XML firmado guardado no superó la comprobación de integridad. No se envió nada al SRI; requiere soporte.",
-  TOO_LARGE: "El comprobante firmado supera el tamaño máximo de envío al SRI. No se envió.",
-  SIZE_POLICY_MISSING:
-    "No hay una política vigente del tamaño máximo de envío al SRI, así que no se envió nada.",
+  TRANSMISSION_SIZE_POLICY_EXCEEDED:
+    "El comprobante excede el límite de seguridad de transmisión de EmiteYa. Reduzca el contenido antes de enviarlo.",
   SRI_UNAVAILABLE: "El SRI no respondió durante los reintentos.",
   HANDLER_ERROR: "La transmisión falló de forma inesperada.",
-  CERTIFICATION_SIZE_CAP_EXCEEDED:
-    "El comprobante supera el tope de seguridad de la sesión de certificación en Pruebas, que no es un límite del SRI. No se envió nada al SRI.",
-  CERTIFICATION_ENVIRONMENT_NOT_TEST:
-    "La sesión de certificación solo se comunica con el SRI sobre comprobantes del ambiente de Pruebas. No se envió nada al SRI.",
 };
 
 export const stopMessage = (code: string): string =>
