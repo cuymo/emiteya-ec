@@ -2,7 +2,7 @@
 
 ## 1. Reproducción del defecto
 
-- [ ] 1.1 En `scripts/sri-egress/session.test.ts`, la aplicación de prueba escribe su PID. La prueba
+- [x] 1.1 En `scripts/sri-egress/session.test.ts`, la aplicación de prueba escribe su PID. La prueba
   de `rollback` comprueba además:
   - que ese PID, con su instante de arranque, ya no existe;
   - que un proceso ajeno lanzado por la prueba sigue vivo.
@@ -13,7 +13,7 @@
 
 ## 2. Ciclo de vida de la sesión
 
-- [ ] 2.1 Crear `scripts/sri-egress/lifecycle.ts` (design D1 a D4):
+- [x] 2.1 Crear `scripts/sri-egress/lifecycle.ts` (design D1 a D4):
   - la búsqueda de los procesos de la sesión, por el identificador, por compartir un espacio de nombres
     de red verificado y, para el supervisor, por PID con su instante de arranque;
   - la detención ordenada con espera y con la verificación final;
@@ -26,7 +26,7 @@
   - D: los procesos ajenos nunca se señalan;
   - E: un `EPERM` y un proceso que no muere dan procesos restantes con su motivo;
   - un PID reutilizado del supervisor no se señala.
-- [ ] 2.2 En `scripts/sri-egress/session.ts` (design D1, D4, D6 y D7):
+- [x] 2.2 En `scripts/sri-egress/session.ts` (design D1, D4, D6 y D7):
   - `apply` genera `SRI_EGRESS_SESSION_ID` y guarda el estado v2;
   - el cierre del supervisor usa el módulo antes de cerrar sus servidores y conserva el estado si
     queda algo;

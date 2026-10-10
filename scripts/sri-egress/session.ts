@@ -8,8 +8,10 @@
 //   node scripts/sri-egress/session.ts status   --state-dir <dir>
 //   node scripts/sri-egress/session.ts rollback --state-dir <dir>
 //
-// `verify` no genera tráfico de red: no contacta el SRI, ni Pruebas ni Producción.
+// `verify` no genera tráfico de red: no contacta el SRI, ni Pruebas ni Producción. `rollback` y el
+// cierre del supervisor detienen todo proceso de la sesión y lo verifican (lifecycle.ts).
 import { spawn, spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import {
   chmodSync,
   existsSync,
@@ -26,6 +28,16 @@ import { connect, createServer, type Server } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  findSessionProcesses,
+  processRef,
+  procTable,
+  SESSION_ID_VARIABLE,
+  terminateSession,
+  type ProcessRef,
+  type ProcessTable,
+  type TerminateOptions,
+} from "./lifecycle.ts";
 import { decideEgress, type EgressReason } from "./policy.ts";
 import { createEgressProxy, type Dial } from "./proxy.ts";
 import { closeServer, listenUnix, relayTcpToUnix, relayUnixToTcp } from "./relay.ts";
@@ -224,17 +236,26 @@ export async function runVerify(options: {
   return { ok: checks.every((c) => c.ok), checks };
 }
 
-type State = { supervisorPid: number; childPid: number | null; apiPort: number; startedAt: string };
-
-const alive = (pid: number | null) => {
-  if (!pid) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
+/**
+ * Estado de la sesión (design D1 y D3): el identificador que heredan los procesos de dentro, y el
+ * supervisor y el lanzador con su instante de arranque. Un estado sin `sessionId` es de la versión
+ * anterior de la herramienta.
+ */
+type State = {
+  version?: 2;
+  sessionId?: string;
+  supervisor?: ProcessRef | null;
+  launcher?: ProcessRef | null;
+  apiPort: number;
+  startedAt: string;
 };
+
+const SOCKETS = ["egress.sock", "pg.sock", "api.sock"] as const;
+
+function readState(statePath: string): State | null {
+  if (!existsSync(statePath)) return null;
+  return JSON.parse(readFileSync(statePath, "utf8")) as State;
+}
 
 async function apply(args: string[], command: string[]) {
   const stateDir = option(args, "--state-dir");
@@ -246,10 +267,17 @@ async function apply(args: string[], command: string[]) {
       "apply necesita --state-dir, --backend-env-file, --api-port y el comando de la aplicación",
     );
   const statePath = join(stateDir, "state.json");
-  if (existsSync(statePath)) {
-    const previous = JSON.parse(readFileSync(statePath, "utf8")) as State;
-    if (alive(previous.supervisorPid))
-      throw new Error("ya hay una sesión activa en ese directorio");
+  const previous = readState(statePath);
+  if (previous) {
+    // Falla cerrada: no se arranca encima de una sesión que todavía tiene procesos.
+    if (!previous.sessionId)
+      throw new Error("estado de una versión anterior: comprueba sus procesos y bórralo a mano");
+    const leftovers = findSessionProcesses(procTable, {
+      sessionId: previous.sessionId,
+      supervisor: previous.supervisor ?? null,
+    });
+    if (leftovers.length > 0)
+      throw new Error("ya hay una sesión con procesos en ese directorio: usa status o rollback");
   }
 
   // Falla cerrada: sin todas las comprobaciones en verde no arranca nada.
@@ -277,11 +305,14 @@ async function apply(args: string[], command: string[]) {
     await relayTcpToUnix(apiPort, join(stateDir, "api.sock")),
   ];
 
+  // El identificador va después del archivo de entorno: el archivo no lo puede sustituir (design D1).
+  const sessionId = randomBytes(16).toString("hex");
   const env: Record<string, string> = {
     PATH: process.env.PATH ?? "",
     HOME: process.env.HOME ?? "",
     LANG: process.env.LANG ?? "C.UTF-8",
     ...parseEnvFile(readFileSync(envFile, "utf8")),
+    [SESSION_ID_VARIABLE]: sessionId,
   };
   const child = spawn(
     "unshare",
@@ -305,8 +336,10 @@ async function apply(args: string[], command: string[]) {
     { stdio: "inherit", env },
   );
   const state: State = {
-    supervisorPid: process.pid,
-    childPid: child.pid ?? null,
+    version: 2,
+    sessionId,
+    supervisor: processRef(procTable, process.pid),
+    launcher: child.pid ? processRef(procTable, child.pid) : null,
     apiPort,
     startedAt: new Date().toISOString(),
   };
@@ -314,13 +347,20 @@ async function apply(args: string[], command: string[]) {
   console.log(JSON.stringify({ session: "APPLIED", apiPort, allowed: "celcer.sri.gob.ec:443" }));
 
   let stopping = false;
+  // Detiene la sesión antes de cerrar el proxy y los puentes: un envío en curso puede terminar. Solo
+  // borra el estado si no queda ningún proceso; si queda alguno, lo conserva para `rollback`.
   const teardown = async (code: number) => {
     if (stopping) return;
     stopping = true;
-    if (alive(child.pid ?? null)) child.kill("SIGTERM");
+    const outcome = await terminateSession(procTable, { sessionId, exclude: [process.pid] });
     await Promise.all(servers.map(closeServer));
-    for (const name of ["egress.sock", "pg.sock", "api.sock"])
-      rmSync(join(stateDir, name), { force: true });
+    if (outcome.remaining.length > 0) {
+      console.error(
+        JSON.stringify({ session: "TEARDOWN_INCOMPLETE", remaining: outcome.remaining }),
+      );
+      process.exit(1);
+    }
+    for (const name of SOCKETS) rmSync(join(stateDir, name), { force: true });
     rmSync(statePath, { force: true });
     console.log(JSON.stringify({ session: "ROLLED_BACK" }));
     process.exit(code);
@@ -331,39 +371,70 @@ async function apply(args: string[], command: string[]) {
   for (const signal of ["SIGTERM", "SIGINT"] as const) process.on(signal, () => void teardown(0));
 }
 
-function status(args: string[]) {
-  const stateDir = option(args, "--state-dir");
-  if (!stateDir) throw new Error("status necesita --state-dir");
-  const statePath = join(stateDir, "state.json");
-  if (!existsSync(statePath)) return { session: "NOT_RUNNING" };
-  const state = JSON.parse(readFileSync(statePath, "utf8")) as State;
+/**
+ * Cada parte de la sesión (design D7). `STALE`: hay estado sin supervisor vivo, por ejemplo procesos de
+ * la sesión que sobrevivieron, o es el estado de la versión anterior.
+ */
+export function sessionStatus(stateDir: string, table: ProcessTable = procTable) {
+  const state = readState(join(stateDir, "state.json"));
+  if (!state) return { session: "NOT_RUNNING" };
+  if (!state.sessionId) return { session: "STALE", reason: "STATE_WITHOUT_SESSION_ID" };
+  const found = findSessionProcesses(table, {
+    sessionId: state.sessionId,
+    supervisor: state.supervisor ?? null,
+  });
+  const has = (role: string) => found.some((entry) => entry.role === role);
   return {
-    session: alive(state.supervisorPid) ? "RUNNING" : "STALE",
-    supervisor: alive(state.supervisorPid),
-    isolatedProcess: alive(state.childPid),
+    session: has("supervisor") ? "RUNNING" : "STALE",
+    supervisor: has("supervisor"),
+    launcher: has("launcher"),
+    isolatedProcess: has("inside"),
+    app: has("app"),
+    sessionProcesses: found.length,
     apiPort: state.apiPort,
     startedAt: state.startedAt,
   };
 }
 
-async function rollback(args: string[]) {
-  const stateDir = option(args, "--state-dir");
-  if (!stateDir) throw new Error("rollback necesita --state-dir");
+/**
+ * Detiene todo proceso de la sesión y lo verifica (design D4, D6 y D7). Idempotente. Falla cerrada:
+ * si queda un proceso, informa `ROLLBACK_INCOMPLETE` y conserva el estado para reintentar. El
+ * registro `egress.log` se conserva siempre como evidencia.
+ */
+export async function rollbackSession(
+  stateDir: string,
+  deps: Readonly<{ table?: ProcessTable; timeouts?: Partial<TerminateOptions> }> = {},
+) {
   const statePath = join(stateDir, "state.json");
-  if (existsSync(statePath)) {
-    const state = JSON.parse(readFileSync(statePath, "utf8")) as State;
-    for (const pid of [state.supervisorPid, state.childPid])
-      if (pid && alive(pid)) process.kill(pid, "SIGTERM");
-    const deadline = Date.now() + 10_000;
-    while ((alive(state.supervisorPid) || alive(state.childPid)) && Date.now() < deadline)
-      await new Promise((resolve) => setTimeout(resolve, 200));
-    for (const pid of [state.supervisorPid, state.childPid])
-      if (pid && alive(pid)) process.kill(pid, "SIGKILL");
+  const state = readState(statePath);
+  if (!state)
+    return { session: "ROLLED_BACK", stopped: [], leftoverProcesses: 0, leftoverState: false };
+  if (!state.sessionId)
+    return {
+      session: "ROLLBACK_INCOMPLETE",
+      reason: "STATE_WITHOUT_SESSION_ID",
+      remaining: [],
+      stateRetained: true,
+    };
+  const outcome = await terminateSession(deps.table ?? procTable, {
+    ...deps.timeouts,
+    sessionId: state.sessionId,
+    supervisor: state.supervisor ?? null,
+  });
+  if (outcome.remaining.length > 0) {
+    // El supervisor pudo borrar el estado al cerrarse: se vuelve a escribir para poder reintentar.
+    mkdirSync(stateDir, { recursive: true, mode: 0o700 });
+    writeFileSync(statePath, JSON.stringify(state), { mode: 0o600 });
+    return { session: "ROLLBACK_INCOMPLETE", remaining: outcome.remaining, stateRetained: true };
   }
-  for (const name of ["egress.sock", "pg.sock", "api.sock", "state.json"])
-    rmSync(join(stateDir, name), { force: true });
+  for (const name of [...SOCKETS, "state.json"]) rmSync(join(stateDir, name), { force: true });
   // Nada global que revertir: la sesión nunca cambió el firewall ni la red del anfitrión.
-  return { session: "ROLLED_BACK", leftoverState: existsSync(statePath) };
+  return {
+    session: "ROLLED_BACK",
+    stopped: outcome.stopped.map((entry) => entry.role),
+    leftoverProcesses: 0,
+    leftoverState: existsSync(statePath),
+  };
 }
 
 async function main() {
@@ -387,8 +458,17 @@ async function main() {
     process.exit(result.ok ? 0 : 1);
   }
   if (command === "apply") return apply(args, appCommand);
-  if (command === "status") return console.log(JSON.stringify(status(args)));
-  if (command === "rollback") return console.log(JSON.stringify(await rollback(args)));
+  const stateDir = option(args, "--state-dir");
+  if (command === "status") {
+    if (!stateDir) throw new Error("status necesita --state-dir");
+    return console.log(JSON.stringify(sessionStatus(stateDir)));
+  }
+  if (command === "rollback") {
+    if (!stateDir) throw new Error("rollback necesita --state-dir");
+    const result = await rollbackSession(stateDir);
+    console.log(JSON.stringify(result));
+    process.exit(result.session === "ROLLED_BACK" ? 0 : 1);
+  }
   console.error(
     "uso: session.ts verify | apply | status | rollback (ver docs/quality/sri-egress-allowlist.md)",
   );
