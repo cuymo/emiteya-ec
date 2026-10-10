@@ -650,7 +650,7 @@ archivo de entorno.
 | Fecha | Commit | Tipo | Número | Resultado | Códigos del SRI | Notas |
 | --- | --- | --- | --- | --- | --- | --- |
 | 2026-10-10 | `352ed01` | 01 (consumidor final) | `001-001-000000300` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Primer envío con la conexión perdida: `SEND_UNKNOWN`, reconciliación de la misma clave y reenvío del mismo XML. Detalle debajo |
-| Pendiente | | 01 (comprador identificado) | | | | |
+| 2026-10-10 | `f4d9492` | 01 (comprador identificado) | `001-001-000000301` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | El mismo patrón que la 300: primer envío con la conexión perdida, `SEND_UNKNOWN`, reconciliación de la misma clave y reenvío del mismo XML. Es el documento base de 04, 05 y 06. Detalle debajo |
 | Pendiente | | 04 | | | | |
 | Pendiente | | 05 | | | | |
 | Pendiente | | 06 | | | | |
@@ -709,6 +709,63 @@ números de autorización, los XML y las respuestas completas quedan fuera del r
   admitidos, ningún bloqueo y ningún intento hacia Producción.
 - **Cierre.** La sesión volvió a `SRI_TRANSMISSION_ENABLED=0`, y la readiness dio 19/19. El siguiente
   secuencial de la factura en Pruebas es `301`.
+
+### 2026-10-10 · 01 comprador identificado `001-001-000000301`
+
+Commit `f4d9492`, ambiente `TEST`, esquema `1.1.0`. Es la factura base de 04, 05 y 06:
+- el comprador identificado de la sección 6 (`TEST_IDENTIFIED_BUYER`);
+- dos unidades del bien, que permiten una devolución parcial con retorno físico;
+- una del servicio;
+- IVA 15 % (código 4 del catálogo activo), forma de pago `01` y sin descuentos.
+
+Las claves de acceso, los números de autorización, la identidad del comprador, los XML y las
+respuestas completas quedan fuera del repositorio (sección 11).
+
+- **Antes de la red.**
+  - XSD `factura_V1.1.0` en `PASS`. Firma XAdES-BES válida: el valor de la firma y las tres
+    referencias, con el certificado vigente de la empresa.
+  - Clave de acceso de 49 dígitos con el dígito verificador correcto, ambiente `1`, serie `001001` y
+    secuencial `000000301`.
+  - Dos detalles. Tamaños exactos: XML firmado 10 149 bytes, base64 13 532 y SOAP 13 812. Los tres
+    quedan bajo la política v1.
+- **Sesión.** Una sesión nueva de la lista de permitidos, con `rollback` corregido
+  (`fix-sri-egress-rollback-process-cleanup`). La readiness dio 19/19 antes del envío.
+- **Estados**, en UTC:
+
+  | De | A | Instante |
+  | --- | --- | --- |
+  | — | `RESERVED` | 22:23:59.089 |
+  | `RESERVED` | `SIGNED` | 22:23:59.855 |
+  | `SIGNED` | `SEND_UNKNOWN` | 22:25:28.680 |
+  | `SEND_UNKNOWN` | `RECEIVED` | 22:25:31.206 |
+  | `RECEIVED` | `AUTHORIZED` | 22:25:38.543 |
+
+- **Intentos**, todos contra `celcer.sri.gob.ec` en `TEST`:
+
+  | # | Operación | Transporte | Duración | Resultado (`classifier_version`) | SHA-256 del sobre | SHA-256 de la respuesta |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | Recepción | Conexión perdida (`UND_ERR_SOCKET`), sin cabeceras | 4 151 ms | `UNKNOWN` (`reception/1`) | `2fea9b27…93b6e4aa` | — |
+  | 2 | Autorización | HTTP 200 | 2 074 ms | `KEY_UNKNOWN`: cero comprobantes (`authorization/1`) | `18682317…036f4a94` | `c418e57a…9fc48ee3` |
+  | 3 | ConsultaComprobante | HTTP 200 | 87 ms | `NO_EVIDENCE`: `RECHAZADA`, identificador 99 (`validity/2`) | `480d3611…97a033f3` | `2b44ce1f…957ecefb` |
+  | 4 | Recepción | HTTP 200 | 236 ms | `RECEIVED`: `RECIBIDA`, sin mensajes (`reception/1`) | `2fea9b27…93b6e4aa` | `3f188de6…9b6f66b2` |
+  | 5 | Autorización | HTTP 200 | 85 ms | `AUTHORIZED`: `AUTORIZADO`, ambiente `PRUEBAS` (`authorization/1`) | `18682317…036f4a94` | `2b54867a…af91ea15` |
+
+- **Reconciliación.** Lo mismo que en la 300. Tras la conexión perdida, el comprobante quedó en
+  `SEND_UNKNOWN`. Se consultó la misma clave, sin evidencia de recepción, y se reenvió el mismo XML:
+  el sobre del intento 4 es idéntico al del intento 1. No hubo un secuencial nuevo, ni errores 43, 45
+  o 70.
+- **Artefactos.**
+  - `SIGNED_XML` y `AUTHORIZED_XML` son iguales: 10 149 bytes, SHA-256
+    `b7e65f98f73796119d17b40fe9faf989a7e095254f10c136281c6d21ba8c3cba`.
+  - `RIDE_PDF`: 23 638 bytes, SHA-256
+    `b2f2940652bea8c206d327e5558565b2c4042806979688031aae46ea96d15404`.
+  - El inventario descontó una vez, las dos unidades del bien (`SALIDA_FACTURA`).
+- **Salida de red.** Cinco `CONNECT` a `celcer.sri.gob.ec:443`, todos admitidos, ningún bloqueo y
+  ningún intento hacia Producción.
+- **Cierre.**
+  - La sesión se cerró con `rollback`: `ROLLED_BACK`, sin procesos de la sesión.
+  - `SRI_TRANSMISSION_ENABLED=0`.
+  - El siguiente secuencial de la factura en Pruebas es `302`.
 
 ## 14. Cambios del repositorio antes de la primera transmisión real
 
