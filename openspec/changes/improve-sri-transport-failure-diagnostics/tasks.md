@@ -2,10 +2,10 @@
 
 ## 1. Proxy de salida
 
-- [ ] 1.1 En `scripts/sri-egress/proxy.test.ts`, contra destinos simulados, reproducir el `502`
+- [x] 1.1 En `scripts/sri-egress/proxy.test.ts`, contra destinos simulados, reproducir el `502`
   dentro de un túnel establecido (design D3). Verificar que con el código anterior el cliente recibe
   `HTTP/1.1 502` después de los bytes del destino.
-- [ ] 1.2 En `scripts/sri-egress/proxy.ts`:
+- [x] 1.2 En `scripts/sri-egress/proxy.ts`:
   - el túnel numerado y sus eventos `UPSTREAM_CONNECTED`, `UPSTREAM_CONNECT_FAILED` y
     `TUNNEL_CLOSED` (design D2);
   - el `502` solo antes de establecer el túnel (design D3).
