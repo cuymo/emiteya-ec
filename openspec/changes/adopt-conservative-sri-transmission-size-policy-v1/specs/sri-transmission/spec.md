@@ -79,7 +79,7 @@ El sistema SHALL aplicar a todo envío individual al SRI, en Pruebas y en Produc
 - **THEN** no existe una configuración para hacerlo y el límite sigue siendo 40 000 bytes
 
 ### Requirement: Diagnóstico de la política de tamaño
-El sistema SHALL informar, sin secretos, la política de tamaño vigente con su identificador `PRODUCT_CONSERVATIVE_POLICY_V1` y su límite, y la última comprobación con su ambiente fiscal, sus tres medidas, si se permitió y el motivo, sin identificar el comprobante. Cada comprobación SHALL registrarse y los bloqueos se cuentan. Nunca registra el XML, el base64 ni el cuerpo SOAP.
+El sistema SHALL informar en su estado de salud, sin secretos, la política de tamaño vigente con su identificador `PRODUCT_CONSERVATIVE_POLICY_V1` y su límite, y de la última comprobación solo sus tres medidas, si se permitió y el motivo del bloqueo. Cada comprobación SHALL registrarse con su ambiente fiscal, y los bloqueos se cuentan. Nunca informa ni registra el XML, el base64 ni el cuerpo SOAP.
 
 #### Scenario: Estado de salud con la política
 - **WHEN** se consulta el estado de salud de la instalación
@@ -87,7 +87,7 @@ El sistema SHALL informar, sin secretos, la política de tamaño vigente con su 
 
 #### Scenario: Última comprobación en el estado de salud
 - **WHEN** la política comprobó un comprobante
-- **THEN** el estado de salud informa su ambiente fiscal, sus tres medidas, si se permitió y el motivo, sin su clave, su número, su RUC ni sus terceros
+- **THEN** el estado de salud informa solo sus tres medidas, si se permitió y el motivo del bloqueo, sin su ambiente, su clave, su número, su RUC ni sus terceros
 
 #### Scenario: Bloqueos contados
 - **WHEN** la política bloquea comprobantes

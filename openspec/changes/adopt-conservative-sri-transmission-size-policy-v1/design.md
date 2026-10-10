@@ -96,10 +96,11 @@ producto que la sostenía. `SRI_TRANSMISSION_ENABLED` sigue siendo el interrupto
 
 `fiscal/infrastructure/transmission-size-diagnostics.ts` expone `observe(check)` y `lastCheck()`, y
 el contador `sri_transmission_size_policy_blocks_total`, sin etiquetas de identidad.
-- **El check** lleva el ambiente fiscal, `allowed`, `reason` (`TRANSMISSION_SIZE_POLICY_EXCEEDED` o
-  null), las tres medidas, `limitBytes`, `policyId` y `at`.
-- **El registro** lleva lo mismo, a `info` si se permite y a `error`/alerta si se bloquea. Nunca el
-  XML, el base64 ni el SOAP.
+- **El check** lleva solo las tres medidas, `allowed` y `blockReason`
+  (`TRANSMISSION_SIZE_POLICY_EXCEEDED` o null). Es lo único que publica la readiness, por la
+  condición del dueño del producto al aprobar el apply.
+- **El registro** añade el ambiente fiscal, `limitBytes` y `policyId`, a `info` si se permite y como
+  alerta si se bloquea. Nunca el XML, el base64 ni el SOAP.
 - **La readiness** reemplaza `sriSizeGate` por
   `sriSizePolicy: { source: "PRODUCT_CONSERVATIVE_POLICY_V1", limitBytes: 40000, lastCheck }`.
 
