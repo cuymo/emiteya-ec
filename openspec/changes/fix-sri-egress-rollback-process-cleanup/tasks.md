@@ -50,10 +50,10 @@
 
 ## 4. Verificación
 
-- [ ] 4.1 Ejecutar las pruebas del proyecto `scripts`, `corepack pnpm verify` y
+- [x] 4.1 Ejecutar las pruebas del proyecto `scripts`, `corepack pnpm verify` y
   `openspec validate --all --strict`. Si `verify` no sale con 0 por la clase de fallo de carga ya
   documentada, aplicar la política de evidencia compuesta y registrar el código de salida real.
-- [ ] 4.2 Repetir localmente una sesión simulada:
+- [x] 4.2 Repetir localmente una sesión simulada:
   - `apply` contra la aplicación de prueba y el servidor falso de base de datos, con `status` en
     `RUNNING`;
   - `rollback`;
