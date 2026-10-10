@@ -10,10 +10,8 @@ import type {
   EnablementRepository,
   NewEntryVersion,
   NewPolicyVersion,
-  NewSizePolicyVersion,
   StoredEntryVersion,
   StoredPolicyVersion,
-  StoredSizePolicyVersion,
   StoredSchemaEntry,
   StoredSpecialCase,
 } from "../application/ports.ts";
@@ -76,28 +74,6 @@ function toStoredPolicy(
   };
 }
 
-function toStoredSizePolicy(
-  row: Awaited<ReturnType<PrismaClient["sriTransmissionPolicy"]["findMany"]>>[number],
-): StoredSizePolicyVersion {
-  return {
-    id: row.id,
-    maxSignedDocumentBytes: row.maxSignedDocumentBytes,
-    sourceText: row.sourceText,
-    sourceSection: row.sourceSection,
-    literalUnit: row.literalUnit,
-    interpretation: row.interpretation,
-    effectiveFrom: toIso(row.effectiveFrom),
-    effectiveFromBasis: row.effectiveFromBasis as StoredSizePolicyVersion["effectiveFromBasis"],
-    effectiveTo: toIsoOrNull(row.effectiveTo),
-    datasetVersion: row.datasetVersion,
-  };
-}
-
-const readSizePolicy = (db: Db) =>
-  db.sriTransmissionPolicy
-    .findMany({ orderBy: { effectiveFrom: "asc" } })
-    .then((rows) => rows.map(toStoredSizePolicy));
-
 const ENTRY_ORDER = [{ entryKey: "asc" as const }, { effectiveFrom: "asc" as const }];
 
 function readEntries(db: Db, catalogType: FiscalCatalogType, entryKey?: string) {
@@ -145,7 +121,6 @@ export function createCatalogReader(db: Db): CatalogReader {
       const rows = await db.consumerFinalPolicy.findMany({ orderBy: { effectiveFrom: "asc" } });
       return rows.map(toStoredPolicy);
     },
-    sizePolicyVersions: () => readSizePolicy(db),
     async schemaEntries(): Promise<StoredSchemaEntry[]> {
       const version = await latestVersion(db, "schema-registry");
       if (version === null) return [];
@@ -210,18 +185,6 @@ const toPolicyRow = (version: NewPolicyVersion) => ({
   datasetVersion: version.datasetVersion,
 });
 
-const toSizePolicyRow = (version: NewSizePolicyVersion) => ({
-  maxSignedDocumentBytes: version.maxSignedDocumentBytes,
-  sourceText: version.sourceText,
-  sourceSection: version.sourceSection,
-  literalUnit: version.literalUnit,
-  interpretation: version.interpretation,
-  effectiveFrom: toDate(version.effectiveFrom),
-  effectiveFromBasis: version.effectiveFromBasis,
-  effectiveTo: version.effectiveTo ? toDate(version.effectiveTo) : null,
-  datasetVersion: version.datasetVersion,
-});
-
 /** Lock propio del cargador: distinto del de las migraciones de Prisma (design D3). */
 export const LOADER_LOCK = "fiscal-catalogs:loader";
 
@@ -282,17 +245,6 @@ export function createDatasetStore(tx: Prisma.TransactionClient): DatasetStore {
     },
     async closePolicyVersion(id, effectiveTo, datasetVersion) {
       await tx.consumerFinalPolicy.update({
-        where: { id },
-        data: { effectiveTo: toDate(effectiveTo), closedInDatasetVersion: datasetVersion },
-      });
-    },
-    sizePolicyVersions: () => readSizePolicy(tx),
-    async insertSizePolicyVersions(versions) {
-      if (versions.length === 0) return;
-      await tx.sriTransmissionPolicy.createMany({ data: versions.map(toSizePolicyRow) });
-    },
-    async closeSizePolicyVersion(id, effectiveTo, datasetVersion) {
-      await tx.sriTransmissionPolicy.update({
         where: { id },
         data: { effectiveTo: toDate(effectiveTo), closedInDatasetVersion: datasetVersion },
       });

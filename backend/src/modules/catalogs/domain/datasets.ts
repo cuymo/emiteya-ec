@@ -188,26 +188,6 @@ export const datasetFileSchema = z.discriminatedUnion("catalogType", [
       )
       .min(1),
   }),
-  // Límite de tamaño del envío al SRI (add-sri-transmission, design D17): la cita de la fuente, su
-  // sección, la unidad literal y la interpretación exacta en bytes con su justificación.
-  z.strictObject({
-    catalogType: z.literal("sri-transmission-policy"),
-    ...header,
-    versions: z
-      .array(
-        z.strictObject({
-          maxSignedDocumentBytes: z.number().int().positive(),
-          sourceText: text,
-          sourceSection: text,
-          literalUnit: text,
-          interpretation: text,
-          effectiveFrom: isoDate,
-          effectiveFromBasis: effectiveFromBasisSchema,
-          effectiveTo: isoDate.nullable(),
-        }),
-      )
-      .min(1),
-  }),
   z.strictObject({
     catalogType: z.literal("schema-registry"),
     ...header,
@@ -236,15 +216,10 @@ export type ConsumerFinalPolicyDataset = Extract<
   DatasetFile,
   { catalogType: "consumer-final-policy" }
 >;
-export type SriTransmissionPolicyDataset = Extract<
-  DatasetFile,
-  { catalogType: "sri-transmission-policy" }
->;
 /** Datasets de una política con versiones por vigencia, sin entradas. */
-export type PolicyDataset = ConsumerFinalPolicyDataset | SriTransmissionPolicyDataset;
+export type PolicyDataset = ConsumerFinalPolicyDataset;
 export const isPolicyDataset = (dataset: DatasetFile): dataset is PolicyDataset =>
-  dataset.catalogType === "consumer-final-policy" ||
-  dataset.catalogType === "sri-transmission-policy";
+  dataset.catalogType === "consumer-final-policy";
 export type SchemaRegistryDataset = Extract<DatasetFile, { catalogType: "schema-registry" }>;
 export type SpecialCaseDataset = Extract<DatasetFile, { catalogType: "special-case-matrix" }>;
 

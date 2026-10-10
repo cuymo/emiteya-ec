@@ -64,20 +64,6 @@ export type StoredPolicyVersion = {
   datasetVersion: number;
 };
 
-/** Versión de la política de tamaño del envío al SRI (add-sri-transmission, design D17). */
-export type StoredSizePolicyVersion = {
-  id: string;
-  maxSignedDocumentBytes: number;
-  sourceText: string;
-  sourceSection: string;
-  literalUnit: string;
-  interpretation: string;
-  effectiveFrom: IsoDate;
-  effectiveFromBasis: EffectiveFromBasis;
-  effectiveTo: IsoDate | null;
-  datasetVersion: number;
-};
-
 /** Archivo del registro de esquemas: un esquema de documento o uno que este importa. */
 export type StoredSchemaEntry = {
   kind: "DOCUMENT" | "IMPORT";
@@ -103,7 +89,6 @@ export type StoredSpecialCase = {
 
 export type NewEntryVersion = Omit<StoredEntryVersion, "id">;
 export type NewPolicyVersion = Omit<StoredPolicyVersion, "id">;
-export type NewSizePolicyVersion = Omit<StoredSizePolicyVersion, "id">;
 
 /** Operaciones del cargador, dentro de su transacción (design D3). */
 export interface DatasetStore {
@@ -125,9 +110,6 @@ export interface DatasetStore {
   policyVersions(): Promise<StoredPolicyVersion[]>;
   insertPolicyVersions(versions: NewPolicyVersion[]): Promise<void>;
   closePolicyVersion(id: string, effectiveTo: IsoDate, datasetVersion: number): Promise<void>;
-  sizePolicyVersions(): Promise<StoredSizePolicyVersion[]>;
-  insertSizePolicyVersions(versions: NewSizePolicyVersion[]): Promise<void>;
-  closeSizePolicyVersion(id: string, effectiveTo: IsoDate, datasetVersion: number): Promise<void>;
   insertSchemaEntries(datasetVersion: number, entries: StoredSchemaEntry[]): Promise<void>;
   insertSpecialCases(datasetVersion: number, entries: StoredSpecialCase[]): Promise<void>;
 }
@@ -141,7 +123,6 @@ export interface CatalogReader {
   catalogs(): Promise<AppliedDataset[]>;
   entryVersions(catalogType: FiscalCatalogType, entryKey?: string): Promise<StoredEntryVersion[]>;
   policyVersions(): Promise<StoredPolicyVersion[]>;
-  sizePolicyVersions(): Promise<StoredSizePolicyVersion[]>;
   schemaEntries(): Promise<StoredSchemaEntry[]>;
   specialCases(): Promise<StoredSpecialCase[]>;
 }

@@ -438,23 +438,16 @@ describe("migraciones sobre una base PostgreSQL limpia", () => {
     );
   });
 
-  it("crea la política de tamaño del envío al SRI con sus restricciones y triggers", async () => {
-    expect(await constraints()).toEqual(
-      expect.arrayContaining([
-        "sri_transmission_policy_values_check",
-        "fiscal_catalog_dataset_catalog_type_check",
-      ]),
+  it("la política oficial de tamaño ya no existe (adopt-conservative-sri-transmission-size-policy-v1)", async () => {
+    expect(await constraints()).toContain("fiscal_catalog_dataset_catalog_type_check");
+    expect(
+      (await constraints()).filter((name) => name.startsWith("sri_transmission_policy")),
+    ).toEqual([]);
+    expect((await indexes()).filter((name) => name.startsWith("sri_transmission_policy"))).toEqual(
+      [],
     );
-    expect(await indexes()).toEqual(
-      expect.arrayContaining(["sri_transmission_policy_effective_from_key"]),
-    );
-    expect(await triggers()).toEqual(
-      expect.arrayContaining([
-        "sri_transmission_policy_no_delete",
-        "sri_transmission_policy_no_truncate",
-        "sri_transmission_policy_guard",
-        "sri_transmission_policy_no_overlap",
-      ]),
+    expect((await triggers()).filter((name) => name.startsWith("sri_transmission_policy"))).toEqual(
+      [],
     );
   });
 

@@ -14,7 +14,6 @@ import type {
   StoredEntryVersion,
   StoredPolicyVersion,
   StoredSchemaEntry,
-  StoredSizePolicyVersion,
   StoredSpecialCase,
 } from "./ports.ts";
 import { createCatalogResolver, type CatalogResolver } from "./resolver.ts";
@@ -44,11 +43,6 @@ export type IdentificationRule = {
 
 export type FiscalCatalogQueries = CatalogResolver & {
   consumerFinalPolicy(date: IsoDate): Promise<StoredPolicyVersion | null>;
-  /**
-   * Límite de tamaño del envío al SRI aplicable en la fecha del envío (add-sri-transmission,
-   * design D17). Sin una versión vigente, null: ningún envío sale.
-   */
-  sriTransmissionSizePolicy(date: IsoDate): Promise<StoredSizePolicyVersion | null>;
   identificationRule(code: string, date: IsoDate): Promise<IdentificationRule | null>;
   availability(
     companyId: string,
@@ -81,10 +75,6 @@ export function createFiscalCatalogQueries({
 
     async consumerFinalPolicy(date) {
       return resolveCatalogEntry(await reader.policyVersions(), date);
-    },
-
-    async sriTransmissionSizePolicy(date) {
-      return resolveCatalogEntry(await reader.sizePolicyVersions(), date);
     },
 
     schemaRegistry: () => reader.schemaEntries(),

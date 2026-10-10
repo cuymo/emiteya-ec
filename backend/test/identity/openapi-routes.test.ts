@@ -121,7 +121,7 @@ describe("rutas documentadas", () => {
   });
 
   it("ninguna ruta envía al SRI, recibe, autoriza ni expone SOAP (add-sri-transmission, D18)", () => {
-    // Solo hay lecturas (historial y política de tamaño) y la reconciliación del administrador.
+    // Solo hay lecturas (historial) y la reconciliación del administrador.
     const sri = apiRoutes
       .filter((route) =>
         /send|submit|soap|recep|autoriz|authoriz|transmi|reconcil/i.test(route.path),
@@ -134,7 +134,6 @@ describe("rutas documentadas", () => {
         "get /credit-notes/:creditNoteId/transmission",
         "get /debit-notes/:debitNoteId/transmission",
         "get /documents/:documentId/authorized-xml",
-        "get /fiscal-catalogs/sri-transmission-policy",
         "get /invoices/:invoiceId/transmission",
         "post /credit-notes/:creditNoteId/reconciliations",
         "post /debit-notes/:debitNoteId/reconciliations",

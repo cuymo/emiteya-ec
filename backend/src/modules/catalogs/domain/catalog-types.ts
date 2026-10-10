@@ -5,14 +5,13 @@ export { FISCAL_CATALOG_TYPES, type FiscalCatalogType };
 
 /**
  * Datasets que el cargador aplica: los catálogos de entradas, la política de consumidor final, el
- * registro, la matriz y la política de tamaño del envío al SRI.
+ * registro y la matriz.
  */
 export const DATASET_TYPES = [
   ...FISCAL_CATALOG_TYPES,
   "consumer-final-policy",
   "schema-registry",
   "special-case-matrix",
-  "sri-transmission-policy",
 ] as const;
 export type DatasetType = (typeof DATASET_TYPES)[number];
 

@@ -66,7 +66,7 @@
 
 ## 3. Retiro del catálogo `sri-transmission-policy`
 
-- [ ] 3.1 Escribir la migración (design D6):
+- [x] 3.1 Escribir la migración (design D6):
   - elimina la tabla `sri_transmission_policy` y sus dos funciones propias;
   - borra las filas de ese tipo del registro de datasets, con el trigger de inmutabilidad
     deshabilitado solo para esa sentencia;
@@ -79,16 +79,16 @@
   - una fila de ese tipo previa a la migración desaparece.
 
   La prueba de deriva de Prisma pasa.
-- [ ] 3.2 Quitar el tipo del módulo `catalogs`: dominio, dataset, cargador, puertos, consultas,
+- [x] 3.2 Quitar el tipo del módulo `catalogs`: dominio, dataset, cargador, puertos, consultas,
   repositorio Prisma, `fiscal-catalogs` y la ruta HTTP. Verificar con el typecheck y con las pruebas
   de catálogos que siguen pasando.
-- [ ] 3.3 Quitar la ruta y los esquemas de la vista (`packages/contracts`: `routes.ts` y
+- [x] 3.3 Quitar la ruta y los esquemas de la vista (`packages/contracts`: `routes.ts` y
   `fiscal-catalogs.ts`) y regenerar `docs/generated/openapi.json`. Verificar con `openapi:check`,
   `packages/contracts/test/openapi.test.ts` y `test/identity/openapi-routes.test.ts`.
-- [ ] 3.4 Quitar del frontend la consulta y la sección de la política en la pantalla de catálogos.
+- [x] 3.4 Quitar del frontend la consulta y la sección de la política en la pantalla de catálogos.
   Verificar con `frontend/test/fiscal-catalogs-screen.test.tsx`: la pantalla ya no muestra ni pide la
   política.
-- [ ] 3.5 Quitar `test/support/synthetic-size-policy.ts` y `sri-transmission-policy.test.ts`, y su
+- [x] 3.5 Quitar `test/support/synthetic-size-policy.ts` y `sri-transmission-policy.test.ts`, y su
   uso en las pruebas de integración y en `test/manual/mvp-sandbox.ts`. Verificar que esas pruebas
   transmiten sin cargar ninguna política.
 

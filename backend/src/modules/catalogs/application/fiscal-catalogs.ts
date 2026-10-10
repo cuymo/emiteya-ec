@@ -15,7 +15,6 @@ import {
   type FiscalCatalogType,
   type SchemaRegistryEntryView,
   type SpecialCaseView,
-  type SriTransmissionPolicyView,
 } from "@facturador/contracts";
 import { parseInput, type Authorizer } from "../../identity/application/authorization.ts";
 import type { RequestContext } from "../../identity/application/request-context.ts";
@@ -283,26 +282,6 @@ export function createFiscalCatalogs({
       const versions = await reader.policyVersions();
       return {
         source: source(dataset),
-        at,
-        applicable: resolveCatalogEntry(versions, at),
-        versions,
-      };
-    },
-
-    /**
-     * Política de tamaño del envío al SRI (add-sri-transmission, design D17). Sin una fuente
-     * oficial verificada no está publicada: la vista lo dice con `source` nulo y sin versiones.
-     */
-    async sriTransmissionPolicy(
-      ctx: RequestContext,
-      query: unknown,
-    ): Promise<SriTransmissionPolicyView> {
-      authorizer.requirePermission(ctx, "fiscalCatalogs.read");
-      const { at = today() } = parseInput(catalogEntriesQuerySchema.pick({ at: true }), query);
-      const dataset = latestByType(await reader.catalogs()).get("sri-transmission-policy");
-      const versions = dataset ? await reader.sizePolicyVersions() : [];
-      return {
-        source: dataset ? source(dataset) : null,
         at,
         applicable: resolveCatalogEntry(versions, at),
         versions,

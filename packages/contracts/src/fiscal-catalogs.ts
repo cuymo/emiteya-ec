@@ -244,31 +244,6 @@ export const consumerFinalPolicyViewSchema = z.strictObject({
 });
 export type ConsumerFinalPolicyView = z.infer<typeof consumerFinalPolicyViewSchema>;
 
-/**
- * Límite de tamaño del comprobante firmado para su envío individual al SRI (add-sri-transmission,
- * design D17, Q-47): cifra exacta en bytes con la cita, la sección, la unidad literal y su
- * interpretación. Sin una fuente oficial verificada no se publica: `source` es null.
- */
-export const sriTransmissionPolicyVersionViewSchema = z.strictObject({
-  id: z.string(),
-  maxSignedDocumentBytes: z.number().int().positive(),
-  sourceText: z.string(),
-  sourceSection: z.string(),
-  literalUnit: z.string(),
-  interpretation: z.string(),
-  effectiveFrom: isoDate,
-  effectiveFromBasis: effectiveFromBasisSchema,
-  effectiveTo: isoDate.nullable(),
-  datasetVersion: z.number().int().positive(),
-});
-export const sriTransmissionPolicyViewSchema = z.strictObject({
-  source: catalogSourceViewSchema.nullable(),
-  at: isoDate,
-  applicable: sriTransmissionPolicyVersionViewSchema.nullable(),
-  versions: z.array(sriTransmissionPolicyVersionViewSchema),
-});
-export type SriTransmissionPolicyView = z.infer<typeof sriTransmissionPolicyViewSchema>;
-
 /** Archivo del registro de esquemas: un XSD de comprobante o un esquema que este importa. */
 export const schemaRegistryEntryViewSchema = z.strictObject({
   kind: z.enum(["DOCUMENT", "IMPORT"]),

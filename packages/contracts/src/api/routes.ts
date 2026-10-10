@@ -52,7 +52,6 @@ import {
   catalogEntryViewSchema,
   catalogTypeParamsSchema,
   consumerFinalPolicyViewSchema,
-  sriTransmissionPolicyViewSchema,
   fiscalCatalogSummaryViewSchema,
   schemaRegistryEntryViewSchema,
   setEnablementSchema,
@@ -877,21 +876,6 @@ export const apiRoutes: readonly RouteDefinition[] = [
         description:
           "Versiones de la política y la aplicable en la fecha `at` (hoy en Ecuador por defecto).",
         schema: successEnvelope(consumerFinalPolicyViewSchema),
-      },
-      ...configErrors,
-    },
-  }),
-  defineRoute({
-    method: "get",
-    path: "/fiscal-catalogs/sri-transmission-policy",
-    summary:
-      "Consultar el límite de tamaño del comprobante firmado para su envío al SRI: bytes, cita y unidad",
-    request: { query: catalogEntriesQuerySchema.pick({ at: true }) },
-    responses: {
-      200: {
-        description:
-          "Versiones de la política y la aplicable en la fecha `at` (hoy en Ecuador por defecto). Sin una fuente oficial verificada no hay política publicada: `source` es null y no hay versiones (Q-47).",
-        schema: successEnvelope(sriTransmissionPolicyViewSchema),
       },
       ...configErrors,
     },

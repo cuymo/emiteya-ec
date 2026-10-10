@@ -38,10 +38,6 @@ import {
   simulatedSri,
   type ReceptionBehavior,
 } from "../support/simulated-sri.ts";
-import {
-  installSyntheticSizePolicy,
-  syntheticSizePolicy,
-} from "../support/synthetic-size-policy.ts";
 
 if (process.env.NODE_ENV === "production") {
   console.error("sandbox:mvp es solo para desarrollo y pruebas; nunca se arranca en producción.");
@@ -111,11 +107,6 @@ const sriPort = await listen(sri.server);
 const proxy = outboundProxy(sriPort);
 const proxyUrl = `http://127.0.0.1:${await listen(proxy.server)}`;
 const db = resumed ?? (await createMigratedSchema("manual_mvp"));
-// La política sintética admite documentos grandes: el límite oficial sigue pendiente (Q-47).
-if (!resumed)
-  await installSyntheticSizePolicy(db.database.prisma, [
-    syntheticSizePolicy({ maxSignedDocumentBytes: 1_000_000 }),
-  ]);
 
 const endpoint = (path: string) => `http://${SRI_HOST}/comprobantes-electronicos-ws/${path}`;
 const backend = await startE2eBackend({

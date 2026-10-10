@@ -18,10 +18,6 @@ import { reconcileStock } from "../../src/modules/inventory/infrastructure/index
 import { FIXTURE_PASSWORD, FIXTURE_RUC, readFixture } from "../support/p12-fixtures.ts";
 import { pageTexts } from "../support/pdf-inspection.ts";
 import { SRI_HOST, listen, outboundProxy, simulatedSri } from "../support/simulated-sri.ts";
-import {
-  installSyntheticSizePolicy,
-  syntheticSizePolicy,
-} from "../support/synthetic-size-policy.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { E2E_ORIGIN, startE2eBackend, type E2eBackend } from "./e2e-backend.ts";
 
@@ -45,9 +41,6 @@ describe("flujo completo de las liquidaciones de compra", () => {
     proxy = outboundProxy(await listen(sri.server));
     proxyUrl = `http://127.0.0.1:${await listen(proxy.server)}`;
     db = await createMigratedSchema("end_to_end_purchase_settlements");
-    await installSyntheticSizePolicy(db.database.prisma, [
-      syntheticSizePolicy({ maxSignedDocumentBytes: 1_000_000 }),
-    ]);
   }, 120_000);
 
   afterAll(async () => {
