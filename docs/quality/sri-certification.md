@@ -23,10 +23,14 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Q-47 quedó resuelta por política de producto el 2026-10-09 y ya no bloquea la certificación ni el
   go-live (sección 2). Rige la política conservadora de tamaño de EmiteYa, la misma en Pruebas y en
   Producción (sección 2.1).
-- **El P12 reemitido de Security Data, con el RUC, pasó el ensayo offline completo el 2026-10-10**
-  (sección 5, «Ensayo 3»).
-  - Su certificado **vence el 2026-11-12**: la certificación tiene que terminar antes.
-  - Queda borrar una copia idéntica que sigue en la raíz del repositorio.
+- **NEW REAL P12 CERTIFICATION READY: YES.** El P12 reemitido de Security Data, con el RUC, pasó el
+  ensayo offline completo el 2026-10-10 (sección 5, «Ensayo 3»). Está fuera del repositorio, con
+  permisos `600`.
+- **CERTIFICATE EXPIRY: 2026-11-12.** La certificación en Pruebas tiene que terminar antes. No es un
+  defecto del producto.
+- **READY FOR SRI TEST ENVIRONMENT CHECKLIST: YES.** La lista está en
+  `sri-test-environment-checklist.md`, solo para Pruebas. No se ha contactado ningún host del SRI y
+  `SRI_TRANSMISSION_ENABLED` sigue en `0`.
 - Faltan también la lista del RUC, la salida de red y las decisiones de la sección 1. Hasta entonces
   no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
 
@@ -38,7 +42,7 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 | Política conservadora de tamaño (`PRODUCT_CONSERVATIVE_POLICY_V1`) | Implementada (`adopt-conservative-sri-transmission-size-policy-v1`) | Menos de 40 000 bytes en el XML firmado, su base64 y el SOAP (sección 2.1). Los siete documentos miden como máximo 13 532 bytes (sección 2) |
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, secciones 5.2 y 7.2.3, en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
 | Endpoints y WSDL de Pruebas | Verificados el 2026-10-04; se vuelven a verificar al empezar la sesión | `docs/product/sri-wsdl/` con su SHA-256 (`wsdl-manifest.test.ts`) y `backend/src/modules/sri-engine/infrastructure/endpoints.ts` (sección 3) |
-| P12 ecuatoriano real compatible | **Cumplida offline (2026-10-10)** con el P12 reemitido. Vence el 2026-11-12 | Security Data, RUC en el OID `1.3.6.1.4.1.37746.3.11` igual al de la empresa, firma y XSD válidos, y los siete documentos dentro de la política v1 (sección 5, «Ensayo 3»). Pendiente: borrar la copia idéntica de la raíz del repositorio |
+| P12 ecuatoriano real compatible | **Cumplida offline (2026-10-10)** con el P12 reemitido. **Vence el 2026-11-12** | Security Data, RUC en el OID `1.3.6.1.4.1.37746.3.11` igual al de la empresa, firma y XSD válidos, y los siete documentos dentro de la política v1 (sección 5, «Ensayo 3»). El P12 está fuera del repositorio, con permisos `600` |
 | RUC habilitado en Pruebas | Pendiente | La lista de la sección 4 la comprueba el operador |
 | Salida de red solo hacia Pruebas | Pendiente | Hace falta una lista de permitidos solo hacia `celcer.sri.gob.ec:443` (secciones 3 y 14) |
 | Contrapartes de prueba | Pendiente: decisión del dueño | Sin identidades reales de terceros (sección 6) |
@@ -225,8 +229,15 @@ defecto para un comprobante del ambiente de Pruebas.
 Pruebas con un solo `GET` de lectura y se compara su SHA-256 con el README. Si cambió, se detiene la
 sesión: hay que revisar el contrato.
 
-**Producción no se usa.** Para que ningún error de configuración llegue a `cel.sri.gob.ec`, la sesión
-aplica tres capas:
+**Producción no se usa, nunca.** Durante toda la certificación, el SRI de Producción
+(`cel.sri.gob.ec`) queda fuera de cualquier interacción, sin excepción para pruebas:
+
+- pruebas de humo, health checks ni diagnósticos de conectividad;
+- DNS, TCP, HTTP ni SOAP;
+- Recepción, Autorización, ConsultaComprobante, reconciliación ni descarga de WSDL.
+
+El bloqueo se comprueba revisando la configuración, nunca intentando llegar a Producción. Para que
+ningún error de configuración llegue a `cel.sri.gob.ec`, la sesión aplica tres capas:
 
 1. **La empresa solo está en Pruebas.** La sesión se hace en una instalación nueva con la empresa en el
    ambiente de Pruebas, y nunca se cambia el ambiente durante la sesión. Los endpoints salen del
@@ -460,12 +471,11 @@ red. Solo se registran datos no sensibles.
 
     Con textos largos, el máximo es 15 460 bytes de SOAP (01 con comprador identificado), con un
     margen de 24 540 hasta 40 000.
-- **Acción local pendiente del operador: borrar la copia del P12 de la raíz del repositorio.**
-  - El operador copió el P12 fuera del repositorio, que es el que usa la configuración, pero dejó una
-    copia idéntica en la raíz.
-  - Esa copia está ignorada solo por un patrón local de `.git/info/exclude`.
-  - Hay que borrarla, sin moverla de vuelta ni añadir su nombre a `.gitignore`.
-  - Después se retira el patrón local.
+- **MOVE REAL P12 OUTSIDE REPOSITORY TREE: hecho (2026-10-10).**
+  - El P12 que usa la configuración está fuera del repositorio, con permisos `600`.
+  - La copia idéntica que había quedado en la raíz se borró con la autorización del operador, tras
+    comprobar por hash que era igual al archivo externo.
+  - Se retiró el patrón temporal de `.git/info/exclude`. Ningún nombre real figura en `.gitignore`.
 
 ## 6. Instalación y datos de la certificación
 
