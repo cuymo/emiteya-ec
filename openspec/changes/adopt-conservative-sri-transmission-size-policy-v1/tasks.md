@@ -94,19 +94,19 @@
 
 ## 4. Documentación
 
-- [ ] 4.1 Actualizar Q-47 en `docs/product/open-questions.md`: **Resuelta**
+- [x] 4.1 Actualizar Q-47 en `docs/product/open-questions.md`: **Resuelta**
   (`RESOLVED_BY_PRODUCT_POLICY_V1`), con su razón, sin ser compuerta, y revisable solo con evidencia
   oficial nueva mediante un change nuevo (design D7). Actualizar también:
   - la fila de `sri-transmission` y la del change 7 en `docs/product/capabilities.md` y
     `open-questions.md`;
   - `docs/product/sri-catalogs/README.md`.
-- [ ] 4.2 Actualizar `docs/quality/sri-certification.md`:
+- [x] 4.2 Actualizar `docs/quality/sri-certification.md`:
   - las compuertas, con Q-47 resuelta;
   - la sección 2, con «320 Kb» como contexto;
   - la sección 2.1, ahora la política v1 en los dos ambientes;
   - el aislamiento de Producción como medida operativa;
   - que los límites de recursos no garantizan la transmisión.
-- [ ] 4.3 Actualizar:
+- [x] 4.3 Actualizar:
   - `docs/architecture/fiscal-emission.md`;
   - `docs/architecture/database.md`, con la tabla, el índice, las restricciones y los triggers
     retirados, y catorce datasets;

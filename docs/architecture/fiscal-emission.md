@@ -48,7 +48,7 @@ solicitud ── crear ─▶│ 1 validar ─▶ 2 RESERVED ─(commit)─▶ 3
 | 2 | La misma transacción, sin I/O externo: crea el snapshot, reserva el secuencial, bloquea la identidad tributaria, persiste los componentes definitivos de la clave de acceso y crea el comprobante (ver "Transacción de `RESERVED`"). | `RESERVED` |
 | 3 | Tras el commit, con el arriendo del intento, construye el XML desde el snapshot con el builder de la versión registrada. | `RESERVED` |
 | 4 | Valida el XML contra el XSD del snapshot. Falla cerrada si falta el XSD, su hash no coincide o la versión no está registrada (CTX §19.2, ADR 0021). | `RESERVED` |
-| 5 | Firma con la firma vigente, vuelve a validar el XML firmado contra el XSD y persiste sus bytes exactos con su hash, en la misma transacción que la transición, la auditoría y el job `sri.transmit` (ADR 0004, ADR 0010). El límite de tamaño lo comprueba la transmisión antes de cada envío (BR-26, Q-47). | `SIGNED` |
+| 5 | Firma con la firma vigente, vuelve a validar el XML firmado contra el XSD y persiste sus bytes exactos con su hash, en la misma transacción que la transición, la auditoría y el job `sri.transmit` (ADR 0004, ADR 0010). La política de tamaño la comprueba la transmisión antes de cada envío (BR-26, Q-47 resuelta por política de producto). | `SIGNED` |
 | 6 | Recepción: envía el XML firmado persistido y persiste la respuesta original antes de clasificarla. | `RECEIVED`, `RETURNED` o `SEND_UNKNOWN` |
 | 7 | Autorización: consulta por clave con backoff y jitter; persiste la respuesta original antes de clasificarla; guarda número, fecha, ambiente y XML autorizado (CTX §34, §45). | `AUTHORIZED`, `NOT_AUTHORIZED` o `MANUAL_REVIEW` |
 | 8 | RIDE desde el comprobante autorizado, guardado como artefacto (CTX §30). | Cambio 8 |
@@ -202,9 +202,12 @@ Decididas el 2026-10-03 en la revisión de readiness del cambio 7; el design del
   - el XML autorizado exacto, si viene en la respuesta.
 
   El `SIGNED_XML` (lo enviado) no se reemplaza. El XML autorizado (lo recibido) es otro artefacto, y ambos se verifican por hash.
-- **Límite de tamaño.** Es una política versionada de `fiscal-catalogs`, con el texto fuente, la sección, la unidad y la interpretación exacta en bytes.
-  - Entre 320 000 y 327 680 bytes no se decide sin la fuente oficial (Q-47), y la cifra no se inventa ni se copia de la librería.
-  - Resuelto en el cambio 7 (2026-10-04): Q-47 es una compuerta previa a la transmisión real. La política existe y falla cerrada; su cifra se publicará en un cambio pequeño cuando haya evidencia oficial.
+- **Límite de tamaño.** Es la política conservadora de EmiteYa, `PRODUCT_CONSERVATIVE_POLICY_V1`, una constante del código (`fiscal/domain/transmission-size-policy.ts`). Q-47 quedó resuelta por política de producto el 2026-10-09 (`adopt-conservative-sri-transmission-size-policy-v1`).
+  - Todo envío individual, en Pruebas y en Producción, debe medir menos de 40 000 bytes en el XML firmado, su base64 y el cuerpo SOAP, medidos sobre el cuerpo que se construye una sola vez y se envía tal cual.
+  - No es el límite oficial del SRI: la ficha dice «320 Kb» sin definir la unidad ni la representación.
+  - Al excederla, la transmisión se detiene antes de la red sin recortar el comprobante.
+  - Los límites de recursos de los borradores no garantizan que un comprobante sea transmisible.
+  - En el cambio 7 (2026-10-04) era una política versionada de `fiscal-catalogs` que nunca se publicó; se retiró junto con la sesión de certificación.
 - **API.** No hay `POST /send`, `/soap`, `/reception` ni `/authorization`: el sistema transmite con jobs. La API de facturas expone el estado, los mensajes de negocio y el historial útil. Si el design la justifica, añade una acción de reconciliación solo para el administrador.
 - **Compuertas externas.** No bloquean proponer ni apply; sí bloquean la transmisión real y el go-live:
   - el vector oficial de la clave de acceso: cumplido el 2026-10-04 (ficha v2.34, secciones 5.2 y 7.2.3, en la prueba de contrato de `AccessKeys`);
@@ -387,7 +390,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Intentos, respuestas originales y resultados | `fiscal/infrastructure/prisma-sri-evidence.ts` |
 | Transporte SOAP, sobres, endpoints y circuit breaker | `sri-engine/infrastructure` (`soap-transport.ts`, `soap-envelopes.ts`, `endpoints.ts`, `circuit-breaker.ts`, `sri-gateway.ts`) |
 | Clasificadores de recepción, autorización y validez | `sri-engine/infrastructure` (`reception-classifier.ts`, `authorization-classifier.ts`, `validity-classifier.ts`) |
-| Política de tamaño | `catalogs` (dataset `sri-transmission-policy`) |
+| Política de tamaño | `fiscal` (constante `PRODUCT_CONSERVATIVE_POLICY_V1`, no un catálogo) |
 | Consultas y reconciliación manual | `invoices/application/invoices.ts` e `invoices/infrastructure/http/invoices-router.ts`, con la solicitud compartida `fiscal/application/reconciliation-request.ts` (`add-credit-notes`) |
 | Métricas | `fiscal/infrastructure/transmission-metrics.ts` |
 | Pantallas | `frontend/src/features/archive/transmission-section.tsx`, compartida por la factura y la nota de crédito con textos, rutas y permiso por tipo (`document-kinds.ts`, `add-credit-notes`) |
@@ -421,8 +424,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
   | Motivo | Cuándo |
   | --- | --- |
   | `INTEGRITY_FAILED` | El `SIGNED_XML` no coincide con su hash, su tamaño, su comprobante o su clave. No se envía nada. |
-  | `TOO_LARGE` | El XML firmado supera el límite de la política vigente. No se envía. |
-  | `SIZE_POLICY_MISSING` | No hay política de tamaño vigente para la fecha del envío. No se envía. |
+  | `TRANSMISSION_SIZE_POLICY_EXCEEDED` | El XML firmado, su base64 o el SOAP llegan a los 40 000 bytes de la política conservadora. No se envía, sin intento con el SRI ni transición. |
   | `SRI_UNAVAILABLE` | Fallos de transporte hasta agotar los intentos, el plazo o la ventana. |
   | `HANDLER_ERROR` | Un fallo inesperado del handler hasta agotar los intentos. |
 
@@ -462,7 +464,7 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Decisiones del cambio 7 | Errores 70, 43 y 45 | `SEND_UNKNOWN` y reconciliación; nunca `RETURNED` ni otro secuencial; el 45 sin la clave conocida es `MANUAL_REVIEW`. |
 | Decisiones del cambio 7 | Verificación antes de cada envío | Hash, tamaño, comprobante y clave del `SIGNED_XML`. |
 | Decisiones del cambio 7 | Autorización inmutable | Número, fecha y ambiente guardados una vez; `AUTHORIZED_XML` aparte del firmado. |
-| Decisiones del cambio 7 | Límite de tamaño versionado | Dataset `sri-transmission-policy`; sin política vigente no se envía. La cifra oficial en bytes es una compuerta previa a la transmisión real (Q-47). |
+| Decisiones del cambio 7 | Límite de tamaño | Hoy es la política conservadora `PRODUCT_CONSERVATIVE_POLICY_V1`: menos de 40 000 bytes en el XML firmado, su base64 y el SOAP, en Pruebas y en Producción (Q-47 resuelta por política de producto, `adopt-conservative-sri-transmission-size-policy-v1`). |
 | Decisiones del cambio 7 | API orientada a la factura | Historial y reconciliación del administrador; ninguna ruta de envío ni de SOAP. |
 | `add-invoice-emission` | Envía siempre los mismos bytes | El envío y el reenvío usan el `SIGNED_XML` persistido; nunca se regenera. |
 
@@ -1117,7 +1119,7 @@ La implementa `add-sri-transmission` (cambio 7).
 - Las consultas se reintentan; el envío nunca se reintenta a ciegas: primero se reconcilia.
 - Circuit breaker por servicio y ambiente del SRI; mientras está abierto, los jobs se reprograman sin llamar ni consumir intentos, y la métrica `sri_circuit_open` lo muestra.
 - La autorización puede tardar hasta 24 horas desde `RECIBIDA` (CTX §23.1): es la ventana de conclusión por defecto (`SRI_CONCLUSION_WINDOW_HOURS`), y al agotarla sin conclusión el comprobante pasa a `MANUAL_REVIEW` (design D4).
-- Un comprobante por envío, sin lotes, y nunca uno que supere el límite de tamaño versionado (CTX §29); su cifra exacta en bytes espera la fuente oficial (Q-47, compuerta previa a la transmisión real) y, mientras tanto, ningún envío sale.
+- Un comprobante por envío, sin lotes, y nunca uno que exceda la política conservadora de tamaño (CTX §29, Q-47 resuelta por política de producto): menos de 40 000 bytes en el XML firmado, su base64 y el SOAP.
 - La caída del SRI no afecta la consulta local ni la emisión hasta `SIGNED` (ERS RNF-004).
 
 | Caso de recuperación (CTX §52)                       | Mecanismo                                                                    |
@@ -1134,7 +1136,7 @@ La implementa `add-sri-transmission` (cambio 7).
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | XSD                                | Registro de esquemas con tipo, raíz, versión, archivo, hash SHA-256, origen y fecha (CTX §19.3). Los archivos se empaquetan con la aplicación y nunca se descargan en tiempo de ejecución. Los antiguos se conservan. |
 | Versiones iniciales                | 01 1.1.0, 03 1.1.0, 04 1.1.0, 05 1.0.0, 06 1.1.0, 07 2.0.0 (CTX §3.1, ADR 0008).                                  |
-| Catálogos y políticas              | Entradas con vigencia, fuente y versión: impuestos, retenciones, formas de pago, consumidor final, límite de tamaño y endpoints por defecto (CTX §55). |
+| Catálogos y políticas              | Entradas con vigencia, fuente y versión: impuestos, retenciones, formas de pago, consumidor final y endpoints por defecto (CTX §55). La política de tamaño es una constante del código, no un catálogo. |
 | Casos especiales                   | Matriz de soporte por anexo con categorías explícitas; lo no soportado se rechaza antes de emitir (ADR 0014).      |
 | Snapshot de cada comprobante       | Versiones de XSD, builder, catálogos, configuración de la empresa y renderer del RIDE (CTX §39).                  |
 | Cambios normativos                 | Proceso de CTX §53 y checklist de CTX §54 antes de cada release; registro en el repositorio (Q-40).                |

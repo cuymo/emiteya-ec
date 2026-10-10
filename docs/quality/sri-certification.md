@@ -20,9 +20,9 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 
 **Estado al 2026-10-09: todavía no se ejecuta.**
 
-- Q-47 sigue abierta y bloquea la transmisión general y el go-live (sección 2).
-- Para certificar solo en Pruebas ya existe la sesión de certificación con su tope de seguridad
-  conservador (sección 2.1). Su verificación global sigue pendiente.
+- Q-47 quedó resuelta por política de producto el 2026-10-09 y ya no bloquea la certificación ni el
+  go-live (sección 2). Rige la política conservadora de tamaño de EmiteYa, la misma en Pruebas y en
+  Producción (sección 2.1).
 - El P12 real del operador es criptográficamente compatible, pero su certificado no trae el RUC: no
   sirve para certificar con esta empresa. **EXTERNAL CERTIFICATE REISSUE REQUIRED** (sección 5,
   «Ensayos offline»).
@@ -33,8 +33,8 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 
 | Compuerta | Estado | Evidencia o acción |
 | --- | --- | --- |
-| Q-47: límite de tamaño en bytes | **Abierta, BLOCKER para la transmisión general** | La ficha dice «320 Kb» sin definir la unidad (sección 2). Sin una política vigente, la aplicación no envía nada (falla cerrada) |
-| Tope de seguridad de la certificación | Implementado el 2026-10-09 (`add-sri-certification-safety-cap`); verificación global pendiente | Los siete documentos miden como máximo 13 532 bytes (sección 2) |
+| Q-47: límite de tamaño en bytes | **Resuelta por política de producto** (2026-10-09, `RESOLVED_BY_PRODUCT_POLICY_V1`) | La ficha dice «320 Kb» sin definir la unidad (sección 2). La aplicación aplica su propia política conservadora, sin afirmar que sea la del SRI |
+| Política conservadora de tamaño (`PRODUCT_CONSERVATIVE_POLICY_V1`) | Implementada (`adopt-conservative-sri-transmission-size-policy-v1`) | Menos de 40 000 bytes en el XML firmado, su base64 y el SOAP (sección 2.1). Los siete documentos miden como máximo 13 532 bytes (sección 2) |
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, secciones 5.2 y 7.2.3, en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
 | Endpoints y WSDL de Pruebas | Verificados el 2026-10-04; se vuelven a verificar al empezar la sesión | `docs/product/sri-wsdl/` con su SHA-256 (`wsdl-manifest.test.ts`) y `backend/src/modules/sri-engine/infrastructure/endpoints.ts` (sección 3) |
 | P12 ecuatoriano real compatible | **BLOQUEADA: EXTERNAL CERTIFICATE REISSUE REQUIRED.** Responsable: externo (Security Data) | El P12 actual es `CRYPTOGRAPHICALLY_COMPATIBLE` pero `NOT_SRI_CERTIFICATION_ELIGIBLE_FOR_THIS_COMPANY` (`CERTIFICATE_RUC_NOT_FOUND`): su certificado no trae el OID `1.3.6.1.4.1.37746.3.11`. Hace falta un certificado reemitido con el RUC (sección 5) |
@@ -44,7 +44,7 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 | Q-53 (dos ejemplares del RIDE de la liquidación) | No bloquea | Es una obligación de entrega, no de la transmisión; se revisa antes del go-live |
 | Q-52 (edición vigente del Reglamento) | No bloquea | Revisión normativa separada |
 
-## 2. Q-47: el límite de tamaño
+## 2. Q-47: el límite de tamaño (resuelta por política de producto)
 
 **Fuente oficial única.** Ficha técnica «Manual de usuario, catálogo y especificaciones técnicas.
 Emisión de Comprobantes Electrónicos. Método de autorización Off-line», versión 2.34 (julio de 2026),
@@ -61,13 +61,13 @@ SHA-256 `7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9`. El e
   kilobytes, ni si un kilo vale 1000 o 1024.
 - **A qué bytes se aplica:** no definido. Dice «por comprobante», en la validación de la recepción.
   El código 26, «Tamaño máximo superado», dice «Tamaño del archivo supera lo establecido» (RECEPCIÓN),
-  sin cifra. No dice si mide el XML firmado, su base64 en el SOAP o el sobre completo. La aplicación
-  compara el XML firmado tal como se envía, antes del base64 (`transmit-handler.ts`, `TOO_LARGE`).
+  sin cifra. No dice si mide el XML firmado, su base64 en el SOAP o el sobre completo. Por eso la
+  política del producto mide las tres representaciones (sección 2.1).
 - **A qué comprobantes y versiones aplica:** a cualquier comprobante del envío individual del esquema
   off-line, sin distinguir tipo ni versión del XSD.
-- **Qué pasa al excederlo:** el SRI devuelve el código 26 en la recepción. En la aplicación, un XML
-  firmado mayor que la política no se envía: el job se detiene con `TOO_LARGE` y el comprobante queda
-  `SIGNED`, sin llamar al SRI.
+- **Qué pasa al excederlo:** el SRI devuelve el código 26 en la recepción. La aplicación no llega a
+  ese punto: un comprobante que excede su política no se envía. El job se detiene con
+  `TRANSMISSION_SIZE_POLICY_EXCEEDED` y el comprobante queda `SIGNED`, sin llamar al SRI.
 - **Búsquedas.** Las del 2026-10-03, el 2026-10-04 y el 2026-10-09 solo encontraron versiones de la
   ficha con el mismo texto; la 2.34 sigue siendo la vigente. Una guía oficial de preguntas frecuentes
   de facturación electrónica figura en la biblioteca del SRI, pero no se ha leído: obtenerla y
@@ -75,8 +75,10 @@ SHA-256 `7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9`. El e
 
 ### Medición frente a las lecturas posibles
 
-Ninguna de estas cifras es oficial y **ninguna se adopta**. Solo muestran qué documentos del MVP
-quedarían en juego según cómo se lea «320 Kb».
+Ninguna de estas cifras es oficial y ninguna se adopta como lectura del texto del SRI. La política
+del producto coincide en número con la lectura más restrictiva por decisión conservadora propia, no
+porque el SRI la defina. Las cifras muestran qué documentos del MVP quedarían en juego según cómo se
+lea «320 Kb».
 
 | Lectura posible de «320 Kb» | Bytes |
 | --- | --- |
@@ -99,7 +101,8 @@ quedarían en juego según cómo se lea «320 Kb».
 
 ### Los siete documentos de la certificación (medición offline del 2026-10-09)
 
-Es evidencia de readiness para la sesión de certificación, no una prueba del límite oficial del SRI.
+Es evidencia de margen frente a la política conservadora de la sección 2.1, no una prueba del límite
+oficial del SRI.
 
 Se miden con `corepack pnpm --filter @facturador/backend measure:certification-payloads`
 (`backend/test/manual/measure-certification-payloads.ts`), sin red, sin SRI y sin base de datos. Cada
@@ -134,90 +137,76 @@ unos 280 caracteres.
 - **El certificado real.** El certificado embebido sintético mide 947 bytes DER con RSA 2048 y 1 203
   con RSA 4096. Cada byte más del certificado real suma 4/3 en el XML y 16/9 en el SOAP. Por eso el
   certificado real puede ser hasta 14 887 bytes DER mayor que el sintético de 4096 antes de alcanzar
-  el tope en el peor caso. El tamaño exacto se ve en el ensayo offline con el P12 real (sección 5).
+  el límite de la política en el peor caso. El tamaño exacto se ve en el ensayo offline con el P12
+  real (sección 5).
 
 - **Documentos de certificación** (pocas líneas, como los de la sección 7): rondan los 8 a 10 KB.
   Quedan por debajo de todas las lecturas.
-- **Lecturas en kilobits:** con los límites por defecto, la retención de peor caso (46 614 bytes), la
-  guía (78 827) y la liquidación (156 132) las superan. La aplicación no las enviaría: `TOO_LARGE`, sin
-  llamada.
-- **Lecturas en kilobytes:** con los máximos absolutos configurados, la liquidación las supera.
+- **Con la política v1,** con los límites por defecto, la retención de peor caso (46 614 bytes), la
+  guía (78 827) y la liquidación (156 132) no se transmiten: `TRANSMISSION_SIZE_POLICY_EXCEEDED`, sin
+  llamada y sin recortarlas.
+- **Límites de recursos frente a transmisibilidad.** Los límites de líneas, destinatarios, detalles,
+  sustentos o pagos son defensas de recursos de los borradores: no garantizan que un comprobante sea
+  transmisible. Un comprobante válido puede superar la política. En ese caso no se transmite ni se
+  recorta, y el usuario debe reducir o dividir el contenido cuando el tipo lo permita. Los límites
+  actuales no se reducen por esta política.
 
-Esto no cambia el runtime: la cifra oficial decide si hay que ajustar los límites por defecto de la
-aplicación.
+### Resolución (2026-10-09)
 
-### Cómo se resuelve
+Ninguna fuente primaria fijó la unidad ni los bytes medidos. El dueño del producto resolvió Q-47 por
+**política de producto** (`RESOLVED_BY_PRODUCT_POLICY_V1`): EmiteYa aplica su política conservadora
+de la sección 2.1 en Pruebas y en Producción, sin afirmar que sea el límite oficial del SRI. Q-47 deja
+de ser una compuerta de la certificación y del go-live. Solo se revisa con evidencia oficial nueva del
+SRI, mediante una decisión y un change nuevos, sin reabrir Q-47.
 
-1. **Evidencia oficial.** La guía oficial de preguntas frecuentes, una consulta formal al SRI u otra
-   fuente primaria que fije la unidad y los bytes medidos. Con ella, un cambio OpenSpec pequeño publica
-   `sri-transmission-policy` (versión 1) con el texto, la sección, la unidad literal y la
-   interpretación.
-2. **Decisión explícita del dueño del producto**, si la evidencia oficial no llega. Una política
-   conservadora del producto, registrada como decisión propia y no como cifra oficial, en su propio
-   cambio OpenSpec. No se toma por defecto ni de forma implícita.
+## 2.1 Política conservadora de tamaño de EmiteYa (`PRODUCT_CONSERVATIVE_POLICY_V1`)
 
-Hasta entonces, Q-47 es un BLOCKER para la transmisión general: sin política vigente y sin la sesión
-de certificación, `SRI_TRANSMISSION_ENABLED=1` deja `/health/ready` en `503` y el job se detiene con
-`SIZE_POLICY_MISSING`.
+La implementó `adopt-conservative-sri-transmission-size-policy-v1`, que retiró la sesión de
+certificación de `add-sri-certification-safety-cap` y el catálogo `sri-transmission-policy`.
 
-## 2.1 Tope de seguridad de la certificación (sesión de certificación)
+**Regla.** Vale para todo envío individual al SRI, en Pruebas y en Producción. Justo antes de enviar a
+la recepción, el sistema construye una sola vez el cuerpo final y mide tres cosas. Ese mismo cuerpo es
+el que recibe el transporte:
 
-Lo implementó `add-sri-certification-safety-cap` el 2026-10-09.
+- `signedXmlBytes`, el XML firmado en UTF-8;
+- `base64PayloadBytes`, su base64 exacto;
+- `soapRequestBytes`, el cuerpo SOAP completo.
 
-**CERTIFICATION SAFETY CAP: 40 000 bytes.** Se deriva de la lectura convencional más restrictiva del
-texto oficial ambiguo: «320 Kb» leídos como 320 000 bits, que son 40 000 bytes. Las demás lecturas
-razonables dan cifras mayores. Es una constante del código, no una configuración.
+Solo envía si las tres son menores que 40 000 (39 999 pasa; 40 000 y 40 001 no).
 
-**Qué no es.** No resuelve Q-47 y no es:
-- el límite oficial del SRI;
-- el límite de Producción;
-- un límite general de documento;
-- una defensa de recursos;
-- una regla del XSD.
+- **Qué es:** una decisión conservadora del producto, fija en el código.
+- **Qué no es:** no es configurable, ninguna variable de entorno la cambia y no es el límite oficial
+  del SRI.
 
-Q-47 sigue abierta como compuerta del go-live.
-
-**Activación.** `SRI_CERTIFICATION_SAFETY_CAP_ENABLED=1`, apagada por defecto.
-- No habilita la transmisión: sigue haciendo falta `SRI_TRANSMISSION_ENABLED=1`.
-- Con la bandera, el sistema solo habla con el SRI sobre comprobantes del ambiente de Pruebas. Un
-  comprobante de Producción se detiene con `CERTIFICATION_ENVIRONMENT_NOT_TEST` antes de cualquier
-  llamada (envío, autorización o consulta), sin redirigirlo ni corregir su ambiente.
-
-**Regla.** Justo antes de enviar a la recepción, el sistema construye una sola vez el cuerpo final
-y mide tres cosas. Ese mismo cuerpo es el que recibe el transporte:
-
-- `signedXmlBytes`;
-- `base64PayloadBytes`;
-- `soapRequestBytes`.
-
-Solo envía si las tres son menores que 40 000 (39 999 pasa; 40 000 y 40 001 no). Si alguna llega al
-tope, el job se detiene con `CERTIFICATION_SIZE_CAP_EXCEEDED`:
+**Bloqueo antes de la red.** Si alguna medida llega a 40 000, el job se detiene con
+`TRANSMISSION_SIZE_POLICY_EXCEEDED`:
 
 - sin llamada, sin intento con el SRI y sin respuesta;
 - sin transición fiscal;
-- distinto de un `RETURNED` y del código 26 del SRI.
+- distinto de un `RETURNED`, de un `NOT_AUTHORIZED` y del código 26 del SRI.
 
-El documento nunca se recorta, comprime ni altera.
+El documento nunca se recorta, comprime, altera ni divide. El usuario ve: «El comprobante excede el
+límite de seguridad de transmisión de EmiteYa. Reduzca el contenido antes de enviarlo.»
 
-**Composición con la política oficial.** El tope solo restringe:
+**La política no habilita la transmisión.** Sigue haciendo falta `SRI_TRANSMISSION_ENABLED=1`, que
+nace apagada, con sus precondiciones técnicas: endpoints válidos y al menos un worker.
 
-| Política oficial | Sesión | Fuente efectiva | Resultado |
-| --- | --- | --- | --- |
-| Presente | Apagada | `SRI_OFFICIAL_POLICY` | Rige solo la oficial |
-| Presente | Encendida | `SRI_OFFICIAL_AND_CERTIFICATION_CAP` | Deben permitirlo las dos |
-| Ausente | Encendida | `CERTIFICATION_CONSERVATIVE_CAP` | Un comprobante de Pruebas bajo el tope puede enviarse |
-| Ausente | Apagada | `MISSING` | `SIZE_POLICY_MISSING`, sin red |
+**Producción durante la certificación.** La política no prohíbe Producción. Durante la certificación
+real, el aislamiento es operativo (secciones 3 y 14):
+
+- la empresa en el ambiente de Pruebas;
+- los endpoints de Producción sustituidos por un destino no enrutable;
+- una lista de permitidos externa solo hacia `celcer.sri.gob.ec`;
+- la transmisión habilitada solo durante la sesión controlada.
 
 **Diagnóstico sin secretos.**
-- `/health/ready` publica `sriSizeGate`:
-  - si la sesión está activa;
-  - el tope;
-  - la fuente efectiva;
-  - la última comprobación: ambiente fiscal, las tres medidas, si se permitió y su motivo, sin clave,
-    RUC, número ni terceros.
-- Métricas: `sri_certification_safety_cap_enabled` y `sri_certification_gate_blocks_total`, esta
-  con una sola etiqueta, `reason`.
-- Cada envío o bloqueo deja un registro con las medidas, sin el XML, el base64 ni el SOAP.
+- `/health/ready` publica `sriSizePolicy`:
+  - `source`, que es `PRODUCT_CONSERVATIVE_POLICY_V1`, nunca `SRI_OFFICIAL_POLICY`;
+  - `limitBytes`;
+  - la última comprobación: las tres medidas, `allowed` y `blockReason`.
+- Métrica: `sri_transmission_size_policy_blocks_total`, sin etiquetas.
+- Cada comprobación deja un registro con el ambiente fiscal y las medidas, sin el XML, el base64 ni
+  el SOAP.
 
 ## 3. Endpoints y salida de red
 
@@ -260,7 +249,6 @@ aplica tres capas:
   cualquier otro despliegue, arranca con un archivo de entorno fuera del repositorio:
   - `NODE_ENV=production`;
   - `SRI_TRANSMISSION_ENABLED=1`;
-  - `SRI_CERTIFICATION_SAFETY_CAP_ENABLED=1`, la sesión de certificación de la sección 2.1;
   - `SRI_JOB_WORKERS=1`;
   - las tres sobrescrituras de Producción;
   - el proxy de la lista de permitidos;
@@ -269,13 +257,12 @@ aplica tres capas:
   Antes de emitir se comprueba lo siguiente. Si la readiness da `503`, se corrige la precondición
   que nombra el log; no se rodea.
   - `/health/ready` responde `200` con `"sriTransmission": "enabled"`;
-  - `sriSizeGate` informa `certificationSafetyCapEnabled: true` y, sin política oficial, la fuente
-    `CERTIFICATION_CONSERVATIVE_CAP`, nunca `SRI_OFFICIAL_POLICY`;
-  - `sri_transmission_enabled` y `sri_certification_safety_cap_enabled` valen `1` en `/metrics`.
+  - `sriSizePolicy` informa la fuente `PRODUCT_CONSERVATIVE_POLICY_V1` y `limitBytes: 40000`;
+  - `sri_transmission_enabled` vale `1` en `/metrics`.
 - **Vuelta a fallar cerrado.** Hay tres formas, de la más suave a la más inmediata:
   1. Parar el proceso (`SIGTERM`): el runner espera hasta 8 s a los jobs en curso y vence los
      arriendos.
-  2. Reiniciarlo con `SRI_TRANSMISSION_ENABLED=0` y `SRI_CERTIFICATION_SAFETY_CAP_ENABLED=0`.
+  2. Reiniciarlo con `SRI_TRANSMISSION_ENABLED=0`.
   3. Si hay prisa, cortar el proxy de la lista de permitidos: toda llamada falla en el transporte y
      nada sale.
 
@@ -436,7 +423,7 @@ red. Solo se registran datos no sensibles.
   8. la firma y su verificación;
   9. el XSD de los siete documentos;
   10. la medición del XML firmado, su base64 y el SOAP;
-  11. el tope de seguridad de la certificación (< 40 000 bytes).
+  11. la política conservadora de tamaño (< 40 000 bytes en las tres medidas).
 
   Solo después: READY FOR SRI TEST ENVIRONMENT CHECKLIST.
 - **Acción local pendiente del operador: MOVE REAL P12 OUTSIDE REPOSITORY TREE.**
@@ -557,7 +544,6 @@ La sesión se detiene de inmediato, con la transmisión vuelta a fallar cerrado 
 ocurre cualquiera de estas condiciones. No se sigue «para ver qué pasa».
 
 - **Compuertas:**
-  - Q-47 sin resolver: no hay política de tamaño vigente;
   - P12 rechazado, RUC del certificado distinto o firma no utilizable;
   - RUC no habilitado en Pruebas o tipo no habilitado.
 - **Endpoints:**
@@ -627,11 +613,8 @@ Con los seis tipos en `AUTHORIZED`, S-3 online y AC-03 pasan a cumplidos aquí y
 
 ## 14. Cambios del repositorio antes de la primera transmisión real
 
-- **Política de tamaño (Q-47).** Publicar `sri-transmission-policy` versión 1 en su cambio OpenSpec,
-  solo con evidencia oficial. Es necesaria para la transmisión general y el go-live; para la
-  certificación la sustituye el tope de la sección 2.1.
-- **Tope de seguridad de la certificación.** Implementado en `add-sri-certification-safety-cap`.
-  Falta su verificación global (`corepack pnpm verify` con PostgreSQL) antes de integrarlo.
+- **Política de tamaño (Q-47).** Resuelta por política de producto: la política conservadora de la
+  sección 2.1 rige en Pruebas y en Producción (`adopt-conservative-sri-transmission-size-policy-v1`).
 - **Lista de permitidos de salida.** Un proxy `CONNECT` local de herramientas, fuera del runtime de la
   aplicación, que solo admita `celcer.sri.gob.ec:443`, o la regla equivalente del firewall,
   documentada.
@@ -671,14 +654,13 @@ Se resuelven después de la certificación y antes de habilitar Producción
   - saltar validaciones o la firma;
   - rutas que finjan un `AUTHORIZED`;
   - relajar la seguridad.
-- **Permitido:** controles adicionales que solo hacen más restrictiva la sesión de Pruebas. El tope
-  de seguridad de la certificación (sección 2.1) pertenece a esta categoría: no salta la integridad
-  ni la política oficial, y fuera de Pruebas no deja hablar con el SRI.
+- **Permitido:** controles operativos que solo hacen más restrictiva la sesión de Pruebas, como el
+  aislamiento de Producción de las secciones 3 y 14. La política de tamaño de la sección 2.1 es la
+  misma de siempre, no un modo especial de la certificación.
 - El interruptor de la transmisión no salta invariantes fiscales: con él encendido rigen la integridad
-  del artefacto, el límite de tamaño y la máquina de estados.
+  del artefacto, la política de tamaño y la máquina de estados.
 - No se reintenta «de todas formas» un comprobante en revisión manual: solo sale con la
   reconciliación y evidencia concluyente.
 - No se suben al repositorio el P12, su contraseña, el RUC real, la clave maestra ni respuestas sin
   anonimizar.
-- No se usa Producción ni se cambia el valor por defecto de `SRI_TRANSMISSION_ENABLED` ni el de
-  `SRI_CERTIFICATION_SAFETY_CAP_ENABLED`.
+- No se usa Producción ni se cambia el valor por defecto de `SRI_TRANSMISSION_ENABLED`.

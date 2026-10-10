@@ -9,13 +9,15 @@
 // de la recepción (`receptionEnvelope`, el cuerpo de la petición HTTP, sin sus cabeceras). Mide dos
 // perfiles de datos: el típico y el de textos largos (razón social y direcciones cerca de su máximo).
 // El certificado real puede ser mayor que el sintético: la cifra exacta se ve en el ensayo offline
-// con el P12 real (sección 5 del runbook). El tope de comparación es el CERTIFICATION SAFETY CAP de
-// 40000 bytes; no es el límite oficial del SRI (Q-47 sigue abierta).
+// con el P12 real (sección 5 del runbook). La comparación es con la política conservadora de tamaño
+// de EmiteYa, PRODUCT_CONSERVATIVE_POLICY_V1, de 40 000 bytes. No es el límite oficial del SRI (Q-47
+// resuelta por política de producto).
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { DocumentType } from "@facturador/contracts";
+import { TRANSMISSION_SIZE_POLICY } from "../../src/modules/fiscal/domain/transmission-size-policy.ts";
 import {
   registeredSchema,
   type SchemaRegistryEntry,
@@ -44,8 +46,7 @@ import { iva, settlementSnapshot, SUPPLIER } from "../support/ride-purchase-sett
 import { detail, guideSnapshot } from "../support/ride-shipping-guides.ts";
 import { supportTax, withheld, withholdingSnapshot } from "../support/ride-withholdings.ts";
 
-/** CERTIFICATION SAFETY CAP: la lectura convencional más restrictiva de «320 Kb» (no oficial). */
-const CERTIFICATION_SAFETY_CAP = 40_000;
+const LIMIT = TRANSMISSION_SIZE_POLICY.limitBytes;
 
 const path = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
 const validator = createXmllintXsdValidator({ root: path("../../../docs/product/") });
@@ -329,7 +330,7 @@ try {
           signedXmlUtf8Bytes: signed.length,
           base64PayloadBytes: base64,
           completeSoapRequestBytes: soap,
-          margenAlTope: CERTIFICATION_SAFETY_CAP - Math.max(signed.length, base64, soap),
+          margenAlLimite: LIMIT - Math.max(signed.length, base64, soap),
           certificadoDerBytes: Buffer.from(certificate.replace(/\s+/g, ""), "base64").length,
         });
       }
@@ -338,15 +339,16 @@ try {
   console.table(rows);
   const max = Math.max(...rows.map((r) => Number(r.completeSoapRequestBytes)));
   // Un byte más del certificado embebido suma 4/3 en el XML (base64) y 16/9 en el SOAP: hasta dónde
-  // puede crecer el certificado real respecto del sintético antes de alcanzar el tope.
-  const tolerance = Math.floor(((CERTIFICATION_SAFETY_CAP - 1 - max) * 9) / 16);
+  // puede crecer el certificado real respecto del sintético antes de alcanzar el límite.
+  const tolerance = Math.floor(((LIMIT - 1 - max) * 9) / 16);
   console.log(
     JSON.stringify({
-      certificationSafetyCap: CERTIFICATION_SAFETY_CAP,
+      sizePolicy: TRANSMISSION_SIZE_POLICY.id,
+      limitBytes: LIMIT,
       maxObservedBytes: max,
-      margin: CERTIFICATION_SAFETY_CAP - max,
+      margin: LIMIT - max,
       extraCertificateDerBytesTolerated: tolerance,
-      allBelow: rows.every((r) => Number(r.margenAlTope) > 0),
+      allBelow: rows.every((r) => Number(r.margenAlLimite) > 0),
       rows,
     }),
   );

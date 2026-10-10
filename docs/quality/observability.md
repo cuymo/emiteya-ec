@@ -63,7 +63,8 @@ Alertas propuestas (el despliegue las configura en su sistema de métricas):
 - comprobantes `RECEIVED` cerca de agotar la ventana de conclusión;
 - aumento de devoluciones: `sri_attempts_total{outcome="RETURNED"}`;
 - cualquier job `STOPPED`: `fiscal_jobs{status="STOPPED"} > 0`;
-- cualquier `INTEGRITY_FAILED` o `SIZE_POLICY_MISSING`, que el log registra como error;
+- cualquier `INTEGRITY_FAILED`, que el log registra como error;
+- cualquier `TRANSMISSION_SIZE_POLICY_EXCEEDED`, también registrado como error: el comprobante excede la política conservadora de tamaño y hay que reducir su contenido (`sri_transmission_size_policy_blocks_total`);
 - comprobantes en `SEND_UNKNOWN` o `MANUAL_REVIEW` que no bajan;
 - circuit breaker abierto de forma prolongada: `sri_circuit_open == 1` durante varios minutos.
 

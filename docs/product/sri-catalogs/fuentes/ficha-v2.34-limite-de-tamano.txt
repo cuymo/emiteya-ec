@@ -31,9 +31,13 @@ Observaciones (2026-10-03):
 - La misma página da dos cifras distintas para el mismo límite del lote ("500 kb" y "512 kb"), y
   "Kbps" se usa para kilobits por segundo. El texto no permite fijar si "Kb" son kilobytes o
   kilobits, ni si un kilo vale 1000 o 1024.
-- Por eso la conversión exacta a bytes no se puede determinar con esta fuente: el dataset
-  sri-transmission-policy no se publica.
+- Por eso la conversión exacta a bytes no se puede determinar con esta fuente.
 
-Decisión del 2026-10-04: Q-47 queda resuelta como compuerta previa a la transmisión real. Texto
-normativo "320 Kb"; cifra exacta en bytes desconocida; sin conversión inferida ni valor
-provisional. Se publicará en un cambio OpenSpec pequeño cuando haya evidencia oficial.
+Decisión del 2026-10-04: Q-47 queda como compuerta previa a la transmisión real. Texto normativo
+"320 Kb"; cifra exacta en bytes desconocida; sin conversión inferida ni valor provisional.
+
+Decisión del 2026-10-09 (adopt-conservative-sri-transmission-size-policy-v1): Q-47 queda resuelta
+por política de producto (RESOLVED_BY_PRODUCT_POLICY_V1). EmiteYa no interpreta "320 Kb" como una
+definición exacta. Su política conservadora PRODUCT_CONSERVATIVE_POLICY_V1 exige menos de 40 000
+bytes en el XML firmado, su base64 y el cuerpo SOAP, en Pruebas y en Producción. No es la cifra
+oficial del SRI. Este extracto queda como fuente de contexto.
