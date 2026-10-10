@@ -51,6 +51,6 @@
 
 ## 4. Verificación
 
-- [ ] 4.1 Ejecutar las pruebas focalizadas, `corepack pnpm verify` y `openspec validate --all
+- [x] 4.1 Ejecutar las pruebas focalizadas, `corepack pnpm verify` y `openspec validate --all
   --strict`. Si `verify` no sale con 0 por una clase de fallo ya documentada, aplicar la política de
   evidencia compuesta y registrar el código de salida real. Nada contacta el SRI.
