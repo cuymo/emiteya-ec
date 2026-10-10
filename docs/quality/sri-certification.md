@@ -23,9 +23,10 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Q-47 quedó resuelta por política de producto el 2026-10-09 y ya no bloquea la certificación ni el
   go-live (sección 2). Rige la política conservadora de tamaño de EmiteYa, la misma en Pruebas y en
   Producción (sección 2.1).
-- El P12 real del operador es criptográficamente compatible, pero su certificado no trae el RUC: no
-  sirve para certificar con esta empresa. **EXTERNAL CERTIFICATE REISSUE REQUIRED** (sección 5,
-  «Ensayos offline»).
+- **El P12 reemitido de Security Data, con el RUC, pasó el ensayo offline completo el 2026-10-10**
+  (sección 5, «Ensayo 3»).
+  - Su certificado **vence el 2026-11-12**: la certificación tiene que terminar antes.
+  - Queda borrar una copia idéntica que sigue en la raíz del repositorio.
 - Faltan también la lista del RUC, la salida de red y las decisiones de la sección 1. Hasta entonces
   no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
 
@@ -37,7 +38,7 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 | Política conservadora de tamaño (`PRODUCT_CONSERVATIVE_POLICY_V1`) | Implementada (`adopt-conservative-sri-transmission-size-policy-v1`) | Menos de 40 000 bytes en el XML firmado, su base64 y el SOAP (sección 2.1). Los siete documentos miden como máximo 13 532 bytes (sección 2) |
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, secciones 5.2 y 7.2.3, en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
 | Endpoints y WSDL de Pruebas | Verificados el 2026-10-04; se vuelven a verificar al empezar la sesión | `docs/product/sri-wsdl/` con su SHA-256 (`wsdl-manifest.test.ts`) y `backend/src/modules/sri-engine/infrastructure/endpoints.ts` (sección 3) |
-| P12 ecuatoriano real compatible | **BLOQUEADA: EXTERNAL CERTIFICATE REISSUE REQUIRED.** Responsable: externo (Security Data) | El P12 actual es `CRYPTOGRAPHICALLY_COMPATIBLE` pero `NOT_SRI_CERTIFICATION_ELIGIBLE_FOR_THIS_COMPANY` (`CERTIFICATE_RUC_NOT_FOUND`): su certificado no trae el OID `1.3.6.1.4.1.37746.3.11`. Hace falta un certificado reemitido con el RUC (sección 5) |
+| P12 ecuatoriano real compatible | **Cumplida offline (2026-10-10)** con el P12 reemitido. Vence el 2026-11-12 | Security Data, RUC en el OID `1.3.6.1.4.1.37746.3.11` igual al de la empresa, firma y XSD válidos, y los siete documentos dentro de la política v1 (sección 5, «Ensayo 3»). Pendiente: borrar la copia idéntica de la raíz del repositorio |
 | RUC habilitado en Pruebas | Pendiente | La lista de la sección 4 la comprueba el operador |
 | Salida de red solo hacia Pruebas | Pendiente | Hace falta una lista de permitidos solo hacia `celcer.sri.gob.ec:443` (secciones 3 y 14) |
 | Contrapartes de prueba | Pendiente: decisión del dueño | Sin identidades reales de terceros (sección 6) |
@@ -426,11 +427,45 @@ red. Solo se registran datos no sensibles.
   11. la política conservadora de tamaño (< 40 000 bytes en las tres medidas).
 
   Solo después: READY FOR SRI TEST ENVIRONMENT CHECKLIST.
-- **Acción local pendiente del operador: MOVE REAL P12 OUTSIDE REPOSITORY TREE.**
-  - El P12 real está hoy dentro del árbol de trabajo, ignorado por Git y sin seguimiento.
-  - Debe moverse fuera del repositorio, y el archivo local de secretos del ensayo debe quedar solo
-    con la ruta externa.
-  - No forma parte del change.
+- **Ensayo 3 (2026-10-10), con el P12 reemitido: PASS.**
+  - **Condiciones:** sin red, en un espacio de nombres de red sin interfaces, con
+    `SRI_TRANSMISSION_ENABLED=0`. El P12 estaba fuera del repositorio con permisos `600`, y la
+    contraseña nueva se leyó de la configuración local.
+  - **Contenedor:** contadores con un máximo de 102 400, dentro del techo de 131 072. El lector y el
+    importador real en el pool lo abren: inspección, firma de prueba y verificación.
+  - **Certificado:**
+    - emisor Security Data;
+    - OID `1.3.6.1.4.1.37746.3.11` presente, con un RUC legible e igual al de la empresa;
+    - vigente del 2026-10-09 al **2026-11-12**;
+    - RSA 2048, firma del certificado `sha256WithRSAEncryption` y cadena de tres certificados;
+    - perfil soportado.
+  - **Los siete documentos:** datos sintéticos, firma con el firmador real en el pool y la firma XML
+    `rsa-sha1` del ADR 0013. En los catorce casos (dos perfiles de datos por documento) pasan:
+    - el XSD antes y después de firmar;
+    - la firma, verificada con la clave del certificado embebido;
+    - el certificado embebido, igual al importado;
+    - los digests de las tres referencias, comprobados con un verificador independiente.
+
+    Medidas del perfil típico, en bytes:
+
+    | Documento | XML firmado | base64 | SOAP | Política v1 |
+    | --- | --- | --- | --- | --- |
+    | 01 consumidor final | 9 434 | 12 580 | 12 860 | PASS |
+    | 01 comprador identificado | 10 092 | 13 456 | 13 736 | PASS |
+    | 04 nota de crédito | 9 556 | 12 744 | 13 024 | PASS |
+    | 05 nota de débito | 9 086 | 12 116 | 12 396 | PASS |
+    | 06 guía de remisión | 9 357 | 12 476 | 12 756 | PASS |
+    | 07 retención | 9 986 | 13 316 | 13 596 | PASS |
+    | 03 liquidación de compra | 9 634 | 12 848 | 13 128 | PASS |
+
+    Con textos largos, el máximo es 15 460 bytes de SOAP (01 con comprador identificado), con un
+    margen de 24 540 hasta 40 000.
+- **Acción local pendiente del operador: borrar la copia del P12 de la raíz del repositorio.**
+  - El operador copió el P12 fuera del repositorio, que es el que usa la configuración, pero dejó una
+    copia idéntica en la raíz.
+  - Esa copia está ignorada solo por un patrón local de `.git/info/exclude`.
+  - Hay que borrarla, sin moverla de vuelta ni añadir su nombre a `.gitignore`.
+  - Después se retira el patrón local.
 
 ## 6. Instalación y datos de la certificación
 
