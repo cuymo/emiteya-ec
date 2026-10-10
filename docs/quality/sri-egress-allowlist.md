@@ -33,11 +33,21 @@ Vive fuera del runtime de la aplicación, en `scripts/sri-egress/`, y se ejecuta
     extremo y no se inspecciona.
 - **Puentes locales.** Los sockets Unix con ruta cruzan los espacios de nombres de red. Así el proceso
   aislado alcanza el proxy, la base de datos y la exposición de su propia API al anfitrión, y nada más.
+- **Identidad de la sesión.** `apply` genera un identificador aleatorio, `SRI_EGRESS_SESSION_ID`.
+  - Lo heredan `unshare`, el lanzador `inside.ts`, la aplicación y sus descendientes.
+  - Un proceso es de la sesión si arrancó con ese identificador, o si comparte el espacio de nombres
+    de red de uno que lo lleva.
+  - El supervisor se reconoce por su PID con el mismo instante de arranque.
+  - Nunca se busca un proceso por su nombre ni se señala un proceso ajeno.
 - **Falla cerrada.**
-  - `apply` no arranca nada si `verify` falla.
+  - `apply` no arranca nada si `verify` falla, ni si el directorio ya tiene una sesión con procesos.
   - Si el proxy cae, la aplicación se queda sin salida.
-  - Si la aplicación o el supervisor terminan, se cierran los puentes y se borra el estado.
-  - `unshare --kill-child` termina todo lo que corre dentro.
+  - Si la aplicación termina, el supervisor cierra la sesión.
+  - Al cerrarse, el supervisor detiene primero todo proceso de la sesión y después cierra sus puentes.
+    Si queda algún proceso, conserva el estado para `rollback`.
+  - `unshare --kill-child` no basta por sí solo. Al morir, `unshare` mata a `inside.ts` antes de que
+    reenvíe la señal, y la aplicación quedaba huérfana. Por eso la detención empieza por la aplicación
+    (ROLLBACK).
 
 Decisiones de la política (`scripts/sri-egress/policy.ts`):
 
@@ -93,16 +103,25 @@ corepack pnpm sri:egress apply --state-dir <dir privado> --backend-env-file <arc
 
 1. Repite `verify`: si falla, no arranca nada.
 2. Abre el proxy y los puentes en `<dir privado>` (permisos `700`, sockets `600`).
-3. Arranca la aplicación en el espacio de nombres aislado, con `NODE_USE_ENV_PROXY=1` y
-   `HTTPS_PROXY` al puente del proxy.
+3. Arranca la aplicación en el espacio de nombres aislado, con `NODE_USE_ENV_PROXY=1`, `HTTPS_PROXY`
+   al puente del proxy y el identificador de la sesión. Guarda en `state.json` el identificador, y el
+   supervisor y el lanzador con su instante de arranque.
 4. Queda en primer plano supervisando: si algo termina, cierra todo.
 
-La API queda en `127.0.0.1:<puerto>` del anfitrión, para el frontend y el operador. `status` informa
-el estado:
+La API queda en `127.0.0.1:<puerto>` del anfitrión, para el frontend y el operador.
+
+## STATUS
 
 ```sh
 corepack pnpm sri:egress status --state-dir <dir privado>
 ```
+
+Informa `supervisor`, `launcher` (`unshare`), `isolatedProcess` (`inside.ts`), `app` y
+`sessionProcesses`, la cantidad de procesos de la sesión:
+- `RUNNING`: el supervisor vive;
+- `STALE`: hay estado sin supervisor, por ejemplo una aplicación que le sobrevivió; se resuelve con
+  `rollback`;
+- `NOT_RUNNING`: no hay estado.
 
 ## ROLLBACK
 
@@ -110,9 +129,25 @@ corepack pnpm sri:egress status --state-dir <dir privado>
 corepack pnpm sri:egress rollback --state-dir <dir privado>
 ```
 
-- Detiene el supervisor y el proceso aislado: primero con `SIGTERM` y, si hace falta, con `SIGKILL`.
-- Borra los sockets y el estado.
-- Termina en `ROLLED_BACK`.
+Detiene todo proceso de la sesión, en este orden:
+1. `SIGTERM` a la aplicación y a sus descendientes, con el proxy y los puentes todavía abiertos para
+   que un envío en curso termine. Espera hasta 20 s.
+2. `SIGTERM` a `inside.ts`, a `unshare` y al supervisor. Espera hasta 10 s.
+3. `SIGKILL` a lo que quede. Espera hasta 5 s.
+
+Después vuelve a buscar los procesos de la sesión:
+- Si no queda ninguno, borra los sockets y el estado y termina en `ROLLED_BACK`, con la lista de lo
+  detenido.
+- Si queda alguno, termina en `ROLLBACK_INCOMPLETE` con código de salida 1. Informa cada proceso
+  restante con su PID, su papel y su motivo (`STILL_ALIVE`, `EPERM`), y conserva el estado para
+  reintentar. Nunca informa `ROLLED_BACK` en ese caso.
+
+Además:
+- Es idempotente: sobre una sesión ya detenida, o con parte de sus procesos terminados, termina en
+  `ROLLED_BACK`.
+- `egress.log` se conserva siempre como evidencia.
+- Un `state.json` de la versión anterior, sin identificador, no permite reconocer los procesos de
+  forma segura: `rollback` lo rechaza (`STATE_WITHOUT_SESSION_ID`) sin borrarlo.
 - No hay nada global que revertir: la herramienta nunca cambió el firewall ni la red del anfitrión.
 - Si la sesión termina sin `ROLLED_BACK`, la red del anfitrión queda igual.
 
@@ -129,6 +164,16 @@ corepack pnpm sri:egress rollback --state-dir <dir privado>
 Pruebas: `scripts/sri-egress/*.test.ts`:
 - la política;
 - el entorno;
-- una sesión aplicada de punta a punta con una aplicación de prueba: Producción bloqueada, sin ruta
-  directa, la base de datos por su puente y `rollback`;
+- una sesión aplicada de punta a punta con una aplicación de prueba:
+  - Producción bloqueada, sin ruta directa y la base de datos por su puente;
+  - `status`;
+  - `rollback`, sin que sobreviva la aplicación y sin tocar un proceso ajeno;
+- una aplicación que sobrevivió a su supervisor y a su lanzador: `status` la marca `STALE` y
+  `rollback` la detiene;
+- el ciclo de vida, con una tabla de procesos simulada:
+  - la sesión normal y el orden de las señales;
+  - una sesión parcialmente detenida y la idempotencia;
+  - los procesos ajenos;
+  - una señal rechazada o un proceso que no muere (`ROLLBACK_INCOMPLETE` con el estado conservado);
+  - un PID reutilizado;
 - la falla cerrada.

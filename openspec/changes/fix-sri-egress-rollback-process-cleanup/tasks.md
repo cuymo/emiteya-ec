@@ -39,7 +39,7 @@
 
 ## 3. Documentación
 
-- [ ] 3.1 Actualizar `docs/quality/sri-egress-allowlist.md`:
+- [x] 3.1 Actualizar `docs/quality/sri-egress-allowlist.md`:
   - la falla cerrada, sin afirmar que `--kill-child` termina todo;
   - ROLLBACK: el orden, la espera, `ROLLBACK_INCOMPLETE`, la idempotencia y la conservación de
     `egress.log`;
