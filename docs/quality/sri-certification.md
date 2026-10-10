@@ -18,7 +18,7 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Producción no forma parte de este runbook. El go-live es otra compuerta, con sus propios requisitos
   (sección 15 y `definition-of-done.md`, Go-Live v1.0).
 
-**Estado al 2026-10-09: todavía no se ejecuta.**
+**Estado al 2026-10-10: en ejecución, 1 de 7 documentos `AUTHORIZED` en Pruebas.**
 
 - Q-47 quedó resuelta por política de producto el 2026-10-09 y ya no bloquea la certificación ni el
   go-live (sección 2). Rige la política conservadora de tamaño de EmiteYa, la misma en Pruebas y en
@@ -28,11 +28,13 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
   permisos `600`.
 - **CERTIFICATE EXPIRY: 2026-11-12.** La certificación en Pruebas tiene que terminar antes. No es un
   defecto del producto.
-- **READY FOR SRI TEST ENVIRONMENT CHECKLIST: YES.** La lista está en
-  `sri-test-environment-checklist.md`, solo para Pruebas. No se ha contactado ningún host del SRI y
-  `SRI_TRANSMISSION_ENABLED` sigue en `0`.
-- Faltan también la lista del RUC, la salida de red y las decisiones de la sección 1. Hasta entonces
-  no se contacta al SRI, no se usa el P12 real y no se habilita la transmisión real.
+- La lista del entorno de Pruebas (`sri-test-environment-checklist.md`) quedó completa: la readiness
+  de la sesión dio 19/19 antes y después de aplicar la lista de permitidos de salida.
+- **El 2026-10-10 la factura 01 a consumidor final `001-001-000000300` quedó `AUTHORIZED`** en Pruebas
+  (sección 13). Fue el único documento enviado. Al terminar, la transmisión volvió a
+  `SRI_TRANSMISSION_ENABLED=0`.
+- Cada documento siguiente necesita la autorización expresa del dueño. El siguiente secuencial de
+  la factura es `301`; los de 03, 04, 05, 06 y 07 empiezan en `100`. Producción nunca se contacta.
 
 ## 1. Compuertas
 
@@ -43,9 +45,9 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 | Vector oficial de la clave de acceso | Cumplida (2026-10-04) | Ficha v2.34, secciones 5.2 y 7.2.3, en `backend/test/sri-engine/access-keys.contract.test.ts`; extracto en `docs/product/sri-catalogs/fuentes/ficha-v2.34-clave-de-acceso.txt` |
 | Endpoints y WSDL de Pruebas | Verificados el 2026-10-04; se vuelven a verificar al empezar la sesión | `docs/product/sri-wsdl/` con su SHA-256 (`wsdl-manifest.test.ts`) y `backend/src/modules/sri-engine/infrastructure/endpoints.ts` (sección 3) |
 | P12 ecuatoriano real compatible | **Cumplida offline (2026-10-10)** con el P12 reemitido. **Vence el 2026-11-12** | Security Data, RUC en el OID `1.3.6.1.4.1.37746.3.11` igual al de la empresa, firma y XSD válidos, y los siete documentos dentro de la política v1 (sección 5, «Ensayo 3»). El P12 está fuera del repositorio, con permisos `600` |
-| RUC habilitado en Pruebas | Pendiente | La lista de la sección 4 la comprueba el operador |
-| Salida de red solo hacia Pruebas | Pendiente | Hace falta una lista de permitidos solo hacia `celcer.sri.gob.ec:443` (secciones 3 y 14) |
-| Contrapartes de prueba | Pendiente: decisión del dueño | Sin identidades reales de terceros (sección 6) |
+| RUC habilitado en Pruebas | Cumplida (2026-10-10) | Confirmado por el operador con la lista de la sección 4; la primera factura quedó autorizada en Pruebas (sección 13) |
+| Salida de red solo hacia Pruebas | Cumplida (2026-10-10) | Lista de permitidos aplicada y verificada, solo `celcer.sri.gob.ec:443` (`sri-egress-allowlist.md`, secciones 3 y 14) |
+| Contrapartes de prueba | Cumplida (2026-10-10) | Configuradas fuera del repositorio con el consentimiento confirmado por el dueño; aquí solo figuran sus marcadores (sección 6) |
 | Q-53 (dos ejemplares del RIDE de la liquidación) | No bloquea | Es una obligación de entrega, no de la transmisión; se revisa antes del go-live |
 | Q-52 (edición vigente del Reglamento) | No bloquea | Revisión normativa separada |
 
@@ -647,7 +649,7 @@ archivo de entorno.
 
 | Fecha | Commit | Tipo | Número | Resultado | Códigos del SRI | Notas |
 | --- | --- | --- | --- | --- | --- | --- |
-| Pendiente | | 01 (consumidor final) | | | | |
+| 2026-10-10 | `352ed01` | 01 (consumidor final) | `001-001-000000300` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Primer envío con la conexión perdida: `SEND_UNKNOWN`, reconciliación de la misma clave y reenvío del mismo XML. Detalle debajo |
 | Pendiente | | 01 (comprador identificado) | | | | |
 | Pendiente | | 04 | | | | |
 | Pendiente | | 05 | | | | |
@@ -657,6 +659,56 @@ archivo de entorno.
 
 Con los seis tipos en `AUTHORIZED`, S-3 online y AC-03 pasan a cumplidos aquí y en
 `docs/product/open-questions.md`.
+
+### 2026-10-10 · 01 consumidor final `001-001-000000300`
+
+Commit `352ed01`, ambiente `TEST`, esquema `1.1.0`. Una línea de un bien con IVA 15 % (código 4 del
+catálogo activo), por debajo del monto máximo del consumidor final. Las claves de acceso, los
+números de autorización, los XML y las respuestas completas quedan fuera del repositorio
+(sección 11).
+
+- **Antes de la red.**
+  - XSD `factura_V1.1.0` en `PASS`. Firma XAdES-BES válida: el valor de la firma y las tres
+    referencias, con el certificado vigente de la empresa.
+  - Clave de acceso de 49 dígitos con el dígito verificador correcto, ambiente `1`, serie `001001` y
+    secuencial `000000300`.
+  - Tamaños exactos: XML firmado 9 568 bytes, base64 12 760 y SOAP 13 040. Los tres quedan bajo la
+    política v1 (menos de 40 000).
+- **Estados**, en UTC:
+
+  | De | A | Instante |
+  | --- | --- | --- |
+  | — | `RESERVED` | 18:01:05.509 |
+  | `RESERVED` | `SIGNED` | 18:01:06.918 |
+  | `SIGNED` | `SEND_UNKNOWN` | 18:08:51.926 |
+  | `SEND_UNKNOWN` | `RECEIVED` | 18:08:54.422 |
+  | `RECEIVED` | `AUTHORIZED` | 18:09:00.964 |
+
+- **Intentos**, todos contra `celcer.sri.gob.ec` en `TEST`:
+
+  | # | Operación | Transporte | Resultado (`classifier_version`) | SHA-256 del sobre | SHA-256 de la respuesta |
+  | --- | --- | --- | --- | --- | --- |
+  | 1 | Recepción | Conexión perdida (`UND_ERR_SOCKET`) | `UNKNOWN` (`reception/1`) | `610425dc…c0009a50` | — |
+  | 2 | Autorización | HTTP 200 | `KEY_UNKNOWN`: cero comprobantes (`authorization/1`) | `35f32ff1…0aaa1730` | `6e1c88da…9df13b70` |
+  | 3 | ConsultaComprobante | HTTP 200 | `NO_EVIDENCE`: `RECHAZADA`, identificador 99, «No existen datos para los parámetros ingresados» (`validity/2`) | `861f432d…52efad0d` | `81e5014f…68f340c4` |
+  | 4 | Recepción | HTTP 200 | `RECEIVED`: `RECIBIDA`, sin mensajes (`reception/1`) | `610425dc…c0009a50` | `3f188de6…9b6f66b2` |
+  | 5 | Autorización | HTTP 200 | `AUTHORIZED`: `AUTORIZADO`, ambiente `PRUEBAS` (`authorization/1`) | `35f32ff1…0aaa1730` | `8ae7ea91…0889f8a6` |
+
+- **Reconciliación.** No llegó respuesta al primer envío, así que la aplicación no lo dio por enviado
+  ni por devuelto: quedó en `SEND_UNKNOWN`. Antes de cualquier reenvío consultó la misma clave en
+  Autorización y en ConsultaComprobante. Sin evidencia de recepción, reenvió el mismo XML, con el mismo
+  SHA-256, y el sobre del intento 4 es idéntico al del intento 1. No hubo un secuencial nuevo, ni
+  errores 43, 45 o 70.
+- **Artefactos.**
+  - `SIGNED_XML` y `AUTHORIZED_XML` son iguales: 9 568 bytes, SHA-256
+    `a26329f6480f136700afaddb5bda057755e29b71a399ad4fade44ad89bc10394`.
+  - `RIDE_PDF`: 23 243 bytes, SHA-256
+    `9692c4ba7206f7038117f294d9bdb7581dd013dd078c3bf567b208ef41aafb52`.
+  - El inventario descontó una vez (`SALIDA_FACTURA`).
+- **Salida de red.** El registro del proxy tiene cinco `CONNECT` a `celcer.sri.gob.ec:443`, todos
+  admitidos, ningún bloqueo y ningún intento hacia Producción.
+- **Cierre.** La sesión volvió a `SRI_TRANSMISSION_ENABLED=0`, y la readiness dio 19/19. El siguiente
+  secuencial de la factura en Pruebas es `301`.
 
 ## 14. Cambios del repositorio antes de la primera transmisión real
 
