@@ -51,6 +51,7 @@ describe("handler sri.transmit", () => {
   const replies: TransportOutcome[] = [];
   const alerts: string[] = [];
   const sizeChecks: TransmissionSizeCheck[] = [];
+  const infoLogs: { fields: object; message: string }[] = [];
 
   const handler = (classifiers = sriClassifiers) =>
     createTransmitHandler({
@@ -58,7 +59,10 @@ describe("handler sri.transmit", () => {
       evidence: createSriEvidenceRepository(prisma),
       uow: createTransmissionUnitOfWork(prisma),
       jobs: store,
-      logger: { info: () => {}, warn: () => {} },
+      logger: {
+        info: (fields: object, message: string) => void infoLogs.push({ fields, message }),
+        warn: () => {},
+      },
       followers: [],
       documents: createDocumentRepository(prisma),
       artifacts: createArtifactStore(prisma),
@@ -374,6 +378,43 @@ describe("handler sri.transmit", () => {
           ["sri.reconcile", "PENDING"],
         ]);
       }
+    });
+
+    it("el log del intento lleva el diagnóstico de un corte sin cambiar su clase; una respuesta no lo lleva", async () => {
+      const attemptLog = () =>
+        infoLogs.find((entry) => entry.message === "intento con el SRI clasificado")?.fields;
+      const diagnostic = {
+        phase: "BEFORE_HEADERS",
+        causes: [
+          { name: "TypeError", code: null, syscall: null },
+          { name: "SocketError", code: "UND_ERR_SOCKET", syscall: null },
+        ],
+        socket: { bytesWritten: 14_129, bytesRead: 0 },
+      } as const;
+      const cut = await signedWithJob();
+      const at = new Date();
+      replies.push({
+        kind: "CONNECTION_LOST",
+        errorCode: "UND_ERR_SOCKET",
+        diagnostic,
+        startedAt: at,
+        headersAt: null,
+        completedAt: at,
+      });
+      infoLogs.length = 0;
+      await run(cut.job);
+      expect(await stateOf(cut.document.id)).toBe("SEND_UNKNOWN");
+      expect(attemptLog()).toMatchObject({
+        transport: "CONNECTION_LOST",
+        transportDiagnostic: diagnostic,
+        to: "SEND_UNKNOWN",
+      });
+
+      const ok = await signedWithJob();
+      replies.push(response(receptionResponse("RECIBIDA")));
+      infoLogs.length = 0;
+      await run(ok.job);
+      expect(attemptLog()).toMatchObject({ transport: "RESPONSE", transportDiagnostic: null });
     });
 
     it("los errores 70, 43 y 45 nunca llevan a RETURNED; el 70 espera antes de reconciliar", async () => {

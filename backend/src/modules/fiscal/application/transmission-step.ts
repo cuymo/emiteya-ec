@@ -25,6 +25,7 @@ import {
   isBreakerOpen,
   type BreakerOpen,
   type SriExchange,
+  type TransportDiagnostic,
   type TransportOutcome,
 } from "../../sri-engine/application/transport.ts";
 import type { DocumentState, TransitionActor, TransitionCause } from "../domain/document.ts";
@@ -252,6 +253,9 @@ export async function executeSriStep<C>(
   input: Readonly<{ job: Job; document: StoredDocument; signal: AbortSignal; now: () => Date }>,
 ): Promise<StepResult> {
   const { job, document } = input;
+  // Diagnóstico del fallo de transporte, solo para el log: el intento guardado no lo persiste
+  // (improve-sri-transport-failure-diagnostics, design D1).
+  let transportDiagnostic: TransportDiagnostic | null = null;
   let attempt = await deps.evidence.unclassified(job.companyId, job.id, step.operation);
   if (attempt) {
     deps.logger.warn(
@@ -274,6 +278,8 @@ export async function executeSriStep<C>(
       });
       return "BREAKER_OPEN";
     }
+    if (exchange.outcome.kind !== "RESPONSE")
+      transportDiagnostic = exchange.outcome.diagnostic ?? null;
     attempt = await deps.evidence.record({
       companyId: document.companyId,
       documentId: document.id,
@@ -339,6 +345,7 @@ export async function executeSriStep<C>(
       operation: step.operation,
       attemptId: attempt.id,
       transport: attempt.outcome.kind,
+      transportDiagnostic,
       outcome,
       to: decision.transitions.at(-1)?.to ?? null,
       durationMs: Math.round(seconds * 1_000),

@@ -31,12 +31,25 @@ export type TransportTimings = Readonly<{
   completedAt: Date;
 }>;
 
+/**
+ * Diagnóstico de un fallo sin respuesta (improve-sri-transport-failure-diagnostics, design D1): la
+ * fase, los nombres, códigos y llamadas al sistema de la cadena de causas y los contadores del
+ * socket cuando el error los trae. Nunca el mensaje, direcciones, puertos ni contenido. Solo va al
+ * log del intento; no cambia la clasificación.
+ */
+export type TransportDiagnostic = Readonly<{
+  phase: "BEFORE_HEADERS" | "BODY";
+  causes: readonly Readonly<{ name: string; code: string | null; syscall: string | null }>[];
+  socket: Readonly<{ bytesWritten: number; bytesRead: number }> | null;
+}>;
+
 export type TransportOutcome =
   | (TransportTimings &
       Readonly<{
         kind: TransportFailure;
         /** Código de la causa (`ECONNREFUSED`, `UND_ERR_SOCKET`…), sin el mensaje original. */
         errorCode: string;
+        diagnostic?: TransportDiagnostic;
       }>)
   | (TransportTimings &
       Readonly<{

@@ -337,3 +337,78 @@ describe("respuestas: el transporte no reinterpreta el cuerpo", () => {
     expect(received).toHaveLength(1);
   });
 });
+
+describe("diagnóstico del fallo, sin contenido (improve-sri-transport-failure-diagnostics, D1)", () => {
+  type Failure = {
+    kind: string;
+    diagnostic?: {
+      phase: string;
+      causes: { name: string; code: string | null; syscall: string | null }[];
+      socket: { bytesWritten: number; bytesRead: number } | null;
+    };
+  };
+  const diagnosticOf = (outcome: unknown) => (outcome as Failure).diagnostic!;
+
+  it("un puerto cerrado: NOT_SENT, con ECONNREFUSED y la llamada connect", async () => {
+    const port = await listen(createNetServer());
+    const closed = servers.pop()!;
+    await new Promise((resolve) => closed.close(resolve));
+    const result = await exchange(`http://${port}/ws`);
+    expect(result.outcome.kind).toBe("NOT_SENT");
+    const diagnostic = diagnosticOf(result.outcome);
+    expect(diagnostic.phase).toBe("BEFORE_HEADERS");
+    expect(diagnostic.causes).toContainEqual({
+      name: "Error",
+      code: "ECONNREFUSED",
+      syscall: "connect",
+    });
+  });
+
+  it("un corte tras leer la solicitud: sigue incierto, con la solicitud escrita y nada leído", async () => {
+    const envelope = Buffer.alloc(13_812, 0x61);
+    const port = await listen(
+      createNetServer((socket) => {
+        let seen = 0;
+        socket.on("data", (chunk: Buffer) => {
+          seen += chunk.length;
+          if (seen >= envelope.length) socket.destroy();
+        });
+      }),
+    );
+    const result = await exchange(`http://${port}/ws`, envelope);
+    expect(result.outcome).toMatchObject({ kind: "CONNECTION_LOST", headersAt: null });
+    const diagnostic = diagnosticOf(result.outcome);
+    expect(diagnostic.phase).toBe("BEFORE_HEADERS");
+    expect(diagnostic.causes.map((cause) => cause.code)).toContain("UND_ERR_SOCKET");
+    expect(diagnostic.socket!.bytesWritten).toBeGreaterThanOrEqual(envelope.length);
+    expect(diagnostic.socket!.bytesRead).toBe(0);
+    // Ni el mensaje ni la dirección ni el puerto.
+    const serialized = JSON.stringify(diagnostic);
+    for (const absent of ["127.0.0.1", port.split(":")[1]!, "fetch failed", "other side closed"])
+      expect(serialized).not.toContain(absent);
+  });
+
+  it("los plazos propios llevan su fase", async () => {
+    const sockets: Socket[] = [];
+    const port = await listen(createNetServer((socket) => void sockets.push(socket)));
+    const request = await exchange(`http://${port}/ws`);
+    expect(request.outcome.kind).toBe("REQUEST_TIMEOUT");
+    expect(diagnosticOf(request.outcome).phase).toBe("BEFORE_HEADERS");
+    sockets.forEach((socket) => socket.destroy());
+
+    const { url } = await httpServer((_req, res) => {
+      res.writeHead(200, { "content-type": "text/xml", "content-length": "1000" });
+      res.write("<parcial>");
+    });
+    const body = await exchange(url);
+    expect(body.outcome.kind).toBe("BODY_TIMEOUT");
+    expect(diagnosticOf(body.outcome).phase).toBe("BODY");
+  });
+
+  it("una respuesta no lleva diagnóstico", async () => {
+    const { url } = await httpServer((_req, res) => res.end("<ok/>"));
+    const result = await exchange(url);
+    expect(result.outcome.kind).toBe("RESPONSE");
+    expect(result.outcome).not.toHaveProperty("diagnostic");
+  });
+});

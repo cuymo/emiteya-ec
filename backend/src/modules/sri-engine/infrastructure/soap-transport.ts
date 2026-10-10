@@ -11,6 +11,7 @@ import type {
   SriExchange,
   SriExchangeRequest,
   SriTransport,
+  TransportDiagnostic,
   TransportFailure,
 } from "../application/transport.ts";
 import type { SriEndpoints } from "./endpoints.ts";
@@ -42,6 +43,41 @@ export function causeCodes(error: unknown): string[] {
     current = (current as { cause?: unknown }).cause;
   }
   return codes;
+}
+
+const text = (value: unknown, max: number): string | null =>
+  typeof value === "string" || typeof value === "number" ? String(value).slice(0, max) : null;
+
+/**
+ * Diagnóstico de un fallo sin contenido (improve-sri-transport-failure-diagnostics, design D1): de la
+ * cadena de causas solo el nombre, el código y la llamada al sistema, y los bytes escritos y leídos
+ * del primer eslabón que los trae (el `SocketError` de undici). Nunca el mensaje, que puede llevar el
+ * host o la dirección, ni la dirección o el puerto del socket.
+ */
+export function failureDiagnostic(
+  error: unknown,
+  phase: TransportDiagnostic["phase"],
+): TransportDiagnostic {
+  const causes: { name: string; code: string | null; syscall: string | null }[] = [];
+  let socket: TransportDiagnostic["socket"] = null;
+  let current: unknown = error;
+  for (let depth = 0; current && depth < 5; depth++) {
+    const link = current as { name?: unknown; code?: unknown; syscall?: unknown; socket?: unknown };
+    causes.push({
+      name: text(link.name, 40) ?? "Error",
+      code: text(link.code, 40),
+      syscall: text(link.syscall, 20),
+    });
+    const counters = link.socket as { bytesWritten?: unknown; bytesRead?: unknown } | undefined;
+    if (
+      socket === null &&
+      typeof counters?.bytesWritten === "number" &&
+      typeof counters.bytesRead === "number"
+    )
+      socket = { bytesWritten: counters.bytesWritten, bytesRead: counters.bytesRead };
+    current = (current as { cause?: unknown }).cause;
+  }
+  return { phase, causes, socket };
 }
 
 /**
@@ -145,7 +181,13 @@ export function createSoapTransport(options: SoapTransportOptions): SriTransport
             : classifyRequestFailure(error);
         return {
           ...exchange,
-          outcome: { ...failure, startedAt, headersAt: null, completedAt: now() },
+          outcome: {
+            ...failure,
+            diagnostic: failureDiagnostic(error, "BEFORE_HEADERS"),
+            startedAt,
+            headersAt: null,
+            completedAt: now(),
+          },
         };
       }
       clearTimeout(timer);
@@ -173,6 +215,7 @@ export function createSoapTransport(options: SoapTransportOptions): SriTransport
           outcome: {
             kind: timedOut ? "BODY_TIMEOUT" : "CONNECTION_LOST",
             errorCode: timedOut ? "BODY_TIMEOUT" : (causeCodes(error)[0] ?? "UNKNOWN"),
+            diagnostic: failureDiagnostic(error, "BODY"),
             startedAt,
             headersAt,
             completedAt: now(),

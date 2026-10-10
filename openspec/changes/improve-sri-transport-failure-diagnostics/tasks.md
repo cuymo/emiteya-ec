@@ -19,7 +19,7 @@
 
 ## 2. Diagnóstico del transporte
 
-- [ ] 2.1 En `transport.ts` y `soap-transport.ts`, el `diagnostic` del fallo (design D1). Verificar
+- [x] 2.1 En `transport.ts` y `soap-transport.ts`, el `diagnostic` del fallo (design D1). Verificar
   en `soap-transport.contract.test.ts`:
   - el puerto cerrado da `NOT_SENT` con `ECONNREFUSED` y `connect`;
   - el corte tras la solicitud da `CONNECTION_LOST` con los contadores, con lo escrito al menos del
@@ -27,13 +27,13 @@
   - los plazos propios llevan su fase;
   - la clasificación no cambia;
   - el diagnóstico no contiene direcciones, puertos ni mensajes.
-- [ ] 2.2 Crear `backend/test/sri-engine/soap-transport-proxy.contract.test.ts`: el transporte en
+- [x] 2.2 Crear `backend/test/sri-engine/soap-transport-proxy.contract.test.ts`: el transporte en
   un proceso hijo con el proxy del entorno, un proxy `CONNECT` local y un servidor TLS local para
   un nombre `.test` (design D4). Cubre la respuesta normal, el cierre y el reset tras la solicitud,
   el primero que falla y el segundo que pasa, el silencio y el cierre, el corte durante el TLS, el
   cierre tras el `CONNECT`, el `502` del proxy y el proxy ausente. Verificar la clasificación de
   cada uno: solo el proxy ausente es `NOT_SENT`.
-- [ ] 2.3 En `transmission-step.ts`, `transportDiagnostic` en el log «intento con el SRI
+- [x] 2.3 En `transmission-step.ts`, `transportDiagnostic` en el log «intento con el SRI
   clasificado». Verificar con una prueba del paso de transmisión:
   - el log de un `CONNECTION_LOST` lleva el diagnóstico;
   - el de una respuesta no lo lleva.
