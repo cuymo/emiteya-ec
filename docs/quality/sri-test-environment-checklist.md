@@ -7,9 +7,15 @@ completo está en `sri-certification.md`, el runbook, y esta lista remite a sus 
 **Estado al 2026-10-10: preparada, sin ejecutar.** No se ha contactado ningún host del SRI y
 `SRI_TRANSMISSION_ENABLED` sigue en `0`. Nada de esta lista habilita la transmisión por sí solo.
 
-> **Plazo.** El certificado del P12 vence el **2026-11-12**. La certificación en Pruebas tiene que
-> terminar antes de esa fecha. No es un defecto del producto ni cambia el código. Si no da tiempo, el
-> operador renueva el certificado y se repite el ensayo offline (runbook, sección 5).
+> **Plazo operativo: el certificado del P12 vence el 2026-11-12.** La certificación en Pruebas tiene
+> que terminar antes de esa fecha. No es un defecto del producto ni cambia el código. La comprobación
+> final (sección G) se detiene con `CERTIFICATE_EXPIRY_TOO_CLOSE` si quedan menos de 7 días. En ese
+> caso se para, se evalúa la renovación y, con el certificado nuevo, se repite el ensayo offline
+> (runbook, sección 5).
+
+**Estado de la confirmación del operador:** PENDING en todos los puntos de B y en los datos de C.
+Los confirma el operador desde los canales oficiales del SRI. Lo que no se puede confirmar sin
+contactar los servicios web queda PENDING; nunca se confirma con una llamada.
 
 ## Regla absoluta: Producción nunca
 
@@ -79,12 +85,27 @@ Detalle en el runbook, secciones 6 y 3.1.
   utilizable y el RUC coincide.
 - [ ] Productos sintéticos con «PRUEBA» en el nombre: un bien con stock inicial suficiente y un
   servicio.
-- [ ] **Contrapartes de prueba: decisión pendiente del dueño** (runbook, sección 6):
-  - el comprador identificado;
-  - el sujeto retenido;
-  - el proveedor de la liquidación, sin RUC activo.
+- [ ] **Contrapartes de prueba** (runbook, sección 6). El repositorio solo usa estos marcadores; los
+  valores concretos viven en la configuración local y en la instalación, nunca en la documentación:
 
-  No se usan identidades reales de terceros sin su consentimiento.
+  | Marcador | Uso | Requisito |
+  | --- | --- | --- |
+  | `TEST_IDENTIFIED_BUYER` | Comprador identificado de la factura 2; destinatario de la guía | RUC, cédula o pasaporte |
+  | `TEST_WITHHOLDING_SUBJECT` | Sujeto retenido del comprobante de retención | RUC, cédula o pasaporte |
+  | `TEST_PURCHASE_SETTLEMENT_SUPPLIER` | Proveedor de la liquidación de compra | Sin RUC activo: cédula o pasaporte |
+
+  - Solo dos orígenes son válidos:
+    - una identidad bajo control del operador (`OWNER_CONTROLLED`);
+    - una persona con consentimiento explícito por escrito (`WRITTEN_CONSENT`).
+  - No se inventan cédulas ecuatorianas.
+  - No se asume que el SRI acepte un pasaporte sintético hasta comprobarlo en Pruebas.
+  - Para la factura a consumidor final se usa `9999999999999`.
+- [ ] **El punto de emisión de la certificación**: la combinación empresa + Pruebas + establishment +
+  emission point + tipo de comprobante. En el repositorio solo figuran sus códigos públicos:
+  `CERT_ESTABLISHMENT_CODE` (normalmente `001`) y `CERT_EMISSION_POINT_CODE`, que deben confirmarse.
+  - Seis contadores de Pruebas propios: 01, 03, 04, 05, 06 y 07.
+  - Ningún contador de Producción en ese punto.
+  - No se reutiliza ni se cambia ninguna numeración de Producción.
 
 ## D. Red: solo `celcer.sri.gob.ec:443`
 
@@ -98,10 +119,14 @@ Detalle en el runbook, secciones 3 y 14.
 - [ ] Los endpoints de Producción (`SRI_ENDPOINT_PRODUCTION_RECEPTION`, `_AUTHORIZATION` y
   `_VALIDITY`) están sobrescritos con una URL `https` que no lleva a ningún sitio, por ejemplo un
   puerto cerrado de `127.0.0.1`. Se comprueba leyendo la configuración.
-- [ ] Una **lista de permitidos de salida, exclusivamente `celcer.sri.gob.ec:443`**: un proxy
-  `CONNECT` local (`NODE_USE_ENV_PROXY=1` y `HTTPS_PROXY`) o una regla equivalente del firewall,
-  activa y documentada. Hoy es la herramienta pendiente de la sección 14 del runbook. Su regla se
-  revisa por escrito; no se prueba contra Producción.
+- [ ] La **lista de permitidos de salida, exclusivamente `celcer.sri.gob.ec:443`**, preparada en
+  `sri-egress-allowlist.md` (`corepack pnpm sri:egress`):
+  - un espacio de nombres de red sin interfaces;
+  - un proxy `CONNECT` que solo admite celcer;
+  - procedimientos APPLY, VERIFY y ROLLBACK, con falla cerrada y sin `sudo` ni cambios del firewall.
+  - [ ] `verify` en `PASS` con el archivo de entorno de la sesión, sin red. Su salida se guarda para la
+    sección G.
+  - [ ] `apply`, solo en la sesión controlada y con la autorización del dueño.
 - [ ] La verificación de los WSDL de Pruebas al empezar la sesión (un `GET` de lectura por servicio,
   SHA-256 igual al registrado) se hace **solo con la autorización expresa del dueño en ese momento** y
   solo contra `celcer.sri.gob.ec`.
@@ -119,7 +144,46 @@ Detalle en el runbook, sección 3.1.
 - [ ] Están ensayadas las tres formas de volver a fallar cerrado: parar el proceso, reiniciarlo con
   `SRI_TRANSMISSION_ENABLED=0` o cortar la lista de permitidos.
 
-## F. Ejecución (solo cuando A a E estén completas y el dueño lo autorice)
+## G. Comprobación final de la sesión, sin red
+
+```sh
+corepack pnpm --filter @facturador/backend sri:test-session-readiness \
+  --backend-env-file <archivo> --confirmations <archivo> --egress-verify <salida de verify>
+```
+
+Lee la base de la instalación de la certificación en solo lectura y no contacta ningún host. Exige a
+la vez:
+- empresa y comprobantes en Pruebas;
+- la firma vigente con su secreto, al menos 7 días de vigencia y el RUC igual al de la empresa;
+- `PRODUCT_CONSERVATIVE_POLICY_V1` activa;
+- `SRI_TRANSMISSION_ENABLED=0` durante la preparación;
+- los endpoints de Pruebas en celcer y los de Producción inaccesibles;
+- un `verify` de la lista de permitidos en `PASS`, con menos de 24 horas;
+- el establecimiento y el punto confirmados y activos, y los seis tipos confirmados;
+- los secuenciales de Pruebas listos;
+- las tres contrapartes resueltas.
+
+No imprime el RUC, las identificaciones ni secretos. El archivo de confirmaciones vive fuera del
+repositorio, con permisos `600`. Plantilla, solo con marcadores:
+
+```json
+{
+  "rucEnabledForElectronicInvoicing": false,
+  "testEnvironmentEnabled": false,
+  "taxDataMatchesSri": false,
+  "establishmentCode": "<CERT_ESTABLISHMENT_CODE>",
+  "emissionPointCode": "<CERT_EMISSION_POINT_CODE>",
+  "documentTypesEnabled": [],
+  "lastUsedTestSequential": {},
+  "counterparties": {
+    "TEST_IDENTIFIED_BUYER": { "consent": "OWNER_CONTROLLED", "identificationType": "<04|05|06>", "identification": "<local>" },
+    "TEST_WITHHOLDING_SUBJECT": { "consent": "WRITTEN_CONSENT", "identificationType": "<04|05|06>", "identification": "<local>" },
+    "TEST_PURCHASE_SETTLEMENT_SUPPLIER": { "consent": "WRITTEN_CONSENT", "identificationType": "<05|06>", "identification": "<local>" }
+  }
+}
+```
+
+## F. Ejecución (solo cuando A a E y G estén completas y el dueño lo autorice)
 
 - [ ] El orden y la matriz de los siete documentos, uno a la vez, cada uno hasta `AUTHORIZED` (runbook,
   secciones 7 y 8).

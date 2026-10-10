@@ -246,11 +246,11 @@ ningún error de configuración llegue a `cel.sri.gob.ec`, la sesión aplica tre
    `SRI_ENDPOINT_PRODUCTION_RECEPTION`, `_AUTHORIZATION` y `_VALIDITY` se sobrescriben con una URL
    `https` que no lleva a ningún sitio. Por ejemplo, un puerto cerrado de `127.0.0.1`: es válida para
    la configuración y falla en el transporte.
-3. **La salida de red solo permite Pruebas.** Una lista de permitidos admite únicamente
-   `celcer.sri.gob.ec:443`:
-   - o un proxy `CONNECT` local con `NODE_USE_ENV_PROXY=1` y `HTTPS_PROXY`, que rechaza cualquier otro
-     destino (herramienta pendiente, sección 14);
-   - o una regla equivalente del firewall del equipo.
+3. **La salida de red solo permite Pruebas.** La lista de permitidos de `sri-egress-allowlist.md`
+   admite únicamente `celcer.sri.gob.ec:443`:
+   - la aplicación corre en un espacio de nombres de red sin interfaces;
+   - su única salida es un proxy `CONNECT` que bloquea Producción con `PRODUCTION_ACCESS_BLOCKED`;
+   - tiene procedimientos APPLY, VERIFY y ROLLBACK, con falla cerrada y sin `sudo`.
 
 ## 3.1 Interruptor de la transmisión
 
@@ -495,11 +495,13 @@ red. Solo se registran datos no sensibles.
 - **Contrapartes.** No se usan identidades reales de terceros ni números inventados con dígito
   verificador válido, porque pueden pertenecer a una persona real.
   - **Consumidor final:** `9999999999999`, el oficial, para la factura.
-  - **Comprador o proveedor identificado:** el SRI puede validar el formato de la identificación, y la
-    fuente archivada no publica identificadores de prueba oficiales. El dueño decide entre:
-    - identidades bajo su control, con su consentimiento, como su propio RUC o cédula;
-    - una persona que consienta por escrito;
-    - un pasaporte marcado «PRUEBA», si el SRI lo acepta en Pruebas.
+  - **Comprador, sujeto retenido y proveedor identificados:** el repositorio usa solo los marcadores
+    `TEST_IDENTIFIED_BUYER`, `TEST_WITHHOLDING_SUBJECT` y `TEST_PURCHASE_SETTLEMENT_SUPPLIER`.
+    - Sus valores viven en la configuración local y en la instalación.
+    - Solo valen dos orígenes: una identidad bajo control del operador o una persona con consentimiento
+      explícito por escrito.
+    - No se inventan cédulas, y no se asume que un pasaporte sintético sea aceptado hasta comprobarlo
+      en Pruebas (`sri-test-environment-checklist.md`, sección C).
   - **Proveedor de la liquidación:** según la política del producto, debe ser una persona sin RUC
     activo (cédula o pasaporte).
   - **Transportista de la guía:** el propio, la empresa (`SELF`), sin un tercero.
@@ -660,9 +662,11 @@ Con los seis tipos en `AUTHORIZED`, S-3 online y AC-03 pasan a cumplidos aquí y
 
 - **Política de tamaño (Q-47).** Resuelta por política de producto: la política conservadora de la
   sección 2.1 rige en Pruebas y en Producción (`adopt-conservative-sri-transmission-size-policy-v1`).
-- **Lista de permitidos de salida.** Un proxy `CONNECT` local de herramientas, fuera del runtime de la
-  aplicación, que solo admita `celcer.sri.gob.ec:443`, o la regla equivalente del firewall,
-  documentada.
+- **Lista de permitidos de salida.** Preparada en `scripts/sri-egress/` (`sri-egress-allowlist.md`):
+  espacio de nombres de red y proxy `CONNECT` que solo admite `celcer.sri.gob.ec:443`, fuera del
+  runtime de la aplicación. Se aplica solo en la sesión controlada.
+- **Comprobación final de la sesión.** `sri:test-session-readiness`, sin red
+  (`sri-test-environment-checklist.md`, sección G).
 - **Tamaños sin medir.** Medir el XML firmado de una factura de 100 líneas, una nota de crédito de 100
   líneas y una nota de débito de 100 conceptos con los benchmarks existentes, para completar la
   sección 2.
