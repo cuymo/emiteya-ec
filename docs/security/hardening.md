@@ -30,6 +30,12 @@ job payloads, imported files, and configuration.
 - Encode values that reach HTML; prefer rendering text over trusted-HTML injection.
 - Sanitize any rich content that must render as markup.
 - Set a Content Security Policy and the standard security headers.
+  - En este proyecto, la API las envía con helmet (`../architecture/backend.md`).
+  - Las del frontend tienen una sola autoridad, Next.js: `frontend/src/proxy.ts` aplica la política
+    de `frontend/src/lib/web-security-policy.ts` a cada documento, con un nonce por petición
+    (ADR 0025).
+  - El proxy inverso no añade otra CSP. HSTS pertenece al proxy que termina TLS
+    (`../architecture/deployment.md`).
 - Sanitize errors that reach the client. See `../architecture/feedback-and-states.md`.
 
 ## Authentication And Authorization

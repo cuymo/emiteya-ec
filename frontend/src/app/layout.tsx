@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { SemanticToaster } from "@/components/feedback";
 import { QueryProvider } from "@/components/session";
@@ -11,11 +12,14 @@ export const metadata: Metadata = {
   description: "Facturador electrónico open source para los comprobantes del SRI.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+// Leer el nonce de `proxy.ts` hace dinámico todo el árbol: cada documento se renderiza por petición
+// con su propio nonce (enforce-frontend-security-headers-csp, design D2 y D5).
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="es" suppressHydrationWarning>
       <body>
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           <QueryProvider>
             <TooltipProvider delayDuration={300}>
               {children}

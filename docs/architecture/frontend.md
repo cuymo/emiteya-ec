@@ -12,6 +12,12 @@
 - Feedback: one shared semantic toast system.
 - Data fetching: typed API helpers over internal backend routes.
 - Charts: shadcn-compatible chart components when a chart answers a real question.
+- Política de seguridad del navegador: `src/proxy.ts` aplica a cada documento la política de
+  `src/lib/web-security-policy.ts`, con un nonce nuevo por petición (ADR 0025).
+  - Todos los documentos se renderizan por petición: el layout raíz lee el nonce con `headers()`.
+  - Una página nueva no necesita nada para recibir el nonce. Un script en línea propio, o una
+    biblioteca que inserte scripts o estilos en tiempo de ejecución, tiene que pasar por esa
+    política y por `check:web-security-policy`.
 
 ## Product UI Principle
 

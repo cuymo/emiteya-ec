@@ -29,7 +29,7 @@
 
 ## 2. Aplicación en Next.js y renderizado por petición
 
-- [ ] 2.1 Leer `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md` y
+- [x] 2.1 Leer `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md` y
   `01-app/02-guides/content-security-policy.md` de la versión instalada (`frontend/AGENTS.md`).
   Crear `frontend/src/proxy.ts` (D1, D8):
   1. genera un nonce por petición de documento con el módulo de 1.1;
@@ -43,13 +43,13 @@
   - la misma política, con el mismo nonce, va en la petición y en la respuesta;
   - las cabeceras de D6 están presentes y `Strict-Transport-Security` no;
   - el `matcher` no cubre `/api/v1/...` ni `/_next/static/...`.
-- [ ] 2.2 Leer el nonce en `frontend/src/app/layout.tsx` con `headers()` y pasarlo a
+- [x] 2.2 Leer el nonce en `frontend/src/app/layout.tsx` con `headers()` y pasarlo a
   `frontend/src/components/theme-provider.tsx`, que lo entrega a `NextThemesProvider` (D5).
   `next.config.ts` sigue sin `headers()` propios (D8). Verificar:
   - las pruebas del proveedor de tema y de la sesión siguen en verde;
   - `corepack pnpm --filter @facturador/frontend build` no deja ninguna ruta de página `○`;
   - `typecheck` y `lint` están en verde.
-- [ ] 2.3 Escribir `docs/architecture/adr/0025-...md`: la autoridad de las cabeceras, el nonce por
+- [x] 2.3 Escribir `docs/architecture/adr/0025-...md`: la autoridad de las cabeceras, el nonce por
   petición con su contrato, todas las páginas dinámicas, las alternativas de D1 con su evidencia y
   la caché de los documentos. Actualizar:
   - `docs/architecture/frontend.md`: el renderizado por petición y el nonce;

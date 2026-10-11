@@ -58,6 +58,26 @@ BETTER_AUTH_URL=https://app.example.com
 
 Use this when path routing is not available or when API isolation matters.
 
+En este proyecto, el navegador siempre llama a `/api` en el origen del frontend: Next.js lo reenvía
+a `API_INTERNAL_URL` (ADR 0016). Un dominio de API separado al que llamara el navegador exigiría un
+cambio de la política de seguridad (`connect-src`) y de CORS, no solo de configuración.
+
+### Cabeceras de seguridad y caché de los documentos
+
+El frontend escribe en cada documento HTML su `Content-Security-Policy` y las cabeceras de semántica
+del navegador (ADR 0025). El proxy inverso:
+- **No añade otra CSP**, ni en una cabecera ni de otra forma: el frontend es su única autoridad.
+- **Conserva sin cambios las cabeceras de la aplicación:** `Content-Security-Policy`,
+  `Referrer-Policy`, `X-Content-Type-Options`, `Permissions-Policy` y `Cross-Origin-Opener-Policy`.
+- **No guarda los documentos HTML en una caché compartida** ni sustituye su `Cache-Control` privado:
+  cada documento lleva un nonce de un solo uso. Los recursos de `/_next/static` sí se pueden guardar
+  con su caché pública e inmutable.
+- **Configura HSTS** (`Strict-Transport-Security`): solo el proxy que termina TLS sabe si la conexión
+  llegó por HTTPS, y el frontend no la envía.
+  - El valor de `max-age` y la inclusión de subdominios se deciden con la configuración del proxy,
+    en el hardening del despliegue.
+  - Hasta entonces, HSTS sigue pendiente en la compuerta del go-live.
+
 ## Data Safety
 
 - Redeploying the application must not delete database data.
