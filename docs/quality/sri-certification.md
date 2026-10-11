@@ -18,7 +18,7 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Producción no forma parte de este runbook. El go-live es otra compuerta, con sus propios requisitos
   (sección 15 y `definition-of-done.md`, Go-Live v1.0).
 
-**Estado al 2026-10-11: en ejecución, 5 de 7 documentos `AUTHORIZED` en Pruebas.**
+**Estado al 2026-10-11: en ejecución, 6 de 7 documentos `AUTHORIZED` en Pruebas.**
 
 - Q-47 quedó resuelta por política de producto el 2026-10-09 y ya no bloquea la certificación ni el
   go-live (sección 2). Rige la política conservadora de tamaño de EmiteYa, la misma en Pruebas y en
@@ -36,11 +36,13 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
   - la factura 01 a comprador identificado `001-001-000000301`, base de 04, 05 y 06;
   - la nota de crédito 04 `001-001-000000100`, una devolución parcial de la 301;
   - la nota de débito 05 `001-001-000000100`, costos posteriores sobre la 301;
-  - la guía de remisión 06 `001-001-000000100`, transporte propio con sustento en la 301.
+  - la guía de remisión 06 `001-001-000000100`, transporte propio con sustento en la 301;
+  - la liquidación de compra 03 `001-001-000000100`, caso c) del art. 13 con
+    `TEST_PURCHASE_SETTLEMENT_SUPPLIER`, sustento previsto de la 07.
 
   Al terminar cada sesión, la transmisión volvió a `SRI_TRANSMISSION_ENABLED=0`.
-- Los siguientes secuenciales en Pruebas: 01 `302`, 04 `101`, 05 `101`, 06 `101`; 03 y 07 empiezan
-  en `100`. Producción nunca se contacta.
+- Los siguientes secuenciales en Pruebas: 01 `302`, 03 `101`, 04 `101`, 05 `101`, 06 `101`; 07
+  empieza en `100`. Producción nunca se contacta.
 
 ## 1. Compuertas
 
@@ -637,6 +639,13 @@ simulado (`improve-sri-transport-failure-diagnostics`).
   nueva, recibió su respuesta en 341 ms. Así que no ocurre en toda primera conexión.
   No se hace ningún sondeo ni calentamiento contra el SRI para explicarlo, y la recuperación no
   cambia.
+- **En la liquidación de compra 03 reapareció (5 de 6)**, con la misma firma:
+  - el primer túnel conectó en 30 ms y recibió los 3 093 bytes del vuelo TLS;
+  - envió la solicitud completa, 15 413 bytes;
+  - el destino reseteó (`ECONNRESET`) 4 019 ms después del último byte del cliente, sin responder;
+  - la aplicación escribió 13 649 bytes y no leyó ninguno.
+
+  La recuperación fue la misma.
 
 ## 10. Condiciones de parada
 
@@ -705,8 +714,8 @@ archivo de entorno.
 | 2026-10-11 | `bb9c18e` | 04 (devolución parcial) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Una unidad del bien de la 301, con retorno físico; el inventario sube una vez. El mismo patrón del primer envío, ya con el diagnóstico. Detalle debajo |
 | 2026-10-11 | `bb9c18e` | 05 (costos posteriores) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Sobre la 301; sin efecto en el inventario ni en la capacidad de crédito. El mismo patrón del primer envío. Detalle debajo |
 | 2026-10-11 | `7612887` | 06 (transporte propio) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes | Sustento la 301; una unidad del bien, sin movimiento de inventario. Camino feliz: el primer túnel respondió sin la anomalía. Detalle debajo |
+| 2026-10-11 | `d26317c` | 03 (caso c) del art. 13) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Proveedor `TEST_PURCHASE_SETTLEMENT_SUPPLIER`; un servicio, sin movimiento de inventario y sin crear la 07. Reapareció el patrón del primer envío. Detalle debajo |
 | Pendiente | | 07 | | | | |
-| Pendiente | | 03 | | | | |
 
 Con los seis tipos en `AUTHORIZED`, S-3 online y AC-03 pasan a cumplidos aquí y en
 `docs/product/open-questions.md`.
@@ -976,6 +985,66 @@ La dirección de destino y la placa quedan fuera del repositorio, autorizadas po
   - La 301, la 04 y la 05 siguen `AUTHORIZED` y sin cambios.
 - **Cierre.** `rollback` dio `ROLLED_BACK`, sin procesos de la sesión, y la transmisión volvió a
   `0`. El siguiente secuencial 06 es `101`.
+
+### 2026-10-11 · 03 liquidación de compra `001-001-000000100`
+
+Commit `d26317c`, ambiente `TEST`, esquema `1.1.0`.
+- Política `PURCHASE_SETTLEMENT_ELIGIBILITY_V1`, regla `ART_13_C_RUSTICITY_NO_ACTIVE_RUC`, con sus
+  cuatro declaraciones `USER_DECLARED`. El sistema no las verifica.
+- Proveedor `TEST_PURCHASE_SETTLEMENT_SUPPLIER`: activo, con el rol de proveedor, identificado con
+  cédula y con consentimiento escrito.
+- Su dirección es un dato sintético de prueba, autorizado por el dueño solo para Pruebas, y no
+  afirma el domicilio real. Va solo en el borrador y en el XML: no se escribió en Terceros. Queda
+  fuera del repositorio.
+- Una línea de servicio: 1 × 150,00 con el IVA `2:4` del catálogo vigente (15 %), impuesto 22,50 y
+  total 172,50.
+- Un pago `01` por 172,50 con plazo 0.
+
+- **Antes de la red.**
+  - XSD `LiquidacionCompra_V1.1.0` en `PASS`. Firma XAdES-BES válida, con sus tres referencias.
+  - Clave de acceso con el dígito verificador correcto, ambiente `1`, tipo `03` y secuencial
+    `000000100`.
+  - Los campos del proveedor, de la línea, de los totales y del pago coinciden con los datos
+    locales.
+  - Tamaños: XML firmado 9 789 bytes, base64 13 052 y SOAP 13 332.
+- **Estados**, en UTC:
+
+  | De | A | Instante |
+  | --- | --- | --- |
+  | — | `RESERVED` | 15:56:59.405 |
+  | `RESERVED` | `SIGNED` | 15:57:00.521 |
+  | `SIGNED` | `SEND_UNKNOWN` | 15:58:28.839 |
+  | `SEND_UNKNOWN` | `RECEIVED` | 15:58:31.427 |
+  | `RECEIVED` | `AUTHORIZED` | 15:58:37.002 |
+
+- **Intentos**, todos contra `celcer.sri.gob.ec` en `TEST`:
+
+  | # | Operación | Transporte | Duración | Resultado (`classifier_version`) | SHA-256 del sobre | SHA-256 de la respuesta |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | Recepción | Conexión perdida (`UND_ERR_SOCKET`), sin cabeceras | 4 161 ms | `UNKNOWN` (`reception/1`) | `1a335d21…489728f8` | — |
+  | 2 | Autorización | HTTP 200 | 2 083 ms | `KEY_UNKNOWN`: cero comprobantes (`authorization/1`) | `bd33f645…20c17f9d` | `c5807ee3…fa26fd6f` |
+  | 3 | ConsultaComprobante | HTTP 200 | 84 ms | `NO_EVIDENCE`: `RECHAZADA`, identificador 99 (`validity/2`) | `ad98721f…fd2c6b95` | `cf8ad789…590b14d1` |
+  | 4 | Recepción | HTTP 200 | 294 ms | `RECEIVED`: `RECIBIDA`, sin mensajes (`reception/1`) | `1a335d21…489728f8` | `3f188de6…9b6f66b2` |
+  | 5 | Autorización | HTTP 200 | 79 ms | `AUTHORIZED`: `AUTORIZADO`, ambiente `PRUEBAS` (`authorization/1`) | `bd33f645…20c17f9d` | `7b623474…6166da22` |
+
+- **Reconciliación.** La misma recuperación: el mismo sobre en el reenvío, sin un secuencial nuevo
+  ni errores 43, 45 o 70.
+- **Primer túnel.**
+  - La conexión con el destino tardó 30 ms.
+  - Se enviaron 15 413 bytes al destino y llegaron 3 093.
+  - El destino cerró con un reset (`ECONNRESET`) 4 019 ms después del último byte del cliente.
+  - La aplicación escribió 13 649 bytes y no leyó ninguno.
+- **Artefactos.**
+  - `SIGNED_XML` y `AUTHORIZED_XML` son iguales: 9 789 bytes, SHA-256
+    `1163a94576047bcc5c837b116853066a50b9c732045d58cc386efe51ee15e82e`.
+  - `RIDE_PDF`: 23 454 bytes, SHA-256
+    `6a91e52daab37a88ddad6495d58614cca7ac8dcd78cc1de1962389baa7c2107c`.
+- **Efectos.**
+  - Sin movimiento de inventario: sigue en 8.
+  - La 301, la 04, la 05 y la 06 siguen `AUTHORIZED` y sin cambios.
+  - No se creó ninguna retención 07, ni borrador ni documento.
+- **Cierre.** `rollback` dio `ROLLED_BACK`, sin procesos de la sesión, y la transmisión volvió a
+  `0`. El siguiente secuencial 03 es `101`.
 
 ## 14. Cambios del repositorio antes de la primera transmisión real
 
