@@ -198,6 +198,13 @@ variantes, con un aviso visible, un diálogo, un menú y el cambio de tema:
 - `style-src 'self'` queda como respaldo para navegadores sin la separación.
 - El resultado de la medición se registra en el ADR 0025 y en la deuda técnica.
 
+**Resultado (tarea 3.3, Chrome real):**
+- La variante A dio 6 violaciones, todas de `style-src-elem`: los `<style>` de sonner y de
+  next-themes.
+- La variante B dio 0.
+- Se aplica B: `style-src-elem 'self' 'unsafe-inline'` y `style-src-attr 'none'`. Queda
+  `STYLE_INLINE_DEBT: OPEN`, acotada a los elementos `<style>`.
+
 **Alcance:** solo estilos. Los scripts siguen exigiendo nonce, y la excepción nunca alcanza
 `script-src`, `script-src-elem` ni `script-src-attr`.
 
@@ -345,6 +352,28 @@ demuestra que ninguna concesión llega a producción.
 - **`docs/quality/manual-mvp-test-2026-10-09.md` y `definition-of-done.md`:** H-02 completo en la
   aplicación, con HSTS pendiente en el borde.
 - **`docs/architecture/frontend.md`:** el renderizado por petición y el nonce.
+
+### D12. Compatibilidad descubierta en la implementación
+
+- **Zod 4 sin la prueba de `eval`.** La comprobación de navegador encontró violaciones
+  `script-src eval` en el inicio de sesión, la impresión y el cierre de sesión.
+  - **Causa:** Zod 4 prueba `new Function("")` al construir cada esquema, y Chrome registra la
+    violación aunque el error se capture. El código de Zod lo documenta.
+  - **Solución:** `frontend/src/instrumentation-client.ts` fija `z.config({ jitless: true })` antes de
+    que se construya ningún esquema. Es la inicialización síncrona que Next.js corre antes de los
+    componentes.
+  - **Efecto:** el comportamiento no cambia (con esta política Zod no podía compilar) y no se
+    debilita la política.
+- **El reenvío de `/api` queda en el build.** `next.config.ts` lee `API_INTERNAL_URL` al compilar,
+  así que `next start` no puede cambiarlo. La comprobación lee el puerto del manifiesto de rutas y
+  arranca el backend en él.
+- **`'strict-dynamic'` y los scripts creados por un script autorizado.** Un `<script>` creado con
+  `createElement` por un script ya autorizado se ejecuta por diseño de `'strict-dynamic'`. Por eso la
+  prueba del script no autorizado lo inyecta en el marcado del documento, que es la forma real de
+  una inyección almacenada o reflejada.
+- **Impresión en el Chrome sin interfaz.** `print()` dentro del `iframe` puede tumbar la pestaña en la
+  navegación siguiente. La comprobación descarga e imprime en una pestaña propia que cierra al
+  terminar, y sigue los demás flujos en otra.
 
 ## Risks / Trade-offs
 

@@ -73,7 +73,7 @@
 
   Verificar que `corepack pnpm install` y `corepack pnpm check:versions` pasan y que el lockfile solo
   cambia por esa dependencia.
-- [ ] 3.2 Crear `scripts/check-web-security-policy.ts` y el script `check:web-security-policy`.
+- [x] 3.2 Crear `scripts/check-web-security-policy.ts` y el script `check:web-security-policy`.
   1. Arranca el backend con `startE2eBackend`, con un puerto fijo y el SRI simulado de
      `backend/test/support/simulated-sri.ts`, como `e2e-document-archive`; nunca el SRI real.
   2. Arranca `next start` del build en el origen `localhost:3000`, con `/api` hacia ese backend.
@@ -89,7 +89,7 @@
   Si un flujo revela una dependencia legítima de ventanas emergentes u `opener` que COOP rompe, se
   detiene y se informa (D6). Verificar ejecutándolo en local después del build: termina en 0, y cada
   condición informa su resultado.
-- [ ] 3.3 Medir los estilos en Chrome real (D4). Con la política de la aplicación activa, el modo de
+- [x] 3.3 Medir los estilos en Chrome real (D4). Con la política de la aplicación activa, el modo de
   medición del script añade una `Content-Security-Policy-Report-Only` por cada variante, A y B, y
   recorre los mismos flujos, con un aviso visible, un diálogo, un menú y el cambio de tema.
   - Aplicar la regla de decisión de D4 al módulo de 1.1 y ajustar su prueba unitaria.

@@ -67,11 +67,13 @@ describe("política de producción", () => {
     }
   });
 
-  it("limita unsafe-inline a las directivas de estilo", () => {
+  it("limita unsafe-inline a los elementos <style>, con los atributos style bloqueados", () => {
     for (const [name, sources] of policy) {
-      if (sources.includes("'unsafe-inline'")) expect(name).toMatch(/^style-src/);
+      if (sources.includes("'unsafe-inline'")) expect(name).toBe("style-src-elem");
     }
     expect(policy.get("style-src")).toEqual(["'self'"]);
+    expect(policy.get("style-src-elem")).toEqual(["'self'", "'unsafe-inline'"]);
+    expect(policy.get("style-src-attr")).toEqual(["'none'"]);
   });
 
   it("no tiene comodines ni esquemas completos, y blob: solo va en frame-src", () => {

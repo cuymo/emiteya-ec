@@ -23,7 +23,8 @@
     "sri:egress": "node scripts/sri-egress/session.ts",
     "openapi:generate": "corepack pnpm --filter @facturador/contracts openapi:generate",
     "openapi:check": "corepack pnpm --filter @facturador/contracts openapi:check",
-    "verify": "corepack pnpm format:check && corepack pnpm check:versions && corepack pnpm --filter @facturador/backend db:generate && corepack pnpm lint && corepack pnpm typecheck && corepack pnpm test && corepack pnpm openapi:check && corepack pnpm check:dev-start && corepack pnpm build && corepack pnpm check:xsd-artifact && corepack pnpm check:ride-assets"
+    "verify": "corepack pnpm format:check && corepack pnpm check:versions && corepack pnpm --filter @facturador/backend db:generate && corepack pnpm lint && corepack pnpm typecheck && corepack pnpm test && corepack pnpm openapi:check && corepack pnpm check:dev-start && corepack pnpm build && corepack pnpm check:web-security-policy && corepack pnpm check:xsd-artifact && corepack pnpm check:ride-assets",
+    "check:web-security-policy": "node --conditions=development scripts/check-web-security-policy.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

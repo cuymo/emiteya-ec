@@ -46,13 +46,15 @@ const PERMISSIONS_POLICY = [
 ].join(", ");
 
 /**
- * Estilos en línea (design D4): variante C, la más amplia, hasta que la medición en Chrome de la
- * tarea 3.3 la acote. Nunca alcanza las directivas de scripts.
+ * Estilos en línea (design D4), acotados por la medición en Chrome (variante B): solo los elementos
+ * `<style>` que sonner y next-themes insertan en tiempo de ejecución necesitan `'unsafe-inline'`; los
+ * atributos `style` quedan bloqueados. `style-src` es el respaldo para navegadores sin la separación.
+ * Deuda abierta en `docs/quality/technical-debt.md`. Nunca alcanza las directivas de scripts.
  */
 const STYLE_DIRECTIVES: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["style-src", ["'self'"]],
   ["style-src-elem", ["'self'", "'unsafe-inline'"]],
-  ["style-src-attr", ["'unsafe-inline'"]],
+  ["style-src-attr", ["'none'"]],
 ];
 
 /** La `Content-Security-Policy` de un documento con su nonce (design D3). */

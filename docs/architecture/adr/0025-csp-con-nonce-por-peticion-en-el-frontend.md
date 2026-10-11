@@ -50,8 +50,25 @@ la capa de aplicación (`../../quality/manual-mvp-test-2026-10-09.md`).
   - los recursos de `/_next/static` conservan su caché pública e inmutable.
 - **Scripts:** `script-src` con el nonce y `'strict-dynamic'`, sin `'unsafe-inline'` ni
   `'unsafe-eval'` en producción, y `script-src-attr 'none'`.
-- **Estilos en línea:** se acotan a la directiva que la medición en Chrome exige (design D4 del
-  cambio), como excepción declarada en `../../quality/technical-debt.md`.
+- **Estilos en línea, acotados por la medición en Chrome** (design D4 del cambio). Con la política
+  activa, se añadió cada variante como política solo informativa y se recorrieron el inicio de
+  sesión, un diálogo, un menú, el cambio de tema, la bandeja y una descarga con su aviso:
+
+  | Variante | `style-src-elem` | `style-src-attr` | Violaciones |
+  | --- | --- | --- | --- |
+  | A | `'self' 'nonce-…'` | `'none'` | 6, todas de `style-src-elem`: los `<style>` que insertan sonner y next-themes |
+  | B | `'self' 'unsafe-inline'` | `'none'` | 0 |
+
+  Se elige B: solo los elementos `<style>` necesitan `'unsafe-inline'`, y los atributos `style` quedan
+  bloqueados. Es una excepción declarada en `../../quality/technical-debt.md`
+  (`STYLE_INLINE_DEBT: OPEN`, acotada a `style-src-elem`).
+- **Zod sin la prueba de `eval`.** Zod 4 prueba `new Function("")` al construir cada esquema. Con
+  esta política, la prueba falla y el navegador registra una violación, aunque el error se capture.
+  - `frontend/src/instrumentation-client.ts` fija `z.config({ jitless: true })` antes de que la
+    aplicación construya sus esquemas. Next.js garantiza que ese código síncrono corre antes de los
+    componentes.
+  - El comportamiento no cambia, porque con esta política Zod ya no podía compilar sus validadores.
+  - La política queda sin violaciones.
 
 - **Comprobación en un navegador real:** `playwright-core` 1.64.0 como dependencia de desarrollo de
   la raíz, con versión exacta.

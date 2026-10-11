@@ -81,6 +81,7 @@ Fuentes: ERS §18.1 y CTX §19.4, §49–52, §61.
 | Exportación              | El XLSX respeta los filtros, conserva identificaciones como texto e importes como números.                 | ERS AC-09          |
 | Respaldo                 | Restauración completa de configuración, comprobantes y artefactos.                                         | ERS AC-10          |
 | Seguridad                | Firma y contraseña ausentes de logs y respuestas; escaneo de dependencias y de secretos.                   | ERS §18.1, §20     |
+| Política del navegador   | Build de producción en un Chrome real: CSP aplicada con nonce por documento, script inyectado bloqueado, sin enmarcado, cabeceras y caché de los documentos, y flujos legítimos sin violaciones (`check:web-security-policy`). | ADR 0025 |
 | Certificación SRI        | Matriz por tipo en el ambiente de Pruebas del SRI: camino feliz, XSD inválido, firma inválida, devuelto, autorizado, no autorizado y timeout con reconciliación. Fuera de CI y nunca como prueba de carga. La factura empieza con S-3 online (`sri-certification.md`). | ERS AC-03; CTX §49 |
 
 Aunque el MVP tiene una sola empresa por instalación, los fixtures incluyen al menos dos
@@ -98,6 +99,17 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
 - Aislamiento: cada archivo de integración crea su propio esquema PostgreSQL dentro de `facturador_test`, le aplica las migraciones con `prisma migrate deploy` sin el advisory lock global de Prisma (`PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK`: cada esquema es nuevo y lo migra un solo archivo, y el lock solo encolaba esquemas independientes hasta agotar su espera) y lo elimina al terminar (`createMigratedSchema`), de modo que los archivos corren en paralelo sin compartir datos y el aprovisionamiento puede partir de una instalación vacía. Las fixtures incluyen siempre dos empresas.
 - Frontend: Vitest con jsdom y Testing Library; las consultas se hacen por rol y nombre accesible, lo que también verifica la accesibilidad básica. `frontend/test/harness.tsx` monta los proveedores reales con la navegación de Next simulada y un `fetch` que responde por método y ruta.
 - Herramientas: las reglas de capas de ESLint y `check:versions` tienen sus propias pruebas.
+- **Política de seguridad del navegador:** `corepack pnpm check:web-security-policy`, después de
+  `corepack pnpm build`. `verify` la corre detrás del build.
+  - Arranca el backend con el arnés end-to-end, la firma sintética y un SRI simulado (nunca el SRI
+    real).
+  - Arranca `next start` del build en `http://localhost:3000`, con el backend en el puerto al que el
+    build reenvía `/api`. Necesita ese puerto y el 3000 libres, PostgreSQL y el Chrome del sistema.
+  - Recorre los flujos en Chrome con `playwright-core` y falla ante cualquier violación inesperada de
+    la política.
+  - Con `--measure-styles`, mide además las variantes de estilos del design D4 como políticas solo
+    informativas.
+  - Dura unos 20 segundos en local, e informa sus tiempos por fase.
 - Prueba manual con navegador: `corepack pnpm --filter @facturador/backend sandbox:mvp <estado.json>` arranca `main.ts` real sobre un esquema propio de `facturador_test`, con la transmisión dirigida solo a un SRI simulado local (también los endpoints de Producción) a través de un proxy que rechaza cualquier otro host, P12 sintéticos del generador del repositorio y la política conservadora de tamaño del código. Un control en `127.0.0.1:4699` elige el comportamiento del SRI simulado por secuencial: recibido, retenido, clave ajena, devuelto, no autorizado o caído. Al detenerse conserva el esquema; `--resume` lo reanuda con la misma clave maestra sintética y `--clean` lo borra. Nunca usa credenciales, certificados ni endpoints reales y se niega a arrancar con `NODE_ENV=production`. El registro de la pasada del 2026-10-09 está en `manual-mvp-test-2026-10-09.md`.
 - Rendimiento de la búsqueda: `corepack pnpm --filter @facturador/backend bench:search` es un gate dedicado, fuera de `test` y de `verify`, para que la carga de un runner compartido no lo vuelva inestable. Se ejecuta sobre una PostgreSQL 17 sin carga ajena y escribe el entorno, los tiempos y los planes de consulta en `docs/quality/benchmarks/` (`performance.md`). La suite normal comprueba el comportamiento, los índices (`migrations.test.ts`) y los planes de las búsquedas por prefijo (`search-plans.test.ts`).
 
