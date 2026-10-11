@@ -100,7 +100,7 @@
     hacen falta las dos directivas.
 
   Verificar que la comprobación de 3.2 pasa con la política acotada.
-- [ ] 3.4 Encadenar `check:web-security-policy` en `verify` después de `corepack pnpm build`, como
+- [x] 3.4 Encadenar `check:web-security-policy` en `verify` después de `corepack pnpm build`, como
   `check:xsd-artifact`. Medir su duración local y documentar el comando en `docs/quality/testing.md`.
   Verificar que `corepack pnpm verify` lo ejecuta. `timeout-minutes` no se toca hasta medir la CI
   (4.5).
@@ -117,7 +117,7 @@
   (`HSTS STATUS: DEFERRED TO DEPLOYMENT/PROXY HARDENING`), en
   `docs/quality/manual-mvp-test-2026-10-09.md` y `docs/quality/definition-of-done.md` (Go-Live
   v1.0). Verificar que `corepack pnpm format:check` pasa.
-- [ ] 4.4 Ejecutar `corepack pnpm verify` completo y verificar que termina en 0. Si falla por una
+- [x] 4.4 Ejecutar `corepack pnpm verify` completo y verificar que termina en 0. Si falla por una
   prueba inestable ya registrada en `technical-debt.md`, informar el código de salida real y aportar
   la evidencia aislada o de control, sin marcar la tarea como completa.
 - [ ] 4.5 Cuando el cambio corra en la CI remota, medir la duración del job. Si queda demasiado cerca
