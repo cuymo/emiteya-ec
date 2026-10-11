@@ -64,7 +64,7 @@ comprobantes restantes reutilizan el núcleo que construye la factura.
 | 4   | `add-signing-certificate`  | `signing-certificate`                                 | 2              | AC-01         |
 | 5a  | `add-fiscal-catalogs`      | `fiscal-catalogs`: catálogos oficiales versionados, política decimal común, política de consumidor final, registro de esquemas y matriz de casos especiales | 1 | —  |
 | 5b  | `add-parties-and-products` | `parties`, `products`: consumen `fiscal-catalogs` como dependencia canónica | 5a | — |
-| —   | Spikes técnicos, sin OpenSpec | Validación de `facturacion-electronica-ec`: XSD (S-2, ejecutado, ADR 0021), factura offline (S-3 offline, ejecutado con el builder propio de Q-44), autorización en Pruebas (S-3 online, compuerta de go-live) y PDF (S-4) (Q-34, ADR 0018) | 0 | ADRs de dependencias |
+| —   | Spikes técnicos, sin OpenSpec | Validación de `facturacion-electronica-ec`: XSD (S-2, ejecutado, ADR 0021), factura offline (S-3 offline, ejecutado con el builder propio de Q-44), autorización en Pruebas (S-3 online, compuerta de go-live, cumplida el 2026-10-11) y PDF (S-4) (Q-34, ADR 0018) | 0 | ADRs de dependencias |
 | 6   | `add-invoice-emission`     | `document-emission`, `invoices`                       | 3, 4, 5a, 5b, spike | AC-05    |
 | 7   | `add-sri-transmission`     | `sri-transmission`                                    | 6              | AC-06; AC-02 parcial (el RIDE llega con el cambio 8 y la autorización real con S-3 online) |
 | 8   | `add-document-archive`     | `document-archive`                                    | 7              | AC-07; completa AC-02 con S-3 online |

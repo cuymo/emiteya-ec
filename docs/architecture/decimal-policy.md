@@ -70,7 +70,7 @@ inventario que no sale de ningún XSD.
   - Los cálculos internos son exactos, sin redondeos intermedios.
   - Un campo fiscal se redondea HALF_UP solo al materializarlo a la escala de su XSD.
   - Los totales se construyen con los valores ya materializados.
-  - La validó la parte offline de S-3. La autorización en Pruebas del SRI (parte online) es la compuerta de go-live, y una contradicción abre `/opsx:update`.
+  - La validó la parte offline de S-3. La autorización en Pruebas del SRI (parte online) es la compuerta de go-live, y una contradicción abre `/opsx:update`. Se cumplió el 2026-10-11 sin contradicciones: el SRI autorizó en Pruebas los siete comprobantes de la certificación con los importes calculados por esta política (`../quality/sri-certification.md`, sección 13).
 
 ## Salida y frontend
 

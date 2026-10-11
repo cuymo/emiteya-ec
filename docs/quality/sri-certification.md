@@ -21,6 +21,12 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 **Estado al 2026-10-11: completa, 7 de 7 documentos `AUTHORIZED` en Pruebas.** AC-03 y la parte
 online de S-3 quedan cumplidas (sección 13). Producción nunca se probó y sigue fuera de este runbook.
 
+- Tipos certificados: 01, 03, 04, 05, 06 y 07, en siete comprobantes (dos facturas 01).
+- La certificación del MVP termina aquí: no se envía ningún documento más al SRI, ni a Pruebas ni a
+  Producción.
+- La evidencia de la sección 13 queda congelada. Una corrección futura se hace con un commit
+  documental nuevo, sin reescribir los resultados.
+
 - Q-47 quedó resuelta por política de producto el 2026-10-09 y ya no bloquea la certificación ni el
   go-live (sección 2). Rige la política conservadora de tamaño de EmiteYa, la misma en Pruebas y en
   Producción (sección 2.1).
@@ -705,6 +711,19 @@ ocurre cualquiera de estas condiciones. No se sigue «para ver qué pasa».
 
 **Nunca se guarda en ningún lado:** el P12, su contraseña, la clave privada, la clave maestra ni el
 archivo de entorno.
+
+**Higiene de los diagnósticos locales.** Durante la certificación, tres salidas locales mostraron
+datos que no debían imprimirse:
+- un error no capturado de un script imprimió la ruta del P12;
+- un diagnóstico imprimió identificadores de las contrapartes de prueba;
+- una confirmación imprimió el identificador interno del usuario administrador de la certificación.
+
+Quedaron en la terminal y la sesión del operador: nada pasó al repositorio, a la documentación, a
+los commits ni a servicios externos, y los valores no se copian en ningún lado. No bloquean la
+certificación. Desde entonces:
+- los scripts que tocan secretos capturan sus errores e imprimen solo el código;
+- los diagnósticos imprimen solo booleanos, códigos, importes y prefijos de hashes, a partir de
+  campos elegidos uno por uno, nunca filtrando por la forma del valor.
 
 ## 12. Respuestas reales como fixtures
 
