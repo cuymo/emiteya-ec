@@ -81,9 +81,16 @@ la capa de aplicación (`../../quality/manual-mvp-test-2026-10-09.md`).
 
 ## Consequences
 
-- **Rendimiento.** Las 29 rutas estáticas pasan a renderizarse por petición. En la readiness, una
-  ruta estática respondía en p50 0,9 ms y una dinámica en p50 4,4 ms, en local. Es aceptable para un
-  back office autenticado, autoalojado, con una instancia y sin CDN.
+- **Rendimiento.** Las 29 rutas estáticas pasan a renderizarse por petición. Medición local
+  (`next start`, 30 peticiones por ruta, tiempo al primer byte):
+
+  | Ruta | Antes (readiness) | Después (verificación) |
+  | --- | --- | --- |
+  | `/facturas` (antes estática) | p50 0,9 ms | p50 5,2 ms, p95 7,4 ms |
+  | `/facturas/[id]` (ya dinámica) | p50 4,4 ms | p50 4,7 ms, p95 6,5 ms |
+  | `/iniciar-sesion` (antes estática) | — | p50 4,5 ms, p95 5,8 ms |
+
+  Es aceptable para un back office autenticado, autoalojado, con una instancia y sin CDN.
 - **CDN.** Un CDN o proxy futuro no puede guardar los documentos en una caché compartida
   (`../deployment.md`).
 - **Dependencias.** Una actualización de Next.js, sonner o next-themes que cambie lo que se inserta

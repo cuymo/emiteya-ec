@@ -79,7 +79,7 @@ Notas del entorno:
 | Id | Caso | Severidad | Descripción | Estado |
 | --- | --- | --- | --- | --- |
 | H-01 | MVT-076 | MINOR | Con la ventana baja (por ejemplo 1280×720 en `/facturas`), el último destino de la barra lateral («Portabilidad de datos») quedaba fuera de la ventana y no se podía pulsar. El contenedor fijo de la navegación no se desplazaba. | Corregido en `089835f` (`overflow-y-auto`, prueba en `frontend/test/app-shell.test.tsx`). Reprobado a 1366×768, 1280×720 y 1280×600: PASS |
-| H-02 | MVT-068 | MINOR, `NEEDS_USER_DECISION` | Las páginas del frontend no envían CSP, `X-Frame-Options`, `X-Content-Type-Options` ni `Referrer-Policy`, que pide `docs/security/hardening.md`. La API sí las envía (helmet). Con la cookie `SameSite=Lax`, la sesión no viaja en un iframe entre sitios. | Decidido: compuerta de seguridad del go-live; no se implementa en el MVP. La autoridad (Next.js o el proxy) se decide en el hardening del go-live |
+| H-02 | MVT-068 | MINOR, `NEEDS_USER_DECISION` | Las páginas del frontend no envían CSP, `X-Frame-Options`, `X-Content-Type-Options` ni `Referrer-Policy`, que pide `docs/security/hardening.md`. La API sí las envía (helmet). Con la cookie `SameSite=Lax`, la sesión no viaja en un iframe entre sitios. | Decidido: compuerta de seguridad del go-live; no se implementa en el MVP. **APPLICATION LAYER COMPLETE** (2026-10-11, `enforce-frontend-security-headers-csp`, ADR 0025): Next.js, única autoridad, envía en cada documento una CSP aplicada con nonce por petición, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y `Cross-Origin-Opener-Policy`. `HSTS STATUS: DEFERRED TO DEPLOYMENT/PROXY HARDENING` |
 | H-03 | MVT-068 | Observación, `NEEDS_USER_DECISION` | `/api/v1` no valida el `Origin` por sí misma: un POST JSON con un Origin ajeno y la cookie inyectada fuera del navegador llega al handler. Desde un navegador no hay vía de CSRF: cookie `SameSite=Lax`, `text/plain` y formularios rechazados con 400, preflight sin CORS e inicio de sesión con Origin ajeno rechazado con 403. | Decidido: defensa en profundidad, a revisar en el go-live con la política de proxy, CORS y CSRF del despliegue real; no se modifica ahora |
 | H-04 | MVT-011 | COSMETIC | El mismo estado sin permiso tiene dos redacciones: «No tienes acceso a Usuarios» (también en Reportes y Comprobantes) frente a «No tienes permiso para ver esta sección». | Decidido: COSMETIC, no se corrige ahora |
 
@@ -108,6 +108,9 @@ Decisiones sobre los hallazgos:
 - H-02: compuerta de seguridad del go-live, registrada en `definition-of-done.md` (Go-Live v1.0).
   Conserva CSP, `frame-ancestors` o `X-Frame-Options`, `nosniff` y `Referrer-Policy`, con una sola
   autoridad.
+  - **Capa de aplicación completa** el 2026-10-11 (`enforce-frontend-security-headers-csp`,
+    ADR 0025), verificada en Chrome con `check:web-security-policy`.
+  - Queda HSTS en el proxy que termina TLS: se difiere al hardening del despliegue.
 - H-03: defensa en profundidad, a revisar en el go-live con la política de proxy, CORS y CSRF del
   despliegue real (registrada en `definition-of-done.md`).
 - H-04: COSMETIC, sin corrección por ahora.

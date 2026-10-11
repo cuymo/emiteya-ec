@@ -107,13 +107,13 @@
 
 ## 4. Verificación y cierre de H-02 en la aplicación
 
-- [ ] 4.1 Volver a medir la latencia de un documento con el método del design: `next start` local,
+- [x] 4.1 Volver a medir la latencia de un documento con el método del design: `next start` local,
   30 peticiones, p50 y p95 de una antigua ruta estática y de una dinámica. Registrarla en el ADR 0025.
   Verificar que la diferencia sigue en el orden de milisegundos medido en la readiness.
-- [ ] 4.2 Arrancar `next dev` y abrir el inicio de sesión. Verificar que funciona con la política de
+- [x] 4.2 Arrancar `next dev` y abrir el inicio de sesión. Verificar que funciona con la política de
   desarrollo y que solo lleva las concesiones de D10. Si la recarga en caliente exige otra, añadirla
   solo en desarrollo y cubrirla en la prueba de 1.1.
-- [ ] 4.3 Marcar H-02 como «APPLICATION LAYER COMPLETE», con HSTS diferido al borde TLS
+- [x] 4.3 Marcar H-02 como «APPLICATION LAYER COMPLETE», con HSTS diferido al borde TLS
   (`HSTS STATUS: DEFERRED TO DEPLOYMENT/PROXY HARDENING`), en
   `docs/quality/manual-mvp-test-2026-10-09.md` y `docs/quality/definition-of-done.md` (Go-Live
   v1.0). Verificar que `corepack pnpm format:check` pasa.
