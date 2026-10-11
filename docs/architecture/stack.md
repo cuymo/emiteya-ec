@@ -86,6 +86,7 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | ESLint / typescript-eslint | 10.11.0 / 8.71.0 | Frontend sin `eslint-config-next` (ADR 0016). |
 | Prettier | 3.9.9 | |
 | Vitest | 5.0.3 | |
+| playwright-core | 1.64.0, versión exacta, solo desarrollo | Comprobación del build en un navegador real (`check:web-security-policy`, ADR 0025). Lanza el Chrome del sistema y no descarga navegadores. Apache-2.0, sin dependencias transitivas. |
 | Express | 5.2.1 | Validada por S-1. |
 | Zod | 4.6.5 | Misma major que Better Auth. |
 | Prisma / @prisma/client / @prisma/adapter-pg | 7.10.0 | Generador `prisma-client`. |

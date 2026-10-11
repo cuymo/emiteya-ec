@@ -64,7 +64,7 @@
 
 ## 3. Comprobación del build en un navegador real
 
-- [ ] 3.1 Añadir `playwright-core` como dependencia de desarrollo de la raíz, con versión exacta
+- [x] 3.1 Añadir `playwright-core` como dependencia de desarrollo de la raíz, con versión exacta
   (D9).
   - Confirmar el nombre del paquete, su mantenimiento y su licencia Apache-2.0
     (`hardening.md`, «Dependencies And Supply Chain»).

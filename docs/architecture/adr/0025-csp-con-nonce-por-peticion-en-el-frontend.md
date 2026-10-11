@@ -53,6 +53,15 @@ la capa de aplicación (`../../quality/manual-mvp-test-2026-10-09.md`).
 - **Estilos en línea:** se acotan a la directiva que la medición en Chrome exige (design D4 del
   cambio), como excepción declarada en `../../quality/technical-debt.md`.
 
+- **Comprobación en un navegador real:** `playwright-core` 1.64.0 como dependencia de desarrollo de
+  la raíz, con versión exacta.
+  - Es de Microsoft (`microsoft/playwright`), con licencia Apache-2.0 y sin dependencias
+    transitivas, publicado el 2026-10-07. No aporta avisos a `pnpm audit`.
+  - Lanza el Chrome del sistema (`channel: "chrome"`) y no descarga navegadores: el runner de la CI
+    trae Chrome.
+  - La alternativa sin dependencias, el protocolo DevTools a mano por WebSocket, exigía más código
+    propio y frágil.
+
 ## Consequences
 
 - **Rendimiento.** Las 29 rutas estáticas pasan a renderizarse por petición. En la readiness, una
