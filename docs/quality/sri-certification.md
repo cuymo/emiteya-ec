@@ -18,7 +18,7 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Producción no forma parte de este runbook. El go-live es otra compuerta, con sus propios requisitos
   (sección 15 y `definition-of-done.md`, Go-Live v1.0).
 
-**Estado al 2026-10-11: en ejecución, 4 de 7 documentos `AUTHORIZED` en Pruebas.**
+**Estado al 2026-10-11: en ejecución, 5 de 7 documentos `AUTHORIZED` en Pruebas.**
 
 - Q-47 quedó resuelta por política de producto el 2026-10-09 y ya no bloquea la certificación ni el
   go-live (sección 2). Rige la política conservadora de tamaño de EmiteYa, la misma en Pruebas y en
@@ -35,11 +35,12 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
   - la factura 01 a consumidor final `001-001-000000300`;
   - la factura 01 a comprador identificado `001-001-000000301`, base de 04, 05 y 06;
   - la nota de crédito 04 `001-001-000000100`, una devolución parcial de la 301;
-  - la nota de débito 05 `001-001-000000100`, costos posteriores sobre la 301.
+  - la nota de débito 05 `001-001-000000100`, costos posteriores sobre la 301;
+  - la guía de remisión 06 `001-001-000000100`, transporte propio con sustento en la 301.
 
   Al terminar cada sesión, la transmisión volvió a `SRI_TRANSMISSION_ENABLED=0`.
-- Los siguientes secuenciales en Pruebas: 01 `302`, 04 `101`, 05 `101`; 03, 06 y 07 empiezan en
-  `100`. Producción nunca se contacta.
+- Los siguientes secuenciales en Pruebas: 01 `302`, 04 `101`, 05 `101`, 06 `101`; 03 y 07 empiezan
+  en `100`. Producción nunca se contacta.
 
 ## 1. Compuertas
 
@@ -632,6 +633,8 @@ simulado (`improve-sri-transport-failure-diagnostics`).
   El caché de rutas del núcleo no tenía una MTU aprendida tras el fallo, lo que debilita la hipótesis
   de la MTU sin descartarla. Que el plazo sea idéntico sugiere un temporizador fijo del lado lejano
   sobre la primera conexión con el TLS sin reanudar. La causa última sigue fuera de lo observable.
+- **En la guía 06 no se repitió (4 de 5).** El primer túnel, también con el TLS completo en una sesión
+  nueva, recibió su respuesta en 341 ms. Así que no ocurre en toda primera conexión.
   No se hace ningún sondeo ni calentamiento contra el SRI para explicarlo, y la recuperación no
   cambia.
 
@@ -701,7 +704,7 @@ archivo de entorno.
 | 2026-10-10 | `f4d9492` | 01 (comprador identificado) | `001-001-000000301` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | El mismo patrón que la 300: primer envío con la conexión perdida, `SEND_UNKNOWN`, reconciliación de la misma clave y reenvío del mismo XML. Es el documento base de 04, 05 y 06. Detalle debajo |
 | 2026-10-11 | `bb9c18e` | 04 (devolución parcial) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Una unidad del bien de la 301, con retorno físico; el inventario sube una vez. El mismo patrón del primer envío, ya con el diagnóstico. Detalle debajo |
 | 2026-10-11 | `bb9c18e` | 05 (costos posteriores) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Sobre la 301; sin efecto en el inventario ni en la capacidad de crédito. El mismo patrón del primer envío. Detalle debajo |
-| Pendiente | | 06 | | | | |
+| 2026-10-11 | `7612887` | 06 (transporte propio) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes | Sustento la 301; una unidad del bien, sin movimiento de inventario. Camino feliz: el primer túnel respondió sin la anomalía. Detalle debajo |
 | Pendiente | | 07 | | | | |
 | Pendiente | | 03 | | | | |
 
@@ -923,6 +926,56 @@ Commit `bb9c18e`, ambiente `TEST`, esquema `1.0.0`. Documento modificado: la fac
   - La 301 y la nota de crédito 04 siguen `AUTHORIZED` y sin cambios.
 - **Cierre.** `rollback` dio `ROLLED_BACK`, sin procesos de la sesión, y la transmisión volvió a
   `0`. El siguiente secuencial 05 es `101`.
+
+### 2026-10-11 · 06 guía de remisión `001-001-000000100`
+
+Commit `7612887`, ambiente `TEST`, esquema `1.1.0`.
+- Transporte propio (`SELF`): la empresa es el transportista.
+- Partida desde el establecimiento 001, con fechas de transporte del día.
+- Un destinatario, `TEST_IDENTIFIED_BUYER`, con motivo «Venta» y sustento en la factura 01
+  `001-001-000000301` `AUTHORIZED`.
+- Una unidad del bien, sin el servicio.
+
+La dirección de destino y la placa quedan fuera del repositorio, autorizadas por el dueño.
+
+- **Antes de la red.**
+  - XSD `GuiaRemision_V1.1.0` en `PASS`. Firma XAdES-BES válida, con sus tres referencias.
+  - Clave de acceso con el dígito verificador correcto, ambiente `1`, tipo `06` y secuencial
+    `000000100`.
+  - Los campos de transporte, destinatario y sustento coinciden con los datos locales, incluido el
+    número de autorización de la 301.
+  - Tamaños: XML firmado 9 563 bytes, base64 12 752 y SOAP 13 032.
+- **Estados**, en UTC:
+
+  | De | A | Instante |
+  | --- | --- | --- |
+  | — | `RESERVED` | 05:13:03.474 |
+  | `RESERVED` | `SIGNED` | 05:13:04.602 |
+  | `SIGNED` | `RECEIVED` | 05:13:59.124 |
+  | `RECEIVED` | `AUTHORIZED` | 05:14:05.038 |
+
+- **Intentos**, todos contra `celcer.sri.gob.ec` en `TEST`:
+
+  | # | Operación | Transporte | Duración | Resultado (`classifier_version`) | SHA-256 del sobre | SHA-256 de la respuesta |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | Recepción | HTTP 200 | 465 ms | `RECEIVED`: `RECIBIDA`, sin mensajes (`reception/1`) | `ff04fbf7…29792ef9` | `3f188de6…9b6f66b2` |
+  | 2 | Autorización | HTTP 200 | 98 ms | `AUTHORIZED`: `AUTORIZADO`, ambiente `PRUEBAS` (`authorization/1`) | `d121c982…274420d6` | `d2a931ee…c4883a93` |
+
+- **Sin reconciliación.**
+  - El primer túnel conectó en 24 ms y envió 15 113 bytes.
+  - Recibió 4 824 bytes: el vuelo TLS y la respuesta.
+  - El destino respondió 341 ms después del último byte del cliente y cerró con `FIN`.
+  - No hubo errores 43, 45 o 70.
+- **Artefactos.**
+  - `SIGNED_XML` y `AUTHORIZED_XML` son iguales: 9 563 bytes, SHA-256
+    `c7b3b4b0133557829dedd86f91bf08f7f723bc7d164d69304cbf305a8c69752d`.
+  - `RIDE_PDF`: 23 988 bytes, SHA-256
+    `c53c533a25c877ff340d4c7691fdebb9b5a6372dd5d45030343295ff3b2b2813`.
+- **Efectos.**
+  - Sin movimiento de inventario: sigue en 8.
+  - La 301, la 04 y la 05 siguen `AUTHORIZED` y sin cambios.
+- **Cierre.** `rollback` dio `ROLLED_BACK`, sin procesos de la sesión, y la transmisión volvió a
+  `0`. El siguiente secuencial 06 es `101`.
 
 ## 14. Cambios del repositorio antes de la primera transmisión real
 
