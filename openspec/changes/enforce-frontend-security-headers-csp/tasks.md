@@ -2,7 +2,7 @@
 
 ## 1. La política como módulo puro
 
-- [ ] 1.1 Crear `frontend/src/lib/web-security-policy.ts`, sin efectos.
+- [x] 1.1 Crear `frontend/src/lib/web-security-policy.ts`, sin efectos.
   - Genera el nonce con `crypto.getRandomValues` sobre 16 bytes, codificado en base64, y valida su
     estructura (design D1, contrato del nonce).
   - Construye la `Content-Security-Policy` a partir del nonce y del modo, con las directivas de D3:
