@@ -81,9 +81,10 @@ La secuencia 0 a 16 del MVP está completa: el cambio 16 se archivó el 2026-10-
 manual integral se hizo el 2026-10-09 con una pasada autónoma de extremo a extremo en navegador
 contra un SRI simulado: 75 casos en PASS, sin BLOCKER ni MAJOR
 (`../quality/manual-mvp-test-2026-10-09.md`). Eso no es una certificación con el SRI ni declara el
-producto listo para producción. Lo que sigue no es un cambio de la secuencia: la preparación de la
-certificación con el SRI en Pruebas (S-3 online) y las compuertas del go-live
-(`../quality/definition-of-done.md`, Go-Live v1.0).
+producto listo para producción. Lo que sigue no es un cambio de la secuencia. La certificación con
+el SRI en Pruebas (S-3 online) quedó completa el 2026-10-11: al menos un comprobante de cada uno de
+los seis tipos `AUTHORIZED`, AC-03 cumplido (`../quality/sri-certification.md`, sección 13). Quedan las
+compuertas del go-live (`../quality/definition-of-done.md`, Go-Live v1.0).
 
 Capacidades futuras sin número en la secuencia, decididas en la revisión de readiness del cambio 7
 (2026-10-03): `correct-returned-document` (corrección de un devuelto, BR-28) y

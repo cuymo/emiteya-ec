@@ -18,7 +18,8 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
 - Producción no forma parte de este runbook. El go-live es otra compuerta, con sus propios requisitos
   (sección 15 y `definition-of-done.md`, Go-Live v1.0).
 
-**Estado al 2026-10-11: en ejecución, 6 de 7 documentos `AUTHORIZED` en Pruebas.**
+**Estado al 2026-10-11: completa, 7 de 7 documentos `AUTHORIZED` en Pruebas.** AC-03 y la parte
+online de S-3 quedan cumplidas (sección 13). Producción nunca se probó y sigue fuera de este runbook.
 
 - Q-47 quedó resuelta por política de producto el 2026-10-09 y ya no bloquea la certificación ni el
   go-live (sección 2). Rige la política conservadora de tamaño de EmiteYa, la misma en Pruebas y en
@@ -38,11 +39,13 @@ parte online de S-3. Reemplaza el plan anterior de diez facturas, que no cubría
   - la nota de débito 05 `001-001-000000100`, costos posteriores sobre la 301;
   - la guía de remisión 06 `001-001-000000100`, transporte propio con sustento en la 301;
   - la liquidación de compra 03 `001-001-000000100`, caso c) del art. 13 con
-    `TEST_PURCHASE_SETTLEMENT_SUPPLIER`, sustento previsto de la 07.
+    `TEST_PURCHASE_SETTLEMENT_SUPPLIER`, sustento de la 07;
+  - el comprobante de retención 07 `001-001-000000100` sobre esa 03: renta 311 y la retención del
+    100 % del IVA.
 
   Al terminar cada sesión, la transmisión volvió a `SRI_TRANSMISSION_ENABLED=0`.
-- Los siguientes secuenciales en Pruebas: 01 `302`, 03 `101`, 04 `101`, 05 `101`, 06 `101`; 07
-  empieza en `100`. Producción nunca se contacta.
+- Los siguientes secuenciales en Pruebas: 01 `302`; 03, 04, 05, 06 y 07 `101`. No se envía ningún
+  documento más. Producción nunca se contacta.
 
 ## 1. Compuertas
 
@@ -646,6 +649,16 @@ simulado (`improve-sri-transport-failure-diagnostics`).
   - la aplicación escribió 13 649 bytes y no leyó ninguno.
 
   La recuperación fue la misma.
+- **En la retención 07 reapareció (6 de 7)**, con la misma firma:
+  - el primer túnel conectó en 36 ms y recibió los 3 093 bytes del vuelo TLS;
+  - envió la solicitud completa, 15 889 bytes;
+  - el destino reseteó (`ECONNRESET`) 4 016 ms después del último byte del cliente, sin responder;
+  - la aplicación escribió 14 125 bytes y no leyó ninguno.
+
+  La recuperación fue la misma. Cierre de la certificación: la anomalía apareció en 6 de los 7
+  primeros envíos, siempre con el mismo plazo de unos 4 s y sin respuesta. La recuperación de la
+  aplicación (`SEND_UNKNOWN`, reconciliación de la misma clave y reenvío del mismo XML) llevó los
+  seis a `AUTHORIZED` sin secuenciales nuevos ni duplicados. La causa sigue sin conocerse.
 
 ## 10. Condiciones de parada
 
@@ -715,10 +728,10 @@ archivo de entorno.
 | 2026-10-11 | `bb9c18e` | 05 (costos posteriores) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Sobre la 301; sin efecto en el inventario ni en la capacidad de crédito. El mismo patrón del primer envío. Detalle debajo |
 | 2026-10-11 | `7612887` | 06 (transporte propio) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes | Sustento la 301; una unidad del bien, sin movimiento de inventario. Camino feliz: el primer túnel respondió sin la anomalía. Detalle debajo |
 | 2026-10-11 | `d26317c` | 03 (caso c) del art. 13) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Proveedor `TEST_PURCHASE_SETTLEMENT_SUPPLIER`; un servicio, sin movimiento de inventario y sin crear la 07. Reapareció el patrón del primer envío. Detalle debajo |
-| Pendiente | | 07 | | | | |
+| 2026-10-11 | `24db98e` | 07 (renta e IVA sobre la 03) | `001-001-000000100` | `AUTHORIZED` | Recepción y Autorización sin mensajes; en la reconciliación, ConsultaComprobante respondió el identificador 99 | Sustento la liquidación 03 `001-001-000000100`, código de sustento 01, sin parte relacionada; renta 311 al 3 % y el 100 % del IVA. Reapareció el patrón del primer envío. Detalle debajo |
 
-Con los seis tipos en `AUTHORIZED`, S-3 online y AC-03 pasan a cumplidos aquí y en
-`docs/product/open-questions.md`.
+Con los seis tipos en `AUTHORIZED` desde el 2026-10-11, S-3 online y AC-03 quedan cumplidos aquí y
+en `docs/product/open-questions.md`.
 
 ### 2026-10-10 · 01 consumidor final `001-001-000000300`
 
@@ -1045,6 +1058,85 @@ Commit `d26317c`, ambiente `TEST`, esquema `1.1.0`.
   - No se creó ninguna retención 07, ni borrador ni documento.
 - **Cierre.** `rollback` dio `ROLLED_BACK`, sin procesos de la sesión, y la transmisión volvió a
   `0`. El siguiente secuencial 03 es `101`.
+
+### 2026-10-11 · 07 comprobante de retención `001-001-000000100`
+
+Commit `24db98e`, ambiente `TEST`, esquema `2.0.0`.
+- Sujeto retenido `TEST_PURCHASE_SETTLEMENT_SUPPLIER`, el proveedor de la 03.
+- Parte relacionada `NO`: una declaración sintética, solo de este escenario de Pruebas.
+- Período fiscal `10/2026`, propuesto por el servidor.
+- Un documento sustento: la liquidación de compra 03 `001-001-000000100` `AUTHORIZED`, con su
+  número de autorización.
+  - Sus datos se leyeron de la 03 autorizada en la aplicación, no se transcribieron a mano. El
+    producto trata el sustento como una referencia declarada por el usuario (design D6).
+  - Código de sustento `01`: crédito tributario para la declaración del IVA, servicios y bienes
+    distintos de inventarios y activos fijos. Es el escenario elegido, no una regla para toda
+    liquidación.
+  - Total sin impuestos 150,00, IVA `2:4` del 15 % por 22,50, importe total 172,50 y un pago `01`
+    por 172,50.
+- **Retenciones**, calculadas por el servidor:
+
+  | Impuesto | Código | Porcentaje | Base | Retenido | Fuente |
+  | --- | --- | --- | --- | --- | --- |
+  | Renta | 311, pagos a través de liquidación de compra (nivel cultural o rusticidad) | 3 % | 150,00 | 4,50 | Porcentaje: Resolución NAC-DGERCGC26-00000009, art. 2, num. 5, lit. f). Base: RALRTI, art. 111 |
+  | IVA | 3, retención del IVA 100 % | 100 % | 22,50 | 22,50 | Resolución NAC-DGERCGC20-00000061, art. 4, lit. c), num. iii |
+
+  Total retenido: 27,00. Sin ISD.
+
+  La base de renta deja fuera el IVA. El RALRTI, art. 111 (publicación oficial del SRI, identificado
+  por el dueño), retiene solo sobre el valor del bien o servicio, sin los impuestos indirectos
+  (IVA, ICE) cuando están discriminados, como el IVA de la 03. La resolución fija el 3 % del caso de
+  rusticidad, sujeta a las reglas específicas de la Ley y su Reglamento. El extracto
+  `sri-catalogs/fuentes/normativa-liquidacion-retenciones.txt` no transcribe el art. 111. El producto
+  no deriva la base: la escribe el usuario (spec «Base de la retención»).
+
+- **Antes de la red.**
+  - XSD `ComprobanteRetencion_V2.0.0` en `PASS`. Firma XAdES-BES válida, con sus tres referencias.
+  - Clave de acceso con el dígito verificador correcto, ambiente `1`, tipo `07` y secuencial
+    `000000100`.
+  - El sustento, el sujeto, las retenciones y el pago coinciden con la 03 y con los datos locales.
+  - Tamaños: XML firmado 10 144 bytes, base64 13 528 y SOAP 13 808.
+- **Estados**, en UTC:
+
+  | De | A | Instante |
+  | --- | --- | --- |
+  | — | `RESERVED` | 17:11:17.225 |
+  | `RESERVED` | `SIGNED` | 17:11:18.251 |
+  | `SIGNED` | `SEND_UNKNOWN` | 17:12:23.262 |
+  | `SEND_UNKNOWN` | `RECEIVED` | 17:12:25.762 |
+  | `RECEIVED` | `AUTHORIZED` | 17:12:31.173 |
+
+- **Intentos**, todos contra `celcer.sri.gob.ec` en `TEST`:
+
+  | # | Operación | Transporte | Duración | Resultado (`classifier_version`) | SHA-256 del sobre | SHA-256 de la respuesta |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | Recepción | Conexión perdida (`UND_ERR_SOCKET`), sin cabeceras | 4 158 ms | `UNKNOWN` (`reception/1`) | `bddec96a…1d520299` | — |
+  | 2 | Autorización | HTTP 200 | 2 078 ms | `KEY_UNKNOWN`: cero comprobantes (`authorization/1`) | `67592a89…9ddf3b3a` | `5e4f88c7…d9715416` |
+  | 3 | ConsultaComprobante | HTTP 200 | 64 ms | `NO_EVIDENCE`: `RECHAZADA`, identificador 99 (`validity/2`) | `a40bf03d…b96a0989` | `6cd36733…b0d4fc21` |
+  | 4 | Recepción | HTTP 200 | 221 ms | `RECEIVED`: `RECIBIDA`, sin mensajes (`reception/1`) | `bddec96a…1d520299` | `3f188de6…9b6f66b2` |
+  | 5 | Autorización | HTTP 200 | 94 ms | `AUTHORIZED`: `AUTORIZADO`, ambiente `PRUEBAS` (`authorization/1`) | `67592a89…9ddf3b3a` | `1f1f941e…98209ff0` |
+
+- **Reconciliación.** La misma recuperación: el mismo sobre en el reenvío, sin un secuencial nuevo
+  ni errores 43, 45 o 70.
+- **Primer túnel.**
+  - La conexión con el destino tardó 36 ms.
+  - Se enviaron 15 889 bytes al destino y llegaron 3 093.
+  - El destino cerró con un reset (`ECONNRESET`) 4 016 ms después del último byte del cliente.
+  - La aplicación escribió 14 125 bytes y no leyó ninguno.
+- **Artefactos.**
+  - `SIGNED_XML` y `AUTHORIZED_XML` son iguales: 10 144 bytes, SHA-256
+    `77ca4d043298019cf786719275552917184c606c7390a06dc19b975180e2b1fa`.
+  - `RIDE_PDF`: 23 919 bytes, SHA-256
+    `e832a4ce580e3a9021eb802def83848eb69e9e04586a3d729f41f7e403bcc73f`.
+- **Efectos.**
+  - Sin movimiento de inventario: sigue en 8.
+  - La 03 sigue `AUTHORIZED` e inmutable, con los mismos artefactos.
+  - La 300, la 301, la 04, la 05 y la 06 siguen `AUTHORIZED` y sin cambios.
+- **Cierre.** `rollback` dio `ROLLED_BACK`, sin procesos de la sesión, y la transmisión volvió a
+  `0`. El siguiente secuencial 07 es `101`.
+
+Con esta retención termina la certificación en Pruebas. No se envía ningún documento más, y
+Producción queda para la compuerta del go-live (sección 15).
 
 ## 14. Cambios del repositorio antes de la primera transmisión real
 
