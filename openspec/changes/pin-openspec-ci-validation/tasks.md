@@ -72,7 +72,7 @@
 
 ## 3. Verificación local y CI de la rama
 
-- [ ] 3.1 Antes de empujar, verificar en local:
+- [x] 3.1 Antes de empujar, verificar en local:
   - las pruebas del envoltorio y de la excepción;
   - `corepack pnpm openspec:validate`;
   - `corepack pnpm security:dependencies` y `corepack pnpm security:secrets` con `PASS`;
