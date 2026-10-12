@@ -85,6 +85,8 @@ de integración SRI de CTX §59:
   - **Capa de aplicación: completa** (2026-10-11, ADR 0025). Next.js es la única autoridad, con un nonce por petición, y la comprobación es `check:web-security-policy`.
   - **HSTS: pendiente en el borde TLS.** Se difiere al hardening del despliegue y del proxy (`../architecture/deployment.md`). La compuerta completa del go-live sigue abierta hasta que ese cambio configure y verifique HSTS.
 - La política de proxy, CORS y CSRF del despliegue real está revisada, incluida la comprobación del `Origin` en `/api/v1` como defensa en profundidad (H-03 de `manual-mvp-test-2026-10-09.md`; no se encontró una vía de CSRF desde un navegador).
+  - **Capa de aplicación: completa** (2026-10-12, `enforce-api-origin-and-body-limits`). Las mutaciones de `/api/v1` exigen el origen canónico de `BETTER_AUTH_URL`, Fetch Metadata rechaza `same-site` y `cross-site`, la API sigue sin CORS y el cuerpo de `/api/auth` queda acotado a 8192 bytes de JSON (spec `api-request-protection`). La comprobación en Chrome es `check:web-security-policy`.
+  - **Techo de cuerpo del proxy: pendiente en el borde.** El proxy que enruta `/api` no puede admitir menos de 4 MiB, con 8 MiB como objetivo (`../architecture/deployment.md`, "Techo de cuerpo del proxy"). Se difiere al hardening del despliegue y del proxy; la compuerta completa del go-live sigue abierta hasta que ese cambio revise la política del proxy real.
 - Los reportes XLSX principales funcionan.
 - Los contratos WSDL de Pruebas y Producción están verificados, y el reloj del servidor está
   sincronizado. Es una verificación de contrato, no de conectividad:

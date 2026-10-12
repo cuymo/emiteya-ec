@@ -169,10 +169,10 @@
 
 ## 5. Verificación y cierre de H-03 en la aplicación
 
-- [ ] 5.1 Ejecutar `corepack pnpm verify` completo y `openspec validate --all --strict`. Si falla
+- [x] 5.1 Ejecutar `corepack pnpm verify` completo y `openspec validate --all --strict`. Si falla
   una prueba inestable ya registrada en `technical-debt.md`, informar el código de salida real y
   aportar la evidencia aislada o de control, sin marcar la tarea como completa.
-- [ ] 5.2 Marcar H-03 como «APPLICATION LAYER COMPLETE» en
+- [x] 5.2 Marcar H-03 como «APPLICATION LAYER COMPLETE» en
   `docs/quality/manual-mvp-test-2026-10-09.md` y en `docs/quality/definition-of-done.md`, con el
   techo de cuerpo del borde diferido al hardening del despliegue. Verificar que
   `corepack pnpm format:check` pasa.

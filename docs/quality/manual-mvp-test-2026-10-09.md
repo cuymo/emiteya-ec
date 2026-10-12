@@ -80,7 +80,7 @@ Notas del entorno:
 | --- | --- | --- | --- | --- |
 | H-01 | MVT-076 | MINOR | Con la ventana baja (por ejemplo 1280×720 en `/facturas`), el último destino de la barra lateral («Portabilidad de datos») quedaba fuera de la ventana y no se podía pulsar. El contenedor fijo de la navegación no se desplazaba. | Corregido en `089835f` (`overflow-y-auto`, prueba en `frontend/test/app-shell.test.tsx`). Reprobado a 1366×768, 1280×720 y 1280×600: PASS |
 | H-02 | MVT-068 | MINOR, `NEEDS_USER_DECISION` | Las páginas del frontend no envían CSP, `X-Frame-Options`, `X-Content-Type-Options` ni `Referrer-Policy`, que pide `docs/security/hardening.md`. La API sí las envía (helmet). Con la cookie `SameSite=Lax`, la sesión no viaja en un iframe entre sitios. | Decidido: compuerta de seguridad del go-live; no se implementa en el MVP. **APPLICATION LAYER COMPLETE** (2026-10-11, `enforce-frontend-security-headers-csp`, ADR 0025): Next.js, única autoridad, envía en cada documento una CSP aplicada con nonce por petición, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y `Cross-Origin-Opener-Policy`. `HSTS STATUS: DEFERRED TO DEPLOYMENT/PROXY HARDENING` |
-| H-03 | MVT-068 | Observación, `NEEDS_USER_DECISION` | `/api/v1` no valida el `Origin` por sí misma: un POST JSON con un Origin ajeno y la cookie inyectada fuera del navegador llega al handler. Desde un navegador no hay vía de CSRF: cookie `SameSite=Lax`, `text/plain` y formularios rechazados con 400, preflight sin CORS e inicio de sesión con Origin ajeno rechazado con 403. | Decidido: defensa en profundidad, a revisar en el go-live con la política de proxy, CORS y CSRF del despliegue real; no se modifica ahora |
+| H-03 | MVT-068 | Observación, `NEEDS_USER_DECISION` | `/api/v1` no valida el `Origin` por sí misma: un POST JSON con un Origin ajeno y la cookie inyectada fuera del navegador llega al handler. Desde un navegador no hay vía de CSRF: cookie `SameSite=Lax`, `text/plain` y formularios rechazados con 400, preflight sin CORS e inicio de sesión con Origin ajeno rechazado con 403. | Decidido: defensa en profundidad, a revisar en el go-live con la política de proxy, CORS y CSRF del despliegue real. **APPLICATION LAYER COMPLETE** (2026-10-12, `enforce-api-origin-and-body-limits`): las mutaciones de `/api/v1` exigen el origen canónico de `BETTER_AUTH_URL`, Fetch Metadata rechaza `same-site` y `cross-site`, y el cuerpo de `/api/auth` queda acotado a 8192 bytes de JSON. `PROXY BODY CEILING STATUS: DEFERRED TO DEPLOYMENT/PROXY HARDENING` |
 | H-04 | MVT-011 | COSMETIC | El mismo estado sin permiso tiene dos redacciones: «No tienes acceso a Usuarios» (también en Reportes y Comprobantes) frente a «No tienes permiso para ver esta sección». | Decidido: COSMETIC, no se corrige ahora |
 
 Observaciones que no son defectos:
@@ -113,6 +113,10 @@ Decisiones sobre los hallazgos:
   - Queda HSTS en el proxy que termina TLS: se difiere al hardening del despliegue.
 - H-03: defensa en profundidad, a revisar en el go-live con la política de proxy, CORS y CSRF del
   despliegue real (registrada en `definition-of-done.md`).
+  - **Capa de aplicación completa** el 2026-10-12 (`enforce-api-origin-and-body-limits`): origen
+    canónico y Fetch Metadata en `/api/v1`, y cuerpo acotado de `/api/auth`. Verificada en Chrome
+    con `check:web-security-policy`, desde un sitio hermano y desde otro sitio.
+  - Queda el techo de cuerpo del proxy (objetivo de 8 MiB): se difiere al hardening del despliegue.
 - H-04: COSMETIC, sin corrección por ahora.
 
 ## Pendientes
