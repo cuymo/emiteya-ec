@@ -211,9 +211,10 @@ canónico, la lista de orígenes ni la regla que falló.
 ### Requirement: Observabilidad de los rechazos
 Cada rechazo por origen o por Fetch Metadata SHALL emitir un evento de seguridad con el método, una
 categoría gruesa de la ruta, el motivo y la correlación, y SHALL incrementar un contador con solo el
-método y el motivo. Ningún rechazo SHALL registrar la URL con sus identificadores, los valores de
-`Origin` o `Referer`, cuerpos, cookies, contraseñas ni el conjunto de cabeceras, ni crear auditoría
-de dominio.
+método y el motivo. El evento y el contador no SHALL llevar la URL con sus identificadores, los
+valores de `Origin` o `Referer`, cuerpos, cookies, contraseñas ni el conjunto de cabeceras. Ningún
+registro de un rechazo SHALL contener el cuerpo, contraseñas, cookies ni los valores de `Origin` o
+`Referer`, y ningún rechazo SHALL crear auditoría de dominio.
 
 #### Scenario: Evento de un rechazo
 - **WHEN** el sistema rechaza una solicitud de impresión de un comprobante por su origen
