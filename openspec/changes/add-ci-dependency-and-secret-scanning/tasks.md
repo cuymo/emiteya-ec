@@ -170,7 +170,7 @@
 
 ## 4. Verificación local y CI de la rama
 
-- [ ] 4.1 Antes de empujar, verificar en local:
+- [x] 4.1 Antes de empujar, verificar en local:
   - las pruebas dirigidas: la política de dependencias, las excepciones, el instalador y su suma, el
     comprobador de secretos, las reglas y la seguridad del escaneo local;
   - `corepack pnpm format:check`, `openspec validate --all --strict` y `corepack pnpm verify`;
