@@ -162,18 +162,49 @@ describe("adaptador acotado de Better Auth", () => {
     }
   });
 
-  it("un cuerpo comprimido llega descomprimido y sin content-encoding, y su tamaño real cuenta", async () => {
+  it("no reenvía el Content-Length del mensaje recibido: el cuerpo reconstruido define su tamaño", async () => {
     const server = await adapterServer();
     try {
       const json = '{"email":"operador@ejemplo.test"}';
+      await server.send({
+        path: "/api/auth/sign-in/email",
+        headers: {
+          "content-type": "application/json",
+          "content-length": String(Buffer.byteLength(json)),
+        },
+        body: json,
+      });
+      const [request] = server.received;
+      expect(request!.headers).not.toHaveProperty("content-length");
+      expect(request!.headers).not.toHaveProperty("transfer-encoding");
+      expect(request!.body?.toString()).toBe(json);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("un cuerpo comprimido llega descomprimido, sin el Content-Length ni el content-encoding del mensaje, y su tamaño real cuenta", async () => {
+    const server = await adapterServer();
+    try {
+      const json = `{"email":"operador@ejemplo.test","relleno":"${"x".repeat(500)}"}`;
+      const compressed = gzipSync(json);
+      // El Content-Length recibido describe los bytes comprimidos, no el cuerpo que recibe Better Auth.
+      expect(compressed.length).not.toBe(Buffer.byteLength(json));
       const res = await server.send({
         path: "/api/auth/sign-in/email",
-        headers: { "content-type": "application/json", "content-encoding": "gzip" },
-        body: gzipSync(json),
+        headers: {
+          "content-type": "application/json",
+          "content-encoding": "gzip",
+          "content-length": String(compressed.length),
+        },
+        body: compressed,
       });
       expect(res.status).toBe(200);
-      expect(server.received[0]!.body?.toString()).toBe(json);
-      expect(server.received[0]!.headers).not.toHaveProperty("content-encoding");
+      const [request] = server.received;
+      expect(request!.body?.toString()).toBe(json);
+      for (const name of ["content-length", "content-encoding", "transfer-encoding"]) {
+        expect(request!.headers, name).not.toHaveProperty(name);
+      }
 
       const bomb = gzipSync(`{"relleno":"${"x".repeat(20_000)}"}`);
       expect(bomb.length).toBeLessThan(8192);
