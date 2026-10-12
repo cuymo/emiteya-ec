@@ -91,7 +91,7 @@
 
 ## 2. Cuerpo acotado de Better Auth
 
-- [ ] 2.1 En `backend/src/modules/identity/infrastructure/better-auth/http.ts`, sustituir
+- [x] 2.1 En `backend/src/modules/identity/infrastructure/better-auth/http.ts`, sustituir
   `toNodeHandler(auth)` por el adaptador acotado (design D6):
   1. 415 `UNSUPPORTED_MEDIA_TYPE` si la petición declara un cuerpo que no es `application/json`,
      sin leerlo;
@@ -120,7 +120,7 @@
   Verificar también que las pruebas de contrato de Better Auth (`better-auth-contract.test.ts`) y
   las de `auth-harness` siguen en verde: inicio y cierre de sesión, cambio de contraseña, límite de
   intentos, allowlist y cookies.
-- [ ] 2.2 Crear `backend/test/integration/auth-body-limits.test.ts` sobre `buildAuthApp`, con un
+- [x] 2.2 Crear `backend/test/integration/auth-body-limits.test.ts` sobre `buildAuthApp`, con un
   cliente HTTP de Node crudo para controlar `Content-Length` y `chunked`:
   - **Funciona igual:** el inicio de sesión normal en JSON, el cierre de sesión con `{}` y el
     cambio de contraseña.
@@ -138,7 +138,7 @@
   Si Node rechaza un encuadre malformado antes del código de la aplicación, documentarlo como
   frontera de transporte, sin pruebas que reinterpreten el flujo crudo (design D6). Verificar que
   el archivo pasa.
-- [ ] 2.3 En una prueba end-to-end con `startE2eBackend`, donde la defensa propia de Better Auth
+- [x] 2.3 En una prueba end-to-end con `startE2eBackend`, donde la defensa propia de Better Auth
   está activa, comprobar:
   - un inicio de sesión con `Origin` ajeno sigue recibiendo el 403 de Better Auth;
   - un inicio de sesión de más de 8192 bytes recibe 413.

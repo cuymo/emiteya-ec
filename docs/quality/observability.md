@@ -45,6 +45,7 @@ El proyecto separa dos conceptos que la plantilla agrupa:
   - No lleva el `Origin` ni el `Referer` recibidos, las cookies, el cuerpo, otras cabeceras ni la IP, y no crea auditoría.
   - El contador `http_request_origin_rejections_total` solo tiene las etiquetas `method` y `reason`, para mantener baja la cardinalidad.
   - El log de petición de `pino-http` de un rechazo es el mismo que el de cualquier otra petición: método, URL y estado.
+- **Rechazos del cuerpo de `/api/auth`** (`413` y `415`): solo aparecen en el log de petición de `pino-http`, con el método, la URL y el estado, sin el cuerpo ni las cabeceras. No son eventos de seguridad propios.
 
 ## Transmisión al SRI
 

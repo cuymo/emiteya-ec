@@ -94,7 +94,8 @@ export function buildAuthApp(
       onRejected: (rejection) =>
         securityEvents.emit({ type: "request_origin_rejected", ...rejection }),
     },
-    mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
+    mountBeforeBodyParser: (express) =>
+      mountAuth(express, auth, { origin: TEST_ORIGIN, securityEvents }),
     ...(options.jsonBodyExceptions ? { jsonBodyExceptions: options.jsonBodyExceptions } : {}),
     ...(options.apiRouter
       ? { apiRouter: options.apiRouter({ auth, uow, securityEvents, memberships, context }) }

@@ -164,14 +164,18 @@ ninguna cabecera `Access-Control-*`.
      `Content-Length: 0`.
    - Un cuerpo `chunked` vacío y sin tipo de contenido cuenta como declarado. Ningún cliente actual
      lo envía: el cierre de sesión manda `{}` en JSON.
-2. **Lectura acotada.** `express.raw({ type: "application/json", limit: 8192 })`, que usa
-   `raw-body`, como el logo:
-   - **Con `Content-Length` mayor que 8192:** rechaza sin leer nada.
-   - **En modo `chunked` o sin `Content-Length`:** cuenta los bytes que Node entrega para esta
-     petición, y al pasar de 8192 deja de leer y falla con `entity.too.large`.
+2. **Lectura acotada.**
+   - **Con `Content-Length` mayor que 8192:** el adaptador responde 413 al ver la cabecera, sin leer
+     nada. El parser de Express no basta para este caso: detecta el exceso sin acumular, pero
+     descarta el cuerpo entero antes de informar el error, y el cliente tendría que terminar de
+     enviarlo para recibir la respuesta (corrección durante la implementación).
+   - **En modo `chunked` o sin `Content-Length`:** `express.raw({ type: "application/json", limit:
+     8192 })`, que usa `raw-body`, como el logo, cuenta los bytes que Node entrega para esta
+     petición. Al pasar de 8192 deja de acumular, descarta el resto y falla con
+     `entity.too.large`.
 
-   El manejador de errores lo convierte en el 413 `PAYLOAD_TOO_LARGE` de la API. La memoria queda
-   acotada al límite más un fragmento del flujo.
+   El manejador de errores convierte ambos casos en el 413 `PAYLOAD_TOO_LARGE` de la API. La
+   memoria queda acotada al límite más un fragmento del flujo.
 
    **Frontera del encuadre HTTP (revisión).** La aplicación controla el cuerpo tal como Node lo
    analiza y lo entrega.
@@ -191,7 +195,8 @@ ninguna cabecera `Access-Control-*`.
    - **Cabeceras:** las de Node, sin las de salto a salto ni las de encuadre. Se descartan
      `connection`, `keep-alive`, `transfer-encoding`, `te`, `trailer`, `upgrade`,
      `proxy-authorization`, `proxy-authenticate` y `content-length`, que el `Request` recalcula,
-     además de cualquier cabecera que nombre `Connection`. Se conservan la cookie, `Origin`,
+     además de cualquier cabecera que nombre `Connection`. También `content-encoding`, porque el
+     parser entrega el cuerpo ya descomprimido, y el límite cuenta esos bytes. Se conservan la cookie, `Origin`,
      `Referer`, `Sec-Fetch-*`, `Accept`, `User-Agent`, `Content-Type` y la IP que escribe el
      servidor, y las demás cabeceras de aplicación pasan como hoy.
    - **Cuerpo:** el `Buffer`, o ninguno si está vacío.

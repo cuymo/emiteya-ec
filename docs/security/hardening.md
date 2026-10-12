@@ -83,6 +83,9 @@ requisitos están en la spec `api-request-protection`.
 - **Antes del cuerpo y de la sesión.** La guarda corre antes del parser JSON
   (`../architecture/backend.md`), y su 403 no revela el origen esperado.
 - **Sin CORS.** La API no envía cabeceras `Access-Control-Allow-*`.
+- **`/api/auth`.** La guarda no se aplica: Better Auth conserva su propia comprobación de origen y
+  su CSRF. La aplicación solo acota su cuerpo a 8192 bytes y exige JSON en un cuerpo no vacío
+  (`../architecture/authentication.md`, "Adaptador acotado").
 
 ## Secrets
 

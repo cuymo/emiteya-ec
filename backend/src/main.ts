@@ -797,7 +797,8 @@ const app = createApp({
       securityEvents.emit({ type: "request_origin_rejected", ...rejection }),
   },
   apiRouter,
-  mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
+  mountBeforeBodyParser: (express) =>
+    mountAuth(express, auth, { origin: canonicalApiOrigin, securityEvents }),
   // Rutas con su propio parser: la carga de la firma, los borradores de guía (2 MiB, design D23 de
   // add-shipping-guides) y los de liquidación de compra (4 MiB, design D22 de add-purchase-settlements).
   jsonBodyExceptions: (req) =>
