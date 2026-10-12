@@ -1,0 +1,90 @@
+# Gitleaks del proyecto (add-ci-dependency-and-secret-scanning, design D6). Extiende las reglas por
+# defecto de la versión fijada en security/gitleaks.json y añade reglas acotadas del proyecto. Sin
+# exclusiones de directorios: las allowlists solo admiten valores ya marcados como sintéticos o como
+# ejemplos documentados. Las reglas por ruta no se suprimen nunca (scripts/check-secret-security.ts).
+title = "facturadorsri-opensource"
+
+[extend]
+useDefault = true
+
+# --- Archivos que nunca se versionan ----------------------------------------------------------------
+
+[[rules]]
+id = "project-pkcs12-file"
+description = "Archivo PKCS#12 (.p12 o .pfx) versionado"
+path = '''(?i)\.(p12|pfx)$'''
+
+[[rules]]
+id = "project-local-secrets-file"
+description = "Archivo de secretos local versionado"
+path = '''(?i)(^|/)archivosensible\.env$'''
+
+[[rules]]
+id = "project-env-file"
+description = "Archivo .env real versionado; solo se versionan los .env.example"
+path = '''(^|/)\.env(\.[^/]+)?$'''
+[[rules.allowlists]]
+paths = ['''(^|/)\.env\.example$''']
+
+# --- Contenido ----------------------------------------------------------------------------------------
+
+[[rules]]
+id = "project-certificate-master-key"
+description = "Clave maestra de la custodia de firmas (32 bytes en base64)"
+regex = '''CERTIFICATE_MASTER_KEY["']?\s*[:=]\s*["']?([A-Za-z0-9+/]{43}=)'''
+secretGroup = 1
+keywords = ["certificate_master_key"]
+[[rules.allowlists]]
+description = "La clave de ejemplo documentada, que la API rechaza en producción"
+regexes = ['''^ZGVzYXJyb2xsby1sb2NhbC1uby11c2FyLWVuLXByb2Q=$''']
+
+[[rules]]
+id = "project-better-auth-secret"
+description = "Secreto de Better Auth configurado"
+regex = '''BETTER_AUTH_SECRET["']?\s*[:=]\s*["'`]?([^\s"'`$]{32,})'''
+secretGroup = 1
+keywords = ["better_auth_secret"]
+[[rules.allowlists]]
+description = "El secreto de ejemplo documentado, que la API rechaza en producción"
+regexes = ['''^desarrollo\-local\-solo\-para\-pruebas\-no\-usar\-en\-produccion$''']
+[[rules.allowlists]]
+description = "Valores marcados como de pruebas o solo de CI"
+stopwords = ["secreto-de-pruebas", "ci-solo-para-verificacion"]
+
+[[rules]]
+id = "project-postgres-url-password"
+description = "URL de PostgreSQL con una contraseña incrustada"
+regex = '''postgres(?:ql)?://[^:/@\s"'`]+:([^@\s"'`]{8,})@[^\s"'`]+'''
+secretGroup = 1
+keywords = ["postgres://", "postgresql://"]
+[[rules.allowlists]]
+description = "La credencial de la base local de desarrollo de compose.yaml y de la CI"
+regexes = ['''^facturador$''']
+
+# --- Falsos positivos de las reglas por defecto -------------------------------------------------------
+
+[[allowlists]]
+description = "Valores sintéticos de las pruebas, marcados como tales"
+targetRules = ["generic-api-key"]
+stopwords = [
+  "secreto-de-pruebas",
+  "contrasena-de-prueba",
+  "contrasena-e2e-",
+  "contrasena-nueva",
+  "contrasena-propia-nueva",
+  "nueva-contrasena",
+  "-prueba-",
+  "ci-solo-para-verificacion",
+]
+
+[[allowlists]]
+description = "Los ejemplos documentados, que la API rechaza en producción"
+targetRules = ["generic-api-key"]
+regexTarget = "match"
+regexes = ['''ZGVzYXJyb2xsby1sb2NhbC1uby11c2FyLWVuLXByb2Q=''', '''desarrollo\-local\-solo\-para\-pruebas\-no\-usar\-en\-produccion''']
+
+[[allowlists]]
+description = "Claves de idempotencia: identificadores de petición elegidos por el cliente, no credenciales"
+targetRules = ["generic-api-key"]
+regexTarget = "match"
+regexes = ['''(?i)idempotency[-_]?key''']

@@ -87,6 +87,7 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | Prettier | 3.9.9 | |
 | Vitest | 5.0.3 | |
 | playwright-core | 1.64.0, versión exacta, solo desarrollo | Comprobación del build en un navegador real (`check:web-security-policy`, ADR 0025). Lanza el Chrome del sistema y no descarga navegadores. Apache-2.0, sin dependencias transitivas. |
+| Gitleaks | 8.30.1, binario oficial `gitleaks_8.30.1_linux_x64.tar.gz`, SHA-256 `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`; solo CI y desarrollo, fuera de npm (MIT) | Escaneo de secretos (`security:secrets`, ADR 0026). Fijado en `security/gitleaks.json`, con la fuente `https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1`; la CI lo instala con `scripts/security/install-gitleaks.sh`, que comprueba la suma antes de extraerlo o ejecutarlo. En local se exige exactamente esta versión. Actualizarlo es un cambio revisado. |
 | Express | 5.2.1 | Validada por S-1. |
 | Zod | 4.6.5 | Misma major que Better Auth. |
 | Prisma / @prisma/client / @prisma/adapter-pg | 7.10.0 | Generador `prisma-client`. |

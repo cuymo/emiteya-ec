@@ -59,7 +59,7 @@
 
 ## 2. Seguridad de los secretos
 
-- [ ] 2.1 Fijar Gitleaks y crear su instalador (design D4):
+- [x] 2.1 Fijar Gitleaks y crear su instalador (design D4):
   - **Fijación:** desde la release oficial vigente de `github.com/gitleaks/gitleaks`, descargar el
     artefacto de Linux x64 a un temporal fuera del repositorio. Calcular su SHA-256 y compararlo con
     el archivo de sumas de la release. Registrar la versión, el artefacto, la suma y la URL en
@@ -74,7 +74,7 @@
   - la prueba del instalador (proyecto `scripts`), con un servidor HTTP local y un artefacto falso
     que deja una marca si se ejecuta: con una suma incorrecta sale con error e imprime `ERROR` sin
     binario ni marca, y con la correcta extrae y comprueba la versión.
-- [ ] 2.2 Crear `.gitleaks.toml` (design D6):
+- [x] 2.2 Crear `.gitleaks.toml` (design D6):
   - **Defaults:** extiende las reglas por defecto con la directiva documentada de la versión fijada,
     sin suponerla.
   - **Reglas por ruta:** `*.p12`, `*.pfx`, `archivosensible.env` y `.env` o `.env.*`, salvo los
@@ -89,7 +89,7 @@
   nada. Informar la regla, la categoría, el commit y la clasificación, sin el valor.
 
   Verificar que el historial da cero hallazgos tras el ajuste, y anotar el número de supresiones.
-- [ ] 2.3 Crear `scripts/check-secret-security.ts` (design D5 y D6):
+- [x] 2.3 Crear `scripts/check-secret-security.ts` (design D5 y D6):
   - **Versión:** exige la versión exacta de `security/gitleaks.json`. Si falta o es otra, falla con
     una instrucción segura y nunca descarga.
   - **En local:** el historial confirmado y los cambios preparados, nunca el directorio de trabajo
@@ -112,7 +112,7 @@
   - **Versión local:** sin binario o con otra versión, falla.
   - **Alcance:** los argumentos nunca escanean el directorio de trabajo.
   - **Supresiones:** una huella de una regla por ruta en `.gitleaksignore` falla.
-- [ ] 2.4 Crear `scripts/security/gitleaks-rules.test.ts`, con su configuración de Vitest y el
+- [x] 2.4 Crear `scripts/security/gitleaks-rules.test.ts`, con su configuración de Vitest y el
   script `test:secret-rules` (design D7). Corre contra el binario fijado sobre repositorios git
   temporales fuera del proyecto y nunca empuja nada. Cubre:
   - **Detectados:** una credencial sintética de una regla por defecto, la clave maestra, el secreto
@@ -123,11 +123,11 @@
   - **Salida:** la del comprobador no contiene ningún valor sintético.
 
   Verificar que `corepack pnpm test:secret-rules` pasa en local con la versión fijada.
-- [ ] 2.5 Añadir al `.gitignore` versionado `*.p12`, `*.pfx` y `archivosensible.env`, sin cambiar
+- [x] 2.5 Añadir al `.gitignore` versionado `*.p12`, `*.pfx` y `archivosensible.env`, sin cambiar
   las reglas `.env`, `.env.*` ni `!.env.example` (design D9). Verificar:
   - `git check-ignore` confirma los tres patrones, y `backend/.env.example` sigue versionado;
   - ningún archivo sensible entra en el índice.
-- [ ] 2.6 Documentar el grupo:
+- [x] 2.6 Documentar el grupo:
   - **`docs/security/hardening.md`:** las reglas del proyecto, lo que no se trata como secreto, la
     salida redactada y la respuesta ante un hallazgo (design D10: contener, rotar o revocar, evaluar
     y reescribir el historial solo con autorización explícita).

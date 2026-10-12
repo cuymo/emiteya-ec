@@ -92,6 +92,53 @@ requisitos están en la spec `api-request-protection`.
 - Never in code, logs, error messages, client bundles, or version control.
 - Only variables explicitly intended to be public may reach the browser.
 - A leaked secret is rotated, not merely deleted in a later commit.
+
+### Escaneo de secretos en este proyecto
+
+`corepack pnpm security:secrets` (`scripts/check-secret-security.ts`) ejecuta Gitleaks, fijado por
+versión y SHA-256 en `security/gitleaks.json`, y corre en la CI en el workflow de seguridad
+(`add-ci-dependency-and-secret-scanning`).
+
+- **Reglas:** las de Gitleaks por defecto (`[extend] useDefault = true` en `.gitleaks.toml`) más las
+  del proyecto:
+  - **por ruta:** `*.p12`, `*.pfx`, `archivosensible.env` y los `.env` reales (no los
+    `.env.example`);
+  - **por contenido:** la clave maestra de la custodia, el secreto de Better Auth y las URL de
+    PostgreSQL con una contraseña;
+  - **las claves privadas PEM**, con la regla por defecto.
+- **Lo que no se trata como secreto:** las claves de acceso del SRI, los identificadores fiscales,
+  los números de autorización, las firmas XML ni los certificados públicos. Ninguna regla los marca
+  solo por largos.
+- **Archivos binarios y vacíos.** Gitleaks no informa las reglas por ruta de estos archivos en modo
+  git, y un PKCS#12 real es binario. El comprobador revisa además, solo con git, cada ruta del
+  historial y del índice preparado con las mismas reglas.
+- **Alcance:** solo datos de git.
+  - En la CI, el historial alcanzable desde el commit del evento.
+  - En local, además, lo preparado para el commit.
+  - Nunca el directorio de trabajo, así que no lee archivos sin versionar como `archivosensible.env`
+    ni nada fuera del repositorio.
+- **Falsos positivos:**
+  - **Allowlists acotadas:** solo para valores ya marcados como de pruebas o solo de CI, los ejemplos
+    documentados que la API rechaza en producción, la credencial de la base local de desarrollo y
+    las claves de idempotencia.
+  - **Huellas:** lo que quede se suprime en `.gitleaksignore`, con un comentario.
+  - **Lo que no se suprime:** las reglas por ruta. Los comentarios `gitleaks:allow` tampoco
+    suprimen nada.
+  - **Sin exclusiones** de directorios, de pruebas ni de documentos.
+- **Salida redactada:** solo la regla, el archivo, la línea, el commit corto y un identificador
+  opaco.
+  - Nunca el valor, el campo `Match`, la huella cruda ni el autor del commit.
+  - Para un archivo prohibido, solo la categoría y el directorio, porque el nombre podría contener
+    la identidad de un contribuyente.
+  - El informe de Gitleaks es temporal y se borra siempre. No hay SARIF ni artefactos.
+- **Respuesta ante un hallazgo real:**
+  1. contener;
+  2. rotar o revocar el secreto donde aplique;
+  3. evaluar la exposición;
+  4. decidir aparte si conviene reescribir el historial.
+
+  Reescribirlo, o forzar un push, exige autorización explícita del dueño. Encontrar un secreto no
+  autoriza a modificar el historial publicado, ni a imprimir o mover el valor por la automatización.
 - Keep production credentials at least privilege after provisioning.
 
 ## File Handling

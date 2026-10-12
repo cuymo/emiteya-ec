@@ -247,6 +247,23 @@ Añade:
 **Lo que no es un secreto:** claves de acceso del SRI, certificados públicos, firmas XML ni
 identificadores fiscales. Ninguna regla los marca solo por largos.
 
+**Comprobación de rutas complementaria (medida durante la implementación).** Gitleaks 8.30.1, en
+modo git, no informa una regla por ruta para un archivo binario ni vacío. Lo hace solo para uno de
+texto, porque `git log -p` no trae líneas de esos archivos.
+
+Un PKCS#12 real es binario. Por eso el comprobador lista además, solo con git, cada ruta añadida o
+modificada en el historial escaneado (y en el índice preparado, en local) y le aplica las mismas
+reglas por ruta. Es la capa complementaria de patrones que la readiness admitía junto al escáner,
+no en su lugar. Una prueba comprueba que sus patrones son los mismos de `.gitleaks.toml`.
+
+**Lo que se mide al implementar:**
+- **Hallazgos por ruta:** se reconocen por la línea 0, además de por su regla, y nunca muestran el
+  nombre del archivo.
+- **El campo `Match` redactado sigue mostrando el nombre del archivo**, intercalado con `REDACTED`.
+  Por eso nunca se imprime.
+- **Comentarios `gitleaks:allow`:** Gitleaks los respeta por defecto, y una supresión en línea no es
+  revisable. Las ejecuciones usan `--ignore-gitleaks-allow`.
+
 **Falsos positivos:**
 - **Allowlists acotadas por valor:** solo para los marcadores que ya identifican un valor como
   sintético. Por ejemplo, el secreto y la clave maestra de ejemplo documentados (que producción

@@ -16,6 +16,12 @@ backend/src/generated/
 .env.*
 !.env.example
 
+# Material sensible: firmas electrónicas y el archivo de secretos local, nunca versionados
+# (add-ci-dependency-and-secret-scanning; el escaneo de secretos también los rechaza)
+*.[pP]12
+*.[pP][fF][xX]
+archivosensible.env
+
 # Pruebas y cobertura
 coverage/
 .vitest/

@@ -137,6 +137,21 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
     con una copia del archivo de excepciones sin una entrada (`FAIL`) o con un `expires` pasado
     (`FAIL`).
   - **Un `ERROR` de la fuente:** las mismas pruebas, con una salida vacía o no JSON.
+- **Seguridad de los secretos:** `corepack pnpm security:secrets`.
+  - **Gitleaks local:** exige exactamente la versión de `security/gitleaks.json`, y falla si falta o
+    es otra. Se instala desde el artefacto oficial de esa release, comprobando su SHA-256; el
+    comando nunca lo descarga.
+  - **Alcance:** revisa el historial de HEAD y lo preparado para el commit, nunca el directorio de
+    trabajo.
+  - **Pruebas de las reglas:** `corepack pnpm test:secret-rules` las ejecuta contra el binario fijado
+    (`GITLEAKS_BIN` o el `PATH`).
+  - **Reproducir un hallazgo** sin secretos reales: esas pruebas crean repositorios git temporales
+    con valores sintéticos generados al vuelo, y nunca empujan nada. Para probarlo a mano, crear
+    fuera del proyecto un repositorio con un valor sintético, copiar `.gitleaks.toml` y
+    `security/gitleaks.json`, y ejecutar `node <proyecto>/scripts/check-secret-security.ts --ci`
+    desde ese repositorio.
+  - **El instalador de la CI** (`scripts/security/install-gitleaks.sh`) tiene su prueba en el
+    proyecto `scripts`: con una suma incorrecta no extrae ni ejecuta nada y termina en `ERROR`.
 - Rendimiento de la búsqueda: `corepack pnpm --filter @facturador/backend bench:search` es un gate dedicado, fuera de `test` y de `verify`, para que la carga de un runner compartido no lo vuelva inestable. Se ejecuta sobre una PostgreSQL 17 sin carga ajena y escribe el entorno, los tiempos y los planes de consulta en `docs/quality/benchmarks/` (`performance.md`). La suite normal comprueba el comportamiento, los índices (`migrations.test.ts`) y los planes de las búsquedas por prefijo (`search-plans.test.ts`).
 
 ## Test Data
