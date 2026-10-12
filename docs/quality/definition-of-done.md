@@ -86,7 +86,17 @@ de integración SRI de CTX §59:
   - **HSTS: pendiente en el borde TLS.** Se difiere al hardening del despliegue y del proxy (`../architecture/deployment.md`). La compuerta completa del go-live sigue abierta hasta que ese cambio configure y verifique HSTS.
 - La política de proxy, CORS y CSRF del despliegue real está revisada, incluida la comprobación del `Origin` en `/api/v1` como defensa en profundidad (H-03 de `manual-mvp-test-2026-10-09.md`; no se encontró una vía de CSRF desde un navegador).
 - Los reportes XLSX principales funcionan.
-- Los WSDL de Pruebas y Producción están verificados, y el reloj del servidor está sincronizado.
+- Los contratos WSDL de Pruebas y Producción están verificados, y el reloj del servidor está
+  sincronizado. Es una verificación de contrato, no de conectividad:
+  - **Pruebas:** contra los artefactos oficiales registrados en `docs/product/sri-wsdl/`, con su
+    SHA-256, y la evidencia de la certificación en Pruebas (`sri-certification.md`).
+  - **Producción:** solo offline, contra la documentación y los artefactos oficiales que publica el
+    SRI (servicio, host, ruta y versión). La implementación debe ser coherente con ese contrato.
+  - **Sin red contra Producción.** La verificación offline no incluye consultas DNS, conexiones TCP,
+    peticiones HTTP, SOAP, descarga del WSDL en vivo, pruebas de conectividad, pruebas de humo ni
+    verificación de credenciales.
+  - La conectividad real con Producción queda fuera del alcance del proyecto, y la prohibición de
+    contactar Producción no cambia.
 - Las reglas de consumidor final vigentes y el Anexo 26 están revisados (Q-37), y los casos especiales no soportados están bloqueados.
 - La matriz normativa está revisada contra la ficha vigente.
 - El README cubre instalación, configuración, actualización y respaldo.
