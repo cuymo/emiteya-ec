@@ -4,7 +4,18 @@ import { fileURLToPath } from "node:url";
 import { apiRoutes, buildOpenApiDocument } from "@facturador/contracts";
 
 const target = fileURLToPath(new URL("../../../docs/generated/openapi.json", import.meta.url));
-const document = buildOpenApiDocument(apiRoutes, { title: "Facturador SRI API", version: "0.0.0" });
+// Regla de origen de la API (enforce-api-origin-and-body-limits), sin el origen configurado.
+const description = [
+  "API de la aplicación, autenticada con la cookie de sesión y sin CORS.",
+  "Toda mutación (POST, PUT, PATCH y DELETE) exige una cabecera Origin igual al origen público de la aplicación.",
+  "Una petición con Sec-Fetch-Site same-site o cross-site recibe 403 en cualquier método salvo OPTIONS.",
+  "Los dos rechazos responden 403 REQUEST_ORIGIN_REJECTED antes de leer el cuerpo y de autenticar.",
+].join(" ");
+const document = buildOpenApiDocument(apiRoutes, {
+  title: "Facturador SRI API",
+  version: "0.0.0",
+  description,
+});
 const content = JSON.stringify(document, null, 2) + "\n";
 
 if (process.argv.includes("--check")) {

@@ -31,7 +31,7 @@ function parameters(location: Location, schema: z.ZodObject | undefined): Parame
 
 export function buildOpenApiDocument(
   routes: readonly RouteDefinition[],
-  info: { title: string; version: string },
+  info: { title: string; version: string; description?: string },
 ) {
   const paths: Record<string, Record<string, unknown>> = {};
   for (const route of routes) {

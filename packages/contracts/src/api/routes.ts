@@ -246,7 +246,11 @@ const schemas = userSchemas();
 const errors = {
   400: { description: "Datos inválidos; el mensaje indica el campo.", schema: errorEnvelopeSchema },
   401: { description: "Sin sesión o sin membresía activa.", schema: errorEnvelopeSchema },
-  403: { description: "El rol no tiene permiso para esta acción.", schema: errorEnvelopeSchema },
+  403: {
+    description:
+      "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
+    schema: errorEnvelopeSchema,
+  },
   404: { description: "El usuario no existe en la empresa.", schema: errorEnvelopeSchema },
   409: { description: "Conflicto con una regla de acceso.", schema: errorEnvelopeSchema },
 };

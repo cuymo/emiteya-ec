@@ -149,7 +149,7 @@
 
 ## 3. Contratos y OpenAPI
 
-- [ ] 3.1 En `packages/contracts/src/api/routes.ts`, ampliar la descripción compartida del 403 con
+- [x] 3.1 En `packages/contracts/src/api/routes.ts`, ampliar la descripción compartida del 403 con
   el rechazo por origen y la descripción general de la API con la regla de origen y Fetch Metadata,
   sin el origen canónico. Regenerar `docs/generated/openapi.json`. Verificar que
   `corepack pnpm openapi:check` pasa.

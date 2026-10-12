@@ -2,7 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Facturador SRI API",
-    "version": "0.0.0"
+    "version": "0.0.0",
+    "description": "API de la aplicación, autenticada con la cookie de sesión y sin CORS. Toda mutación (POST, PUT, PATCH y DELETE) exige una cabecera Origin igual al origen público de la aplicación. Una petición con Sec-Fetch-Site same-site o cross-site recibe 403 en cualquier método salvo OPTIONS. Los dos rechazos responden 403 REQUEST_ORIGIN_REJECTED antes de leer el cuerpo y de autenticar."
   },
   "servers": [
     {
@@ -328,7 +329,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -562,7 +563,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -831,7 +832,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1140,7 +1141,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1384,7 +1385,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1754,7 +1755,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2188,7 +2189,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2588,7 +2589,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2732,7 +2733,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3136,7 +3137,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3597,7 +3598,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3811,7 +3812,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4048,7 +4049,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4334,7 +4335,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4621,7 +4622,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4873,7 +4874,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5178,7 +5179,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5402,7 +5403,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5652,7 +5653,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5908,7 +5909,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6189,7 +6190,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6538,7 +6539,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6843,7 +6844,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7132,7 +7133,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7372,7 +7373,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7559,7 +7560,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7746,7 +7747,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -8109,7 +8110,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -8301,7 +8302,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -8448,7 +8449,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -9251,7 +9252,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -10008,7 +10009,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -10419,7 +10420,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -10737,7 +10738,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -11004,7 +11005,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -11380,7 +11381,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -11751,7 +11752,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -12376,7 +12377,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -12884,7 +12885,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -13107,7 +13108,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -13495,7 +13496,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -14061,7 +14062,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -14593,7 +14594,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -14956,7 +14957,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -15663,7 +15664,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -16260,7 +16261,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -17067,7 +17068,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -17247,7 +17248,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -18805,7 +18806,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -19219,7 +19220,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -19974,7 +19975,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -20354,7 +20355,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -21211,7 +21212,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -22046,7 +22047,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -22521,7 +22522,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -22868,7 +22869,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -23018,7 +23019,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -23208,7 +23209,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -23398,7 +23399,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -23617,7 +23618,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -23875,7 +23876,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -24262,7 +24263,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -24633,7 +24634,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -24836,7 +24837,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -25183,7 +25184,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -25492,7 +25493,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -25949,7 +25950,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -26406,7 +26407,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -26749,7 +26750,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -27077,7 +27078,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -27349,7 +27350,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -27947,7 +27948,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -28520,7 +28521,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -29211,7 +29212,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -29391,7 +29392,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -31134,7 +31135,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -31574,7 +31575,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -31889,7 +31890,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -32764,7 +32765,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -33144,7 +33145,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -34081,7 +34082,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -34996,7 +34997,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -35280,7 +35281,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -35544,7 +35545,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -36161,7 +36162,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -36735,7 +36736,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -37445,7 +37446,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -37625,7 +37626,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -39365,7 +39366,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -39808,7 +39809,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -40642,7 +40643,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -41022,7 +41023,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -41958,7 +41959,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -42872,7 +42873,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -43146,7 +43147,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -43544,7 +43545,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -43801,7 +43802,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -44762,7 +44763,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -45512,7 +45513,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -46573,7 +46574,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -46753,7 +46754,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -48509,7 +48510,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -48931,7 +48932,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -49785,7 +49786,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -50679,7 +50680,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -51059,7 +51060,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -52015,7 +52016,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -52340,7 +52341,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -52581,7 +52582,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -52825,7 +52826,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -53019,7 +53020,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -53320,7 +53321,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -53576,7 +53577,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -54946,7 +54947,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -56014,7 +56015,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -57473,7 +57474,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -57653,7 +57654,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -59618,7 +59619,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -60046,7 +60047,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -60994,7 +60995,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -61982,7 +61983,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -62362,7 +62363,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -63412,7 +63413,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -63744,7 +63745,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -64024,7 +64025,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -64268,7 +64269,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -65229,7 +65230,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -66093,7 +66094,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -67154,7 +67155,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -67374,7 +67375,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -69277,7 +69278,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -69679,7 +69680,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -70592,7 +70593,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -71545,7 +71546,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -71925,7 +71926,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -72940,7 +72941,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -73443,7 +73444,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -73677,7 +73678,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -74154,7 +74155,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -74359,7 +74360,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -74874,7 +74875,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -75089,7 +75090,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -75460,7 +75461,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -75611,7 +75612,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -76050,7 +76051,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -76237,7 +76238,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -76666,7 +76667,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -76845,7 +76846,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -77409,7 +77410,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -77927,7 +77928,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -78330,7 +78331,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
@@ -78480,7 +78481,7 @@
             }
           },
           "403": {
-            "description": "El rol no tiene permiso para esta acción.",
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
             "content": {
               "application/json": {
                 "schema": {
