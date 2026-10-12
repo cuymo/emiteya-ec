@@ -120,11 +120,24 @@ The system SHALL let an authorized member archive an active project.
 ## Setup And Maintenance
 
 The generated skills call `openspec` directly, so every developer installs the CLI on the
-`PATH` with pnpm:
+`PATH` with pnpm, at the version pinned in `package.json`:
 
 ```bash
-corepack pnpm add --global @fission-ai/openspec
+corepack pnpm add --global @fission-ai/openspec@1.14.0
 ```
+
+That global CLI serves only the generated agent workflows and `openspec update`. Project
+validation never uses it:
+
+- `corepack pnpm openspec:validate` runs the repository-pinned CLI (`@fission-ai/openspec` 1.14.0,
+  a root dev dependency) with `validate --all --strict`, through `scripts/openspec-validate.ts`.
+  It resolves the package from the repository, not from the `PATH`, prints the version it runs,
+  and disables telemetry (`OPENSPEC_TELEMETRY=0`).
+- `corepack pnpm verify` runs it right after `format:check`, so remote CI enforces strict
+  validation on every push and pull request. A validation failure fails the build; the command
+  never repairs or rewrites OpenSpec files.
+- Upgrading OpenSpec is a reviewed dependency change: bump the dev dependency, review the lockfile
+  and `security:dependencies`, and regenerate the agent files with `openspec update`.
 
 The `verify` workflow is not in OpenSpec's default `core` profile, and the profile is a
 per-machine setting. Every developer enables it once:
@@ -139,7 +152,7 @@ fall outside that developer's profile.
 
 - The `openspec-*` skills in `.agents/skills/`, `.claude/skills/`, and `.github/skills/`, the commands in `.claude/commands/opsx/`, and the prompts in `.github/prompts/` are generated. Never edit them; run `openspec update` after upgrading the CLI.
 - `openspec/config.yaml` is authored. It is injected into every run, so keep it short and point to documents instead of copying them.
-- OpenSpec collects anonymous usage statistics. Opt out with `openspec config set telemetry.enabled false`, or set `OPENSPEC_TELEMETRY=0`.
+- OpenSpec collects anonymous usage statistics. The project validation command disables them; for interactive use, opt out with `openspec config set telemetry.enabled false`, or set `OPENSPEC_TELEMETRY=0`.
 
 ## Custom Schema
 

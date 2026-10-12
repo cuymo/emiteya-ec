@@ -31,7 +31,7 @@
 
 ## 2. Comando canónico de validación
 
-- [ ] 2.1 Crear `scripts/openspec-validate.ts`, solo con módulos de Node (design D2):
+- [x] 2.1 Crear `scripts/openspec-validate.ts`, solo con módulos de Node (design D2):
   - **Resolución:** resuelve el paquete con la resolución de módulos anclada en la raíz y comprueba
     que la versión instalada es la declarada en `package.json`. Si falta o difiere, falla con una
     instrucción.
@@ -55,11 +55,11 @@
     temporales sin tocar los `node_modules` reales.
 
   Verificar también que `corepack pnpm openspec:validate` pasa en el repositorio.
-- [ ] 2.2 Añadir `corepack pnpm openspec:validate` al script `verify`, justo después de
+- [x] 2.2 Añadir `corepack pnpm openspec:validate` al script `verify`, justo después de
   `format:check` y antes de `check:versions`, las pruebas y el build (design D3), sin cambiar
   `verify.yml` ni `security.yml`. Verificar que el diff de `package.json` solo añade la dependencia y
   los dos scripts.
-- [ ] 2.3 Documentar el grupo (design D5 y D6):
+- [x] 2.3 Documentar el grupo (design D5 y D6):
   - **`docs/architecture/bootstrap.md`:** la instalación global fijada en
     `@fission-ai/openspec@1.14.0`, solo para los flujos de agentes y `openspec update`, y el comando
     del proyecto para validar.

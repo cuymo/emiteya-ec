@@ -50,7 +50,7 @@ The kit ships OpenSpec already initialized for Codex, Claude Code, and GitHub Co
 once:
 
 ```bash
-corepack pnpm add --global @fission-ai/openspec
+corepack pnpm add --global @fission-ai/openspec@1.14.0
 openspec config set profile custom
 openspec config set workflows '["propose","explore","apply","update","sync","archive","verify"]'
 openspec update
@@ -59,6 +59,11 @@ openspec update
 `openspec update` regenerates the generated skills for the installed CLI version. To support
 another agent, add it with `openspec init --tools <id>`; existing files stay untouched. See
 `docs/quality/change-lifecycle.md` for the lifecycle.
+
+The global CLI serves only the generated agent workflows and must match the version pinned in
+`package.json`. Project validation uses the repository-pinned CLI instead:
+`corepack pnpm openspec:validate`, also run by `verify` ("Setup And Maintenance" in
+`docs/quality/change-lifecycle.md`).
 
 ## 4. Backend Baseline
 

@@ -126,6 +126,9 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
     informativas.
   - Dura unos 20 segundos en local, e informa sus tiempos por fase.
 - Prueba manual con navegador: `corepack pnpm --filter @facturador/backend sandbox:mvp <estado.json>` arranca `main.ts` real sobre un esquema propio de `facturador_test`, con la transmisión dirigida solo a un SRI simulado local (también los endpoints de Producción) a través de un proxy que rechaza cualquier otro host, P12 sintéticos del generador del repositorio y la política conservadora de tamaño del código. Un control en `127.0.0.1:4699` elige el comportamiento del SRI simulado por secuencial: recibido, retenido, clave ajena, devuelto, no autorizado o caído. Al detenerse conserva el esquema; `--resume` lo reanuda con la misma clave maestra sintética y `--clean` lo borra. Nunca usa credenciales, certificados ni endpoints reales y se niega a arrancar con `NODE_ENV=production`. El registro de la pasada del 2026-10-09 está en `manual-mvp-test-2026-10-09.md`.
+- **Validación de OpenSpec:** `corepack pnpm openspec:validate` ejecuta `openspec validate --all --strict` con la CLI fijada en el repositorio (`@fission-ai/openspec` 1.14.0), nunca una global, e imprime la versión que usa.
+  - `verify` la ejecuta justo después de `format:check`, antes de las pruebas y el build, así que el job `verify` de la CI la corre en cada push y pull request.
+  - Sus pruebas (`scripts/openspec-validate.test.ts`) usan una CLI simulada para el entorno y los códigos de salida, y la CLI real para el `PATH`, un repositorio temporal inválido y la ausencia de cambios en `openspec/` (`docs/quality/change-lifecycle.md`).
 - **Workflow de seguridad** (`.github/workflows/security.yml`, ADR 0026):
   - **Cuándo:** en cada push y pull request, cada lunes y a mano.
   - **Cómo:** dos jobs paralelos e independientes de `verify`, sin secretos y con permisos de solo
