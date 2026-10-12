@@ -179,7 +179,7 @@
   Si una prueba inestable ya registrada falla en `verify`, informar el código de salida real con la
   evidencia aislada o de control. Si el escaneo de secretos encuentra un posible secreto real, no
   empujar.
-- [ ] 4.2 Empujar la rama `add-ci-dependency-and-secret-scanning`, sin fusionar ni empujar `main`.
+- [x] 4.2 Empujar la rama `add-ci-dependency-and-secret-scanning`, sin fusionar ni empujar `main`.
   Esperar los workflows de la rama y comprobar:
   - `verify`, `dependency-security` y `secret-security` en verde;
   - el resumen de cada job de seguridad con `PASS`;

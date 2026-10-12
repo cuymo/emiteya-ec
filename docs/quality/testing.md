@@ -139,6 +139,8 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
       fusión con sus commits y su base.
 
     No se traen otras referencias. Cada rama empujada tiene su propia corrida.
+  - **Duración medida** en la primera corrida (38265133725, 2026-10-12): `dependency-security` tardó
+    25 s y `secret-security` 38 s, en paralelo con `verify`, sin alargar el camino crítico.
 - **Seguridad de las dependencias:** `corepack pnpm security:dependencies`, sin tokens ni
   instalación, con salida a la red solo hacia el registro de npm. Termina en
   `DEPENDENCY SECURITY: PASS`, `FAIL` o `ERROR`.
