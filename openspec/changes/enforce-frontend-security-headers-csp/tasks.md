@@ -120,7 +120,7 @@
 - [x] 4.4 Ejecutar `corepack pnpm verify` completo y verificar que termina en 0. Si falla por una
   prueba inestable ya registrada en `technical-debt.md`, informar el código de salida real y aportar
   la evidencia aislada o de control, sin marcar la tarea como completa.
-- [ ] 4.5 Cuando el cambio corra en la CI remota, medir la duración del job. Si queda demasiado cerca
+- [x] 4.5 Cuando el cambio corra en la CI remota, medir la duración del job. Si queda demasiado cerca
   del límite de 45 minutos o lo supera, subir `timeout-minutes` en `.github/workflows/verify.yml` a un
   valor basado en esa medida, con margen razonable, y anotarlo en la deuda «Duración de la CI».
   Verificar con una ejecución verde de la CI.
