@@ -2,13 +2,13 @@
 
 ## 1. CLI de OpenSpec fijada y su escaneo
 
-- [ ] 1.1 Añadir `@fission-ai/openspec` con la versión exacta `1.14.0` a las `devDependencies` de la
+- [x] 1.1 Añadir `@fission-ai/openspec` con la versión exacta `1.14.0` a las `devDependencies` de la
   raíz con Corepack, sin caret ni tilde, y regenerar el lockfile (design D1). Verificar:
   - `corepack pnpm install --frozen-lockfile` pasa;
   - ningún paquete nuevo lleva `requiresBuild`, y `allowBuilds` no cambia;
   - `corepack pnpm check:versions` pasa;
   - el diff del lockfile solo añade OpenSpec y sus dependencias.
-- [ ] 1.2 Ejecutar `pnpm audit --json` y comparar con la línea base: 4 HIGH y 1 MODERATE.
+- [x] 1.2 Ejecutar `pnpm audit --json` y comparar con la línea base: 4 HIGH y 1 MODERATE.
   - **Si aparece cualquier HIGH o CRITICAL** distinto de la ruta nueva hacia `braces`
     (GHSA-vfj7-8cjw-p6xm), detenerse sin crear excepciones e informarlo.
   - **Si no:** confirmar la ruta exacta que serializa `pnpm audit` para `braces` a través de OpenSpec,
@@ -21,7 +21,7 @@
     MODERATE visibles;
   - en `scripts/check-dependency-security.test.ts`, sobre la entrada real de `braces`: cubre la ruta
     del lint y la de OpenSpec, y una tercera ruta arbitraria hacia `braces` da `FAIL`.
-- [ ] 1.3 Documentar el grupo:
+- [x] 1.3 Documentar el grupo:
   - **`docs/architecture/stack.md`:** la fila de la CLI de OpenSpec, versión exacta y solo
     desarrollo.
   - **`docs/quality/technical-debt.md`:** la deuda de `braces` menciona la ruta de OpenSpec y el mismo

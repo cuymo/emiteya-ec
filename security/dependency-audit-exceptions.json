@@ -58,9 +58,12 @@
     {
       "advisory": "GHSA-vfj7-8cjw-p6xm",
       "package": "braces",
-      "paths": ["frontend>@next/eslint-plugin-next>fast-glob>micromatch>braces"],
-      "reason": "Transitiva solo de desarrollo, de las herramientas de lint (@next/eslint-plugin-next); no llega al build de producción. Sin versión corregida identificada.",
-      "owner": "Mantenedores del frontend",
+      "paths": [
+        ".>@fission-ai/openspec>fast-glob>micromatch>braces",
+        "frontend>@next/eslint-plugin-next>fast-glob>micromatch>braces"
+      ],
+      "reason": "Transitiva solo de desarrollo y de la CI, por dos rutas: las herramientas de lint (@next/eslint-plugin-next) y la CLI de OpenSpec (@fission-ai/openspec > fast-glob > micromatch), que valida los cambios en local y en la CI. Ninguna llega al build ni a la ejecución de la aplicación. El aviso afecta la disponibilidad del proceso ante patrones de llaves muy anidados. OpenSpec procesa globs de la configuración y de los cambios del repositorio, que no se tratan como confiables por sí mismos: una contribución malformada o maliciosa podría hacer fallar la validación. Sin versión corregida de braces por estas rutas; la excepción es temporal, y un cambio del paquete o de las rutas obliga a reevaluarla.",
+      "owner": "Mantenedores del frontend y de la CI",
       "reviewed": "2026-10-12",
       "expires": "2027-01-10"
     }
