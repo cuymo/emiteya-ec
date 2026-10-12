@@ -126,6 +126,19 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
     informativas.
   - Dura unos 20 segundos en local, e informa sus tiempos por fase.
 - Prueba manual con navegador: `corepack pnpm --filter @facturador/backend sandbox:mvp <estado.json>` arranca `main.ts` real sobre un esquema propio de `facturador_test`, con la transmisión dirigida solo a un SRI simulado local (también los endpoints de Producción) a través de un proxy que rechaza cualquier otro host, P12 sintéticos del generador del repositorio y la política conservadora de tamaño del código. Un control en `127.0.0.1:4699` elige el comportamiento del SRI simulado por secuencial: recibido, retenido, clave ajena, devuelto, no autorizado o caído. Al detenerse conserva el esquema; `--resume` lo reanuda con la misma clave maestra sintética y `--clean` lo borra. Nunca usa credenciales, certificados ni endpoints reales y se niega a arrancar con `NODE_ENV=production`. El registro de la pasada del 2026-10-09 está en `manual-mvp-test-2026-10-09.md`.
+- **Workflow de seguridad** (`.github/workflows/security.yml`, ADR 0026):
+  - **Cuándo:** en cada push y pull request, cada lunes y a mano.
+  - **Cómo:** dos jobs paralelos e independientes de `verify`, sin secretos y con permisos de solo
+    lectura.
+  - **`dependency-security`:** `security:dependencies`, sin instalar dependencias.
+  - **`secret-security`:**
+    - instala las dependencias de desarrollo sin scripts e instala Gitleaks verificado por suma;
+    - ejecuta `test:secret-rules` y `security:secrets --ci`;
+    - su checkout trae el historial completo (`fetch-depth: 0`), y Gitleaks revisa lo alcanzable
+      desde el commit del evento: en un push, la rama empujada; en una pull request, el commit de
+      fusión con sus commits y su base.
+
+    No se traen otras referencias. Cada rama empujada tiene su propia corrida.
 - **Seguridad de las dependencias:** `corepack pnpm security:dependencies`, sin tokens ni
   instalación, con salida a la red solo hacia el registro de npm. Termina en
   `DEPENDENCY SECURITY: PASS`, `FAIL` o `ERROR`.

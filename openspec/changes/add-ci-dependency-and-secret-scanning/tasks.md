@@ -138,11 +138,11 @@
 
 ## 3. Workflow de seguridad y acciones fijadas
 
-- [ ] 3.1 Resolver, desde los repositorios oficiales, los SHA de commit de las releases vigentes de
+- [x] 3.1 Resolver, desde los repositorios oficiales, los SHA de commit de las releases vigentes de
   `actions/checkout` y `actions/setup-node` dentro de la major 5. Fijarlos en `verify.yml` con la
   versión legible en un comentario, sin otro cambio en ese workflow (design D8). Verificar que el
   diff de `verify.yml` solo toca las dos referencias.
-- [ ] 3.2 Crear `.github/workflows/security.yml` (design D7):
+- [x] 3.2 Crear `.github/workflows/security.yml` (design D7):
   - **Disparadores:** `push`, `pull_request`, un `schedule` semanal y `workflow_dispatch`.
   - **Permisos:** solo `contents: read`, sin secretos ni ejecución privilegiada de pull requests.
   - **`dependency-security`** (5 minutos): checkout con `persist-credentials: false`, `setup-node`,
@@ -158,7 +158,7 @@
 
   Verificar con `corepack pnpm format:check` y una revisión de los permisos, los disparadores y los
   pasos.
-- [ ] 3.3 Documentar el grupo:
+- [x] 3.3 Documentar el grupo:
   - **`docs/architecture/adr/0026-…`:** el escaneo con `pnpm audit` y excepciones revisadas, la CLI
     de Gitleaks fijada por suma, el workflow aparte y las alternativas descartadas.
   - **`docs/architecture/stack.md`:** la fijación de las acciones.

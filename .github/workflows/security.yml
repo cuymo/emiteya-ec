@@ -1,0 +1,61 @@
+# Seguridad de las dependencias y de los secretos (add-ci-dependency-and-secret-scanning, design D7).
+# Dos jobs paralelos e independientes del workflow verify, sin secretos del repositorio y con permisos de
+# solo lectura. Ningún paso contacta el SRI. Las acciones van fijadas por commit (design D8).
+name: security
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Cada lunes: detecta avisos nuevos aunque nadie haga push, sin repetir el verify.
+    - cron: "17 11 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Activar Corepack
+        run: corepack enable
+      # Sin `pnpm install`: el comprobador solo usa módulos de Node, y `pnpm audit` lee el lockfile.
+      - name: Seguridad de las dependencias
+        run: corepack pnpm security:dependencies
+
+  secret-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # Historial completo del commit del evento: Gitleaks revisa lo alcanzable desde HEAD.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Activar Corepack
+        run: corepack enable
+      # Solo para ejecutar las pruebas de las reglas con Vitest; sin scripts de instalación.
+      - name: Instalar las dependencias de desarrollo
+        run: corepack pnpm install --frozen-lockfile --ignore-scripts
+      # Descarga el artefacto oficial y comprueba su SHA-256 antes de extraerlo o ejecutarlo.
+      - name: Instalar Gitleaks verificado
+        run: scripts/security/install-gitleaks.sh security/gitleaks.json "$RUNNER_TEMP/gitleaks"
+      - name: Pruebas de las reglas de secretos
+        run: corepack pnpm test:secret-rules
+        env:
+          GITLEAKS_BIN: ${{ runner.temp }}/gitleaks/gitleaks
+      - name: Seguridad de los secretos
+        run: corepack pnpm security:secrets --ci --gitleaks "$RUNNER_TEMP/gitleaks/gitleaks"
