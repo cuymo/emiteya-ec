@@ -80,7 +80,7 @@
 
   Si una prueba inestable ya registrada falla en `verify`, informar el código de salida real con la
   evidencia aislada o de control.
-- [ ] 3.2 Con autorización, empujar la rama y comprobar en la CI:
+- [x] 3.2 Con autorización, empujar la rama y comprobar en la CI:
   - en el log de `verify`, la validación estricta con la CLI fijada corre antes de las pruebas;
   - `verify` y `security` quedan en verde;
   - `verify.yml` y `security.yml` siguen sin cambios.
