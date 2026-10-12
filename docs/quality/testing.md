@@ -126,6 +126,17 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
     informativas.
   - Dura unos 20 segundos en local, e informa sus tiempos por fase.
 - Prueba manual con navegador: `corepack pnpm --filter @facturador/backend sandbox:mvp <estado.json>` arranca `main.ts` real sobre un esquema propio de `facturador_test`, con la transmisión dirigida solo a un SRI simulado local (también los endpoints de Producción) a través de un proxy que rechaza cualquier otro host, P12 sintéticos del generador del repositorio y la política conservadora de tamaño del código. Un control en `127.0.0.1:4699` elige el comportamiento del SRI simulado por secuencial: recibido, retenido, clave ajena, devuelto, no autorizado o caído. Al detenerse conserva el esquema; `--resume` lo reanuda con la misma clave maestra sintética y `--clean` lo borra. Nunca usa credenciales, certificados ni endpoints reales y se niega a arrancar con `NODE_ENV=production`. El registro de la pasada del 2026-10-09 está en `manual-mvp-test-2026-10-09.md`.
+- **Seguridad de las dependencias:** `corepack pnpm security:dependencies`, sin tokens ni
+  instalación, con salida a la red solo hacia el registro de npm. Termina en
+  `DEPENDENCY SECURITY: PASS`, `FAIL` o `ERROR`.
+
+  Para reproducir cada fallo sin tocar el lockfile:
+  - **Un aviso HIGH sin excepción y una excepción vencida:** las pruebas de
+    `scripts/check-dependency-security.test.ts`, con salidas de muestra y fechas inyectadas.
+  - **En el repositorio real:** `node scripts/check-dependency-security.ts --exceptions <archivo>`
+    con una copia del archivo de excepciones sin una entrada (`FAIL`) o con un `expires` pasado
+    (`FAIL`).
+  - **Un `ERROR` de la fuente:** las mismas pruebas, con una salida vacía o no JSON.
 - Rendimiento de la búsqueda: `corepack pnpm --filter @facturador/backend bench:search` es un gate dedicado, fuera de `test` y de `verify`, para que la carga de un runner compartido no lo vuelva inestable. Se ejecuta sobre una PostgreSQL 17 sin carga ajena y escribe el entorno, los tiempos y los planes de consulta en `docs/quality/benchmarks/` (`performance.md`). La suite normal comprueba el comportamiento, los índices (`migrations.test.ts`) y los planes de las búsquedas por prefijo (`search-plans.test.ts`).
 
 ## Test Data

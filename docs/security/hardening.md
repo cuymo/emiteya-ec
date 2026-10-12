@@ -112,6 +112,31 @@ requisitos están en la spec `api-request-protection`.
 - Commit the lockfile and review its diff; a single direct bump can pull in many indirect changes.
 - Treat an unmaintained dependency on a security-relevant path as a finding.
 
+### Escaneo de dependencias en este proyecto
+
+`corepack pnpm security:dependencies` (`scripts/check-dependency-security.ts`) consulta `pnpm audit`
+sobre el lockfile y corre en la CI en el workflow de seguridad (`add-ci-dependency-and-secret-scanning`).
+
+- **Bloquean:** los avisos HIGH y CRITICAL, de producción y de desarrollo, directos y transitivos,
+  sin período de gracia. MODERATE, LOW e INFO se informan sin bloquear.
+- **`ERROR` no es `PASS`.** Una salida vacía, malformada o no JSON de la fuente de avisos es `ERROR`,
+  distinto de un hallazgo (`FAIL`). Ninguno de los dos pasa.
+- **Excepciones:** `security/dependency-audit-exceptions.json`. Cada excepción lleva:
+  - el GHSA y el paquete exactos;
+  - las rutas de dependencias que cubre, que deben ser todas las del hallazgo;
+  - el motivo con su contexto de explotabilidad, el responsable, la fecha de revisión y el
+    vencimiento, de como máximo 90 días.
+- **Cuándo falla una excepción:** si vence, si le falta un campo, si usa comodines o campos extra, si
+  está duplicada, si su revisión está en el futuro, o si ya no corresponde a un hallazgo bloqueante
+  o a alguna de sus rutas (obsoleta).
+- **Una ruta nueva hacia un paquete exceptuado** vuelve a bloquear.
+- **Lo que no se usa:**
+  - `pnpm audit --ignore-unfixable`, que ignora en bloque y sin dejar rastro;
+  - los ignorados de `pnpm-workspace.yaml`, sin motivo, responsable ni vencimiento, que además
+    ocultan el aviso en local.
+- **Corrección:** se corrige la dependencia en un cambio propio, o se registra una excepción
+  revisada. Nunca se suprime un aviso solo para obtener la CI en verde.
+
 ## Logging
 
 - Never log passwords, tokens, cookies, full auth headers, or full sensitive payloads.

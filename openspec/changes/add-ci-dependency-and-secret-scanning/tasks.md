@@ -2,7 +2,7 @@
 
 ## 1. Seguridad de las dependencias
 
-- [ ] 1.1 Ejecutar `corepack pnpm audit --json` sobre el lockfile vigente y revalidar los avisos
+- [x] 1.1 Ejecutar `corepack pnpm audit --json` sobre el lockfile vigente y revalidar los avisos
   (design D3, revisión):
   - comparar cada HIGH conocido (`mysql2`, `deepmerge-ts`, `node-forge`, `braces`) por GHSA, paquete,
     severidad y rutas;
@@ -10,7 +10,7 @@
 
   Si aparece un HIGH o CRITICAL nuevo, o uno conocido cambió, detenerse antes de crear excepciones,
   e informar el hallazgo y una propuesta. Verificar con el resumen de los avisos, sin datos privados.
-- [ ] 1.2 Crear `scripts/check-dependency-security.ts`, solo con módulos `node:*` (design D1, D2 y
+- [x] 1.2 Crear `scripts/check-dependency-security.ts`, solo con módulos `node:*` (design D1, D2 y
   D3):
   1. ejecuta `corepack pnpm audit --json`;
   2. trata como `DEPENDENCY SECURITY: ERROR` una salida vacía, malformada o no JSON, con el código de
@@ -32,7 +32,7 @@
   - **Severidad:** un HIGH nuevo falla, un CRITICAL falla, y un MODERATE solo se informa sin fallar.
   - **Error de la fuente:** una salida vacía, malformada o no JSON da `ERROR`, nunca `PASS`.
   - **Salida:** ningún contenido crudo de pnpm.
-- [ ] 1.3 Crear `security/dependency-audit-exceptions.json` solo para los HIGH de la tarea 1.1 que
+- [x] 1.3 Crear `security/dependency-audit-exceptions.json` solo para los HIGH de la tarea 1.1 que
   siguen apareciendo con el mismo GHSA, paquete y rutas:
   - `mysql2`, 30 días;
   - `deepmerge-ts`, 45 días;
@@ -45,7 +45,7 @@
   Verificar que `corepack pnpm security:dependencies`:
   - termina en `PASS`, con los exceptuados y su vencimiento, y los MODERATE visibles;
   - no modifica `pnpm-lock.yaml` ni `pnpm-workspace.yaml`.
-- [ ] 1.4 Documentar el grupo:
+- [x] 1.4 Documentar el grupo:
   - **`docs/security/hardening.md`:** la política de severidad, el esquema y los límites de las
     excepciones, y por qué no se usan `--ignore-unfixable` ni los ignorados de `pnpm-workspace.yaml`.
   - **`docs/quality/testing.md`:** el comando y cómo reproducir un fallo por un aviso HIGH, por una

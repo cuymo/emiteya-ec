@@ -1,0 +1,68 @@
+{
+  "exceptions": [
+    {
+      "advisory": "GHSA-3f6p-5ww8-9rcr",
+      "package": "mysql2",
+      "paths": [
+        "backend>@prisma/client>prisma>mysql2",
+        "backend>auth>better-auth>@better-auth/prisma-adapter>@prisma/client>prisma>mysql2",
+        "backend>auth>better-auth>@better-auth/prisma-adapter>prisma>mysql2",
+        "backend>auth>better-auth>@prisma/client>prisma>mysql2",
+        "backend>auth>better-auth>mysql2",
+        "backend>auth>better-auth>prisma>mysql2",
+        "backend>better-auth>@better-auth/prisma-adapter>@prisma/client>prisma>mysql2",
+        "backend>better-auth>@better-auth/prisma-adapter>prisma>mysql2",
+        "backend>better-auth>@prisma/client>prisma>mysql2",
+        "backend>better-auth>mysql2",
+        "backend>better-auth>prisma>mysql2",
+        "backend>prisma>mysql2"
+      ],
+      "reason": "Transitiva de la CLI de Prisma (también por better-auth) en un proyecto que solo usa PostgreSQL. La corrección existe (>=3.22.0) y requiere su propia revisión de dependencias, separada de este cambio.",
+      "owner": "Mantenedores del backend",
+      "reviewed": "2026-10-12",
+      "expires": "2026-11-11"
+    },
+    {
+      "advisory": "GHSA-ggr8-5vv4-36mx",
+      "package": "deepmerge-ts",
+      "paths": [
+        "backend>@prisma/client>prisma>@prisma/config>deepmerge-ts",
+        "backend>auth>better-auth>@better-auth/prisma-adapter>@prisma/client>prisma>@prisma/config>deepmerge-ts",
+        "backend>auth>better-auth>@better-auth/prisma-adapter>prisma>@prisma/config>deepmerge-ts",
+        "backend>auth>better-auth>@prisma/client>prisma>@prisma/config>deepmerge-ts",
+        "backend>auth>better-auth>prisma>@prisma/config>deepmerge-ts",
+        "backend>better-auth>@better-auth/prisma-adapter>@prisma/client>prisma>@prisma/config>deepmerge-ts",
+        "backend>better-auth>@better-auth/prisma-adapter>prisma>@prisma/config>deepmerge-ts",
+        "backend>better-auth>@prisma/client>prisma>@prisma/config>deepmerge-ts",
+        "backend>better-auth>prisma>@prisma/config>deepmerge-ts",
+        "backend>prisma>@prisma/config>deepmerge-ts"
+      ],
+      "reason": "Transitiva de @prisma/config por la CLI de Prisma. La corrección (>=8.0.0) cruza una major y es sensible para la compatibilidad de Prisma 7 con Better Auth 1.7.7; requiere su propia revisión.",
+      "owner": "Mantenedores del backend",
+      "reviewed": "2026-10-12",
+      "expires": "2026-11-26"
+    },
+    {
+      "advisory": "GHSA-86w9-cpqp-85rv",
+      "package": "node-forge",
+      "paths": [
+        "backend>ec-sri-invoice-signer>node-forge",
+        "backend>facturacion-electronica-ec>ec-sri-invoice-signer>node-forge",
+        "backend>node-forge"
+      ],
+      "reason": "Directa del backend y de los firmadores del SRI (ec-sri-invoice-signer, también por facturacion-electronica-ec), en el área de firma congelada. La revisión de solo lectura del 2026-10-12 encontró usos para leer PKCS#12 y ASN.1, campos del certificado, base64, SHA-1 y firmar con la clave privada, y ninguna llamada de verificación de firmas RSA PKCS#1 v1.5, que es la operación del aviso. No afirma que el paquete sea seguro en general; sin versión corregida publicada.",
+      "owner": "Mantenedores del backend y de la firma",
+      "reviewed": "2026-10-12",
+      "expires": "2027-01-10"
+    },
+    {
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "paths": ["frontend>@next/eslint-plugin-next>fast-glob>micromatch>braces"],
+      "reason": "Transitiva solo de desarrollo, de las herramientas de lint (@next/eslint-plugin-next); no llega al build de producción. Sin versión corregida identificada.",
+      "owner": "Mantenedores del frontend",
+      "reviewed": "2026-10-12",
+      "expires": "2027-01-10"
+    }
+  ]
+}
