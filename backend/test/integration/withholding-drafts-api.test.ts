@@ -5,7 +5,7 @@
 // tarifas de IVA con su porcentaje y las formas de pago de la empresa; los límites configurados; la
 // versión del borrador; y `403`, `401` y otra empresa `404`. Un borrador no reserva número ni crea
 // comprobantes.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type {
   WithholdingDraftSummaryView,

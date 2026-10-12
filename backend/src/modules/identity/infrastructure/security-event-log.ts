@@ -23,6 +23,12 @@ export function createSecurityEventLog(logger: Logger, registry: Registry): Secu
     labelNames: ["status", "action"] as const,
     registers: [registry],
   });
+  const originRejections = new Counter({
+    name: "http_request_origin_rejections_total",
+    help: "Peticiones de /api/v1 rechazadas por su origen o por Fetch Metadata.",
+    labelNames: ["method", "reason"] as const,
+    registers: [registry],
+  });
   const log = logger.child({ channel: "security" });
 
   return {
@@ -70,6 +76,20 @@ export function createSecurityEventLog(logger: Logger, registry: Registry): Secu
               requestId: event.correlationId,
             },
             "contraseña propia cambiada",
+          );
+          return;
+        case "request_origin_rejected":
+          originRejections.inc({ method: event.method, reason: event.reason });
+          // Solo la categoría de la ruta: ni la URL, ni el Origin recibido, ni otras cabeceras.
+          log.warn(
+            {
+              event: event.type,
+              method: event.method,
+              route: event.route,
+              reason: event.reason,
+              requestId: event.correlationId,
+            },
+            "petición rechazada por su origen",
           );
           return;
       }

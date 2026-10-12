@@ -7,7 +7,7 @@
 // reutilizada o ausente; la auditoría sin XML ni SOAP; y las métricas.
 import { randomUUID } from "node:crypto";
 import { Registry } from "@prometheus-io/client";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { WithholdingDraftView, WithholdingReceiptView } from "@facturador/contracts";
 import { DATASET_FILES } from "../../src/modules/catalogs/datasets/index.ts";

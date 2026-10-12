@@ -4,7 +4,7 @@
 // previa muestra los remanentes y los problemas por línea y se recalcula tras otra nota reservada;
 // sin sesión `401` y otra empresa `404`; una factura de otro ambiente que el de la empresa no se emite.
 // Un borrador no reserva capacidad ni número.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type {
   CreditNoteDraftSummaryView,

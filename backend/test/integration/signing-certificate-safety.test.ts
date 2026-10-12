@@ -2,7 +2,7 @@
 // revierte el reemplazo; ni respuestas, ni errores, ni logs, ni auditoría, ni tablas contienen la
 // contraseña ni el P12 en claro; métricas sin secretos; firmas que la clave no abre.
 import { Registry } from "@prometheus-io/client";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";

@@ -27,9 +27,10 @@ import { createMembershipReader } from "../../src/modules/identity/infrastructur
 import { createSecurityEventLog } from "../../src/modules/identity/infrastructure/security-event-log.ts";
 import { createLogger } from "../../src/platform/logging/logger.ts";
 import { createMetrics } from "../../src/platform/metrics/metrics.ts";
+import { TEST_ORIGIN } from "../support/http-client.ts";
 import type { MigratedSchema } from "./database.ts";
 
-export const BASE_URL = "http://localhost:3000";
+export const BASE_URL = TEST_ORIGIN;
 export const PASSWORD = "contrasena-de-prueba-1";
 
 export function testAuthSettings(overrides: Partial<AuthSettings> = {}): AuthSettings {
@@ -88,6 +89,11 @@ export function buildAuthApp(
     metrics,
     readiness: () => Promise.resolve(true),
     trustProxy: options.trustProxy ?? false,
+    requestOrigin: {
+      canonical: TEST_ORIGIN,
+      onRejected: (rejection) =>
+        securityEvents.emit({ type: "request_origin_rejected", ...rejection }),
+    },
     mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
     ...(options.jsonBodyExceptions ? { jsonBodyExceptions: options.jsonBodyExceptions } : {}),
     ...(options.apiRouter

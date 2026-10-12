@@ -3,7 +3,7 @@
 // otra clave sobre un borrador emitido y la misma clave en otra empresa. Ninguna repetición reserva
 // otro número.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { InvoiceView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

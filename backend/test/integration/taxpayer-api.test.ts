@@ -1,5 +1,5 @@
 // API de la configuración tributaria (design D12): permisos, sesión, lista permitida y aislamiento.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createMember, type AuthApp } from "./auth-harness.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";

@@ -2,7 +2,7 @@
 // alta con la identificación validada por el catálogo fiscal, unicidad por empresa con altas
 // simultáneas, corrección con versión, desactivación como estado deseado, búsqueda sin tildes con
 // orden estable, consumidor final protegido, permisos, aislamiento y auditoría.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { PartyView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

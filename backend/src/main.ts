@@ -7,6 +7,7 @@ import { Router } from "express";
 import { createApp } from "./app.ts";
 import {
   EnvError,
+  loadCanonicalOrigin,
   loadCertificateCustody,
   loadEnv,
   loadInitialAdmin,
@@ -175,9 +176,9 @@ import { createMetrics } from "./platform/metrics/metrics.ts";
 import { createCryptoWorkerPool } from "./platform/workers/crypto-worker-pool.ts";
 import { createRideWorkerPool } from "./platform/workers/ride-worker-pool.ts";
 
-function loadEnvOrExit(): Env {
+function loadOrExit<T>(load: () => T): T {
   try {
-    return loadEnv();
+    return load();
   } catch (error) {
     if (error instanceof EnvError) {
       console.error(error.message);
@@ -187,19 +188,11 @@ function loadEnvOrExit(): Env {
   }
 }
 
-const env = loadEnvOrExit();
+const env: Env = loadOrExit(() => loadEnv());
+// Sin un origen canónico utilizable, la API no arranca (enforce-api-origin-and-body-limits, D4).
+const canonicalApiOrigin = loadOrExit(() => loadCanonicalOrigin(env));
 // Sin la clave maestra de la custodia, la API no arranca (ADR 0011, design D6).
-const certificateCustody = (() => {
-  try {
-    return loadCertificateCustody(env);
-  } catch (error) {
-    if (error instanceof EnvError) {
-      console.error(error.message);
-      process.exit(1);
-    }
-    throw error;
-  }
-})();
+const certificateCustody = loadOrExit(() => loadCertificateCustody(env));
 const logger = createLogger(env.LOG_LEVEL);
 logger.info(
   certificateCustody.enabled
@@ -798,6 +791,11 @@ const app = createApp({
     };
   },
   trustProxy: env.TRUST_PROXY,
+  requestOrigin: {
+    canonical: canonicalApiOrigin,
+    onRejected: (rejection) =>
+      securityEvents.emit({ type: "request_origin_rejected", ...rejection }),
+  },
   apiRouter,
   mountBeforeBodyParser: (express) => mountAuth(express, auth, securityEvents),
   // Rutas con su propio parser: la carga de la firma, los borradores de guía (2 MiB, design D23 de

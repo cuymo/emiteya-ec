@@ -5,7 +5,7 @@
 // en una factura y en una nota; el snapshot autosuficiente; la auditoría y las métricas.
 import { randomUUID } from "node:crypto";
 import { Registry } from "@prometheus-io/client";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CreditNoteDraftView, CreditNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

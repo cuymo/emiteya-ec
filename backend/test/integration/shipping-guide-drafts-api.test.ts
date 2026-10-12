@@ -6,7 +6,7 @@
 // guarda sin reservar; la propuesta desde una factura; la partida propuesta y la derivada del origen;
 // el traslado propio sin comparar con el establecimiento del punto; la versión; el borrador emitido
 // inmutable; y `403`, `401` y otra empresa `404`.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type {
   ShippingCarrierView,

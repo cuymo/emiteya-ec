@@ -1,6 +1,6 @@
 // API de consulta y ajuste de secuenciales (design D9 a D12): permisos, aislamiento, reglas del
 // ajuste, conflicto con una reserva, auditoría atómica y representación del contador agotado.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAuditLog } from "../../src/modules/audit/infrastructure/prisma-audit-log.ts";
 import { createMember, type AuthApp } from "./auth-harness.ts";

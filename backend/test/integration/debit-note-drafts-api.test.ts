@@ -5,7 +5,7 @@
 // valor total y la forma de pago resuelta por el catálogo; los problemas van junto a su concepto;
 // la versión del borrador se respeta; sin sesión `401` y otra empresa `404`. Un borrador no reserva
 // número ni crea comprobantes.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type {
   DebitEligibleInvoiceView,

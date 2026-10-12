@@ -4,7 +4,7 @@
 // de un producto con inventario fuera de la corrección del producto. Las autorizaciones usan un SRI
 // simulado con respuestas SINTÉTICAS.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { createAuthorizeHandler } from "../../src/modules/fiscal/application/authorize-handler.ts";

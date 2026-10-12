@@ -5,6 +5,7 @@ import { pinoHttp } from "pino-http";
 import type { Logger } from "pino";
 import { errorHandler, notFound } from "./platform/http/error-handler.ts";
 import { requestId } from "./platform/http/request-id.ts";
+import { requestOriginGuard, type RequestOriginOptions } from "./platform/http/request-origin.ts";
 import { metricsHandler, recordHttpMetrics, type Metrics } from "./platform/metrics/metrics.ts";
 import { healthRouter, type ReadinessCheck } from "./platform/health/health.ts";
 
@@ -15,6 +16,8 @@ export type AppDependencies = {
   metrics: Metrics;
   readiness: ReadinessCheck;
   trustProxy?: boolean | number | string;
+  /** Origen canónico de /api/v1 y aviso de cada rechazo (enforce-api-origin-and-body-limits, D1). */
+  requestOrigin: RequestOriginOptions;
   /** Rutas de aplicación bajo /api/v1 (ADR 0015). */
   apiRouter?: Router;
   /** Montaje de routers que necesitan el cuerpo sin procesar (por ejemplo, Better Auth). */
@@ -51,6 +54,8 @@ export function createApp(deps: AppDependencies): Express {
   app.get("/metrics", metricsHandler(deps.metrics));
 
   deps.mountBeforeBodyParser?.(app);
+  // Antes de leer cualquier cuerpo y de consultar la sesión.
+  app.use("/api/v1", requestOriginGuard(deps.requestOrigin));
 
   const json = express.json({ limit: JSON_BODY_LIMIT });
   app.use((req, res, next) => (deps.jsonBodyExceptions?.(req) ? next() : json(req, res, next)));

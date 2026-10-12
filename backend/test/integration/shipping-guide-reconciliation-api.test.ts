@@ -5,7 +5,7 @@
 // finalización (`"06"` en `COMPLETED_AUDIT`) no llevan SOAP. Las reconciliaciones de los demás tipos
 // siguen con sus propias pruebas, sin cambios.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { ShippingGuideView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

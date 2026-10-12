@@ -2,7 +2,7 @@
 // D6 y D13): guardar, corregir con versión y eliminar sin datos fiscales, borradores incompletos,
 // vista previa no fiscal con el precio vigente del producto, límites del contenido, referencias de
 // la empresa, aislamiento, permisos y borrador emitido inmutable.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { DraftSummaryView, DraftView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

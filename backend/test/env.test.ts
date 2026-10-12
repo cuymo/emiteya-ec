@@ -6,6 +6,7 @@ import {
   EXAMPLE_AUTH_SECRET,
   EXAMPLE_CERTIFICATE_MASTER_KEY,
   EnvError,
+  loadCanonicalOrigin,
   loadCertificateCustody,
   loadEnv,
   loadInitialAdmin,
@@ -149,6 +150,31 @@ describe("configuración por entorno", () => {
         INITIAL_USER_PASSWORD: "a".repeat(16),
       }),
     ).toEqual({ email: "admin@example.com", password: "a".repeat(16) });
+  });
+
+  it("el origen canónico sale de BETTER_AUTH_URL, y sin uno utilizable no hay arranque ni valor en el mensaje", () => {
+    expect(
+      loadCanonicalOrigin(
+        loadEnv({ ...valid, BETTER_AUTH_URL: "https://facturas.ejemplo.test:443/app/?x=1" }),
+      ),
+    ).toBe("https://facturas.ejemplo.test");
+    for (const unusable of [`file:///${SECRET}`, SECRET]) {
+      const error = (() => {
+        try {
+          loadCanonicalOrigin({ BETTER_AUTH_URL: unusable });
+        } catch (e) {
+          return e as EnvError;
+        }
+      })();
+      expect(error).toBeInstanceOf(EnvError);
+      expect(error?.variables).toEqual(["BETTER_AUTH_URL"]);
+      expect(error?.message).not.toContain(SECRET);
+    }
+
+    const startup = startupWith({ ...valid, BETTER_AUTH_URL: `ftp://${SECRET}` });
+    expect(startup.status).toBe(1);
+    expect(startup.stderr).toContain("BETTER_AUTH_URL: valor inválido");
+    expect(startup.stderr).not.toContain(SECRET);
   });
 
   it("el arranque termina con el nombre de la variable y sin su valor", () => {

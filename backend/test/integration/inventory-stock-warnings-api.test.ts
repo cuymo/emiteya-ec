@@ -2,7 +2,7 @@
 // orientativo, aparte de los `issues` y sin bloquear la emisión. Un producto marcado sin inventario
 // avisa sin tratarse como saldo cero.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

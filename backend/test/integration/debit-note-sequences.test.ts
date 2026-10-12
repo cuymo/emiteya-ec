@@ -8,7 +8,7 @@
 // es autorizada por el arnés con la reserva real del secuencial (las notas y la guía exigen una
 // factura autorizada y la transmisión está apagada); las demás se emiten por HTTP.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";

@@ -5,7 +5,7 @@
 // distintas dejan una sola retención y la otra responde 409. Se repite varias rondas para descartar
 // fallos intermitentes.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { WithholdingReceiptView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

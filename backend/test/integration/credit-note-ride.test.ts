@@ -3,7 +3,7 @@
 // programa su RIDE en la misma operación que la autorización; el handler lo dibuja con la
 // distribución de la nota y lo guarda una vez con su procedencia; la bandeja lo descarga verificado.
 import { createHash, randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CreditNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

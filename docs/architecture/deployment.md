@@ -60,7 +60,22 @@ Use this when path routing is not available or when API isolation matters.
 
 En este proyecto, el navegador siempre llama a `/api` en el origen del frontend: Next.js lo reenvía
 a `API_INTERNAL_URL` (ADR 0016). Un dominio de API separado al que llamara el navegador exigiría un
-cambio de la política de seguridad (`connect-src`) y de CORS, no solo de configuración.
+cambio de la política de seguridad (`connect-src`), de CORS y de la regla de origen de `/api/v1`, no
+solo de configuración.
+
+### Techo de cuerpo del proxy
+
+El proxy inverso que enruta `/api` no puede admitir menos que el cuerpo legítimo más grande de la
+API, el borrador de una liquidación de compra (4 MiB). El borrador de una guía de remisión admite
+2 MiB, y el logo, `LOGO_MAX_BYTES`. Si el techo del proxy es menor, el proxy corta la petición antes
+de que la API pueda responder con su mensaje.
+
+- El ejemplo de Nginx de "Configuración de la empresa" (`client_max_body_size 1m;`) cubre el logo
+  por defecto, pero no los borradores.
+- El objetivo es 8 MiB, que se configurará y verificará en el hardening del despliegue y del proxy,
+  junto con HSTS.
+- Los límites de la propia API no cambian con el techo del proxy: siguen rechazando con 413 lo que
+  supera el límite de cada ruta.
 
 ### Cabeceras de seguridad y caché de los documentos
 
@@ -130,7 +145,7 @@ API comparten origen (ADR 0016).
 | Variable | Obligatoria | Default | Uso |
 | --- | --- | --- | --- |
 | `BETTER_AUTH_SECRET` | Sí | | Secreto de Better Auth, de al menos 32 caracteres. El de `.env.example` se rechaza en producción. Generar con `openssl rand -base64 32`. |
-| `BETTER_AUTH_URL` | Sí | | Origen público de la aplicación, el mismo del frontend (por ejemplo, `https://app.example.com`). Deriva los orígenes de confianza. |
+| `BETTER_AUTH_URL` | Sí | | Origen público de la aplicación, el mismo del frontend (por ejemplo, `https://app.example.com`). Deriva el único origen de confianza, también de `/api/v1`: debe ser el origen exacto que ve el navegador (esquema, host y puerto), nunca la dirección interna. Si no coincide, toda mutación de `/api/v1` recibe 403; sin un origen `http` o `https` válido, la API no arranca. |
 | `INITIAL_USER_EMAIL`, `INITIAL_USER_PASSWORD` | Solo sin empresa | | Administrador inicial del primer arranque. La contraseña cumple la política de contraseñas. |
 | `PASSWORD_MIN_LENGTH`, `PASSWORD_MAX_LENGTH` | No | 12, 128 | Política de contraseñas. |
 | `LOGIN_MAX_FAILURES`, `LOGIN_FAILURE_WINDOW_MINUTES` | No | 5, 15 | Límite de inicios fallidos por correo e IP. |
@@ -315,7 +330,8 @@ Variable que valida la API al arrancar (cambio `add-taxpayer-setup`, design D5):
 El logo se carga con `PUT /api/v1/taxpayer/logo` como cuerpo binario. El proxy inverso debe
 admitir cuerpos de al menos `LOGO_MAX_BYTES` en las rutas `/api`; si su límite es menor, el
 proxy rechaza la carga antes de que la API pueda responder con su mensaje (por ejemplo, en Nginx,
-`client_max_body_size 1m;` cubre el valor por defecto). Los formatos admitidos (PNG y JPEG) y el
+`client_max_body_size 1m;` cubre el valor por defecto del logo, pero no los borradores: ver "Techo
+de cuerpo del proxy"). Los formatos admitidos (PNG y JPEG) y el
 máximo de 4096 px por lado son valores de diseño del módulo, no configuración.
 
 ### Recuperación administrativa de emergencia

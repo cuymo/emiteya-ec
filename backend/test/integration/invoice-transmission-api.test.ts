@@ -2,7 +2,7 @@
 // design D15, D18 y D19), con dos empresas. Los estados de la transmisión, los intentos y los jobs
 // se escriben directamente en la base de datos: este archivo prueba la API, no los handlers.
 import { createHash, randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { InvoiceSummaryView, InvoiceView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

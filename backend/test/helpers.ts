@@ -4,6 +4,7 @@ import { createApp } from "../src/app.ts";
 import type { ReadinessCheck } from "../src/platform/health/health.ts";
 import { createLogger } from "../src/platform/logging/logger.ts";
 import { createMetrics } from "../src/platform/metrics/metrics.ts";
+import { TEST_ORIGIN } from "./support/http-client.ts";
 
 export function buildTestApp(options: { apiRouter?: Router; readiness?: ReadinessCheck } = {}) {
   const lines: string[] = [];
@@ -13,6 +14,7 @@ export function buildTestApp(options: { apiRouter?: Router; readiness?: Readines
     logger,
     metrics,
     readiness: options.readiness ?? (() => Promise.resolve(true)),
+    requestOrigin: { canonical: TEST_ORIGIN },
     ...(options.apiRouter ? { apiRouter: options.apiRouter } : {}),
   });
   return { app, metrics, logs: () => lines.join("") };

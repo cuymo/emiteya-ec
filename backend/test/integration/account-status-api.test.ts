@@ -1,6 +1,6 @@
 // Punto de emisión predeterminado propio y preparación para emitir (design D8, D9 y D12), para
 // administradores y operadores.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAuditLog } from "../../src/modules/audit/infrastructure/prisma-audit-log.ts";
 import { createMember, type AuthApp } from "./auth-harness.ts";

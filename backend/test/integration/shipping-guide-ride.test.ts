@@ -5,7 +5,7 @@
 // la bandeja lo lista con el tipo 06 y sus destinatarios, lo descarga verificado y la solicitud de
 // impresión entrega el mismo RIDE.
 import { createHash, randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { ShippingGuideView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

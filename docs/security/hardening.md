@@ -63,6 +63,27 @@ vive en memoria y solo es válido con una instancia de API (`../architecture/dep
 | Límite de inicio de sesión por correo e IP | 5 intentos fallidos cada 15 minutos; un inicio correcto reinicia el contador | Sí, intentos y ventana | CognitiveStack ("Rate limit authentication") |
 | Límite de inicio de sesión por IP | 30 peticiones por minuto, solo contra ráfagas y tolerante a oficinas detrás de NAT | Sí, peticiones y ventana | CognitiveStack; ajuste derivado del spike S-1 |
 
+### Origen de las peticiones
+
+Defensa en profundidad de `/api/v1` frente a las peticiones que un navegador envía desde otro sitio
+con la cookie de sesión. No sustituye la sesión, el rol ni el aislamiento por empresa. Los
+requisitos están en la spec `api-request-protection`.
+
+- **Frontera de confianza.** El único origen aceptado es el canónico, el de `BETTER_AUTH_URL`, que
+  también usa Better Auth. Sin un origen `http` o `https` válido, la API no arranca. No hay lista
+  adicional, comodines ni forma de desactivarlo.
+- **Las cabeceras reenviadas no cuentan.** `Host`, `X-Forwarded-Host`, `Forwarded` y
+  `X-Forwarded-Proto` llegan del cliente o del reenvío. `TRUST_PROXY` solo decide la IP del
+  cliente, nunca el origen.
+- **Por qué hace falta.** La cookie `SameSite=Lax` viaja también desde un subdominio hermano o
+  desde otro puerto del mismo host. Algunos `POST` no llevan cuerpo y salen sin preflight, y la
+  exportación de reportes es un `GET` con efectos.
+- **Dos reglas.** Las mutaciones exigen el `Origin` exacto. Fetch Metadata rechaza además
+  `same-site` y `cross-site` en todos los métodos salvo `OPTIONS`.
+- **Antes del cuerpo y de la sesión.** La guarda corre antes del parser JSON
+  (`../architecture/backend.md`), y su 403 no revela el origen esperado.
+- **Sin CORS.** La API no envía cabeceras `Access-Control-Allow-*`.
+
 ## Secrets
 
 - Never in code, logs, error messages, client bundles, or version control.

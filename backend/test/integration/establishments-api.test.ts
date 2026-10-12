@@ -1,6 +1,6 @@
 // API de establecimientos y puntos de emisión (design D12): permisos por rol, aislamiento por
 // empresa, rutas anidadas, campos no permitidos y lista con disponibilidad.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createMember, type AuthApp } from "./auth-harness.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";

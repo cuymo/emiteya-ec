@@ -5,7 +5,7 @@
 // las capacidades, el producto ni los roles del proveedor. Las reconciliaciones diagnósticas del
 // inventario y de las capacidades no informan diferencias. Respuestas del SRI sintéticas, sin red.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { PURCHASE_SETTLEMENT_STATEMENTS } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

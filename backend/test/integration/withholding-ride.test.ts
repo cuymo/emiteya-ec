@@ -5,7 +5,7 @@
 // procedencia; un segundo intento no genera otro; la bandeja lo lista con el tipo 07 y lo descarga
 // verificado.
 import { createHash, randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { WithholdingReceiptView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

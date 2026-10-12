@@ -4,7 +4,7 @@
 // distribución de la nota de débito, con la denominación de la forma de pago de su snapshot, y lo
 // guarda una vez con su procedencia; la bandeja lo lista con el tipo 05 y lo descarga verificado.
 import { createHash, randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { DebitNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

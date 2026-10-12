@@ -35,15 +35,17 @@ Orden de middleware de `createApp` (ADR 0016):
 4. Métricas HTTP por patrón de ruta.
 5. Endpoints operacionales: `/health/live`, `/health/ready` y `/metrics`, fuera de `/api` y fuera de la API pública. Restringir su exposición corresponde al despliegue (`deployment.md`).
 6. `mountBeforeBodyParser`: punto de montaje para routers que necesitan el cuerpo sin procesar. Monta Better Auth en `/api/auth/*`, precedido del middleware que escribe la IP del cliente y la correlación como cabeceras propias del servidor.
-7. `express.json` con límite de 100 KB, salvo las rutas que `jsonBodyExceptions` declara con su propio parser: la carga de la firma electrónica (límite derivado de `CERTIFICATE_MAX_BYTES`) crear y actualizar un borrador de guía de remisión (2 MiB, design D23 de `add-shipping-guides`) y crear y actualizar un borrador de liquidación de compra (4 MiB, design D22 de `add-purchase-settlements`). El límite global no cambia para el resto de la API, tampoco para las emisiones.
-8. `/api/v1`: el router de aplicación que recibe `createApp` (ADR 0015).
-9. Manejador 404 y manejador de errores.
+7. Guarda de origen de `/api/v1` (`platform/http/request-origin.ts`), antes de leer cualquier cuerpo y de consultar la sesión. `OPTIONS` pasa sin evaluarse; `Sec-Fetch-Site` `same-site` o `cross-site` se rechaza en los demás métodos, y las mutaciones exigen el `Origin` exacto del origen canónico (`../security/hardening.md`, "Origen de las peticiones").
+8. `express.json` con límite de 100 KB, salvo las rutas que `jsonBodyExceptions` declara con su propio parser: la carga de la firma electrónica (límite derivado de `CERTIFICATE_MAX_BYTES`) crear y actualizar un borrador de guía de remisión (2 MiB, design D23 de `add-shipping-guides`) y crear y actualizar un borrador de liquidación de compra (4 MiB, design D22 de `add-purchase-settlements`). El límite global no cambia para el resto de la API, tampoco para las emisiones.
+9. `/api/v1`: el router de aplicación que recibe `createApp` (ADR 0015).
+10. Manejador 404 y manejador de errores.
 
 Contrato de errores:
 
 - Respuesta: `{ error: { code, message, requestId } }`, con el esquema de `@facturador/contracts`.
 - `AppError` lleva un código estable, el estado HTTP y un mensaje para el usuario; `NotFoundError`, `ConflictError` y `ValidationError` (desde un `ZodError`) son sus variantes genéricas.
 - Errores del parser: `413 PAYLOAD_TOO_LARGE` y `400 INVALID_JSON`.
+- Rechazo por origen o por Fetch Metadata: `403 REQUEST_ORIGIN_REJECTED`, con `Cache-Control: no-store` y un mensaje genérico, sin el origen esperado ni la regla que falló.
 - Cualquier otro error responde `500 INTERNAL_ERROR` con un mensaje genérico; el detalle y el stack quedan solo en el log, con el mismo `requestId`.
 
 Ejecución: en desarrollo, `node --watch --env-file-if-exists=.env --conditions=development src/main.ts` (type stripping nativo, sin `tsx`); en producción, `tsc -p tsconfig.build.json` y `node dist/main.js`. El código respeta las restricciones de `erasableSyntaxOnly` descritas en ADR 0016.

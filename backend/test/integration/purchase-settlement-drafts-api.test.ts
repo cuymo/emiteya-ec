@@ -6,7 +6,7 @@
 // guarda sin reservar; la dirección propuesta desde el tercero; la vista previa con los importes del
 // spec y los problemas por línea o pago; la versión; el borrador emitido inmutable; los límites como
 // defensa del sistema; y `403`, `401` y otra empresa `404`.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type {
   PurchaseSettlementDraftSummaryView,

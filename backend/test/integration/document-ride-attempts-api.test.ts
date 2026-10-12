@@ -1,7 +1,7 @@
 // Reintento de una generación detenida del RIDE sobre HTTP (add-document-archive, tarea 9.1,
 // design D5): programa un job manual que genera el RIDE; nunca reemplaza uno existente, nunca deja
 // dos jobs activos, nunca cambia el estado fiscal y no se audita.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { DocumentSummaryView } from "@facturador/contracts";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";

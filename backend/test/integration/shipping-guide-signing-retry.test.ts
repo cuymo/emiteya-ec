@@ -4,7 +4,7 @@
 // Una guía firmada se devuelve sin efecto ni auditoría; la de otra empresa o un comprobante de otro
 // tipo responden `404`; sin sesión, `401`.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { ShippingGuideView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

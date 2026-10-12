@@ -2,7 +2,7 @@
 // (add-document-archive, tareas 8.1 y 8.2, design D8 y D9): los bytes exactos guardados con sus
 // cabeceras y su nombre determinista; nada sale si la integridad falla; la impresión es una acción
 // explícita; cada entrega queda en un historial de solo agregado, sin auditoría y sin bytes.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { DeliveryView, DocumentDeliveriesView } from "@facturador/contracts";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";

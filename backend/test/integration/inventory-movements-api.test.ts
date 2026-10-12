@@ -3,7 +3,7 @@
 // operación y clave y la huella de su solicitud; sin auditoría duplicada y sin rutas para editar o
 // borrar movimientos.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { Registry } from "@prometheus-io/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";

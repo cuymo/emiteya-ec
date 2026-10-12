@@ -3,7 +3,7 @@
 // mismo snapshot, con `credit_note.signing_retried`, y su capacidad sigue reservada. Una nota firmada
 // se devuelve sin efecto ni auditoría; la de otra empresa o una factura responden `404`.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CreditNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

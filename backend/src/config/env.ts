@@ -16,6 +16,7 @@ import {
 } from "@facturador/contracts";
 import { z } from "zod";
 import { DEFAULT_LOGO_MAX_BYTES, LOGO_MAX_BYTES_RANGE } from "../modules/taxpayer/domain/logo.ts";
+import { canonicalOrigin } from "../platform/http/request-origin.ts";
 
 const trustProxy = z
   .string()
@@ -295,6 +296,21 @@ function toEnvError(issues: z.core.$ZodIssue[], source: NodeJS.ProcessEnv): EnvE
       : `${name}: valor inválido`;
   });
   return new EnvError(variables, details);
+}
+
+/**
+ * Origen canónico de /api/v1, el mismo de Better Auth (enforce-api-origin-and-body-limits, D4). Sin
+ * un origen http o https la API no arranca; el mensaje nombra la variable, nunca su valor.
+ */
+export function loadCanonicalOrigin(env: Pick<Env, "BETTER_AUTH_URL">): string {
+  try {
+    return canonicalOrigin(env.BETTER_AUTH_URL);
+  } catch {
+    throw new EnvError(
+      ["BETTER_AUTH_URL"],
+      ["BETTER_AUTH_URL: no produce un origen http o https válido"],
+    );
+  }
 }
 
 export function passwordPolicy(env: Env): PasswordPolicy {

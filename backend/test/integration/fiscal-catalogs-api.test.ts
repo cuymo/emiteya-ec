@@ -2,7 +2,7 @@
 // consulta de ambos roles, versión aplicable por fecha, valores por defecto y decisiones de la
 // empresa, habilitación como estado deseado con auditoría solo de la transición real, aislamiento y
 // ninguna ruta para modificar datos oficiales.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DATASET_FILES } from "../../src/modules/catalogs/datasets/index.ts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import request from "supertest";
+import request from "./support/http-client.ts";
 import { describe, expect, it } from "vitest";
 import { buildTestApp } from "./helpers.ts";
 

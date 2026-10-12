@@ -5,7 +5,7 @@
 // (test/fixtures/s3-offline/), y el XML firmado vuelve a validar contra el XSD y a verificar.
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, describe, expect, inject, it } from "vitest";
 import type { InvoiceView } from "@facturador/contracts";
 import {

@@ -8,7 +8,7 @@
 // direcciones, placa, XML ni SOAP; y las métricas.
 import { randomUUID } from "node:crypto";
 import { Registry } from "@prometheus-io/client";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { ShippingGuideDraftView, ShippingGuideView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

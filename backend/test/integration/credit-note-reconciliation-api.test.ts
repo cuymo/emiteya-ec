@@ -3,7 +3,7 @@
 // revisión manual que pasa a autorizada con su crédito aplicado; un operador recibe `403`; un estado
 // no reconciliable y una interacción en curso se rechazan; los eventos de auditoría no llevan SOAP.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CreditNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

@@ -3,7 +3,7 @@
 // una sola liquidación y la otra responde 409; emisiones simultáneas de borradores distintos reciben
 // secuenciales sin huecos ni repetidos. Se repite varias rondas para descartar fallos intermitentes.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { PURCHASE_SETTLEMENT_STATEMENTS, type PurchaseSettlementView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

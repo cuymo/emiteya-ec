@@ -5,7 +5,7 @@
 // ellos y el transportista conserva los suyos). Las reconciliaciones diagnósticas no informan
 // diferencias. Respuestas del SRI sintéticas, sin red.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { reconcileCreditCapacity } from "../../src/modules/credit-notes/infrastructure/index.ts";

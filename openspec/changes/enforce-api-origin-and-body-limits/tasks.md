@@ -2,7 +2,7 @@
 
 ## 1. Guarda de origen y Fetch Metadata en `/api/v1`
 
-- [ ] 1.1 Crear `backend/src/platform/http/request-origin.ts`, sin efectos (design D2, D3, D4 y D8):
+- [x] 1.1 Crear `backend/src/platform/http/request-origin.ts`, sin efectos (design D2, D3, D4 y D8):
   - **`canonicalOrigin(url)`:** devuelve `URL.origin`, y falla si no es un origen `http` o `https`.
   - **La evaluación de una petición:** recibe el método y las cabeceras, y devuelve que sigue o una
     de las seis categorías.
@@ -21,7 +21,7 @@
     falsificados no cambian el resultado.
   - **`canonicalOrigin`:** descarta la ruta y rechaza `file:`, `ftp:` y los valores inválidos.
   - **La categoría:** no contiene identificadores.
-- [ ] 1.2 Montar la guarda en `createApp` (`backend/src/app.ts`), con la dependencia nueva
+- [x] 1.2 Montar la guarda en `createApp` (`backend/src/app.ts`), con la dependencia nueva
   `requestOrigin`, entre `mountBeforeBodyParser` y el parser JSON (design D1).
   - **Error:** el rechazo pone `Cache-Control: no-store` y sale con `REQUEST_ORIGIN_REJECTED` 403
     por el manejador de errores (design D7 y D8).
@@ -38,7 +38,7 @@
     muestra el valor;
   - las pruebas de `security-event-log`: el evento sin URL cruda y las etiquetas del contador;
   - `typecheck` y `lint`.
-- [ ] 1.3 Crear el cliente compartido `backend/test/support/http-client.ts` (design D9).
+- [x] 1.3 Crear el cliente compartido `backend/test/support/http-client.ts` (design D9).
   - `request(app, options?)` es un reemplazo directo de `supertest(app)`.
   - En `post`, `put`, `patch` y `delete` envía `Origin: TEST_ORIGIN`.
   - `request(app, { origin: null })` no envía `Origin`, y `.set("Origin", …)` lo sustituye.
@@ -49,7 +49,7 @@
 
   Verificar que `corepack pnpm exec vitest run --project backend` sigue en verde con la guarda
   activa.
-- [ ] 1.4 Crear `backend/test/integration/request-origin.test.ts` sobre `buildAuthApp`, construyendo
+- [x] 1.4 Crear `backend/test/integration/request-origin.test.ts` sobre `buildAuthApp`, construyendo
   las peticiones negativas en el cliente: `{ origin: null }`, `.set("Origin", …)` y
   `.set("Sec-Fetch-Site", …)`. Cubrir los escenarios del spec:
   - **Mutaciones:** la mutación válida con el origen canónico; un origen ajeno, uno de un sitio
@@ -75,7 +75,7 @@
     límite propio siguen aceptando sus cuerpos grandes.
 
   Verificar que el archivo pasa.
-- [ ] 1.5 Documentar el grupo:
+- [x] 1.5 Documentar el grupo:
   - `docs/security/hardening.md`: la frontera de confianza y el origen canónico;
   - `docs/architecture/backend.md`: el orden de los middleware con la guarda;
   - `docs/quality/observability.md`: el evento y el contador;

@@ -5,7 +5,7 @@
 // identificación de cualquier destinatario, el filtro de estado y la paginación; el historial de la
 // transmisión; y `403`, `401` y otra empresa `404`.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type {
   ShippingGuideSummaryView,

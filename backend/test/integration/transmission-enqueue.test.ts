@@ -2,7 +2,7 @@
 // factura firmada tiene su `sri.transmit` desde el mismo commit, y si esa transacción se cae no
 // queda ni el SIGNED ni el job. Emite por HTTP con la firma sintética del arnés, sin el SRI.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { InvoiceView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

@@ -96,6 +96,11 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
   - Separarla elimina esa interferencia; no cambia sus invariantes, su volumen ni `maxWait`.
 - Un paquete: `corepack pnpm exec vitest run --project backend` (o `contracts`, `frontend`, `scripts`).
 - Integración: las pruebas de `backend/test/integration/` usan PostgreSQL real, la base `facturador_test` de `compose.yaml` o `DATABASE_URL_TEST`. Levántala con `docker compose up -d --wait`. Si no está disponible, fallan con esa indicación; nunca se saltan.
+- **Origen de las peticiones:** las pruebas en proceso llaman a la aplicación como un navegador del mismo origen.
+  - `backend/test/support/http-client.ts` es un reemplazo directo de `supertest(app)` que envía `Origin: TEST_ORIGIN` en `post`, `put`, `patch` y `delete`. `buildTestApp` y `buildAuthApp` arman la aplicación con ese mismo origen canónico.
+  - Una prueba negativa construye la petición en el cliente: `request(app, { origin: null })` no envía `Origin`, y `.set("Origin", …)` o `.set("Sec-Fetch-Site", …)` lo cambian.
+  - La aplicación no tiene cabeceras ni envoltorios de prueba. Un archivo que mute con `supertest` directo recibe el 403 de la guarda.
+  - El arnés end-to-end (`startE2eBackend`), los benchmarks y `check:web-security-policy` envían su propio `Origin`.
 - Aislamiento: cada archivo de integración crea su propio esquema PostgreSQL dentro de `facturador_test`, le aplica las migraciones con `prisma migrate deploy` sin el advisory lock global de Prisma (`PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK`: cada esquema es nuevo y lo migra un solo archivo, y el lock solo encolaba esquemas independientes hasta agotar su espera) y lo elimina al terminar (`createMigratedSchema`), de modo que los archivos corren en paralelo sin compartir datos y el aprovisionamiento puede partir de una instalación vacía. Las fixtures incluyen siempre dos empresas.
 - Frontend: Vitest con jsdom y Testing Library; las consultas se hacen por rol y nombre accesible, lo que también verifica la accesibilidad básica. `frontend/test/harness.tsx` monta los proveedores reales con la navegación de Next simulada y un `fetch` que responde por método y ruta.
 - Herramientas: las reglas de capas de ESLint y `check:versions` tienen sus propias pruebas.

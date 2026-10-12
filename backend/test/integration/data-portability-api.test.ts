@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { Registry } from "@prometheus-io/client";
 import { Router } from "express";
 import pino from "pino";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   dataExportListViewSchema,

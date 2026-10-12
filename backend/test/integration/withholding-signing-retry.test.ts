@@ -5,7 +5,7 @@
 // tipo responden `404`; sin sesión, `401`. Los datos congelados al reservar (la razón social del
 // proveedor y la forma de pago) rigen el XML firmado y el RIDE aunque cambien antes de firmar.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { WithholdingReceiptView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

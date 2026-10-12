@@ -2,7 +2,7 @@
 // búsqueda por número o comprador, de la más reciente a la más antigua; detalle desde el snapshot
 // con el diagnóstico si sigue reservada; sin el XML firmado; aislamiento por empresa y permisos.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { InvoiceSummaryView, InvoiceView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

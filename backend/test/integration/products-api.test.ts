@@ -3,7 +3,7 @@
 // estado tributario derivado que sigue a la habilitación y a la vigencia sin tocar las referencias,
 // coherencia del tipo sobre el estado final, unicidad del código con altas simultáneas, corrección
 // con versión, búsqueda, recuentos, permisos, aislamiento y auditoría.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { ProductTaxSummaryView, ProductView } from "@facturador/contracts";
 import { DATASET_FILES } from "../../src/modules/catalogs/datasets/index.ts";

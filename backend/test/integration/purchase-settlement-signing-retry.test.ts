@@ -5,7 +5,7 @@
 // catálogo: el XML sale del snapshot congelado. Una liquidación firmada se devuelve sin efecto; la de
 // otra empresa o un comprobante de otro tipo responden `404`; sin sesión, `401`.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { PURCHASE_SETTLEMENT_STATEMENTS, type PurchaseSettlementView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

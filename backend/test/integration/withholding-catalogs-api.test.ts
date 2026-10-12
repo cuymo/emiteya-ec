@@ -2,7 +2,7 @@
 // design D7 a D12): consulta con la clasificación, el texto literal y los sustentos admitidos;
 // resolución por fecha; utilizable solo si está soportada, vigente y habilitada; habilitación por
 // empresa con su aislamiento, el 403 del operador y el rechazo de las entradas fuera de alcance.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DATASET_FILES } from "../../src/modules/catalogs/datasets/index.ts";
 import {

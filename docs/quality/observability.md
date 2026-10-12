@@ -32,13 +32,19 @@ El proyecto separa dos conceptos que la plantilla agrupa:
 | Concepto | Qué registra | Empresa | Almacenamiento | Retención |
 | --- | --- | --- | --- | --- |
 | Rastro de auditoría del tenant | Cambios exitosos de un actor conocido: administración de accesos y, en cambios futuros, configuración tributaria, firma, secuenciales y comprobantes (ERS RF-003, SEC-007). Además, cada exportación de un reporte que el servidor terminó de generar (`report.exported`), aunque no cambie datos. | Siempre conocida | Tabla de solo agregado en PostgreSQL, escrita en la misma transacción que la acción | Indefinida, como evidencia |
-| Eventos de seguridad | Inicios de sesión fallidos, cuentas inexistentes, límites de intentos alcanzados y denegaciones de autorización, aunque el actor sea conocido. | Opcional: puede no existir | Logs estructurados y métricas; no se guardan en el rastro de auditoría | La del sistema de logs del operador; por defecto se propone 90 días |
+| Eventos de seguridad | Inicios de sesión fallidos, cuentas inexistentes, límites de intentos alcanzados, denegaciones de autorización, aunque el actor sea conocido, y peticiones de `/api/v1` rechazadas por su origen o por Fetch Metadata. | Opcional: puede no existir | Logs estructurados y métricas; no se guardan en el rastro de auditoría | La del sistema de logs del operador; por defecto se propone 90 días |
 
 - Los intentos denegados se registran como eventos de seguridad, no en el rastro de auditoría: siguen siendo revisables y detectan enumeraciones, sin llenar de ruido una tabla inmutable.
 - El rastro de auditoría no guarda direcciones IP. Ni el ERS ni CTX las exigen, y una tabla inmutable no permite borrarlas.
 - Better Auth guarda por defecto la IP en cada sesión; el proyecto la anula al crear la sesión, y el estado del límite de intentos vive en memoria, de modo que ninguna IP se persiste en la base de datos.
 - Los eventos de seguridad pueden incluir la IP del cliente para limitar intentos y detectar abusos. Detrás de un proxy, la IP se toma de `X-Forwarded-For` solo si viene de un proxy declarado de confianza; si no, se usa la del socket. Nunca se confía en la cabecera de un cliente directo.
 - Si en el futuro una IP debe persistirse fuera de los logs, se documentan antes su propósito, ubicación, retención y base legal.
+- **Rechazo por origen** (`request_origin_rejected`, en `warn`):
+  - Lleva el método, la categoría de la ruta, el motivo y la correlación (`requestId`).
+  - La categoría es el primer segmento tras `/api/v1` cuando es un nombre de recurso, como `documents`; si no, `unknown`. Nunca es la URL con sus identificadores.
+  - No lleva el `Origin` ni el `Referer` recibidos, las cookies, el cuerpo, otras cabeceras ni la IP, y no crea auditoría.
+  - El contador `http_request_origin_rejections_total` solo tiene las etiquetas `method` y `reason`, para mantener baja la cardinalidad.
+  - El log de petición de `pino-http` de un rechazo es el mismo que el de cualquier otra petición: método, URL y estado.
 
 ## Transmisión al SRI
 

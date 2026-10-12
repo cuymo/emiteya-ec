@@ -1,6 +1,6 @@
 // API del logo (design D5 y D12): cuerpo binario, tipos de contenido, límite, cabeceras de la
 // descarga, permisos y aislamiento por empresa.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { pngBytes } from "../fixtures/images.ts";
 import { createMember, type AuthApp } from "./auth-harness.ts";

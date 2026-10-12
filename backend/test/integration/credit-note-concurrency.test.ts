@@ -6,7 +6,7 @@
 // anulaciones totales (una) y el remanente exacto de tres notas simultáneas de un tercio. Cada
 // escenario se repite y la reconciliación de las capacidades no informa diferencias.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CreditNoteDraftView, CreditNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

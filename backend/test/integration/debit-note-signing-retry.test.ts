@@ -3,7 +3,7 @@
 // snapshot, con `debit_note.signing_retried`. Una nota firmada se devuelve sin efecto ni auditoría;
 // la de otra empresa, una factura o una nota de crédito responden `404`.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { DebitNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

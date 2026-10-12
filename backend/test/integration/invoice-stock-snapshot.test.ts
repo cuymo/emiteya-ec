@@ -2,7 +2,7 @@
 // design D4): por línea, producto marcado y con inventario inicializado al reservar; la versión 1 se
 // sigue leyendo sin esa decisión; el XML es el mismo con o sin ella.
 import { randomInt, randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { createFiscalUnitOfWork } from "../../src/modules/fiscal/infrastructure/unit-of-work.ts";

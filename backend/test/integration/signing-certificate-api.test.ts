@@ -2,7 +2,7 @@
 // certificate, design D3 a D12): carga y reemplazo con destrucción del secreto, idempotencia y
 // conflicto, rechazos con su mensaje, consultas, anticipación, permisos, aislamiento y preparación
 // para emitir. Fixtures sintéticos, nunca certificados reales.
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
 import { PASSWORD_ENCODING_MESSAGE } from "../../src/modules/signing/application/errors.ts";

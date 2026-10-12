@@ -5,7 +5,7 @@
 // guarda una vez con su procedencia; un segundo intento no genera otro; se descarga verificado, la
 // solicitud de impresión entrega el mismo RIDE y el historial de entregas registra ambas.
 import { createHash, randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { PURCHASE_SETTLEMENT_STATEMENTS, type PurchaseSettlementView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";

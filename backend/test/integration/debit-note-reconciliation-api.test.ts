@@ -4,7 +4,7 @@
 // operador recibe `403`; un estado no reconciliable y una interacción en curso se rechazan; los
 // eventos de auditoría de la solicitud y de la finalización no llevan SOAP.
 import { randomUUID } from "node:crypto";
-import request from "supertest";
+import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { DebitNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
