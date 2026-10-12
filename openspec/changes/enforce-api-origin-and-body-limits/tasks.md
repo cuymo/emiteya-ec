@@ -156,7 +156,7 @@
 
 ## 4. Comprobación de navegador
 
-- [ ] 4.1 Ampliar `scripts/check-web-security-policy.ts` (design D10):
+- [x] 4.1 Ampliar `scripts/check-web-security-policy.ts` (design D10):
   - una página atacante en `http://localhost:3001` (mismo sitio) y otra en
     `http://127.0.0.1:3001` (otro sitio);
   - con la sesión abierta, desde cada una: un `POST` sin cuerpo con credenciales a

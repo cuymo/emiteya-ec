@@ -109,9 +109,19 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
   - Arranca el backend con el arnés end-to-end, la firma sintética y un SRI simulado (nunca el SRI
     real).
   - Arranca `next start` del build en `http://localhost:3000`, con el backend en el puerto al que el
-    build reenvía `/api`. Necesita ese puerto y el 3000 libres, PostgreSQL y el Chrome del sistema.
+    build reenvía `/api`. Necesita ese puerto, el 3000 y el 3001 libres, PostgreSQL y el Chrome del
+    sistema.
   - Recorre los flujos en Chrome con `playwright-core` y falla ante cualquier violación inesperada de
     la política.
+  - **Origen de `/api/v1`** (puntos 24 a 26, `enforce-api-origin-and-body-limits`): con la sesión
+    abierta, dos páginas atacantes en el puerto 3001, `localhost` (del mismo sitio) y `127.0.0.1`
+    (de otro sitio), envían una solicitud de impresión sin cuerpo y navegan a la exportación de un
+    reporte.
+    - Las dos peticiones se rechazan por el `Sec-Fetch-Site` esperado. La impresión se confirma en
+      el registro de seguridad del backend, porque Chrome oculta la respuesta opaca del `POST`
+      (ORB); la exportación, por su 403 en la navegación.
+    - La API confirma que no se registró ninguna impresión ni exportación.
+    - Usan un contexto propio del navegador, fuera del recuento de violaciones de la política.
   - Con `--measure-styles`, mide además las variantes de estilos del design D4 como políticas solo
     informativas.
   - Dura unos 20 segundos en local, e informa sus tiempos por fase.

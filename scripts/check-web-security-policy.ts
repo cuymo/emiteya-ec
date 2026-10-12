@@ -4,7 +4,8 @@
 // SRI SIMULADO y la firma sintética de las pruebas, y `next start` del build en el origen de las
 // pruebas. Recorre los flujos legítimos en Chrome, recoge las violaciones de la política y falla ante
 // cualquiera inesperada. Nunca contacta el SRI real: el SRI simulado vive en un host que no resuelve
-// por DNS y solo se alcanza por su proxy local.
+// por DNS y solo se alcanza por su proxy local. Con la sesión abierta, dos páginas atacantes en el
+// puerto 3001 comprueban además el origen de /api/v1 (enforce-api-origin-and-body-limits, design D10).
 //
 // Uso, después de `corepack pnpm build`:
 //   corepack pnpm check:web-security-policy                  comprobación completa
@@ -12,11 +13,22 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { request as httpRequest } from "node:http";
+import {
+  createServer as createHttpServer,
+  request as httpRequest,
+  type RequestListener,
+  type Server,
+} from "node:http";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { chromium, type BrowserContext, type Page } from "playwright-core";
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type Page,
+  type Request,
+} from "playwright-core";
 import { pngBytes } from "../backend/test/fixtures/images.ts";
 import {
   createMigratedSchema,
@@ -45,6 +57,8 @@ const ROOT = join(import.meta.dirname, "..");
 const FRONTEND = join(ROOT, "frontend");
 const ADMIN = { email: "admin@csp.check", password: "contrasena-admin-csp-1" };
 const STEP_TIMEOUT_MS = 30_000;
+/** Puerto de las páginas atacantes: `localhost` es del mismo sitio que el origen, `127.0.0.1` no. */
+const ATTACKER_PORT = 3001;
 const measureStyles = process.argv.includes("--measure-styles");
 
 type Violation = {
@@ -148,6 +162,12 @@ async function main(): Promise<number> {
     );
     return 1;
   }
+  if (await portInUse(ATTACKER_PORT)) {
+    console.error(
+      `check:web-security-policy: el puerto ${ATTACKER_PORT} de las páginas atacantes está ocupado.`,
+    );
+    return 1;
+  }
   await requireTestDatabase();
 
   const fixtures = mkdtempSync(join(tmpdir(), "facturador-csp-p12-"));
@@ -241,6 +261,9 @@ async function main(): Promise<number> {
             .map((v) => `${v.phase}: ${v.directive} ${v.blocked} (${v.source})`)
             .join(" | "),
     );
+
+    await checkCrossSiteRequests(browser, invoice, backend, db);
+    mark("origen de /api/v1");
 
     if (measureStyles) await measureStyleVariants(browser, invoice.number);
 
@@ -587,6 +610,14 @@ async function step<T>(
   }
 }
 
+async function signInThroughForm(page: Page): Promise<void> {
+  await page.goto("/iniciar-sesion");
+  await page.getByLabel("Correo").fill(ADMIN.email);
+  await page.getByLabel("Contraseña", { exact: true }).fill(ADMIN.password);
+  await page.getByRole("button", { name: "Iniciar sesión" }).click();
+  await page.getByRole("button", { name: /^Cuenta de / }).waitFor({ timeout: STEP_TIMEOUT_MS });
+}
+
 /** Flujos legítimos con la política y COOP activas (design D9, puntos 5, 15 a 19). */
 async function checkBrowserFlows(
   context: BrowserContext,
@@ -601,13 +632,9 @@ async function checkBrowserFlows(
     "5. Arranque e hidratación correctos",
     state,
     async () => {
-      await page.goto("/iniciar-sesion");
       // La aplicación hidratada toma el envío del formulario; sin JavaScript, el envío nativo se
       // bloquea por form-action y la sesión no empieza.
-      await page.getByLabel("Correo").fill(ADMIN.email);
-      await page.getByLabel("Contraseña", { exact: true }).fill(ADMIN.password);
-      await page.getByRole("button", { name: "Iniciar sesión" }).click();
-      await page.getByRole("button", { name: /^Cuenta de / }).waitFor({ timeout: STEP_TIMEOUT_MS });
+      await signInThroughForm(page);
       check(
         "5. Arranque e hidratación correctos",
         at("5. Arranque e hidratación correctos") === 0,
@@ -736,6 +763,162 @@ async function checkBrowserFlows(
     page,
   );
   await page.close();
+}
+
+/**
+ * Páginas atacantes en el puerto 3001: una solicitud de impresión, un `POST` sin cuerpo que el
+ * navegador envía sin preflight, y una navegación de nivel superior a la exportación de un reporte.
+ */
+async function attackerPages(documentId: string): Promise<() => Promise<void>> {
+  const pages: Record<string, string> = {
+    "/impresion": `fetch(${JSON.stringify(`${E2E_ORIGIN}/api/v1/documents/${documentId}/print-requests`)}, { method: "POST", mode: "no-cors", credentials: "include" });`,
+    "/exportacion": `location.href = ${JSON.stringify(`${E2E_ORIGIN}/api/v1/reports/issued-documents/export`)};`,
+  };
+  const handler: RequestListener = (req, res) => {
+    const script = pages[req.url ?? ""];
+    res.writeHead(script ? 200 : 404, { "content-type": "text/html; charset=utf-8" });
+    res.end(
+      script ? `<!doctype html><title>Página atacante</title><script>${script}</script>` : "",
+    );
+  };
+  const servers: Server[] = [];
+  // `localhost` puede resolver a ::1 o a 127.0.0.1; sin IPv6 basta 127.0.0.1.
+  for (const host of ["127.0.0.1", "::1"]) {
+    const server = createHttpServer(handler);
+    const listening = await new Promise<boolean>((resolve) => {
+      server.once("error", () => resolve(false));
+      server.listen(ATTACKER_PORT, host, () => resolve(true));
+    });
+    if (listening) servers.push(server);
+    else if (host === "127.0.0.1") throw new Error("las páginas atacantes no pudieron escuchar");
+  }
+  return async () => {
+    await Promise.all(
+      servers.map((server) => new Promise((resolve) => server.close(() => resolve(undefined)))),
+    );
+  };
+}
+
+/**
+ * Origen de /api/v1 en el navegador (H-03, puntos 24 a 26): con la sesión del administrador abierta,
+ * un sitio hermano y otro sitio no registran una impresión ni una exportación. Sin la guarda, la
+ * cookie `Lax` viajaría desde el sitio hermano y la impresión quedaría registrada. Usa un contexto
+ * propio: sus páginas no son de la aplicación y no cuentan para las violaciones de la política.
+ */
+async function checkCrossSiteRequests(
+  browser: Browser,
+  invoice: { id: string },
+  backend: E2eBackend,
+  db: MigratedSchema,
+): Promise<void> {
+  const close = await attackerPages(invoice.id);
+  const context = await browser.newContext({ baseURL: E2E_ORIGIN, acceptDownloads: true });
+  const state = { phase: "origen de /api/v1" };
+  try {
+    const { cookie } = await backend.signIn(ADMIN.email, ADMIN.password);
+    const counts = async () => {
+      const deliveries = await backend.fetchApi(
+        "GET",
+        `/documents/${invoice.id}/deliveries`,
+        cookie,
+      );
+      if (!deliveries.ok) throw new Error(`GET deliveries: ${deliveries.status}`);
+      const { data } = (await deliveries.json()) as { data: { items: { event: string }[] } };
+      return {
+        prints: data.items.filter((e) => e.event === "PRINT_REQUESTED").length,
+        // El rastro de auditoría no tiene API de lectura: se cuenta en la base.
+        exports: await db.database.prisma.auditEvent.count({
+          where: { action: "report.exported" },
+        }),
+      };
+    };
+    await step("Sesión para el origen de /api/v1", state, async () => {
+      await signInThroughForm(await context.newPage());
+    });
+    const before = await counts();
+
+    // El `POST` va en modo no-cors: Chrome descarta la respuesta JSON opaca (ORB), y Playwright no ve
+    // su estado ni sus cabeceras completas. El rechazo se confirma en el registro de seguridad del
+    // backend, cuyo motivo dice qué `Sec-Fetch-Site` recibió la API.
+    const rejections = (reason: string, route: string) =>
+      backend
+        .output()
+        .split("\n")
+        .filter(
+          (line) =>
+            line.includes('"event":"request_origin_rejected"') &&
+            line.includes(`"reason":"${reason}"`) &&
+            line.includes(`"route":"${route}"`),
+        ).length;
+    const headersOf = (request: Request) =>
+      Promise.race([
+        request.allHeaders(),
+        new Promise<Record<string, string>>((resolve) =>
+          setTimeout(() => resolve(request.headers()), 5_000),
+        ),
+      ]);
+    for (const [name, origin, site] of [
+      [
+        "24. Un sitio hermano no imprime ni exporta con la sesión",
+        `http://localhost:${ATTACKER_PORT}`,
+        "same-site",
+      ],
+      [
+        "25. Otro sitio no imprime ni exporta con la sesión",
+        `http://127.0.0.1:${ATTACKER_PORT}`,
+        "cross-site",
+      ],
+    ] as const) {
+      await step(name, state, async () => {
+        const reason = site === "same-site" ? "fetch_site_same_site" : "fetch_site_cross_site";
+        const page = await context.newPage();
+        try {
+          const printsRejected = rejections(reason, "documents");
+          const print = page.waitForRequest(
+            (req) => req.url().endsWith(`/documents/${invoice.id}/print-requests`),
+            { timeout: STEP_TIMEOUT_MS },
+          );
+          await page.goto(`${origin}/impresion`);
+          await print;
+          await until(
+            () => rejections(reason, "documents") > printsRejected,
+            `la API rechaza la impresión (${reason})`,
+          );
+
+          const exportsRejected = rejections(reason, "reports");
+          const exported = page.waitForResponse(
+            (res) => res.url().endsWith("/reports/issued-documents/export"),
+            { timeout: STEP_TIMEOUT_MS },
+          );
+          await page.goto(`${origin}/exportacion`).catch(() => undefined);
+          const exportResponse = await exported;
+          const exportHeaders = await headersOf(exportResponse.request());
+          const exportSite = exportHeaders["sec-fetch-site"];
+          await until(
+            () => rejections(reason, "reports") > exportsRejected,
+            `la API rechaza la exportación (${reason})`,
+          );
+          check(
+            name,
+            exportResponse.status() === 403 && exportSite === site,
+            `impresión rechazada en la API por ${reason}; exportación ${exportResponse.status()} (${exportSite}, cookie ${"cookie" in exportHeaders ? "enviada" : "no enviada"})`,
+          );
+        } finally {
+          await page.close();
+        }
+      });
+    }
+
+    const after = await counts();
+    check(
+      "26. Ninguna impresión ni exportación registrada desde otro origen",
+      after.prints === before.prints && after.exports === before.exports,
+      `impresiones ${before.prints} → ${after.prints}; exportaciones ${before.exports} → ${after.exports}`,
+    );
+  } finally {
+    await context.close();
+    await close();
+  }
 }
 
 /** Violaciones provocadas a propósito: deben bloquearse y quedar registradas (puntos 6, 9 y 10). */
