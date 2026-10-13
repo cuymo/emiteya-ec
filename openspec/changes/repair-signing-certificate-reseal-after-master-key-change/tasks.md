@@ -54,7 +54,7 @@
 
 ## 3. Ensayo C1 de sustitución de la clave maestra
 
-- [ ] 3.1 Crear `backend/test/integration/e2e-master-key-replacement.test.ts` con el arnés
+- [x] 3.1 Crear `backend/test/integration/e2e-master-key-replacement.test.ts` con el arnés
   `startE2eBackend` (design D9). Claves sintéticas generadas en cada ejecución, versión 1 la antigua
   y versión 2 la nueva, y P12 sintéticos de los fixtures. Recorrer por HTTP:
   1. empresa y administrador sintéticos y `main.ts` con la clave antigua;
