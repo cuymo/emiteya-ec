@@ -219,8 +219,9 @@ exportaciones temporales, `.env` y `.env.*`, PKCS#12 y PFX, claves privadas, `ar
 las salidas locales de pruebas. Las rutas exactas de los XSD se fijan al implementar.
 
 **Prueba:** un árbol temporal con el `.dockerignore` del repositorio, archivos permitidos y archivos
-prohibidos sintéticos, construido con un Dockerfile de sonda sobre la misma base de Node. Exporta el
-contexto recibido y comprueba qué llegó: ningún prohibido y todos los permitidos. Además, una
+prohibidos sintéticos, construido con un Dockerfile de sonda (`FROM scratch` y `COPY . /`), sin
+descargar ninguna imagen. Exporta el contexto recibido y comprueba qué llegó: ningún prohibido y
+todos los permitidos. Además, una
 búsqueda en las imágenes finales confirma que no traen archivos de entorno, PKCS#12, PFX ni claves
 privadas bajo el directorio de la aplicación. Nunca se lee ni se imprime un archivo privado real.
 

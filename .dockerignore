@@ -1,0 +1,60 @@
+# Contexto de build de las imágenes de producción (harden-deployment-proxy-and-recovery, design D10).
+# Lista de permitidos: todo queda fuera salvo lo que las imágenes necesitan para construirse. El
+# .gitignore no protege un contexto de Docker; este archivo sí.
+*
+
+# Manifiestos del workspace.
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.base.json
+
+# Contratos compartidos.
+!packages/contracts/package.json
+!packages/contracts/tsconfig.json
+!packages/contracts/tsconfig.build.json
+!packages/contracts/src/
+
+# Backend: código, esquema y migraciones, scripts del build y fuentes del RIDE.
+!backend/package.json
+!backend/tsconfig.json
+!backend/tsconfig.build.json
+!backend/prisma.config.ts
+!backend/prisma/
+!backend/src/
+!backend/scripts/copy-xsd.ts
+!backend/scripts/xsd-bundle.ts
+!backend/scripts/copy-ride-assets.ts
+!backend/assets/
+
+# Frontend: código y configuración del build.
+!frontend/package.json
+!frontend/tsconfig.json
+!frontend/next.config.ts
+!frontend/next-env.d.ts
+!frontend/postcss.config.mjs
+!frontend/src/
+
+# XSD canónicos que copia el build del backend.
+!docs/product/sri-xsd/
+!docs/product/w3c-xsd/
+
+# Nunca, aunque estén bajo una ruta permitida: dependencias y salidas locales, secretos y claves.
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/test-results
+**/*.log
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+**/*.env
+**/*.[pP]12
+**/*.[pP][fF][xX]
+**/*.pem
+**/*.key
+**/archivosensible.env
+**/data-exports
+**/exports
+backend/src/generated

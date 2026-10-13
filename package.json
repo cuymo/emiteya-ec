@@ -28,6 +28,7 @@
     "check:web-security-policy": "node --conditions=development scripts/check-web-security-policy.ts",
     "security:dependencies": "node scripts/check-dependency-security.ts",
     "security:secrets": "node scripts/check-secret-security.ts",
+    "deployment:context": "node scripts/deployment/check-build-context.ts",
     "test:secret-rules": "vitest run --config scripts/security/vitest.gitleaks.config.ts",
     "openspec:validate": "node scripts/openspec-validate.ts"
   },

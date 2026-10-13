@@ -10,6 +10,21 @@ Recommended services:
 - `frontend`: Next.js frontend.
 - Remote PostgreSQL database for production.
 
+### Imágenes de producción
+
+Las imágenes se construyen desde la raíz del repositorio, con el contexto acotado por `.dockerignore`
+(`harden-deployment-proxy-and-recovery`, ADR 0027):
+
+| Imagen | Dockerfile y objetivo | Contenido |
+| --- | --- | --- |
+| API | `deploy/backend.Dockerfile`, `runtime` | `node dist/main.js` sobre `node:24.21.0-bookworm-slim`: `dist` (con los XSD y las fuentes del RIDE), las dependencias de producción y `package.json`. Usuario `node` (UID 1000), sin npm, Corepack ni pnpm, y sin `NODE_ENV` fijado: el despliegue lo declara. |
+| Migraciones | `deploy/backend.Dockerfile`, `migrate` | Un solo uso: ejecuta `db:migrate:deploy` (`prisma migrate deploy`) como `node` y termina. Trae la CLI de Prisma, el esquema, las migraciones y su `schema-engine` de Debian con OpenSSL 3, sin salida a la red al ejecutarse. |
+| Interfaz | `deploy/frontend.Dockerfile`, `runtime` | `next start --port 3000`, no la salida `standalone`, para que Next.js vuelva a evaluar `next.config.ts` y exija `API_INTERNAL_URL`. Solo `.next`, las dependencias de producción, `package.json`, `next.config.ts` y su resolución de `API_INTERNAL_URL`. Usuario `node`. |
+
+- **`API_INTERNAL_URL` de la interfaz** es un argumento obligatorio del build y la misma variable al ejecutar; sin ella, ni el build ni `next start` arrancan.
+- **El contexto de build** admite solo los manifiestos del workspace, el código del backend, del frontend y de los contratos, y los XSD que copia el build. Excluye en cualquier nivel `node_modules`, `.next`, `dist`, archivos de entorno, PKCS#12, PFX, claves privadas y salidas locales. `corepack pnpm deployment:context` lo comprueba con archivos sintéticos y busca esos archivos en las imágenes construidas.
+- **Las dependencias de producción** de la API incluyen las dependencias entre pares que el lockfile resuelve para `better-auth` y `@prisma/client` (por ejemplo, el paquete `prisma` sin sus motores); no son dependencias de desarrollo del backend ni se ejecutan.
+
 ## Environment
 
 Keep runtime configuration in environment variables:

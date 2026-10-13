@@ -2,7 +2,7 @@
 
 ## 1. Imágenes de producción y contexto de build
 
-- [ ] 1.1 Crear el `.dockerignore` de la raíz con lista de permitidos (design D10): admite solo los
+- [x] 1.1 Crear el `.dockerignore` de la raíz con lista de permitidos (design D10): admite solo los
   manifiestos de la raíz, `backend/`, `frontend/`, `packages/contracts/` y las fuentes de los XSD
   bajo `docs/product/` que copia `copy-xsd`, y excluye en cualquier nivel `node_modules`, `.next`,
   `dist`, `coverage`, logs, exportaciones temporales, `.env` y `.env.*`, PKCS#12, PFX, claves
@@ -10,10 +10,10 @@
 
   Verificar con un script de prueba de contexto (`scripts/deployment/`) que construye un árbol
   temporal con el `.dockerignore` del repositorio, archivos permitidos y archivos prohibidos
-  sintéticos, y comprueba con un Dockerfile de sonda sobre `node:24.21.0-bookworm-slim` que ningún
+  sintéticos, y comprueba con un Dockerfile de sonda (`FROM scratch` y `COPY . /`) que ningún
   prohibido llega al contexto y que todos los permitidos sí. El script nunca lee un archivo privado
   real.
-- [ ] 1.2 Crear `deploy/backend.Dockerfile` (design D2) sobre `node:24.21.0-bookworm-slim`, sin
+- [x] 1.2 Crear `deploy/backend.Dockerfile` (design D2) sobre `node:24.21.0-bookworm-slim`, sin
   digest, con Corepack, pnpm 12.4.2 y `--frozen-lockfile`. Etapas de build de `contracts` y del
   backend (`tsc`, `copy-xsd`, `copy-ride-assets`), dependencias de producción sin scripts de
   instalación, objetivo `migrate` (CLI de Prisma, esquema, migraciones y `schema-engine` de
@@ -32,7 +32,7 @@
   - la imagen no trae código fuente, pruebas ni dependencias de desarrollo;
   - una búsqueda no encuentra archivos de entorno, PKCS#12, PFX ni claves privadas bajo el
     directorio de la aplicación.
-- [ ] 1.3 Crear `deploy/frontend.Dockerfile` (design D3) sobre la misma base, con `API_INTERNAL_URL`
+- [x] 1.3 Crear `deploy/frontend.Dockerfile` (design D3) sobre la misma base, con `API_INTERNAL_URL`
   como argumento obligatorio sin valor por defecto y `NEXT_TELEMETRY_DISABLED=1`. Runtime: `.next`
   sin su caché de build, las dependencias de producción, `package.json`, `next.config.ts` y
   `src/lib/api-internal-url.ts` (más `tsconfig.json` o `public/` solo si `next start` los necesita);
@@ -43,7 +43,7 @@
   - el runtime corre como un UID distinto de 0;
   - sin `API_INTERNAL_URL` en ejecución, `next start` termina con código 1;
   - la imagen solo trae los archivos de ejecución y nada del resto del repositorio.
-- [ ] 1.4 Actualizar `docs/architecture/stack.md` con las versiones de las imágenes
+- [x] 1.4 Actualizar `docs/architecture/stack.md` con las versiones de las imágenes
   (`node:24.21.0-bookworm-slim`, `nginx:1.30.5-alpine` y `postgres:17-alpine`) y documentar en
   `docs/architecture/deployment.md` las imágenes, sus objetivos y el contexto de build.
 
