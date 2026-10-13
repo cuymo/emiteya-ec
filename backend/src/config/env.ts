@@ -107,7 +107,9 @@ export function sriTransportBudgetMs(
 // Defaults de docs/security/hardening.md; son configuración, no contrato.
 export const envSchema = z
   .object({
-    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    // Sin valor por defecto: cada arranque declara su ambiente (harden-production-configuration-and-
+    // clock-ownership, design D1); toda la seguridad de producción depende de esta variable.
+    NODE_ENV: z.enum(["development", "test", "production"]),
     PORT: int(1, 65535).default(4000),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     LOG_LEVEL: z
@@ -364,9 +366,9 @@ function toEnvError(issues: z.core.$ZodIssue[], source: NodeJS.ProcessEnv): EnvE
   const variables = [...new Set(issues.map((issue) => String(issue.path[0] ?? "?")))];
   const details = issues.map((issue) => {
     const name = String(issue.path[0] ?? "?");
-    if (issue.code === "invalid_type" && source[name] === undefined)
-      return `${name}: es obligatoria`;
-    return issue.code === "custom" ? `${name}: ${issue.message}` : `${name}: valor inválido`;
+    if (issue.code === "custom") return `${name}: ${issue.message}`;
+    // Ausente sin valor por defecto: `invalid_type` para un texto, `invalid_value` para un enumerado.
+    return source[name] === undefined ? `${name}: es obligatoria` : `${name}: valor inválido`;
   });
   return new EnvError(variables, details);
 }

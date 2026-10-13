@@ -116,6 +116,7 @@ describe("recuperación administrativa de emergencia", () => {
           input: stdin,
           env: {
             PATH: process.env.PATH,
+            NODE_ENV: "development",
             DATABASE_URL: db.url,
             BETTER_AUTH_SECRET: "secreto-de-pruebas-0123456789abcdef0123",
             BETTER_AUTH_URL: BASE_URL,

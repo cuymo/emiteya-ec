@@ -35,7 +35,8 @@ readiness (2026-10-12):
     depende de ese ambiente: la defensa de origen propia de Better Auth no está activa con
     `NODE_ENV=test`.
   - `backend/test/env.test.ts` (`startupWith`) y `backend/test/integration/provisioning.test.ts`
-    arrancan `main.ts` con `PATH` y un entorno explícito, sin `NODE_ENV`.
+    arrancan `main.ts` con `PATH` y un entorno explícito, sin `NODE_ENV`, y
+    `backend/test/integration/recovery.test.ts` arranca así `admin-recover.ts`.
   - `backend/package.json` (`dev`, `admin:recover`) usa `--env-file-if-exists=.env`, y
     `backend/.env.example` ya documenta `NODE_ENV=development`.
 - **La gramática de `trust proxy` de Express** (`proxy-addr`) admite: un número de saltos, una
@@ -87,7 +88,8 @@ produce `invalid_type`, que `toEnvError` convierte en «NODE_ENV: es obligatoria
 - `backend/test/env.test.ts`: el objeto `valid` declara `NODE_ENV: "development"`; `startupWith` y
   las pruebas que ya fijan `"production"` siguen igual, y las pruebas de la ausencia de la
   variable la quitan a propósito.
-- `backend/test/integration/provisioning.test.ts`: su arranque declara `NODE_ENV: "development"`.
+- `backend/test/integration/provisioning.test.ts` y `backend/test/integration/recovery.test.ts`: su
+  arranque declara `NODE_ENV: "development"`.
 
 Las pruebas que ya se comportan bien con el cambio no se editan.
 

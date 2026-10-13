@@ -62,14 +62,14 @@
 
 ## 2. `NODE_ENV` obligatorio
 
-- [ ] 2.1 En `backend/src/config/env.ts`, quitar `.default("development")` de `NODE_ENV` (design
+- [x] 2.1 En `backend/src/config/env.ts`, quitar `.default("development")` de `NODE_ENV` (design
   D1). Verificar con pruebas en `backend/test/env.test.ts`:
   - sin la variable: `EnvError` que nombra `NODE_ENV`, sin mostrar otro valor del entorno, también
     en un arranque real de `main.ts`, que termina antes de escuchar;
   - con `development`, `test` o `production` explícitos y el resto de la configuración válida para
     ese ambiente: se acepta;
   - con un valor fuera del enumerado: `EnvError`, sin repetir el valor.
-- [ ] 2.2 Declarar `NODE_ENV: "development"` en los arranques de design D1 que hoy no lo fijan:
+- [x] 2.2 Declarar `NODE_ENV: "development"` en los arranques de design D1 que hoy no lo fijan:
   `scripts/check-dev-start.ts` y `backend/test/integration/e2e-backend.ts` (antes de
   `...options.env`). Revisar `backend/src/commands/admin-recover.ts` y confirmar que ya depende de
   `.env` (vía `--env-file-if-exists`), documentado en `backend/.env.example`; sin cambio de código
@@ -78,11 +78,12 @@
   Verificar que `corepack pnpm check:dev-start` sigue pasando, y que
   `backend/test/integration/e2e-request-protection.test.ts` sigue pasando con el control de origen
   de Better Auth activo.
-- [ ] 2.3 Declarar `NODE_ENV` en el objeto `valid` de `backend/test/env.test.ts` y en el arranque
-  de `backend/test/integration/provisioning.test.ts` (`development` donde no se prueba el ambiente
-  a propósito), sin editar las pruebas que ya se comportan bien. Verificar que
-  `corepack pnpm exec vitest run --project backend test/env.test.ts` y la prueba de
-  aprovisionamiento pasan.
+- [x] 2.3 Declarar `NODE_ENV` en el objeto `valid` de `backend/test/env.test.ts` y en los
+  arranques de `backend/test/integration/provisioning.test.ts` y
+  `backend/test/integration/recovery.test.ts` (`development` donde no se prueba el ambiente a
+  propósito), sin editar las pruebas que ya se comportan bien. Verificar que
+  `corepack pnpm exec vitest run --project backend test/env.test.ts` y las pruebas de
+  aprovisionamiento y de recuperación pasan.
 
 ## 3. `API_INTERNAL_URL` obligatorio en producción, al construir y al ejecutar
 

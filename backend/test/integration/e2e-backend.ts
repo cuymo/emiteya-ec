@@ -55,6 +55,9 @@ export async function startE2eBackend(options: {
     cwd: BACKEND_DIR,
     env: {
       PATH: process.env.PATH,
+      // El ambiente efectivo de siempre, ahora explícito (harden-production-configuration-and-clock-
+      // ownership, design D1): con `test`, Better Auth apagaría su propia defensa de origen.
+      NODE_ENV: "development",
       PORT: String(port),
       DATABASE_URL: db.url,
       BETTER_AUTH_SECRET: "secreto-de-pruebas-e2e-0123456789abcdef",

@@ -10,6 +10,7 @@ describe("createApp", () => {
     const router = Router();
     router.get("/ip", (req, res) => void res.json({ ip: req.ip }));
     const base = {
+      NODE_ENV: "development",
       DATABASE_URL: "postgresql://u:p@127.0.0.1:5432/db",
       BETTER_AUTH_SECRET: "secreto-de-pruebas-0123456789abcdef0123",
       BETTER_AUTH_URL: "http://localhost:3000",

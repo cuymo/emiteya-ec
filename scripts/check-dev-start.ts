@@ -69,6 +69,9 @@ const child = spawn(process.execPath, args, {
   cwd: backendDir,
   env: {
     ...process.env,
+    // La API exige el ambiente declarado, sin valor por defecto (harden-production-configuration-and-
+    // clock-ownership, design D1).
+    NODE_ENV: "development",
     PORT: String(port),
     DATABASE_URL: databaseUrl,
     LOG_LEVEL: "warn",

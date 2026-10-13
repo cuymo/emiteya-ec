@@ -33,6 +33,7 @@ import {
 const backendRoot = fileURLToPath(new URL("..", import.meta.url));
 const SECRET = "valor-secreto-que-no-debe-aparecer";
 const valid = {
+  NODE_ENV: "development",
   DATABASE_URL: "postgresql://u:p@127.0.0.1:5432/db",
   BETTER_AUTH_SECRET: "secreto-de-pruebas-0123456789abcdef0123",
   BETTER_AUTH_URL: "http://localhost:3000",
@@ -73,9 +74,10 @@ describe("configuración por entorno", () => {
     });
   });
 
-  it("exige DATABASE_URL, BETTER_AUTH_SECRET y BETTER_AUTH_URL", () => {
+  it("exige NODE_ENV, DATABASE_URL, BETTER_AUTH_SECRET y BETTER_AUTH_URL", () => {
     expect(() => loadEnv({})).toThrow(EnvError);
     expect(envError({})?.variables).toEqual([
+      "NODE_ENV",
       "DATABASE_URL",
       "BETTER_AUTH_SECRET",
       "BETTER_AUTH_URL",
@@ -891,5 +893,76 @@ describe("configuración de producción (harden-production-configuration-and-clo
         ),
       ).toBe("https://facturas.ejemplo.test");
     });
+  });
+});
+
+describe("ambiente declarado (harden-production-configuration-and-clock-ownership, design D1)", () => {
+  const { NODE_ENV: _nodeEnv, ...withoutNodeEnv } = valid;
+
+  it("exige NODE_ENV sin valor por defecto ni otros valores del entorno en el mensaje", () => {
+    const error = envError(withoutNodeEnv);
+    expect(error?.variables).toEqual(["NODE_ENV"]);
+    expect(error?.message).toContain("NODE_ENV: es obligatoria");
+    expect(error?.message).not.toContain(valid.BETTER_AUTH_SECRET);
+    expect(error?.message).not.toContain("u:p@");
+  });
+
+  it("admite development, test y production explícitos, y rechaza otro valor sin repetirlo", () => {
+    expect(loadEnv({ ...valid, NODE_ENV: "development" }).NODE_ENV).toBe("development");
+    expect(loadEnv({ ...valid, NODE_ENV: "test" }).NODE_ENV).toBe("test");
+    expect(loadEnv(production).NODE_ENV).toBe("production");
+    for (const value of ["produccion", "Production", "prod", ""]) {
+      const error = envError({ ...valid, NODE_ENV: value });
+      expect([value, error?.variables]).toEqual([value, ["NODE_ENV"]]);
+      if (value) expect(error?.message).not.toContain(value);
+    }
+  });
+
+  it("la API no arranca sin NODE_ENV, antes de escuchar", () => {
+    const result = startupWith(withoutNodeEnv);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("NODE_ENV: es obligatoria");
+    expect(result.stderr).not.toContain(valid.BETTER_AUTH_SECRET);
+    expect(result.stdout).not.toContain("backend escuchando");
+  });
+});
+
+describe("los rechazos de configuración no revelan secretos (harden-production-configuration-and-clock-ownership, design D6)", () => {
+  it("un arranque de producción rechazado nombra las variables sin credenciales, secretos ni el entorno", () => {
+    // La URL se arma en tiempo de ejecución: ninguna credencial, ni sintética, queda escrita.
+    const database = new URL("postgresql://127.0.0.1:5432/db");
+    database.username = "usuario-sintetico";
+    database.password = `clave-${randomBytes(8).toString("hex")}`;
+    const secrets = {
+      DATABASE_URL: database.toString(),
+      BETTER_AUTH_SECRET: `secreto-sintetico-${randomBytes(16).toString("hex")}`,
+      CERTIFICATE_MASTER_KEY: randomBytes(32).toString("base64"),
+      CERTIFICATE_PASSWORD: `clave-de-certificado-${randomBytes(8).toString("hex")}`,
+      VARIABLE_AJENA: `centinela-del-entorno-${randomBytes(8).toString("hex")}`,
+    };
+    const result = startupWith({
+      ...production,
+      ...secrets,
+      TRUST_PROXY: "false",
+      DATA_EXPORT_DIRECTORY: "relativo",
+      BETTER_AUTH_URL: "http://facturas.ejemplo.test",
+    });
+    expect(result.status).toBe(1);
+    for (const name of ["TRUST_PROXY", "DATA_EXPORT_DIRECTORY", "BETTER_AUTH_URL"]) {
+      expect(result.stderr).toContain(`${name}: `);
+    }
+    for (const value of [
+      database.username,
+      database.password,
+      secrets.BETTER_AUTH_SECRET,
+      secrets.CERTIFICATE_MASTER_KEY,
+      secrets.CERTIFICATE_PASSWORD,
+      secrets.VARIABLE_AJENA,
+      "facturas.ejemplo.test",
+      "relativo",
+    ]) {
+      expect(result.stderr).not.toContain(value);
+      expect(result.stdout).not.toContain(value);
+    }
   });
 });
