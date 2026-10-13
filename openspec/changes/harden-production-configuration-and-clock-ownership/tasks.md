@@ -198,5 +198,11 @@
     ahora exige esa comprobación previa. La segunda corrida terminó con código 0: 393 archivos de
     prueba en verde, AC-04 aparte en verde, `check:dev-start`, `build:verification`,
     `check:web-security-policy` (39 comprobaciones), `check:xsd-artifact` y `check:ride-assets`.
-- [ ] 5.3 Publicar la rama del cambio (no `main`) y registrar la evidencia de su CI: `verify` y
+- [x] 5.3 Publicar la rama del cambio (no `main`) y registrar la evidencia de su CI: `verify` y
   `security` en verde, con la validación estricta de OpenSpec dentro de `verify`.
+
+  Evidencia (2026-10-12, rama publicada en `1b651f2`; `main` sin cambios en `775ebfc`):
+  - `verify` (run 38343691499): `success` en unos 35 min, con OpenSpec 1.14.0 del repositorio y
+    23/23 en la validación estricta, 393 archivos de prueba y AC-04 aparte en verde,
+    `check:dev-start` y `check:web-security-policy` (39 comprobaciones).
+  - `security` (run 38343691482): `success` en `dependency-security` y `secret-security`.
