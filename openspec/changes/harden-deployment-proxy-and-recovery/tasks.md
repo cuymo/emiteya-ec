@@ -266,5 +266,15 @@
     registrada en `technical-debt.md`; aislada pasó (1/1). La corrida de control terminó con código 0
     en 708 s: 393 archivos de prueba, AC-04 aparte, `openapi:check`, `check:dev-start`,
     `build:verification`, `check:web-security-policy` (39), `check:xsd-artifact` y `check:ride-assets`.
-- [ ] 7.3 Publicar la rama del cambio (no `main`) y registrar la evidencia de su CI: `verify`,
+- [x] 7.3 Publicar la rama del cambio (no `main`) y registrar la evidencia de su CI: `verify`,
   `security` y `deployment` en verde, con la validación estricta de OpenSpec dentro de `verify`.
+
+  Evidencia (2026-10-13, rama publicada en `2aabc54`; `main` sin cambios en `8b9dcaf`):
+  - `deployment` (run 38423323451): `success`. `topology` en unos 4 min 48 s, con
+    `deployment:context` 2/2, `deployment:topology` 33/33 y `deployment:context --image` 5/5;
+    `recovery` en unos 4 min 3 s, con `deployment:recovery` 19/19 (respaldo de 213 ms y restauración
+    de 710 ms, solo como evidencia).
+  - `verify` (run 38423323537): `success` en unos 42 min, con OpenSpec 24/24 en la validación
+    estricta, 393 archivos de prueba, AC-04 aparte y `check:web-security-policy` (39).
+  - `security` (run 38423323541): `success` en `dependency-security` y `secret-security` (Gitleaks
+    8.30.1 verificado por suma).
