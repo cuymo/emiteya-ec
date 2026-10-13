@@ -228,7 +228,7 @@
 
 ## 7. Cierre del go-live y verificación
 
-- [ ] 7.1 Con la evidencia de los grupos 3 y 4 en la mano, actualizar
+- [x] 7.1 Con la evidencia de los grupos 3 y 4 en la mano, actualizar
   `docs/quality/definition-of-done.md` y `docs/quality/technical-debt.md`. Se cierran solo las
   entradas existentes:
   - HSTS en el borde TLS;
