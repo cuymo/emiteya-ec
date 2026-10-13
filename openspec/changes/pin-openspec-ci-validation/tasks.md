@@ -86,7 +86,8 @@
   - `verify.yml` y `security.yml` siguen sin cambios.
 
   Anotar las ejecuciones y las duraciones.
-- [ ] 3.3 Tras publicar en `main` con autorización, y solo cuando la CI de `main` demuestre que la
-  validación estricta corrió, mover `PINNED_OPEN_SPEC_CI_VALIDATION` a resueltas en
-  `docs/quality/technical-debt.md`, con la ejecución que lo demuestra. La deuda de `braces` sigue
-  abierta. Verificar que `openspec validate --all --strict` pasa con la CLI fijada.
+- [x] 3.3 Solo cuando la CI remota de GitHub, el job `verify` del repositorio, demuestre que la
+  validación estricta corrió con la CLI fijada, mover `PINNED_OPEN_SPEC_CI_VALIDATION` a resueltas
+  en `docs/quality/technical-debt.md`, con la ejecución que lo demuestra (revisión: la CI de la rama
+  basta; la CI de `main` sigue siendo la compuerta de integración del cierre). La deuda de `braces`
+  sigue abierta. Verificar que `openspec validate --all --strict` pasa con la CLI fijada.
