@@ -74,7 +74,7 @@
 
 ## 4. Documentación del comportamiento
 
-- [ ] 4.1 Actualizar lo que describe la recuperación:
+- [x] 4.1 Actualizar lo que describe la recuperación:
   - `docs/architecture/adr/0011-custodia-del-certificado.md`, consecuencias: volver a cargar el mismo
     certificado restablece su custodia con la clave configurada. La rotación sigue sin implementarse
     y sigue siendo requisito del go-live.

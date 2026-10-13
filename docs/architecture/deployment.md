@@ -272,7 +272,7 @@ La custodia de la firma (ADR 0011) y el pool criptográfico (design D18 de
 
 - Sin clave válida, la API no arranca: el error nombra la variable sin mostrar su valor ni la ruta del archivo.
 - La clave se respalda aparte de la base de datos (ver Respaldo y restauración).
-- Perderla o cambiarla deja las firmas cargadas como no disponibles hasta volver a cargarlas (riesgo R-15). La rotación verificada es requisito del go-live (ADR 0011).
+- Perderla o cambiarla deja las firmas cargadas como no disponibles hasta que cada administrador vuelve a cargar el mismo P12 con su contraseña, que restablece su custodia con la clave configurada (riesgo R-15).
 
 ### Emisión de facturas
 
@@ -483,7 +483,8 @@ AC-10):
 
 - **El volcado solo no basta para la custodia de la firma.** Sin la misma clave maestra, la
   aplicación restaurada arranca y funciona, pero cada certificado custodiado aparece no disponible
-  (`KEY_UNAVAILABLE`) y la firma queda bloqueada hasta volver a cargarlo. La clave maestra y su
+  (`KEY_UNAVAILABLE`) y la firma queda bloqueada hasta que su administrador vuelve a cargar el mismo
+  P12 con su contraseña, que restablece la custodia con la clave configurada. La clave maestra y su
   versión se guardan fuera del volcado, del respaldo, del repositorio y de las imágenes.
 - **Respaldo** (topología de referencia; `harden-deployment-proxy-and-recovery`, ADR 0027):
   `deploy/backup.sh <directorio>`, con las mismas variables de Compose del despliegue. Ejecuta
