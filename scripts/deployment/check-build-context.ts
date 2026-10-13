@@ -98,8 +98,20 @@ export function receivedContext(): string[] {
   }
 }
 
-/** Busca en el directorio de la aplicación de una imagen archivos de entorno, PKCS#12 o claves. */
+/**
+ * Busca archivos de entorno, PKCS#12 o claves en el árbol de la aplicación de una imagen: la raíz de su
+ * directorio de trabajo (`/app` en las de ejecución, `/repo` en la de migraciones), sin entrar en las
+ * dependencias de terceros, que pueden traer fixtures propios.
+ */
 export function forbiddenInImage(image: string): string[] {
+  const workingDir = run("docker", [
+    "image",
+    "inspect",
+    "-f",
+    "{{.Config.WorkingDir}}",
+    image,
+  ]).stdout.trim();
+  const root = `/${workingDir.split("/")[1] || "app"}`;
   const result = run("docker", [
     "run",
     "--rm",
@@ -108,9 +120,9 @@ export function forbiddenInImage(image: string): string[] {
     "--entrypoint",
     "find",
     image,
-    "/app",
-    "-path",
-    "/app/node_modules",
+    root,
+    "-name",
+    "node_modules",
     "-prune",
     "-o",
     "(",
@@ -161,7 +173,7 @@ export function main(args: string[]): number {
     if (!image) continue;
     const found = forbiddenInImage(image);
     checks.record(
-      `la imagen ${image} no trae entornos, PKCS#12 ni claves en /app`,
+      `la imagen ${image} no trae entornos, PKCS#12 ni claves en su árbol de la aplicación`,
       found.length === 0,
       found.length ? `${found.length} archivos` : "",
     );
