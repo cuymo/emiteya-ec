@@ -275,6 +275,38 @@ describe("diálogo Cargar o Reemplazar firma (design D14)", () => {
     ).toBe("c1");
   });
 
+  it("recuperación: la misma firma con un cambio confirma que su custodia se restableció", async () => {
+    let current = certificate({ state: "KEY_UNAVAILABLE", usable: false });
+    renderScreen(() => current, {
+      "PUT /api/v1/signing-certificate": () => {
+        current = certificate();
+        return { status: 200, body: { data: { certificate: current, unchanged: false } } };
+      },
+    });
+    await userEvent.setup().click(await screen.findByRole("button", { name: "Reemplazar firma" }));
+    const { dialog, user } = await fillDialog();
+    await user.click(within(dialog).getByRole("button", { name: "Reemplazar firma" }));
+    expect(
+      await screen.findByText(
+        "Restableciste la custodia de la firma de ANA PEREZ: ya se puede usar para emitir.",
+      ),
+    ).toBeDefined();
+    expect(await screen.findByText("Utilizable")).toBeDefined();
+  });
+
+  it("la misma firma sin cambios lo indica", async () => {
+    renderScreen(() => certificate(), {
+      "PUT /api/v1/signing-certificate": () => ({
+        status: 200,
+        body: { data: { certificate: certificate(), unchanged: true } },
+      }),
+    });
+    await userEvent.setup().click(await screen.findByRole("button", { name: "Reemplazar firma" }));
+    const { dialog, user } = await fillDialog();
+    await user.click(within(dialog).getByRole("button", { name: "Reemplazar firma" }));
+    expect(await screen.findByText("Esa firma ya era la vigente: no cambió nada.")).toBeDefined();
+  });
+
   it("los errores van a su campo o al cuerpo, sin repetir la contraseña", async () => {
     let response: { status: number; body: unknown } = {
       status: 400,

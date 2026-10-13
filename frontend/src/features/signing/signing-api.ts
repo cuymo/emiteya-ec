@@ -59,10 +59,14 @@ export function fileToBase64(file: File): Promise<string> {
   });
 }
 
-function uploadMessage(result: SigningCertificateUploadResult, replacing: boolean) {
+function uploadMessage(result: SigningCertificateUploadResult, expectedCurrentId: string | null) {
   const holder = commonName(result.certificate.subject);
   if (result.unchanged) return "Esa firma ya era la vigente: no cambió nada.";
-  return `${replacing ? "Reemplazaste" : "Cargaste"} la firma de ${holder}, vigente hasta el ${formatDate(result.certificate.notAfter)}.`;
+  // Un cambio que devuelve la misma firma es la recuperación de su custodia (repair-signing-
+  // certificate-reseal-after-master-key-change, design D6).
+  if (result.certificate.id === expectedCurrentId)
+    return `Restableciste la custodia de la firma de ${holder}: ya se puede usar para emitir.`;
+  return `${expectedCurrentId !== null ? "Reemplazaste" : "Cargaste"} la firma de ${holder}, vigente hasta el ${formatDate(result.certificate.notAfter)}.`;
 }
 
 export function useUploadCertificate(options: {
@@ -76,7 +80,7 @@ export function useUploadCertificate(options: {
         json: input,
         schema: signingCertificateUploadResultSchema,
       }),
-    success: (result, input) => uploadMessage(result, input.expectedCurrentId !== null),
+    success: (result, input) => uploadMessage(result, input.expectedCurrentId),
     invalidate: SIGNING_KEYS,
     onSuccess: options.onSuccess,
     onError: options.onError,

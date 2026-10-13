@@ -45,7 +45,7 @@
 
 ## 2. Confirmación de la recuperación en la pantalla de la firma
 
-- [ ] 2.1 En `frontend/src/features/signing/signing-api.ts`, devolver «Restableciste la custodia de
+- [x] 2.1 En `frontend/src/features/signing/signing-api.ts`, devolver «Restableciste la custodia de
   la firma de {titular}: ya se puede usar para emitir.» cuando la respuesta es
   `unchanged: false` y la firma devuelta es la que se envió en `expectedCurrentId` (design D6). La
   pantalla no cambia de estructura y sus estados (carga, error, permiso, vacío) siguen como están.
