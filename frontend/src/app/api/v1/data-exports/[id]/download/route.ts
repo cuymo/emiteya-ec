@@ -3,10 +3,13 @@
 // el backend verifica el SHA-256 completo del paquete antes del primer byte: con varios GB, eso
 // supera ese plazo. Esta ruta reenvía la descarga al backend sin plazo de espera, con la cookie de
 // la sesión, y devuelve su respuesta tal cual por streaming, sin almacenarla. La autenticación, el
-// permiso, la empresa y la verificación siguen siendo del backend.
+// permiso, la empresa y la verificación siguen siendo del backend. En producción, sin
+// API_INTERNAL_URL la descarga falla sin contactar a nadie (harden-production-configuration-and-
+// clock-ownership, design D5).
 import { request as httpRequest, type IncomingMessage } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { Readable } from "node:stream";
+import { resolveApiInternalUrl } from "@/lib/api-internal-url";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +27,17 @@ const HOP_BY_HOP = new Set([
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const target = new URL(
-    `/api/v1/data-exports/${encodeURIComponent(id)}/download`,
-    process.env.API_INTERNAL_URL ?? "http://127.0.0.1:4000",
-  );
+  let apiInternalUrl: string;
+  try {
+    apiInternalUrl = resolveApiInternalUrl(process.env.API_INTERNAL_URL, {
+      required: process.env.NODE_ENV === "production",
+    });
+  } catch (error) {
+    // El mensaje nombra la variable y la regla, nunca el valor.
+    console.error((error as Error).message);
+    return new Response(null, { status: 500, headers: { "cache-control": "no-store" } });
+  }
+  const target = new URL(`/api/v1/data-exports/${encodeURIComponent(id)}/download`, apiInternalUrl);
   const headers: Record<string, string> = { "x-forwarded-host": request.headers.get("host") ?? "" };
   for (const name of FORWARDED) {
     const value = request.headers.get(name);

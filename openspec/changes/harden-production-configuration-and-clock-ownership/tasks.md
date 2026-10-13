@@ -87,7 +87,7 @@
 
 ## 3. `API_INTERNAL_URL` obligatorio en producción, al construir y al ejecutar
 
-- [ ] 3.1 Crear `frontend/src/lib/api-internal-url.ts` con la regla de design D5 (ausente: error
+- [x] 3.1 Crear `frontend/src/lib/api-internal-url.ts` con la regla de design D5 (ausente: error
   si se exige, bucle local si no; presente: URL absoluta `http:` o `https:`, sin credenciales, solo
   un origen; los errores nombran la variable y la regla, nunca el valor). En
   `frontend/next.config.ts`, exportar una función de la fase que exige el destino en toda fase
@@ -104,7 +104,7 @@
     ese destino; en la fase de desarrollo, sin la variable, va al bucle local;
   - la ruta de descarga: en producción y sin la variable, responde `500` con `no-store` sin
     contactar el servidor de prueba; en pruebas, sigue reenviando como hasta ahora.
-- [ ] 3.2 Crear `scripts/build-for-verification.ts` (design D5), que ejecuta `corepack pnpm build`
+- [x] 3.2 Crear `scripts/build-for-verification.ts` (design D5), que ejecuta `corepack pnpm build`
   con `API_INTERNAL_URL=http://127.0.0.1:4000` explícito, sin shell, y devuelve su código, y usarlo
   en el paso `build` de `verify` en `package.json`. Verificar:
   - sin la variable, `corepack pnpm --filter @facturador/frontend build` falla con un mensaje que

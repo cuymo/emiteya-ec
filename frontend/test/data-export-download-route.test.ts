@@ -3,7 +3,7 @@
 // cabeceras y el cuerpo por streaming, sin las cabeceras de un salto, y responde 405 a HEAD.
 import { createServer, type IncomingHttpHeaders, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { GET, HEAD } from "@/app/api/v1/data-exports/[id]/download/route";
 
 describe("ruta de la descarga del paquete", () => {
@@ -45,6 +45,33 @@ describe("ruta de la descarga del paquete", () => {
       }),
       { params: Promise.resolve({ id }) },
     );
+
+  // harden-production-configuration-and-clock-ownership, design D5.
+  it("en producción, sin destino o con uno inválido, responde 500 sin contactar a nadie", async () => {
+    const configured = process.env.API_INTERNAL_URL;
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      for (const value of [undefined, `${configured}/ruta-sintetica`]) {
+        if (value === undefined) delete process.env.API_INTERNAL_URL;
+        else process.env.API_INTERNAL_URL = value;
+        seen = [];
+        const res = await call("e1");
+        expect(res.status).toBe(500);
+        expect(res.headers.get("cache-control")).toBe("no-store");
+        expect(await res.text()).toBe("");
+        expect(seen).toEqual([]);
+      }
+      expect(errors.mock.calls).toEqual([
+        ["API_INTERNAL_URL: es obligatoria en producción"],
+        ["API_INTERNAL_URL: debe ser solo un origen, sin ruta, consulta ni fragmento"],
+      ]);
+    } finally {
+      vi.unstubAllEnvs();
+      errors.mockRestore();
+      process.env.API_INTERNAL_URL = configured;
+    }
+  });
 
   it("reenvía la cookie y devuelve el paquete por streaming con sus cabeceras", async () => {
     seen = [];
