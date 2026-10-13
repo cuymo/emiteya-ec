@@ -85,7 +85,7 @@
   - `docs/product/capabilities.md`, fila de `signing-certificate`.
 
   Verificar con `corepack pnpm format:check`.
-- [ ] 4.2 Con el ensayo de 3.1 en verde, escribir en `docs/architecture/deployment.md` el
+- [x] 4.2 Con el ensayo de 3.1 en verde, escribir en `docs/architecture/deployment.md` el
   procedimiento probado de sustitución de la clave maestra (C1, decisión del propietario del
   2026-10-13; design D8):
   1. respaldo verificado de la base de datos;

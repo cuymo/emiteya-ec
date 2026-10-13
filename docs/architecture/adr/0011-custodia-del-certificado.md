@@ -31,4 +31,4 @@ SEC-002); CTX §20.4 prohíbe guardarlos en claro, en logs o en respaldos sin ci
 - Perder o cambiar la clave maestra deja la firma no disponible hasta volver a cargarla: cargar otra
   vez el mismo P12 con su contraseña restablece su custodia con la clave configurada, sin crear otra
   firma (riesgo R-15; `repair-signing-certificate-reseal-after-master-key-change`).
-- La rotación de la clave maestra no se implementa todavía, pero el formato la admite. Es requisito del go-live (`definition-of-done.md`): rotar o volver a cifrar los certificados, o un procedimiento operativo documentado y probado para sustituirlos de forma segura.
+- La rotación automática de la clave maestra (volver a cifrar los secretos sin volver a cargarlos) no se implementa todavía, pero el formato la admite: es deuda. El requisito del go-live (`definition-of-done.md`) se cumple con el procedimiento operativo documentado y probado de `deployment.md`, «Sustitución de la clave maestra» (2026-10-13).

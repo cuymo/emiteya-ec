@@ -272,7 +272,7 @@ La custodia de la firma (ADR 0011) y el pool criptográfico (design D18 de
 
 - Sin clave válida, la API no arranca: el error nombra la variable sin mostrar su valor ni la ruta del archivo.
 - La clave se respalda aparte de la base de datos (ver Respaldo y restauración).
-- Perderla o cambiarla deja las firmas cargadas como no disponibles hasta que cada administrador vuelve a cargar el mismo P12 con su contraseña, que restablece su custodia con la clave configurada (riesgo R-15).
+- Perderla o cambiarla deja las firmas cargadas como no disponibles hasta que cada administrador vuelve a cargar el mismo P12 con su contraseña, que restablece su custodia con la clave configurada (riesgo R-15). Para cambiarla a propósito, «Sustitución de la clave maestra».
 
 ### Emisión de facturas
 
@@ -514,6 +514,54 @@ AC-10):
 - El procedimiento de restauración se prueba antes de cada release (ERS §20).
 - El SRI no es un sistema de respaldo (CTX §31).
 - La exportación de portabilidad (`data-portability`) no es un respaldo: no contiene la firma, los secretos ni los datos internos de autenticación, y no se restaura. AC-10 se verifica restaurando este respaldo.
+
+### Sustitución de la clave maestra
+
+Procedimiento operativo probado para cambiar la clave maestra de la custodia de firmas (ADR 0011;
+`repair-signing-certificate-reseal-after-master-key-change`). La aplicación no vuelve a cifrar los
+secretos por su cuenta: cada empresa restablece la custodia de su firma volviendo a cargar el mismo
+P12. Lo ensaya `backend/test/integration/e2e-master-key-replacement.test.ts`, que reinicia el
+backend real con otra clave sobre el mismo esquema, con material sintético.
+
+**Antes de empezar:** cada empresa con firma custodiada tiene a mano su P12 y su contraseña, y la
+sustitución se hace en una ventana de mantenimiento: la vuelta atrás descarta lo escrito después
+del respaldo.
+
+1. **Respaldo verificado.** Un volcado nuevo con `deploy/backup.sh` y su SHA-256 comprobado. Lo
+   ideal es haber ensayado su restauración (sección anterior).
+2. **La clave antigua, en custodia segura y aparte,** con su versión: fuera del volcado, del
+   repositorio y de las imágenes. Es la única forma de volver atrás.
+3. **La clave nueva:** `openssl rand -base64 32` en el archivo de secreto del despliegue
+   (`certificate_master_key` en la topología de referencia) y una versión nueva en
+   `CERTIFICATE_MASTER_KEY_VERSION` (por ejemplo, de `1` a `2`), que la auditoría registra.
+4. **Reinicio o redespliegue** del backend con la clave nueva.
+5. **Las firmas custodiadas quedan `KEY_UNAVAILABLE`,** como se espera. El arranque registra cada
+   una, sin secretos («la firma vigente no se puede abrir con la clave de custodia configurada», con
+   la empresa y la firma), y la métrica `signing_certificate_usable` la muestra en 0.
+6. **Cada administrador vuelve a cargar el mismo P12 con su contraseña** en la pantalla de la firma.
+   La carga pasa todas las validaciones de una carga normal, y una contraseña incorrecta o un
+   archivo inválido no cambian nada.
+7. **La recuperación sella la custodia con la clave actual:** la misma firma, con sus metadatos, y
+   el evento `signing_certificate.custody_restored` con la versión anterior y la nueva.
+8. **Comprobar `VALID`** en la pantalla o en la métrica.
+9. **Repetir por empresa** hasta que ninguna firma vigente quede `KEY_UNAVAILABLE`.
+10. **La clave antigua:** se conserva o se retira según la política del operador, y solo cuando
+    todas las empresas recuperaron su firma.
+11. **Vuelta atrás:** restaurar juntos el respaldo del paso 1 y la clave antigua. Volver solo a la
+    clave antigua no sirve: las firmas ya recuperadas quedan selladas con la nueva y vuelven a
+    `KEY_UNAVAILABLE` (lo comprueba el ensayo). La aplicación no guarda dos claves a la vez.
+
+- **El volcado solo no recupera la custodia:** sin la clave con la que se sellaron, las firmas
+  restauradas quedan no disponibles hasta volver a cargarlas.
+- **Ninguna clave, ningún P12 y ninguna contraseña** van a los registros, a la auditoría ni al
+  volcado: el volcado solo contiene los secretos cifrados.
+- **Una empresa que no puede volver a cargar su firma** (perdió el P12 o la contraseña) carga una
+  firma nueva de su entidad certificadora, que reemplaza a la anterior. Si eso no es posible a
+  tiempo, se vuelve atrás la operación completa (paso 11).
+- **Una firma vencida no se recupera:** la carga exige un certificado vigente, así que se carga uno
+  nuevo.
+- La rotación automática de la clave (volver a cifrar los secretos sin volver a cargarlos) no existe
+  y sigue como deuda (ADR 0011).
 
 ### Responsabilidades del operador
 
