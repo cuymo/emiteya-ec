@@ -388,7 +388,13 @@ No hay pantallas nuevas, migraciones de esquema ni cambios en los contratos de l
 4. Scripts de respaldo y restauración, y ensayo de la recuperación.
 5. Workflow `deployment`.
 6. Documentación, ADR y deuda.
-7. Verificación local y en la CI de la rama (`verify`, `security`, `deployment`).
+7. Verificación local y en la CI de la rama (`verify`, `security`, `deployment`). La CI alojada de
+   GitHub es la fuente preferida. Si no puede ejecutarse porque el dueño declina el uso pagado de
+   GitHub Actions (decisión del 2026-10-13), un `verify` completo con código 0 en una copia limpia y
+   aislada del mismo commit (instalación congelada, cadena de herramientas fijada y recursos de prueba
+   nuevos) cumple la compuerta de `verify`, y la evidencia remota de `security` y `deployment` sobre
+   ese mismo commit sigue valiendo. Ni el contenido de `verify` ni los demás requisitos cambian, y la
+   evidencia nunca presenta la ejecución local como la CI remota (`docs/quality/change-lifecycle.md`).
 
 **Reversión:** revertir los commits del cambio. No toca la aplicación ni el esquema, así que una
 instalación existente no se ve afectada.

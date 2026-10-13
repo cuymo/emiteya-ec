@@ -266,8 +266,14 @@
     registrada en `technical-debt.md`; aislada pasó (1/1). La corrida de control terminó con código 0
     en 708 s: 393 archivos de prueba, AC-04 aparte, `openapi:check`, `check:dev-start`,
     `build:verification`, `check:web-security-policy` (39), `check:xsd-artifact` y `check:ride-assets`.
-- [x] 7.3 Publicar la rama del cambio (no `main`) y registrar la evidencia de su CI: `verify`,
-  `security` y `deployment` en verde, con la validación estricta de OpenSpec dentro de `verify`.
+- [x] 7.3 Publicar la rama del cambio (no `main`) y registrar la evidencia de su CI: `security` y
+  `deployment` en verde sobre el commit de la implementación, y la compuerta completa de `verify`, con
+  la validación estricta de OpenSpec dentro. La CI alojada de GitHub es la fuente preferida de
+  `verify`; si no puede ejecutarse porque el dueño declina el uso pagado de GitHub Actions, un
+  `corepack pnpm verify` completo con código 0 en una copia limpia y aislada del mismo commit
+  (instalación congelada, cadena de herramientas fijada y recursos de prueba nuevos) la cumple, junto
+  con la seguridad, las imágenes y los ensayos de despliegue y de recuperación desde esa misma copia
+  (design, Migration Plan). La evidencia nunca presenta la ejecución local como la CI remota.
 
   Evidencia (2026-10-13, rama publicada en `2aabc54`; `main` sin cambios en `8b9dcaf`):
   - `deployment` (run 38423323451): `success`. `topology` en unos 4 min 48 s, con
@@ -278,3 +284,29 @@
     estricta, 393 archivos de prueba, AC-04 aparte y `check:web-security-policy` (39).
   - `security` (run 38423323541): `success` en `dependency-security` y `secret-security` (Gitleaks
     8.30.1 verificado por suma).
+
+  Evidencia sobre el commit de la implementación `674db9d` (2026-10-13; `main` sin cambios en
+  `8b9dcaf`):
+  - `security` (run 38429432356) y `deployment` (run 38429432476, `topology` y `recovery`):
+    `success` en la CI alojada.
+  - `verify` en la CI alojada (run 38429432172): **no disponible como compuerta**. El primer intento
+    falló por la inestabilidad ya registrada de AC-04 (P2028 de Prisma, «Unable to start a transaction
+    in the given time»), en un commit que solo cambiaba `tasks.md`; el reintento no llegó a empezar
+    porque GitHub lo rechazó por la facturación de Actions, y el dueño decidió no pagar la CI alojada.
+    No se presenta como verde.
+  - **Sustituto aceptado por el dueño: verificación en sala limpia** del mismo `674db9d`, en una
+    copia nueva (`git worktree` aislado, sin `node_modules`, `.next`, `dist`, bases, contenedores,
+    volúmenes, secretos ni certificados previos), con Node 24.21.0 oficial comprobado por su SHA-256,
+    pnpm 12.4.2 por Corepack, un almacén de paquetes vacío y un PostgreSQL 17 nuevo, y el mismo
+    entorno de solo CI que `verify.yml`:
+    - `pnpm install --frozen-lockfile`: código 0 (768 paquetes descargados, ninguno reutilizado);
+    - `corepack pnpm verify`: código 0 en 540 s, a la primera: OpenSpec 24/24, 393 archivos de prueba
+      (3384 pruebas, 1 omitida), AC-04 3/3, `openapi:check`, `check:dev-start`, `build:verification`,
+      `check:web-security-policy` 39/39, `check:xsd-artifact` y `check:ride-assets`;
+    - `security:dependencies` y `security:secrets`: `PASS`, sin excepciones ni supresiones nuevas;
+    - imágenes `backend`, `migrate` y `frontend` construidas sin caché: la API y la interfaz corren
+      como `node` (UID 1000) con Node 24.21.0;
+    - `deployment:context --image` 5/5, `deployment:topology` 33/33 y `deployment:recovery` 19/19 con
+      recursos de prueba nuevos y `SRI_TRANSMISSION_ENABLED=0`, sin salida a Internet y sin el
+      override de salida;
+    - todos los recursos temporales de la sala limpia se borraron.

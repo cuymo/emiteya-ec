@@ -62,6 +62,21 @@ explore -> propose -> review -> apply -> verify -> archive
 Two more workflows support the cycle: **update** revises a change's artifacts when a decision
 changes mid-flight, and **sync** merges delta specs into the main specs without archiving.
 
+### Verify evidence for closing a change
+
+- The `verify` workflow on GitHub-hosted runners is the preferred evidence: it is independent of
+  the developer's machine.
+- Paid GitHub-hosted Actions are not a mandatory project dependency. When hosted execution is
+  unavailable by the owner's explicit decision (for example, the owner declines paid Actions), a
+  complete `corepack pnpm verify` with exit code 0 in a reproducible, isolated clean-room checkout of
+  the exact commit can satisfy the verify gate: a fresh worktree, the frozen lockfile, the pinned
+  toolchain, and fresh test resources.
+- The evidence names its source truthfully and never presents a local run as remote CI. The
+  content of `verify` does not change.
+- This is not a general rule that local runs replace remote CI: hosted workflows that do run keep
+  counting, and a failure that a workflow actually executes is always investigated
+  (`harden-deployment-proxy-and-recovery`, 2026-10-13).
+
 | Workflow | Claude Code      | GitHub Copilot   | Codex                       |
 | -------- | ---------------- | ---------------- | --------------------------- |
 | Explore  | `/opsx:explore`  | `/opsx-explore`  | `$openspec-explore`         |
