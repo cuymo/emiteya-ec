@@ -118,6 +118,13 @@ de integración SRI de CTX §59:
   - La conectividad real con Producción queda fuera del alcance del proyecto, y la prohibición de
     contactar Producción no cambia.
 - Las reglas de consumidor final vigentes y el Anexo 26 están revisados (Q-37), y los casos especiales no soportados están bloqueados.
+  - **Revisados** (2026-10-13, `go-live-normative-review-2026-10-13.md`): las reglas de consumidor
+    final coinciden con la ficha v2.34, y Q-37 queda resuelta para el alcance de v1 (uso propio o
+    suministro no comercial).
+  - **Pendiente:** el bloqueo de los casos especiales no soportados está incompleto (H-01 y H-02).
 - La matriz normativa está revisada contra la ficha vigente.
+  - **Revisada con hallazgos abiertos** (2026-10-13, `go-live-normative-review-2026-10-13.md`):
+    H-01 (el Anexo 24 se da por soportado y no se escribe) bloquea el go-live; H-02 y H-03 esperan
+    una decisión.
 - El README cubre instalación, configuración, actualización y respaldo.
 - Existen `SECURITY.md` con un canal para reportar vulnerabilidades, la licencia (Q-33), `CONTRIBUTING.md` y un `CHANGELOG` que registra la versión de ficha y XSD compatible.

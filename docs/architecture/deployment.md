@@ -569,3 +569,9 @@ La documentación de instalación declara dónde residen los datos y qué le cor
 operador: TLS, respaldos, NTP, actualizaciones, revisión normativa antes de actualizar y
 decisión sobre el RUC proveedor del Anexo 26 (ERS SEC-009; CTX §37, Q-37).
 
+- El go-live de v1 soporta solo el uso propio o el suministro no comercial de EmiteYa: el RUC
+  proveedor queda vacío. Vender, licenciar o prestar EmiteYa como sistema o servicio de pago no
+  está soportado hasta que el producto escriba el campo «RUC Proveedor» del Anexo 26 (Q-37).
+- Al entregar impresa una liquidación de compra, dos ejemplares de su RIDE firmados por el receptor
+  (Q-53, `../quality/go-live-normative-review-2026-10-13.md`).
+

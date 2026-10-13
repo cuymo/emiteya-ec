@@ -806,6 +806,10 @@ SHA-256: 03813b55c4c38d084975d3216c1b20d266a78b264ef52bcf53ff897c59e3ef2f
 El PDF es una imagen escaneada sin capa de texto: lo que sigue es una TRANSCRIPCIÓN VISUAL de las
 páginas 2, 4, 5 y 6, renderizadas con pdftoppm a 110 ppp (sin OCR). Es el texto original de 2018, sin
 sus reformas, que se transcriben a continuación.
+Confirmación del 2026-10-13 (Q-53): el PDF descargado de nuevo desde la misma URL tiene el mismo
+SHA-256, y su página 4, renderizada otra vez a 110 ppp y leída, dice palabra por palabra lo transcrito
+del artículo 6, numeral 2, literal d, incluido "conservado obligatoriamente por el receptor". Las
+reformas registradas abajo (22-00000064, 24-00000035 y 25-00000014) no tocan el artículo 6.
 
 Art. 2.- Tipos de comprobantes electrónicos.- Los sujetos pasivos de tributos podrán emitir como
 comprobantes electrónicos, entre otros, los siguientes comprobantes de venta, retención y documentos
