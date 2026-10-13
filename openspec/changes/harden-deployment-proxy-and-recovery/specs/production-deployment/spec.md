@@ -30,9 +30,9 @@ servicios de la aplicación SHALL alcanzarlas.
 ### Requirement: Redirección a HTTPS y HSTS en el borde
 El borde SHALL responder a toda petición HTTP con una redirección permanente al mismo recurso en el
 origen HTTPS canónico de la instalación, sin servir contenido de la aplicación por HTTP. Toda
-respuesta HTTPS del borde SHALL llevar `Strict-Transport-Security: max-age=31536000`, sin
-`includeSubDomains` ni `preload`. Una respuesta HTTP nunca SHALL llevar esa cabecera, y la interfaz y
-la API siguen sin enviarla.
+respuesta HTTPS del borde SHALL llevar una sola cabecera `Strict-Transport-Security: max-age=31536000`,
+sin `includeSubDomains` ni `preload`: el borde es su única fuente pública y descarta la que traiga la
+respuesta de la aplicación. Una respuesta HTTP nunca SHALL llevar esa cabecera.
 
 #### Scenario: Petición HTTP redirigida
 - **WHEN** un cliente pide una página o una ruta de la API por HTTP
@@ -40,9 +40,10 @@ la API siguen sin enviarla.
   contenido de la aplicación
 
 #### Scenario: HSTS en las respuestas HTTPS
-- **WHEN** un cliente pide una página o una ruta de la API por HTTPS
-- **THEN** la respuesta lleva `Strict-Transport-Security: max-age=31536000`, sin
-  `includeSubDomains` ni `preload`
+- **WHEN** un cliente pide una página o una ruta de la API por HTTPS, también cuando la respuesta es
+  un error
+- **THEN** la respuesta lleva una sola cabecera `Strict-Transport-Security: max-age=31536000`, sin
+  `includeSubDomains` ni `preload`, aunque la aplicación haya enviado otra
 
 #### Scenario: Sin HSTS por HTTP
 - **WHEN** el borde responde a una petición HTTP con su redirección

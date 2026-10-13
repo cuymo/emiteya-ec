@@ -1,0 +1,13 @@
+# Salida a Internet del backend para el uso real del SRI (harden-deployment-proxy-and-recovery,
+# design D9; ADR 0027). Solo por decisión explícita del dueño, y siempre junto a una segunda acción
+# separada: declarar SRI_TRANSMISSION_ENABLED=1, que este archivo no cambia. Nunca en las pruebas, en la
+# CI ni en la topología por defecto:
+#   docker compose -f deploy/compose.yaml -f deploy/compose.sri-egress.yaml up -d
+services:
+  backend:
+    networks:
+      app: {}
+      sri-egress: {}
+
+networks:
+  sri-egress: {}

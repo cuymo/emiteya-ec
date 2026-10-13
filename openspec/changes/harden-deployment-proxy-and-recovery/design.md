@@ -131,9 +131,11 @@ completa con `envsubst` al arrancar:
 - **HTTP (80):** solo una redirección `301` a `${PUBLIC_ORIGIN}$request_uri`, nunca derivada de
   `Host`, sin HSTS.
 - **HTTPS (443):** TLS 1.2 y 1.3 con el certificado y la clave montados de solo lectura;
-  `server_tokens off`; HSTS `max-age=31536000`, con `always`, en todas las respuestas HTTPS. Como un
-  `add_header` en un `location` anula los heredados, ningún `location` añade cabeceras propias, y la
-  prueba comprueba HSTS en una página, en `/api`, en un `413` y en un rechazo de salud.
+  `server_tokens off`; HSTS `max-age=31536000`, con `always`, en todas las respuestas HTTPS. La API
+  envía hoy su propia HSTS con `includeSubDomains` (el `helmet()` por defecto); el borde la descarta
+  con `proxy_hide_header` y emite solo la suya, sin cambiar la aplicación. Como un `add_header` o un
+  `proxy_hide_header` en un `location` anulan los heredados, ningún `location` los declara, y la
+  prueba comprueba una sola HSTS en una página, en `/api`, en un `413` y en un rechazo de salud.
 - **Rutas:**
   - `location /api/`: al backend, con 8 MiB de cuerpo y una espera de `${NGINX_PROXY_READ_TIMEOUT}`
     (60 s por defecto);

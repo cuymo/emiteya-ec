@@ -51,7 +51,7 @@
 
 ## 2. Topología de referencia y borde nginx
 
-- [ ] 2.1 Crear `deploy/compose.yaml` (design D4, D6, D7 y D8):
+- [x] 2.1 Crear `deploy/compose.yaml` (design D4, D6, D7 y D8):
   - servicios `postgres` (`postgres:17-alpine`, `POSTGRES_PASSWORD_FILE`), `migrate`, `backend`,
     `frontend` y `proxy` (`nginx:1.30.5-alpine`);
   - red `edge` solo para `proxy`, con los puertos 443 y 80 como variables;
@@ -70,7 +70,7 @@
 
   Verificar con `docker compose config` que el backend, el frontend y PostgreSQL no publican
   puertos, que `app` es interna y que ningún servicio de la aplicación está en `edge`.
-- [ ] 2.2 Crear la plantilla de nginx en `deploy/nginx/templates/` (design D5):
+- [x] 2.2 Crear la plantilla de nginx en `deploy/nginx/templates/` (design D5):
   - HTTP solo redirige a `${PUBLIC_ORIGIN}$request_uri`, sin HSTS;
   - HTTPS con TLS 1.2 y 1.3, `server_tokens off` y HSTS `max-age=31536000` con `always`, sin
     `includeSubDomains` ni `preload`, sin `add_header` en los `location`;
@@ -85,7 +85,7 @@
 
   Verificar con `nginx -t` y `nginx -T` sobre la configuración renderizada que las directivas de
   producción son esas.
-- [ ] 2.3 Crear `deploy/production.env.example`, solo con marcadores (sin secretos válidos, dominio
+- [x] 2.3 Crear `deploy/production.env.example`, solo con marcadores (sin secretos válidos, dominio
   real, identidad fiscal ni rutas privadas), con todas las variables de la prioridad 4 y
   `SRI_TRANSMISSION_ENABLED=0`. Crear `deploy/compose.sri-egress.yaml` (design D9), que solo añade
   al backend una red con salida.
@@ -94,7 +94,7 @@
   - el escaneo de secretos del repositorio no informa nada en la plantilla;
   - `docker compose config` con el override solo cambia la red del backend;
   - nada en las pruebas ni en la CI levanta el override.
-- [ ] 2.4 Documentar en `docs/architecture/deployment.md`:
+- [x] 2.4 Documentar en `docs/architecture/deployment.md`:
   - la topología, las redes, la subred fija y cómo cambiarla junto con `TRUST_PROXY`;
   - el enrutamiento del borde, TLS (certificado válido y renovación a elección del operador) y HSTS
     (solo con HTTPS ya funcionando);

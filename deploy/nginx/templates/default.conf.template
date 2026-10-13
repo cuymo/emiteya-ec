@@ -1,0 +1,85 @@
+# Borde TLS de la topología de producción de referencia (harden-deployment-proxy-and-recovery,
+# design D5; ADR 0027). La imagen oficial de nginx sustituye las variables ${...} al arrancar
+# (envsubst) y deja intactas las de nginx. Ningún `location` declara `add_header`,
+# `proxy_hide_header` ni `proxy_set_header`: si lo hiciera, dejaría de heredar los del servidor.
+
+# Log de acceso mínimo, como el log de petición de la aplicación: sin IP, consulta, cabeceras,
+# cookies ni cuerpos.
+log_format emiteya_edge escape=json
+  '{"time":"$time_iso8601","method":"$request_method","path":"$uri",'
+  '"status":$status,"bytes":$body_bytes_sent,"duration":$request_time}';
+
+server_tokens off;
+
+# DNS interno de Docker: el destino se resuelve en cada petición, así un contenedor recreado con otra
+# dirección sigue alcanzable sin recargar nginx.
+resolver 127.0.0.11 valid=10s ipv6=off;
+
+# HTTP solo redirige al origen canónico, nunca derivado de `Host`, y sin HSTS.
+server {
+  listen 80 default_server;
+  server_name _;
+  access_log /var/log/nginx/access.log emiteya_edge;
+  return 301 ${PUBLIC_ORIGIN}$request_uri;
+}
+
+server {
+  listen 443 ssl default_server;
+  http2 on;
+  server_name _;
+  access_log /var/log/nginx/access.log emiteya_edge;
+
+  ssl_certificate /run/secrets/tls_certificate;
+  ssl_certificate_key /run/secrets/tls_private_key;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_session_cache shared:emiteya_tls:10m;
+  ssl_session_tickets off;
+
+  # La única HSTS pública: la de la aplicación (helmet) se descarta.
+  proxy_hide_header Strict-Transport-Security;
+  add_header Strict-Transport-Security "max-age=31536000" always;
+
+  # Cabeceras reenviadas normalizadas: la IP del cliente es la que observa el borde, nunca una
+  # cadena que traiga el cliente.
+  proxy_http_version 1.1;
+  proxy_set_header Connection "";
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $remote_addr;
+  proxy_set_header X-Forwarded-Proto https;
+  proxy_set_header X-Forwarded-Host "";
+  proxy_set_header Forwarded "";
+  proxy_set_header X-Real-IP "";
+
+  client_max_body_size 1m;
+  proxy_read_timeout ${NGINX_PROXY_READ_TIMEOUT};
+  set $emiteya_api "http://${NGINX_API_UPSTREAM}";
+  set $emiteya_web "http://${NGINX_WEB_UPSTREAM}";
+
+  # Salud y métricas de la API: solo por la red privada.
+  location ^~ /health {
+    return 404;
+  }
+  location ^~ /metrics {
+    return 404;
+  }
+
+  # La API, directa, con el techo de cuerpo por encima del mayor borrador legítimo (4 MiB).
+  location /api/ {
+    client_max_body_size 8m;
+    proxy_pass $emiteya_api;
+  }
+
+  # La descarga de portabilidad verifica el paquete antes del primer byte: espera extendida y
+  # entrega por streaming, sin guardarla en el almacenamiento temporal de nginx.
+  location ~ ^/api/v1/data-exports/[^/]+/download$ {
+    client_max_body_size 8m;
+    proxy_read_timeout ${NGINX_DOWNLOAD_READ_TIMEOUT};
+    proxy_buffering off;
+    proxy_max_temp_file_size 0;
+    proxy_pass $emiteya_api;
+  }
+
+  location / {
+    proxy_pass $emiteya_web;
+  }
+}

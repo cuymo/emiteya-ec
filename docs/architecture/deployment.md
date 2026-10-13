@@ -91,8 +91,8 @@ de que la API pueda responder con su mensaje.
 
 - El ejemplo de Nginx de "Configuración de la empresa" (`client_max_body_size 1m;`) cubre el logo
   por defecto, pero no los borradores.
-- El objetivo es 8 MiB, que se configurará y verificará en el hardening del despliegue y del proxy,
-  junto con HSTS.
+- La topología de referencia fija 8 MiB en `/api/` y 1 MiB en el resto (ver "Topología de
+  referencia").
 - Los límites de la propia API no cambian con el techo del proxy: siguen rechazando con 413 lo que
   supera el límite de cada ruta.
 
@@ -108,9 +108,11 @@ del navegador (ADR 0025). El proxy inverso:
   con su caché pública e inmutable.
 - **Configura HSTS** (`Strict-Transport-Security`): solo el proxy que termina TLS sabe si la conexión
   llegó por HTTPS, y el frontend no la envía.
-  - El valor de `max-age` y la inclusión de subdominios se deciden con la configuración del proxy,
-    en el hardening del despliegue.
-  - Hasta entonces, HSTS sigue pendiente en la compuerta del go-live.
+  - El borde de referencia emite `max-age=31536000`, sin `includeSubDomains` ni `preload`, solo en
+    HTTPS, y descarta la HSTS que la API añade por su cuenta (el `helmet()` por defecto, con
+    `includeSubDomains`).
+  - En el borde real se activa solo cuando HTTPS ya funciona con un certificado válido: un navegador
+    que la recibe no vuelve a aceptar HTTP en ese host durante un año.
 
 ## Data Safety
 
@@ -124,6 +126,79 @@ del navegador (ADR 0025). El proxy inverso:
 El producto se instala por contribuyente, una empresa por instancia, en un servidor Linux
 que opera el administrador técnico. Lo que sigue es la topología objetivo; el instalador de
 un solo paso es P2.
+
+### Topología de referencia
+
+`deploy/compose.yaml` es la topología de producción de referencia: un solo host con Docker Compose
+(`harden-deployment-proxy-and-recovery`, ADR 0027, spec `production-deployment`).
+
+| Servicio | Imagen | Redes | Público |
+| --- | --- | --- | --- |
+| `proxy` | `nginx:1.30.5-alpine` | `edge` y `app` (IP fija) | 443 (TLS) y 80 (solo redirige) |
+| `frontend` | `emiteya-frontend` (`next start`) | `app` | No |
+| `backend` | `emiteya-backend` (`runtime`) | `app` | No |
+| `migrate` | `emiteya-migrate` (un solo uso) | `app` | No |
+| `postgres` | `postgres:17-alpine` | `app` | No |
+
+- **Redes.** `app` es interna: la interfaz, la API, las migraciones y PostgreSQL no tienen salida a
+  Internet ni puertos publicados en el host. Solo `proxy` está también en `edge`, la red con los
+  puertos publicados. Construir las imágenes sí necesita red (registros de imágenes y de paquetes);
+  la topología en ejecución no.
+- **`TRUST_PROXY`.** La IP fija de `proxy` en `app` (`PROXY_APP_IP`, `172.29.247.10` por defecto)
+  es la única de confianza: la misma variable alimenta su `ipv4_address` y `TRUST_PROXY` de la API.
+  Si la subred (`APP_SUBNET`, `172.29.247.0/24`, con las direcciones dinámicas en `APP_IP_RANGE`,
+  `172.29.247.128/25`) choca con una red del host, se cambian las tres a la vez. Nunca un número de
+  saltos, toda la subred ni `true`: la interfaz u otro contenedor interno no son proxies de
+  confianza.
+- **Enrutamiento del borde.** `/api/*` va directo a la API y el resto a la interfaz, en el mismo
+  origen; el reenvío de `/api` de Next.js queda para el desarrollo. `/health*` y `/metrics*` se
+  rechazan con `404` sin reenviarlos.
+- **TLS.** El borde termina TLS 1.2 y 1.3 con el certificado y la clave del directorio de secretos.
+  El certificado real es válido y de confianza pública, y su emisión y su renovación (ACME o la del
+  proveedor) son del operador. HTTP solo redirige con `301` al mismo recurso en `PUBLIC_ORIGIN`,
+  nunca a un destino derivado de `Host`.
+- **HSTS.** `max-age=31536000`, sin `includeSubDomains` ni `preload`, en todas las respuestas HTTPS,
+  también en los errores; nunca por HTTP (ver "Cabeceras de seguridad y caché de los documentos").
+- **Cabeceras reenviadas.** `Host` del cliente, `X-Forwarded-For` sobrescrita con la IP que observa
+  el borde (nunca la cadena que traiga el cliente), `X-Forwarded-Proto https`, y `Forwarded` y
+  `X-Forwarded-Host` vacías.
+- **Techo de cuerpo y esperas.** 8 MiB en `/api/` y 1 MiB en el resto; 60 s de espera de la respuesta,
+  y 180 s solo en la descarga de portabilidad, sin almacenarla en el borde. Los límites de cada ruta
+  de la API no cambian.
+- **Logs.** A stdout y stderr. El log de acceso del borde lleva la hora, el método, la ruta sin
+  consulta, el estado, los bytes y la duración: sin IP, cabeceras, cookies ni cuerpos. El log de
+  errores de nginx incluye la IP del cliente cuando un error es de una petición; si un operador
+  necesita la IP en su log de acceso, documenta antes su propósito y su retención
+  (`../quality/observability.md`).
+- **Volúmenes.** `postgres-data` (PGDATA, se respalda) y `exports` (`DATA_EXPORT_DIRECTORY`,
+  persiste entre reinicios y no se respalda). La imagen de la API trae
+  `/var/lib/facturador/exports` del usuario `node` con modo `0700`, y Docker inicializa así un volumen
+  con nombre nuevo; la API nunca lo crea y sigue comprobándolo al arrancar. Con un directorio del host
+  en lugar del volumen, el operador lo aprovisiona antes de arrancar
+  (`install -d -o 1000 -g 1000 -m 0700 <directorio>`).
+- **Secretos.** Nunca en el repositorio ni en las imágenes. `EMITEYA_ENV_FILE`, fuera del
+  repositorio, trae `DATABASE_URL`, `BETTER_AUTH_SECRET` y, en el primer arranque, el administrador
+  inicial. `EMITEYA_SECRETS_DIR` trae `postgres_password`, `certificate_master_key` (legible por el
+  UID 1000), `tls_certificate` y `tls_private_key`. `deploy/production.env.example` lista las
+  variables con marcadores.
+- **Configuración fijada.** `NODE_ENV=production`, `SRI_TRANSMISSION_ENABLED=0`,
+  `BETTER_AUTH_URL=${PUBLIC_ORIGIN}`, `TRUST_PROXY=${PROXY_APP_IP}`, `API_INTERNAL_URL` (argumento de
+  build y entorno de la interfaz) y `DATA_EXPORT_DIRECTORY`, declarados en el Compose.
+- **Arranque.** `postgres` sano (`pg_isready`), luego `migrate` terminado con éxito, luego `backend`
+  (salud de vida `/health/live`), luego `frontend` (`GET /iniciar-sesion`) y `proxy`. Si una
+  migración falla, la API no arranca. El despliegue da la API por lista cuando `/health/ready`
+  responde por la red interna; la salud de vida nunca depende de la base de datos, para no reiniciar
+  el contenedor por una dependencia caída.
+- **Apagado.** `stop_grace_period: 30s`: la API espera hasta 10 s las peticiones en curso y cierra sus
+  jobs, sus pools y la base de datos.
+- **Privilegios.** La interfaz, la API y las migraciones corren como `node` (UID 1000), sin
+  capacidades (`cap_drop: ALL`) y con `no-new-privileges`; la API y la interfaz, con la raíz de solo
+  lectura y `tmpfs` en sus escrituras (`/tmp`, `.next/cache`). nginx conserva el modelo de su imagen
+  oficial con el mínimo medido de capacidades: `CHOWN`, `NET_BIND_SERVICE`, `SETGID` y `SETUID`.
+- **Salida al SRI.** La topología por defecto no tiene salida a Internet, además de
+  `SRI_TRANSMISSION_ENABLED=0`. Para el uso real del SRI, el dueño da dos pasos separados y
+  deliberados: añadir `deploy/compose.sri-egress.yaml`, que solo conecta la API a una red con salida,
+  y declarar `SRI_TRANSMISSION_ENABLED=1`. Ni las pruebas ni la CI levantan ese override.
 
 ### Servicios
 
@@ -144,7 +219,7 @@ un solo paso es P2.
 | `GET /metrics` | Formato Prometheus | Métricas de proceso y de peticiones, `xsd_registry_available`, las de la firma, `invoice_emission_stage_duration_seconds`, `sri_transmission_enabled` y las de la transmisión al SRI (`../quality/observability.md`). |
 
 - Existen en el servicio `api`, fuera de `/api` (ADR 0016), como endpoints operacionales. No pertenecen a la API pública del producto: no están bajo `/api/v1` ni en `docs/generated/openapi.json`.
-- Su exposición no está restringida por la aplicación: el backend los sirve a cualquiera que alcance el servicio. Restringirlos (red interna, reglas del proxy o autenticación) es una responsabilidad obligatoria del despliegue, que todavía está fuera de alcance; ningún despliegue puede publicarlos sin esa restricción. El diseño previsto es que el proxy público solo enrute `/` al frontend y `/api` al backend, y que el orquestador y el sistema de métricas los consulten por la red interna, pero esa garantía se implementará con el despliegue.
+- Su exposición no está restringida por la aplicación: el backend los sirve a cualquiera que alcance el servicio. Restringirlos es responsabilidad del despliegue, y ningún despliegue puede publicarlos. En la topología de referencia, el borde los rechaza con `404` sin reenviarlos, y solo se consultan por la red interna.
 - `/metrics` publica información del proceso (memoria, CPU, rutas y tiempos de respuesta); si una instalación necesita consultarla desde fuera de la red interna, debe protegerla con autenticación en el proxy.
 
 ### Configuración adicional
@@ -170,7 +245,7 @@ API comparten origen (ADR 0016).
 | `PASSWORD_MIN_LENGTH`, `PASSWORD_MAX_LENGTH` | No | 12, 128 | Política de contraseñas. |
 | `LOGIN_MAX_FAILURES`, `LOGIN_FAILURE_WINDOW_MINUTES` | No | 5, 15 | Límite de inicios fallidos por correo e IP. |
 | `LOGIN_IP_MAX_REQUESTS`, `LOGIN_IP_WINDOW_SECONDS` | No | 30, 60 | Límite de inicios de sesión por IP, contra ráfagas. |
-| `TRUST_PROXY` | En producción, sí | `false` fuera de producción | Proxies de confianza, para que la IP del cliente sea la real; sin confianza, se usa la IP del socket. Solo admite: un número de saltos desde 1; una dirección IP; un bloque CIDR con prefijo desde 1; una lista separada por comas de direcciones o bloques; o `loopback`, solo. Cualquier otro valor (`true`, `0`, `linklocal`, `uniquelocal`, un bloque `/0`, texto arbitrario) impide arrancar en cualquier ambiente. En producción, ausente o `false` también impide arrancar. Un número de saltos solo es correcto si el despliegue garantiza que la cadena de proxies delante de la API tiene exactamente esa longitud: si no, un cliente puede falsear su IP con `X-Forwarded-For`. Por eso se prefieren las direcciones o los bloques del proxy, y el valor de la topología real se verifica en el hardening del despliegue y del proxy. |
+| `TRUST_PROXY` | En producción, sí | `false` fuera de producción | Proxies de confianza, para que la IP del cliente sea la real; sin confianza, se usa la IP del socket. Solo admite: un número de saltos desde 1; una dirección IP; un bloque CIDR con prefijo desde 1; una lista separada por comas de direcciones o bloques; o `loopback`, solo. Cualquier otro valor (`true`, `0`, `linklocal`, `uniquelocal`, un bloque `/0`, texto arbitrario) impide arrancar en cualquier ambiente. En producción, ausente o `false` también impide arrancar. Un número de saltos solo es correcto si el despliegue garantiza que la cadena de proxies delante de la API tiene exactamente esa longitud: si no, un cliente puede falsear su IP con `X-Forwarded-For`. Por eso se prefieren las direcciones o los bloques del proxy. En la topología de referencia es la IP fija de nginx en la red interna (ver "Topología de referencia"). |
 
 ### Frontend
 
@@ -335,6 +410,7 @@ límites del ERS. `bench:data-portability` confirmó sus valores por defecto el 
 - **Varias instancias:** el MVP tiene una (ver "Número de instancias"). Con varias, `DATA_EXPORT_DIRECTORY` debe ser compartido o la descarga debe llegar a la instancia que generó el paquete.
 - **No es un respaldo:** el paquete no contiene la firma, los secretos ni los datos internos de autenticación, y no se restaura (ver "Respaldo y restauración").
 - **Proxy inverso y descarga:** el backend calcula el SHA-256 completo del paquete antes de enviar la primera cabecera, así que la respuesta de `GET /api/v1/data-exports/{id}/download` tarda en empezar. Medido en un disco giratorio: entre 40 y 56 s para 5 GiB, unos 8 a 11 s por GiB (`openspec/changes/archive/2026-10-08-add-data-portability/ui-review.md`); en un SSD, entre 2.5 y 7.6 s para el paquete de Q-26, de caché caliente a fría (`bench:data-portability`). La verificación completa se mantiene en cada descarga por decisión del dueño del producto (2026-10-08).
+  - **Topología de referencia:** el borde espera 180 s en esa ruta, solo en ella, y la entrega por streaming sin guardarla (ver "Topología de referencia").
   - **Requisito del go-live:** el proxy que enruta `/api` al backend debe esperar la respuesta de esa ruta **al menos 120 s** antes del primer byte (por ejemplo, `proxy_read_timeout` de nginx, cuyo valor por defecto es 60 s, o el plazo de respuesta del upstream de Traefik), sin almacenar el cuerpo (`proxy_buffering off`, o el equivalente del proxy). Antes del go-live, el tiempo se vuelve a medir con el almacenamiento real de producción y el margen se ajusta si hace falta.
   - Es un requisito operativo del despliegue, no una constante fiscal ni un requisito del ERS.
   - El reenvío general de `/api` de Next.js corta a los 30 s; por eso el frontend atiende la descarga en su ruta propia del mismo origen, `app/api/v1/data-exports/[id]/download/route.ts`, sin plazo y por streaming. Ese plazo de 30 s no se reintroduce en la descarga.
