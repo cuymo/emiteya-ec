@@ -105,7 +105,10 @@ export type SigningCertificateResponse = z.infer<typeof signingCertificateRespon
 
 export const signingCertificateUploadResultSchema = z.strictObject({
   certificate: signingCertificateViewSchema,
-  /** true si el certificado ya era la firma vigente: nada cambió. */
+  /**
+   * true si el certificado ya era la firma vigente y su custodia se abre con la clave configurada:
+   * nada cambió. false si se cargó, se reemplazó o se restableció su custodia.
+   */
   unchanged: z.boolean(),
 });
 export type SigningCertificateUploadResult = z.infer<typeof signingCertificateUploadResultSchema>;

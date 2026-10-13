@@ -138,7 +138,11 @@ export function createSigningCertificates(deps: SigningCertificateDependencies) 
       };
     },
 
-    /** Carga o reemplazo (design D3 y D7). Cargar otra vez la firma vigente no cambia nada. */
+    /**
+     * Carga, reemplazo (design D3 y D7) o recuperación de la custodia (repair-signing-certificate-
+     * reseal-after-master-key-change, design D1 a D4). Cargar otra vez la firma vigente no cambia
+     * nada mientras su secreto se abra con la clave configurada.
+     */
     async upload(
       ctx: RequestContext,
       body: unknown,
@@ -162,11 +166,46 @@ export function createSigningCertificates(deps: SigningCertificateDependencies) 
         const detectedRuc = info.detectedRuc;
         const companyRuc = await deps.companyRuc.currentRuc(ctx.companyId);
 
+        /** Sella el P12 subido y su contraseña con la clave activa, ligados a la firma indicada. */
+        const seal = (certificateId: string) => {
+          const binding = { companyId: ctx.companyId, certificateId };
+          const material = {
+            p12: new SecretBytes(Buffer.from(bytes)),
+            password: new SecretText(input.password),
+          };
+          const sealed = vault.seal(material, binding);
+          material.p12.wipe();
+          return { sealed, binding };
+        };
+
         const result = await uow.run(async (scope) => {
           await scope.certificates.lock(ctx.companyId);
           const current = await scope.certificates.findActive(ctx.companyId);
-          if (current && current.fingerprint === info.fingerprint)
-            return { stored: current, unchanged: true };
+          if (current && current.fingerprint === info.fingerprint) {
+            if (keyAvailable(current)) return { stored: current, unchanged: true };
+            // La clave configurada no abre su secreto (se cambió o se perdió): esta carga, ya
+            // validada como cualquier otra, vuelve a custodiar la misma firma con la clave actual.
+            if (current.id !== input.expectedCurrentId) throw certificateChanged();
+            const { sealed, binding } = seal(current.id);
+            await scope.certificates.deleteSecret(current.id);
+            await scope.certificates.insertSecret(sealed, binding);
+            await scope.audit.append({
+              companyId: ctx.companyId,
+              actor: { type: "USER", userId: ctx.userId },
+              action: "signing_certificate.custody_restored",
+              changes: {
+                ...describe("certificate", current, companyRuc),
+                "custody.keyVersion.from": current.secret?.keyVersion ?? null,
+                "custody.keyVersion.to": sealed.keyVersion,
+              },
+              correlationId: ctx.requestId,
+            });
+            const stored: StoredCertificate = {
+              ...current,
+              secret: { keyVersion: sealed.keyVersion, keyCheck: sealed.keyCheck },
+            };
+            return { stored, unchanged: false };
+          }
           if ((current?.id ?? null) !== input.expectedCurrentId) throw certificateChanged();
 
           const created: NewCertificate = {
@@ -184,13 +223,7 @@ export function createSigningCertificates(deps: SigningCertificateDependencies) 
             uploadedAt: at,
             uploadedBy: ctx.userId,
           };
-          const binding = { companyId: ctx.companyId, certificateId: created.id };
-          const material = {
-            p12: new SecretBytes(Buffer.from(bytes)),
-            password: new SecretText(input.password),
-          };
-          const sealed = vault.seal(material, binding);
-          material.p12.wipe();
+          const { sealed, binding } = seal(created.id);
           if (current) {
             await scope.certificates.deleteSecret(current.id);
             await scope.certificates.markReplaced(current.id, at);

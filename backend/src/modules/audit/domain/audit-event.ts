@@ -32,6 +32,8 @@ export const AUDIT_ACTIONS = [
   "signing_certificate.loaded",
   "signing_certificate.replaced",
   "signing_certificate.expiry_alert_changed",
+  // repair-signing-certificate-reseal-after-master-key-change, design D5.
+  "signing_certificate.custody_restored",
   "fiscal_catalog.entry_enabled",
   "fiscal_catalog.entry_disabled",
   // add-parties-and-products, design D13.

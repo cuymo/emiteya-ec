@@ -1,7 +1,9 @@
 // API de la firma electrónica contra PostgreSQL y el pool criptográfico reales (add-signing-
 // certificate, design D3 a D12): carga y reemplazo con destrucción del secreto, idempotencia y
 // conflicto, rechazos con su mensaje, consultas, anticipación, permisos, aislamiento y preparación
-// para emitir. Fixtures sintéticos, nunca certificados reales.
+// para emitir. Fixtures sintéticos, nunca certificados reales. Desde repair-signing-certificate-
+// reseal-after-master-key-change, también la recuperación de la custodia con otra clave (design D9).
+import { randomUUID } from "node:crypto";
 import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CertificateCustodyConfig } from "../../src/config/env.ts";
@@ -440,5 +442,275 @@ describe("API de la firma electrónica", () => {
       cookies.statusKey = await sessionCookie(otherKey.app, "admin@a.ec");
       expect(await status(otherKey.app, "statusKey")).toBe("PENDING");
     });
+  });
+});
+
+describe("recuperación de la custodia (repair-signing-certificate-reseal-after-master-key-change, design D9)", () => {
+  // Dos apps sobre el mismo esquema: la clave 1 y la clave 2, como un reinicio con otra clave.
+  const keyOne: CertificateCustodyConfig = {
+    enabled: true,
+    keyVersion: "1",
+    key: Buffer.alloc(32, 21),
+  };
+  const keyTwo: CertificateCustodyConfig = {
+    enabled: true,
+    keyVersion: "2",
+    key: Buffer.alloc(32, 22),
+  };
+  const pool = createCryptoWorkerPool({
+    entry: certificateTasksEntry(),
+    size: 2,
+    timeoutMs: 30_000,
+  });
+  let db: MigratedSchema;
+  let one: ReturnType<typeof buildTaxpayerApp>;
+  let two: ReturnType<typeof buildTaxpayerApp>;
+  let companyA: string;
+  let companyB: string;
+  let adminA: string;
+  let certificateId: string;
+  const cookies: Record<string, string> = {};
+  const as = (who: string, app: ReturnType<typeof buildTaxpayerApp>) => ({
+    get: async () =>
+      bodyOf(await request(app.app).get("/api/v1/signing-certificate").set("Cookie", cookies[who]!))
+        .data.certificate ?? null,
+    upload: (name: string, expectedCurrentId: string | null, password = FIXTURE_PASSWORD) =>
+      request(app.app)
+        .put("/api/v1/signing-certificate")
+        .set("Cookie", cookies[who]!)
+        .send({ file: file(name), password, expectedCurrentId }),
+  });
+  const secret = async () => {
+    const row = await db.database.prisma.signingCertificateSecret.findUniqueOrThrow({
+      where: { certificateId },
+    });
+    return { keyVersion: row.keyVersion, bytes: Buffer.from(row.wrappedKey).toString("hex") };
+  };
+  const events = (companyId: string, action: string) =>
+    db.database.prisma.auditEvent.findMany({
+      where: { companyId, action },
+      orderBy: { occurredAt: "asc" },
+    });
+  // Nada de lo que viaja o se audita puede contener la contraseña, las claves ni el P12.
+  const needles = () => [
+    FIXTURE_PASSWORD,
+    keyOne.key.toString("base64"),
+    keyTwo.key.toString("base64"),
+    file("sd-utf8.modern.p12").slice(100, 164),
+  ];
+  const expectNoSecrets = (value: unknown) => {
+    const text = JSON.stringify(value);
+    for (const needle of needles()) expect(text).not.toContain(needle);
+  };
+
+  beforeAll(async () => {
+    db = await createMigratedSchema("signing_reseal");
+    one = buildTaxpayerApp(db, { signing: { pool, custody: keyOne } });
+    two = buildTaxpayerApp(db, { signing: { pool, custody: keyTwo } });
+    companyA = await insertCompany(db.database.prisma, "Empresa A");
+    companyB = await insertCompany(db.database.prisma, "Empresa B");
+    adminA = await createMember(one.uow, companyA, {
+      name: "adminA",
+      email: "admin@a.ec",
+      role: "ADMIN",
+    });
+    await createMember(one.uow, companyA, {
+      name: "operatorA",
+      email: "operador@a.ec",
+      role: "OPERATOR",
+    });
+    await createMember(one.uow, companyB, { name: "adminB", email: "admin@b.ec", role: "ADMIN" });
+    for (const [name, app] of [
+      ["one", one],
+      ["two", two],
+    ] as const) {
+      cookies[`adminA.${name}`] = await sessionCookie(app.app, "admin@a.ec");
+      cookies[`operatorA.${name}`] = await sessionCookie(app.app, "operador@a.ec");
+      cookies[`adminB.${name}`] = await sessionCookie(app.app, "admin@b.ec");
+    }
+  });
+
+  afterAll(async () => {
+    await pool.close();
+    await db.drop();
+  });
+
+  it("con la custodia utilizable, la misma firma no cambia nada", async () => {
+    const admin = as("adminA.one", one);
+    const first = await admin.upload("sd-utf8.modern.p12", null);
+    expect(first.status).toBe(200);
+    certificateId = String(bodyOf(first).data.certificate!.id);
+    const before = await secret();
+    expect(before.keyVersion).toBe("1");
+
+    const again = await admin.upload("sd-utf8.modern.p12", certificateId);
+    expect(again.status).toBe(200);
+    expect(bodyOf(again).data).toMatchObject({
+      unchanged: true,
+      certificate: { id: certificateId, state: "VALID" },
+    });
+    expect(await secret()).toEqual(before);
+    expect(await events(companyA, "signing_certificate.custody_restored")).toHaveLength(0);
+  });
+
+  it("con otra clave la firma no está disponible, y la misma carga restablece su custodia", async () => {
+    const admin = as("adminA.two", two);
+    expect(await admin.get()).toMatchObject({
+      id: certificateId,
+      state: "KEY_UNAVAILABLE",
+      usable: false,
+    });
+    const before = await secret();
+    const row = await db.database.prisma.signingCertificate.findUniqueOrThrow({
+      where: { id: certificateId },
+    });
+
+    const res = await admin.upload("sd-utf8.modern.p12", certificateId);
+    expect(res.status).toBe(200);
+    expect(bodyOf(res).data).toMatchObject({
+      unchanged: false,
+      certificate: { id: certificateId, state: "VALID", usable: true, detectedRuc: FIXTURE_RUC },
+    });
+    expectNoSecrets(res.body);
+    const after = await secret();
+    expect(after.keyVersion).toBe("2");
+    expect(after.bytes).not.toBe(before.bytes);
+    // La misma firma: sus metadatos, fecha y autor de la carga no cambian, y no hay otra.
+    expect(
+      await db.database.prisma.signingCertificate.findUniqueOrThrow({
+        where: { id: certificateId },
+      }),
+    ).toEqual(row);
+    expect(
+      await db.database.prisma.signingCertificate.count({ where: { companyId: companyA } }),
+    ).toBe(1);
+
+    const [event, ...more] = await events(companyA, "signing_certificate.custody_restored");
+    expect(more).toHaveLength(0);
+    expect(event).toMatchObject({ actorType: "USER", actorUserId: adminA });
+    expect(event?.changes).toMatchObject({
+      "certificate.fingerprint": row.fingerprintSha256,
+      "certificate.detectedRuc": FIXTURE_RUC,
+      "custody.keyVersion.from": "1",
+      "custody.keyVersion.to": "2",
+    });
+    expectNoSecrets(event);
+    expect(await events(companyA, "signing_certificate.replaced")).toHaveLength(0);
+    expect(await events(companyA, "signing_certificate.loaded")).toHaveLength(1);
+  });
+
+  it("después de recuperarla, la misma carga no cambia nada", async () => {
+    const before = await secret();
+    const res = await as("adminA.two", two).upload("sd-utf8.modern.p12", certificateId);
+    expect(res.status).toBe(200);
+    expect(bodyOf(res).data).toMatchObject({ unchanged: true, certificate: { id: certificateId } });
+    expect(await secret()).toEqual(before);
+    expect(await events(companyA, "signing_certificate.custody_restored")).toHaveLength(1);
+  });
+
+  it("volver solo a la clave anterior deja la firma no disponible", async () => {
+    // Desde aquí, para la app con la clave 1, la firma vuelve a estar no disponible.
+    expect(await as("adminA.one", one).get()).toMatchObject({
+      id: certificateId,
+      state: "KEY_UNAVAILABLE",
+    });
+  });
+
+  it("una recuperación rechazada no toca el secreto", async () => {
+    const admin = as("adminA.one", one);
+    const before = await secret();
+    const rejected = async (res: { status: number; body: unknown }, code: string) => {
+      expect(res.status, code).toBe(400);
+      expect(bodyOf(res).error.code).toBe(code);
+      expectNoSecrets(res.body);
+      expect(await secret()).toEqual(before);
+    };
+    await rejected(
+      await admin.upload("sd-utf8.modern.p12", certificateId, "contraseña-incorrecta"),
+      "CERTIFICATE_PASSWORD_INVALID",
+    );
+    // El mismo certificado con otra clave privada: la huella coincide, la carga no es válida.
+    await rejected(
+      await admin.upload("mismatch.p12", certificateId),
+      "CERTIFICATE_KEY_UNSUPPORTED",
+    );
+    await rejected(
+      await admin.upload("corrupt-truncated.p12", certificateId),
+      "CERTIFICATE_UNREADABLE",
+    );
+    const row = await db.database.prisma.signingCertificate.findUniqueOrThrow({
+      where: { id: certificateId },
+    });
+    const late = buildTaxpayerApp(db, {
+      signing: { pool, custody: keyOne, now: () => new Date(row.notAfter.getTime() + 1000) },
+    });
+    cookies["adminA.late"] = await sessionCookie(late.app, "admin@a.ec");
+    await rejected(
+      await as("adminA.late", late).upload("sd-utf8.modern.p12", certificateId),
+      "CERTIFICATE_NOT_VALID_NOW",
+    );
+    expect(await admin.get()).toMatchObject({ id: certificateId, state: "KEY_UNAVAILABLE" });
+    expect(await events(companyA, "signing_certificate.custody_restored")).toHaveLength(1);
+  });
+
+  it("una recuperación con una vista desactualizada es un conflicto y no cambia nada", async () => {
+    const before = await secret();
+    for (const expected of [null, randomUUID()]) {
+      const res = await as("adminA.one", one).upload("sd-utf8.modern.p12", expected);
+      expect(res.status).toBe(409);
+      expect(bodyOf(res).error.code).toBe("CERTIFICATE_CHANGED");
+    }
+    expect(await secret()).toEqual(before);
+    expect(await events(companyA, "signing_certificate.custody_restored")).toHaveLength(1);
+  });
+
+  it("dos recuperaciones simultáneas restablecen la custodia una sola vez", async () => {
+    const admin = as("adminA.one", one);
+    const [a, b] = await Promise.all([
+      admin.upload("sd-utf8.modern.p12", certificateId),
+      admin.upload("sd-utf8.modern.p12", certificateId),
+    ]);
+    expect([a.status, b.status]).toEqual([200, 200]);
+    expect([bodyOf(a).data.unchanged, bodyOf(b).data.unchanged].sort()).toEqual([false, true]);
+    expect((await secret()).keyVersion).toBe("1");
+    expect(await events(companyA, "signing_certificate.custody_restored")).toHaveLength(2);
+    expect(await admin.get()).toMatchObject({ id: certificateId, state: "VALID" });
+  });
+
+  it("el operador no recupera y la empresa B no toca la firma de A", async () => {
+    // Con la clave 2, la firma de A (sellada con la 1) vuelve a estar no disponible.
+    const before = await secret();
+    const operator = await as("operatorA.two", two).upload("sd-utf8.modern.p12", certificateId);
+    expect(operator.status).toBe(403);
+
+    const fromB = await as("adminB.two", two).upload("sd-utf8.modern.p12", null);
+    expect(fromB.status).toBe(200);
+    expect(bodyOf(fromB).data).toMatchObject({ unchanged: false });
+    expect(bodyOf(fromB).data.certificate!.id).not.toBe(certificateId);
+    expect(await events(companyB, "signing_certificate.loaded")).toHaveLength(1);
+    expect(await events(companyB, "signing_certificate.custody_restored")).toHaveLength(0);
+
+    expect(await secret()).toEqual(before);
+    expect(await as("adminA.two", two).get()).toMatchObject({
+      id: certificateId,
+      state: "KEY_UNAVAILABLE",
+    });
+    expect(await events(companyA, "signing_certificate.custody_restored")).toHaveLength(2);
+  });
+
+  it("una firma distinta con la custodia no disponible es un reemplazo", async () => {
+    const res = await as("adminA.two", two).upload("other-ruc.modern.p12", certificateId);
+    expect(res.status).toBe(200);
+    const next = bodyOf(res).data.certificate!;
+    expect(next.id).not.toBe(certificateId);
+    expect(next).toMatchObject({ detectedRuc: FIXTURE_OTHER_RUC, state: "VALID" });
+    expect(
+      await db.database.prisma.signingCertificate.findUniqueOrThrow({
+        where: { id: certificateId },
+        include: { secret: true },
+      }),
+    ).toMatchObject({ status: "REPLACED", replacedById: next.id, secret: null });
+    expect(await events(companyA, "signing_certificate.replaced")).toHaveLength(1);
+    expect(await events(companyA, "signing_certificate.custody_restored")).toHaveLength(2);
   });
 });

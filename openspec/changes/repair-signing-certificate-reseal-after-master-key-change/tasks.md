@@ -2,7 +2,7 @@
 
 ## 1. Recuperación de la custodia en la carga de la firma (API)
 
-- [ ] 1.1 En `backend/src/modules/signing/application/signing-certificate.ts` (`upload`), dentro de la
+- [x] 1.1 En `backend/src/modules/signing/application/signing-certificate.ts` (`upload`), dentro de la
   transacción y bajo el bloqueo, partir el caso de la misma huella (design D1 a D4 y D7):
   - custodia que se abre (`keyAvailable(current)`) → `unchanged: true` sin escribir nada, como hoy;
   - custodia que no se abre → `CERTIFICATE_CHANGED` si `expectedCurrentId` no es la firma vigente;
@@ -12,13 +12,13 @@
 
   La inspección sigue fuera de la transacción y antes de ella, y el P12 se borra de la memoria como
   hoy. Sin migración. Se verifica con las pruebas de 1.3.
-- [ ] 1.2 Añadir `signing_certificate.custody_restored` a `AUDIT_ACTIONS`
+- [x] 1.2 Añadir `signing_certificate.custody_restored` a `AUDIT_ACTIONS`
   (`backend/src/modules/audit/domain/audit-event.ts`) y registrarlo en la misma transacción de la
   recuperación con los metadatos de la firma (`describe("certificate", …)`),
   `custody.keyVersion.from` y `custody.keyVersion.to` (design D5). Nunca el archivo, la contraseña,
   la clave privada, la clave maestra ni el material cifrado. Se verifica con las aserciones de
   auditoría de 1.3.
-- [ ] 1.3 Añadir a `backend/test/integration/signing-certificate-api.test.ts` un bloque «recuperación
+- [x] 1.3 Añadir a `backend/test/integration/signing-certificate-api.test.ts` un bloque «recuperación
   de la custodia» con su propio esquema y dos apps sobre él, con claves sintéticas distintas (design
   D9):
   - misma firma con custodia utilizable → `unchanged: true`, sin evento ni cambio del secreto;
@@ -39,7 +39,7 @@
   `corepack pnpm --filter @facturador/backend exec vitest run test/integration/signing-certificate-api.test.ts`,
   incluidas sin cambios las pruebas existentes, como «cargar otra vez la firma vigente no cambia
   nada ni audita».
-- [ ] 1.4 Corregir el comentario de `unchanged` en `packages/contracts/src/signing-certificate.ts`
+- [x] 1.4 Corregir el comentario de `unchanged` en `packages/contracts/src/signing-certificate.ts`
   («sin cambios cuando la firma ya era la vigente y su custodia se abre con la clave configurada»),
   sin cambiar el esquema. Verificar que `corepack pnpm openapi:check` pasa sin diferencias.
 
