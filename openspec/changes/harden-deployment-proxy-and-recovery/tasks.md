@@ -199,7 +199,7 @@
 
 ## 5. Workflow `deployment`
 
-- [ ] 5.1 Crear `.github/workflows/deployment.yml` (design D13):
+- [x] 5.1 Crear `.github/workflows/deployment.yml` (design D13):
   - `push`, `pull_request` y `workflow_dispatch`;
   - `permissions: contents: read` y ningún secreto del repositorio;
   - jobs paralelos `topology` y `recovery` con `timeout-minutes` acotados;
@@ -212,7 +212,7 @@
   - toda acción está fijada por el SHA de un commit, comprobado en el archivo;
   - el escaneo de secretos no informa nada;
   - `verify.yml` y `security.yml` no cambian.
-- [ ] 5.2 Documentar el workflow en `docs/quality/testing.md`, junto al de seguridad. Verificar que
+- [x] 5.2 Documentar el workflow en `docs/quality/testing.md`, junto al de seguridad. Verificar que
   `corepack pnpm format:check` pasa.
 
 ## 6. README y evidencia del reloj

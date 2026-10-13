@@ -1,0 +1,69 @@
+# Despliegue de referencia (harden-deployment-proxy-and-recovery, design D13; ADR 0027). Dos jobs
+# paralelos e independientes de verify y security: construyen las imágenes de producción y ensayan la
+# topología y la recuperación con TLS efímero y secretos sintéticos generados al ejecutar, con la red de
+# la aplicación sin salida a Internet y SRI_TRANSMISSION_ENABLED=0. Construir sí descarga imágenes y
+# paquetes; la topología en ejecución no sale a Internet. Sin secretos del repositorio, sin publicar
+# imágenes y sin artefactos. Ningún paso contacta el SRI ni levanta deploy/compose.sri-egress.yaml.
+name: deployment
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  topology:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EMITEYA_IMAGE_TAG: deployment-check
+      NEXT_TELEMETRY_DISABLED: "1"
+      CHECKPOINT_DISABLE: "1"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Activar Corepack
+        run: corepack enable
+      # Solo para los scripts de los ensayos; las imágenes instalan sus propias dependencias.
+      - name: Instalar dependencias
+        run: corepack pnpm install --frozen-lockfile
+      - name: Contexto de build sin archivos prohibidos
+        run: corepack pnpm deployment:context
+      - name: Imágenes, topología, borde y persistencia
+        run: corepack pnpm deployment:topology
+      - name: Imágenes sin entornos, PKCS#12 ni claves
+        run: >-
+          corepack pnpm deployment:context
+          --image emiteya-backend:deployment-check
+          --image emiteya-migrate:deployment-check
+          --image emiteya-frontend:deployment-check
+
+  recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EMITEYA_IMAGE_TAG: deployment-check
+      NEXT_TELEMETRY_DISABLED: "1"
+      CHECKPOINT_DISABLE: "1"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Activar Corepack
+        run: corepack enable
+      - name: Instalar dependencias
+        run: corepack pnpm install --frozen-lockfile
+      - name: Respaldo, restauración y custodia sintética
+        run: corepack pnpm deployment:recovery

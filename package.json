@@ -28,9 +28,9 @@
     "check:web-security-policy": "node --conditions=development scripts/check-web-security-policy.ts",
     "security:dependencies": "node scripts/check-dependency-security.ts",
     "security:secrets": "node scripts/check-secret-security.ts",
-    "deployment:context": "node scripts/deployment/check-build-context.ts",
-    "deployment:topology": "node scripts/deployment/check-topology.ts",
-    "deployment:recovery": "node scripts/deployment/check-recovery.ts",
+    "deployment:context": "node --conditions=development scripts/deployment/check-build-context.ts",
+    "deployment:topology": "node --conditions=development scripts/deployment/check-topology.ts",
+    "deployment:recovery": "node --conditions=development scripts/deployment/check-recovery.ts",
     "test:secret-rules": "vitest run --config scripts/security/vitest.gitleaks.config.ts",
     "openspec:validate": "node scripts/openspec-validate.ts"
   },

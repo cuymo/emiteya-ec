@@ -192,6 +192,18 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
     Registra las duraciones del respaldo y de la restauración como evidencia, nunca como un RTO o un
     RPO. Los volcados y los secretos viven en un directorio temporal `0700` fuera del repositorio y se
     borran siempre.
+- **Workflow de despliegue** (`.github/workflows/deployment.yml`, ADR 0027):
+  - **Cuándo:** en cada push y pull request, y a mano.
+  - **Cómo:** dos jobs paralelos e independientes de `verify` y `security`, con permisos de solo
+    lectura, sin secretos del repositorio, sin publicar imágenes ni subir artefactos (ni volcados, ni
+    claves, ni P12, ni archivos de entorno). Las acciones van fijadas por commit, las mismas de
+    `verify.yml`, y Docker y Compose son los del runner.
+  - **`topology`:** `deployment:context`, `deployment:topology` (que construye las tres imágenes) y
+    `deployment:context --image` sobre las imágenes construidas.
+  - **`recovery`:** `deployment:recovery`, que construye las imágenes y ensaya el respaldo y la
+    restauración.
+  - **Red:** construir descarga imágenes y paquetes; la topología en ejecución corre sin salida a
+    Internet y con `SRI_TRANSMISSION_ENABLED=0`, y ningún paso levanta el override de salida.
 - **Workflow de seguridad** (`.github/workflows/security.yml`, ADR 0026):
   - **Cuándo:** en cada push y pull request, cada lunes y a mano.
   - **Cómo:** dos jobs paralelos e independientes de `verify`, sin secretos y con permisos de solo
