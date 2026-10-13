@@ -121,8 +121,13 @@ describe("dirección de las dependencias de la portabilidad", () => {
     ]) {
       expect(main).toContain(`...${factory}(reportSchema`);
     }
+    // El directorio pasa por su comprobación previa de producción (harden-production-configuration-
+    // and-clock-ownership, design D2) antes de llegar al módulo.
+    expect(main).toContain(
+      "const dataExportDirectory = loadOrExit(() => loadDataExportDirectory(env));",
+    );
+    expect(main).toContain("directory: dataExportDirectory,");
     for (const variable of [
-      "DATA_EXPORT_DIRECTORY",
       "DATA_EXPORT_MAX_CONCURRENT",
       "DATA_EXPORT_TTL_HOURS",
       "DATA_EXPORT_DISK_HEADROOM_PERCENT",
