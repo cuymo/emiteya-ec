@@ -1,0 +1,41 @@
+# Prueba de comportamiento de las esperas del borde (harden-deployment-proxy-and-recovery, design
+# D12): la misma plantilla de nginx de producción, con las esperas escaladas, delante de un servidor
+# de prueba que tarda en enviar su primer byte. Solo red local; nunca forma parte del despliegue.
+name: ${EMITEYA_PROJECT:?define EMITEYA_PROJECT}
+
+services:
+  slow-upstream:
+    image: node:24.21.0-bookworm-slim
+    command:
+      - node
+      - -e
+      - "require('node:http').createServer((req, res) => setTimeout(() => { res.writeHead(200, { 'content-type': 'text/plain' }); res.end('respuesta-tardia'); }, Number(process.env.FIRST_BYTE_DELAY_MS))).listen(8080)"
+    environment:
+      FIRST_BYTE_DELAY_MS: ${FIRST_BYTE_DELAY_MS:?define FIRST_BYTE_DELAY_MS}
+    networks: [app]
+
+  proxy:
+    image: nginx:1.30.5-alpine
+    environment:
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?define PUBLIC_ORIGIN}
+      NGINX_API_UPSTREAM: slow-upstream:8080
+      NGINX_WEB_UPSTREAM: slow-upstream:8080
+      NGINX_PROXY_READ_TIMEOUT: ${NGINX_PROXY_READ_TIMEOUT:?define NGINX_PROXY_READ_TIMEOUT}
+      NGINX_DOWNLOAD_READ_TIMEOUT: ${NGINX_DOWNLOAD_READ_TIMEOUT:?define NGINX_DOWNLOAD_READ_TIMEOUT}
+    volumes:
+      - ../../../deploy/nginx/templates:/etc/nginx/templates:ro
+    secrets: [tls_certificate, tls_private_key]
+    ports:
+      - "${EDGE_HTTPS_PORT:?define EDGE_HTTPS_PORT}:443"
+    networks: [app]
+    depends_on: [slow-upstream]
+
+networks:
+  app:
+    internal: false
+
+secrets:
+  tls_certificate:
+    file: ${EMITEYA_SECRETS_DIR:?define EMITEYA_SECRETS_DIR}/tls_certificate
+  tls_private_key:
+    file: ${EMITEYA_SECRETS_DIR:?define EMITEYA_SECRETS_DIR}/tls_private_key

@@ -130,6 +130,46 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
 - **Validación de OpenSpec:** `corepack pnpm openspec:validate` ejecuta `openspec validate --all --strict` con la CLI fijada en el repositorio (`@fission-ai/openspec` 1.14.0), nunca una global, e imprime la versión que usa.
   - `verify` la ejecuta justo después de `format:check`, antes de las pruebas y el build, así que el job `verify` de la CI la corre en cada push y pull request.
   - Sus pruebas (`scripts/openspec-validate.test.ts`) usan una CLI simulada para el entorno y los códigos de salida, y la CLI real para el `PATH`, un repositorio temporal inválido y la ausencia de cambios en `openspec/` (`docs/quality/change-lifecycle.md`).
+- **Despliegue de referencia** (`harden-deployment-proxy-and-recovery`, spec `production-deployment`,
+  ADR 0027): ensayos con Docker y Docker Compose sobre `deploy/compose.yaml`, fuera de `verify`.
+  Necesitan Docker, la CLI de OpenSSL y los puertos 18443 a 18445 y 18080 a 18082 libres
+  (`DEPLOYMENT_HTTPS_PORT` y `DEPLOYMENT_HTTP_PORT` los cambian).
+  - **Contexto de build:** `corepack pnpm deployment:context [--image <imagen>…]` construye con el
+    `.dockerignore` del repositorio un árbol temporal de archivos permitidos y prohibidos sintéticos,
+    exporta lo que recibe el build (`FROM scratch` y `COPY . /`) y comprueba que no llega ningún
+    prohibido; con `--image`, busca además archivos de entorno, PKCS#12 y claves en `/app` de cada
+    imagen. Nunca lee un archivo privado real.
+  - **Topología:** `corepack pnpm deployment:topology` construye las imágenes (salvo con
+    `DEPLOYMENT_SKIP_BUILD=1`) y levanta la topología en un proyecto propio, con secretos sintéticos
+    aleatorios y un certificado TLS efímero generados en un directorio temporal fuera del
+    repositorio, en el que solo confía el cliente de la prueba. Comprueba:
+    - que una migración fallida impide arrancar el backend, y el orden de arranque;
+    - que solo el borde publica puertos y que un cliente de otra red no alcanza los servicios
+      internos;
+    - la redirección HTTP, una sola HSTS exacta también en un `413` y en un rechazo, el enrutamiento
+      de `/api` y de las páginas, y la salud y las métricas rechazadas por fuera y vivas por dentro;
+    - el inicio de sesión del administrador sintético con cookies `Secure`;
+    - la IP del cliente: un contenedor cliente en la red pública provoca inicios de sesión fallidos,
+      con y sin un `X-Forwarded-For` falsificado, y la prueba compara el campo `ip` de esos eventos de
+      seguridad con su dirección; la misma llamada desde la interfaz, directa a la API, se atribuye a
+      la interfaz;
+    - el techo de cuerpo (4 MB llegan a la API; más de 8 MiB en `/api/` y más de 1 MiB fuera reciben
+      `413` del borde);
+    - la salida bloqueada: un contenedor trampa en la red pública no recibe ninguna conexión de la API
+      ni de la interfaz;
+    - los procesos sin root y sin capacidades, la raíz de solo lectura y el mínimo de capacidades de
+      nginx;
+    - las esperas: la configuración renderizada (180 s solo en la descarga, sin almacenarla; 60 s en
+      el resto) y, con la misma plantilla y esperas escaladas, una descarga de primer byte tardío que
+      se entrega completa mientras otra ruta recibe `504`;
+    - la persistencia: datos sintéticos no fiscales (la configuración de la empresa, un operador, un
+      logo sintético, una exportación de reporte y una de portabilidad lista) sobreviven a recrear los
+      contenedores sin borrar volúmenes, y el paquete conserva su SHA-256;
+    - el apagado del backend con código 0, sus mensajes de cierre y dentro del plazo de gracia.
+
+    Nunca contacta el SRI ni otro servicio externo: corre con `SRI_TRANSMISSION_ENABLED=0`, sin salida
+    a Internet en la red de la aplicación y sin el override de salida. Siempre borra sus proyectos,
+    volúmenes y temporales. Dura unos 5 minutos en local con las imágenes ya construidas.
 - **Workflow de seguridad** (`.github/workflows/security.yml`, ADR 0026):
   - **Cuándo:** en cada push y pull request, cada lunes y a mano.
   - **Cómo:** dos jobs paralelos e independientes de `verify`, sin secretos y con permisos de solo

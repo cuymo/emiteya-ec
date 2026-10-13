@@ -1,0 +1,6 @@
+# Migración que falla a propósito (harden-deployment-proxy-and-recovery, design D7 y D12): credenciales
+# sintéticas que PostgreSQL rechaza, solo para el servicio de migración. El backend no debe arrancar.
+services:
+  migrate:
+    environment:
+      DATABASE_URL: postgresql://nadie:x@postgres:5432/emiteya

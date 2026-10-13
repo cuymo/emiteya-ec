@@ -108,7 +108,7 @@
 
 ## 3. Ensayo de la topología y del borde
 
-- [ ] 3.1 Crear el script de ensayo de la topología en `scripts/deployment/` (design D12). Genera en
+- [x] 3.1 Crear el script de ensayo de la topología en `scripts/deployment/` (design D12). Genera en
   un directorio temporal fuera del repositorio secretos sintéticos y un certificado TLS efímero con
   `node-forge`, levanta un proyecto de Compose propio con puertos altos, espera `/health/ready` por
   la red privada, nunca imprime un secreto y siempre limpia sus contenedores, volúmenes y temporales.
@@ -122,7 +122,7 @@
     responden;
   - el inicio de sesión del administrador sintético da cookies `Secure`;
   - los procesos de la interfaz y de la API no corren como root.
-- [ ] 3.2 Añadir al ensayo la IP del cliente y la salida (design D12):
+- [x] 3.2 Añadir al ensayo la IP del cliente y la salida (design D12):
   - un cliente de prueba con dirección fija en `edge` provoca un inicio de sesión fallido, y el
     campo `ip` de ese evento en el log del backend es la dirección del cliente, con y sin un
     `X-Forwarded-For` falsificado;
@@ -131,7 +131,7 @@
   - un contenedor trampa solo en `edge` no recibe ninguna conexión del backend ni del frontend.
 
   El script solo muestra los campos comparados.
-- [ ] 3.3 Añadir al ensayo los cuerpos y la espera (design D12):
+- [x] 3.3 Añadir al ensayo los cuerpos y la espera (design D12):
   - 4 MiB sintéticos a la ruta de borradores de liquidación, sin sesión y con el `Origin` canónico,
     reciben el sobre de la API;
   - más de 8 MiB en `/api/` y más de 1 MiB fuera reciben `413` del borde;
@@ -141,7 +141,7 @@
     descarga se entrega completa y otra ruta recibe un error de puerta de enlace.
 
   Sin cambiar ningún límite de la aplicación.
-- [ ] 3.4 Añadir al ensayo el arranque, el apagado y la persistencia (design D7 y D12):
+- [x] 3.4 Añadir al ensayo el arranque, el apagado y la persistencia (design D7 y D12):
   - con una `DATABASE_URL` inválida solo para `migrate`, el backend no arranca;
   - `docker compose stop` del backend termina con código 0 antes de 30 s y con sus mensajes de
     cierre;
@@ -150,7 +150,7 @@
     mismos datos y el mismo SHA-256 del paquete descargado de nuevo;
   - medir la raíz de solo lectura del backend y del frontend con `tmpfs` y registrar el resultado
     (design D7).
-- [ ] 3.5 Documentar en `docs/quality/testing.md` el ensayo de la topología: cómo se ejecuta en local,
+- [x] 3.5 Documentar en `docs/quality/testing.md` el ensayo de la topología: cómo se ejecuta en local,
   qué necesita (Docker y puertos libres), qué comprueba y que nunca contacta el SRI ni otro servicio
   externo. Verificar que `corepack pnpm format:check` pasa.
 
