@@ -241,10 +241,30 @@
   Quedan para la revisión final del go-live la evidencia del operador: reloj real, certificado y su
   renovación, cifrado y retención de los respaldos, y la medición de la descarga en su
   almacenamiento. Verificar que ningún documento afirma un cierre sin su evidencia.
-- [ ] 7.2 Ejecutar en local los dos ensayos (topología y recuperación), la prueba del
+- [x] 7.2 Ejecutar en local los dos ensayos (topología y recuperación), la prueba del
   `.dockerignore`, `corepack pnpm openspec:validate`, `corepack pnpm security:dependencies`,
   `corepack pnpm security:secrets` y el `corepack pnpm verify` completo, con cero tráfico al SRI.
   Si una prueba inestable ya registrada falla, informar el código de salida real con la evidencia
   aislada o de control, sin marcar la tarea como completa.
+
+  Evidencia (2026-10-13, local, cero tráfico al SRI):
+  - `deployment:context`: 2/2 sin imágenes y 5/5 con las tres imágenes construidas (`backend`,
+    `migrate` y `frontend`). La primera pasada con `--image` falló por la forma de invocarla y porque
+    la búsqueda suponía `/app`, que la imagen de migraciones no tiene; ahora recorre el árbol del
+    directorio de trabajo de cada imagen (`0f0d706`).
+  - `deployment:topology`: 33/33 en 272 s, construyendo las imágenes.
+  - `deployment:recovery`: 19/19 en 93 s; respaldo de 245 ms y restauración de 4,3 s con los datos
+    sintéticos, como evidencia y no como un RTO o un RPO.
+  - Raíz de solo lectura medida: la API (`tmpfs` en `/tmp`) y la interfaz (`tmpfs` en `.next/cache`)
+    arrancan, quedan sanas y escriben sus temporales (la exportación de un reporte) sin root, sin
+    capacidades y con la raíz de solo lectura. nginx corre con `CHOWN`, `NET_BIND_SERVICE`, `SETGID` y
+    `SETUID`.
+  - `openspec:validate` 24/24, `format:check`, `security:dependencies` (`PASS`, las cuatro
+    excepciones sin cambios) y `security:secrets` (`PASS`) con código 0.
+  - `corepack pnpm verify`: la primera corrida terminó con código 1 por
+    `e2e-fiscal-catalogs.test.ts` («Sin registro de la carga de catálogos»), la inestabilidad ya
+    registrada en `technical-debt.md`; aislada pasó (1/1). La corrida de control terminó con código 0
+    en 708 s: 393 archivos de prueba, AC-04 aparte, `openapi:check`, `check:dev-start`,
+    `build:verification`, `check:web-security-policy` (39), `check:xsd-artifact` y `check:ride-assets`.
 - [ ] 7.3 Publicar la rama del cambio (no `main`) y registrar la evidencia de su CI: `verify`,
   `security` y `deployment` en verde, con la validación estricta de OpenSpec dentro de `verify`.
