@@ -150,7 +150,7 @@
 
 ## 5. Verificación
 
-- [ ] 5.1 Prueba de humo en modo producción, sin tráfico al SRI y solo con secretos sintéticos:
+- [x] 5.1 Prueba de humo en modo producción, sin tráfico al SRI y solo con secretos sintéticos:
   backend con `NODE_ENV=production`, Postgres local de pruebas, una clave maestra de custodia
   sintética generada al azar solo para ese proceso (formato válido, distinta de la de ejemplo,
   nunca registrada, impresa ni versionada), un `BETTER_AUTH_SECRET` sintético, un
@@ -161,10 +161,42 @@
   que `/health/live` y `/health/ready` responden, que la interfaz carga, y que la API rechaza el
   arranque de producción con cada regla nueva incumplida, sin crear ni enviar ningún comprobante
   fiscal.
-- [ ] 5.2 Ejecutar las pruebas dirigidas (`backend/test/env.test.ts` y las del frontend de 3.1),
+
+  Evidencia (2026-10-12, local, script fuera del repositorio): backend compilado (`dist/main.js`)
+  sobre un esquema propio de `facturador_test`, con secretos sintéticos generados al azar en el
+  proceso de la prueba y nunca impresos; frontend construido con `API_INTERNAL_URL` explícito en un
+  puerto propio y servido con `next start`; todo HTTP saliente del backend por un proxy trampa.
+  22/22 comprobaciones en verde: diez rechazos de arranque en producción (sin `NODE_ENV`; sin
+  `TRUST_PROXY`, `false`, `true`, `linklocal` y `0`; sin `DATA_EXPORT_DIRECTORY`, inexistente y
+  enlace simbólico; `BETTER_AUTH_URL` parecida al bucle local), cada uno con código 1, el mensaje de
+  su regla, sin pila ni secretos y sin crear el directorio; `/health/live` 200, `/health/ready` 200
+  con `sriTransmission: "disabled"`; `next start` sin `API_INTERNAL_URL` termina con código 1; la
+  interfaz carga con su CSP; `/api` se reenvía al backend (401 sin sesión); el inicio de sesión del
+  administrador sintético por el mismo origen da cookies `Secure` y `HttpOnly`, y `/api/v1/me`
+  responde 200; apagado con código 0; cero conexiones salientes. Una primera corrida dio 20/21 por
+  una sonda equivocada de `/api/auth/get-session`, que el proyecto no expone a propósito (404); se
+  sustituyó por el inicio de sesión. El esquema y el directorio temporal se eliminaron.
+- [x] 5.2 Ejecutar las pruebas dirigidas (`backend/test/env.test.ts` y las del frontend de 3.1),
   `corepack pnpm openspec:validate`, `corepack pnpm security:dependencies`,
   `corepack pnpm security:secrets` y el `corepack pnpm verify` completo. Si una prueba inestable ya
   registrada en `technical-debt.md` falla, informar el código de salida real con la evidencia
   aislada o de control, sin marcar la tarea como completa.
+
+  Evidencia (2026-10-12, local):
+  - Pruebas dirigidas en verde: `env.test.ts`, `app.test.ts`, aprovisionamiento, recuperación,
+    `e2e-request-protection` y, en el frontend, `api-internal-url.test.ts` y la ruta de descarga.
+  - `openspec:validate`: 23/23, código 0. `security:dependencies`: `PASS`, código 0, con las cuatro
+    excepciones vigentes sin cambios y un aviso `MODERATE` solo informado.
+  - `security:secrets` (Gitleaks 8.30.1 fijado, instalado fuera del repositorio): la primera corrida
+    dio `FAIL`, código 1, por una URL de PostgreSQL con una contraseña sintética escrita en la prueba
+    de privacidad de `env.test.ts`. Ese commit aún no estaba publicado: se corrigió en él mismo (la
+    URL se arma en tiempo de ejecución con una contraseña aleatoria), sin excepción nueva en
+    Gitleaks. La segunda corrida dio `PASS`, código 0.
+  - `corepack pnpm verify`: la primera corrida terminó con código 1 porque
+    `test/architecture/data-portability-dependency-direction.test.ts` exigía el texto
+    `env.DATA_EXPORT_DIRECTORY` en `main.ts`, que ahora pasa por `loadDataExportDirectory`; la prueba
+    ahora exige esa comprobación previa. La segunda corrida terminó con código 0: 393 archivos de
+    prueba en verde, AC-04 aparte en verde, `check:dev-start`, `build:verification`,
+    `check:web-security-policy` (39 comprobaciones), `check:xsd-artifact` y `check:ride-assets`.
 - [ ] 5.3 Publicar la rama del cambio (no `main`) y registrar la evidencia de su CI: `verify` y
   `security` en verde, con la validación estricta de OpenSpec dentro de `verify`.
