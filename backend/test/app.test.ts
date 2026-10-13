@@ -2,9 +2,32 @@ import { Router } from "express";
 import request from "./support/http-client.ts";
 import { describe, expect, it } from "vitest";
 import { errorEnvelopeSchema } from "@facturador/contracts";
+import { loadEnv } from "../src/config/env.ts";
 import { buildTestApp } from "./helpers.ts";
 
 describe("createApp", () => {
+  it("aplica el límite de confianza ya resuelto por la configuración (harden-production-configuration-and-clock-ownership, D3)", async () => {
+    const router = Router();
+    router.get("/ip", (req, res) => void res.json({ ip: req.ip }));
+    const base = {
+      DATABASE_URL: "postgresql://u:p@127.0.0.1:5432/db",
+      BETTER_AUTH_SECRET: "secreto-de-pruebas-0123456789abcdef0123",
+      BETTER_AUTH_URL: "http://localhost:3000",
+    };
+    const forwardedIp = async (TRUST_PROXY?: string) => {
+      const { TRUST_PROXY: trustProxy } = loadEnv(TRUST_PROXY ? { ...base, TRUST_PROXY } : base);
+      const { app } = buildTestApp({ apiRouter: router, trustProxy });
+      const res = await request(app).get("/api/v1/ip").set("x-forwarded-for", "203.0.113.7");
+      return (res.body as { ip: string }).ip;
+    };
+    expect(await forwardedIp()).not.toBe("203.0.113.7");
+    expect(await forwardedIp("false")).not.toBe("203.0.113.7");
+    expect(await forwardedIp("1")).toBe("203.0.113.7");
+    expect(await forwardedIp("loopback")).toBe("203.0.113.7");
+    expect(await forwardedIp("127.0.0.1, ::1, ::ffff:127.0.0.1")).toBe("203.0.113.7");
+    expect(await forwardedIp("10.0.0.0/8")).not.toBe("203.0.113.7");
+  });
+
   it("una ruta inexistente responde 404 con el sobre de error", async () => {
     const { app } = buildTestApp();
     const res = await request(app).get("/api/v1/no-existe");

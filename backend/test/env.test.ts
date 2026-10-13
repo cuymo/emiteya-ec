@@ -1,6 +1,20 @@
 import { spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import {
+  chmodSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import express from "express";
+import { afterAll, describe, expect, it } from "vitest";
 import { TRANSMISSION_SIZE_POLICY } from "../src/modules/fiscal/domain/transmission-size-policy.ts";
 import {
   EXAMPLE_AUTH_SECRET,
@@ -8,8 +22,10 @@ import {
   EnvError,
   loadCanonicalOrigin,
   loadCertificateCustody,
+  loadDataExportDirectory,
   loadEnv,
   loadInitialAdmin,
+  parseTrustProxy,
   SRI_ENDPOINT_VARIABLES,
   sriTransportBudgetMs,
 } from "../src/config/env.ts";
@@ -20,6 +36,13 @@ const valid = {
   DATABASE_URL: "postgresql://u:p@127.0.0.1:5432/db",
   BETTER_AUTH_SECRET: "secreto-de-pruebas-0123456789abcdef0123",
   BETTER_AUTH_URL: "http://localhost:3000",
+};
+// Lo mínimo que producción exige además (harden-production-configuration-and-clock-ownership).
+const production = {
+  ...valid,
+  NODE_ENV: "production",
+  TRUST_PROXY: "loopback",
+  DATA_EXPORT_DIRECTORY: "/srv/facturador/exports",
 };
 
 function envError(source: Record<string, string>): EnvError | undefined {
@@ -102,11 +125,7 @@ describe("configuración por entorno", () => {
     expect(loadEnv({ ...valid, BETTER_AUTH_SECRET: EXAMPLE_AUTH_SECRET }).NODE_ENV).toBe(
       "development",
     );
-    const error = envError({
-      ...valid,
-      NODE_ENV: "production",
-      BETTER_AUTH_SECRET: EXAMPLE_AUTH_SECRET,
-    });
+    const error = envError({ ...production, BETTER_AUTH_SECRET: EXAMPLE_AUTH_SECRET });
     expect(error?.variables).toEqual(["BETTER_AUTH_SECRET"]);
     expect(error?.message).not.toContain(EXAMPLE_AUTH_SECRET);
   });
@@ -231,7 +250,7 @@ describe("custodia de la firma electrónica (design D6)", () => {
 
   it("deshabilitada solo de forma expresa y nunca en producción", () => {
     expect(custody({ CERTIFICATE_CUSTODY: "disabled" })).toEqual({ enabled: false });
-    const error = envError({ ...valid, NODE_ENV: "production", CERTIFICATE_CUSTODY: "disabled" });
+    const error = envError({ ...production, CERTIFICATE_CUSTODY: "disabled" });
     expect(error?.variables).toEqual(["CERTIFICATE_CUSTODY"]);
   });
 
@@ -261,7 +280,7 @@ describe("custodia de la firma electrónica (design D6)", () => {
   it("rechaza la clave de ejemplo en producción y la admite en desarrollo", () => {
     expect(custody({ CERTIFICATE_MASTER_KEY: EXAMPLE_CERTIFICATE_MASTER_KEY }).enabled).toBe(true);
     const error = custodyError({
-      NODE_ENV: "production",
+      ...production,
       CERTIFICATE_MASTER_KEY: EXAMPLE_CERTIFICATE_MASTER_KEY,
     });
     expect(error?.message).toContain("CERTIFICATE_MASTER_KEY: es la de ejemplo");
@@ -269,7 +288,7 @@ describe("custodia de la firma electrónica (design D6)", () => {
   });
 
   it("la API no arranca en producción sin clave de custodia", () => {
-    const result = startupWith({ ...valid, NODE_ENV: "production" });
+    const result = startupWith(production);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("CERTIFICATE_MASTER_KEY: es obligatoria");
   });
@@ -413,7 +432,6 @@ describe("emisión de facturas (add-invoice-emission, design D2 y D11)", () => {
   });
 
   it("rechaza EMISSION_STAGE_TIMINGS=1 en producción", () => {
-    const production = { ...valid, NODE_ENV: "production" };
     expect(envError({ ...production, EMISSION_STAGE_TIMINGS: "1" })?.variables).toEqual([
       "EMISSION_STAGE_TIMINGS",
     ]);
@@ -518,7 +536,6 @@ describe("transmisión al SRI (add-sri-transmission, design D5 y D22)", () => {
   });
 
   it("los endpoints sobrescritos exigen https en producción", () => {
-    const production = { ...valid, NODE_ENV: "production" };
     expect(
       envError({ ...production, SRI_ENDPOINT_PRODUCTION_RECEPTION: "http://127.0.0.1:9/r" })
         ?.variables,
@@ -641,5 +658,238 @@ describe("portabilidad de datos (add-data-portability, design D14 y D20)", () =>
     expect(envError({ ...valid, DATA_EXPORT_DIRECTORY: "exports" })?.variables).toEqual([
       "DATA_EXPORT_DIRECTORY",
     ]);
+  });
+});
+
+describe("configuración de producción (harden-production-configuration-and-clock-ownership)", () => {
+  const root = mkdtempSync(join(tmpdir(), "facturador-env-"));
+  afterAll(() => {
+    if (existsSync(join(root, "sin-escritura"))) chmodSync(join(root, "sin-escritura"), 0o700);
+    rmSync(root, { recursive: true, force: true });
+  });
+  const directory = (name: string) => {
+    const path = join(root, name);
+    mkdirSync(path, { mode: 0o700 });
+    return path;
+  };
+  const directoryError = (
+    path: string | undefined,
+    probe?: Parameters<typeof loadDataExportDirectory>[1],
+  ) => {
+    try {
+      loadDataExportDirectory({ NODE_ENV: "production", DATA_EXPORT_DIRECTORY: path }, probe);
+    } catch (error) {
+      return error as EnvError;
+    }
+    return undefined;
+  };
+  const { DATA_EXPORT_DIRECTORY: _directory, ...withoutDirectory } = production;
+  const { TRUST_PROXY: _trustProxy, ...withoutTrustProxy } = production;
+
+  describe("directorio de exportación (design D2)", () => {
+    it("en producción usa un directorio absoluto, existente, propio y utilizable", () => {
+      const path = directory("valido");
+      expect(loadDataExportDirectory(loadEnv({ ...production, DATA_EXPORT_DIRECTORY: path }))).toBe(
+        path,
+      );
+    });
+
+    it("en producción exige la variable y una ruta absoluta", () => {
+      const missing = envError(withoutDirectory);
+      expect(missing?.variables).toEqual(["DATA_EXPORT_DIRECTORY"]);
+      expect(missing?.message).toContain("DATA_EXPORT_DIRECTORY: es obligatoria en producción");
+      expect(directoryError(undefined)?.message).toContain("es obligatoria en producción");
+      expect(envError({ ...production, DATA_EXPORT_DIRECTORY: "exports" })?.variables).toEqual([
+        "DATA_EXPORT_DIRECTORY",
+      ]);
+    });
+
+    it("en producción rechaza, sin crear nada ni mostrar la ruta, lo que no es un directorio propio y utilizable", () => {
+      const absent = join(root, "inexistente");
+      const target = directory("destino");
+      const link = join(root, "enlace");
+      symlinkSync(target, link);
+      const file = join(root, "archivo");
+      writeFileSync(file, "");
+      const cases: [string, EnvError | undefined, string][] = [
+        [absent, directoryError(absent), "no existe (producción no lo crea)"],
+        [link, directoryError(link), "es un enlace simbólico"],
+        [file, directoryError(file), "no es un directorio"],
+      ];
+      for (const [path, error, rule] of cases) {
+        expect(error).toBeInstanceOf(EnvError);
+        expect(error?.variables).toEqual(["DATA_EXPORT_DIRECTORY"]);
+        expect(error?.message).toContain(`DATA_EXPORT_DIRECTORY: ${rule}`);
+        expect(error?.message).not.toContain(path);
+      }
+      expect(existsSync(absent)).toBe(false);
+    });
+
+    it("en producción rechaza un directorio de otro usuario", () => {
+      const path = directory("ajeno");
+      const realUid = process.getuid?.() ?? 0;
+      const error = directoryError(path, {
+        lstat: (target) => Object.assign(lstatSync(target), { uid: realUid + 1 }),
+        access: () => undefined,
+        uid: realUid,
+      });
+      expect(error?.message).toContain(
+        "DATA_EXPORT_DIRECTORY: no pertenece al usuario del proceso",
+      );
+      expect(error?.message).not.toContain(path);
+    });
+
+    it.skipIf(process.getuid?.() === 0)(
+      "en producción rechaza un directorio sin permiso de escritura",
+      () => {
+        const path = directory("sin-escritura");
+        chmodSync(path, 0o500);
+        const error = directoryError(path);
+        expect(error?.message).toContain(
+          "DATA_EXPORT_DIRECTORY: el proceso no puede leerlo, escribir en él o recorrerlo",
+        );
+        expect(error?.message).not.toContain(path);
+      },
+    );
+
+    it("en desarrollo y en pruebas sigue siendo opcional", () => {
+      expect(loadDataExportDirectory(loadEnv(valid))).toBeUndefined();
+      expect(loadDataExportDirectory(loadEnv({ ...valid, NODE_ENV: "test" }))).toBeUndefined();
+      const absent = join(root, "desarrollo-inexistente");
+      expect(loadDataExportDirectory(loadEnv({ ...valid, DATA_EXPORT_DIRECTORY: absent }))).toBe(
+        absent,
+      );
+      expect(existsSync(absent)).toBe(false);
+    });
+
+    it("la API no arranca en producción con un directorio inexistente, antes de escuchar y sin pila", () => {
+      const key = randomBytes(32).toString("base64");
+      const absent = join(root, "arranque-inexistente");
+      const result = startupWith({
+        ...production,
+        CERTIFICATE_MASTER_KEY: key,
+        DATA_EXPORT_DIRECTORY: absent,
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("DATA_EXPORT_DIRECTORY: no existe (producción no lo crea)");
+      expect(result.stderr).not.toContain(absent);
+      expect(result.stderr).not.toContain(key);
+      expect(result.stderr).not.toMatch(/^\s+at /m);
+      expect(result.stdout).not.toContain("backend escuchando");
+      expect(existsSync(absent)).toBe(false);
+    });
+  });
+
+  describe("límite de confianza del proxy (design D3)", () => {
+    const accepted: [string, false | number | string][] = [
+      ["1", 1],
+      ["2", 2],
+      ["10.0.0.1", "10.0.0.1"],
+      ["2001:db8::1", "2001:db8::1"],
+      ["10.0.0.0/8", "10.0.0.0/8"],
+      ["2001:db8::/32", "2001:db8::/32"],
+      ["10.0.0.1, 10.0.0.2/32 ,2001:db8::1", "10.0.0.1,10.0.0.2/32,2001:db8::1"],
+      ["loopback", "loopback"],
+    ];
+    const rejected = [
+      "0",
+      "-1",
+      "01",
+      "1.5",
+      "1e3",
+      "linklocal",
+      "uniquelocal",
+      "loopback,10.0.0.1",
+      SECRET,
+      "",
+      "10.0.0.256",
+      "10.0.0.0/33",
+      "2001:db8::/129",
+      "0.0.0.0/0",
+      "::/0",
+      "10.0.0.0/08",
+      "10.0.0.0/255.0.0.0",
+      "10.0.0.1,",
+      "[::1]",
+      "fe80::1%eth0",
+      "10.0.0.1/8/8",
+    ];
+
+    it("en producción admite saltos, direcciones, bloques, listas y loopback, y Express los compila", () => {
+      for (const [value, expected] of accepted) {
+        const parsed = loadEnv({ ...production, TRUST_PROXY: value }).TRUST_PROXY;
+        expect([value, parsed]).toEqual([value, expected]);
+        expect(() => express().set("trust proxy", parsed)).not.toThrow();
+      }
+    });
+
+    it("en producción exige el límite: ausente, false y true no arrancan", () => {
+      for (const source of [withoutTrustProxy, { ...production, TRUST_PROXY: "false" }]) {
+        const error = envError(source);
+        expect(error?.variables).toEqual(["TRUST_PROXY"]);
+        expect(error?.message).toContain("TRUST_PROXY: es obligatoria en producción");
+      }
+      expect(envError({ ...production, TRUST_PROXY: "true" })?.variables).toEqual(["TRUST_PROXY"]);
+    });
+
+    it("en cualquier ambiente rechaza una sintaxis no admitida, sin mostrarla y sin llegar a Express", () => {
+      for (const NODE_ENV of ["development", "test", "production"]) {
+        for (const value of [...rejected, "true"]) {
+          expect(parseTrustProxy(value)).toBeNull();
+          const error = envError({ ...production, NODE_ENV, TRUST_PROXY: value });
+          expect([NODE_ENV, value, error?.variables]).toEqual([NODE_ENV, value, ["TRUST_PROXY"]]);
+        }
+        expect(envError({ ...production, NODE_ENV, TRUST_PROXY: SECRET })?.message).not.toContain(
+          SECRET,
+        );
+      }
+    });
+
+    it("en desarrollo y en pruebas sigue sin confiar en ningún proxy por defecto", () => {
+      expect(loadEnv(valid).TRUST_PROXY).toBe(false);
+      expect(loadEnv({ ...valid, NODE_ENV: "test" }).TRUST_PROXY).toBe(false);
+      expect(loadEnv({ ...valid, TRUST_PROXY: "false" }).TRUST_PROXY).toBe(false);
+      expect(loadEnv({ ...valid, TRUST_PROXY: "1" }).TRUST_PROXY).toBe(1);
+    });
+  });
+
+  describe("origen de la autenticación (design D4)", () => {
+    it("en producción admite https y el http del bucle local exacto", () => {
+      for (const url of [
+        "https://facturas.ejemplo.test",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://[::1]:3000",
+      ]) {
+        expect([url, envError({ ...production, BETTER_AUTH_URL: url })]).toEqual([url, undefined]);
+      }
+    });
+
+    it("en producción rechaza http con otro host, incluidos los que se parecen al bucle local", () => {
+      for (const url of [
+        "http://facturas.ejemplo.test",
+        "http://localhost.example.com:3000",
+        "http://127.0.0.1.example.com:3000",
+        "http://10.0.0.5:3000",
+      ]) {
+        const error = envError({ ...production, BETTER_AUTH_URL: url });
+        expect([url, error?.variables]).toEqual([url, ["BETTER_AUTH_URL"]]);
+        expect(error?.message).toContain(
+          "BETTER_AUTH_URL: usa http fuera del bucle local en producción",
+        );
+        expect(error?.message).not.toContain(new URL(url).hostname);
+      }
+      expect(loadEnv({ ...valid, BETTER_AUTH_URL: "http://facturas.ejemplo.test" })).toMatchObject({
+        BETTER_AUTH_URL: "http://facturas.ejemplo.test",
+      });
+    });
+
+    it("el origen canónico sigue siendo el de BETTER_AUTH_URL en https", () => {
+      expect(
+        loadCanonicalOrigin(
+          loadEnv({ ...production, BETTER_AUTH_URL: "https://facturas.ejemplo.test" }),
+        ),
+      ).toBe("https://facturas.ejemplo.test");
+    });
   });
 });

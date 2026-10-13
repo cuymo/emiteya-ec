@@ -2,7 +2,7 @@
 
 ## 1. `DATA_EXPORT_DIRECTORY`, `TRUST_PROXY` y `BETTER_AUTH_URL` por ambiente
 
-- [ ] 1.1 En `backend/src/config/env.ts`, exigir `DATA_EXPORT_DIRECTORY` en producción desde
+- [x] 1.1 En `backend/src/config/env.ts`, exigir `DATA_EXPORT_DIRECTORY` en producción desde
   `.superRefine`, y añadir `loadDataExportDirectory(env)` (design D2): en producción, sin crear
   nada, comprueba con `lstatSync` que la ruta existe, que es un directorio real (no un enlace
   simbólico), que pertenece al proceso (la regla de `package-files.ts#privateDirectory`) y, con
@@ -26,7 +26,7 @@
   - en desarrollo y en pruebas, sin la variable: sigue funcionando con el directorio temporal por
     defecto, como hasta ahora;
   - ningún mensaje de error contiene la ruta.
-- [ ] 1.2 En `backend/src/config/env.ts`, sustituir el `transform` de `TRUST_PROXY` por la
+- [x] 1.2 En `backend/src/config/env.ts`, sustituir el `transform` de `TRUST_PROXY` por la
   gramática de design D3 (un entero de saltos mayor o igual que 1; una dirección IP; un bloque
   CIDR con prefijo de 1 en adelante; una lista separada por comas de direcciones o bloques; o
   `loopback`, solo), validada con `node:net.isIP` y una comprobación de CIDR propia, sin
@@ -45,7 +45,7 @@
   - el valor resuelto llega a `createApp` sin cambios de comportamiento para las formas ya
     admitidas (número y `false`), con una prueba de regresión sobre `trustProxy` en
     `backend/test/app.test.ts` o equivalente.
-- [ ] 1.3 En `backend/src/config/env.ts`, añadir a `.superRefine` la regla de design D4: en
+- [x] 1.3 En `backend/src/config/env.ts`, añadir a `.superRefine` la regla de design D4: en
   producción, si `BETTER_AUTH_URL` es `http:` y su `hostname` no es exactamente `localhost`,
   `127.0.0.1` ni `[::1]`, `EnvError`. No se toca `canonicalOrigin` ni la comparación de origen de
   H-03.

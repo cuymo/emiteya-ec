@@ -9,6 +9,7 @@ import {
   EnvError,
   loadCanonicalOrigin,
   loadCertificateCustody,
+  loadDataExportDirectory,
   loadEnv,
   loadInitialAdmin,
   passwordPolicy,
@@ -193,6 +194,9 @@ const env: Env = loadOrExit(() => loadEnv());
 const canonicalApiOrigin = loadOrExit(() => loadCanonicalOrigin(env));
 // Sin la clave maestra de la custodia, la API no arranca (ADR 0011, design D6).
 const certificateCustody = loadOrExit(() => loadCertificateCustody(env));
+// En producción, el directorio de exportación existe de antemano, propio y utilizable; nunca se crea
+// (harden-production-configuration-and-clock-ownership, design D2).
+const dataExportDirectory = loadOrExit(() => loadDataExportDirectory(env));
 const logger = createLogger(env.LOG_LEVEL);
 logger.info(
   certificateCustody.enabled
@@ -582,7 +586,7 @@ const portability = dataPortabilityModule({
   },
   jobs: jobStore,
   limits: {
-    directory: env.DATA_EXPORT_DIRECTORY,
+    directory: dataExportDirectory,
     maxConcurrent: env.DATA_EXPORT_MAX_CONCURRENT,
     ttlHours: env.DATA_EXPORT_TTL_HOURS,
     headroomPercent: env.DATA_EXPORT_DISK_HEADROOM_PERCENT,

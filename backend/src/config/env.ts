@@ -1,5 +1,6 @@
 // Configuración por entorno, validada al arrancar (docs/architecture/deployment.md).
-import { readFileSync } from "node:fs";
+import { accessSync, constants, lstatSync, readFileSync, type Stats } from "node:fs";
+import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
 import {
   CERTIFICATE_MAX_BYTES_DEFAULT,
@@ -18,21 +19,57 @@ import { z } from "zod";
 import { DEFAULT_LOGO_MAX_BYTES, LOGO_MAX_BYTES_RANGE } from "../modules/taxpayer/domain/logo.ts";
 import { canonicalOrigin } from "../platform/http/request-origin.ts";
 
+/** Una dirección IP explícita o un bloque CIDR con prefijo de 1 en adelante (design D3). */
+function isAddressOrBlock(entry: string): boolean {
+  if (entry.includes("%")) return false;
+  const [address = "", prefix, ...rest] = entry.split("/");
+  const family = isIP(address);
+  if (family === 0 || rest.length > 0) return false;
+  if (prefix === undefined) return true;
+  return /^[1-9]\d{0,2}$/.test(prefix) && Number(prefix) <= (family === 4 ? 32 : 128);
+}
+
+/**
+ * Gramática de `TRUST_PROXY` (harden-production-configuration-and-clock-ownership, design D3): un
+ * número de saltos mayor o igual que 1, una dirección o un bloque CIDR, una lista de direcciones o
+ * bloques, o `loopback`, solo; `false` se resuelve aparte. Devuelve `null` para todo lo demás, que
+ * nunca llega a Express: `true`, `0`, `linklocal`, `uniquelocal`, un bloque `/0` o texto arbitrario.
+ */
+export function parseTrustProxy(value: string): false | number | string | null {
+  if (value === "false") return false;
+  if (/^[1-9]\d*$/.test(value)) {
+    const hops = Number(value);
+    return Number.isSafeInteger(hops) ? hops : null;
+  }
+  if (value === "loopback") return value;
+  const entries = value.split(",").map((entry) => entry.trim());
+  return entries.every(isAddressOrBlock) ? entries.join(",") : null;
+}
+
 const trustProxy = z
   .string()
   .default("false")
-  .transform((value, ctx): boolean | number | string => {
-    if (value === "false") return false;
-    if (/^\d+$/.test(value)) return Number(value);
-    if (value === "true") {
-      ctx.addIssue({
-        code: "custom",
-        message: "no se admite `true`: indica el número de proxies o sus direcciones",
-      });
-      return z.NEVER;
-    }
-    return value;
+  .transform((value, ctx): false | number | string => {
+    const parsed = parseTrustProxy(value);
+    if (parsed !== null) return parsed;
+    ctx.addIssue({
+      code: "custom",
+      message:
+        value === "true"
+          ? "no se admite `true`: indica el número de proxies o sus direcciones"
+          : "no tiene una sintaxis admitida (saltos desde 1, una IP, un CIDR, una lista de IP o CIDR, o loopback)",
+    });
+    return z.NEVER;
   });
+
+/** Hosts exactos con los que `BETTER_AUTH_URL` puede usar `http:` en producción (design D4). */
+const LOOPBACK_AUTH_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+function usesHttpOutsideLoopback(value: string): boolean {
+  if (!URL.canParse(value)) return false;
+  const url = new URL(value);
+  return url.protocol === "http:" && !LOOPBACK_AUTH_HOSTS.has(url.hostname);
+}
 
 /** Secreto de `backend/.env.example`: sirve para desarrollo y se rechaza en producción. */
 export const EXAMPLE_AUTH_SECRET = "desarrollo-local-solo-para-pruebas-no-usar-en-produccion";
@@ -202,8 +239,9 @@ export const envSchema = z
     // proyecto, nunca límites del ERS, confirmadas con `bench:data-portability` (2026-10-08): una
     // generación del volumen de Q-26 usa unos 0,9 núcleos y 723 MiB de memoria residente durante
     // 10 min sin afectar a la API, y la reserva de disco exige más que el pico medido. El directorio del
-    // paquete es privado (0700) y absoluto; en producción, un volumen persistente que sobreviva un
-    // reinicio durante la vigencia del paquete. Sin valor, un subdirectorio del temporal del sistema.
+    // paquete es privado (0700) y absoluto; en producción es obligatorio y preaprovisionado, un volumen
+    // persistente que sobreviva un reinicio durante la vigencia del paquete (loadDataExportDirectory).
+    // Sin valor, en desarrollo y pruebas, un subdirectorio del temporal del sistema.
     // La vigencia cuenta desde que el paquete queda listo. La reserva de disco se comprueba antes de
     // cada fase: el tamaño sin comprimir más el margen, más la reserva fija.
     DATA_EXPORT_DIRECTORY: z
@@ -239,10 +277,42 @@ export const envSchema = z
       ctx.addIssue({ code: "custom", path: ["BETTER_AUTH_SECRET"], message: "es el de ejemplo" });
     }
     if (env.NODE_ENV === "production" && env.CERTIFICATE_CUSTODY === "disabled") {
-      ctx.addIssue({ code: "custom", path: ["CERTIFICATE_CUSTODY"], message: "disabled" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["CERTIFICATE_CUSTODY"],
+        message: "no se admite deshabilitada en producción",
+      });
     }
     if (env.NODE_ENV === "production" && env.EMISSION_STAGE_TIMINGS) {
-      ctx.addIssue({ code: "custom", path: ["EMISSION_STAGE_TIMINGS"], message: "en producción" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["EMISSION_STAGE_TIMINGS"],
+        message: "no se admite en producción",
+      });
+    }
+    // Configuración que solo tiene sentido en un despliegue real (design D2, D3 y D4).
+    if (env.NODE_ENV === "production") {
+      if (env.DATA_EXPORT_DIRECTORY === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["DATA_EXPORT_DIRECTORY"],
+          message: "es obligatoria en producción",
+        });
+      }
+      if (env.TRUST_PROXY === false) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["TRUST_PROXY"],
+          message: "es obligatoria en producción y no admite `false`",
+        });
+      }
+      if (usesHttpOutsideLoopback(env.BETTER_AUTH_URL)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["BETTER_AUTH_URL"],
+          message: "usa http fuera del bucle local en producción",
+        });
+      }
     }
     // Un arriendo nunca vence con una llamada en curso (design D5): no hay latido.
     if (env.SRI_JOB_LEASE_SECONDS * 1_000 < sriTransportBudgetMs(env) + SRI_LEASE_MARGIN_MS) {
@@ -280,7 +350,10 @@ export class EnvError extends Error {
   }
 }
 
-/** Valida el entorno. Los mensajes nombran la variable y el problema, nunca su valor. */
+/**
+ * Valida el entorno. Los mensajes nombran la variable y el problema, nunca su valor: los de las
+ * reglas propias (`custom`) se escriben sin el valor, y el resto se resume.
+ */
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const result = envSchema.safeParse(source);
   if (result.success) return result.data;
@@ -291,9 +364,9 @@ function toEnvError(issues: z.core.$ZodIssue[], source: NodeJS.ProcessEnv): EnvE
   const variables = [...new Set(issues.map((issue) => String(issue.path[0] ?? "?")))];
   const details = issues.map((issue) => {
     const name = String(issue.path[0] ?? "?");
-    return issue.code === "invalid_type" && source[name] === undefined
-      ? `${name}: es obligatoria`
-      : `${name}: valor inválido`;
+    if (issue.code === "invalid_type" && source[name] === undefined)
+      return `${name}: es obligatoria`;
+    return issue.code === "custom" ? `${name}: ${issue.message}` : `${name}: valor inválido`;
   });
   return new EnvError(variables, details);
 }
@@ -311,6 +384,57 @@ export function loadCanonicalOrigin(env: Pick<Env, "BETTER_AUTH_URL">): string {
       ["BETTER_AUTH_URL: no produce un origen http o https válido"],
     );
   }
+}
+
+export type DirectoryProbe = Readonly<{
+  lstat: (path: string) => Stats;
+  access: (path: string, mode: number) => void;
+  /** Usuario del proceso; sin `process.getuid` (Windows) no se compara el propietario. */
+  uid: number | undefined;
+}>;
+
+const systemDirectoryProbe = (): DirectoryProbe => ({
+  lstat: (path) => lstatSync(path),
+  access: (path, mode) => accessSync(path, mode),
+  uid: process.getuid?.(),
+});
+
+/**
+ * Directorio de los paquetes de portabilidad (harden-production-configuration-and-clock-ownership,
+ * design D2). En producción debe existir de antemano, ser un directorio real del usuario del proceso
+ * y utilizable; nunca se crea. En desarrollo y pruebas se devuelve tal cual (sin valor, el módulo usa
+ * el temporal del sistema). Los mensajes nombran la variable y la regla, nunca la ruta.
+ */
+export function loadDataExportDirectory(
+  env: Pick<Env, "NODE_ENV" | "DATA_EXPORT_DIRECTORY">,
+  probe: DirectoryProbe = systemDirectoryProbe(),
+): string | undefined {
+  const directory = env.DATA_EXPORT_DIRECTORY;
+  if (env.NODE_ENV !== "production") return directory;
+  const rejected = (rule: string) =>
+    new EnvError(["DATA_EXPORT_DIRECTORY"], [`DATA_EXPORT_DIRECTORY: ${rule}`]);
+  if (directory === undefined) throw rejected("es obligatoria en producción");
+  let info: Stats;
+  try {
+    info = probe.lstat(directory);
+  } catch (error) {
+    throw rejected(
+      (error as NodeJS.ErrnoException).code === "ENOENT"
+        ? "no existe (producción no lo crea)"
+        : "no se puede consultar",
+    );
+  }
+  if (info.isSymbolicLink()) throw rejected("es un enlace simbólico");
+  if (!info.isDirectory()) throw rejected("no es un directorio");
+  if (probe.uid !== undefined && info.uid !== probe.uid) {
+    throw rejected("no pertenece al usuario del proceso");
+  }
+  try {
+    probe.access(directory, constants.R_OK | constants.W_OK | constants.X_OK);
+  } catch {
+    throw rejected("el proceso no puede leerlo, escribir en él o recorrerlo");
+  }
+  return directory;
 }
 
 export function passwordPolicy(env: Env): PasswordPolicy {
