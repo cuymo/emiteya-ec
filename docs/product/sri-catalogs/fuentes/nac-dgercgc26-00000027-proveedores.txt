@@ -1,0 +1,132 @@
+Extracto literal de la Resolución NAC-DGERCGC26-00000027 del SRI, para Q-37 y el anexo 26 de la
+ficha v2.34 (revisión final del go-live, 2026-10-13).
+
+Fuente (texto que se transcribe): SRI, "RESOLUCIÓN Nro. NAC-DGERCGC26-00000027", "Establecer las
+normas para el registro de proveedores de sistemas informáticos o servicios de facturación
+electrónica". Dictada y firmada electrónicamente el 27 de julio de 2026 por la Directora General del
+SRI. Publicada en el Quinto Suplemento del Registro Oficial No. 335, 28 de julio de 2026 (índice
+oficial: https://www.registroficial.gob.ec/quinto-suplemento-no-335/, que la lista como «Se
+establecen las normas para el registro de proveedores de sistemas informáticos o servicios de
+facturación electrónica»).
+URL oficial del PDF (biblioteca documental del SRI, enlazada desde su "Catastro Regulatorio 2026",
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/28c3f114-1dde-4bc9-94c4-1435a1a16572/CATASTRO%20REGULATORIO%202026.xlsx):
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar?id=c972f679-0a6b-4eb7-8691-5e37f86bced3&nombre=NAC-DGERCGC26-00000027.pdf
+SHA-256 del PDF descargado el 2026-10-13: 8e0a219270439c2ebe8ba85b59599ec627fd3aad84cac17fba2eed3b3cc8d84b
+(5 páginas; creado el 2026-07-27 con Microsoft Word y modificado con iText por la firma electrónica;
+su pie dice "Validar únicamente en FirmaEC", y la firma no se validó aquí). El PDF no se versiona.
+Extraído con pdftotext -layout; se quitan los espacios finales, las líneas vacías y el pie de cada
+página (dirección, teléfono y sitio web del SRI). Se omiten los considerandos (páginas 1 a 3).
+
+== Encabezado ==
+                                 RESOLUCIÓN Nro. NAC-DGERCGC26-00000027
+                                           LA DIRECTORA GENERAL
+                                      DEL SERVICIO DE RENTAS INTERNAS
+[Considerandos omitidos.]
+
+== Parte resolutiva, disposiciones y firma ==
+                                                         Resuelve:
+               Establecer las normas para el registro de proveedores de sistemas informáticos
+                                   o servicios de facturación electrónica
+              Art. 1.- Ámbito.- La presente resolución regula el registro de los proveedores de
+              sistemas informáticos o servicios de facturación electrónica, entendiéndose como tales
+              a aquellos que permitan la emisión, firma, transmisión y conservación de comprobantes
+              de venta, retención y documentos complementarios, bajo el esquema electrónico,
+              cumpliendo con los requisitos establecidos por la Administración Tributaria.
+              Art. 2.- Proveedores de sistemas informáticos o servicios de facturación
+              electrónica.- Se consideran proveedores de sistemas informáticos o servicios de
+              facturación electrónica a los siguientes sujetos pasivos, que se encuentren domiciliados
+              en el Ecuador o que tengan un establecimiento permanente en el país:
+                      a) Los desarrolladores y dueños del código fuente de sistemas informáticos o
+                         similares, para la emisión, firma, transmisión y almacenamiento de
+                         comprobantes electrónicos, con la finalidad de ser comercializados, y,
+                      b) Los propietarios de licencias y del código fuente de sistemas informáticos de
+                         facturación electrónica desarrollados por terceros, con la finalidad de ser
+                         comercializados.
+              Art. 3.- Registro de actividades económicas en el RUC.- Los sujetos pasivos
+              descritos en el artículo 2 de la presente resolución, de manera obligatoria deben registrar
+              en el RUC, un establecimiento exclusivo con una de las siguientes actividades
+              económicas, según corresponda:
+                         Sujetos pasivos                  Código CIIU         Actividad económica
+               a) Los desarrolladores y dueños del                           “Planificación, diseño y
+               código      fuente      de    sistemas                     desarrollo de sistemas para la
+               informáticos o similares, para la                              emisión, transmisión y
+               emisión,     firma,    transmisión    y    J62021002      conservación de comprobantes
+               almacenamiento de comprobantes                            electrónicos bajo las normas de
+               electrónicos, con la finalidad de ser                     la Administración del Tributaria
+               comercializados, y                                                  del Ecuador”.
+               b) Los propietarios de licencias y del                    “Comercialización de sistemas
+               código      fuente      de    sistemas                     para la emisión, transmisión y
+               informáticos        de      facturación    J62021003      conservación de comprobantes
+               electrónica      desarrollados      por                   electrónicos bajo las normas de
+               terceros, con la finalidad de ser                         la Administración del Tributaria
+               comercializados.                                          del Ecuador, desarrollados por
+                                                                                     terceros”.
+              Art. 4.- Listado de proveedores. - El Servicio de Rentas Internas publicará en su portal
+              web institucional el listado de proveedores que se hayan registrado en el RUC con las
+              actividades económicas señaladas en el artículo 3 de la presente resolución; este listado
+              será actualizado hasta los primeros 10 días hábiles de cada mes, con corte al último día
+              del mes anterior.
+              Art. 5.- Requisito adicional en comprobantes electrónicos.- Los sujetos pasivos
+              emisores de comprobantes electrónicos deberán incluir, en la sección de información
+              adicional, el número de RUC del proveedor del sistema informático o servicios de
+              facturación electrónica, conforme lo señalado en la Ficha Técnica de Comprobantes
+              Electrónicos.
+                                           DISPOSICIONES GENERALES
+              Primera.- La unidad administrativa del Servicio de Rentas Internas que tenga a su cargo
+              la ejecución del presente acto normativo deberá crear en el sistema las actividades:
+              “Planificación, diseño y desarrollo de sistemas para la emisión, transmisión y
+              conservación de comprobantes electrónicos bajo las normas de la Administración del
+              Tributaria del Ecuador” y “Comercialización de sistemas para la emisión, transmisión y
+              conservación de comprobantes electrónicos bajo las normas de la Administración del
+              Tributaria del Ecuador, desarrollados por terceros”, bajo los códigos J62021002 y
+              J62021003, respectivamente, tal como consta en el artículo 3 de esta resolución.
+              Segunda.- Para efectos de lo establecido en el artículo 3 de la presente resolución, en
+              el caso de las sociedades se verificará que la actividad económica a registrar se
+              encuentre relacionada con su objeto social.
+                                          DISPOSICIONES TRANSITORIAS
+              Primera.- Los sujetos pasivos que deban registrar las actividades señaladas en esta
+              resolución, deberán inscribirse o actualizar su RUC, en el plazo de 30 días, contados a
+              partir de la publicación de la presente resolución en el Registro Oficial.
+              Segunda.- El Servicio de Rentas Internas publicará el listado señalado en el artículo 4
+              de la presente resolución, a partir del mes de octubre de 2026.
+              Tercera.- Los sujetos pasivos emisores de comprobantes electrónicos deberán
+              implementar el requisito establecido en el artículo 5 la presente resolución en el plazo
+              de 60 días calendario, contados a partir de su publicación en el Registro Oficial.
+              Disposición final.- El presente acto normativo entrará en vigor a partir de su publicación
+              en el Registro Oficial.
+              Comuníquese y publíquese.
+              Dictó y firmó electrónicamente, la resolución que antecede, la magister Alexandra
+              Verónica Navarrete Ricaurte, Directora General del Servicio de Rentas Internas en
+              Quito, D.M., el 27 de julio de 2026.
+              Lo certifico.
+                                                         Validar únicamente en FirmaEC.
+                                                         Firmado electrónicamente por:
+                                                         ENRIQUE JAVIER
+                                                         URGILES MERCHAN
+                                            Ing. Javier Urgilés Merchán
+                                             SECRETARIO GENERAL
+                                         SERVICIO DE RENTAS INTERNAS
+
+== Fuente informativa, no normativa ==
+
+SRI, Boletín 042, "Proveedores de sistemas de facturación electrónica deberán registrarse ante el
+SRI", Quito, 28 de julio de 2026:
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/86f1f377-1ea4-4ecf-9f80-03bb8209c358/BOLETI%CC%81N%20042%20-%20PROVEEDORES%20DE%20SISTEMAS%20DE%20FACTURACI%C3%93N%20ELECTR%C3%93NICA%20DEBER%C3%81N%20REGISTRARSE%20ANTE%20EL%20SRI.pdf
+SHA-256 del PDF descargado el 2026-10-13: 7d126042cbe692eecb7d0f052ca6b88dd5310e3f4a00d0ef84e8a2921534cf61
+Dice: "Este requisito deberá cumplirse en un plazo de 60 días hábiles contados desde la publicación
+de la resolución en el Registro Oficial." La resolución dice 60 días calendario (disposición
+transitoria tercera). Prevalece la resolución.
+
+== Observaciones (2026-10-13) ==
+
+- Art. 2: los proveedores son los desarrolladores y dueños del código fuente (a), y los propietarios
+  de licencias y del código fuente de sistemas desarrollados por terceros (b), en ambos casos "con la
+  finalidad de ser comercializados", domiciliados en el Ecuador o con establecimiento permanente.
+- Art. 5: el emisor incluye en la información adicional el RUC del proveedor "conforme lo señalado
+  en la Ficha Técnica". El anexo 26 de la ficha v2.34 (página 135; extracto en
+  ficha-v2.34-liquidacion-de-compra.txt) lo exige a quien usa sistemas de facturación de terceros:
+  <infoAdicional>, <campoAdicional nombre="RUC Proveedor">, con el número de RUC del proveedor.
+- Plazo del emisor: 60 días calendario desde la publicación (transitoria tercera). Resuelve el C-09
+  de open-questions.md. Plazo del proveedor para el RUC: 30 días (transitoria primera).
+- Precedencia del proyecto: la resolución y la ficha técnica sobre el boletín de prensa.
+- La clasificación de EmiteYa frente a esta resolución está en Q-37 (open-questions.md).
