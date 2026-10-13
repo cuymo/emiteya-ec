@@ -1,0 +1,157 @@
+Extracto literal para el registro offline del contrato de los servicios web de Producción (C3 de la
+revisión final del go-live, 2026-10-13).
+
+Fuente: Ficha técnica "Manual de usuario, catálogo y especificaciones técnicas. Emisión de
+Comprobantes Electrónicos. Método de autorización Off-line", versión 2.34, publicada el 2026-07-27.
+URL oficial (la del dataset consumer-final-policy/1.json):
+https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf
+SHA-256 del PDF descargado el 2026-10-13: 7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9
+(el mismo de los extractos anteriores y de los datasets publicados; 142 páginas). Extraído con
+pdftotext -layout, por página; cada sección indica su recorte. Se conservan las columnas y se quitan
+solo los espacios finales y las líneas vacías. El número de página del PDF coincide con el impreso.
+Las direcciones se transcriben como texto del documento: no se consultaron. Producción nunca se
+contacta, y esta revisión tampoco contactó el ambiente de Pruebas.
+
+== Página 17: secciones 7.2, 7.2.1 a 7.2.3 (recepción), desde 7.2 ==
+     7.2      Existen dos ambientes disponibles para la invocación de los WS publicados
+              por la Administración Tributaria:
+         7.2.1 Uno es para el ambiente de pruebas, donde cada contribuyente certificará
+               que su aplicación funcione correctamente con cada tipo de comprobante
+               electrónico, las direcciones de los WS son las siguientes:
+https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+         7.2.2 El segundo es para el ambiente de producción, al cual cada contribuyente
+               deberá acceder una vez que ha realizado las pruebas y esté seguro de que
+               su aplicación funciona correctamente, las direcciones de los WS son las
+               siguientes:
+https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+         7.2.3 Los WS expuestos por la Administración Tributaria son los siguientes:
+              Recepción de comprobantes electrónicos
+              @WebMethod
+              @WebResult(name="RespuestaRecepcionComprobante")
+              public RespuestaSolicitud validarComprobante(@WebParam(name = "xml")
+              byte[] xml);
+              Parámetros:
+     I/O     Nombre        Tipo                                            Descripción
+    IN      Xml            byte[]   Equivale al archivo xml del comprobante, el cual debe estar firmado por el contribuyente.
+                                    Retorna un objeto XML el cual indica la aceptación o rechazo del comprobante.
+                                    En caso de rechazo se envía el arreglo con los motivos.
+                                    La estructura que cumplirá la respuesta a la invocación del servicio es la siguiente:
+                                    Recepción exitosa
+                                    <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                                      <soap:Body>
+                                        <ns2:validarComprobanteResponse xmlns:ns2="http://ec.gob.sri.ws.recepcion">
+                                          <RespuestaRecepcionComprobante>
+            RespuestaC                      <estado>RECIBIDA</estado>
+    OUT     omprobante     Objeto           <comprobantes/>
+            Autorizacion                  </RespuestaRecepcionComprobante>
+                                        </ns2:validarComprobanteResponse>
+                                      </soap:Body>
+                                    </soap:Envelope>
+                                    Recepción fallida
+                                    <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                                    <soap:Body>
+                                    <ns2:validarComprobanteResponse xmlns:ns2="http://ec.gob.sri.ws.recepcion">
+
+== Página 18: autorización, desde "Consulta de respuesta de autorización" hasta el elemento de la respuesta ==
+Consulta de respuesta de autorización:
+        @WebMethod
+        @WebResult(name = "RespuestaAutorizacionComprobante")
+        public RespuestaComprobante autorizacionComprobante(
+        @WebParam(name            =       "claveAccesoComprobante")  String
+        claveAccesoComprobante) ;
+        Consulta de respuesta de lote
+        @WebMethod
+        @WebResult(name = "RespuestaAutorizacionLote")
+        public RespuestaLote autorizacionComprobanteLote(@WebParam(name =
+        "claveAccesoLote") String claveAccesoLote) ;
+Parámetros:
+ I/O    Nombre      Tipo                                            Descripción
+IN     ClaveAcces   String   Equivale a la clave de acceso del comprobante a ser consultado.
+       o
+OUT    RespuestaL   Objeto   Retorna un objeto XML el cual indica la aceptación o rechazo de cada uno de los
+       oteCompAu             comprobantes ingresado en el lote.
+       torizacion            En caso de rechazo se envía el arreglo con los motivos por cada comprobante del lote.
+                             Comprobante Autorizado
+                             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                               <soap:Body>
+                                 <ns2:autorizacionComprobanteResponse
+                             xmlns:ns2="http://ec.gob.sri.ws.autorizacion">
+                                  <RespuestaAutorizacionComprobante>
+
+== Página 21: sección 8.2 ==
+8.2 Existen dos ambientes disponibles para la invocación de los WS publicados por
+    la Administración Tributaria:
+
+== Página 22: secciones 8.2.1 a 8.2.3 (consulta de validez) ==
+         8.2.1 Uno es para el ambiente de pruebas, donde cada contribuyente certificará
+               que su aplicación funcione correctamente con cada tipo de comprobante
+               electrónico, las direcciones de los WS son las siguientes:
+https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl
+https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaFactura?wsdl
+         8.2.2 El segundo es para el ambiente de producción, al cual cada contribuyente
+               deberá acceder una vez que ha realizado las pruebas y esté seguro de que
+               su aplicación funciona correctamente, las direcciones de los WS son las
+               siguientes:
+https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl
+https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaFactura?wsdl
+         8.2.3 Los WS expuestos por la Administración Tributaria son los siguientes:
+              Consulta de validez de comprobantes electrónicos
+     @WebMethod
+     @WebResult(name = " EstadoAutorizacionComprobante")
+     public RespuestaConsultaComprobante consultarEstadoAutorizacionComprobante
+     (@WebParam(name = "claveAcceso") String claveAcceso)
+     Parámetros:
+     I/O     Nombre       Tipo                                          Descripción
+    IN     claveAcceso    String   Clave de acceso del comprobante electrónico
+                                   <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                                   xmlns:ec="http://ec.gob.sri.ws.consultas">
+                                    <soapenv:Header/>
+                                    <soapenv:Body>
+                                      <ec:consultarEstadoAutorizacionComprobante>
+                                   <claveAcceso>0211202401050306179800120010020000000677300995216</claveAcceso>
+                                      </ec:consultarEstadoAutorizacionComprobante>
+                                    </soapenv:Body>
+                                   </soapenv:Envelope>
+    OUT    EstadoAutori   Objeto   Retorna un objeto XML con la información del estado del comprobante electrónico.
+           zacionCompr
+                                   Dependiendo del estado de autorización del comprobante electrónicos, el servicio web,
+           obante
+                                   devolverá en la etiqueta estadoAutorizacion el valor:
+                                   “AUTORIZADO”
+                                    “NO AUTORIZADO”
+                                   “PENDIENTE DE ANULAR” y
+                                   “ANULADO”
+                                   <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                                    <soap:Body>
+                                      <ns2:consultarEstadoAutorizacionComprobanteResponse
+                                   xmlns:ns2="http://ec.gob.sri.ws.consultas">
+                                       <EstadoAutorizacionComprobante>
+
+== Página 23: fin del ejemplo de respuesta de la consulta ==
+<claveAcceso>2111202405176001321000110010010000001241234567810</claveAcceso>
+      <mensajes/>
+      <estadoAutorizacion>AUTORIZADO</estadoAutorizacion>
+      <tipoComprobante>Nota de Débito</tipoComprobante>
+      <rucEmisor>1760013210001</rucEmisor>
+      <fechaAutorizacion>2024-12-12T10:49:37-05:00</fechaAutorizacion>
+     </EstadoAutorizacionComprobante>
+   </ns2:consultarEstadoAutorizacionComprobanteResponse>
+ </soap:Body>
+</soap:Envelope>
+
+== Observaciones (2026-10-13) ==
+
+- Producción (7.2.2 y 8.2.2): HTTPS, host cel.sri.gob.ec, contexto comprobantes-electronicos-ws y los
+  servicios RecepcionComprobantesOffline, AutorizacionComprobantesOffline, ConsultaComprobante y
+  ConsultaFactura, los mismos que Pruebas (7.2.1 y 8.2.1) con otro host.
+- Operaciones (7.2.3 y 8.2.3): validarComprobante(xml) con respuesta RespuestaRecepcionComprobante en
+  http://ec.gob.sri.ws.recepcion; autorizacionComprobante(claveAccesoComprobante) con respuesta
+  RespuestaAutorizacionComprobante en http://ec.gob.sri.ws.autorizacion;
+  consultarEstadoAutorizacionComprobante(claveAcceso) con respuesta EstadoAutorizacionComprobante en
+  http://ec.gob.sri.ws.consultas. Sobres SOAP 1.1 (http://schemas.xmlsoap.org/soap/envelope/).
+- La ficha también documenta autorizacionComprobanteLote y ConsultaFactura, que el producto no usa.
+- 7.1.4 (páginas 16, 17 y 21) recomienda no fijar en el código la información de los servicios ni sus
+  certificados: el producto admite sobrescribir cada dirección por configuración y no fija certificados.
+- La comparación con el código está en docs/product/sri-wsdl/README.md, «Producción».

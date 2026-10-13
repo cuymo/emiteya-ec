@@ -109,6 +109,9 @@ de integración SRI de CTX §59:
     SHA-256, y la evidencia de la certificación en Pruebas (`sri-certification.md`).
   - **Producción:** solo offline, contra la documentación y los artefactos oficiales que publica el
     SRI (servicio, host, ruta y versión). La implementación debe ser coherente con ese contrato.
+    - **Verificación documental: completa** (2026-10-13). Coincide con la ficha v2.34 (7.2.2, 7.2.3,
+      8.2.2 y 8.2.3, PDF con su SHA-256): `../product/sri-wsdl/README.md`, «Producción: verificación
+      documental offline».
   - **Sin red contra Producción.** La verificación offline no incluye consultas DNS, conexiones TCP,
     peticiones HTTP, SOAP, descarga del WSDL en vivo, pruebas de conectividad, pruebas de humo ni
     verificación de credenciales.
