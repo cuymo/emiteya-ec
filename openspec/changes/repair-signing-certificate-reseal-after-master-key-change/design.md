@@ -45,7 +45,8 @@ La motivación está en `proposal.md`, y los requisitos en `specs/signing-certif
   rotación automática o en bloque.
 - Detectar un secreto corrupto cuyo `keyCheck` es correcto: la definición de «utilizable» no cambia
   (`canOpen`), y la firma de un comprobante sigue fallando con `CustodyError` como hoy.
-- Escribir el procedimiento final de sustitución de la clave maestra (C1), que llega después.
+- Automatizar el procedimiento de sustitución de la clave maestra (C1): se documenta como
+  procedimiento operativo probado, con el ensayo de D9, y lo ejecuta el operador.
 
 ## Decisions
 

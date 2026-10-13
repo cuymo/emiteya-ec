@@ -57,6 +57,11 @@ vigente mientras tanto: no puede documentarse como un procedimiento seguro.
   usarse, en lugar de «ya era la vigente» o «reemplazaste».
 - **Documentación del comportamiento:** el ADR 0011, `deployment.md` y el comentario del contrato
   de la carga dicen que volver a cargar la misma firma restablece su custodia.
+- **Procedimiento de sustitución de la clave maestra (C1),** escrito después de que el ensayo
+  sintético pase (decisión del propietario del 2026-10-13): respaldo verificado, clave antigua en
+  custodia aparte, clave nueva, reinicio, recuperación por empresa, verificación, retiro de la clave
+  antigua y vuelta atrás solo con el respaldo y la clave antigua juntos. Cierra el criterio de la
+  clave maestra de la `definition-of-done.md`.
 
 **Fuera de alcance:**
 - La rotación automática de la clave maestra y el recifrado en bloque: la deuda sigue abierta (ADR
@@ -64,8 +69,6 @@ vigente mientras tanto: no puede documentarse como un procedimiento seguro.
 - Varias claves maestras activas a la vez, el respaldo de una clave antigua dentro de la aplicación
   y la custodia doblemente cifrada. La vuelta atrás de una sustitución de clave es operativa:
   restaurar el respaldo previo de la base de datos junto con la clave antigua.
-- El procedimiento operativo final de sustitución de la clave maestra y el cierre de C1 en la
-  `definition-of-done.md`: se escriben después de aplicar este cambio y volver a ensayarlo.
 - Un modo general de «forzar el reemplazo», campos nuevos en la API o un rediseño del historial de
   firmas.
 - Cualquier cambio fiscal: XML, XSD, clave de acceso, SOAP, endpoints del SRI, reconciliación,

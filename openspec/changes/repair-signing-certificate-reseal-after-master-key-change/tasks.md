@@ -74,8 +74,7 @@
 
 ## 4. Documentación del comportamiento
 
-- [ ] 4.1 Actualizar lo que describe la recuperación, sin escribir todavía el procedimiento C1 ni
-  cerrarlo:
+- [ ] 4.1 Actualizar lo que describe la recuperación:
   - `docs/architecture/adr/0011-custodia-del-certificado.md`, consecuencias: volver a cargar el mismo
     certificado restablece su custodia con la clave configurada. La rotación sigue sin implementarse
     y sigue siendo requisito del go-live.
@@ -85,8 +84,27 @@
   - `docs/security/threat-model.md`, fila de la pérdida o el cambio de la clave maestra.
   - `docs/product/capabilities.md`, fila de `signing-certificate`.
 
-  Verificar con `corepack pnpm format:check`, y que `definition-of-done.md` (criterio de la clave
-  maestra) y el estado C1 no cambian.
+  Verificar con `corepack pnpm format:check`.
+- [ ] 4.2 Con el ensayo de 3.1 en verde, escribir en `docs/architecture/deployment.md` el
+  procedimiento probado de sustitución de la clave maestra (C1, decisión del propietario del
+  2026-10-13; design D8):
+  1. respaldo verificado de la base de datos;
+  2. la clave antigua en custodia segura, aparte;
+  3. la clave nueva, con su versión;
+  4. reinicio o redespliegue;
+  5. las firmas custodiadas quedan `KEY_UNAVAILABLE`;
+  6. cada administrador vuelve a cargar su P12 con su contraseña;
+  7. la recuperación sella con la clave actual;
+  8. comprobar `VALID`;
+  9. repetir por empresa;
+  10. conservar o retirar la clave antigua según la política del operador, solo al terminar;
+  11. la vuelta atrás exige restaurar juntos el respaldo previo y la clave antigua, nunca volver
+      solo a la clave antigua.
+
+  Decir que el volcado solo no recupera la custodia, y que las claves, el P12 y su contraseña nunca
+  van a los registros ni al volcado. Marcar en `definition-of-done.md` el criterio de la clave
+  maestra como cumplido por el procedimiento probado, citando el ensayo, y dejar en el ADR 0011 la
+  rotación automática como deuda. Verificar con `corepack pnpm format:check`.
 
 ## 5. Verificación
 
