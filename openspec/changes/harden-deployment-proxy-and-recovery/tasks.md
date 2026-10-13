@@ -156,13 +156,13 @@
 
 ## 4. Respaldo, restauración y ensayo de la recuperación
 
-- [ ] 4.1 Crear `deploy/backup.sh` y `deploy/restore.sh` (design D11):
+- [x] 4.1 Crear `deploy/backup.sh` y `deploy/restore.sh` (design D11):
   - el respaldo usa `pg_dump -Fc` de la imagen de PostgreSQL 17, con modo `0600` y su SHA-256;
   - la restauración comprueba la suma, se niega con un destino que no está vacío salvo con
     `--replace-existing` (documentada como destructiva), y ejecuta
     `pg_restore --exit-on-error --no-owner`;
   - los dos solo imprimen rutas, tamaños, sumas y códigos de salida.
-- [ ] 4.2 Crear el script de ensayo de la recuperación en `scripts/deployment/` (design D12):
+- [x] 4.2 Crear el script de ensayo de la recuperación en `scripts/deployment/` (design D12):
   1. siembra solo datos sintéticos no fiscales, con un certificado sintético del generador del
      repositorio en la custodia y una exportación lista;
   2. registra las huellas: migraciones, recuentos de cada tabla, resumen de las filas sembradas y
@@ -174,15 +174,16 @@
   - las huellas coinciden y la aplicación queda lista;
   - con la misma clave sintética, la validez del certificado indica la clave disponible;
   - con otra clave sintética, la aplicación queda lista y el certificado aparece no disponible;
-  - la exportación sin su archivo da `DATA_EXPORT_PACKAGE_MISSING` con su evento de auditoría;
+  - la exportación sin su archivo queda `FAILED` con `DATA_EXPORT_PACKAGE_MISSING` y su evento de
+    auditoría, y su descarga no entrega ningún byte;
   - se registran las duraciones como evidencia;
   - ninguna emisión fiscal y ninguna conexión externa.
-- [ ] 4.3 Añadir al ensayo las negativas (design D12):
+- [x] 4.3 Añadir al ensayo las negativas (design D12):
   - un volcado alterado no pasa la suma y no toca el destino;
   - un volcado truncado con su suma recalculada hace fallar `pg_restore` y el script lo informa;
   - una segunda restauración sobre la base ya restaurada, sin la opción destructiva, se niega y las
     huellas no cambian.
-- [ ] 4.4 Documentar en `docs/architecture/deployment.md`:
+- [x] 4.4 Documentar en `docs/architecture/deployment.md`:
   - el respaldo y la restauración, con sus comandos;
   - que el volcado contiene datos fiscales y del negocio;
   - el cifrado, la retención y la custodia fuera del servidor, a cargo del operador, con su clave

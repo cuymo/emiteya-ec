@@ -30,6 +30,7 @@
     "security:secrets": "node scripts/check-secret-security.ts",
     "deployment:context": "node scripts/deployment/check-build-context.ts",
     "deployment:topology": "node scripts/deployment/check-topology.ts",
+    "deployment:recovery": "node scripts/deployment/check-recovery.ts",
     "test:secret-rules": "vitest run --config scripts/security/vitest.gitleaks.config.ts",
     "openspec:validate": "node scripts/openspec-validate.ts"
   },

@@ -8,9 +8,19 @@ import { request as httpsRequest } from "node:https";
 import { tmpdir } from "node:os";
 import { deflateSync } from "node:zlib";
 import { join } from "node:path";
+import { FIXTURE_RUC } from "../../backend/test/support/p12-fixtures.ts";
 import { ROOT, must, run, type Result } from "./docker.ts";
 
 export const COMPOSE_FILE = join(ROOT, "deploy", "compose.yaml");
+
+/** Configuración de la empresa sintética, con el RUC de prueba de los fixtures del repositorio. */
+export const SYNTHETIC_TAXPAYER = {
+  ruc: FIXTURE_RUC,
+  legalName: "EMPRESA SINTETICA DE DESPLIEGUE S.A.",
+  headOfficeAddress: "Dirección sintética de prueba",
+  accountingRequired: false,
+  expectedVersion: null,
+};
 
 export type Deployment = {
   project: string;
@@ -69,6 +79,11 @@ export function createDeployment(options: {
   project: string;
   httpsPort: number;
   httpPort: number;
+  /**
+   * Tercer octeto de una subred propia (172.29.<n>.0/24) para proyectos simultáneos; sin él, la de
+   * referencia. La IP del proxy y TRUST_PROXY la siguen, como en el despliegue real.
+   */
+  subnet?: number;
   extra?: NodeJS.ProcessEnv;
 }): Deployment {
   const dir = mkdtempSync(join(tmpdir(), `${options.project}-`));
@@ -110,6 +125,13 @@ export function createDeployment(options: {
       EDGE_HTTPS_PORT: String(options.httpsPort),
       EDGE_HTTP_PORT: String(options.httpPort),
       EMITEYA_IMAGE_TAG: process.env.EMITEYA_IMAGE_TAG ?? "deployment-check",
+      ...(options.subnet === undefined
+        ? {}
+        : {
+            APP_SUBNET: `172.29.${options.subnet}.0/24`,
+            APP_IP_RANGE: `172.29.${options.subnet}.128/25`,
+            PROXY_APP_IP: `172.29.${options.subnet}.10`,
+          }),
       ...options.extra,
     },
   };

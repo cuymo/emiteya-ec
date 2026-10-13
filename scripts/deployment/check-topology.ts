@@ -5,7 +5,6 @@
 // ningún destino fuera de las redes locales de la prueba.
 import { createHash, randomBytes } from "node:crypto";
 import { join } from "node:path";
-import { FIXTURE_RUC } from "../../backend/test/support/p12-fixtures.ts";
 import { Checks, NODE_IMAGE, ROOT, run, sleep, until } from "./docker.ts";
 import {
   compose,
@@ -16,6 +15,7 @@ import {
   edgeRequest,
   execNode,
   syntheticPng,
+  SYNTHETIC_TAXPAYER,
   type Deployment,
 } from "./fixtures.ts";
 
@@ -24,15 +24,6 @@ const HTTP_PORT = Number(process.env.DEPLOYMENT_HTTP_PORT ?? 18080);
 const FIXTURES = join(ROOT, "scripts", "deployment", "fixtures");
 const API_LARGEST_DRAFT = 4_000_000;
 const sha256 = (data: Buffer) => createHash("sha256").update(data).digest("hex");
-
-/** Configuración de la empresa sintética, con el RUC de prueba de los fixtures del repositorio. */
-export const SYNTHETIC_TAXPAYER = {
-  ruc: FIXTURE_RUC,
-  legalName: "EMPRESA SINTETICA DE DESPLIEGUE S.A.",
-  headOfficeAddress: "Dirección sintética de prueba",
-  accountingRequired: false,
-  expectedVersion: null,
-};
 
 /** Id del contenedor de un servicio del proyecto. */
 function containerOf(d: Deployment, service: string): string {
@@ -455,6 +446,7 @@ async function edgeTimeoutBehavior(checks: Checks) {
 function migrationFailure(checks: Checks) {
   const d = createDeployment({
     project: "emiteya-migracion-fallida",
+    subnet: 246,
     httpsPort: HTTPS_PORT + 2,
     httpPort: HTTP_PORT + 2,
   });

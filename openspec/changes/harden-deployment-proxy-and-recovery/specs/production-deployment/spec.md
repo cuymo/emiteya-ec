@@ -167,8 +167,9 @@ una base con datos salvo con una opción destructiva explícita y documentada. T
 migraciones SHALL aplicarse sin pérdida de datos, la aplicación SHALL arrancar sobre la base
 restaurada y SHALL conservar, comparado con el estado anterior al respaldo, sus usuarios, su
 empresa, sus membresías, su configuración, su custodia cifrada y el contenido de sus artefactos
-almacenados. Un paquete de portabilidad cuyo archivo no se restauró SHALL fallar de forma cerrada
-al descargarse, y la empresa SHALL poder generar uno nuevo.
+almacenados. Un paquete de portabilidad listo cuyo archivo no se restauró SHALL quedar fallido de
+forma cerrada, con su código y su evento de auditoría, y nunca SHALL entregarse; la empresa SHALL
+poder generar uno nuevo.
 
 #### Scenario: Restauración completa en una base nueva
 - **WHEN** se restaura un respaldo válido en una base nueva y vacía de la misma versión mayor
@@ -181,10 +182,11 @@ al descargarse, y la empresa SHALL poder generar uno nuevo.
   existentes
 
 #### Scenario: Paquete de portabilidad sin su archivo
-- **WHEN** tras restaurar, el administrador descarga un paquete que figuraba listo y cuyo archivo no
-  forma parte del respaldo
-- **THEN** la descarga falla con `DATA_EXPORT_PACKAGE_MISSING`, queda auditada, y la empresa puede
-  generar una exportación nueva
+- **WHEN** tras restaurar, la aplicación arranca con un paquete que figuraba listo y cuyo archivo no
+  forma parte del respaldo, y el administrador intenta descargarlo
+- **THEN** la exportación queda fallida con `DATA_EXPORT_PACKAGE_MISSING` y su evento de auditoría
+  (lo detecta el barrido al arrancar o la propia descarga), la descarga no entrega ningún byte, y la
+  empresa puede generar una exportación nueva
 
 ### Requirement: Custodia de la firma y clave maestra en la recuperación
 Un respaldo de la base de datos SHALL ser insuficiente por sí solo para recuperar la custodia de la

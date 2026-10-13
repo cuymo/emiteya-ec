@@ -170,6 +170,28 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
     Nunca contacta el SRI ni otro servicio externo: corre con `SRI_TRANSMISSION_ENABLED=0`, sin salida
     a Internet en la red de la aplicación y sin el override de salida. Siempre borra sus proyectos,
     volúmenes y temporales. Dura unos 5 minutos en local con las imágenes ya construidas.
+  - **Recuperación:** `corepack pnpm deployment:recovery`, con tres proyectos simultáneos en subredes
+    propias (la IP del proxy y `TRUST_PROXY` las siguen):
+    1. siembra en el origen solo datos sintéticos no fiscales: la configuración de la empresa, un
+       operador, un logo sintético, un certificado del generador de P12 del repositorio en la
+       custodia y una exportación de portabilidad lista; ninguna emisión ni firma;
+    2. detiene la aplicación (no PostgreSQL) para que nada cambie, toma la huella de la base
+       (migraciones con su suma, y recuento y resumen del contenido de cada tabla, que se comparan
+       sin imprimirse) y respalda con `deploy/backup.sh`;
+    3. comprueba las negativas en un PostgreSQL vacío: un volcado alterado no pasa la suma y no toca
+       el destino; uno truncado con su suma recalculada hace fallar `pg_restore`;
+    4. restaura con `deploy/restore.sh` en un PostgreSQL 17 nuevo e independiente, compara las
+       huellas, comprueba que una segunda restauración se niega sin cambiar nada y que las
+       migraciones no cambian datos;
+    5. arranca la aplicación sobre lo restaurado con la misma clave maestra sintética: el
+       administrador, el operador y el logo vuelven, el certificado está disponible y la exportación
+       sin su archivo queda `FAILED` con `DATA_EXPORT_PACKAGE_MISSING`, auditada y sin entregarse;
+    6. con otra clave maestra sintética, la aplicación queda lista, el certificado aparece
+       `KEY_UNAVAILABLE` y el registro no lleva secretos.
+
+    Registra las duraciones del respaldo y de la restauración como evidencia, nunca como un RTO o un
+    RPO. Los volcados y los secretos viven en un directorio temporal `0700` fuera del repositorio y se
+    borran siempre.
 - **Workflow de seguridad** (`.github/workflows/security.yml`, ADR 0026):
   - **Cuándo:** en cada push y pull request, cada lunes y a mano.
   - **Cómo:** dos jobs paralelos e independientes de `verify`, sin secretos y con permisos de solo

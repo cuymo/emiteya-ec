@@ -476,10 +476,39 @@ Un respaldo completo tiene tres partes, y la restauración necesita las tres (ER
 AC-10):
 
 1. Volcado de PostgreSQL.
-2. Almacenamiento de artefactos.
+2. Almacenamiento de artefactos. Con el adaptador actual viven en PostgreSQL (ADR 0010), así que el
+   volcado los incluye.
 3. Clave maestra de la custodia de firmas (`CERTIFICATE_MASTER_KEY`, con su versión), guardada por separado de las dos anteriores. El volcado de PostgreSQL solo contiene la firma cifrada.
 
-- Los respaldos se cifran (ERS SEC-008) y nunca incluyen el P12 sin cifrar (CTX §20.4).
+- **El volcado solo no basta para la custodia de la firma.** Sin la misma clave maestra, la
+  aplicación restaurada arranca y funciona, pero cada certificado custodiado aparece no disponible
+  (`KEY_UNAVAILABLE`) y la firma queda bloqueada hasta volver a cargarlo. La clave maestra y su
+  versión se guardan fuera del volcado, del respaldo, del repositorio y de las imágenes.
+- **Respaldo** (topología de referencia; `harden-deployment-proxy-and-recovery`, ADR 0027):
+  `deploy/backup.sh <directorio>`, con las mismas variables de Compose del despliegue. Ejecuta
+  `pg_dump -Fc` de PostgreSQL 17 dentro del contenedor, por su socket local y sin contraseña en los
+  argumentos, y deja el volcado y su `.sha256`, con modo `0600`, imprimiendo solo la ruta, el tamaño y
+  la suma. El éxito exige el código 0 de `pg_dump` y la suma registrada.
+- **Restauración:** con la aplicación detenida y solo `postgres` en marcha,
+  `deploy/restore.sh <volcado>`:
+  1. comprueba el SHA-256 antes de tocar nada (código 3 si no coincide);
+  2. se niega si la base de destino tiene objetos (código 4); `--replace-existing` la borra y la
+     recrea antes, y es destructiva: solo se usa a propósito;
+  3. `pg_restore --exit-on-error --no-owner` (código 5 si falla, y la base no se da por recuperada).
+
+  Después se aplican las migraciones (`docker compose -f deploy/compose.yaml up migrate`, sin cambios
+  si el esquema estaba al día) y se arranca la aplicación con la misma clave maestra.
+- **Lo que no se respalda:** el volumen `exports`. Sus paquetes caducan y se regeneran desde la base;
+  tras restaurar, un paquete que figuraba listo queda `FAILED` con `DATA_EXPORT_PACKAGE_MISSING` y su
+  evento de auditoría, y la empresa genera uno nuevo.
+- **Versiones:** `pg_dump` y `pg_restore` de la misma versión mayor (17), los de la imagen de
+  PostgreSQL. No se promete recuperar entre versiones mayores.
+- **Sin RTO ni RPO aprobados.** El ensayo registra la duración del respaldo y de la restauración con
+  sus datos sintéticos solo como evidencia (`../quality/testing.md`).
+- Los respaldos se cifran (ERS SEC-008) y nunca incluyen el P12 sin cifrar (CTX §20.4). El volcado
+  contiene datos fiscales y del negocio: su cifrado en reposo, su retención y su copia fuera del
+  servidor son del operador, que guarda la clave de ese cifrado aparte del respaldo. La revisión
+  final del go-live pide la evidencia del mecanismo elegido.
 - El procedimiento de restauración se prueba antes de cada release (ERS §20).
 - El SRI no es un sistema de respaldo (CTX §31).
 - La exportación de portabilidad (`data-portability`) no es un respaldo: no contiene la firma, los secretos ni los datos internos de autenticación, y no se restaura. AC-10 se verifica restaurando este respaldo.

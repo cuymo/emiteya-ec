@@ -30,11 +30,14 @@ es el estado observado durante la readiness (2026-10-13) que decide el enfoque:
   hasta unos 2,7 MiB con el máximo configurable; borrador de guía 2 MiB; borrador de liquidación
   4 MiB, el mayor.
 - **Portabilidad.** La generación es un job asíncrono; la descarga calcula el SHA-256 completo antes
-  del primer byte (40 a 56 s para 5 GiB en disco giratorio). Un paquete listo sin su archivo falla
-  al descargarse con `DATA_EXPORT_PACKAGE_MISSING` y un evento de auditoría.
+  del primer byte (40 a 56 s para 5 GiB en disco giratorio). Un paquete listo sin su archivo queda
+  `FAILED` con `DATA_EXPORT_PACKAGE_MISSING` y un evento de auditoría: lo detecta el barrido al
+  arrancar (design D14 de `add-data-portability`) o la propia descarga, y nunca se entrega.
 - **Custodia.** El volcado guarda el P12 y su contraseña cifrados con AES-256-GCM y la clave de datos
   envuelta con la clave maestra, que nunca vive en PostgreSQL (ADR 0011). La validez del certificado
-  expone si la clave está disponible (`vault.canOpen`), sin firmar nada.
+  expone si la clave está disponible (`vault.canOpen`), sin firmar nada. Con otra clave, la API
+  arranca, registra que la firma vigente no se abre y la muestra `KEY_UNAVAILABLE`, sin escribir
+  nada.
 - **Artefactos.** Viven en PostgreSQL (`bytea`, ADR 0010): un solo respaldo, el de la base de datos.
 - **Imágenes oficiales vigentes** (manifiesto de `docker-library/official-images` y nginx.org, el
   2026-10-13): `node:24.21.0-bookworm-slim`; la línea estable de nginx 1.30.5, con
@@ -301,8 +304,8 @@ Así no hace falta un paquete de varios GB ni esperar minutos.
 6. Comparación de las huellas y comprobaciones por la API:
    - con la misma clave sintética, la validez del certificado indica la clave disponible;
    - con otra clave sintética, la aplicación queda lista y el certificado aparece no disponible;
-   - la descarga de la exportación sin su archivo da `DATA_EXPORT_PACKAGE_MISSING` y su evento de
-     auditoría.
+   - la exportación sin su archivo queda `FAILED` con `DATA_EXPORT_PACKAGE_MISSING` y su evento de
+     auditoría, y su descarga no entrega ningún byte.
 7. **Negativas:** un volcado alterado no pasa la suma y no toca el destino; un volcado truncado con su
    suma recalculada hace fallar `pg_restore`; una segunda restauración sobre la base ya restaurada,
    sin la opción destructiva, se niega y las huellas no cambian.
