@@ -108,5 +108,5 @@
 
 ## 5. Verificación
 
-- [ ] 5.1 Pasar `corepack pnpm openspec:validate`, `corepack pnpm security:dependencies` y
+- [x] 5.1 Pasar `corepack pnpm openspec:validate`, `corepack pnpm security:dependencies` y
   `corepack pnpm security:secrets`, y terminar con `corepack pnpm verify` en verde.
