@@ -459,8 +459,9 @@ node dist/commands/admin-recover.js --email admin@example.com
 
 - Reloj del host, o del contenedor, sincronizado por NTP o un mecanismo equivalente, porque el SRI rechaza firmas con fecha futura (CTX §20.5).
   - Es responsabilidad de la infraestructura del despliegue. La aplicación no mide la desviación: ni `/health/ready` ni las métricas informan del reloj, y no hay un umbral normativo de desviación.
-  - La evidencia es operativa y se obtiene fuera de la aplicación, con la herramienta del host o del proveedor, sin imponer un servicio concreto: por ejemplo, el estado de `chrony` (`chronyc tracking`), el de `systemd-timesyncd` (`timedatectl`) o las métricas `node_timex_*` de `node_exporter`.
-  - El procedimiento concreto de la topología elegida se fija en el hardening del despliegue y del proxy.
+  - En la topología de referencia, los contenedores comparten el reloj del kernel del host: ningún contenedor ejecuta NTP, y la sincronización y su evidencia son del host o de la plataforma.
+  - **Evidencia del go-live:** antes de habilitar el uso real, el operador guarda la salida de la herramienta de su host o de su proveedor, sin imponer un servicio concreto: `chronyc tracking` (y `chronyc sources`) con chrony; `timedatectl show -p NTPSynchronized` o `timedatectl timesync-status` con systemd-timesyncd; las métricas `node_timex_sync_status` y `node_timex_offset_seconds` de `node_exporter`; o el equivalente de la plataforma. La evidencia muestra que el host está sincronizado; no se fija un umbral numérico ni se compara con el SRI.
+  - La revisión final del go-live pide esa evidencia del host real.
 - Salida HTTPS hacia los hosts del SRI.
 - Cifrado en reposo del volumen de la base de datos, que guarda también los artefactos, o del disco que lo aloja (ADR 0010, Q-39).
 

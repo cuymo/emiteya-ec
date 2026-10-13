@@ -73,11 +73,77 @@ El primer arranque del backend crea la empresa y el administrador inicial con
 `INITIAL_USER_EMAIL` e `INITIAL_USER_PASSWORD` de `backend/.env`; con ellos se inicia sesión.
 Recuperación de emergencia de un administrador: `docs/architecture/deployment.md`.
 
+## Despliegue de producción
+
+La topología de referencia es `deploy/compose.yaml`: nginx como único servicio público (TLS en
+443 y redirección en 80), y la interfaz, la API y PostgreSQL 17 en una red interna sin salida a
+Internet. El detalle está en `docs/architecture/deployment.md` ("Topología de referencia" y
+"Respaldo y restauración") y en ADR 0027.
+
+**Instalación**, en un servidor Linux con Docker y Docker Compose:
+
+1. Crea fuera del repositorio el archivo de entorno y el directorio de secretos que describe
+   `deploy/production.env.example`: la contraseña de PostgreSQL, la clave maestra de la custodia
+   (32 bytes en base64, legible por el UID 1000), el certificado TLS válido con su clave, y
+   `DATABASE_URL`, `BETTER_AUTH_SECRET` y el administrador inicial.
+2. Exporta las variables de Compose (`EMITEYA_ENV_FILE`, `EMITEYA_SECRETS_DIR`, `PUBLIC_ORIGIN` y,
+   si la subred choca con la del host, `APP_SUBNET`, `APP_IP_RANGE` y `PROXY_APP_IP` juntas).
+3. Construye las imágenes y arranca:
+
+   ```bash
+   docker compose -f deploy/compose.yaml build
+   docker compose -f deploy/compose.yaml up -d
+   ```
+
+   PostgreSQL arranca, las migraciones se aplican una vez y solo entonces arranca la API. La
+   instalación está lista cuando `/health/ready` responde 200 por la red interna:
+
+   ```bash
+   docker compose -f deploy/compose.yaml exec backend \
+     node -e "fetch('http://127.0.0.1:4000/health/ready').then((r) => process.exit(r.ok ? 0 : 1))"
+   ```
+
+4. Inicia sesión con el administrador inicial y retira después `INITIAL_USER_PASSWORD` del archivo
+   de entorno.
+
+La transmisión al SRI nace apagada (`SRI_TRANSMISSION_ENABLED=0`) y la red de la aplicación no
+tiene salida. El uso real del SRI exige dos pasos deliberados del dueño, documentados en
+`docs/architecture/deployment.md`.
+
+**Actualización:** respalda la base, actualiza el repositorio a la versión nueva y repite el paso 3
+(`build` y `up -d`): Compose aplica las migraciones antes de recrear la API y la interfaz, y una
+migración fallida deja la API sin arrancar.
+
+**Respaldo**, con las mismas variables de Compose:
+
+```bash
+deploy/backup.sh /ruta/de/respaldos
+```
+
+Deja un volcado `pg_dump -Fc` de PostgreSQL 17 y su `.sha256`. Contiene datos fiscales y del
+negocio: cífralo y guárdalo fuera del servidor bajo tu control. La clave maestra de la custodia no
+va en el volcado y se respalda aparte: sin ella, los certificados custodiados no se recuperan.
+
+**Restauración**, con la aplicación detenida y una base vacía:
+
+```bash
+docker compose -f deploy/compose.yaml up -d postgres
+deploy/restore.sh /ruta/de/respaldos/emiteya-<fecha>.dump
+docker compose -f deploy/compose.yaml up -d
+```
+
+`restore.sh` comprueba la suma antes de tocar nada y se niega a escribir sobre una base con datos;
+su opción `--replace-existing` es destructiva.
+
 ## Verificación
 
 ```bash
 corepack pnpm verify
 ```
+
+Los ensayos del despliegue (`corepack pnpm deployment:context`, `deployment:topology` y
+`deployment:recovery`) necesitan Docker y corren aparte, también en el workflow `deployment` de la
+CI (`docs/quality/testing.md`).
 
 Encadena formato, versiones fijadas, generación del cliente de Prisma, lint, typecheck,
 pruebas (las de integración exigen PostgreSQL en marcha), OpenAPI, el arranque del backend en

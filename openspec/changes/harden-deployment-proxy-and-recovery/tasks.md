@@ -217,10 +217,10 @@
 
 ## 6. README y evidencia del reloj
 
-- [ ] 6.1 Actualizar `README.md` con la instalación de producción, el arranque y la preparación, la
+- [x] 6.1 Actualizar `README.md` con la instalación de producción, el arranque y la preparación, la
   actualización (construir, migrar y recrear), y el respaldo y la restauración, enlazando a
   `docs/architecture/deployment.md`. Sin `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md` ni `CHANGELOG`.
-- [ ] 6.2 Documentar en `docs/architecture/deployment.md` la evidencia del reloj del host para el
+- [x] 6.2 Documentar en `docs/architecture/deployment.md` la evidencia del reloj del host para el
   go-live (`chronyc tracking`, `timedatectl` u otro equivalente de la plataforma, sin NTP en los
   contenedores, sin umbral, sin endpoint de reloj en la aplicación).
 
