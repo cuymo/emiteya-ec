@@ -14,10 +14,12 @@ Recommended services:
 
 Keep runtime configuration in environment variables:
 
+- `NODE_ENV`
 - `DATABASE_URL`
 - `BETTER_AUTH_URL`
 - `BETTER_AUTH_SECRET`
-- `CORS_ORIGIN`
+- `TRUST_PROXY` and `DATA_EXPORT_DIRECTORY` (required in production)
+- `API_INTERNAL_URL` (frontend)
 - `INITIAL_USER_EMAIL`
 - `INITIAL_USER_PASSWORD`
 - External service tokens as needed.
@@ -38,17 +40,19 @@ Two common layouts:
 - Frontend: `https://app.example.com/`
 - API: `https://app.example.com/api`
 
-Frontend environment:
+Frontend environment (the internal address of the API service, at build and at runtime):
 
 ```text
-NEXT_PUBLIC_API_BASE_URL=https://app.example.com
+API_INTERNAL_URL=http://api:4000
 ```
 
 Backend environment:
 
 ```text
-CORS_ORIGIN=https://app.example.com
+NODE_ENV=production
 BETTER_AUTH_URL=https://app.example.com
+TRUST_PROXY=<the proxy's address or CIDR, as seen by the API>
+DATA_EXPORT_DIRECTORY=/var/lib/facturador/exports
 ```
 
 ### Separate API Domain
@@ -144,13 +148,23 @@ API comparten origen (ADR 0016).
 
 | Variable | Obligatoria | Default | Uso |
 | --- | --- | --- | --- |
+| `NODE_ENV` | Sí | | `development`, `test` o `production`, declarado en cada arranque: sin él, o con otro valor, la API no arranca. Con `production` rigen las reglas de producción: cookies `Secure`, rechazo del secreto y de la clave de ejemplo, custodia de la firma obligatoria, y las exigencias de `BETTER_AUTH_URL`, `TRUST_PROXY` y `DATA_EXPORT_DIRECTORY`. |
 | `BETTER_AUTH_SECRET` | Sí | | Secreto de Better Auth, de al menos 32 caracteres. El de `.env.example` se rechaza en producción. Generar con `openssl rand -base64 32`. |
-| `BETTER_AUTH_URL` | Sí | | Origen público de la aplicación, el mismo del frontend (por ejemplo, `https://app.example.com`). Deriva el único origen de confianza, también de `/api/v1`: debe ser el origen exacto que ve el navegador (esquema, host y puerto), nunca la dirección interna. Si no coincide, toda mutación de `/api/v1` recibe 403; sin un origen `http` o `https` válido, la API no arranca. |
+| `BETTER_AUTH_URL` | Sí | | Origen público de la aplicación, el mismo del frontend (por ejemplo, `https://app.example.com`). Deriva el único origen de confianza, también de `/api/v1`: debe ser el origen exacto que ve el navegador (esquema, host y puerto), nunca la dirección interna. Si no coincide, toda mutación de `/api/v1` recibe 403; sin un origen `http` o `https` válido, la API no arranca. En producción debe usar `https:`; `http:` solo se admite con los hosts exactos `localhost`, `127.0.0.1` y `[::1]`, para una prueba de humo local del software de producción (un host que solo se les parece, como `localhost.example.com`, se rechaza). |
 | `INITIAL_USER_EMAIL`, `INITIAL_USER_PASSWORD` | Solo sin empresa | | Administrador inicial del primer arranque. La contraseña cumple la política de contraseñas. |
 | `PASSWORD_MIN_LENGTH`, `PASSWORD_MAX_LENGTH` | No | 12, 128 | Política de contraseñas. |
 | `LOGIN_MAX_FAILURES`, `LOGIN_FAILURE_WINDOW_MINUTES` | No | 5, 15 | Límite de inicios fallidos por correo e IP. |
 | `LOGIN_IP_MAX_REQUESTS`, `LOGIN_IP_WINDOW_SECONDS` | No | 30, 60 | Límite de inicios de sesión por IP, contra ráfagas. |
-| `TRUST_PROXY` | No | `false` | Número de proxies de confianza o sus direcciones. Detrás del proxy público, declararlo para que la IP del cliente sea la real; sin él, se usa la IP del socket. |
+| `TRUST_PROXY` | En producción, sí | `false` fuera de producción | Proxies de confianza, para que la IP del cliente sea la real; sin confianza, se usa la IP del socket. Solo admite: un número de saltos desde 1; una dirección IP; un bloque CIDR con prefijo desde 1; una lista separada por comas de direcciones o bloques; o `loopback`, solo. Cualquier otro valor (`true`, `0`, `linklocal`, `uniquelocal`, un bloque `/0`, texto arbitrario) impide arrancar en cualquier ambiente. En producción, ausente o `false` también impide arrancar. Un número de saltos solo es correcto si el despliegue garantiza que la cadena de proxies delante de la API tiene exactamente esa longitud: si no, un cliente puede falsear su IP con `X-Forwarded-For`. Por eso se prefieren las direcciones o los bloques del proxy, y el valor de la topología real se verifica en el hardening del despliegue y del proxy. |
+
+### Frontend
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `API_INTERNAL_URL` | En el build y en la ejecución de producción, sí | `http://127.0.0.1:4000` solo con `next dev` | Origen interno del servicio `api` al que Next.js reenvía `/api` (ADR 0016) y al que la descarga de portabilidad envía cada petición. Debe ser una URL `http:` o `https:` de solo origen, sin credenciales, ruta, consulta ni fragmento; no se exige HTTPS en este salto interno. Nunca se deriva de `Host` ni de una cabecera reenviada. Sin ella, o con un valor inválido, `next build` y `next start` fallan con un mensaje que nombra la variable, sin mostrar su valor, y la descarga responde `500` sin contactar a nadie. |
+
+- **El mismo valor al construir y al ejecutar.** El reenvío de `/api` queda fijado en el build (`.next/routes-manifest.json`), mientras que la descarga lee la variable en cada petición. El operador construye y ejecuta cada build con el mismo `API_INTERNAL_URL`; un valor distinto al ejecutar reparte las peticiones entre dos destinos. No hay una comprobación automática de esa igualdad.
+- `corepack pnpm verify` construye su build con `API_INTERNAL_URL=http://127.0.0.1:4000` explícito (`corepack pnpm build:verification`), el destino de bucle local que después sirve `check:web-security-policy`. `corepack pnpm build` a secas falla sin la variable, como cualquier build de producción.
 
 ### Firma electrónica
 
@@ -294,7 +308,7 @@ límites del ERS. `bench:data-portability` confirmó sus valores por defecto el 
 
 | Variable | Obligatoria | Default | Uso |
 | --- | --- | --- | --- |
-| `DATA_EXPORT_DIRECTORY` | En producción, sí | Un subdirectorio del temporal del sistema | Directorio privado (`0700`) y absoluto de los paquetes de portabilidad, fuera de cualquier directorio público o estático. Debe ser un volumen persistente que sobreviva un reinicio durante la vigencia del paquete: el temporal del sistema puede ser `tmpfs` o vaciarse al reiniciar. |
+| `DATA_EXPORT_DIRECTORY` | En producción, sí | Fuera de producción, un subdirectorio del temporal del sistema | Directorio privado (`0700`) y absoluto de los paquetes de portabilidad, fuera de cualquier directorio público o estático. Debe ser un volumen persistente que sobreviva un reinicio durante la vigencia del paquete: el temporal del sistema puede ser `tmpfs` o vaciarse al reiniciar. En producción se aprovisiona antes de arrancar: la API nunca lo crea, y no arranca si falta, si es relativo, si no existe, si es un enlace simbólico o no es un directorio, si no pertenece al usuario del proceso o si ese usuario no puede leerlo, escribir en él o recorrerlo; el mensaje nombra la regla incumplida, sin la ruta. |
 | `DATA_EXPORT_MAX_CONCURRENT` | No | 1 | Generaciones a la vez por instancia (1 a 2). Las demás esperan en la cola durable; cada empresa tiene como máximo una generación activa. |
 | `DATA_EXPORT_TTL_HOURS` | No | 24 | Vigencia de un paquete listo (1 a 168 horas), contada desde que queda listo y no desde la solicitud. Al caducar se borra el paquete, nunca los datos de la empresa. |
 | `DATA_EXPORT_DISK_HEADROOM_PERCENT` | No | 10 | Margen sobre el tamaño sin comprimir del paquete (0 a 100) que el disco debe tener libre antes de copiar los artefactos. |
@@ -352,7 +366,10 @@ node dist/commands/admin-recover.js --email admin@example.com
 
 ### Requisitos del servidor
 
-- Reloj sincronizado por NTP; la salud informa la desviación, porque el SRI rechaza firmas con fecha futura (CTX §20.5).
+- Reloj del host, o del contenedor, sincronizado por NTP o un mecanismo equivalente, porque el SRI rechaza firmas con fecha futura (CTX §20.5).
+  - Es responsabilidad de la infraestructura del despliegue. La aplicación no mide la desviación: ni `/health/ready` ni las métricas informan del reloj, y no hay un umbral normativo de desviación.
+  - La evidencia es operativa y se obtiene fuera de la aplicación, con la herramienta del host o del proveedor, sin imponer un servicio concreto: por ejemplo, el estado de `chrony` (`chronyc tracking`), el de `systemd-timesyncd` (`timedatectl`) o las métricas `node_timex_*` de `node_exporter`.
+  - El procedimiento concreto de la topología elegida se fija en el hardening del despliegue y del proxy.
 - Salida HTTPS hacia los hosts del SRI.
 - Cifrado en reposo del volumen de la base de datos, que guarda también los artefactos, o del disco que lo aloja (ADR 0010, Q-39).
 

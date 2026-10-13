@@ -1146,7 +1146,7 @@ La implementa `add-sri-transmission` (cambio 7).
 - Custodia del certificado en ADR 0011; parámetros de firma en ADR 0013.
 - Puerto del firmador según CTX §20.3. Recibe el certificado descifrado solo en memoria y durante la firma.
 - Validaciones previas de CTX §20.6 en cada firma, no solo al cargar el certificado.
-- El servidor sincroniza su reloj por NTP y la salud reporta la desviación (CTX §20.5).
+- El servidor sincroniza su reloj por NTP o un mecanismo equivalente, con evidencia operativa de la infraestructura; la aplicación no mide la desviación (CTX §20.5; `deployment.md`, "Requisitos del servidor").
 
 ## Artefactos, RIDE y entrega
 

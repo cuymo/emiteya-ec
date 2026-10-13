@@ -67,7 +67,7 @@ Use pnpm through Corepack. These are the project's actual scripts; `verify` also
 - Lint: `corepack pnpm lint`
 - Test: `corepack pnpm test`
 - Typecheck: `corepack pnpm typecheck`
-- Build: `corepack pnpm build`
+- Build: `corepack pnpm build` (the frontend production build requires `API_INTERNAL_URL`; `verify` uses `corepack pnpm build:verification`)
 - Full validation: `corepack pnpm verify`
 
 ## Constraints

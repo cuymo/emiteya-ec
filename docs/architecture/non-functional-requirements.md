@@ -19,7 +19,7 @@ la forma de verificarlo. Aplican a todos los cambios OpenSpec.
 | RNF-009 | Navegación por teclado, etiquetas y contraste.                                | Patrones de interfaz y checklist de CognitiveStack.                                                    | `frontend.md`, `../quality/frontend-checklist.md` | Checklist por pantalla.                |
 | RNF-010 | Español, USD y fechas de Ecuador.                                             | Interfaz en español; USD fijo; zona horaria `America/Guayaquil` para fechas fiscales.                  | `../product/glossary.md`, `deployment.md` | Pruebas de fecha cerca de medianoche.          |
 | RNF-011 | Módulos fiscales desacoplados de la UI y de la persistencia.                  | Dominio fiscal puro y puertos de CTX §43.                                                              | `ARCHITECTURE.md`, ADR 0007               | Regla de dependencias verificada por lint.     |
-| RNF-012 | Logs estructurados, métricas y health checks.                                 | Logs JSON con correlación; métricas de CTX §48; salud de base de datos, SRI, reloj y jobs.             | `../quality/observability.md`, `fiscal-emission.md` | Endpoint de salud en CI.             |
+| RNF-012 | Logs estructurados, métricas y health checks.                                 | Logs JSON con correlación; métricas de CTX §48; salud de base de datos, SRI y jobs (el reloj, en la infraestructura). | `../quality/observability.md`, `fiscal-emission.md` | Endpoint de salud en CI.             |
 
 ## Seguridad (ERS §15)
 
@@ -51,7 +51,7 @@ la forma de verificarlo. Aplican a todos los cambios OpenSpec.
 
 | Exigencia                                              | Cómo se cumple                                                               | CTX       |
 | ------------------------------------------------------ | ---------------------------------------------------------------------------- | --------- |
-| Reloj sincronizado con NTP.                            | Requisito de instalación y alerta de desviación en la salud.                 | §20.5     |
+| Reloj sincronizado con NTP.                            | Requisito de la infraestructura, con evidencia operativa fuera de la aplicación. | §20.5     |
 | Sin certificados TLS del SRI fijados en el código.     | TLS estándar del runtime; endpoints configurables.                           | §7.5      |
 | Límite de 320 KB por comprobante.                      | Parámetro versionado verificado tras la firma.                               | §29       |
 | Timeouts, backoff con jitter y circuit breaker.        | Política del cliente SRI.                                                    | §33       |

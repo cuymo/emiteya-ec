@@ -116,7 +116,7 @@
 
 ## 4. Documentación
 
-- [ ] 4.1 Actualizar `docs/architecture/deployment.md` (design D3, D5, D7 y D8):
+- [x] 4.1 Actualizar `docs/architecture/deployment.md` (design D3, D5, D7 y D8):
   - `NODE_ENV` entra en la tabla de variables, obligatorio, sin valor por defecto;
   - la fila de `TRUST_PROXY` describe la gramática validada, que es obligatoria en producción, y
     advierte que un número de saltos solo es correcto si el despliegue garantiza esa longitud de la
@@ -133,12 +133,13 @@
     `node_exporter` o equivalente, sin imponer uno), con la mención a la prioridad 5 para el
     procedimiento concreto;
   - se retira `CORS_ORIGIN` de “Environment” y de los ejemplos de despliegue por rutas.
-- [ ] 4.2 Corregir `docs/architecture/non-functional-requirements.md`: la fila de CTX §20.5 pasa de
+- [x] 4.2 Corregir `docs/architecture/non-functional-requirements.md`: la fila de CTX §20.5 pasa de
   “alerta de desviación en la salud” a evidencia operativa fuera de la aplicación, y la fila de
-  RNF-012 ya no dice que la salud mide el reloj.
-- [ ] 4.3 Corregir `docs/quality/definition-of-done.md`: el requisito de go-live sobre el reloj pide
+  RNF-012 ya no dice que la salud mide el reloj. Corregir igual la misma afirmación en
+  `docs/architecture/fiscal-emission.md` y `docs/security/threat-model.md`.
+- [x] 4.3 Corregir `docs/quality/definition-of-done.md`: el requisito de go-live sobre el reloj pide
   evidencia operativa de sincronización, no una medición de la aplicación.
-- [ ] 4.4 Actualizar `docs/quality/technical-debt.md` con el encargo a la prioridad 5: aprovisionar
+- [x] 4.4 Actualizar `docs/quality/technical-debt.md` con el encargo a la prioridad 5: aprovisionar
   el directorio durable de exportación (propietario, permisos y volumen), el proxy inverso real con
   su valor de `TRUST_PROXY` para esa topología, TLS y HSTS, y la evidencia concreta de
   sincronización del reloj del host o del contenedor.

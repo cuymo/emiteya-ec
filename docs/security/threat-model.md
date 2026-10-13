@@ -68,6 +68,6 @@ Límites de confianza adicionales:
 | XSD o catálogo manipulado en el repositorio | XML incorrecto firmado y enviado | Hash en el registro de esquemas, revisión obligatoria de esos archivos, falla cerrada (ADR 0008). |
 | Datos personales en logs o volcados SOAP | Exposición de datos de terceros | Redacción por defecto; los logs llevan identificadores y códigos (CTX §47). |
 | Interceptación del tráfico con el SRI | Comprobantes alterados o respuestas falsas | TLS con validación estándar, nunca desactivada; respuestas originales conservadas. |
-| Desfase o manipulación del reloj | Firmas rechazadas por el SRI | NTP obligatorio y alerta de desviación (CTX §20.5). |
+| Desfase o manipulación del reloj | Firmas rechazadas por el SRI | NTP o equivalente obligatorio en la infraestructura, con evidencia operativa fuera de la aplicación (CTX §20.5; `../architecture/deployment.md`). |
 | Clave de acceso usada para consultar comprobantes ajenos | Exposición de datos fiscales | La clave es dato fiscal con control de acceso; las consultas se limitan a la empresa de la sesión (CTX §47). |
 | Abuso de la emisión por un usuario autorizado | Consumo de secuenciales o comprobantes indebidos | Roles por operación, límite de tasa en la emisión y auditoría de cada transición. |

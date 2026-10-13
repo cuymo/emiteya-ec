@@ -105,7 +105,8 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
 - Frontend: Vitest con jsdom y Testing Library; las consultas se hacen por rol y nombre accesible, lo que también verifica la accesibilidad básica. `frontend/test/harness.tsx` monta los proveedores reales con la navegación de Next simulada y un `fetch` que responde por método y ruta.
 - Herramientas: las reglas de capas de ESLint y `check:versions` tienen sus propias pruebas.
 - **Política de seguridad del navegador:** `corepack pnpm check:web-security-policy`, después de
-  `corepack pnpm build`. `verify` la corre detrás del build.
+  `corepack pnpm build:verification` (el build con `API_INTERNAL_URL` explícito). `verify` la corre
+  detrás de ese build.
   - Arranca el backend con el arnés end-to-end, la firma sintética y un SRI simulado (nunca el SRI
     real).
   - Arranca `next start` del build en `http://localhost:3000`, con el backend en el puerto al que el

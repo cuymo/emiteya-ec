@@ -88,8 +88,11 @@ de integración SRI de CTX §59:
   - **Capa de aplicación: completa** (2026-10-12, `enforce-api-origin-and-body-limits`). Las mutaciones de `/api/v1` exigen el origen canónico de `BETTER_AUTH_URL`, Fetch Metadata rechaza `same-site` y `cross-site`, la API sigue sin CORS y el cuerpo de `/api/auth` queda acotado a 8192 bytes de JSON (spec `api-request-protection`). La comprobación en Chrome es `check:web-security-policy`.
   - **Techo de cuerpo del proxy: pendiente en el borde.** El proxy que enruta `/api` no puede admitir menos de 4 MiB, con 8 MiB como objetivo (`../architecture/deployment.md`, "Techo de cuerpo del proxy"). Se difiere al hardening del despliegue y del proxy; la compuerta completa del go-live sigue abierta hasta que ese cambio revise la política del proxy real.
 - Los reportes XLSX principales funcionan.
-- Los contratos WSDL de Pruebas y Producción están verificados, y el reloj del servidor está
-  sincronizado. Es una verificación de contrato, no de conectividad:
+- El reloj del servidor está sincronizado (NTP o equivalente), con evidencia operativa de la
+  infraestructura obtenida fuera de la aplicación (`../architecture/deployment.md`, "Requisitos del
+  servidor"). La aplicación no mide la desviación ni tiene un umbral propio.
+- Los contratos WSDL de Pruebas y Producción están verificados. Es una verificación de contrato, no
+  de conectividad:
   - **Pruebas:** contra los artefactos oficiales registrados en `docs/product/sri-wsdl/`, con su
     SHA-256, y la evidencia de la certificación en Pruebas (`sri-certification.md`).
   - **Producción:** solo offline, contra la documentación y los artefactos oficiales que publica el
