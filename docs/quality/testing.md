@@ -245,6 +245,39 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
     desde ese repositorio.
   - **El instalador de la CI** (`scripts/security/install-gitleaks.sh`) tiene su prueba en el
     proyecto `scripts`: con una suma incorrecta no extrae ni ejecuta nada y termina en `ERROR`.
+- **Regresión visual del frontend** (`adopt-premium-design-foundation-and-shell`, design D17):
+  harness local con `@playwright/test`, en `frontend/playwright.config.ts` y `frontend/visual/`.
+  - **Entorno:**
+    - el Chrome del sistema, sin descargar navegadores;
+    - el build de producción del frontend, que el propio harness construye y arranca en el puerto
+      4310;
+    - `/api/v1` simulada en el navegador con datos deterministas (`visual/fixtures.ts`): no necesita
+      backend y nunca hay tráfico al SRI.
+  - **Determinismo:** reloj fijo (2026-10-14 10:00, `America/Guayaquil`, `es-EC`), movimiento
+    reducido, animaciones desactivadas y espera a las fuentes.
+  - **Fallos de red:** una petición a otro origen o a una ruta de la API sin datos de prueba hace
+    fallar la prueba.
+  - **Dos grupos que nunca se comparan entre sí:**
+    - `corepack pnpm test:visual:spacing-proof`: evidencia congelada del paso de la escala de 8 a
+      4 px. Son cinco pantallas de la interfaz anterior, con imagen y volcado geométrico de cajas,
+      comparadas con cero píxeles de diferencia. Solo tiene sentido en el commit del codemod.
+    - `corepack pnpm test:visual`: la apariencia aprobada del shell premium.
+  - **Medición de carga:** `corepack pnpm test:visual:bundle` escribe
+    `frontend/test-results/bundle.json` con los bytes de JavaScript, CSS y fuentes de tres pantallas
+    representativas (`docs/quality/benchmarks/frontend-shell-2026-10-14.md`).
+  - **Imágenes base:**
+    - están versionadas en `frontend/visual/<proyecto>/__screenshots__/` y se generan solo en Linux;
+    - en otro sistema se actualizan en local y no se versionan;
+    - una ejecución normal nunca las escribe (`updateSnapshots: "none"`): si falta una o hay
+      diferencia, falla.
+  - **Actualizar a propósito** las del shell:
+    1. `corepack pnpm test:visual:update`;
+    2. revisar cada diferencia en el informe HTML (`frontend/playwright-report/`);
+    3. versionar la imagen nueva en el mismo commit que la causa.
+
+    La captura inicial de la prueba de espaciado se hizo una sola vez con
+    `corepack pnpm --filter @facturador/frontend exec playwright test --project=spacing-proof --update-snapshots`.
+  - **Fuera de `verify`** por ahora: el rasterizado depende del sistema.
 - Rendimiento de la búsqueda: `corepack pnpm --filter @facturador/backend bench:search` es un gate dedicado, fuera de `test` y de `verify`, para que la carga de un runner compartido no lo vuelva inestable. Se ejecuta sobre una PostgreSQL 17 sin carga ajena y escribe el entorno, los tiempos y los planes de consulta en `docs/quality/benchmarks/` (`performance.md`). La suite normal comprueba el comportamiento, los índices (`migrations.test.ts`) y los planes de las búsquedas por prefijo (`search-plans.test.ts`).
 
 ## Test Data

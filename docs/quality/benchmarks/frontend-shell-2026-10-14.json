@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-14",
+  "change": "adopt-premium-design-foundation-and-shell",
+  "method": "corepack pnpm test:visual:bundle: bytes de JavaScript, CSS y fuentes descargados del build de producción hasta la red en calma (eventos de red de Playwright, Chrome del sistema, API simulada).",
+  "environment": {
+    "next": "16.3.8 (Turbopack)",
+    "node": "v24.21.0",
+    "browser": "Google Chrome 154.0.8037.57",
+    "os": "Linux 7.1.6-1-cachyos",
+    "commitBefore": "33037ca"
+  },
+  "before": {
+    "login": {
+      "css": {
+        "files": 1,
+        "transferred": 7640,
+        "decoded": 34224
+      },
+      "js": {
+        "files": 13,
+        "transferred": 341169,
+        "decoded": 1239599
+      }
+    },
+    "inicio": {
+      "css": {
+        "files": 1,
+        "transferred": 7640,
+        "decoded": 34224
+      },
+      "js": {
+        "files": 15,
+        "transferred": 357158,
+        "decoded": 1287780
+      }
+    },
+    "facturas": {
+      "css": {
+        "files": 1,
+        "transferred": 7640,
+        "decoded": 34224
+      },
+      "js": {
+        "files": 16,
+        "transferred": 377414,
+        "decoded": 1359450
+      }
+    }
+  },
+  "after": null
+}

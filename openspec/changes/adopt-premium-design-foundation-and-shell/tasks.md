@@ -49,7 +49,7 @@
 
 ## 2. Etapa B: harness visual y línea base de la prueba de espaciado
 
-- [ ] 2.1 Crear `frontend/playwright.config.ts` y `frontend/visual/` (design D17):
+- [x] 2.1 Crear `frontend/playwright.config.ts` y `frontend/visual/` (design D17):
   - Chrome del sistema;
   - `webServer` con `next build` y `next start`, con un `API_INTERNAL_URL` ficticio;
   - fixtures deterministas de `/api/v1/*` con `page.route`;
@@ -63,7 +63,7 @@
   Verificar:
   - el proyecto `spacing-proof` captura dos veces seguidas sin ningún píxel distinto;
   - ninguna petición sale del propio origen.
-- [ ] 2.2 Capturar y versionar la línea base de la interfaz actual en `frontend/visual/spacing-proof/`:
+- [x] 2.2 Capturar y versionar la línea base de la interfaz actual en `frontend/visual/spacing-proof/`:
   - shell en escritorio, claro y oscuro (administrador, Pruebas, Inicio);
   - shell en móvil claro;
   - lista de facturas con datos;
@@ -75,7 +75,7 @@
   Verificar:
   - `test:visual:spacing-proof` pasa contra lo versionado;
   - el volcado es idéntico en dos ejecuciones.
-- [ ] 2.3 Medir con `next build` la tabla de rutas antes del cambio (primera carga y compartido) en
+- [x] 2.3 Medir con `next build` la tabla de rutas antes del cambio (primera carga y compartido) en
   `docs/quality/benchmarks/frontend-shell-2026-10-14.{md,json}`, como «antes». Documentar en
   `docs/quality/testing.md`:
   - el harness y sus tres comandos;

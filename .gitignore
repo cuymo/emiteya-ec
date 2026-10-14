@@ -37,3 +37,7 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Salidas del harness visual (frontend/playwright.config.ts).
+frontend/test-results/
+frontend/playwright-report/
