@@ -14,6 +14,53 @@ the destination's filters or internal view selector.
 When a module has only one destination, link the module directly instead of forcing an
 unnecessary expand/collapse step.
 
+## Information Architecture Of The Shell
+
+Approved by the owner on 2026-10-14 (`adopt-premium-design-foundation-and-shell`, spec
+`web-application-shell`). The groups and destinations, in this order:
+
+| Group         | Destinations                                                                                              |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| Inicio        | Inicio (shown as a loose destination, without a group label)                                              |
+| Ventas        | Facturas, Notas de crédito, Notas de débito                                                               |
+| Compras       | Liquidaciones de compra, Retenciones                                                                      |
+| Logística     | Guías de remisión, Inventario                                                                             |
+| Documentos    | Comprobantes, Borradores                                                                                  |
+| Maestros      | Terceros, Productos                                                                                       |
+| Análisis      | Reportes                                                                                                  |
+| Configuración | Empresa, Ambiente, Establecimientos, Secuenciales, Firma electrónica, Catálogos fiscales, Usuarios, Portabilidad de datos |
+
+- **Mi cuenta** lives in the account menu, not in the sidebar.
+- **Permissions.** Each destination keeps the permission of the earlier navigation. The operator
+  sees every group up to Análisis and, in Configuración, only Catálogos fiscales.
+- **Single source.** `frontend/src/lib/navigation/routes.ts` is the only source of:
+  - the sidebar and the current destination;
+  - the breadcrumbs;
+  - the command palette;
+  - Quick Create;
+  - the forbidden-destination guard.
+
+  It holds the groups, the destinations, the internal routes of each destination (detail, new
+  draft, draft) with their final breadcrumb and their permission, and the creation actions. No
+  other component keeps its own map.
+
+### Breadcrumbs: Hierarchy, Never Repetition
+
+Breadcrumbs add hierarchy; they never repeat the page title.
+- **Operational groups.** Ventas, Compras, Logística, Documentos, Maestros and Análisis only group
+  the sidebar and are not breadcrumbs.
+- **Configuración** is a section, so it is a breadcrumb, shown as text.
+- **On an internal screen**, the destination is a link to its list, and the last breadcrumb is the
+  current page. That last breadcrumb is the label of the record when the screen provides it (the
+  document number, the product name), or the label of the route.
+- **A trail of one breadcrumb is not shown.** That covers Inicio, top-level destinations such as
+  Facturas and Productos, and Mi cuenta.
+
+Examples:
+- Facturas › 001-001-000000123;
+- Notas de crédito › Borrador de nota de crédito;
+- Configuración › Empresa.
+
 ## Submodules Instead Of Tabs
 
 A module that covers several areas exposes them as submodules under its sidebar group,

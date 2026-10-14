@@ -235,7 +235,7 @@
 
 ## 6. Etapa D: modelo de rutas canónico
 
-- [ ] 6.1 Crear `frontend/src/lib/navigation/` (D10, D15). Contenido:
+- [x] 6.1 Crear `frontend/src/lib/navigation/` (D10, D15). Contenido:
   - grupos en el orden de la spec, con Inicio suelto;
   - destinos con su permiso actual;
   - rutas internas con su miga final y su permiso;
@@ -253,7 +253,7 @@
   - acciones de creación por rol;
   - paridad de permisos con cada pantalla;
   - una ruta sin patrón no se guarda.
-- [ ] 6.2 Documentar en `navigation-responsive.md` la arquitectura de información aprobada, la regla
+- [x] 6.2 Documentar en `navigation-responsive.md` la arquitectura de información aprobada, la regla
   de migas jerárquicas y que el modelo es la única fuente.
 
   Verificar que el documento coincide con el modelo.
