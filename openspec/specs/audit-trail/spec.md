@@ -106,7 +106,7 @@ El sistema SHALL registrar un evento de auditoría por cada ajuste exitoso del s
 - **THEN** no se registra ningún evento
 
 ### Requirement: Auditoría de la firma electrónica
-El sistema SHALL registrar un evento de auditoría por cada carga o reemplazo exitoso de la firma electrónica y por cada cambio exitoso de la anticipación de su aviso de vencimiento. Cada evento indica actor, empresa, acción, el momento y, para la firma, la firma anterior y la nueva por sus metadatos: titular, emisor, número de serie, huella, vigencia, RUC detectado y si coincidía con el RUC de la empresa. Ningún evento contiene el archivo de la firma, su contraseña ni su clave privada.
+El sistema SHALL registrar un evento de auditoría por cada carga, reemplazo o recuperación de la custodia exitosos de la firma electrónica y por cada cambio exitoso de la anticipación de su aviso de vencimiento. Cada evento indica actor, empresa, acción, el momento y, para la firma, la firma anterior y la nueva por sus metadatos: titular, emisor, número de serie, huella, vigencia, RUC detectado y si coincidía con el RUC de la empresa. Ningún evento contiene el archivo de la firma, su contraseña, su clave privada, la clave de custodia ni el secreto cifrado.
 
 #### Scenario: Primera carga
 - **WHEN** un administrador carga la primera firma de la empresa
@@ -117,12 +117,17 @@ El sistema SHALL registrar un evento de auditoría por cada carga o reemplazo ex
 - **THEN** existe un evento con los metadatos de la firma anterior y de la nueva
 - **AND** el evento no contiene el archivo, la contraseña ni la clave privada de ninguna de las dos
 
+#### Scenario: Recuperación de la custodia
+- **WHEN** un administrador restablece la custodia de la firma vigente que no podía abrirse con la clave configurada
+- **THEN** existe un evento propio de la recuperación, distinto de la carga y del reemplazo, con el administrador como actor, la empresa, los metadatos de la firma y la versión de la clave de custodia anterior y la configurada
+- **AND** el evento no contiene el archivo, la contraseña, la clave privada, la clave de custodia ni el secreto cifrado
+
 #### Scenario: Cambio de la anticipación del aviso
 - **WHEN** un administrador cambia la anticipación del aviso de 30 a 45 días
 - **THEN** existe un evento con el valor anterior 30 y el nuevo 45
 
 #### Scenario: Carga sin cambio o rechazada
-- **WHEN** un administrador vuelve a cargar la firma vigente o fija la anticipación que ya tiene, o la operación se rechaza por validación, por permiso o por conflicto
+- **WHEN** un administrador vuelve a cargar la firma vigente cuyo secreto se abre con la clave configurada o fija la anticipación que ya tiene, o la operación se rechaza por validación, por permiso o por conflicto
 - **THEN** no se registra ningún evento
 
 ### Requirement: Auditoría de la habilitación de catálogos fiscales
