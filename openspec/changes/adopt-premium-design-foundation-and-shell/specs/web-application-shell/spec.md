@@ -72,9 +72,13 @@ mostrar un nombre supuesto.
 
 ### Requirement: Ambiente fiscal visible en el shell
 El shell SHALL mostrar el ambiente fiscal vigente en todas las pantallas autenticadas y en todos sus
-estados (barra expandida o colapsada, panel móvil). En Pruebas, el aviso persistente que no puede
-cerrarse; en Producción, un indicador con texto e icono, nunca solo con color. Si el ambiente no
-puede confirmarse, no SHALL presentarse como Producción.
+estados (barra expandida o colapsada, panel móvil). A todas las anchuras, incluida la de un
+teléfono, la barra superior SHALL mostrar un indicador compacto con el texto «Pruebas» o
+«Producción» que siga visible al desplazar el contenido, nunca solo color o icono. En Pruebas,
+SHALL mostrarse además un aviso persistente que no puede cerrarse y que dice que los comprobantes no
+tienen validez tributaria. Producción SHALL presentarse como contexto y no como resultado de una
+validación: su indicador no SHALL comunicar que todo está correcto. Si el ambiente no puede
+confirmarse, no SHALL presentarse como Producción.
 
 #### Scenario: Pruebas con la barra colapsada
 - **WHEN** un operador de una empresa en Pruebas colapsa la barra lateral y navega a otra pantalla
@@ -83,10 +87,19 @@ puede confirmarse, no SHALL presentarse como Producción.
 #### Scenario: Pruebas en móvil
 - **WHEN** un operador de una empresa en Pruebas abre y cierra la navegación en un teléfono
 - **THEN** el aviso de Pruebas sigue visible al cerrarla
+- **AND** la barra superior muestra el texto «Pruebas»
 
 #### Scenario: Producción sin depender del color
 - **WHEN** un usuario navega por una empresa en Producción, en escritorio o en móvil
 - **THEN** ve un indicador con el texto «Producción» y un icono
+
+#### Scenario: Ambiente visible al desplazar en un teléfono
+- **WHEN** un usuario de una empresa en Producción o en Pruebas desplaza el contenido de una pantalla larga en un teléfono
+- **THEN** la barra superior sigue mostrando el texto del ambiente vigente
+
+#### Scenario: Producción no es un resultado
+- **WHEN** un usuario navega por una empresa en Producción
+- **THEN** el indicador de Producción no usa la presentación de éxito ni de validación correcta, porque el ambiente es contexto y no se comprueba ninguna conexión con el SRI
 
 #### Scenario: Ambiente desconocido
 - **WHEN** el ambiente de la empresa no puede confirmarse
@@ -103,10 +116,10 @@ mostrarse.
 - **WHEN** un administrador abre la navegación
 - **THEN** ve:
   - Inicio;
-  - Ventas: Facturas, Notas de crédito, Notas de débito;
+  - Ventas: Facturas, Borradores de facturas, Notas de crédito, Notas de débito;
   - Compras: Liquidaciones de compra, Retenciones;
   - Logística: Guías de remisión, Inventario;
-  - Documentos: Comprobantes, Borradores;
+  - Documentos: Archivo de comprobantes;
   - Maestros: Terceros, Productos;
   - Análisis: Reportes;
   - Configuración: Empresa, Ambiente, Establecimientos, Secuenciales, Firma electrónica, Catálogos fiscales, Usuarios, Portabilidad de datos.
@@ -114,6 +127,11 @@ mostrarse.
 #### Scenario: Operador
 - **WHEN** un operador abre la navegación
 - **THEN** ve los mismos grupos que el administrador hasta Análisis, y en Configuración solo Catálogos fiscales
+
+#### Scenario: Borradores de facturas y archivo de comprobantes
+- **WHEN** un usuario busca dónde continuar una factura sin emitir y dónde consultar comprobantes de cualquier tipo
+- **THEN** encuentra Borradores de facturas en Ventas, que solo contiene borradores de factura, y Archivo de comprobantes en Documentos, que reúne los comprobantes de todos los tipos
+- **AND** las direcciones de esas pantallas no cambian
 
 #### Scenario: Navegación no es autorización
 - **WHEN** un operador solicita a la API una operación de un destino que su navegación no muestra
@@ -137,11 +155,25 @@ barra expandida, colapsada o en el panel móvil.
 - **WHEN** la barra lateral está colapsada a iconos
 - **THEN** el destino actual sigue marcado y anunciado como actual
 
+#### Scenario: Destino actual a la vista al cargar
+- **WHEN** un administrador abre directamente la pantalla de Portabilidad de datos en una ventana baja, cuyo destino queda fuera del área visible de la barra
+- **THEN** la barra se desplaza lo justo para mostrar entero el destino actual, sin desplazar la página
+
+#### Scenario: Destino actual ya visible
+- **WHEN** un usuario navega a un destino que ya se ve entero en la barra
+- **THEN** la barra no cambia su desplazamiento
+
 ### Requirement: Navegación adaptable
 En escritorio y tableta, la barra lateral SHALL poder colapsarse a iconos y volver a expandirse, y
 el navegador SHALL recordar la elección al recargar. Colapsada, cada destino SHALL conservar su
-nombre accesible y mostrarlo como ayuda al enfocarlo o señalarlo. En móvil, la misma navegación
-SHALL abrirse en un panel lateral desde un botón de menú.
+nombre accesible y mostrarlo como ayuda al enfocarlo o señalarlo. Expandida o colapsada, cada
+destino SHALL responder al puntero en toda su zona visible, y la navegación SHALL desplazarse dentro
+de la barra cuando la altura no alcanza, con rueda, panel táctil o teclado y sin desplazamiento
+horizontal, de modo que cada destino permitido se alcance con el puntero. Configuración SHALL
+empezar plegada fuera de sus pantallas y abierta en ellas. El usuario SHALL poder abrirla o
+plegarla durante la sesión sin perder ningún destino ni permiso. En móvil, la misma navegación
+SHALL abrirse en un panel lateral desde un botón de navegación reconocible como menú, con nombre
+accesible.
 
 #### Scenario: Colapsar y recargar
 - **WHEN** un usuario colapsa la barra lateral y recarga la pantalla
@@ -151,9 +183,29 @@ SHALL abrirse en un panel lateral desde un botón de menú.
 - **WHEN** la barra está colapsada y un usuario enfoca con el teclado el icono de Facturas
 - **THEN** el destino se anuncia como «Facturas» y se muestra su nombre como ayuda
 
+#### Scenario: Cada icono colapsado responde al clic
+- **WHEN** la barra está colapsada y un usuario hace clic en el centro del icono de cualquier destino que su rol ve, incluido el último de cada grupo
+- **THEN** llega a ese destino
+
+#### Scenario: Ventana baja
+- **WHEN** la altura de la ventana no alcanza para todos los destinos, con la barra expandida o colapsada
+- **THEN** el usuario desplaza la navegación dentro de la barra con la rueda o el panel táctil y llega con el puntero a cualquier destino permitido, sin desplazamiento horizontal
+
+#### Scenario: Configuración plegada fuera de sus pantallas
+- **WHEN** un administrador abre Facturas
+- **THEN** Configuración aparece plegada, anunciada como plegada, y sus destinos se muestran al abrirla
+
+#### Scenario: Configuración abierta en sus pantallas
+- **WHEN** un administrador abre directamente Usuarios, o navega a Empresa con Configuración plegada
+- **THEN** Configuración aparece abierta, con el destino actual marcado
+
+#### Scenario: Plegar Configuración a mano
+- **WHEN** un administrador pliega Configuración en una de sus pantallas, o la abre en otra pantalla
+- **THEN** Configuración queda como la dejó mientras navega en esa sesión de la interfaz
+
 #### Scenario: Panel móvil
-- **WHEN** un usuario en un teléfono abre el menú, elige un destino o pulsa Escape, toca fuera del panel o pulsa el botón de cerrar
-- **THEN** el panel se cierra y el foco vuelve al botón de menú
+- **WHEN** un usuario en un teléfono abre el panel con el botón «Abrir navegación», elige un destino o pulsa Escape, toca fuera del panel o pulsa el botón de cerrar
+- **THEN** el panel se cierra y el foco vuelve al botón de navegación
 
 #### Scenario: Mismos destinos en el panel móvil
 - **WHEN** un operador abre el panel de navegación en móvil
@@ -173,6 +225,10 @@ miga SHALL anunciarse como página actual.
 #### Scenario: Borrador
 - **WHEN** un usuario abre un borrador de nota de crédito
 - **THEN** ve la ruta Notas de crédito › Borrador de nota de crédito, con Notas de crédito como enlace
+
+#### Scenario: Nueva factura
+- **WHEN** un usuario abre la pantalla de nueva factura
+- **THEN** ve la ruta Borradores de facturas › Nueva factura, con Borradores de facturas como enlace
 
 #### Scenario: Destino de primer nivel sin miga redundante
 - **WHEN** un usuario abre la lista de facturas o la de productos
@@ -196,9 +252,10 @@ creación existentes que el rol permite: factura, nota de crédito, nota de déb
 remisión y liquidación de compra. Elegir una acción SHALL llevar a esa pantalla. Nunca SHALL crear un
 borrador, reservar un número ni emitir por sí misma.
 
-#### Scenario: Nueva factura
+#### Scenario: Nueva factura desde la creación rápida
 - **WHEN** un operador elige «Nueva factura» en la creación rápida
 - **THEN** llega a la pantalla de nueva factura, igual que desde la lista de facturas
+- **AND** la navegación marca Borradores de facturas, en Ventas, como destino actual
 
 #### Scenario: Abrir sin elegir
 - **WHEN** un usuario abre la creación rápida y la cierra sin elegir una acción
@@ -214,13 +271,24 @@ borrador, reservar un número ni emitir por sí misma.
 
 ### Requirement: Paleta de comandos
 El shell SHALL abrir, con Ctrl+K o ⌘+K y desde un control visible, una paleta con los destinos y las
-acciones de creación rápida que el rol permite. Escribir SHALL filtrarlos sin distinguir mayúsculas
-ni tildes. Elegir uno SHALL llevar a su pantalla. La paleta no SHALL consultar al servidor mientras
-se escribe.
+acciones de creación rápida que el rol permite. El control y el campo de la paleta SHALL declarar
+ese alcance («Buscar pantalla o acción»), visible y en su nombre accesible, y no SHALL presentarse
+como búsqueda de comprobantes, terceros o productos. Escribir SHALL filtrar por el nombre del
+destino o la acción y por sus sinónimos, sin distinguir mayúsculas ni tildes. Elegir uno SHALL
+llevar a su pantalla. La paleta no SHALL consultar al servidor mientras se escribe, ni ofrecer
+resultados de registros concretos.
 
 #### Scenario: Atajo y destino
 - **WHEN** un operador pulsa Ctrl+K, escribe «credito» y elige Notas de crédito
 - **THEN** llega a la lista de notas de crédito y la paleta se cierra
+
+#### Scenario: Alcance declarado
+- **WHEN** un usuario ve el control de la paleta en la barra superior, en escritorio o en un teléfono
+- **THEN** su texto visible o su nombre accesible es «Buscar pantalla o acción», y el campo de la paleta usa el mismo texto
+
+#### Scenario: Sinónimos
+- **WHEN** un operador escribe «clientes» o un administrador escribe «contraseña» o «IVA»
+- **THEN** la paleta ofrece Terceros, Mi cuenta o Catálogos fiscales, respectivamente
 
 #### Scenario: Acción de creación
 - **WHEN** un usuario abre la paleta y elige «Nueva guía de remisión»
@@ -231,8 +299,8 @@ se escribe.
 - **THEN** no se envía ninguna petición a la API por lo escrito
 
 #### Scenario: Sin resultados
-- **WHEN** lo escrito no coincide con ningún destino ni acción
-- **THEN** la paleta dice que no hay resultados y no ofrece destinos ocultos para el rol
+- **WHEN** lo escrito no coincide con ningún destino ni acción, por ejemplo un número de comprobante o el nombre de un cliente
+- **THEN** la paleta dice que no encontró una pantalla o acción con ese término, sin afirmar que el comprobante o el cliente no existen, y no ofrece destinos ocultos para el rol
 
 #### Scenario: Cerrar con Escape
 - **WHEN** un usuario abre la paleta desde su control y pulsa Escape

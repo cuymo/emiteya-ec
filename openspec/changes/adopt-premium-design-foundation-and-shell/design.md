@@ -442,8 +442,10 @@ tiene, y `cmdk` para la paleta. Las dos van con versión exacta.
   al elegir un destino y foco devuelto al botón de menú.
   - Los grupos son plegables, con el del destino actual abierto, porque `navigation-responsive.md`
     pide plegarlos en móvil.
-  - En escritorio los grupos siempre están abiertos.
+  - En escritorio los grupos operativos siempre están abiertos; Configuración se pliega (D24).
 - **Estado por defecto:** expandida.
+- **Correcciones del control de calidad UX:** clic en toda la barra colapsada (D21), desplazamiento
+  a cualquier altura (D22) y destino actual a la vista (D23).
 
 ### D13. Paleta de comandos
 
@@ -453,7 +455,8 @@ tiene, y `cmdk` para la paleta. Las dos van con versión exacta.
   - grupo «Ir a»: los destinos y Mi cuenta;
   - grupo «Crear»: las acciones de creación rápida.
 - **Filtro propio.** No distingue mayúsculas ni tildes (NFD sin diacríticos) y busca en la
-  etiqueta, el grupo y palabras clave. Es determinista y tiene prueba unitaria.
+  etiqueta, el grupo y palabras clave. Es determinista y tiene prueba unitaria. Las palabras clave
+  de cada destino viven en el modelo de rutas (D26).
 - **Sin servidor.** Ninguna consulta mientras se escribe.
 - **Carga diferida.** El contenido se carga bajo demanda (`next/dynamic`) en la primera apertura,
   así que no engorda la carga inicial de cada ruta. El atajo y el disparador viven en el shell.
@@ -745,3 +748,186 @@ Aprobado con un ajuste de las migas:
 - migas jerárquicas, sin una miga que repita el título (D15).
 
 No quedan preguntas abiertas.
+
+## Correcciones del control de calidad UX (2026-10-14)
+
+Una revisión UX independiente recorrió la aplicación real a 1440, 1024, 768 y 390 px, en los dos
+temas, como administrador nuevo, operador diario y usuario ocasional. Su resultado fue «PASS WITH
+CORRECTIONS», con un hallazgo S4 y cuatro S3 atribuibles al shell. El propietario aceptó la revisión
+y decidió corregir el shell dentro de este change, antes de archivarlo, porque es más barato que
+dejar que la misma fricción se propague a cada módulo. Las decisiones siguientes cambian
+comportamiento observable. El resto de hallazgos queda registrado para las fases siguientes (al
+final de esta sección).
+
+### D21. Barra colapsada utilizable con el puntero (SH-1, S4)
+
+- **Defecto medido.** En modo icono, la etiqueta de cada grupo queda invisible (opacidad 0) y sube
+  2 rem sobre el último destino del grupo anterior, pero sigue recibiendo el puntero. En 7 de 21
+  iconos, un clic en el centro no navegaba.
+- **Corrección en el primitivo** (`ui/sidebar`, `SidebarGroupLabel`). En modo icono, la etiqueta no
+  participa en la detección del puntero (`pointer-events: none`). Sigue en el DOM y no cambia la
+  semántica: la navegación conserva sus nombres accesibles.
+- **Prueba.** El harness colapsa la barra y hace clic en el centro de cada destino visible para el
+  rol, a 1440×900 y 1024×768, como administrador y como operador. Cero centros muertos.
+
+### D22. Barra desplazable a cualquier altura (SH-2, S3)
+
+- **Defecto medido.** En modo icono, el contenido de la barra tenía `overflow: hidden`. A 1024×768,
+  los últimos destinos quedaban fuera de alcance con el puntero.
+- **Corrección en el primitivo** (`SidebarContent`). El desplazamiento vertical funciona expandida y
+  colapsada: rueda, panel táctil y teclado, y el foco trae el destino a la vista. Nunca hay
+  desplazamiento horizontal.
+- **Barra de desplazamiento oculta**, como en la plantilla. Una barra visible restaría ancho al
+  carril de 3 rem en los sistemas que no la superponen. D23 y D24 mantienen a la vista el destino
+  actual y la mayoría de los destinos.
+- **Prueba.** A 1024×768, a 1366×657 (la altura útil de un portátil de 1366×768) y a 1280×560: cada
+  destino permitido se alcanza con la rueda sobre la barra y responde al clic en su centro, expandida
+  y colapsada.
+
+### D23. Destino actual a la vista (SH-3, S3)
+
+- **Defecto medido.** 21 destinos y 7 títulos necesitan unos 1100 px, así que el destino actual de
+  Configuración quedaba por debajo de la barra al cargar, incluso a 1920×1080.
+- **Corrección en el shell** (`AppSidebar`). En la carga autenticada, en un enlace directo y en cada
+  cambio de ruta, si el destino actual no está entero dentro del área visible de la barra, la barra
+  se desplaza lo justo para mostrarlo (equivalente a `block: "nearest"`).
+  - Si ya se ve entero, la barra no se mueve.
+  - Solo se desplaza la barra, nunca la página.
+  - Sin animación en la carga, y suave en los cambios de ruta salvo con movimiento reducido.
+
+### D24. Configuración plegada por defecto
+
+- **Decisión del propietario.** Configuración agrupa ocho destinos de uso esporádico y ocupaba el
+  38 % de la barra con el mismo peso visual que el trabajo diario. Es divulgación progresiva: no
+  quita ninguna ruta ni oculta permisos.
+- **Comportamiento:**
+  - fuera de sus pantallas, Configuración empieza plegada;
+  - en una de sus pantallas, empieza abierta, y se abre sola al entrar en una;
+  - el usuario la abre o la pliega a mano durante la sesión de la interfaz, y nunca se pliega sola;
+  - sin persistencia entre dispositivos.
+- **Presentación.** En escritorio, su cabecera es un botón con el icono de ajustes, el nombre
+  «Configuración» y un indicador de plegado (`aria-expanded`). Colapsada la barra, queda el icono con
+  su ayuda «Configuración». En el panel móvil sigue la regla de todos los grupos (D12).
+- **Los grupos operativos no se pliegan** para acortar la barra. Conservan la pista de información.
+  Con Configuración plegada, la barra expandida entra en unos 890 px.
+
+### D25. Ventas, borradores y archivo: nombres que dicen qué contienen
+
+- **Problema.** Facturas, Comprobantes y Borradores no comunicaban su relación. `/borradores` solo
+  contiene borradores de factura, y «Nueva factura» llevaba de Ventas a Documentos.
+- **Decisión del propietario** (sin mover rutas):
+  - Ventas: Facturas, Borradores de facturas (`/borradores`), Notas de crédito y Notas de débito.
+  - Documentos: Archivo de comprobantes (`/comprobantes`), la vista transversal de todos los
+    comprobantes.
+- **Una sola fuente.** El nombre sale del modelo de rutas. Así cambian a la vez la barra, el destino
+  actual, las migas, la paleta y los nombres accesibles. El título del documento y el encabezado de
+  esas dos pantallas usan el mismo nombre, para que lo que se pulsa coincida con lo que se ve.
+- **Creación rápida.** «Nueva factura» sigue en `/borradores/nuevo`, que ahora marca Ventas ›
+  Borradores de facturas como destino actual.
+- **Sin cambios** en rutas, API ni backend. Terceros conserva su nombre: la paleta reconoce sus
+  sinónimos (D26).
+
+### D26. Paleta de comandos veraz sobre su alcance (SH-4, S3)
+
+- **Problema.** El disparador decía «Buscar…», que promete buscar comprobantes, clientes o
+  productos. La paleta solo busca pantallas y acciones de creación, y no debe consultar datos.
+- **Alcance declarado:**
+  - el disparador dice «Buscar pantalla o acción…»;
+  - su nombre accesible, también en el botón compacto, es «Buscar pantalla o acción»;
+  - el campo de la paleta usa el mismo texto.
+  - No se llama «Búsqueda global» ni «Buscar» a secas.
+- **Sinónimos sin red.** Cada destino del modelo de rutas lleva palabras clave que el filtro
+  consulta, entre ellas:
+  - Terceros: clientes, proveedores, transportistas, contactos.
+  - Catálogos fiscales: IVA, ICE, IRBPNR, impuestos, formas de pago, retenciones.
+  - Firma electrónica: certificado, P12, PKCS12.
+  - Mi cuenta: contraseña, password, cuenta.
+  - Secuenciales: secuencial, numeración, número.
+  - Archivo de comprobantes: comprobantes, documentos, archivo, facturas emitidas.
+  - Borradores de facturas: borradores, factura pendiente, factura sin emitir.
+- **Sin resultados falsos.** Un número de comprobante, un cliente o un producto concretos no
+  producen resultados inventados. Sin coincidencia, la paleta dice que no encontró una pantalla o
+  acción con ese término e indica dónde buscar registros. Nunca afirma que un registro no existe.
+- **El disparador completo** aparece desde 1280 px, porque su texto ya no cabe con la barra
+  expandida a 1024 px. Por debajo es el botón compacto con el mismo nombre accesible y su ayuda.
+
+### D27. Ambiente siempre visible y con menos fatiga
+
+- **Defecto medido.** En móvil, el distintivo de la barra superior se ocultaba por debajo de 640 px.
+  En Producción, la línea que lo sustituía se iba al desplazar, y no quedaba ninguna indicación del
+  ambiente.
+- **Siempre visible.** El distintivo con el texto «Pruebas» o «Producción» va en la barra superior,
+  que es fija, a todas las anchuras, incluidas las de un teléfono. La línea móvil de Producción
+  desaparece porque queda redundante.
+- **Pruebas sin fatiga.** La franja persistente no se puede cerrar y conserva su texto completo.
+  Pasa a una superficie neutra y sutil con el icono y un acento lateral de advertencia, en lugar del
+  bloque ámbar saturado. La franja de la firma por vencer conserva su tono de advertencia, porque sí
+  pide una acción.
+- **Producción no es un éxito.** El ambiente es contexto, no un resultado de validación. Producción
+  deja el verde con marca de verificación y usa un distintivo neutro de alta atención (contraste
+  invertido) con el texto «Producción». No hay ninguna comprobación de conectividad con el SRI.
+
+### D28. Tema oscuro con menos deslumbramiento
+
+- **Defecto medido.** El fondo casi negro (`#0a0a0a`) con texto casi blanco (`#fafafa`) daba 18,96:1:
+  deslumbra en sesiones largas.
+- **Corrección solo en tokens** (`.dark` en `globals.css`), sin ajustes por pantalla.
+  - Fondo `oklch(0.18 0 0)` (`#121212`) y texto `oklch(0.93 0 0)`. El texto y el atenuado (0.72)
+    toman los valores del preset Tangerine de la plantilla.
+  - Superficies neutras escalonadas: barra 0.2, tarjeta y popover 0.225, muted, secondary y accent
+    0.285. El primario, los semánticos, `input` y `ring` no cambian.
+- **Contraste medido**, con la misma fórmula que `design-tokens.test.ts`:
+
+  | Par | Antes | Después |
+  | --- | --- | --- |
+  | Texto / fondo | 18,96:1 | 15,30:1 |
+  | Texto / tarjeta | 17,16:1 | 13,92:1 |
+  | Atenuado / fondo | 8,28:1 | 7,58:1 |
+  | Atenuado / muted | 6,32:1 | 5,79:1 |
+  | Texto / acento (hover y activo) | 14,48:1 | 11,68:1 |
+  | Texto primario / primario | 6,71:1 | 6,71:1 |
+  | Primario (enlace) / fondo | 6,85:1 | 6,50:1 |
+  | Borde de control / tarjeta | 3,69:1 | 3,52:1 |
+
+  Todo sigue en WCAG AA o mejor. La prueba de tokens añade una guarda contra el negro y el blanco
+  casi puros en el tema oscuro.
+
+### D29. Botón de navegación móvil reconocible
+
+- **Icono.** El botón que abre el panel móvil usa el icono convencional de menú (tres líneas) y no
+  el del panel lateral. Escritorio conserva el del panel para colapsar la barra.
+- **Nombre accesible:** «Abrir navegación». El panel sigue llamándose «Menú».
+
+### Lo que no cambia en esta corrección
+
+- **Tema:** el control conserva su comportamiento, sus anchuras y su contrato de prueba. Su
+  prominencia en la barra superior queda como deuda UX no bloqueante.
+- **Contexto de la empresa:** solo lectura, sin enlace ni selector.
+- **Para la fase de componentes compartidos y de dominio:**
+  - los colores de SEND_UNKNOWN, RESERVED y MANUAL_REVIEW en `StatusBadge`;
+  - los mensajes crudos del SRI y la guía tras un resultado fiscal.
+- **Para el corte de DataTable y PageHeader:**
+  - chips con el primario;
+  - números que se parten;
+  - exceso de filtros en el archivo;
+  - posición del estado;
+  - «0-0»;
+  - densidad;
+  - acción principal de Facturas;
+  - tablas nativas en pantallas estrechas.
+- **Para los cortes de formularios:**
+  - totales después de guardar;
+  - posición de Guardar en Empresa;
+  - formularios de producto y de tercero;
+  - controles nativos.
+- **Inicio:** sin rediseño ahora. Queda como trabajo prioritario: con la empresa lista no ofrece
+  ninguna acción diaria. El objetivo es Nueva factura, Requieren atención, recientes y el estado de
+  la firma.
+- **Catálogos fiscales:** sin rediseño. Queda pendiente para su fase de dominio:
+  - navegación por categorías;
+  - búsqueda;
+  - divulgación progresiva;
+  - procedencia sin repetir;
+  - ayuda para las siglas.
+
+Todo esto queda registrado en `docs/quality/technical-debt.md`.

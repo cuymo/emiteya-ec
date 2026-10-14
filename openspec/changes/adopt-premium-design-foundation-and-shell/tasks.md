@@ -444,6 +444,95 @@
 
   Verificar que todo pasa, o que solo falla un flake ya registrado (AC-04), con evidencia exacta.
 
+## 14. Correcciones del control de calidad UX
+
+La revisión UX independiente del 2026-10-14 fue aceptada por el propietario como entrada autorizada
+(design, «Correcciones del control de calidad UX», D21 a D29). Las tareas 1 a 13 quedan como
+estaban. Estas corrigen el shell antes de archivar, sin tocar el backend, la API, la base de datos,
+la lógica fiscal ni el SRI.
+
+- [x] 14.1 Registrar las correcciones en el design (D21 a D29), en la spec delta y en estas tareas.
+
+  Verificar con `openspec:validate`.
+- [ ] 14.2 SH-1: en `ui/sidebar`, que la etiqueta de grupo en modo icono no reciba el puntero, sin
+  quitarla del DOM (D21).
+
+  Verificar que la navegación conserva sus nombres accesibles.
+- [ ] 14.3 SH-2: en `SidebarContent`, desplazamiento vertical expandida y colapsada, sin
+  desplazamiento horizontal (D22).
+
+  Verificar rueda, teclado y foco.
+- [ ] 14.4 SH-3: en `AppSidebar`, mostrar el destino actual si queda fuera del área visible de la
+  barra, en la carga, en un enlace directo y en cada cambio de ruta (D23):
+  - solo la barra, nunca la página;
+  - sin moverla si el destino ya se ve entero;
+  - con movimiento reducido, sin animación.
+
+  Verificar con pruebas unitarias y en navegador.
+- [ ] 14.5 Configuración plegada fuera de sus pantallas y abierta en ellas, con apertura y pliegue
+  manual durante la sesión, en escritorio, colapsada y en el panel móvil (D24).
+
+  Verificar que no se pierde ningún destino ni permiso.
+- [ ] 14.6 IA de ventas y documentos (D25), sin mover rutas:
+  - Ventas › Borradores de facturas (`/borradores`);
+  - Documentos › Archivo de comprobantes (`/comprobantes`);
+  - las migas, la paleta, el destino actual, los nombres accesibles, el título del documento y el
+    encabezado de esas pantallas.
+
+  Verificar que «Nueva factura» marca Ventas › Borradores de facturas.
+- [ ] 14.7 Paleta veraz (D26):
+  - disparador y campo «Buscar pantalla o acción…», con nombre accesible «Buscar pantalla o
+    acción» también en el botón compacto;
+  - sinónimos en el modelo de rutas;
+  - estado vacío que no afirma la inexistencia de registros.
+
+  Verificar que no hay resultados de registros concretos ni consultas al servidor.
+- [ ] 14.8 Ambiente (D27):
+  - distintivo con texto a todas las anchuras en la barra superior fija;
+  - sin la línea móvil de Producción;
+  - franja de Pruebas en una superficie neutra con acento de advertencia, sin cierre;
+  - Producción en un distintivo neutro de alta atención, sin verde de éxito.
+
+  Verificar a 390 px, también al desplazar.
+- [ ] 14.9 Tema oscuro (D28): solo los tokens de `.dark`, con el contraste antes y después y una
+  guarda en `design-tokens.test.ts`.
+
+  Verificar WCAG AA en cada par.
+- [ ] 14.10 Botón de navegación móvil con el icono de menú y el nombre «Abrir navegación» (D29).
+
+  Verificar el foco al cerrar el panel.
+- [ ] 14.11 Pruebas de regresión UX en el harness (`visual/shell/`), a las anchuras y alturas de
+  D21 a D23:
+  - clic en el centro de cada icono colapsado, para administrador y operador;
+  - alcance con el puntero a poca altura, expandida y colapsada;
+  - destino actual a la vista tras un enlace directo;
+  - Configuración plegada fuera y abierta dentro;
+  - ambiente visible en móvil al desplazar;
+  - alcance declarado y sinónimos de la paleta;
+  - nombres Borradores de facturas y Archivo de comprobantes.
+
+  Verificar también teclado, axe y foco.
+- [ ] 14.12 Capturas:
+  - revisar las diferencias de las capturas del shell;
+  - actualizar solo las afectadas;
+  - añadir estados nuevos: ventana baja, destino de Configuración, Producción en móvil.
+
+  Verificar que ninguna captura ajena cambia.
+- [ ] 14.13 Documentar en `navigation-responsive.md`, `design-foundations.md`,
+  `feedback-and-states.md`, `frontend.md` y `technical-debt.md`, incluidos los hallazgos aplazados a
+  las fases siguientes.
+- [ ] 14.14 Ejecutar, sin tráfico al SRI:
+  - las pruebas enfocadas;
+  - `openspec:validate`, `format:check`, `security:dependencies` y `security:secrets`;
+  - `test:visual`;
+  - `verify`.
+
+  Verificar que todo pasa.
+- [ ] 14.15 Reconstruir el frontend del despliegue local de revisión, con `SRI_TRANSMISSION_ENABLED=0`
+  y sin tráfico al SRI, y repetir la revisión UX enfocada en el shell a 1440, 1024, 768 y 390 px.
+
+  Verificar cero hallazgos S4/S5 del shell y SH-1 a SH-3 cerrados.
+
 ## Registro de la verificación
 
 - **13.1, carga:** el JavaScript transferido sube entre un 1,7 y un 3,5 % según la pantalla. Se
