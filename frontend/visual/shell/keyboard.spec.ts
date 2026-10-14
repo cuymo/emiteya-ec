@@ -74,10 +74,14 @@ test.describe("teclado del shell", () => {
     );
     await page.goto("/facturas");
     await settle(page);
-    const last = page
-      .getByRole("navigation", { name: "Navegación principal" })
-      .getByRole("link", { name: "Portabilidad de datos" });
-    await expect(last).not.toBeInViewport();
+    const nav = page.getByRole("navigation", { name: "Navegación principal" });
+    // Configuración empieza plegada fuera de sus pantallas (design D24): su cabecera es lo último.
+    const section = nav.getByRole("button", { name: "Configuración" });
+    await expect(section).not.toBeInViewport();
+    await section.scrollIntoViewIfNeeded();
+    await expect(section).toBeInViewport();
+    await section.click();
+    const last = nav.getByRole("link", { name: "Portabilidad de datos" });
     await last.scrollIntoViewIfNeeded();
     await expect(last).toBeInViewport();
     // Se desplazó la barra, no la página.
@@ -91,7 +95,7 @@ test.describe("teclado del shell", () => {
     const { page } = await openPage(browser, { persona: "admin" }, { viewport: MOBILE });
     await page.goto("/");
     await settle(page);
-    const menu = page.getByRole("button", { name: "Abrir menú" });
+    const menu = page.getByRole("button", { name: "Abrir navegación" });
     await menu.click();
     await expect(page.getByRole("dialog", { name: "Menú" })).toBeVisible();
     await page.keyboard.press("Escape");

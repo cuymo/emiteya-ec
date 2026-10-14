@@ -86,7 +86,7 @@ test.describe("shell premium", () => {
 
   test("móvil con el panel abierto", async ({ browser }) => {
     const { page, recorder } = await open(browser, "/", { viewport: MOBILE });
-    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page.getByRole("button", { name: "Abrir navegación" }).click();
     await expect(page.getByRole("dialog", { name: "Menú" })).toBeVisible();
     await pruebasVisible(page);
     await finish(page, recorder, "shell-mobile-panel");

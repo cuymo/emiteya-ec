@@ -44,7 +44,7 @@ test.describe("accesibilidad del shell", () => {
     const { page } = await openPage(browser, { persona: "admin" }, { viewport: MOBILE });
     await page.goto("/");
     await settle(page);
-    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page.getByRole("button", { name: "Abrir navegación" }).click();
     await expect(page.getByRole("dialog", { name: "Menú" })).toBeVisible();
     expect(await violations(page)).toEqual([]);
     await page.context().close();

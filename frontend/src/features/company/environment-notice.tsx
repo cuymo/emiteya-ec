@@ -1,11 +1,12 @@
-// Aviso del ambiente en el shell (design D6, ERS RF-004 y RF-005). En Pruebas, una franja
-// persistente sin cierre en todas las pantallas; en Producción, el distintivo de la cabecera. Por
-// debajo de 640px la cabecera no tiene espacio para el distintivo, así que Producción se indica con
-// una línea compacta bajo ella. Mientras carga se reserva el espacio, y ante un error nunca se supone
-// Producción.
+// Aviso del ambiente en el shell (design D6 y D27, ERS RF-004 y RF-005). El distintivo con el texto
+// del ambiente va en la barra superior, que es fija, a todas las anchuras: el ambiente sigue a la
+// vista al desplazar, también en un teléfono. En Pruebas, además, una franja persistente sin cierre,
+// en una superficie neutra con acento de advertencia para que no canse. Producción es contexto, no un
+// resultado: su distintivo es neutro y de alta atención, sin el verde de éxito. Mientras carga se
+// reserva el espacio, y ante un error nunca se supone Producción.
 "use client";
 
-import { CircleCheck, TriangleAlert } from "lucide-react";
+import { Radio, TriangleAlert } from "lucide-react";
 import { NoticeStrip as Strip } from "@/components/notice-strip";
 import { Skeleton } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -23,36 +24,29 @@ export function EnvironmentNotice() {
       </Strip>
     );
   }
-  if (status.data.environment === "PRODUCTION") {
-    return (
-      <Strip tone="success" className="sm:hidden">
-        Ambiente de Producción
-      </Strip>
-    );
-  }
+  if (status.data.environment === "PRODUCTION") return null;
   return (
-    <Strip tone="warning">
+    <Strip tone="environment">
       Ambiente de Pruebas: los comprobantes no tienen validez tributaria.
     </Strip>
   );
 }
 
 /**
- * Distintivo de la barra superior, desde 640px; por debajo lo sustituye la línea de
- * EnvironmentNotice. Usa el `Badge` derivado de la plantilla (adopt-premium-design-foundation-and-shell,
- * design D11): texto e icono, nunca solo color.
+ * Distintivo de la barra superior, a todas las anchuras (design D27). Usa el `Badge` derivado de la
+ * plantilla (adopt-premium-design-foundation-and-shell, design D11): texto e icono, nunca solo color.
  */
 export function EnvironmentBadge() {
   const status = useCompanyStatus();
-  if (status.isPending) return <Skeleton className="hidden h-5 w-20 rounded-4xl sm:block" />;
+  if (status.isPending) return <Skeleton className="h-5 w-20 shrink-0 rounded-4xl" />;
   if (status.isError) return null;
   return status.data.environment === "PRODUCTION" ? (
-    <Badge variant="success" className="hidden sm:inline-flex">
-      <CircleCheck aria-hidden="true" />
+    <Badge variant="emphasis" className="shrink-0">
+      <Radio aria-hidden="true" />
       Producción
     </Badge>
   ) : (
-    <Badge variant="warning" className="hidden sm:inline-flex">
+    <Badge variant="warning" className="shrink-0">
       <TriangleAlert aria-hidden="true" />
       Pruebas
     </Badge>

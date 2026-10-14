@@ -2,7 +2,9 @@
 // frontend/THIRD_PARTY_NOTICES.md). Adaptado (adopt-premium-design-foundation-and-shell, design D6):
 // variantes semánticas de EmiteYa en lugar de las de la plantilla. En un estado, el color va en el
 // icono, el borde y el fondo; el texto queda en `foreground` para conservar el contraste, y el estado
-// nunca se comunica solo con color: lleva icono y texto. Anillo de foco sólido.
+// nunca se comunica solo con color: lleva icono y texto. Anillo de foco sólido. `emphasis` es neutro
+// y de alta atención (contraste invertido): identifica un contexto, como Producción, sin presentarlo
+// como un resultado correcto (design D27).
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type { ComponentProps } from "react";
@@ -23,6 +25,7 @@ export const badgeVariants = cva(
         info: "border-info/30 bg-info/10 [&>svg]:text-info",
         destructive: "border-destructive/30 bg-destructive/10 [&>svg]:text-destructive",
         neutral: "border-border bg-muted [&>svg]:text-muted-foreground",
+        emphasis: "border-foreground bg-foreground text-background [&>svg]:text-background",
         outline: "border-border",
       },
     },

@@ -129,18 +129,21 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.73 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Menos deslumbramiento en sesiones largas (design D28): fondo algo más claro que el negro de la
+     plantilla y texto algo más suave que el blanco (0.93 y 0.72, del preset Tangerine de la
+     plantilla), con superficies neutras escalonadas. Texto sobre fondo: 15.3:1 (antes 18.96:1). */
+  --background: oklch(0.18 0 0);
+  --foreground: oklch(0.93 0 0);
+  --card: oklch(0.225 0 0);
+  --card-foreground: oklch(0.93 0 0);
+  --popover: oklch(0.225 0 0);
+  --popover-foreground: oklch(0.93 0 0);
+  --secondary: oklch(0.285 0 0);
+  --secondary-foreground: oklch(0.93 0 0);
+  --muted: oklch(0.285 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --accent: oklch(0.285 0 0);
+  --accent-foreground: oklch(0.93 0 0);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(0.55 0 0);
 
@@ -157,10 +160,10 @@
   --info: oklch(0.72 0.12 240);
   --info-foreground: oklch(0.16 0.01 250);
 
-  --sidebar: oklch(0.18 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(0.2 0 0);
+  --sidebar-foreground: oklch(0.93 0 0);
+  --sidebar-accent: oklch(0.285 0 0);
+  --sidebar-accent-foreground: oklch(0.93 0 0);
   --sidebar-border: oklch(1 0 0 / 12%);
 
   --overlay: oklch(0.08 0 0 / 0.6);

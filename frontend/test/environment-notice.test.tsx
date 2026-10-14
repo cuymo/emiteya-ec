@@ -81,7 +81,37 @@ describe("aviso de ambiente (design D6)", () => {
     renderShell();
     await screen.findByText("Producción");
     expect(screen.queryByText(TEST_NOTICE)).toBeNull();
+    // Corrección del control de calidad UX (design D27): ya no hay línea móvil de Producción,
+    // porque el distintivo se ve a todas las anchuras.
+    expect(screen.queryByText("Ambiente de Producción")).toBeNull();
   });
+
+  it("Producción es contexto, no un resultado: distintivo neutro, sin la variante de éxito", async () => {
+    mockApi({
+      "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }),
+      "GET /api/v1/company/status": () => status("PRODUCTION"),
+    });
+    renderShell();
+    const badge = (await screen.findByText("Producción")).closest("[data-slot=badge]")!;
+    expect(badge.getAttribute("data-variant")).toBe("emphasis");
+    expect(badge.getAttribute("data-variant")).not.toBe("success");
+    expect(badge.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  for (const environment of ["TEST", "PRODUCTION"] as const) {
+    it(`el distintivo de ${environment} no se oculta en pantallas estrechas`, async () => {
+      // Antes llevaba `hidden sm:inline-flex`; ahora se ve a todas las anchuras (design D27). El
+      // harness del navegador comprueba además que sigue visible al desplazar en un teléfono.
+      mockApi({
+        "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }),
+        "GET /api/v1/company/status": () => status(environment),
+      });
+      renderShell();
+      const label = environment === "TEST" ? "Pruebas" : "Producción";
+      const badge = (await screen.findByText(label)).closest("[data-slot=badge]")!;
+      expect(badge.className.split(/\s+/)).not.toContain("hidden");
+    });
+  }
 
   it("ante un error no supone Producción", async () => {
     mockApi({

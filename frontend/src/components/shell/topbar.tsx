@@ -3,9 +3,12 @@
 // frontend/THIRD_PARTY_NOTICES.md), sin preferencias de diseño, preajustes, menú de GitHub ni cuentas
 // de demostración. Por anchura:
 // - desde 768 px: alternar la barra, migas, contexto de la empresa, paleta, ambiente, tema y cuenta;
-// - en móvil: menú, contexto de la empresa (que crece), paleta y cuenta; las migas pasan al contenido.
+// - en móvil: navegación, contexto de la empresa (que crece), ambiente, paleta y cuenta; las migas
+//   pasan al contenido. El ambiente se ve a todas las anchuras (design D27), y el botón que abre el
+//   panel móvil usa el icono de menú, «Abrir navegación» (design D29).
 "use client";
 
+import { Menu } from "lucide-react";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Kbd } from "@/components/ui/kbd";
@@ -22,11 +25,13 @@ function SidebarToggle() {
   if (isMobile) {
     return (
       <SidebarTrigger
-        aria-label="Abrir menú"
+        aria-label="Abrir navegación"
         aria-haspopup="dialog"
         aria-expanded={openMobile}
         size="icon-sm"
-      />
+      >
+        <Menu aria-hidden="true" />
+      </SidebarTrigger>
     );
   }
   const label = open ? "Contraer barra lateral" : "Expandir barra lateral";

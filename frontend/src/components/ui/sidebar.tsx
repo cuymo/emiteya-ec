@@ -187,8 +187,16 @@ export function Sidebar({
   );
 }
 
-/** Alterna la barra: la colapsa en escritorio y abre el panel en móvil. Lleva su nombre accesible. */
-export function SidebarTrigger({ className, onClick, ...props }: ComponentProps<typeof Button>) {
+/**
+ * Alterna la barra: la colapsa en escritorio y abre el panel en móvil. Lleva su nombre accesible. Su
+ * icono por defecto es el del panel lateral; el botón móvil pasa el icono de menú (design D29).
+ */
+export function SidebarTrigger({
+  className,
+  onClick,
+  children,
+  ...props
+}: ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar();
   return (
     <Button
@@ -203,7 +211,7 @@ export function SidebarTrigger({ className, onClick, ...props }: ComponentProps<
       }}
       {...props}
     >
-      <PanelLeftIcon aria-hidden="true" />
+      {children ?? <PanelLeftIcon aria-hidden="true" />}
     </Button>
   );
 }

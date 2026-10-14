@@ -128,6 +128,17 @@ describe("tokens del sistema de diseño", () => {
     expect(outside).not.toMatch(/oklch\(|#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);
   });
 
+  it("el tema oscuro no usa negro ni blanco casi puros (design D28)", () => {
+    // Antes: fondo 0.145 y texto 0.985, 18.96:1, que deslumbra en sesiones largas.
+    const lightness = (name: string) => Number(/^oklch\(([\d.]+) /.exec(resolve(DARK, name))![1]);
+    expect(lightness("background")).toBeGreaterThanOrEqual(0.17);
+    expect(lightness("foreground")).toBeLessThanOrEqual(0.95);
+    expect(lightness("card")).toBeGreaterThan(lightness("background"));
+    expect(lightness("muted")).toBeGreaterThan(lightness("card"));
+    expect(contrast(DARK, "foreground", "background")).toBeLessThan(17);
+    expect(contrast(DARK, "foreground", "background")).toBeGreaterThanOrEqual(7);
+  });
+
   it("la escala de espaciado es de base 4", () => {
     expect(CSS).toContain("--spacing: 0.25rem;");
   });

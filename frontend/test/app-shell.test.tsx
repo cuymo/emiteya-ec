@@ -294,7 +294,7 @@ describe("ambiente fiscal visible", () => {
     api();
     renderShell();
     await screen.findByText(TEST_NOTICE);
-    await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+    await user.click(screen.getByRole("button", { name: "Abrir navegación" }));
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(screen.getByText(TEST_NOTICE)).toBeDefined();
@@ -386,7 +386,11 @@ describe("navegación adaptable", () => {
     navigation.pathname = "/";
     renderShell();
     await screen.findByText("contenido");
-    const menu = screen.getByRole("button", { name: "Abrir menú" });
+    // El botón se llamaba «Abrir menú» y usaba el icono del panel lateral; ahora es «Abrir
+    // navegación», con el icono de menú (design D29).
+    const menu = screen.getByRole("button", { name: "Abrir navegación" });
+    expect(menu.querySelector("svg.lucide-menu")).not.toBeNull();
+    expect(menu.querySelector("svg.lucide-panel-left")).toBeNull();
     await user.click(menu);
     const panel = await screen.findByRole("dialog", { name: "Menú" });
     // Los grupos se pliegan en móvil; se abren para elegir un destino.
@@ -403,7 +407,7 @@ describe("navegación adaptable", () => {
     navigation.pathname = "/";
     renderShell();
     await screen.findByText("contenido");
-    const menu = screen.getByRole("button", { name: "Abrir menú" });
+    const menu = screen.getByRole("button", { name: "Abrir navegación" });
     await user.click(menu);
     await user.click(await screen.findByRole("button", { name: "Cerrar menú" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());

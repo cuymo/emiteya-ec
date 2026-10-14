@@ -46,7 +46,7 @@ test("las 41 pantallas autenticadas abren dentro del shell a 320, 768, 1024 y 14
       await page.waitForLoadState("networkidle");
       const shell =
         width < 768
-          ? page.getByRole("button", { name: "Abrir menú" })
+          ? page.getByRole("button", { name: "Abrir navegación" })
           : page.getByRole("navigation", { name: "Navegación principal" });
       if (!(await shell.isVisible())) problems.push(`${width}px ${url}: sin shell`);
       if (errors.length > 0) problems.push(`${width}px ${url}: ${errors.join(" | ")}`);
