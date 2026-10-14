@@ -11,10 +11,16 @@
   - `backend/test/catalogs/datasets.test.ts` y las pruebas de la matriz pasan;
   - la consulta de la matriz devuelve el 24 `OUT_OF_MVP` y el 26 `CONDITIONAL_GO_LIVE`;
   - el arranque aplica la versión 2 sobre una base con la versión 1.
-- [ ] 1.2 Comprobar qué hace el cargador de la imagen anterior (`main` antes de este cambio) ante una
-  base con la versión 2 ya aplicada, y documentarlo en `docs/architecture/deployment.md`,
-  «Actualizaciones y reversión» (design, Migration Plan). Verificar con una prueba local del cargador
-  o un arranque de la versión anterior sobre un esquema sintético, sin tráfico al SRI.
+- [ ] 1.2 Ensayo de reversión, obligatorio (decisión del propietario del 2026-10-13):
+  1. arrancar la versión nueva sobre un esquema sintético para que aplique la versión 2;
+  2. detenerla;
+  3. arrancar la versión publicada anterior (`main` `a85fade`) sobre el mismo esquema;
+  4. comprobar si arranca, si lee la matriz sin error y si sigue con su semántica anterior.
+
+  Documentar el resultado en `docs/architecture/deployment.md`, «Actualizaciones y reversión»:
+  compatible, o la limitación exacta. Si la versión anterior no arranca o no lee la matriz, parar
+  antes de archivar e informar `ROLLBACK_INCOMPATIBILITY` con la migración compatible más pequeña.
+  Sin tráfico al SRI.
 
 ## 2. Regla compartida de casos especiales del emisor
 
@@ -39,6 +45,12 @@
   - la emisión normal sin declaración igual que antes;
   - los fixtures de regresión que registran la categoría o la versión de la matriz actualizados solo
     en esos campos.
+
+- [ ] 2.3 Añadir una prueba genérica de coherencia entre la matriz publicada y el motor: cada anexo
+  que la última versión de `special-case-matrix` clasifica como `CORE` o `CONDITIONAL_ISSUER_RULE`
+  con una condición del emisor está en `SUPPORTED_SPECIAL_CASES`, ningún anexo soportado por el
+  motor queda fuera de esas categorías, y el 24 no figura como soportado. Verificar que la prueba
+  falla si el 24 vuelve a `SUPPORTED_SPECIAL_CASES` o a `CONDITIONAL_ISSUER_RULE`.
 
 ## 3. Bloqueo en los otros cinco tipos
 

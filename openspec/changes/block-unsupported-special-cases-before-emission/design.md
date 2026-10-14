@@ -118,8 +118,9 @@ se registra ningún evento»), así que este tampoco. Las métricas de conflicto
 mapa actual.
 
 Descartado: **códigos distintos por anexo** (`LARGE_TAXPAYER_UNSUPPORTED`, …). El código ya es
-estable, y el anexo queda en el mensaje. Si se prefiere un código propio para el 24, es un cambio de
-contrato pequeño que no altera el resto del diseño (decisión abierta para la revisión).
+estable, y el anexo queda en el mensaje. Decisión del propietario del 2026-10-13: reutilizar
+`SPECIAL_CASE_UNSUPPORTED`. Los problemas de emisión no tienen hoy un campo estructurado para el
+anexo, y no se añade uno.
 
 ### D5. Mapeo de los tipos del Anexo 24
 
@@ -132,8 +133,8 @@ contrato pequeño que no altera el resto del diseño (decisión abierta para la 
 | Guía de remisión | 06 | No | Documento complementario que el anexo no nombra |
 | Comprobante de retención | 07 | No | Comprobante de retención (Reglamento, art. 3), no de venta |
 
-La liquidación de compra entra por la definición del art. 1. Se marca para la revisión explícita del
-propietario, porque el anexo no la nombra.
+La liquidación de compra entra por la definición del art. 1, aunque el anexo no la nombra: aprobado
+por el propietario el 2026-10-13.
 
 ### D6. La declaración de gran contribuyente se queda como está
 
@@ -165,6 +166,10 @@ Queda como fila de deuda y en el ADR 0014.
   - un segundo intento devuelve el mismo rechazo.
 - **Matriz:** la prueba del manifiesto de datasets con la versión 2, y la consulta que muestra el 24
   `OUT_OF_MVP`.
+- **Coherencia de la matriz y el motor** (requisito del propietario): una prueba genérica comprueba
+  que todo anexo que la matriz publicada presenta como aplicado por el sistema (`CORE` y
+  `CONDITIONAL_ISSUER_RULE`) lo soporta de verdad el motor, y que el 24 no figura como soportado.
+  Evita que se repita este tipo de desajuste.
 - **Regresión:** los fixtures que registran la categoría o la versión de la matriz (por ejemplo
   `invoice-regression/snapshot.json`) se actualizan solo en esos campos, nunca el XML.
 - Ninguna prueba contacta al SRI: las transmisiones de las pruebas usan los dobles existentes.
@@ -191,11 +196,12 @@ Queda como fila de deuda y en el ADR 0014.
 - [Una empresa gran contribuyente que hoy emite facturas deja de poder emitir los cuatro tipos] →
   es el comportamiento correcto: hoy emite comprobantes incompletos. El mensaje lo explica. La
   revisión normativa y el ADR 0014 lo documentan, y soportarla queda como deuda (D6).
-- [La liquidación de compra entra por una definición y no por el texto del anexo] → D5 la marca para
-  revisión. Excluirla sería emitir sin la leyenda si el art. 1 rige.
+- [La liquidación de compra entra por una definición y no por el texto del anexo] → aprobado (D5).
+  Excluirla sería emitir sin la leyenda si el art. 1 rige.
 - [Cambian campos de fixtures de regresión] → solo la categoría y la versión de la matriz; los XML no
   cambian.
-- [El código único no distingue el anexo de forma estructurada] → decisión abierta (D4).
+- [El código único no distingue el anexo de forma estructurada] → aceptado (D4): el mensaje lo
+  identifica.
 
 ## Migration Plan
 
@@ -204,7 +210,3 @@ imagen nueva. Volver a la imagen anterior con la versión 2 ya cargada en la bas
 comprobado: la tarea de la matriz verifica qué hace el cargador de esa imagen ante una versión que
 no conoce, y lo documenta en `deployment.md` («Actualizaciones y reversión»).
 
-## Open Questions
-
-- ¿Un código propio para el Anexo 24 en lugar de `SPECIAL_CASE_UNSUPPORTED` (D4)? No cambia la regla,
-  los puntos de rechazo ni las pruebas, solo el contrato de error.
