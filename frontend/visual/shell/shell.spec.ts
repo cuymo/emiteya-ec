@@ -133,7 +133,8 @@ test.describe("shell premium", () => {
     );
     await page
       .getByRole("navigation", { name: "Navegación principal" })
-      .getByRole("link", { name: "Facturas" })
+      // Exacto: «Borradores de facturas» también contiene «Facturas» (design D25).
+      .getByRole("link", { name: "Facturas", exact: true })
       .click();
     await expect(
       page.getByRole("status").filter({ hasText: "Cargando la pantalla" }),
@@ -206,6 +207,62 @@ test.describe("shell premium", () => {
     await expect(page.getByRole("table")).toBeVisible();
     await pruebasVisible(page);
     await finish(page, recorder, "invoices-in-shell");
+  });
+
+  // Estados de las correcciones del control de calidad UX (design D23, D24 y D27; tarea 14.12).
+  // Contribuyente sin registrar, como en una instalación nueva: Ambiente explica qué falta.
+  const TAXPAYER_NOT_REGISTERED = {
+    "GET /api/v1/taxpayer": {
+      status: 200,
+      body: {
+        data: {
+          configured: false,
+          version: null,
+          environment: "TEST",
+          taxIdentityLocked: false,
+          profile: null,
+          logo: null,
+          logoMaxBytes: 1048576,
+          updatedAt: null,
+        },
+      },
+    },
+  };
+
+  test("destino de Configuración, con la sección abierta", async ({ browser }) => {
+    const { page, recorder } = await open(browser, "/configuracion/ambiente", {
+      scenario: { persona: "admin", overrides: TAXPAYER_NOT_REGISTERED },
+    });
+    await expect(
+      page.getByRole("navigation", { name: "Navegación principal" }).getByRole("link", {
+        name: "Ambiente",
+      }),
+    ).toHaveAttribute("aria-current", "page");
+    await pruebasVisible(page);
+    await finish(page, recorder, "shell-config-route");
+  });
+
+  test("ventana baja, con el destino actual a la vista", async ({ browser }) => {
+    const { page, recorder } = await open(browser, "/configuracion/ambiente", {
+      viewport: { width: 1280, height: 560 },
+      scenario: { persona: "admin", overrides: TAXPAYER_NOT_REGISTERED },
+    });
+    await expect(
+      page.getByRole("navigation", { name: "Navegación principal" }).getByRole("link", {
+        name: "Ambiente",
+      }),
+    ).toBeInViewport();
+    await finish(page, recorder, "shell-short-height");
+  });
+
+  test("Producción en móvil", async ({ browser }) => {
+    const { page, recorder } = await open(browser, "/", {
+      viewport: MOBILE,
+      scenario: { persona: "operator", environment: "PRODUCTION" },
+    });
+    await expect(page.locator("header").getByText("Producción", { exact: true })).toBeVisible();
+    await expect(page.getByText(TEST_NOTICE)).toHaveCount(0);
+    await finish(page, recorder, "shell-mobile-production");
   });
 
   test("inicio de sesión", async ({ browser }) => {
