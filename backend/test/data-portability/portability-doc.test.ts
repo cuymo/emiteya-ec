@@ -18,7 +18,7 @@ const ENV = read("../../src/config/env.ts");
 const POLICY = read("../../src/modules/identity/domain/access-policy.ts");
 const METRICS = read("../../src/modules/data-portability/infrastructure/metrics.ts");
 const OBSERVABILITY = read("../../../docs/quality/observability.md");
-const NAVIGATION = read("../../../frontend/src/components/navigation.tsx");
+const NAVIGATION = read("../../../frontend/src/lib/navigation/routes.ts");
 
 describe("docs/architecture/data-portability.md", () => {
   it("cita cada ruta registrada de la portabilidad", () => {
