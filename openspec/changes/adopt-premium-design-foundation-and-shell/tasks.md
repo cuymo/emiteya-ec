@@ -413,7 +413,7 @@
 
 ## 13. Etapa F: integración final
 
-- [ ] 13.1 Medir de nuevo `next build` y completar el «después» del benchmark. Comprobar que no hay
+- [x] 13.1 Medir de nuevo `next build` y completar el «después» del benchmark. Comprobar que no hay
   en los chunks:
   - Recharts, simple-icons, FullCalendar ni Vercel Analytics;
   - las preferencias en zustand de la plantilla;
@@ -421,13 +421,13 @@
   - más de un woff2.
 
   Verificar que el benchmark tiene los dos lados y las comprobaciones.
-- [ ] 13.2 Construir en local la imagen de producción del frontend y confirmar que contiene la
+- [x] 13.2 Construir en local la imagen de producción del frontend y confirmar que contiene la
   fuente servida desde el propio origen y que el build no pidió fuentes a otros orígenes. Si el
   flujo local de revisión lo permite, reconstruir el despliegue local de revisión con
   `SRI_TRANSMISSION_ENABLED=0` y sin tráfico al SRI.
 
   Verificar que la imagen se construye y que el woff2 está.
-- [ ] 13.3 Recorrer `docs/quality/frontend-checklist.md` sobre el shell:
+- [x] 13.3 Recorrer `docs/quality/frontend-checklist.md` sobre el shell:
   - 320, 768, 1024 y 1440 px, y zoom al 200 %;
   - teclado;
   - temas claro y oscuro;
@@ -443,6 +443,30 @@
   - `test:visual`.
 
   Verificar que todo pasa, o que solo falla un flake ya registrado (AC-04), con evidencia exacta.
+
+## Registro de la verificación
+
+- **13.1, carga:** el JavaScript transferido sube entre un 1,7 y un 3,5 % según la pantalla. Se
+  añade una sola fuente, Geist Sans variable (69.652 bytes, desde el propio origen). Ningún chunk
+  contiene dependencias de demostración, y `cmdk` va en un chunk diferido
+  (`docs/quality/benchmarks/frontend-shell-2026-10-14.md`).
+- **13.2, Docker:** la imagen de producción del frontend se construye con el woff2 en
+  `.next/static/media` y sin peticiones a fuentes externas. El despliegue local de revisión se
+  reconstruyó solo en su frontend, con la transmisión al SRI desactivada (el backend registra
+  `"sriTransmission":"disabled"`) y sin tráfico al SRI.
+- **13.3, lista de comprobación del frontend:**
+  - **Pantallas:** `visual/shell/routes.spec.ts` abre las 41 pantallas autenticadas a 320, 768, 1024
+    y 1440 px dentro del shell, sin errores no capturados ni desbordamiento horizontal. El zoom al
+    200 % equivale a un viewport CSS de la mitad, que queda dentro de ese rango.
+  - **Accesibilidad:** cero violaciones de axe (WCAG 2.2 AA).
+  - **Teclado:** recorrido real en el navegador.
+  - **Temas:** claro y oscuro, con el contraste de tokens comprobado.
+  - **Roles:** administrador y operador.
+  - **Ambientes:** Pruebas y Producción.
+  - **Contra el backend real:** `check:web-security-policy` recorre inicio de sesión, navegación,
+    paleta, barra y creación rápida, con 40 comprobaciones en verde, y la revisión local sirve el
+    shell.
+  - **Lista de comprobación:** sin hallazgos abiertos para el shell.
 
 ## Trazabilidad de componentes (referencia)
 
@@ -467,7 +491,7 @@ shadcn/ui. Los avisos están en `frontend/THIRD_PARTY_NOTICES.md`.
 | button | `components/ui/button.tsx` | `components/ui/button.tsx` | TEMPLATE-DERIVED (reemplaza al EMITEYA-EXISTING) | Nombres de EmiteYa; D5 y `legacy-*` | — | Anillo sólido; `aria-label` en solo icono | 44 px en móvil | 5.2 |
 | breadcrumb | `components/ui/breadcrumb.tsx` | `components/ui/breadcrumb.tsx` | TEMPLATE-DERIVED | «Más» en español | — | `aria-current="page"` | Fila compacta en móvil | 5.1, 7.1 |
 | kbd | `components/ui/kbd.tsx` | `components/ui/kbd.tsx` | TEMPLATE-DERIVED | Ninguna | — | Decorativo | Oculto en móvil | 5.1 |
-| command | `components/ui/command.tsx` | `components/ui/command.tsx` | TEMPLATE-DERIVED | `CommandDialog` sobre `ui/dialog`, con título y descripción en español dentro del contenido; `CommandInput` con envoltorio propio en lugar de `InputGroup` (evita importar `input-group`, `input` y `textarea`); sin `CommandShortcut` | — | Combobox de cmdk; foco devuelto; ítems de 44 px en móvil | Diálogo arriba en móvil | 5.1, 8.2 |
+| command | `components/ui/command.tsx` | `components/ui/command.tsx` | TEMPLATE-DERIVED | `CommandDialog` sobre `ui/dialog`, con título y descripción en español dentro del contenido; `CommandInput` con envoltorio propio en lugar de `InputGroup` (evita importar `input-group`, `input` y `textarea`); sin `CommandShortcut` ni el indicador de selección | — | Combobox de cmdk; foco devuelto; ítems de 44 px en móvil | Diálogo arriba en móvil | 5.1, 8.2 |
 | empty | `components/ui/empty.tsx` | `components/ui/empty.tsx` | TEMPLATE-DERIVED | Ninguna | — | Título como encabezado | — | 5.1, 9.1 |
 | use-mobile | `hooks/use-mobile.ts` | `hooks/use-mobile.ts` | TEMPLATE-DERIVED | Corte de 768 px; `useSyncExternalStore` en lugar de copiar el estado en un efecto; expone `useMediaQuery` | — | — | Decide `Sheet` y el tema por anchura | 5.1 |
 | dialog | — | `components/ui/dialog.tsx` | EMITEYA-EXISTING | Base de `CommandDialog`; la devolución del foco pasa a `use-return-focus.ts`, compartida con `sheet` | — | Devolución del foco | — | 5.1, 8.2 |
