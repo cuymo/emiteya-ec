@@ -1,8 +1,9 @@
 // Diálogo base (Radix Dialog): foco atrapado y restaurado, Escape y clic fuera para cerrar.
 import { X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { useRef, type ComponentProps, type ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "./use-return-focus";
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -31,7 +32,7 @@ export function DialogContent({
   ...props
 }: ComponentProps<typeof DialogPrimitive.Content> & { closeLabel?: string; children: ReactNode }) {
   // Radix devuelve el foco solo a un DialogTrigger; los diálogos controlados recuerdan quién los abrió.
-  const opener = useRef<HTMLElement | null>(null);
+  const focus = useReturnFocus({ onOpenAutoFocus, onCloseAutoFocus });
   return (
     <DialogPrimitive.Portal>
       <DialogOverlay />
@@ -42,18 +43,8 @@ export function DialogContent({
           className,
         )}
         {...props}
-        onOpenAutoFocus={(event) => {
-          opener.current =
-            document.activeElement instanceof HTMLElement ? document.activeElement : null;
-          onOpenAutoFocus?.(event);
-        }}
-        onCloseAutoFocus={(event) => {
-          onCloseAutoFocus?.(event);
-          if (!event.defaultPrevented && opener.current?.isConnected) {
-            event.preventDefault();
-            opener.current.focus();
-          }
-        }}
+        onOpenAutoFocus={focus.onOpenAutoFocus}
+        onCloseAutoFocus={focus.onCloseAutoFocus}
       >
         {children}
         <DialogPrimitive.Close

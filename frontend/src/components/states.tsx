@@ -77,11 +77,6 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
   );
 }
 
-export function Skeleton({ className }: { className?: string }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={cn("rounded-md bg-surface-subtle motion-safe:animate-pulse", className)}
-    />
-  );
-}
+// El esqueleto es el primitivo derivado de la plantilla (adopt-premium-design-foundation-and-shell,
+// design D6); se reexporta aquí para sus usos existentes.
+export { Skeleton } from "@/components/ui/skeleton";

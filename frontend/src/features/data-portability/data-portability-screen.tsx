@@ -154,7 +154,7 @@ function Sha256({ value }: { value: string }) {
       </code>
       <Button
         variant="ghost"
-        size="icon"
+        size="legacy-icon"
         aria-label="Copiar SHA-256"
         onClick={() => void copy()}
         className="shrink-0"

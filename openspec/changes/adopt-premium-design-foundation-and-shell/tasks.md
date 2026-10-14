@@ -182,7 +182,7 @@
 
 ## 5. Etapa C: primitivos derivados de la plantilla
 
-- [ ] 5.1 Copiar y adaptar desde `../template-shadcn-premium/src/` los primitivos de la tabla de
+- [x] 5.1 Copiar y adaptar desde `../template-shadcn-premium/src/` los primitivos de la tabla de
   trazabilidad (al final de este archivo) a `frontend/src/components/ui/`, y el hook a
   `frontend/src/hooks/use-mobile.ts`, con un comentario de procedencia por archivo (D6, D7).
 
@@ -205,7 +205,7 @@
     `sheet` controlado;
   - las columnas de la tabla completas;
   - `THIRD_PARTY_NOTICES.md` lista cada archivo derivado.
-- [ ] 5.2 Convertir `components/ui/button.tsx` en el botón derivado (D5, D6):
+- [x] 5.2 Convertir `components/ui/button.tsx` en el botón derivado (D5, D6):
   - variantes `primary`, `secondary`, `outline`, `ghost`, `destructive` y `link`;
   - tamaños `default` (36), `sm` (32), `xs` (24), `icon`, `icon-sm` e `icon-xs`, con 44 px en móvil;
   - tamaños transitorios `legacy-md` (por defecto), `legacy-sm`, `legacy-icon` y `legacy-icon-sm`.
@@ -213,18 +213,19 @@
   Reescribir las 14 llamadas explícitas a su par `legacy-*`.
 
   Verificar:
-  - una prueba de geometría por tamaño;
-  - el volcado geométrico de las pantallas heredadas sin cambios de caja frente al estado posterior
-    al grupo 3;
+  - una prueba por tamaño: la escala aprobada, y que cada `legacy-*` conserva las mismas clases de
+    alto, relleno, separación, objetivo táctil e icono que el botón anterior. Es una comprobación de
+    clases, no un volcado geométrico, porque Geist (grupo 4) ya cambió las métricas del texto;
+  - revisión visual de las pantallas heredadas con el botón nuevo;
   - ningún archivo nuevo usa `legacy-*`.
-- [ ] 5.3 Convertir `components/ui/menu-and-tooltip.tsx` en fachada sobre `dropdown-menu` y
+- [x] 5.3 Convertir `components/ui/menu-and-tooltip.tsx` en fachada sobre `dropdown-menu` y
   `tooltip`, con la misma API y alto. Hacer que el `Skeleton` de `states.tsx` reexporte
   `ui/skeleton` con `motion-safe`.
 
   Verificar:
   - las pruebas existentes de menús, tooltips y esqueletos pasan sin cambios;
   - no queda otra implementación.
-- [ ] 5.4 Documentar:
+- [x] 5.4 Documentar:
   - `component-system.md`: capas, propiedad, regla de extensión, fachadas y variantes `legacy-*`
     como compatibilidad transitoria;
   - `frontend.md`: la tabla de contratos;
@@ -454,7 +455,7 @@ shadcn/ui. Los avisos están en `frontend/THIRD_PARTY_NOTICES.md`.
 
 | Componente | Origen | Destino | Clase | Adaptaciones | CSP | Accesibilidad | Responsive | Pruebas |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| sidebar | `components/ui/sidebar.tsx` | `components/ui/sidebar.tsx` | TEMPLATE-DERIVED | Sin `SidebarInput` ni variantes sin uso; anchos en CSS; tamaños D5; cookie `sidebar_state`; Ctrl/⌘ + B | Sin `style` en servidor | Botón de cerrar visible en móvil; español; tooltips en colapsado | Escritorio y tableta colapsables; `Sheet` en móvil | 5.1, 7.1 |
+| sidebar | `components/ui/sidebar.tsx` | `components/ui/sidebar.tsx` | TEMPLATE-DERIVED | Solo variante `sidebar` con colapso a iconos; sin `SidebarInput`, `SidebarRail`, acciones, insignias, submenús ni esqueleto; `SidebarInset` es un `div`; cookie `sidebar_state` con `SameSite=Lax`; Ctrl/⌘ + B; capa `--z-sticky` | Sin `style` (anchos en `globals.css`; el esqueleto, que escribía `style`, no se copia) | Botón «Cerrar menú» visible en móvil; título y descripción del panel en español; tooltips en colapsado | Escritorio y tableta colapsables; `Sheet` en móvil con ítems de 44 px | 5.1, 7.1 |
 | sheet | `components/ui/sheet.tsx` | `components/ui/sheet.tsx` | TEMPLATE-DERIVED | `bg-overlay`; capas | — | «Cerrar»; foco devuelto en modo controlado | Lateral en móvil | 5.1 |
 | tooltip | `components/ui/tooltip.tsx` | `components/ui/tooltip.tsx` | TEMPLATE-DERIVED | Capa; base de la fachada | — | Opaco; se muestra con foco | — | 5.1, 5.3 |
 | dropdown-menu | `components/ui/dropdown-menu.tsx` | `components/ui/dropdown-menu.tsx` | TEMPLATE-DERIVED | Capa; base de la fachada | — | Teclado Radix | Ítems de 44 px en móvil | 5.1, 5.3 |
@@ -466,10 +467,11 @@ shadcn/ui. Los avisos están en `frontend/THIRD_PARTY_NOTICES.md`.
 | button | `components/ui/button.tsx` | `components/ui/button.tsx` | TEMPLATE-DERIVED (reemplaza al EMITEYA-EXISTING) | Nombres de EmiteYa; D5 y `legacy-*` | — | Anillo sólido; `aria-label` en solo icono | 44 px en móvil | 5.2 |
 | breadcrumb | `components/ui/breadcrumb.tsx` | `components/ui/breadcrumb.tsx` | TEMPLATE-DERIVED | «Más» en español | — | `aria-current="page"` | Fila compacta en móvil | 5.1, 7.1 |
 | kbd | `components/ui/kbd.tsx` | `components/ui/kbd.tsx` | TEMPLATE-DERIVED | Ninguna | — | Decorativo | Oculto en móvil | 5.1 |
-| command | `components/ui/command.tsx` | `components/ui/command.tsx` | TEMPLATE-DERIVED | `CommandDialog` sobre `ui/dialog`; español | — | Combobox de cmdk; foco devuelto | — | 5.1, 8.2 |
+| command | `components/ui/command.tsx` | `components/ui/command.tsx` | TEMPLATE-DERIVED | `CommandDialog` sobre `ui/dialog`, con título y descripción en español dentro del contenido; `CommandInput` con envoltorio propio en lugar de `InputGroup` (evita importar `input-group`, `input` y `textarea`); sin `CommandShortcut` | — | Combobox de cmdk; foco devuelto; ítems de 44 px en móvil | Diálogo arriba en móvil | 5.1, 8.2 |
 | empty | `components/ui/empty.tsx` | `components/ui/empty.tsx` | TEMPLATE-DERIVED | Ninguna | — | Título como encabezado | — | 5.1, 9.1 |
-| use-mobile | `hooks/use-mobile.ts` | `hooks/use-mobile.ts` | TEMPLATE-DERIVED | Corte de 768 px | — | — | Decide `Sheet` | 5.1 |
-| dialog | — | `components/ui/dialog.tsx` | EMITEYA-EXISTING | Base de `CommandDialog` | — | Devolución del foco | — | 8.2 |
+| use-mobile | `hooks/use-mobile.ts` | `hooks/use-mobile.ts` | TEMPLATE-DERIVED | Corte de 768 px; `useSyncExternalStore` en lugar de copiar el estado en un efecto; expone `useMediaQuery` | — | — | Decide `Sheet` y el tema por anchura | 5.1 |
+| dialog | — | `components/ui/dialog.tsx` | EMITEYA-EXISTING | Base de `CommandDialog`; la devolución del foco pasa a `use-return-focus.ts`, compartida con `sheet` | — | Devolución del foco | — | 5.1, 8.2 |
+| use-return-focus | — | `components/ui/use-return-focus.ts` | EMITEYA-EXISTING (extraído de `dialog.tsx`) | Recuerda quién abrió la capa y le devuelve el foco | — | Foco devuelto en capas controladas | — | 5.1 |
 
 **Componentes del shell** (rutas de la plantilla relativas a `src/app/(main)/dashboard/`):
 

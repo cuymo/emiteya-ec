@@ -1,81 +1,59 @@
-// Menú desplegable y tooltip base (Radix), opacos y sobre el contenido en ambos temas.
-import { DropdownMenu, Tooltip as TooltipPrimitive } from "radix-ui";
+// Fachada de compatibilidad (adopt-premium-design-foundation-and-shell, design D6): conserva la API
+// anterior del menú desplegable y del tooltip, con el alto de ítem de las pantallas aún no migradas,
+// sobre los primitivos derivados de la plantilla (`dropdown-menu.tsx` y `tooltip.tsx`). No hay otra
+// implementación por debajo. El código nuevo usa los primitivos directamente; esta fachada se retira
+// al migrar sus usos (technical-debt.md).
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
+import { Tooltip as TooltipRoot, TooltipContent, TooltipTrigger } from "./tooltip";
 
-export const Menu = DropdownMenu.Root;
-export const MenuTrigger = DropdownMenu.Trigger;
-export const MenuLabel = DropdownMenu.Label;
+export { TooltipProvider } from "./tooltip";
 
-export function MenuContent({ className, ...props }: ComponentProps<typeof DropdownMenu.Content>) {
-  return (
-    <DropdownMenu.Portal>
-      <DropdownMenu.Content
-        sideOffset={4}
-        className={cn(
-          "z-(--z-popover) min-w-48 rounded-md border border-border bg-surface p-1 text-sm text-foreground shadow-md",
-          className,
-        )}
-        {...props}
-      />
-    </DropdownMenu.Portal>
-  );
+export const Menu = DropdownMenu;
+export const MenuTrigger = DropdownMenuTrigger;
+export const MenuLabel = DropdownMenuLabel;
+
+export function MenuContent({
+  className,
+  align = "center",
+  ...props
+}: ComponentProps<typeof DropdownMenuContent>) {
+  return <DropdownMenuContent align={align} className={cn("min-w-48", className)} {...props} />;
 }
 
-export function MenuItem({ className, ...props }: ComponentProps<typeof DropdownMenu.Item>) {
+/** Ítem con el alto anterior (40 px, 44 px en móvil) mientras su pantalla no migre. */
+export function MenuItem({ className, ...props }: ComponentProps<typeof DropdownMenuItem>) {
   return (
-    <DropdownMenu.Item
-      className={cn(
-        "flex h-10 cursor-default items-center gap-2 rounded-sm px-2 outline-none select-none",
-        "data-highlighted:bg-surface-subtle data-disabled:opacity-50 [&_svg]:size-5",
-        className,
-      )}
-      {...props}
-    />
+    <DropdownMenuItem className={cn("h-10 gap-2 px-2 [&_svg]:size-5", className)} {...props} />
   );
 }
 
 export function MenuCheckboxItem({
   className,
-  children,
   ...props
-}: ComponentProps<typeof DropdownMenu.CheckboxItem>) {
-  return (
-    <DropdownMenu.CheckboxItem
-      className={cn(
-        "flex h-10 cursor-default items-center gap-2 rounded-sm px-2 outline-none select-none",
-        "data-highlighted:bg-surface-subtle",
-        className,
-      )}
-      {...props}
-    >
-      <span className="inline-flex size-4 items-center justify-center rounded-sm border border-border">
-        <DropdownMenu.ItemIndicator className="size-2 rounded-sm bg-primary" />
-      </span>
-      {children}
-    </DropdownMenu.CheckboxItem>
-  );
+}: ComponentProps<typeof DropdownMenuCheckboxItem>) {
+  return <DropdownMenuCheckboxItem className={cn("h-10 gap-2 pl-2", className)} {...props} />;
 }
 
 export function MenuSeparator() {
-  return <DropdownMenu.Separator className="my-1 h-px bg-border" />;
+  return <DropdownMenuSeparator />;
 }
-
-export const TooltipProvider = TooltipPrimitive.Provider;
 
 /** Tooltip opaco que nombra una acción; no sustituye etiquetas de campos ni de navegación. */
 export function Tooltip({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <TooltipPrimitive.Root>
-      <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
-      <TooltipPrimitive.Portal>
-        <TooltipPrimitive.Content
-          sideOffset={4}
-          className="z-(--z-popover) max-w-64 rounded-md border border-border bg-foreground px-2 py-1 text-xs text-background shadow-md"
-        >
-          {label}
-        </TooltipPrimitive.Content>
-      </TooltipPrimitive.Portal>
-    </TooltipPrimitive.Root>
+    <TooltipRoot>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent sideOffset={4}>{label}</TooltipContent>
+    </TooltipRoot>
   );
 }

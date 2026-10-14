@@ -56,7 +56,7 @@ function AccountMenu() {
       <MenuTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
+          size="legacy-icon"
           aria-label={`Cuenta de ${me.name}`}
           className="rounded-full"
         >
@@ -120,7 +120,7 @@ export function AppShell({
           {hasNavigation && (
             <Button
               variant="ghost"
-              size="icon"
+              size="legacy-icon"
               className="md:hidden"
               aria-label="Abrir menú"
               onClick={() => setDrawerOpen(true)}

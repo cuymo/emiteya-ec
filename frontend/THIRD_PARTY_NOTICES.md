@@ -177,3 +177,18 @@ destino relativo a `frontend/src/`.
 | --- | --- | --- |
 | `app/globals.css`, variantes `data-open`, `data-closed`, `data-selected`, `data-disabled`, `data-active`, `data-horizontal`, `data-vertical` y la utilidad `no-scrollbar` | `dist/tailwind.css` del paquete `shadcn` 4.21.5 (no instalado: copiado de su fuente publicada) | MIT de shadcn/ui |
 | `app/globals.css`, nombres de los tokens canónicos, neutros y escala de radios | `app/globals.css` de la plantilla | MIT de «Studio Admin» |
+| `components/ui/button.tsx` | `components/ui/button.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/badge.tsx` | `components/ui/badge.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/sidebar.tsx` | `components/ui/sidebar.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/sheet.tsx` | `components/ui/sheet.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/dropdown-menu.tsx` | `components/ui/dropdown-menu.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/tooltip.tsx` | `components/ui/tooltip.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/command.tsx` | `components/ui/command.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/breadcrumb.tsx` | `components/ui/breadcrumb.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/empty.tsx` | `components/ui/empty.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/avatar.tsx` | `components/ui/avatar.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/kbd.tsx` | `components/ui/kbd.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/separator.tsx` | `components/ui/separator.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/collapsible.tsx` | `components/ui/collapsible.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/skeleton.tsx` | `components/ui/skeleton.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `hooks/use-mobile.ts` | `hooks/use-mobile.ts` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |

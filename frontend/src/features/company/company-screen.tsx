@@ -428,7 +428,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
             className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
           >
             <span>Otro administrador cambió los datos. Recarga para ver la versión vigente.</span>
-            <Button variant="outline" size="sm" onClick={() => void reload()}>
+            <Button variant="outline" size="legacy-sm" onClick={() => void reload()}>
               Recargar
             </Button>
           </div>

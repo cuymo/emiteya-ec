@@ -12,6 +12,52 @@ Prefer shadcn/ui primitives styled through semantic Tailwind tokens. Use Lucide 
 instead of hand-drawn SVGs when a suitable icon exists. Treat third-party component
 registries as source code to review and adapt, not as an independent design system.
 
+## Derived Design System (ADR 0028)
+
+The primitives come from the source code of the reference template «Studio Admin», kept outside the
+repository and never versioned. A primitive is copied only when a change needs it, adapted to the
+tokens, the CSP and the accessibility rules, and recorded in the change's traceability table and in
+`frontend/THIRD_PARTY_NOTICES.md`.
+
+- **Source ownership.** Each shared component belongs to one of four classes:
+  - **TEMPLATE-DERIVED:** copied and adapted from the template, with a provenance comment. Examples
+    are `components/ui/button.tsx`, `sidebar.tsx`, `sheet.tsx`, `dropdown-menu.tsx`,
+    `tooltip.tsx`, `command.tsx`, `badge.tsx`, `breadcrumb.tsx`, `empty.tsx`, `avatar.tsx`,
+    `kbd.tsx`, `separator.tsx`, `collapsible.tsx`, `skeleton.tsx` and `hooks/use-mobile.ts`.
+  - **EMITEYA-EXISTING:** an earlier EmiteYa component that stays, such as `ui/dialog.tsx`,
+    `EntityPickerDialog`, `ConfirmDialog`, `AppDataTable` and `FileField`.
+  - **NEW SHARED:** a new application component composed from primitives, such as the
+    breadcrumbs and the route states.
+  - **NEW DOMAIN:** a component of a business concept.
+- **Extension rule.** When the template lacks a component EmiteYa needs:
+  1. compose it from the existing primitives;
+  2. use the same tokens, sizes, radii, focus ring, motion, responsive behavior and accessibility
+     conventions;
+  3. give it component-level tests;
+  4. reuse it wherever the same need appears.
+
+  Never solve the need separately in each page.
+- **One implementation per pattern.** There is one `Button`, one menu and tooltip system, and one
+  skeleton. Earlier components that are still in use become compatibility facades over the derived
+  primitive:
+  - `components/ui/menu-and-tooltip.tsx` keeps the old `Menu`/`Tooltip` API and item height over
+    `dropdown-menu` and `tooltip`;
+  - `components/states.tsx` re-exports `Skeleton`.
+
+  Facades are transitional and leave as screens migrate.
+- **Control sizes are variants.**
+  - `Button` sizes: `default` (36px), `sm` (32px), `xs` (24px, only inside chips), `icon`,
+    `icon-sm` and `icon-xs`, all at least 44px of touch target below 768px.
+  - The `legacy-*` sizes (`legacy-md`, the default while unmigrated screens exist, plus
+    `legacy-sm`, `legacy-icon` and `legacy-icon-sm`) are migration compatibility variants. They
+    keep the height, padding, gap, touch target and icon size of the earlier button. New code must
+    not use them, a migrated screen must not keep them, and they are removed when migration reaches
+    100%.
+  - An icon-only button is a size, not a color. It always has an `aria-label`, plus a tooltip when
+    the context asks for one.
+- **Focus.** Modal layers return focus to whoever opened them, also when controlled, through
+  `components/ui/use-return-focus.ts` (dialog and sheet).
+
 ## System Layers
 
 Keep one direction of dependency, from generic to specific:

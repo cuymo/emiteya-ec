@@ -142,7 +142,7 @@ export function RowActionButton({
     <Tooltip label={label}>
       <Button
         variant="ghost"
-        size="icon-sm"
+        size="legacy-icon-sm"
         aria-label={label}
         onClick={onClick}
         disabled={disabled}

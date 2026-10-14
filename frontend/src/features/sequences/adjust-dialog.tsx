@@ -182,7 +182,7 @@ export function AdjustSequenceDialog({
           <p>{error}</p>
           <Button
             variant="outline"
-            size="sm"
+            size="legacy-sm"
             onClick={() =>
               void onReload().then(() => {
                 setError(undefined);

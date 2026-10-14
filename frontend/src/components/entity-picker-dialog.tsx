@@ -295,7 +295,7 @@ export function EntityPickerDialog<T>({
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="legacy-icon-sm"
               className="max-md:size-11"
               aria-label="Página anterior"
               disabled={page <= 1}
@@ -305,7 +305,7 @@ export function EntityPickerDialog<T>({
             </Button>
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="legacy-icon-sm"
               className="max-md:size-11"
               aria-label="Página siguiente"
               disabled={page >= pages}

@@ -428,7 +428,7 @@ export function ReportsScreen() {
             <span className="break-words">{productName}</span>
             <Button
               variant="ghost"
-              size="sm"
+              size="legacy-sm"
               onClick={() => url.update({ producto: null })}
               aria-label="Quitar el filtro de producto"
             >

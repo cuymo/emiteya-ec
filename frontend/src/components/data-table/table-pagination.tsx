@@ -53,7 +53,7 @@ export function TablePagination({
         <nav aria-label="Paginación" className="flex items-center gap-1">
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="legacy-icon-sm"
             className="max-md:size-11"
             aria-label="Primera página"
             disabled={page <= 1}
@@ -63,7 +63,7 @@ export function TablePagination({
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="legacy-icon-sm"
             className="max-md:size-11"
             aria-label="Página anterior"
             disabled={page <= 1}
@@ -76,7 +76,7 @@ export function TablePagination({
           </span>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="legacy-icon-sm"
             className="max-md:size-11"
             aria-label="Página siguiente"
             disabled={page >= pages}
@@ -86,7 +86,7 @@ export function TablePagination({
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="legacy-icon-sm"
             className="max-md:size-11"
             aria-label="Última página"
             disabled={page >= pages}
