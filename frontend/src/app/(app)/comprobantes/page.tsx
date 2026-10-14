@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DocumentsScreen, DocumentsSkeleton } from "@/features/archive/documents-screen";
 
-export const metadata: Metadata = { title: "Comprobantes · Facturador SRI" };
+export const metadata: Metadata = { title: "Comprobantes · EmiteYa" };
 
 export default function DocumentsPage() {
   return (

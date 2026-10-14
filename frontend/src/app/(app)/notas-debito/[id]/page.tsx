@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DebitNoteDetailScreen } from "@/features/debit-notes/debit-note-detail";
 
-export const metadata: Metadata = { title: "Nota de débito · Facturador SRI" };
+export const metadata: Metadata = { title: "Nota de débito · EmiteYa" };
 
 export default async function DebitNotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

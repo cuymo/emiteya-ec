@@ -5,7 +5,7 @@ import {
   WithholdingReceiptsSkeleton,
 } from "@/features/withholding-receipts/withholding-receipts-screen";
 
-export const metadata: Metadata = { title: "Retenciones · Facturador SRI" };
+export const metadata: Metadata = { title: "Retenciones · EmiteYa" };
 
 export default function WithholdingReceiptsPage() {
   return (

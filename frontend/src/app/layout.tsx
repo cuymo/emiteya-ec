@@ -9,7 +9,7 @@ import { TooltipProvider } from "@/components/ui/menu-and-tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Facturador SRI",
+  title: "EmiteYa",
   description: "Facturador electrónico open source para los comprobantes del SRI.",
 };
 

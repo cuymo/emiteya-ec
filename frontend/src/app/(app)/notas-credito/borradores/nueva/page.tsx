@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CreditNoteDraftScreen } from "@/features/credit-notes/credit-note-draft-editor";
 
-export const metadata: Metadata = { title: "Nueva nota de crédito · Facturador SRI" };
+export const metadata: Metadata = { title: "Nueva nota de crédito · EmiteYa" };
 
 /** `?factura={id}` llega desde el detalle de la factura con la factura ya elegida. */
 export default async function NewCreditNoteDraftPage({

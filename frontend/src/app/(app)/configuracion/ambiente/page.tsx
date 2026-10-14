@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { EnvironmentScreen } from "@/features/company/environment-screen";
 
-export const metadata: Metadata = { title: "Ambiente · Facturador SRI" };
+export const metadata: Metadata = { title: "Ambiente · EmiteYa" };
 
 export default function EnvironmentPage() {
   return <EnvironmentScreen />;

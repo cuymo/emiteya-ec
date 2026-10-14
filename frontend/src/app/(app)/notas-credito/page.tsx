@@ -5,7 +5,7 @@ import {
   CreditNotesSkeleton,
 } from "@/features/credit-notes/credit-notes-screen";
 
-export const metadata: Metadata = { title: "Notas de crédito · Facturador SRI" };
+export const metadata: Metadata = { title: "Notas de crédito · EmiteYa" };
 
 export default function CreditNotesPage() {
   return (

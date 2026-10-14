@@ -64,7 +64,7 @@ export function LoginScreen() {
     >
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-foreground-muted">Facturador SRI</p>
+          <p className="text-sm font-semibold text-foreground-muted">EmiteYa</p>
           <h1 className="text-3xl font-bold">Iniciar sesión</h1>
         </div>
         {expired && !error && (
@@ -128,7 +128,7 @@ export function LoginSkeleton() {
     >
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-foreground-muted">Facturador SRI</p>
+          <p className="text-sm font-semibold text-foreground-muted">EmiteYa</p>
           <h1 className="text-3xl font-bold">Iniciar sesión</h1>
         </div>
         <Skeleton className="h-16 w-full" />

@@ -365,7 +365,7 @@
 
 ## 10. Etapa D: nombre visible del producto
 
-- [ ] 10.1 Cambiar «Facturador SRI» por «EmiteYa» en:
+- [x] 10.1 Cambiar «Facturador SRI» por «EmiteYa» en:
   - el `metadata` raíz;
   - el `metadata.title` de las 42 páginas;
   - el inicio de sesión;

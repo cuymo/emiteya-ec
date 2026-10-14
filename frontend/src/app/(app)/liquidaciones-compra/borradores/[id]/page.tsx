@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PurchaseSettlementDraftScreen } from "@/features/purchase-settlements/purchase-settlement-draft-editor";
 
-export const metadata: Metadata = { title: "Borrador de liquidación de compra · Facturador SRI" };
+export const metadata: Metadata = { title: "Borrador de liquidación de compra · EmiteYa" };
 
 export default async function PurchaseSettlementDraftPage({
   params,

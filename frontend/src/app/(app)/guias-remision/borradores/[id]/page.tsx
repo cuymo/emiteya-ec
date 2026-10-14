@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ShippingGuideDraftScreen } from "@/features/shipping-guides/shipping-guide-draft-editor";
 
-export const metadata: Metadata = { title: "Borrador de guía de remisión · Facturador SRI" };
+export const metadata: Metadata = { title: "Borrador de guía de remisión · EmiteYa" };
 
 export default async function ShippingGuideDraftPage({
   params,

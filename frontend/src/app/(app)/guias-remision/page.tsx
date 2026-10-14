@@ -5,7 +5,7 @@ import {
   ShippingGuidesSkeleton,
 } from "@/features/shipping-guides/shipping-guides-screen";
 
-export const metadata: Metadata = { title: "Guías de remisión · Facturador SRI" };
+export const metadata: Metadata = { title: "Guías de remisión · EmiteYa" };
 
 export default function ShippingGuidesPage() {
   return (

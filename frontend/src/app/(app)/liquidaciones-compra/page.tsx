@@ -5,7 +5,7 @@ import {
   PurchaseSettlementsSkeleton,
 } from "@/features/purchase-settlements/purchase-settlements-screen";
 
-export const metadata: Metadata = { title: "Liquidaciones de compra · Facturador SRI" };
+export const metadata: Metadata = { title: "Liquidaciones de compra · EmiteYa" };
 
 export default function PurchaseSettlementsPage() {
   return (

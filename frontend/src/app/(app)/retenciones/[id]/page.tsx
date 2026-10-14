@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { WithholdingReceiptDetailScreen } from "@/features/withholding-receipts/withholding-receipt-detail";
 
-export const metadata: Metadata = { title: "Comprobante de retención · Facturador SRI" };
+export const metadata: Metadata = { title: "Comprobante de retención · EmiteYa" };
 
 export default async function WithholdingReceiptPage({
   params,

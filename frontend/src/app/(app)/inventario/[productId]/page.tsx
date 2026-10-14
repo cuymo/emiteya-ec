@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { StockItemDetailScreen } from "@/features/inventory/stock-item-detail";
 
-export const metadata: Metadata = { title: "Inventario · Facturador SRI" };
+export const metadata: Metadata = { title: "Inventario · EmiteYa" };
 
 export default async function StockItemPage({
   params,
