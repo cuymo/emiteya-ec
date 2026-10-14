@@ -81,7 +81,7 @@
 
 ## 4. Documentación
 
-- [ ] 4.1 Actualizar:
+- [x] 4.1 Actualizar:
   - el ADR 0014: enmienda con el 24 en `OUT_OF_MVP`, bloqueado antes de reservar, y lo que exigirá
     soportarlo (design D6); y el 26 bloqueado en los seis tipos;
   - `docs/architecture/fiscal-emission.md`: la fila de casos especiales, con los dos anexos y los

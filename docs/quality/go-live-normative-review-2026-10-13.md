@@ -9,6 +9,11 @@ ni Producción ni Pruebas.
 coinciden con la ficha. La matriz normativa queda **revisada con hallazgos abiertos**: H-01 es un
 caso obligatorio del alcance declarado que el producto no cumple; H-02 y H-03 quedan para decisión.
 
+**Actualización del 2026-10-13 (`block-unsupported-special-cases-before-emission`):** H-01 y H-02 quedan cerrados. El producto bloquea antes
+de reservar los dos anexos que conoce y no soporta, y ningún caso obligatorio del alcance declarado
+se omite en silencio. H-03 sigue como observación no bloqueante. La matriz normativa queda
+**revisada**.
+
 ## Fuentes fijadas
 
 | Fuente | Identificación | SHA-256 del PDF | Extracto |
@@ -90,12 +95,22 @@ PDF). Estado en el alcance declarado de v1:
 | 2 (RIDE) | `CORE` | Soportado | Archivo documental de los seis tipos |
 | 21 (agente de retención) | `CONDITIONAL_ISSUER_RULE` | Soportado | `agenteRetencion` en el `infoTributaria` común de los seis tipos |
 | 22 (RIMPE) | `CONDITIONAL_ISSUER_RULE` | Soportado, con la observación H-03 | `contribuyenteRimpe` en el `infoTributaria` común |
-| 24 (grandes contribuyentes) | `CONDITIONAL_ISSUER_RULE` | **No cumplido: hallazgo H-01** | La evaluación de la factura lo da por soportado y ningún builder escribe la leyenda |
-| 26 (RUC del proveedor) | `CONDITIONAL_GO_LIVE` | Uso propio o no comercial: soportado (no aplica, Q-37). Suministro comercial: no soportado, con el bloqueo incompleto de H-02 | Q-37 |
+| 24 (grandes contribuyentes) | `OUT_OF_MVP` (matriz versión 2) | Conocido, no soportado y bloqueado antes de reservar en `01`, `03`, `04` y `05` (H-01 cerrado) | Regla compartida de casos especiales y pruebas de emisión de los cuatro tipos |
+| 26 (RUC del proveedor) | `CONDITIONAL_GO_LIVE` | Uso propio o no comercial: soportado (no aplica, Q-37). Suministro comercial: conocido, no soportado y bloqueado antes de reservar en los seis tipos (H-02 cerrado) | Q-37; pruebas de emisión de los seis tipos |
 | 15 (compatibilidad de dispositivos) | `NOT_APPLICABLE` | No aplica | ADR 0014 |
 | 4 a 9, 11 a 13, 16, 18 a 20, 23 y 25 | `OUT_OF_MVP` | Fuera del alcance declarado | La API no ofrece sus atributos. Un contribuyente obligado por su actividad (por ejemplo, combustibles o materiales de construcción) no usa el MVP para esas operaciones: el producto no infiere obligaciones (ADR 0014; `overview.md`) |
 
-### H-01: el Anexo 24 se da por soportado y no se escribe (abierto, bloquea)
+### H-01: el Anexo 24 se da por soportado y no se escribe (cerrado el 2026-10-13)
+
+**Cierre (`block-unsupported-special-cases-before-emission`, decisión del propietario: fallar de forma cerrada en v1):** el 24 sale del conjunto
+soportado del motor y la matriz versión 2 lo publica fuera del MVP. Con la empresa declarada gran
+contribuyente, la factura, la liquidación de compra (comprobante de venta por el art. 1 del
+Reglamento), la nota de crédito y la nota de débito se rechazan antes de reservar con
+`SPECIAL_CASE_UNSUPPORTED`, sin consumir secuencial ni producir efecto fiscal. La guía de remisión
+y el comprobante de retención no están en el anexo y se emiten. El anexo no se implementa: queda
+como deuda.
+
+Hallazgo original:
 
 - **Fuente:** ficha v2.34, Anexo 24 (página 132): «Los comprobantes de venta, notas de crédito y
   notas de débito electrónicos deberán contener la leyenda "Gran Contribuyente" y el número de la
@@ -117,7 +132,13 @@ PDF). Estado en el alcance declarado de v1:
   soportados. La alternativa es implementarlo: número de resolución en la configuración, campo
   adicional en el XML, RIDE y pruebas de XSD.
 
-### H-02: el bloqueo del Anexo 26 cubre solo la factura (abierto, fuera del alcance de v1)
+### H-02: el bloqueo del Anexo 26 cubre solo la factura (cerrado el 2026-10-13)
+
+**Cierre (`block-unsupported-special-cases-before-emission`):** el mismo rechazo previo a la reserva, con `SPECIAL_CASE_UNSUPPORTED`, cubre
+los seis tipos. El Anexo 26 sigue sin implementarse y el suministro comercial sigue sin soporte
+(Q-37).
+
+Hallazgo original:
 
 - **Spec:** `document-emission`, «Casos especiales no soportados», escenario «Anexo 26 aplicable y
   no soportado»: con un RUC proveedor distinto del propio, la emisión de un comprobante se rechaza
@@ -130,7 +151,7 @@ PDF). Estado en el alcance declarado de v1:
 - **Acción mínima:** extender el mismo rechazo previo a la reserva a los otros cinco tipos, con sus
   pruebas.
 
-### H-03: leyenda del negocio popular RIMPE (observación)
+### H-03: leyenda del negocio popular RIMPE (observación abierta, no bloqueante)
 
 La ficha (Anexo 22, página 130) define «CONTRIBUYENTE NEGOCIO POPULAR - RÉGIMEN RIMPE», pero el tipo
 `contribuyenteRimpe` de los XSD oficiales registrados solo admite «CONTRIBUYENTE RÉGIMEN RIMPE». El

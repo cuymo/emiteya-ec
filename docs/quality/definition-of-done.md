@@ -121,10 +121,11 @@ de integración SRI de CTX §59:
   - **Revisados** (2026-10-13, `go-live-normative-review-2026-10-13.md`): las reglas de consumidor
     final coinciden con la ficha v2.34, y Q-37 queda resuelta para el alcance de v1 (uso propio o
     suministro no comercial).
-  - **Pendiente:** el bloqueo de los casos especiales no soportados está incompleto (H-01 y H-02).
+  - **Casos especiales no soportados bloqueados** (2026-10-13, `block-unsupported-special-cases-before-emission`): el Anexo 24 en la factura,
+    la liquidación de compra y las notas, y el Anexo 26 en los seis tipos, antes de reservar.
 - La matriz normativa está revisada contra la ficha vigente.
-  - **Revisada con hallazgos abiertos** (2026-10-13, `go-live-normative-review-2026-10-13.md`):
-    H-01 (el Anexo 24 se da por soportado y no se escribe) bloquea el go-live; H-02 y H-03 esperan
-    una decisión.
+  - **Revisada** (2026-10-13, `go-live-normative-review-2026-10-13.md` y `block-unsupported-special-cases-before-emission`): H-01 y H-02
+    cerrados, sin casos obligatorios omitidos en silencio en el alcance declarado. H-03 queda como
+    observación no bloqueante (la ficha y el XSD oficial se contradicen).
 - El README cubre instalación, configuración, actualización y respaldo.
 - Existen `SECURITY.md` con un canal para reportar vulnerabilidades, la licencia (Q-33), `CONTRIBUTING.md` y un `CHANGELOG` que registra la versión de ficha y XSD compatible.

@@ -308,7 +308,7 @@ la identidad tributaria.
 | Cálculo | `AMOUNT_OUT_OF_RANGE` |
 | Pagos | `PAYMENT_METHOD_NOT_FOUND`, `PAYMENT_METHOD_NOT_USABLE`, `PAYMENTS_DO_NOT_MATCH_TOTAL` |
 | Consumidor final | `CONSUMER_FINAL_POLICY_MISSING`, `CONSUMER_FINAL_LIMIT_EXCEEDED` |
-| Casos especiales | `SPECIAL_CASE_UNSUPPORTED`: hoy, el anexo 26, cuando la configuración declara un RUC proveedor distinto del propio |
+| Casos especiales | `SPECIAL_CASE_UNSUPPORTED`, con la regla compartida de `fiscal/domain/special-cases.ts` (`block-unsupported-special-cases-before-emission`): el anexo 24 con la empresa declarada gran contribuyente (factura, liquidación de compra, nota de crédito y nota de débito) y el anexo 26 con un RUC proveedor distinto del propio (los seis tipos), siempre antes de reservar |
 | Esquema | `SCHEMA_NOT_AVAILABLE` |
 | Reserva | `SEQUENCE_EXHAUSTED`, que además se registra como advertencia en el log |
 
