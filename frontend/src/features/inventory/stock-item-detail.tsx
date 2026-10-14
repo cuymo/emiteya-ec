@@ -39,6 +39,7 @@ import {
   StockEntryDialog,
   type MovementTarget,
 } from "./movement-dialogs";
+import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 
 type OpenDialog =
   | { kind: "initialize" }
@@ -239,6 +240,8 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
   const canInitialize = canSee(me.role, "inventory.initialize");
   const canConfigure = canSee(me.role, "inventory.configure");
   const item = useStockItem(productId, allowed);
+  // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
+  useBreadcrumbLabel(item.data?.name);
   const [dialog, setDialog] = useState<OpenDialog | null>(null);
   const summaryRef = useRef<HTMLHeadingElement>(null);
   const disableNoteId = useId();

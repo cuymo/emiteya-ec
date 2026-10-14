@@ -30,6 +30,7 @@ import {
 import { StateCell } from "@/features/invoices/invoices-screen";
 import { useDebitNote, useRetryDebitNoteSigning } from "./debit-notes-api";
 import { treatmentLabel } from "./debit-note-format";
+import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -48,6 +49,8 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
   const allowed = canSee(me.role, "debitNotes.read");
   const canRetry = canSee(me.role, "debitNotes.retrySigning");
   const note = useDebitNote(debitNoteId, allowed);
+  // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
+  useBreadcrumbLabel(note.data?.documentNumber);
   const retry = useRetryDebitNoteSigning();
 
   const header = (

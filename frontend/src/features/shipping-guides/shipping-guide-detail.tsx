@@ -36,6 +36,7 @@ import {
   recipientCountLabel,
 } from "./shipping-guide-format";
 import { useRetryShippingGuideSigning, useShippingGuide } from "./shipping-guides-api";
+import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 
 type Recipient = ShippingGuideView["recipients"][number];
 
@@ -182,6 +183,8 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
   const allowed = canSee(me.role, "shippingGuides.read");
   const canRetry = canSee(me.role, "shippingGuides.retrySigning");
   const guide = useShippingGuide(shippingGuideId, allowed);
+  // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
+  useBreadcrumbLabel(guide.data?.documentNumber);
   const retry = useRetryShippingGuideSigning();
 
   const header = (

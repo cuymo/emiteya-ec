@@ -1,18 +1,85 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+// Shell autenticado (spec web-application-shell; adopt-premium-design-foundation-and-shell, grupo 7).
+// Conserva cada comportamiento del shell anterior (sesión, destinos por rol, destino actual, tema,
+// errores) con la arquitectura de información nueva, y cubre los escenarios del shell premium:
+// contexto de la empresa, ambiente, navegación adaptable, migas, cuenta y saltar al contenido.
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppShell, ShellSkeleton } from "@/components/app-shell";
+import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
+import { AppShell, ShellSkeleton } from "@/components/shell/app-shell";
 import { SessionGate } from "@/components/session";
+import { EnvironmentBadge, EnvironmentNotice } from "@/features/company/environment-notice";
+import { ShellCompanyContext } from "@/features/company/shell-company-context";
+import { CertificateNotice } from "@/features/signing/certificate-notice";
 import { ADMIN_ME, OPERATOR_ME, errorBody, mockApi, navigation, renderApp } from "./harness";
+import { resetViewport, setViewportWidth } from "./viewport";
 
-function renderShell() {
+const TEST_NOTICE = "Ambiente de Pruebas: los comprobantes no tienen validez tributaria.";
+
+type Options = {
+  me?: typeof ADMIN_ME | typeof OPERATOR_ME;
+  environment?: "TEST" | "PRODUCTION";
+  displayName?: string | null;
+  companyFails?: boolean;
+  validity?: Record<string, unknown>;
+  sidebarDefaultOpen?: boolean;
+  children?: React.ReactNode;
+};
+
+function api({
+  me = ADMIN_ME,
+  environment = "TEST",
+  displayName = "Ferretería Andina",
+  companyFails = false,
+  validity = {
+    state: "VALID",
+    usable: true,
+    notAfter: "2027-06-30T23:59:59.000Z",
+    daysToExpiry: 259,
+  },
+}: Options = {}) {
+  return mockApi({
+    "GET /api/v1/me": () => ({ status: 200, body: { data: me } }),
+    "GET /api/v1/company/status": () =>
+      companyFails
+        ? { status: 503, body: errorBody("UNAVAILABLE", "x") }
+        : {
+            status: 200,
+            body: {
+              data: {
+                environment,
+                displayName,
+                readiness: { ready: false, checks: [{ key: "TAXPAYER_DATA", status: "MET" }] },
+              },
+            },
+          },
+    "GET /api/v1/signing-certificate/validity": () => ({ status: 200, body: { data: validity } }),
+    "POST /api/auth/sign-out": () => ({ status: 200, body: { success: true } }),
+  });
+}
+
+function renderShell(options: Options = {}) {
   return renderApp(
     <SessionGate fallback={<ShellSkeleton />}>
-      <AppShell>
-        <p>contenido</p>
+      <AppShell
+        sidebarDefaultOpen={options.sidebarDefaultOpen ?? true}
+        company={<ShellCompanyContext />}
+        environment={<EnvironmentBadge />}
+        notices={
+          <>
+            <EnvironmentNotice />
+            <CertificateNotice />
+          </>
+        }
+      >
+        {options.children ?? <p>contenido</p>}
       </AppShell>
     </SessionGate>,
   );
 }
+
+const sidebar = () => screen.getByRole("complementary", { name: "Barra lateral" });
+const mainNav = () => screen.getByRole("navigation", { name: "Navegación principal" });
 
 beforeEach(() => {
   navigation.pathname = "/configuracion/usuarios";
@@ -22,11 +89,13 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  resetViewport();
+  document.cookie = "sidebar_state=; max-age=0; path=/";
 });
 
-describe("shell autenticado", () => {
+describe("shell autenticado: comportamiento conservado", () => {
   it("verifica la sesión sin pantalla en blanco y luego muestra cabecera, contenido y enlace para saltar", async () => {
-    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
+    api();
     renderShell();
     expect(screen.getByRole("status").textContent).toContain("Verificando la sesión");
     await screen.findByText("contenido");
@@ -38,181 +107,102 @@ describe("shell autenticado", () => {
   });
 
   it("el administrador ve el destino Usuarios en Configuración, marcado como actual", async () => {
-    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
+    api();
     renderShell();
     const link = await screen.findByRole("link", { name: "Usuarios" });
     expect(link.getAttribute("href")).toBe("/configuracion/usuarios");
     expect(link.getAttribute("aria-current")).toBe("page");
-    expect(screen.getByText("Configuración")).toBeDefined();
+    expect(within(mainNav()).getByText("Configuración")).toBeDefined();
   });
 
-  it("la navegación de la barra lateral se desplaza dentro de ella con la ventana baja", async () => {
-    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
-    renderShell();
-    await screen.findByRole("link", { name: "Portabilidad de datos" });
-    const sidebar = screen.getByRole("complementary", { name: "Barra lateral" });
-    const sticky = sidebar.firstElementChild as HTMLElement;
-    expect(sticky.className).toContain("sticky");
-    expect(sticky.className).toContain("overflow-y-auto");
-    expect(sticky.contains(screen.getByRole("link", { name: "Portabilidad de datos" }))).toBe(true);
-  });
-
-  it("el administrador ve Empresa, Ambiente, Establecimientos y Secuenciales en Configuración", async () => {
-    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
-    renderShell();
-    expect((await screen.findByRole("link", { name: "Empresa" })).getAttribute("href")).toBe(
-      "/configuracion/empresa",
-    );
-    expect(screen.getByRole("link", { name: "Ambiente" }).getAttribute("href")).toBe(
-      "/configuracion/ambiente",
-    );
-    expect(screen.getByRole("link", { name: "Establecimientos" }).getAttribute("href")).toBe(
-      "/configuracion/establecimientos",
-    );
-    expect(screen.getByRole("link", { name: "Secuenciales" }).getAttribute("href")).toBe(
-      "/configuracion/secuenciales",
-    );
-    expect(screen.getByRole("link", { name: "Firma electrónica" }).getAttribute("href")).toBe(
-      "/configuracion/firma",
-    );
-    expect(screen.getByRole("link", { name: "Catálogos fiscales" }).getAttribute("href")).toBe(
-      "/configuracion/catalogos-fiscales",
-    );
-    // add-data-portability, design D23.
-    expect(screen.getByRole("link", { name: "Portabilidad de datos" }).getAttribute("href")).toBe(
-      "/configuracion/portabilidad",
-    );
-  });
-
-  it("el operador solo ve Catálogos fiscales en Configuración, que consulta (add-fiscal-catalogs)", async () => {
-    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: OPERATOR_ME } }) });
+  it("la navegación vive dentro de la barra lateral, con todos sus destinos alcanzables", async () => {
+    // Antes se comprobaban las clases `sticky` y `overflow-y-auto`; el desplazamiento real de la
+    // barra con la ventana baja lo comprueba el harness visual en un navegador.
+    api();
     renderShell();
     await screen.findByText("contenido");
-    expect(screen.queryByRole("link", { name: "Usuarios" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Empresa" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Ambiente" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Establecimientos" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Secuenciales" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Firma electrónica" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Portabilidad de datos" })).toBeNull();
+    expect(sidebar().contains(mainNav())).toBe(true);
     expect(
-      (await screen.findByRole("link", { name: "Catálogos fiscales" })).getAttribute("href"),
+      within(mainNav()).getByRole("link", { name: "Portabilidad de datos" }).getAttribute("href"),
+    ).toBe("/configuracion/portabilidad");
+  });
+
+  it("el administrador ve los destinos de Configuración con sus direcciones", async () => {
+    api();
+    renderShell();
+    await screen.findByText("contenido");
+    const config: Record<string, string> = {
+      Empresa: "/configuracion/empresa",
+      Ambiente: "/configuracion/ambiente",
+      Establecimientos: "/configuracion/establecimientos",
+      Secuenciales: "/configuracion/secuenciales",
+      "Firma electrónica": "/configuracion/firma",
+      "Catálogos fiscales": "/configuracion/catalogos-fiscales",
+      Usuarios: "/configuracion/usuarios",
+      "Portabilidad de datos": "/configuracion/portabilidad",
+    };
+    for (const [name, href] of Object.entries(config)) {
+      expect(within(mainNav()).getByRole("link", { name }).getAttribute("href")).toBe(href);
+    }
+  });
+
+  it("el operador solo ve Catálogos fiscales en Configuración", async () => {
+    api({ me: OPERATOR_ME });
+    navigation.pathname = "/configuracion/catalogos-fiscales";
+    renderShell();
+    await screen.findByText("contenido");
+    for (const name of [
+      "Usuarios",
+      "Empresa",
+      "Ambiente",
+      "Establecimientos",
+      "Secuenciales",
+      "Firma electrónica",
+      "Portabilidad de datos",
+    ]) {
+      expect(within(mainNav()).queryByRole("link", { name })).toBeNull();
+    }
+    expect(
+      within(mainNav()).getByRole("link", { name: "Catálogos fiscales" }).getAttribute("href"),
     ).toBe("/configuracion/catalogos-fiscales");
   });
 
-  it("administrador y operador ven Terceros y Productos en Operación (add-parties-and-products)", async () => {
+  it("administrador y operador ven los destinos operativos en sus grupos nuevos", async () => {
+    // Antes estaban todos en «Operación»; ahora Ventas, Compras, Logística, Documentos, Maestros y
+    // Análisis (arquitectura de información aprobada).
+    const destinations: Record<string, string> = {
+      Inicio: "/",
+      Facturas: "/facturas",
+      "Notas de crédito": "/notas-credito",
+      "Notas de débito": "/notas-debito",
+      "Liquidaciones de compra": "/liquidaciones-compra",
+      Retenciones: "/retenciones",
+      "Guías de remisión": "/guias-remision",
+      Inventario: "/inventario",
+      Comprobantes: "/comprobantes",
+      Borradores: "/borradores",
+      Terceros: "/terceros",
+      Productos: "/productos",
+      Reportes: "/reportes",
+    };
     for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
+      api({ me });
+      navigation.pathname = "/";
       const view = renderShell();
       await screen.findByText("contenido");
-      expect(screen.getByText("Operación")).toBeDefined();
-      expect(screen.getByRole("link", { name: "Terceros" }).getAttribute("href")).toBe("/terceros");
-      expect(screen.getByRole("link", { name: "Productos" }).getAttribute("href")).toBe(
-        "/productos",
-      );
-      view.unmount();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("administrador y operador ven Inventario en Operación (add-minimal-inventory)", async () => {
-    for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(screen.getByRole("link", { name: "Inventario" }).getAttribute("href")).toBe(
-        "/inventario",
-      );
-      view.unmount();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("administrador y operador ven Reportes en Operación (add-reports-export)", async () => {
-    for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(screen.getByRole("link", { name: "Reportes" }).getAttribute("href")).toBe("/reportes");
-      view.unmount();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("administrador y operador ven Facturas y Borradores en Operación (add-invoice-emission)", async () => {
-    for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(screen.getByRole("link", { name: "Facturas" }).getAttribute("href")).toBe("/facturas");
-      expect(screen.getByRole("link", { name: "Borradores" }).getAttribute("href")).toBe(
-        "/borradores",
-      );
-      view.unmount();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("administrador y operador ven Comprobantes en Operación (add-document-archive)", async () => {
-    for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(screen.getByRole("link", { name: "Comprobantes" }).getAttribute("href")).toBe(
-        "/comprobantes",
-      );
-      view.unmount();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("administrador y operador ven Notas de débito en Operación (add-debit-notes)", async () => {
-    for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(screen.getByRole("link", { name: "Notas de débito" }).getAttribute("href")).toBe(
-        "/notas-debito",
-      );
-      view.unmount();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("administrador y operador ven Retenciones en Operación (add-withholding-receipts)", async () => {
-    for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(screen.getByRole("link", { name: "Retenciones" }).getAttribute("href")).toBe(
-        "/retenciones",
-      );
-      view.unmount();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("administrador y operador ven Guías de remisión en Operación (add-shipping-guides)", async () => {
-    for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(screen.getByRole("link", { name: "Guías de remisión" }).getAttribute("href")).toBe(
-        "/guias-remision",
-      );
-      view.unmount();
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("administrador y operador ven Liquidaciones de compra en Operación (add-purchase-settlements)", async () => {
-    for (const me of [ADMIN_ME, OPERATOR_ME]) {
-      mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(
-        screen.getByRole("link", { name: "Liquidaciones de compra" }).getAttribute("href"),
-      ).toBe("/liquidaciones-compra");
+      for (const label of [
+        "Ventas",
+        "Compras",
+        "Logística",
+        "Documentos",
+        "Maestros",
+        "Análisis",
+      ]) {
+        expect(within(mainNav()).getByText(label)).toBeDefined();
+      }
+      for (const [name, href] of Object.entries(destinations)) {
+        expect(within(mainNav()).getByRole("link", { name }).getAttribute("href")).toBe(href);
+      }
       view.unmount();
       vi.unstubAllGlobals();
     }
@@ -253,7 +243,7 @@ describe("shell autenticado", () => {
   });
 
   it("el selector cambia entre tema oscuro y claro, también con las flechas", async () => {
-    mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }) });
+    api();
     renderShell();
     const dark = await screen.findByRole("radio", { name: "Oscuro" });
     await act(async () => {
@@ -268,5 +258,300 @@ describe("shell autenticado", () => {
     });
     expect(screen.getByRole("radio", { name: "Oscuro" }).getAttribute("aria-checked")).toBe("true");
     expect(document.activeElement).toBe(screen.getByRole("radio", { name: "Oscuro" }));
+  });
+});
+
+describe("nombre del producto", () => {
+  it("el shell identifica el producto como EmiteYa y nunca como Facturador SRI", async () => {
+    api();
+    renderShell();
+    await screen.findByText("contenido");
+    expect(within(sidebar()).getByRole("link", { name: "EmiteYa" }).getAttribute("href")).toBe("/");
+    expect(document.body.textContent).not.toContain("Facturador SRI");
+  });
+});
+
+describe("contexto de la empresa", () => {
+  it("muestra el nombre comercial de la empresa de la sesión, sin selector", async () => {
+    api({ displayName: "Ferretería Andina" });
+    renderShell();
+    const name = await screen.findByText("Ferretería Andina");
+    const context = name.closest("[data-slot=company-context]") as HTMLElement;
+    expect(context).not.toBeNull();
+    // No es un control: no abre ningún menú ni ofrece cambiar de empresa.
+    expect(context.closest("button, a, [role=button], [role=combobox]")).toBeNull();
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.queryByText(/cambiar de empresa/i)).toBeNull();
+  });
+
+  it("muestra el nombre que da el sistema; sin datos registrados no supone ninguno", async () => {
+    // `displayName` ya es el nombre comercial o, si no hay, la razón social (`/company/status`).
+    api({ displayName: null });
+    renderShell();
+    expect(await screen.findByText("Empresa sin datos registrados")).toBeDefined();
+    expect(document.querySelector("[data-slot=company-context]")).toBeNull();
+  });
+
+  it("si el contexto no puede obtenerse, lo indica sin mostrar un nombre", async () => {
+    api({ companyFails: true });
+    renderShell();
+    expect(
+      await screen.findByText("No pudimos confirmar la empresa", {}, { timeout: 4000 }),
+    ).toBeDefined();
+    expect(document.querySelector("[data-slot=company-context]")).toBeNull();
+  });
+
+  it("solo muestra la empresa de la sesión, ninguna otra", async () => {
+    api({ displayName: "Ferretería Andina" });
+    renderShell();
+    await screen.findByText("Ferretería Andina");
+    expect(document.querySelectorAll("[data-slot=company-context]")).toHaveLength(1);
+  });
+});
+
+describe("ambiente fiscal visible", () => {
+  it("el aviso de Pruebas sigue visible con la barra colapsada", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(1280);
+    api();
+    renderShell();
+    await screen.findByText(TEST_NOTICE);
+    await user.click(screen.getByRole("button", { name: "Contraer barra lateral" }));
+    expect(screen.getByText(TEST_NOTICE)).toBeDefined();
+    expect(screen.queryByRole("button", { name: /cerrar/i })).toBeNull();
+  });
+
+  it("en móvil el aviso de Pruebas sigue visible al abrir y cerrar la navegación", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    api();
+    renderShell();
+    await screen.findByText(TEST_NOTICE);
+    await user.click(screen.getByRole("button", { name: "Abrir menú" }));
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.getByText(TEST_NOTICE)).toBeDefined();
+  });
+
+  it("Producción se indica con texto e icono", async () => {
+    api({ environment: "PRODUCTION" });
+    renderShell();
+    const badge = (await screen.findByText("Producción")).closest("[data-slot=badge]")!;
+    expect(badge.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    expect(screen.queryByText(TEST_NOTICE)).toBeNull();
+  });
+
+  it("el aviso de la firma convive con el de ambiente", async () => {
+    api({
+      validity: {
+        state: "EXPIRING",
+        usable: true,
+        notAfter: "2026-10-20T23:59:59.000Z",
+        daysToExpiry: 6,
+      },
+    });
+    renderShell();
+    await screen.findByText(TEST_NOTICE);
+    expect(await screen.findByText(/La firma electrónica vence el/)).toBeDefined();
+  });
+});
+
+describe("destino actual", () => {
+  it("marca exactamente un destino como actual", async () => {
+    api();
+    navigation.pathname = "/retenciones";
+    renderShell();
+    await screen.findByText("contenido");
+    const current = within(mainNav())
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page");
+    expect(current.map((link) => link.textContent)).toEqual(["Retenciones"]);
+  });
+
+  it("en una pantalla interna marca su destino, también con la barra colapsada", async () => {
+    api();
+    navigation.pathname = "/notas-credito/borradores/d1";
+    renderShell({ sidebarDefaultOpen: false });
+    await screen.findByText("contenido");
+    expect(
+      within(mainNav())
+        .getByRole("link", { name: "Notas de crédito" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+  });
+});
+
+describe("navegación adaptable", () => {
+  it("colapsa la barra, guarda la preferencia y se renderiza colapsada al recargar", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(1280);
+    api();
+    const view = renderShell();
+    await screen.findByText("contenido");
+    const toggle = screen.getByRole("button", { name: "Contraer barra lateral" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    await user.click(toggle);
+    expect(document.cookie).toContain("sidebar_state=false");
+    expect(
+      screen.getByRole("button", { name: "Expandir barra lateral" }).getAttribute("aria-expanded"),
+    ).toBe("false");
+    view.unmount();
+    // El layout lee la cookie y pasa el estado: la barra vuelve colapsada.
+    renderShell({ sidebarDefaultOpen: false });
+    await screen.findByText("contenido");
+    expect(screen.getByRole("button", { name: "Expandir barra lateral" })).toBeDefined();
+  });
+
+  it("colapsada, cada destino conserva su nombre y lo muestra como ayuda al enfocarlo", async () => {
+    setViewportWidth(1280);
+    api();
+    renderShell({ sidebarDefaultOpen: false });
+    await screen.findByText("contenido");
+    const facturas = within(mainNav()).getByRole("link", { name: "Facturas" });
+    act(() => facturas.focus());
+    expect((await screen.findByRole("tooltip")).textContent).toContain("Facturas");
+  });
+
+  it("en móvil abre un panel con los mismos destinos que se cierra al elegir uno", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    api({ me: OPERATOR_ME });
+    navigation.pathname = "/";
+    renderShell();
+    await screen.findByText("contenido");
+    const menu = screen.getByRole("button", { name: "Abrir menú" });
+    await user.click(menu);
+    const panel = await screen.findByRole("dialog", { name: "Menú" });
+    // Los grupos se pliegan en móvil; se abren para elegir un destino.
+    await user.click(within(panel).getByRole("button", { name: "Ventas" }));
+    await user.click(within(panel).getByRole("link", { name: "Facturas" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(menu);
+  });
+
+  it("en móvil el panel se cierra con su botón visible y devuelve el foco al menú", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    api();
+    navigation.pathname = "/";
+    renderShell();
+    await screen.findByText("contenido");
+    const menu = screen.getByRole("button", { name: "Abrir menú" });
+    await user.click(menu);
+    await user.click(await screen.findByRole("button", { name: "Cerrar menú" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(menu);
+  });
+});
+
+describe("migas", () => {
+  const breadcrumb = () => screen.queryAllByRole("navigation", { name: "Ruta de navegación" });
+
+  function RecordLabel({ label }: { label: string }) {
+    useBreadcrumbLabel(label);
+    return <p>contenido</p>;
+  }
+
+  it("una pantalla interna muestra el destino como enlace y el registro como página actual", async () => {
+    api();
+    navigation.pathname = "/facturas/abc";
+    renderShell({ children: <RecordLabel label="001-001-000000123" /> });
+    await screen.findByText("contenido");
+    const [nav] = breadcrumb();
+    expect(within(nav!).getByRole("link", { name: "Facturas" }).getAttribute("href")).toBe(
+      "/facturas",
+    );
+    expect(within(nav!).getByText("001-001-000000123").getAttribute("aria-current")).toBe("page");
+  });
+
+  it("mientras no hay registro, la miga final es la de la ruta", async () => {
+    api();
+    navigation.pathname = "/facturas/abc";
+    renderShell();
+    await screen.findByText("contenido");
+    expect(within(breadcrumb()[0]!).getByText("Detalle de factura")).toBeDefined();
+  });
+
+  it("un destino de primer nivel no muestra migas", async () => {
+    api();
+    for (const path of ["/facturas", "/productos", "/"]) {
+      navigation.pathname = path;
+      const view = renderShell();
+      await screen.findByText("contenido");
+      expect(breadcrumb(), path).toHaveLength(0);
+      view.unmount();
+    }
+  });
+
+  it("Configuración es una sección de las migas", async () => {
+    api();
+    navigation.pathname = "/configuracion/empresa";
+    renderShell();
+    await screen.findByText("contenido");
+    const [nav] = breadcrumb();
+    expect(within(nav!).getByText("Configuración")).toBeDefined();
+    expect(within(nav!).getByText("Empresa").getAttribute("aria-current")).toBe("page");
+  });
+});
+
+describe("menú de cuenta", () => {
+  it("muestra nombre, rol, Mi cuenta y Cerrar sesión", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(1280);
+    api({ me: OPERATOR_ME });
+    navigation.pathname = "/";
+    renderShell();
+    await user.click(await screen.findByRole("button", { name: `Cuenta de ${OPERATOR_ME.name}` }));
+    const menu = await screen.findByRole("menu");
+    expect(menu.textContent).toContain(OPERATOR_ME.name);
+    expect(menu.textContent).toContain("Operador");
+    expect(within(menu).getByRole("menuitem", { name: "Mi cuenta" }).getAttribute("href")).toBe(
+      "/mi-cuenta",
+    );
+    expect(within(menu).getByRole("menuitem", { name: "Cerrar sesión" })).toBeDefined();
+    // En escritorio el tema vive en la barra superior, no en el menú.
+    expect(within(menu).queryByRole("menuitemradio")).toBeNull();
+  });
+
+  it("cerrar sesión termina la sesión una sola vez y lleva al inicio de sesión", async () => {
+    const user = userEvent.setup();
+    const calls = api();
+    navigation.pathname = "/";
+    renderShell();
+    const account = await screen.findByRole("button", { name: "Cuenta de Ana Admin" });
+    await user.click(account);
+    await user.click(await screen.findByRole("menuitem", { name: "Cerrar sesión" }));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/iniciar-sesion"));
+    expect(calls.filter((call) => call.key.startsWith("POST /api/auth/sign-out"))).toHaveLength(1);
+  });
+
+  it("en un teléfono el tema está en el menú de cuenta, con la opción vigente marcada", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    api();
+    navigation.pathname = "/";
+    renderShell();
+    await user.click(await screen.findByRole("button", { name: "Cuenta de Ana Admin" }));
+    const menu = await screen.findByRole("menu");
+    const options = within(menu).getAllByRole("menuitemradio");
+    expect(options.map((option) => option.textContent)).toEqual(["Claro", "Oscuro", "Sistema"]);
+    expect(
+      within(menu).getByRole("menuitemradio", { name: "Sistema" }).getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+});
+
+describe("saltar al contenido", () => {
+  it("es el primer elemento enfocable y apunta al contenido principal", async () => {
+    const user = userEvent.setup();
+    api();
+    renderShell();
+    await screen.findByText("contenido");
+    await user.tab();
+    const skip = screen.getByRole("link", { name: "Saltar al contenido" });
+    expect(document.activeElement).toBe(skip);
+    const main = screen.getByRole("main");
+    expect(main.id).toBe("contenido");
+    expect(main.getAttribute("tabindex")).toBe("-1");
   });
 });

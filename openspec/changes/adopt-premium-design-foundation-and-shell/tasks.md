@@ -260,7 +260,7 @@
 
 ## 7. Etapa D: shell, barra superior, contexto, ambiente, cuenta, tema y migas
 
-- [ ] 7.1 Crear en `components/shell/`:
+- [x] 7.1 Crear en `components/shell/`:
   - `AppShell`: enlace para saltar al contenido, `SidebarProvider` y ranuras;
   - `AppSidebar`: marca EmiteYa con `Receipt`, grupos, `aria-current`, colapso a iconos con
     tooltips y en móvil un `Sheet` con grupos plegables;
@@ -277,14 +277,14 @@
   - colapsar y recargar, destino colapsado accesible, panel móvil y mismos destinos;
   - las migas de la spec, incluida la ausencia en destinos de primer nivel;
   - saltar al contenido.
-- [ ] 7.2 Crear la presentación de `CompanyContext` (no es un control) y su conexión en
+- [x] 7.2 Crear la presentación de `CompanyContext` (no es un control) y su conexión en
   `features/company/`. Adaptar `EnvironmentBadge` al `Badge` derivado. Mantener `EnvironmentNotice` y
   `CertificateNotice` en ese orden.
 
   Verificar con pruebas de la spec: empresa con y sin nombre comercial, sin selector, contexto no
   disponible, otra empresa no visible, Pruebas con la barra colapsada y en móvil, Producción sin
   color, ambiente desconocido y aviso de la firma.
-- [ ] 7.3 Crear `AccountMenu`:
+- [x] 7.3 Crear `AccountMenu`:
   - «Cuenta de {nombre}»;
   - nombre, correo y rol;
   - Mi cuenta;
@@ -297,7 +297,7 @@
   - contenido, cerrar sesión y cierre repetido;
   - tema: cambiar y recargar, teclado y pantalla estrecha;
   - un solo control por ancho: a 375 px y a 1280 px hay exactamente un control de tema enfocable.
-- [ ] 7.4 Reescribir `frontend/test/app-shell.test.tsx` conservando cada comportamiento que cubría,
+- [x] 7.4 Reescribir `frontend/test/app-shell.test.tsx` conservando cada comportamiento que cubría,
   y explicar en el commit cada aserción cambiada. Los grupos pasan de «Operación» y «Configuración»
   a los grupos nuevos, y las clases `sticky`/`overflow-y-auto` se sustituyen por comprobaciones de
   comportamiento.
@@ -305,7 +305,7 @@
   Verificar:
   - Vitest pasa;
   - `check:web-security-policy` pasa con sus selectores sin cambios.
-- [ ] 7.5 Documentar el shell en `navigation-responsive.md` y en `frontend.md`.
+- [x] 7.5 Documentar el shell en `navigation-responsive.md` y en `frontend.md`.
 
   Verificar:
   - typecheck, lint y build pasan;

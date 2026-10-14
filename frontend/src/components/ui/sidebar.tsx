@@ -36,10 +36,9 @@ import {
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SIDEBAR_COOKIE_NAME } from "@/lib/navigation/sidebar-state";
 import { cn } from "@/lib/utils";
 
-/** Cookie de preferencia: solo guarda si la barra está expandida (design D12). */
-export const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 

@@ -1,9 +1,10 @@
 import { act, screen, waitFor } from "@testing-library/react";
 import { focusManager } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppShell, ShellSkeleton } from "@/components/app-shell";
+import { AppShell, ShellSkeleton } from "@/components/shell/app-shell";
 import { SessionGate } from "@/components/session";
 import { EnvironmentBadge, EnvironmentNotice } from "@/features/company/environment-notice";
+import { ShellCompanyContext } from "@/features/company/shell-company-context";
 import { ADMIN_ME, OPERATOR_ME, errorBody, mockApi, navigation, renderApp } from "./harness";
 
 const status = (environment: "TEST" | "PRODUCTION") => ({
@@ -27,7 +28,11 @@ const status = (environment: "TEST" | "PRODUCTION") => ({
 function renderShell() {
   return renderApp(
     <SessionGate fallback={<ShellSkeleton />}>
-      <AppShell notice={<EnvironmentNotice />} status={<EnvironmentBadge />}>
+      <AppShell
+        company={<ShellCompanyContext />}
+        environment={<EnvironmentBadge />}
+        notices={<EnvironmentNotice />}
+      >
         <p>contenido</p>
       </AppShell>
     </SessionGate>,
@@ -60,7 +65,8 @@ describe("aviso de ambiente (design D6)", () => {
       // el texto lleva toda la información (excepción de contraste en ui-review.md).
       expect(strip.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
       expect(strip.querySelectorAll("button, a, input, [tabindex]")).toHaveLength(0);
-      const badge = screen.getByText("Pruebas").parentElement as HTMLElement;
+      // El distintivo es el `Badge` derivado: el texto y el icono decorativo viven en el mismo elemento.
+      const badge = screen.getByText("Pruebas").closest("[data-slot=badge]") as HTMLElement;
       expect(badge.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
       expect(screen.getByText("Pruebas")).toBeDefined();
       expect(screen.queryByRole("button", { name: /cerrar/i })).toBeNull();

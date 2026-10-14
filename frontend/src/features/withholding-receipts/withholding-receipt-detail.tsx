@@ -31,6 +31,7 @@ import {
 import { StateCell } from "@/features/invoices/invoices-screen";
 import { RELATED_PARTY_LABELS, formatPeriod, formatSupportNumber } from "./withholding-format";
 import { useRetryWithholdingSigning, useWithholdingReceipt } from "./withholding-receipts-api";
+import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 
 type Support = WithholdingReceiptView["supports"][number];
 
@@ -176,6 +177,8 @@ export function WithholdingReceiptDetailScreen({
   const allowed = canSee(me.role, "withholdings.read");
   const canRetry = canSee(me.role, "withholdings.retrySigning");
   const receipt = useWithholdingReceipt(withholdingReceiptId, allowed);
+  // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
+  useBreadcrumbLabel(receipt.data?.documentNumber);
   const retry = useRetryWithholdingSigning();
 
   const header = (

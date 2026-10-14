@@ -192,3 +192,8 @@ destino relativo a `frontend/src/`.
 | `components/ui/collapsible.tsx` | `components/ui/collapsible.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/skeleton.tsx` | `components/ui/skeleton.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `hooks/use-mobile.ts` | `hooks/use-mobile.ts` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/shell/app-shell.tsx` | `app/(main)/dashboard/layout.tsx` | MIT de «Studio Admin» |
+| `components/shell/topbar.tsx` | `app/(main)/dashboard/layout.tsx (cabecera)` | MIT de «Studio Admin» |
+| `components/shell/app-sidebar.tsx` | `app/(main)/dashboard/_components/sidebar/app-sidebar.tsx y nav-main.tsx` | MIT de «Studio Admin» |
+| `components/shell/account-menu.tsx` | `app/(main)/dashboard/_components/sidebar/nav-user.tsx` | MIT de «Studio Admin» |
+| `components/shell/company-context.tsx` | `app/(main)/dashboard/_components/header/account-switcher.tsx (patrón visual)` | MIT de «Studio Admin» |

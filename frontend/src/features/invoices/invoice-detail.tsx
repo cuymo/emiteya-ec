@@ -27,6 +27,7 @@ import { TransmissionSection } from "@/features/archive/transmission-section";
 import { InvoiceCreditSection } from "@/features/credit-notes/invoice-credit-section";
 import { InvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-note-action";
 import { InvoiceShippingGuideAction } from "@/features/shipping-guides/invoice-shipping-guide-action";
+import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -45,6 +46,8 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
   const allowed = canSee(me.role, "invoices.read");
   const canRetry = canSee(me.role, "invoices.retrySigning");
   const invoice = useInvoice(invoiceId, allowed);
+  // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
+  useBreadcrumbLabel(invoice.data?.documentNumber);
   const retry = useRetrySigning();
   const methods = useCatalogEntries("payment-method", allowed);
   const methodLabel = (code: string) => {

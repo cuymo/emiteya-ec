@@ -7,7 +7,8 @@
 
 import { CircleCheck, TriangleAlert } from "lucide-react";
 import { NoticeStrip as Strip } from "@/components/notice-strip";
-import { Skeleton, StatusBadge } from "@/components/states";
+import { Skeleton } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
 import { useCompanyStatus } from "./company-api";
 
 export function EnvironmentNotice() {
@@ -36,18 +37,24 @@ export function EnvironmentNotice() {
   );
 }
 
-/** Distintivo de la cabecera, desde 640px; por debajo lo sustituye la línea de EnvironmentNotice. */
+/**
+ * Distintivo de la barra superior, desde 640px; por debajo lo sustituye la línea de
+ * EnvironmentNotice. Usa el `Badge` derivado de la plantilla (adopt-premium-design-foundation-and-shell,
+ * design D11): texto e icono, nunca solo color.
+ */
 export function EnvironmentBadge() {
   const status = useCompanyStatus();
-  if (status.isPending) return <Skeleton className="hidden h-6 w-18 sm:block" />;
+  if (status.isPending) return <Skeleton className="hidden h-5 w-20 rounded-4xl sm:block" />;
   if (status.isError) return null;
-  return (
-    <span className="hidden sm:inline-flex">
-      {status.data.environment === "PRODUCTION" ? (
-        <StatusBadge tone="success" label="Producción" icon={CircleCheck} />
-      ) : (
-        <StatusBadge tone="warning" label="Pruebas" icon={TriangleAlert} />
-      )}
-    </span>
+  return status.data.environment === "PRODUCTION" ? (
+    <Badge variant="success" className="hidden sm:inline-flex">
+      <CircleCheck aria-hidden="true" />
+      Producción
+    </Badge>
+  ) : (
+    <Badge variant="warning" className="hidden sm:inline-flex">
+      <TriangleAlert aria-hidden="true" />
+      Pruebas
+    </Badge>
   );
 }

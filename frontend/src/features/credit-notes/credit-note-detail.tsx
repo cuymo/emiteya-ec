@@ -33,6 +33,7 @@ import {
 } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/invoices/invoices-screen";
 import { useCreditNote, useRetryCreditNoteSigning } from "./credit-notes-api";
+import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -59,6 +60,8 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
   const allowed = canSee(me.role, "creditNotes.read");
   const canRetry = canSee(me.role, "creditNotes.retrySigning");
   const note = useCreditNote(creditNoteId, allowed);
+  // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
+  useBreadcrumbLabel(note.data?.documentNumber);
   const retry = useRetryCreditNoteSigning();
 
   const header = (

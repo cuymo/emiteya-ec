@@ -61,6 +61,52 @@ Examples:
 - Notas de crédito › Borrador de nota de crédito;
 - Configuración › Empresa.
 
+## Application Shell
+
+The authenticated shell (`frontend/src/components/shell/`, spec `web-application-shell`) derives
+from the reference template's dashboard layout (ADR 0028).
+
+- **Sidebar** (`AppSidebar`):
+  - **Header:** the EmiteYa brand (text plus a neutral Lucide mark) linking to Inicio, and Quick
+    Create.
+  - **Body:** the groups of the route model, with a solid but restrained active treatment
+    (`aria-current="page"`).
+  - **From 768px:** it collapses to icons and back with its toggle or Ctrl/⌘ + B. A collapsed
+    destination keeps its accessible name and shows it as a tooltip on focus or hover.
+  - **Persistence:** the choice is kept in the `sidebar_state` cookie, which the layout reads on the
+    server so a reload renders the same state without a flash.
+  - **Below 768px:** the same navigation opens in a sheet from the menu button. The sheet has a
+    visible «Cerrar menú» button, collapsible groups (the current one open) and 44px items. It
+    closes on a destination, Escape, the overlay or the close button, and returns focus to the menu
+    button.
+- **Topbar** (`Topbar`), 48px high (56px on mobile).
+  - **From 768px:**
+    - sidebar toggle;
+    - breadcrumbs, which take the free space;
+    - the company context;
+    - the command palette trigger;
+    - the environment badge (from 640px);
+    - the «Tema» radiogroup (from 640px);
+    - the account menu.
+  - **On mobile:** menu button, company context (which grows), palette and account. Breadcrumbs
+    move to the start of the content area.
+- **Company context.** It is read-only: the trade name, or the legal name, of the session's
+  company, from `/company/status`. It is not a control and never suggests switching companies.
+  - **While loading:** it reserves its space.
+  - **On error:** it says it could not confirm the company, without guessing a name.
+  - **Without registered data:** it says so.
+- **Environment.**
+  - **Pruebas:** the persistent, non-dismissible warning strip stays under the topbar, then the
+    signature notice.
+  - **Producción:** a badge with icon and text from 640px, and the compact strip below.
+  - **Unknown environment:** it is never shown as Producción.
+- **Theme.** From 640px the «Tema» radiogroup is in the topbar; below 640px it moves into the account
+  menu as radio items. Both use the same next-themes state, and there is never more than one theme
+  control at the same width.
+- **Account menu.** Its accessible name is «Cuenta de {nombre}». It shows the name, email and role,
+  plus Mi cuenta and Cerrar sesión, which disables itself after the first selection.
+- **Skip link.** «Saltar al contenido» is the first focusable element and targets `main#contenido`.
+
 ## Submodules Instead Of Tabs
 
 A module that covers several areas exposes them as submodules under its sidebar group,

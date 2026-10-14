@@ -33,6 +33,7 @@ import {
   usePurchaseSettlement,
   useRetryPurchaseSettlementSigning,
 } from "./purchase-settlements-api";
+import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 
 type Line = PurchaseSettlementView["lines"][number];
 
@@ -114,6 +115,8 @@ export function PurchaseSettlementDetailScreen({
   const allowed = canSee(me.role, "purchaseSettlements.read");
   const canRetry = canSee(me.role, "purchaseSettlements.retrySigning");
   const settlement = usePurchaseSettlement(purchaseSettlementId, allowed);
+  // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
+  useBreadcrumbLabel(settlement.data?.documentNumber);
   const retry = useRetryPurchaseSettlementSigning();
 
   const header = (
