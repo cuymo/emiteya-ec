@@ -178,14 +178,14 @@ export function ProductDialog({
       {review && (
         <div
           role="note"
-          className="rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+          className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
         >
           <p className="font-medium">
             {review.status === "REVIEW_REQUIRED"
               ? "Revisa los impuestos"
               : "Faltan datos para calcular un impuesto"}
           </p>
-          <ul className="list-disc pl-2">
+          <ul className="list-disc pl-4">
             {review.reasons.map((reason) => (
               <li key={reason.slot}>
                 {SLOT_NOUNS[reason.slot]} {reason.code} {REASON_TEXT[reason.reason]}.
@@ -199,7 +199,7 @@ export function ProductDialog({
           )}
         </div>
       )}
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <span id={kindLabel} className="text-sm font-medium">
           Tipo
         </span>
@@ -234,7 +234,7 @@ export function ProductDialog({
           autoComplete="off"
         />
       </FormField>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           id="product-main-code"
           label="Código principal (opcional)"
@@ -319,11 +319,11 @@ export function ProductDialog({
           </FormField>
           {stockManaged && product ? (
             // Sin registrar: la marca conserva su valor y no se envía cambiada.
-            <div className="flex flex-col gap-0.5">
-              <label className="flex min-h-5.5 items-center gap-1 text-sm text-foreground-muted">
+            <div className="flex flex-col gap-1">
+              <label className="flex min-h-11 items-center gap-2 text-sm text-foreground-muted">
                 <input
                   type="checkbox"
-                  className="size-2.5 accent-primary"
+                  className="size-5 accent-primary"
                   checked={product.stockTracked}
                   disabled
                   readOnly
@@ -344,10 +344,10 @@ export function ProductDialog({
               )}
             </div>
           ) : (
-            <label className="flex min-h-5.5 items-center gap-1 text-sm">
+            <label className="flex min-h-11 items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                className="size-2.5 accent-primary"
+                className="size-5 accent-primary"
                 {...form.register("stockTracked")}
               />
               Controlar stock de este bien

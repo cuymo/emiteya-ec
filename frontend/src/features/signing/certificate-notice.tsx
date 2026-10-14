@@ -19,7 +19,7 @@ export function CertificateNotice() {
   const next = admin ? (
     <Link
       href="/configuracion/firma"
-      className="font-medium underline underline-offset-2 max-md:inline-flex max-md:min-h-5.5 max-md:items-center"
+      className="font-medium underline underline-offset-2 max-md:inline-flex max-md:min-h-11 max-md:items-center"
     >
       Ir a Firma electrónica
     </Link>

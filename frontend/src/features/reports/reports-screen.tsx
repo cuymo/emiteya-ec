@@ -306,7 +306,7 @@ export function ReportsScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="reportes-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="reportes-titulo" className="flex flex-col gap-6">
         <h1 id="reportes-titulo" className="text-3xl font-bold">
           Reportes
         </h1>
@@ -347,7 +347,7 @@ export function ReportsScreen() {
 
   const dateFilters = hasDates(url.report) ? (
     <>
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <Label htmlFor="filtro-mes">Mes</Label>
         <Select
           id="filtro-mes"
@@ -384,7 +384,7 @@ export function ReportsScreen() {
   ) : null;
 
   const stateFilter = hasState(url.report) ? (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <Label htmlFor="filtro-estado">Estado</Label>
       <Select
         id="filtro-estado"
@@ -402,7 +402,7 @@ export function ReportsScreen() {
   ) : null;
 
   const environmentFilter = hasEnvironment(url.report) ? (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <Label htmlFor="filtro-ambiente">Ambiente</Label>
       <Select
         id="filtro-ambiente"
@@ -419,12 +419,12 @@ export function ReportsScreen() {
 
   const productFilter =
     url.report === "inventory-balances" || url.report === "inventory-movements" ? (
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <span className="text-sm font-medium" id="filtro-producto">
           Producto
         </span>
         {url.productId ? (
-          <span className="flex flex-wrap items-center gap-0.5">
+          <span className="flex flex-wrap items-center gap-1">
             <span className="break-words">{productName}</span>
             <Button
               variant="ghost"
@@ -454,7 +454,7 @@ export function ReportsScreen() {
         return (
           <>
             {dateFilters}
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-tipo">Tipo de comprobante</Label>
               <Select
                 id="filtro-tipo"
@@ -470,7 +470,7 @@ export function ReportsScreen() {
               </Select>
             </div>
             {stateFilter}
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-establecimiento">Establecimiento</Label>
               <Select
                 id="filtro-establecimiento"
@@ -487,7 +487,7 @@ export function ReportsScreen() {
                 ))}
               </Select>
             </div>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-punto">Punto de emisión</Label>
               <Select
                 id="filtro-punto"
@@ -510,7 +510,7 @@ export function ReportsScreen() {
         return (
           <>
             {dateFilters}
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-cliente">Identificación del cliente</Label>
               <Input
                 id="filtro-cliente"
@@ -527,7 +527,7 @@ export function ReportsScreen() {
         return (
           <>
             {dateFilters}
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-sujeto">Identificación del sujeto retenido</Label>
               <Input
                 id="filtro-sujeto"
@@ -536,7 +536,7 @@ export function ReportsScreen() {
                 onChange={(event) => setSupplierDraft(event.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-periodo">Período fiscal</Label>
               <Select
                 id="filtro-periodo"
@@ -565,7 +565,7 @@ export function ReportsScreen() {
           <>
             {productFilter}
             {dateFilters}
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-movimiento">Tipo de movimiento</Label>
               <Select
                 id="filtro-movimiento"
@@ -585,7 +585,7 @@ export function ReportsScreen() {
       case "parties":
         return (
           <>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-rol">Rol</Label>
               <Select
                 id="filtro-rol"
@@ -600,7 +600,7 @@ export function ReportsScreen() {
                 ))}
               </Select>
             </div>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-identificacion">Identificación</Label>
               <Input
                 id="filtro-identificacion"
@@ -609,7 +609,7 @@ export function ReportsScreen() {
                 onChange={(event) => setIdentificationDraft(event.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="filtro-estado-tercero">Estado</Label>
               <Select
                 id="filtro-estado-tercero"
@@ -657,13 +657,13 @@ export function ReportsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="reportes-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-end justify-between gap-2">
+    <section aria-labelledby="reportes-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 id="reportes-titulo" className="text-3xl font-bold">
           Reportes
         </h1>
         {canExport ? (
-          <div className="flex flex-col items-end gap-0.5">
+          <div className="flex flex-col items-end gap-1">
             <Button
               onClick={runExport}
               disabled={exportReport.isPending || rangeError !== null || report.isPending}
@@ -680,12 +680,12 @@ export function ReportsScreen() {
         ) : null}
       </div>
       {exportProblem?.key === filterKey ? (
-        <p role="alert" className="rounded-md border border-warning/40 bg-warning/10 p-1 text-sm">
+        <p role="alert" className="rounded-md border border-warning/40 bg-warning/10 p-2 text-sm">
           {exportProblem.message}
         </p>
       ) : null}
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-col gap-1">
           <Label htmlFor="reporte">Reporte</Label>
           <Select
             id="reporte"
@@ -700,7 +700,7 @@ export function ReportsScreen() {
           </Select>
         </div>
         {url.reportParam === "inventario" ? (
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             <span id="vista-inventario" className="text-sm font-medium">
               Vista
             </span>
@@ -722,8 +722,8 @@ export function ReportsScreen() {
             : null}
         </p>
       </div>
-      <p className="flex items-start gap-0.5 text-sm text-foreground-muted">
-        <Info aria-hidden="true" className="mt-0.25 size-2 shrink-0" />
+      <p className="flex items-start gap-1 text-sm text-foreground-muted">
+        <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
         {REPORT_NOTICE}
       </p>
       <AppDataTable
@@ -741,7 +741,7 @@ export function ReportsScreen() {
         refreshing={report.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-3">
             <Button
               variant="outline"
               className="w-fit md:hidden"
@@ -754,7 +754,7 @@ export function ReportsScreen() {
             </Button>
             <div
               id="filtros-reporte"
-              className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-1 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-4`}
+              className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-2 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-4`}
             >
               {reportFilters}
             </div>
@@ -796,9 +796,9 @@ export function ReportsScreen() {
 
 export function ReportsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
-      <Skeleton className="h-5 w-24" />
-      <Skeleton className="h-30 w-full" />
+    <section aria-busy="true" className="flex flex-col gap-6">
+      <Skeleton className="h-10 w-48" />
+      <Skeleton className="h-60 w-full" />
     </section>
   );
 }

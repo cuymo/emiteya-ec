@@ -13,7 +13,7 @@ export function MenuContent({ className, ...props }: ComponentProps<typeof Dropd
       <DropdownMenu.Content
         sideOffset={4}
         className={cn(
-          "z-(--z-popover) min-w-24 rounded-md border border-border bg-surface p-0.5 text-sm text-foreground shadow-md",
+          "z-(--z-popover) min-w-48 rounded-md border border-border bg-surface p-1 text-sm text-foreground shadow-md",
           className,
         )}
         {...props}
@@ -26,8 +26,8 @@ export function MenuItem({ className, ...props }: ComponentProps<typeof Dropdown
   return (
     <DropdownMenu.Item
       className={cn(
-        "flex h-5 cursor-default items-center gap-1 rounded-sm px-1 outline-none select-none",
-        "data-highlighted:bg-surface-subtle data-disabled:opacity-50 [&_svg]:size-2.5",
+        "flex h-10 cursor-default items-center gap-2 rounded-sm px-2 outline-none select-none",
+        "data-highlighted:bg-surface-subtle data-disabled:opacity-50 [&_svg]:size-5",
         className,
       )}
       {...props}
@@ -43,14 +43,14 @@ export function MenuCheckboxItem({
   return (
     <DropdownMenu.CheckboxItem
       className={cn(
-        "flex h-5 cursor-default items-center gap-1 rounded-sm px-1 outline-none select-none",
+        "flex h-10 cursor-default items-center gap-2 rounded-sm px-2 outline-none select-none",
         "data-highlighted:bg-surface-subtle",
         className,
       )}
       {...props}
     >
-      <span className="inline-flex size-2 items-center justify-center rounded-sm border border-border">
-        <DropdownMenu.ItemIndicator className="size-1 rounded-sm bg-primary" />
+      <span className="inline-flex size-4 items-center justify-center rounded-sm border border-border">
+        <DropdownMenu.ItemIndicator className="size-2 rounded-sm bg-primary" />
       </span>
       {children}
     </DropdownMenu.CheckboxItem>
@@ -58,7 +58,7 @@ export function MenuCheckboxItem({
 }
 
 export function MenuSeparator() {
-  return <DropdownMenu.Separator className="my-0.5 h-px bg-border" />;
+  return <DropdownMenu.Separator className="my-1 h-px bg-border" />;
 }
 
 export const TooltipProvider = TooltipPrimitive.Provider;
@@ -71,7 +71,7 @@ export function Tooltip({ label, children }: { label: string; children: ReactNod
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
           sideOffset={4}
-          className="z-(--z-popover) max-w-32 rounded-md border border-border bg-foreground px-1 py-0.5 text-xs text-background shadow-md"
+          className="z-(--z-popover) max-w-64 rounded-md border border-border bg-foreground px-2 py-1 text-xs text-background shadow-md"
         >
           {label}
         </TooltipPrimitive.Content>

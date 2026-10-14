@@ -36,7 +36,7 @@ export function EnvironmentScreen() {
   );
   if (!allowed) {
     return (
-      <section aria-labelledby="ambiente-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="ambiente-titulo" className="flex flex-col gap-6">
         {heading}
         <EmptyState
           kind="no-permission"
@@ -50,7 +50,7 @@ export function EnvironmentScreen() {
   if (taxpayer.isError || status.isError) {
     const error = taxpayer.error ?? status.error;
     return (
-      <section aria-labelledby="ambiente-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="ambiente-titulo" className="flex flex-col gap-6">
         {heading}
         <ErrorState
           message={errorMessage(error)}
@@ -66,9 +66,9 @@ export function EnvironmentScreen() {
   const pending = status.data.readiness.checks.filter((check) => check.status === "PENDING");
 
   return (
-    <section aria-labelledby="ambiente-titulo" className="flex max-w-2xl flex-col gap-3">
+    <section aria-labelledby="ambiente-titulo" className="flex max-w-2xl flex-col gap-6">
       {heading}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <div>
           {production ? (
             <StatusBadge tone="success" label="Producción" icon={CircleCheck} />
@@ -83,7 +83,7 @@ export function EnvironmentScreen() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-0.5 text-sm">
+      <div className="flex flex-col gap-1 text-sm">
         <p className="font-medium">
           {status.data.readiness.ready ? "Lista para emitir" : "Aún no puede emitir"}
         </p>
@@ -101,7 +101,7 @@ export function EnvironmentScreen() {
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <div>
             <Button disabled aria-describedby="ambiente-sin-datos">
               Cambiar a Producción
@@ -148,11 +148,11 @@ export function EnvironmentScreen() {
 
 export function EnvironmentSkeleton() {
   return (
-    <section aria-busy="true" className="flex max-w-2xl flex-col gap-3">
+    <section aria-busy="true" className="flex max-w-2xl flex-col gap-6">
       <h1 className="text-3xl font-bold">Ambiente</h1>
-      <Skeleton className="h-3 w-12" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-5 w-24" />
+      <Skeleton className="h-6 w-24" />
+      <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-10 w-48" />
     </section>
   );
 }

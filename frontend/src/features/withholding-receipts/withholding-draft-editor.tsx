@@ -96,7 +96,7 @@ function useDefaultPoint(enabled: boolean) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1.5">
+    <section aria-labelledby={id} className="flex flex-col gap-3">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -120,7 +120,7 @@ function OperationAlert({
       ref={alertRef}
       role="alert"
       tabIndex={-1}
-      className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
     >
       <p>{message}</p>
       {action}
@@ -130,8 +130,8 @@ function OperationAlert({
 
 function SubjectCard({ subject }: { subject: Subject }) {
   return (
-    <div className="flex min-w-0 items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-1">
-      <UserRound aria-hidden="true" className="size-2 shrink-0 text-foreground-muted" />
+    <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
+      <UserRound aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
       <span className="flex min-w-0 flex-col">
         <span className="font-medium break-words">{subject.legalName}</span>
         <span className="text-sm text-foreground-muted tabular-nums">{subject.identification}</span>
@@ -360,15 +360,15 @@ function DraftEditor({
     ) : undefined;
 
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <Header title="Borrador de retención" />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
       )}
 
-      <form noValidate onSubmit={onSave} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           <Section title="Proveedor">
             {subject ? (
               <SubjectCard subject={subject} />
@@ -389,7 +389,7 @@ function DraftEditor({
           </Section>
 
           <Section title="Parte relacionada">
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <span id={relatedLabelId} className="text-sm font-medium">
                 ¿El proveedor es parte relacionada?
               </span>
@@ -410,7 +410,7 @@ function DraftEditor({
           </Section>
 
           <Section title="Período fiscal">
-            <div className="grid gap-1 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <FormField id="periodo-mes" label="Mes">
                 <Select
                   {...fieldAria("periodo-mes", undefined)}
@@ -451,7 +451,7 @@ function DraftEditor({
             {periodDiffers && (
               <p
                 role="status"
-                className="rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-sm"
+                className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-sm"
               >
                 El período ({formatPeriod(chosenPeriod)}) es distinto del mes de emisión (
                 {formatPeriod(preview.issueMonth)}). Puedes emitirlo, pero tendrás que confirmarlo.
@@ -466,7 +466,7 @@ function DraftEditor({
               retenciones que le hiciste. Los documentos son declaraciones tuyas: el sistema no los
               busca ni los modifica.
             </p>
-            <ol className="flex flex-col gap-1.5">
+            <ol className="flex flex-col gap-3">
               {supports.fields.map((field, index) => (
                 <SupportCard
                   key={field.id}
@@ -521,9 +521,9 @@ function DraftEditor({
 
         <aside
           aria-labelledby="resumen-titulo"
-          className="flex flex-col gap-2 lg:sticky lg:top-2 lg:self-start"
+          className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start"
         >
-          <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
             <h2
               id="resumen-titulo"
               ref={summaryRef}
@@ -537,7 +537,7 @@ function DraftEditor({
                 Guarda el borrador para calcular las retenciones con los porcentajes oficiales.
               </p>
             ) : (
-              <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+              <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
                 {preview.supports.flatMap((support) =>
                   support.withholdings.map((item) => (
                     <div key={`${support.position}-${item.position}`} className="contents">
@@ -561,13 +561,13 @@ function DraftEditor({
               </p>
             )}
             {fresh && generalIssues.length > 0 && (
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 <h3 className="text-sm font-semibold">Antes de emitir</h3>
                 <IssueList issues={generalIssues} />
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {canEmit && (
               <Button
                 disabled={emitBlocked}
@@ -616,24 +616,24 @@ function DraftEditor({
           })
         }
         description={
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <p>La emisión reserva el número de la retención y la firma; no se puede deshacer.</p>
             {/* En pantallas angostas, cada dato bajo su nombre: los números no se parten. */}
-            <dl className="grid grid-cols-1 gap-x-2 text-foreground sm:grid-cols-[auto_1fr] sm:gap-y-0.5">
+            <dl className="grid grid-cols-1 gap-x-4 text-foreground sm:grid-cols-[auto_1fr] sm:gap-y-1">
               <dt className="text-foreground-muted">Ambiente</dt>
-              <dd className="max-sm:mb-0.5">{environment ?? "Desconocido"}</dd>
+              <dd className="max-sm:mb-1">{environment ?? "Desconocido"}</dd>
               <dt className="text-foreground-muted">Proveedor</dt>
-              <dd className="break-words max-sm:mb-0.5">{draft.party?.legalName ?? "—"}</dd>
+              <dd className="break-words max-sm:mb-1">{draft.party?.legalName ?? "—"}</dd>
               <dt className="text-foreground-muted">Período fiscal</dt>
-              <dd className={confirmPeriod ? "font-semibold max-sm:mb-0.5" : "max-sm:mb-0.5"}>
+              <dd className={confirmPeriod ? "font-semibold max-sm:mb-1" : "max-sm:mb-1"}>
                 {formatPeriod(savedPeriod)}
               </dd>
               <dt className="text-foreground-muted">Parte relacionada</dt>
-              <dd className="max-sm:mb-0.5">
+              <dd className="max-sm:mb-1">
                 {draft.relatedParty ? RELATED_PARTY_LABELS[draft.relatedParty] : "—"}
               </dd>
               <dt className="text-foreground-muted">Documentos</dt>
-              <dd className="max-sm:mb-0.5">
+              <dd className="max-sm:mb-1">
                 <ul>
                   {draft.supports.map((support, index) => (
                     <li key={index} className="whitespace-nowrap tabular-nums">
@@ -651,10 +651,10 @@ function DraftEditor({
         }
       >
         {confirmPeriod && (
-          <label className="mt-1 flex min-h-5.5 items-start gap-1 rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-sm">
+          <label className="mt-2 flex min-h-11 items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-sm">
             <input
               type="checkbox"
-              className="mt-0.5 size-2.5 shrink-0 accent-primary"
+              className="mt-1 size-5 shrink-0 accent-primary"
               checked={periodConfirmed}
               onChange={(event) => setPeriodConfirmed(event.target.checked)}
             />
@@ -671,12 +671,12 @@ function DraftEditor({
 
 function Header({ title }: { title: string }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <Link
         href="/retenciones"
-        className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+        className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
       >
-        <ArrowLeft aria-hidden="true" className="size-2" />
+        <ArrowLeft aria-hidden="true" className="size-4" />
         Retenciones
       </Link>
       <h1 id="editor-titulo" className="text-3xl font-bold">
@@ -688,7 +688,7 @@ function Header({ title }: { title: string }) {
 
 function Fallback({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <Header title={title} />
       {children}
     </section>
@@ -834,10 +834,10 @@ export function WithholdingDraftScreen({ draftId }: { draftId: string }) {
 
 export function WithholdingDraftSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Borrador de retención</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

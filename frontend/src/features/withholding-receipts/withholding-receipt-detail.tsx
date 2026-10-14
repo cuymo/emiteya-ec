@@ -37,7 +37,7 @@ type Support = WithholdingReceiptView["supports"][number];
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -52,9 +52,9 @@ function SupportCard({ support }: { support: Support }) {
   return (
     <li
       aria-labelledby={headingId}
-      className="flex flex-col gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm"
+      className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-1">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 id={headingId} className="font-medium">
           {support.documentTypeLabel}{" "}
           <span className="whitespace-nowrap tabular-nums">
@@ -78,14 +78,14 @@ function SupportCard({ support }: { support: Support }) {
         </p>
       )}
       {/* Por debajo de 640 px, cada retención apilada: los importes no se parten ni desbordan. */}
-      <ul aria-label="Retenciones del documento" className="flex flex-col gap-0.5 sm:hidden">
+      <ul aria-label="Retenciones del documento" className="flex flex-col gap-1 sm:hidden">
         {support.withholdings.map((item) => (
-          <li key={item.position} className="flex flex-col border-t border-border pt-0.5">
+          <li key={item.position} className="flex flex-col border-t border-border pt-1">
             <span className="font-medium">
               {item.taxLabel} {item.code}
             </span>
             <span className="text-xs text-foreground-muted break-words">{item.label}</span>
-            <span className="flex flex-wrap gap-x-1 tabular-nums">
+            <span className="flex flex-wrap gap-x-2 tabular-nums">
               <span className="whitespace-nowrap">Base {formatUsd(item.base)}</span>
               <span className="whitespace-nowrap">{formatPercentage(item.percentage)}</span>
               <span className="whitespace-nowrap font-medium">
@@ -99,16 +99,16 @@ function SupportCard({ support }: { support: Support }) {
         <caption className="sr-only">Retenciones del documento</caption>
         <thead className="text-xs text-foreground-muted">
           <tr>
-            <th scope="col" className="py-0.5 font-medium">
+            <th scope="col" className="py-1 font-medium">
               Retención
             </th>
-            <th scope="col" className="py-0.5 pl-1 text-right font-medium">
+            <th scope="col" className="py-1 pl-2 text-right font-medium">
               Base
             </th>
-            <th scope="col" className="py-0.5 pl-1 text-right font-medium">
+            <th scope="col" className="py-1 pl-2 text-right font-medium">
               Porcentaje
             </th>
-            <th scope="col" className="py-0.5 pl-1 text-right font-medium">
+            <th scope="col" className="py-1 pl-2 text-right font-medium">
               Valor retenido
             </th>
           </tr>
@@ -116,7 +116,7 @@ function SupportCard({ support }: { support: Support }) {
         <tbody>
           {support.withholdings.map((item) => (
             <tr key={item.position} className="border-t border-border align-top">
-              <td className="py-0.5 pr-1">
+              <td className="py-1 pr-2">
                 <span className="flex flex-col">
                   <span className="font-medium">
                     {item.taxLabel} {item.code}
@@ -124,20 +124,20 @@ function SupportCard({ support }: { support: Support }) {
                   <span className="text-xs text-foreground-muted break-words">{item.label}</span>
                 </span>
               </td>
-              <td className="py-0.5 pl-1 text-right whitespace-nowrap">{formatUsd(item.base)}</td>
-              <td className="py-0.5 pl-1 text-right whitespace-nowrap">
+              <td className="py-1 pl-2 text-right whitespace-nowrap">{formatUsd(item.base)}</td>
+              <td className="py-1 pl-2 text-right whitespace-nowrap">
                 {formatPercentage(item.percentage)}
               </td>
-              <td className="py-0.5 pl-1 text-right whitespace-nowrap">{formatUsd(item.amount)}</td>
+              <td className="py-1 pl-2 text-right whitespace-nowrap">{formatUsd(item.amount)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <details className="rounded-md border border-border px-1 py-0.5">
-        <summary className="cursor-pointer py-0.5 font-medium">
+      <details className="rounded-md border border-border px-2 py-1">
+        <summary className="cursor-pointer py-1 font-medium">
           Totales, impuestos y pagos declarados
         </summary>
-        <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 py-0.5 tabular-nums">
+        <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 py-1 tabular-nums">
           <dt>Total sin impuestos</dt>
           <dd className="text-right">{formatUsd(support.totalWithoutTaxes)}</dd>
           <dt>Importe total</dt>
@@ -159,7 +159,7 @@ function SupportCard({ support }: { support: Support }) {
             </div>
           ))}
         </dl>
-        <p className="pb-0.5 text-xs text-foreground-muted">
+        <p className="pb-1 text-xs text-foreground-muted">
           Los impuestos y pagos del documento son los que declaraste; el sistema no los recalcula.
         </p>
       </details>
@@ -181,14 +181,14 @@ export function WithholdingReceiptDetailScreen({
   const header = (
     <Link
       href="/retenciones"
-      className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
     >
-      <ArrowLeft aria-hidden="true" className="size-2" />
+      <ArrowLeft aria-hidden="true" className="size-4" />
       Retenciones
     </Link>
   );
   const fallback = (body: ReactNode) => (
-    <section aria-labelledby="retencion-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="retencion-titulo" className="flex flex-col gap-6">
       {header}
       <h1 id="retencion-titulo" className="text-3xl font-bold">
         Comprobante de retención
@@ -229,14 +229,14 @@ export function WithholdingReceiptDetailScreen({
   const reserved = data.state === "RESERVED";
   const related = data.relatedParty;
   return (
-    <section aria-labelledby="retencion-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="retencion-titulo" className="flex flex-col gap-6">
       {header}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
           <h1 id="retencion-titulo" className="text-3xl font-bold tabular-nums">
             Retención <span className="whitespace-nowrap">{data.documentNumber}</span>
           </h1>
-          <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted">
+          <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]} ·{" "}
             <span className="tabular-nums">Total retenido {formatUsd(data.totals.withheld)}</span>
@@ -253,7 +253,7 @@ export function WithholdingReceiptDetailScreen({
       {reserved && (
         <div
           role="status"
-          className="flex flex-col gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+          className="flex flex-col gap-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
         >
           {data.diagnostic ? (
             <>
@@ -275,8 +275,8 @@ export function WithholdingReceiptDetailScreen({
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           {!reserved && <TransmissionSection document={data} />}
           <DocumentsSection document={data} />
           <Section title="Proveedor">
@@ -288,7 +288,7 @@ export function WithholdingReceiptDetailScreen({
             </p>
           </Section>
           <Section title="Documentos sustento">
-            <ol className="flex flex-col gap-1">
+            <ol className="flex flex-col gap-2">
               {data.supports.map((support) => (
                 <SupportCard key={support.position} support={support} />
               ))}
@@ -308,12 +308,12 @@ export function WithholdingReceiptDetailScreen({
         </div>
         <aside
           aria-labelledby="totales-titulo"
-          className="flex flex-col gap-1.5 self-start rounded-lg border border-border bg-surface p-2"
+          className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"
         >
           <h2 id="totales-titulo" className="text-lg font-semibold">
             Totales
           </h2>
-          <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+          <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
             <dt>Período fiscal</dt>
             <dd className="text-right">{formatPeriod(data.fiscalPeriod)}</dd>
             {data.supports.flatMap((support) =>
@@ -330,7 +330,7 @@ export function WithholdingReceiptDetailScreen({
             <dt className="font-semibold">Total retenido</dt>
             <dd className="text-right font-semibold">{formatUsd(data.totals.withheld)}</dd>
           </dl>
-          <div className="flex flex-col gap-0.5 border-t border-border pt-1 text-sm">
+          <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Clave de acceso</span>
             <span className="font-mono text-xs break-all">{data.accessKey}</span>
           </div>
@@ -342,10 +342,10 @@ export function WithholdingReceiptDetailScreen({
 
 export function WithholdingReceiptDetailSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Comprobante de retención</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

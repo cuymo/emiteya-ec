@@ -59,11 +59,11 @@ export function DialogContent({
         <DialogPrimitive.Close
           aria-label={closeLabel}
           className={cn(
-            "absolute top-1 right-1 inline-flex size-5.5 items-center justify-center rounded-md text-foreground-muted",
+            "absolute top-2 right-2 inline-flex size-11 items-center justify-center rounded-md text-foreground-muted",
             "hover:bg-surface-subtle hover:text-foreground active:bg-border",
           )}
         >
-          <X aria-hidden="true" className="size-2.5" />
+          <X aria-hidden="true" className="size-5" />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>

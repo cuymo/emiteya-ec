@@ -72,7 +72,7 @@ export function FileField({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <span id={`${id}-label`} className="text-sm font-medium">
         {label}
       </span>
@@ -80,7 +80,7 @@ export function FileField({
         {disabledReason ?? `${acceptLabel}, hasta ${formatBytes(maxBytes)}.`}
       </p>
       {current && (
-        <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface p-1">
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-surface p-2">
           {current.preview}
           <div className="flex min-w-0 flex-col text-sm">
             <span className="font-medium break-words">{current.name}</span>
@@ -104,7 +104,7 @@ export function FileField({
           event.target.value = "";
         }}
       />
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="outline"
           disabled={disabled}

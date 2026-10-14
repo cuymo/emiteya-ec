@@ -23,13 +23,9 @@ export function NoticeStrip({
   return (
     <div
       role="status"
-      className={cn(
-        "flex items-center gap-1 border-b px-1 py-0.5 text-sm md:px-2",
-        strip,
-        className,
-      )}
+      className={cn("flex items-center gap-2 border-b px-2 py-1 text-sm md:px-4", strip, className)}
     >
-      <Icon aria-hidden="true" className={cn("size-2 shrink-0", icon_)} />
+      <Icon aria-hidden="true" className={cn("size-4 shrink-0", icon_)} />
       <p>{children}</p>
     </div>
   );

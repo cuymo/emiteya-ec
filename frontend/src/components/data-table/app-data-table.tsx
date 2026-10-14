@@ -71,7 +71,7 @@ export function AppDataTable<T>({
   const showRows = !loading && !state;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       {toolbar}
       <div
         className="overflow-hidden rounded-lg border border-border bg-surface"
@@ -87,7 +87,7 @@ export function AppDataTable<T>({
                     <th
                       key={header.id}
                       scope="col"
-                      className="h-5 px-1.5 font-medium whitespace-nowrap last:text-right"
+                      className="h-10 px-3 font-medium whitespace-nowrap last:text-right"
                     >
                       {header.isPlaceholder
                         ? null
@@ -102,8 +102,8 @@ export function AppDataTable<T>({
                 Array.from({ length: Math.min(pageSize, 8) }, (_, index) => (
                   <tr key={`skeleton-${index}`} className="border-t border-border">
                     {Array.from({ length: visibleColumns }, (_, cell) => (
-                      <td key={cell} className="h-6 px-1.5">
-                        <Skeleton className="h-2 w-full max-w-24" />
+                      <td key={cell} className="h-12 px-3">
+                        <Skeleton className="h-4 w-full max-w-48" />
                       </td>
                     ))}
                   </tr>
@@ -119,7 +119,7 @@ export function AppDataTable<T>({
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className="h-6 px-1.5 align-middle last:w-px last:text-right"
+                        className="h-12 px-3 align-middle last:w-px last:text-right"
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
@@ -136,10 +136,10 @@ export function AppDataTable<T>({
               {Array.from({ length: 4 }, (_, index) => (
                 <li
                   key={index}
-                  className="flex flex-col gap-1 border-t border-border p-2 first:border-t-0"
+                  className="flex flex-col gap-2 border-t border-border p-4 first:border-t-0"
                 >
-                  <Skeleton className="h-2 w-24" />
-                  <Skeleton className="h-2 w-32" />
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-4 w-64" />
                 </li>
               ))}
             </ul>
@@ -148,7 +148,7 @@ export function AppDataTable<T>({
           {showRows && (
             <ul aria-label={label} className="flex flex-col">
               {data.map((row) => (
-                <li key={getRowId(row)} className="border-t border-border p-2 first:border-t-0">
+                <li key={getRowId(row)} className="border-t border-border p-4 first:border-t-0">
                   {renderCard(row)}
                 </li>
               ))}

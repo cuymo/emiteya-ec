@@ -116,7 +116,7 @@ const issuedDocuments: Presentation<IssuedDocumentRow> = {
     },
   ],
   card: (row) => (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <span className="flex flex-col">
         <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
@@ -125,7 +125,7 @@ const issuedDocuments: Presentation<IssuedDocumentRow> = {
         </span>
       </span>
       <Person {...counterpartOf(row)} />
-      <dl className="grid grid-cols-[auto_1fr] gap-x-1 text-sm">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-sm">
         <dt className="text-foreground-muted">Subtotal</dt>
         <dd>
           <Amount value={row.subtotal} />
@@ -186,7 +186,7 @@ const invoices: Presentation<InvoiceRow> = {
     },
   ],
   card: (row) => (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <span className="flex flex-col">
         <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
@@ -194,7 +194,7 @@ const invoices: Presentation<InvoiceRow> = {
         </span>
       </span>
       <Person {...row.customer} />
-      <dl className="grid grid-cols-[auto_1fr] gap-x-1 text-sm">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-sm">
         <dt className="text-foreground-muted">Subtotal</dt>
         <dd>
           <Amount value={row.subtotal} />
@@ -279,7 +279,7 @@ const withholdings: Presentation<WithholdingRow> = {
     },
   ],
   card: (row) => (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <span className="flex flex-col">
         <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
@@ -291,7 +291,7 @@ const withholdings: Presentation<WithholdingRow> = {
       <span className="text-sm">
         {row.taxLabel} {row.code} · {formatPercentage(row.percentage)}
       </span>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-1 text-sm">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-sm">
         <dt className="text-foreground-muted">Base</dt>
         <dd>
           <Amount value={row.base} />
@@ -330,7 +330,7 @@ const balances: Presentation<InventoryBalanceRow> = {
     },
   ],
   card: (row) => (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <span className="break-words font-medium">{row.name}</span>
       {row.code ? (
         <span className="text-xs text-foreground-muted tabular-nums">{row.code}</span>
@@ -389,8 +389,8 @@ const movements: Presentation<InventoryMovementRow> = {
     },
   ],
   card: (row) => (
-    <div className="flex flex-col gap-1">
-      <span className="flex flex-wrap justify-between gap-1">
+    <div className="flex flex-col gap-2">
+      <span className="flex flex-wrap justify-between gap-2">
         <span className="font-medium">{STOCK_MOVEMENT_TYPE_LABELS[row.movementType]}</span>
         <span className="text-sm text-foreground-muted tabular-nums">
           {formatDateTime(row.occurredAt)}
@@ -440,7 +440,7 @@ const parties: Presentation<PartyRow> = {
     },
   ],
   card: (row) => (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <Person name={row.legalName} identification={row.identification} />
       {row.email || row.phone ? (
         <span className="break-all text-sm text-foreground-muted">

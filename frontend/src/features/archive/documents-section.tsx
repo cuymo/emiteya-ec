@@ -38,7 +38,7 @@ function DeliveryHistory({ documentId }: { documentId: string }) {
   const history = useDocumentDeliveries(documentId, open);
   let content: ReactNode = null;
   if (open) {
-    if (history.isPending) content = <Skeleton className="h-8 w-full" />;
+    if (history.isPending) content = <Skeleton className="h-16 w-full" />;
     else if (history.isError)
       content = (
         <ErrorState
@@ -51,12 +51,9 @@ function DeliveryHistory({ documentId }: { documentId: string }) {
     else
       content = (
         <>
-          <ol aria-label="Historial de entregas" className="flex flex-col gap-1">
+          <ol aria-label="Historial de entregas" className="flex flex-col gap-2">
             {history.data.items.map((delivery) => (
-              <li
-                key={delivery.id}
-                className="flex flex-col gap-0.5 border-l-2 border-border pl-1.5"
-              >
+              <li key={delivery.id} className="flex flex-col gap-1 border-l-2 border-border pl-3">
                 <span className="font-medium">
                   {DELIVERY_EVENT_LABELS[delivery.event]} ·{" "}
                   {ARTIFACT_KIND_LABELS[delivery.artifactKind]}
@@ -81,12 +78,10 @@ function DeliveryHistory({ documentId }: { documentId: string }) {
       className="rounded-lg border border-border bg-surface"
       onToggle={(event) => setOpen((event.target as HTMLDetailsElement).open)}
     >
-      <summary className="flex min-h-5.5 cursor-pointer items-center px-1.5 font-medium">
+      <summary className="flex min-h-11 cursor-pointer items-center px-3 font-medium">
         Historial de entregas
       </summary>
-      <div className="flex flex-col gap-1 border-t border-border px-1.5 py-1 text-sm">
-        {content}
-      </div>
+      <div className="flex flex-col gap-2 border-t border-border px-3 py-2 text-sm">{content}</div>
     </details>
   );
 }
@@ -97,8 +92,8 @@ function rideMessage(kind: DocumentKind, summary: DocumentSummaryView): ReactNod
       return "El RIDE está listo para entregarse.";
     case "PENDING":
       return (
-        <span className="inline-flex items-center gap-1">
-          <LoaderCircle aria-hidden="true" className="size-2 motion-safe:animate-spin" />
+        <span className="inline-flex items-center gap-2">
+          <LoaderCircle aria-hidden="true" className="size-4 motion-safe:animate-spin" />
           Estamos preparando el RIDE. Aparecerá aquí en unos segundos.
         </span>
       );
@@ -169,7 +164,7 @@ function KindDocumentsSection({
   );
 
   let body: ReactNode;
-  if (summary.isPending) body = <Skeleton className="h-6 w-full" />;
+  if (summary.isPending) body = <Skeleton className="h-12 w-full" />;
   else if (summary.error instanceof ApiError && summary.error.status === 403)
     body = (
       <p className="text-sm text-foreground-muted">
@@ -192,10 +187,10 @@ function KindDocumentsSection({
         {documents.ride === "STOPPED" ? (
           <div
             role="status"
-            className="flex items-start gap-1 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+            className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
           >
-            <CirclePause aria-hidden="true" className="mt-0.5 size-2 shrink-0" />
-            <div className="flex flex-col gap-0.5">
+            <CirclePause aria-hidden="true" className="mt-1 size-4 shrink-0" />
+            <div className="flex flex-col gap-1">
               <p className="font-medium">La preparación del RIDE se detuvo.</p>
               <p>{stopReason(rideGeneration.reason)}</p>
               <p className="text-foreground-muted">
@@ -209,7 +204,7 @@ function KindDocumentsSection({
           <p className="text-sm">{rideMessage(kind, data)}</p>
         )}
         {(canDownload || (canRetry && rideGeneration.retryable)) && (
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-wrap items-center gap-2">
             {canDownload && documents.ride === "AVAILABLE" && (
               <>
                 {downloadButton("ride", "Descargar RIDE", "primary")}
@@ -250,7 +245,7 @@ function KindDocumentsSection({
   }
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1.5">
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
       <h2 id={headingId} ref={headingRef} tabIndex={-1} className="text-lg font-semibold">
         Documentos
       </h2>

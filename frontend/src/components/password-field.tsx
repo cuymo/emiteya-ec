@@ -21,7 +21,7 @@ export function PasswordField({
         autoComplete={autoComplete}
         autoCapitalize="none"
         spellCheck={false}
-        className="pr-5.5"
+        className="pr-11"
       />
       <button
         type="button"
@@ -29,14 +29,14 @@ export function PasswordField({
         aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
         aria-pressed={visible}
         className={cn(
-          "absolute inset-y-0 right-0 inline-flex w-5 items-center justify-center rounded-r-md text-foreground-muted max-md:w-5.5",
+          "absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center rounded-r-md text-foreground-muted max-md:w-11",
           "hover:text-foreground active:text-foreground",
         )}
       >
         {visible ? (
-          <EyeOff aria-hidden="true" className="size-2.5" />
+          <EyeOff aria-hidden="true" className="size-5" />
         ) : (
-          <Eye aria-hidden="true" className="size-2.5" />
+          <Eye aria-hidden="true" className="size-5" />
         )}
       </button>
     </div>

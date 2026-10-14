@@ -20,11 +20,11 @@ export function AsyncButton({
       className={cn("relative", className)}
     >
       {/* El texto conserva el ancho; el indicador se superpone sin mover el resto. */}
-      <span className={cn("inline-flex items-center gap-1", pending && "invisible")}>
+      <span className={cn("inline-flex items-center gap-2", pending && "invisible")}>
         {children}
       </span>
       {pending && (
-        <span className="absolute inset-0 inline-flex items-center justify-center gap-1">
+        <span className="absolute inset-0 inline-flex items-center justify-center gap-2">
           <LoaderCircle aria-hidden="true" className="motion-safe:animate-spin" />
           <span className="sr-only">{pendingLabel ?? "Procesando"}</span>
         </span>

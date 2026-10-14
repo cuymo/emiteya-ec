@@ -42,7 +42,7 @@ const IDENTIFICATION_LABELS: Record<string, string> = { "05": "Cédula", "06": "
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -55,7 +55,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function LineItem({ line }: { line: Line }) {
   const codes = [line.mainCode, line.auxiliaryCode].filter(Boolean).join(" · ");
   return (
-    <li className="flex flex-wrap items-baseline justify-between gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm">
+    <li className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
       <span className="flex min-w-0 flex-col">
         <span className="font-medium break-words">{line.description}</span>
         <span className="text-foreground-muted tabular-nums">
@@ -83,11 +83,11 @@ function DeclarationsSection({
         Art. 13, letra c, del Reglamento de Comprobantes de Venta (versión{" "}
         {eligibility.policyVersion} de la política del sistema).
       </p>
-      <ul className="flex flex-col gap-0.5 text-sm">
+      <ul className="flex flex-col gap-1 text-sm">
         {eligibility.declarations.map((declaration) => (
           <li
             key={declaration.statementId}
-            className="flex flex-col rounded-md border border-border bg-surface px-1.5 py-1"
+            className="flex flex-col rounded-md border border-border bg-surface px-3 py-2"
           >
             <span className="break-words">{declaration.text}</span>
             <span className="text-foreground-muted">
@@ -119,14 +119,14 @@ export function PurchaseSettlementDetailScreen({
   const header = (
     <Link
       href="/liquidaciones-compra"
-      className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
     >
-      <ArrowLeft aria-hidden="true" className="size-2" />
+      <ArrowLeft aria-hidden="true" className="size-4" />
       Liquidaciones de compra
     </Link>
   );
   const fallback = (body: ReactNode) => (
-    <section aria-labelledby="liquidacion-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="liquidacion-titulo" className="flex flex-col gap-6">
       {header}
       <h1 id="liquidacion-titulo" className="text-3xl font-bold">
         Liquidación de compra
@@ -166,14 +166,14 @@ export function PurchaseSettlementDetailScreen({
   const data = settlement.data;
   const reserved = data.state === "RESERVED";
   return (
-    <section aria-labelledby="liquidacion-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="liquidacion-titulo" className="flex flex-col gap-6">
       {header}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
           <h1 id="liquidacion-titulo" className="text-3xl font-bold tabular-nums">
             Liquidación de compra <span className="whitespace-nowrap">{data.documentNumber}</span>
           </h1>
-          <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted">
+          <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]}
           </span>
@@ -189,7 +189,7 @@ export function PurchaseSettlementDetailScreen({
       {reserved && (
         <div
           role="status"
-          className="flex flex-col gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+          className="flex flex-col gap-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
         >
           {data.diagnostic ? (
             <>
@@ -213,14 +213,14 @@ export function PurchaseSettlementDetailScreen({
 
       <p
         role="note"
-        className="flex items-start gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+        className="flex items-start gap-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
       >
-        <Info aria-hidden="true" className="mt-0.5 size-2 shrink-0 text-warning" />
+        <Info aria-hidden="true" className="mt-1 size-4 shrink-0 text-warning" />
         <span>{data.withholdingNotice}</span>
       </p>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           {!reserved && <TransmissionSection document={data} />}
           <DocumentsSection document={data} />
           <Section title="Proveedor">
@@ -235,18 +235,18 @@ export function PurchaseSettlementDetailScreen({
           </Section>
           <DeclarationsSection eligibility={data.eligibility} />
           <Section title="Líneas">
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col gap-2">
               {data.lines.map((line) => (
                 <LineItem key={line.position} line={line} />
               ))}
             </ul>
           </Section>
           <Section title="Pagos">
-            <ul className="flex flex-col gap-0.5 text-sm">
+            <ul className="flex flex-col gap-1 text-sm">
               {data.payments.map((payment) => (
                 <li
                   key={payment.position}
-                  className="flex flex-wrap justify-between gap-1 tabular-nums"
+                  className="flex flex-wrap justify-between gap-2 tabular-nums"
                 >
                   <span className="flex min-w-0 flex-col">
                     <span className="break-words">
@@ -264,12 +264,12 @@ export function PurchaseSettlementDetailScreen({
         </div>
         <aside
           aria-labelledby="totales-titulo"
-          className="flex flex-col gap-1.5 self-start rounded-lg border border-border bg-surface p-2"
+          className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"
         >
           <h2 id="totales-titulo" className="text-lg font-semibold">
             Totales
           </h2>
-          <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+          <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
             {data.totals.taxes.map((tax) => (
               <div key={`base-${tax.rateCode}`} className="contents">
                 <dt>Subtotal {tax.label}</dt>
@@ -292,7 +292,7 @@ export function PurchaseSettlementDetailScreen({
             <dd className="text-right font-semibold">{formatUsd(data.totals.total)}</dd>
           </dl>
           <p className="text-xs text-foreground-muted">Moneda: dólar de los Estados Unidos.</p>
-          <div className="flex flex-col gap-0.5 border-t border-border pt-1 text-sm">
+          <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Clave de acceso</span>
             <span className="font-mono text-xs break-all">{data.accessKey}</span>
           </div>
@@ -304,10 +304,10 @@ export function PurchaseSettlementDetailScreen({
 
 export function PurchaseSettlementDetailSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Liquidación de compra</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

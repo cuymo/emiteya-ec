@@ -88,7 +88,7 @@ function useDefaultPoint(enabled: boolean) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1.5">
+    <section aria-labelledby={id} className="flex flex-col gap-3">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -112,7 +112,7 @@ function OperationAlert({
       ref={alertRef}
       role="alert"
       tabIndex={-1}
-      className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
     >
       <p>{message}</p>
       {action}
@@ -125,9 +125,9 @@ function WithholdingNotice({ text }: { text: string }) {
   return (
     <p
       role="note"
-      className="flex items-start gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-sm"
+      className="flex items-start gap-1 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-sm"
     >
-      <Info aria-hidden="true" className="mt-0.5 size-2 shrink-0 text-warning" />
+      <Info aria-hidden="true" className="mt-1 size-4 shrink-0 text-warning" />
       <span>{text}</span>
     </p>
   );
@@ -372,15 +372,15 @@ function DraftEditor({
       : null;
 
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <Header title="Borrador de liquidación de compra" />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
       )}
 
-      <form noValidate onSubmit={onSave} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           <Section title="Punto de emisión">
             <FormField id="punto" label="Punto de emisión">
               <Select
@@ -405,8 +405,8 @@ function DraftEditor({
               Una persona natural con cédula o pasaporte y el rol de proveedor en Terceros.
             </p>
             {supplier ? (
-              <p className="flex items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm">
-                <UserRound aria-hidden="true" className="size-2 shrink-0 text-foreground-muted" />
+              <p className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                <UserRound aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
                 <span className="flex min-w-0 flex-col">
                   <span className="font-medium break-words">{supplier.legalName}</span>
                   <span className="text-foreground-muted tabular-nums">
@@ -436,7 +436,7 @@ function DraftEditor({
           </Section>
 
           <Section title="Líneas">
-            <ol className="flex flex-col gap-1.5">
+            <ol className="flex flex-col gap-3">
               {lines.fields.map((field, index) => (
                 <LineCard
                   key={field.id}
@@ -475,7 +475,7 @@ function DraftEditor({
               Cada pago lleva su forma de pago, su total, su plazo y su unidad de tiempo. La suma de
               los pagos debe ser exactamente el importe total.
             </p>
-            <ol className="flex flex-col gap-1.5">
+            <ol className="flex flex-col gap-3">
               {payments.fields.map((field, index) => (
                 <PaymentRow
                   key={field.id}
@@ -512,9 +512,9 @@ function DraftEditor({
 
         <aside
           aria-labelledby="resumen-titulo"
-          className="flex flex-col gap-2 lg:sticky lg:top-2 lg:self-start"
+          className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start"
         >
-          <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
             <h2
               id="resumen-titulo"
               ref={summaryRef}
@@ -538,7 +538,7 @@ function DraftEditor({
                       : "—"}
                   </span>
                 </p>
-                <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+                <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
                   {totals ? (
                     <>
                       {totals.taxes.map((tax) => (
@@ -575,9 +575,9 @@ function DraftEditor({
                   catálogos.
                 </p>
                 <WithholdingNotice text={preview.withholdingNotice} />
-                <div className="flex flex-col gap-0.5 text-sm">
+                <div className="flex flex-col gap-1 text-sm">
                   <h3 className="font-semibold">Al emitir declararás</h3>
-                  <ul className="flex list-disc flex-col gap-0.5 pl-2">
+                  <ul className="flex list-disc flex-col gap-1 pl-4">
                     {preview.policy.statements.map((statement) => (
                       <li key={statement.id}>{statement.text}</li>
                     ))}
@@ -586,7 +586,7 @@ function DraftEditor({
               </>
             )}
             {fresh && generalIssues.length > 0 && (
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 <h3 className="text-sm font-semibold">Antes de emitir</h3>
                 <IssueList issues={generalIssues} />
               </div>
@@ -595,7 +595,7 @@ function DraftEditor({
               Límites del sistema (no del SRI): {limits.lines} líneas y {limits.payments} pagos.
             </p>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {canEmit && (
               <Button
                 disabled={emitBlocked}
@@ -649,27 +649,25 @@ function DraftEditor({
           })
         }
         description={
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <p>
               La emisión reserva el número de la liquidación y la firma; no se puede deshacer. No
               emite ni espera el comprobante de retención.
             </p>
             {/* En pantallas angostas, cada dato bajo su nombre: los números no se parten. */}
-            <dl className="grid grid-cols-1 gap-x-2 text-foreground sm:grid-cols-[auto_1fr] sm:gap-y-0.5">
+            <dl className="grid grid-cols-1 gap-x-4 text-foreground sm:grid-cols-[auto_1fr] sm:gap-y-1">
               <dt className="text-foreground-muted">Ambiente</dt>
-              <dd className="max-sm:mb-0.5">{environment ?? "Desconocido"}</dd>
+              <dd className="max-sm:mb-1">{environment ?? "Desconocido"}</dd>
               <dt className="text-foreground-muted">Proveedor</dt>
-              <dd className="break-words max-sm:mb-0.5">
+              <dd className="break-words max-sm:mb-1">
                 {preview.supplier
                   ? `${preview.supplier.legalName} · ${preview.supplier.identification}`
                   : "—"}
               </dd>
               <dt className="text-foreground-muted">Importe total</dt>
-              <dd className="tabular-nums max-sm:mb-0.5">
-                {totals ? formatUsd(totals.total) : "—"}
-              </dd>
+              <dd className="tabular-nums max-sm:mb-1">{totals ? formatUsd(totals.total) : "—"}</dd>
               <dt className="text-foreground-muted">Líneas y pagos</dt>
-              <dd className="max-sm:mb-0.5">
+              <dd className="max-sm:mb-1">
                 {draft.lines.length === 1 ? "1 línea" : `${draft.lines.length} líneas`} ·{" "}
                 {draft.payments.length === 1 ? "1 pago" : `${draft.payments.length} pagos`}
               </dd>
@@ -677,23 +675,23 @@ function DraftEditor({
           </div>
         }
       >
-        <fieldset className="mt-1 flex flex-col gap-1 text-sm">
-          <legend className="mb-0.5 font-semibold">Declaraciones de procedencia</legend>
+        <fieldset className="mt-2 flex flex-col gap-2 text-sm">
+          <legend className="mb-1 font-semibold">Declaraciones de procedencia</legend>
           <p className="text-xs text-foreground-muted">Fuente: {policy.source}.</p>
           <p
             role="note"
-            className="rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-foreground"
+            className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-foreground"
           >
             {DECLARATIONS_NOTICE}
           </p>
           {statements.map((statement) => (
             <label
               key={statement.id}
-              className="flex min-h-5.5 items-start gap-1 rounded-md border border-border px-1 py-0.5"
+              className="flex min-h-11 items-start gap-2 rounded-md border border-border px-2 py-1"
             >
               <input
                 type="checkbox"
-                className="mt-0.5 size-2.5 shrink-0 accent-primary"
+                className="mt-1 size-5 shrink-0 accent-primary"
                 checked={declared.includes(statement.id)}
                 onChange={(event) =>
                   setDeclared((current) =>
@@ -719,12 +717,12 @@ function DraftEditor({
 
 function Header({ title }: { title: string }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <Link
         href="/liquidaciones-compra"
-        className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+        className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
       >
-        <ArrowLeft aria-hidden="true" className="size-2" />
+        <ArrowLeft aria-hidden="true" className="size-4" />
         Liquidaciones de compra
       </Link>
       <h1 id="editor-titulo" className="text-3xl font-bold">
@@ -736,7 +734,7 @@ function Header({ title }: { title: string }) {
 
 function Fallback({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <Header title={title} />
       {children}
     </section>
@@ -881,10 +879,10 @@ export function PurchaseSettlementDraftScreen({ draftId }: { draftId: string }) 
 
 export function PurchaseSettlementDraftSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Borrador de liquidación de compra</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

@@ -47,7 +47,7 @@ const INCOME: WithholdingTaxCode = "1";
 export function IssueList({ issues }: { issues: readonly WithholdingIssue[] }) {
   if (issues.length === 0) return null;
   return (
-    <ul className="flex flex-col gap-0.5 text-sm">
+    <ul className="flex flex-col gap-1 text-sm">
       {issues.map((issue, index) => (
         <li key={`${issue.code}-${index}`} className="text-danger">
           {issue.message}
@@ -94,7 +94,7 @@ function OptionPicker<T extends { entryKey: string; code: string; label: string 
     });
   };
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
+    <div className="flex min-w-0 flex-col gap-1">
       <span id={labelId} className="text-sm font-medium">
         {label}
       </span>
@@ -103,13 +103,13 @@ function OptionPicker<T extends { entryKey: string; code: string; label: string 
         aria-labelledby={labelId}
         aria-describedby={`${labelId}-value`}
         aria-invalid={invalid || undefined}
-        className="h-auto min-h-4 justify-between text-left font-normal whitespace-normal"
+        className="h-auto min-h-8 justify-between text-left font-normal whitespace-normal"
         onClick={() => setOpen(true)}
       >
         <span id={`${labelId}-value`} className="min-w-0 break-words">
           {chosen ? describe(chosen) : value ? `Código ${value} (no disponible)` : "Elegir"}
         </span>
-        <ChevronDown aria-hidden="true" className="size-2 shrink-0" />
+        <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
       </Button>
       <EntityPickerDialog<T>
         open={open}
@@ -133,7 +133,7 @@ function OptionPicker<T extends { entryKey: string; code: string; label: string 
 function SubList({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
       <h4 id={id} className="text-sm font-semibold">
         {title}
       </h4>
@@ -195,9 +195,9 @@ export function SupportCard({
     <li
       aria-label={`Documento sustento ${position}`}
       aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-1.5 rounded-md border border-border bg-surface px-1.5 py-1 aria-invalid:border-danger"
+      className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
     >
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="font-medium">Documento sustento {position}</h3>
         {canRemove && (
           <RowActionButton
@@ -208,7 +208,7 @@ export function SupportCard({
         )}
       </div>
 
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <span id={typeLabelId} className="text-sm font-medium">
           Tipo de documento
         </span>
@@ -258,7 +258,7 @@ export function SupportCard({
             )}
         </Select>
       </FormField>
-      <div className="grid gap-1 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <FormField
           id={`numero-${index}`}
           label="Número"
@@ -303,7 +303,7 @@ export function SupportCard({
           {...form.register(`${base}.authorizationNumber`)}
         />
       </FormField>
-      <div className="grid gap-1 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <FormField
           id={`sin-impuestos-${index}`}
           label="Total sin impuestos"
@@ -333,7 +333,7 @@ export function SupportCard({
           Transcribe los impuestos del documento. El código de porcentaje es el vigente en su fecha;
           el sistema no recalcula la base ni el valor.
         </p>
-        <ol className="flex flex-col gap-1">
+        <ol className="flex flex-col gap-2">
           {taxes.fields.map((field, t) => {
             const taxPosition = t + 1;
             const current = support.taxes[t];
@@ -347,10 +347,10 @@ export function SupportCard({
                 key={field.id}
                 aria-label={`Impuesto ${taxPosition} del documento ${position}`}
                 aria-invalid={problems.length > 0 || undefined}
-                className="flex flex-col gap-1 rounded-md border border-border px-1 py-1 aria-invalid:border-danger"
+                className="flex flex-col gap-2 rounded-md border border-border px-2 py-2 aria-invalid:border-danger"
               >
-                <div className="flex flex-wrap items-end justify-between gap-1">
-                  <div className="flex flex-col gap-0.5">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div className="flex flex-col gap-1">
                     <span id={labelId} className="text-sm font-medium">
                       Impuesto
                     </span>
@@ -409,7 +409,7 @@ export function SupportCard({
                     </Select>
                   </FormField>
                 )}
-                <div className="grid gap-1 sm:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-3">
                   {current?.tax && current.tax !== IVA_SUPPORT ? (
                     <FormField
                       id={`tarifa-declarada-${field.id}`}
@@ -428,9 +428,9 @@ export function SupportCard({
                       />
                     </FormField>
                   ) : (
-                    <div className="flex flex-col gap-0.5 text-sm">
+                    <div className="flex flex-col gap-1 text-sm">
                       <span className="font-medium">Tarifa</span>
-                      <span className="flex min-h-4 items-center text-foreground-muted tabular-nums">
+                      <span className="flex min-h-8 items-center text-foreground-muted tabular-nums">
                         {chosenRate?.percentage
                           ? `${formatPercentage(chosenRate.percentage)} (catálogo)`
                           : "Del catálogo"}
@@ -482,7 +482,7 @@ export function SupportCard({
       </SubList>
 
       <SubList title="Formas de pago">
-        <ol className="flex flex-col gap-1">
+        <ol className="flex flex-col gap-2">
           {payments.fields.map((field, p) => {
             const paymentPosition = p + 1;
             const current = support.payments[p];
@@ -493,9 +493,9 @@ export function SupportCard({
                 key={field.id}
                 aria-label={`Forma de pago ${paymentPosition} del documento ${position}`}
                 aria-invalid={problems.length > 0 || undefined}
-                className="flex flex-col gap-1 rounded-md border border-border px-1 py-1 aria-invalid:border-danger"
+                className="flex flex-col gap-2 rounded-md border border-border px-2 py-2 aria-invalid:border-danger"
               >
-                <div className="grid items-end gap-1 sm:grid-cols-[minmax(0,1fr)_10rem_auto]">
+                <div className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto]">
                   <FormField id={`pago-${field.id}`} label="Forma de pago">
                     <Select
                       {...fieldAria(`pago-${field.id}`, undefined)}
@@ -565,7 +565,7 @@ export function SupportCard({
       </SubList>
 
       <SubList title="Retenciones">
-        <ol className="flex flex-col gap-1">
+        <ol className="flex flex-col gap-2">
           {items.fields.map((field, i) => {
             const itemPosition = i + 1;
             const current = support.withholdings[i];
@@ -579,10 +579,10 @@ export function SupportCard({
                 key={field.id}
                 aria-label={`Retención ${itemPosition} del documento ${position}`}
                 aria-invalid={problems.length > 0 || undefined}
-                className="flex flex-col gap-1 rounded-md border border-border px-1 py-1 aria-invalid:border-danger"
+                className="flex flex-col gap-2 rounded-md border border-border px-2 py-2 aria-invalid:border-danger"
               >
-                <div className="flex flex-wrap items-end justify-between gap-1">
-                  <div className="flex flex-col gap-0.5">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div className="flex flex-col gap-1">
                     <span id={labelId} className="text-sm font-medium">
                       Impuesto a retener
                     </span>
@@ -656,7 +656,7 @@ export function SupportCard({
                     </Select>
                   </FormField>
                 )}
-                <div className="grid items-end gap-1 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
+                <div className="grid items-end gap-2 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
                   <FormField
                     id={`base-retencion-${field.id}`}
                     label="Base imponible"
@@ -670,7 +670,7 @@ export function SupportCard({
                   </FormField>
                   <p
                     aria-label={`Cálculo de la retención ${itemPosition} del documento ${position}`}
-                    className="flex min-h-4 items-center text-sm tabular-nums"
+                    className="flex min-h-8 items-center text-sm tabular-nums"
                   >
                     {result
                       ? `${formatPercentage(result.percentage)} · valor retenido ${formatUsd(result.amount)}`

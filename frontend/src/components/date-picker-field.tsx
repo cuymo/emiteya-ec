@@ -29,7 +29,7 @@ export function DatePickerField({
   const id = useId();
   const errorId = `${id}-error`;
   return (
-    <div className={cn("flex flex-col gap-0.5", className)}>
+    <div className={cn("flex flex-col gap-1", className)}>
       <Label htmlFor={id}>{label}</Label>
       <div className="relative">
         <Input
@@ -41,16 +41,16 @@ export function DatePickerField({
           onChange={(event) => onChange(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          className={cn(value && "pr-5")}
+          className={cn(value && "pr-10")}
         />
         {value && (
           <button
             type="button"
             aria-label={`Limpiar ${label.toLowerCase()}`}
             onClick={() => onChange("")}
-            className="absolute inset-y-0 right-0 inline-flex w-5 items-center justify-center text-foreground-muted hover:text-foreground"
+            className="absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center text-foreground-muted hover:text-foreground"
           >
-            <X aria-hidden="true" className="size-2" />
+            <X aria-hidden="true" className="size-4" />
           </button>
         )}
       </div>

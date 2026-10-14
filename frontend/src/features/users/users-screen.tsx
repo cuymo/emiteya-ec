@@ -101,16 +101,16 @@ function RowActions({
         <button
           type="button"
           aria-label={OWN_ACCESS}
-          className="inline-flex size-5 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-subtle max-md:size-5.5"
+          className="inline-flex size-10 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-subtle max-md:size-11"
         >
-          <Info aria-hidden="true" className="size-2.5" />
+          <Info aria-hidden="true" className="size-5" />
         </button>
       </Tooltip>
     );
   }
   const active = user.status === "ACTIVE";
   return (
-    <div className="inline-flex items-center gap-0.5">
+    <div className="inline-flex items-center gap-1">
       <RowActionButton
         icon={UserCog}
         label={`Cambiar rol de ${user.name}`}
@@ -220,7 +220,7 @@ export function UsersScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="usuarios-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="usuarios-titulo" className="flex flex-col gap-6">
         <h1 id="usuarios-titulo" className="text-3xl font-bold">
           Usuarios
         </h1>
@@ -263,8 +263,8 @@ export function UsersScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="usuarios-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="usuarios-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 id="usuarios-titulo" className="text-3xl font-bold">
           Usuarios
         </h1>
@@ -289,7 +289,7 @@ export function UsersScreen() {
         refreshing={users.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-4">
             <SearchInput
               value={searchDraft}
               onChange={setSearchDraft}
@@ -314,16 +314,16 @@ export function UsersScreen() {
           </div>
         }
         renderCard={(user) => (
-          <div className="flex flex-col gap-1">
-            <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex flex-col gap-2">
+            <div className="flex min-w-0 flex-col gap-1">
               <span className="font-medium break-words">{user.name}</span>
               <span className="text-sm break-words text-foreground-muted">{user.email}</span>
-              <span className="flex flex-wrap items-center gap-1 text-sm">
+              <span className="flex flex-wrap items-center gap-2 text-sm">
                 {ROLE_LABELS[user.role]}
                 <StatusCell user={user} />
               </span>
             </div>
-            <div className="-ml-1">
+            <div className="-ml-2">
               <RowActions
                 user={user}
                 isSelf={isSelf(user)}
@@ -352,10 +352,10 @@ export function UsersScreen() {
 /** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function UsersSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Usuarios</h1>
-      <Skeleton className="h-5 w-full max-w-md" />
-      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <Skeleton className="h-64 w-full" />
     </section>
   );
 }

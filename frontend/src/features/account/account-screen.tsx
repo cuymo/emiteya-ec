@@ -51,12 +51,12 @@ export function AccountScreen() {
   });
 
   return (
-    <section aria-labelledby="cuenta-titulo" className="flex max-w-xl flex-col gap-4">
-      <div className="flex flex-col gap-1">
+    <section aria-labelledby="cuenta-titulo" className="flex max-w-xl flex-col gap-8">
+      <div className="flex flex-col gap-2">
         <h1 id="cuenta-titulo" className="text-3xl font-bold">
           Mi cuenta
         </h1>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-sm">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
           <dt className="text-foreground-muted">Nombre</dt>
           <dd className="break-words">{me.name}</dd>
           <dt className="text-foreground-muted">Correo</dt>
@@ -70,9 +70,9 @@ export function AccountScreen() {
         aria-labelledby="contrasena-titulo"
         noValidate
         onSubmit={form.handleSubmit((input) => change.mutate(input))}
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-4"
       >
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1">
           <h2 id="contrasena-titulo" className="text-lg font-semibold">
             Cambiar contraseña
           </h2>

@@ -28,7 +28,7 @@ import { PURCHASE_SETTLEMENTS_KEY, fetchPurchaseProducts } from "./purchase-sett
 export function IssueList({ issues }: { issues: readonly PurchaseSettlementIssue[] }) {
   if (issues.length === 0) return null;
   return (
-    <ul className="flex flex-col gap-0.5 text-sm">
+    <ul className="flex flex-col gap-1 text-sm">
       {issues.map((issue, index) => (
         <li key={`${issue.code}-${index}`} className="text-danger">
           {issue.message}
@@ -85,18 +85,18 @@ export function LineCard({
     <li
       aria-label={`Línea ${position}`}
       aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-1 rounded-md border border-border bg-surface px-1.5 py-1 aria-invalid:border-danger"
+      className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
     >
-      <div className="flex flex-wrap items-center justify-between gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Línea {position}</h3>
         {canRemove && (
           <RowActionButton icon={Trash2} label={`Quitar la línea ${position}`} onClick={onRemove} />
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-1 text-sm">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
         <Button
           variant="outline"
-          className="h-auto min-h-4 justify-between text-left font-normal whitespace-normal"
+          className="h-auto min-h-8 justify-between text-left font-normal whitespace-normal"
           aria-label={
             line.productId
               ? `Cambiar el producto de la línea ${position}: ${line.productName}`
@@ -109,7 +109,7 @@ export function LineCard({
               ? `Producto: ${line.productName || "elegido"}`
               : "Elegir producto (opcional)"}
           </span>
-          <ChevronDown aria-hidden="true" className="size-2 shrink-0" />
+          <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
         </Button>
         {line.productId && (
           <Button
@@ -150,7 +150,7 @@ export function LineCard({
         emptyTitle="No hay productos que coincidan"
         emptyDescription="Escribe la línea sin producto: la liquidación no necesita uno."
       />
-      <div className="grid gap-1 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <FormField id={id("codigo")} label="Código principal" error={errors?.mainCode?.message}>
           <Input
             autoComplete="off"
@@ -182,7 +182,7 @@ export function LineCard({
           {...form.register(`${base}.description`)}
         />
       </FormField>
-      <div className="grid gap-1 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-3">
         <FormField
           id={id("unidad")}
           label="Unidad de medida"
@@ -218,7 +218,7 @@ export function LineCard({
           />
         </FormField>
       </div>
-      <div className="grid gap-1 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <FormField
           id={id("descuento")}
           label="Descuento (USD)"
@@ -289,15 +289,15 @@ export function PaymentRow({
     <li
       aria-label={`Pago ${position}`}
       aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-1 rounded-md border border-border bg-surface px-1.5 py-1 aria-invalid:border-danger"
+      className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
     >
-      <div className="flex flex-wrap items-center justify-between gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Pago {position}</h3>
         {canRemove && (
           <RowActionButton icon={Trash2} label={`Quitar el pago ${position}`} onClick={onRemove} />
         )}
       </div>
-      <div className="grid gap-1 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <FormField id={id("forma")} label="Forma de pago">
           <Select
             {...fieldAria(id("forma"), undefined)}

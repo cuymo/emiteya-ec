@@ -31,7 +31,7 @@ import { InvoiceShippingGuideAction } from "@/features/shipping-guides/invoice-s
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -57,16 +57,16 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
   const header = (
     <Link
       href="/facturas"
-      className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
     >
-      <ArrowLeft aria-hidden="true" className="size-2" />
+      <ArrowLeft aria-hidden="true" className="size-4" />
       Facturas
     </Link>
   );
 
   if (!allowed) {
     return (
-      <section aria-labelledby="factura-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="factura-titulo" className="flex flex-col gap-6">
         {header}
         <h1 id="factura-titulo" className="text-3xl font-bold">
           Factura
@@ -83,7 +83,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
   if (invoice.isError) {
     const missing = invoice.error instanceof ApiError && invoice.error.status === 404;
     return (
-      <section aria-labelledby="factura-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="factura-titulo" className="flex flex-col gap-6">
         {header}
         <h1 id="factura-titulo" className="text-3xl font-bold">
           Factura
@@ -107,14 +107,14 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
   const data = invoice.data;
   const reserved = data.state === "RESERVED";
   return (
-    <section aria-labelledby="factura-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="factura-titulo" className="flex flex-col gap-6">
       {header}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
           <h1 id="factura-titulo" className="text-3xl font-bold tabular-nums">
             Factura {data.documentNumber}
           </h1>
-          <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted">
+          <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]}
           </span>
@@ -132,7 +132,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
       {reserved && (
         <div
           role="status"
-          className="flex flex-col gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+          className="flex flex-col gap-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
         >
           {data.diagnostic ? (
             <>
@@ -154,8 +154,8 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           {!reserved && <TransmissionSection document={data} />}
           <DocumentsSection document={data} />
           <InvoiceCreditSection invoice={data} />
@@ -171,11 +171,11 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
             </p>
           </Section>
           <Section title="Productos">
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col gap-2">
               {data.lines.map((line) => (
                 <li
                   key={line.position}
-                  className="flex flex-wrap items-baseline justify-between gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm"
+                  className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
                 >
                   <span className="flex min-w-0 flex-col">
                     <span className="font-medium break-words">{line.description}</span>
@@ -193,9 +193,9 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
             </ul>
           </Section>
           <Section title="Formas de pago">
-            <ul className="flex flex-col gap-0.5 text-sm">
+            <ul className="flex flex-col gap-1 text-sm">
               {data.payments.map((payment, index) => (
-                <li key={index} className="flex justify-between gap-1 tabular-nums">
+                <li key={index} className="flex justify-between gap-2 tabular-nums">
                   <span className="break-words">{methodLabel(payment.code)}</span>
                   <span className="whitespace-nowrap">{formatUsd(payment.amount)}</span>
                 </li>
@@ -205,12 +205,12 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
         </div>
         <aside
           aria-labelledby="totales-titulo"
-          className="flex flex-col gap-1.5 self-start rounded-lg border border-border bg-surface p-2"
+          className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"
         >
           <h2 id="totales-titulo" className="text-lg font-semibold">
             Totales
           </h2>
-          <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+          <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
             <dt>Subtotal sin impuestos</dt>
             <dd className="text-right">{formatUsd(data.totals.withoutTaxes)}</dd>
             <dt>Descuento</dt>
@@ -224,7 +224,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
             <dt className="font-semibold">Total</dt>
             <dd className="text-right font-semibold">{formatUsd(data.totals.total)}</dd>
           </dl>
-          <div className="flex flex-col gap-0.5 border-t border-border pt-1 text-sm">
+          <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Clave de acceso</span>
             <span className="font-mono text-xs break-all">{data.accessKey}</span>
           </div>
@@ -236,10 +236,10 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
 
 export function InvoiceDetailSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Factura</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

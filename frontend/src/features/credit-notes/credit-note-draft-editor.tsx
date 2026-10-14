@@ -198,7 +198,7 @@ function useDefaultPoint(enabled: boolean) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1.5">
+    <section aria-labelledby={id} className="flex flex-col gap-3">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -210,7 +210,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function IssueList({ issues }: { issues: readonly CreditNoteIssue[] }) {
   if (issues.length === 0) return null;
   return (
-    <ul className="flex flex-col gap-0.5 text-sm">
+    <ul className="flex flex-col gap-1 text-sm">
       {issues.map((issue, index) => (
         <li key={`${issue.code}-${index}`} className="text-danger">
           {issue.message}
@@ -231,11 +231,11 @@ function Declarations({
   const id = useId();
   const declaration = CREDIT_NOTE_ELIGIBILITY_DECLARATION;
   return (
-    <fieldset className="mt-1 flex flex-col gap-1 text-sm">
-      <legend className="mb-0.5 font-semibold">Declaraciones del usuario</legend>
+    <fieldset className="mt-2 flex flex-col gap-2 text-sm">
+      <legend className="mb-1 font-semibold">Declaraciones del usuario</legend>
       <p
         role="note"
-        className="rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-foreground"
+        className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-foreground"
       >
         {declaration.notice}
       </p>
@@ -244,12 +244,12 @@ function Declarations({
         return (
           <div
             key={statement.id}
-            className="flex flex-col gap-0.5 rounded-md border border-border px-1 py-0.5"
+            className="flex flex-col gap-1 rounded-md border border-border px-2 py-1"
           >
-            <label className="flex min-h-5.5 items-start gap-1">
+            <label className="flex min-h-11 items-start gap-2">
               <input
                 type="checkbox"
-                className="mt-0.5 size-2.5 shrink-0 accent-primary"
+                className="mt-1 size-5 shrink-0 accent-primary"
                 checked={checked.includes(statement.id)}
                 aria-describedby={contextId}
                 onChange={(event) =>
@@ -290,7 +290,7 @@ function OperationAlert({
       ref={alertRef}
       role="alert"
       tabIndex={-1}
-      className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
     >
       <p>{message}</p>
       {action}
@@ -449,13 +449,13 @@ function DraftEditor({
     ) : undefined;
 
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
         <Link
           href="/notas-credito"
-          className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+          className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
         >
-          <ArrowLeft aria-hidden="true" className="size-2" />
+          <ArrowLeft aria-hidden="true" className="size-4" />
           Notas de crédito
         </Link>
         <h1 id="editor-titulo" className="text-3xl font-bold">
@@ -467,12 +467,12 @@ function DraftEditor({
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
       )}
 
-      <form noValidate onSubmit={onSave} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           <Section title="Factura que se modifica">
-            <div className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-border bg-surface px-1.5 py-1">
-              <span className="flex min-w-0 items-center gap-1">
-                <FileText aria-hidden="true" className="size-2 shrink-0 text-foreground-muted" />
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2">
+              <span className="flex min-w-0 items-center gap-2">
+                <FileText aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
                 <span className="flex min-w-0 flex-col">
                   <span className="font-medium tabular-nums">Factura {credit.documentNumber}</span>
                   <span className="text-sm text-foreground-muted break-words">
@@ -506,7 +506,7 @@ function DraftEditor({
           </Section>
 
           <Section title="Causa y motivo">
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <span id={causeLabelId} className="text-sm font-medium">
                 Causa
               </span>
@@ -559,7 +559,7 @@ function DraftEditor({
                 Elige la causa para ver lo que se acredita de cada línea.
               </p>
             ) : (
-              <ul className="flex flex-col gap-1.5">
+              <ul className="flex flex-col gap-3">
                 {credit.lines.map((line, index) => {
                   const values = lines[index];
                   const lineError = errors.lines?.[index];
@@ -576,9 +576,9 @@ function DraftEditor({
                       key={line.position}
                       aria-label={`Línea ${line.position}: ${line.description}`}
                       aria-invalid={problems.length > 0 || undefined}
-                      className="flex flex-col gap-1 rounded-md border border-border bg-surface px-1.5 py-1 aria-invalid:border-danger"
+                      className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-1">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
                         <span className="flex min-w-0 flex-col">
                           <span className="font-medium break-words">{line.description}</span>
                           <span className="text-xs text-foreground-muted tabular-nums">
@@ -594,10 +594,10 @@ function DraftEditor({
                         </span>
                       </div>
                       {cause === "RETURN" ? (
-                        <label className="flex min-h-5.5 items-center gap-1 text-sm">
+                        <label className="flex min-h-11 items-center gap-2 text-sm">
                           <input
                             type="checkbox"
-                            className="size-2.5 accent-primary"
+                            className="size-5 accent-primary"
                             disabled={exhausted && !values?.selected}
                             {...form.register(`lines.${index}.selected`)}
                           />
@@ -611,7 +611,7 @@ function DraftEditor({
                         </p>
                       )}
                       {included && (
-                        <div className="grid gap-1 sm:grid-cols-2">
+                        <div className="grid gap-2 sm:grid-cols-2">
                           {cause === "RETURN" && (
                             <FormField
                               id={`cantidad-${line.position}`}
@@ -668,9 +668,9 @@ function DraftEditor({
 
         <aside
           aria-labelledby="resumen-titulo"
-          className="flex flex-col gap-2 lg:sticky lg:top-2 lg:self-start"
+          className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start"
         >
-          <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
             <h2
               id="resumen-titulo"
               ref={summaryRef}
@@ -684,7 +684,7 @@ function DraftEditor({
                 Guarda el borrador para calcular los importes con el crédito vigente de la factura.
               </p>
             ) : preview?.totals ? (
-              <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+              <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
                 <dt>Subtotal sin impuestos</dt>
                 <dd className="text-right">{formatUsd(preview.totals.withoutTaxes)}</dd>
                 {preview.totals.taxes.map((tax) => (
@@ -711,13 +711,13 @@ function DraftEditor({
               </p>
             )}
             {fresh && generalIssues.length > 0 && (
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 <h3 className="text-sm font-semibold">Antes de emitir</h3>
                 <IssueList issues={generalIssues} />
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {canEmit && (
               <Button
                 disabled={emitBlocked}
@@ -768,12 +768,12 @@ function DraftEditor({
             })
           }
           description={
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <p>
                 La emisión reserva el número de la nota y su crédito en la factura, y la firma; no
                 se puede deshacer.
               </p>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-foreground">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-foreground">
                 <dt className="text-foreground-muted">Ambiente</dt>
                 <dd>{environment ?? "Desconocido"}</dd>
                 <dt className="text-foreground-muted">Factura</dt>
@@ -799,13 +799,13 @@ function DraftEditor({
 function InvoiceChooser({ onChoose }: { onChoose: (invoiceId: string) => void }) {
   const [picking, setPicking] = useState(false);
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
         <Link
           href="/notas-credito"
-          className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+          className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
         >
-          <ArrowLeft aria-hidden="true" className="size-2" />
+          <ArrowLeft aria-hidden="true" className="size-4" />
           Notas de crédito
         </Link>
         <h1 id="editor-titulo" className="text-3xl font-bold">
@@ -831,7 +831,7 @@ function InvoiceChooser({ onChoose }: { onChoose: (invoiceId: string) => void })
         getKey={(invoice) => invoice.id}
         getLabel={(invoice) => `Factura ${invoice.documentNumber}, ${invoice.buyerName}`}
         renderItem={(invoice) => (
-          <span className="flex w-full items-center justify-between gap-1">
+          <span className="flex w-full items-center justify-between gap-2">
             <span className="flex min-w-0 flex-col">
               <span className="font-medium tabular-nums">{invoice.documentNumber}</span>
               <span className="text-sm break-words text-foreground-muted">
@@ -851,7 +851,7 @@ function InvoiceChooser({ onChoose }: { onChoose: (invoiceId: string) => void })
 
 function Fallback({ children }: { children: ReactNode }) {
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <h1 id="editor-titulo" className="text-3xl font-bold">
         Borrador de nota de crédito
       </h1>
@@ -958,10 +958,10 @@ export function CreditNoteDraftScreen({
 
 export function CreditNoteDraftSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Borrador de nota de crédito</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

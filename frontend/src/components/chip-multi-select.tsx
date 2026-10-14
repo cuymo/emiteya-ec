@@ -32,14 +32,14 @@ export function ChipMultiSelect<T extends string>({
       {...(labelledBy ? { "aria-labelledby": labelledBy } : {})}
       {...(describedBy ? { "aria-describedby": describedBy } : {})}
       disabled={disabled}
-      className="flex flex-wrap gap-0.5"
+      className="flex flex-wrap gap-1"
     >
       {options.map((option) => (
         <ToggleGroup.Item
           key={option.value}
           value={option.value}
           className={cn(
-            "h-4 rounded-full border border-input px-1.5 text-sm text-foreground max-md:h-5.5",
+            "h-8 rounded-full border border-input px-3 text-sm text-foreground max-md:h-11",
             "motion-safe:transition-colors motion-safe:duration-150",
             "hover:bg-surface-subtle data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
             "disabled:cursor-not-allowed disabled:opacity-50",

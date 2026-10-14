@@ -30,18 +30,18 @@ export function TablePagination({
   const format = (value: number) => value.toLocaleString("es-EC");
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-1.5 py-1 text-sm text-foreground-muted">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-3 py-2 text-sm text-foreground-muted">
       <p aria-live="polite">
         Mostrando {format(from)}-{format(to)} de {format(total)}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <label htmlFor={sizeId} className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-4">
+        <label htmlFor={sizeId} className="flex items-center gap-2">
           Filas
           <select
             id={sizeId}
             value={pageSize}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            className="h-4 rounded-md border border-input bg-surface px-0.5 text-sm text-foreground max-md:h-5.5"
+            className="h-8 rounded-md border border-input bg-surface px-1 text-sm text-foreground max-md:h-11"
           >
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>
@@ -50,11 +50,11 @@ export function TablePagination({
             ))}
           </select>
         </label>
-        <nav aria-label="Paginación" className="flex items-center gap-0.5">
+        <nav aria-label="Paginación" className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon-sm"
-            className="max-md:size-5.5"
+            className="max-md:size-11"
             aria-label="Primera página"
             disabled={page <= 1}
             onClick={() => onPageChange(1)}
@@ -64,20 +64,20 @@ export function TablePagination({
           <Button
             variant="ghost"
             size="icon-sm"
-            className="max-md:size-5.5"
+            className="max-md:size-11"
             aria-label="Página anterior"
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
           >
             <ChevronLeft aria-hidden="true" />
           </Button>
-          <span className="min-w-12 text-center tabular-nums">
+          <span className="min-w-24 text-center tabular-nums">
             Página {format(page)} de {format(pages)}
           </span>
           <Button
             variant="ghost"
             size="icon-sm"
-            className="max-md:size-5.5"
+            className="max-md:size-11"
             aria-label="Página siguiente"
             disabled={page >= pages}
             onClick={() => onPageChange(page + 1)}
@@ -87,7 +87,7 @@ export function TablePagination({
           <Button
             variant="ghost"
             size="icon-sm"
-            className="max-md:size-5.5"
+            className="max-md:size-11"
             aria-label="Última página"
             disabled={page >= pages}
             onClick={() => onPageChange(pages)}

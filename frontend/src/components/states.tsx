@@ -31,11 +31,11 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex h-3 items-center gap-0.5 rounded-sm border px-0.5 text-xs font-medium whitespace-nowrap",
+        "inline-flex h-6 items-center gap-1 rounded-sm border px-1 text-xs font-medium whitespace-nowrap",
         TONES[tone].className,
       )}
     >
-      <Icon aria-hidden="true" className="size-1.5" />
+      <Icon aria-hidden="true" className="size-3" />
       <span className="text-foreground">{label}</span>
     </span>
   );
@@ -56,18 +56,18 @@ export function EmptyState({
 }) {
   const Icon = EMPTY_ICONS[kind];
   return (
-    <div className="flex flex-col items-center gap-1 px-2 py-6 text-center">
-      <Icon aria-hidden="true" className="size-4 text-foreground-muted" />
+    <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
+      <Icon aria-hidden="true" className="size-8 text-foreground-muted" />
       <p className="text-base font-semibold">{title}</p>
       {description && <p className="max-w-prose text-sm text-foreground-muted">{description}</p>}
-      {action && <div className="mt-1">{action}</div>}
+      {action && <div className="mt-2">{action}</div>}
     </div>
   );
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div role="alert" className="flex flex-col items-center gap-1 px-2 py-6 text-center">
+    <div role="alert" className="flex flex-col items-center gap-2 px-4 py-12 text-center">
       <p className="text-base font-semibold">{message}</p>
       <Button variant="outline" onClick={onRetry}>
         <RotateCw aria-hidden="true" />

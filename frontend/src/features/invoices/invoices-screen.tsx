@@ -83,7 +83,7 @@ export function StateCell({
 }) {
   const badge = INVOICE_STATE_BADGES[state];
   return (
-    <span className="inline-flex flex-wrap items-center gap-0.5">
+    <span className="inline-flex flex-wrap items-center gap-1">
       <StatusBadge tone={badge.tone} label={badge.label} icon={badge.icon} />
       {stopped && <StatusBadge tone="warning" label="Transmisión detenida" icon={CirclePause} />}
     </span>
@@ -169,7 +169,7 @@ export function InvoicesScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="facturas-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="facturas-titulo" className="flex flex-col gap-6">
         <h1 id="facturas-titulo" className="text-3xl font-bold">
           Facturas
         </h1>
@@ -217,8 +217,8 @@ export function InvoicesScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="facturas-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="facturas-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 id="facturas-titulo" className="text-3xl font-bold">
           Facturas
         </h1>
@@ -238,7 +238,7 @@ export function InvoicesScreen() {
         refreshing={invoices.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-4">
             <SearchInput
               value={searchDraft}
               onChange={setSearchDraft}
@@ -254,7 +254,7 @@ export function InvoicesScreen() {
           </div>
         }
         renderCard={(invoice) => (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Link
               href={`/facturas/${invoice.id}`}
               className="font-medium tabular-nums underline-offset-2 hover:underline"
@@ -262,7 +262,7 @@ export function InvoicesScreen() {
               {invoice.documentNumber}
             </Link>
             <span className="text-sm break-words">{invoice.buyerName}</span>
-            <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted tabular-nums">
+            <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted tabular-nums">
               {formatUsd(invoice.total)} · {formatIssueDate(invoice.issueDate)}
               <StateCell state={invoice.state} stopped={invoice.transmissionStopped} />
             </span>
@@ -275,10 +275,10 @@ export function InvoicesScreen() {
 
 export function InvoicesSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Facturas</h1>
-      <Skeleton className="h-5 w-full max-w-md" />
-      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <Skeleton className="h-64 w-full" />
     </section>
   );
 }

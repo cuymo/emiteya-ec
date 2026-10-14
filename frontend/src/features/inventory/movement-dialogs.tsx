@@ -142,7 +142,7 @@ export function InitializeStockDialog({
           {...form.register("quantity")}
           inputMode="decimal"
           autoComplete="off"
-          className="max-w-40"
+          className="max-w-80"
         />
       </FormField>
       <NoteField form={form} />
@@ -212,7 +212,7 @@ export function StockEntryDialog({
           {...form.register("quantity")}
           inputMode="decimal"
           autoComplete="off"
-          className="max-w-40"
+          className="max-w-80"
         />
       </FormField>
       <NoteField form={form} />
@@ -303,7 +303,7 @@ export function StockAdjustmentDialog({
         );
       })}
     >
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <span id={directionLabel} className="text-sm font-medium">
           Dirección
         </span>
@@ -326,7 +326,7 @@ export function StockAdjustmentDialog({
           {...form.register("quantity")}
           inputMode="decimal"
           autoComplete="off"
-          className="max-w-40"
+          className="max-w-80"
         />
       </FormField>
       <FormField

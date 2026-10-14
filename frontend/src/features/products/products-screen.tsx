@@ -136,7 +136,7 @@ function RowActions({
 }) {
   const active = product.status === "ACTIVE";
   return (
-    <div className="inline-flex items-center gap-0.5">
+    <div className="inline-flex items-center gap-1">
       <RowActionButton
         icon={Pencil}
         label={`Corregir ${product.name}`}
@@ -272,7 +272,7 @@ export function ProductsScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="productos-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="productos-titulo" className="flex flex-col gap-6">
         <h1 id="productos-titulo" className="text-3xl font-bold">
           Productos
         </h1>
@@ -318,8 +318,8 @@ export function ProductsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="productos-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="productos-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 id="productos-titulo" className="text-3xl font-bold">
           Productos
         </h1>
@@ -346,8 +346,8 @@ export function ProductsScreen() {
         refreshing={products.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-col gap-1.5">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-4">
               <SearchInput
                 value={searchDraft}
                 onChange={setSearchDraft}
@@ -374,7 +374,7 @@ export function ProductsScreen() {
               id={moreFiltersId}
               className={cn(
                 moreFilters ? "flex" : "hidden",
-                "flex-wrap items-center gap-2 md:flex",
+                "flex-wrap items-center gap-4 md:flex",
               )}
             >
               <ChipGroup
@@ -393,8 +393,8 @@ export function ProductsScreen() {
           </div>
         }
         renderCard={(product) => (
-          <div className="flex flex-col gap-1">
-            <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex flex-col gap-2">
+            <div className="flex min-w-0 flex-col gap-1">
               <span className="font-medium break-words">{product.name}</span>
               <span className="text-sm text-foreground-muted tabular-nums">
                 {product.mainCode ? `${product.mainCode} · ` : ""}
@@ -402,12 +402,12 @@ export function ProductsScreen() {
                 {formatDecimal(product.unitPrice, { minFractionDigits: 2 })} · IVA{" "}
                 {ivaLabel(product)}
               </span>
-              <span className="flex flex-wrap items-center gap-1 text-sm">
+              <span className="flex flex-wrap items-center gap-2 text-sm">
                 <TaxCell product={product} />
                 <StatusCell product={product} />
               </span>
             </div>
-            {canManage && <div className="-ml-1">{actions(product)}</div>}
+            {canManage && <div className="-ml-2">{actions(product)}</div>}
           </div>
         )}
       />
@@ -427,10 +427,10 @@ export function ProductsScreen() {
 /** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function ProductsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Productos</h1>
-      <Skeleton className="h-5 w-full max-w-md" />
-      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <Skeleton className="h-64 w-full" />
     </section>
   );
 }

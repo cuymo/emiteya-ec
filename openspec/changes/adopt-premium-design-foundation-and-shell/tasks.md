@@ -91,7 +91,7 @@
 
 ## 3. Etapa B: escala de espaciado de base 4 con geometría equivalente
 
-- [ ] 3.1 Escribir `scripts/codemods/rebase-spacing-to-4px.ts` y sus pruebas (design D3):
+- [x] 3.1 Escribir `scripts/codemods/rebase-spacing-to-4px.ts` y sus pruebas (design D3):
   - literales de cadena y de plantilla de `frontend/src/**/*.{ts,tsx}` con el API del compilador de
     TypeScript;
   - separa variantes, `!` y signo;
@@ -106,7 +106,7 @@
   - tokens que no son de espaciado (`text-sm`, `max-w-2xl`, `outline-offset-2`, `w-1/2`,
     `h-[calc(…)]`);
   - la negativa a ejecutarse dos veces.
-- [ ] 3.2 Ejecutar el codemod y fijar `--spacing: 0.25rem`, sin ningún otro cambio visual.
+- [x] 3.2 Ejecutar el codemod y fijar `--spacing: 0.25rem`, sin ningún otro cambio visual.
 
   Verificar la equivalencia antes de hacer el commit:
   - `test:visual:spacing-proof` con 0 píxeles distintos;

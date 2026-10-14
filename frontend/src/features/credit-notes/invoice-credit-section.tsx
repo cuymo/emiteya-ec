@@ -28,7 +28,7 @@ export function InvoiceCreditSection({ invoice }: { invoice: Pick<InvoiceView, "
   if (!canRead || !authorized || forbidden) return null;
 
   let body;
-  if (credit.isPending) body = <Skeleton className="h-6 w-full" />;
+  if (credit.isPending) body = <Skeleton className="h-12 w-full" />;
   else if (credit.isError)
     body = (
       <ErrorState
@@ -41,7 +41,7 @@ export function InvoiceCreditSection({ invoice }: { invoice: Pick<InvoiceView, "
     const available = compareDecimalStrings(data.available, "0") > 0;
     body = (
       <>
-        <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums sm:max-w-sm">
+        <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums sm:max-w-sm">
           <dt>Aplicado en notas autorizadas</dt>
           <dd className="text-right">{formatUsd(data.applied)}</dd>
           <dt>Reservado por notas en curso</dt>
@@ -72,7 +72,7 @@ export function InvoiceCreditSection({ invoice }: { invoice: Pick<InvoiceView, "
   }
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1.5">
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
       <h2 id={headingId} className="text-lg font-semibold">
         Notas de crédito
       </h2>

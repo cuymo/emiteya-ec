@@ -80,9 +80,9 @@ export function BalanceCell({
   if (item.negative) {
     return (
       <span
-        className={`inline-flex ${wrap ? "flex-wrap" : "whitespace-nowrap"} items-center justify-end gap-0.5 text-danger`}
+        className={`inline-flex ${wrap ? "flex-wrap" : "whitespace-nowrap"} items-center justify-end gap-1 text-danger`}
       >
-        <TriangleAlert aria-hidden="true" className="size-2" />
+        <TriangleAlert aria-hidden="true" className="size-4" />
         <span className="text-sm font-medium whitespace-nowrap text-foreground">
           Saldo negativo
         </span>
@@ -176,7 +176,7 @@ export function InventoryScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="inventario-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="inventario-titulo" className="flex flex-col gap-6">
         <h1 id="inventario-titulo" className="text-3xl font-bold">
           Inventario
         </h1>
@@ -227,8 +227,8 @@ export function InventoryScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="inventario-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-col gap-0.5">
+    <section aria-labelledby="inventario-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
         <h1 id="inventario-titulo" className="text-3xl font-bold">
           Inventario
         </h1>
@@ -252,7 +252,7 @@ export function InventoryScreen() {
         refreshing={items.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-4">
             <SearchInput
               value={searchDraft}
               onChange={setSearchDraft}
@@ -268,12 +268,12 @@ export function InventoryScreen() {
           </div>
         }
         renderCard={(item) => (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-start justify-between gap-1">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
               <ProductLink item={item} />
               <BalanceCell item={item} />
             </div>
-            <span className="flex flex-wrap items-center justify-between gap-1 text-sm">
+            <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <StockStateBadge state={item.state} />
               {item.lastMovementAt && (
                 <span className="tabular-nums text-foreground-muted">
@@ -290,9 +290,9 @@ export function InventoryScreen() {
 
 export function InventorySkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
-      <Skeleton className="h-5 w-24" />
-      <Skeleton className="h-30 w-full" />
+    <section aria-busy="true" className="flex flex-col gap-6">
+      <Skeleton className="h-10 w-48" />
+      <Skeleton className="h-60 w-full" />
     </section>
   );
 }

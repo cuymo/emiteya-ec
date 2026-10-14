@@ -15,18 +15,32 @@ one place. Screens consume tokens; they do not invent their own visual language.
 
 ## Spacing
 
-Use one arithmetic scale. Base 8, with 4 reserved for optical correction.
+Use one arithmetic scale. The Tailwind base is 4px (`--spacing: 0.25rem`), the scale of the
+reference template (ADR 0028). Steps of 8px are still the default rhythm, and 4px is reserved for
+optical correction.
 
 | Token   | Value | Use                                            |
 | ------- | ----- | ---------------------------------------------- |
-| `0.5`   | 4px   | Optical adjustment, such as icon to label      |
-| `1`     | 8px   | Tightly bound elements                         |
-| `2`     | 16px  | Related elements inside a group                |
-| `3`     | 24px  | Groups inside a section                        |
-| `4`     | 32px  | Subsections                                    |
-| `6`     | 48px  | Sections                                       |
-| `8`     | 64px  | Major divisions                                |
-| `10`    | 80px  | Exceptional separation                         |
+| `1`     | 4px   | Optical adjustment, such as icon to label      |
+| `2`     | 8px   | Tightly bound elements                         |
+| `4`     | 16px  | Related elements inside a group                |
+| `6`     | 24px  | Groups inside a section                        |
+| `8`     | 32px  | Subsections                                    |
+| `12`    | 48px  | Sections                                       |
+| `16`    | 64px  | Major divisions                                |
+| `20`    | 80px  | Exceptional separation                         |
+
+Until 2026-10-14 the base was 8px (`--spacing: 0.5rem`, so `p-2` meant 16px). The change
+`adopt-premium-design-foundation-and-shell` moved to base 4 with a one-shot codemod.
+- **What the codemod did:** it doubled the number of every Tailwind utility that multiplies
+  `--spacing` (padding, margin, gap, space, width, height, size, inset, translate, basis, scroll
+  spacing), only inside string and template literals of `frontend/src`. `p-2` became `p-4`, `h-5.5`
+  became `h-11`. Every computed value stayed the same.
+- **Proof:** the spacing proof of the visual harness, with zero changed pixels and identical boxes on
+  the five baseline screens.
+- **Where it lives now:** in the history of that change. It is no longer in the tree.
+
+Any value written before that date in a document or a review comment is on the old scale.
 
 Rules:
 

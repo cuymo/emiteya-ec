@@ -42,11 +42,11 @@ function byPoint(views: FiscalSequenceView[]) {
 function CounterRow({ view, onAdjust }: { view: FiscalSequenceView; onAdjust: () => void }) {
   const label = DOCUMENT_TYPE_LABELS[view.documentType];
   return (
-    <li className="flex items-center justify-between gap-1 px-1.5 py-1">
-      <div className="flex min-w-0 flex-col gap-0.5 text-sm">
+    <li className="flex items-center justify-between gap-2 px-3 py-2">
+      <div className="flex min-w-0 flex-col gap-1 text-sm">
         <span className="font-medium">{label}</span>
         {view.nextNumber === null ? (
-          <span className="flex flex-wrap items-center gap-1 text-foreground-muted">
+          <span className="flex flex-wrap items-center gap-2 text-foreground-muted">
             <StatusBadge tone="danger" label="Agotado" />
             No admite más comprobantes de este tipo en este punto.
           </span>
@@ -93,7 +93,7 @@ export function SequencesScreen() {
   );
   if (!allowed) {
     return (
-      <section aria-labelledby="secuenciales-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="secuenciales-titulo" className="flex flex-col gap-6">
         {heading}
         <EmptyState
           kind="no-permission"
@@ -107,9 +107,9 @@ export function SequencesScreen() {
   let content;
   if (environment === null || sequences.isPending) {
     content = (
-      <div aria-busy="true" className="flex flex-col gap-1">
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-16 w-full" />
+      <div aria-busy="true" className="flex flex-col gap-2">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
       </div>
     );
   } else if (sequences.isError) {
@@ -133,12 +133,12 @@ export function SequencesScreen() {
     );
   } else {
     content = (
-      <ul aria-label="Puntos de emisión" className="flex flex-col gap-1.5">
+      <ul aria-label="Puntos de emisión" className="flex flex-col gap-3">
         {byPoint(sequences.data).map((views) => {
           const first = views[0]!;
           return (
             <li key={first.emissionPoint.id} className="rounded-lg border border-border bg-surface">
-              <div className="flex flex-wrap items-center gap-1 px-1.5 py-1">
+              <div className="flex flex-wrap items-center gap-2 px-3 py-2">
                 <h2 className="font-semibold">Punto {pointLabel(first)}</h2>
                 {!first.emissionPoint.available && (
                   <>
@@ -171,10 +171,10 @@ export function SequencesScreen() {
   }
 
   return (
-    <section aria-labelledby="secuenciales-titulo" className="flex max-w-3xl flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="secuenciales-titulo" className="flex max-w-3xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {heading}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <span id="ambiente-secuenciales" className="text-sm text-foreground-muted">
             Ambiente
           </span>
@@ -198,9 +198,9 @@ export function SequencesScreen() {
 
 export function SequencesSkeleton() {
   return (
-    <section aria-busy="true" className="flex max-w-3xl flex-col gap-3">
+    <section aria-busy="true" className="flex max-w-3xl flex-col gap-6">
       <h1 className="text-3xl font-bold">Secuenciales</h1>
-      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-32 w-full" />
     </section>
   );
 }

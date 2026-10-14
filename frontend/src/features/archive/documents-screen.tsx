@@ -280,7 +280,7 @@ export function DocumentsScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="comprobantes-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="comprobantes-titulo" className="flex flex-col gap-6">
         <h1 id="comprobantes-titulo" className="text-3xl font-bold">
           Comprobantes
         </h1>
@@ -343,9 +343,9 @@ export function DocumentsScreen() {
   const advancedFilters = (
     <div
       id="filtros-avanzados"
-      className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-1 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-[repeat(6,minmax(0,1fr))]`}
+      className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-2 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-[repeat(6,minmax(0,1fr))]`}
     >
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <Label htmlFor="filtro-tipo">Tipo de comprobante</Label>
         <Select
           id="filtro-tipo"
@@ -372,7 +372,7 @@ export function DocumentsScreen() {
         error={rangeError}
         onChange={(value) => url.update({ hasta: value })}
       />
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <Label htmlFor="filtro-identificacion">Identificación del receptor</Label>
         <Input
           id="filtro-identificacion"
@@ -381,7 +381,7 @@ export function DocumentsScreen() {
           onChange={(event) => setIdentificationDraft(event.target.value)}
         />
       </div>
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <Label htmlFor="filtro-establecimiento">Establecimiento</Label>
         <Select
           id="filtro-establecimiento"
@@ -396,7 +396,7 @@ export function DocumentsScreen() {
           ))}
         </Select>
       </div>
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <Label htmlFor="filtro-punto">Punto de emisión</Label>
         <Select
           id="filtro-punto"
@@ -416,7 +416,7 @@ export function DocumentsScreen() {
   );
 
   return (
-    <section aria-labelledby="comprobantes-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="comprobantes-titulo" className="flex flex-col gap-6">
       <h1 id="comprobantes-titulo" className="text-3xl font-bold">
         Comprobantes
       </h1>
@@ -435,8 +435,8 @@ export function DocumentsScreen() {
         refreshing={documents.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-col gap-1.5">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-4">
               <SearchInput
                 value={searchDraft}
                 onChange={setSearchDraft}
@@ -466,8 +466,8 @@ export function DocumentsScreen() {
         renderCard={(item) => {
           const base = detailPath(item);
           return (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-start justify-between gap-1">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
                 <span className="flex flex-col">
                   {base ? (
                     <Link
@@ -491,7 +491,7 @@ export function DocumentsScreen() {
                 ) : null}
                 {receiverOf(item).name}
               </span>
-              <span className="flex flex-wrap items-center justify-between gap-1 text-sm">
+              <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="tabular-nums text-foreground-muted">
                   {formatIssueDate(item.issueDate)}
                 </span>
@@ -510,9 +510,9 @@ export function DocumentsScreen() {
 
 export function DocumentsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
-      <Skeleton className="h-5 w-24" />
-      <Skeleton className="h-30 w-full" />
+    <section aria-busy="true" className="flex flex-col gap-6">
+      <Skeleton className="h-10 w-48" />
+      <Skeleton className="h-60 w-full" />
     </section>
   );
 }

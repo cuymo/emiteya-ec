@@ -152,7 +152,7 @@ export function UploadCertificateDialog({
       {conflict && (
         <div
           role="alert"
-          className="flex flex-col items-start gap-1 rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+          className="flex flex-col items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
         >
           <p>{error}</p>
           <Button

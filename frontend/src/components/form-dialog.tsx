@@ -51,7 +51,7 @@ export function FormDialog({
         {...(onCloseAutoFocus ? { onCloseAutoFocus } : {})}
       >
         <form onSubmit={onSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-          <div className="flex flex-col gap-0.5 px-3 pt-3 pr-7">
+          <div className="flex flex-col gap-1 px-6 pt-6 pr-14">
             <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
             {description && (
               <DialogDescription className="text-sm text-foreground-muted">
@@ -59,18 +59,18 @@ export function FormDialog({
               </DialogDescription>
             )}
           </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 py-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
             {children}
             {error && (
               <p
                 role="alert"
-                className="rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+                className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
               >
                 {error}
               </p>
             )}
           </div>
-          <div className="flex justify-end gap-1 border-t border-border px-3 py-2">
+          <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
             <DialogClose asChild>
               <Button variant="ghost" disabled={pending}>
                 Cancelar
@@ -101,7 +101,7 @@ export function FormField({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-sm font-medium">
         {label}
       </label>

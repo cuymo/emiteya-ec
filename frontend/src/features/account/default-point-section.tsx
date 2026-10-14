@@ -53,7 +53,7 @@ function DefaultPointForm({ current }: { current: DefaultEmissionPointView }) {
   const initial = current?.emissionPoint.id ?? NONE;
   const [value, setValue] = useState(initial);
 
-  if (establishments.isPending) return <Skeleton className="h-5 w-full max-w-sm" />;
+  if (establishments.isPending) return <Skeleton className="h-10 w-full max-w-sm" />;
   if (establishments.isError) {
     return (
       <ErrorState
@@ -82,7 +82,7 @@ function DefaultPointForm({ current }: { current: DefaultEmissionPointView }) {
         event.preventDefault();
         save.mutate(value === NONE ? null : value);
       }}
-      className="flex flex-col gap-1"
+      className="flex flex-col gap-2"
     >
       {current && !current.available && (
         <p role="status" className="text-sm">
@@ -90,7 +90,7 @@ function DefaultPointForm({ current }: { current: DefaultEmissionPointView }) {
           está disponible; elige otro.
         </p>
       )}
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <label htmlFor="default-point" className="text-sm font-medium">
           Punto de emisión
         </label>
@@ -138,8 +138,8 @@ function DefaultPointForm({ current }: { current: DefaultEmissionPointView }) {
 export function DefaultPointSection() {
   const current = useDefaultPoint();
   return (
-    <section aria-labelledby="punto-titulo" className="flex flex-col gap-2">
-      <div className="flex flex-col gap-0.5">
+    <section aria-labelledby="punto-titulo" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
         <h2 id="punto-titulo" className="text-lg font-semibold">
           Punto de emisión predeterminado
         </h2>
@@ -148,7 +148,7 @@ export function DefaultPointSection() {
         </p>
       </div>
       {current.isPending ? (
-        <Skeleton className="h-5 w-full max-w-sm" />
+        <Skeleton className="h-10 w-full max-w-sm" />
       ) : current.isError ? (
         <ErrorState message={errorMessage(current.error)} onRetry={() => void current.refetch()} />
       ) : (

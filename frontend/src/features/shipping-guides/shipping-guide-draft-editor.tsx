@@ -89,7 +89,7 @@ function useDefaultPoint(enabled: boolean) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1.5">
+    <section aria-labelledby={id} className="flex flex-col gap-3">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -113,7 +113,7 @@ function OperationAlert({
       ref={alertRef}
       role="alert"
       tabIndex={-1}
-      className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
     >
       <p>{message}</p>
       {action}
@@ -392,17 +392,17 @@ function DraftEditor({
     ) : undefined;
 
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <Header title="Borrador de guía de remisión" />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
       )}
 
-      <form noValidate onSubmit={onSave} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           <Section title="Transporte">
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <span id={sourceLabelId} className="text-sm font-medium">
                 ¿Quién transporta?
               </span>
@@ -417,8 +417,8 @@ function DraftEditor({
               />
             </div>
             {transporterSource === "SELF" && (
-              <p className="flex items-center gap-1 rounded-md border border-border bg-surface-subtle px-1.5 py-1 text-sm">
-                <Truck aria-hidden="true" className="size-2 shrink-0 text-foreground-muted" />
+              <p className="flex items-center gap-2 rounded-md border border-border bg-surface-subtle px-3 py-2 text-sm">
+                <Truck aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
                 <span className="flex min-w-0 flex-col">
                   <span className="font-medium break-words">
                     {options.issuerIdentity?.legalName ?? "La empresa"}
@@ -432,8 +432,8 @@ function DraftEditor({
             {transporterSource === "PARTY" && (
               <>
                 {values.carrierId ? (
-                  <p className="flex items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm">
-                    <Truck aria-hidden="true" className="size-2 shrink-0 text-foreground-muted" />
+                  <p className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                    <Truck aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
                     <span className="flex min-w-0 flex-col">
                       <span className="font-medium break-words">{values.carrierName}</span>
                       <span className="text-foreground-muted tabular-nums">
@@ -463,7 +463,7 @@ function DraftEditor({
               error={errors.plate?.message}
             >
               <Input
-                className="max-w-60"
+                className="max-w-120"
                 autoComplete="off"
                 {...fieldAria(
                   "placa",
@@ -476,7 +476,7 @@ function DraftEditor({
           </Section>
 
           <Section title="Fechas y partida">
-            <div className="grid gap-1 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <DatePickerField
                 label="Fecha de inicio del transporte"
                 value={values.transportStart ?? ""}
@@ -494,7 +494,7 @@ function DraftEditor({
               El inicio no puede ser anterior a la fecha de emisión, que es la del día en que
               emitas.
             </p>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <span id={departureLabelId} className="text-sm font-medium">
                 Punto de partida
               </span>
@@ -509,7 +509,7 @@ function DraftEditor({
               />
             </div>
             {departureMode === "ESTABLISHMENT" ? (
-              <div className="grid gap-1 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <FormField id="origen" label="Establecimiento de origen">
                   <Select
                     {...fieldAria("origen", undefined)}
@@ -524,13 +524,13 @@ function DraftEditor({
                     ))}
                   </Select>
                 </FormField>
-                <div className="flex min-w-0 flex-col gap-0.5">
+                <div className="flex min-w-0 flex-col gap-1">
                   <span id="partida-derivada" className="text-sm font-medium">
                     Dirección de partida
                   </span>
                   <p
                     aria-labelledby="partida-derivada"
-                    className="min-h-4 rounded-md border border-border bg-surface-subtle px-1 py-0.5 text-sm break-words"
+                    className="min-h-8 rounded-md border border-border bg-surface-subtle px-2 py-1 text-sm break-words"
                   >
                     {origin?.address ?? "—"}
                   </p>
@@ -561,7 +561,7 @@ function DraftEditor({
               Cada destinatario recibe parte de la mercadería, con su sustento: una factura
               autorizada de la empresa o, sin factura, uno de los casos del art. 30 que declares.
             </p>
-            <ol className="flex flex-col gap-1.5">
+            <ol className="flex flex-col gap-3">
               {recipients.fields.map((field, index) => (
                 <RecipientCard
                   key={field.id}
@@ -623,9 +623,9 @@ function DraftEditor({
 
         <aside
           aria-labelledby="resumen-titulo"
-          className="flex flex-col gap-2 lg:sticky lg:top-2 lg:self-start"
+          className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start"
         >
-          <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
             <h2
               id="resumen-titulo"
               ref={summaryRef}
@@ -639,7 +639,7 @@ function DraftEditor({
                 Guarda el borrador para revisarlo con los datos con que se emitirá.
               </p>
             ) : (
-              <dl className="grid grid-cols-1 gap-y-0.5 text-sm">
+              <dl className="grid grid-cols-1 gap-y-1 text-sm">
                 <dt className="text-foreground-muted">Transportista</dt>
                 <dd className="break-words">
                   {preview.carrier
@@ -662,7 +662,7 @@ function DraftEditor({
               </p>
             )}
             {fresh && generalIssues.length > 0 && (
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 <h3 className="text-sm font-semibold">Antes de emitir</h3>
                 <IssueList issues={generalIssues} />
               </div>
@@ -672,7 +672,7 @@ function DraftEditor({
               {limits.detailsPerRecipient} detalles por destinatario y {limits.details} por guía.
             </p>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {canEmit && (
               <Button
                 disabled={emitBlocked}
@@ -722,23 +722,23 @@ function DraftEditor({
           })
         }
         description={
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <p>La emisión reserva el número de la guía y la firma; no se puede deshacer.</p>
             {/* En pantallas angostas, cada dato bajo su nombre: los números no se parten. */}
-            <dl className="grid grid-cols-1 gap-x-2 text-foreground sm:grid-cols-[auto_1fr] sm:gap-y-0.5">
+            <dl className="grid grid-cols-1 gap-x-4 text-foreground sm:grid-cols-[auto_1fr] sm:gap-y-1">
               <dt className="text-foreground-muted">Ambiente</dt>
-              <dd className="max-sm:mb-0.5">{environment ?? "Desconocido"}</dd>
+              <dd className="max-sm:mb-1">{environment ?? "Desconocido"}</dd>
               <dt className="text-foreground-muted">Transportista</dt>
-              <dd className="break-words max-sm:mb-0.5">{preview.carrier?.legalName ?? "—"}</dd>
+              <dd className="break-words max-sm:mb-1">{preview.carrier?.legalName ?? "—"}</dd>
               <dt className="text-foreground-muted">Placa</dt>
-              <dd className="tabular-nums max-sm:mb-0.5">{draft.plate ?? "—"}</dd>
+              <dd className="tabular-nums max-sm:mb-1">{draft.plate ?? "—"}</dd>
               <dt className="text-foreground-muted">Fechas</dt>
-              <dd className="tabular-nums max-sm:mb-0.5">
+              <dd className="tabular-nums max-sm:mb-1">
                 {draft.transportStart ? formatIssueDate(draft.transportStart) : "—"} al{" "}
                 {draft.transportEnd ? formatIssueDate(draft.transportEnd) : "—"}
               </dd>
               <dt className="text-foreground-muted">Destinatarios</dt>
-              <dd className="max-sm:mb-0.5">
+              <dd className="max-sm:mb-1">
                 <ul>
                   {preview.recipients.map((recipient) => (
                     <li key={recipient.position} className="break-words">
@@ -758,8 +758,8 @@ function DraftEditor({
         }
       >
         {declarationRequired && (
-          <div className="mt-1 flex flex-col gap-1 rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-sm">
-            <ul className="flex flex-col gap-0.5">
+          <div className="mt-2 flex flex-col gap-2 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-sm">
+            <ul className="flex flex-col gap-1">
               {exceptions.map(({ position, policy }) => (
                 <li key={position} className="break-words">
                   Destinatario {position}: {policy?.label} (literal {policy?.literal}).{" "}
@@ -767,10 +767,10 @@ function DraftEditor({
                 </li>
               ))}
             </ul>
-            <label className="flex min-h-5.5 items-start gap-1">
+            <label className="flex min-h-11 items-start gap-2">
               <input
                 type="checkbox"
-                className="mt-0.5 size-2.5 shrink-0 accent-primary"
+                className="mt-1 size-5 shrink-0 accent-primary"
                 checked={declared}
                 onChange={(event) => setDeclared(event.target.checked)}
               />
@@ -785,12 +785,12 @@ function DraftEditor({
 
 function Header({ title }: { title: string }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <Link
         href="/guias-remision"
-        className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+        className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
       >
-        <ArrowLeft aria-hidden="true" className="size-2" />
+        <ArrowLeft aria-hidden="true" className="size-4" />
         Guías de remisión
       </Link>
       <h1 id="editor-titulo" className="text-3xl font-bold">
@@ -802,7 +802,7 @@ function Header({ title }: { title: string }) {
 
 function Fallback({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <Header title={title} />
       {children}
     </section>
@@ -946,10 +946,10 @@ export function ShippingGuideDraftScreen({ draftId }: { draftId: string }) {
 
 export function ShippingGuideDraftSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Borrador de guía de remisión</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

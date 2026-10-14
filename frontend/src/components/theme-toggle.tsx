@@ -51,7 +51,7 @@ export function ThemeToggle() {
       role="radiogroup"
       aria-label="Tema"
       onKeyDown={onKeyDown}
-      className="hidden items-center gap-0.5 rounded-lg border border-border bg-surface-subtle p-0.5 sm:flex"
+      className="hidden items-center gap-1 rounded-lg border border-border bg-surface-subtle p-1 sm:flex"
     >
       {OPTIONS.map((option, index) => {
         const checked = selected === option.value;
@@ -70,13 +70,13 @@ export function ThemeToggle() {
             tabIndex={checked || (selected === undefined && index === 0) ? 0 : -1}
             onClick={() => setTheme(option.value)}
             className={cn(
-              "inline-flex size-5.5 items-center justify-center rounded-md text-foreground-muted",
+              "inline-flex size-11 items-center justify-center rounded-md text-foreground-muted",
               "motion-safe:transition-colors motion-safe:duration-150 motion-safe:ease-standard",
               "hover:text-foreground active:bg-border",
               checked && "bg-surface text-foreground shadow-sm",
             )}
           >
-            <Icon aria-hidden="true" className="size-2.5" />
+            <Icon aria-hidden="true" className="size-5" />
           </button>
         );
       })}
@@ -98,15 +98,15 @@ export function ThemeMenu() {
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
         aria-label="Tema"
-        className="inline-flex size-5.5 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-subtle hover:text-foreground sm:hidden"
+        className="inline-flex size-11 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-subtle hover:text-foreground sm:hidden"
       >
-        <Current aria-hidden="true" className="size-2.5" />
+        <Current aria-hidden="true" className="size-5" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="end"
           sideOffset={4}
-          className="z-(--z-popover) min-w-20 rounded-md border border-border bg-surface p-0.5 text-sm shadow-md"
+          className="z-(--z-popover) min-w-40 rounded-md border border-border bg-surface p-1 text-sm shadow-md"
         >
           <DropdownMenu.RadioGroup value={selected} onValueChange={setTheme}>
             {OPTIONS.map((option) => {
@@ -115,9 +115,9 @@ export function ThemeMenu() {
                 <DropdownMenu.RadioItem
                   key={option.value}
                   value={option.value}
-                  className="flex h-5.5 cursor-default items-center gap-1 rounded-sm px-1 outline-none data-highlighted:bg-surface-subtle data-[state=checked]:font-semibold"
+                  className="flex h-11 cursor-default items-center gap-2 rounded-sm px-2 outline-none data-highlighted:bg-surface-subtle data-[state=checked]:font-semibold"
                 >
-                  <Icon aria-hidden="true" className="size-2.5" />
+                  <Icon aria-hidden="true" className="size-5" />
                   {option.label}
                 </DropdownMenu.RadioItem>
               );

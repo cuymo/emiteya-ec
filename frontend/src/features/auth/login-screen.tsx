@@ -60,22 +60,22 @@ export function LoginScreen() {
   return (
     <main
       id="contenido"
-      className="flex min-h-dvh items-center justify-center bg-background px-2 py-6"
+      className="flex min-h-dvh items-center justify-center bg-background px-4 py-12"
     >
-      <div className="flex w-full max-w-sm flex-col gap-3">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-foreground-muted">Facturador SRI</p>
           <h1 className="text-3xl font-bold">Iniciar sesión</h1>
         </div>
         {expired && !error && (
           <p
             role="status"
-            className="rounded-md border border-info/40 bg-info/10 px-1.5 py-1 text-sm"
+            className="rounded-md border border-info/40 bg-info/10 px-3 py-2 text-sm"
           >
             Tu sesión terminó. Inicia sesión de nuevo para continuar.
           </p>
         )}
-        <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
+        <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
           <FormField id="email" label="Correo" error={errors.email?.message}>
             <Input
               {...fieldAria("email", errors.email?.message)}
@@ -97,7 +97,7 @@ export function LoginScreen() {
           {error && (
             <p
               role="alert"
-              className="rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+              className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
             >
               {error}
             </p>
@@ -123,17 +123,17 @@ export function LoginScreen() {
 export function LoginSkeleton() {
   return (
     <main
-      className="flex min-h-dvh items-center justify-center bg-background px-2 py-6"
+      className="flex min-h-dvh items-center justify-center bg-background px-4 py-12"
       aria-busy="true"
     >
-      <div className="flex w-full max-w-sm flex-col gap-3">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-foreground-muted">Facturador SRI</p>
           <h1 className="text-3xl font-bold">Iniciar sesión</h1>
         </div>
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-5 w-full" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-10 w-full" />
       </div>
     </main>
   );

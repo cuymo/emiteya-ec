@@ -14,11 +14,11 @@ const VARIANTS = {
 
 // Por debajo de 768px todo objetivo táctil mide al menos 44px (frontend.md).
 const SIZES = {
-  md: "h-5 gap-1 px-2 text-sm max-md:h-5.5",
-  sm: "h-4 gap-0.5 px-1.5 text-sm max-md:h-5.5",
+  md: "h-10 gap-2 px-4 text-sm max-md:h-11",
+  sm: "h-8 gap-1 px-3 text-sm max-md:h-11",
   // Objetivo táctil de 44px para acciones independientes (cabecera, cierre de diálogo).
-  icon: "size-5.5",
-  "icon-sm": "size-5",
+  icon: "size-11",
+  "icon-sm": "size-10",
 } as const;
 
 export type ButtonProps = ComponentProps<"button"> & {
@@ -43,7 +43,7 @@ export function Button({
         "inline-flex shrink-0 items-center justify-center rounded-md font-medium whitespace-nowrap",
         "motion-safe:transition-colors motion-safe:duration-150 motion-safe:ease-standard",
         "disabled:pointer-events-none disabled:opacity-50 aria-disabled:opacity-50",
-        "[&_svg]:size-2.5 [&_svg]:shrink-0",
+        "[&_svg]:size-5 [&_svg]:shrink-0",
         VARIANTS[variant],
         SIZES[size],
         className,

@@ -161,7 +161,7 @@ function useDefaultPoint(enabled: boolean) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1.5">
+    <section aria-labelledby={id} className="flex flex-col gap-3">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -173,7 +173,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function IssueList({ issues }: { issues: readonly InvoiceIssue[] }) {
   if (issues.length === 0) return null;
   return (
-    <ul className="flex flex-col gap-0.5 text-sm">
+    <ul className="flex flex-col gap-1 text-sm">
       {issues.map((issue, index) => (
         <li key={`${issue.code}-${index}`} className="text-danger">
           {issue.message}
@@ -191,9 +191,9 @@ function StockWarningNote({ warning }: { warning: StockWarning }) {
   return (
     <p
       role="note"
-      className="flex items-start gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-sm"
+      className="flex items-start gap-1 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-sm"
     >
-      <Info aria-hidden="true" className="mt-0.5 size-2 shrink-0 text-warning" />
+      <Info aria-hidden="true" className="mt-1 size-4 shrink-0 text-warning" />
       <span>
         {warning.code === "STOCK_BELOW_REQUESTED"
           ? `Aviso de existencias: pides ${formatDecimal(warning.requested)} y el saldo contabilizado es ${formatDecimal(warning.balance ?? "0")}.`
@@ -219,7 +219,7 @@ function OperationAlert({
       ref={alertRef}
       role="alert"
       tabIndex={-1}
-      className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
     >
       <p>{message}</p>
       {action}
@@ -348,13 +348,13 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
     ) : undefined;
 
   return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
+    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
         <Link
           href="/borradores"
-          className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+          className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
         >
-          <ArrowLeft aria-hidden="true" className="size-2" />
+          <ArrowLeft aria-hidden="true" className="size-4" />
           Borradores
         </Link>
         <h1 id="editor-titulo" className="text-3xl font-bold">
@@ -366,13 +366,13 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
       )}
 
-      <form noValidate onSubmit={onSave} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           <Section title="Comprador y punto de emisión">
-            <div className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-border bg-surface px-1.5 py-1">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2">
               {buyer ? (
-                <span className="flex min-w-0 items-center gap-1">
-                  <UserRound aria-hidden="true" className="size-2 shrink-0 text-foreground-muted" />
+                <span className="flex min-w-0 items-center gap-2">
+                  <UserRound aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
                   <span className="flex min-w-0 flex-col">
                     <span className="font-medium break-words">{buyer.legalName}</span>
                     <span className="text-sm text-foreground-muted tabular-nums">
@@ -412,7 +412,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                 Agrega los productos o servicios que vendes en esta factura.
               </p>
             ) : (
-              <ul className="flex flex-col gap-1.5">
+              <ul className="flex flex-col gap-3">
                 {lines.fields.map((field, index) => {
                   const position = index + 1;
                   const lineError = errors.lines?.[index];
@@ -430,9 +430,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                       key={field.id}
                       aria-label={`Línea ${position}: ${field.name}`}
                       aria-invalid={problems.length > 0 || undefined}
-                      className="flex flex-col gap-1 rounded-md border border-border bg-surface px-1.5 py-1 aria-invalid:border-danger"
+                      className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
                     >
-                      <div className="flex items-start justify-between gap-1">
+                      <div className="flex items-start justify-between gap-2">
                         <span className="flex min-w-0 flex-col">
                           <span className="font-medium break-words">{field.name}</span>
                           {field.mainCode && (
@@ -445,7 +445,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                           onClick={() => lines.remove(index)}
                         />
                       </div>
-                      <div className="grid gap-1 sm:grid-cols-3">
+                      <div className="grid gap-2 sm:grid-cols-3">
                         <FormField
                           id={`cantidad-${index}`}
                           label="Cantidad"
@@ -457,9 +457,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                             {...form.register(`lines.${index}.quantity`)}
                           />
                         </FormField>
-                        <div className="flex flex-col gap-0.5">
+                        <div className="flex flex-col gap-1">
                           <span className="text-sm font-medium">Precio unitario</span>
-                          <span className="flex h-5 items-center text-sm tabular-nums max-md:h-5.5">
+                          <span className="flex h-10 items-center text-sm tabular-nums max-md:h-11">
                             {formatUsd(field.unitPrice)}
                           </span>
                         </div>
@@ -494,7 +494,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
           </Section>
 
           <Section title="Formas de pago">
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-3">
               {payments.fields.map((field, index) => {
                 const position = index + 1;
                 const paymentError = errors.payments?.[index];
@@ -502,7 +502,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                 return (
                   <li
                     key={field.id}
-                    className="grid items-end gap-1 sm:grid-cols-[minmax(0,1fr)_10rem_auto]"
+                    className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto]"
                   >
                     <FormField
                       id={`forma-${index}`}
@@ -571,9 +571,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
 
         <aside
           aria-labelledby="resumen-titulo"
-          className="flex flex-col gap-2 lg:sticky lg:top-2 lg:self-start"
+          className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start"
         >
-          <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
             <h2 id="resumen-titulo" className="text-lg font-semibold">
               Resumen
             </h2>
@@ -582,7 +582,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                 Guarda el borrador para calcular los totales con los precios y tarifas vigentes.
               </p>
             ) : preview?.totals ? (
-              <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+              <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
                 <dt>Subtotal sin impuestos</dt>
                 <dd className="text-right">{formatUsd(preview.totals.withoutTaxes)}</dd>
                 <dt>Descuento</dt>
@@ -607,13 +607,13 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
               </p>
             )}
             {draft && !isDirty && generalIssues.length > 0 && (
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 <h3 className="text-sm font-semibold">Antes de emitir</h3>
                 <IssueList issues={generalIssues} />
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {canEmit && (
               <Button
                 disabled={emitBlocked}
@@ -682,7 +682,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
         getKey={(product) => product.id}
         getLabel={(product) => `${product.name}, ${formatUsd(product.unitPrice)}`}
         renderItem={(product) => (
-          <span className="flex w-full items-center justify-between gap-1">
+          <span className="flex w-full items-center justify-between gap-2">
             <span className="flex min-w-0 flex-col">
               <span className="font-medium break-words">{product.name}</span>
               {product.mainCode && (
@@ -720,9 +720,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
             })
           }
           description={
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <p>La emisión reserva el número de la factura y la firma; no se puede deshacer.</p>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-foreground">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-foreground">
                 <dt className="text-foreground-muted">Ambiente</dt>
                 <dd>{environment ?? "Desconocido"}</dd>
                 <dt className="text-foreground-muted">Comprador</dt>
@@ -735,7 +735,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                 <dd className="tabular-nums">{draft.lines.length}</dd>
               </dl>
               {draft.buyer?.systemRecord === "CONSUMER_FINAL" && (
-                <p className="rounded-md border border-warning/40 bg-warning/10 px-1 py-0.5 text-foreground">
+                <p className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-foreground">
                   Una factura a consumidor final tiene restricciones para anularse o corregirse con
                   una nota de crédito. Si el cliente necesita la factura a su nombre, identifícalo
                   antes de emitir.
@@ -758,7 +758,7 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
 
   if (!allowed) {
     return (
-      <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
         <h1 id="editor-titulo" className="text-3xl font-bold">
           Borrador de factura
         </h1>
@@ -776,7 +776,7 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
     const emitted = error instanceof ApiError && error.code === "INVOICE_DRAFT_ALREADY_EMITTED";
     const missing = error instanceof ApiError && error.status === 404;
     return (
-      <section aria-labelledby="editor-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
         <h1 id="editor-titulo" className="text-3xl font-bold">
           Borrador de factura
         </h1>
@@ -818,10 +818,10 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
 
 export function DraftEditorSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Borrador de factura</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

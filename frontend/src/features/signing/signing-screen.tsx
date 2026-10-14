@@ -60,7 +60,7 @@ function RucComparison({ certificate }: { certificate: SigningCertificateView })
   return (
     <div
       role="note"
-      className="rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+      className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
     >
       El RUC del certificado ({certificate.detectedRuc}) es distinto del RUC de la empresa (
       {certificate.companyRuc}). Es una comprobación preventiva de esta aplicación: la firma se
@@ -86,7 +86,7 @@ function ExpiryAlertForm({ days }: { days: number }) {
     /^\d{1,2}$/.test(value) && parsed >= EXPIRY_ALERT_DAYS.min && parsed <= EXPIRY_ALERT_DAYS.max;
   return (
     <form
-      className="flex flex-col gap-1"
+      className="flex flex-col gap-2"
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -103,7 +103,7 @@ function ExpiryAlertForm({ days }: { days: number }) {
       <label htmlFor="expiry-alert-days" className="text-sm font-medium">
         Aviso de vencimiento
       </label>
-      <div className="flex flex-wrap items-center gap-1 text-sm">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
         <span>Avisar con</span>
         <Input
           id="expiry-alert-days"
@@ -112,7 +112,7 @@ function ExpiryAlertForm({ days }: { days: number }) {
           onChange={(event) => setValue(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "expiry-alert-error" : "expiry-alert-hint"}
-          className="w-8"
+          className="w-16"
           maxLength={2}
         />
         <span>días de anticipación</span>
@@ -147,7 +147,7 @@ export function SigningScreen() {
 
   if (!allowed) {
     return (
-      <section aria-labelledby="firma-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="firma-titulo" className="flex flex-col gap-6">
         {heading}
         <EmptyState
           kind="no-permission"
@@ -162,16 +162,16 @@ export function SigningScreen() {
       <section
         aria-labelledby="firma-titulo"
         aria-busy="true"
-        className="flex max-w-3xl flex-col gap-3"
+        className="flex max-w-3xl flex-col gap-6"
       >
         {heading}
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
       </section>
     );
   }
   if (query.isError) {
     return (
-      <section aria-labelledby="firma-titulo" className="flex max-w-3xl flex-col gap-3">
+      <section aria-labelledby="firma-titulo" className="flex max-w-3xl flex-col gap-6">
         {heading}
         <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       </section>
@@ -185,22 +185,22 @@ export function SigningScreen() {
     </Button>
   );
   return (
-    <section aria-labelledby="firma-titulo" className="flex max-w-3xl flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="firma-titulo" className="flex max-w-3xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {heading}
         {certificate && action}
       </div>
       {certificate ? (
         <>
-          <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-2">
-            <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+            <div className="flex flex-wrap items-center gap-2">
               <StatusBadge
                 tone={STATE[certificate.state].tone}
                 label={STATE[certificate.state].label}
               />
               <p className="text-sm">{stateExplanation(certificate)}</p>
             </div>
-            <dl className="grid grid-cols-1 gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+            <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-[auto_1fr]">
               <dt className="text-foreground-muted">Titular</dt>
               <dd className="break-words">{commonName(certificate.subject)}</dd>
               <dt className="text-foreground-muted">RUC del certificado</dt>

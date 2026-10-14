@@ -151,7 +151,7 @@ function toInput(values: FormOutput, expectedVersion: number | null): UpdateTaxp
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-2">
+    <section aria-labelledby={id} className="flex flex-col gap-4">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -166,8 +166,8 @@ function Checkbox({
   ...props
 }: { id: string; label: string } & ComponentProps<"input">) {
   return (
-    <label htmlFor={id} className="flex min-h-4 items-center gap-1 text-sm">
-      <input id={id} type="checkbox" className="size-2 accent-primary" {...props} />
+    <label htmlFor={id} className="flex min-h-8 items-center gap-2 text-sm">
+      <input id={id} type="checkbox" className="size-4 accent-primary" {...props} />
       {label}
     </label>
   );
@@ -217,20 +217,20 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
   const isWithholding = useWatch({ control: form.control, name: "isWithholdingAgent" });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
       <form
         noValidate
         aria-label="Datos de la empresa"
         onSubmit={form.handleSubmit((values) => save.mutate(toInput(values, baseVersion)))}
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-8"
       >
         <Section id="identificacion" title="Identificación">
           {locked ? (
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <span className="text-sm font-medium">RUC</span>
               <span className="text-base">{taxpayer.profile?.ruc}</span>
-              <p className="flex items-center gap-0.5 text-xs text-foreground-muted">
-                <Lock aria-hidden="true" className="size-1.5" />
+              <p className="flex items-center gap-1 text-xs text-foreground-muted">
+                <Lock aria-hidden="true" className="size-3" />
                 El RUC ya no puede cambiar en esta empresa. Para emitir con otro RUC se necesita
                 otra empresa.
               </p>
@@ -286,7 +286,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
               autoComplete="street-address"
             />
           </FormField>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <FormField id="phone" label="Teléfono (opcional)" error={errors.phone?.message}>
               <Input
                 {...fieldAria("phone", errors.phone?.message)}
@@ -307,7 +307,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
         </Section>
 
         <Section id="atributos" title="Atributos tributarios">
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             <span id="accounting-label" className="text-sm font-medium">
               Obligada a llevar contabilidad
             </span>
@@ -331,7 +331,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
               </p>
             )}
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Checkbox
               id="isSpecialTaxpayer"
               label="Es contribuyente especial"
@@ -351,7 +351,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
               </FormField>
             )}
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Checkbox
               id="isWithholdingAgent"
               label="Es agente de retención"
@@ -382,7 +382,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
             label="Es gran contribuyente"
             {...form.register("largeTaxpayer")}
           />
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             <span id="rimpe-label" className="text-sm font-medium">
               Régimen RIMPE
             </span>
@@ -425,7 +425,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
         {conflict && (
           <div
             role="alert"
-            className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
           >
             <span>Otro administrador cambió los datos. Recarga para ver la versión vigente.</span>
             <Button variant="outline" size="sm" onClick={() => void reload()}>
@@ -434,7 +434,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
           </div>
         )}
 
-        <div className="flex flex-col gap-1 border-t border-border pt-2">
+        <div className="flex flex-col gap-2 border-t border-border pt-4">
           <p className="text-sm text-foreground-muted">
             Los cambios aplican a los comprobantes que se emitan después.
           </p>
@@ -469,7 +469,7 @@ export function CompanyScreen() {
 
   if (!allowed) {
     return (
-      <section aria-labelledby="empresa-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="empresa-titulo" className="flex flex-col gap-6">
         <h1 id="empresa-titulo" className="text-3xl font-bold">
           Empresa
         </h1>
@@ -484,7 +484,7 @@ export function CompanyScreen() {
   if (taxpayer.isPending) return <CompanySkeleton />;
   if (taxpayer.isError) {
     return (
-      <section aria-labelledby="empresa-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="empresa-titulo" className="flex flex-col gap-6">
         <h1 id="empresa-titulo" className="text-3xl font-bold">
           Empresa
         </h1>
@@ -498,9 +498,9 @@ export function CompanyScreen() {
 
   const view = taxpayer.data;
   return (
-    <section aria-labelledby="empresa-titulo" className="flex max-w-3xl flex-col gap-3">
-      <div className="flex flex-col gap-0.5">
-        <div className="flex flex-wrap items-baseline gap-1">
+    <section aria-labelledby="empresa-titulo" className="flex max-w-3xl flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-baseline gap-2">
           <h1 id="empresa-titulo" className="text-3xl font-bold">
             Empresa
           </h1>
@@ -521,12 +521,12 @@ export function CompanyScreen() {
 
 export function CompanySkeleton() {
   return (
-    <section aria-busy="true" className="flex max-w-3xl flex-col gap-3">
+    <section aria-busy="true" className="flex max-w-3xl flex-col gap-6">
       <h1 className="text-3xl font-bold">Empresa</h1>
-      <Skeleton className="h-5 w-full max-w-xs" />
-      <Skeleton className="h-5 w-full" />
-      <Skeleton className="h-5 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-10 w-full max-w-xs" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

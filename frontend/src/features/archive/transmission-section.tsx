@@ -67,9 +67,9 @@ function SriMessageList({
 }) {
   if (messages.length === 0) return null;
   return (
-    <ul aria-label={label} className="flex flex-col gap-0.5 text-sm">
+    <ul aria-label={label} className="flex flex-col gap-1 text-sm">
       {messages.map((message, index) => (
-        <li key={index} className="rounded-md border border-border bg-surface px-1.5 py-1">
+        <li key={index} className="rounded-md border border-border bg-surface px-3 py-2">
           <p className="break-words">
             {message.identifier && (
               <span className="font-medium tabular-nums">
@@ -116,7 +116,7 @@ function TransmissionHistory({ kind, documentId }: { kind: DocumentKind; documen
   const history = useDocumentTransmission(kind, documentId, open);
   let content: ReactNode = null;
   if (open) {
-    if (history.isPending) content = <Skeleton className="h-8 w-full" />;
+    if (history.isPending) content = <Skeleton className="h-16 w-full" />;
     else if (history.isError)
       content = (
         <ErrorState
@@ -127,9 +127,9 @@ function TransmissionHistory({ kind, documentId }: { kind: DocumentKind; documen
     else
       content = (
         <>
-          <ol aria-label="Historial de la transmisión" className="flex flex-col gap-1">
+          <ol aria-label="Historial de la transmisión" className="flex flex-col gap-2">
             {history.data.events.map((event, index) => (
-              <li key={index} className="flex flex-col gap-0.5 border-l-2 border-border pl-1.5">
+              <li key={index} className="flex flex-col gap-1 border-l-2 border-border pl-3">
                 <span className="font-medium">{eventTitle(event)}</span>
                 <span className="text-foreground-muted">
                   {formatDateTime(event.at)} · {eventDetail(event)}
@@ -154,12 +154,10 @@ function TransmissionHistory({ kind, documentId }: { kind: DocumentKind; documen
       className="rounded-lg border border-border bg-surface"
       onToggle={(event) => setOpen((event.target as HTMLDetailsElement).open)}
     >
-      <summary className="flex min-h-5.5 cursor-pointer items-center px-1.5 font-medium">
+      <summary className="flex min-h-11 cursor-pointer items-center px-3 font-medium">
         Historial de la transmisión
       </summary>
-      <div className="flex flex-col gap-1 border-t border-border px-1.5 py-1 text-sm">
-        {content}
-      </div>
+      <div className="flex flex-col gap-2 border-t border-border px-3 py-2 text-sm">{content}</div>
     </details>
   );
 }
@@ -195,8 +193,8 @@ function KindTransmissionSection({
   const messages = transmission.lastResult?.messages ?? [];
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 id={headingId} className="text-lg font-semibold">
           Transmisión al SRI
         </h2>
@@ -218,10 +216,10 @@ function KindTransmissionSection({
       {transmission.stopped && (
         <div
           role="status"
-          className="flex items-start gap-1 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+          className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
         >
-          <CirclePause aria-hidden="true" className="mt-0.5 size-2 shrink-0" />
-          <div className="flex flex-col gap-0.5">
+          <CirclePause aria-hidden="true" className="mt-1 size-4 shrink-0" />
+          <div className="flex flex-col gap-1">
             <p className="font-medium">La transmisión está detenida.</p>
             <p>{transmission.stopped.message}</p>
             <p className="text-foreground-muted">
@@ -234,7 +232,7 @@ function KindTransmissionSection({
         </div>
       )}
       {authorization && (
-        <dl className="grid grid-cols-1 gap-x-3 gap-y-0.5 text-sm sm:grid-cols-[auto_1fr]">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
           <dt className="text-foreground-muted">Número de autorización</dt>
           <dd className="font-mono text-xs break-all">{authorization.number}</dd>
           <dt className="text-foreground-muted">Fecha de autorización</dt>
@@ -244,7 +242,7 @@ function KindTransmissionSection({
         </dl>
       )}
       {messages.length > 0 && (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1">
           <h3 className="text-sm font-medium">Mensajes del SRI</h3>
           <SriMessageList messages={messages} label="Mensajes del SRI" />
         </div>

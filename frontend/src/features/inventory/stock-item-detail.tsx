@@ -50,7 +50,7 @@ function Note({ children }: { children: ReactNode }) {
   return (
     <p
       role="note"
-      className="rounded-md border border-border bg-surface-subtle px-1.5 py-1 text-sm text-foreground-muted"
+      className="rounded-md border border-border bg-surface-subtle px-3 py-2 text-sm text-foreground-muted"
     >
       {children}
     </p>
@@ -124,7 +124,7 @@ function Kardex({ productId }: { productId: string }) {
         id: "detail",
         header: "Detalle",
         cell: ({ row }) => (
-          <span className="block min-w-24">
+          <span className="block min-w-48">
             <MovementDetail movement={row.original} />
           </span>
         ),
@@ -167,7 +167,7 @@ function Kardex({ productId }: { productId: string }) {
   ) : undefined;
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1">
+    <section aria-labelledby={headingId} className="flex flex-col gap-2">
       <h2 id={headingId} className="text-lg font-semibold">
         Kárdex
       </h2>
@@ -189,7 +189,7 @@ function Kardex({ productId }: { productId: string }) {
         refreshing={movements.isFetching}
         state={state}
         toolbar={
-          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:max-w-xl">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:max-w-xl">
             <DatePickerField
               label="Desde"
               value={from}
@@ -212,12 +212,12 @@ function Kardex({ productId }: { productId: string }) {
           </div>
         }
         renderCard={(movement) => (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-start justify-between gap-1">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
               <span className="font-medium">{MOVEMENT_TYPE_LABELS[movement.type]}</span>
               <span className="tabular-nums">{formatDelta(movement.delta)}</span>
             </div>
-            <span className="flex flex-wrap items-center justify-between gap-1 text-sm">
+            <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span className="tabular-nums text-foreground-muted">
                 {formatDateTime(movement.occurredAt)}
               </span>
@@ -269,16 +269,16 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
   const header = (
     <Link
       href="/inventario"
-      className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
     >
-      <ArrowLeft aria-hidden="true" className="size-2" />
+      <ArrowLeft aria-hidden="true" className="size-4" />
       Inventario
     </Link>
   );
 
   if (!allowed) {
     return (
-      <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-6">
         {header}
         <h1 id="inventario-detalle-titulo" className="text-3xl font-bold">
           Inventario
@@ -295,7 +295,7 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
   if (item.isError) {
     const missing = item.error instanceof ApiError && item.error.status === 404;
     return (
-      <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-6">
         {header}
         <h1 id="inventario-detalle-titulo" className="text-3xl font-bold">
           Inventario
@@ -382,8 +382,8 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
   }
 
   const secondary = data.state === "TRACKED_INITIALIZED" && (canAdjust || canConfigure) && (
-    <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap gap-1">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
         {canAdjust && (
           <Button variant="outline" onClick={() => open("adjust")}>
             <SlidersHorizontal aria-hidden="true" />
@@ -412,14 +412,14 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
   );
 
   return (
-    <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-6">
       {header}
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
           <h1 id="inventario-detalle-titulo" className="text-3xl font-bold break-words">
             {data.name}
           </h1>
-          <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted">
+          <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StockStateBadge state={data.state} />
             {data.mainCode && <span className="tabular-nums">{data.mainCode}</span>}
             {data.productStatus === "INACTIVE" && <span>Producto inactivo</span>}
@@ -428,7 +428,7 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
         {primary}
       </div>
 
-      <div className="flex flex-col gap-1 rounded-lg border border-border p-2">
+      <div className="flex flex-col gap-2 rounded-lg border border-border p-4">
         <h2
           ref={summaryRef}
           tabIndex={-1}
@@ -446,7 +446,7 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
           )}
         </p>
         {initialized && (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-sm">
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
             {data.initializedAt && (
               <>
                 <dt className="text-foreground-muted">Inicializado</dt>
@@ -499,7 +499,7 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
         onOpenChange={(next) => (next ? undefined : setDialog(null))}
         title="¿Desactivar el control de stock?"
         description={
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <p>
               Las facturas nuevas de {data.name} dejarán de descontar su inventario. El kárdex se
               conserva y puedes reactivar el control después.
@@ -521,10 +521,10 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
 
 export function StockItemDetailSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
-      <Skeleton className="h-5 w-40" />
-      <Skeleton className="h-12 w-full" />
-      <Skeleton className="h-30 w-full" />
+    <section aria-busy="true" className="flex flex-col gap-6">
+      <Skeleton className="h-10 w-80" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-60 w-full" />
     </section>
   );
 }

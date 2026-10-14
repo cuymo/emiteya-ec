@@ -33,16 +33,16 @@ function Checks({ status, canConfigure }: { status: CompanyStatus; canConfigure:
           const met = check.status === "MET";
           const Icon = met ? CircleCheck : Circle;
           return (
-            <li key={check.key} className="flex items-start gap-1.5 px-2 py-1.5">
+            <li key={check.key} className="flex items-start gap-3 px-4 py-3">
               <Icon
                 aria-hidden="true"
                 className={
                   met
-                    ? "mt-0.5 size-2.5 shrink-0 text-success"
-                    : "mt-0.5 size-2.5 shrink-0 text-foreground-muted"
+                    ? "mt-1 size-5 shrink-0 text-success"
+                    : "mt-1 size-5 shrink-0 text-foreground-muted"
                 }
               />
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <p className="text-sm font-semibold">
                   {copy.title}
                   <span className="sr-only">{met ? ": cumplido" : ": pendiente"}</span>
@@ -82,7 +82,7 @@ export function ReadinessScreen() {
   if (status.isPending) return <ReadinessSkeleton />;
   if (status.isError) {
     return (
-      <section aria-labelledby="inicio-titulo" className="flex max-w-2xl flex-col gap-3">
+      <section aria-labelledby="inicio-titulo" className="flex max-w-2xl flex-col gap-6">
         <h1 id="inicio-titulo" className="text-3xl font-bold">
           Preparación para emitir
         </h1>
@@ -93,12 +93,12 @@ export function ReadinessScreen() {
 
   const { ready } = status.data.readiness;
   return (
-    <section aria-labelledby="inicio-titulo" className="flex max-w-2xl flex-col gap-3">
-      <div className="flex flex-col gap-1">
+    <section aria-labelledby="inicio-titulo" className="flex max-w-2xl flex-col gap-6">
+      <div className="flex flex-col gap-2">
         <h1 id="inicio-titulo" className="text-3xl font-bold">
           Preparación para emitir
         </h1>
-        <div className="flex flex-wrap items-center gap-1 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
           {ready ? (
             <StatusBadge tone="success" label="Lista para emitir" icon={CircleCheck} />
           ) : (
@@ -124,10 +124,10 @@ export function ReadinessScreen() {
 
 export function ReadinessSkeleton() {
   return (
-    <section aria-busy="true" className="flex max-w-2xl flex-col gap-3">
+    <section aria-busy="true" className="flex max-w-2xl flex-col gap-6">
       <h1 className="text-3xl font-bold">Preparación para emitir</h1>
-      <Skeleton className="h-3 w-16" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-6 w-32" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

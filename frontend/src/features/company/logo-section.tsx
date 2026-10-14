@@ -37,9 +37,9 @@ export function LogoSection({
   return (
     <section
       aria-labelledby="logo-titulo"
-      className="flex flex-col gap-2 border-t border-border pt-3"
+      className="flex flex-col gap-4 border-t border-border pt-6"
     >
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <h2 id="logo-titulo" className="text-lg font-semibold">
           Logo
         </h2>
@@ -71,7 +71,7 @@ export function LogoSection({
                   <img
                     src={`/api/v1/taxpayer/logo?v=${logo.sha256.slice(0, 16)}`}
                     alt="Logo vigente de la empresa"
-                    className="h-8 max-w-32 rounded-sm border border-border bg-surface object-contain"
+                    className="h-16 max-w-64 rounded-sm border border-border bg-surface object-contain"
                   />
                 ),
               }

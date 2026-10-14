@@ -42,7 +42,7 @@ type Recipient = ShippingGuideView["recipients"][number];
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -97,9 +97,9 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
   return (
     <li
       aria-labelledby={headingId}
-      className="flex flex-col gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm"
+      className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-1">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 id={headingId} className="font-medium break-words">
           {recipient.position}. {recipient.legalName}
         </h3>
@@ -110,7 +110,7 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
           Establecimiento propio {recipient.destinationEstablishment.code}
         </p>
       )}
-      <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-2 gap-y-0.5">
+      <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-4 gap-y-1">
         <dt className="text-foreground-muted">Destino</dt>
         <dd className="break-words">{recipient.address}</dd>
         <dt className="text-foreground-muted">Motivo</dt>
@@ -130,11 +130,11 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
       </dl>
       <SupportText support={recipient.support} />
       {/* Por debajo de 640 px, cada detalle apilado: la descripción no se corta. */}
-      <ul aria-label="Detalle del destinatario" className="flex flex-col gap-0.5 sm:hidden">
+      <ul aria-label="Detalle del destinatario" className="flex flex-col gap-1 sm:hidden">
         {recipient.details.map((detail) => (
-          <li key={detail.position} className="flex flex-col border-t border-border pt-0.5">
+          <li key={detail.position} className="flex flex-col border-t border-border pt-1">
             <span className="break-words">{detail.description}</span>
-            <span className="flex flex-wrap gap-x-1 text-foreground-muted tabular-nums">
+            <span className="flex flex-wrap gap-x-2 text-foreground-muted tabular-nums">
               <span className="whitespace-nowrap">Cantidad {formatDecimal(detail.quantity)}</span>
               {detail.mainCode && <span>Código {detail.mainCode}</span>}
               {detail.auxiliaryCode && <span>Auxiliar {detail.auxiliaryCode}</span>}
@@ -146,16 +146,16 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
         <caption className="sr-only">Detalle del destinatario</caption>
         <thead className="text-xs text-foreground-muted">
           <tr>
-            <th scope="col" className="py-0.5 text-right font-medium">
+            <th scope="col" className="py-1 text-right font-medium">
               Cantidad
             </th>
-            <th scope="col" className="py-0.5 pl-1 font-medium">
+            <th scope="col" className="py-1 pl-2 font-medium">
               Descripción
             </th>
-            <th scope="col" className="py-0.5 pl-1 font-medium">
+            <th scope="col" className="py-1 pl-2 font-medium">
               Código principal
             </th>
-            <th scope="col" className="py-0.5 pl-1 font-medium">
+            <th scope="col" className="py-1 pl-2 font-medium">
               Código auxiliar
             </th>
           </tr>
@@ -163,12 +163,12 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
         <tbody>
           {recipient.details.map((detail) => (
             <tr key={detail.position} className="border-t border-border align-top">
-              <td className="py-0.5 text-right whitespace-nowrap tabular-nums">
+              <td className="py-1 text-right whitespace-nowrap tabular-nums">
                 {formatDecimal(detail.quantity)}
               </td>
-              <td className="py-0.5 pl-1 break-words">{detail.description}</td>
-              <td className="py-0.5 pl-1">{detail.mainCode ?? ""}</td>
-              <td className="py-0.5 pl-1">{detail.auxiliaryCode ?? ""}</td>
+              <td className="py-1 pl-2 break-words">{detail.description}</td>
+              <td className="py-1 pl-2">{detail.mainCode ?? ""}</td>
+              <td className="py-1 pl-2">{detail.auxiliaryCode ?? ""}</td>
             </tr>
           ))}
         </tbody>
@@ -187,14 +187,14 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
   const header = (
     <Link
       href="/guias-remision"
-      className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
     >
-      <ArrowLeft aria-hidden="true" className="size-2" />
+      <ArrowLeft aria-hidden="true" className="size-4" />
       Guías de remisión
     </Link>
   );
   const fallback = (body: ReactNode) => (
-    <section aria-labelledby="guia-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="guia-titulo" className="flex flex-col gap-6">
       {header}
       <h1 id="guia-titulo" className="text-3xl font-bold">
         Guía de remisión
@@ -231,14 +231,14 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
   const data = guide.data;
   const reserved = data.state === "RESERVED";
   return (
-    <section aria-labelledby="guia-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="guia-titulo" className="flex flex-col gap-6">
       {header}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
           <h1 id="guia-titulo" className="text-3xl font-bold tabular-nums">
             Guía de remisión <span className="whitespace-nowrap">{data.documentNumber}</span>
           </h1>
-          <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted">
+          <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]}
           </span>
@@ -254,7 +254,7 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
       {reserved && (
         <div
           role="status"
-          className="flex flex-col gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+          className="flex flex-col gap-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
         >
           {data.diagnostic ? (
             <>
@@ -276,12 +276,12 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           {!reserved && <TransmissionSection document={data} />}
           <DocumentsSection document={data} />
           <Section title="Transporte">
-            <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-2 gap-y-0.5 text-sm">
+            <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-4 gap-y-1 text-sm">
               <dt className="text-foreground-muted">Transportista</dt>
               <dd className="flex flex-col">
                 <span className="font-medium break-words">{data.transporter.legalName}</span>
@@ -306,7 +306,7 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
             </dl>
           </Section>
           <Section title="Destinatarios">
-            <ol className="flex flex-col gap-1">
+            <ol className="flex flex-col gap-2">
               {data.recipients.map((recipient) => (
                 <RecipientCard key={recipient.position} recipient={recipient} />
               ))}
@@ -315,12 +315,12 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
         </div>
         <aside
           aria-labelledby="resumen-titulo"
-          className="flex flex-col gap-1.5 self-start rounded-lg border border-border bg-surface p-2"
+          className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"
         >
           <h2 id="resumen-titulo" className="text-lg font-semibold">
             Resumen
           </h2>
-          <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+          <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
             <dt>Destinatarios</dt>
             <dd className="text-right">{recipientCountLabel(data.counts.recipients)}</dd>
             <dt>Detalles</dt>
@@ -333,7 +333,7 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
           <p className="text-xs text-foreground-muted">
             La guía no tiene total monetario: sustenta el traslado, no una venta.
           </p>
-          <div className="flex flex-col gap-0.5 border-t border-border pt-1 text-sm">
+          <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Clave de acceso</span>
             <span className="font-mono text-xs break-all">{data.accessKey}</span>
           </div>
@@ -345,10 +345,10 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
 
 export function ShippingGuideDetailSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Guía de remisión</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

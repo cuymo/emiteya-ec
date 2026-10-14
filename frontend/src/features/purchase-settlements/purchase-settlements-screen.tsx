@@ -94,15 +94,15 @@ function DraftsPanel() {
   const nameOf = (draft: PurchaseSettlementDraftSummaryView) =>
     draft.supplierName ? `Liquidación a ${draft.supplierName}` : "Liquidación sin proveedor";
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1">
+    <section aria-labelledby={headingId} className="flex flex-col gap-2">
       <h2 id={headingId} className="text-lg font-semibold">
         Borradores en curso
       </h2>
-      <ul className="flex flex-col gap-0.5">
+      <ul className="flex flex-col gap-1">
         {data.map((draft) => (
           <li
             key={draft.id}
-            className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
           >
             <span className="flex min-w-0 flex-col">
               <Link
@@ -233,7 +233,7 @@ export function PurchaseSettlementsScreen() {
   );
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="liquidaciones-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="liquidaciones-titulo" className="flex flex-col gap-6">
         {title}
         <EmptyState
           kind="no-permission"
@@ -286,8 +286,8 @@ export function PurchaseSettlementsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="liquidaciones-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="liquidaciones-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {title}
         {newSettlement}
       </div>
@@ -307,7 +307,7 @@ export function PurchaseSettlementsScreen() {
         refreshing={settlements.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-3">
             <SearchInput
               value={searchDraft}
               onChange={setSearchDraft}
@@ -323,8 +323,8 @@ export function PurchaseSettlementsScreen() {
           </div>
         }
         renderCard={(settlement) => (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-start justify-between gap-1">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
               <Link
                 href={`/liquidaciones-compra/${settlement.id}`}
                 className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
@@ -336,7 +336,7 @@ export function PurchaseSettlementsScreen() {
               </span>
             </div>
             <span className="text-sm break-words">{settlement.supplierName}</span>
-            <span className="flex flex-wrap items-center justify-between gap-1 text-sm">
+            <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span className="text-foreground-muted tabular-nums">
                 {settlement.supplierIdentification}
               </span>
@@ -352,10 +352,10 @@ export function PurchaseSettlementsScreen() {
 
 export function PurchaseSettlementsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Liquidaciones de compra</h1>
-      <Skeleton className="h-5 w-full max-w-md" />
-      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <Skeleton className="h-64 w-full" />
     </section>
   );
 }

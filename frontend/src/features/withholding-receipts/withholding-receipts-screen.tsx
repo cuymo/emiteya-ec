@@ -117,15 +117,15 @@ function DraftsPanel() {
   const { data, meta } = drafts.data;
   const nameOf = (draft: WithholdingDraftSummaryView) => draft.partyName ?? "Sin proveedor";
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1">
+    <section aria-labelledby={headingId} className="flex flex-col gap-2">
       <h2 id={headingId} className="text-lg font-semibold">
         Borradores en curso
       </h2>
-      <ul className="flex flex-col gap-0.5">
+      <ul className="flex flex-col gap-1">
         {data.map((draft) => (
           <li
             key={draft.id}
-            className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
           >
             <span className="flex min-w-0 flex-col">
               <Link
@@ -275,7 +275,7 @@ export function WithholdingReceiptsScreen() {
   );
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="retenciones-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="retenciones-titulo" className="flex flex-col gap-6">
         {title}
         <EmptyState
           kind="no-permission"
@@ -328,8 +328,8 @@ export function WithholdingReceiptsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="retenciones-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="retenciones-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {title}
         {newReceipt}
       </div>
@@ -349,15 +349,15 @@ export function WithholdingReceiptsScreen() {
         refreshing={receipts.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-col gap-1.5">
-            <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-end gap-4">
               <SearchInput
                 value={searchDraft}
                 onChange={setSearchDraft}
                 label="Buscar por número o proveedor"
                 placeholder="Número o proveedor"
               />
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1">
                 <Label htmlFor="filtro-periodo">Período fiscal</Label>
                 <Select
                   id="filtro-periodo"
@@ -382,8 +382,8 @@ export function WithholdingReceiptsScreen() {
           </div>
         }
         renderCard={(receipt) => (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-start justify-between gap-1">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
               <Link
                 href={`/retenciones/${receipt.id}`}
                 className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
@@ -407,10 +407,10 @@ export function WithholdingReceiptsScreen() {
 
 export function WithholdingReceiptsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Retenciones</h1>
-      <Skeleton className="h-5 w-full max-w-md" />
-      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <Skeleton className="h-64 w-full" />
     </section>
   );
 }

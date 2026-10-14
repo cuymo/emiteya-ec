@@ -13,7 +13,7 @@ import { useCompanyStatus } from "./company-api";
 export function EnvironmentNotice() {
   const status = useCompanyStatus();
   if (status.isPending) {
-    return <div aria-hidden="true" className="h-4 border-b border-border bg-surface-subtle" />;
+    return <div aria-hidden="true" className="h-8 border-b border-border bg-surface-subtle" />;
   }
   if (status.isError) {
     return (
@@ -39,7 +39,7 @@ export function EnvironmentNotice() {
 /** Distintivo de la cabecera, desde 640px; por debajo lo sustituye la línea de EnvironmentNotice. */
 export function EnvironmentBadge() {
   const status = useCompanyStatus();
-  if (status.isPending) return <Skeleton className="hidden h-3 w-9 sm:block" />;
+  if (status.isPending) return <Skeleton className="hidden h-6 w-18 sm:block" />;
   if (status.isError) return null;
   return (
     <span className="hidden sm:inline-flex">

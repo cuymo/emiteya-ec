@@ -45,9 +45,9 @@ function EstablishmentItem({
   const active = establishment.status === "ACTIVE";
   return (
     <li className="rounded-lg border border-border bg-surface">
-      <div className="flex flex-wrap items-start justify-between gap-1 px-1.5 py-1">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-start justify-between gap-2 px-3 py-2">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">Establecimiento {establishment.code}</span>
             {active ? (
               <StatusBadge tone="success" label="Activo" />
@@ -57,7 +57,7 @@ function EstablishmentItem({
           </span>
           <span className="text-sm break-words text-foreground-muted">{establishment.address}</span>
         </div>
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
           <RowActionButton icon={MapPin} label="Corregir la dirección" onClick={onEdit} />
           <RowActionButton icon={Plus} label="Agregar punto de emisión" onClick={onAddPoint} />
           {active ? (
@@ -78,7 +78,7 @@ function EstablishmentItem({
         </div>
       </div>
       {establishment.emissionPoints.length === 0 ? (
-        <p className="border-t border-border px-1.5 py-1 text-sm text-foreground-muted">
+        <p className="border-t border-border px-3 py-2 text-sm text-foreground-muted">
           Sin puntos de emisión. Agrega uno para emitir desde este establecimiento.
         </p>
       ) : (
@@ -89,9 +89,9 @@ function EstablishmentItem({
           {establishment.emissionPoints.map((point) => (
             <li
               key={point.id}
-              className="flex flex-wrap items-center justify-between gap-1 px-1.5 py-0.5"
+              className="flex flex-wrap items-center justify-between gap-2 px-3 py-1"
             >
-              <span className="flex flex-wrap items-center gap-1 text-sm">
+              <span className="flex flex-wrap items-center gap-2 text-sm">
                 <span>Punto {pointLabel(establishment, point)}</span>
                 <PointStatus point={point} />
                 {point.status === "ACTIVE" && !active && (
@@ -138,7 +138,7 @@ export function EstablishmentsScreen() {
   );
   if (!allowed) {
     return (
-      <section aria-labelledby="establecimientos-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="establecimientos-titulo" className="flex flex-col gap-6">
         {heading}
         <EmptyState
           kind="no-permission"
@@ -159,9 +159,9 @@ export function EstablishmentsScreen() {
   let content;
   if (establishments.isPending) {
     content = (
-      <div aria-busy="true" className="flex flex-col gap-1">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
+      <div aria-busy="true" className="flex flex-col gap-2">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
       </div>
     );
   } else if (establishments.isError) {
@@ -181,7 +181,7 @@ export function EstablishmentsScreen() {
     );
   } else {
     content = (
-      <ul aria-label="Establecimientos" className="flex flex-col gap-1.5">
+      <ul aria-label="Establecimientos" className="flex flex-col gap-3">
         {establishments.data.map((establishment) => (
           <EstablishmentItem
             key={establishment.id}
@@ -195,8 +195,8 @@ export function EstablishmentsScreen() {
   }
 
   return (
-    <section aria-labelledby="establecimientos-titulo" className="flex max-w-3xl flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="establecimientos-titulo" className="flex max-w-3xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {heading}
         {create}
       </div>

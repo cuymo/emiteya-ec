@@ -62,7 +62,7 @@ export function DraftsScreen() {
   const forbidden = drafts.error instanceof ApiError && drafts.error.status === 403;
 
   const actions = (draft: DraftSummaryView) => (
-    <div className="inline-flex items-center gap-0.5">
+    <div className="inline-flex items-center gap-1">
       <RowActionButton
         icon={Pencil}
         label={`Corregir el borrador de ${buyerOf(draft)}`}
@@ -116,7 +116,7 @@ export function DraftsScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="borradores-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="borradores-titulo" className="flex flex-col gap-6">
         <h1 id="borradores-titulo" className="text-3xl font-bold">
           Borradores
         </h1>
@@ -145,8 +145,8 @@ export function DraftsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="borradores-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="borradores-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 id="borradores-titulo" className="text-3xl font-bold">
           Borradores
         </h1>
@@ -173,7 +173,7 @@ export function DraftsScreen() {
         refreshing={drafts.isFetching}
         state={tableState}
         renderCard={(draft) => (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Link
               href={`/borradores/${draft.id}`}
               className="font-medium break-words underline-offset-2 hover:underline"
@@ -183,7 +183,7 @@ export function DraftsScreen() {
             <span className="text-sm text-foreground-muted tabular-nums">
               {totalOf(draft)} · Punto {pointOf(draft)} · {formatDateTime(draft.updatedAt)}
             </span>
-            <div className="-ml-1">{actions(draft)}</div>
+            <div className="-ml-2">{actions(draft)}</div>
           </div>
         )}
       />
@@ -211,9 +211,9 @@ export function DraftsScreen() {
 /** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function DraftsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Borradores</h1>
-      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-64 w-full" />
     </section>
   );
 }

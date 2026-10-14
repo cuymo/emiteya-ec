@@ -33,7 +33,7 @@ function SkipLink() {
   return (
     <a
       href="#contenido"
-      className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-(--z-toast) focus:rounded-md focus:bg-surface focus:p-1"
+      className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-(--z-toast) focus:rounded-md focus:bg-surface focus:p-2"
     >
       Saltar al contenido
     </a>
@@ -62,14 +62,14 @@ function AccountMenu() {
         >
           <span
             aria-hidden="true"
-            className="inline-flex size-4 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-foreground"
+            className="inline-flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-foreground"
           >
             {initials(me.name)}
           </span>
         </Button>
       </MenuTrigger>
       <MenuContent align="end">
-        <MenuLabel className="flex flex-col px-1 py-0.5">
+        <MenuLabel className="flex flex-col px-2 py-1">
           <span className="truncate font-semibold">{me.name}</span>
           <span className="truncate text-xs text-foreground-muted">{ROLE_LABELS[me.role]}</span>
         </MenuLabel>
@@ -115,8 +115,8 @@ export function AppShell({
   return (
     <div className="flex min-h-dvh flex-col">
       <SkipLink />
-      <header className="sticky top-0 z-(--z-sticky) flex h-8 items-center justify-between gap-1 border-b border-border bg-surface px-1 md:px-2">
-        <div className="flex items-center gap-1">
+      <header className="sticky top-0 z-(--z-sticky) flex h-16 items-center justify-between gap-2 border-b border-border bg-surface px-2 md:px-4">
+        <div className="flex items-center gap-2">
           {hasNavigation && (
             <Button
               variant="ghost"
@@ -130,7 +130,7 @@ export function AppShell({
           )}
           <Brand />
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {status}
           <ThemeToggle />
           <ThemeMenu />
@@ -142,16 +142,16 @@ export function AppShell({
         {hasNavigation && (
           <aside
             aria-label="Barra lateral"
-            className="hidden w-32 shrink-0 border-r border-border bg-surface md:block"
+            className="hidden w-64 shrink-0 border-r border-border bg-surface md:block"
           >
             {/* Con la ventana baja, la navegación se desplaza dentro de la barra: los últimos
                 destinos de Configuración siguen alcanzables. */}
-            <div className="sticky top-8 h-[calc(100dvh-4rem)] overflow-y-auto">
+            <div className="sticky top-16 h-[calc(100dvh-4rem)] overflow-y-auto">
               <NavigationLinks role={me.role} />
             </div>
           </aside>
         )}
-        <main id="contenido" className="min-w-0 flex-1 px-2 py-3 md:px-3">
+        <main id="contenido" className="min-w-0 flex-1 px-4 py-6 md:px-6">
           {children}
         </main>
       </div>
@@ -160,10 +160,10 @@ export function AppShell({
           <DialogContent
             aria-describedby={undefined}
             closeLabel="Cerrar menú"
-            className="top-0 left-0 h-dvh max-h-dvh w-36 max-w-[85vw] translate-x-0 translate-y-0 rounded-none border-y-0 border-l-0"
+            className="top-0 left-0 h-dvh max-h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 rounded-none border-y-0 border-l-0"
           >
             <DialogTitle className="sr-only">Menú</DialogTitle>
-            <div className="flex h-8 items-center border-b border-border px-2">
+            <div className="flex h-16 items-center border-b border-border px-4">
               <Brand />
             </div>
             <NavigationLinks role={me.role} onNavigate={() => setDrawerOpen(false)} />
@@ -181,14 +181,14 @@ export function ShellSkeleton() {
       <span className="sr-only" role="status">
         Verificando la sesión
       </span>
-      <div className="flex h-8 items-center justify-between border-b border-border bg-surface px-2">
+      <div className="flex h-16 items-center justify-between border-b border-border bg-surface px-4">
         <span className="text-base font-bold">Facturador SRI</span>
-        <Skeleton className="size-4 rounded-full" />
+        <Skeleton className="size-8 rounded-full" />
       </div>
-      <div className="flex flex-col gap-2 px-2 py-3 md:px-3">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-3 w-full max-w-xl" />
-        <Skeleton className="h-3 w-full max-w-lg" />
+      <div className="flex flex-col gap-4 px-4 py-6 md:px-6">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-6 w-full max-w-xl" />
+        <Skeleton className="h-6 w-full max-w-lg" />
       </div>
     </div>
   );

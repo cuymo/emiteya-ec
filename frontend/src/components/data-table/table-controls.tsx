@@ -27,10 +27,10 @@ export function SearchInput({
   placeholder?: string;
 }) {
   return (
-    <div className="relative w-full sm:w-32">
+    <div className="relative w-full sm:w-64">
       <Search
         aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 left-1 size-2 -translate-y-1/2 text-foreground-muted"
+        className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-foreground-muted"
       />
       <Input
         type="search"
@@ -39,16 +39,16 @@ export function SearchInput({
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="pr-5 pl-4"
+        className="pr-10 pl-8"
       />
       {value && (
         <button
           type="button"
           aria-label="Limpiar búsqueda"
           onClick={() => onChange("")}
-          className="absolute inset-y-0 right-0 inline-flex w-5 items-center justify-center text-foreground-muted hover:text-foreground"
+          className="absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center text-foreground-muted hover:text-foreground"
         >
-          <X aria-hidden="true" className="size-2" />
+          <X aria-hidden="true" className="size-4" />
         </button>
       )}
     </div>
@@ -75,14 +75,14 @@ export function ChipGroup<T extends string>({
       onValueChange={(next) => {
         if (next) onChange(next as T);
       }}
-      className="flex flex-wrap gap-0.5"
+      className="flex flex-wrap gap-1"
     >
       {options.map((option) => (
         <ToggleGroup.Item
           key={option.value}
           value={option.value}
           className={cn(
-            "h-4 rounded-full border border-input px-1.5 text-sm text-foreground max-md:h-5.5",
+            "h-8 rounded-full border border-input px-3 text-sm text-foreground max-md:h-11",
             "motion-safe:transition-colors motion-safe:duration-150",
             "hover:bg-surface-subtle data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
           )}
@@ -146,7 +146,7 @@ export function RowActionButton({
         aria-label={label}
         onClick={onClick}
         disabled={disabled}
-        className="max-md:size-5.5"
+        className="max-md:size-11"
       >
         <Icon aria-hidden="true" />
       </Button>

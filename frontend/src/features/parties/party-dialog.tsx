@@ -118,7 +118,7 @@ export function PartyDialog({
         );
       })}
     >
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,12rem)_1fr]">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,12rem)_1fr]">
         <FormField id="party-type" label="Tipo de identificación">
           <Select id="party-type" {...form.register("identificationType")}>
             {(types.data ?? []).map((type) => (
@@ -168,7 +168,7 @@ export function PartyDialog({
           autoComplete="off"
         />
       </FormField>
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <span id={rolesLabel} className="text-sm font-medium">
           Roles <span className="font-normal text-foreground-muted">(opcional)</span>
         </span>
@@ -191,7 +191,7 @@ export function PartyDialog({
           {...form.register("address")}
         />
       </FormField>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <FormField id="party-email" label="Correo (opcional)" error={errors.email?.message}>
           <Input
             {...fieldAria("party-email", errors.email?.message)}

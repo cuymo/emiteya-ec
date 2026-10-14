@@ -104,7 +104,7 @@ function RowActions({
   if (party.systemRecord) return null;
   const active = party.status === "ACTIVE";
   return (
-    <div className="inline-flex items-center gap-0.5">
+    <div className="inline-flex items-center gap-1">
       <RowActionButton
         icon={Pencil}
         label={`Corregir a ${party.legalName}`}
@@ -209,7 +209,7 @@ export function PartiesScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="terceros-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="terceros-titulo" className="flex flex-col gap-6">
         <h1 id="terceros-titulo" className="text-3xl font-bold">
           Terceros
         </h1>
@@ -252,8 +252,8 @@ export function PartiesScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="terceros-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="terceros-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 id="terceros-titulo" className="text-3xl font-bold">
           Terceros
         </h1>
@@ -280,7 +280,7 @@ export function PartiesScreen() {
         refreshing={parties.isFetching}
         state={tableState}
         toolbar={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-4">
             <SearchInput
               value={searchDraft}
               onChange={setSearchDraft}
@@ -302,18 +302,18 @@ export function PartiesScreen() {
           </div>
         }
         renderCard={(party) => (
-          <div className="flex flex-col gap-1">
-            <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex flex-col gap-2">
+            <div className="flex min-w-0 flex-col gap-1">
               <span className="font-medium break-words">{party.legalName}</span>
               <span className="text-sm text-foreground-muted tabular-nums">
                 {party.identificationTypeLabel ?? party.identificationType} · {party.identification}
               </span>
-              <span className="flex flex-wrap items-center gap-1 text-sm">
+              <span className="flex flex-wrap items-center gap-2 text-sm">
                 {roles(party)}
                 <StatusCell party={party} />
               </span>
             </div>
-            {canManage && <div className="-ml-1">{actions(party)}</div>}
+            {canManage && <div className="-ml-2">{actions(party)}</div>}
           </div>
         )}
       />
@@ -337,10 +337,10 @@ export function PartiesScreen() {
 /** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function PartiesSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Terceros</h1>
-      <Skeleton className="h-5 w-full max-w-md" />
-      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-10 w-full max-w-md" />
+      <Skeleton className="h-64 w-full" />
     </section>
   );
 }

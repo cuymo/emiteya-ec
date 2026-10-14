@@ -165,18 +165,18 @@ export function NavigationLinks({ role, onNavigate }: { role: Role; onNavigate?:
   const pathname = usePathname();
   const groups = visibleGroups(role);
   return (
-    <nav aria-label="Navegación principal" className="flex h-full flex-col gap-3 p-2">
+    <nav aria-label="Navegación principal" className="flex h-full flex-col gap-6 p-4">
       {(["main", "bottom"] as const).map((placement) => (
         <div
           key={placement}
-          className={cn("flex flex-col gap-2", placement === "bottom" && "mt-auto")}
+          className={cn("flex flex-col gap-4", placement === "bottom" && "mt-auto")}
         >
           {groups
             .filter((group) => group.placement === placement)
             .map((group) => (
-              <div key={group.label} className="flex flex-col gap-0.5">
-                <p className="px-1 text-xs font-medium text-foreground-muted">{group.label}</p>
-                <ul className="flex flex-col gap-0.5">
+              <div key={group.label} className="flex flex-col gap-1">
+                <p className="px-2 text-xs font-medium text-foreground-muted">{group.label}</p>
+                <ul className="flex flex-col gap-1">
                   {group.destinations.map((destination) => {
                     const active =
                       pathname === destination.href || pathname.startsWith(`${destination.href}/`);
@@ -188,14 +188,14 @@ export function NavigationLinks({ role, onNavigate }: { role: Role; onNavigate?:
                           onClick={onNavigate}
                           aria-current={active ? "page" : undefined}
                           className={cn(
-                            "flex h-5.5 items-center gap-1 rounded-md px-1 text-sm font-medium",
+                            "flex h-11 items-center gap-2 rounded-md px-2 text-sm font-medium",
                             "motion-safe:transition-colors motion-safe:duration-150",
                             active
                               ? "bg-primary text-primary-foreground"
                               : "text-foreground hover:bg-surface-subtle active:bg-border",
                           )}
                         >
-                          <Icon aria-hidden="true" className="size-2.5" />
+                          <Icon aria-hidden="true" className="size-5" />
                           {destination.label}
                         </Link>
                       </li>

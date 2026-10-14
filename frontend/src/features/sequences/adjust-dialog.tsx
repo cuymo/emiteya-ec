@@ -138,7 +138,7 @@ export function AdjustSequenceDialog({
       })}
     >
       {view && (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-sm">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
           <dt className="text-foreground-muted">Siguiente vigente</dt>
           <dd>{formatSequential(current)}</dd>
           <dt className="text-foreground-muted">Último reservado</dt>
@@ -161,7 +161,7 @@ export function AdjustSequenceDialog({
           inputMode="numeric"
           autoComplete="off"
           maxLength={9}
-          className="max-w-40"
+          className="max-w-80"
         />
       </FormField>
       {decreasing && (
@@ -177,7 +177,7 @@ export function AdjustSequenceDialog({
       {conflict && (
         <div
           role="alert"
-          className="flex flex-col items-start gap-1 rounded-md border border-danger/40 bg-danger/10 px-1.5 py-1 text-sm"
+          className="flex flex-col items-start gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
         >
           <p>{error}</p>
           <Button

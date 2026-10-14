@@ -155,8 +155,8 @@ function EntryRow({
   // Una entrada de retención fuera de alcance no se elige ni se habilita: no lleva control.
   const enableable = entry.enablement.source !== "NOT_ENABLEABLE" && (scope?.selectable ?? true);
   return (
-    <li className="flex flex-col gap-1 px-1.5 py-1 sm:flex-row sm:items-center sm:justify-between sm:gap-1.5">
-      <div className="flex min-w-0 flex-col gap-0.5 text-sm">
+    <li className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+      <div className="flex min-w-0 flex-col gap-1 text-sm">
         <span id={labelId} className="font-medium break-words">
           {entryLabel(entry)}
         </span>
@@ -167,7 +167,7 @@ function EntryRow({
           {withholdingRate ? ` · ${withholdingRate}` : ""}
         </span>
         {classification && (
-          <span className="flex flex-col gap-0.5">
+          <span className="flex flex-col gap-1">
             <span>
               <StatusBadge
                 tone={scope?.selectable ? "success" : "neutral"}
@@ -199,7 +199,7 @@ function EntryRow({
         )}
       </div>
       {enableable && (
-        <div className="flex shrink-0 items-center justify-between gap-1 sm:justify-start">
+        <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-start">
           <span className="text-sm text-foreground-muted" aria-hidden="true">
             {entry.enablement.enabled ? "Habilitada" : "Deshabilitada"}
           </span>
@@ -267,14 +267,14 @@ function CatalogSection({
     return normalize(`${entry.code} ${entry.entryKey} ${entryLabel(entry)}`).includes(needle);
   });
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1">
+    <section aria-labelledby={headingId} className="flex flex-col gap-2">
       <h2 id={headingId} className="text-xl font-semibold">
         {title}
       </h2>
       <p className="text-sm text-foreground-muted">{description}</p>
       <SourceLine summary={summary} />
       {filterable && (
-        <div className="flex max-w-sm flex-col gap-0.5">
+        <div className="flex max-w-sm flex-col gap-1">
           <label htmlFor={filterId} className="text-sm font-medium">
             Filtrar por código o denominación<span className="sr-only"> en {title}</span>
           </label>
@@ -287,7 +287,7 @@ function CatalogSection({
         </div>
       )}
       {entries.isPending ? (
-        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-48 w-full" />
       ) : entries.isError ? (
         <ErrorState message={errorMessage(entries.error)} onRetry={() => void entries.refetch()} />
       ) : visible.length === 0 ? (
@@ -316,17 +316,17 @@ function CatalogSection({
 function ReadOnlyGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <details className="rounded-lg border border-border bg-surface">
-      <summary className="flex min-h-5.5 cursor-pointer items-center px-1.5 font-medium">
+      <summary className="flex min-h-11 cursor-pointer items-center px-3 font-medium">
         {title}
       </summary>
-      <div className="border-t border-border px-1.5 py-1 text-sm">{children}</div>
+      <div className="border-t border-border px-3 py-2 text-sm">{children}</div>
     </details>
   );
 }
 
 function ConsumerFinalPolicy() {
   const policy = useConsumerFinalPolicy(true);
-  if (policy.isPending) return <Skeleton className="h-8 w-full" />;
+  if (policy.isPending) return <Skeleton className="h-16 w-full" />;
   if (policy.isError)
     return (
       <ErrorState message={errorMessage(policy.error)} onRetry={() => void policy.refetch()} />
@@ -334,7 +334,7 @@ function ConsumerFinalPolicy() {
   const applicable = policy.data.applicable;
   if (!applicable) return <p>No hay una política vigente hoy.</p>;
   return (
-    <dl className="grid grid-cols-1 gap-x-3 gap-y-0.5 sm:grid-cols-[auto_1fr]">
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-[auto_1fr]">
       <dt className="text-foreground-muted">Monto máximo sin identificar al comprador</dt>
       <dd className="tabular-nums">{formatUsd(applicable.maxAmount)}</dd>
       <dt className="text-foreground-muted">Identificación</dt>
@@ -357,13 +357,13 @@ function ConsumerFinalPolicy() {
 
 function IdentificationTypes() {
   const entries = useCatalogEntries("identification-type", true);
-  if (entries.isPending) return <Skeleton className="h-8 w-full" />;
+  if (entries.isPending) return <Skeleton className="h-16 w-full" />;
   if (entries.isError)
     return (
       <ErrorState message={errorMessage(entries.error)} onRetry={() => void entries.refetch()} />
     );
   return (
-    <ul aria-label="Tipos de identificación" className="flex flex-col gap-0.5">
+    <ul aria-label="Tipos de identificación" className="flex flex-col gap-1">
       {entries.data.entries.map((entry) => {
         const rule = entry.applicable?.identificationRule;
         return (
@@ -387,13 +387,13 @@ function IdentificationTypes() {
 
 function SpecialCases() {
   const cases = useSpecialCases(true);
-  if (cases.isPending) return <Skeleton className="h-8 w-full" />;
+  if (cases.isPending) return <Skeleton className="h-16 w-full" />;
   if (cases.isError)
     return <ErrorState message={errorMessage(cases.error)} onRetry={() => void cases.refetch()} />;
   return (
-    <ul aria-label="Matriz de casos especiales" className="flex flex-col gap-0.5">
+    <ul aria-label="Matriz de casos especiales" className="flex flex-col gap-1">
       {cases.data.map((annex) => (
-        <li key={annex.annex} className="flex flex-wrap items-baseline gap-x-1">
+        <li key={annex.annex} className="flex flex-wrap items-baseline gap-x-2">
           <span className="tabular-nums font-medium">Anexo {annex.annex}</span>
           <span>{annex.topic}</span>
           <span className="text-foreground-muted">· {CATEGORY_LABELS[annex.category]}</span>
@@ -405,13 +405,13 @@ function SpecialCases() {
 
 function Schemas() {
   const schemas = useSchemaRegistry(true);
-  if (schemas.isPending) return <Skeleton className="h-8 w-full" />;
+  if (schemas.isPending) return <Skeleton className="h-16 w-full" />;
   if (schemas.isError)
     return (
       <ErrorState message={errorMessage(schemas.error)} onRetry={() => void schemas.refetch()} />
     );
   return (
-    <ul aria-label="Esquemas XSD registrados" className="flex flex-col gap-2">
+    <ul aria-label="Esquemas XSD registrados" className="flex flex-col gap-4">
       {schemas.data.map((schema) => (
         <li key={schema.path} className="flex flex-col">
           <p>
@@ -458,7 +458,7 @@ export function FiscalCatalogsScreen() {
 
   if (!allowed) {
     return (
-      <section aria-labelledby="catalogos-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="catalogos-titulo" className="flex flex-col gap-6">
         {heading}
         <EmptyState
           kind="no-permission"
@@ -473,16 +473,16 @@ export function FiscalCatalogsScreen() {
       <section
         aria-labelledby="catalogos-titulo"
         aria-busy="true"
-        className="flex max-w-3xl flex-col gap-3"
+        className="flex max-w-3xl flex-col gap-6"
       >
         {heading}
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
       </section>
     );
   }
   if (summaries.isError) {
     return (
-      <section aria-labelledby="catalogos-titulo" className="flex max-w-3xl flex-col gap-3">
+      <section aria-labelledby="catalogos-titulo" className="flex max-w-3xl flex-col gap-6">
         {heading}
         <ErrorState
           message={errorMessage(summaries.error)}
@@ -494,8 +494,8 @@ export function FiscalCatalogsScreen() {
   const summary = (type: FiscalCatalogType) =>
     summaries.data.find((catalog) => catalog.catalogType === type);
   return (
-    <section aria-labelledby="catalogos-titulo" className="flex max-w-3xl flex-col gap-4">
-      <div className="flex flex-col gap-1">
+    <section aria-labelledby="catalogos-titulo" className="flex max-w-3xl flex-col gap-8">
+      <div className="flex flex-col gap-2">
         {heading}
         <p className="text-sm text-foreground-muted">
           Datos oficiales del SRI que trae esta versión del producto. Los códigos, las
@@ -592,7 +592,7 @@ export function FiscalCatalogsScreen() {
         usage={none}
         filterable
       />
-      <section aria-labelledby="mas-datos" className="flex flex-col gap-1">
+      <section aria-labelledby="mas-datos" className="flex flex-col gap-2">
         <h2 id="mas-datos" className="text-xl font-semibold">
           Más datos oficiales
         </h2>

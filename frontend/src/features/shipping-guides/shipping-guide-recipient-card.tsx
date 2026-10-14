@@ -55,7 +55,7 @@ const NO_ROLES = [] as const;
 export function IssueList({ issues }: { issues: readonly ShippingGuideIssue[] }) {
   if (issues.length === 0) return null;
   return (
-    <ul className="flex flex-col gap-0.5 text-sm">
+    <ul className="flex flex-col gap-1 text-sm">
       {issues.map((issue, index) => (
         <li key={`${issue.code}-${index}`} className="text-danger">
           {issue.message}
@@ -68,7 +68,7 @@ export function IssueList({ issues }: { issues: readonly ShippingGuideIssue[] })
 function SubList({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
       <h4 id={id} className="text-sm font-semibold">
         {title}
       </h4>
@@ -81,13 +81,13 @@ function SubList({ title, children }: { title: string; children: ReactNode }) {
 function ReadOnly({ label, value, hint }: { label: string; value: string; hint?: string }) {
   const id = useId();
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
+    <div className="flex min-w-0 flex-col gap-1">
       <span id={id} className="text-sm font-medium">
         {label}
       </span>
       <p
         aria-labelledby={id}
-        className="min-h-4 rounded-md border border-border bg-surface-subtle px-1 py-0.5 text-sm break-words"
+        className="min-h-8 rounded-md border border-border bg-surface-subtle px-2 py-1 text-sm break-words"
       >
         {value || "—"}
       </p>
@@ -98,8 +98,8 @@ function ReadOnly({ label, value, hint }: { label: string; value: string; hint?:
 
 function PartyCard({ name, identification }: { name: string; identification: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-1">
-      <UserRound aria-hidden="true" className="size-2 shrink-0 text-foreground-muted" />
+    <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
+      <UserRound aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
       <span className="flex min-w-0 flex-col">
         <span className="font-medium break-words">{name}</span>
         <span className="text-sm text-foreground-muted tabular-nums">{identification}</span>
@@ -158,7 +158,7 @@ function GoodsDialog({
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-xl">
-        <div className="flex flex-col gap-1.5 p-3">
+        <div className="flex flex-col gap-3 p-6">
           <DialogTitle className="text-lg font-semibold">
             Cargar mercancías de la factura
           </DialogTitle>
@@ -168,22 +168,22 @@ function GoodsDialog({
             marcar, para agregarse como línea libre con los datos de la factura.
           </DialogDescription>
           {goods.isPending ? (
-            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-32 w-full" />
           ) : goods.isError ? (
             <ErrorState
               message="No pudimos cargar las líneas de la factura."
               onRetry={() => void goods.refetch()}
             />
           ) : (
-            <ul className="flex max-h-80 flex-col gap-0.5 overflow-y-auto">
+            <ul className="flex max-h-160 flex-col gap-1 overflow-y-auto">
               {lines.map((line) => {
                 const free = line.suggestion === "FREE_LINE";
                 return (
                   <li key={line.position}>
-                    <label className="flex min-h-5.5 items-start gap-1 rounded-md border border-border px-1 py-0.5 text-sm">
+                    <label className="flex min-h-11 items-start gap-2 rounded-md border border-border px-2 py-1 text-sm">
                       <input
                         type="checkbox"
-                        className="mt-0.5 size-2.5 shrink-0 accent-primary"
+                        className="mt-1 size-5 shrink-0 accent-primary"
                         checked={isChecked(line)}
                         onChange={(event) =>
                           setChanged((current) => ({
@@ -209,7 +209,7 @@ function GoodsDialog({
               })}
             </ul>
           )}
-          <div className="flex flex-wrap justify-end gap-1">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => close(false)}>
               Cancelar
             </Button>
@@ -273,10 +273,10 @@ function DetailRow({
     <li
       aria-label={`Detalle ${position} del destinatario ${recipientIndex + 1}`}
       aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-1 rounded-md border border-border px-1 py-1 aria-invalid:border-danger"
+      className="flex flex-col gap-2 rounded-md border border-border px-2 py-2 aria-invalid:border-danger"
     >
-      <div className="flex flex-wrap items-end justify-between gap-1">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="flex flex-col gap-1">
           <span id={modeLabelId} className="text-sm font-medium">
             Detalle {position}
           </span>
@@ -310,12 +310,12 @@ function DetailRow({
         )}
       </div>
       {detail.mode === "PRODUCT" ? (
-        <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_8rem_8rem]">
-          <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_8rem]">
+          <div className="flex min-w-0 flex-col gap-1">
             <span className="text-sm font-medium">Producto</span>
             <Button
               variant="outline"
-              className="h-auto min-h-4 justify-between text-left font-normal whitespace-normal"
+              className="h-auto min-h-8 justify-between text-left font-normal whitespace-normal"
               aria-label={
                 detail.productId
                   ? `Cambiar el producto del detalle ${position}: ${detail.productName}`
@@ -326,7 +326,7 @@ function DetailRow({
               <span className="min-w-0 break-words">
                 {detail.productId ? detail.productName || "Producto elegido" : "Elegir producto"}
               </span>
-              <ChevronDown aria-hidden="true" className="size-2 shrink-0" />
+              <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
             </Button>
           </div>
           <ReadOnly label="Código principal" value={mainCode} />
@@ -358,7 +358,7 @@ function DetailRow({
           />
         </div>
       ) : (
-        <div className="grid gap-1 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           <FormField
             id={id("codigo")}
             label="Código principal (opcional)"
@@ -383,7 +383,7 @@ function DetailRow({
           </FormField>
         </div>
       )}
-      <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_10rem]">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem]">
         <FormField
           id={id("descripcion")}
           label="Descripción (incluye unidad y características)"
@@ -405,7 +405,7 @@ function DetailRow({
           />
         </FormField>
       </div>
-      <p className="flex flex-wrap justify-between gap-1 text-xs text-foreground-muted">
+      <p className="flex flex-wrap justify-between gap-2 text-xs text-foreground-muted">
         <span className="min-w-0 break-words">
           {description.trim()
             ? `En el XML y el RIDE: «${description.trim()}»`
@@ -506,9 +506,9 @@ export function RecipientCard({
     <li
       aria-label={`Destinatario ${position}`}
       aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-1.5 rounded-md border border-border bg-surface px-1.5 py-1 aria-invalid:border-danger"
+      className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
     >
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="font-medium">Destinatario {position}</h3>
         {canRemove && (
           <RowActionButton
@@ -519,7 +519,7 @@ export function RecipientCard({
         )}
       </div>
 
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <span id={kindLabelId} className="text-sm font-medium">
           Destinatario
         </span>
@@ -638,7 +638,7 @@ export function RecipientCard({
               ))}
             </Select>
           </FormField>
-          <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_10rem]">
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem]">
             <ReadOnly
               label="Dirección de destino"
               value={destination?.address ?? ""}
@@ -651,7 +651,7 @@ export function RecipientCard({
 
       {recipient.kind !== "" && (
         <>
-          <div className="grid gap-1 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <FormField
               id={id("motivo")}
               label="Motivo del traslado"
@@ -679,7 +679,7 @@ export function RecipientCard({
               <Input
                 inputMode="numeric"
                 maxLength={3}
-                className="max-w-32"
+                className="max-w-64"
                 {...fieldAria(
                   id("codigo-destino"),
                   errors?.destinationEstablishmentCode?.message,
@@ -692,12 +692,12 @@ export function RecipientCard({
 
           <SubList title="Sustento">
             {recipient.kind === "OWN_COMPANY" ? (
-              <p className="rounded-md border border-border bg-surface-subtle px-1 py-0.5 text-sm">
+              <p className="rounded-md border border-border bg-surface-subtle px-2 py-1 text-sm">
                 Sin factura: {ownCase.statement} (art. 30, numeral 8, literal {ownCase.literal}).
               </p>
             ) : (
               <>
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-col gap-1">
                   <span id={supportLabelId} className="text-sm font-medium">
                     Comprobante de venta
                   </span>
@@ -725,7 +725,7 @@ export function RecipientCard({
                         Una factura autorizada de la empresa, también a consumidor final.
                       </p>
                     )}
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-2">
                       <Button variant="outline" onClick={() => setChoosingInvoice(true)}>
                         {recipient.invoiceId ? "Cambiar factura" : "Elegir factura"}
                       </Button>
@@ -770,7 +770,7 @@ export function RecipientCard({
                   </>
                 )}
                 {recipient.supportKind === "DECLARED_EXCEPTION" && (
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-1">
                     <span id={caseLabelId} className="text-sm font-medium">
                       Caso del art. 30, numeral 8, del Reglamento de Comprobantes
                     </span>
@@ -792,7 +792,7 @@ export function RecipientCard({
       )}
 
       <SubList title="Detalle">
-        <ol className="flex flex-col gap-1">
+        <ol className="flex flex-col gap-2">
           {details.fields.map((field, d) => (
             <DetailRow
               key={field.id}

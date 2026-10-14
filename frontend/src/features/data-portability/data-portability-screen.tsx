@@ -141,13 +141,13 @@ function Sha256({ value }: { value: string }) {
     }
   }
   return (
-    <div className="flex items-start gap-1">
+    <div className="flex items-start gap-2">
       <code
         aria-label={`SHA-256 ${value}`}
         className="font-mono text-sm leading-relaxed break-all tabular-nums"
       >
         {groups.map((group, index) => (
-          <span key={index} className="inline-block pr-1">
+          <span key={index} className="inline-block pr-2">
             {group}
           </span>
         ))}
@@ -175,8 +175,8 @@ function ReadyPackage({
   onDownload: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <dl className="grid grid-cols-1 gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+    <div className="flex flex-col gap-3">
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-[auto_1fr]">
         <dt className="text-foreground-muted">Datos al</dt>
         <dd className="tabular-nums">{formatDateTime(row.snapshotAt!)}</dd>
         <dt className="text-foreground-muted">Disponible hasta</dt>
@@ -194,7 +194,7 @@ function ReadyPackage({
           <Sha256 value={row.sha256!} />
         </dd>
       </dl>
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-2">
         <Button asChild variant={primary ? "primary" : "outline"}>
           {/* Navegación del navegador al mismo origen: el paquete nunca pasa por la página. */}
           <a href={downloadHref(row.id)} download onClick={onDownload}>
@@ -212,14 +212,14 @@ function ReadyPackage({
 
 function Explanation() {
   return (
-    <section aria-labelledby="portabilidad-contenido" className="flex flex-col gap-1.5">
+    <section aria-labelledby="portabilidad-contenido" className="flex flex-col gap-3">
       <h2 id="portabilidad-contenido" className="text-lg font-semibold">
         Qué contiene el paquete
       </h2>
-      <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+        <div className="flex flex-col gap-1">
           <h3 className="font-medium">Incluye</h3>
-          <ul className="list-disc pl-2.5 marker:text-foreground-muted">
+          <ul className="list-disc pl-5 marker:text-foreground-muted">
             <li>
               Los datos de la empresa, sus establecimientos y puntos de emisión, con su historia.
             </li>
@@ -235,9 +235,9 @@ function Explanation() {
             </li>
           </ul>
         </div>
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1">
           <h3 className="font-medium">No incluye</h3>
-          <ul className="list-disc pl-2.5 marker:text-foreground-muted">
+          <ul className="list-disc pl-5 marker:text-foreground-muted">
             <li>La firma electrónica, su contraseña ni ningún otro secreto.</li>
             <li>Las contraseñas, las sesiones ni los datos de inicio de sesión de los usuarios.</li>
             <li>Los borradores sin emitir, que siguen en el sistema.</li>
@@ -307,7 +307,7 @@ function History({ polling, now, current }: { polling: boolean; now: number; cur
   ) : undefined;
 
   return (
-    <section aria-labelledby="portabilidad-historial" className="flex flex-col gap-1">
+    <section aria-labelledby="portabilidad-historial" className="flex flex-col gap-2">
       <h2 id="portabilidad-historial" className="text-lg font-semibold">
         Historial
       </h2>
@@ -329,13 +329,13 @@ function History({ polling, now, current }: { polling: boolean; now: number; cur
         refreshing={history.isFetching}
         state={state}
         renderCard={(row) => (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-start justify-between gap-1">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
               <span className="tabular-nums">{formatDateTime(row.requestedAt)}</span>
               <ExportStatus row={row} now={now} />
             </div>
             <span className="text-sm">{resultText(row, now)}</span>
-            <span className="flex flex-wrap justify-between gap-1 text-sm text-foreground-muted">
+            <span className="flex flex-wrap justify-between gap-2 text-sm text-foreground-muted">
               <span className="break-words">{row.requestedBy.name}</span>
               {row.sizeBytes && <span className="tabular-nums">{formatSize(row.sizeBytes)}</span>}
             </span>
@@ -372,7 +372,7 @@ export function DataPortabilityScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="portabilidad-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="portabilidad-titulo" className="flex flex-col gap-6">
         {heading}
         <EmptyState
           kind="no-permission"
@@ -387,16 +387,16 @@ export function DataPortabilityScreen() {
       <section
         aria-labelledby="portabilidad-titulo"
         aria-busy="true"
-        className="flex max-w-5xl flex-col gap-3"
+        className="flex max-w-5xl flex-col gap-6"
       >
         {heading}
-        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
       </section>
     );
   }
   if (current.isError) {
     return (
-      <section aria-labelledby="portabilidad-titulo" className="flex max-w-5xl flex-col gap-3">
+      <section aria-labelledby="portabilidad-titulo" className="flex max-w-5xl flex-col gap-6">
         {heading}
         <ErrorState message={errorMessage(current.error)} onRetry={() => void current.refetch()} />
       </section>
@@ -433,9 +433,9 @@ export function DataPortabilityScreen() {
   const outcome = !active && latest && latest.id !== ready?.id ? latest : null;
 
   return (
-    <section aria-labelledby="portabilidad-titulo" className="flex max-w-5xl flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+    <section aria-labelledby="portabilidad-titulo" className="flex max-w-5xl flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           {heading}
           {latest && generateButton}
         </div>
@@ -453,10 +453,10 @@ export function DataPortabilityScreen() {
           action={generateButton}
         />
       ) : (
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-2">
+        <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
           {active && (
-            <div className="flex flex-col gap-0.5" aria-live="polite">
-              <div className="flex flex-wrap items-center gap-1">
+            <div className="flex flex-col gap-1" aria-live="polite">
+              <div className="flex flex-wrap items-center gap-2">
                 <ExportStatus row={active} now={now} />
                 <p className="text-sm">{progressText(active)}</p>
               </div>
@@ -468,7 +468,7 @@ export function DataPortabilityScreen() {
             </div>
           )}
           {ready && (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <div>
                 <ExportStatus row={ready} now={now} />
               </div>
@@ -476,7 +476,7 @@ export function DataPortabilityScreen() {
             </div>
           )}
           {outcome && (
-            <div role="status" className="flex flex-col gap-0.5">
+            <div role="status" className="flex flex-col gap-1">
               <div>
                 <ExportStatus row={outcome} now={now} />
               </div>

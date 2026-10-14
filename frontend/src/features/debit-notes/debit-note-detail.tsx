@@ -34,7 +34,7 @@ import { treatmentLabel } from "./debit-note-format";
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
       <h2 id={id} className="text-lg font-semibold">
         {title}
       </h2>
@@ -53,14 +53,14 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
   const header = (
     <Link
       href="/notas-debito"
-      className="inline-flex items-center gap-0.5 self-start text-sm text-foreground-muted hover:text-foreground"
+      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
     >
-      <ArrowLeft aria-hidden="true" className="size-2" />
+      <ArrowLeft aria-hidden="true" className="size-4" />
       Notas de débito
     </Link>
   );
   const fallback = (body: ReactNode) => (
-    <section aria-labelledby="nota-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="nota-titulo" className="flex flex-col gap-6">
       {header}
       <h1 id="nota-titulo" className="text-3xl font-bold">
         Nota de débito
@@ -101,14 +101,14 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
   const reserved = data.state === "RESERVED";
   const declarations = data.declarations;
   return (
-    <section aria-labelledby="nota-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="nota-titulo" className="flex flex-col gap-6">
       {header}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
           <h1 id="nota-titulo" className="text-3xl font-bold tabular-nums">
             Nota de débito {data.documentNumber}
           </h1>
-          <span className="flex flex-wrap items-center gap-1 text-sm text-foreground-muted">
+          <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]} ·{" "}
             <span className="tabular-nums">{formatUsd(data.totals.total)}</span>
@@ -125,7 +125,7 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
       {reserved && (
         <div
           role="status"
-          className="flex flex-col gap-0.5 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-1 text-sm"
+          className="flex flex-col gap-1 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
         >
           {data.diagnostic ? (
             <>
@@ -147,8 +147,8 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
           {!reserved && <TransmissionSection document={data} />}
           <DocumentsSection document={data} />
           <Section title="Factura modificada">
@@ -176,11 +176,11 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
             </p>
           </Section>
           <Section title="Conceptos">
-            <ol className="flex flex-col gap-1">
+            <ol className="flex flex-col gap-2">
               {data.concepts.map((concept) => (
                 <li
                   key={concept.position}
-                  className="flex flex-wrap items-baseline justify-between gap-1 rounded-md border border-border bg-surface px-1.5 py-1 text-sm"
+                  className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
                 >
                   <span className="flex min-w-0 flex-col">
                     <span className="font-medium break-words">{concept.description}</span>
@@ -206,11 +206,11 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
                 Es una declaración del usuario: el sistema no puede comprobarla.
               </span>
             </p>
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col gap-2">
               {declarations.statements.map((statement) => (
                 <li
                   key={statement.id}
-                  className="flex flex-col gap-0.5 rounded-md border border-border bg-surface px-1.5 py-1 text-sm"
+                  className="flex flex-col gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm"
                 >
                   <span>{statement.text}</span>
                   <span className="text-xs text-foreground-muted">Fuente: {statement.source}</span>
@@ -226,12 +226,12 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
         </div>
         <aside
           aria-labelledby="totales-titulo"
-          className="flex flex-col gap-1.5 self-start rounded-lg border border-border bg-surface p-2"
+          className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"
         >
           <h2 id="totales-titulo" className="text-lg font-semibold">
             Totales
           </h2>
-          <dl className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 text-sm tabular-nums">
+          <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
             <dt>Subtotal sin impuestos</dt>
             <dd className="text-right">{formatUsd(data.totals.withoutTaxes)}</dd>
             {data.totals.taxes.map((tax) => (
@@ -245,14 +245,14 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
             <dt className="font-semibold">Valor total</dt>
             <dd className="text-right font-semibold">{formatUsd(data.totals.total)}</dd>
           </dl>
-          <div className="flex flex-col gap-0.5 border-t border-border pt-1 text-sm">
+          <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Forma de pago</span>
             <span className="break-words">
               {data.payment.label} ·{" "}
               <span className="tabular-nums">{formatUsd(data.payment.amount)}</span>
             </span>
           </div>
-          <div className="flex flex-col gap-0.5 border-t border-border pt-1 text-sm">
+          <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Clave de acceso</span>
             <span className="font-mono text-xs break-all">{data.accessKey}</span>
           </div>
@@ -264,10 +264,10 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
 
 export function DebitNoteDetailSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-3">
+    <section aria-busy="true" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Nota de débito</h1>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-48 w-full" />
     </section>
   );
 }

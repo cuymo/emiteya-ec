@@ -100,14 +100,14 @@ export function ConfirmDialog({
           className="flex min-h-0 flex-1 flex-col"
         >
           {/* Un contenido más alto que la pantalla se desplaza y las acciones quedan a la vista. */}
-          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pt-3 pr-7 pb-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 pt-6 pr-14 pb-4">
             <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
             <DialogDescription asChild>
               <div className="text-sm text-foreground-muted">{description}</div>
             </DialogDescription>
             {children}
             {requiredText && (
-              <div className="mt-1 flex flex-col gap-0.5">
+              <div className="mt-2 flex flex-col gap-1">
                 <label htmlFor={textId} className="text-sm font-medium">
                   {requiredText.label}
                 </label>
@@ -123,7 +123,7 @@ export function ConfirmDialog({
                     setText(event.target.value);
                     if (problem && !requiredText.validate(event.target.value)) setProblem(null);
                   }}
-                  className="w-full min-w-0 rounded-md border border-input bg-surface px-1.5 py-1 text-base text-foreground sm:text-sm aria-invalid:border-danger"
+                  className="w-full min-w-0 rounded-md border border-input bg-surface px-3 py-2 text-base text-foreground sm:text-sm aria-invalid:border-danger"
                 />
                 {problem && (
                   <p id={errorId} className="text-sm text-danger">
@@ -136,7 +136,7 @@ export function ConfirmDialog({
               </div>
             )}
             {typedConfirmation && (
-              <div className="mt-1 flex flex-col gap-0.5">
+              <div className="mt-2 flex flex-col gap-1">
                 <label htmlFor={inputId} className="text-sm font-medium">
                   {typedConfirmation.label}
                 </label>
@@ -150,7 +150,7 @@ export function ConfirmDialog({
               </div>
             )}
           </div>
-          <div className="flex flex-wrap justify-end gap-1 border-t border-border px-3 py-2">
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-6 py-4">
             <DialogClose asChild>
               <Button variant="ghost" disabled={pending}>
                 Cancelar

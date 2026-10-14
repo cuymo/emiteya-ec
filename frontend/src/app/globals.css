@@ -74,8 +74,8 @@
 }
 
 @theme {
-  /* Escala de espaciado de base 8: 0.5 = 4px, 1 = 8px, 2 = 16px, 3 = 24px, 4 = 32px, 6 = 48px. */
-  --spacing: 0.5rem;
+  /* Escala de espaciado de base 4 (ADR 0028): 1 = 4px, 2 = 8px, 4 = 16px, 6 = 24px, 8 = 32px. */
+  --spacing: 0.25rem;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
