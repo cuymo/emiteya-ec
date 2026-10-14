@@ -36,12 +36,13 @@ const counts = async (db: MigratedSchema) => {
 // catálogos de retención: 3 impuestos a retener + 8 códigos del IVA + 127 conceptos de la renta +
 // 40 tipos de documento sustento + 16 códigos de sustento.
 const LOADED = {
-  datasets: 15,
+  datasets: 16,
   keys: 295,
   entries: 295,
   policy: 1,
   schemas: 13,
-  cases: 26,
+  // 26 anexos por cada versión de la matriz (block-unsupported-special-cases-before-emission).
+  cases: 52,
   audit: 0,
 };
 
@@ -63,9 +64,9 @@ describe("cargador de catálogos fiscales", () => {
       await db.drop();
     });
 
-    it("aplica los quince datasets en una base vacía, sin auditoría", async () => {
+    it("aplica los dieciséis datasets en una base vacía, sin auditoría", async () => {
       const report = await loadInstalledFiscalCatalogs(db.database.prisma);
-      expect(report.applied).toHaveLength(15);
+      expect(report.applied).toHaveLength(16);
       expect(report.alreadyApplied).toEqual([]);
       expect(await counts(db)).toEqual(LOADED);
     });
@@ -76,7 +77,7 @@ describe("cargador de catálogos fiscales", () => {
       });
       const report = await loadInstalledFiscalCatalogs(db.database.prisma);
       expect(report.applied).toEqual([]);
-      expect(report.alreadyApplied).toHaveLength(15);
+      expect(report.alreadyApplied).toHaveLength(16);
       expect(await counts(db)).toEqual(LOADED);
       expect(
         await db.database.prisma.fiscalCatalogDataset.findMany({ orderBy: { catalogType: "asc" } }),
@@ -195,6 +196,28 @@ describe("cargador de catálogos fiscales", () => {
     });
   });
 
+  it("aplica la matriz de casos especiales versión 2 sobre una base con la versión 1", async () => {
+    // block-unsupported-special-cases-before-emission (design D3): la actualización de una instalación.
+    const db = await createMigratedSchema("catalog_loader_matrix_upgrade");
+    try {
+      const previous = DATASET_FILES.filter(
+        (file) =>
+          !(
+            (file as { catalogType: string }).catalogType === "special-case-matrix" &&
+            (file as { version: number }).version === 2
+          ),
+      );
+      await loadInstalledFiscalCatalogs(db.database.prisma, previous);
+      const report = await loadInstalledFiscalCatalogs(db.database.prisma);
+      expect(report.applied).toEqual([
+        expect.objectContaining({ catalogType: "special-case-matrix", version: 2 }),
+      ]);
+      expect(await counts(db)).toEqual(LOADED);
+    } finally {
+      await db.drop();
+    }
+  });
+
   it("dos cargadores simultáneos sobre una base vacía aplican una sola vez y ambos terminan", async () => {
     const db = await createMigratedSchema("catalog_loader_race");
     const second = createDatabase(db.url);
@@ -204,9 +227,9 @@ describe("cargador de catálogos fiscales", () => {
         loadFiscalCatalogs({ uow: createDatasetUnitOfWork(db.database.prisma), datasets }),
         loadFiscalCatalogs({ uow: createDatasetUnitOfWork(second.prisma), datasets }),
       ]);
-      expect([a.applied.length, b.applied.length].sort((x, y) => x - y)).toEqual([0, 15]);
+      expect([a.applied.length, b.applied.length].sort((x, y) => x - y)).toEqual([0, 16]);
       expect([a.alreadyApplied.length, b.alreadyApplied.length].sort((x, y) => x - y)).toEqual([
-        0, 15,
+        0, 16,
       ]);
       expect(await counts(db)).toEqual(LOADED);
     } finally {

@@ -33,6 +33,7 @@ niega a arrancar si un dataset altera lo ya publicado.
 | `schema-registry` | 1 | `docs/product/sri-xsd/README.md` | 6 | `55b7962770a7b6e614580e06681eb978909872874a6f0ca3ccb1acca598ab9c2` |
 | `schema-registry` | 2 | `docs/product/sri-xsd/README.md` y `docs/product/w3c-xsd/README.md`: los seis XSD con su ruta lógica y sus imports, y el import `xmldsig-core-schema.xsd` | 7 | `0dcfcaabcf155098b5d650f25399cd3b3d5a1a8a8e9189762f42f89cc174841b` |
 | `special-case-matrix` | 1 | Índice de anexos de la ficha (páginas 2 y 3); categorías del ADR 0014 | 26 | `508b57aee92202e4e7071126c240de481c3effdf9ce588bf209ebd8e5eca5da2` |
+| `special-case-matrix` | 2 | La versión 1 con el anexo 24 (grandes contribuyentes) fuera del MVP: conocido, no soportado y bloqueado antes de reservar (`block-unsupported-special-cases-before-emission`; ADR 0014) | 26 | `b09b3dc2fe11e7cb2fc63e648d2f1b23dd81b7a828eeb6d54c986a6eeb9b3485` |
 | `withholding-tax` | 1 | Tabla 19 (página 32) | 3 | `4907c4e53ad42077c6e6d47f71b9d6a112e0bd19970af3b98c02f21b67ea742c` |
 | `withholding-iva-code` | 1 | Tabla 20, retención del IVA (página 33) | 8 | `fd427a28eaaff257467002d89070b9e936c4da28a0aaf54f60b8c982aa423686` |
 | `withholding-income-concept` | 1 | Catálogo ATS, tabla 3.10, bloque "DESDE 06/AGOSTO/2026" | 127 | `beb5376613e9e9f53ad128f9ffd74bb7514b3518d37d18e1eeb193c92b01d9b5` |

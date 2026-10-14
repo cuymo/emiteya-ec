@@ -1,0 +1,170 @@
+{
+  "catalogType": "special-case-matrix",
+  "version": 2,
+  "source": {
+    "document": "Ficha técnica: Manual de usuario, catálogo y especificaciones técnicas. Emisión de Comprobantes Electrónicos. Método de autorización Off-line",
+    "version": "2.34",
+    "publishedOn": "2026-07-27",
+    "url": "https://www.sri.gob.ec/o/sri-portlet-biblioteca-alfresco-internet/descargar/f8d9bb36-5632-4f96-b463-b9265b55338c/FICHA%20TE%CC%81CNICA%20COMPROBANTES%20ELECTRO%CC%81NICOS%20ESQUEMA%20OFFLINE%20Versio%CC%81n%202.34.pdf",
+    "sha256": "7333aebfbdf2cb3ba83f9fc67a7a7f0346ca59506480a260cc42f96dbdfc13c9"
+  },
+  "enablementPolicy": "NOT_ENABLEABLE",
+  "entries": [
+    {
+      "annex": 1,
+      "topic": "Formatos XML versión 1.0.0",
+      "category": "CORE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 2,
+      "topic": "Formato de representaciones impresas de documentos electrónicos (RIDE)",
+      "category": "CORE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 3,
+      "topic": "Formatos XML versión 1.1.0",
+      "category": "CORE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 4,
+      "topic": "Formatos XML factura exportación aplicados a las versiones 1.0.0 y 1.1.0",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 5,
+      "topic": "Formatos XML factura reembolso aplicado en las versiones 1.0.0 y 1.1.0",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 6,
+      "topic": "Formatos XML factura con subsidios aplicado en las versiones 1.0.0 y 1.1.0",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 7,
+      "topic": "Formatos de representación impresa de documento electrónico con subsidio (RIDE)",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 8,
+      "topic": "Formatos XML factura con rubros de terceros aplicado en las versiones 2.0.0 y 2.1.0",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 9,
+      "topic": "Formatos XML factura sustitutiva de guía de remisión aplicado en las versiones 2.0.0 y 2.1.0",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 10,
+      "topic": "Formato XML de comprobante de retención ATS versión 2.0.0",
+      "category": "CORE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 11,
+      "topic": "Requisitos obligatorios para el XML de factura comercial negociable",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 12,
+      "topic": "Requisito obligatorio para el XML de factura en venta de combustibles líquidos derivados de hidrocarburos y biocombustibles",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 13,
+      "topic": "Requisito obligatorio para XML de comprobantes emitidos desde una máquina fiscal",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 14,
+      "topic": "Ejemplo firma electrónica bajo estándar XAdES_BES",
+      "category": "CORE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 15,
+      "topic": "Compatibilidad dispositivos provistos",
+      "category": "NOT_APPLICABLE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 16,
+      "topic": "Requisito obligatorio de llenado para el XML de factura en la venta de combustibles líquidos derivados de hidrocarburos y biocombustibles",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 17,
+      "topic": "Formatos XML liquidación de compra de bienes y prestación de servicios en las versiones 1.0.0 y 1.1.0",
+      "category": "CORE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 18,
+      "topic": "Requisitos obligatorios de llenado en la factura electrónica por la entrega de fundas plásticas",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 19,
+      "topic": "Aplicación de las autorretenciones",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 20,
+      "topic": "Requisito para la aplicación de la devolución automática del IVA en el XML de facturas, notas de crédito y notas de débito",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 21,
+      "topic": "Requisito obligatorio para comprobantes electrónicos emitidos por contribuyentes designados como agentes de retención",
+      "category": "CONDITIONAL_ISSUER_RULE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 22,
+      "topic": "Requisito obligatorio para comprobantes electrónicos emitidos por contribuyentes RIMPE",
+      "category": "CONDITIONAL_ISSUER_RULE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 23,
+      "topic": "Requisito obligatorio el llenado para el XML de comprobantes de venta en la transferencia local de materiales de construcción",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 24,
+      "topic": "Requisito obligatorio para comprobantes electrónicos emitidos por grandes contribuyentes",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 25,
+      "topic": "Requisitos obligatorios de llenado para el XML de facturas emitidas por las operadoras y sus socios o accionistas, de transporte comercial, excepto taxis",
+      "category": "OUT_OF_MVP",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    },
+    {
+      "annex": 26,
+      "topic": "Requisito obligatorio de información de RUC de proveedor de sistemas informáticos o servicios de facturación electrónica",
+      "category": "CONDITIONAL_GO_LIVE",
+      "sourceRef": "Índice de anexos de la ficha, páginas 2 y 3; categoría del ADR 0014"
+    }
+  ]
+}

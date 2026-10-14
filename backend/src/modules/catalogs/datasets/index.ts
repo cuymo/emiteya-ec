@@ -10,6 +10,7 @@ import paymentMethod1 from "./payment-method/1.json" with { type: "json" };
 import schemaRegistry1 from "./schema-registry/1.json" with { type: "json" };
 import schemaRegistry2 from "./schema-registry/2.json" with { type: "json" };
 import specialCaseMatrix1 from "./special-case-matrix/1.json" with { type: "json" };
+import specialCaseMatrix2 from "./special-case-matrix/2.json" with { type: "json" };
 import supportCode1 from "./support-code/1.json" with { type: "json" };
 import supportDocumentType1 from "./support-document-type/1.json" with { type: "json" };
 import tax1 from "./tax/1.json" with { type: "json" };
@@ -35,4 +36,6 @@ export const DATASET_FILES: readonly unknown[] = [
   withholdingIncomeConcept1,
   supportDocumentType1,
   supportCode1,
+  // block-unsupported-special-cases-before-emission (design D3): el anexo 24 queda fuera del MVP.
+  specialCaseMatrix2,
 ];

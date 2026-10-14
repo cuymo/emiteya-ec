@@ -207,6 +207,12 @@ describe("API de los catálogos fiscales", () => {
         .data as unknown as { annex: number; category: string }[];
       expect(cases).toHaveLength(26);
       expect(cases.find((c) => c.annex === 26)?.category).toBe("CONDITIONAL_GO_LIVE");
+      // block-unsupported-special-cases-before-emission (design D3): conocido y fuera del MVP.
+      expect(cases.find((c) => c.annex === 24)).toMatchObject({
+        category: "OUT_OF_MVP",
+        topic:
+          "Requisito obligatorio para comprobantes electrónicos emitidos por grandes contribuyentes",
+      });
     });
 
     it("las consultas no se auditan", async () => {

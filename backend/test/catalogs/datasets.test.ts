@@ -24,7 +24,7 @@ const entries = (type: string) =>
   >[];
 
 describe("datasets de la versión instalada", () => {
-  it("los quince datasets validan y coinciden con el manifiesto", () => {
+  it("los dieciséis datasets validan y coinciden con el manifiesto", () => {
     const manifest = readFileSync(new URL("sri-catalogs/README.md", DOCS), "utf8");
     const rows = [
       ...manifest.matchAll(/^\| `([a-z-]+)` \| (\d+) \| [^|]+ \| (\d+) \| `([0-9a-f]{64})` \|$/gm),
@@ -44,7 +44,7 @@ describe("datasets de la versión instalada", () => {
         }))
         .sort((a, b) => a.type.localeCompare(b.type)),
     ).toEqual(rows.sort((a, b) => a.type!.localeCompare(b.type!)));
-    expect(rows).toHaveLength(15);
+    expect(rows).toHaveLength(16);
   });
 
   it("citan la ficha v2.34 por su hash, el registro el manifiesto de los XSD y la renta y el sustento el Catálogo ATS", () => {
@@ -165,20 +165,33 @@ describe("datasets de la versión instalada", () => {
     }
   });
 
-  it("fija las categorías de la matriz del ADR 0014", () => {
-    const matrix = byType("special-case-matrix");
-    const byCategory: Record<string, number[]> = {};
-    for (const entry of "entries" in matrix
-      ? (matrix.entries as { annex: number; category: string }[])
-      : []) {
-      (byCategory[entry.category] ??= []).push(entry.annex);
-    }
-    expect(byCategory).toEqual({
+  it("fija las categorías de la matriz del ADR 0014 en cada versión", () => {
+    const categories = (version: number) => {
+      const matrix = datasets.find(
+        (dataset) => dataset.catalogType === "special-case-matrix" && dataset.version === version,
+      )!;
+      const byCategory: Record<string, number[]> = {};
+      for (const entry of "entries" in matrix
+        ? (matrix.entries as { annex: number; category: string }[])
+        : []) {
+        (byCategory[entry.category] ??= []).push(entry.annex);
+      }
+      return byCategory;
+    };
+    expect(categories(1)).toEqual({
       CORE: [1, 2, 3, 10, 14, 17],
       CONDITIONAL_ISSUER_RULE: [21, 22, 24],
       CONDITIONAL_GO_LIVE: [26],
       NOT_APPLICABLE: [15],
       OUT_OF_MVP: [4, 5, 6, 7, 8, 9, 11, 12, 13, 16, 18, 19, 20, 23, 25],
+    });
+    // Versión 2 (block-unsupported-special-cases-before-emission, design D3): el 24 fuera del MVP.
+    expect(categories(2)).toEqual({
+      CORE: [1, 2, 3, 10, 14, 17],
+      CONDITIONAL_ISSUER_RULE: [21, 22],
+      CONDITIONAL_GO_LIVE: [26],
+      NOT_APPLICABLE: [15],
+      OUT_OF_MVP: [4, 5, 6, 7, 8, 9, 11, 12, 13, 16, 18, 19, 20, 23, 24, 25],
     });
   });
 

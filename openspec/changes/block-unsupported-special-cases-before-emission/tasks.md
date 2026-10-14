@@ -2,7 +2,7 @@
 
 ## 1. Matriz publicada: el Anexo 24 fuera del MVP
 
-- [ ] 1.1 Añadir `backend/src/modules/catalogs/datasets/special-case-matrix/2.json` (design D3): los 26
+- [x] 1.1 Añadir `backend/src/modules/catalogs/datasets/special-case-matrix/2.json` (design D3): los 26
   anexos de la versión 1, con el 24 en `OUT_OF_MVP` y su número, tema y referencia sin cambios.
   Registrarlo en `datasets/index.ts`, con su fila y su checksum en
   `docs/product/sri-catalogs/README.md`. La versión 1 no se edita.

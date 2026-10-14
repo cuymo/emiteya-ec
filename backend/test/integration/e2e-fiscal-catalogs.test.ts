@@ -15,7 +15,8 @@ const OPERATOR = {
 // 5 tipos de identificación + 3 impuestos + 9 IVA + 75 ICE + 1 IRBPNR + 8 formas de pago, y los de
 // add-withholding-receipts: 3 impuestos a retener + 8 códigos del IVA + 127 conceptos de renta + 40
 // tipos de documento sustento + 16 códigos de sustento.
-const LOADED = { datasets: 15, keys: 295, entries: 295, policy: 1, schemas: 13, cases: 26 };
+// La matriz de casos especiales guarda sus 26 anexos por versión (dos versiones).
+const LOADED = { datasets: 16, keys: 295, entries: 295, policy: 1, schemas: 13, cases: 52 };
 
 /** Registro de arranque de la carga de catálogos (main.ts con LOG_LEVEL=info). */
 function loadReport(output: string): { applied: string[]; alreadyApplied: number } {
@@ -91,7 +92,7 @@ describe("flujo completo de los catálogos fiscales", () => {
   };
 
   it("carga al arrancar, consulta, habilita con auditoría y un segundo arranque no cambia nada", async () => {
-    // 1. El arranque carga los quince datasets, sin auditoría por la carga.
+    // 1. El arranque carga los dieciséis datasets, sin auditoría por la carga.
     expect(loadReport(backend.output())).toMatchObject({ alreadyApplied: 0 });
     expect(loadReport(backend.output()).applied).toHaveLength(LOADED.datasets);
     expect(await counts()).toEqual(LOADED);
