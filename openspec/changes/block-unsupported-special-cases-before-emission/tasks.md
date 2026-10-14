@@ -11,7 +11,7 @@
   - `backend/test/catalogs/datasets.test.ts` y las pruebas de la matriz pasan;
   - la consulta de la matriz devuelve el 24 `OUT_OF_MVP` y el 26 `CONDITIONAL_GO_LIVE`;
   - el arranque aplica la versión 2 sobre una base con la versión 1.
-- [ ] 1.2 Ensayo de reversión, obligatorio (decisión del propietario del 2026-10-13):
+- [x] 1.2 Ensayo de reversión, obligatorio (decisión del propietario del 2026-10-13):
   1. arrancar la versión nueva sobre un esquema sintético para que aplique la versión 2;
   2. detenerla;
   3. arrancar la versión publicada anterior (`main` `a85fade`) sobre el mismo esquema;

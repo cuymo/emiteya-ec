@@ -423,6 +423,19 @@ límites del ERS. `bench:data-portability` confirmó sus valores por defecto el 
 - **Si hiciera falta volver atrás,** se sigue un runbook explícito revisado para ese caso, o se restaura una copia compatible tomada antes de migrar (ver "Respaldo y restauración").
 - **Lo que nunca se hace:** quitar una protección de integridad, como ese trigger, para seguir operando con una versión anterior.
 - Hoy no existe un sistema de reversión de migraciones.
+- **Matriz de casos especiales versión 2** (`block-unsupported-special-cases-before-emission`): la
+  reversión es compatible. Ensayo del 2026-10-13 sobre un esquema sintético, sin tráfico al SRI:
+  1. la versión nueva aplica la versión 2;
+  2. la versión publicada anterior (`a85fade`) arranca sobre la misma base, su cargador reconoce sus
+     quince datasets sin error y omite la versión que no conoce, y su consulta de la matriz devuelve
+     la última versión guardada, con el anexo 24 fuera del MVP;
+  3. la versión nueva vuelve a arrancar sobre la misma base.
+
+  Limitación: la versión anterior sigue bloqueando el anexo 24 en la factura, porque lee la matriz
+  guardada, pero vuelve a emitir sin bloqueo la liquidación de compra, la nota de crédito y la nota
+  de débito de una empresa declarada gran contribuyente. El bloqueo del anexo 26 vuelve a cubrir
+  solo la factura. Volver atrás devuelve esos huecos; la matriz que ven los usuarios sigue siendo
+  la correcta.
 
 ### Configuración de la empresa
 
