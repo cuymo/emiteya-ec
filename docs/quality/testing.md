@@ -263,14 +263,16 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
       comparadas con cero píxeles de diferencia. Solo tiene sentido en el commit del codemod.
     - `corepack pnpm test:visual`: la apariencia aprobada del shell premium (proyecto `shell`,
       `frontend/visual/shell/`).
-      - **Capturas:** 15, con una tolerancia de 0,1 % de píxeles para el suavizado del texto:
+      - **Capturas:** 18, con una tolerancia de 0,1 % de píxeles para el suavizado del texto:
         - escritorio claro y oscuro con la barra expandida, y claro con la barra colapsada;
         - tableta;
         - móvil cerrado y con el panel abierto;
-        - Producción con un operador;
+        - Producción con un operador, y Producción en móvil;
         - paleta de comandos y creación rápida abiertas;
         - carga, error inesperado, dirección inexistente y destino no permitido;
         - la lista heredada de facturas dentro del shell;
+        - un destino de Configuración con la sección abierta, y el mismo en una ventana baja con el
+          destino actual a la vista;
         - el inicio de sesión.
       - **Error inesperado:** se provoca solo en la prueba, con un script de inicio que hace fallar
         el formateo de una fecha centinela.
@@ -282,6 +284,19 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
       - **Comprobaciones de cada prueba:** que no hubo peticiones a otros orígenes ni rutas de la
         API sin datos de prueba, y que el aviso de Pruebas está visible en cada captura de una
         empresa en Pruebas.
+      - **Regresión del control de calidad UX** (`ux.spec.ts`, design D21 a D27). Reproduce cada
+        hallazgo de la revisión manual:
+        - clic en el centro de cada icono de la barra colapsada, a 1440×900 y 1024×768, como
+          administrador y como operador;
+        - alcance con la rueda del ratón de cada destino a 1024×768, 1366×657 y 1280×560, con la
+          barra expandida y colapsada, sin desplazamiento horizontal;
+        - el destino actual a la vista tras un enlace directo y al cambiar de ruta, sin mover la
+          barra si ya se ve;
+        - Configuración plegada fuera de sus pantallas y abierta en ellas;
+        - el ambiente visible al desplazar en un teléfono, en Pruebas y en Producción;
+        - el alcance declarado y los sinónimos de la paleta, sin resultados inventados;
+        - los nombres Borradores de facturas y Archivo de comprobantes;
+        - `axe` en la barra colapsada, en Configuración con tema oscuro y en Producción en móvil.
   - **Medición de carga:** `corepack pnpm test:visual:bundle` escribe
     `frontend/test-results/bundle.json` con los bytes de JavaScript, CSS y fuentes de tres pantallas
     representativas (`docs/quality/benchmarks/frontend-shell-2026-10-14.md`).

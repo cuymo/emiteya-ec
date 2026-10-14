@@ -27,6 +27,21 @@ matrix, durations, and easing.
 Do not use persistent success banners for routine actions. Do not use a toast as the only
 place to explain how to correct a specific invalid field.
 
+### Persistent Notice Strips
+
+`NoticeStrip` (`frontend/src/components/notice-strip.tsx`) sits under the topbar for conditions that
+persist across screens. It carries an icon and text, never color alone, and it cannot be dismissed
+while the condition holds.
+
+- **`environment`:** the Pruebas environment. The user sees it on every screen, so it uses a quiet
+  neutral surface with the warning icon and a side accent, never a saturated block. It keeps the full
+  text: the documents have no tax validity (`adopt-premium-design-foundation-and-shell`, design
+  D27).
+- **`warning` and `danger`:** conditions that ask for an action, such as a signature about to expire
+  or expired.
+- **Producción** has no strip. Its badge in the topbar, visible at every width, identifies the
+  environment as context, never as a success state.
+
 ## Toast Contract
 
 Use one global toast component with semantic variants:

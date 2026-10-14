@@ -93,6 +93,29 @@ success  warning  destructive  info   (each with its -foreground)
   uses the canonical names.
 - **Contrast** of every pair in use is checked by `frontend/test/design-tokens.test.ts`, and
   contrast wins over a literal template value.
+- **Dark theme for sustained use** (`adopt-premium-design-foundation-and-shell`, design D28). The
+  template's near-black background with near-white text gave 18.96:1 and glared in long sessions.
+  - **Values:** background `oklch(0.18 0 0)` (`#121212`) and foreground `oklch(0.93 0 0)`, with the
+    foreground and muted foreground (0.72) taken from the template's Tangerine preset.
+  - **Surfaces:** neutral and stepped: sidebar 0.2, card and popover 0.225, muted, secondary and
+    accent 0.285.
+  - **Unchanged:** primary, semantic colors, `input` and `ring`.
+
+  | Pair | Before | After |
+  | --- | --- | --- |
+  | Foreground / background | 18.96:1 | 15.30:1 |
+  | Foreground / card | 17.16:1 | 13.92:1 |
+  | Muted foreground / background | 8.28:1 | 7.58:1 |
+  | Muted foreground / muted | 6.32:1 | 5.79:1 |
+  | Foreground / accent (hover, active) | 14.48:1 | 11.68:1 |
+  | Primary foreground / primary | 6.71:1 | 6.71:1 |
+  | Primary (link) / background | 6.85:1 | 6.50:1 |
+  | Form border / card | 3.69:1 | 3.52:1 |
+
+  Everything stays at WCAG AA or better, and the token test guards against near-pure black and
+  white in the dark theme.
+- **Environment, not status.** `Badge` has a neutral, high-attention `emphasis` variant (inverted
+  contrast) for context such as Producción. A context is never drawn as a success.
 
 - Define the palette in a perceptual space such as OKLCH, with HSL as an acceptable fallback, so lightness and chroma relationships hold across states and themes.
 - Derive hover, active, selected, and disabled from the base token by a defined lightness or opacity step, not by choosing another color.

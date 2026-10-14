@@ -17,18 +17,25 @@ unnecessary expand/collapse step.
 ## Information Architecture Of The Shell
 
 Approved by the owner on 2026-10-14 (`adopt-premium-design-foundation-and-shell`, spec
-`web-application-shell`). The groups and destinations, in this order:
+`web-application-shell`), with the corrections of the UX quality gate of the same day (design D25).
+The groups and destinations, in this order:
 
 | Group         | Destinations                                                                                              |
 | ------------- | --------------------------------------------------------------------------------------------------------- |
 | Inicio        | Inicio (shown as a loose destination, without a group label)                                              |
-| Ventas        | Facturas, Notas de crédito, Notas de débito                                                               |
+| Ventas        | Facturas, Borradores de facturas, Notas de crédito, Notas de débito                                       |
 | Compras       | Liquidaciones de compra, Retenciones                                                                      |
 | Logística     | Guías de remisión, Inventario                                                                             |
-| Documentos    | Comprobantes, Borradores                                                                                  |
+| Documentos    | Archivo de comprobantes                                                                                   |
 | Maestros      | Terceros, Productos                                                                                       |
 | Análisis      | Reportes                                                                                                  |
 | Configuración | Empresa, Ambiente, Establecimientos, Secuenciales, Firma electrónica, Catálogos fiscales, Usuarios, Portabilidad de datos |
+
+- **Sales and documents.**
+  - **Borradores de facturas** (`/borradores`) holds only invoice drafts. The other documents keep
+    their drafts inside their own destination.
+  - **Archivo de comprobantes** (`/comprobantes`) is the cross-document archive of every type.
+  - The routes did not change. «Nueva factura» lands in Ventas › Borradores de facturas.
 
 - **Mi cuenta** lives in the account menu, not in the sidebar.
 - **Permissions.** Each destination keeps the permission of the earlier navigation. The operator
@@ -59,6 +66,7 @@ Breadcrumbs add hierarchy; they never repeat the page title.
 Examples:
 - Facturas › 001-001-000000123;
 - Notas de crédito › Borrador de nota de crédito;
+- Borradores de facturas › Nueva factura;
 - Configuración › Empresa.
 
 ## Application Shell
@@ -73,32 +81,53 @@ from the reference template's dashboard layout (ADR 0028).
     (`aria-current="page"`).
   - **From 768px:** it collapses to icons and back with its toggle or Ctrl/⌘ + B. A collapsed
     destination keeps its accessible name and shows it as a tooltip on focus or hover.
+  - **Pointer:** every destination responds to the pointer over its whole visible area, also the
+    last one of each group when collapsed (design D21). The invisible group labels of the icon mode
+    never take the pointer.
+  - **Short windows:** the navigation scrolls inside the sidebar, expanded or collapsed, with the
+    wheel, the touchpad or the keyboard, and never horizontally (design D22).
+  - **Current destination in view:** on load, on a deep link and on every route change, the sidebar
+    scrolls just enough to show the current destination if it is outside its visible area. It never
+    scrolls the page, does not move when the destination is already fully visible, and does not
+    animate with reduced motion (design D23).
+  - **Configuración, progressively disclosed** (design D24):
+    - It starts folded outside its screens and open on them, and it opens by itself when the user
+      enters one.
+    - The user can open or fold it during the session. It never folds by itself, and it is not
+      persisted across devices.
+    - Its header is a button with the settings icon, «Configuración» and an expand indicator; when
+      the sidebar is collapsed it is the icon with its tooltip.
+    - The operational groups never fold, so they keep a strong information scent.
   - **Persistence:** the choice is kept in the `sidebar_state` cookie, which the layout reads on the
     server so a reload renders the same state without a flash.
-  - **Below 768px:** the same navigation opens in a sheet from the menu button. The sheet has a
-    visible «Cerrar menú» button, collapsible groups (the current one open) and 44px items. It
-    closes on a destination, Escape, the overlay or the close button, and returns focus to the menu
-    button.
+  - **Below 768px:** the same navigation opens in a sheet from the «Abrir navegación» button, which
+    uses the conventional menu icon (design D29). The sheet has a visible «Cerrar menú» button,
+    collapsible groups (the current one open) and 44px items. It closes on a destination, Escape,
+    the overlay or the close button, and returns focus to the navigation button.
 - **Topbar** (`Topbar`), 48px high (56px on mobile).
   - **From 768px:**
     - sidebar toggle;
     - breadcrumbs, which take the free space;
     - the company context;
     - the command palette trigger;
-    - the environment badge (from 640px);
+    - the environment badge;
     - the «Tema» radiogroup (from 640px);
     - the account menu.
-  - **On mobile:** menu button, company context (which grows), palette and account. Breadcrumbs
-    move to the start of the content area.
+  - **On mobile:** navigation button, company context (which grows), environment badge, palette and
+    account. Breadcrumbs move to the start of the content area.
 - **Company context.** It is read-only: the trade name, or the legal name, of the session's
   company, from `/company/status`. It is not a control and never suggests switching companies.
   - **While loading:** it reserves its space.
   - **On error:** it says it could not confirm the company, without guessing a name.
   - **Without registered data:** it says so.
-- **Environment.**
-  - **Pruebas:** the persistent, non-dismissible warning strip stays under the topbar, then the
-    signature notice.
-  - **Producción:** a badge with icon and text from 640px, and the compact strip below.
+- **Environment** (design D27).
+  - **Always visible:** the badge with the text «Pruebas» or «Producción» sits in the sticky topbar
+    at every width, also on a phone after scrolling.
+  - **Pruebas:** besides the badge, a persistent, non-dismissible strip under the topbar says that
+    the documents have no tax validity, then the signature notice. The strip uses a quiet neutral
+    surface with the warning icon and a side accent, so seeing it on every screen does not tire.
+  - **Producción:** context, not a result. Its badge is neutral and high-attention (inverted
+    contrast), never the success green, and nothing checks the SRI connection.
   - **Unknown environment:** it is never shown as Producción.
 - **Theme.** From 640px the «Tema» radiogroup is in the topbar; below 640px it moves into the account
   menu as radio items. Both use the same next-themes state, and there is never more than one theme
@@ -114,11 +143,19 @@ from the reference template's dashboard layout (ADR 0028).
     screen's primary action.
   - **Collapsed:** an icon button named «Nuevo». It is 44px on mobile.
 - **Command palette** (`CommandPalette`).
-  - **Opening:** Ctrl/⌘ + K from any authenticated screen, or the «Buscar» trigger in the topbar.
+  - **Opening:** Ctrl/⌘ + K from any authenticated screen, or its trigger in the topbar.
+  - **Truthful scope** (design D26): the trigger says «Buscar pantalla o acción…» (from 1280px; below,
+    a compact button with the same accessible name and tooltip), and so does the field. It searches
+    screens and actions, never documents, third parties or products, and is never called a global
+    search.
   - **Contents:** «Ir a» (the permitted destinations and Mi cuenta) and «Crear» (the Quick Create
     actions), both from the route model.
-  - **Filtering:** case- and accent-insensitive, over labels and group names
-    (`lib/navigation/palette-filter.ts`).
+  - **Filtering:** case- and accent-insensitive, over labels, group names and the synonyms each
+    destination declares in the route model (`lib/navigation/palette-filter.ts`). For example,
+    «clientes» finds Terceros, «contraseña» Mi cuenta and «IVA» Catálogos fiscales.
+  - **No invented results:** an invoice number, a customer or a product finds nothing, and the empty
+    state says that no screen or action matched, pointing to each screen's own search. It never says
+    a record does not exist.
   - **No server calls:** it never queries the server while typing. Server-backed global search is a
     later change.
   - **Behavior:** choosing an entry navigates and closes the palette, and Escape returns focus to the
