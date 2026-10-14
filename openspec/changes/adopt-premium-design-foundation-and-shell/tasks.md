@@ -116,7 +116,7 @@
 
   Si hay ruido de rasterizado con la geometría idéntica, aplicar la política de D3: informar la
   causa y no relajar en silencio.
-- [ ] 3.3 Actualizar la tabla de espaciado de `design-foundations.md` a base 4 y describir la
+- [x] 3.3 Actualizar la tabla de espaciado de `design-foundations.md` a base 4 y describir la
   transformación. Hacer el commit con el codemod y su resultado. En un commit inmediatamente
   posterior, borrar el codemod y sus pruebas (D3).
 
