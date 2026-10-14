@@ -58,6 +58,28 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
 - **Focus.** Modal layers return focus to whoever opened them, also when controlled, through
   `components/ui/use-return-focus.ts` (dialog and sheet).
 
+### Staged Duplication Enforcement
+
+`frontend/eslint.config.js` applies strict rules only to new shell code; legacy code keeps its rules
+until its screen migrates.
+
+- **Scope:** `src/components/shell/**`, `src/components/route-states/**`, `src/lib/navigation/**`
+  and `src/hooks/**`.
+- **What those paths may not contain:**
+  - direct `radix-ui` imports (use `components/ui`);
+  - the legacy facades and components (`components/ui/menu-and-tooltip`, `components/states`,
+    `components/notice-strip`);
+  - arbitrary Tailwind values (arbitrary variants are allowed);
+  - literal hex colors;
+  - `legacy-*` sizes;
+  - the JSX `style` attribute;
+  - a `Button` without an explicit `size`.
+- **In `src/components/ui/**`,** only the `style` attribute is forbidden. The internal arbitrary
+  values of template-derived primitives stay, documented in ADR 0028.
+- **Growth:** when a screen migrates, its paths join the first list in the same change.
+- **Tests:** `frontend/test/staged-lint.test.ts` runs ESLint with the real configuration and checks
+  that each rule fires and that correct code passes.
+
 ## System Layers
 
 Keep one direction of dependency, from generic to specific:

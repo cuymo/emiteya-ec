@@ -380,7 +380,7 @@
 
 ## 11. Etapa E: prevención de duplicación escalonada
 
-- [ ] 11.1 Añadir en `frontend/eslint.config.js` las reglas de D19, solo para `components/shell/**`,
+- [x] 11.1 Añadir en `frontend/eslint.config.js` las reglas de D19, solo para `components/shell/**`,
   `components/route-states/**`, `lib/navigation/**` y `hooks/**`, más la prohibición de `style` en
   `components/ui/**`.
 
@@ -389,7 +389,7 @@
     infracción (`radix-ui` directo, color hexadecimal, valor arbitrario, `legacy-*`, `style`,
     `Button` sin `size`) y acepta el código correcto;
   - `corepack pnpm lint` pasa sin tocar código heredado.
-- [ ] 11.2 Documentar en `component-system.md` la aplicación escalonada.
+- [x] 11.2 Documentar en `component-system.md` la aplicación escalonada.
 
   Verificar que el documento lista las mismas rutas que la configuración.
 
