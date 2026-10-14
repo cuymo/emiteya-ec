@@ -9,7 +9,7 @@
     "start": "next start --port 3000",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:visual": "playwright test --project=shell --pass-with-no-tests",
+    "test:visual": "playwright test --project=shell",
     "test:visual:update": "playwright test --project=shell --update-snapshots",
     "test:visual:spacing-proof": "playwright test --project=spacing-proof",
     "test:visual:bundle": "playwright test --project=bundle"

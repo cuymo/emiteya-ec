@@ -395,10 +395,10 @@
 
 ## 12. Etapa F: pruebas del shell en navegador
 
-- [ ] 12.1 Capturar y versionar el proyecto `shell` (D17), revisando cada imagen en el informe HTML.
+- [x] 12.1 Capturar y versionar el proyecto `shell` (D17), revisando cada imagen en el informe HTML.
 
   Verificar que `test:visual` pasa dos veces seguidas.
-- [ ] 12.2 Añadir la prueba de accesibilidad con `@axe-core/playwright` (WCAG 2.2 AA) sobre el
+- [x] 12.2 Añadir la prueba de accesibilidad con `@axe-core/playwright` (WCAG 2.2 AA) sobre el
   shell: escritorio claro y oscuro, móvil y paleta abierta. Añadir el recorrido de teclado real con
   el foco visible.
 
@@ -406,7 +406,7 @@
   - cero violaciones de axe;
   - el recorrido de teclado pasa, como complemento de las pruebas de interacción y no como
     sustituto.
-- [ ] 12.3 Comprobar en el harness que ninguna petición sale del propio origen y que el aviso de
+- [x] 12.3 Comprobar en el harness que ninguna petición sale del propio origen y que el aviso de
   Pruebas aparece en cada imagen de Pruebas. Actualizar `testing.md` con el conjunto final.
 
   Verificar que `test:visual` pasa.

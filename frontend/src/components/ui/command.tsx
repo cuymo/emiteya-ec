@@ -5,11 +5,12 @@
 //   título y la descripción en español dentro del contenido;
 // - `CommandInput` lleva su propio envoltorio en lugar del `InputGroup` de la plantilla, para no
 //   arrastrar `input-group`, `input` y `textarea` sin otro uso;
-// - ítems de al menos 44 px por debajo de 768 px; sin el atajo, que no se usa.
+// - ítems de al menos 44 px por debajo de 768 px; sin el atajo ni el indicador de selección, que no
+//   se usan.
 "use client";
 
 import { Command as CommandPrimitive } from "cmdk";
-import { CheckIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
@@ -149,10 +150,6 @@ export function CommandItem({
       {...props}
     >
       {children}
-      <CheckIcon
-        aria-hidden="true"
-        className="ml-auto opacity-0 group-data-[checked=true]/command-item:opacity-100"
-      />
     </CommandPrimitive.Item>
   );
 }

@@ -9,6 +9,8 @@ export type Environment = "TEST" | "PRODUCTION";
 export type Scenario = {
   persona: Persona;
   environment?: Environment;
+  /** Respuestas propias de una prueba, por `MÉTODO /ruta`; se consultan antes que las comunes. */
+  overrides?: Record<string, Reply>;
 };
 
 /** Servidor del build de producción que arranca `playwright.config.ts`. */
@@ -25,7 +27,7 @@ const ME = {
   operator: { name: "Óscar Operador", email: "oscar@empresa.ec", role: "OPERATOR" },
 } as const;
 
-const INVOICES = [
+export const INVOICES = [
   [
     "inv-1",
     "001-001-000000123",
@@ -85,7 +87,7 @@ const INVOICES = [
   createdAt: `${issueDate}T15:00:00.000Z`,
 }));
 
-type Reply = { status: number; body?: unknown };
+export type Reply = { status: number; body?: unknown };
 
 function reply(scenario: Scenario, method: string, path: string): Reply | null {
   const environment = scenario.environment ?? "TEST";
@@ -99,6 +101,8 @@ function reply(scenario: Scenario, method: string, path: string): Reply | null {
     return null;
   }
   const route = `${method} ${path}`;
+  const override = scenario.overrides?.[route];
+  if (override) return override;
   switch (route) {
     case "GET /api/v1/me":
       return { status: 200, body: { data: ME[scenario.persona] } };

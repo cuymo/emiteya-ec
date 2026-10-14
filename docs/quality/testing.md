@@ -261,7 +261,27 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
     - `corepack pnpm test:visual:spacing-proof`: evidencia congelada del paso de la escala de 8 a
       4 px. Son cinco pantallas de la interfaz anterior, con imagen y volcado geométrico de cajas,
       comparadas con cero píxeles de diferencia. Solo tiene sentido en el commit del codemod.
-    - `corepack pnpm test:visual`: la apariencia aprobada del shell premium.
+    - `corepack pnpm test:visual`: la apariencia aprobada del shell premium (proyecto `shell`,
+      `frontend/visual/shell/`).
+      - **Capturas:** 15, con una tolerancia de 0,1 % de píxeles para el suavizado del texto:
+        - escritorio claro y oscuro con la barra expandida, y claro con la barra colapsada;
+        - tableta;
+        - móvil cerrado y con el panel abierto;
+        - Producción con un operador;
+        - paleta de comandos y creación rápida abiertas;
+        - carga, error inesperado, dirección inexistente y destino no permitido;
+        - la lista heredada de facturas dentro del shell;
+        - el inicio de sesión.
+      - **Error inesperado:** se provoca solo en la prueba, con un script de inicio que hace fallar
+        el formateo de una fecha centinela.
+      - **Accesibilidad:** `axe` (`@axe-core/playwright`, WCAG 2.2 AA) sobre escritorio claro y
+        oscuro, móvil, la paleta abierta y el panel móvil abierto.
+      - **Teclado real:** enlace para saltar al contenido, foco visible, Ctrl+B, un solo control de
+        tema por anchura, desplazamiento de la barra con la ventana baja y el panel móvil con
+        Escape.
+      - **Comprobaciones de cada prueba:** que no hubo peticiones a otros orígenes ni rutas de la
+        API sin datos de prueba, y que el aviso de Pruebas está visible en cada captura de una
+        empresa en Pruebas.
   - **Medición de carga:** `corepack pnpm test:visual:bundle` escribe
     `frontend/test-results/bundle.json` con los bytes de JavaScript, CSS y fuentes de tres pantallas
     representativas (`docs/quality/benchmarks/frontend-shell-2026-10-14.md`).

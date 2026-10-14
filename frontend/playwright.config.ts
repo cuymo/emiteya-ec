@@ -44,9 +44,11 @@ export default defineConfig({
       testMatch: /bundle\/.*\.spec\.ts$/,
     },
     {
-      // B. Apariencia aprobada del shell premium.
+      // B. Apariencia aprobada del shell premium. Tolerancia mínima documentada (testing.md) para el
+      // suavizado del texto; cualquier cambio de diseño la supera.
       name: "shell",
       testMatch: /shell\/.*\.spec\.ts$/,
+      expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.001 } },
     },
   ],
   webServer: {
