@@ -160,22 +160,35 @@ SHALL abrirse en un panel lateral desde un botón de menú.
 - **THEN** ve los mismos destinos que en la barra lateral de escritorio, ni uno más
 
 ### Requirement: Migas de navegación
-El shell SHALL mostrar la ruta de la pantalla actual, derivada de la misma navegación: el grupo, el
-destino y, en una pantalla interna, la pantalla actual. El destino SHALL ser un enlace, y la última
-miga SHALL anunciarse como la página actual. Las migas, el destino actual y la paleta de comandos
-SHALL usar los mismos nombres.
+El shell SHALL mostrar migas que aporten jerarquía, derivadas de la misma navegación, y nunca una
+miga que solo repita el título de la página. Los grupos operativos no son una miga. Configuración
+sí, porque agrupa secciones. En una pantalla interna, el destino SHALL ser un enlace, y la última
+miga SHALL anunciarse como página actual.
 
 #### Scenario: Pantalla interna
-- **WHEN** un usuario abre el detalle de una factura
-- **THEN** ve la ruta Ventas › Facturas › Detalle de factura, con Facturas como enlace a la lista y el detalle anunciado como página actual
+- **WHEN** un usuario abre el detalle de la factura 001-001-000000123
+- **THEN** ve la ruta Facturas › 001-001-000000123, con Facturas como enlace a la lista y el número anunciado como página actual
+- **AND** mientras el número todavía no se conoce, la última miga es «Detalle de factura»
 
-#### Scenario: Destino de primer nivel
-- **WHEN** un usuario abre la lista de productos
-- **THEN** ve la ruta Maestros › Productos, con Productos como página actual
+#### Scenario: Borrador
+- **WHEN** un usuario abre un borrador de nota de crédito
+- **THEN** ve la ruta Notas de crédito › Borrador de nota de crédito, con Notas de crédito como enlace
+
+#### Scenario: Destino de primer nivel sin miga redundante
+- **WHEN** un usuario abre la lista de facturas o la de productos
+- **THEN** el shell no muestra migas, porque solo repetirían el título de la página
+
+#### Scenario: Sección de configuración
+- **WHEN** un administrador abre Empresa o Secuenciales
+- **THEN** ve la ruta Configuración › Empresa o Configuración › Secuenciales, con la sección anunciada como página actual
 
 #### Scenario: Inicio
 - **WHEN** un usuario abre Inicio
-- **THEN** la ruta es solo Inicio
+- **THEN** el shell no muestra migas
+
+#### Scenario: Mismos nombres
+- **WHEN** un usuario abre una pantalla interna de inventario
+- **THEN** el destino de las migas, el destino actual de la navegación y el destino que ofrece la paleta de comandos se llaman igual, Inventario
 
 ### Requirement: Creación rápida
 El shell SHALL ofrecer en todas las pantallas autenticadas una creación rápida con las pantallas de
@@ -233,7 +246,7 @@ se escribe.
 El shell SHALL permitir elegir el tema Claro, Oscuro o Sistema con un grupo de opciones accesible
 llamado «Tema», que se recorre con las flechas. La elección SHALL recordarse y, sin elección, SHALL
 seguirse la preferencia del sistema. En pantallas estrechas, el tema SHALL ofrecerse dentro del menú
-de cuenta.
+de cuenta. A ningún ancho SHALL haber dos controles de tema visibles a la vez.
 
 #### Scenario: Cambiar el tema
 - **WHEN** un usuario elige Oscuro en el grupo «Tema» y recarga la pantalla
@@ -246,6 +259,10 @@ de cuenta.
 #### Scenario: Pantalla estrecha
 - **WHEN** un usuario en un teléfono abre el menú de cuenta
 - **THEN** encuentra las opciones de tema Claro, Oscuro y Sistema, con la vigente marcada
+
+#### Scenario: Un solo control por ancho
+- **WHEN** un usuario usa la aplicación en escritorio y luego en un teléfono
+- **THEN** en escritorio el tema está solo en la barra superior y no en el menú de cuenta, y en el teléfono está solo en el menú de cuenta, y ambos cambian el mismo tema
 
 ### Requirement: Menú de cuenta
 El shell SHALL ofrecer un menú de cuenta, con nombre accesible «Cuenta de» seguido del nombre del
@@ -316,6 +333,10 @@ del destino ni solicitar sus datos. Es solo presentación: la API sigue rechazan
 - **WHEN** un operador abre directamente la dirección de Usuarios
 - **THEN** ve dentro del shell que no tiene acceso a esa sección y un enlace a Inicio
 - **AND** no se solicita la lista de usuarios
+
+#### Scenario: Sin destello del contenido
+- **WHEN** un operador abre directamente la dirección de Secuenciales
+- **THEN** en ningún momento se muestra el contenido de Secuenciales antes del estado sin acceso
 
 #### Scenario: Destino permitido
 - **WHEN** un operador abre directamente la dirección de Catálogos fiscales

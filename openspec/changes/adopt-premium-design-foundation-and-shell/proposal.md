@@ -81,6 +81,18 @@ de los módulos de negocio.
   - sin React Compiler;
   - sin el arranque de tema ni los preajustes de la plantilla;
   - la CSP intacta.
+- **Revisión del propietario de la propuesta** (2026-10-14). Aprobada con un ajuste:
+  - **Migas:** aportan jerarquía y no repiten el título. Un destino de primer nivel no muestra
+    migas; una pantalla interna sí (Facturas › 001-001-000000123, Configuración › Empresa).
+  - **Aprobado tal como estaba propuesto:**
+    - el tema por anchura, sin duplicar el control;
+    - `empty`;
+    - `class-variance-authority`;
+    - Geist, condicionado a confirmar que es local, sin red y con licencia clara;
+    - las variantes CSS de shadcn copiadas, no instaladas;
+    - la creación rápida en `outline`;
+    - la guarda de destino no permitido sin destello;
+    - los tamaños de botón `legacy-*`, solo transitorios.
 
 ### Fuera de alcance
 

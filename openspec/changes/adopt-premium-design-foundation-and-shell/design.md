@@ -146,7 +146,22 @@ features/company/         L3  conexión de datos del contexto de empresa y del a
   3. **Comparación.** Después del codemod, las imágenes deben coincidir con 0 píxeles distintos y
      el JSON debe ser idéntico.
   4. **Verificación.** Pasan Vitest, typecheck, lint y build.
+- **Aislamiento** (decisión del propietario). La medición compara solo el cambio de escala. Entre
+  la línea base y el codemod no entra Geist, ni radios, colores, shell, jerarquía tipográfica ni
+  rediseño alguno. Esos cambios empiezan después de demostrada la equivalencia.
+- **Alcance del criterio de 0 píxeles.** Vale solo para esta prueba. No se espera igualdad entre la
+  interfaz anterior y el shell premium.
+  - Si el rasterizado del navegador produjera ruido de píxeles sin cambio de geometría, no se relaja
+    la prueba en silencio.
+  - Se informa la causa exacta, y la igualdad de cajas pasa a ser la prueba geométrica que manda,
+    solo después de documentar por qué esa diferencia no tiene que ver con el espaciado.
+  - Las capturas nunca se retocan a mano.
 - **Reversión:** revertir ese único commit.
+- **Ciclo de vida del codemod.** Entra con sus pruebas en el commit que lo ejecuta, y se borra en
+  un commit inmediatamente posterior del mismo grupo. Es de un solo uso y se niega a volver a
+  ejecutarse, así que conservarlo en el árbol no aporta. El historial guarda su código y su
+  resultado para reproducirlo. La transformación queda descrita en `design-foundations.md`.
+  - Solo toca `frontend/src`: ni backend ni recursos fiscales generados.
 - **Alternativas descartadas:**
   - Mantener la base 8 y reducir a la mitad cada clase copiada de la plantilla: diverge del código
     fuente en cada copia futura.
@@ -178,14 +193,14 @@ valores salen así:
 - **Contraste.** Una tarea comprueba 4,5:1 y 3:1 en cada par usado, en ambos temas. Si un neutro de
   la plantilla no cumple, el valor se ajusta y queda anotado; el contraste manda sobre el valor
   literal.
-- **Variantes de shadcn.** Las de `shadcn/tailwind.css` (`data-open`, `data-closed` y las demás que
-  usan los primitivos copiados) entran por una de dos vías:
-  - **(a) Preferida:** copiar al bloque de variantes de `globals.css` solo las que usan los
-    primitivos copiados, con el aviso MIT de shadcn en `THIRD_PARTY_NOTICES.md`.
-  - **(b)** Añadir `shadcn` como dependencia de desarrollo exacta e importar su CSS.
-
-  La (b) instala la CLI y sus dependencias transitivas solo por una hoja de estilos. La elección
-  se registra con la lista de variantes usadas.
+- **Variantes de shadcn** (decisión del propietario: copiar, no instalar). Las de
+  `shadcn/tailwind.css` (`data-open`, `data-closed` y las demás que usan los primitivos copiados)
+  se copian a `globals.css`, solo las que se usan, con su origen anotado y el aviso MIT de shadcn
+  en `THIRD_PARTY_NOTICES.md`.
+  - No se instala el paquete `shadcn` ni su CLI.
+  - No se copia CSS de la plantilla que no se use.
+  - Como el paquete no está en el árbol de la plantilla, la definición de cada variante se toma de
+    la fuente publicada de shadcn/ui (MIT), con la referencia anotada.
 - **Animaciones:** `tw-animate-css` como dependencia exacta, solo CSS. Se añade una regla global
   `prefers-reduced-motion` que acorta o anula sus animaciones.
 
@@ -212,6 +227,14 @@ valores salen así:
   - El código nuevo del shell está obligado por lint (D19) a pasar un tamaño de la escala aprobada.
   - Al migrar la última pantalla, el valor por defecto pasa a `default` y los `legacy-*` se borran.
     Queda anotado en `technical-debt.md`.
+  - **Aprobado por el propietario como transitorio** (2026-10-14). Son variantes de compatibilidad
+    de la migración, nada más:
+    - el código premium nuevo no las usa;
+    - una pantalla migrada no las conserva;
+    - se retiran a medida que avanza la migración, hasta el 100 %.
+
+    El botón de solo icono es un tamaño o una composición, no un color nuevo: lleva siempre
+    `aria-label`, y tooltip cuando el contexto lo pide.
 - **Alternativas descartadas:**
   - Dos componentes `Button`: duplicación.
   - Cambiar ya el alto de los botones heredados a 36 px: altera la geometría de pantallas fuera de
@@ -299,7 +322,9 @@ tiene, y `cmdk` para la paleta. Las dos van con versión exacta.
   opciones de radio del menú de cuenta: Claro, Oscuro y Sistema.
 - **Por qué:** así se cumple la arquitectura aprobada («Tema» en el menú de cuenta) sin duplicar el
   control en la misma anchura, que la Definition of Done prohíbe.
-- Queda señalado para la revisión del propietario.
+- **Aprobado por el propietario** (2026-10-14). Nunca hay dos controles de tema visibles ni
+  enfocables al mismo ancho: el del menú solo se renderiza por debajo de 640 px y el de la barra
+  solo desde 640 px. Los dos usan el mismo estado de `next-themes`.
 
 ### D9. Fuente: Geist desde el propio origen
 
@@ -313,9 +338,15 @@ tiene, y `cmdk` para la paleta. Las dos van con versión exacta.
 - **Descartadas:**
   - `next/font/google`: descarga en el build y ata el build de Docker a la red de Google.
   - Copiar los woff2 al repositorio: archivos binarios con su propia licencia.
-- **Regla de parada.** Si al implementar no es inequívoco el origen o la licencia de la fuente del
-  paquete, se para y se informa antes de añadir binarios. La fuente Geist es OFL-1.1, y la licencia
-  del paquete se confirma en su `package.json`.
+- **Condiciones** (decisión del propietario: aprobado de forma condicional). Se usa `geist` solo si
+  la inspección del paquete instalado confirma todo esto:
+  - trae los woff2 dentro del paquete;
+  - no pide nada a Google ni a otro origen, ni en ejecución ni en el build;
+  - su licencia (la de la fuente, OFL-1.1, y la del paquete) permite este uso;
+  - funciona en la imagen de Docker de producción;
+  - funciona bajo la CSP actual.
+
+  Si algo de eso falla, se para con `GEIST_SOURCE_BLOCKER`, sin añadir binarios y sin tocar la CSP.
 - **Verificación:**
   - cero peticiones de fuentes a otros orígenes en el harness;
   - la imagen de Docker de producción se construye y contiene el woff2;
@@ -390,6 +421,11 @@ tiene, y `cmdk` para la paleta. Las dos van con versión exacta.
 - **Guarda de destino no permitido.** `AppShell` resuelve la ruta en el modelo. Si su permiso no
   está en el rol, muestra `RouteForbidden` en lugar de la página, que así no pide datos. Las
   pantallas conservan su comprobación propia como defensa.
+  - **Sin destello.** La decisión es síncrona: el shell solo se renderiza con la sesión ya cargada
+    (`SessionGate`), y la ruta y el rol se conocen antes del primer render del contenido. El
+    contenido protegido nunca llega a montarse, así que no pide sus datos.
+  - **No es la autoridad de seguridad.** La defensa en profundidad es la guarda del shell más la
+    comprobación de la pantalla más la autorización de la API, que es la que manda.
 - **Pruebas.** `app/(app)/layout.tsx` sigue siendo el único lugar de composición, y la estructura
   conserva los nombres que usan las pruebas: «Barra lateral», «Navegación principal» y «Saltar al
   contenido».
@@ -433,18 +469,41 @@ tiene, y `cmdk` para la paleta. Las dos van con versión exacta.
   EmiteYa admite una sola acción primaria por pantalla y la creación rápida está en todas.
 - **Comportamiento:** solo navega. Sin el «Inbox» de la plantilla.
 
-### D15. Migas de navegación
+### D15. Migas de navegación: jerarquía, no repetición
 
-`AppBreadcrumbs` deriva la ruta del modelo:
-- el grupo, como texto, porque un grupo no es una página;
-- el destino, como enlace;
-- la miga final, con `aria-current="page"`.
+Ajuste del propietario a la propuesta (2026-10-14). `AppBreadcrumbs` deriva la ruta del modelo y
+solo se muestra cuando aporta jerarquía.
 
-En un destino de primer nivel, el destino es la miga final. Las etiquetas de registros concretos,
-como el número de una factura, quedan para la fase de cabeceras de página.
+**Qué entra en la ruta:**
+- **Ancestro de sección.** Los grupos operativos (Ventas, Compras, Logística, Documentos, Maestros,
+  Análisis) solo agrupan la barra y no son una miga. Configuración sí lo es: es una sección que
+  agrupa ajustes. Aparece como texto, porque no es una página.
+- **Destino.** En una pantalla interna aparece como enlace a su lista.
+- **Miga final.** Lleva `aria-current="page"`. Es la etiqueta del patrón («Borrador de nota de
+  crédito», «Detalle de inventario») o, si la pantalla la aporta, la del registro (el número del
+  comprobante, el nombre del producto).
 
-Duplicación conocida: la última miga repite el `h1` de la pantalla, que no se toca en este cambio.
-Se resuelve cuando llegue `PageHeader`.
+**Cuándo no se muestra.** Si la ruta queda con una sola miga, la página actual, el shell no muestra
+migas. Pasa en Inicio, en los destinos operativos de primer nivel (Facturas, Productos) y en Mi
+cuenta. Por eso nunca repite el título de la pantalla.
+
+**Ejemplos:**
+- Facturas › 001-001-000000123;
+- Notas de crédito › Borrador de nota de crédito;
+- Inventario › {producto};
+- Configuración › Empresa;
+- Configuración › Secuenciales.
+
+**Etiqueta del registro.** Un contexto del shell, `useBreadcrumbLabel(label)`, permite que la
+pantalla aporte la etiqueta del registro. Fuera del shell no hace nada, así que las pruebas de
+pantallas aisladas no cambian.
+- Se conecta con una sola línea en las seis pantallas de detalle de comprobantes (número) y en la
+  de detalle de inventario (nombre del producto). Es lo mínimo para alojarlas en el shell; no
+  rediseña su contenido.
+- Mientras el dato carga, se ve la etiqueta del patrón.
+
+**Sin un mapa propio.** Las migas no tienen un mapa independiente: salen del mismo modelo que la
+barra y la paleta (D10).
 
 ### D16. Estados de ruta
 
@@ -480,26 +539,40 @@ Se resuelve cuando llegue `PageHeader`.
   - `reducedMotion: "reduce"`;
   - `animations: "disabled"` y cursor oculto;
   - espera a `document.fonts.ready`.
-- **Conjunto canónico, versionado** en `frontend/visual/__screenshots__/`, generado en Linux. En
-  otros sistemas se actualiza solo en local, sin versionar.
-  - **Línea base previa al rediseño** (grupo 1, prueba de D3):
-    - shell en escritorio, claro y oscuro;
-    - shell en móvil claro;
-    - lista de facturas;
-    - inicio de sesión.
-  - **Shell premium** (grupo 11), unas 15 imágenes:
+- **Dos grupos separados**, versionados y generados en Linux. En otros sistemas se actualizan solo
+  en local, sin versionar. Nunca se compara el shell premium con las capturas de la interfaz
+  anterior esperando igualdad.
+  - **A. Prueba de espaciado**, proyecto `spacing-proof`, en `frontend/visual/spacing-proof/`:
+    - **Pantallas:**
+      - shell en escritorio, claro y oscuro;
+      - shell en móvil claro;
+      - lista de facturas;
+      - inicio de sesión.
+    - **Geometría:** un volcado JSON de las cajas de cada pantalla, también versionado.
+    - **Cuándo se captura:** en el grupo 2, y se compara en el grupo 3 (D3).
+    - **Después:** queda como evidencia congelada de la transición. `test:visual` no lo ejecuta, y
+      solo tiene sentido en el commit del codemod (`test:visual:spacing-proof`, documentado en
+      `testing.md`).
+  - **B. Shell premium**, proyecto `shell`, en `frontend/visual/shell/` (grupo 12). Es la apariencia
+    nueva aprobada, con unas 15 imágenes, aunque se prioriza el valor de cobertura sobre un número
+    exacto:
     - escritorio claro y oscuro, con la barra expandida y colapsada;
     - tableta;
     - móvil cerrado y con el panel abierto;
-    - Producción con un operador;
+    - aviso de Pruebas, y Producción con un operador;
     - paleta abierta y creación rápida abierta;
     - carga, error, dirección inexistente y destino no permitido;
     - lista de facturas heredada dentro del shell nuevo;
     - inicio de sesión.
-- **Comandos:** `test:visual` y `test:visual:update`, en el frontend y en la raíz. No forman parte
-  de `verify`.
-- **Tolerancia:** 0 píxeles para la prueba de D3; una tolerancia mínima documentada para el uso
-  normal.
+- **Comandos:**
+  - `test:visual`: el proyecto `shell` más la accesibilidad y el teclado;
+  - `test:visual:update`: actualizar las imágenes base del proyecto `shell`;
+  - `test:visual:spacing-proof`.
+
+  Están en el frontend y en la raíz, fuera de `verify`. Una ejecución normal nunca actualiza imágenes
+  base: falta la imagen o hay diferencia, y falla. Solo `…:update` escribe, a propósito.
+- **Tolerancia:** 0 píxeles para la prueba de D3, con la política de ruido de D3. Para el uso
+  normal, una tolerancia mínima documentada.
 - **Revisión:** cada cambio de una imagen base se revisa en el informe HTML de Playwright, y la
   imagen nueva se versiona en el mismo commit que la causa. El proceso queda en `testing.md`.
 
@@ -623,9 +696,10 @@ doble clic. La guarda de destino no permitido es presentación, y la API sigue a
   origen, y cada variante nueva que exija otro primitivo pasa por la misma revisión.
 - **[La guarda de rutas no coincide con el permiso de la pantalla]** → Una prueba de paridad por
   patrón contra la tabla revisada. Una ruta sin patrón no se guarda.
-- **[Las migas repiten el `h1`]** → Aceptado de forma temporal (D15).
+- **[Una pantalla interna sin etiqueta de registro]** → Muestra la etiqueta del patrón (D15). Nunca
+  se muestra una miga que solo repita el título.
 - **[El tema queda en dos lugares según la anchura]** → Un solo estado (`next-themes`), un solo
-  control por anchura (D8). Queda señalado al propietario.
+  control por anchura (D8), aprobado por el propietario.
 - **[Los botones heredados se ven distintos]** → La geometría se conserva con `legacy-*` (D5), y el
   cambio de estilo es el de la base aprobada.
 - **[cmdk o la fuente engordan la carga inicial]** → La paleta se carga de forma diferida, hay una
@@ -638,21 +712,36 @@ doble clic. La guarda de destino no permitido es presentación, y la API sigue a
 ## Migration Plan
 
 - **Rama y commits.** Todo ocurre en `redesign-frontend`, con un commit por grupo de tareas, en el
-  orden de `tasks.md`.
+  orden de `tasks.md`. El grupo 3 lleva además un segundo commit que borra el codemod.
+- **Etapas del propietario** (2026-10-14), con sus grupos:
+  - **A:** aviso de terceros y dependencias (grupo 1).
+  - **B:** harness, línea base y espaciado de base 4 con su prueba aislada (grupos 2 y 3).
+  - **C:** tokens y primitivos (grupos 4 y 5).
+  - **D:** modelo de rutas, shell, creación rápida, paleta y marca (grupos 6, 7, 8 y 10).
+  - **E:** estados de ruta y accesibilidad (grupo 9), más las reglas escalonadas (grupo 11).
+  - **F:** pruebas en navegador e integración final (grupos 12 y 13).
 - **Orden protegido.** El harness y la línea base van antes del codemod, y el codemod va antes de
-  los tokens. Así la prueba de equivalencia de D3 compara la interfaz sin otros cambios.
+  los tokens. Así la prueba de equivalencia de D3 compara la interfaz sin otros cambios. Añadir
+  dependencias en el grupo 1 no la afecta, porque nada las importa todavía.
 - **Reversión:**
   - cada grupo se revierte por separado;
-  - el codemod, revirtiendo su único commit;
-  - el shell, revirtiendo los grupos 5 a 9, porque `app-shell.tsx` y `navigation.tsx` se borran en
-    el grupo 6.
-- **Sin despliegue ni migraciones.** El cambio no se publica en `main` hasta su verificación
-  completa y la autorización del propietario.
+  - el codemod, revirtiendo su commit;
+  - el shell, revirtiendo los grupos 6 a 10, porque `app-shell.tsx` y `navigation.tsx` se borran en
+    el grupo 7.
+- **Sin despliegue ni migraciones.** El cambio no se archiva, no se publica en `main` ni se sube
+  hasta la revisión visual y la autorización del propietario.
 
-## Open Questions
+## Decisiones del propietario (revisión del 2026-10-14)
 
-- **Variantes de shadcn:** copiarlas (preferida) o la dependencia `shadcn` (D4). Se decide al
-  implementar con la lista de variantes usadas, sin cambiar la spec ni las tareas.
-- **Tema según la anchura** (D8) y **`empty` en el corte** (D6, D16): señalados para la revisión del
-  propietario. Si cambian, solo cambia la ubicación del control o la composición de los estados de
-  ruta.
+Aprobado con un ajuste de las migas:
+- tema por anchura (D8);
+- `empty` en el corte (D6, D16);
+- `class-variance-authority` (D6);
+- Geist condicionado a la inspección (D9, `GEIST_SOURCE_BLOCKER`);
+- variantes de shadcn copiadas y no instaladas (D4);
+- creación rápida en `outline` (D14);
+- guarda de destino no permitido sin destello (D11);
+- tamaños `legacy-*` solo transitorios (D5);
+- migas jerárquicas, sin una miga que repita el título (D15).
+
+No quedan preguntas abiertas.
