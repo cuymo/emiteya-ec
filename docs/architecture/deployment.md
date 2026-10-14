@@ -434,8 +434,15 @@ límites del ERS. `bench:data-portability` confirmó sus valores por defecto el 
   Limitación: la versión anterior sigue bloqueando el anexo 24 en la factura, porque lee la matriz
   guardada, pero vuelve a emitir sin bloqueo la liquidación de compra, la nota de crédito y la nota
   de débito de una empresa declarada gran contribuyente. El bloqueo del anexo 26 vuelve a cubrir
-  solo la factura. Volver atrás devuelve esos huecos; la matriz que ven los usuarios sigue siendo
-  la correcta.
+  solo la factura. La matriz que ven los usuarios sigue siendo la correcta.
+
+  Clasificación: **compatible en estructura, limitada en semántica.** Volver a una imagen anterior a
+  `block-unsupported-special-cases-before-emission` reabre vías de emisión no soportadas, y esa
+  imagen no tiene la misma seguridad fiscal. Regla del operador, si una reversión de emergencia lo
+  exige:
+  - no reanudar la emisión de una empresa declarada gran contribuyente ni con un RUC proveedor de un
+    tercero mientras corra la imagen anterior;
+  - preferir corregir y avanzar a la imagen con el bloqueo.
 
 ### Configuración de la empresa
 
