@@ -29,6 +29,8 @@ const config: IssuerConfig = {
     specialTaxpayerNumber: null,
     withholdingAgentResolution: null,
     rimpeCategory: null,
+    largeTaxpayer: false,
+    providerRuc: null,
   },
 };
 const point: IssuerPoint = {

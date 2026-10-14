@@ -27,6 +27,7 @@ import {
   uploadCertificate,
   type ReadyCompany,
 } from "./emission-harness.ts";
+import { fiscalEffects } from "./fiscal-effects.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
 
 type Body = {
@@ -105,25 +106,6 @@ describe("emisión de facturas hasta RESERVED", () => {
         where: { companyId: company.companyId, action: { startsWith: "invoice." } },
       }),
       locked: config?.taxIdentityLocked ?? false,
-    };
-  }
-
-  /** Efectos fiscales de la empresa que un rechazo previo a la reserva nunca produce (design D7). */
-  async function effects(company: ReadyCompany) {
-    const prisma = db.database.prisma;
-    const companyId = company.companyId;
-    return {
-      sequences: await prisma.fiscalSequence.findMany({
-        where: { companyId },
-        select: { documentType: true, nextNumber: true },
-        orderBy: { documentType: "asc" },
-      }),
-      reservations: await prisma.fiscalSequenceReservation.count({ where: { companyId } }),
-      documents: await prisma.electronicDocument.count({ where: { companyId } }),
-      artifacts: await prisma.documentArtifact.count({ where: { companyId } }),
-      stockMovements: await prisma.stockMovement.count({ where: { companyId } }),
-      jobs: await prisma.job.count({ where: { companyId } }),
-      sriAttempts: await prisma.sriAttempt.count({ where: { companyId } }),
     };
   }
 
@@ -629,13 +611,13 @@ describe("emisión de facturas hasta RESERVED", () => {
         profile: { largeTaxpayer: true },
       });
       const draft = await draftFor(large);
-      const before = await effects(large);
+      const before = await fiscalEffects(db.database.prisma, large.companyId);
       for (let attempt = 0; attempt < 2; attempt++) {
         const error = await rejected(large, draft, "SPECIAL_CASE_UNSUPPORTED");
         expect(error.message).toContain("anexo 24");
         expect(error.message).toContain("gran contribuyente");
       }
-      expect(await effects(large)).toEqual(before);
+      expect(await fiscalEffects(db.database.prisma, large.companyId)).toEqual(before);
       expect(before).toMatchObject({ reservations: 0, documents: 0, jobs: 0, sriAttempts: 0 });
       const regular = await readyCompany(api, db, {
         slug: "comun",

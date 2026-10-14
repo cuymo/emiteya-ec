@@ -54,16 +54,16 @@
 
 ## 3. Bloqueo en los otros cinco tipos
 
-- [ ] 3.1 Añadir `SPECIAL_CASE_UNSUPPORTED` a `CREDIT_NOTE_ERROR_CODES`, `DEBIT_NOTE_ERROR_CODES`,
+- [x] 3.1 Añadir `SPECIAL_CASE_UNSUPPORTED` a `CREDIT_NOTE_ERROR_CODES`, `DEBIT_NOTE_ERROR_CODES`,
   `WITHHOLDING_ERROR_CODES`, `SHIPPING_GUIDE_ERROR_CODES` y `PURCHASE_SETTLEMENT_ERROR_CODES` (design
   D4), y regenerar el OpenAPI. Verificar que `corepack pnpm openapi:check` pasa con el documento
   regenerado y que el frontend muestra el mensaje del servidor en el rechazo de la emisión de esos
   tipos.
-- [ ] 3.2 Ampliar `IssuerConfig.profile` de los cinco módulos con `largeTaxpayer` y `providerRuc` (el
+- [x] 3.2 Ampliar `IssuerConfig.profile` de los cinco módulos con `largeTaxpayer` y `providerRuc` (el
   dato ya llega desde `taxpayerEmissionReads`), y en su `application/context.ts` añadir el problema
   de `unsupportedSpecialCase` después de cargar la configuración, junto a `TAXPAYER_NOT_CONFIGURED`
   (design D2). Verificar con `corepack pnpm typecheck` y las pruebas de 3.3.
-- [ ] 3.3 En el archivo de emisión de cada tipo (`credit-note-emission.test.ts`,
+- [x] 3.3 En el archivo de emisión de cada tipo (`credit-note-emission.test.ts`,
   `debit-note-emission.test.ts`, y los de la retención, la guía y la liquidación), con su patrón de
   rechazo:
   - nota de crédito, nota de débito y liquidación con la empresa gran contribuyente → 409

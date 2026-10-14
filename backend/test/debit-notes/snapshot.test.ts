@@ -77,6 +77,8 @@ const build = (payment = evaluation.payment!) =>
         specialTaxpayerNumber: null,
         withholdingAgentResolution: null,
         rimpeCategory: null,
+        largeTaxpayer: false,
+        providerRuc: null,
       },
     },
     point: {

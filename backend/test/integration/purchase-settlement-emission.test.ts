@@ -16,10 +16,13 @@ import {
 } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import type { PurchaseSettlementSnapshot } from "../../src/modules/purchase-settlements/domain/snapshot.ts";
+import type { TaxpayerProfile } from "../../src/modules/taxpayer/domain/taxpayer-config.ts";
+import { FIXTURE_RUC } from "../support/p12-fixtures.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
 import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker-pool.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { CUSTODY, readyCompany, type ReadyCompany } from "./emission-harness.ts";
+import { fiscalEffects } from "./fiscal-effects.ts";
 import { insertPurchaseSupplier } from "./purchase-settlement-harness.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
 
@@ -458,5 +461,53 @@ describe("emisión de liquidaciones de compra", () => {
       "PURCHASE_SETTLEMENT_DRAFT_NOT_FOUND",
     ]);
     expect(await trace()).toEqual(before);
+  });
+
+  describe("casos especiales no soportados (block-unsupported-special-cases-before-emission)", () => {
+    /** Empresa con la declaración indicada, su proveedor y el borrador de la liquidación. */
+    const prepared = async (slug: string, profile: Partial<TaxpayerProfile>) => {
+      const company = await readyCompany(api, db, {
+        slug,
+        pool,
+        p12Dir: inject("p12FixturesDir"),
+        profile,
+      });
+      const supplier = await insertPurchaseSupplier(db.database.prisma, company, "0102030405", {
+        legalName: "María Quishpe",
+      });
+      return { company, created: await draft({ supplierPartyId: supplier }, company) };
+    };
+    const rejectedTwice = async (
+      slug: string,
+      profile: Partial<TaxpayerProfile>,
+      annex: string,
+    ) => {
+      const { company, created } = await prepared(slug, profile);
+      expect(created.preview.issues).toContainEqual(
+        expect.objectContaining({ code: "SPECIAL_CASE_UNSUPPORTED" }),
+      );
+      const before = await fiscalEffects(db.database.prisma, company.companyId);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const res = await emit(api, created, { cookie: company.cookies.operator });
+        expect([res.status, bodyOf(res).error.code]).toEqual([409, "SPECIAL_CASE_UNSUPPORTED"]);
+        expect(bodyOf(res).error.message).toContain(annex);
+      }
+      expect(await fiscalEffects(db.database.prisma, company.companyId)).toEqual(before);
+      const stored = await db.database.prisma.purchaseSettlementDraft.findUniqueOrThrow({
+        where: { id: created.id },
+      });
+      expect(stored.status).toBe("DRAFT");
+    };
+
+    it("una empresa gran contribuyente no emite la liquidación (anexo 24), sin efectos fiscales", async () => {
+      await rejectedTwice("liq-grande", { largeTaxpayer: true }, "anexo 24");
+    });
+
+    it("un RUC proveedor de un tercero bloquea la liquidación (anexo 26); el propio no", async () => {
+      await rejectedTwice("liq-tercero", { providerRuc: "0992877878001" }, "anexo 26");
+      const { company, created } = await prepared("liq-propio", { providerRuc: FIXTURE_RUC });
+      const res = await emit(api, created, { cookie: company.cookies.operator });
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+    });
   });
 });

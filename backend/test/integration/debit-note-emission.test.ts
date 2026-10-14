@@ -11,6 +11,8 @@ import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { DebitNoteDraftView, DebitNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import type { DebitNoteSnapshot } from "../../src/modules/debit-notes/domain/snapshot.ts";
+import type { TaxpayerProfile } from "../../src/modules/taxpayer/domain/taxpayer-config.ts";
+import { FIXTURE_RUC } from "../support/p12-fixtures.ts";
 import { createDebitNoteDraftRepository } from "../../src/modules/debit-notes/infrastructure/prisma-drafts.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
 import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker-pool.ts";
@@ -23,6 +25,7 @@ import {
 } from "./credit-notes-harness.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { CUSTODY, readyCompany, type ReadyCompany } from "./emission-harness.ts";
+import { fiscalEffects } from "./fiscal-effects.ts";
 import { insertProduct } from "./inventory-harness.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
 
@@ -551,5 +554,59 @@ describe("emisión de notas de débito", () => {
     expect(await metric("debit_note_concepts_total")).toContain(
       'cause="POST_INVOICE_COST_EXPENSE"',
     );
+  });
+
+  describe("casos especiales no soportados (block-unsupported-special-cases-before-emission)", () => {
+    /** Empresa con la declaración indicada, una factura autorizada propia y el borrador de la nota. */
+    const prepared = async (slug: string, profile: Partial<TaxpayerProfile>) => {
+      const company = await readyCompany(api, db, {
+        slug,
+        pool,
+        p12Dir: inject("p12FixturesDir"),
+        profile,
+      });
+      const fiscal = { companyId: company.companyId, adminId: company.adminId, points: [] };
+      const product = await insertProduct(db.database.prisma, fiscal, {
+        kind: "SERVICE",
+        stockTracked: false,
+      });
+      // Al 15 %, el mismo tratamiento del concepto de la nota.
+      const target = await insertAuthorizedInvoice(db.database.prisma, companyOf(company), [
+        { productId: product, quantity: "1", unitPrice: "15.00" },
+      ]);
+      return { company, created: await draft(target, {}, company) };
+    };
+    const rejectedTwice = async (
+      slug: string,
+      profile: Partial<TaxpayerProfile>,
+      annex: string,
+    ) => {
+      const { company, created } = await prepared(slug, profile);
+      expect(created.preview.issues).toContainEqual(
+        expect.objectContaining({ code: "SPECIAL_CASE_UNSUPPORTED" }),
+      );
+      const before = await fiscalEffects(db.database.prisma, company.companyId);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const res = await emit(api, created, randomUUID(), DECLARATIONS, company);
+        expect([res.status, bodyOf(res).error.code]).toEqual([409, "SPECIAL_CASE_UNSUPPORTED"]);
+        expect(bodyOf(res).error.message).toContain(annex);
+      }
+      expect(await fiscalEffects(db.database.prisma, company.companyId)).toEqual(before);
+      const stored = await db.database.prisma.debitNoteDraft.findUniqueOrThrow({
+        where: { id: created.id },
+      });
+      expect(stored.status).toBe("DRAFT");
+    };
+
+    it("una empresa gran contribuyente no emite la nota (anexo 24), sin efectos fiscales", async () => {
+      await rejectedTwice("nd-grande", { largeTaxpayer: true }, "anexo 24");
+    });
+
+    it("un RUC proveedor de un tercero bloquea la nota (anexo 26); el propio no", async () => {
+      await rejectedTwice("nd-tercero", { providerRuc: "0992877878001" }, "anexo 26");
+      const { company, created } = await prepared("nd-propio", { providerRuc: FIXTURE_RUC });
+      const res = await emit(api, created, randomUUID(), DECLARATIONS, company);
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+    });
   });
 });

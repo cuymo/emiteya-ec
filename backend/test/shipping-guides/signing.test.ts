@@ -135,6 +135,8 @@ const SNAPSHOT: ShippingGuideSnapshot = withShippingGuideKey(
         specialTaxpayerNumber: null,
         withholdingAgentResolution: null,
         rimpeCategory: null,
+        largeTaxpayer: false,
+        providerRuc: null,
       },
     },
     point: {

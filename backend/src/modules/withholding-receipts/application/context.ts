@@ -18,6 +18,7 @@ import {
   type WithholdingEvaluation,
 } from "../domain/evaluation.ts";
 import type { WithheldPartyReader, WithholdingReads } from "./ports.ts";
+import { unsupportedSpecialCase } from "../../fiscal/domain/special-cases.ts";
 
 /** Tipo y versión del XSD del comprobante de retención de este cambio. */
 export const WITHHOLDING_SCHEMA = { documentType: "07", version: "2.0.0" } as const;
@@ -63,6 +64,10 @@ async function readiness(
       ),
     );
   }
+  // Casos especiales del emisor que el motor no soporta (block-unsupported-special-cases-before-
+  // emission, design D2): se rechazan antes de reservar, con el mismo código que la factura.
+  const special = config ? unsupportedSpecialCase(config.profile, "07") : null;
+  if (special) issues.push(issue("SPECIAL_CASE_UNSUPPORTED", special.message));
   const point = emissionPointId ? await reads.emissionPoint(companyId, emissionPointId) : null;
   if (!emissionPointId) {
     issues.push(

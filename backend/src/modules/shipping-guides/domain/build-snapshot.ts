@@ -25,6 +25,9 @@ export type IssuerConfig = Readonly<{
     specialTaxpayerNumber: string | null;
     withholdingAgentResolution: string | null;
     rimpeCategory: "EMPRENDEDOR" | "NEGOCIO_POPULAR" | null;
+    /** Condiciones del emisor que la regla de casos especiales bloquea (anexos 24 y 26). */
+    largeTaxpayer: boolean;
+    providerRuc: string | null;
   }>;
 }>;
 

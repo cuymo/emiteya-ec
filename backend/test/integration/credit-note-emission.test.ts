@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import type { CreditNoteDraftView, CreditNoteView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import type { CreditNoteSnapshot } from "../../src/modules/credit-notes/domain/snapshot.ts";
+import type { TaxpayerProfile } from "../../src/modules/taxpayer/domain/taxpayer-config.ts";
 import { reconcileCreditCapacity } from "../../src/modules/credit-notes/infrastructure/index.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
 import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker-pool.ts";
@@ -24,6 +25,8 @@ import {
 } from "./credit-notes-harness.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { CUSTODY, readyCompany, type ReadyCompany } from "./emission-harness.ts";
+import { fiscalEffects } from "./fiscal-effects.ts";
+import { FIXTURE_RUC } from "../support/p12-fixtures.ts";
 import { insertProduct } from "./inventory-harness.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
 
@@ -599,5 +602,79 @@ describe("emisión de notas de crédito", () => {
       physicalReturn: true,
     });
     expect(await metric("credit_note_reservations_total")).toContain('cause="RETURN"');
+  });
+
+  describe("casos especiales no soportados (block-unsupported-special-cases-before-emission)", () => {
+    /** Empresa con la declaración indicada, una factura autorizada de un servicio y su borrador. */
+    const prepared = async (slug: string, profile: Partial<TaxpayerProfile>) => {
+      const company = await readyCompany(api, db, {
+        slug,
+        pool,
+        p12Dir: inject("p12FixturesDir"),
+        profile,
+      });
+      const fiscal = { companyId: company.companyId, adminId: company.adminId, points: [] };
+      const product = await insertProduct(db.database.prisma, fiscal, {
+        kind: "SERVICE",
+        stockTracked: false,
+      });
+      const target = await insertAuthorizedInvoice(db.database.prisma, companyOf(company), [
+        { productId: product, quantity: "1", unitPrice: "15.00", rate: IVA0 },
+      ]);
+      const res = await request(api.app)
+        .post("/api/v1/credit-notes/drafts")
+        .set("Cookie", company.cookies.operator)
+        .send({
+          invoiceId: target.id,
+          emissionPointId: company.emissionPointId,
+          cause: "RETURN",
+          reason: "Devolución del servicio",
+          lines: [{ position: 1, quantity: "1", physicalReturn: "0" }],
+        });
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+      return { company, created: bodyOf(res).data };
+    };
+    const emitAs = (company: ReadyCompany, created: { id: string; version: number }) =>
+      request(api.app)
+        .post("/api/v1/credit-notes")
+        .set("Cookie", company.cookies.operator)
+        .set("Idempotency-Key", randomUUID())
+        .send({
+          draftId: created.id,
+          expectedVersion: created.version,
+          declarations: DECLARATIONS,
+        });
+    const rejectedTwice = async (
+      slug: string,
+      profile: Partial<TaxpayerProfile>,
+      annex: string,
+    ) => {
+      const { company, created } = await prepared(slug, profile);
+      expect(created.preview.issues).toContainEqual(
+        expect.objectContaining({ code: "SPECIAL_CASE_UNSUPPORTED" }),
+      );
+      const before = await fiscalEffects(db.database.prisma, company.companyId);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const res = await emitAs(company, created);
+        expect([res.status, bodyOf(res).error.code]).toEqual([409, "SPECIAL_CASE_UNSUPPORTED"]);
+        expect(bodyOf(res).error.message).toContain(annex);
+      }
+      expect(await fiscalEffects(db.database.prisma, company.companyId)).toEqual(before);
+      const stored = await db.database.prisma.creditNoteDraft.findUniqueOrThrow({
+        where: { id: created.id },
+      });
+      expect(stored.status).toBe("DRAFT");
+    };
+
+    it("una empresa gran contribuyente no emite la nota (anexo 24), sin efectos fiscales", async () => {
+      await rejectedTwice("nc-grande", { largeTaxpayer: true }, "anexo 24");
+    });
+
+    it("un RUC proveedor de un tercero bloquea la nota (anexo 26); el propio no", async () => {
+      await rejectedTwice("nc-tercero", { providerRuc: "0992877878001" }, "anexo 26");
+      const { company, created } = await prepared("nc-propio", { providerRuc: FIXTURE_RUC });
+      const res = await emitAs(company, created);
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+    });
   });
 });

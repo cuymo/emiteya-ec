@@ -24,6 +24,7 @@ import type {
   ShippingPartyReader,
   ShippingProductReader,
 } from "./ports.ts";
+import { unsupportedSpecialCase } from "../../fiscal/domain/special-cases.ts";
 
 /** Tipo y versión del XSD de la guía de remisión de este cambio. */
 export const SHIPPING_GUIDE_SCHEMA = { documentType: "06", version: "1.1.0" } as const;
@@ -80,6 +81,10 @@ async function readiness(
       ),
     );
   }
+  // Casos especiales del emisor que el motor no soporta (block-unsupported-special-cases-before-
+  // emission, design D2): se rechazan antes de reservar, con el mismo código que la factura.
+  const special = config ? unsupportedSpecialCase(config.profile, "06") : null;
+  if (special) issues.push(issue("SPECIAL_CASE_UNSUPPORTED", special.message));
   const point = emissionPointId ? await reads.emissionPoint(companyId, emissionPointId) : null;
   if (!emissionPointId) {
     issues.push({

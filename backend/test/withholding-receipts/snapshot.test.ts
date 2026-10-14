@@ -31,6 +31,8 @@ const CONFIG = {
     specialTaxpayerNumber: "12345",
     withholdingAgentResolution: "1",
     rimpeCategory: null,
+    largeTaxpayer: false,
+    providerRuc: null,
   },
 };
 const POINT = {

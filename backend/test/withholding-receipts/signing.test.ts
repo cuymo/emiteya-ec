@@ -83,6 +83,8 @@ const SNAPSHOT: WithholdingSnapshot = withWithholdingKey(
         specialTaxpayerNumber: null,
         withholdingAgentResolution: "1",
         rimpeCategory: null,
+        largeTaxpayer: false,
+        providerRuc: null,
       },
     },
     point: {

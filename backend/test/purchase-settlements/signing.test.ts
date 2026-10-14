@@ -84,6 +84,8 @@ const SNAPSHOT: PurchaseSettlementSnapshot = withPurchaseSettlementKey(
         specialTaxpayerNumber: null,
         withholdingAgentResolution: null,
         rimpeCategory: null,
+        largeTaxpayer: false,
+        providerRuc: null,
       },
     },
     point: {

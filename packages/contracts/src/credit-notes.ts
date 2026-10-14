@@ -270,6 +270,8 @@ export const CREDIT_NOTE_ERROR_CODES = [
   "TAXPAYER_NOT_CONFIGURED",
   "EMISSION_POINT_NOT_FOUND",
   "EMISSION_POINT_UNAVAILABLE",
+  // block-unsupported-special-cases-before-emission (design D4): el mismo código que la factura.
+  "SPECIAL_CASE_UNSUPPORTED",
   "SIGNING_CERTIFICATE_NOT_USABLE",
   "SCHEMA_NOT_AVAILABLE",
   "SEQUENCE_EXHAUSTED",

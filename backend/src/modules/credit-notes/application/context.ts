@@ -20,6 +20,7 @@ import type {
   InvoiceCreditSourceReader,
   ReturnCapacity,
 } from "./ports.ts";
+import { unsupportedSpecialCase } from "../../fiscal/domain/special-cases.ts";
 
 /** Tipo y versión del XSD de la nota de crédito de este cambio. */
 export const CREDIT_NOTE_SCHEMA = { documentType: "04", version: "1.1.0" } as const;
@@ -84,6 +85,10 @@ async function readiness(
       ),
     );
   }
+  // Casos especiales del emisor que el motor no soporta (block-unsupported-special-cases-before-
+  // emission, design D2): se rechazan antes de reservar, con el mismo código que la factura.
+  const special = config ? unsupportedSpecialCase(config.profile, "04") : null;
+  if (special) issues.push(issue("SPECIAL_CASE_UNSUPPORTED", special.message));
   const point = emissionPointId ? await reads.emissionPoint(companyId, emissionPointId) : null;
   if (!emissionPointId) {
     issues.push(

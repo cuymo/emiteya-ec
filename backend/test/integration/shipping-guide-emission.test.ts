@@ -14,12 +14,15 @@ import type { ShippingGuideDraftView, ShippingGuideView } from "@facturador/cont
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import { shippingGuideFingerprint } from "../../src/modules/shipping-guides/application/emission.ts";
 import type { ShippingGuideSnapshot } from "../../src/modules/shipping-guides/domain/snapshot.ts";
+import type { TaxpayerProfile } from "../../src/modules/taxpayer/domain/taxpayer-config.ts";
+import { FIXTURE_RUC } from "../support/p12-fixtures.ts";
 import { createShippingGuideDraftRepository } from "../../src/modules/shipping-guides/infrastructure/prisma-drafts.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
 import { createCryptoWorkerPool } from "../../src/platform/workers/crypto-worker-pool.ts";
 import { insertAuthorizedInvoice, type AuthorizedInvoiceDocument } from "./credit-notes-harness.ts";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { CUSTODY, createProduct, readyCompany, type ReadyCompany } from "./emission-harness.ts";
+import { fiscalEffects } from "./fiscal-effects.ts";
 import { insertGuideParty } from "./shipping-guide-harness.ts";
 import { buildTaxpayerApp } from "./taxpayer-harness.ts";
 
@@ -908,5 +911,70 @@ describe("emisión de guías de remisión", () => {
         data: { address: destination.address },
       });
     }
+  });
+
+  describe("casos especiales no soportados (block-unsupported-special-cases-before-emission)", () => {
+    /** Empresa con la declaración indicada y el borrador de una guía sustentada en su factura. */
+    const prepared = async (slug: string, profile: Partial<TaxpayerProfile>) => {
+      const company = await readyCompany(api, db, {
+        slug,
+        pool,
+        p12Dir: inject("p12FixturesDir"),
+        profile,
+      });
+      const own = await insertAuthorizedInvoice(
+        db.database.prisma,
+        {
+          companyId: company.companyId,
+          adminId: company.adminId,
+          establishmentId: company.establishmentId,
+          emissionPointId: company.emissionPointId,
+        },
+        [{ productId: company.productId, quantity: "10", unitPrice: "8.75" }],
+      );
+      const created = await draft(
+        {
+          recipients: [
+            invoiceRecipient({
+              recipient: { kind: "PARTY", partyId: company.customerId },
+              support: { kind: "INTERNAL_INVOICE", invoiceId: own.id },
+              details: [
+                { productId: company.productId, description: "Cemento 50 kg", quantity: "10" },
+              ],
+            }),
+          ],
+        },
+        company,
+      );
+      return { company, created };
+    };
+
+    it("el anexo 24 no alcanza a la guía: una empresa gran contribuyente la emite", async () => {
+      const { company, created } = await prepared("guia-grande", { largeTaxpayer: true });
+      expect(created.preview.issues).toEqual([]);
+      const res = await emit(api, created, {}, company);
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+    });
+
+    it("un RUC proveedor de un tercero bloquea la guía (anexo 26), sin efectos; el propio no", async () => {
+      const { company, created } = await prepared("guia-tercero", { providerRuc: "0992877878001" });
+      expect(created.preview.issues).toContainEqual(
+        expect.objectContaining({ code: "SPECIAL_CASE_UNSUPPORTED" }),
+      );
+      const before = await fiscalEffects(db.database.prisma, company.companyId);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const res = await emit(api, created, {}, company);
+        expect([res.status, bodyOf(res).error.code]).toEqual([409, "SPECIAL_CASE_UNSUPPORTED"]);
+        expect(bodyOf(res).error.message).toContain("anexo 26");
+      }
+      expect(await fiscalEffects(db.database.prisma, company.companyId)).toEqual(before);
+      const stored = await db.database.prisma.shippingGuideDraft.findUniqueOrThrow({
+        where: { id: created.id },
+      });
+      expect(stored.status).toBe("DRAFT");
+      const ownRuc = await prepared("guia-propio", { providerRuc: FIXTURE_RUC });
+      const res = await emit(api, ownRuc.created, {}, ownRuc.company);
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+    });
   });
 });
