@@ -719,7 +719,13 @@ async function checkBrowserFlows(
     "Diálogo, tema y logo",
     state,
     async () => {
-      await page.getByRole("link", { name: "Usuarios" }).first().click();
+      // Configuración empieza plegada fuera de sus pantallas (adopt-premium-design-foundation-and-
+      // shell, design D24): se abre como lo haría el usuario antes de elegir Usuarios.
+      const nav = page.getByRole("navigation", { name: "Navegación principal" });
+      const configuracion = nav.getByRole("button", { name: "Configuración" });
+      if ((await configuracion.getAttribute("aria-expanded")) !== "true")
+        await configuracion.click();
+      await nav.getByRole("link", { name: "Usuarios" }).click();
       await page.waitForURL("**/configuracion/usuarios");
       await page.getByRole("button", { name: "Crear usuario" }).click();
       await page.getByRole("dialog").waitFor({ timeout: STEP_TIMEOUT_MS });
