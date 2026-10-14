@@ -240,6 +240,10 @@ El sistema SHALL publicar la categoría de soporte de cada anexo de la ficha té
 - **WHEN** un usuario consulta el anexo 26
 - **THEN** figura como condición del go-live, no como funcionalidad ordinaria
 
+#### Scenario: Anexo de los grandes contribuyentes
+- **WHEN** un usuario consulta el anexo 24
+- **THEN** figura fuera del MVP, con su tema, y no como una condición del emisor que el sistema aplica
+
 #### Scenario: Intento de cambiar una categoría
 - **WHEN** un administrador intenta cambiar la categoría de un anexo
 - **THEN** el sistema rechaza la solicitud y la matriz no cambia
