@@ -78,6 +78,39 @@ describe("shell autenticado: comportamiento conservado", () => {
     }
   });
 
+  it("Configuración empieza plegada fuera de sus pantallas y se abre a mano (design D24)", async () => {
+    const user = userEvent.setup();
+    api();
+    navigation.pathname = "/facturas";
+    renderShell();
+    await screen.findByText("contenido");
+    const section = within(mainNav()).getByRole("button", { name: "Configuración" });
+    expect(section.getAttribute("aria-expanded")).toBe("false");
+    expect(within(mainNav()).queryByRole("link", { name: "Usuarios" })).toBeNull();
+    await user.click(section);
+    expect(section.getAttribute("aria-expanded")).toBe("true");
+    expect(within(mainNav()).getByRole("link", { name: "Usuarios" }).getAttribute("href")).toBe(
+      "/configuracion/usuarios",
+    );
+    // Los grupos operativos no se pliegan.
+    expect(within(mainNav()).getByRole("link", { name: "Facturas" })).toBeDefined();
+  });
+
+  it("en una pantalla de Configuración empieza abierta y el usuario puede plegarla", async () => {
+    const user = userEvent.setup();
+    api();
+    renderShell();
+    await screen.findByText("contenido");
+    const section = within(mainNav()).getByRole("button", { name: "Configuración" });
+    expect(section.getAttribute("aria-expanded")).toBe("true");
+    expect(
+      within(mainNav()).getByRole("link", { name: "Usuarios" }).getAttribute("aria-current"),
+    ).toBe("page");
+    await user.click(section);
+    expect(section.getAttribute("aria-expanded")).toBe("false");
+    expect(within(mainNav()).queryByRole("link", { name: "Usuarios" })).toBeNull();
+  });
+
   it("el operador solo ve Catálogos fiscales en Configuración", async () => {
     api({ me: OPERATOR_ME });
     navigation.pathname = "/configuracion/catalogos-fiscales";
@@ -105,14 +138,16 @@ describe("shell autenticado: comportamiento conservado", () => {
     const destinations: Record<string, string> = {
       Inicio: "/",
       Facturas: "/facturas",
+      // Corrección del control de calidad UX (design D25): Borradores pasa a Ventas como
+      // «Borradores de facturas» y Comprobantes se llama «Archivo de comprobantes».
+      "Borradores de facturas": "/borradores",
       "Notas de crédito": "/notas-credito",
       "Notas de débito": "/notas-debito",
       "Liquidaciones de compra": "/liquidaciones-compra",
       Retenciones: "/retenciones",
       "Guías de remisión": "/guias-remision",
       Inventario: "/inventario",
-      Comprobantes: "/comprobantes",
-      Borradores: "/borradores",
+      "Archivo de comprobantes": "/comprobantes",
       Terceros: "/terceros",
       Productos: "/productos",
       Reportes: "/reportes",

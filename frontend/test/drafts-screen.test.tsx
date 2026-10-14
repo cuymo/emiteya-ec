@@ -322,7 +322,8 @@ describe("pantalla Borradores", () => {
         body: errorBody("FORBIDDEN", "No tienes permiso."),
       }),
     });
-    expect(await screen.findByText("No tienes acceso a Borradores")).toBeDefined();
+    // El destino se llama «Borradores de facturas» (design D25); el aviso usa el mismo nombre.
+    expect(await screen.findByText("No tienes acceso a Borradores de facturas")).toBeDefined();
   });
 
   it("elimina un borrador con una confirmación", async () => {

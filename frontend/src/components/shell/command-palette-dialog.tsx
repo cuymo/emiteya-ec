@@ -1,6 +1,8 @@
 // Contenido de la paleta de comandos, cargado bajo demanda (adopt-premium-design-foundation-and-shell,
-// design D13). Destinos y acciones de creación del modelo de rutas, filtrados por el rol; sin ninguna
-// consulta al servidor mientras se escribe. Elegir uno navega y cierra la paleta.
+// design D13 y D26). Destinos y acciones de creación del modelo de rutas, filtrados por el rol y
+// buscables por su nombre o sus sinónimos; sin ninguna consulta al servidor mientras se escribe.
+// Declara su alcance: busca pantallas y acciones, no comprobantes, terceros ni productos. Elegir uno
+// navega y cierra la paleta.
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -49,12 +51,22 @@ export default function CommandPaletteDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Paleta de comandos"
-      description="Busca un destino o una acción de creación."
+      description="Busca una pantalla o una acción de creación. No busca comprobantes, terceros ni productos."
     >
-      <Command filter={paletteFilter} loop>
-        <CommandInput placeholder="Buscar destino o acción…" aria-label="Buscar destino o acción" />
-        <CommandList>
-          <CommandEmpty>No hay resultados.</CommandEmpty>
+      {/* `label` da nombre al campo (cmdk lo enlaza con aria-labelledby) y a la lista, que si no se
+          anuncian sin nombre y en inglés. */}
+      <Command filter={paletteFilter} loop label="Buscar pantalla o acción">
+        <CommandInput
+          placeholder="Buscar pantalla o acción…"
+          aria-label="Buscar pantalla o acción"
+        />
+        <CommandList label="Pantallas y acciones">
+          <CommandEmpty>
+            <p>No encontramos una pantalla o acción con ese término.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Para buscar comprobantes, terceros o productos, usa la búsqueda de su pantalla.
+            </p>
+          </CommandEmpty>
           <CommandGroup heading="Ir a">
             {destinations.map(({ destination, group }) => {
               const Icon = destination.icon;
@@ -62,7 +74,7 @@ export default function CommandPaletteDialog({
                 <CommandItem
                   key={destination.href}
                   value={destination.label}
-                  keywords={[group]}
+                  keywords={[group, ...(destination.keywords ?? [])]}
                   onSelect={() => go(destination.href)}
                 >
                   <Icon aria-hidden="true" />

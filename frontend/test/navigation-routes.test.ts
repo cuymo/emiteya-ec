@@ -52,10 +52,12 @@ describe("modelo de rutas", () => {
   it("el administrador ve todos los grupos y destinos, en el orden de la spec", () => {
     expect(labels(permissionsOf("ADMIN"))).toEqual([
       ["Inicio", ["Inicio"]],
-      ["Ventas", ["Facturas", "Notas de crédito", "Notas de débito"]],
+      // Corrección del control de calidad UX (design D25): Borradores pasa a Ventas como «Borradores
+      // de facturas» y Comprobantes se llama «Archivo de comprobantes»; las rutas no cambian.
+      ["Ventas", ["Facturas", "Borradores de facturas", "Notas de crédito", "Notas de débito"]],
       ["Compras", ["Liquidaciones de compra", "Retenciones"]],
       ["Logística", ["Guías de remisión", "Inventario"]],
-      ["Documentos", ["Comprobantes", "Borradores"]],
+      ["Documentos", ["Archivo de comprobantes"]],
       ["Maestros", ["Terceros", "Productos"]],
       ["Análisis", ["Reportes"]],
       [
@@ -90,7 +92,11 @@ describe("modelo de rutas", () => {
     expect(destination("/facturas/abc")).toBe("Facturas");
     expect(destination("/notas-credito/borradores/d1")).toBe("Notas de crédito");
     expect(destination("/notas-credito/borradores/nueva")).toBe("Notas de crédito");
-    expect(destination("/borradores/nuevo")).toBe("Borradores");
+    // La nueva factura marca Ventas › Borradores de facturas (design D25).
+    expect(destination("/borradores/nuevo")).toBe("Borradores de facturas");
+    expect(resolveRoute("/borradores/nuevo")?.group?.label).toBe("Ventas");
+    expect(resolveRoute("/borradores")?.destination.href).toBe("/borradores");
+    expect(resolveRoute("/comprobantes")?.destination.label).toBe("Archivo de comprobantes");
     expect(destination("/inventario/p1")).toBe("Inventario");
     expect(destination("/")).toBe("Inicio");
     expect(destination("/mi-cuenta")).toBe("Mi cuenta");
@@ -127,6 +133,11 @@ describe("migas", () => {
     expect(crumbs("/inventario/p1", "Tornillo 3/8")).toEqual([
       "Inventario→/inventario",
       "[Tornillo 3/8]",
+    ]);
+    // Corrección del control de calidad UX (design D25).
+    expect(crumbs("/borradores/nuevo")).toEqual([
+      "Borradores de facturas→/borradores",
+      "[Nueva factura]",
     ]);
   });
 

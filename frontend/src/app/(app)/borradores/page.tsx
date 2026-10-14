@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DraftsScreen, DraftsSkeleton } from "@/features/invoices/drafts-screen";
 
-export const metadata: Metadata = { title: "Borradores · EmiteYa" };
+export const metadata: Metadata = { title: "Borradores de facturas · EmiteYa" };
 
 export default function DraftsPage() {
   return (

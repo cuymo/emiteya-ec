@@ -12,7 +12,11 @@ export function normalize(text: string): string {
     .trim();
 }
 
-export function paletteFilter(value: string, search: string, keywords: string[] = []): number {
+export function paletteFilter(
+  value: string,
+  search: string,
+  keywords: readonly string[] = [],
+): number {
   const query = normalize(search);
   if (query === "") return 1;
   let best = 0;

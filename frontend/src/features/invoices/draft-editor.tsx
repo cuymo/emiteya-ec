@@ -355,7 +355,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
           className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          Borradores
+          Borradores de facturas
         </Link>
         <h1 id="editor-titulo" className="text-3xl font-bold">
           {draft ? "Borrador de factura" : "Nueva factura"}

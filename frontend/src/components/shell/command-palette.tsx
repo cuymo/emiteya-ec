@@ -1,8 +1,10 @@
 // Paleta de comandos (adopt-premium-design-foundation-and-shell, design D13; spec
 // web-application-shell, «Paleta de comandos»). Derivada de `search-dialog.tsx` de la plantilla
 // «Studio Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md): se abre con Ctrl/⌘ + K (en la plantilla era
-// ⌘J) o con su disparador, y solo ofrece navegación y creación rápida. El contenido se carga bajo
-// demanda la primera vez que se abre, para no engordar la carga inicial de cada pantalla.
+// ⌘J) o con su disparador, y solo ofrece navegación y creación rápida. El disparador declara ese
+// alcance, «Buscar pantalla o acción» (design D26): no promete buscar registros. El texto completo
+// cabe desde 1280 px; por debajo, el botón compacto lleva el mismo nombre y su ayuda. El contenido se
+// carga bajo demanda la primera vez que se abre, para no engordar la carga inicial de cada pantalla.
 "use client";
 
 import { Search } from "lucide-react";
@@ -10,7 +12,10 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useModifierLabel } from "./shortcut";
+
+const SCOPE = "Buscar pantalla o acción";
 
 const CommandPaletteDialog = dynamic(() => import("./command-palette-dialog"), { ssr: false });
 
@@ -41,25 +46,32 @@ export function CommandPalette() {
       <Button
         variant="outline"
         size="sm"
-        aria-label="Buscar"
+        aria-label={SCOPE}
         aria-keyshortcuts="Control+K Meta+K"
         onClick={show}
-        className="hidden w-48 justify-start text-muted-foreground lg:inline-flex"
+        className="hidden w-64 justify-start text-muted-foreground xl:inline-flex"
       >
         <Search aria-hidden="true" />
-        <span className="flex-1 text-left">Buscar…</span>
+        <span className="flex-1 truncate text-left">{SCOPE}…</span>
         <Kbd>{modifier} K</Kbd>
       </Button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Buscar"
-        aria-keyshortcuts="Control+K Meta+K"
-        onClick={show}
-        className="lg:hidden"
-      >
-        <Search aria-hidden="true" />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={SCOPE}
+            aria-keyshortcuts="Control+K Meta+K"
+            onClick={show}
+            className="xl:hidden"
+          >
+            <Search aria-hidden="true" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {SCOPE} <Kbd>{modifier} K</Kbd>
+        </TooltipContent>
+      </Tooltip>
       {loaded && <CommandPaletteDialog open={open} onOpenChange={setOpen} />}
     </>
   );

@@ -2,7 +2,8 @@
 // spec web-application-shell). Es la única fuente de la navegación lateral, el destino actual, las
 // migas, la paleta de comandos, la creación rápida y la guarda de destino no permitido: ninguno de
 // ellos tiene un mapa propio. Los permisos son un espejo de presentación de la política del servidor
-// (`lib/permissions.ts`); la API sigue autorizando cada operación.
+// (`lib/permissions.ts`); la API sigue autorizando cada operación. Las palabras clave son sinónimos
+// para la paleta de comandos (design D26): ayudan a reconocer un destino, nunca buscan registros.
 import {
   BookOpenCheck,
   Building2,
@@ -20,6 +21,7 @@ import {
   ListOrdered,
   Package,
   ReceiptText,
+  Settings,
   ShoppingBasket,
   Store,
   Truck,
@@ -37,13 +39,19 @@ export type Destination = {
   label: string;
   icon: LucideIcon;
   permission: Permission | null;
+  /** Sinónimos que la paleta de comandos reconoce (design D26). */
+  keywords?: readonly string[];
 };
 
 export type NavGroup = {
   id: string;
   label: string;
-  /** Una sección que agrupa ajustes y aparece en las migas; los grupos operativos solo agrupan. */
+  /**
+   * Una sección que agrupa ajustes y aparece en las migas; los grupos operativos solo agrupan. En la
+   * barra, una sección se pliega fuera de sus pantallas (design D24) y lleva su icono.
+   */
   section: boolean;
+  icon?: LucideIcon;
   destinations: Destination[];
 };
 
@@ -69,6 +77,7 @@ export const MI_CUENTA: Destination = {
   label: "Mi cuenta",
   icon: UserRound,
   permission: null,
+  keywords: ["contraseña", "password", "cuenta", "perfil"],
 };
 
 /** Grupos y destinos en el orden de la spec; como máximo dos niveles. */
@@ -80,6 +89,14 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     section: false,
     destinations: [
       { href: "/facturas", label: "Facturas", icon: FileText, permission: "invoices.read" },
+      {
+        // Solo borradores de factura: los demás comprobantes guardan los suyos en su destino.
+        href: "/borradores",
+        label: "Borradores de facturas",
+        icon: FilePenLine,
+        permission: "invoices.draft",
+        keywords: ["borradores", "factura pendiente", "factura sin emitir"],
+      },
       {
         href: "/notas-credito",
         label: "Notas de crédito",
@@ -133,12 +150,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     section: false,
     destinations: [
       {
+        // Vista transversal de los comprobantes de todos los tipos.
         href: "/comprobantes",
-        label: "Comprobantes",
+        label: "Archivo de comprobantes",
         icon: FolderArchive,
         permission: "archive.read",
+        keywords: ["comprobantes", "documentos", "archivo", "facturas emitidas"],
       },
-      { href: "/borradores", label: "Borradores", icon: FilePenLine, permission: "invoices.draft" },
     ],
   },
   {
@@ -146,7 +164,22 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: "Maestros",
     section: false,
     destinations: [
-      { href: "/terceros", label: "Terceros", icon: Contact, permission: "parties.read" },
+      {
+        href: "/terceros",
+        label: "Terceros",
+        icon: Contact,
+        permission: "parties.read",
+        keywords: [
+          "clientes",
+          "cliente",
+          "proveedores",
+          "proveedor",
+          "transportistas",
+          "transportista",
+          "contactos",
+          "terceros",
+        ],
+      },
       { href: "/productos", label: "Productos", icon: Package, permission: "products.read" },
     ],
   },
@@ -162,6 +195,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     id: "configuracion",
     label: "Configuración",
     section: true,
+    icon: Settings,
     destinations: [
       {
         href: "/configuracion/empresa",
@@ -186,18 +220,21 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         label: "Secuenciales",
         icon: ListOrdered,
         permission: "sequences.read",
+        keywords: ["secuencial", "numeración", "número"],
       },
       {
         href: "/configuracion/firma",
         label: "Firma electrónica",
         icon: FileKey,
         permission: "certificate.read",
+        keywords: ["certificado", "firma", "P12", "PKCS12"],
       },
       {
         href: "/configuracion/catalogos-fiscales",
         label: "Catálogos fiscales",
         icon: BookOpenCheck,
         permission: "fiscalCatalogs.read",
+        keywords: ["IVA", "ICE", "IRBPNR", "impuestos", "formas de pago", "retenciones"],
       },
       {
         href: "/configuracion/usuarios",

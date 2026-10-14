@@ -282,11 +282,11 @@ export function DocumentsScreen() {
     return (
       <section aria-labelledby="comprobantes-titulo" className="flex flex-col gap-6">
         <h1 id="comprobantes-titulo" className="text-3xl font-bold">
-          Comprobantes
+          Archivo de comprobantes
         </h1>
         <EmptyState
           kind="no-permission"
-          title="No tienes acceso a Comprobantes"
+          title="No tienes acceso al Archivo de comprobantes"
           description="Pide a un administrador que revise tu rol."
         />
       </section>
@@ -418,7 +418,7 @@ export function DocumentsScreen() {
   return (
     <section aria-labelledby="comprobantes-titulo" className="flex flex-col gap-6">
       <h1 id="comprobantes-titulo" className="text-3xl font-bold">
-        Comprobantes
+        Archivo de comprobantes
       </h1>
       <AppDataTable
         label="Comprobantes emitidos"

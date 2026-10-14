@@ -118,11 +118,11 @@ export function DraftsScreen() {
     return (
       <section aria-labelledby="borradores-titulo" className="flex flex-col gap-6">
         <h1 id="borradores-titulo" className="text-3xl font-bold">
-          Borradores
+          Borradores de facturas
         </h1>
         <EmptyState
           kind="no-permission"
-          title="No tienes acceso a Borradores"
+          title="No tienes acceso a Borradores de facturas"
           description="Pide a un administrador que revise tu rol."
         />
       </section>
@@ -148,7 +148,7 @@ export function DraftsScreen() {
     <section aria-labelledby="borradores-titulo" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 id="borradores-titulo" className="text-3xl font-bold">
-          Borradores
+          Borradores de facturas
         </h1>
         <Button asChild>
           <Link href="/borradores/nuevo">
@@ -212,7 +212,7 @@ export function DraftsScreen() {
 export function DraftsSkeleton() {
   return (
     <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Borradores</h1>
+      <h1 className="text-3xl font-bold">Borradores de facturas</h1>
       <Skeleton className="h-64 w-full" />
     </section>
   );

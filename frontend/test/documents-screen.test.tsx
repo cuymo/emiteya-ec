@@ -434,7 +434,8 @@ describe("Comprobantes", () => {
 
   it("sin permiso explica el acceso", async () => {
     render({ "GET /api/v1/documents": () => ({ status: 403, body: errorBody("FORBIDDEN", "x") }) });
-    expect(await screen.findByText("No tienes acceso a Comprobantes")).toBeDefined();
+    // El destino se llama «Archivo de comprobantes» (design D25); el aviso usa el mismo nombre.
+    expect(await screen.findByText("No tienes acceso al Archivo de comprobantes")).toBeDefined();
   });
 
   it("los filtros viven en la URL y llegan a la API", async () => {
