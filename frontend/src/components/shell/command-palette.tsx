@@ -49,7 +49,7 @@ export function CommandPalette() {
         aria-label={SCOPE}
         aria-keyshortcuts="Control+K Meta+K"
         onClick={show}
-        className="hidden w-64 justify-start text-muted-foreground xl:inline-flex"
+        className="hidden w-72 justify-start text-muted-foreground xl:inline-flex"
       >
         <Search aria-hidden="true" />
         <span className="flex-1 truncate text-left">{SCOPE}…</span>
