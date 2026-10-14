@@ -119,8 +119,8 @@
       {
         "annex": 24,
         "active": false,
-        "category": "CONDITIONAL_ISSUER_RULE",
-        "supported": true
+        "category": "OUT_OF_MVP",
+        "supported": false
       },
       {
         "annex": 26,
@@ -140,7 +140,7 @@
     "payment-method": 1,
     "schema-registry": 2,
     "identification-type": 1,
-    "special-case-matrix": 1
+    "special-case-matrix": 2
   },
   "environmentCode": "1",
   "snapshotVersion": 2

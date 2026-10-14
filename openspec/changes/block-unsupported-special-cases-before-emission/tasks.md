@@ -24,7 +24,7 @@
 
 ## 2. Regla compartida de casos especiales del emisor
 
-- [ ] 2.1 Crear `backend/src/modules/fiscal/domain/special-cases.ts` (design D1 y D5):
+- [x] 2.1 Crear `backend/src/modules/fiscal/domain/special-cases.ts` (design D1 y D5):
   - `issuerSpecialCases(profile)`;
   - la aplicabilidad por tipo: 21 y 22 en los seis; 24 en `01`, `03`, `04` y `05`; 26 en los seis;
   - `SUPPORTED_SPECIAL_CASES = {21, 22}`;
@@ -32,7 +32,7 @@
 
   Verificar con una prueba unitaria nueva cada combinación de declaración y tipo, incluidos el 24 en
   `06` y `07` (no activo), el 26 con el propio RUC (no activo), y el 21 y el 22 sin bloqueo.
-- [ ] 2.2 Pasar la evaluación de la factura a la regla compartida (sin el `SUPPORTED_SPECIAL_CASES`
+- [x] 2.2 Pasar la evaluación de la factura a la regla compartida (sin el `SUPPORTED_SPECIAL_CASES`
   local), conservando la comprobación de la categoría de la matriz y el registro de las reglas en el
   snapshot. Verificar:
   - `backend/test/invoices/evaluation.test.ts` y `backend/test/integration/invoice-emission.test.ts`,
@@ -46,7 +46,7 @@
   - los fixtures de regresión que registran la categoría o la versión de la matriz actualizados solo
     en esos campos.
 
-- [ ] 2.3 Añadir una prueba genérica de coherencia entre la matriz publicada y el motor: cada anexo
+- [x] 2.3 Añadir una prueba genérica de coherencia entre la matriz publicada y el motor: cada anexo
   que la última versión de `special-case-matrix` clasifica como `CORE` o `CONDITIONAL_ISSUER_RULE`
   con una condición del emisor está en `SUPPORTED_SPECIAL_CASES`, ningún anexo soportado por el
   motor queda fuera de esas categorías, y el 24 no figura como soportado. Verificar que la prueba

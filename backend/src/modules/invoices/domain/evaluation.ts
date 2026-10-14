@@ -9,6 +9,12 @@ import {
 } from "@facturador/contracts";
 import { subtractExact, sumExact } from "../../../platform/decimal/fiscal-decimal.ts";
 import {
+  SUPPORTED_SPECIAL_CASES,
+  issuerSpecialCases,
+  specialCaseApplies,
+  unsupportedSpecialCaseMessage,
+} from "../../fiscal/domain/special-cases.ts";
+import {
   InvoiceAmountError,
   invoiceTotals,
   lineDiscount,
@@ -22,9 +28,14 @@ import {
 
 export const CONSUMER_FINAL = "CONSUMER_FINAL";
 
-/** Anexos de casos especiales cuya generación soporta la factura 1.1.0 de este cambio. */
-export const SUPPORTED_SPECIAL_CASES: ReadonlySet<number> = new Set([21, 22, 24]);
-const SUPPORTED_CATEGORIES: ReadonlySet<string> = new Set(["CORE", "CONDITIONAL_ISSUER_RULE"]);
+/**
+ * Categorías de la matriz cuyos anexos el sistema aplica. Un anexo de la condición del emisor es
+ * soportado si su categoría está aquí y además el motor lo soporta (`fiscal/domain/special-cases.ts`).
+ */
+export const SUPPORTED_CATEGORIES: ReadonlySet<string> = new Set([
+  "CORE",
+  "CONDITIONAL_ISSUER_RULE",
+]);
 
 /** Tipo del impuesto de cada posición del producto (design D7 de add-parties-and-products). */
 const TAX_LABELS: Record<string, string> = {
@@ -209,19 +220,6 @@ const issue = (
 ): InvoiceIssue => ({ code, message, line: where.line ?? null, payment: where.payment ?? null });
 
 const usd = (amount: string) => `USD ${amount}`;
-
-/** Reglas del emisor que activan un anexo de casos especiales (design D6, grupo 9). */
-export function issuerSpecialCases(
-  profile: IssuerProfile,
-): readonly Readonly<{ annex: number; active: boolean }>[] {
-  return [
-    { annex: 21, active: profile.withholdingAgentResolution !== null },
-    { annex: 22, active: profile.rimpeCategory !== null },
-    { annex: 24, active: profile.largeTaxpayer },
-    // Anexo 26: un RUC proveedor distinto del propio indica el sistema de un tercero (CTX §37).
-    { annex: 26, active: profile.providerRuc !== null && profile.providerRuc !== profile.ruc },
-  ];
-}
 
 /** Mide un tramo síncrono; la identidad por defecto. */
 export type MeasureSync = <T>(work: () => T) => T;
@@ -564,12 +562,9 @@ export function evaluateInvoice(
         SUPPORTED_CATEGORIES.has(entry.category) &&
         SUPPORTED_SPECIAL_CASES.has(annex);
       specialCases.push({ annex, active, category: entry?.category ?? null, supported });
-      if (active && !supported) {
+      if (active && !supported && specialCaseApplies(annex, "01")) {
         issues.push(
-          issue(
-            "SPECIAL_CASE_UNSUPPORTED",
-            `El anexo ${annex}${entry ? ` (${entry.topic})` : ""} aplica a esta factura y su generación todavía no está soportada.`,
-          ),
+          issue("SPECIAL_CASE_UNSUPPORTED", unsupportedSpecialCaseMessage(annex, entry?.topic)),
         );
       }
     }

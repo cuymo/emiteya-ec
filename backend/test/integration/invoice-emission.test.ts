@@ -108,6 +108,25 @@ describe("emisión de facturas hasta RESERVED", () => {
     };
   }
 
+  /** Efectos fiscales de la empresa que un rechazo previo a la reserva nunca produce (design D7). */
+  async function effects(company: ReadyCompany) {
+    const prisma = db.database.prisma;
+    const companyId = company.companyId;
+    return {
+      sequences: await prisma.fiscalSequence.findMany({
+        where: { companyId },
+        select: { documentType: true, nextNumber: true },
+        orderBy: { documentType: "asc" },
+      }),
+      reservations: await prisma.fiscalSequenceReservation.count({ where: { companyId } }),
+      documents: await prisma.electronicDocument.count({ where: { companyId } }),
+      artifacts: await prisma.documentArtifact.count({ where: { companyId } }),
+      stockMovements: await prisma.stockMovement.count({ where: { companyId } }),
+      jobs: await prisma.job.count({ where: { companyId } }),
+      sriAttempts: await prisma.sriAttempt.count({ where: { companyId } }),
+    };
+  }
+
   beforeAll(async () => {
     db = await createMigratedSchema("invoice_emission");
     await loadInstalledFiscalCatalogs(db.database.prisma);
@@ -600,6 +619,31 @@ describe("emisión de facturas hasta RESERVED", () => {
         profile: { providerRuc: FIXTURE_RUC },
       });
       expect((await emit(own, await draftFor(own))).status).toBe(201);
+    });
+
+    it("anexo 24: una empresa gran contribuyente no emite la factura, sin efectos; sin él, se emite", async () => {
+      const large = await readyCompany(api, db, {
+        slug: "grande",
+        pool,
+        p12Dir,
+        profile: { largeTaxpayer: true },
+      });
+      const draft = await draftFor(large);
+      const before = await effects(large);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const error = await rejected(large, draft, "SPECIAL_CASE_UNSUPPORTED");
+        expect(error.message).toContain("anexo 24");
+        expect(error.message).toContain("gran contribuyente");
+      }
+      expect(await effects(large)).toEqual(before);
+      expect(before).toMatchObject({ reservations: 0, documents: 0, jobs: 0, sriAttempts: 0 });
+      const regular = await readyCompany(api, db, {
+        slug: "comun",
+        pool,
+        p12Dir,
+        profile: { largeTaxpayer: false },
+      });
+      expect((await emit(regular, await draftFor(regular))).status).toBe(201);
     });
 
     it("esquema ausente o alterado en la instalación", async () => {

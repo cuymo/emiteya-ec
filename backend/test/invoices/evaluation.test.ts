@@ -41,7 +41,8 @@ const PROFILE: IssuerProfile = {
 const SPECIAL_CASES = [
   { annex: 21, topic: "Agente de retención", category: "CONDITIONAL_ISSUER_RULE" },
   { annex: 22, topic: "RIMPE", category: "CONDITIONAL_ISSUER_RULE" },
-  { annex: 24, topic: "Gran contribuyente", category: "CONDITIONAL_ISSUER_RULE" },
+  // Matriz versión 2 (block-unsupported-special-cases-before-emission): el 24 fuera del MVP.
+  { annex: 24, topic: "Gran contribuyente", category: "OUT_OF_MVP" },
   { annex: 26, topic: "Sistema de un tercero", category: "CONDITIONAL_GO_LIVE" },
 ];
 
@@ -190,18 +191,42 @@ describe("evaluación de la factura (design D6)", () => {
         },
       });
 
-    it("agente de retención, RIMPE y gran contribuyente están soportados", () => {
+    it("agente de retención y RIMPE están soportados", () => {
       const evaluation = evaluateInvoice(
-        withProfile({
-          withholdingAgentResolution: "1",
-          rimpeCategory: "EMPRENDEDOR",
-          largeTaxpayer: true,
-        }),
+        withProfile({ withholdingAgentResolution: "1", rimpeCategory: "EMPRENDEDOR" }),
       );
       expect(evaluation.issues).toEqual([]);
       expect(
         evaluation.specialCases.filter((rule) => rule.active).map((rule) => rule.annex),
-      ).toEqual([21, 22, 24]);
+      ).toEqual([21, 22]);
+    });
+
+    it("gran contribuyente: el anexo 24 aplica a la factura y no está soportado", () => {
+      const evaluation = evaluateInvoice(withProfile({ largeTaxpayer: true }));
+      expect(evaluation.issues).toEqual([
+        {
+          code: "SPECIAL_CASE_UNSUPPORTED",
+          message:
+            "El anexo 24 (grandes contribuyentes) aplica a este comprobante: esta versión no soporta la emisión de una empresa declarada gran contribuyente.",
+          line: null,
+          payment: null,
+        },
+      ]);
+      expect(evaluation.specialCases.find((rule) => rule.annex === 24)).toEqual({
+        annex: 24,
+        active: true,
+        category: "OUT_OF_MVP",
+        supported: false,
+      });
+    });
+
+    it("el bloqueo del anexo 24 no depende de la categoría de la matriz", () => {
+      const matrix = SPECIAL_CASES.map((entry) =>
+        entry.annex === 24 ? { ...entry, category: "CONDITIONAL_ISSUER_RULE" } : entry,
+      );
+      expect(codes({ ...withProfile({ largeTaxpayer: true }), specialCases: matrix })).toEqual([
+        "SPECIAL_CASE_UNSUPPORTED",
+      ]);
     });
 
     it("el anexo 26 aplica con un RUC proveedor distinto del propio y no está soportado", () => {
@@ -210,7 +235,7 @@ describe("evaluación de la factura (design D6)", () => {
         {
           code: "SPECIAL_CASE_UNSUPPORTED",
           message:
-            "El anexo 26 (Sistema de un tercero) aplica a esta factura y su generación todavía no está soportada.",
+            "El anexo 26 (RUC del proveedor del sistema o servicio) aplica a este comprobante: esta versión no soporta la emisión con un sistema provisto por un tercero.",
           line: null,
           payment: null,
         },
