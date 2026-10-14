@@ -1,3 +1,4 @@
+import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -17,7 +18,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
-    <html lang="es" suppressHydrationWarning>
+    // Geist Sans desde el propio origen (`next/font/local` del paquete, ADR 0028): una sola familia.
+    <html lang="es" className={GeistSans.variable} suppressHydrationWarning>
       <body>
         <ThemeProvider nonce={nonce}>
           <QueryProvider>

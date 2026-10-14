@@ -1,28 +1,118 @@
-/* Tokens semánticos de docs/architecture/design-foundations.md. Los componentes no usan valores crudos. */
+/* Tokens canónicos del sistema de diseño (ADR 0028, design-foundations.md). Los nombres y los neutros
+   vienen de la plantilla «Studio Admin»; el primario y los colores semánticos, de EmiteYa. Los
+   componentes no usan valores crudos. */
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Variantes de shadcn/ui (MIT, `shadcn/tailwind.css` 4.21.5): solo las que usan los primitivos
+   derivados de la plantilla. Aviso en frontend/THIRD_PARTY_NOTICES.md. */
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-selected {
+  &:where([data-selected="true"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-active {
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-horizontal {
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-vertical {
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 :root {
-  --background: oklch(0.985 0.002 250);
-  --surface: oklch(1 0 0);
-  --surface-subtle: oklch(0.965 0.003 250);
-  --foreground: oklch(0.21 0.01 250);
-  --foreground-muted: oklch(0.47 0.01 250);
-  --border: oklch(0.9 0.005 250);
-  /* Borde de los controles de formulario: 3:1 frente a superficie y fondo (WCAG 1.4.11). */
-  --input: oklch(0.62 0.01 250);
-  --ring: oklch(0.55 0.16 255);
+  --radius: 0.625rem;
+
+  /* Neutros y superficies de la plantilla. */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  /* Más oscuro que el 0.556 de la plantilla: 4.5:1 también sobre `muted` (contraste antes que valor). */
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --border: oklch(0.922 0 0);
+  /* Borde de los controles de formulario: 3:1 frente a fondo y superficie (WCAG 1.4.11). */
+  --input: oklch(0.62 0 0);
+
+  /* Único primario: el azul de EmiteYa. El foco usa su anillo sólido. */
   --primary: oklch(0.5 0.16 255);
   --primary-foreground: oklch(0.99 0 0);
-  --success: oklch(0.56 0.14 150);
-  --warning: oklch(0.7 0.15 70);
-  --danger: oklch(0.56 0.2 27);
-  --danger-foreground: oklch(0.99 0 0);
-  --info: oklch(0.58 0.13 240);
-  --neutral: oklch(0.55 0.01 250);
-  /* Fondo de las capas modales (diálogos y cajón de navegación). */
-  --overlay: oklch(0.21 0.01 250 / 0.45);
+  --ring: oklch(0.55 0.16 255);
+
+  /* Colores semánticos de EmiteYa. En el tema claro, éxito, información y advertencia bajan algo de
+     luminosidad respecto de sus valores previos (0.56, 0.58 y 0.7) para dar 4.5:1 al texto sobre
+     ellos y 3:1 a sus iconos sobre el fondo; matiz y croma no cambian. */
+  --destructive: oklch(0.56 0.2 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.53 0.14 150);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.65 0.15 70);
+  --warning-foreground: oklch(0.21 0 0);
+  --info: oklch(0.54 0.13 240);
+  --info-foreground: oklch(0.99 0 0);
+
+  /* Barra lateral (plantilla), con el primario de EmiteYa. */
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(0.955 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: var(--ring);
+
+  /* Fondo de las capas modales (diálogos, paneles y paleta). */
+  --overlay: oklch(0.21 0 0 / 0.45);
 
   /* Capas de apilamiento (design-foundations.md, Radius, Elevation, And Depth). */
   --z-dropdown: 10;
@@ -31,60 +121,124 @@
   --z-dialog: 40;
   --z-popover: 50;
   --z-toast: 60;
+
+  /* Anchos de la barra lateral: aquí y no en un atributo `style`, que la CSP bloquea (design D7). */
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
+  --sidebar-width-mobile: 18rem;
 }
 
 .dark {
-  --background: oklch(0.17 0.01 250);
-  --surface: oklch(0.21 0.01 250);
-  --surface-subtle: oklch(0.25 0.012 250);
-  --foreground: oklch(0.95 0.005 250);
-  --foreground-muted: oklch(0.72 0.01 250);
-  --border: oklch(0.32 0.012 250);
-  --input: oklch(0.55 0.012 250);
-  --ring: oklch(0.72 0.14 255);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.73 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(0.55 0 0);
+
   --primary: oklch(0.68 0.15 255);
   --primary-foreground: oklch(0.16 0.01 250);
+  --ring: oklch(0.72 0.14 255);
+
+  --destructive: oklch(0.68 0.19 27);
+  --destructive-foreground: oklch(0.16 0.01 250);
   --success: oklch(0.7 0.14 150);
+  --success-foreground: oklch(0.16 0.01 250);
   --warning: oklch(0.8 0.14 75);
-  --danger: oklch(0.68 0.19 27);
-  --danger-foreground: oklch(0.16 0.01 250);
+  --warning-foreground: oklch(0.16 0.01 250);
   --info: oklch(0.72 0.12 240);
-  --neutral: oklch(0.65 0.01 250);
-  --overlay: oklch(0.08 0.01 250 / 0.6);
+  --info-foreground: oklch(0.16 0.01 250);
+
+  --sidebar: oklch(0.18 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 12%);
+
+  --overlay: oklch(0.08 0 0 / 0.6);
 }
 
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-subtle: var(--surface-subtle);
   --color-foreground: var(--foreground);
-  --color-foreground-muted: var(--foreground-muted);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-danger: var(--danger);
-  --color-danger-foreground: var(--danger-foreground);
   --color-overlay: var(--overlay);
-  --color-info: var(--info);
-  --color-neutral: var(--neutral);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Alias heredados (technical-debt.md): el mismo valor con el nombre anterior, hasta que cada
+     pantalla migre. No son una segunda paleta. */
+  --color-surface: var(--card);
+  --color-surface-subtle: var(--muted);
+  --color-foreground-muted: var(--muted-foreground);
+  --color-danger: var(--destructive);
+  --color-danger-foreground: var(--destructive-foreground);
+  --color-neutral: var(--muted-foreground);
 }
 
 @theme {
   /* Escala de espaciado de base 4 (ADR 0028): 1 = 4px, 2 = 8px, 4 = 16px, 6 = 24px, 8 = 32px. */
   --spacing: 0.25rem;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  /* Geist Sans desde el propio origen (`geist/font/sans`, ADR 0028); la pila del sistema de respaldo. */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @layer base {
+  /* Como la plantilla: un borde sin color toma el token, no `currentColor`. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
   html {
     color-scheme: light;
   }
@@ -96,6 +250,18 @@
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/* Movimiento reducido: sin las animaciones de entrada y salida de tw-animate-css ni transiciones
+   largas (design-foundations.md, Motion). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

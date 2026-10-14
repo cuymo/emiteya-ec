@@ -51,7 +51,9 @@ Rules:
 
 ## Typography
 
-One small scale, one ratio, few weights.
+One small scale, one ratio, few weights. The family is Geist Sans, a single variable font served
+from the application's own origin by the `geist` package (`next/font/local`, OFL-1.1, ADR 0028),
+with the system stack as fallback. There are no other families.
 
 | Role            | Size    | Weight  |
 | --------------- | ------- | ------- |
@@ -69,13 +71,28 @@ One small scale, one ratio, few weights.
 
 ## Color
 
-Define semantic tokens and never raw values in components:
+Define semantic tokens and never raw values in components. `frontend/src/app/globals.css` is the
+only source (ADR 0028):
 
 ```text
-background  surface  surface-subtle  foreground  foreground-muted  border  ring
+background  foreground  card  popover  secondary  muted  muted-foreground  accent
+border  input  ring  overlay  sidebar-*
 primary
-success  warning  danger  info  neutral
+success  warning  destructive  info   (each with its -foreground)
 ```
+
+- **Neutrals and surfaces** come from the reference template.
+- **`primary`** is the single EmiteYa blue. It is used for primary actions and purposeful emphasis,
+  never to encode a fiscal state.
+- **Semantic colors** come from EmiteYa. In the light theme, `success`, `info` and `warning` were
+  darkened slightly so that text on them reaches 4.5:1 and their icons reach 3:1 on the background.
+- **`input`** keeps 3:1 against background and surface for form borders (WCAG 1.4.11).
+- **`ring`** is solid, never translucent.
+- **Legacy aliases** (`surface`, `surface-subtle`, `foreground-muted`, `danger`,
+  `danger-foreground`, `neutral`) map to the canonical tokens until every screen migrates. New code
+  uses the canonical names.
+- **Contrast** of every pair in use is checked by `frontend/test/design-tokens.test.ts`, and
+  contrast wins over a literal template value.
 
 - Define the palette in a perceptual space such as OKLCH, with HSL as an acceptable fallback, so lightness and chroma relationships hold across states and themes.
 - Derive hover, active, selected, and disabled from the base token by a defined lightness or opacity step, not by choosing another color.
@@ -94,7 +111,7 @@ everything stands out, nothing does.
 | ------- | ----------------------------------- |
 | success | Completed, healthy, approved        |
 | warning | Needs attention, degraded, expiring |
-| danger  | Failed, blocked, destructive        |
+| destructive (`danger`) | Failed, blocked, destructive |
 | info    | In progress, informational          |
 | neutral | Inactive, secondary, draft          |
 
@@ -103,7 +120,11 @@ shared status badge does.
 
 ## Radius, Elevation, And Depth
 
-- Keep a small radius set and use it to group, not to decorate. Default to 8px or less in work surfaces.
+- Keep a small, named radius set and use it to group, not to decorate. The scale is the template's
+  (ADR 0028, which supersedes the former 8px maximum): `--radius` is 10px, with `sm` 6px, `md` 8px,
+  `lg` 10px and `xl` 14px; `2xl` to `4xl` are reserved for large floating surfaces. Never write an
+  arbitrary radius in new code; a derived primitive that technically needs one documents it as an
+  isolated exception.
 - Prefer a border or a surface step over a shadow. Reserve elevation for genuinely floating layers: popover, dropdown, dialog, toast.
 - Tokenize z-index by layer, so stacking is never guessed: dropdown, sticky, overlay, dialog, popover, toast.
 

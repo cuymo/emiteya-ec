@@ -22,7 +22,7 @@ correo y los reportes siguen siendo objetivo.
 
 | Componente           | Responsabilidad                                                                                     | Capacidades                                         |
 | -------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `frontend/`          | Next.js: configuración, emisión, bandeja, catálogos, inventario y reportes. No conoce secretos. Única autoridad de la política de seguridad del navegador de sus documentos, con un nonce por petición (ADR 0025). | Todas las de interfaz; `web-security-policy`        |
+| `frontend/`          | Next.js: configuración, emisión, bandeja, catálogos, inventario y reportes. No conoce secretos. Única autoridad de la política de seguridad del navegador de sus documentos, con un nonce por petición (ADR 0025). Sistema de diseño y componentes derivados de la plantilla «Studio Admin» (ADR 0028). | Todas las de interfaz; `web-security-policy`        |
 | `backend/` módulo `identity` | Usuarios, membresía en la empresa y roles sobre Better Auth.                                | `user-access`                                       |
 | `backend/` módulo `taxpayer` | Empresa y sus versiones, ambiente, establecimientos y puntos.                               | `taxpayer-setup`                                    |
 | `backend/` módulo `signing`  | Firma electrónica: carga, custodia cifrada (ADR 0011), vigencia y firma de documentos en el pool criptográfico. | `signing-certificate`, `document-emission` |

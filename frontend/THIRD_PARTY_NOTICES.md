@@ -173,4 +173,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 Cada archivo derivado lleva un comentario de procedencia. Origen relativo a `src/` de la plantilla y
 destino relativo a `frontend/src/`.
 
-Todavía no hay archivos derivados.
+| Destino | Origen | Licencia |
+| --- | --- | --- |
+| `app/globals.css`, variantes `data-open`, `data-closed`, `data-selected`, `data-disabled`, `data-active`, `data-horizontal`, `data-vertical` y la utilidad `no-scrollbar` | `dist/tailwind.css` del paquete `shadcn` 4.21.5 (no instalado: copiado de su fuente publicada) | MIT de shadcn/ui |
+| `app/globals.css`, nombres de los tokens canónicos, neutros y escala de radios | `app/globals.css` de la plantilla | MIT de «Studio Admin» |

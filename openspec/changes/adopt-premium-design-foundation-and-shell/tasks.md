@@ -127,7 +127,7 @@
 
 ## 4. Etapa C: tokens, radios, fuente y variantes CSS
 
-- [ ] 4.1 Reescribir los tokens de `globals.css` según D4:
+- [x] 4.1 Reescribir los tokens de `globals.css` según D4:
   - canónicos de la plantilla, con sus neutros;
   - `input` de EmiteYa (3:1);
   - un único `primary`, el azul de EmiteYa, y `ring` sólido;
@@ -144,11 +144,11 @@
   - hay un solo `--primary` por tema;
   - no hay colores literales fuera del bloque de tokens;
   - cada radio es un token con nombre.
-- [ ] 4.2 Comprobar el contraste de cada par de tokens usado (4,5:1 en texto, 3:1 en elementos no
+- [x] 4.2 Comprobar el contraste de cada par de tokens usado (4,5:1 en texto, 3:1 en elementos no
   textuales y bordes de formulario), en claro y oscuro. Ajustar y anotar lo que no cumpla.
 
   Verificar con una prueba que calcula el contraste desde los valores OKLCH.
-- [ ] 4.3 Importar `tw-animate-css` y añadir la regla global `prefers-reduced-motion`. Copiar a
+- [x] 4.3 Importar `tw-animate-css` y añadir la regla global `prefers-reduced-motion`. Copiar a
   `globals.css` solo las variantes de shadcn que usan los primitivos del grupo 5, con su origen
   anotado (D4).
 
@@ -156,7 +156,7 @@
   - el build genera las variantes `data-open` y `data-closed`;
   - con movimiento reducido no hay animaciones;
   - `THIRD_PARTY_NOTICES.md` lista el CSS copiado.
-- [ ] 4.4 Usar solo `geist/font/sans` en `app/layout.tsx`, con la variable en `<html>` y
+- [x] 4.4 Usar solo `geist/font/sans` en `app/layout.tsx`, con la variable en `<html>` y
   `--font-sans` sobre `var(--font-geist-sans)`. Sin Geist Mono (D9).
 
   Verificar:
@@ -166,7 +166,7 @@
   - una sola fuente por página.
 
   Si falla, parar con `GEIST_SOURCE_BLOCKER`.
-- [ ] 4.5 Crear el ADR `docs/architecture/adr/0028-sistema-de-diseno-y-componentes-de-la-plantilla.md`
+- [x] 4.5 Crear el ADR `docs/architecture/adr/0028-sistema-de-diseno-y-componentes-de-la-plantilla.md`
   (Accepted, 2026-10-14). Contenido:
   - procedencia: «Studio Admin» 2.2.0, MIT, manifiesto SHA-256, fuera del repositorio;
   - capas y propiedad de los tokens;
