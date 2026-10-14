@@ -107,6 +107,12 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | @tanstack/react-table | 8.21.3 | Tabla compartida. La 9, estable desde agosto de 2026, cambia la API; se adopta en su propio cambio. |
 | @tanstack/react-query | 5.104.0 | Estado de servidor: cancelación de consultas obsoletas, invalidación tras mutaciones y deduplicación, que `frontend.md` exige y que no conviene reimplementar. |
 | sonner | 2.0.8 | El sistema de avisos de shadcn/ui; un único toaster semántico. |
+| class-variance-authority | 0.7.1 | Variantes de los primitivos derivados de la plantilla «Studio Admin» (ADR 0028), que la usan en su código fuente. Apache-2.0, solo depende de `clsx`. |
+| cmdk | 1.1.1 | Lista con búsqueda de la paleta de comandos del shell. MIT; usa los paquetes de Radix que ya resuelve `radix-ui`, sin duplicarlos. |
+| tw-animate-css | 1.4.0 | Animaciones de entrada y salida de los primitivos derivados, solo CSS y sin JavaScript; con `prefers-reduced-motion` se anulan. MIT. |
+| geist | 1.7.2 | Geist Sans variable, una sola familia, servida desde el propio origen con `next/font/local`: el woff2 viene en el paquete, sin red en el build ni en ejecución. OFL-1.1 (aviso en `frontend/THIRD_PARTY_NOTICES.md`). |
+| @playwright/test | 1.64.0, versión exacta, solo desarrollo | Harness de regresión visual local (`test:visual`), con el Chrome del sistema y sin descargar navegadores; la misma versión que `playwright-core`. Apache-2.0. Fuera de `verify`. |
+| @axe-core/playwright | 4.13.0, versión exacta, solo desarrollo | Prueba de accesibilidad WCAG 2.2 AA del shell dentro del harness visual. MPL-2.0, con `axe-core` 4.13.0. |
 
 ## Documentation
 

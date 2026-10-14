@@ -16,7 +16,7 @@
 
 ## 1. Etapa A: aviso de terceros y dependencias
 
-- [ ] 1.1 Crear `frontend/THIRD_PARTY_NOTICES.md` con:
+- [x] 1.1 Crear `frontend/THIRD_PARTY_NOTICES.md` con:
   - el aviso MIT de «Studio Admin» (© 2024 Mohammed Arham Khan, versión 2.2.0);
   - el aviso MIT de shadcn/ui, origen de los primitivos y de las variantes CSS;
   - la sección «Archivos derivados», que cada grupo completa;
@@ -24,7 +24,7 @@
     plantilla.
 
   Verificar que el archivo existe con los dos avisos completos.
-- [ ] 1.2 Añadir las dependencias con versión exacta compatible y una fila cada una en `stack.md`:
+- [x] 1.2 Añadir las dependencias con versión exacta compatible y una fila cada una en `stack.md`:
   - de ejecución: `class-variance-authority`, `cmdk`, `tw-animate-css` y `geist`;
   - de desarrollo: `@playwright/test` 1.64.0 (la misma que `playwright-core`) y
     `@axe-core/playwright`.
@@ -37,7 +37,7 @@
   - `security:dependencies` pasa;
   - no se descarga ningún navegador;
   - el diff del lockfile solo trae esas dependencias y sus transitivas revisadas.
-- [ ] 1.3 Inspeccionar el paquete `geist` instalado (design D9):
+- [x] 1.3 Inspeccionar el paquete `geist` instalado (design D9):
   - los woff2 están dentro del paquete;
   - `geist/font/sans` usa `next/font/local`, sin `next/font/google` ni ninguna URL remota;
   - la licencia de la fuente (OFL-1.1) y la del paquete.
