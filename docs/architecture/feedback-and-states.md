@@ -87,6 +87,28 @@ real progress when it can be measured.
 - Ignore or cancel stale requests after filters or scope change.
 - For slow operations, transition from spinner to meaningful progress or status.
 
+## Route States
+
+Shared route-level states (`frontend/src/components/route-states/`,
+`adopt-premium-design-foundation-and-shell`). They compose the template-derived `empty`, `button` and
+`skeleton` primitives with fixed Spanish messages, and never show technical detail, stack traces,
+JSON or internal identifiers.
+
+| State | Where | Behavior |
+| --- | --- | --- |
+| Loading | `app/(app)/loading.tsx` → `RouteLoading` | Skeleton of the page header and content, announced as «Cargando la pantalla». The shell stays visible and usable. |
+| Unexpected error | `app/(app)/error.tsx` → `RouteError` | «No pudimos mostrar esta pantalla» with «Intentar de nuevo» (`retry()` of Next 16). `error.message` and `digest` are never shown. The shell stays, so the user can go elsewhere. |
+| Unknown address | `app/not-found.tsx` → `RouteNotFound` | «Esta página no existe», with the brand and a link to Inicio. It is outside the shell and asks for no company data. |
+| Forbidden destination | `components/shell/route-guard.tsx` → `RouteForbidden` | When the role lacks the destination's permission in the route model, the shell shows «No tienes acceso a esta sección» with a link to Inicio. The decision is synchronous, so the protected screen never mounts and never requests its data. The screen keeps its own check, and the API remains the authority. |
+
+- **No catch-all route.** There is no `[...not-found]` page: `next.config.ts` rewrites
+  `/api/:path*` as a `fallback`, which runs after dynamic routes, so a catch-all would shadow the
+  API.
+- **No experimental conventions.** Next's experimental `forbidden.js`, `authInterrupts` and
+  `global-not-found` are not used.
+- **Screen states stay.** The `EmptyState` and `ErrorState` of each screen remain until that screen
+  migrates.
+
 ## Success
 
 - Confirm the completed business action, not the HTTP operation.

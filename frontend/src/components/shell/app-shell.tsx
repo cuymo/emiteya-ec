@@ -13,6 +13,7 @@ import { AppSidebar } from "./app-sidebar";
 import { BreadcrumbLabelProvider } from "./breadcrumb-label";
 import { CommandPalette } from "./command-palette";
 import { QuickCreateMenu } from "./quick-create-menu";
+import { RouteGuard } from "./route-guard";
 import { Topbar } from "./topbar";
 
 function SkipLink() {
@@ -53,7 +54,7 @@ export function AppShell({
             className="min-w-0 flex-1 px-4 py-6 outline-none md:px-6"
           >
             <AppBreadcrumbs className="mb-4 md:hidden" />
-            {children}
+            <RouteGuard>{children}</RouteGuard>
           </main>
         </SidebarInset>
       </SidebarProvider>

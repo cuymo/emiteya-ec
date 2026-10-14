@@ -341,7 +341,7 @@
 
 ## 9. Etapa E: estados de ruta, destino no permitido y accesibilidad
 
-- [ ] 9.1 Crear `components/route-states/` (`RouteLoading`, `RouteError`, `RouteNotFound` y
+- [x] 9.1 Crear `components/route-states/` (`RouteLoading`, `RouteError`, `RouteNotFound` y
   `RouteForbidden`) con `empty`, `button` y `skeleton`. Añadir:
   - `app/(app)/loading.tsx`;
   - `app/(app)/error.tsx`, con `retry()` y un mensaje fijo;
@@ -351,13 +351,13 @@
 
   Verificar con pruebas de la spec: navegación lenta, fallo al mostrar, sin detalles técnicos,
   dirección inexistente y que la API no cambia.
-- [ ] 9.2 Añadir la guarda síncrona de destino no permitido en `AppShell` (D11).
+- [x] 9.2 Añadir la guarda síncrona de destino no permitido en `AppShell` (D11).
 
   Verificar con pruebas de la spec:
   - operador en Usuarios: estado sin acceso y ninguna petición `GET /users`;
   - sin destello: el contenido de Secuenciales nunca se monta para un operador;
   - destino permitido.
-- [ ] 9.3 Añadir pruebas de teclado de Vitest para la barra (colapso, Ctrl+B, panel móvil con
+- [x] 9.3 Añadir pruebas de teclado de Vitest para la barra (colapso, Ctrl+B, panel móvil con
   Escape y foco devuelto), la paleta, la creación rápida, el menú de cuenta y el tema. Documentar
   los estados de ruta y la razón de no usar comodín en `feedback-and-states.md`.
 
