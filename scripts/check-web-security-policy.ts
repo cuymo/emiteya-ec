@@ -747,6 +747,36 @@ async function checkBrowserFlows(
     page,
   );
 
+  // Shell premium (adopt-premium-design-foundation-and-shell, design D7): la paleta de comandos, el
+  // colapso de la barra lateral y la creación rápida, sin ninguna violación de la política. La
+  // comprobación 20 cuenta cualquier violación de estos pasos.
+  await step(
+    "Paleta, barra lateral y creación rápida",
+    state,
+    async () => {
+      await page.keyboard.press("Control+KeyK");
+      const palette = page.getByRole("dialog", { name: "Paleta de comandos" });
+      await palette.waitFor({ timeout: STEP_TIMEOUT_MS });
+      await page.keyboard.press("Escape");
+      await palette.waitFor({ state: "hidden", timeout: STEP_TIMEOUT_MS });
+      await page.getByRole("button", { name: "Contraer barra lateral" }).click();
+      await page.getByRole("button", { name: "Expandir barra lateral" }).click();
+      await page
+        .getByRole("button", { name: "Contraer barra lateral" })
+        .waitFor({ timeout: STEP_TIMEOUT_MS });
+      await page.getByRole("button", { name: "Nuevo" }).click();
+      await page.getByRole("menu").waitFor({ timeout: STEP_TIMEOUT_MS });
+      await page.keyboard.press("Escape");
+      await page.getByRole("menu").waitFor({ state: "hidden", timeout: STEP_TIMEOUT_MS });
+      check(
+        "27. El shell funciona con la política",
+        true,
+        "paleta de comandos, colapso de la barra lateral y creación rápida",
+      );
+    },
+    page,
+  );
+
   await step(
     "15. COOP no rompe la aplicación",
     state,

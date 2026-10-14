@@ -197,3 +197,5 @@ destino relativo a `frontend/src/`.
 | `components/shell/app-sidebar.tsx` | `app/(main)/dashboard/_components/sidebar/app-sidebar.tsx y nav-main.tsx` | MIT de «Studio Admin» |
 | `components/shell/account-menu.tsx` | `app/(main)/dashboard/_components/sidebar/nav-user.tsx` | MIT de «Studio Admin» |
 | `components/shell/company-context.tsx` | `app/(main)/dashboard/_components/header/account-switcher.tsx (patrón visual)` | MIT de «Studio Admin» |
+| `components/shell/quick-create-menu.tsx` | `app/(main)/dashboard/_components/sidebar/nav-main.tsx` (Quick Create) | MIT de «Studio Admin» |
+| `components/shell/command-palette.tsx`, `components/shell/command-palette-dialog.tsx` | `app/(main)/dashboard/_components/header/search-dialog.tsx` | MIT de «Studio Admin» |

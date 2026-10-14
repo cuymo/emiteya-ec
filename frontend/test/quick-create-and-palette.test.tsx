@@ -1,0 +1,189 @@
+// Creación rápida y paleta de comandos del shell (spec web-application-shell; adopt-premium-design-
+// foundation-and-shell, design D13 y D14): solo navegan, filtran según el rol, se manejan con el
+// teclado y devuelven el foco, y la paleta no consulta al servidor mientras se escribe.
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { normalize, paletteFilter } from "@/lib/navigation/palette-filter";
+import { OPERATOR_ME, navigation } from "./harness";
+import { api, renderShell } from "./shell-harness";
+import { resetViewport, setViewportWidth } from "./viewport";
+
+beforeEach(() => {
+  navigation.pathname = "/facturas";
+  navigation.search = new URLSearchParams();
+  navigation.push.mockReset();
+  navigation.replace.mockReset();
+  setViewportWidth(1280);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  resetViewport();
+});
+
+const apiCalls = (calls: { key: string }[]) => calls.filter((call) => call.key.includes("/api/"));
+
+describe("creación rápida", () => {
+  it("lleva a la pantalla de nueva factura y no crea nada por sí misma", async () => {
+    const user = userEvent.setup();
+    const calls = api();
+    renderShell();
+    await screen.findByText("contenido");
+    await user.click(screen.getByRole("button", { name: "Nuevo" }));
+    const menu = await screen.findByRole("menu");
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "Nueva factura",
+      "Nueva nota de crédito",
+      "Nueva nota de débito",
+      "Nueva retención",
+      "Nueva guía de remisión",
+      "Nueva liquidación de compra",
+    ]);
+    const link = within(menu).getByRole("menuitem", { name: "Nueva factura" });
+    expect(link.getAttribute("href")).toBe("/borradores/nuevo");
+    // Abrirla no envía ninguna petición que cree algo.
+    expect(apiCalls(calls).filter((call) => !call.key.startsWith("GET "))).toEqual([]);
+  });
+
+  it("abrirla y cerrarla sin elegir no crea nada ni cambia de pantalla", async () => {
+    const user = userEvent.setup();
+    const calls = api();
+    renderShell();
+    await screen.findByText("contenido");
+    const trigger = screen.getByRole("button", { name: "Nuevo" });
+    await user.click(trigger);
+    await screen.findByRole("menu");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(document.activeElement).toBe(trigger);
+    expect(navigation.push).not.toHaveBeenCalled();
+    expect(apiCalls(calls).filter((call) => !call.key.startsWith("GET "))).toEqual([]);
+  });
+
+  it("se maneja con el teclado y devuelve el foco al control que la abrió", async () => {
+    const user = userEvent.setup();
+    api();
+    renderShell();
+    await screen.findByText("contenido");
+    const trigger = screen.getByRole("button", { name: "Nuevo" });
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    await screen.findByRole("menu");
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement?.textContent).toBe("Nueva nota de crédito");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("colapsada, es un botón de icono con su nombre", async () => {
+    api();
+    renderShell({ sidebarDefaultOpen: false });
+    await screen.findByText("contenido");
+    expect(screen.getByRole("button", { name: "Nuevo" }).textContent).toBe("");
+  });
+});
+
+describe("paleta de comandos", () => {
+  it("se abre con Ctrl+K, filtra sin tildes y lleva al destino elegido", async () => {
+    const user = userEvent.setup();
+    api({ me: OPERATOR_ME });
+    renderShell();
+    await screen.findByText("contenido");
+    await user.keyboard("{Control>}k{/Control}");
+    const dialog = await screen.findByRole("dialog", { name: "Paleta de comandos" });
+    await user.type(within(dialog).getByRole("combobox"), "credito");
+    const option = within(dialog).getByRole("option", { name: /^Notas de crédito/ });
+    await user.click(option);
+    expect(navigation.push).toHaveBeenCalledWith("/notas-credito");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("ofrece las acciones de creación, que solo navegan", async () => {
+    const user = userEvent.setup();
+    const calls = api();
+    renderShell();
+    await screen.findByText("contenido");
+    await user.click(screen.getAllByRole("button", { name: "Buscar" })[0]!);
+    const dialog = await screen.findByRole("dialog", { name: "Paleta de comandos" });
+    await user.type(within(dialog).getByRole("combobox"), "guia de remision");
+    await user.click(within(dialog).getByRole("option", { name: "Nueva guía de remisión" }));
+    expect(navigation.push).toHaveBeenCalledWith("/guias-remision/borradores/nueva");
+    expect(apiCalls(calls).filter((call) => !call.key.startsWith("GET "))).toEqual([]);
+  });
+
+  it("no consulta al servidor mientras se escribe", async () => {
+    const user = userEvent.setup();
+    const calls = api();
+    renderShell();
+    await screen.findByText("contenido");
+    await user.keyboard("{Control>}k{/Control}");
+    const dialog = await screen.findByRole("dialog", { name: "Paleta de comandos" });
+    const before = calls.length;
+    await user.type(within(dialog).getByRole("combobox"), "productos factura reportes");
+    expect(calls.slice(before)).toEqual([]);
+  });
+
+  it("sin coincidencias dice que no hay resultados y no ofrece destinos ocultos", async () => {
+    const user = userEvent.setup();
+    api({ me: OPERATOR_ME });
+    renderShell();
+    await screen.findByText("contenido");
+    await user.keyboard("{Control>}k{/Control}");
+    const dialog = await screen.findByRole("dialog", { name: "Paleta de comandos" });
+    await user.type(within(dialog).getByRole("combobox"), "usuarios");
+    expect(within(dialog).getByText("No hay resultados.")).toBeDefined();
+    expect(within(dialog).queryByRole("option", { name: /Usuarios/ })).toBeNull();
+  });
+
+  it("Escape la cierra y devuelve el foco al disparador", async () => {
+    const user = userEvent.setup();
+    api();
+    renderShell();
+    await screen.findByText("contenido");
+    const trigger = screen.getAllByRole("button", { name: "Buscar" })[0]!;
+    await user.click(trigger);
+    await screen.findByRole("dialog", { name: "Paleta de comandos" });
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("el administrador encuentra los destinos de Configuración y Mi cuenta", async () => {
+    const user = userEvent.setup();
+    api();
+    renderShell();
+    await screen.findByText("contenido");
+    await user.keyboard("{Control>}k{/Control}");
+    const dialog = await screen.findByRole("dialog", { name: "Paleta de comandos" });
+    await user.type(within(dialog).getByRole("combobox"), "usuarios");
+    expect(within(dialog).getByRole("option", { name: /^Usuarios/ })).toBeDefined();
+    await user.clear(within(dialog).getByRole("combobox"));
+    await user.type(within(dialog).getByRole("combobox"), "mi cuenta");
+    expect(within(dialog).getByRole("option", { name: /^Mi cuenta/ })).toBeDefined();
+  });
+});
+
+describe("filtro de la paleta", () => {
+  it("no distingue mayúsculas ni tildes", () => {
+    expect(normalize("  Notas de CRÉDITO ")).toBe("notas de credito");
+    expect(paletteFilter("Notas de crédito", "credito")).toBe(1);
+    expect(paletteFilter("Guías de remisión", "GUIA")).toBe(1);
+  });
+
+  it("puntúa más lo que empieza por lo escrito que lo que solo lo contiene", () => {
+    expect(paletteFilter("Facturas", "fact")).toBe(1);
+    expect(paletteFilter("Facturas", "tura")).toBe(0.5);
+    expect(paletteFilter("Facturas", "xyz")).toBe(0);
+  });
+
+  it("también busca en las palabras clave y acepta la búsqueda vacía", () => {
+    expect(paletteFilter("Empresa", "configur", ["Configuración"])).toBe(1);
+    expect(paletteFilter("Empresa", "")).toBe(1);
+  });
+});

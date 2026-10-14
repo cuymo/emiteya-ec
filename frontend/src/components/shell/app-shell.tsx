@@ -11,6 +11,8 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppBreadcrumbs } from "./app-breadcrumbs";
 import { AppSidebar } from "./app-sidebar";
 import { BreadcrumbLabelProvider } from "./breadcrumb-label";
+import { CommandPalette } from "./command-palette";
+import { QuickCreateMenu } from "./quick-create-menu";
 import { Topbar } from "./topbar";
 
 function SkipLink() {
@@ -41,9 +43,9 @@ export function AppShell({
     <BreadcrumbLabelProvider>
       <SkipLink />
       <SidebarProvider defaultOpen={sidebarDefaultOpen}>
-        <AppSidebar />
+        <AppSidebar headerAction={<QuickCreateMenu />} />
         <SidebarInset>
-          <Topbar company={company} environment={environment} />
+          <Topbar company={company} environment={environment} search={<CommandPalette />} />
           {notices}
           <main
             id="contenido"

@@ -313,7 +313,7 @@
 
 ## 8. Etapa D: creación rápida y paleta de comandos
 
-- [ ] 8.1 Crear `QuickCreateMenu` (D14):
+- [x] 8.1 Crear `QuickCreateMenu` (D14):
   - en la cabecera de la barra, variante `outline`, sin color propio, 44 px en móvil;
   - colapsada, un icono con el tooltip «Nuevo»;
   - acciones permitidas del modelo;
@@ -321,7 +321,7 @@
 
   Verificar con pruebas de la spec: nueva factura, abrir sin elegir (ninguna petición de creación),
   acción no permitida y teclado con foco devuelto.
-- [ ] 8.2 Crear `CommandPalette` (D13):
+- [x] 8.2 Crear `CommandPalette` (D13):
   - Ctrl/⌘ + K y disparador con `Kbd`;
   - «Ir a» y «Crear» desde el modelo y según el rol;
   - filtro sin mayúsculas ni tildes;
@@ -331,7 +331,7 @@
 
   Verificar con pruebas de la spec: atajo y destino, acción de creación, sin consultas al servidor,
   sin resultados, Escape y destinos según el rol. Añadir pruebas unitarias del filtro.
-- [ ] 8.3 Ampliar `scripts/check-web-security-policy.ts` con la paleta, el colapso de la barra y la
+- [x] 8.3 Ampliar `scripts/check-web-security-policy.ts` con la paleta, el colapso de la barra y la
   creación rápida, sin violaciones. Documentar la paleta y la creación rápida en
   `navigation-responsive.md`.
 

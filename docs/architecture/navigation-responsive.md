@@ -106,6 +106,23 @@ from the reference template's dashboard layout (ADR 0028).
 - **Account menu.** Its accessible name is «Cuenta de {nombre}». It shows the name, email and role,
   plus Mi cuenta and Cerrar sesión, which disables itself after the first selection.
 - **Skip link.** «Saltar al contenido» is the first focusable element and targets `main#contenido`.
+- **Quick Create** (`QuickCreateMenu`, «Nuevo», in the sidebar header).
+  - **What it offers:** the existing creation screens the role allows (invoice, credit note, debit
+    note, withholding, shipping guide and purchase settlement).
+  - **What it does:** it only navigates. It never creates a draft, reserves a number or emits.
+  - **Style:** the `outline` variant, because it sits on every screen and must not compete with the
+    screen's primary action.
+  - **Collapsed:** an icon button named «Nuevo». It is 44px on mobile.
+- **Command palette** (`CommandPalette`).
+  - **Opening:** Ctrl/⌘ + K from any authenticated screen, or the «Buscar» trigger in the topbar.
+  - **Contents:** «Ir a» (the permitted destinations and Mi cuenta) and «Crear» (the Quick Create
+    actions), both from the route model.
+  - **Filtering:** case- and accent-insensitive, over labels and group names
+    (`lib/navigation/palette-filter.ts`).
+  - **No server calls:** it never queries the server while typing. Server-backed global search is a
+    later change.
+  - **Behavior:** choosing an entry navigates and closes the palette, and Escape returns focus to the
+    trigger. Its content loads on first opening, so it does not grow every route's first load.
 
 ## Submodules Instead Of Tabs
 
