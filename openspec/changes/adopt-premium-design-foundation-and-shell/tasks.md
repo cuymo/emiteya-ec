@@ -437,7 +437,7 @@
   Comprobar que cada pantalla heredada abre dentro del shell nuevo.
 
   Verificar que la lista queda marcada.
-- [ ] 13.4 Ejecutar, sin tráfico al SRI:
+- [x] 13.4 Ejecutar, sin tráfico al SRI:
   - `openspec:validate`, `format:check`, `security:dependencies` y `security:secrets`;
   - `verify`;
   - `test:visual`.
@@ -467,6 +467,20 @@
     paleta, barra y creación rápida, con 40 comprobaciones en verde, y la revisión local sirve el
     shell.
   - **Lista de comprobación:** sin hallazgos abiertos para el shell.
+- **13.4, integración final:** sin tráfico al SRI.
+  - **Validaciones:** `openspec:validate` (25/25), `format:check`, `security:dependencies` y
+    `security:secrets` (Gitleaks 8.30.1) pasan.
+  - **Primer `verify`:** falló de forma determinista en una sola suite.
+    `backend/test/data-portability/portability-doc.test.ts` leía `components/navigation.tsx`, que
+    este change borra. Ahora lee `lib/navigation/routes.ts`, donde la entrada de Portabilidad tiene
+    la misma forma. No cambia ninguna aserción: ruta, etiqueta, permiso y posición dentro del grupo
+    Configuración, después de Usuarios.
+  - **Segundo `verify`:** pasa completo: 405 de 405 archivos, 3561 pruebas en verde y 1 omitida,
+    sin fallos de AC-04, y `check:web-security-policy` con 40 comprobaciones en verde.
+  - **`test:visual`:** 27 de 27 en verde: 15 capturas del shell, 5 pruebas de axe, 6 de teclado y
+    el recorrido de las 41 rutas.
+  - **Prueba de equivalencia del espaciado:** es evidencia congelada del commit del codemod y se
+    ejecutó sobre ese commit (cero píxeles distintos y geometría idéntica en las 5 pantallas).
 
 ## Trazabilidad de componentes (referencia)
 
