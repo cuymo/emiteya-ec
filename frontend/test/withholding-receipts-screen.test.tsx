@@ -121,6 +121,20 @@ describe("pantalla Retenciones", () => {
     expect((await screen.findAllByText("Todavía no hay retenciones")).length).toBeGreaterThan(0);
   });
 
+  it("vacía: la única principal está en el encabezado y el vacío la repite en outline (D11)", async () => {
+    render(<WithholdingReceiptsScreen />, { "GET /api/v1/withholding-receipts": paged([]) });
+    await waitFor(() =>
+      expect(screen.getAllByRole("link", { name: "Nueva retención" }).length).toBeGreaterThan(1),
+    );
+    const variants = screen
+      .getAllByRole("link", { name: "Nueva retención" })
+      .map((link) => link.getAttribute("data-variant"));
+    expect(variants.filter((variant) => variant === "primary")).toHaveLength(1);
+    expect(variants.filter((variant) => variant !== "primary").every((v) => v === "outline")).toBe(
+      true,
+    );
+  });
+
   it("sin permiso explica el acceso", async () => {
     render(<WithholdingReceiptsScreen />, {
       "GET /api/v1/withholding-receipts": () => ({

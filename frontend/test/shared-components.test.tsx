@@ -46,6 +46,33 @@ describe("SegmentedControl", () => {
   });
 });
 
+describe("SegmentedControl: selección neutra (productize-invoice-editor-and-composition-foundation, D10)", () => {
+  it("la opción elegida es una pieza elevada con borde, no el azul principal", () => {
+    render(
+      <SegmentedControl
+        options={[
+          { value: "GOOD", label: "Bien" },
+          { value: "SERVICE", label: "Servicio" },
+        ]}
+        value="GOOD"
+        onChange={() => undefined}
+      />,
+    );
+    const chosen = screen.getByRole("radio", { name: "Bien" });
+    expect(chosen.getAttribute("data-state")).toBe("on");
+    const classes = chosen.className.split(/\s+/);
+    for (const token of [
+      "data-[state=on]:bg-background",
+      "data-[state=on]:text-foreground",
+      "data-[state=on]:shadow-sm",
+      "data-[state=on]:ring-muted-foreground",
+    ])
+      expect(classes, token).toContain(token);
+    expect(chosen.className).not.toContain("bg-primary");
+    expect(chosen.parentElement!.className.split(/\s+/)).toContain("bg-muted");
+  });
+});
+
 describe("ConfirmDialog", () => {
   function Harness({ typed, onConfirm }: { typed?: boolean; onConfirm: () => void }) {
     const [open, setOpen] = useState(false);

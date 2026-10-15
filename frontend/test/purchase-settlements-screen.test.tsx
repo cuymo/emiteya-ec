@@ -144,6 +144,22 @@ describe("pantalla Liquidaciones de compra", () => {
     expect(screen.getAllByText(/art\. 13, letra c/).length).toBeGreaterThan(0);
   });
 
+  it("vacía: la única principal está en el encabezado y el vacío la repite en outline (D11)", async () => {
+    render(<PurchaseSettlementsScreen />, { "GET /api/v1/purchase-settlements": paged([]) });
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole("link", { name: "Nueva liquidación de compra" }).length,
+      ).toBeGreaterThan(1),
+    );
+    const variants = screen
+      .getAllByRole("link", { name: "Nueva liquidación de compra" })
+      .map((link) => link.getAttribute("data-variant"));
+    expect(variants.filter((variant) => variant === "primary")).toHaveLength(1);
+    expect(variants.filter((variant) => variant !== "primary").every((v) => v === "outline")).toBe(
+      true,
+    );
+  });
+
   it("sin permiso explica el acceso", async () => {
     render(<PurchaseSettlementsScreen />, {
       "GET /api/v1/purchase-settlements": () => ({

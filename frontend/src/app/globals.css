@@ -236,6 +236,14 @@
      Medido con Facturas: la amplia necesita unos 625 px, y 640 px deja la compacta a 200 % de zoom
      y la amplia a 768 px con la barra colapsada. */
   --container-table-wide: 40rem;
+  /* Anchos de contenido por función (productize-invoice-editor-and-composition-foundation, design
+     D4): `max-w-reading` para texto y estado, `max-w-form` para formularios de una columna. Los
+     espacios de trabajo (listas y editores con panel) no tienen máximo. */
+  --container-reading: 42rem;
+  --container-form: 48rem;
+  /* Contenedor desde el que el panel de un formulario va al lado, con la variante `@form-rail:`
+     (design D5): 36rem de formulario, 1.5rem de hueco y 18rem de panel. */
+  --container-form-rail: 55rem;
 }
 
 @layer base {

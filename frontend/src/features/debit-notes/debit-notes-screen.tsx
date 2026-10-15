@@ -275,14 +275,17 @@ export function DebitNotesScreen() {
     );
   }
 
-  const newNote = canDraft ? (
-    <Button asChild>
-      <Link href="/notas-debito/borradores/nueva">
-        <Plus aria-hidden="true" />
-        Nueva nota de débito
-      </Link>
-    </Button>
-  ) : null;
+  // La acción va en el encabezado como principal; el estado vacío la repite en `outline`, sin una
+  // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
+  const newNote = (variant: "primary" | "outline") =>
+    canDraft ? (
+      <Button asChild variant={variant}>
+        <Link href="/notas-debito/borradores/nueva">
+          <Plus aria-hidden="true" />
+          Nueva nota de débito
+        </Link>
+      </Button>
+    ) : null;
   const tableState = notes.isError ? (
     <ErrorState
       message="No pudimos cargar las notas de débito."
@@ -311,7 +314,7 @@ export function DebitNotesScreen() {
         kind="empty"
         title="Todavía no hay notas de débito"
         description="Una nota de débito cobra, después de una factura autorizada, intereses de mora o costos y gastos posteriores a ella."
-        action={newNote ?? undefined}
+        action={newNote("outline") ?? undefined}
       />
     )
   ) : undefined;
@@ -320,7 +323,7 @@ export function DebitNotesScreen() {
     <section aria-labelledby="notas-titulo" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {title}
-        {newNote}
+        {newNote("primary")}
       </div>
       {canDraft && <DraftsPanel />}
       <AppDataTable

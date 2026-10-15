@@ -41,6 +41,10 @@ beforeAll(async () => {
     "rounded-xl",
     "h-9",
     "bg-surface",
+    "disabled:not-aria-busy:bg-muted",
+    "max-w-reading",
+    "max-w-form",
+    "@form-rail:flex-row",
   ]);
 });
 
@@ -72,5 +76,20 @@ describe("CSS del sistema de diseño", () => {
     // apunta directamente al token canónico.
     expect(css).toMatch(/\.rounded-xl\s*\{\s*border-radius: calc\(var\(--radius\) \+ 4px\)/);
     expect(css).toMatch(/\.bg-surface\s*\{\s*background-color: var\(--card\)/);
+  });
+
+  it("el deshabilitado del botón excluye el pendiente (design D9)", () => {
+    // `AsyncButton` pendiente está deshabilitado y lleva `aria-busy`: conserva su variante.
+    expect(css).toMatch(
+      /\.disabled\\:not-aria-busy\\:bg-muted:disabled:not\(\[aria-busy="true"\]\)\s*\{\s*background-color: var\(--muted\)/,
+    );
+  });
+
+  it("los anchos por función y el punto de apilado del formulario generan sus utilidades (D4, D5)", () => {
+    expect(css).toMatch(/\.max-w-reading\s*\{\s*max-width: var\(--container-reading\)/);
+    expect(css).toMatch(/\.max-w-form\s*\{\s*max-width: var\(--container-form\)/);
+    expect(css).toMatch(
+      /@container \(width >= 55rem\)\s*\{\s*\.\\@form-rail\\:flex-row\s*\{\s*flex-direction: row/,
+    );
   });
 });

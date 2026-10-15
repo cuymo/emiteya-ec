@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ChipGroup } from "@/components/data-table/table-controls";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 function Facturas() {
@@ -97,5 +98,41 @@ describe("ToggleGroup", () => {
     const group = renderToString(<Views />);
     expect(group).not.toContain("--gap");
     expect(group.match(/\sstyle="[^"]*"/g)).toEqual([' style="outline:none"']);
+  });
+});
+
+describe("ChipGroup: selección neutra (productize-invoice-editor-and-composition-foundation, D10)", () => {
+  it("la opción elegida se reconoce por el borde y el peso, sin el azul principal", async () => {
+    function Harness() {
+      const [value, setValue] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
+      return (
+        <ChipGroup
+          label="Estado"
+          value={value}
+          options={[
+            { value: "ACTIVE", label: "Activos" },
+            { value: "INACTIVE", label: "Desactivados" },
+          ]}
+          onChange={setValue}
+        />
+      );
+    }
+    render(<Harness />);
+    const active = screen.getByRole("radio", { name: "Activos" });
+    expect(active.getAttribute("data-state")).toBe("on");
+    const classes = active.className.split(/\s+/);
+    for (const token of [
+      "data-[state=on]:border-foreground",
+      "data-[state=on]:bg-muted",
+      "data-[state=on]:font-medium",
+      "data-[state=on]:text-foreground",
+    ])
+      expect(classes, token).toContain(token);
+    expect(active.className).not.toContain("bg-primary");
+    await userEvent.setup().click(screen.getByRole("radio", { name: "Desactivados" }));
+    expect(screen.getByRole("radio", { name: "Desactivados" }).getAttribute("data-state")).toBe(
+      "on",
+    );
+    expect(active.getAttribute("data-state")).toBe("off");
   });
 });

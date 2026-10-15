@@ -126,6 +126,16 @@ variant across the application.
 How many may be visible at once is set by the action budget in `cognitive-architecture.md`.
 How destructive actions are confirmed, or undone, is set by `forms-and-workflows.md`.
 
+Rules that keep the hierarchy readable (`productize-invoice-editor-and-composition-foundation`,
+design D9 to D11; the visual contract is in `component-system.md`):
+
+- **An unavailable action looks unavailable.** A disabled button of any level turns neutral and
+  says why nearby. A pending action keeps its level with the loading indicator.
+- **A chosen option is not an action.** Chips and segmented controls show the selection with
+  neutral surfaces, border and weight, never with the primary blue.
+- **The empty state does not add a second primary.** If the page header already offers the action,
+  the empty state repeats it as `outline`.
+
 ## Native First For Accessibility
 
 A visually attractive component that reduces accessibility is not an improvement.

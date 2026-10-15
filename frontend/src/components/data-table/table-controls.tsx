@@ -84,7 +84,9 @@ export function ChipGroup<T extends string>({
           className={cn(
             "h-8 rounded-full border border-input px-3 text-sm text-foreground max-md:h-11",
             "motion-safe:transition-colors motion-safe:duration-150",
-            "hover:bg-surface-subtle data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
+            // Selección neutra (productize-invoice-editor-and-composition-foundation, design D10):
+            // se reconoce por el borde y el peso, y no compite con la acción principal.
+            "hover:bg-surface-subtle data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:font-medium data-[state=on]:text-foreground",
           )}
         >
           {option.label}

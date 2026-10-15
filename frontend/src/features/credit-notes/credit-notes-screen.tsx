@@ -270,14 +270,17 @@ export function CreditNotesScreen() {
     );
   }
 
-  const newNote = canDraft ? (
-    <Button asChild>
-      <Link href="/notas-credito/borradores/nueva">
-        <Plus aria-hidden="true" />
-        Nueva nota de crédito
-      </Link>
-    </Button>
-  ) : null;
+  // La acción va en el encabezado como principal; el estado vacío la repite en `outline`, sin una
+  // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
+  const newNote = (variant: "primary" | "outline") =>
+    canDraft ? (
+      <Button asChild variant={variant}>
+        <Link href="/notas-credito/borradores/nueva">
+          <Plus aria-hidden="true" />
+          Nueva nota de crédito
+        </Link>
+      </Button>
+    ) : null;
   const tableState = notes.isError ? (
     <ErrorState
       message="No pudimos cargar las notas de crédito."
@@ -306,7 +309,7 @@ export function CreditNotesScreen() {
         kind="empty"
         title="Todavía no hay notas de crédito"
         description="Una nota de crédito corrige una factura autorizada: la anula por completo o registra una devolución."
-        action={newNote ?? undefined}
+        action={newNote("outline") ?? undefined}
       />
     )
   ) : undefined;
@@ -315,7 +318,7 @@ export function CreditNotesScreen() {
     <section aria-labelledby="notas-titulo" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {title}
-        {newNote}
+        {newNote("primary")}
       </div>
       {canDraft && <DraftsPanel />}
       <AppDataTable

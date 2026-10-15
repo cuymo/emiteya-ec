@@ -244,14 +244,17 @@ export function PurchaseSettlementsScreen() {
     );
   }
 
-  const newSettlement = canDraft ? (
-    <Button asChild>
-      <Link href="/liquidaciones-compra/borradores/nueva">
-        <Plus aria-hidden="true" />
-        Nueva liquidación de compra
-      </Link>
-    </Button>
-  ) : null;
+  // La acción va en el encabezado como principal; el estado vacío la repite en `outline`, sin una
+  // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
+  const newSettlement = (variant: "primary" | "outline") =>
+    canDraft ? (
+      <Button asChild variant={variant}>
+        <Link href="/liquidaciones-compra/borradores/nueva">
+          <Plus aria-hidden="true" />
+          Nueva liquidación de compra
+        </Link>
+      </Button>
+    ) : null;
   const tableState = settlements.isError ? (
     <ErrorState
       message="No pudimos cargar las liquidaciones de compra."
@@ -280,7 +283,7 @@ export function PurchaseSettlementsScreen() {
         kind="empty"
         title="Todavía no hay liquidaciones de compra"
         description="La empresa emite una liquidación de compra cuando adquiere bienes muebles o servicios a una persona natural no obligada a llevar contabilidad que, sin RUC o con su RUC suspendido, no puede emitir comprobantes de venta por su nivel cultural o rusticidad (art. 13, letra c, del Reglamento de Comprobantes de Venta)."
-        action={newSettlement ?? undefined}
+        action={newSettlement("outline") ?? undefined}
       />
     )
   ) : undefined;
@@ -289,7 +292,7 @@ export function PurchaseSettlementsScreen() {
     <section aria-labelledby="liquidaciones-titulo" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {title}
-        {newSettlement}
+        {newSettlement("primary")}
       </div>
       {canDraft && <DraftsPanel />}
       <AppDataTable

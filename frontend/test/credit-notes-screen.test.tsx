@@ -130,6 +130,22 @@ describe("pantalla Notas de crédito", () => {
     );
   });
 
+  it("vacía: la única principal está en el encabezado y el vacío la repite en outline (D11)", async () => {
+    render(<CreditNotesScreen />, { "GET /api/v1/credit-notes": paged([]) });
+    await waitFor(() =>
+      expect(screen.getAllByRole("link", { name: "Nueva nota de crédito" }).length).toBeGreaterThan(
+        1,
+      ),
+    );
+    const variants = screen
+      .getAllByRole("link", { name: "Nueva nota de crédito" })
+      .map((link) => link.getAttribute("data-variant"));
+    expect(variants.filter((variant) => variant === "primary")).toHaveLength(1);
+    expect(variants.filter((variant) => variant !== "primary").every((v) => v === "outline")).toBe(
+      true,
+    );
+  });
+
   it("sin permiso explica el acceso", async () => {
     render(<CreditNotesScreen />, {
       "GET /api/v1/credit-notes": () => ({ status: 403, body: errorBody("FORBIDDEN", "x") }),

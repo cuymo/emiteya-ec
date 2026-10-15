@@ -57,6 +57,40 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     the context asks for one.
 - **Focus.** Modal layers return focus to whoever opened them, also when controlled, through
   `components/ui/use-return-focus.ts` (dialog and sheet).
+- **Disabled is neutral; pending is not disabled** (`productize-invoice-editor-and-composition-foundation`,
+  design D9).
+  - A disabled `primary`, `secondary` or `destructive` button becomes `bg-muted
+    text-muted-foreground`, without shadow or variant color. A disabled `outline`, `ghost` or
+    `link` keeps its surface and dims its text to `text-muted-foreground`; `outline` also dims its
+    border. `aria-disabled` behaves the same.
+  - No opacity over the variant color: a washed-out primary still reads as the main action.
+  - `AsyncButton` while pending (`aria-busy`) keeps its variant with the indicator: an action in
+    progress is not an unavailable action. Every disabled rule is written `disabled:not-aria-busy:`.
+  - In dark mode `outline` is transparent, so it never reads as a filled block.
+- **Selection is neutral** (design D10). The primary blue is reserved for the main action.
+  - `ChipGroup`: the chosen option takes a `foreground` border, the `muted` surface, `foreground`
+    text and medium weight. It is recognized by shape and weight, not only by color.
+  - `SegmentedControl`: the chosen option is a raised `bg-background` piece with a small shadow and
+    a `muted-foreground` ring, inside a `muted` track, like the template's `toggle-group`. The ring
+    contrasts at least 3:1 with the track and with the piece in both themes.
+  - Facturas' views (`ui/toggle.tsx`) already followed this rule; the legacy lists and forms now
+    match it without being migrated.
+- **One primary per surface, also when empty** (design D11). When the page header offers an
+  action, the empty state offers the same action as `outline`, never as a second primary.
+- **Content widths by role** (design D4), as `--container-*` tokens in `globals.css`:
+
+  | Role | Token | Utility | Value | Use |
+  | --- | --- | --- | --- | --- |
+  | Reading | `--container-reading` | `max-w-reading` | 42rem (672 px) | Text and status: Inicio, Ambiente |
+  | Form | `--container-form` | `max-w-form` | 48rem (768 px) | One-column forms: Empresa, Mi cuenta, long dialogs |
+  | Workspace | none | `max-w-none` | Content width | Lists and editors with a side panel |
+
+  - `--container-form-rail` (55rem) is the container width from which a form's side panel goes
+    beside the form, with the `@form-rail:` variant: 36rem of form, 1.5rem of gap and an 18rem
+    panel. Below it the panel stacks after the form.
+  - Legacy widths map to these roles when their screen migrates, and keep their values until then:
+    `max-w-xl` (Mi cuenta) and `max-w-3xl` (Configuración) to form; `max-w-2xl` (Inicio, Ambiente)
+    and `max-w-5xl` (Portabilidad) to reading.
 
 ### Staged Duplication Enforcement
 

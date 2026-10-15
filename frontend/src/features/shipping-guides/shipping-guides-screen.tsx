@@ -245,14 +245,17 @@ export function ShippingGuidesScreen() {
     );
   }
 
-  const newGuide = canDraft ? (
-    <Button asChild>
-      <Link href="/guias-remision/borradores/nueva">
-        <Plus aria-hidden="true" />
-        Nueva guía de remisión
-      </Link>
-    </Button>
-  ) : null;
+  // La acción va en el encabezado como principal; el estado vacío la repite en `outline`, sin una
+  // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
+  const newGuide = (variant: "primary" | "outline") =>
+    canDraft ? (
+      <Button asChild variant={variant}>
+        <Link href="/guias-remision/borradores/nueva">
+          <Plus aria-hidden="true" />
+          Nueva guía de remisión
+        </Link>
+      </Button>
+    ) : null;
   const tableState = guides.isError ? (
     <ErrorState
       message="No pudimos cargar las guías de remisión."
@@ -281,7 +284,7 @@ export function ShippingGuidesScreen() {
         kind="empty"
         title="Todavía no hay guías de remisión"
         description="Una guía de remisión sustenta el traslado de mercadería dentro del país: quién la transporta, en qué vehículo, desde dónde y hacia qué destinatarios."
-        action={newGuide ?? undefined}
+        action={newGuide("outline") ?? undefined}
       />
     )
   ) : undefined;
@@ -290,7 +293,7 @@ export function ShippingGuidesScreen() {
     <section aria-labelledby="guias-titulo" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {title}
-        {newGuide}
+        {newGuide("primary")}
       </div>
       {canDraft && <DraftsPanel />}
       <AppDataTable

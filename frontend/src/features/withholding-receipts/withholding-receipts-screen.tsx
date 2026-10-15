@@ -286,14 +286,17 @@ export function WithholdingReceiptsScreen() {
     );
   }
 
-  const newReceipt = canDraft ? (
-    <Button asChild>
-      <Link href="/retenciones/borradores/nueva">
-        <Plus aria-hidden="true" />
-        Nueva retención
-      </Link>
-    </Button>
-  ) : null;
+  // La acción va en el encabezado como principal; el estado vacío la repite en `outline`, sin una
+  // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
+  const newReceipt = (variant: "primary" | "outline") =>
+    canDraft ? (
+      <Button asChild variant={variant}>
+        <Link href="/retenciones/borradores/nueva">
+          <Plus aria-hidden="true" />
+          Nueva retención
+        </Link>
+      </Button>
+    ) : null;
   const tableState = receipts.isError ? (
     <ErrorState
       message="No pudimos cargar las retenciones."
@@ -322,7 +325,7 @@ export function WithholdingReceiptsScreen() {
         kind="empty"
         title="Todavía no hay retenciones"
         description="Un comprobante de retención acredita la renta y el IVA que retuviste a un proveedor sobre sus facturas, notas de venta o liquidaciones de compra."
-        action={newReceipt ?? undefined}
+        action={newReceipt("outline") ?? undefined}
       />
     )
   ) : undefined;
@@ -331,7 +334,7 @@ export function WithholdingReceiptsScreen() {
     <section aria-labelledby="retenciones-titulo" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {title}
-        {newReceipt}
+        {newReceipt("primary")}
       </div>
       {canDraft && <DraftsPanel />}
       <AppDataTable

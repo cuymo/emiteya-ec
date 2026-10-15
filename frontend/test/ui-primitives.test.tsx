@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import Link from "next/link";
 import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
+import { AsyncButton } from "@/components/async-button";
 import { Avatar, AvatarFallback, initials } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -99,6 +100,66 @@ describe("Button", () => {
       for (const token of previous[size])
         expect(classes.has(token), `${size}: ${token}`).toBe(true);
     }
+  });
+
+  // productize-invoice-editor-and-composition-foundation, design D9.
+  it("deshabilitado neutro por variante, sin opacidad sobre su color", () => {
+    const of = (variant: Parameters<typeof buttonVariants>[0]) => tokens(buttonVariants(variant));
+    for (const variant of ["primary", "secondary", "destructive"] as const) {
+      const classes = of({ variant });
+      for (const token of [
+        "disabled:not-aria-busy:bg-muted",
+        "disabled:not-aria-busy:text-muted-foreground",
+        "disabled:not-aria-busy:shadow-none",
+        "aria-disabled:not-aria-busy:bg-muted",
+      ])
+        expect(classes.has(token), `${variant}: ${token}`).toBe(true);
+    }
+    for (const variant of ["outline", "ghost", "link"] as const) {
+      const classes = of({ variant });
+      expect(classes.has("disabled:not-aria-busy:text-muted-foreground"), variant).toBe(true);
+      expect(classes.has("disabled:not-aria-busy:bg-muted"), variant).toBe(false);
+    }
+    expect(of({ variant: "outline" }).has("disabled:not-aria-busy:border-border/60")).toBe(true);
+    for (const variant of [
+      "primary",
+      "secondary",
+      "outline",
+      "ghost",
+      "destructive",
+      "link",
+    ] as const)
+      expect(
+        [...of({ variant })].some((token) => token.includes("opacity-50")),
+        variant,
+      ).toBe(false);
+  });
+
+  it("outline es transparente en oscuro, sin el bloque gris de la plantilla", () => {
+    const classes = tokens(buttonVariants({ variant: "outline" }));
+    expect(classes.has("dark:bg-transparent")).toBe(true);
+    expect(classes.has("dark:bg-input/30")).toBe(false);
+  });
+
+  it("AsyncButton pendiente no se atenúa: conserva su variante con el indicador", () => {
+    render(
+      <AsyncButton size="default" pending pendingLabel="Guardando">
+        Guardar borrador
+      </AsyncButton>,
+    );
+    // jsdom no aplica `invisible`: el nombre incluye también el texto que queda oculto.
+    const button = screen.getByRole("button", { name: /Guardando/ });
+    expect(button.hasAttribute("disabled")).toBe(true);
+    expect(button.getAttribute("aria-busy")).toBe("true");
+    expect(button.getAttribute("data-variant")).toBe("primary");
+    // Toda regla de deshabilitado que cambia el aspecto excluye `aria-busy`.
+    const disabledRules = button.className
+      .split(/\s+/)
+      .filter(
+        (token) => /^(aria-)?disabled:/.test(token) && token !== "disabled:pointer-events-none",
+      );
+    expect(disabledRules.length).toBeGreaterThan(0);
+    expect(disabledRules.every((token) => token.includes(":not-aria-busy:"))).toBe(true);
   });
 
   it("sin tamaño, usa el transitorio legacy-md para las pantallas aún no migradas", () => {

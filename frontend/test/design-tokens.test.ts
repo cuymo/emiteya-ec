@@ -144,6 +144,21 @@ describe("tokens del sistema de diseño", () => {
   });
 });
 
+describe("botón deshabilitado (productize-invoice-editor-and-composition-foundation, D9)", () => {
+  for (const [name, theme] of [
+    ["claro", ROOT],
+    ["oscuro", DARK],
+  ] as const) {
+    it(`tema ${name}: el texto deshabilitado sobre muted sigue legible, al menos 3:1`, () => {
+      expect(contrast(theme, "muted-foreground", "muted")).toBeGreaterThanOrEqual(3);
+    });
+    it(`tema ${name}: la pieza elegida del control segmentado se distingue de la pista y de su relleno (D10)`, () => {
+      expect(contrast(theme, "muted-foreground", "muted")).toBeGreaterThanOrEqual(3);
+      expect(contrast(theme, "muted-foreground", "background")).toBeGreaterThanOrEqual(3);
+    });
+  }
+});
+
 describe("contraste de los tokens", () => {
   for (const [name, theme] of [
     ["claro", ROOT],

@@ -49,6 +49,22 @@ Rules:
 - Equal padding everywhere flattens hierarchy. Vary it deliberately.
 - Whitespace is structural, not leftover. It isolates the decision; it does not turn an operational screen into a sparse scroll.
 
+## Content Widths
+
+Width says what kind of screen it is (`productize-invoice-editor-and-composition-foundation`, design
+D4). Three roles, with `--container-*` tokens in `globals.css` so Tailwind generates the utilities
+without arbitrary values:
+
+| Role | Token | Utility | Value |
+| --- | --- | --- | --- |
+| Reading | `--container-reading` | `max-w-reading` | 42rem (672 px) |
+| Form | `--container-form` | `max-w-form` | 48rem (768 px) |
+| Workspace | none | `max-w-none` | Content width |
+
+`--container-form-rail` (55rem) is the container width from which a form's side panel sits beside
+the form (`@form-rail:`). The legacy `max-w-xl`, `max-w-2xl`, `max-w-3xl` and `max-w-5xl` map to
+these roles as listed in `component-system.md`, when their screens migrate.
+
 ## Typography
 
 One small scale, one ratio, few weights. The family is Geist Sans, a single variable font served
@@ -166,6 +182,16 @@ Every interactive element defines its states before it ships.
 
 Add `selected`, `error`, and `read-only` where the component supports them. A control whose
 pressed state is indistinguishable from its resting state is unfinished.
+
+- **Disabled reads as unavailable, not as a faded variant**
+  (`productize-invoice-editor-and-composition-foundation`, design D9). Filled buttons turn to the
+  `muted` surface with `muted-foreground` text; quiet buttons dim only their text. Never lower the
+  opacity of the variant color. The disabled text keeps at least 3:1 on `muted` in both themes
+  (`design-tokens.test.ts`).
+- **Loading is not disabled.** A pending `AsyncButton` (`aria-busy`) keeps its variant color with
+  the indicator.
+- **Selected is neutral** (design D10). Chips and segmented controls show the chosen option by
+  shape, border and weight on neutral surfaces; the primary color stays with the main action.
 
 ## Motion
 

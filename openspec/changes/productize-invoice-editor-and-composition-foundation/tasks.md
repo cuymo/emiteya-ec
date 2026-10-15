@@ -72,7 +72,7 @@
 
 ## 2. Jerarquía de acciones y anchos del sistema
 
-- [ ] 2.1 Botón deshabilitado neutro en `components/ui/button.tsx` (D9):
+- [x] 2.1 Botón deshabilitado neutro en `components/ui/button.tsx` (D9):
   - por variante, sin opacidad sobre el color de la variante;
   - el estado pendiente (`aria-busy`) excluido;
   - `outline` transparente en oscuro.
@@ -80,21 +80,21 @@
   Verificar con pruebas:
   - unitarias del aspecto por variante y de `AsyncButton` pendiente;
   - de tokens: al menos 3:1 entre el texto deshabilitado y `muted` en claro y en oscuro.
-- [ ] 2.2 Selección neutra en `ChipGroup` y `SegmentedControl` (D10), con la elección reconocible por
+- [x] 2.2 Selección neutra en `ChipGroup` y `SegmentedControl` (D10), con la elección reconocible por
   forma y peso.
 
   Verificar con pruebas unitarias del estado elegido y con las pruebas existentes de las 10 listas y
   los 11 consumidores en verde.
-- [ ] 2.3 Estado vacío sin segunda principal en notas de crédito, notas de débito, retenciones, guías
+- [x] 2.3 Estado vacío sin segunda principal en notas de crédito, notas de débito, retenciones, guías
   y liquidaciones (D11).
 
   Verificar con una prueba por pantalla que el encabezado tiene la única principal y el vacío la
   misma acción en `outline`.
-- [ ] 2.4 Tokens de ancho por función (`--container-reading`, `--container-form`) y del punto de
+- [x] 2.4 Tokens de ancho por función (`--container-reading`, `--container-form`) y del punto de
   apilado del formulario (`--container-form-rail`) en `globals.css` (D4, D5).
 
   Verificar con `design-css.test.ts` que existen y generan sus utilidades.
-- [ ] 2.5 Actualizar `component-system.md`, `component-selection.md` y `design-foundations.md` con
+- [x] 2.5 Actualizar `component-system.md`, `component-selection.md` y `design-foundations.md` con
   las reglas de D9, D10, D11 y D4, incluido el mapeo de los anchos heredados.
 
   Verificar que los documentos nombran los mismos tokens que el código.
