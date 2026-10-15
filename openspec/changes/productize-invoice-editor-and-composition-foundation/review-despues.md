@@ -659,3 +659,33 @@ Cada punto está marcado, o declarado como excepción o como no aplicable, con s
 - [ ] **Excepción declarada:** crear, editar, ver y quitar contra el backend real no se ejercitó,
   por las salvaguardas (ver «Tarea y jerarquía»).
 - [x] Cada criterio queda informado como cumplido o como excepción con su motivo.
+
+## Verificación final (tarea 9.1)
+
+Todo sobre el commit `196b537`, sin tráfico al SRI. `SRI_TRANSMISSION_ENABLED=0` se leyó en el
+backend del despliegue de revisión, y la sala limpia lo fija en `0`.
+
+- **`verify`, en sala limpia:** un worktree nuevo del commit exacto, PostgreSQL 17 propio y los
+  valores de relleno del CI.
+  - **Primera ejecución:** falló en `test` por una sola prueba del backend:
+    `job-runner.test.ts`, «pausado, ningún job `sri.*` se toma ni consume intentos». Espera una
+    ventana fija de 400 ms, y la máquina estaba cargada (carga media de unos 8). La rama no toca el
+    runner: del backend solo cambia una ruta en una prueba de documentación. Aislada, la prueba pasó
+    5 de 5.
+  - **Segunda ejecución,** con una base nueva: código 0 en todos los pasos.
+    - Formato, OpenSpec (26), versiones, lint y tipos.
+    - 3745 pruebas en verde y una omitida, y AC-04 3 de 3.
+    - OpenAPI, arranque de desarrollo y build.
+    - `check:web-security-policy` 40 de 40 (tarea 3.8), con el SRI simulado `sri-simulado.test`,
+      que no resuelve y solo se alcanza por un proxy local.
+    - XSD y recursos del RIDE.
+- **`security:dependencies`:** PASS. Solo hay excepciones revisadas y vigentes, y un aviso moderado
+  informado.
+- **`security:secrets`:** PASS, con Gitleaks 8.30.1 verificado por su hash, y las 13 pruebas de las
+  reglas.
+- **`test:visual`:** 115 de 115, sin capturas base cambiadas.
+- **Pruebas enfocadas:** las del frontend, 803 de 803. `editor.spec.ts`, dentro de `test:visual`.
+- **`test:visual:review`, etiqueta `final` comparada con `despues`:** 96 capturas, ninguna falta.
+  No hubo errores de página, peticiones a otro origen ni rutas sin datos de prueba. La y del
+  título, las cajas de la barra y el alto del documento son iguales a los del «después» en las 96,
+  y `contact-sheets/compare-despues-movil.png` se miró.

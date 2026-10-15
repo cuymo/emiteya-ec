@@ -145,7 +145,7 @@
   - «Facturas › Nueva factura» y «Facturas › Borrador de factura»;
   - Facturas como destino actual antes y después del primer guardado;
   - la creación rápida marcando Facturas.
-- [ ] 3.8 Ajustar `scripts/check-web-security-policy.ts` si cambia algún nombre que use, sin
+- [x] 3.8 Ajustar `scripts/check-web-security-policy.ts` si cambia algún nombre que use, sin
   debilitar la política.
 
   Verificar con `corepack pnpm check:web-security-policy` en verde.
@@ -334,7 +334,7 @@
 
 ## 9. Verificación final
 
-- [ ] 9.1 Ejecutar, sin tráfico al SRI:
+- [x] 9.1 Ejecutar, sin tráfico al SRI:
   - las pruebas enfocadas;
   - `openspec:validate`, `format:check`, `security:dependencies` y `security:secrets`;
   - `test:visual`;
