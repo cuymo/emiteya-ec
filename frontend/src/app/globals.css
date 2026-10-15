@@ -247,6 +247,10 @@
   /* Contenedor desde el que una rejilla de campos va en dos columnas y la lista de líneas muestra su
      fila de encabezados, con la variante `@form-wide:` (design D7 y D13). */
   --container-form-wide: 40rem;
+  /* Zona izquierda de la barra superior en un teléfono desde la que la ficha de la empresa acompaña
+     a su nombre, con la variante `@topbar-company:` (design D1). A 320 px la zona mide unos 88 px:
+     sin la ficha, el nombre se lee recortado («Fer…») en lugar de quedar en un trazo. */
+  --container-topbar-company: 8rem;
 }
 
 /* Columnas de los formularios (productize-invoice-editor-and-composition-foundation, design D5 y

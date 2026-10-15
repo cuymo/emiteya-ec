@@ -7,6 +7,8 @@
 // - Con varias columnas, cada campo ocupa tres filas de una `subgrid` (etiqueta, control y mensaje):
 //   las etiquetas y los controles de una fila comparten la y, aunque solo un campo tenga ayuda.
 // - Cada rejilla es una fila de campos; con una columna, los campos se apilan con su separación.
+// - Las columnas son `minmax(0, 1fr)`: un contenido que no se parte, como el nombre del comprador,
+//   se recorta en lugar de ensanchar la página (a 320 px desbordaba 18 px).
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
@@ -15,12 +17,12 @@ import { cn } from "@/lib/utils";
 const LAYOUTS = {
   /** Dos columnas iguales desde 40rem de contenedor (`--container-form-wide`). */
   pair: {
-    grid: "grid gap-4 @form-wide:grid-cols-2 @form-wide:gap-x-4 @form-wide:gap-y-1",
+    grid: "grid grid-cols-1 gap-4 @form-wide:grid-cols-2 @form-wide:gap-x-4 @form-wide:gap-y-1",
     field: "@form-wide:row-span-3 @form-wide:grid @form-wide:grid-rows-subgrid",
   },
   /** Forma de pago fluida, e importe con su «Quitar», desde 32rem de contenedor. */
   payment: {
-    grid: "grid gap-3 @lg:grid-cols-payment @lg:gap-x-3 @lg:gap-y-1",
+    grid: "grid grid-cols-1 gap-3 @lg:grid-cols-payment @lg:gap-x-3 @lg:gap-y-1",
     field: "@lg:row-span-3 @lg:grid @lg:grid-rows-subgrid",
   },
 } as const;

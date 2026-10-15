@@ -59,7 +59,10 @@ export function Topbar({
 }) {
   return (
     <header className="sticky top-0 z-(--z-sticky) flex h-12 shrink-0 items-center gap-4 border-b bg-background px-3 max-md:h-14 md:px-4">
-      <div data-slot="topbar-start" className="flex min-w-0 items-center gap-2 max-md:flex-1">
+      <div
+        data-slot="topbar-start"
+        className="flex min-w-0 items-center gap-2 max-md:@container max-md:flex-1"
+      >
         <SidebarToggle />
         <Separator
           orientation="vertical"

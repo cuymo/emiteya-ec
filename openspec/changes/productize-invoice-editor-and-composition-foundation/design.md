@@ -197,7 +197,9 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
   accesible por debajo, centrado en su zona (spec «Paleta de comandos»).
 - **Contexto de la empresa:** máximo 14rem (224 px) desde `md` y 10rem (160 px) por debajo, con
   `truncate`. El nombre completo va en `title` y en el nombre accesible (spec «Contexto de la empresa
-  visible», «Nombre largo»).
+  visible», «Nombre largo»). En un teléfono estrecho (zona izquierda por debajo de 8rem, unos 320 px
+  de ventana) la ficha con las iniciales cede su sitio al nombre, que se lee recortado en lugar de
+  quedar en un trazo (hallado en la revisión «después», tarea 8.1).
 - **Ambiente:** el indicador compacto de la zona derecha es la identidad global del ambiente (D21).
 - **Alternativa descartada:** recortar las migas en la barra con elipsis. Mantiene la jerarquía de la
   página en el chrome global, compite con la empresa por el espacio y sigue fallando a 768 px.

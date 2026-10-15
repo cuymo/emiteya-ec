@@ -120,7 +120,9 @@ from the reference template's dashboard layout (ADR 0028).
   (`productize-invoice-editor-and-composition-foundation`, design D1). Only the global context, in
   three zones, with 8px inside a zone and 16px between zones:
   - **start:** the sidebar toggle (or «Abrir navegación» on mobile) and the company context, at most
-    14rem from 768px and 10rem below, truncated;
+    14rem from 768px and 10rem below, truncated. On a narrow phone (a start zone under 8rem, about
+    320px of window) the company initials give their space to the name, so it reads truncated
+    («Ferr…») instead of as a sliver;
   - **flexible center:** the command palette trigger, an 18rem field from `xl` and an icon below;
   - **end:** the environment indicator and the account menu.
 

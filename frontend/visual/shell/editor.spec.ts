@@ -189,6 +189,8 @@ test.describe("lectura a cualquier anchura (D5, D18)", () => {
     [1024, 768, 1, true, true],
     [768, 900, 1, false, false],
     [390, 844, 1, false, false],
+    // La anchura mínima soportada (frontend-checklist.md, tarea 8.3).
+    [320, 640, 1, false, false],
     // 1440 px al 200 % de zoom.
     [720, 450, 2, false, false],
   ] as const) {
@@ -219,8 +221,42 @@ test.describe("lectura a cualquier anchura (D5, D18)", () => {
       expect(amount!.width).toBeGreaterThanOrEqual(150);
       const fit = await selectFit(page, "Forma de pago");
       const select = await page.getByLabel("Forma de pago", { exact: true }).boundingBox();
-      if (width === 390) expect(select!.width).toBeGreaterThanOrEqual(form!.width - 1);
+      if (width <= 390) expect(select!.width).toBeGreaterThanOrEqual(form!.width - 1);
       else expect(fit.needed).toBeLessThanOrEqual(fit.available);
+      await finish(page, recorder);
+    });
+  }
+});
+
+test.describe("barra superior en una línea (D1, tarea 8.3)", () => {
+  for (const [width, height] of [
+    [320, 640],
+    [390, 844],
+    [768, 900],
+    [1024, 768],
+    [1280, 800],
+  ] as const) {
+    test(`${width} px: cada pieza en una sola línea y sin solaparse`, async ({ browser }) => {
+      const { page, recorder } = await open(browser, READY, { viewport: { width, height } });
+      const boxes = await page.getByRole("banner").evaluate((header) =>
+        [...header.querySelectorAll(":scope > [data-slot^=topbar-] > *")]
+          .filter((element) => element.getClientRects().length > 0)
+          .map((element) => {
+            const rect = element.getBoundingClientRect();
+            return { left: rect.left, right: rect.right, height: rect.height };
+          }),
+      );
+      const bar = await page.getByRole("banner").boundingBox();
+      for (const box of boxes) expect(box.height).toBeLessThanOrEqual(44);
+      for (const [index, box] of boxes.entries()) {
+        if (index > 0) expect(box.left).toBeGreaterThanOrEqual(boxes[index - 1]!.right - 0.5);
+        expect(box.right).toBeLessThanOrEqual(bar!.x + bar!.width);
+      }
+      // El nombre de la empresa se lee, aunque recortado: a 320 px la ficha le cede su sitio.
+      const name = await page
+        .locator("[data-slot=company-context] > span:last-child")
+        .boundingBox();
+      expect(name!.width).toBeGreaterThanOrEqual(28);
       await finish(page, recorder);
     });
   }

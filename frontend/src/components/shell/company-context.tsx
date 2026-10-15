@@ -62,7 +62,9 @@ export function CompanyContext({
       className={cn("flex min-w-0 items-center gap-2 text-sm font-medium", className)}
       title={state.name}
     >
-      <Avatar size="sm" className="rounded-md after:rounded-md">
+      {/* En un teléfono estrecho la ficha cede su sitio al nombre, que es lo que pide la spec
+          (productize-invoice-editor-and-composition-foundation, design D1). */}
+      <Avatar size="sm" className="rounded-md after:rounded-md max-md:@max-topbar-company:hidden">
         <AvatarFallback className="rounded-md text-xs font-semibold">
           {initials(state.name)}
         </AvatarFallback>
