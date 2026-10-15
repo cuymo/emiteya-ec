@@ -206,7 +206,7 @@
 
   Verificar con `corepack pnpm lint`, y con una prueba de lint escalonado, que la pantalla migrada
   no importa `@/components/states`, `radix-ui` ni tamaños `legacy-*`.
-- [ ] 8.2 Registrar las brechas del backend del design en `technical-debt.md`, y documentar Facturas
+- [x] 8.2 Registrar las brechas del backend del design en `technical-debt.md`, y documentar Facturas
   en `fiscal-emission.md` o en el documento de la pantalla (vistas, estados, acciones y marca de
   ambiente).
 
