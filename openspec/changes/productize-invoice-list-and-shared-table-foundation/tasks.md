@@ -189,7 +189,7 @@
   Verificar con pruebas de la pantalla cada estado sin paginación vacía, y que las pruebas
   existentes de Facturas siguen cubriendo sus comportamientos, con las aserciones cambiadas
   explicadas.
-- [ ] 7.4 Ampliar `scripts/check-web-security-policy.ts` si el flujo de Facturas cambia algún nombre
+- [x] 7.4 Ampliar `scripts/check-web-security-policy.ts` si el flujo de Facturas cambia algún nombre
   que use (abrir la lista y una factura), sin debilitar la política.
 
   Verificar con `corepack pnpm check:web-security-policy` (40 comprobaciones o las vigentes) en
@@ -262,7 +262,7 @@
   - sin S3 atribuibles a la base o al encabezado;
   - el operador diario en 4/5 o más;
   - los hallazgos heredados informados aparte.
-- [ ] 10.3 Ejecutar, sin tráfico al SRI:
+- [x] 10.3 Ejecutar, sin tráfico al SRI:
   - las pruebas enfocadas;
   - `openspec:validate`, `format:check`, `security:dependencies` y `security:secrets`;
   - `test:visual`;
