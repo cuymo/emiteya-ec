@@ -437,9 +437,12 @@ Una sola tabla semántica con dos distribuciones, elegidas con container queries
 el contenedor de la tabla. Son CSS puro, compatible con la CSP. Dependen del espacio real, que
 cambia con la barra expandida o colapsada, y no del viewport.
 
-- **Amplia** (contenedor de 576 px o más, `@xl`): las cinco columnas de D10. Cubre 1024 px con la
+- **Amplia** (contenedor de 640 px o más, variante `@table-wide` del token `--container-table-wide`
+  de `globals.css`): las cinco columnas de D10. Medida en la aplicación, necesita unos 625 px; con
+  `@xl` (576 px), a 200 % de zoom la tabla amplia se desplazaba, y con `@2xl` (672 px), a 768 px con la
+  barra colapsada el contenedor se quedaba en la compacta. Cubre 1024 px con la
   barra expandida y 768 px con la barra colapsada.
-- **Compacta** (menos de 576 px): dos columnas.
+- **Compacta** (menos de 640 px): dos columnas.
   - «Factura»: el número, el comprador y la insignia de estado, en líneas.
   - «Total»: el total y, debajo, la fecha.
   - Las columnas Estado, Comprador y acciones se ocultan a la vez que sus encabezados.

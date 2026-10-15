@@ -170,8 +170,9 @@ Do not replace the entire page with a spinner for routine table refreshes.
 
 - Choose per table: horizontal scroll inside the surface when the mobile user compares rows, a prioritized card list when they act on one record at a time. See `navigation-responsive.md`.
 - In the shared `DataTable`, a table can switch between a wide and a compact composition with
-  Tailwind container queries on the table surface (`@container` with `@xl:` classes in the column
-  `meta`). The available width changes with the sidebar, so the viewport is the wrong signal. The
+  Tailwind container queries on the table surface (`@container` with `@table-wide:` classes in the
+  column `meta`; the `--container-table-wide` token is 40rem, measured with Facturas). The available
+  width changes with the sidebar and the zoom, so the viewport is the wrong signal. The
   compact composition keeps one semantic table and moves the hidden columns' data into the first
   column; if it still does not fit, the table scrolls inside its surface, never the page. Facturas
   uses this instead of cards.

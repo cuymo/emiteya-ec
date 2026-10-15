@@ -182,7 +182,7 @@
   - que la tabla no pide nada por fila.
 - [x] 7.3 Implementar los estados (D14) y las dos distribuciones (D15):
   - primera carga, recarga, vacío inicial, vacío por filtros, error y sin permiso;
-  - la distribución amplia desde `@xl` del contenedor;
+  - la distribución amplia desde `@table-wide` del contenedor (640 px; D15);
   - la compacta, con la identidad en líneas, el total y la fecha;
   - el desplazamiento solo dentro de la tabla.
 

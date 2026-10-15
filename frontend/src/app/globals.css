@@ -231,6 +231,11 @@
     var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  /* Ancho del contenedor desde el que una tabla de lista pasa a su distribución amplia, con la
+     variante `@table-wide:` (productize-invoice-list-and-shared-table-foundation, design D15).
+     Medido con Facturas: la amplia necesita unos 625 px, y 640 px deja la compacta a 200 % de zoom
+     y la amplia a 768 px con la barra colapsada. */
+  --container-table-wide: 40rem;
 }
 
 @layer base {

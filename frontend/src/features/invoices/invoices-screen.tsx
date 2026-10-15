@@ -172,9 +172,10 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
         header: "Factura",
         // El margen izquierdo aloja la marca de atención: los números quedan alineados.
         meta: {
-          headClassName: "pl-4 @xl:pl-5",
+          headClassName: "pl-4 @table-wide:pl-5",
           skeletonClassName: "w-36",
-          cellClassName: "w-full py-2 pr-2 pl-4 @xl:w-auto @xl:pr-3 @xl:pl-5",
+          cellClassName:
+            "w-full py-2 pr-2 pl-4 @table-wide:w-auto @table-wide:pr-3 @table-wide:pl-5",
         },
         cell: ({ row }) => {
           const invoice = row.original;
@@ -193,18 +194,18 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
               <span
                 className={cn(
                   "flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground",
-                  mark ? "flex" : "hidden @xl:flex",
+                  mark ? "flex" : "hidden @table-wide:flex",
                 )}
               >
-                <span className="hidden tabular-nums @xl:inline">
+                <span className="hidden tabular-nums @table-wide:inline">
                   {formatIssueDate(invoice.issueDate)}
                 </span>
                 {mark}
               </span>
-              <span className="line-clamp-2 text-sm break-words @xl:hidden">
+              <span className="line-clamp-2 text-sm break-words @table-wide:hidden">
                 {invoice.buyerName}
               </span>
-              <span className="@xl:hidden">
+              <span className="@table-wide:hidden">
                 <StateCell state={invoice.state} stopped={invoice.transmissionStopped} />
               </span>
             </div>
@@ -215,8 +216,8 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
         id: "state",
         header: "Estado",
         meta: {
-          headClassName: "hidden @xl:table-cell",
-          cellClassName: "hidden @xl:table-cell",
+          headClassName: "hidden @table-wide:table-cell",
+          cellClassName: "hidden @table-wide:table-cell",
           skeletonClassName: "w-36",
         },
         cell: ({ row }) => (
@@ -227,8 +228,8 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
         id: "buyer",
         header: "Comprador",
         meta: {
-          headClassName: "hidden @xl:table-cell",
-          cellClassName: "hidden @xl:table-cell @xl:w-full @xl:max-w-0",
+          headClassName: "hidden @table-wide:table-cell",
+          cellClassName: "hidden @table-wide:table-cell @table-wide:w-full @table-wide:max-w-0",
           skeletonClassName: "w-full max-w-56",
         },
         cell: ({ row }) => (
@@ -245,8 +246,8 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
         header: "Total",
         // En la compacta, el menú va en esta celda: el encabezado se alinea con el importe.
         meta: {
-          headClassName: "pr-10.5 text-right @xl:pr-3",
-          cellClassName: "py-2 pr-2 pl-2 text-right @xl:pr-3 @xl:pl-3",
+          headClassName: "pr-10.5 text-right @table-wide:pr-3",
+          cellClassName: "py-2 pr-2 pl-2 text-right @table-wide:pr-3 @table-wide:pl-3",
           skeletonClassName: "ml-auto w-24",
         },
         cell: ({ row }) => (
@@ -255,11 +256,11 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
               <span className="whitespace-nowrap tabular-nums">
                 {formatUsd(row.original.total)}
               </span>
-              <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums @xl:hidden">
+              <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums @table-wide:hidden">
                 {formatIssueDate(row.original.issueDate)}
               </span>
             </span>
-            <span className="-my-1 @xl:hidden">
+            <span className="-my-1 @table-wide:hidden">
               <InvoiceActions invoice={row.original} />
             </span>
           </span>
@@ -270,8 +271,8 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
         header: "Acciones",
         meta: {
           srOnlyHeader: true,
-          headClassName: "hidden w-12 @xl:table-cell",
-          cellClassName: "hidden w-12 text-right @xl:table-cell",
+          headClassName: "hidden w-12 @table-wide:table-cell",
+          cellClassName: "hidden w-12 text-right @table-wide:table-cell",
           skeletonClassName: "ml-auto size-6",
         },
         cell: ({ row }) => <InvoiceActions invoice={row.original} />,
