@@ -3,17 +3,25 @@
 ## ADDED Requirements
 
 ### Requirement: Acción siguiente en el editor de facturas
-El editor de facturas SHALL destacar como acción principal la siguiente acción que el usuario puede
-ejecutar. Sin borrador guardado, o con cambios sin guardar, la acción principal SHALL ser guardar el
-borrador. Con el borrador guardado, sin cambios, sin problemas pendientes y con permiso para emitir,
-la acción principal SHALL ser emitir la factura. Emitir no SHALL destacarse mientras no pueda
-ejecutarse: SHALL percibirse como no disponible y decir por qué. Sin permiso para emitir, la acción
-de emitir no SHALL aparecer.
+El editor de facturas SHALL distinguir guardar el borrador de emitir la factura. Guardar SHALL estar
+disponible siempre que no haya un guardado en curso, también con el borrador incompleto o con
+problemas que impiden emitir. Un guardado que el servidor rechaza SHALL explicar el motivo junto al
+dato que lo causa, o con la forma de recuperarse, sin perder lo escrito. Emitir SHALL estar
+disponible solo con la versión vigente guardada, sin cambios sin guardar, sin problemas del servidor
+y con permiso para emitir. El servidor vuelve a comprobarlo al emitir. El editor SHALL destacar como
+acción principal la siguiente acción válida: guardar mientras no haya una versión guardada sin
+cambios, y emitir cuando la emisión esté disponible. Una acción que no puede ejecutarse SHALL
+percibirse como no disponible y decir por qué. Sin permiso para emitir, la acción de emitir no SHALL
+aparecer.
 
 #### Scenario: Factura nueva
 - **WHEN** un operador abre la pantalla de nueva factura
 - **THEN** «Guardar borrador» es la acción principal
 - **AND** «Emitir factura» se percibe como no disponible y dice que primero hay que guardar el borrador
+
+#### Scenario: Borrador incompleto
+- **WHEN** un operador guarda una factura nueva sin comprador ni líneas
+- **THEN** el borrador queda guardado, «Guardar borrador» sigue disponible, y «Emitir factura» se percibe como no disponible con el motivo de lo que falta
 
 #### Scenario: Cambios sin guardar
 - **WHEN** un operador cambia la cantidad de una línea de un borrador guardado
@@ -21,11 +29,23 @@ de emitir no SHALL aparecer.
 
 #### Scenario: Borrador con problemas
 - **WHEN** un operador guarda un borrador cuyo comprador no es un cliente
-- **THEN** «Emitir factura» se percibe como no disponible, el motivo remite a los problemas, y cada problema se muestra junto al dato que lo causa
+- **THEN** «Guardar borrador» sigue disponible, «Emitir factura» se percibe como no disponible con un motivo que remite a los problemas, y cada problema se muestra junto al dato que lo causa
+
+#### Scenario: Guardado en curso
+- **WHEN** un operador elige guardar el borrador
+- **THEN** mientras se guarda, guardar se muestra en curso, el formulario no se puede editar y «Emitir factura» no está disponible
+
+#### Scenario: Guardado rechazado
+- **WHEN** el servidor rechaza un guardado porque el borrador cambió en otra sesión
+- **THEN** el editor explica el conflicto, ofrece recargar el borrador y conserva lo escrito hasta que el operador decida
 
 #### Scenario: Listo para emitir
 - **WHEN** un operador guarda un borrador completo y sin problemas
 - **THEN** «Emitir factura» es la acción principal y guardar queda como acción secundaria
+
+#### Scenario: Rechazo al emitir
+- **WHEN** entre la vista previa y la emisión cambia una condición, como la firma electrónica, y el servidor rechaza la emisión
+- **THEN** no se emite ninguna factura, el editor muestra el motivo y vuelve a mostrar los problemas actuales del borrador
 
 #### Scenario: Sin permiso para emitir
 - **WHEN** un usuario con permiso para preparar borradores pero no para emitir abre un borrador listo
@@ -33,10 +53,13 @@ de emitir no SHALL aparecer.
 
 ### Requirement: Totales veraces en el editor de facturas
 El editor SHALL mostrar solo los totales, los impuestos y los problemas que calcula el servidor para
-el borrador guardado, sin calcular importes en el navegador. Con cambios sin guardar, no SHALL
-presentar los totales anteriores como vigentes: SHALL indicar que hay que guardar para recalcularlos.
-Mientras alguna línea no pueda calcularse, SHALL decirlo en lugar de mostrar importes parciales o
-ceros.
+la versión guardada del borrador, sin calcular importes en el navegador. Sin borrador guardado, no
+SHALL mostrar importes ni ceros, y SHALL explicar que los totales se obtienen al guardar. Con el
+borrador guardado y sin cambios, SHALL mostrar los últimos totales del servidor. Con cambios sin
+guardar, no SHALL presentar los totales anteriores como vigentes: SHALL rotularlos como los del
+último guardado y explicar que hay que guardar para recalcularlos. Tras un guardado correcto, la
+respuesta del servidor SHALL ser la única fuente de los totales. Mientras alguna línea no pueda
+calcularse, SHALL decirlo en lugar de mostrar importes parciales o ceros.
 
 #### Scenario: Borrador guardado
 - **WHEN** un operador guarda un borrador con dos líneas calculables
@@ -44,11 +67,15 @@ ceros.
 
 #### Scenario: Totales tras editar
 - **WHEN** un operador cambia el descuento de una línea después de guardar
-- **THEN** el resumen deja de presentar el total anterior como vigente e indica que hay que guardar para recalcularlo
+- **THEN** el resumen rotula el total anterior como el del último guardado, no lo presenta como vigente, y explica que hay que guardar para recalcularlo
+
+#### Scenario: Después de guardar
+- **WHEN** un operador con cambios sin guardar guarda el borrador y el servidor lo acepta
+- **THEN** el resumen muestra los totales de esa respuesta del servidor como vigentes y deja de rotularlos como del último guardado
 
 #### Scenario: Sin borrador guardado
 - **WHEN** un operador agrega productos a una factura nueva sin guardarla
-- **THEN** el resumen no muestra importes y dice que se calculan al guardar el borrador
+- **THEN** el resumen no muestra importes ni ceros y explica que guardar el borrador da los totales calculados por el servidor
 
 #### Scenario: Línea que no se puede calcular
 - **WHEN** un borrador guardado tiene una línea cuyo impuesto no puede calcularse
@@ -119,13 +146,19 @@ las formas de pago no cambian.
 - **THEN** cada acción de quitar está junto a su forma de pago y su nombre accesible dice cuál quita
 
 ### Requirement: Cambios sin guardar en el editor de facturas
-El editor SHALL indicar de forma visible cuándo hay cambios sin guardar. Al cerrar o recargar la
-pestaña con cambios sin guardar, el navegador SHALL pedir confirmación antes de descartarlos. Sin
-cambios, salir del editor no SHALL pedir nada.
+El editor SHALL indicar de forma visible «Cambios sin guardar» mientras haya cambios que no se han
+guardado. Al cerrar o recargar la pestaña con cambios sin guardar, el navegador SHALL pedir
+confirmación antes de descartarlos. El indicador y el aviso SHALL desaparecer solo tras un guardado
+que el servidor confirma, u otra operación confirmada que persista la versión que se ve. Un guardado
+fallido SHALL conservar los cambios y el indicador. Sin cambios, salir del editor no SHALL pedir nada.
 
 #### Scenario: Indicador de cambios
 - **WHEN** un operador cambia el punto de emisión de un borrador guardado
-- **THEN** el editor muestra que hay cambios sin guardar hasta que guarda
+- **THEN** el editor muestra «Cambios sin guardar» hasta que el servidor confirma el guardado
+
+#### Scenario: Guardado fallido
+- **WHEN** un operador con cambios sin guardar guarda y el servidor rechaza el guardado
+- **THEN** sus cambios siguen en el formulario, el editor sigue mostrando «Cambios sin guardar» y cerrar la pestaña sigue pidiendo confirmación
 
 #### Scenario: Cerrar la pestaña con cambios
 - **WHEN** un operador intenta cerrar o recargar la pestaña con cambios sin guardar

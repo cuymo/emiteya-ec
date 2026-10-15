@@ -27,6 +27,63 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
 - **Enlaces de vuelta:** 14 pantallas de detalle y de editor añaden además un enlace «volver»
   (`ArrowLeft`) que repite la primera miga.
 
+### Ambiente en el shell
+
+- **Hoy:** el distintivo compacto de la barra (`EnvironmentBadge`: «Pruebas» con advertencia,
+  «Producción» en `emphasis`, nada si el ambiente no se confirma) y, debajo, una franja de ancho
+  completo (`EnvironmentNotice` sobre `NoticeStrip`).
+  - En Pruebas, la franja dice «Ambiente de Pruebas: los comprobantes no tienen validez
+    tributaria.».
+  - Si el ambiente no se confirma, la franja dice «Ambiente desconocido…».
+- **Specs que hoy la exigen:**
+  - `web-application-shell`: «Ambiente fiscal visible en el shell», «Shell autenticado disponible»
+    y «Carga de una pantalla»;
+  - `taxpayer-setup`: «Aviso persistente del ambiente».
+- **Trazabilidad:** ERS RF-004 (distinguir los ambientes de forma inequívoca) y RF-005 (advertencia
+  persistente en Pruebas).
+- **Confirmaciones de los editores:** las seis muestran «Ambiente: Pruebas» o «Desconocido».
+  - Ninguna dice «sin validez tributaria»: eso lo aportaba la franja.
+  - Son las de la factura (`draft-editor.tsx`) y de los editores de nota de crédito, nota de débito,
+    retención, guía y liquidación.
+- **La franja de la firma** (vencimiento de la firma electrónica) usa el mismo `NoticeStrip` y no
+  cambia.
+
+### Guardar y emitir en el servidor
+
+- **Guardar** (`backend/src/modules/invoices/application/drafts.ts`, `create` y `update`):
+  - **acepta borradores incompletos:** sin punto, sin comprador, sin líneas o sin formas de pago;
+  - **solo rechaza:**
+    - el formato del cuerpo (`createDraftSchema` y `updateDraftSchema`);
+    - más líneas que el máximo (`INVOICE_TOO_MANY_LINES`);
+    - referencias que no existen en la empresa: `EMISSION_POINT_NOT_FOUND`, `BUYER_NOT_FOUND`,
+      `PRODUCT_NOT_FOUND` y `PAYMENT_METHOD_NOT_FOUND` (fuera del catálogo vigente);
+    - la versión desactualizada (`INVOICE_DRAFT_CHANGED`);
+    - el borrador ya emitido (`INVOICE_DRAFT_ALREADY_EMITTED`);
+    - la falta de permiso (`invoices.draft`).
+  - **En el cliente,** Zod pide una cantidad válida, un descuento válido o vacío, y una forma de
+    pago elegida en cada fila existente.
+- **Vista previa:** cada `GET` y cada guardado devuelven la evaluación del borrador a la fecha
+  (`evaluateInvoice`, `backend/src/modules/invoices/domain/evaluation.ts`).
+  - Sus problemas son exactamente los requisitos de la emisión:
+    - lo que falta (`INVOICE_DRAFT_INCOMPLETE`);
+    - contribuyente configurado y firma usable;
+    - punto disponible;
+    - comprador cliente y activo;
+    - productos activos;
+    - impuestos calculables;
+    - descuentos;
+    - límites de consumidor final;
+    - formas de pago utilizables y que suman el total;
+    - esquema disponible.
+- **Emisión** (`backend/src/modules/invoices/application/emission.ts`, `reserve`):
+  - comprueba `invoices.emit`, la `Idempotency-Key`, el borrador sin emitir y la versión esperada;
+  - vuelve a ejecutar la misma evaluación bajo bloqueo, a la fecha de emisión, y rechaza con el
+    primer problema (`EmissionRejectedError`);
+  - una condición que cambió después de la vista previa, como la firma, se rechaza al emitir.
+- **Al volver a montar:** el editor se monta de nuevo con cada versión guardada
+  (`key={id-version}`). Una edición hecha mientras el guardado está en curso se pierde al montarse
+  la versión nueva.
+
 ### Editor de facturas (`frontend/src/features/invoices/draft-editor.tsx`, 827 líneas)
 
 - **Rutas:** `/borradores/nuevo` (`DraftEditorScreen draftId={null}`) y `/borradores/[id]`.
@@ -141,34 +198,40 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
 - **Contexto de la empresa:** máximo 14rem (224 px) desde `md` y 10rem (160 px) por debajo, con
   `truncate`. El nombre completo va en `title` y en el nombre accesible (spec «Contexto de la empresa
   visible», «Nombre largo»).
-- **Ambiente:** el distintivo compacto de la barra no cambia, a todas las anchuras.
+- **Ambiente:** el indicador compacto de la zona derecha es la identidad global del ambiente (D21).
 - **Alternativa descartada:** recortar las migas en la barra con elipsis. Mantiene la jerarquía de la
   página en el chrome global, compite con la empresa por el espacio y sigue fallando a 768 px.
 
-### D2. Migas encima del título, en la cabecera del contenido
+### D2. Migas encima del título: el `PageHeader` en las rutas migradas y la fila compartida en las heredadas (PO-1)
 
-- **Cambio:** las migas salen de la barra y la fila que hoy solo ve el móvil
-  (`AppBreadcrumbs className="mb-4 md:hidden"`) se muestra a todas las anchuras.
-  - Una sola línea con `truncate` en la última miga.
-  - La fila no se pinta en los destinos de primer nivel, igual que hoy.
-- **Desviación consciente de «PageHeader dueño de las migas»:** la fila la pinta el marco del
-  contenido del shell, justo encima del `PageHeader`.
-  - Así las pantallas heredadas sin `PageHeader` siguen orientadas sin migrarlas.
-  - Visualmente es idéntico a una miga del encabezado.
-  - La gramática de D3 fija la distancia entre la fila y el título.
+- **Cambio:** las migas salen de la barra superior.
+- **Dueño por ruta, decidido por el modelo de rutas y no por el historial:**
+  - **Rutas migradas** (en este cambio, `/borradores/nuevo` y `/borradores/[id]`): el `PageHeader`
+    pinta las migas encima del título. Las obtiene de la misma derivación
+    (`breadcrumbsFor(resolveRoute(…))`, con la etiqueta del registro de `useBreadcrumbLabel`).
+  - **Rutas heredadas:** la fila compartida del contenido (`AppBreadcrumbs` en `app-shell.tsx`) se
+    muestra a todas las anchuras, sin el `md:hidden` actual, hasta que cada ruta se migre.
+  - **Nunca las dos a la vez:** cada ruta interna del modelo (`INTERNAL_ROUTES`) declara
+    `orientation: "page-header"` cuando la pantalla usa el `PageHeader` con migas. El shell no
+    pinta la fila compartida en esas rutas.
+  - Una prueba recorre el modelo y comprueba que ninguna ruta tiene las dos.
+- **Forma:** una sola línea con `truncate` en la última miga, sin fila en los destinos de primer
+  nivel.
 - **Una sola orientación:** se retiran los 14 enlaces «volver» que repiten la primera miga.
   - Editores: factura, nota de crédito, nota de débito, retención, guía y liquidación.
   - Detalles: factura, nota de crédito, nota de débito, retención, guía, liquidación e ítem de
     inventario.
   - Es un cambio mecánico, sin tocar la composición de esas pantallas.
+- **Alternativa descartada:** que el shell pinte siempre las migas. Funciona sin migrar, pero deja
+  al `PageHeader` sin dueño de su orientación y obliga a cada migración a deshacerlo.
 
 ### D3. Gramática de `PageHeader` (componente existente, sin otro sistema de encabezado)
 
 | Variante | Migas (D2) | Título | Descripción | Contexto | Acción principal | Secundarias |
 | --- | --- | --- | --- | --- | --- | --- |
 | Lista (Facturas) | No | `h1` | Opcional | Opcional | A la derecha del título | Junto a la principal |
-| Editor (factura) | Sí, encima | `h1` | No | Estado del borrador: «Sin guardar», «Guardado» o «Cambios sin guardar» | No: las acciones viven en el resumen o en la barra de acciones (D11) | No |
-| Configuración y lectura | Sí («Configuración › …») | `h1` | Sí | Opcional | A la derecha, dentro del ancho de la función (D4) | Junto a la principal |
+| Editor (factura) | Sí, dentro del propio `PageHeader`, encima del título (D2) | `h1` | No | Estado del borrador: «Sin guardar», «Guardado» o «Cambios sin guardar» | No: las acciones viven en el resumen o en la barra de acciones (D11) | No |
+| Configuración y lectura | Sí («Configuración › …»), en el `PageHeader` al migrarse | `h1` | Sí | Opcional | A la derecha, dentro del ancho de la función (D4) | Junto a la principal |
 
 - **Ritmo vertical fijo:**
   - el bloque del título mide al menos 40 px, la altura del botón por defecto, con `items-center`;
@@ -259,23 +322,23 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
 - **`StickySummaryPanel`:**
   - al lado (D5): `sticky` bajo la barra superior, que sigue a la vista;
   - apilado: una sección más, al final del formulario.
-- **Contenido veraz** (spec «Totales veraces» y «Ambiente junto a la emisión"):
-  1. **Estado del borrador:** «Sin guardar», «Guardado» o «Cambios sin guardar», en texto.
-  2. **Totales:**
-     - con el borrador guardado y sin cambios, los del servidor: subtotal sin impuestos,
-       descuento, cada IVA y total;
-     - sin borrador, «Los totales se calculan al guardar el borrador»;
-     - con cambios, «Guarda para recalcular los totales», y el último total guardado solo como
-       referencia rotulada («Último total guardado: USD …»), atenuada;
-     - con `totals` nulo, «Los totales aparecen cuando todas las líneas se pueden calcular».
-     - Nunca ceros ni cálculos del navegador.
+- **Contenido veraz** (spec «Totales veraces», PO-2):
+  1. **Estado del borrador:** «Sin guardar», «Guardado» o «Cambios sin guardar», en texto (D16).
+  2. **Totales**, siempre del servidor y nunca ceros ni cálculos del navegador:
+     - **A. Borrador nuevo sin guardar:** sin importes; «Guarda el borrador para obtener los
+       totales calculados por el servidor.»
+     - **B. Guardado sin cambios:** los últimos del servidor: subtotal sin impuestos, descuento,
+       cada IVA y total.
+     - **C. Guardado con cambios:** el bloque se rotula «Totales del último guardado», se atenúa
+       y lleva «Guarda para recalcularlos». Ningún importe aparece como vigente.
+     - **D. Tras un guardado correcto:** la respuesta nueva del servidor sustituye al bloque (el
+       editor se monta con la versión nueva) y el rótulo desaparece. Un guardado fallido deja el
+       bloque en C.
+     - **Con `totals` nulo:** «Los totales aparecen cuando todas las líneas se pueden calcular».
   3. «Vista previa del dd/mm/aaaa, sin validez fiscal», en P2.
   4. **«Antes de emitir»:** los problemas generales del servidor.
-  5. **Ambiente:**
-     - Pruebas: aviso «Pruebas · esta factura no tendrá validez tributaria», con el tono de
-       ambiente del shell;
-     - Producción: «Producción» como contexto neutro;
-     - desconocido: «No pudimos confirmar el ambiente».
+  5. **Aviso de ambiente junto a la emisión (D21):** el aviso contextual, inmediatamente encima
+     de las acciones.
 - **`StickyFormActions`:** la acción principal, la secundaria y el motivo de la acción no
   disponible, escrito y asociado con `aria-describedby`.
   - Al lado, al pie del panel.
@@ -324,7 +387,7 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
 - **Dónde se aplica:** en las cinco listas de Context, el botón del estado vacío deja de ser el mismo
   elemento del encabezado y pasa a la variante secundaria. Facturas y Borradores ya lo cumplen.
 
-### D12. Destino actual, migas y creación rápida de las rutas de factura (PO-1, recomendación)
+### D12. Destino actual, migas y creación rápida de las rutas de factura (PO-1, aprobada)
 
 - **Cambio:** en `INTERNAL_ROUTES`, `/borradores/nuevo` y `/borradores/[id]` pasan a tener a
   Facturas como destino.
@@ -334,8 +397,8 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
   flujo.
 - **Lo que no cambia:** Borradores de facturas sigue en Ventas como lista para retomar borradores, y
   las direcciones no cambian (sin enlaces rotos).
-- **Alternativa (si el propietario la elige):** nueva factura en Facturas y borrador existente en
-  Borradores. Exige revisar el escenario «Editor de factura» de la delta antes de aplicar.
+- **Alternativa descartada por el propietario:** nueva factura en Facturas y borrador existente en
+  Borradores. Cambiaba el destino en mitad del flujo, al primer guardado.
 
 ### D13. Editor: composición de cada sección
 
@@ -363,38 +426,61 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
   - con varias, la ayuda de sección «Cada forma de pago lleva su importe y deben sumar el total»;
   - las reglas no cambian, y quitar la última fila sigue permitido como hoy.
 
-### D14. Matriz de estados reales del editor
+### D14. Guardar y emitir según el código y el servidor reales
 
-| Estado (código real) | Principal | Secundaria | No disponible o ausente | Motivo | Llamada |
-| --- | --- | --- | --- | --- | --- |
-| Nuevo sin guardar (`draft === null`) | Guardar borrador | — | Emitir, neutro | «Guarda el borrador para emitirlo.» | `POST /invoices/drafts` |
-| Guardando (`save.isPending`) | Guardar, pendiente (`aria-busy`) | — | Emitir, neutro | — | En curso |
-| Guardado con cambios (`isDirty`) | Guardar borrador | — | Emitir, neutro | «Guarda los cambios antes de emitir.» | `PUT /invoices/drafts/{id}` |
-| Guardado sin cambios, con problemas (`issues.length > 0`) | — (se corrige un dato) | Guardar borrador (recalcula a la fecha) | Emitir, neutro | «Resuelve los problemas del resumen antes de emitir.» | — |
-| Listo (guardado, sin cambios ni problemas, con `invoices.emit`) | Emitir factura | Guardar borrador | — | — | Abre la confirmación |
-| Confirmación abierta, emitiendo (`emit.isPending`) | Confirmar, pendiente | Cancelar | — | — | `POST /invoices` con `Idempotency-Key` |
-| Sin permiso para emitir | Guardar borrador | — | Emitir, ausente | — | — |
-| Errores de operación | Recuperación: «Recargar borrador» (`INVOICE_DRAFT_CHANGED`) o «Ver facturas» (`INVOICE_DRAFT_ALREADY_EMITTED`) | — | — | El mensaje del servidor | — |
+Cinco preguntas independientes deciden las acciones. Ninguna es un estado nuevo: todas existen hoy
+en el código.
 
-- **Estados que no se inventan:** «inválido o incompleto» no existe como estado propio. Son los
-  errores de validación del formulario al guardar y los problemas del servidor del borrador guardado.
+| Pregunta | Fuente real |
+| --- | --- |
+| ¿Hay un guardado en curso? | `save.isPending` |
+| ¿Se puede guardar? | Siempre que no haya un guardado en curso y el usuario tenga `invoices.draft` (la ruta ya lo exige). Un borrador incompleto o con problemas se guarda. Lo que el cliente o el servidor rechazan se explica al pulsar, junto al dato o con su recuperación, sin deshabilitar el botón de antemano. |
+| ¿La versión vigente está guardada? | `draft !== null && !isDirty` |
+| ¿Se cumplen los requisitos de la emisión? | `preview.issues.length === 0` en la versión guardada; el servidor lo vuelve a evaluar al emitir |
+| ¿Puede emitir el usuario? | `invoices.emit` |
+
+| Situación | Principal | Secundaria | No disponible, con su motivo | Llamada |
+| --- | --- | --- | --- | --- |
+| Nuevo, sin guardar | Guardar borrador | — | Emitir: «Guarda el borrador para emitirlo.» | `POST /invoices/drafts` |
+| Guardado, incompleto o con problemas, sin cambios | Ninguna destacada (se corrige un dato) | Guardar borrador (vuelve a evaluar a la fecha) | Emitir: «Resuelve los problemas del resumen antes de emitir.» o lo que falta | `PUT /invoices/drafts/{id}` al guardar |
+| Guardado con cambios | Guardar borrador | — | Emitir: «Guarda los cambios antes de emitir.» | `PUT /invoices/drafts/{id}` |
+| Guardado en curso | Guardar, en curso (`aria-busy`) | — | Emitir, y el formulario sin edición hasta la respuesta | En curso |
+| Listo: guardado, sin cambios, sin problemas, con `invoices.emit` | Emitir factura | Guardar borrador | — | Abre la confirmación |
+| Emitiendo | Confirmar, en curso | Cancelar, deshabilitado mientras espera | — | `POST /invoices` con `Idempotency-Key` |
+| Sin `invoices.emit` | Guardar borrador | — | Emitir, ausente | — |
+| Guardado rechazado | Recuperación: «Recargar borrador» (`INVOICE_DRAFT_CHANGED`) o «Ver facturas» (`INVOICE_DRAFT_ALREADY_EMITTED`); el resto, junto al dato | Guardar (lo escrito se conserva) | — | — |
+| Emisión rechazada por el servidor | — | — | Emitir, hasta corregir: el motivo y los problemas actuales al volver a cargar el borrador | `GET /invoices/drafts/{id}` |
+
+- **Guardar nunca se deshabilita por los requisitos de la emisión.** Solo espera mientras hay un
+  guardado en curso.
+- **Formulario sin edición mientras se guarda** (derivada de PO-3): los campos se marcan como solo
+  lectura con `aria-busy`. Así lo persistido es exactamente lo que se ve, y montar la versión nueva
+  no descarta nada escrito durante la espera.
+- **Ni estados ni reglas nuevos.** La máquina de estados fiscal y las reglas del servidor no
+  cambian.
 
 ### D15. Confirmación de la emisión
 
 - **Se conservan:** la intención explícita, la irreversibilidad, el ambiente, el comprador, el total
   del servidor, las líneas, el aviso de consumidor final y la `Idempotency-Key` por versión.
-- **Se añade:** en Pruebas, la línea «Esta factura no tendrá validez tributaria», con el tono de
-  ambiente.
+- **Se añade:** el aviso contextual de D21 dentro de la confirmación: «Pruebas · esta factura no
+  tendrá validez tributaria», con icono y texto. Con el ambiente sin confirmar, «No pudimos
+  confirmar el ambiente».
 - **No cambia:** la máquina de estados ni las precondiciones del servidor.
 
-### D16. Cambios sin guardar (PO-3, recomendación)
+### D16. Cambios sin guardar (PO-3, aprobada)
 
 - **Indicador:** el contexto del `PageHeader` del editor (D3) y el estado del resumen (D8) dicen
   «Cambios sin guardar» mientras `isDirty`.
-- **Aviso al salir:** un `beforeunload` registrado solo con cambios avisa al cerrar o recargar la
-  pestaña.
-- **Navegación interna:** no se intercepta. El App Router de Next.js no ofrece un bloqueo fiable, y
-  un bloqueo a medias es peor que ninguno. Queda registrado.
+- **Aviso al salir:** un `beforeunload` registrado solo mientras hay cambios avisa al cerrar o
+  recargar la pestaña. Se retira en cuanto el estado queda limpio.
+- **Cuándo se limpia:** solo cuando el servidor confirma el guardado. El editor se monta con la
+  versión devuelta, que es la que se ve gracias al formulario sin edición durante el guardado (D14).
+  - Un guardado fallido conserva los valores, el indicador y el aviso.
+  - La recuperación de `INVOICE_DRAFT_CHANGED` («Recargar borrador») descarta los cambios solo
+    cuando el operador la elige.
+- **Navegación interna:** no se intercepta. El App Router de Next.js no ofrece un bloqueo fiable,
+  y un bloqueo a medias es peor que ninguno. Queda como brecha documentada.
 
 ### D17. Revisión visual como ojos del agente (`test:visual:review`)
 
@@ -428,9 +514,12 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
 
   Nunca falla por estética: la composición la juzgan el agente y las personas.
 - **Sin dependencias nuevas:** solo Playwright y las API del navegador y de Node.
-- **Solo harness:** revisar el despliegue local de revisión es un procedimiento manual documentado
-  que exige probar `SRI_TRANSMISSION_ENABLED=0` con `docker inspect` antes de abrir el navegador.
-  Nunca se deduce del valor por defecto.
+- **Solo harness:** el comando nunca usa el backend ni emite.
+- **Despliegue local de revisión:** es un procedimiento manual documentado.
+  - Antes de abrir el navegador, exige leer la configuración real del backend en ejecución
+    (`docker inspect`) y comprobar `SRI_TRANSMISSION_ENABLED=0`.
+  - Si no puede establecerse, la revisión se detiene.
+  - Nunca se deduce del valor por defecto, y nunca se emite de verdad durante la revisión.
 
 ### D18. Matriz de revisión de este cambio
 
@@ -442,7 +531,11 @@ La motivación está en `proposal.md` y el comportamiento observable en las spec
   - una configuración (Empresa) y su miga;
   - una lista heredada (Productos, por la selección neutra);
   - el diálogo de producto (control segmentado);
-  - la barra superior y el panel móvil.
+  - un editor heredado que emite (nota de crédito), con el aviso de Pruebas junto a «Emitir» y en su
+    confirmación;
+  - la barra superior en Pruebas (con la explicación del indicador abierta), en Producción y con el
+    ambiente sin confirmar;
+  - el panel móvil.
 - **Anchuras:** 1440×900, 1280×800, 1024×768 expandida y colapsada, 768×900, 390×844 y 720×450 con
   escala 2 (equivalente a 200 % de zoom).
 - **Temas:** claro en todas las capturas y oscuro en Facturas, el editor listo y Productos.
@@ -469,6 +562,50 @@ Generar las imágenes sin mirarlas, o pasar `test:visual`, no basta. Se escribe 
 - **Revisión UX:** operador diario, primera vez y usuario ocasional en 4/5 o más.
 - **Aparte:** los S3 que dependan del backend (`SERVER_TOTAL_PREVIEW_GAP`) se informan por separado.
 
+### D21. Ambiente: identidad global compacta y aviso contextual (aprobada)
+
+- **Global:** el indicador de la zona derecha de la barra es el aviso persistente del ambiente.
+
+  | Ambiente | Texto visible | Icono y tono | Nombre accesible | Al enfocarlo, señalarlo o tocarlo |
+  | --- | --- | --- | --- | --- |
+  | Pruebas | «Pruebas» | Advertencia, tono de ambiente | «Ambiente de Pruebas: los comprobantes no tienen validez tributaria» | Una explicación breve en un popover: sin validez tributaria, y que un administrador cambia el ambiente en Configuración › Ambiente |
+  | Producción | «Producción» | Icono de contexto, `emphasis` neutro, nunca éxito | «Ambiente de Producción» | — |
+  | Sin confirmar | «Sin confirmar» | Advertencia | «No pudimos confirmar el ambiente» | Explica que no se pudo confirmar si los comprobantes tienen validez tributaria |
+
+  - Es un botón con popover, no un tooltip, para que funcione con el tacto y el teclado.
+  - No se puede cerrar ni ocultar.
+  - RF-004 y RF-005 se cumplen con este indicador: es inequívoco, persistente y una advertencia.
+- **Se retira** `EnvironmentNotice` (la franja de ancho completo). `NoticeStrip` sigue para el
+  vencimiento de la firma.
+- **Contextual:** un componente compartido, `EmissionEnvironmentNotice` en `features/company`, con
+  icono y texto, que nunca comunica solo con color.
+  - Pruebas: «Pruebas · este comprobante no tendrá validez tributaria», con la palabra del tipo:
+    factura, nota de crédito y demás.
+  - Sin confirmar: «No pudimos confirmar el ambiente».
+  - Producción: nada junto a la acción; en la confirmación, «Producción» como contexto.
+- **Dónde va:**
+  - en el editor de facturas, encima de las acciones (D8) y dentro de la confirmación (D15);
+  - en los editores de nota de crédito, nota de débito, retención, guía y liquidación, junto a su
+    «Emitir» y dentro de su confirmación, insertado sin recomponer esas pantallas (spec
+    `document-emission`, «Aviso de Pruebas al emitir»).
+- **Por qué:** la advertencia está donde se toma la decisión fiscal, y deja de cansar en cada
+  pantalla de lectura.
+- **Alternativa descartada:** conservar la franja global y añadir el aviso contextual. Duplica la
+  señal, que es el hallazgo de fatiga de la auditoría.
+
+### D22. Revisión visual antes de tocar el código
+
+- **Antes:** en el apply, el grupo 1 se completa y se commitea antes de cualquier cambio de código
+  de ejecución:
+  - la herramienta;
+  - las capturas «antes»;
+  - abrirlas y mirarlas, junto con las hojas y la geometría;
+  - `review-antes.md` con hallazgos concretos.
+- **Después:** al terminar se captura la misma matriz, se compara y se escribe `review-despues.md`
+  con conclusiones basadas en la evidencia.
+- **Qué no basta:** generar capturas, o pasar `test:visual`. La valoración cubre jerarquía
+  visual, densidad, alineación, prioridad de acciones, anchuras, claro y oscuro, y uso operativo.
+
 ## Trazabilidad de la plantilla
 
 Origen relativo a `../template-shadcn-premium/src/app/(main)/dashboard/` (MIT de «Studio Admin»);
@@ -486,7 +623,7 @@ avisos en `frontend/THIRD_PARTY_NOTICES.md`.
 
 | Brecha | Efecto | Mientras tanto |
 | --- | --- | --- |
-| `SERVER_TOTAL_PREVIEW_GAP`: no hay vista previa de totales sin guardar | Tras editar no se ven totales hasta guardar | Resumen veraz (D8) y guardar como acción principal (D14) |
+| `SERVER_TOTAL_PREVIEW_GAP`: no hay vista previa de totales sin guardar (aceptada en PO-2) | Tras editar no se ven totales vigentes hasta guardar | Resumen veraz A–D (D8) y guardar como acción principal (D14) |
 | `UNSAVED_CHANGES_GAP`, parte de navegación interna | Un enlace interno con cambios sin guardar los pierde | Indicador visible y aviso al cerrar o recargar (D16) |
 
 ## Operaciones sensibles
@@ -507,8 +644,16 @@ avisos en `frontend/THIRD_PARTY_NOTICES.md`.
   actualizan la prueba de la creación rápida y la de `ux.spec.ts`.
 - **[Barra de acciones fija al pie tapa contenido o foco]** → Reserva de alto y comprobación de foco
   en la matriz de revisión.
-- **[Todas las capturas del shell cambian]** → La barra superior sale distinta en las 26 capturas. Se
-  revisan las diferencias y se acepta solo lo esperado (barra, migas y botones).
+- **[Todas las capturas del shell cambian]** → La barra superior sale distinta y desaparece la
+  franja en las 26 capturas. Se revisan las diferencias y se acepta solo lo esperado (barra, migas,
+  ambiente y botones).
+- **[Retirar la franja reduce la advertencia en pantallas sin emisión]** → El indicador compacto
+  sigue en todas las pantallas como advertencia persistente con su explicación, y el aviso contextual
+  aparece donde se emite, en los seis editores. Las pruebas de `taxpayer-setup` y del shell se
+  actualizan a la forma compacta.
+- **[Tocar los cinco editores heredados para el aviso contextual]** → Inserción de un componente
+  junto a «Emitir» y en la confirmación, sin cambiar su composición ni su comportamiento. Una prueba
+  por editor.
 - **[El último total guardado se confunde con el vigente]** → Se rotula como «Último total guardado»,
   se atenúa y se muestra solo como referencia junto a «Guarda para recalcular».
 
@@ -518,7 +663,7 @@ avisos en `frontend/THIRD_PARTY_NOTICES.md`.
   1. capturas «antes» y la medición previa;
   2. la herramienta de revisión;
   3. el sistema (botón, selección, estado vacío, anchos);
-  4. el shell (barra, migas, tema, rutas de factura);
+  4. el shell (barra, migas, tema, ambiente compacto y aviso contextual, rutas de factura);
   5. `PageHeader`;
   6. los primitivos de formulario;
   7. el editor;

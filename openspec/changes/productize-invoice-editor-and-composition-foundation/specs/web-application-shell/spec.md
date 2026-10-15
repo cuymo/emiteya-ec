@@ -44,6 +44,79 @@ presentación de la acción principal, y nunca solo por el color.
 
 ## MODIFIED Requirements
 
+### Requirement: Shell autenticado disponible
+Toda pantalla autenticada SHALL mostrarse dentro del shell: navegación, barra superior con el
+contexto de la empresa y el indicador del ambiente, avisos persistentes de condiciones que lo
+requieran, como el vencimiento de la firma, y el área de contenido de la pantalla. Mientras se
+verifica la sesión, el shell SHALL mostrar su estructura y anunciar la verificación, nunca una
+pantalla en blanco. Sin sesión, SHALL llevar al inicio de sesión conservando el destino pedido.
+
+#### Scenario: Pantalla autenticada
+- **WHEN** un operador con sesión abre la pantalla de facturas
+- **THEN** ve la navegación, la barra superior y el contenido de facturas dentro del shell
+
+#### Scenario: Verificación de la sesión
+- **WHEN** un usuario abre una pantalla autenticada y su sesión todavía se está verificando
+- **THEN** ve la estructura del shell y un estado anunciado de verificación de la sesión, no una pantalla en blanco
+
+#### Scenario: Sin sesión
+- **WHEN** una persona sin sesión abre la pantalla de comprobantes
+- **THEN** llega al inicio de sesión, y al iniciar sesión vuelve a la pantalla de comprobantes
+
+#### Scenario: Aviso de la firma dentro del shell
+- **WHEN** la firma electrónica de la empresa está por vencer en una empresa en Pruebas
+- **THEN** el shell muestra el aviso de vencimiento de la firma y, en la barra superior, el indicador «Pruebas», sin ocultar ninguno de los dos
+
+### Requirement: Ambiente fiscal visible en el shell
+El shell SHALL mostrar el ambiente fiscal vigente en todas las pantallas autenticadas y en todos sus
+estados (barra expandida o colapsada, panel móvil), con un indicador compacto en la barra superior
+que siga visible al desplazar el contenido, nunca solo color o icono. En Pruebas, el indicador SHALL
+ser el aviso persistente del ambiente: SHALL decir «Pruebas» con un icono de advertencia, no SHALL
+poder cerrarse, su nombre accesible SHALL decir que los comprobantes no tienen validez tributaria, y
+SHALL explicarlo al enfocarlo, señalarlo o tocarlo. El shell no SHALL mostrar además un aviso de
+ancho completo por el ambiente. Producción SHALL presentarse como contexto y no como resultado de
+una validación: su indicador no SHALL comunicar que todo está correcto. Si el ambiente no puede
+confirmarse, el indicador SHALL decir que no está confirmado y no SHALL presentarse como Producción.
+
+#### Scenario: Pruebas con la barra colapsada
+- **WHEN** un operador de una empresa en Pruebas colapsa la barra lateral y navega a otra pantalla
+- **THEN** sigue viendo en la barra superior el indicador «Pruebas» con su icono de advertencia, y no puede cerrarlo
+- **AND** el nombre accesible del indicador dice que los comprobantes no tienen validez tributaria
+
+#### Scenario: Pruebas en móvil
+- **WHEN** un operador de una empresa en Pruebas abre y cierra la navegación en un teléfono
+- **THEN** la barra superior sigue mostrando el texto «Pruebas»
+- **AND** al tocar el indicador lee que los comprobantes no tienen validez tributaria
+
+#### Scenario: Sin aviso de ancho completo
+- **WHEN** un operador navega por una empresa en Pruebas
+- **THEN** no ve una franja de ancho completo por el ambiente, y el indicador de la barra superior sigue diciendo «Pruebas»
+
+#### Scenario: Producción sin depender del color
+- **WHEN** un usuario navega por una empresa en Producción, en escritorio o en móvil
+- **THEN** ve un indicador con el texto «Producción» y un icono
+
+#### Scenario: Ambiente visible al desplazar en un teléfono
+- **WHEN** un usuario de una empresa en Producción o en Pruebas desplaza el contenido de una pantalla larga en un teléfono
+- **THEN** la barra superior sigue mostrando el texto del ambiente vigente
+
+#### Scenario: Producción no es un resultado
+- **WHEN** un usuario navega por una empresa en Producción
+- **THEN** el indicador de Producción no usa la presentación de éxito ni de validación correcta, porque el ambiente es contexto y no se comprueba ninguna conexión con el SRI
+
+#### Scenario: Ambiente desconocido
+- **WHEN** el ambiente de la empresa no puede confirmarse
+- **THEN** el indicador de la barra superior dice que el ambiente no está confirmado, con un icono de advertencia, y no muestra «Producción»
+
+### Requirement: Carga de una pantalla
+Mientras una pantalla autenticada carga, el shell SHALL seguir visible y usable: navegación,
+contexto de la empresa y ambiente. El área de contenido SHALL mostrar un estado de carga anunciado a
+las tecnologías de asistencia, nunca un área en blanco.
+
+#### Scenario: Navegación lenta
+- **WHEN** un usuario navega a una pantalla que tarda en cargar
+- **THEN** ve el estado de carga en el área de contenido, y la navegación y el indicador del ambiente siguen visibles
+
 ### Requirement: Contexto de la empresa visible
 El shell SHALL mostrar en todas las pantallas autenticadas el nombre de la empresa de la sesión: su
 nombre comercial o, si no tiene, su razón social. Es solo lectura: el shell no SHALL ofrecer ningún
@@ -113,8 +186,8 @@ barra expandida, colapsada o en el panel móvil.
 - **THEN** la barra no cambia su desplazamiento
 
 ### Requirement: Migas de navegación
-Las pantallas internas SHALL mostrar migas que aporten jerarquía, derivadas de la misma navegación,
-encima del título de la pantalla y nunca en la barra superior, y nunca una miga que solo repita el
+Las pantallas internas SHALL mostrar una sola fila de migas que aporten jerarquía, derivadas de la
+misma navegación, encima del título de la pantalla y nunca en la barra superior, y nunca una miga que solo repita el
 título de la página. Los grupos operativos no son una miga. Configuración sí, porque agrupa
 secciones. En una pantalla interna, el destino SHALL ser un enlace, y la última miga SHALL anunciarse
 como página actual. Las migas SHALL ser el único mecanismo de orientación de la pantalla: no SHALL
@@ -140,6 +213,10 @@ acompañarse de un enlace de vuelta que repita una miga.
 #### Scenario: Una sola orientación
 - **WHEN** un usuario abre el editor de un borrador o el detalle de un comprobante
 - **THEN** la pantalla ofrece la vuelta al destino solo a través de las migas, sin un enlace de vuelta aparte
+
+#### Scenario: Sin migas duplicadas
+- **WHEN** un operador abre el editor de una factura o una pantalla interna heredada
+- **THEN** ve una sola fila de migas, encima del título, y ningún otro elemento de la pantalla repite esa orientación
 
 #### Scenario: Migas a cualquier anchura
 - **WHEN** un usuario abre una pantalla interna en escritorio, en una tableta o en un teléfono
