@@ -214,7 +214,7 @@
 
 ## 9. Navegador, capturas y carga
 
-- [ ] 9.1 Añadir al harness `visual/shell/facturas.spec.ts`:
+- [x] 9.1 Añadir al harness `visual/shell/facturas.spec.ts`:
   - **teclado:** acción principal, búsqueda, vistas con flechas, filtro, número y menú de fila con
     devolución del foco;
   - **axe:** claro, oscuro, vista de atención y móvil;
@@ -223,7 +223,7 @@
     página; a 320 px, desplazamiento solo de la tabla.
 
   Verificar que la spec pasa.
-- [ ] 9.2 Capturar el conjunto canónico de Facturas (D17):
+- [x] 9.2 Capturar el conjunto canónico de Facturas (D17):
   - escritorio claro y oscuro con datos;
   - vista de atención;
   - vacío inicial y vacío por filtros;
@@ -235,7 +235,7 @@
   de las capturas del shell tomadas sobre `/facturas` y actualizar solo las afectadas.
 
   Verificar que `corepack pnpm test:visual` pasa y que ninguna captura ajena cambió.
-- [ ] 9.3 Medir de nuevo `/facturas` con `test:visual:bundle`, completar el «después» del benchmark y
+- [x] 9.3 Medir de nuevo `/facturas` con `test:visual:bundle`, completar el «después» del benchmark y
   explicar cada diferencia.
 
   Verificar que no entra ninguna dependencia nueva y que el conteo no se repite por filtro.

@@ -35,5 +35,33 @@
       ]
     }
   },
-  "after": null
+  "after": {
+    "commit": "cb81aa0",
+    "facturas": {
+      "assets": {
+        "css": {
+          "files": 1,
+          "transferred": 13217,
+          "decoded": 72133
+        },
+        "font": {
+          "files": 1,
+          "transferred": 69652,
+          "decoded": 69652
+        },
+        "js": {
+          "files": 20,
+          "transferred": 395583,
+          "decoded": 1420820
+        }
+      },
+      "api": [
+        "GET /api/v1/company/status",
+        "GET /api/v1/invoices?attention=true&pageSize=1",
+        "GET /api/v1/invoices?page=1&pageSize=25",
+        "GET /api/v1/me",
+        "GET /api/v1/signing-certificate/validity"
+      ]
+    }
+  }
 }
