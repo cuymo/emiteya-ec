@@ -98,6 +98,8 @@ test.describe("teclado de Facturas (D16)", () => {
     await expect(menu).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("menuitem", { name: "Ver factura" })).toBeFocused();
+    // La ayuda «Acciones» no tapa el menú abierto.
+    await expect(page.getByRole("tooltip", { name: "Acciones" })).toHaveCount(0);
     await expect(page.getByRole("menuitem")).toHaveCount(2);
     await page.keyboard.press("Escape");
     await expect(menu).toBeFocused();
@@ -107,7 +109,9 @@ test.describe("teclado de Facturas (D16)", () => {
     await tab();
     const help = page.getByRole("button", { name: "Qué significa «Verificando con el SRI»" });
     await expect(help).toBeFocused();
-    await expect(page.getByRole("tooltip")).toContainText("No emitas esta venta nuevamente.");
+    await expect(
+      page.getByRole("tooltip").filter({ hasText: "No emitas esta venta nuevamente." }),
+    ).toHaveCount(1);
     await page.context().close();
   });
 });
@@ -141,6 +145,8 @@ test.describe("lectura a cualquier anchura (D15)", () => {
     [1024, true, "amplia"],
     [768, false, "compacta"],
     [768, true, "amplia"],
+    // 1280 px al 200 % de zoom.
+    [640, false, "compacta"],
   ] as const) {
     test(`${width} px, barra ${collapsed ? "colapsada" : "expandida"}: distribución ${layout}, número y total en una línea`, async ({
       browser,
@@ -175,6 +181,9 @@ test.describe("lectura a cualquier anchura (D15)", () => {
           .boundingBox();
         expect(state!.x - (number!.x + number!.width)).toBeLessThan(80);
       }
+      // Cabe sin desplazar la tabla ni la página.
+      const container = page.locator("[data-slot=table-container]");
+      expect(await container.evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
       expect(await pageOverflowX(page)).toBe(0);
       await page.context().close();
     });

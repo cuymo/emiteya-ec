@@ -8,6 +8,7 @@
 
 import { MoreHorizontal, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,12 +30,15 @@ export function RowActionsMenu({
   label: string;
   actions: readonly RowAction[];
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [hintOpen, setHintOpen] = useState(false);
   if (actions.length === 0) return null;
   return (
     // No modal: no oculta el resto de la página con aria-hidden ni bloquea el desplazamiento; el
-    // foco entra al menú, Escape lo devuelve al botón y salir del menú lo cierra.
-    <DropdownMenu modal={false}>
-      <Tooltip>
+    // foco entra al menú, Escape lo devuelve al botón y salir del menú lo cierra. La ayuda se oculta
+    // mientras el menú está abierto, para que no lo tape al abrirlo con el teclado.
+    <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
+      <Tooltip open={hintOpen && !menuOpen} onOpenChange={setHintOpen}>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <Button
