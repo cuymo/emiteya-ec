@@ -40,7 +40,7 @@ export function DataTableViews<T extends string>({
       className="w-full sm:w-fit"
     >
       {views.map((view) => (
-        <ToggleGroupItem key={view.value} value={view.value} className="flex-1 sm:flex-none">
+        <ToggleGroupItem key={view.value} value={view.value} className="flex-auto sm:flex-none">
           {view.label}
           {/* El espacio separa el conteo en el nombre accesible: «Requiere atención 3». */}
           {view.count !== undefined && " "}

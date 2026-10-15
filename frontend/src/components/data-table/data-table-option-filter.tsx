@@ -35,7 +35,8 @@ export function DataTableOptionFilter<T extends string>({
 }) {
   const selected = options.find((option) => option.value === value);
   return (
-    <DropdownMenu>
+    // No modal, como el menú de la fila: la página no queda oculta con aria-hidden mientras se elige.
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"

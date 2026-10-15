@@ -54,6 +54,7 @@ import { useListUrlState } from "@/hooks/use-list-url-state";
 import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { formatIssueDate } from "./invoice-format";
 import { useInvoiceAttentionCount, useInvoices } from "./invoices-api";
 
@@ -93,29 +94,21 @@ const SEARCH_MAX_LENGTH = 100;
  * Ambiente de una factura distinto del vigente (D13, PO-4). Si el vigente no se puede confirmar, se
  * marcan las de Pruebas, para no presentarlas nunca como válidas. Es contexto: ni éxito ni rechazo.
  */
-function EnvironmentMark({
-  invoice,
-  current,
-}: {
-  invoice: Environment;
-  current: Environment | undefined;
-}) {
+function environmentMark(invoice: Environment, current: Environment | undefined) {
   if (invoice === current) return null;
   if (invoice === "TEST") {
     return (
-      <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+      <>
         <Badge variant="neutral">Pruebas</Badge>
-        <span className="sr-only">, </span>
-        sin validez tributaria
-      </span>
+        <span>
+          <span className="sr-only">, </span>
+          sin validez tributaria
+        </span>
+      </>
     );
   }
   if (current === undefined) return null;
-  return (
-    <span className="flex">
-      <Badge variant="emphasis">Producción</Badge>
-    </span>
-  );
+  return <Badge variant="emphasis">Producción</Badge>;
 }
 
 async function copyNumber(documentNumber: string) {
@@ -177,13 +170,19 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
       {
         id: "invoice",
         header: "Factura",
-        meta: { cellClassName: "w-full py-2 @xl:w-auto" },
+        // El margen izquierdo aloja la marca de atención: los números quedan alineados.
+        meta: {
+          headClassName: "pl-4 @xl:pl-5",
+          skeletonClassName: "w-36",
+          cellClassName: "w-full py-2 pr-2 pl-4 @xl:w-auto @xl:pr-3 @xl:pl-5",
+        },
         cell: ({ row }) => {
           const invoice = row.original;
+          const mark = environmentMark(invoice.environment, currentEnvironment);
           return (
             <div className="flex flex-col gap-1">
-              <span className="flex items-center gap-1.5">
-                {requiresAttention(invoice) && <AttentionMarker />}
+              <span className="relative flex items-center">
+                {requiresAttention(invoice) && <AttentionMarker className="absolute -left-3" />}
                 <Link
                   href={`/facturas/${invoice.id}`}
                   className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
@@ -191,10 +190,17 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
                   {invoice.documentNumber}
                 </Link>
               </span>
-              <span className="hidden text-xs text-muted-foreground tabular-nums @xl:inline">
-                {formatIssueDate(invoice.issueDate)}
+              <span
+                className={cn(
+                  "flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground",
+                  mark ? "flex" : "hidden @xl:flex",
+                )}
+              >
+                <span className="hidden tabular-nums @xl:inline">
+                  {formatIssueDate(invoice.issueDate)}
+                </span>
+                {mark}
               </span>
-              <EnvironmentMark invoice={invoice.environment} current={currentEnvironment} />
               <span className="line-clamp-2 text-sm break-words @xl:hidden">
                 {invoice.buyerName}
               </span>
@@ -208,7 +214,11 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
       {
         id: "state",
         header: "Estado",
-        meta: { headClassName: "hidden @xl:table-cell", cellClassName: "hidden @xl:table-cell" },
+        meta: {
+          headClassName: "hidden @xl:table-cell",
+          cellClassName: "hidden @xl:table-cell",
+          skeletonClassName: "w-36",
+        },
         cell: ({ row }) => (
           <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
         ),
@@ -219,6 +229,7 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
         meta: {
           headClassName: "hidden @xl:table-cell",
           cellClassName: "hidden @xl:table-cell @xl:w-full @xl:max-w-0",
+          skeletonClassName: "w-full max-w-56",
         },
         cell: ({ row }) => (
           <span className="flex flex-col">
@@ -232,9 +243,14 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
       {
         id: "total",
         header: "Total",
-        meta: { headClassName: "text-right", cellClassName: "py-2 text-right" },
+        // En la compacta, el menú va en esta celda: el encabezado se alinea con el importe.
+        meta: {
+          headClassName: "pr-10.5 text-right @xl:pr-3",
+          cellClassName: "py-2 pr-2 pl-2 text-right @xl:pr-3 @xl:pl-3",
+          skeletonClassName: "ml-auto w-24",
+        },
         cell: ({ row }) => (
-          <span className="flex items-start justify-end gap-1">
+          <span className="flex items-start justify-end gap-0.5">
             <span className="flex flex-col items-end gap-1">
               <span className="whitespace-nowrap tabular-nums">
                 {formatUsd(row.original.total)}
@@ -256,6 +272,7 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
           srOnlyHeader: true,
           headClassName: "hidden w-12 @xl:table-cell",
           cellClassName: "hidden w-12 text-right @xl:table-cell",
+          skeletonClassName: "ml-auto size-6",
         },
         cell: ({ row }) => <InvoiceActions invoice={row.original} />,
       },
@@ -321,6 +338,8 @@ export function InvoicesScreen() {
   }
 
   const clearFilters = () => url.update({ vista: null, estado: null, q: null });
+  // La vista cuenta para el vacío por filtros; la fila de filtros activos aparece solo con un estado
+  // o una búsqueda, porque «Todas» ya deshace la vista.
   const filtersActive = view !== "todas" || state !== undefined || search !== "";
   const activeFilters: ActiveFilter[] = [
     ...(state
@@ -386,7 +405,7 @@ export function InvoicesScreen() {
             activeFilters={
               <DataTableActiveFilters
                 filters={activeFilters}
-                active={filtersActive}
+                active={activeFilters.length > 0}
                 onClear={clearFilters}
               />
             }

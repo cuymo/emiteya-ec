@@ -31,7 +31,9 @@ export function RowActionsMenu({
 }) {
   if (actions.length === 0) return null;
   return (
-    <DropdownMenu>
+    // No modal: no oculta el resto de la página con aria-hidden ni bloquea el desplazamiento; el
+    // foco entra al menú, Escape lo devuelve al botón y salir del menú lo cierra.
+    <DropdownMenu modal={false}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
@@ -39,7 +41,9 @@ export function RowActionsMenu({
               variant="ghost"
               size="icon-sm"
               aria-label={label}
-              className="text-muted-foreground"
+              // En la fila mide 32 px también en móvil, con 44 px de objetivo táctil: así la tabla
+              // compacta cabe a 390 px.
+              className="relative text-muted-foreground max-md:size-8 max-md:after:absolute max-md:after:-inset-1.5"
             >
               <MoreHorizontal aria-hidden="true" />
             </Button>

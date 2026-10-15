@@ -16,7 +16,7 @@ export function DataTableActiveFilters({
 }: {
   /** Filtros que no se ven en otro control (la búsqueda y las opciones del menú). */
   filters: readonly ActiveFilter[];
-  /** Hay algún filtro activo, también una vista distinta de la general. */
+  /** Hay algún filtro que mostrar; el módulo decide si una vista cuenta como filtro. */
   active: boolean;
   onClear: () => void;
 }) {

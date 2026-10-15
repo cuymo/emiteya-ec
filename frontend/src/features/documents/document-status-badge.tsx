@@ -33,6 +33,7 @@ import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 export type DocumentStateVariant = "info" | "success" | "warning" | "destructive";
 
@@ -120,13 +121,13 @@ export function TransmissionStoppedBadge() {
 }
 
 /** Marca discreta de «Requiere atención», con nombre accesible; no colorea la fila. */
-export function AttentionMarker() {
+export function AttentionMarker({ className }: { className?: string }) {
   return (
     <span
       role="img"
       aria-label="Requiere atención"
       title="Requiere atención"
-      className="inline-block size-2 shrink-0 rounded-full bg-warning"
+      className={cn("inline-block size-2 shrink-0 rounded-full bg-warning", className)}
     />
   );
 }

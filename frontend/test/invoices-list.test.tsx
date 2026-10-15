@@ -218,6 +218,8 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
     expect(
       screen.getByRole("radio", { name: /Requiere atención/ }).getAttribute("aria-checked"),
     ).toBe("true");
+    // Solo la vista: «Todas» la deshace, así que no aparece la fila de filtros activos.
+    expect(screen.queryByRole("group", { name: "Filtros activos" })).toBeNull();
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/facturas?vista=atencion", {
         scroll: false,

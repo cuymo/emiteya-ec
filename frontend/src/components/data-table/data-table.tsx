@@ -45,6 +45,8 @@ declare module "@tanstack/react-table" {
     cellClassName?: string;
     /** Encabezado solo para lectores de pantalla, como el de la columna de acciones. */
     srOnlyHeader?: boolean;
+    /** Ancho del esqueleto de la celda, para que la carga conserve la geometría de la columna. */
+    skeletonClassName?: string;
   }
 }
 
@@ -156,7 +158,12 @@ export function DataTable<T>({
                       key={column.id}
                       className={cn("h-11", column.columnDef.meta?.cellClassName)}
                     >
-                      <Skeleton className="h-4 w-full max-w-40" />
+                      <Skeleton
+                        className={cn(
+                          "h-4",
+                          column.columnDef.meta?.skeletonClassName ?? "w-full max-w-40",
+                        )}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
