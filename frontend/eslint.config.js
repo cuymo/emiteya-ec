@@ -43,6 +43,13 @@ export default defineConfig(
       "src/components/route-states/**/*.{ts,tsx}",
       "src/lib/navigation/**/*.{ts,tsx}",
       "src/hooks/**/*.{ts,tsx}",
+      // Base de listas y Facturas (productize-invoice-list-and-shared-table-foundation, design D19).
+      "src/components/layout/**/*.{ts,tsx}",
+      "src/components/data-table/data-table.tsx",
+      "src/components/data-table/data-table-*.tsx",
+      "src/components/data-table/row-actions-menu.tsx",
+      "src/features/documents/**/*.{ts,tsx}",
+      "src/features/invoices/invoices-screen.tsx",
     ],
     rules: {
       "no-restricted-imports": [

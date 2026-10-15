@@ -197,7 +197,7 @@
 
 ## 8. Lint escalonado y documentación de la pantalla
 
-- [ ] 8.1 Añadir a la lista estricta de `frontend/eslint.config.js` (D19):
+- [x] 8.1 Añadir a la lista estricta de `frontend/eslint.config.js` (D19):
   - `components/layout/**`;
   - los archivos nuevos de `components/data-table/`;
   - `features/documents/**`;

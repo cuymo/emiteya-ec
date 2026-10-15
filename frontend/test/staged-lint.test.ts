@@ -85,3 +85,52 @@ describe("aplicación escalonada", () => {
     expect(messages).toEqual([]);
   });
 });
+
+describe("base de listas y Facturas (productize-invoice-list-and-shared-table-foundation, D19)", () => {
+  const MIGRATED = [
+    "src/features/invoices/invoices-screen.tsx",
+    "src/components/data-table/data-table-sample.tsx",
+    "src/components/layout/sample.tsx",
+    "src/features/documents/sample.tsx",
+  ];
+
+  it("la pantalla migrada y la base no importan states, Radix ni tamaños legacy-*", async () => {
+    for (const file of MIGRATED) {
+      const messages = await lint(
+        `import { Dialog } from "radix-ui";\nimport { EmptyState } from "@/components/states";\n${BUTTON}export const A = () => <Button size="legacy-sm">a</Button>;\nexport { Dialog, EmptyState };\n`,
+        file,
+      );
+      expect(
+        messages.some((message) => message.endsWith("no Radix directamente.")),
+        file,
+      ).toBe(true);
+      expect(
+        messages.some((message) => message.endsWith("usa los primitivos derivados.")),
+        file,
+      ).toBe(true);
+      expect(messages, file).toContain("Los tamaños legacy-* son solo para pantallas sin migrar.");
+    }
+  });
+
+  it("los archivos reales de la base y de Facturas cumplen las reglas", async () => {
+    const results = await eslint.lintFiles([
+      "src/features/invoices/invoices-screen.tsx",
+      "src/components/data-table/data-table*.tsx",
+      "src/components/data-table/row-actions-menu.tsx",
+      "src/components/layout/**/*.tsx",
+      "src/features/documents/**/*.tsx",
+      "src/hooks/use-list-url-state.ts",
+    ]);
+    expect(
+      results.flatMap((result) => result.messages.map((m) => `${result.filePath}: ${m.message}`)),
+    ).toEqual([]);
+  });
+
+  it("las listas heredadas conservan sus reglas mientras no migran", async () => {
+    const messages = await lint(
+      'import { EmptyState } from "@/components/states";\nexport { EmptyState };\n',
+      "src/components/data-table/app-data-table.tsx",
+    );
+    expect(messages).toEqual([]);
+  });
+});
