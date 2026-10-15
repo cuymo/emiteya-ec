@@ -239,7 +239,7 @@
   explicar cada diferencia.
 
   Verificar que no entra ninguna dependencia nueva y que el conteo no se repite por filtro.
-- [ ] 9.4 Documentar en `docs/quality/testing.md` las capturas y las comprobaciones nuevas.
+- [x] 9.4 Documentar en `docs/quality/testing.md` las capturas y las comprobaciones nuevas.
 
   Verificar que el recuento de capturas coincide con el harness.
 

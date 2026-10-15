@@ -263,17 +263,31 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
       comparadas con cero píxeles de diferencia. Solo tiene sentido en el commit del codemod.
     - `corepack pnpm test:visual`: la apariencia aprobada del shell premium (proyecto `shell`,
       `frontend/visual/shell/`).
-      - **Capturas:** 18, con una tolerancia de 0,1 % de píxeles para el suavizado del texto:
+      - **Capturas:** 26 (17 del shell y 9 de Facturas), con una tolerancia de 0,1 % de píxeles para
+        el suavizado del texto. Un cambio de color muy tenue, como el gris de un esqueleto sobre el
+        fondo, queda por debajo del umbral por píxel: esas diferencias se revisan a mano. Del shell:
         - escritorio claro y oscuro con la barra expandida, y claro con la barra colapsada;
         - tableta;
         - móvil cerrado y con el panel abierto;
         - Producción con un operador, y Producción en móvil;
         - paleta de comandos y creación rápida abiertas;
         - carga, error inesperado, dirección inexistente y destino no permitido;
-        - la lista heredada de facturas dentro del shell;
         - un destino de Configuración con la sección abierta, y el mismo en una ventana baja con el
           destino actual a la vista;
         - el inicio de sesión.
+      - **Facturas** (`facturas.spec.ts`, `productize-invoice-list-and-shared-table-foundation`,
+        design D17), que sustituyen a la lista heredada dentro del shell:
+        - capturas de escritorio claro y oscuro con datos, la vista «Requiere atención», el vacío
+          inicial, el vacío por filtros, la carga, el error, 1024 px con una empresa en Producción y
+          facturas de Pruebas, y 390 px;
+        - teclado: acción principal, búsqueda, vistas con flechas, filtro de estado, número, menú
+          de la fila con la devolución del foco y la ayuda de «Verificando con el SRI»;
+        - `axe` en claro, oscuro, la vista de atención, móvil y con el menú de una fila abierto;
+        - anchuras medidas: a 1024 y 768 px con la barra expandida y colapsada, la distribución que
+          corresponde y el número y el total en una línea; a 390 px, número, comprador, estado y
+          total dentro de la tabla, sin desplazamiento; a 320 px, desplazamiento solo de la tabla;
+        - peticiones: la lista y un conteo de atención, que no se repite al filtrar, buscar ni
+          cambiar las filas, y ninguna consulta por fila.
       - **Error inesperado:** se provoca solo en la prueba, con un script de inicio que hace fallar
         el formateo de una fecha centinela.
       - **Accesibilidad:** `axe` (`@axe-core/playwright`, WCAG 2.2 AA) sobre escritorio claro y
@@ -299,7 +313,8 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
         - `axe` en la barra colapsada, en Configuración con tema oscuro y en Producción en móvil.
   - **Medición de carga:** `corepack pnpm test:visual:bundle` escribe
     `frontend/test-results/bundle.json` con los bytes de JavaScript, CSS y fuentes de tres pantallas
-    representativas (`docs/quality/benchmarks/frontend-shell-2026-10-14.md`).
+    representativas y sus peticiones a `/api/v1` (`docs/quality/benchmarks/frontend-shell-2026-10-14.md`
+    y `frontend-facturas-2026-10-14.md`).
   - **Imágenes base:**
     - están versionadas en `frontend/visual/<proyecto>/__screenshots__/` y se generan solo en Linux;
     - en otro sistema se actualizan en local y no se versionan;
