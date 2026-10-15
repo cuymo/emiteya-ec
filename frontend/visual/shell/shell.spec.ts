@@ -1,7 +1,8 @@
 // B. Apariencia aprobada del shell premium (design D17). Conjunto canónico pequeño: escritorio claro y
 // oscuro con la barra expandida y colapsada, tableta, móvil cerrado y con el panel abierto, Producción
-// con un operador, paleta y creación rápida abiertas, los estados de ruta, una lista heredada dentro
-// del shell y el inicio de sesión. Nunca se compara con las capturas de la interfaz anterior.
+// con un operador, paleta y creación rápida abiertas, los estados de ruta y el inicio de sesión. Las
+// capturas de Facturas, que sustituyen a la de la lista heredada dentro del shell, están en
+// `facturas.spec.ts`. Nunca se compara con las capturas de la interfaz anterior.
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import {
   BASE_URL,
@@ -200,13 +201,6 @@ test.describe("shell premium", () => {
     ).toBeVisible();
     await pruebasVisible(page);
     await finish(page, recorder, "route-forbidden");
-  });
-
-  test("lista heredada de facturas dentro del shell", async ({ browser }) => {
-    const { page, recorder } = await open(browser, "/facturas");
-    await expect(page.getByRole("table")).toBeVisible();
-    await pruebasVisible(page);
-    await finish(page, recorder, "invoices-in-shell");
   });
 
   // Estados de las correcciones del control de calidad UX (design D23, D24 y D27; tarea 14.12).
