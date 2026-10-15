@@ -91,8 +91,30 @@ In this repository, migrated screens use `PageHeader` (`frontend/src/components/
 Breadcrumbs never live in the shell's top bar (`productize-invoice-editor-and-composition-foundation`,
 design D2). They sit in one row above the page title: the shell paints that row for the screens not
 yet migrated, and a migrated screen paints its own above its title, as the invoice editor does. The
-route model says which one owns each route, so a screen never shows both, and no «back» link repeats
-a breadcrumb. The shell's Quick Create stays an `outline` secondary control.
+route model says which one owns each route (`orientation: "page-header"` in `INTERNAL_ROUTES`), so a
+screen never shows both, and no «back» link repeats a breadcrumb. The shell's Quick Create stays an
+`outline` secondary control.
+
+### `PageHeader` grammar
+
+One header component with three variants (`productize-invoice-editor-and-composition-foundation`,
+design D3). No screen builds its own header.
+
+| Variant | Breadcrumbs | Title | Description | Context | Primary action | Secondary actions |
+| --- | --- | --- | --- | --- | --- | --- |
+| List (`variant="list"`, Facturas) | None | `h1` | Optional | Optional | Right of the title | Next to the primary |
+| Editor (`variant="editor"`, invoice editor) | The route's, inside the header, above the title | `h1` | None | Draft state: «Sin guardar», «Guardado» or «Cambios sin guardar» | None: actions live next to the summary or in the action bar | None |
+| Configuration and reading (written for the migration of those screens) | «Configuración › …», inside the header | `h1` | Yes | Optional | Right, inside the width of its role (`max-w-form` or `max-w-reading`) | Next to the primary |
+
+- **Fixed rhythm:** the title block is at least 40px high, the height of the default button, with
+  the title centered. The title lands on the same y with or without an action.
+- **Spacing:** 8px between the breadcrumb row and the title, and 24px from the header to the content
+  (the `gap-6` of the screen's section).
+- **Breadcrumb owner:** only a route that declares `orientation: "page-header"` may use the editor
+  variant; the header paints the breadcrumbs only there. Every other route keeps the shell's row.
+- **Scope today:** the list and editor variants are implemented, because they have consumers. The
+  configuration variant is documented so those screens migrate to it instead of inventing another
+  header.
 
 A module is complete when everything it offers works end to end against the real backend:
 list, create, edit, detail, and the removal or deactivation the domain allows. A list that

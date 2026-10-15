@@ -162,7 +162,7 @@
 
 ## 4. Gramática de `PageHeader`
 
-- [ ] 4.1 Ritmo vertical fijo y variantes en `components/layout/page-header.tsx` (D3):
+- [x] 4.1 Ritmo vertical fijo y variantes en `components/layout/page-header.tsx` (D3):
   - bloque del título de al menos 40 px con `items-center`;
   - 8 px desde las migas y 24 px hasta el contenido;
   - variante de lista;
@@ -171,7 +171,7 @@
 
   Verificar con `page-header.test.tsx` la variante de editor y sus migas, y con la geometría de la
   revisión la misma y del título en Facturas con y sin acción.
-- [ ] 4.2 Documentar la gramática de las tres variantes en `interface-design.md` y
+- [x] 4.2 Documentar la gramática de las tres variantes en `interface-design.md` y
   `component-system.md`, con la de configuración escrita para su migración y la regla de dueño de
   las migas por ruta.
 

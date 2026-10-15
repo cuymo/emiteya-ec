@@ -3,53 +3,70 @@
 // Visual portado del encabezado de `src/app/(main)/dashboard/file-manager/page.tsx` de la plantilla
 // «Studio Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md), que no tiene un componente compartido:
 // - el título es el único `h1` de la pantalla, con la tipografía de `design-foundations.md`;
-// - una sola ranura de acción principal, para que no pueda haber dos; las secundarias van aparte;
-// - sin migas: las pone la barra superior del shell, y repetirlas duplicaría la orientación.
+// - una sola ranura de acción principal, para que no pueda haber dos; las secundarias van aparte.
+// Gramática y ritmo (productize-invoice-editor-and-composition-foundation, design D3):
+// - el bloque del título mide al menos 40 px, la altura del botón, con el título centrado: cae
+//   siempre en la misma y, haya acción o no;
+// - variante de lista: sin migas, acción principal a la derecha del título;
+// - variante de editor: las migas de la ruta encima del título, a 8 px, el estado del borrador como
+//   contexto y ninguna acción, porque las acciones viven junto al resumen;
+// - la pantalla deja 24 px hasta el contenido (`gap-6` de su sección).
 import type { ReactNode } from "react";
+import { AppBreadcrumbs } from "@/components/shell/app-breadcrumbs";
 import { cn } from "@/lib/utils";
 
-export function PageHeader({
-  title,
-  titleId,
-  description,
-  context,
-  primaryAction,
-  secondaryActions,
-  className,
-}: {
+type Common = {
   title: string;
   /** Id del `h1`, para que la sección de la pantalla lo use como nombre. */
   titleId?: string;
-  description?: ReactNode;
   /** Un estado o una marca junto al título, solo si aporta a la decisión. */
   context?: ReactNode;
+  className?: string;
+};
+
+type ListHeader = Common & {
+  variant?: "list";
+  description?: ReactNode;
   /** La única acción principal de la pantalla. */
   primaryAction?: ReactNode;
   /** Acciones secundarias, en variante `outline` o `ghost`. */
   secondaryActions?: ReactNode;
-  className?: string;
-}) {
-  const actions = primaryAction || secondaryActions;
+};
+
+/** Editor: dueño de sus migas (`orientation: "page-header"` en el modelo de rutas) y sin acciones. */
+type EditorHeader = Common & { variant: "editor" };
+
+export function PageHeader(props: ListHeader | EditorHeader) {
+  const { title, titleId, context, className } = props;
+  const list = props.variant !== "editor" ? props : null;
+  const actions = list && (list.primaryAction || list.secondaryActions);
   return (
     <header
       data-slot="page-header"
-      className={cn("flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between", className)}
+      data-variant={props.variant ?? "list"}
+      className={cn("flex flex-col gap-2", className)}
     >
-      <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1 id={titleId} className="text-3xl font-bold break-words">
-            {title}
-          </h1>
-          {context}
+      {props.variant === "editor" && <AppBreadcrumbs owner="page-header" />}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-1">
+          <div
+            data-slot="page-header-title"
+            className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1"
+          >
+            <h1 id={titleId} className="text-3xl font-bold break-words">
+              {title}
+            </h1>
+            {context}
+          </div>
+          {list?.description && <p className="text-sm text-muted-foreground">{list.description}</p>}
         </div>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {actions && (
+          <div className="flex min-h-10 flex-wrap items-center gap-2 max-sm:[&>*]:flex-1">
+            {list.secondaryActions}
+            {list.primaryAction}
+          </div>
+        )}
       </div>
-      {actions && (
-        <div className="flex flex-wrap items-center gap-2 max-sm:[&>*]:flex-1">
-          {secondaryActions}
-          {primaryAction}
-        </div>
-      )}
     </header>
   );
 }

@@ -140,3 +140,30 @@ corta nada.
 - En la confirmación de la nota de crédito, el aviso de Pruebas y el de las declaraciones son dos
   recuadros de advertencia seguidos. Se distinguen por su texto y su orden: primero el ambiente,
   después las declaraciones.
+
+## Grupo 4: gramática de `PageHeader`
+
+- **Captura:** `REVIEW_LABEL=grupo-4 REVIEW_COMPARE_WITH=grupo-3`, 91/91 con código 0, sobre
+  `105dcf5` con los cambios del grupo. La matriz suma Facturas sin acceso
+  (`facturas-sin-acceso-*`), el estado en que el encabezado no lleva acción.
+- **Qué se miró:** la y del título en la geometría y, en `test:visual`, la imagen de diferencias de
+  `facturas-desktop-light`.
+- **`test:visual`:** cambian las 13 capturas que muestran Facturas, y en todas solo baja el contenido
+  unos píxeles por debajo del encabezado. La barra superior y la navegación no cambian. Se
+  actualizaron esas 13.
+
+### Resuelto
+
+- **A4, la deriva del título.**
+  - El bloque del título mide al menos 40 px, la altura del botón, así que el título cae en la misma
+    y haya acción o no: 74 px en `facturas-poblada-1440-claro` y en `facturas-sin-acceso-1440-claro`,
+    y 82 px a 390 px en los dos.
+  - Facturas y Productos quedan en la misma y (74 px). Antes, a 72 y 74.
+
+### Lo que sigue
+
+- **Variante de editor:** la adopta el editor de facturas en la tarea 6.1. Hasta entonces el editor
+  pinta sus migas con el mismo componente (`AppBreadcrumbs`), así que su aspecto no cambia en este
+  grupo.
+- **Variante de configuración:** queda escrita en `interface-design.md` para la migración de esas
+  pantallas, sin consumidor en este cambio.

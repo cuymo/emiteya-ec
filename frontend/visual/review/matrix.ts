@@ -113,6 +113,27 @@ export const STATES: State[] = [
     },
   },
   {
+    // Sin acceso: el encabezado no lleva acción. El título cae en la misma y que con «Nueva
+    // factura» (productize-invoice-editor-and-composition-foundation, D3).
+    route: "facturas",
+    state: "sin-acceso",
+    path: "/facturas",
+    group: "listas",
+    scenario: {
+      overrides: {
+        "GET /api/v1/invoices": {
+          status: 403,
+          body: { error: { code: "FORBIDDEN", message: "No.", requestId: "visual" } },
+        },
+      },
+    },
+    widths: PAIR,
+    ready: async (page) => {
+      await heading(page, "Facturas");
+      await shows(page, "No tienes acceso a Facturas");
+    },
+  },
+  {
     route: "facturas",
     state: "menu-fila",
     path: "/facturas",
