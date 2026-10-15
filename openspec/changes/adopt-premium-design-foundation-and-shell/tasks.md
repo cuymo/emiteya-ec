@@ -521,14 +521,14 @@ la lógica fiscal ni el SRI.
 - [x] 14.13 Documentar en `navigation-responsive.md`, `design-foundations.md`,
   `feedback-and-states.md`, `frontend.md` y `technical-debt.md`, incluidos los hallazgos aplazados a
   las fases siguientes.
-- [ ] 14.14 Ejecutar, sin tráfico al SRI:
+- [x] 14.14 Ejecutar, sin tráfico al SRI:
   - las pruebas enfocadas;
   - `openspec:validate`, `format:check`, `security:dependencies` y `security:secrets`;
   - `test:visual`;
   - `verify`.
 
   Verificar que todo pasa.
-- [ ] 14.15 Reconstruir el frontend del despliegue local de revisión, con `SRI_TRANSMISSION_ENABLED=0`
+- [x] 14.15 Reconstruir el frontend del despliegue local de revisión, con `SRI_TRANSMISSION_ENABLED=0`
   y sin tráfico al SRI, y repetir la revisión UX enfocada en el shell a 1440, 1024, 768 y 390 px.
 
   Verificar cero hallazgos S4/S5 del shell y SH-1 a SH-3 cerrados.
@@ -570,6 +570,49 @@ la lógica fiscal ni el SRI.
     el recorrido de las 41 rutas.
   - **Prueba de equivalencia del espaciado:** es evidencia congelada del commit del codemod y se
     ejecutó sobre ese commit (cero píxeles distintos y geometría idéntica en las 5 pantallas).
+
+- **14.11 y 14.12, regresión UX y capturas:**
+  - **`visual/shell/ux.spec.ts`:** 27 pruebas en verde.
+  - **Clic en el centro de cada icono colapsado:** 21 de 21 para el administrador a 1440×900 y a
+    1024×768, y 14 de 14 para el operador; cero centros muertos.
+  - **Alcance con la rueda:** cada destino a 1024×768, 1366×657 y 1280×560, expandida y colapsada,
+    sin desplazamiento horizontal.
+  - **Hallazgo nuevo corregido:** las etiquetas invisibles desbordaban 40 px a lo ancho en modo
+    icono; ahora se recortan.
+  - **Capturas:** se revisaron las diferencias de las 15 existentes. Se actualizaron las 12
+    afectadas, y el panel móvil, la dirección inexistente y el inicio de sesión no cambiaron.
+  - **Capturas nuevas:** el destino de Configuración, la ventana baja y Producción en móvil.
+- **14.14, verificación:**
+  - **Validaciones:** `openspec:validate` (25/25), `format:check`, `security:dependencies` (pasa;
+    informa un aviso moderado de `mysql2` que ya existía) y `security:secrets` (Gitleaks 8.30.1) pasan.
+  - **Primer `verify`:** falló de forma determinista en `check:web-security-policy`, en el paso
+    «Diálogo, tema y logo». Pulsaba Usuarios en la barra, y ahora ese destino está dentro de
+    Configuración plegada (D24). El script abre Configuración antes, como el usuario, y vuelve a dar
+    40 de 40.
+  - **Segundo `verify`:** pasa completo: 406 de 406 archivos, 3575 pruebas en verde y 1 omitida, y
+    40 comprobaciones de la política en verde.
+  - **`test:visual`:** 57 de 57 en verde.
+- **14.15, revisión UX enfocada sobre el despliegue local de revisión:**
+  - **Despliegue:** se reconstruyó solo el frontend, desde `58272c3`, con la transmisión al SRI
+    desactivada y sin tráfico al SRI.
+  - **SH-1 cerrado:** 21 de 21 iconos colapsados navegan con un clic real en su centro a 1440×900,
+    1024×768 y 1366×657.
+  - **SH-2 cerrado:** ningún destino queda fuera del alcance del puntero y no hay desbordamiento
+    horizontal.
+  - **SH-3 cerrado:** tras un enlace directo a Usuarios o Portabilidad, el destino actual se ve
+    entero a 1366×657, 1440×900 y 1920×1080, sin desplazar la página.
+  - **SH-4 cerrado:** el disparador y el campo dicen «Buscar pantalla o acción…»; «clientes»,
+    «contraseña», «IVA» y «numeración» encuentran su destino, y un número de comprobante o un
+    cliente muestran el estado vacío veraz.
+  - **IA:** Ventas › Borradores de facturas y Documentos › Archivo de comprobantes. «Nueva factura»
+    marca Borradores de facturas, con las migas Borradores de facturas › Nueva factura.
+  - **Ambiente:** el distintivo sigue visible tras desplazar 1155 px en un teléfono.
+  - **Móvil:** el botón «Abrir navegación» usa el icono de menú.
+  - **Sin hallazgos S4/S5 ni S3 nuevos del shell.** Hallazgos menores, no bloqueantes:
+    - colapsada y con Configuración abierta a poca altura, la barra de desplazamiento oculta no
+      indica que hay más iconos (S2);
+    - colapsada, los iconos de Configuración no se agrupan visualmente bajo su icono (S1);
+    - en un teléfono, el nombre de la empresa se acorta más junto al distintivo (S1).
 
 ## Trazabilidad de componentes (referencia)
 
