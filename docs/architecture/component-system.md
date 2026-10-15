@@ -146,6 +146,12 @@ primitives -> system components -> domain components -> features -> pages
 | `PageHeader`            | Page title (`h1`) in a 40px block, optional context; `list` variant with description, one primary-action slot and secondary actions; `editor` variant with the route's breadcrumbs above the title and no actions (`frontend/src/components/layout/page-header.tsx`; grammar in `interface-design.md`) |
 | `ColumnVisibilityMenu`  | Business-facing optional column selection                                  |
 | `RowActionButton`       | Icon action with permission/state handling and opaque tooltip              |
+| `FormLayout`            | Form and optional 18rem side panel, beside it from a 55rem container (`--container-form-rail`) and stacked after it below; reading order form, panel, actions (`frontend/src/components/layout/form-layout.tsx`) |
+| `FormSection`           | Form section with an `h2`, optional description, a local action in its header and a thin top rule; named by its title |
+| `FormGrid`              | Fields in columns by container (two from 40rem, `--container-form-wide`), aligned by label, control and message with `subgrid` |
+| `FormFieldRow`          | One row of fields read as a unit, such as a payment: a `fieldset` with its legend, `subgrid` alignment and the inline action in the control row |
+| `StickySummaryPanel`    | The summary surface of a form, sticky beside it or a section after it |
+| `StickyFormActions`     | Primary and secondary actions with the written reason of an unavailable one (`aria-describedby`), at the foot of the panel or as a sticky bottom bar that reserves its height for focus |
 | `FormDialog`            | Accessible create/edit modal with stable header, body, and footer          |
 | `EntityPickerDialog<T>` | Searchable, filterable, paginated relationship selection                   |
 | `ConfirmDialog`         | Risk-proportional confirmation, with typed name when irreversible          |

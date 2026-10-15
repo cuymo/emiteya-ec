@@ -134,3 +134,36 @@ describe("base de listas y Facturas (productize-invoice-list-and-shared-table-fo
     expect(messages).toEqual([]);
   });
 });
+
+describe("composición de formularios y ambiente (productize-invoice-editor-and-composition-foundation, 5.5)", () => {
+  const STRICT = [
+    "src/components/layout/form-layout.tsx",
+    "src/components/layout/form-grid.tsx",
+    "src/components/layout/form-section.tsx",
+    "src/features/company/environment-notice.tsx",
+    "src/features/company/emission-environment-notice.tsx",
+  ];
+
+  it("los primitivos de formulario y los avisos del ambiente están en la lista estricta", async () => {
+    for (const file of STRICT) {
+      const messages = await lint(
+        `import { Dialog } from "radix-ui";\nexport const A = () => <div className="w-[13rem]" />;\nexport { Dialog };\n`,
+        file,
+      );
+      expect(
+        messages.some((message) => message.endsWith("no Radix directamente.")),
+        file,
+      ).toBe(true);
+      expect(messages, file).toContain(
+        "Sin valores arbitrarios de Tailwind: usa los tokens y las escalas.",
+      );
+    }
+  });
+
+  it("los archivos reales cumplen las reglas", async () => {
+    const results = await eslint.lintFiles(STRICT);
+    expect(
+      results.flatMap((result) => result.messages.map((m) => `${result.filePath}: ${m.message}`)),
+    ).toEqual([]);
+  });
+});

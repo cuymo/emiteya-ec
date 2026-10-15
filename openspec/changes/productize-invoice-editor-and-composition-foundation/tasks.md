@@ -184,7 +184,7 @@
 
   Verificar con una prueba unitaria la estructura y el orden de lectura, y con el navegador las
   anchuras de D5.
-- [ ] 5.2 `FormSection` (D6): título, descripción opcional, acción local y contenido, con
+- [x] 5.2 `FormSection` (D6): título, descripción opcional, acción local y contenido, con
   `aria-labelledby`.
 
   Verificar con una prueba unitaria el nombre accesible de la sección y la acción local.
@@ -201,7 +201,7 @@
 
   Verificar con pruebas unitarias el motivo asociado, y con el navegador que el foco nunca queda
   tapado por la barra.
-- [ ] 5.5 Rutas nuevas en la lista estricta de `eslint.config.js` y su prueba de lint escalonado;
+- [x] 5.5 Rutas nuevas en la lista estricta de `eslint.config.js` y su prueba de lint escalonado;
   filas en `component-system.md` y `frontend.md`.
 
   Verificar con `corepack pnpm lint` y `staged-lint.test.ts`.

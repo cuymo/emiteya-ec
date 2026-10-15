@@ -45,6 +45,10 @@ beforeAll(async () => {
     "max-w-reading",
     "max-w-form",
     "@form-rail:flex-row",
+    "@form-rail:grid-cols-form-rail",
+    "@lg:grid-cols-payment",
+    "@form-wide:grid-cols-2",
+    "@form-wide:grid-rows-subgrid",
   ]);
 });
 
@@ -85,11 +89,22 @@ describe("CSS del sistema de diseño", () => {
     );
   });
 
+  it("las columnas de los formularios son utilidades con nombre y responden al contenedor (D5, D7)", () => {
+    expect(css).toMatch(
+      /@container \(width >= 55rem\)\s*\{\s*\.\\@form-rail\\:grid-cols-form-rail\s*\{\s*grid-template-columns: minmax\(0, 1fr\) 18rem/,
+    );
+    expect(css).toMatch(
+      /@container \(width >= 32rem\)\s*\{\s*\.\\@lg\\:grid-cols-payment\s*\{\s*grid-template-columns: minmax\(14rem, 1fr\) 13rem/,
+    );
+    expect(css).toMatch(/@container \(width >= 40rem\)\s*\{\s*\.\\@form-wide\\:grid-cols-2/);
+    expect(css).toMatch(/\.\\@form-wide\\:grid-rows-subgrid\s*\{\s*grid-template-rows: subgrid/);
+  });
+
   it("los anchos por función y el punto de apilado del formulario generan sus utilidades (D4, D5)", () => {
     expect(css).toMatch(/\.max-w-reading\s*\{\s*max-width: var\(--container-reading\)/);
     expect(css).toMatch(/\.max-w-form\s*\{\s*max-width: var\(--container-form\)/);
     expect(css).toMatch(
-      /@container \(width >= 55rem\)\s*\{\s*\.\\@form-rail\\:flex-row\s*\{\s*flex-direction: row/,
+      /@container \(width >= 55rem\)\s*\{(?:\s*\.[^{]+\{[^}]*\})*?\s*\.\\@form-rail\\:flex-row\s*\{\s*flex-direction: row/,
     );
   });
 });

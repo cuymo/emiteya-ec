@@ -244,6 +244,26 @@
   /* Contenedor desde el que el panel de un formulario va al lado, con la variante `@form-rail:`
      (design D5): 36rem de formulario, 1.5rem de hueco y 18rem de panel. */
   --container-form-rail: 55rem;
+  /* Contenedor desde el que una rejilla de campos va en dos columnas y la lista de líneas muestra su
+     fila de encabezados, con la variante `@form-wide:` (design D7 y D13). */
+  --container-form-wide: 40rem;
+}
+
+/* Columnas de los formularios (productize-invoice-editor-and-composition-foundation, design D5 y
+   D7): utilidades con nombre en lugar de valores arbitrarios, compatibles con el lint estricto. */
+@utility grid-cols-form-rail {
+  /* El formulario fluido y el panel de 18rem. */
+  grid-template-columns: minmax(0, 1fr) 18rem;
+}
+@utility grid-cols-payment {
+  /* La forma de pago fluida, de al menos 14rem, y el importe de 10rem con su «Quitar» de 2.5rem. */
+  grid-template-columns: minmax(14rem, 1fr) 13rem;
+}
+
+/* Con una barra de acciones fija al pie (`StickyFormActions`), el foco que el navegador lleva a la
+   vista nunca queda debajo de ella (design D8). */
+html:has([data-slot="sticky-form-actions"]) {
+  scroll-padding-bottom: 8rem;
 }
 
 @layer base {

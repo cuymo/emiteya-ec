@@ -4,7 +4,9 @@
 
 import type { FormEventHandler, ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
+import { useFormRowFieldClass } from "@/components/layout/form-grid";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogClose,
@@ -92,20 +94,38 @@ export function FormField({
   label,
   hint,
   error,
+  action,
+  className,
   children,
 }: {
   id: string;
   label: string;
   hint?: string;
   error?: string | undefined;
+  /**
+   * Una acción en la fila del control, como quitar una forma de pago
+   * (productize-invoice-editor-and-composition-foundation, design D7).
+   */
+  action?: ReactNode;
+  className?: string;
   children: ReactNode;
 }) {
+  // Dentro de `FormGrid` o `FormFieldRow`, el campo ocupa tres filas de su `subgrid` (etiqueta,
+  // control y mensaje), para alinearse con los demás campos de la fila.
+  const rowClass = useFormRowFieldClass();
   return (
-    <div className="flex flex-col gap-1">
+    <div data-slot="form-field" className={cn("flex flex-col gap-1", rowClass, className)}>
       <label htmlFor={id} className="text-sm font-medium">
         {label}
       </label>
-      {children}
+      {action ? (
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">{children}</div>
+          {action}
+        </div>
+      ) : (
+        children
+      )}
       {hint && !error && (
         <p id={`${id}-hint`} className="text-xs text-foreground-muted">
           {hint}
