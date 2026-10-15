@@ -297,9 +297,11 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
           descuento, quitar, formas de pago y guardar; la confirmación con Escape y el foco de vuelta;
         - `axe` en claro, oscuro, móvil (con la página al final, donde la barra fija no tapa ningún
           control), con problemas, nueva y con la confirmación abierta;
-        - anchuras de D18 medidas: el panel al lado o apilado según su contenedor, sin desplazamiento
-          horizontal, el importe entero y la forma de pago entera salvo a 390 px, donde el control
-          nativo ocupa la fila y recorta el nombre oficial;
+        - anchuras de D18 y 320 px medidas: el panel al lado o apilado según su contenedor, sin
+          desplazamiento horizontal, el importe entero y la forma de pago entera salvo a 390 px y
+          menos, donde el control nativo ocupa la fila y recorta el nombre oficial;
+        - la barra superior en una línea a 320, 390, 768, 1024 y 1280 px: cada pieza de 44 px como
+          mucho, sin solaparse ni salirse, y el nombre de la empresa legible aunque recortado;
         - el ambiente en Pruebas, Producción y sin confirmar, junto a las acciones y en la
           confirmación;
         - el foco nunca debajo de la barra de acciones fija, recorriendo el formulario con Tab a 390,
@@ -348,8 +350,9 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
       - `manifest.json`: cada captura con su ruta, estado, anchura, tema, archivos, commit, build y
         fecha.
     - **Anchuras:** 1440×900, 1280×800, 1024×768 con la barra expandida y colapsada, 768×900,
-      390×844, y 720×450 a escala 2, que equivale a 1440×900 al 200 % de zoom. Por debajo de 320 px
-      no se captura: está fuera de las anchuras que el producto soporta.
+      390×844, y 720×450 a escala 2, que equivale a 1440×900 al 200 % de zoom. Facturas, la factura
+      nueva, el borrador listo y Empresa se capturan además a 320×640, la anchura mínima que el
+      producto soporta; por debajo no se captura.
     - **Variables:**
       - `REVIEW_LABEL`: la etiqueta; por defecto, la fecha y el commit corto. Una ejecución completa
         vacía antes la carpeta de su etiqueta.

@@ -4,7 +4,7 @@
 import { expect, type Page } from "@playwright/test";
 import { PRODUCTION_INVOICES, type Scenario } from "../fixtures";
 
-export type WidthKey = "1440" | "1280" | "1024" | "1024c" | "768" | "390" | "1440z200";
+export type WidthKey = "1440" | "1280" | "1024" | "1024c" | "768" | "390" | "320" | "1440z200";
 
 export type Width = {
   key: WidthKey;
@@ -22,6 +22,8 @@ export const WIDTHS: Record<WidthKey, Width> = {
   "1024c": { key: "1024c", viewport: { width: 1024, height: 768 }, scale: 1, collapsed: true },
   "768": { key: "768", viewport: { width: 768, height: 900 }, scale: 1, collapsed: false },
   "390": { key: "390", viewport: { width: 390, height: 844 }, scale: 1, collapsed: false },
+  // La anchura mínima soportada (frontend-checklist.md, tarea 8.3).
+  "320": { key: "320", viewport: { width: 320, height: 640 }, scale: 1, collapsed: false },
   "1440z200": {
     key: "1440z200",
     viewport: { width: 720, height: 450 },
@@ -31,8 +33,19 @@ export const WIDTHS: Record<WidthKey, Width> = {
 };
 
 /** Orden de las anchuras en las hojas: las claves numéricas de un objeto se recorren ordenadas. */
-export const WIDTH_ORDER: WidthKey[] = ["1440", "1280", "1024", "1024c", "768", "390", "1440z200"];
-const ALL = WIDTH_ORDER;
+export const WIDTH_ORDER: WidthKey[] = [
+  "1440",
+  "1280",
+  "1024",
+  "1024c",
+  "768",
+  "390",
+  "320",
+  "1440z200",
+];
+// Las anchuras de D18; 320 px se suma solo en las pantallas principales.
+const ALL: WidthKey[] = ["1440", "1280", "1024", "1024c", "768", "390", "1440z200"];
+const MAIN: WidthKey[] = [...ALL, "320"];
 const KEY: WidthKey[] = ["1440", "1024", "390"];
 const PAIR: WidthKey[] = ["1440", "390"];
 
@@ -80,7 +93,7 @@ export const STATES: State[] = [
     state: "poblada",
     path: "/facturas",
     group: "listas",
-    widths: ALL,
+    widths: MAIN,
     dark: PAIR,
     ready: async (page) => {
       await heading(page, "Facturas");
@@ -207,7 +220,7 @@ export const STATES: State[] = [
     state: "vacia",
     path: "/borradores/nuevo",
     group: "editor",
-    widths: ALL,
+    widths: MAIN,
     ready: async (page) => {
       await heading(page, "Nueva factura");
       await expect(page.getByRole("button", { name: "Guardar borrador" })).toBeVisible();
@@ -238,7 +251,7 @@ export const STATES: State[] = [
     state: "listo",
     path: "/borradores/borrador-listo",
     group: "editor",
-    widths: ALL,
+    widths: MAIN,
     dark: PAIR,
     ready: async (page) => {
       await heading(page, "Borrador de factura");
@@ -378,7 +391,7 @@ export const STATES: State[] = [
     state: "configurada",
     path: "/configuracion/empresa",
     group: "configuracion",
-    widths: ALL,
+    widths: MAIN,
     ready: async (page) => {
       await heading(page, "Empresa");
       await expect(page.getByRole("textbox").first()).toBeVisible();
@@ -434,6 +447,6 @@ export function captures(): Capture[] {
 /** Hoja de contacto de una captura: oscuro y móvil tienen la suya; el resto, la de su grupo. */
 export function sheetOf(capture: { group: Group; width: WidthKey; theme: string }): string {
   if (capture.theme === "oscuro") return "oscuro";
-  if (capture.width === "390") return "movil";
+  if (capture.width === "390" || capture.width === "320") return "movil";
   return capture.group;
 }

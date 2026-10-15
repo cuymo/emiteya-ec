@@ -29,8 +29,11 @@ export function measureComposition() {
   const all = (selector: string, root: ParentNode = document) =>
     Array.from(root.querySelectorAll(selector)).filter(visible);
 
-  // Barra superior: cada hijo visible, en orden, y el hueco con el siguiente.
-  const header = document.querySelector("header");
+  // Barra superior: el `header` del shell, fuera del contenido (el `PageHeader` de una pantalla
+  // también es un `header`). Cada hijo visible, en orden, y el hueco con el siguiente.
+  const header = Array.from(document.querySelectorAll("header")).find(
+    (candidate) => !candidate.closest("main"),
+  );
   const items = header
     ? Array.from(header.querySelectorAll(":scope > *"))
         .filter(visible)
@@ -50,7 +53,7 @@ export function measureComposition() {
   const main = document.querySelector("main");
   const title = main?.querySelector("h1");
   const breadcrumbs = all("[data-slot=breadcrumb]").map((element) => ({
-    inTopbar: Boolean(element.closest("header")),
+    inTopbar: Boolean(header?.contains(element)),
     text: text(element),
     ...box(element),
   }));
