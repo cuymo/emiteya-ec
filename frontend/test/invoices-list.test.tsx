@@ -411,60 +411,6 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
     }
   });
 
-  it("en una empresa en Producción, las facturas de Pruebas dicen que no tienen validez tributaria", async () => {
-    render({
-      "GET /api/v1/company/status": companyStatus("PRODUCTION"),
-      "GET /api/v1/invoices": paged([
-        summary({ id: "t", documentNumber: "001-001-000000020", state: "AUTHORIZED" }),
-        summary({
-          id: "p",
-          documentNumber: "001-001-000000021",
-          environment: "PRODUCTION",
-          state: "AUTHORIZED",
-        }),
-      ]),
-    });
-    const test = await rowOf("001-001-000000020");
-    await waitFor(() => expect(within(test).getByText("Pruebas")).toBeDefined());
-    expect(within(test).getByText("sin validez tributaria")).toBeDefined();
-    expect(within(test).getByText("Pruebas").getAttribute("data-variant")).toBe("neutral");
-    const authorized = within(test).getAllByText("Autorizado")[0]!.closest("[data-slot=badge]");
-    expect(authorized?.getAttribute("data-variant")).toBe("success");
-    const production = await rowOf("001-001-000000021");
-    expect(within(production).queryByText("Pruebas")).toBeNull();
-    expect(within(production).queryByText("Producción")).toBeNull();
-  });
-
-  it("en una empresa en Pruebas, una factura de Producción dice «Producción» sin el tono de éxito", async () => {
-    render({
-      "GET /api/v1/invoices": paged([
-        summary({ id: "p", documentNumber: "001-001-000000030", environment: "PRODUCTION" }),
-        summary({ id: "t", documentNumber: "001-001-000000031" }),
-      ]),
-    });
-    const production = await rowOf("001-001-000000030");
-    const badge = await within(production).findByText("Producción");
-    expect(badge.getAttribute("data-variant")).toBe("emphasis");
-    await waitFor(() =>
-      expect(within(production).getAllByText("Pendiente de envío").length).toBeGreaterThan(0),
-    );
-    expect(within(await rowOf("001-001-000000031")).queryByText("Pruebas")).toBeNull();
-  });
-
-  it("si el ambiente vigente no se confirma, marca las de Pruebas", async () => {
-    render({
-      "GET /api/v1/company/status": () => ({
-        status: 500,
-        body: errorBody("INTERNAL_ERROR", "Error"),
-      }),
-      "GET /api/v1/invoices": paged([summary()]),
-    });
-    const row = await rowOf("001-001-000000001");
-    await waitFor(() => expect(within(row).getByText("sin validez tributaria")).toBeDefined(), {
-      timeout: 5_000,
-    });
-  });
-
   it("la lista no pide nada por fila: solo la lista, el conteo y el contexto de la empresa", async () => {
     const { calls } = render({
       "GET /api/v1/invoices": paged([
@@ -482,6 +428,109 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
     ]);
     expect(listCalls(calls)).toHaveLength(1);
     expect(countCalls(calls)).toHaveLength(1);
+  });
+});
+
+// Ambiente de cada factura (D13, PO-4; tarea 11.1). Solo cuenta el `environment` de la fila; el
+// vigente llega de `/company/status`. Con el vigente desconocido no hay con qué coincidir, así que
+// cada fila dice el suyo. Un 403 deja el error asentado sin reintentos.
+describe("ambiente de cada factura (PO-4, tarea 11.1)", () => {
+  const TEST_ROW = "001-001-000000020";
+  const PRODUCTION_ROW = "001-001-000000021";
+  const ROWS = paged([
+    summary({ id: "t", documentNumber: TEST_ROW, state: "AUTHORIZED" }),
+    summary({
+      id: "p",
+      documentNumber: PRODUCTION_ROW,
+      environment: "PRODUCTION",
+      state: "AUTHORIZED",
+    }),
+  ]);
+  const UNKNOWN: Route = () => ({ status: 403, body: errorBody("FORBIDDEN", "No.") });
+  const badgeOf = (element: HTMLElement) => element.closest("[data-slot=badge]");
+
+  /** Espera a que la consulta del ambiente vigente haya fallado (sin reintentos con un 403). */
+  async function renderUnknown() {
+    const { calls } = render({
+      "GET /api/v1/company/status": UNKNOWN,
+      "GET /api/v1/invoices": ROWS,
+    });
+    await waitFor(() =>
+      expect(calls.some((call) => call.key === "GET /api/v1/company/status")).toBe(true),
+    );
+    await rowOf(PRODUCTION_ROW);
+  }
+
+  it("vigente desconocido + factura de Pruebas: «Pruebas» y «sin validez tributaria»", async () => {
+    await renderUnknown();
+    const row = await rowOf(TEST_ROW);
+    const label = within(row).getByText("Pruebas");
+    expect(label.getAttribute("data-variant")).toBe("neutral");
+    expect(within(row).getByText("sin validez tributaria")).toBeDefined();
+  });
+
+  it("vigente desconocido + factura de Producción: «Producción», nunca en silencio ni en verde", async () => {
+    await renderUnknown();
+    const row = await rowOf(PRODUCTION_ROW);
+    const label = within(row).getByText("Producción");
+    expect(label.getAttribute("data-variant")).toBe("emphasis");
+    expect(within(row).queryByText("sin validez tributaria")).toBeNull();
+  });
+
+  it("empresa en Producción + factura de Pruebas: «Pruebas» con «sin validez tributaria»", async () => {
+    render({
+      "GET /api/v1/company/status": companyStatus("PRODUCTION"),
+      "GET /api/v1/invoices": ROWS,
+    });
+    const production = await rowOf(PRODUCTION_ROW);
+    // Con el vigente confirmado, la fila de Producción deja de llevar marca: coincide.
+    await waitFor(() => expect(within(production).queryByText("Producción")).toBeNull());
+    const row = await rowOf(TEST_ROW);
+    expect(within(row).getByText("Pruebas").getAttribute("data-variant")).toBe("neutral");
+    expect(within(row).getByText("sin validez tributaria")).toBeDefined();
+  });
+
+  it("empresa en Pruebas + factura de Producción: «Producción» como contexto, sin el tono de éxito", async () => {
+    render({ "GET /api/v1/company/status": companyStatus("TEST"), "GET /api/v1/invoices": ROWS });
+    const test = await rowOf(TEST_ROW);
+    await waitFor(() => expect(within(test).queryByText("Pruebas")).toBeNull());
+    const row = await rowOf(PRODUCTION_ROW);
+    const label = within(row).getByText("Producción");
+    expect(label.getAttribute("data-variant")).toBe("emphasis");
+    expect(label.getAttribute("data-variant")).not.toBe("success");
+  });
+
+  it("mismo ambiente: ninguna marca redundante", async () => {
+    render({
+      "GET /api/v1/company/status": companyStatus("TEST"),
+      "GET /api/v1/invoices": paged([
+        summary({ id: "a", documentNumber: "001-001-000000040" }),
+        summary({ id: "b", documentNumber: "001-001-000000041", state: "AUTHORIZED" }),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Facturas emitidas" });
+    await within(table).findAllByText("001-001-000000041");
+    await waitFor(() => expect(within(table).queryByText("Pruebas")).toBeNull());
+    expect(within(table).queryByText("sin validez tributaria")).toBeNull();
+    expect(within(table).queryByText("Producción")).toBeNull();
+  });
+
+  it("el ambiente y el estado son independientes: «Autorizado» en Pruebas sigue sin validez", async () => {
+    render({
+      "GET /api/v1/company/status": companyStatus("PRODUCTION"),
+      "GET /api/v1/invoices": ROWS,
+    });
+    const production = await rowOf(PRODUCTION_ROW);
+    await waitFor(() => expect(within(production).queryByText("Producción")).toBeNull());
+    const row = await rowOf(TEST_ROW);
+    const status = badgeOf(within(row).getAllByText("Autorizado")[0]!);
+    const environment = badgeOf(within(row).getByText("Pruebas"));
+    expect(status?.getAttribute("data-variant")).toBe("success");
+    expect(environment?.getAttribute("data-variant")).toBe("neutral");
+    // Dos insignias distintas: el ambiente no se mezcla con el estado ni lo tiñe.
+    expect(status).not.toBe(environment);
+    expect(status?.textContent).not.toContain("Pruebas");
+    expect(within(row).getByText("sin validez tributaria")).toBeDefined();
   });
 });
 

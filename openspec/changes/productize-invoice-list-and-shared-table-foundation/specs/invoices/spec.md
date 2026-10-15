@@ -114,10 +114,12 @@ estado.
 
 ### Requirement: Ambiente de cada factura en la lista
 La lista SHALL indicar con texto, junto a la identidad de la factura, el ambiente de cada factura
-emitida en un ambiente distinto del vigente de la empresa. Una factura de Pruebas SHALL indicar que
-no tiene validez tributaria. El ambiente es contexto y no SHALL presentarse como éxito ni rechazo,
-ni mezclarse con el estado. Las facturas del ambiente vigente no SHALL llevar esa indicación, y la
-lista no SHALL ofrecer un filtro de ambiente.
+emitida en un ambiente distinto del vigente de la empresa. Si el ambiente vigente no puede
+confirmarse, SHALL indicar el ambiente de cada factura. El ambiente SHALL tomarse solo del dato de
+la propia factura. Una factura de Pruebas SHALL indicar que no tiene validez tributaria. El ambiente
+es contexto y no SHALL presentarse como éxito ni rechazo, ni mezclarse con el estado. Con el
+ambiente vigente confirmado, las facturas de ese ambiente no SHALL llevar esa indicación, y la lista
+no SHALL ofrecer un filtro de ambiente.
 
 #### Scenario: Factura de Pruebas en una empresa en Producción
 - **WHEN** una empresa ya en Producción tiene facturas emitidas en Pruebas y un operador abre la lista
@@ -130,6 +132,11 @@ lista no SHALL ofrecer un filtro de ambiente.
 #### Scenario: Factura de Producción en una empresa en Pruebas
 - **WHEN** una factura de la lista es de Producción y la empresa está en Pruebas
 - **THEN** la fila indica con texto «Producción» como contexto, sin la presentación de éxito
+
+#### Scenario: Ambiente vigente desconocido
+- **WHEN** no se puede confirmar el ambiente vigente de la empresa y la lista tiene facturas de Pruebas y de Producción
+- **THEN** cada factura de Pruebas indica «Pruebas» y que no tiene validez tributaria, y cada factura de Producción indica «Producción» como contexto
+- **AND** ninguna fila queda sin indicación de ambiente
 
 ### Requirement: Apertura de una factura desde la lista
 Cada factura SHALL abrirse desde un enlace con su número, alcanzable con el teclado, y también al

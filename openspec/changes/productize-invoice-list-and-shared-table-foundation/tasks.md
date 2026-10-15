@@ -270,3 +270,13 @@
 
   Verificar que todo pasa. Si solo falla AC-04 por su inestabilidad registrada, informar la
   evidencia compuesta y no presentarla como verde.
+
+## 11. Corrección final del propietario
+
+- [x] 11.1 Con el ambiente vigente de la empresa desconocido, indicar con texto el ambiente de cada
+  fila de la lista (Pruebas con «sin validez tributaria» y Producción sin tono de éxito), sin
+  inferir el ambiente de otro dato.
+
+  Verificar con pruebas enfocadas: desconocido con fila de Pruebas, desconocido con fila de
+  Producción, Producción con fila de Pruebas, Pruebas con fila de Producción, mismo ambiente sin
+  marca redundante, y ambiente independiente del estado fiscal.

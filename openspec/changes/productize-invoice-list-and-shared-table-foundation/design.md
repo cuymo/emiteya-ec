@@ -399,8 +399,10 @@ Motivación en `proposal.md`. Comportamiento observable en las specs delta (`inv
 - **Factura de Producción en una empresa en Pruebas.** «Producción» como contexto, con la
   semántica de ambiente de la base (`emphasis` neutro), nunca el verde de éxito.
 - **Mismo ambiente:** sin indicación, porque el shell ya dice el vigente.
-- **Ambiente desconocido.** Si el vigente no puede confirmarse, se marcan las facturas de Pruebas,
-  para no presentarlas nunca como válidas.
+- **Ambiente desconocido** (corrección del propietario, tarea 11.1). Si el vigente no puede
+  confirmarse, no hay ambiente con el que coincidir: cada fila indica el suyo, «Pruebas» con «sin
+  validez tributaria» y «Producción» como contexto. Ninguna fila queda en silencio, porque el
+  silencio sugeriría que la factura es del ambiente vigente.
 - **Sin filtro de ambiente.** El servidor no lo ofrece, y la lista no filtra la página cargada en
   el navegador. Queda como brecha.
 - **Por qué.** La API mezcla los dos ambientes. Tras pasar a Producción, una factura de Pruebas
@@ -653,5 +655,5 @@ avisos se añaden a `frontend/THIRD_PARTY_NOTICES.md`.
 | PO-1 | **Aprobada.** `DocumentStatusBadge` es la presentación canónica del estado de los comprobantes, mediante la fachada de `StateCell`. En las demás pantallas solo cambia la presentación del estado: no su tabla, columnas, filtros, paginación, acciones, encabezado, comportamiento por anchura, estados vacíos ni flujos. |
 | PO-2 | **Aprobada.** Conteo con una consulta `attention=true&pageSize=1`, global e independiente de la página, las filas, el estado y la búsqueda (D7). |
 | PO-3 | **Modificada.** En la fila, solo «Ver factura» y «Copiar número». Sin «Descargar RIDE» ni notas de crédito o débito (D11). |
-| PO-4 | **Aprobada y obligatoria.** Indicación con texto del ambiente distinto del vigente, con «sin validez tributaria» para Pruebas, sin filtro de ambiente (D13). |
+| PO-4 | **Aprobada y obligatoria.** Indicación con texto del ambiente distinto del vigente, con «sin validez tributaria» para Pruebas, sin filtro de ambiente (D13). Corrección posterior (tarea 11.1): con el vigente desconocido, cada fila indica su ambiente. |
 | PO-5 | **Aprobada.** Vistas «Todas» y «Requiere atención» solamente, más el filtro «Estado» de opción única (D6). |

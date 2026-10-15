@@ -130,6 +130,31 @@ test.describe("accesibilidad de Facturas (D17)", () => {
     });
   }
 
+  test("ambiente vigente desconocido: cada fila dice su ambiente, sin violaciones (tarea 11.1)", async ({
+    browser,
+  }) => {
+    const { page } = await open(browser, "/facturas", {
+      scenario: {
+        persona: "operator",
+        invoices: PRODUCTION_INVOICES,
+        overrides: {
+          "GET /api/v1/company/status": {
+            status: 403,
+            body: { error: { code: "FORBIDDEN", message: "No.", requestId: "visual" } },
+          },
+        },
+      },
+    });
+    // «sin validez tributaria» lleva delante un separador solo para lectores de pantalla.
+    const marks = (text: string, exact: boolean) =>
+      table(page).getByText(text, { exact }).filter({ visible: true });
+    await expect(marks("sin validez tributaria", false)).toHaveCount(2);
+    await expect(marks("Pruebas", true)).toHaveCount(2);
+    await expect(marks("Producción", true)).toHaveCount(PRODUCTION_INVOICES.length - 2);
+    expect(await violations(page)).toEqual([]);
+    await page.context().close();
+  });
+
   test("con el menú de una fila abierto", async ({ browser }) => {
     const { page } = await open(browser, "/facturas");
     await page.getByRole("button", { name: `Acciones de la factura ${FIRST}` }).click();

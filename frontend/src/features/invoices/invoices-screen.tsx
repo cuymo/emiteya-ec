@@ -91,8 +91,10 @@ const SEARCH_LABEL = "Buscar por número, comprador o identificación";
 const SEARCH_MAX_LENGTH = 100;
 
 /**
- * Ambiente de una factura distinto del vigente (D13, PO-4). Si el vigente no se puede confirmar, se
- * marcan las de Pruebas, para no presentarlas nunca como válidas. Es contexto: ni éxito ni rechazo.
+ * Ambiente de una factura distinto del vigente (D13, PO-4; tarea 11.1). Si el vigente no se puede
+ * confirmar no hay ambiente con el que coincidir: se indica el de cada fila, para que el silencio
+ * nunca sugiera que una factura es del ambiente vigente. Solo se usa el `environment` real de la
+ * fila. Es contexto: ni éxito ni rechazo, y no se mezcla con el estado.
  */
 function environmentMark(invoice: Environment, current: Environment | undefined) {
   if (invoice === current) return null;
@@ -107,7 +109,6 @@ function environmentMark(invoice: Environment, current: Environment | undefined)
       </>
     );
   }
-  if (current === undefined) return null;
   return <Badge variant="emphasis">Producción</Badge>;
 }
 
