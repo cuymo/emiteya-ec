@@ -10,8 +10,7 @@
 "use client";
 
 import type { WithholdingReceiptView } from "@facturador/contracts";
-import { ArrowLeft, RotateCw } from "lucide-react";
-import Link from "next/link";
+import { RotateCw } from "lucide-react";
 import { useId, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
@@ -181,18 +180,8 @@ export function WithholdingReceiptDetailScreen({
   useBreadcrumbLabel(receipt.data?.documentNumber);
   const retry = useRetryWithholdingSigning();
 
-  const header = (
-    <Link
-      href="/retenciones"
-      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
-      Retenciones
-    </Link>
-  );
   const fallback = (body: ReactNode) => (
     <section aria-labelledby="retencion-titulo" className="flex flex-col gap-6">
-      {header}
       <h1 id="retencion-titulo" className="text-3xl font-bold">
         Comprobante de retención
       </h1>
@@ -233,7 +222,6 @@ export function WithholdingReceiptDetailScreen({
   const related = data.relatedParty;
   return (
     <section aria-labelledby="retencion-titulo" className="flex flex-col gap-6">
-      {header}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 id="retencion-titulo" className="text-3xl font-bold tabular-nums">

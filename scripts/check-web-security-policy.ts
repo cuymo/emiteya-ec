@@ -134,6 +134,13 @@ const directivesOf = (policy: string) =>
     }),
   );
 
+/** Elige un tema en el menú de cuenta, como lo haría el usuario. */
+async function chooseTheme(page: Page, label: "Oscuro" | "Claro"): Promise<void> {
+  await page.getByRole("button", { name: /^Cuenta de / }).click();
+  await page.getByRole("menuitemradio", { name: label }).click();
+  await page.getByRole("menu").waitFor({ state: "hidden", timeout: STEP_TIMEOUT_MS });
+}
+
 async function until(condition: () => boolean | Promise<boolean>, what: string): Promise<void> {
   const deadline = Date.now() + STEP_TIMEOUT_MS;
   while (Date.now() < deadline) {
@@ -731,10 +738,11 @@ async function checkBrowserFlows(
       await page.getByRole("dialog").waitFor({ timeout: STEP_TIMEOUT_MS });
       await page.keyboard.press("Escape");
       await page.getByRole("dialog").waitFor({ state: "hidden", timeout: STEP_TIMEOUT_MS });
-      const theme = page.getByRole("radiogroup", { name: "Tema" });
-      await theme.getByRole("radio", { name: "Oscuro" }).click();
+      // El tema vive en el menú de cuenta a todas las anchuras
+      // (productize-invoice-editor-and-composition-foundation, spec «Tema accesible»).
+      await chooseTheme(page, "Oscuro");
       await page.waitForFunction(() => document.documentElement.classList.contains("dark"));
-      await theme.getByRole("radio", { name: "Claro" }).click();
+      await chooseTheme(page, "Claro");
       await page.waitForFunction(() => !document.documentElement.classList.contains("dark"));
       await page.goto("/configuracion/empresa");
       const logo = page.getByAltText("Logo vigente de la empresa");
@@ -1105,9 +1113,8 @@ async function measureStyleVariants(
     await page.getByRole("button", { name: "Crear usuario" }).click();
     await page.getByRole("dialog").waitFor({ timeout: STEP_TIMEOUT_MS });
     await page.keyboard.press("Escape");
-    const theme = page.getByRole("radiogroup", { name: "Tema" });
-    await theme.getByRole("radio", { name: "Oscuro" }).click();
-    await theme.getByRole("radio", { name: "Claro" }).click();
+    await chooseTheme(page, "Oscuro");
+    await chooseTheme(page, "Claro");
     await page.getByRole("button", { name: /^Cuenta de / }).click();
     await page.keyboard.press("Escape");
     await page.goto("/comprobantes");

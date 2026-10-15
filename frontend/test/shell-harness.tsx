@@ -3,12 +3,16 @@
 import type { ReactNode } from "react";
 import { AppShell, ShellSkeleton } from "@/components/shell/app-shell";
 import { SessionGate } from "@/components/session";
-import { EnvironmentBadge, EnvironmentNotice } from "@/features/company/environment-notice";
+import { EnvironmentIndicator } from "@/features/company/environment-notice";
 import { ShellCompanyContext } from "@/features/company/shell-company-context";
 import { CertificateNotice } from "@/features/signing/certificate-notice";
 import { ADMIN_ME, OPERATOR_ME, errorBody, mockApi, renderApp, type Route } from "./harness";
 
-export const TEST_NOTICE = "Ambiente de Pruebas: los comprobantes no tienen validez tributaria.";
+/**
+ * Nombre accesible del indicador de Pruebas, que es el aviso persistente del ambiente
+ * (productize-invoice-editor-and-composition-foundation, design D21): ya no hay franja.
+ */
+export const TEST_NOTICE = "Ambiente de Pruebas: los comprobantes no tienen validez tributaria";
 
 export type ShellOptions = {
   me?: typeof ADMIN_ME | typeof OPERATOR_ME;
@@ -59,13 +63,8 @@ export function renderShell(options: ShellOptions = {}) {
       <AppShell
         sidebarDefaultOpen={options.sidebarDefaultOpen ?? true}
         company={<ShellCompanyContext />}
-        environment={<EnvironmentBadge />}
-        notices={
-          <>
-            <EnvironmentNotice />
-            <CertificateNotice />
-          </>
-        }
+        environment={<EnvironmentIndicator />}
+        notices={<CertificateNotice />}
       >
         {options.children ?? <p>contenido</p>}
       </AppShell>

@@ -13,7 +13,7 @@ import {
   compareDecimalStrings,
   type InvoiceState,
 } from "@facturador/contracts";
-import { ArrowLeft, RotateCw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useId, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
@@ -64,18 +64,8 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
   useBreadcrumbLabel(note.data?.documentNumber);
   const retry = useRetryCreditNoteSigning();
 
-  const header = (
-    <Link
-      href="/notas-credito"
-      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
-      Notas de crédito
-    </Link>
-  );
   const fallback = (body: ReactNode) => (
     <section aria-labelledby="nota-titulo" className="flex flex-col gap-6">
-      {header}
       <h1 id="nota-titulo" className="text-3xl font-bold">
         Nota de crédito
       </h1>
@@ -116,7 +106,6 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
   const declarations = data.declarations;
   return (
     <section aria-labelledby="nota-titulo" className="flex flex-col gap-6">
-      {header}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 id="nota-titulo" className="text-3xl font-bold tabular-nums">

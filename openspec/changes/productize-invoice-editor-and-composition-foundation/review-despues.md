@@ -62,3 +62,81 @@ Facturas queda igual a todas las anchuras en la hoja comparativa: ya usaba la se
 El chip elegido pasa a peso medio y crece unos 2 px, así que los chips siguientes se mueven al
 cambiar de filtro. Es el coste de que la elección se reconozca por el peso (D10), y no tapa ni
 corta nada.
+
+## Grupo 3: barra superior, ambiente compacto y una sola orientación
+
+- **Captura:** `REVIEW_LABEL=grupo-3 REVIEW_COMPARE_WITH=antes`, 89/89 con código 0 (87 capturas),
+  sobre `db3ba9a` con los cambios del grupo. La matriz suma el estado de D18 que faltaba: la
+  explicación del indicador abierta (`facturas-indicador-pruebas-*`).
+- **Qué se miró:**
+  - `contact-sheets/compare-antes-shell.png`, `compare-antes-editor.png` y
+    `compare-antes-configuracion.png`;
+  - a tamaño real, las capturas citadas abajo;
+  - la barra, las migas y la y del título de las 87 capturas, en la geometría.
+- **`test:visual`:** cambian 23 de las 26 capturas, todas por la barra nueva y la franja retirada.
+  Se miraron frente a las anteriores (`shell-tablet`, `shell-desktop-light`, `shell-mobile`,
+  `shell-production-operator`, `shell-config-route`, `shell-desktop-dark` y Facturas), y las tres
+  que antes no llegaban a capturarse (paleta, panel móvil y creación rápida) se miraron después de
+  generarlas. Quedan 80 de 80 en verde.
+
+### Resuelto
+
+- **A1 (V4), la barra superior.**
+  - A todas las anchuras de la matriz, cada pieza de la barra mide una sola línea: 32 px de alto en
+    escritorio y 44 en móvil.
+  - Las migas ya no están en la barra: ninguna captura las mide dentro de la cabecera.
+  - En `empresa-configurada-768-claro.png`, donde antes «Configuración» se montaba sobre
+    «Ferretería Andina», la barra se lee limpia y la ruta «Configuración › Empresa» va encima del
+    título.
+- **A2 (V3), barra plana.**
+  - Tres zonas con 16 px entre ellas: navegación y empresa, la paleta centrada, y ambiente y
+    cuenta.
+  - El control de tema de 106 × 38 px desaparece de la barra: vive en el menú de cuenta a todas las
+    anchuras.
+  - A 200 % (`nueva-factura-vacia-1440z200-claro.png`), la barra queda en tres piezas de 44 px.
+- **A3 (V3), orientación repetida.** Una sola fila de migas encima del título, a todas las
+  anchuras, y ningún enlace «volver»: se retiraron de los editores y los detalles. En móvil ya no
+  hay dos filas con el mismo destino (`borrador-listo-390-claro.png`).
+- **A4 (V3), el título que salta.**
+  - La y del título ya no cambia con el ambiente: 72 en Facturas en Pruebas y en Producción, antes
+    101 y 72.
+  - En las pantallas internas es 100 a todas las anchuras de escritorio (antes 129 en los editores
+    y 101 en Empresa), y 108 en móvil (antes 193 y 165).
+  - Queda una deriva de 2 px entre Facturas (72) y Productos (74), que corrige el ritmo del
+    `PageHeader` (tarea 4.1).
+- **A5 (V2).** El editor de facturas marca Facturas en la barra lateral, con las migas
+  «Facturas › Nueva factura» y «Facturas › Borrador de factura»
+  (`borrador-ambiente-desconocido-1440-claro.png`).
+- **B1 (V3), doble aviso.** Ya no hay franja de ancho completo. «Pruebas» sigue en la barra, a
+  todas las anchuras, y su explicación se abre con el tacto, el ratón y el teclado
+  (`facturas-indicador-pruebas-1440-claro.png` y `-390-claro.png`): sin validez tributaria, y que
+  un administrador cambia el ambiente en Configuración › Ambiente.
+- **B2 (V3), en el editor heredado.**
+  - La nota de crédito dice «Pruebas · esta nota de crédito no tendrá validez tributaria» junto a
+    «Emitir» y otra vez en la confirmación (`nota-credito-confirmacion-1440-claro.png`).
+  - Los otros cuatro editores heredados lo hacen igual; lo comprueban sus pruebas, porque no están
+    en la matriz.
+  - El editor de facturas lo recibe en el grupo 6.
+- **B3 (V3), ambiente sin confirmar.**
+  - La barra muestra «Sin confirmar» con advertencia, junto a la cuenta, y nunca
+    «Producción» (`borrador-ambiente-desconocido-1440-claro.png`).
+  - El aviso ya no desaparece mientras se reintenta la consulta. Lo descubrió la prueba del editor:
+    React Query la devolvía a «pendiente» al reintentar.
+
+### Lo que sigue y por qué
+
+- **B4 (V2), Producción en negro.** Se mantiene la variante `emphasis`, como fija D21: Producción
+  es el ambiente de más consecuencia, y el indicador es neutro y de alta atención, nunca de éxito.
+  En la barra de tres zonas queda en su zona, junto a la cuenta, y ya no compite con las migas.
+- **C2 (V4), el formulario a 1024 px.** El formulario sigue en 376 px con la barra expandida: lo
+  resuelven `FormLayout` y el editor (grupos 5 y 6).
+- **Pendientes de los grupos 4 a 6:** A6, C1 (la mitad que falta), C3 a C8.
+
+### Observado y aceptado
+
+- En el ambiente sin confirmar, la barra lleva dos advertencias: «No pudimos confirmar la empresa»,
+  recortado a su ancho máximo, y «Sin confirmar». Son dos hechos distintos, la empresa y el ambiente, y cada uno lleva su
+  texto.
+- En la confirmación de la nota de crédito, el aviso de Pruebas y el de las declaraciones son dos
+  recuadros de advertencia seguidos. Se distinguen por su texto y su orden: primero el ambiente,
+  después las declaraciones.

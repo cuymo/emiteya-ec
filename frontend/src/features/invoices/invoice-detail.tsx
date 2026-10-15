@@ -8,8 +8,7 @@
 // design D19); P3 (versiones y metadatos técnicos): no se muestran.
 "use client";
 
-import { ArrowLeft, RotateCw } from "lucide-react";
-import Link from "next/link";
+import { RotateCw } from "lucide-react";
 import { useId, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
@@ -57,20 +56,9 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
       : `Forma de pago ${code}`;
   };
 
-  const header = (
-    <Link
-      href="/facturas"
-      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
-      Facturas
-    </Link>
-  );
-
   if (!allowed) {
     return (
       <section aria-labelledby="factura-titulo" className="flex flex-col gap-6">
-        {header}
         <h1 id="factura-titulo" className="text-3xl font-bold">
           Factura
         </h1>
@@ -87,7 +75,6 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
     const missing = invoice.error instanceof ApiError && invoice.error.status === 404;
     return (
       <section aria-labelledby="factura-titulo" className="flex flex-col gap-6">
-        {header}
         <h1 id="factura-titulo" className="text-3xl font-bold">
           Factura
         </h1>
@@ -111,7 +98,6 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
   const reserved = data.state === "RESERVED";
   return (
     <section aria-labelledby="factura-titulo" className="flex flex-col gap-6">
-      {header}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 id="factura-titulo" className="text-3xl font-bold tabular-nums">

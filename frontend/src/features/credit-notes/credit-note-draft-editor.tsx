@@ -24,7 +24,7 @@ import {
   type EligibleInvoiceView,
   type InvoiceCreditView,
 } from "@facturador/contracts";
-import { ArrowLeft, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -45,6 +45,7 @@ import { ApiError, apiFetch } from "@/lib/api";
 import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
+import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
 import {
   DEFAULT_POINT_KEY,
   pointLabel,
@@ -451,13 +452,6 @@ function DraftEditor({
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Link
-          href="/notas-credito"
-          className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-        >
-          <ArrowLeft aria-hidden="true" className="size-4" />
-          Notas de crédito
-        </Link>
         <h1 id="editor-titulo" className="text-3xl font-bold">
           {draft ? "Borrador de nota de crédito" : "Nueva nota de crédito"}
         </h1>
@@ -718,6 +712,8 @@ function DraftEditor({
             )}
           </div>
           <div className="flex flex-col gap-2">
+            {/* Aviso del ambiente junto a la acción que decide (design D21). */}
+            {canEmit && <EmissionEnvironmentNotice document="nota de crédito" />}
             {canEmit && (
               <Button
                 disabled={emitBlocked}
@@ -785,6 +781,7 @@ function DraftEditor({
                   {draft.preview.totals ? formatUsd(draft.preview.totals.total) : "—"}
                 </dd>
               </dl>
+              <EmissionEnvironmentNotice document="nota de crédito" />
             </div>
           }
         >
@@ -801,13 +798,6 @@ function InvoiceChooser({ onChoose }: { onChoose: (invoiceId: string) => void })
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Link
-          href="/notas-credito"
-          className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-        >
-          <ArrowLeft aria-hidden="true" className="size-4" />
-          Notas de crédito
-        </Link>
         <h1 id="editor-titulo" className="text-3xl font-bold">
           Nueva nota de crédito
         </h1>

@@ -10,7 +10,7 @@
 "use client";
 
 import type { ShippingGuideView } from "@facturador/contracts";
-import { ArrowLeft, RotateCw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useId, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
@@ -187,18 +187,8 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
   useBreadcrumbLabel(guide.data?.documentNumber);
   const retry = useRetryShippingGuideSigning();
 
-  const header = (
-    <Link
-      href="/guias-remision"
-      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
-      Guías de remisión
-    </Link>
-  );
   const fallback = (body: ReactNode) => (
     <section aria-labelledby="guia-titulo" className="flex flex-col gap-6">
-      {header}
       <h1 id="guia-titulo" className="text-3xl font-bold">
         Guía de remisión
       </h1>
@@ -235,7 +225,6 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
   const reserved = data.state === "RESERVED";
   return (
     <section aria-labelledby="guia-titulo" className="flex flex-col gap-6">
-      {header}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 id="guia-titulo" className="text-3xl font-bold tabular-nums">

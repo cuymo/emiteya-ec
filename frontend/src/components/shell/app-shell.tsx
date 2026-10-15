@@ -53,7 +53,9 @@ export function AppShell({
             tabIndex={-1}
             className="min-w-0 flex-1 px-4 py-6 outline-none md:px-6"
           >
-            <AppBreadcrumbs className="mb-4 md:hidden" />
+            {/* Migas de las pantallas heredadas, encima del título a todas las anchuras (design D2 de
+                productize-invoice-editor-and-composition-foundation); las migradas las pintan ellas. */}
+            <AppBreadcrumbs owner="shell" className="mb-2" />
             <RouteGuard>{children}</RouteGuard>
           </main>
         </SidebarInset>

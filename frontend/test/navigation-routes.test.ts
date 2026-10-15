@@ -9,6 +9,7 @@ import type { Permission } from "@/lib/permissions";
 import {
   breadcrumbsFor,
   CREATE_ACTIONS,
+  INTERNAL_ROUTES,
   permissionsOf,
   resolveRoute,
   visibleCreateActions,
@@ -92,8 +93,11 @@ describe("modelo de rutas", () => {
     expect(destination("/facturas/abc")).toBe("Facturas");
     expect(destination("/notas-credito/borradores/d1")).toBe("Notas de crédito");
     expect(destination("/notas-credito/borradores/nueva")).toBe("Notas de crédito");
-    // La nueva factura marca Ventas › Borradores de facturas (design D25).
-    expect(destination("/borradores/nuevo")).toBe("Borradores de facturas");
+    // El editor de facturas pertenece a Facturas, antes y después del primer guardado
+    // (productize-invoice-editor-and-composition-foundation, D12 y PO-1; sustituye a la D25 de
+    // adopt-premium-design-foundation-and-shell, que lo colgaba de Borradores de facturas).
+    expect(destination("/borradores/nuevo")).toBe("Facturas");
+    expect(destination("/borradores/d-1")).toBe("Facturas");
     expect(resolveRoute("/borradores/nuevo")?.group?.label).toBe("Ventas");
     expect(resolveRoute("/borradores")?.destination.href).toBe("/borradores");
     expect(resolveRoute("/comprobantes")?.destination.label).toBe("Archivo de comprobantes");
@@ -134,11 +138,25 @@ describe("migas", () => {
       "Inventario→/inventario",
       "[Tornillo 3/8]",
     ]);
-    // Corrección del control de calidad UX (design D25).
-    expect(crumbs("/borradores/nuevo")).toEqual([
-      "Borradores de facturas→/borradores",
-      "[Nueva factura]",
-    ]);
+    // productize-invoice-editor-and-composition-foundation, D12 y PO-1.
+    expect(crumbs("/borradores/nuevo")).toEqual(["Facturas→/facturas", "[Nueva factura]"]);
+    expect(crumbs("/borradores/d-1")).toEqual(["Facturas→/facturas", "[Borrador de factura]"]);
+  });
+
+  it("cada ruta tiene un solo dueño de sus migas: el shell o su encabezado (D2)", () => {
+    const owners = new Set(["shell", "page-header"]);
+    for (const route of INTERNAL_ROUTES) {
+      expect(owners.has(route.orientation ?? "shell"), String(route.pattern)).toBe(true);
+    }
+    // Solo el editor de facturas, que es la pantalla migrada, pinta sus propias migas.
+    expect(
+      INTERNAL_ROUTES.filter((route) => route.orientation === "page-header").map((route) =>
+        String(route.pattern),
+      ),
+    ).toEqual([String(/^\/borradores\/nuevo$/), String(/^\/borradores\/[^/]+$/)]);
+    expect(resolveRoute("/borradores/nuevo")?.orientation).toBe("page-header");
+    expect(resolveRoute("/notas-credito/borradores/d1")?.orientation).toBe("shell");
+    expect(resolveRoute("/facturas")?.orientation).toBe("shell");
   });
 
   it("Configuración es una sección de las migas", () => {

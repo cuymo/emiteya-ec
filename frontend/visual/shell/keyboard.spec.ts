@@ -55,13 +55,12 @@ test.describe("teclado del shell", () => {
       const { page } = await openPage(browser, { persona: "admin" }, { viewport });
       await page.goto("/facturas");
       await settle(page);
-      // Primero la barra superior: al abrir el menú, Radix oculta el resto de la página.
-      const topbar = page.getByRole("radiogroup", { name: "Tema" });
-      if (viewport.width >= 640) await expect(topbar).toBeVisible();
-      else await expect(topbar).toBeHidden();
+      // La barra superior no tiene control de tema; el menú de cuenta sí, a todas las anchuras
+      // (productize-invoice-editor-and-composition-foundation, spec «Tema accesible»).
+      await expect(page.getByRole("radiogroup", { name: "Tema" })).toHaveCount(0);
       await page.getByRole("button", { name: "Cuenta de Ana Admin" }).click();
       await expect(page.getByRole("menu")).toBeVisible();
-      await expect(page.getByRole("menuitemradio")).toHaveCount(viewport.width >= 640 ? 0 : 3);
+      await expect(page.getByRole("menuitemradio")).toHaveCount(3);
       await page.context().close();
     }
   });

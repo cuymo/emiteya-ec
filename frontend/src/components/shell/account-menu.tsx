@@ -1,8 +1,9 @@
 // Menú de cuenta (adopt-premium-design-foundation-and-shell, design D8 y D11; spec
 // web-application-shell, «Menú de cuenta» y «Tema accesible»). Derivado de `nav-user.tsx` de la
 // plantilla «Studio Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md), con la cuenta real de la sesión:
-// sin imagen remota, sin Billing ni Notifications de demostración. Por debajo de 640 px ofrece el tema,
-// que por encima vive solo en la barra superior: nunca hay dos controles de tema a la vez.
+// sin imagen remota, sin Billing ni Notifications de demostración. El tema vive aquí a todas las
+// anchuras y en ningún otro sitio: nunca hay dos controles de tema
+// (productize-invoice-editor-and-composition-foundation, spec «Tema accesible»).
 "use client";
 
 import { LogOut, Monitor, Moon, Sun, UserRound } from "lucide-react";
@@ -22,7 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMediaQuery } from "@/hooks/use-mobile";
 import { ROLE_LABELS } from "@/lib/permissions";
 
 const THEMES = [
@@ -31,13 +31,9 @@ const THEMES = [
   { value: "system", label: "Sistema", icon: Monitor },
 ] as const;
 
-/** Por debajo de este ancho el tema pasa al menú de cuenta (design D8). */
-export const NARROW_QUERY = "(max-width: 639px)";
-
 export function AccountMenu() {
   const { me, signOut } = useSession();
   const { theme, setTheme } = useTheme();
-  const narrow = useMediaQuery(NARROW_QUERY);
   const [leaving, setLeaving] = useState(false);
   return (
     <DropdownMenu>
@@ -68,24 +64,20 @@ export function AccountMenu() {
             Mi cuenta
           </Link>
         </DropdownMenuItem>
-        {narrow && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Tema</DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              aria-label="Tema"
-              value={theme ?? "system"}
-              onValueChange={setTheme}
-            >
-              {THEMES.map(({ value, label, icon: Icon }) => (
-                <DropdownMenuRadioItem key={value} value={value}>
-                  <Icon aria-hidden="true" />
-                  {label}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </>
-        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Tema</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          aria-label="Tema"
+          value={theme ?? "system"}
+          onValueChange={setTheme}
+        >
+          {THEMES.map(({ value, label, icon: Icon }) => (
+            <DropdownMenuRadioItem key={value} value={value}>
+              <Icon aria-hidden="true" />
+              {label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={leaving}

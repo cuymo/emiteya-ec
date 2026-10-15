@@ -42,7 +42,10 @@ describe("teclado del shell", () => {
     await screen.findByRole("menu");
     // Al abrir con el teclado, el foco va al primer ítem.
     await waitFor(() => expect(document.activeElement?.textContent).toContain("Mi cuenta"));
+    // El grupo «Tema» vive en el menú a todas las anchuras (spec «Tema accesible»).
     await user.keyboard("{ArrowDown}");
+    expect(document.activeElement?.textContent).toContain("Claro");
+    await user.keyboard("{End}");
     expect(document.activeElement?.textContent).toContain("Cerrar sesión");
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());

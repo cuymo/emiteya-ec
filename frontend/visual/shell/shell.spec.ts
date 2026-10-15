@@ -15,7 +15,9 @@ import {
   type Scenario,
 } from "../fixtures";
 
-const TEST_NOTICE = "Ambiente de Pruebas: los comprobantes no tienen validez tributaria.";
+// El indicador de la barra superior es el aviso persistente de Pruebas: ya no hay franja
+// (productize-invoice-editor-and-composition-foundation, design D21).
+const TEST_NOTICE = "Ambiente de Pruebas: los comprobantes no tienen validez tributaria";
 const TABLET = { width: 1024, height: 768 } as const;
 
 type Options = {
@@ -51,7 +53,15 @@ async function finish(page: Page, recorder: Recorder, name: string) {
   await page.context().close();
 }
 
-const pruebasVisible = (page: Page) => expect(page.getByText(TEST_NOTICE)).toBeVisible();
+// Con un panel o un menú modal abierto, Radix oculta el resto de la página a la asistencia: el
+// indicador se busca por su lugar y se comprueba su nombre accesible por el atributo.
+const pruebasVisible = async (page: Page) => {
+  const indicator = page.locator('header [data-slot="environment-indicator"]');
+  await expect(indicator).toBeVisible();
+  await expect(indicator).toHaveText("Pruebas");
+  await expect(indicator).toHaveAttribute("aria-label", TEST_NOTICE);
+  await expect(page.getByText(/Ambiente de Pruebas: los comprobantes/)).toHaveCount(0);
+};
 
 test.describe("shell premium", () => {
   test("escritorio claro, barra expandida", async ({ browser }) => {
@@ -98,7 +108,7 @@ test.describe("shell premium", () => {
       scenario: { persona: "operator", environment: "PRODUCTION" },
     });
     await expect(page.getByText("Producción", { exact: true })).toBeVisible();
-    await expect(page.getByText(TEST_NOTICE)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: TEST_NOTICE })).toHaveCount(0);
     await finish(page, recorder, "shell-production-operator");
   });
 
@@ -255,7 +265,7 @@ test.describe("shell premium", () => {
       scenario: { persona: "operator", environment: "PRODUCTION" },
     });
     await expect(page.locator("header").getByText("Producción", { exact: true })).toBeVisible();
-    await expect(page.getByText(TEST_NOTICE)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: TEST_NOTICE })).toHaveCount(0);
     await finish(page, recorder, "shell-mobile-production");
   });
 

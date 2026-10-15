@@ -22,7 +22,7 @@ import {
   type WithholdingOptionsView,
   type WithholdingSupplierView,
 } from "@facturador/contracts";
-import { ArrowLeft, Plus, UserRound } from "lucide-react";
+import { Plus, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -41,6 +41,7 @@ import { ApiError, apiFetch } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
+import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
 import {
   DEFAULT_POINT_KEY,
   pointLabel,
@@ -568,6 +569,8 @@ function DraftEditor({
             )}
           </div>
           <div className="flex flex-col gap-2">
+            {/* Aviso del ambiente junto a la acción que decide (design D21). */}
+            {canEmit && <EmissionEnvironmentNotice document="retención" />}
             {canEmit && (
               <Button
                 disabled={emitBlocked}
@@ -647,6 +650,7 @@ function DraftEditor({
                 {preview.totals ? formatUsd(preview.totals.withheld) : "—"}
               </dd>
             </dl>
+            <EmissionEnvironmentNotice document="retención" />
           </div>
         }
       >
@@ -672,13 +676,6 @@ function DraftEditor({
 function Header({ title }: { title: string }) {
   return (
     <div className="flex flex-col gap-2">
-      <Link
-        href="/retenciones"
-        className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-      >
-        <ArrowLeft aria-hidden="true" className="size-4" />
-        Retenciones
-      </Link>
       <h1 id="editor-titulo" className="text-3xl font-bold">
         {title}
       </h1>

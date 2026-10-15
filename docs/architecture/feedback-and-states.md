@@ -33,14 +33,15 @@ place to explain how to correct a specific invalid field.
 persist across screens. It carries an icon and text, never color alone, and it cannot be dismissed
 while the condition holds.
 
-- **`environment`:** the Pruebas environment. The user sees it on every screen, so it uses a quiet
-  neutral surface with the warning icon and a side accent, never a saturated block. It keeps the full
-  text: the documents have no tax validity (`adopt-premium-design-foundation-and-shell`, design
-  D27).
 - **`warning` and `danger`:** conditions that ask for an action, such as a signature about to expire
   or expired.
-- **Producción** has no strip. Its badge in the topbar, visible at every width, identifies the
-  environment as context, never as a success state.
+- **The environment has no strip** (`productize-invoice-editor-and-composition-foundation`, design
+  D21). The compact indicator in the topbar is its persistent notice, at every width and not
+  dismissible, and explains Pruebas in a popover. The fiscal warning is repeated where it matters:
+  `EmissionEnvironmentNotice` (`frontend/src/features/company/`) sits next to «Emitir» and inside the
+  emission confirmation of every editor that emits, with icon and text. In Pruebas it says that the
+  document will have no tax validity; when the environment cannot be confirmed it says so; in
+  Producción it says nothing, and the confirmation shows Producción as context.
 
 ## Toast Contract
 

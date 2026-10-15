@@ -152,6 +152,22 @@ export const STATES: State[] = [
     ready: (page) => heading(page, "Facturas"),
   },
   {
+    // D18: la barra en Pruebas con la explicación del indicador abierta (grupo 3, D21).
+    route: "facturas",
+    state: "indicador-pruebas",
+    path: "/facturas",
+    group: "shell",
+    widths: KEY,
+    viewportOnly: true,
+    ready: (page) => heading(page, "Facturas"),
+    act: async (page) => {
+      await page
+        .getByRole("button", { name: /^Ambiente de Pruebas: los comprobantes no tienen validez/ })
+        .click();
+      await expect(page.getByRole("dialog", { name: "Ambiente de Pruebas" })).toBeVisible();
+    },
+  },
+  {
     route: "facturas",
     state: "panel-movil",
     path: "/facturas",

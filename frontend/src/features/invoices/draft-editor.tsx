@@ -18,7 +18,7 @@ import {
   type ProductView,
   type StockWarning,
 } from "@facturador/contracts";
-import { ArrowLeft, Info, Plus, Trash2, UserRound } from "lucide-react";
+import { Info, Plus, Trash2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -28,6 +28,7 @@ import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
+import { AppBreadcrumbs } from "@/components/shell/app-breadcrumbs";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { useSession } from "@/components/session";
@@ -350,13 +351,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Link
-          href="/borradores"
-          className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-        >
-          <ArrowLeft aria-hidden="true" className="size-4" />
-          Borradores de facturas
-        </Link>
+        <AppBreadcrumbs owner="page-header" />
         <h1 id="editor-titulo" className="text-3xl font-bold">
           {draft ? "Borrador de factura" : "Nueva factura"}
         </h1>
@@ -759,9 +754,12 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
   if (!allowed) {
     return (
       <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-        <h1 id="editor-titulo" className="text-3xl font-bold">
-          Borrador de factura
-        </h1>
+        <div className="flex flex-col gap-2">
+          <AppBreadcrumbs owner="page-header" />
+          <h1 id="editor-titulo" className="text-3xl font-bold">
+            Borrador de factura
+          </h1>
+        </div>
         <EmptyState
           kind="no-permission"
           title="No tienes acceso a los borradores"
@@ -777,9 +775,12 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
     const missing = error instanceof ApiError && error.status === 404;
     return (
       <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-        <h1 id="editor-titulo" className="text-3xl font-bold">
-          Borrador de factura
-        </h1>
+        <div className="flex flex-col gap-2">
+          <AppBreadcrumbs owner="page-header" />
+          <h1 id="editor-titulo" className="text-3xl font-bold">
+            Borrador de factura
+          </h1>
+        </div>
         {emitted || missing ? (
           <EmptyState
             kind="empty"

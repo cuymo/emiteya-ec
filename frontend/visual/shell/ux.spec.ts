@@ -367,17 +367,20 @@ test.describe("ventas, borradores y archivo (D25)", () => {
     await page.context().close();
   });
 
-  test("Nueva factura desde la creación rápida marca Ventas › Borradores de facturas", async ({
+  // productize-invoice-editor-and-composition-foundation, D12 y PO-1: el editor de facturas
+  // pertenece a Facturas (sustituye a la D25, que lo colgaba de Borradores de facturas).
+  test("Nueva factura desde la creación rápida marca Ventas › Facturas, con sus migas encima del título", async ({
     browser,
   }) => {
     const page = await open(browser, "/facturas", { width: 1440, height: 900 });
     await page.getByRole("button", { name: "Nuevo" }).click();
     await page.getByRole("menuitem", { name: "Nueva factura" }).click();
     await page.waitForURL((url) => url.pathname === "/borradores/nuevo");
-    await expect(nav(page).locator('a[aria-current="page"]')).toHaveText("Borradores de facturas");
+    await expect(nav(page).locator('a[aria-current="page"]')).toHaveText("Facturas");
     const crumbs = page.getByRole("navigation", { name: "Ruta de navegación" });
-    await expect(crumbs).toContainText("Borradores de facturas");
-    await expect(crumbs).toContainText("Nueva factura");
+    await expect(crumbs).toHaveCount(1);
+    await expect(crumbs).toHaveText(/^Facturas\s*Nueva factura$/);
+    await expect(page.locator("header").getByRole("navigation")).toHaveCount(0);
     await page.context().close();
   });
 });

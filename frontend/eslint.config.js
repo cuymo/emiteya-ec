@@ -50,6 +50,9 @@ export default defineConfig(
       "src/components/data-table/row-actions-menu.tsx",
       "src/features/documents/**/*.{ts,tsx}",
       "src/features/invoices/invoices-screen.tsx",
+      // Ambiente compacto y aviso de la emisión (productize-invoice-editor-and-composition-foundation, D21).
+      "src/features/company/environment-notice.tsx",
+      "src/features/company/emission-environment-notice.tsx",
     ],
     rules: {
       "no-restricted-imports": [

@@ -53,6 +53,25 @@ describe("creación rápida", () => {
     expect(apiCalls(calls).filter((call) => !call.key.startsWith("GET "))).toEqual([]);
   });
 
+  it("la nueva factura, también después del primer guardado, marca Facturas como destino actual", async () => {
+    // productize-invoice-editor-and-composition-foundation, D12 y PO-1.
+    api();
+    for (const path of ["/borradores/nuevo", "/borradores/draft-1"]) {
+      navigation.pathname = path;
+      const view = renderShell();
+      await screen.findByText("contenido");
+      const nav = screen.getByRole("navigation", { name: "Navegación principal" });
+      const current = within(nav)
+        .getAllByRole("link")
+        .filter((link) => link.getAttribute("aria-current") === "page");
+      expect(
+        current.map((link) => link.textContent),
+        path,
+      ).toEqual(["Facturas"]);
+      view.unmount();
+    }
+  });
+
   it("abrirla y cerrarla sin elegir no crea nada ni cambia de pantalla", async () => {
     const user = userEvent.setup();
     const calls = api();

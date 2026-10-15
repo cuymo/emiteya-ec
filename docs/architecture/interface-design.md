@@ -88,8 +88,11 @@ In this repository, migrated screens use `PageHeader` (`frontend/src/components/
 - one primary-action slot and separate secondary actions, so a screen cannot ship two primary
   actions.
 
-Breadcrumbs come from the shell's top bar, not from `PageHeader`. The shell's Quick Create stays
-an `outline` secondary control.
+Breadcrumbs never live in the shell's top bar (`productize-invoice-editor-and-composition-foundation`,
+design D2). They sit in one row above the page title: the shell paints that row for the screens not
+yet migrated, and a migrated screen paints its own above its title, as the invoice editor does. The
+route model says which one owns each route, so a screen never shows both, and no «back» link repeats
+a breadcrumb. The shell's Quick Create stays an `outline` secondary control.
 
 A module is complete when everything it offers works end to end against the real backend:
 list, create, edit, detail, and the removal or deactivation the domain allows. A list that

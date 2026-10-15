@@ -56,11 +56,19 @@ export type NavGroup = {
 };
 
 /** Una pantalla interna de un destino: su detalle o su editor. */
+/**
+ * Quién pinta las migas de una pantalla (productize-invoice-editor-and-composition-foundation, design
+ * D2): la fila compartida del shell, o el `PageHeader` de una pantalla migrada. Nunca los dos.
+ */
+export type BreadcrumbOwner = "shell" | "page-header";
+
 type InternalRoute = {
   pattern: RegExp;
   destination: string;
   leaf: string;
   permission: Permission;
+  /** Por defecto, la fila compartida del shell. */
+  orientation?: BreadcrumbOwner;
 };
 
 export type CreateAction = {
@@ -282,24 +290,29 @@ function documentRoutes(
 }
 
 /** El orden importa: las rutas específicas van antes que las de identificador. */
-const INTERNAL_ROUTES: readonly InternalRoute[] = [
+export const INTERNAL_ROUTES: readonly InternalRoute[] = [
   {
     pattern: /^\/facturas\/[^/]+$/,
     destination: "/facturas",
     leaf: "Detalle de factura",
     permission: "invoices.read",
   },
+  // El editor de facturas pertenece a Facturas, antes y después del primer guardado, que cambia
+  // `/borradores/nuevo` por `/borradores/{id}` (design D12, PO-1). Borradores de facturas sigue
+  // siendo la lista para retomarlos. Sus migas las pinta el propio editor (D2).
   {
     pattern: /^\/borradores\/nuevo$/,
-    destination: "/borradores",
+    destination: "/facturas",
     leaf: "Nueva factura",
     permission: "invoices.draft",
+    orientation: "page-header",
   },
   {
     pattern: /^\/borradores\/[^/]+$/,
-    destination: "/borradores",
+    destination: "/facturas",
     leaf: "Borrador de factura",
     permission: "invoices.draft",
+    orientation: "page-header",
   },
   ...documentRoutes(
     "/notas-credito",
@@ -414,6 +427,8 @@ export type ResolvedRoute = {
   leaf: string | null;
   /** El permiso que exige la pantalla, o `null` si no hay guarda (ruta sin patrón o libre). */
   permission: Permission | null;
+  /** Quién pinta las migas de la pantalla (design D2). */
+  orientation: BreadcrumbOwner;
 };
 
 function findDestination(href: string): { destination: Destination; group: NavGroup | null } {
@@ -432,7 +447,12 @@ export function resolveRoute(pathname: string): ResolvedRoute | null {
     (destination) => destination.href === path,
   );
   if (exact) {
-    return { ...findDestination(exact.href), leaf: null, permission: exact.permission };
+    return {
+      ...findDestination(exact.href),
+      leaf: null,
+      permission: exact.permission,
+      orientation: "shell",
+    };
   }
   const internal = INTERNAL_ROUTES.find((route) => route.pattern.test(path));
   if (internal) {
@@ -440,13 +460,14 @@ export function resolveRoute(pathname: string): ResolvedRoute | null {
       ...findDestination(internal.destination),
       leaf: internal.leaf,
       permission: internal.permission,
+      orientation: internal.orientation ?? "shell",
     };
   }
   // Una ruta sin patrón conserva su destino actual por prefijo, sin guarda.
   for (const group of NAV_GROUPS) {
     for (const destination of group.destinations) {
       if (destination.href !== "/" && path.startsWith(`${destination.href}/`)) {
-        return { destination, group, leaf: null, permission: null };
+        return { destination, group, leaf: null, permission: null, orientation: "shell" };
       }
     }
   }

@@ -476,3 +476,44 @@ describe("nueva nota de débito", () => {
     await waitFor(() => expect(document.activeElement).toBe(alert));
   });
 });
+
+describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-foundation, D21)", () => {
+  const companyStatus = (environment: "TEST" | "PRODUCTION" | "UNKNOWN"): Route =>
+    environment === "UNKNOWN"
+      ? () => ({ status: 503, body: errorBody("UNAVAILABLE", "x") })
+      : ok({
+          environment,
+          displayName: "COMERCIAL ANDINA S.A.",
+          readiness: { ready: true, checks: [] },
+        });
+  const notices = () => document.querySelectorAll("[data-slot=emission-environment-notice]");
+
+  for (const [environment, expected] of [
+    ["TEST", "Pruebas · esta nota de débito no tendrá validez tributaria."],
+    ["PRODUCTION", null],
+    ["UNKNOWN", /^No pudimos confirmar el ambiente/],
+  ] as const) {
+    it(`${environment}: junto a «Emitir» y en la confirmación, con texto e icono`, async () => {
+      render(<DebitNoteDraftScreen draftId="ndd-1" />, {
+        "GET /api/v1/debit-notes/drafts/ndd-1": ok(debitNoteDraft()),
+        "GET /api/v1/company/status": companyStatus(environment),
+      });
+      const user = userEvent.setup();
+      if (expected !== null) {
+        await waitFor(() => expect(notices()).toHaveLength(1), { timeout: 5_000 });
+      }
+      const dialog = await openEmission(user);
+      if (expected === null) {
+        expect(notices()).toHaveLength(0);
+        expect(within(dialog).getByText("Producción")).toBeDefined();
+        return;
+      }
+      expect(notices()).toHaveLength(2);
+      const inDialog = within(dialog)
+        .getByText(expected)
+        .closest("[data-slot=emission-environment-notice]")!;
+      expect(inDialog.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+      expect(within(dialog).queryByText("Producción")).toBeNull();
+    });
+  }
+});

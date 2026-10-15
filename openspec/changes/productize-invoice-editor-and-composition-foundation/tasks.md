@@ -101,7 +101,7 @@
 
 ## 3. Barra superior estable, ambiente compacto y una sola orientación
 
-- [ ] 3.1 Recomponer `components/shell/topbar.tsx` en tres zonas (D1):
+- [x] 3.1 Recomponer `components/shell/topbar.tsx` en tres zonas (D1):
   - contexto de la empresa acotado, con `title` y nombre accesible completo;
   - sin migas;
   - sin el grupo «Tema».
@@ -109,11 +109,11 @@
   Verificar con pruebas de `app-shell.test.tsx`: una sola línea de elementos, sin migas en la
   barra, el nombre largo recortado con el nombre completo accesible, y sin control de tema en la
   barra.
-- [ ] 3.2 Tema solo en el menú de cuenta a todas las anchuras (spec «Tema accesible»).
+- [x] 3.2 Tema solo en el menú de cuenta a todas las anchuras (spec «Tema accesible»).
 
   Verificar con `app-shell.test.tsx` y `keyboard.spec.ts`: el grupo «Tema» en el menú de cuenta en
   escritorio y en móvil, recorrido con las flechas y recordado al recargar.
-- [ ] 3.3 Indicador compacto del ambiente (D21): Pruebas, Producción y sin confirmar, como botón con
+- [x] 3.3 Indicador compacto del ambiente (D21): Pruebas, Producción y sin confirmar, como botón con
   popover y nombre accesible completo; retirar `EnvironmentNotice` y conservar `NoticeStrip` para la
   firma.
 
@@ -122,23 +122,23 @@
   - sin franja de ancho completo;
   - la explicación con el teclado y el tacto;
   - el aviso de la firma junto al indicador.
-- [ ] 3.4 Aviso contextual compartido `EmissionEnvironmentNotice` (D21), insertado junto a «Emitir» y
+- [x] 3.4 Aviso contextual compartido `EmissionEnvironmentNotice` (D21), insertado junto a «Emitir» y
   en la confirmación de los editores de nota de crédito, nota de débito, retención, guía y
   liquidación, sin recomponerlos. El del editor de facturas se coloca en el grupo 6.
 
   Verificar con una prueba por editor los escenarios de «Aviso de Pruebas al emitir»: Pruebas,
   Producción y sin confirmar, con texto e icono.
-- [ ] 3.5 Migas fuera de la barra con dueño por ruta (D2): `orientation: "page-header"` en las rutas
+- [x] 3.5 Migas fuera de la barra con dueño por ruta (D2): `orientation: "page-header"` en las rutas
   del editor de facturas del modelo, y la fila compartida del contenido a todas las anchuras para
   las demás.
 
   Verificar con `app-shell.test.tsx` y `navigation-routes.test.ts`:
   - los escenarios de «Migas de navegación»;
   - una prueba que recorre el modelo y comprueba que ninguna ruta tiene las dos orientaciones.
-- [ ] 3.6 Retirar los 14 enlaces «volver» (D2) de los editores y detalles listados en el design.
+- [x] 3.6 Retirar los 14 enlaces «volver» (D2) de los editores y detalles listados en el design.
 
   Verificar que sus pruebas buscan la miga en lugar del enlace y siguen en verde.
-- [ ] 3.7 Rutas de factura bajo Facturas en `INTERNAL_ROUTES` (D12, PO-1).
+- [x] 3.7 Rutas de factura bajo Facturas en `INTERNAL_ROUTES` (D12, PO-1).
 
   Verificar con `navigation-routes.test.ts`, `quick-create-and-palette.test.tsx`,
   `drafts-screen.test.tsx` y `ux.spec.ts`:
@@ -149,7 +149,7 @@
   debilitar la política.
 
   Verificar con `corepack pnpm check:web-security-policy` en verde.
-- [ ] 3.9 Revisión visual del shell:
+- [x] 3.9 Revisión visual del shell:
   - `test:visual:review` sobre la barra, el ambiente y las migas a todas las anchuras de D18, con la
     geometría de la barra (una línea y huecos por zona);
   - revisar a mano las diferencias de las 26 capturas de `test:visual` y actualizar solo las

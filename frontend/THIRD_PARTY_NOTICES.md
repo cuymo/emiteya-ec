@@ -183,6 +183,7 @@ destino relativo a `frontend/src/`.
 | `components/ui/sheet.tsx` | `components/ui/sheet.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/dropdown-menu.tsx` | `components/ui/dropdown-menu.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/tooltip.tsx` | `components/ui/tooltip.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/popover.tsx` | `components/ui/popover.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/command.tsx` | `components/ui/command.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/breadcrumb.tsx` | `components/ui/breadcrumb.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/empty.tsx` | `components/ui/empty.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |

@@ -209,22 +209,24 @@ describe("shell autenticado: comportamiento conservado", () => {
     await screen.findByText("contenido");
   });
 
-  it("el selector cambia entre tema oscuro y claro, también con las flechas", async () => {
+  it("el tema se elige en el menú de cuenta, también con las flechas", async () => {
+    // productize-invoice-editor-and-composition-foundation, spec «Tema accesible»: el grupo «Tema»
+    // vive solo en el menú de cuenta, a todas las anchuras.
+    const user = userEvent.setup();
+    setViewportWidth(1280);
     api();
     renderShell();
-    const dark = await screen.findByRole("radio", { name: "Oscuro" });
-    await act(async () => {
-      fireEvent.click(dark);
-    });
+    await user.click(await screen.findByRole("button", { name: "Cuenta de Ana Admin" }));
+    await user.click(await screen.findByRole("menuitemradio", { name: "Oscuro" }));
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    await act(async () => {
-      fireEvent.click(screen.getByRole("radio", { name: "Claro" }));
-    });
-    await act(async () => {
-      fireEvent.keyDown(screen.getByRole("radiogroup", { name: "Tema" }), { key: "ArrowRight" });
-    });
-    expect(screen.getByRole("radio", { name: "Oscuro" }).getAttribute("aria-checked")).toBe("true");
-    expect(document.activeElement).toBe(screen.getByRole("radio", { name: "Oscuro" }));
+    await user.click(screen.getByRole("button", { name: "Cuenta de Ana Admin" }));
+    const dark = await screen.findByRole("menuitemradio", { name: "Oscuro" });
+    expect(dark.getAttribute("aria-checked")).toBe("true");
+    dark.focus();
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement).toBe(screen.getByRole("menuitemradio", { name: "Sistema" }));
+    await user.keyboard("{Enter}");
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 });
 
@@ -277,38 +279,54 @@ describe("contexto de la empresa", () => {
 });
 
 describe("ambiente fiscal visible", () => {
-  it("el aviso de Pruebas sigue visible con la barra colapsada", async () => {
+  const indicator = (name: string | RegExp) => screen.findByRole("button", { name });
+
+  it("el indicador de Pruebas sigue visible con la barra colapsada, sin forma de cerrarlo", async () => {
     const user = userEvent.setup();
     setViewportWidth(1280);
     api();
     renderShell();
-    await screen.findByText(TEST_NOTICE);
+    const pruebas = await indicator(TEST_NOTICE);
+    expect(pruebas.textContent).toBe("Pruebas");
     await user.click(screen.getByRole("button", { name: "Contraer barra lateral" }));
-    expect(screen.getByText(TEST_NOTICE)).toBeDefined();
+    expect(screen.getByRole("button", { name: TEST_NOTICE })).toBeDefined();
     expect(screen.queryByRole("button", { name: /cerrar/i })).toBeNull();
   });
 
-  it("en móvil el aviso de Pruebas sigue visible al abrir y cerrar la navegación", async () => {
+  it("en móvil el indicador sigue visible al abrir y cerrar la navegación, y al tocarlo explica", async () => {
     const user = userEvent.setup();
     setViewportWidth(390);
     api();
     renderShell();
-    await screen.findByText(TEST_NOTICE);
+    await indicator(TEST_NOTICE);
     await user.click(screen.getByRole("button", { name: "Abrir navegación" }));
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getByText(TEST_NOTICE)).toBeDefined();
+    await user.click(screen.getByRole("button", { name: TEST_NOTICE }));
+    const explanation = await screen.findByRole("dialog", { name: "Ambiente de Pruebas" });
+    expect(explanation.textContent).toContain("no tienen validez tributaria");
+  });
+
+  it("sin franja de ancho completo: el ambiente solo vive en la barra superior", async () => {
+    api();
+    renderShell();
+    await indicator(TEST_NOTICE);
+    expect(screen.queryByText(/Ambiente de Pruebas: los comprobantes/)).toBeNull();
+    expect(document.querySelector("header [data-slot=environment-indicator]")).not.toBeNull();
   });
 
   it("Producción se indica con texto e icono", async () => {
     api({ environment: "PRODUCTION" });
     renderShell();
-    const badge = (await screen.findByText("Producción")).closest("[data-slot=badge]")!;
+    const badge = (await screen.findByText("Producción")).closest(
+      "[data-slot=environment-indicator]",
+    )!;
     expect(badge.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
-    expect(screen.queryByText(TEST_NOTICE)).toBeNull();
+    expect(badge.textContent).toBe("Ambiente de Producción");
+    expect(screen.queryByRole("button", { name: TEST_NOTICE })).toBeNull();
   });
 
-  it("el aviso de la firma convive con el de ambiente", async () => {
+  it("el aviso de la firma convive con el indicador de Pruebas", async () => {
     api({
       validity: {
         state: "EXPIRING",
@@ -318,8 +336,45 @@ describe("ambiente fiscal visible", () => {
       },
     });
     renderShell();
-    await screen.findByText(TEST_NOTICE);
+    await indicator(TEST_NOTICE);
     expect(await screen.findByText(/La firma electrónica vence el/)).toBeDefined();
+    expect(screen.getByRole("button", { name: TEST_NOTICE })).toBeDefined();
+  });
+});
+
+describe("barra superior estable (productize-invoice-editor-and-composition-foundation, D1)", () => {
+  it("tres zonas de contexto global: sin migas ni control de tema", async () => {
+    api();
+    navigation.pathname = "/borradores/nuevo";
+    renderShell();
+    await screen.findByText("contenido");
+    const header = screen.getByRole("banner");
+    expect(
+      [...header.querySelectorAll(":scope > [data-slot^=topbar-]")].map((zone) =>
+        zone.getAttribute("data-slot"),
+      ),
+    ).toEqual(["topbar-start", "topbar-center", "topbar-end"]);
+    expect(within(header).queryByRole("navigation", { name: "Ruta de navegación" })).toBeNull();
+    expect(within(header).queryByRole("radiogroup", { name: "Tema" })).toBeNull();
+    // Cada zona en una sola fila: sin saltos de línea.
+    for (const zone of header.querySelectorAll(":scope > [data-slot^=topbar-]"))
+      expect(zone.className.split(/\s+/)).not.toContain("flex-wrap");
+  });
+
+  it("un nombre largo se recorta sin desplazar al resto y sigue completo para la asistencia", async () => {
+    const name = "Distribuidora Ferretera de la Sierra Centro y Sur Compañía Limitada";
+    api({ displayName: name });
+    renderShell();
+    const context = (await screen.findByText(name)).closest(
+      "[data-slot=company-context]",
+    ) as HTMLElement;
+    expect(context.getAttribute("title")).toBe(name);
+    expect(context.textContent!.endsWith(`Empresa: ${name}`)).toBe(true);
+    expect(screen.getByText(name).className.split(/\s+/)).toContain("truncate");
+    // El hueco de la empresa está acotado: 10rem en móvil y 14rem desde 768 px.
+    expect(context.parentElement!.className.split(/\s+/)).toEqual(
+      expect.arrayContaining(["max-w-40", "md:max-w-56", "min-w-0"]),
+    );
   });
 });
 
@@ -443,6 +498,31 @@ describe("migas", () => {
     expect(within(breadcrumb()[0]!).getByText("Detalle de factura")).toBeDefined();
   });
 
+  it("van encima del título, en el contenido, y nunca en la barra superior", async () => {
+    api();
+    for (const path of ["/facturas/abc", "/configuracion/empresa", "/notas-credito/borradores/x"]) {
+      navigation.pathname = path;
+      const view = renderShell();
+      await screen.findByText("contenido");
+      const navs = breadcrumb();
+      expect(navs, path).toHaveLength(1);
+      expect(navs[0]!.closest("main"), path).not.toBeNull();
+      expect(navs[0]!.closest("header"), path).toBeNull();
+      view.unmount();
+    }
+  });
+
+  it("en el editor de facturas, la fila compartida no se pinta: las migas son del editor (D2)", async () => {
+    api();
+    for (const path of ["/borradores/nuevo", "/borradores/d-1"]) {
+      navigation.pathname = path;
+      const view = renderShell();
+      await screen.findByText("contenido");
+      expect(breadcrumb(), path).toHaveLength(0);
+      view.unmount();
+    }
+  });
+
   it("un destino de primer nivel no muestra migas", async () => {
     api();
     for (const path of ["/facturas", "/productos", "/"]) {
@@ -480,8 +560,8 @@ describe("menú de cuenta", () => {
       "/mi-cuenta",
     );
     expect(within(menu).getByRole("menuitem", { name: "Cerrar sesión" })).toBeDefined();
-    // En escritorio el tema vive en la barra superior, no en el menú.
-    expect(within(menu).queryByRole("menuitemradio")).toBeNull();
+    // También en escritorio el tema vive en el menú de cuenta, y en ningún otro sitio.
+    expect(within(menu).getAllByRole("menuitemradio")).toHaveLength(3);
   });
 
   it("cerrar sesión termina la sesión una sola vez y lleva al inicio de sesión", async () => {
@@ -496,7 +576,7 @@ describe("menú de cuenta", () => {
     expect(calls.filter((call) => call.key.startsWith("POST /api/auth/sign-out"))).toHaveLength(1);
   });
 
-  it("en un teléfono el tema está en el menú de cuenta, con la opción vigente marcada", async () => {
+  it("en un teléfono y en escritorio el tema está en el menú de cuenta, con la opción vigente marcada", async () => {
     const user = userEvent.setup();
     setViewportWidth(390);
     api();

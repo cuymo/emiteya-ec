@@ -35,6 +35,18 @@ export function useCompanyStatus() {
   });
 }
 
+/**
+ * Ambiente vigente para los avisos (productize-invoice-editor-and-composition-foundation, design
+ * D21). Sin datos, una consulta que ya falló alguna vez sigue sin confirmar mientras se reintenta:
+ * React Query la devuelve a «pendiente» al volver a pedirla, y un aviso no debe desaparecer por eso.
+ */
+export function useEnvironmentState(): Environment | "UNKNOWN" | "PENDING" {
+  const status = useCompanyStatus();
+  if (status.data) return status.data.environment;
+  if (status.isError || status.errorUpdateCount > 0 || status.failureCount > 0) return "UNKNOWN";
+  return "PENDING";
+}
+
 export function useTaxpayer(enabled = true) {
   return useQuery({
     queryKey: TAXPAYER_KEY,

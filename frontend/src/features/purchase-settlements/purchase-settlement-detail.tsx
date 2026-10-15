@@ -10,8 +10,7 @@
 "use client";
 
 import type { PurchaseSettlementView } from "@facturador/contracts";
-import { ArrowLeft, Info, RotateCw } from "lucide-react";
-import Link from "next/link";
+import { Info, RotateCw } from "lucide-react";
 import { useId, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
@@ -119,18 +118,8 @@ export function PurchaseSettlementDetailScreen({
   useBreadcrumbLabel(settlement.data?.documentNumber);
   const retry = useRetryPurchaseSettlementSigning();
 
-  const header = (
-    <Link
-      href="/liquidaciones-compra"
-      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
-      Liquidaciones de compra
-    </Link>
-  );
   const fallback = (body: ReactNode) => (
     <section aria-labelledby="liquidacion-titulo" className="flex flex-col gap-6">
-      {header}
       <h1 id="liquidacion-titulo" className="text-3xl font-bold">
         Liquidación de compra
       </h1>
@@ -170,7 +159,6 @@ export function PurchaseSettlementDetailScreen({
   const reserved = data.state === "RESERVED";
   return (
     <section aria-labelledby="liquidacion-titulo" className="flex flex-col gap-6">
-      {header}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 id="liquidacion-titulo" className="text-3xl font-bold tabular-nums">

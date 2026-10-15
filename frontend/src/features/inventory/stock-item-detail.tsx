@@ -16,7 +16,7 @@ import {
   type StockMovementType,
   type StockMovementView,
 } from "@facturador/contracts";
-import { ArrowLeft, PackagePlus, Power, PowerOff, SlidersHorizontal } from "lucide-react";
+import { PackagePlus, Power, PowerOff, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
@@ -269,20 +269,9 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
     },
   });
 
-  const header = (
-    <Link
-      href="/inventario"
-      className="inline-flex items-center gap-1 self-start text-sm text-foreground-muted hover:text-foreground"
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
-      Inventario
-    </Link>
-  );
-
   if (!allowed) {
     return (
       <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-6">
-        {header}
         <h1 id="inventario-detalle-titulo" className="text-3xl font-bold">
           Inventario
         </h1>
@@ -299,7 +288,6 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
     const missing = item.error instanceof ApiError && item.error.status === 404;
     return (
       <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-6">
-        {header}
         <h1 id="inventario-detalle-titulo" className="text-3xl font-bold">
           Inventario
         </h1>
@@ -416,7 +404,6 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
 
   return (
     <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-6">
-      {header}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 id="inventario-detalle-titulo" className="text-3xl font-bold break-words">

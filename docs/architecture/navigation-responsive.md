@@ -62,11 +62,23 @@ Breadcrumbs add hierarchy; they never repeat the page title.
   document number, the product name), or the label of the route.
 - **A trail of one breadcrumb is not shown.** That covers Inicio, top-level destinations such as
   Facturas and Productos, and Mi cuenta.
+- **Where** (`productize-invoice-editor-and-composition-foundation`, design D2): one row above the
+  page title, on a single line that truncates the last breadcrumb, at every width, never in the
+  topbar. They are the only orientation of the screen: no «back» link repeats a breadcrumb.
+- **One owner per route.** Each internal route of the model declares who paints its breadcrumbs:
+  - `shell` (the default): the shared row of the shell, at the start of the content area, for the
+    screens not yet migrated;
+  - `page-header`: the migrated screen paints them itself, above its title. Today only the invoice
+    editor (`/borradores/nuevo` and `/borradores/{id}`).
+
+  The shell row is not painted on a `page-header` route, so a screen never shows both.
+- **Invoice editor** (design D12, PO-1): new invoice and draft belong to Facturas, before and after
+  the first save. Borradores de facturas stays in Ventas as the list to resume drafts.
 
 Examples:
 - Facturas › 001-001-000000123;
 - Notas de crédito › Borrador de nota de crédito;
-- Borradores de facturas › Nueva factura;
+- Facturas › Nueva factura, and Facturas › Borrador de factura;
 - Configuración › Empresa.
 
 ## Application Shell
@@ -104,34 +116,39 @@ from the reference template's dashboard layout (ADR 0028).
     uses the conventional menu icon (design D29). The sheet has a visible «Cerrar menú» button,
     collapsible groups (the current one open) and 44px items. It closes on a destination, Escape,
     the overlay or the close button, and returns focus to the navigation button.
-- **Topbar** (`Topbar`), 48px high (56px on mobile).
-  - **From 768px:**
-    - sidebar toggle;
-    - breadcrumbs, which take the free space;
-    - the company context;
-    - the command palette trigger;
-    - the environment badge;
-    - the «Tema» radiogroup (from 640px);
-    - the account menu.
-  - **On mobile:** navigation button, company context (which grows), environment badge, palette and
-    account. Breadcrumbs move to the start of the content area.
+- **Topbar** (`Topbar`), 48px high (56px on mobile), on one line at every width
+  (`productize-invoice-editor-and-composition-foundation`, design D1). Only the global context, in
+  three zones, with 8px inside a zone and 16px between zones:
+  - **start:** the sidebar toggle (or «Abrir navegación» on mobile) and the company context, at most
+    14rem from 768px and 10rem below, truncated;
+  - **flexible center:** the command palette trigger, an 18rem field from `xl` and an icon below;
+  - **end:** the environment indicator and the account menu.
+
+  No breadcrumbs (they go above the title) and no theme control (it lives in the account menu).
 - **Company context.** It is read-only: the trade name, or the legal name, of the session's
   company, from `/company/status`. It is not a control and never suggests switching companies.
   - **While loading:** it reserves its space.
   - **On error:** it says it could not confirm the company, without guessing a name.
   - **Without registered data:** it says so.
-- **Environment** (design D27).
-  - **Always visible:** the badge with the text «Pruebas» or «Producción» sits in the sticky topbar
-    at every width, also on a phone after scrolling.
-  - **Pruebas:** besides the badge, a persistent, non-dismissible strip under the topbar says that
-    the documents have no tax validity, then the signature notice. The strip uses a quiet neutral
-    surface with the warning icon and a side accent, so seeing it on every screen does not tire.
-  - **Producción:** context, not a result. Its badge is neutral and high-attention (inverted
+- **Environment** (`productize-invoice-editor-and-composition-foundation`, design D21). The
+  compact indicator in the topbar is the persistent environment notice; there is no full-width
+  strip.
+  - **Always visible:** it sits in the sticky topbar at every width, also on a phone after
+    scrolling, and cannot be dismissed or hidden.
+  - **Pruebas:** «Pruebas» with a warning icon. Its accessible name says the documents have no tax
+    validity, and a popover explains it, and that an administrator changes the environment in
+    Configuración › Ambiente. The popover opens on keyboard focus, on mouse hover and on tap or
+    click; it is a button with a popover, not a tooltip, so it works with touch and keyboard.
+  - **Producción:** context, not a result. Its indicator is neutral and high-attention (inverted
     contrast), never the success green, and nothing checks the SRI connection.
-  - **Unknown environment:** it is never shown as Producción.
-- **Theme.** From 640px the «Tema» radiogroup is in the topbar; below 640px it moves into the account
-  menu as radio items. Both use the same next-themes state, and there is never more than one theme
-  control at the same width.
+  - **Unknown environment:** «Sin confirmar» with a warning icon and its explanation; never shown
+    as Producción. A query that already failed stays unconfirmed while it retries.
+  - **Where the fiscal decision is made:** every editor that emits repeats the warning next to its
+    «Emitir» and in its confirmation (`EmissionEnvironmentNotice`, spec `document-emission`).
+  - **Signature:** the certificate expiry notice stays as a strip under the topbar.
+- **Theme.** The «Tema» group (Claro, Oscuro, Sistema) lives in the account menu as radio items at
+  every width, walked with the arrows; the choice is remembered by next-themes. The topbar has no
+  theme control, so there is never more than one.
 - **Account menu.** Its accessible name is «Cuenta de {nombre}». It shows the name, email and role,
   plus Mi cuenta and Cerrar sesión, which disables itself after the first selection.
 - **Skip link.** «Saltar al contenido» is the first focusable element and targets `main#contenido`.
@@ -212,9 +229,10 @@ serves operators who return to the same few screens every day.
 The authenticated header should remain compact and stable:
 
 - mobile menu control when the sidebar is hidden;
-- current context or breadcrumb and page title;
-- theme control;
-- avatar menu for profile and sign-out actions.
+- the company context, the command palette and the environment indicator;
+- avatar menu for profile, theme and sign-out actions.
+
+Breadcrumbs and the page title belong to the content area, never to the header.
 
 Use borderless icon controls when their grouping is already clear. Keep icon size medium,
 touch targets at least 44px, and avoid displaying a long account name when the avatar
