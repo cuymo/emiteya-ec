@@ -108,43 +108,43 @@
     }
   },
   "after": {
-    "commit": "cefb533+orden-de-teclado-de-las-lineas",
+    "commit": "6636acd+revision-despues-del-grupo-8",
     "login": {
       "assets": {
+        "js": {
+          "files": 16,
+          "transferred": 348491,
+          "decoded": 1258933
+        },
+        "css": {
+          "files": 1,
+          "transferred": 13999,
+          "decoded": 77470
+        },
         "font": {
           "files": 1,
           "transferred": 69652,
           "decoded": 69652
-        },
-        "css": {
-          "files": 1,
-          "transferred": 13957,
-          "decoded": 77300
-        },
-        "js": {
-          "files": 16,
-          "transferred": 348487,
-          "decoded": 1258909
         }
       },
       "api": ["GET /api/v1/me"]
     },
     "inicio": {
       "assets": {
-        "css": {
-          "files": 1,
-          "transferred": 13957,
-          "decoded": 77300
-        },
         "font": {
           "files": 1,
           "transferred": 69652,
           "decoded": 69652
         },
+        "css": {
+          "files": 1,
+          "transferred": 13999,
+          "decoded": 77470
+        },
         "js": {
           "files": 19,
-          "transferred": 374024,
-          "decoded": 1344726
+          "transferred": 374044,
+          "decoded": 1344802
         }
       },
       "api": [
@@ -160,15 +160,15 @@
           "transferred": 69652,
           "decoded": 69652
         },
-        "css": {
-          "files": 1,
-          "transferred": 13957,
-          "decoded": 77300
-        },
         "js": {
           "files": 20,
-          "transferred": 398114,
-          "decoded": 1429766
+          "transferred": 398134,
+          "decoded": 1429842
+        },
+        "css": {
+          "files": 1,
+          "transferred": 13999,
+          "decoded": 77470
         }
       },
       "api": [
@@ -183,8 +183,8 @@
       "assets": {
         "css": {
           "files": 1,
-          "transferred": 13957,
-          "decoded": 77300
+          "transferred": 13999,
+          "decoded": 77470
         },
         "font": {
           "files": 1,
@@ -193,8 +193,8 @@
         },
         "js": {
           "files": 20,
-          "transferred": 391087,
-          "decoded": 1397746
+          "transferred": 391107,
+          "decoded": 1397822
         }
       },
       "api": [

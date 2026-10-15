@@ -184,6 +184,11 @@ destino relativo a `frontend/src/`.
 | `components/ui/dropdown-menu.tsx` | `components/ui/dropdown-menu.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/tooltip.tsx` | `components/ui/tooltip.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/popover.tsx` | `components/ui/popover.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `features/invoices/draft-editor.tsx`, líneas con su fila de encabezados y «Agregar producto» en la cabecera de la sección (composición visual, sin arrastrar ni total de línea calculado en el navegador) | `app/(main)/dashboard/invoice/_components/invoice-items.tsx` | MIT de «Studio Admin» |
+| `features/invoices/draft-editor.tsx`, el comprador como campo con su etiqueta y su control a todo el ancho de la columna (composición visual) | `app/(main)/dashboard/invoice/_components/client-selector.tsx` | MIT de «Studio Admin» |
+| `features/invoices/draft-editor.tsx`, filas de importe del resumen con la columna numérica a la derecha (composición visual) | `app/(main)/dashboard/invoice/_components/invoice-adjustments.tsx` | MIT de «Studio Admin» |
+| `components/layout/form-grid.tsx`, dos columnas por contenedor en los datos de cabecera (composición visual) | `app/(main)/dashboard/invoice/_components/invoice-details.tsx` | MIT de «Studio Admin» |
+| `components/segmented-control.tsx`, la opción elegida como pieza elevada dentro de una pista neutra (composición visual) | `components/ui/toggle-group.tsx` (variante por defecto) | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/command.tsx` | `components/ui/command.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/breadcrumb.tsx` | `components/ui/breadcrumb.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/empty.tsx` | `components/ui/empty.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |

@@ -16,7 +16,7 @@ nueva factura. Datos en `frontend-editor-2026-10-15.json`.
 | navegador | Google Chrome 154.0.8037.57 |
 | os | Linux 7.1.6-1-cachyos |
 | commit antes | 58f7dc9, con el harness del grupo 1 sin código de ejecución |
-| commit después | cefb533, más el orden de teclado de las líneas del grupo 7 (el botón «Quitar» al final del DOM) |
+| commit después | 6636acd, más los ajustes de la revisión «después» del grupo 8 (filas de campos en una columna por defecto y el nombre de la empresa a 320 px) |
 
 ## Resultados
 
@@ -25,28 +25,29 @@ descomprimido. Bytes. La fuente no cambia (69652 en las cuatro pantallas).
 
 | Pantalla | Tipo | Archivos | Transferido antes | Transferido después | Diferencia | Decodificado antes | Decodificado después | Diferencia |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Inicio de sesión | js | 16 | 347941 | 348487 | +546 | 1257134 | 1258909 | +1775 |
-| Inicio | js | 19 | 371685 | 374024 | +2339 | 1336446 | 1344726 | +8280 |
-| Facturas | js | 20 | 395622 | 398114 | +2492 | 1421073 | 1429766 | +8693 |
-| Nueva factura | js | 20 | 386285 | 391087 | +4802 | 1381488 | 1397746 | +16258 |
-| Todas | css | 1 | 13215 | 13957 | +742 | 72213 | 77300 | +5087 |
+| Inicio de sesión | js | 16 | 347941 | 348491 | +550 | 1257134 | 1258933 | +1799 |
+| Inicio | js | 19 | 371685 | 374044 | +2359 | 1336446 | 1344802 | +8356 |
+| Facturas | js | 20 | 395622 | 398134 | +2512 | 1421073 | 1429842 | +8769 |
+| Nueva factura | js | 20 | 386285 | 391107 | +4822 | 1381488 | 1397822 | +16334 |
+| Todas | css | 1 | 13215 | 13999 | +784 | 72213 | 77470 | +5257 |
 
 ## Explicación de cada diferencia
 
-- **CSS (+742 transferidos en todas):** las utilidades nuevas:
+- **CSS (+784 transferidos en todas):** las utilidades nuevas:
   - las variantes de contenedor del formulario (`@form-rail:`, `@form-wide:`, `@lg:`) y sus
     columnas con nombre;
   - los deshabilitados por variante (`disabled:not-aria-busy:`);
   - la selección neutra;
-  - el popover.
+  - el popover;
+  - la variante `@topbar-company:` del nombre de la empresa en un teléfono estrecho.
 
   Es una sola hoja compartida.
-- **JavaScript del shell (+2339 en Inicio y +2492 en Facturas):** el primitivo `Popover` y el
+- **JavaScript del shell (+2359 en Inicio y +2512 en Facturas):** el primitivo `Popover` y el
   indicador del ambiente con su explicación. A cambio salen la franja y el control de tema de la
   barra.
-- **Inicio de sesión (+546):** la parte compartida del botón, con sus nuevas clases de
+- **Inicio de sesión (+550):** la parte compartida del botón, con sus nuevas clases de
   deshabilitado.
-- **Nueva factura (+4802):** lo del shell, más los primitivos de formulario (`FormLayout`,
+- **Nueva factura (+4822):** lo del shell, más los primitivos de formulario (`FormLayout`,
   `FormSection`, `FormGrid` y `FormFieldRow`) y el aviso de la emisión.
 - **Dependencias:** ninguna nueva. Desde el inicio del cambio, `package.json` solo suma el script
   `test:visual:review`, y el lockfile no cambia.

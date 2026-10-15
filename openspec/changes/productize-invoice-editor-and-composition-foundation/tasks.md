@@ -305,23 +305,23 @@
 
 ## 8. Revisión «después», UX y documentación final
 
-- [ ] 8.1 Capturar el «después» con `REVIEW_LABEL=despues` y `REVIEW_COMPARE_WITH=antes`, abrir y mirar
+- [x] 8.1 Capturar el «después» con `REVIEW_LABEL=despues` y `REVIEW_COMPARE_WITH=antes`, abrir y mirar
   la comparación, y escribir `review-despues.md` con la misma estructura que el «antes» y
   conclusiones basadas en la evidencia.
 
   Verificar que el documento cita las hojas de comparación y mide la barra, el encabezado y la fila
   de pago.
-- [ ] 8.2 Revisión UX enfocada:
+- [x] 8.2 Revisión UX enfocada:
   - con el operador diario, el administrador nuevo y el usuario ocasional;
   - sobre el harness y sobre el despliegue local de revisión, reconstruido solo en su frontend, con
     `SRI_TRANSMISSION_ENABLED=0` leído y comprobado antes de abrir el navegador.
 
   Verificar el umbral de D20 y los S3 del backend informados aparte.
-- [ ] 8.3 Recorrer `frontend-checklist.md` en el editor y en la barra superior: 320, 768, 1024 y
+- [x] 8.3 Recorrer `frontend-checklist.md` en el editor y en la barra superior: 320, 768, 1024 y
   1440 px, zoom al 200 %, teclado, claro y oscuro, administrador y operador, Pruebas y Producción.
 
   Verificar que la lista queda marcada.
-- [ ] 8.4 Actualizar `technical-debt.md`:
+- [x] 8.4 Actualizar `technical-debt.md`:
   - cerrar los V4 de la barra y de formularios para el editor;
   - registrar `SERVER_TOTAL_PREVIEW_GAP` como limitación aceptada y la navegación interna de
     `UNSAVED_CHANGES_GAP`;
