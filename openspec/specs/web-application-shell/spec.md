@@ -9,10 +9,10 @@ mientras una pantalla carga, falla, no existe o no le está permitida.
 
 ### Requirement: Shell autenticado disponible
 Toda pantalla autenticada SHALL mostrarse dentro del shell: navegación, barra superior con el
-contexto de la empresa y el ambiente, avisos persistentes y el área de contenido de la pantalla.
-Mientras se verifica la sesión, el shell SHALL mostrar su estructura y anunciar la verificación,
-nunca una pantalla en blanco. Sin sesión, SHALL llevar al inicio de sesión conservando el destino
-pedido.
+contexto de la empresa y el indicador del ambiente, avisos persistentes de condiciones que lo
+requieran, como el vencimiento de la firma, y el área de contenido de la pantalla. Mientras se
+verifica la sesión, el shell SHALL mostrar su estructura y anunciar la verificación, nunca una
+pantalla en blanco. Sin sesión, SHALL llevar al inicio de sesión conservando el destino pedido.
 
 #### Scenario: Pantalla autenticada
 - **WHEN** un operador con sesión abre la pantalla de facturas
@@ -27,8 +27,8 @@ pedido.
 - **THEN** llega al inicio de sesión, y al iniciar sesión vuelve a la pantalla de comprobantes
 
 #### Scenario: Aviso de la firma dentro del shell
-- **WHEN** la firma electrónica de la empresa está por vencer
-- **THEN** el shell sigue mostrando el aviso de vencimiento de la firma junto al aviso de ambiente, sin ocultar ninguno de los dos
+- **WHEN** la firma electrónica de la empresa está por vencer en una empresa en Pruebas
+- **THEN** el shell muestra el aviso de vencimiento de la firma y, en la barra superior, el indicador «Pruebas», sin ocultar ninguno de los dos
 
 ### Requirement: Nombre visible del producto
 La interfaz SHALL identificar el producto como EmiteYa: en el shell, en el inicio de sesión y en el
@@ -46,7 +46,9 @@ título de cada pantalla. «Facturador SRI» no SHALL aparecer como nombre del p
 El shell SHALL mostrar en todas las pantallas autenticadas el nombre de la empresa de la sesión: su
 nombre comercial o, si no tiene, su razón social. Es solo lectura: el shell no SHALL ofrecer ningún
 control para cambiar de empresa. Si el nombre no puede obtenerse, el shell SHALL indicarlo sin
-mostrar un nombre supuesto.
+mostrar un nombre supuesto. Un nombre que no cabe SHALL recortarse sin desplazar a los demás
+controles de la barra superior, y el nombre completo SHALL seguir disponible para las tecnologías de
+asistencia y al señalarlo.
 
 #### Scenario: Empresa con nombre comercial
 - **WHEN** un operador navega por una empresa con nombre comercial registrado
@@ -55,6 +57,11 @@ mostrar un nombre supuesto.
 #### Scenario: Empresa sin nombre comercial
 - **WHEN** la empresa no tiene nombre comercial registrado
 - **THEN** el shell muestra su razón social
+
+#### Scenario: Nombre largo
+- **WHEN** la empresa tiene un nombre comercial más largo que el espacio de la barra superior
+- **THEN** el nombre se recorta en una sola línea sin desplazar el acceso a la paleta, el ambiente ni la cuenta
+- **AND** el nombre completo se anuncia a las tecnologías de asistencia y se muestra al señalarlo
 
 #### Scenario: Sin selector de empresas
 - **WHEN** un administrador activa el contexto de la empresa
@@ -70,22 +77,28 @@ mostrar un nombre supuesto.
 
 ### Requirement: Ambiente fiscal visible en el shell
 El shell SHALL mostrar el ambiente fiscal vigente en todas las pantallas autenticadas y en todos sus
-estados (barra expandida o colapsada, panel móvil). A todas las anchuras, incluida la de un
-teléfono, la barra superior SHALL mostrar un indicador compacto con el texto «Pruebas» o
-«Producción» que siga visible al desplazar el contenido, nunca solo color o icono. En Pruebas,
-SHALL mostrarse además un aviso persistente que no puede cerrarse y que dice que los comprobantes no
-tienen validez tributaria. Producción SHALL presentarse como contexto y no como resultado de una
-validación: su indicador no SHALL comunicar que todo está correcto. Si el ambiente no puede
-confirmarse, no SHALL presentarse como Producción.
+estados (barra expandida o colapsada, panel móvil), con un indicador compacto en la barra superior
+que siga visible al desplazar el contenido, nunca solo color o icono. En Pruebas, el indicador SHALL
+ser el aviso persistente del ambiente: SHALL decir «Pruebas» con un icono de advertencia, no SHALL
+poder cerrarse, su nombre accesible SHALL decir que los comprobantes no tienen validez tributaria, y
+SHALL explicarlo al enfocarlo, señalarlo o tocarlo. El shell no SHALL mostrar además un aviso de
+ancho completo por el ambiente. Producción SHALL presentarse como contexto y no como resultado de
+una validación: su indicador no SHALL comunicar que todo está correcto. Si el ambiente no puede
+confirmarse, el indicador SHALL decir que no está confirmado y no SHALL presentarse como Producción.
 
 #### Scenario: Pruebas con la barra colapsada
 - **WHEN** un operador de una empresa en Pruebas colapsa la barra lateral y navega a otra pantalla
-- **THEN** sigue viendo el aviso de Pruebas, que indica que los comprobantes no tienen validez tributaria, y no puede cerrarlo
+- **THEN** sigue viendo en la barra superior el indicador «Pruebas» con su icono de advertencia, y no puede cerrarlo
+- **AND** el nombre accesible del indicador dice que los comprobantes no tienen validez tributaria
 
 #### Scenario: Pruebas en móvil
 - **WHEN** un operador de una empresa en Pruebas abre y cierra la navegación en un teléfono
-- **THEN** el aviso de Pruebas sigue visible al cerrarla
-- **AND** la barra superior muestra el texto «Pruebas»
+- **THEN** la barra superior sigue mostrando el texto «Pruebas»
+- **AND** al tocar el indicador lee que los comprobantes no tienen validez tributaria
+
+#### Scenario: Sin aviso de ancho completo
+- **WHEN** un operador navega por una empresa en Pruebas
+- **THEN** no ve una franja de ancho completo por el ambiente, y el indicador de la barra superior sigue diciendo «Pruebas»
 
 #### Scenario: Producción sin depender del color
 - **WHEN** un usuario navega por una empresa en Producción, en escritorio o en móvil
@@ -101,7 +114,7 @@ confirmarse, no SHALL presentarse como Producción.
 
 #### Scenario: Ambiente desconocido
 - **WHEN** el ambiente de la empresa no puede confirmarse
-- **THEN** el shell advierte que no pudo confirmar si los comprobantes tienen validez tributaria y no muestra el indicador de Producción
+- **THEN** el indicador de la barra superior dice que el ambiente no está confirmado, con un icono de advertencia, y no muestra «Producción»
 
 ### Requirement: Navegación según permisos
 La navegación SHALL agrupar los destinos en Inicio, Ventas, Compras, Logística, Documentos,
@@ -137,7 +150,8 @@ mostrarse.
 
 ### Requirement: Destino actual
 La navegación SHALL marcar como actual exactamente un destino: el de la pantalla abierta, también
-cuando es una pantalla interna de ese destino, como un detalle o un editor. La marca SHALL ser
+cuando es una pantalla interna de ese destino, como un detalle o un editor. La pantalla de nueva
+factura y el editor de un borrador de factura SHALL pertenecer a Facturas. La marca SHALL ser
 perceptible sin depender solo del color y SHALL anunciarse a las tecnologías de asistencia, con la
 barra expandida, colapsada o en el panel móvil.
 
@@ -148,6 +162,14 @@ barra expandida, colapsada o en el panel móvil.
 #### Scenario: Pantalla interna
 - **WHEN** un usuario abre el detalle de una factura o el editor de un borrador de nota de crédito
 - **THEN** figuran como actuales Facturas o Notas de crédito, respectivamente
+
+#### Scenario: Editor de factura
+- **WHEN** un operador abre la pantalla de nueva factura, guarda el borrador por primera vez y sigue editándolo
+- **THEN** Facturas figura como destino actual en todo momento, también después del primer guardado
+
+#### Scenario: Borrador abierto desde su lista
+- **WHEN** un operador abre un borrador de factura desde Borradores de facturas
+- **THEN** Facturas figura como destino actual del editor
 
 #### Scenario: Barra colapsada
 - **WHEN** la barra lateral está colapsada a iconos
@@ -210,14 +232,16 @@ accesible.
 - **THEN** ve los mismos destinos que en la barra lateral de escritorio, ni uno más
 
 ### Requirement: Migas de navegación
-El shell SHALL mostrar migas que aporten jerarquía, derivadas de la misma navegación, y nunca una
-miga que solo repita el título de la página. Los grupos operativos no son una miga. Configuración
-sí, porque agrupa secciones. En una pantalla interna, el destino SHALL ser un enlace, y la última
-miga SHALL anunciarse como página actual.
+Las pantallas internas SHALL mostrar una sola fila de migas que aporten jerarquía, derivadas de la
+misma navegación, encima del título de la pantalla y nunca en la barra superior, y nunca una miga que solo repita el
+título de la página. Los grupos operativos no son una miga. Configuración sí, porque agrupa
+secciones. En una pantalla interna, el destino SHALL ser un enlace, y la última miga SHALL anunciarse
+como página actual. Las migas SHALL ser el único mecanismo de orientación de la pantalla: no SHALL
+acompañarse de un enlace de vuelta que repita una miga.
 
 #### Scenario: Pantalla interna
 - **WHEN** un usuario abre el detalle de la factura 001-001-000000123
-- **THEN** ve la ruta Facturas › 001-001-000000123, con Facturas como enlace a la lista y el número anunciado como página actual
+- **THEN** ve encima del título la ruta Facturas › 001-001-000000123, con Facturas como enlace a la lista y el número anunciado como página actual
 - **AND** mientras el número todavía no se conoce, la última miga es «Detalle de factura»
 
 #### Scenario: Borrador
@@ -226,11 +250,27 @@ miga SHALL anunciarse como página actual.
 
 #### Scenario: Nueva factura
 - **WHEN** un usuario abre la pantalla de nueva factura
-- **THEN** ve la ruta Borradores de facturas › Nueva factura, con Borradores de facturas como enlace
+- **THEN** ve la ruta Facturas › Nueva factura, con Facturas como enlace
+
+#### Scenario: Borrador de factura
+- **WHEN** un usuario abre un borrador de factura guardado
+- **THEN** ve la ruta Facturas › Borrador de factura, con Facturas como enlace
+
+#### Scenario: Una sola orientación
+- **WHEN** un usuario abre el editor de un borrador o el detalle de un comprobante
+- **THEN** la pantalla ofrece la vuelta al destino solo a través de las migas, sin un enlace de vuelta aparte
+
+#### Scenario: Sin migas duplicadas
+- **WHEN** un operador abre el editor de una factura o una pantalla interna heredada
+- **THEN** ve una sola fila de migas, encima del título, y ningún otro elemento de la pantalla repite esa orientación
+
+#### Scenario: Migas a cualquier anchura
+- **WHEN** un usuario abre una pantalla interna en escritorio, en una tableta o en un teléfono
+- **THEN** ve las migas en el mismo lugar, encima del título, y la barra superior no las muestra
 
 #### Scenario: Destino de primer nivel sin miga redundante
 - **WHEN** un usuario abre la lista de facturas o la de productos
-- **THEN** el shell no muestra migas, porque solo repetirían el título de la página
+- **THEN** la pantalla no muestra migas, porque solo repetirían el título de la página
 
 #### Scenario: Sección de configuración
 - **WHEN** un administrador abre Empresa o Secuenciales
@@ -238,7 +278,7 @@ miga SHALL anunciarse como página actual.
 
 #### Scenario: Inicio
 - **WHEN** un usuario abre Inicio
-- **THEN** el shell no muestra migas
+- **THEN** la pantalla no muestra migas
 
 #### Scenario: Mismos nombres
 - **WHEN** un usuario abre una pantalla interna de inventario
@@ -253,7 +293,7 @@ borrador, reservar un número ni emitir por sí misma.
 #### Scenario: Nueva factura desde la creación rápida
 - **WHEN** un operador elige «Nueva factura» en la creación rápida
 - **THEN** llega a la pantalla de nueva factura, igual que desde la lista de facturas
-- **AND** la navegación marca Borradores de facturas, en Ventas, como destino actual
+- **AND** la navegación marca Facturas, en Ventas, como destino actual
 
 #### Scenario: Abrir sin elegir
 - **WHEN** un usuario abre la creación rápida y la cierra sin elegir una acción
@@ -310,25 +350,25 @@ resultados de registros concretos.
 
 ### Requirement: Tema accesible
 El shell SHALL permitir elegir el tema Claro, Oscuro o Sistema con un grupo de opciones accesible
-llamado «Tema», que se recorre con las flechas. La elección SHALL recordarse y, sin elección, SHALL
-seguirse la preferencia del sistema. En pantallas estrechas, el tema SHALL ofrecerse dentro del menú
-de cuenta. A ningún ancho SHALL haber dos controles de tema visibles a la vez.
+llamado «Tema», que se recorre con las flechas, dentro del menú de cuenta a todas las anchuras. La
+elección SHALL recordarse y, sin elección, SHALL seguirse la preferencia del sistema. La barra
+superior no SHALL mostrar un control de tema, y a ningún ancho SHALL haber dos controles de tema.
 
 #### Scenario: Cambiar el tema
-- **WHEN** un usuario elige Oscuro en el grupo «Tema» y recarga la pantalla
+- **WHEN** un usuario abre el menú de cuenta, elige Oscuro en el grupo «Tema» y recarga la pantalla
 - **THEN** la interfaz sigue en tema oscuro
 
 #### Scenario: Teclado
-- **WHEN** un usuario enfoca el grupo «Tema» y pulsa la flecha derecha
+- **WHEN** un usuario enfoca el grupo «Tema» del menú de cuenta y pulsa la flecha derecha
 - **THEN** se selecciona la opción siguiente y la interfaz cambia de tema
 
 #### Scenario: Pantalla estrecha
-- **WHEN** un usuario en un teléfono abre el menú de cuenta
+- **WHEN** un usuario abre el menú de cuenta en un teléfono, o en escritorio
 - **THEN** encuentra las opciones de tema Claro, Oscuro y Sistema, con la vigente marcada
 
 #### Scenario: Un solo control por ancho
 - **WHEN** un usuario usa la aplicación en escritorio y luego en un teléfono
-- **THEN** en escritorio el tema está solo en la barra superior y no en el menú de cuenta, y en el teléfono está solo en el menú de cuenta, y ambos cambian el mismo tema
+- **THEN** en ninguno de los dos hay un control de tema en la barra superior, y el del menú de cuenta cambia el mismo tema
 
 ### Requirement: Menú de cuenta
 El shell SHALL ofrecer un menú de cuenta, con nombre accesible «Cuenta de» seguido del nombre del
@@ -362,7 +402,7 @@ las tecnologías de asistencia, nunca un área en blanco.
 
 #### Scenario: Navegación lenta
 - **WHEN** un usuario navega a una pantalla que tarda en cargar
-- **THEN** ve el estado de carga en el área de contenido, y la navegación y el aviso de ambiente siguen visibles
+- **THEN** ve el estado de carga en el área de contenido, y la navegación y el indicador del ambiente siguen visibles
 
 ### Requirement: Error inesperado en una pantalla
 Si una pantalla autenticada falla de forma inesperada al mostrarse, el shell SHALL seguir visible y
@@ -407,3 +447,43 @@ del destino ni solicitar sus datos. Es solo presentación: la API sigue rechazan
 #### Scenario: Destino permitido
 - **WHEN** un operador abre directamente la dirección de Catálogos fiscales
 - **THEN** ve la pantalla de catálogos fiscales como hasta ahora
+
+### Requirement: Barra superior estable
+La barra superior SHALL ocupar una sola línea a todas las anchuras soportadas, en la barra lateral
+expandida o colapsada, sin que ningún texto o control se parta en varias líneas, se salga de la
+barra ni se monte sobre otro. SHALL reunir solo el contexto global: el botón de navegación, el
+contexto de la empresa, el acceso a la paleta de comandos, el ambiente fiscal y el menú de cuenta.
+No SHALL mostrar la jerarquía de la pantalla abierta, como migas o títulos.
+
+#### Scenario: Pantalla interna en una tableta
+- **WHEN** un administrador abre Empresa, dentro de Configuración, en una ventana de 768 px de ancho
+- **THEN** la barra superior muestra en una sola línea, sin solaparse, el contexto de la empresa, el acceso a la paleta, el ambiente y la cuenta
+- **AND** la barra no muestra las migas de la pantalla
+
+#### Scenario: Editor en un portátil
+- **WHEN** un operador abre la pantalla de nueva factura en una ventana de 1024 o 1280 px, con la barra lateral expandida o colapsada
+- **THEN** ningún elemento de la barra superior ocupa más de una línea
+
+#### Scenario: Teléfono
+- **WHEN** un usuario abre cualquier pantalla autenticada en un teléfono
+- **THEN** la barra superior muestra en una sola línea el botón de navegación, el contexto de la empresa, el acceso a la paleta, el ambiente y la cuenta
+
+### Requirement: Jerarquía de acciones de la pantalla
+Cada pantalla SHALL presentar como mucho una acción principal destacada a la vez. Una acción que en
+ese momento no puede ejecutarse SHALL percibirse como no disponible, sin el aspecto de la acción
+principal, y su motivo SHALL estar escrito junto a ella. Cuando el encabezado de la pantalla ya
+ofrece la acción principal, el estado vacío SHALL ofrecer la misma acción solo como secundaria. Las
+opciones elegidas en vistas, filtros y controles segmentados SHALL distinguirse sin usar la
+presentación de la acción principal, y nunca solo por el color.
+
+#### Scenario: Acción no disponible
+- **WHEN** un operador ve la acción de cambiar a Producción mientras la empresa aún no puede emitir
+- **THEN** la acción se percibe como no disponible, no con el aspecto de la acción principal, y el motivo está escrito junto a ella
+
+#### Scenario: Lista vacía con acción en el encabezado
+- **WHEN** un operador abre la lista de notas de crédito de una empresa que aún no tiene ninguna
+- **THEN** «Nueva nota de crédito» es la acción principal del encabezado, y el estado vacío la ofrece como acción secundaria
+
+#### Scenario: Filtro elegido
+- **WHEN** un operador elige el filtro «Activos» en la lista de productos
+- **THEN** el filtro se ve elegido por su forma y su texto, sin competir con la acción principal «Nuevo producto»
