@@ -48,7 +48,7 @@
 
 ## 3. Estado de la lista en la URL
 
-- [ ] 3.1 Crear `hooks/use-list-url-state.ts` (D9):
+- [x] 3.1 Crear `hooks/use-list-url-state.ts` (D9):
   - un esquema de parámetros con valores por defecto y alias;
   - cambios acumulados sobre el último pedido (la corrección de `archive/documents-screen.tsx`);
   - `router.replace` sin desplazar;
@@ -60,7 +60,7 @@
   - el alias `estado=atencion` pasa a `vista=atencion`;
   - cambiar un filtro borra `pagina`;
   - una página fuera de rango va a la última con facturas.
-- [ ] 3.2 Marcar como resuelta, en `docs/quality/technical-debt.md`, la carrera del estado en la
+- [x] 3.2 Marcar como resuelta, en `docs/quality/technical-debt.md`, la carrera del estado en la
   URL para las pantallas que usan el hook, y dejar pendientes las que aún no lo usan.
 
   Verificar que la fila nombra el hook y las pantallas pendientes.
