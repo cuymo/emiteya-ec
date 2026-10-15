@@ -106,5 +106,105 @@
         "GET /api/v1/signing-certificate/validity"
       ]
     }
+  },
+  "after": {
+    "commit": "cefb533+orden-de-teclado-de-las-lineas",
+    "login": {
+      "assets": {
+        "font": {
+          "files": 1,
+          "transferred": 69652,
+          "decoded": 69652
+        },
+        "css": {
+          "files": 1,
+          "transferred": 13957,
+          "decoded": 77300
+        },
+        "js": {
+          "files": 16,
+          "transferred": 348487,
+          "decoded": 1258909
+        }
+      },
+      "api": ["GET /api/v1/me"]
+    },
+    "inicio": {
+      "assets": {
+        "css": {
+          "files": 1,
+          "transferred": 13957,
+          "decoded": 77300
+        },
+        "font": {
+          "files": 1,
+          "transferred": 69652,
+          "decoded": 69652
+        },
+        "js": {
+          "files": 19,
+          "transferred": 374024,
+          "decoded": 1344726
+        }
+      },
+      "api": [
+        "GET /api/v1/company/status",
+        "GET /api/v1/me",
+        "GET /api/v1/signing-certificate/validity"
+      ]
+    },
+    "facturas": {
+      "assets": {
+        "font": {
+          "files": 1,
+          "transferred": 69652,
+          "decoded": 69652
+        },
+        "css": {
+          "files": 1,
+          "transferred": 13957,
+          "decoded": 77300
+        },
+        "js": {
+          "files": 20,
+          "transferred": 398114,
+          "decoded": 1429766
+        }
+      },
+      "api": [
+        "GET /api/v1/company/status",
+        "GET /api/v1/invoices?attention=true&pageSize=1",
+        "GET /api/v1/invoices?page=1&pageSize=25",
+        "GET /api/v1/me",
+        "GET /api/v1/signing-certificate/validity"
+      ]
+    },
+    "nueva-factura": {
+      "assets": {
+        "css": {
+          "files": 1,
+          "transferred": 13957,
+          "decoded": 77300
+        },
+        "font": {
+          "files": 1,
+          "transferred": 69652,
+          "decoded": 69652
+        },
+        "js": {
+          "files": 20,
+          "transferred": 391087,
+          "decoded": 1397746
+        }
+      },
+      "api": [
+        "GET /api/v1/company/status",
+        "GET /api/v1/establishments",
+        "GET /api/v1/fiscal-catalogs/payment-method/entries",
+        "GET /api/v1/me",
+        "GET /api/v1/me/default-emission-point",
+        "GET /api/v1/signing-certificate/validity"
+      ]
+    }
   }
 }

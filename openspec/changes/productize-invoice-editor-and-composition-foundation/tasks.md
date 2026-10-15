@@ -196,7 +196,7 @@
 
   Verificar con pruebas unitarias la asociación del `fieldset` y la acción, y con el navegador que
   las etiquetas y los controles de una fila comparten la y, con una ayuda bajo un solo campo.
-- [ ] 5.4 `StickySummaryPanel` y `StickyFormActions` (D8): fijo al lado y barra al pie cuando se
+- [x] 5.4 `StickySummaryPanel` y `StickyFormActions` (D8): fijo al lado y barra al pie cuando se
   apila, con la reserva de alto para el foco y el motivo asociado con `aria-describedby`.
 
   Verificar con pruebas unitarias el motivo asociado, y con el navegador que el foco nunca queda
@@ -275,7 +275,7 @@
 
 ## 7. Navegador y capturas
 
-- [ ] 7.1 Añadir `visual/shell/editor.spec.ts`:
+- [x] 7.1 Añadir `visual/shell/editor.spec.ts`:
   - **teclado:** comprador, punto, agregar producto, cantidad, formas de pago y acciones, y
     confirmación con devolución del foco;
   - **axe** en claro, oscuro, móvil y con la confirmación abierta;
@@ -284,7 +284,7 @@
   - **ambiente** en Pruebas, Producción y sin confirmar, junto a las acciones y en la confirmación.
 
   Verificar que la spec pasa.
-- [ ] 7.2 Capturas canónicas del editor en `test:visual`:
+- [x] 7.2 Capturas canónicas del editor en `test:visual`:
   - nuevo;
   - incompleto;
   - listo;
@@ -299,7 +299,7 @@
 
   Verificar que `corepack pnpm test:visual` pasa y que ninguna captura ajena al alcance cambió sin
   revisión.
-- [ ] 7.3 Medir la carga «después» con `test:visual:bundle` y explicar cada diferencia.
+- [x] 7.3 Medir la carga «después» con `test:visual:bundle` y explicar cada diferencia.
 
   Verificar que no entra ninguna dependencia nueva y que el editor no hace peticiones nuevas.
 

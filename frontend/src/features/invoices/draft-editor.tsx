@@ -702,13 +702,6 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                               Base imponible {baseText}
                             </span>
                           </div>
-                          <div className="col-start-3 row-start-1 flex justify-end @form-wide:col-start-6 @form-wide:min-h-10 @form-wide:items-center @form-wide:justify-center">
-                            <RowActionButton
-                              icon={Trash2}
-                              label={`Quitar la línea ${position}`}
-                              onClick={() => lines.remove(index)}
-                            />
-                          </div>
                           <FormField
                             id={`cantidad-${index}`}
                             label="Cantidad"
@@ -745,6 +738,15 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                           <span className="hidden h-10 items-center justify-end text-sm tabular-nums @form-wide:flex">
                             {baseText}
                           </span>
+                          {/* Quitar va al final del orden del teclado (cantidad, descuento y quitar);
+                              la rejilla lo coloca arriba a la derecha. */}
+                          <div className="col-start-3 row-start-1 flex justify-end @form-wide:col-start-6 @form-wide:min-h-10 @form-wide:items-center @form-wide:justify-center">
+                            <RowActionButton
+                              icon={Trash2}
+                              label={`Quitar la línea ${position}`}
+                              onClick={() => lines.remove(index)}
+                            />
+                          </div>
                           {(problems.length > 0 || warning) && (
                             <div className="col-span-full flex flex-col gap-2">
                               <IssueList issues={problems} />

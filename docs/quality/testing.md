@@ -263,7 +263,8 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
       comparadas con cero píxeles de diferencia. Solo tiene sentido en el commit del codemod.
     - `corepack pnpm test:visual`: la apariencia aprobada del shell premium (proyecto `shell`,
       `frontend/visual/shell/`).
-      - **Capturas:** 26 (17 del shell y 9 de Facturas), con una tolerancia de 0,1 % de píxeles para
+      - **Capturas:** 34 (17 del shell, 9 de Facturas y 8 del editor de facturas), con una tolerancia
+        de 0,1 % de píxeles para
         el suavizado del texto. Un cambio de color muy tenue, como el gris de un esqueleto sobre el
         fondo, queda por debajo del umbral por píxel: esas diferencias se revisan a mano. Del shell:
         - escritorio claro y oscuro con la barra expandida, y claro con la barra colapsada;
@@ -288,6 +289,21 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
           total dentro de la tabla, sin desplazamiento; a 320 px, desplazamiento solo de la tabla;
         - peticiones: la lista y un conteo de atención, que no se repite al filtrar, buscar ni
           cambiar las filas, y ninguna consulta por fila.
+      - **Editor de facturas** (`editor.spec.ts`, `productize-invoice-editor-and-composition-foundation`,
+        tareas 7.1 y 7.2):
+        - capturas: nuevo, incompleto, listo, con problemas, con cambios, 1024 px con la barra
+          expandida, 390 px y oscuro;
+        - teclado: comprador, punto, agregar producto con el foco en la cantidad nueva, cantidad,
+          descuento, quitar, formas de pago y guardar; la confirmación con Escape y el foco de vuelta;
+        - `axe` en claro, oscuro, móvil (con la página al final, donde la barra fija no tapa ningún
+          control), con problemas, nueva y con la confirmación abierta;
+        - anchuras de D18 medidas: el panel al lado o apilado según su contenedor, sin desplazamiento
+          horizontal, el importe entero y la forma de pago entera salvo a 390 px, donde el control
+          nativo ocupa la fila y recorta el nombre oficial;
+        - el ambiente en Pruebas, Producción y sin confirmar, junto a las acciones y en la
+          confirmación;
+        - el foco nunca debajo de la barra de acciones fija, recorriendo el formulario con Tab a 390,
+          1024 y 1440 px al 200 %.
       - **Error inesperado:** se provoca solo en la prueba, con un script de inicio que hace fallar
         el formateo de una fecha centinela.
       - **Accesibilidad:** `axe` (`@axe-core/playwright`, WCAG 2.2 AA) sobre escritorio claro y
@@ -314,7 +330,8 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
   - **Medición de carga:** `corepack pnpm test:visual:bundle` escribe
     `frontend/test-results/bundle.json` con los bytes de JavaScript, CSS y fuentes de cuatro pantallas
     representativas (inicio de sesión, inicio, Facturas y Nueva factura) y sus peticiones a `/api/v1`
-    (`docs/quality/benchmarks/frontend-shell-2026-10-14.md` y `frontend-facturas-2026-10-14.md`).
+    (`docs/quality/benchmarks/frontend-shell-2026-10-14.md`, `frontend-facturas-2026-10-14.md` y
+    `frontend-editor-2026-10-15.md`).
   - **Revisión visual:** `corepack pnpm --filter @facturador/frontend test:visual:review` (proyecto
     `review`, `productize-invoice-editor-and-composition-foundation`, design D17 y D18). Son los ojos
     del agente y de las personas, no una regresión: no compara imágenes con una base.
