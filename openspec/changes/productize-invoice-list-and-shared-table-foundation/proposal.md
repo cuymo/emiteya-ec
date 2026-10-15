@@ -22,9 +22,12 @@ siguientes.
   - columnas mínimas para decidir: número junto al estado, comprador, fecha y total, con el número
     y el total en una sola línea a 1024 px;
   - abrir la factura desde su número o desde la fila, y un menú de acciones secundarias por fila
-    con solo acciones que existen hoy;
+    con «Ver factura» y «Copiar número» (decisión del propietario: sin «Descargar RIDE» mientras la
+    lista no traiga su disponibilidad);
   - vistas «Todas» y «Requiere atención» con su conteo, y un filtro de estado compacto con los
     ocho estados del glosario, en lugar de siete chips del mismo peso;
+  - la indicación con texto del ambiente de una factura emitida en un ambiente distinto del vigente
+    (la lista de la API mezcla Pruebas y Producción);
   - búsqueda que dice lo que busca de verdad: número, comprador o identificación;
   - estado de la lista en la URL: recargar, compartir y volver conservan la vista;
   - «Limpiar filtros» solo con filtros activos, y los filtros activos visibles y removibles;
@@ -59,6 +62,9 @@ siguientes.
   configurables y ordenar por columna (la API no ordena).
 - **Acciones fiscales desde la lista** (reintentar la firma, reconciliar, anular, reenviar o
   duplicar). Siguen en el detalle, con su contexto.
+- **Descargar el RIDE y crear notas de crédito o débito desde la lista.** El RIDE sigue en el
+  detalle hasta que la lista traiga su disponibilidad, y las notas en sus flujos.
+- **Un filtro de ambiente.** El servidor no lo ofrece y la lista no lo simula en el navegador.
 - **Cambios en el backend.** Lo que la UI necesitaría y la API no ofrece queda como brecha del
   backend registrada, sin implementarse aquí.
 - **TanStack Table v9, Recharts, selectores de fecha y librerías de estado.**

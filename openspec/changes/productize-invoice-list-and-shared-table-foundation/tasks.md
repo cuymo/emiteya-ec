@@ -13,9 +13,8 @@
   estado de los comprobantes (decisión PO-1 del design).
 - **Pruebas existentes.** Ninguna prueba de comportamiento se borra. Cada aserción que cambia queda
   explicada en el commit que la cambia.
-- **Decisiones del propietario.** Las tareas siguen las recomendaciones PO-1 a PO-5 del design. Si
-  el propietario elige otra opción, se ajustan la tarea y el escenario indicados en el design antes
-  de aplicar.
+- **Decisiones del propietario** (2026-10-14, registradas en el design): PO-1, PO-2, PO-4 y PO-5
+  aprobadas. PO-3 modificada: en la fila, solo «Ver factura» y «Copiar número».
 
 ## 1. Arnés y medición previa
 
@@ -155,7 +154,8 @@
 - [ ] 7.1 Componer `features/invoices/invoices-screen.tsx` con `PageHeader` («Facturas», «Nueva
   factura» solo con `invoices.draft`, a la pantalla de nueva factura existente) y `useListUrlState`:
   - vistas «Todas» y «Requiere atención» con su conteo, mediante una consulta
-    `attention=true&pageSize=1` que no se repite por filtro (PO-2);
+    `attention=true&pageSize=1` con clave propia, que no se repite por página, filas, estado ni
+    búsqueda (PO-2);
   - filtro «Estado» con los ocho estados y el mapeo de D6, incluidos los alias;
   - búsqueda «Número, comprador o identificación».
 
@@ -169,18 +169,17 @@
 - [ ] 7.2 Definir las columnas de D10:
   - número y fecha, estado, comprador e identificación, total y acciones;
   - número y total sin partir, `tabular-nums`, sin encabezados ordenables;
-  - la marca de ambiente para las facturas de un ambiente distinto del vigente (PO-4), y de Pruebas
-    si el vigente es desconocido;
+  - la marca de ambiente para las facturas de un ambiente distinto del vigente (PO-4): «Pruebas ·
+    sin validez tributaria» o «Producción» neutro, y las de Pruebas si el vigente es desconocido;
   - el clic de fila;
-  - las acciones de la fila (PO-3): «Ver factura», «Descargar RIDE» solo en autorizadas y con
-    `archive.download` (vía `useDownloadDocument` y sus mensajes) y «Copiar número».
+  - las acciones de la fila (PO-3): solo «Ver factura» y «Copiar número».
 
   Verificar con pruebas de la pantalla:
-  - el enlace y el clic de fila;
-  - las acciones por estado y por permiso;
-  - el RIDE no disponible con su mensaje;
-  - las dos marcas;
-  - que no hay acciones fiscales.
+  - el enlace y el clic de fila, sin paradas de teclado duplicadas;
+  - las dos acciones de la fila y la confirmación de copia;
+  - que no hay «Descargar RIDE», notas ni acciones fiscales;
+  - las marcas de ambiente y de atención;
+  - que la tabla no pide nada por fila.
 - [ ] 7.3 Implementar los estados (D14) y las dos distribuciones (D15):
   - primera carga, recarga, vacío inicial, vacío por filtros, error y sin permiso;
   - la distribución amplia desde `@xl` del contenedor;

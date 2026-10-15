@@ -33,6 +33,10 @@ no admite.
 - **WHEN** la empresa tiene una factura verificando con el SRI, otra en revisión manual y otra firmada con la transmisión detenida, y un operador elige «Requiere atención»
 - **THEN** ve esas tres facturas y la vista indica que son 3
 
+#### Scenario: El número no depende de la página ni de los filtros
+- **WHEN** un operador cambia de página, de filas por página, de estado o de búsqueda
+- **THEN** el número de «Requiere atención» sigue contando todas las facturas de la empresa que requieren atención, sin volver a pedirse por ese cambio
+
 #### Scenario: Vista y estado combinados
 - **WHEN** un operador elige «Requiere atención» y el estado «Pendiente de envío»
 - **THEN** ve solo las facturas firmadas cuya transmisión está detenida
@@ -109,13 +113,23 @@ estado.
 - **THEN** su fila lo indica con una marca discreta que tiene nombre accesible, sin colorear la fila entera
 
 ### Requirement: Ambiente de cada factura en la lista
-La lista SHALL indicar con texto el ambiente de cada factura emitida en un ambiente distinto del
-vigente de la empresa, para que una factura de Pruebas nunca se confunda con una válida en
-Producción. Las facturas del ambiente vigente no SHALL llevar esa indicación.
+La lista SHALL indicar con texto, junto a la identidad de la factura, el ambiente de cada factura
+emitida en un ambiente distinto del vigente de la empresa. Una factura de Pruebas SHALL indicar que
+no tiene validez tributaria. El ambiente es contexto y no SHALL presentarse como éxito ni rechazo,
+ni mezclarse con el estado. Las facturas del ambiente vigente no SHALL llevar esa indicación, y la
+lista no SHALL ofrecer un filtro de ambiente.
 
 #### Scenario: Factura de Pruebas en una empresa en Producción
 - **WHEN** una empresa ya en Producción tiene facturas emitidas en Pruebas y un operador abre la lista
-- **THEN** cada factura de Pruebas indica el texto «Pruebas», y las de Producción no llevan indicación de ambiente
+- **THEN** cada factura de Pruebas indica con texto «Pruebas» y que no tiene validez tributaria, y las de Producción no llevan indicación de ambiente
+
+#### Scenario: Autorizada en Pruebas
+- **WHEN** una factura de Pruebas está autorizada y la empresa está en Producción
+- **THEN** la fila muestra el estado «Autorizado» y, aparte, la indicación de Pruebas, sin presentarla como rechazada
+
+#### Scenario: Factura de Producción en una empresa en Pruebas
+- **WHEN** una factura de la lista es de Producción y la empresa está en Pruebas
+- **THEN** la fila indica con texto «Producción» como contexto, sin la presentación de éxito
 
 ### Requirement: Apertura de una factura desde la lista
 Cada factura SHALL abrirse desde un enlace con su número, alcanzable con el teclado, y también al
@@ -132,21 +146,22 @@ permiten. Ninguna acción fiscal SHALL ofrecerse desde la lista.
 - **THEN** se abre el detalle de esa factura
 - **AND** pulsar el menú de acciones de la fila, o seleccionar texto en ella, no la abre
 
-#### Scenario: Acciones de una factura autorizada
-- **WHEN** un operador con permiso de descarga abre el menú de acciones de una factura autorizada
-- **THEN** encuentra «Ver factura», «Descargar RIDE» y «Copiar número»
+#### Scenario: Acciones de una factura
+- **WHEN** un operador abre el menú de acciones de cualquier factura
+- **THEN** encuentra «Ver factura» y «Copiar número»
+- **AND** no encuentra «Descargar RIDE» ni la creación de notas de crédito o débito, que siguen en el detalle de la factura
 
-#### Scenario: Acciones de una factura no autorizada
-- **WHEN** un operador abre el menú de acciones de una factura que no está autorizada
-- **THEN** encuentra «Ver factura» y «Copiar número», sin «Descargar RIDE»
-
-#### Scenario: RIDE todavía no disponible
-- **WHEN** un operador descarga el RIDE de una factura autorizada cuyo RIDE aún no está disponible
-- **THEN** ve un mensaje que lo explica y puede abrir la factura, sin descargar ningún archivo
+#### Scenario: Copiar el número
+- **WHEN** un operador elige «Copiar número»
+- **THEN** se copia solo el número visible de la factura y una confirmación accesible lo anuncia
 
 #### Scenario: Sin acciones fiscales
 - **WHEN** un operador abre el menú de acciones de cualquier factura
 - **THEN** no encuentra acciones para reintentar la firma, reconciliar, anular, reenviar ni duplicar
+
+#### Scenario: Sin consultas por fila
+- **WHEN** la lista muestra una página de facturas
+- **THEN** no pide el detalle, el RIDE ni el estado de cada factura por separado
 
 ### Requirement: Carga, vacío y error de la lista de facturas
 Mientras la lista carga, el encabezado y las herramientas SHALL mantenerse y la tabla SHALL mostrar

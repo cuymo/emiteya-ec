@@ -95,7 +95,7 @@ Motivación en `proposal.md`. Comportamiento observable en las specs delta (`inv
 | ¿Qué paginación hay? | `page`, `pageSize` (1-100) y `total`. Las páginas se calculan en el cliente. |
 | ¿Hay orden? | No. El servidor entrega primero las más recientes, y no se ofrecen encabezados ordenables (D10). |
 | ¿Qué columnas respaldan los datos? | Número, fecha de emisión, comprador, identificación, total, estado, transmisión detenida y ambiente (D10). |
-| ¿Qué acciones por fila existen? | Abrir el detalle (`invoices.read`) y descargar el RIDE de una autorizada (`archive.download`). Además, copiar el número, que es del cliente y no fiscal. Las acciones fiscales quedan en el detalle (D11). |
+| ¿Qué acciones por fila existen? | Abrir el detalle (`invoices.read`). La API permite descargar el RIDE de una autorizada, pero la fila no trae su disponibilidad, así que por decisión del propietario se queda en el detalle. En la fila: «Ver factura» y «Copiar número», que es del cliente y no fiscal (D11). |
 | ¿Qué patrones de la plantilla se reutilizan? | Ver «Trazabilidad de la plantilla». |
 | ¿Qué se adapta a TanStack v8? | Todo el cableado de la tabla (D2). |
 | ¿Qué componentes compartidos se introducen? | D4 a D9 y D12. |
@@ -267,16 +267,19 @@ Motivación en `proposal.md`. Comportamiento observable en las specs delta (`inv
   ya es el control progresivo, y su disparador mide 44 px. `data-tables.md` pide la hoja cuando hay
   varios filtros; se recoge aquí como decisión, no como excepción.
 
-### D7. Conteo de «Requiere atención» (decisión del propietario, PO-2)
+### D7. Conteo de «Requiere atención» (PO-2, aprobada)
 
-- **Decisión propuesta.** Una consulta propia `attention=true&pageSize=1` lee `meta.total`.
-  - Es una fila y un total, sin búsqueda ni estado: cuenta todas las facturas de la empresa que
-    requieren atención.
-  - Se refresca cuando se refresca la lista y al volver a la ventana. Un cambio de filtro no la
-    repite.
+- **Decisión.** Una consulta propia `attention=true&pageSize=1` lee `meta.total`. No es una
+  capacidad nueva del backend ni un agregado fiscal.
+- **Qué cuenta:** toda la población de atención de la empresa, con la semántica vigente de
+  `attention=true`.
+  - No es un conteo por estado ni por ambiente.
+  - No sale de recorrer páginas en el cliente.
+  - No depende de la página, de las filas por página, del estado ni de la búsqueda.
+- **Cuándo se pide.** Tiene su propia clave de consulta, sin esos parámetros, así que un cambio de
+  presentación no la repite. Se vuelve a pedir con la invalidación habitual de las facturas y al
+  volver a la ventana, igual que la lista.
 - **Por qué.** Responde de forma visible a «¿algo me espera?», sin alarmar.
-- **Alternativa:** sin conteo. Si el propietario la prefiere, el escenario «Requiere atención con su
-  número» pierde la cifra. Un endpoint de conteos sería una brecha del backend.
 
 ### D8. Búsqueda
 
@@ -331,19 +334,22 @@ Motivación en `proposal.md`. Comportamiento observable en las specs delta (`inv
 
   La fila no tiene rol interactivo, así que no hay elementos interactivos anidados. El teclado usa
   el enlace.
-- **`RowActionsMenu`.** Es un botón de icono con el nombre accesible «Acciones de la factura
-  001-001-000000123» y su ayuda, y abre un menú alineado al final. Sus acciones:
-  - **«Ver factura»:** siempre.
-  - **«Descargar RIDE»:** solo en `AUTHORIZED` y con `archive.download` (PO-3). Reutiliza
-    `useDownloadDocument` y sus mensajes de negocio: si el RIDE aún no existe, el usuario ve el
-    motivo y no se descarga nada. La fila no trae la disponibilidad del RIDE, así que queda como
-    brecha.
-  - **«Copiar número»:** del cliente, con su aviso, sin efecto fiscal.
+- **`RowActionsMenu`** (PO-3, modificada por el propietario). Es un botón de icono con el nombre
+  accesible «Acciones de la factura 001-001-000000123» y su ayuda, y abre un menú alineado al final.
+  Sus acciones:
+  - **«Ver factura»:** siempre. Repite el destino del enlace del número, pero dentro del menú, sin
+    añadir paradas de teclado.
+  - **«Copiar número»:** copia solo el número visible, con una confirmación accesible. Nunca la
+    clave de acceso, el identificador interno ni datos personales.
 - **Excluidas:**
-  - reintentar la firma y reconciliar, que son mutaciones fiscales y siguen en el detalle;
-  - anular, reenviar y duplicar, que no existen;
-  - crear una nota de crédito o de débito, que exige saber si la factura es de consumidor final,
-    dato que la fila no trae (PO-3).
+  - **«Descargar RIDE».** La fila no trae la disponibilidad del RIDE, y la lista no la adivina ni
+    pide el detalle por fila. El RIDE sigue en el detalle, y podrá añadirse aquí cuando una lectura
+    de la lista exponga su disponibilidad.
+  - **Notas de crédito o de débito:** siguen en sus flujos y en el detalle.
+  - **Reintentar la firma y reconciliar:** son mutaciones fiscales y siguen en el detalle.
+  - **Anular, reenviar y duplicar:** no existen.
+- **Sin consultas por fila:** la tabla usa solo la respuesta de la lista y el contexto de la empresa
+  del shell.
 - **Presupuesto de acciones:** abrir la fila es la acción principal, y hay como mucho tres
   secundarias en el menú (`cognitive-architecture.md`).
 
@@ -382,16 +388,23 @@ Motivación en `proposal.md`. Comportamiento observable en las specs delta (`inv
     con la incoherencia registrada como deuda.
   - Ninguna de las dos cambia las specs.
 
-### D13. Ambiente de cada factura (decisión del propietario, PO-4)
+### D13. Ambiente de cada factura (PO-4, aprobada y obligatoria)
 
-- **Decisión propuesta.** Una insignia neutra con el texto del ambiente («Pruebas» o «Producción»)
-  junto al número, solo cuando la factura es de un ambiente distinto del vigente de la empresa
-  (`useCompanyStatus`).
-- **Ambiente desconocido.** Si el ambiente vigente no puede confirmarse, se marcan las facturas de
-  Pruebas, para no presentarlas nunca como válidas.
+- **Dato.** La respuesta de la lista trae `environment` en cada fila (`invoiceSummaryViewSchema`). El
+  ambiente nunca se infiere del número, del estado ni de la clave de acceso.
+- **Factura de Pruebas en una empresa en Producción.** Una insignia neutra junto a la identidad, con
+  el texto «Pruebas · sin validez tributaria» en la distribución amplia, o «Pruebas» con su ayuda
+  «Sin validez tributaria» en la compacta. No parece rechazada: el estado sigue aparte, y una
+  factura autorizada en Pruebas se ve «Autorizado».
+- **Factura de Producción en una empresa en Pruebas.** «Producción» como contexto, con la
+  semántica de ambiente de la base (`emphasis` neutro), nunca el verde de éxito.
+- **Mismo ambiente:** sin indicación, porque el shell ya dice el vigente.
+- **Ambiente desconocido.** Si el vigente no puede confirmarse, se marcan las facturas de Pruebas,
+  para no presentarlas nunca como válidas.
+- **Sin filtro de ambiente.** El servidor no lo ofrece, y la lista no filtra la página cargada en
+  el navegador. Queda como brecha.
 - **Por qué.** La API mezcla los dos ambientes. Tras pasar a Producción, una factura de Pruebas
   podría entregarse como válida, y esto lo evita sin tocar el backend.
-- **Brecha.** Un filtro por ambiente en el servidor queda registrado como brecha.
 
 ### D14. Carga, vacío y error
 
@@ -429,9 +442,10 @@ cambia con la barra expandida o colapsada, y no del viewport.
 - **Compacta** (menos de 576 px): dos columnas.
   - «Factura»: el número, el comprador y la insignia de estado, en líneas.
   - «Total»: el total y, debajo, la fecha.
-  - Las columnas Estado y Comprador se ocultan a la vez que sus encabezados.
-  - El menú de acciones se oculta: abrir la fila sigue disponible, y las acciones están en el
-    detalle.
+  - Las columnas Estado, Comprador y acciones se ocultan a la vez que sus encabezados.
+  - El menú de acciones sigue accesible dentro de la celda del total, para que todo quepa a 390 px
+    sin desplazar. Solo una de sus dos copias es visible a la vez, y la oculta queda fuera del
+    árbol de accesibilidad y del orden de Tab.
 - **Si no cabe** (por ejemplo a 320 px), la tabla se desplaza dentro de su contenedor, nunca la
   página. No hay tarjetas.
 - **Sin columna fija:** la identidad ya es la primera columna en las dos distribuciones.
@@ -556,7 +570,7 @@ avisos se añaden a `frontend/THIRD_PARTY_NOTICES.md`.
 | `D/tasks/_components/task-status-filter.tsx` | `data-table-option-filter.tsx` | Adaptado | Opción única (el servidor acepta un estado); selección neutra | `ui/dropdown-menu` | Grupo de radio del menú | — |
 | `D/ecommerce/_components/recent-orders.tsx` (vistas «All / Needs action») | `data-table-views.tsx` | Adaptado | Vistas del servidor con conteo | `ui/toggle-group` | Radiogroup y conteo accesible | Sin `--gap` |
 | `D/tasks/_components/tasks.tsx` (pie) y `D/default/_components/recent-customers-table/table.tsx` | `data-table-pagination.tsx` | Visual portado | «Mostrando A-B de N»; sin cifras al cargar o vacía | `ui/select` (nativo) | Nombres de cada botón | — |
-| `D/users/_components/users-columns.tsx` (acciones) | `row-actions-menu.tsx` | Adaptado | Nombre accesible con el número; acciones del dominio | `ui/dropdown-menu`, `ui/tooltip` | El original de Roles no tiene nombre: aquí siempre | — |
+| `D/users/_components/users-columns.tsx` (acciones) | `row-actions-menu.tsx` | Adaptado | Nombre accesible con el número; solo acciones del dominio («Ver factura», «Copiar número») | `ui/dropdown-menu`, `ui/tooltip` | El original de Roles no tiene nombre: aquí siempre | — |
 | `D/users/_components/users-columns.tsx` (identidad) | Columnas de `features/invoices/` | Visual portado | Número y fecha; comprador e identificación | — | El texto recortado conserva su nombre completo | — |
 | `D/tasks/_components/columns.tsx` (insignia de estado) | `features/documents/document-status-badge.tsx` | Adaptado | Variantes semánticas con tokens, no clases de paleta | `ui/badge` | Texto con icono y ayuda con foco | — |
 | `D/file-manager/page.tsx` (encabezado) | `components/layout/page-header.tsx` | Visual portado | Una sola ranura principal; sin migas | `ui/button` | `h1` único | — |
@@ -570,7 +584,7 @@ avisos se añaden a `frontend/THIRD_PARTY_NOTICES.md`.
 | Sin orden por columna | Sin encabezados ordenables | Las más recientes primero |
 | Sin filtro de ambiente | Pruebas y Producción mezcladas | Marca de ambiente por fila (D13) |
 | Sin conteos por estado ni de atención | El conteo cuesta una consulta extra | `attention=true&pageSize=1` (D7) |
-| La fila no trae la disponibilidad del RIDE, la marca de consumidor final, `reconcilable` ni `inProgress` | Acciones de fila menos precisas | «Descargar RIDE» con mensaje honesto; notas fuera de la lista |
+| La fila no trae la disponibilidad del RIDE, la marca de consumidor final, `reconcilable` ni `inProgress` | Sin «Descargar RIDE» ni notas desde la fila | Siguen en el detalle de la factura |
 | La búsqueda distingue tildes, distingue mayúsculas en el número y no busca la clave de acceso | La búsqueda es más estrecha de lo que el usuario podría esperar | La etiqueta dice exactamente lo que busca |
 | «Requiere atención» no incluye los fallos de firma (RESERVED con diagnóstico) | Un fallo de firma no aparece en esa vista | Se respeta la definición del dominio y se informa al propietario |
 
@@ -578,9 +592,8 @@ avisos se añaden a `frontend/THIRD_PARTY_NOTICES.md`.
 
 - **Ninguna operación nueva.** La lista es de lectura y ya está aislada por empresa.
 - **El conteo** usa la misma consulta aislada y no puede revelar facturas de otra empresa.
-- **«Descargar RIDE»** reutiliza la operación existente del archivo (`archive.download`), con su
-  verificación de integridad y su registro de entrega. Repetirla registra cada entrega, como hoy.
-- **«Copiar número»** es del cliente.
+- **«Copiar número»** es del cliente y copia solo el número visible.
+- **Sin descargas ni consultas por fila** desde la lista.
 - **Sin mutaciones fiscales** desde la lista.
 
 ## Risks / Trade-offs
@@ -588,8 +601,8 @@ avisos se añaden a `frontend/THIRD_PARTY_NOTICES.md`.
 - **[Dos sistemas de tabla durante la migración]** → Es transitorio y tiene criterio de salida en la
   deuda (D1). La pieza heredada no admite código nuevo, porque el lint escalonado la excluye de las
   rutas migradas.
-- **[El conteo añade una petición]** → Una fila y un total, sin repetir por filtro (D7). Se puede
-  retirar si el propietario no lo quiere.
+- **[El conteo añade una petición]** → Una fila y un total, sin repetir por cambios de
+  presentación (D7).
 - **[El estado de los comprobantes cambia también en las otras pantallas (PO-1)]** → Solo la
   insignia, con el mapeo ya aprobado. El harness y las pruebas de esas pantallas se revisan, y la
   alternativa de solo Facturas queda disponible.
@@ -616,15 +629,12 @@ avisos se añaden a `frontend/THIRD_PARTY_NOTICES.md`.
 - **CI alojado.** No puede ejecutarse por la facturación de la cuenta. La verificación final es un
   `verify` en sala limpia, según la política vigente.
 
-## Decisiones del propietario requeridas
+## Decisiones del propietario (2026-10-14)
 
-Las specs y las tareas ya siguen la opción recomendada. Si el propietario elige otra, el ajuste
-indicado es acotado.
-
-| Id | Decisión | Recomendación | Si se elige la otra |
-| --- | --- | --- | --- |
-| PO-1 | Alcance de `DocumentStatusBadge` | Todas las pantallas de comprobantes, mediante la fachada de `StateCell` | Solo Facturas: una tarea cambia y la incoherencia queda como deuda |
-| PO-2 | Conteo de «Requiere atención» | Con conteo (una consulta `pageSize=1`) | Sin conteo: se ajusta un escenario |
-| PO-3 | Acciones de la fila | Ver factura, Descargar RIDE (autorizada) y Copiar número; sin notas de crédito o débito desde la lista | Sin RIDE, o con notas: se ajustan dos escenarios |
-| PO-4 | Marca de ambiente por fila | Sí, solo para facturas de un ambiente distinto del vigente | Sin marca: se retira un requisito |
-| PO-5 | Vistas | «Todas» y «Requiere atención» más el filtro de estado; sin vista «Procesando» | Vista «Procesando» (solo RESERVED): una opción más en las vistas |
+| Id | Decisión |
+| --- | --- |
+| PO-1 | **Aprobada.** `DocumentStatusBadge` es la presentación canónica del estado de los comprobantes, mediante la fachada de `StateCell`. En las demás pantallas solo cambia la presentación del estado: no su tabla, columnas, filtros, paginación, acciones, encabezado, comportamiento por anchura, estados vacíos ni flujos. |
+| PO-2 | **Aprobada.** Conteo con una consulta `attention=true&pageSize=1`, global e independiente de la página, las filas, el estado y la búsqueda (D7). |
+| PO-3 | **Modificada.** En la fila, solo «Ver factura» y «Copiar número». Sin «Descargar RIDE» ni notas de crédito o débito (D11). |
+| PO-4 | **Aprobada y obligatoria.** Indicación con texto del ambiente distinto del vigente, con «sin validez tributaria» para Pruebas, sin filtro de ambiente (D13). |
+| PO-5 | **Aprobada.** Vistas «Todas» y «Requiere atención» solamente, más el filtro «Estado» de opción única (D6). |
