@@ -18,7 +18,7 @@
 
 ## 1. Arnés y medición previa
 
-- [ ] 1.1 Hacer que los datos del harness (`frontend/visual/fixtures.ts`) respondan según los
+- [x] 1.1 Hacer que los datos del harness (`frontend/visual/fixtures.ts`) respondan según los
   parámetros de consulta de `/api/v1/invoices`:
   - `attention`, `state`, `search`, `page` y `pageSize`;
   - un conjunto determinista que cubra los ocho estados, una transmisión detenida, un total de
@@ -26,7 +26,7 @@
   - un escenario sin facturas.
 
   Verificar que `corepack pnpm test:visual` sigue en verde sin cambiar ninguna captura.
-- [ ] 1.2 Medir `/facturas` antes del cambio con `corepack pnpm test:visual:bundle` (JavaScript, CSS
+- [x] 1.2 Medir `/facturas` antes del cambio con `corepack pnpm test:visual:bundle` (JavaScript, CSS
   y fuente) y guardar el «antes» en `docs/quality/benchmarks/frontend-facturas-<fecha>.{md,json}`.
 
   Verificar que el informe nombra el commit, el entorno y los bytes por tipo.

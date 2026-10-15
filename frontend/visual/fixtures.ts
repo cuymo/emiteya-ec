@@ -9,6 +9,8 @@ export type Environment = "TEST" | "PRODUCTION";
 export type Scenario = {
   persona: Persona;
   environment?: Environment;
+  /** Facturas de la empresa; por defecto, `INVOICES`. La lista las filtra como el servidor. */
+  invoices?: InvoiceSummary[];
   /** Respuestas propias de una prueba, por `MÉTODO /ruta`; se consultan antes que las comunes. */
   overrides?: Record<string, Reply>;
 };
@@ -87,9 +89,167 @@ export const INVOICES = [
   createdAt: `${issueDate}T15:00:00.000Z`,
 }));
 
+/** Una fila de la lista de facturas, con la forma de `invoiceSummaryViewSchema`. */
+export type InvoiceSummary = {
+  id: string;
+  documentNumber: string;
+  environment: string;
+  issueDate: string;
+  buyerIdentification: string;
+  buyerName: string;
+  total: string;
+  state: string;
+  diagnosticCode: string | null;
+  transmissionStopped: boolean;
+  createdAt: string;
+};
+
+/** Una factura del catálogo con los campos que la lista recibe del servidor. */
+function invoice(
+  id: string,
+  sequential: number,
+  issueDate: string,
+  buyerIdentification: string,
+  buyerName: string,
+  total: string,
+  state: string,
+  extra: { environment?: Environment; transmissionStopped?: boolean } = {},
+) {
+  return {
+    id,
+    documentNumber: `001-001-${String(sequential).padStart(9, "0")}`,
+    environment: extra.environment ?? "TEST",
+    issueDate,
+    buyerIdentification,
+    buyerName,
+    total,
+    state,
+    diagnosticCode: null,
+    transmissionStopped: extra.transmissionStopped ?? false,
+    createdAt: `${issueDate}T15:00:00.000Z`,
+  };
+}
+
+/**
+ * Catálogo de la lista de facturas (productize-invoice-list-and-shared-table-foundation, tarea 1.1):
+ * los ocho estados, una transmisión detenida (atención sin ser `SEND_UNKNOWN` ni `MANUAL_REVIEW`) y
+ * un total de cuatro cifras, en el orden del servidor (más recientes primero).
+ */
+export const INVOICE_CATALOG: InvoiceSummary[] = [
+  invoice(
+    "cat-01",
+    140,
+    "2026-10-14",
+    "0992877878001",
+    "EL PERNO CIA. LTDA.",
+    "28.75",
+    "AUTHORIZED",
+  ),
+  invoice(
+    "cat-02",
+    139,
+    "2026-10-14",
+    "1790012345001",
+    "Comercial Andina S.A.",
+    "1250.00",
+    "SEND_UNKNOWN",
+  ),
+  invoice("cat-03", 138, "2026-10-13", "0102030405", "María José Paredes", "45.10", "RECEIVED"),
+  invoice(
+    "cat-04",
+    137,
+    "2026-10-13",
+    "1791234567001",
+    "Importadora Quito Cía. Ltda.",
+    "312.00",
+    "MANUAL_REVIEW",
+  ),
+  invoice(
+    "cat-05",
+    136,
+    "2026-10-12",
+    "0991234567001",
+    "Distribuidora del Pacífico",
+    "980.40",
+    "SIGNED",
+    { transmissionStopped: true },
+  ),
+  invoice("cat-06", 135, "2026-10-12", "9999999999999", "CONSUMIDOR FINAL", "3.45", "RETURNED"),
+  invoice(
+    "cat-07",
+    134,
+    "2026-10-11",
+    "0190123456001",
+    "Servicios Técnicos del Sur",
+    "76.20",
+    "NOT_AUTHORIZED",
+  ),
+  invoice("cat-08", 133, "2026-10-11", "1712345678", "Juan Pérez", "12.00", "RESERVED"),
+  invoice(
+    "cat-09",
+    132,
+    "2026-10-10",
+    "0990011223001",
+    "Ferretería La Esquina",
+    "4599.99",
+    "AUTHORIZED",
+  ),
+  invoice(
+    "cat-10",
+    131,
+    "2026-10-10",
+    "1790098765001",
+    "Constructora Valle Alto S.A.",
+    "640.00",
+    "SIGNED",
+  ),
+];
+
+/**
+ * Una empresa ya en Producción, con dos facturas antiguas de Pruebas: la lista del servidor mezcla
+ * los ambientes, y cada fila trae el suyo.
+ */
+export const PRODUCTION_INVOICES: InvoiceSummary[] = INVOICE_CATALOG.map((row, index) => ({
+  ...row,
+  environment: index === 2 || index === 8 ? "TEST" : "PRODUCTION",
+}));
+
+/** Estados que el servidor reúne en «Requiere atención», además de la transmisión detenida. */
+const ATTENTION_STATES = ["SEND_UNKNOWN", "MANUAL_REVIEW"];
+
+/** La lista de facturas filtrada y paginada con la semántica del servidor (`prisma-documents.ts`). */
+function invoiceList(rows: InvoiceSummary[], query: URLSearchParams): Reply {
+  const search = query.get("search")?.trim() ?? "";
+  const state = query.get("state");
+  const attention = query.get("attention") === "true";
+  const page = Number(query.get("page") ?? "1");
+  const pageSize = Number(query.get("pageSize") ?? "25");
+  const matching = rows.filter(
+    (row) =>
+      (!state || row.state === state) &&
+      (!attention || ATTENTION_STATES.includes(row.state) || row.transmissionStopped) &&
+      (!search ||
+        row.documentNumber.includes(search) ||
+        row.buyerIdentification.includes(search) ||
+        row.buyerName.toLowerCase().includes(search.toLowerCase())),
+  );
+  return {
+    status: 200,
+    body: {
+      data: matching.slice((page - 1) * pageSize, page * pageSize),
+      meta: { page, pageSize, total: matching.length },
+    },
+  };
+}
+
 export type Reply = { status: number; body?: unknown };
 
-function reply(scenario: Scenario, method: string, path: string): Reply | null {
+function reply(
+  scenario: Scenario,
+  method: string,
+  path: string,
+  query: URLSearchParams,
+): Reply | null {
   const environment = scenario.environment ?? "TEST";
   if (scenario.persona === "anonymous") {
     if (method === "GET" && path === "/api/v1/me") {
@@ -137,10 +297,7 @@ function reply(scenario: Scenario, method: string, path: string): Reply | null {
         },
       };
     case "GET /api/v1/invoices":
-      return {
-        status: 200,
-        body: { data: INVOICES, meta: { page: 1, pageSize: 25, total: INVOICES.length } },
-      };
+      return invoiceList(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
     default:
       return null;
   }
@@ -180,7 +337,7 @@ export async function openPage(
   await page.route("**/api/v1/**", (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    const found = reply(scenario, request.method(), url.pathname);
+    const found = reply(scenario, request.method(), url.pathname, url.searchParams);
     if (!found) {
       recorder.unexpected.push(`${request.method()} ${url.pathname}`);
       return route.fulfill({
