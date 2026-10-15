@@ -67,7 +67,7 @@
 
 ## 4. Base de tabla compartida
 
-- [ ] 4.1 Crear en `components/data-table/` la tabla y su paginación (D5, D14), en TanStack 8.21.3
+- [x] 4.1 Crear en `components/data-table/` la tabla y su paginación (D5, D14), en TanStack 8.21.3
   (D2):
   - **`data-table.tsx`:** columnas tipadas, `rowCount`, paginación manual, la etiqueta accesible
     (`caption`), las filas esqueleto que conservan las columnas, los estados vacío y de error dentro
@@ -79,7 +79,7 @@
 
   Verificar con pruebas unitarias cada estado, el pie sin «0 de 0» y el comportamiento de
   `onRowOpen`.
-- [ ] 4.2 Crear la barra de herramientas y sus controles:
+- [x] 4.2 Crear la barra de herramientas y sus controles:
   - **`data-table-toolbar.tsx`:** la anatomía de D5;
   - **`data-table-search.tsx`:** etiqueta accesible, espera configurable, `maxLength` y «Limpiar
     búsqueda»;
@@ -92,12 +92,12 @@
 
   Verificar con pruebas unitarias los roles, la selección, la espera de la búsqueda, quitar un
   filtro y que «Limpiar filtros» no aparece sin filtros.
-- [ ] 4.3 Crear `row-actions-menu.tsx`: un botón de icono con nombre accesible propio y su ayuda,
+- [x] 4.3 Crear `row-actions-menu.tsx`: un botón de icono con nombre accesible propio y su ayuda,
   que abre un menú alineado al final, recibe elementos ya filtrados por el módulo y devuelve el foco
   al cerrar.
 
   Verificar con una prueba unitaria el nombre accesible, los elementos y la devolución del foco.
-- [ ] 4.4 Documentar la base:
+- [x] 4.4 Documentar la base:
   - en `docs/architecture/data-tables.md`: el contrato, las dos distribuciones por ancho de
     contenedor y su elección por tabla, y los estados;
   - en `component-system.md`: las piezas y la convivencia transitoria con `AppDataTable`;

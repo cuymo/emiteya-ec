@@ -108,6 +108,7 @@ primitives -> system components -> domain components -> features -> pages
 | `AppDataTable<T>`       | Search, filters, sorting, columns, rows, selection, states, and pagination |
 | `TableToolbar`          | Stable arrangement of search, filters, columns, and table commands         |
 | `TablePagination`       | One footer for client and server pagination                                |
+| `DataTable<T>` and its pieces | The shared list base of migrated screens (`data-tables.md`, «Implementation In This Repository») |
 | `ColumnVisibilityMenu`  | Business-facing optional column selection                                  |
 | `RowActionButton`       | Icon action with permission/state handling and opaque tooltip              |
 | `FormDialog`            | Accessible create/edit modal with stable header, body, and footer          |
@@ -145,6 +146,7 @@ implementation of each.
 Shared components own interaction consistency, not business policy.
 
 - `AppDataTable` owns table mechanics; the module supplies typed columns, filter options, data, and valid actions.
+- `DataTable` (the migrated base) owns the same contract for migrated screens. `AppDataTable` and its legacy controls coexist with it only until the remaining lists migrate; the exit criterion is in `../quality/technical-debt.md`.
 - `FormDialog` owns focus, dismissal, responsive geometry, and footer placement; the form owns fields and business validation.
 - `DatePickerField` selects one calendar date. It is implemented in `frontend/src/components/date-picker-field.tsx` (`add-document-archive`) over the native `<input type="date">`, which the browser localizes and adapts to theme, touch and keyboard, without a calendar dependency. The value is `YYYY-MM-DD` or empty; the field owns its label, a clear button that appears only with a value, and an error associated with `aria-describedby` and `aria-invalid`. Ranges use two fields with `min` and `max`, and the caller explains an inverted range in the second field.
 - `EntityPickerDialog` returns selected business records; it does not know a specific entity type. It is implemented in `frontend/src/components/entity-picker-dialog.tsx` (`add-invoice-emission`): the caller supplies a cache key, a page loader (search, page, page size), how to render and name an item, and an optional quick option shown before the first unfiltered page (for example, "Consumidor final"). The search input is a combobox over a listbox: arrows, Home, End and Enter select without leaving the keyboard; results are paginated by the server, and loading, empty, no-match and error states stay inside the dialog.

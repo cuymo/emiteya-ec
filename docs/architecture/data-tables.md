@@ -10,6 +10,42 @@ several records. Data arriving in rows is not a reason to render a table: one re
 attributes belong in a detail surface, and a handful of unrelated values belong in the
 layout that fits them.
 
+## Implementation In This Repository
+
+`productize-invoice-list-and-shared-table-foundation` introduced the shared list base in
+`frontend/src/components/data-table/`, over TanStack Table 8.21.3 with server pagination. Facturas
+is the first screen that adopts it, in that same change; the other lists still use the legacy
+`AppDataTable` until their own migration (see «Coexistence» below).
+
+| Piece | File | Owns |
+| --- | --- | --- |
+| `DataTable<T>` | `data-table.tsx` | Typed columns with per-column `meta` classes, the accessible `caption`, skeleton rows, the empty or error state inside the surface, `aria-busy` while refreshing, the footer only with rows, and `onRowOpen` |
+| `DataTablePagination` | `data-table-pagination.tsx` | `Mostrando A-B de N`, `Filas por página`, first/previous/next/last and `Página X de Y`; pages derived from the server `total` |
+| `DataTableToolbar` | `data-table-toolbar.tsx` | Row 1: search, views and filters. Row 2, only with active filters: the active filters |
+| `DataTableSearch` | `data-table-search.tsx` | Server-backed search with debounce, trimming, the server length limit, `Limpiar búsqueda`, and a label that states what it really searches |
+| `DataTableViews` | `data-table-views.tsx` | Views over the same collection, a single-choice radio group with neutral selection and an optional server count |
+| `DataTableOptionFilter` | `data-table-option-filter.tsx` | A single-choice filter menu («Estado: Devuelto»), with `Quitar filtro`, for values the server accepts one at a time |
+| `DataTableActiveFilters` | `data-table-active-filters.tsx` | Removable active filters and `Limpiar filtros`, shown only when a filter is active |
+| `RowActionsMenu` | `row-actions-menu.tsx` | The `...` menu of a row, named after its record, with only the actions the module passes |
+| `DataTableEmpty`, `DataTableError` | `data-table-state.tsx` | Empty, filtered-empty and error states with a level-2 heading, over `ui/empty` |
+| `useListUrlState` | `hooks/use-list-url-state.ts` | Search, filters, page and page size in the URL, with quick changes accumulated, the page reset on filter changes, aliases and the out-of-range page |
+
+- **Row opening.** The record's own link is the keyboard target. `onRowOpen` adds a pointer
+  convenience: a primary click on a non-interactive area opens the record, never from a link, a
+  button, a menu (also in a portal), with a modifier key or with selected text. The row is never
+  focusable, so there are no duplicate keyboard stops.
+- **Selection is neutral.** Selected views and filters use the muted surface; the primary blue stays
+  for the screen's primary action.
+- **No client tricks.** No client-side search, sort or filtering of the loaded page. Headers are
+  sortable only when the server sorts.
+
+### Coexistence
+
+`AppDataTable`, `ChipGroup`, `SearchInput` and `TablePagination` stay for the screens not yet
+migrated. That is a transitional exception to «one table system» (`component-system.md`), recorded
+in `../quality/technical-debt.md`. Exit criterion: once no screen imports them, they are deleted.
+New screens use the base above; the staged lint keeps migrated paths off the legacy pieces.
+
 ## Standard Anatomy
 
 1. Compact title/description only when not already supplied by the page.
@@ -133,6 +169,12 @@ Do not replace the entire page with a spinner for routine table refreshes.
 ## Responsive Behavior
 
 - Choose per table: horizontal scroll inside the surface when the mobile user compares rows, a prioritized card list when they act on one record at a time. See `navigation-responsive.md`.
+- In the shared `DataTable`, a table can switch between a wide and a compact composition with
+  Tailwind container queries on the table surface (`@container` with `@xl:` classes in the column
+  `meta`). The available width changes with the sidebar, so the viewport is the wrong signal. The
+  compact composition keeps one semantic table and moves the hidden columns' data into the first
+  column; if it still does not fit, the table scrolls inside its surface, never the page. Facturas
+  uses this instead of cards.
 - Never compress a wide table into columns too narrow to read.
 - Keep primary identity and actions reachable.
 - Allow toolbar controls to wrap into logical rows.
