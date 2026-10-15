@@ -197,16 +197,27 @@ describe("runner de la cola de jobs", () => {
         await tx.$executeRawUnsafe(`SET LOCAL session_replication_role = replica`);
         await store.enqueueIn(tx, job);
       });
-      await store.enqueueIn(prisma, newJob());
+      const demo = newJob();
+      await store.enqueueIn(prisma, demo);
       let paused = true;
       const calls: string[] = [];
-      let claims = 0;
+      // Lo que el runner pide y obtiene de la cola mientras `sri.` está pausado. Se comprueba fuera
+      // del runner: un `expect` dentro de `claim` lo atraparía el propio runner como un fallo de la
+      // consulta, y la prueba fallaría después con un mensaje que no dice qué se pidió.
+      const requested: string[][] = [];
+      const taken: string[] = [];
+      // Workers que volvieron a la cola con `demo.run` ya hecho y no encontraron nada: sondearon con
+      // el job `sri.*` disponible y no lo tomaron.
+      const idle = new Set<string>();
+      let demoDone = false;
       const counting: JobStore = {
         ...store,
-        claim: (request) => {
-          claims++;
-          expect(request.types).not.toContain("sri.transmit");
-          return store.claim(request);
+        claim: async (request) => {
+          requested.push([...request.types]);
+          const claimed = await store.claim(request);
+          taken.push(...claimed.map((found) => found.type));
+          if (demoDone && claimed.length === 0) idle.add(request.owner);
+          return claimed;
         },
       };
       const created = runner({
@@ -218,9 +229,15 @@ describe("runner de la cola de jobs", () => {
         },
       });
       expect(created.activeTypes()).toEqual(["demo.run"]);
-      await pause(400);
+      // Sin ventana fija, que con la base cargada se quedaba corta: se espera a que el runner termine
+      // el trabajo que puede tomar, y a que sus dos workers vuelvan a sondear la cola después.
+      await until(async () => (await statusOf(demo.dedupeKey)) === "DONE");
+      demoDone = true;
+      await until(() => Promise.resolve(idle.size === 2));
       expect(calls).toEqual(["demo.run"]);
-      expect(claims).toBeGreaterThan(0);
+      expect(requested.length).toBeGreaterThan(0);
+      expect(requested.flat()).not.toContain("sri.transmit");
+      expect(taken).toEqual(["demo.run"]);
       expect(await prisma.job.findFirstOrThrow({ where: { type: "sri.transmit" } })).toMatchObject({
         status: "PENDING",
         attemptCount: 0,
