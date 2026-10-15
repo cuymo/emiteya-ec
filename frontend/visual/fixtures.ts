@@ -2,6 +2,7 @@
 // con la forma exacta de los contratos; cualquier petición a otro origen se corta y se registra, y
 // cualquier ruta de la API sin respuesta declarada también, para que la prueba falle.
 import type { Browser, BrowserContextOptions, Page } from "@playwright/test";
+import { editorReply } from "./editor-fixtures";
 
 export type Persona = "admin" | "operator" | "anonymous";
 export type Environment = "TEST" | "PRODUCTION";
@@ -299,7 +300,8 @@ function reply(
     case "GET /api/v1/invoices":
       return invoiceList(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
     default:
-      return null;
+      // El editor de facturas y los catálogos de sus pantallas vecinas (editor-fixtures.ts).
+      return editorReply(method, path, query, scenario.environment ?? "TEST");
   }
 }
 

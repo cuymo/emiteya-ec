@@ -26,7 +26,7 @@
 
 ## 1. Revisión visual como herramienta y capturas «antes»
 
-- [ ] 1.1 Ampliar los datos del harness (`frontend/visual/fixtures.ts`) para el editor:
+- [x] 1.1 Ampliar los datos del harness (`frontend/visual/fixtures.ts`) para el editor:
   - borrador nuevo, borrador incompleto, listo, con problemas, con totales no calculables y a
     consumidor final;
   - establecimientos y puntos, punto predeterminado, catálogo de formas de pago, clientes y
@@ -37,7 +37,7 @@
   Las rutas de escritura (`POST` y `PUT`) no se simulan: la revisión no guarda ni emite nada.
 
   Verificar que `corepack pnpm test:visual` sigue en verde sin cambiar ninguna captura.
-- [ ] 1.2 Crear el proyecto `review` de Playwright y el comando `test:visual:review` (D17):
+- [x] 1.2 Crear el proyecto `review` de Playwright y el comando `test:visual:review` (D17):
   - la matriz (D18) en `visual/review/matrix.ts`;
   - la salida en `frontend/.review/visual/<etiqueta>/`: capturas, geometría JSON, hojas de contacto
     HTML con su PNG y `manifest.json`;
@@ -48,7 +48,7 @@
 
   Verificar que el comando termina en 0, que escribe todos los archivos del manifiesto, que falla
   con una ruta sin datos provocada a propósito, y que `git status` no muestra nada bajo `.review/`.
-- [ ] 1.3 Documentar el flujo:
+- [x] 1.3 Documentar el flujo:
   - `testing.md`: el comando, la salida y los fallos;
   - `definition-of-done.md` y `change-lifecycle.md`: antes y después, abrir e inspeccionar, y
     valorar por escrito (D19, D22);
@@ -57,7 +57,7 @@
 
   Verificar que los tres documentos describen el mismo comando, la misma carpeta y la misma
   condición de parada.
-- [ ] 1.4 Capturar el «antes» con `REVIEW_LABEL=antes`, abrir y mirar las capturas, las hojas y la
+- [x] 1.4 Capturar el «antes» con `REVIEW_LABEL=antes`, abrir y mirar las capturas, las hojas y la
   geometría, y escribir
   `openspec/changes/productize-invoice-editor-and-composition-foundation/review-antes.md`:
   - orden de atención, jerarquía, densidad, alineación, equilibrio y prioridad de acciones;

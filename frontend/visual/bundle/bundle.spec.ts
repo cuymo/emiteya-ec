@@ -13,6 +13,8 @@ const ROUTES: { name: string; path: string; scenario: Scenario }[] = [
   { name: "login", path: "/iniciar-sesion", scenario: { persona: "anonymous" } },
   { name: "inicio", path: "/", scenario: { persona: "admin" } },
   { name: "facturas", path: "/facturas", scenario: { persona: "admin" } },
+  // productize-invoice-editor-and-composition-foundation, tarea 1.4: el editor de facturas.
+  { name: "nueva-factura", path: "/borradores/nuevo", scenario: { persona: "admin" } },
 ];
 
 type Totals = { files: number; transferred: number; decoded: number };

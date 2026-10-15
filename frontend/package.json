@@ -12,7 +12,8 @@
     "test:visual": "playwright test --project=shell",
     "test:visual:update": "playwright test --project=shell --update-snapshots",
     "test:visual:spacing-proof": "playwright test --project=spacing-proof",
-    "test:visual:bundle": "playwright test --project=bundle"
+    "test:visual:bundle": "playwright test --project=bundle",
+    "test:visual:review": "playwright test --project=review"
   },
   "dependencies": {
     "@facturador/contracts": "workspace:*",

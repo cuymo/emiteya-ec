@@ -312,9 +312,61 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
         - los nombres Borradores de facturas y Archivo de comprobantes;
         - `axe` en la barra colapsada, en Configuración con tema oscuro y en Producción en móvil.
   - **Medición de carga:** `corepack pnpm test:visual:bundle` escribe
-    `frontend/test-results/bundle.json` con los bytes de JavaScript, CSS y fuentes de tres pantallas
-    representativas y sus peticiones a `/api/v1` (`docs/quality/benchmarks/frontend-shell-2026-10-14.md`
-    y `frontend-facturas-2026-10-14.md`).
+    `frontend/test-results/bundle.json` con los bytes de JavaScript, CSS y fuentes de cuatro pantallas
+    representativas (inicio de sesión, inicio, Facturas y Nueva factura) y sus peticiones a `/api/v1`
+    (`docs/quality/benchmarks/frontend-shell-2026-10-14.md` y `frontend-facturas-2026-10-14.md`).
+  - **Revisión visual:** `corepack pnpm --filter @facturador/frontend test:visual:review` (proyecto
+    `review`, `productize-invoice-editor-and-composition-foundation`, design D17 y D18). Son los ojos
+    del agente y de las personas, no una regresión: no compara imágenes con una base.
+    - **Qué hace:** sobre el mismo build y los mismos datos deterministas, recorre la matriz de
+      `frontend/visual/review/matrix.ts` (pantallas, estados, anchuras y temas).
+    - **Salida:** `frontend/.review/visual/<etiqueta>/`, ignorada por git:
+      - `screenshots/<ruta>-<estado>-<anchura>-<tema>.png`, de la página entera, o de la ventana si
+        hay un panel o un diálogo abierto;
+      - `geometry/<misma clave>.json`, medido en el navegador: la barra superior y sus huecos, las
+        migas y el título, cada botón con su variante, su estado y su color, cada etiqueta con su
+        control y su hueco, las superficies y los desbordes de la página y de cada contenedor;
+      - `contact-sheets/<hoja>.html` y su PNG, sacado con el mismo navegador: shell, editor, listas,
+        configuración, móvil y oscuro;
+      - `manifest.json`: cada captura con su ruta, estado, anchura, tema, archivos, commit, build y
+        fecha.
+    - **Anchuras:** 1440×900, 1280×800, 1024×768 con la barra expandida y colapsada, 768×900,
+      390×844, y 720×450 a escala 2, que equivale a 1440×900 al 200 % de zoom. Por debajo de 320 px
+      no se captura: está fuera de las anchuras que el producto soporta.
+    - **Variables:**
+      - `REVIEW_LABEL`: la etiqueta; por defecto, la fecha y el commit corto. Una ejecución completa
+        vacía antes la carpeta de su etiqueta.
+      - `REVIEW_FILTER`: partes de clave separadas por comas, para capturar solo un subconjunto. La
+        carpeta de la etiqueta se conserva: se reescriben esas capturas, y las hojas y el
+        manifiesto se rehacen con todo lo que hay en ella.
+      - `REVIEW_COMPARE_WITH=<otra etiqueta>`: escribe además
+        `contact-sheets/compare-<otra>-<hoja>.html` y su PNG, con cada captura junto a su par.
+    - **Fallos:** termina con código distinto de cero si:
+      - falla una navegación o una captura, o el navegador se cae;
+      - un estado no alcanza su condición de listo;
+      - la página lanza un error (`pageerror`);
+      - hay una petición a otro origen;
+      - una ruta de la API no tiene datos de prueba (`visual/fixtures.ts` y
+        `visual/editor-fixtures.ts`, cuya forma comprueba `test/visual-editor-fixtures.test.ts`).
+
+      Nunca falla por estética: la composición la juzgan el agente y las personas.
+    - **No basta con generarla:** hay que abrir las hojas y las capturas, medir con la geometría
+      cuando haga falta y escribir la valoración (`definition-of-done.md` y
+      `change-lifecycle.md`).
+    - **Fuera de `verify` y de `test:visual`.** Nunca usa el backend, nunca guarda ni emite, y no
+      simula las rutas de escritura.
+  - **Despliegue local de revisión** (procedimiento manual, con el backend real en Docker). Antes de
+    abrir el navegador:
+    1. Leer la configuración real del backend en ejecución, solo esa variable y nunca el entorno
+       entero:
+       - `docker inspect --format '{{range .Config.Env}}{{if eq (index (split . "=") 0) "SRI_TRANSMISSION_ENABLED"}}{{println .}}{{end}}{{end}}' <contenedor-del-backend>`;
+       - `docker exec <contenedor-del-backend> printenv SRI_TRANSMISSION_ENABLED`.
+    2. Ambas lecturas deben dar exactamente `0`.
+    3. Si no puede establecerse (no hay contenedor, la variable falta, el valor es otro o el comando
+       falla), la revisión se detiene con `SRI_TRANSMISSION_DISABLED_UNVERIFIED`. Nunca se deduce
+       del valor por defecto.
+
+    Durante la revisión nunca se emite de verdad: los estados de emisión se miran en el harness.
   - **Imágenes base:**
     - están versionadas en `frontend/visual/<proyecto>/__screenshots__/` y se generan solo en Linux;
     - en otro sistema se actualizan en local y no se versionan;

@@ -50,6 +50,13 @@ export default defineConfig({
       testMatch: /shell\/.*\.spec\.ts$/,
       expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.001 } },
     },
+    {
+      // C. Revisión visual (productize-invoice-editor-and-composition-foundation, design D17): captura
+      // la matriz en `.review/visual/<etiqueta>/` para mirarla. No compara imágenes y nunca falla por
+      // estética; fuera de `test:visual` y de `verify`.
+      name: "review",
+      testMatch: /review\/.*\.spec\.ts$/,
+    },
   ],
   webServer: {
     command: "node_modules/.bin/next build && node_modules/.bin/next start --port 4310",

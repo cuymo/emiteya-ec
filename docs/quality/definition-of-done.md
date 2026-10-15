@@ -63,6 +63,18 @@ For frontend work:
 - Action feedback is semantic and transient; persistent page banners are reserved for states that remain relevant after the action ends.
 - Row actions are permission-aware, state-aware, labeled by accessible tooltips, and usable with keyboard and touch.
 - Light/dark themes and desktop/mobile layouts pass `docs/quality/frontend-checklist.md`.
+- A material visual change is looked at in the rendered app, before and after
+  (`productize-invoice-editor-and-composition-foundation`, design D19):
+  - capture the review matrix before touching runtime code and again at the end, with
+    `corepack pnpm --filter @facturador/frontend test:visual:review` into
+    `frontend/.review/visual/<label>/` (`docs/quality/testing.md`);
+  - open the contact sheets and the screenshots, and measure with the geometry when needed;
+  - write a composition assessment: order of attention, hierarchy, density, alignment, balance,
+    action hierarchy, widths, light and dark, daily fatigue, and first-use clarity.
+
+  Generating the images without looking at them, or passing `test:visual`, is not enough. A browser
+  review on the local deployment first reads `SRI_TRANSMISSION_ENABLED=0` from the running backend,
+  and stops if it cannot be established.
 
 ## Go-Live v1.0
 

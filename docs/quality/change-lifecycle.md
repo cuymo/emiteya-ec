@@ -62,6 +62,30 @@ explore -> propose -> review -> apply -> verify -> archive
 Two more workflows support the cycle: **update** revises a change's artifacts when a decision
 changes mid-flight, and **sync** merges delta specs into the main specs without archiving.
 
+### Visual review before and after a material visual change
+
+A change that materially alters what the user sees is reviewed in the rendered app, not only in
+tests (`productize-invoice-editor-and-composition-foundation`, design D19 and D22):
+
+1. **Before.** At the start of apply, before any runtime code changes:
+   - run `REVIEW_LABEL=antes corepack pnpm --filter @facturador/frontend test:visual:review`;
+   - open the contact sheets and screenshots in `frontend/.review/visual/antes/` and read the
+     geometry;
+   - write `review-antes.md` in the change folder, citing screenshot files and measurements;
+   - commit that step on its own.
+2. **After.** When the visual work ends:
+   - run it again with `REVIEW_LABEL=despues REVIEW_COMPARE_WITH=antes`;
+   - inspect the comparison sheets;
+   - write `review-despues.md`: what changed, what was resolved, and what remains and why.
+3. **Assessment.** Both documents cover order of attention, hierarchy, density, alignment,
+   balance, action hierarchy, widths, light and dark, and daily use. Screenshots are never
+   committed; `frontend/.review/` is ignored.
+
+The command uses only the deterministic harness and never contacts the backend or the SRI. A
+browser review on the local deployment first reads `SRI_TRANSMISSION_ENABLED=0` from the running
+backend (`docs/quality/testing.md`), and stops if it cannot be established. Generating images
+without looking at them, or passing `test:visual`, is not a review.
+
 ### Verify evidence for closing a change
 
 - The `verify` workflow on GitHub-hosted runners is the preferred evidence: it is independent of
