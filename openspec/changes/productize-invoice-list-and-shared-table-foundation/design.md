@@ -557,6 +557,20 @@ cambia con la barra expandida o colapsada, y no del viewport.
   en 4/5 o más.
 - **Hallazgos heredados.** Un S3 que venga solo de una limitación del backend o de una pantalla
   fuera del alcance se informa aparte.
+- **Resultado (2026-10-14).** Sin S4/S5 ni S3 atribuibles a la base o al encabezado. Operador diario
+  4/5, usuario ocasional 4/5 y administrador nuevo 4/5. La revisión corrigió, antes de cerrarla:
+  - el texto de ayuda de la búsqueda, que se cortaba;
+  - las vistas, que se desbordaban a 320 px;
+  - los números, desalineados por la marca de atención;
+  - la tabla compacta, que no cabía a 390 px;
+  - la tabla amplia, que se desplazaba a 200 % de zoom (umbral `@table-wide`, D15);
+  - la ayuda «Acciones», que tapaba el menú abierto con el teclado;
+  - el esqueleto, que no conservaba el ancho de las columnas.
+
+  Quedan registrados como S2: el desplazamiento de la tabla a 320 px, que el diseño admite, y las
+  filas más altas con la marca de Pruebas en una empresa en Producción. Heredados o del backend:
+  sin filtro de fechas ni orden (brechas registradas) y «Nueva factura» con la empresa sin
+  configurar, que resuelve el editor, fuera del alcance.
 
 ## Trazabilidad de la plantilla
 

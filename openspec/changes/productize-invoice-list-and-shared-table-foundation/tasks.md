@@ -245,7 +245,7 @@
 
 ## 10. Integración final
 
-- [ ] 10.1 Revisar la pantalla con `docs/quality/frontend-checklist.md`:
+- [x] 10.1 Revisar la pantalla con `docs/quality/frontend-checklist.md`:
   - 320, 768, 1024 y 1440 px, y zoom al 200 %;
   - teclado;
   - claro y oscuro;
@@ -253,7 +253,7 @@
   - Pruebas y Producción.
 
   Verificar que la lista queda marcada.
-- [ ] 10.2 Hacer la revisión UX enfocada de Facturas (D20) con el operador diario, el usuario
+- [x] 10.2 Hacer la revisión UX enfocada de Facturas (D20) con el operador diario, el usuario
   ocasional y el administrador nuevo, con datos del harness y sobre el despliegue local de
   revisión, reconstruido solo en su frontend con `SRI_TRANSMISSION_ENABLED=0`.
 
