@@ -216,6 +216,46 @@ test.describe("lectura a cualquier anchura (D15)", () => {
   });
 });
 
+test.describe("peticiones de Facturas (D18)", () => {
+  test("la lista y un conteo; el conteo no se repite al filtrar, buscar ni cambiar las filas", async ({
+    browser,
+  }) => {
+    const { page } = await openPage(browser, CATALOG);
+    const requests: string[] = [];
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.pathname.startsWith("/api/v1/invoices"))
+        requests.push(`${url.pathname}${url.search}`);
+    });
+    const counts = () =>
+      requests.filter((key) => key === "/api/v1/invoices?attention=true&pageSize=1");
+    await page.goto("/facturas");
+    await settle(page);
+    expect(counts()).toHaveLength(1);
+    expect(requests.filter((key) => key.includes("page="))).toHaveLength(1);
+    await page.getByRole("button", { name: "Estado", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "Devuelto" }).click();
+    await expect(page).toHaveURL(/estado=devueltas/);
+    await settle(page);
+    await page.getByRole("radio", { name: /Requiere atención/ }).click();
+    await expect(page).toHaveURL(/vista=atencion/);
+    await settle(page);
+    await page.getByRole("searchbox").fill("Andina");
+    await expect(page).toHaveURL(/q=Andina/);
+    await settle(page);
+    await page.getByRole("button", { name: "Limpiar filtros" }).first().click();
+    await expect(page).toHaveURL(/\/facturas$/);
+    await settle(page);
+    await page.getByRole("combobox", { name: "Filas por página" }).selectOption("10");
+    await expect(page).toHaveURL(/filas=10/);
+    await settle(page);
+    expect(counts()).toHaveLength(1);
+    // Sin consultas por fila: ningún detalle, RIDE ni estado de una factura.
+    expect(requests.filter((key) => !key.startsWith("/api/v1/invoices?"))).toEqual([]);
+    await page.context().close();
+  });
+});
+
 async function finish(page: Page, recorder: Recorder, name: string) {
   await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true });
   expect(recorder.external, "peticiones a otros orígenes").toEqual([]);
