@@ -37,7 +37,7 @@ import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { pointLabel, useEstablishments } from "@/features/establishments/establishments-api";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/invoices/invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import { useDocuments, useDownloadDocument } from "./archive-api";
 import { RIDE_STATUS_LABELS, receiverOf } from "./archive-format";
 import { EMITTED_DOCUMENT_TYPES, documentKind } from "./document-kinds";

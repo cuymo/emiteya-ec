@@ -22,7 +22,7 @@ import type { ReactNode } from "react";
 import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
 import { BalanceCell } from "@/features/inventory/inventory-screen";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/invoices/invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import { formatPeriod } from "@/features/withholding-receipts/withholding-format";
 
 type Row = Record<string, unknown>;

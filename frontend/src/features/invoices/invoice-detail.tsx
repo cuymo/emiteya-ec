@@ -21,7 +21,7 @@ import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
 import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
 import { CLASS_LABELS, STAGE_LABELS, formatDateTime, formatIssueDate } from "./invoice-format";
 import { useInvoice, useRetrySigning } from "./invoices-api";
-import { StateCell } from "./invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { InvoiceCreditSection } from "@/features/credit-notes/invoice-credit-section";

@@ -32,7 +32,7 @@ import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/invoices/invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import { useCreditNoteDrafts, useCreditNotes, useDeleteCreditNoteDraft } from "./credit-notes-api";
 
 type StateFilter =

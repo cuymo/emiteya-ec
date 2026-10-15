@@ -18,13 +18,13 @@ import { useEffect, useMemo, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { ChipGroup, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
-import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
+import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
-import { CirclePause } from "lucide-react";
-import { INVOICE_STATE_BADGES, formatIssueDate } from "./invoice-format";
+import { StateCell } from "@/features/documents/document-status-badge";
+import { formatIssueDate } from "./invoice-format";
 import { useInvoices } from "./invoices-api";
 
 type StateFilter =
@@ -71,23 +71,6 @@ function useUrlState() {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
   return { filter, page, pageSize, search, update };
-}
-
-export function StateCell({
-  state,
-  stopped = false,
-}: {
-  state: InvoiceState;
-  /** La transmisión se detuvo y espera una decisión del administrador (design D20). */
-  stopped?: boolean;
-}) {
-  const badge = INVOICE_STATE_BADGES[state];
-  return (
-    <span className="inline-flex flex-wrap items-center gap-1">
-      <StatusBadge tone={badge.tone} label={badge.label} icon={badge.icon} />
-      {stopped && <StatusBadge tone="warning" label="Transmisión detenida" icon={CirclePause} />}
-    </span>
-  );
 }
 
 export function InvoicesScreen() {

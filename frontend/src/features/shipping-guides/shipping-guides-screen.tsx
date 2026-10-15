@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/invoices/invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import { detailCountLabel, recipientCountLabel } from "./shipping-guide-format";
 import {
   useDeleteShippingGuideDraft,

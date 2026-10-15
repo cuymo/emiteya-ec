@@ -1,44 +1,12 @@
 // Presentación de facturas y borradores (add-invoice-emission, design D15; add-sri-transmission,
-// design D20): estados con icono y el texto del glosario, etapas y clases del diagnóstico en
-// lenguaje de negocio, y fechas en la hora de Ecuador.
-import {
-  INVOICE_STATE_LABELS,
-  type InvoiceState,
-  type SigningAttemptClass,
-  type SigningAttemptStage,
-  type SriOperation,
-  type SriResultOutcome,
+// design D20): etapas y clases del diagnóstico en lenguaje de negocio, y fechas en la hora de
+// Ecuador. Los estados se presentan con `DocumentStatusBadge` (features/documents).
+import type {
+  SigningAttemptClass,
+  SigningAttemptStage,
+  SriOperation,
+  SriResultOutcome,
 } from "@facturador/contracts";
-import {
-  BadgeCheck,
-  Ban,
-  Clock3,
-  FileCheck2,
-  Hourglass,
-  SearchCheck,
-  TriangleAlert,
-  Undo2,
-  type LucideIcon,
-} from "lucide-react";
-import type { StatusTone } from "@/components/states";
-
-export const INVOICE_STATE_BADGES: Record<
-  InvoiceState,
-  { tone: StatusTone; label: string; icon: LucideIcon }
-> = {
-  RESERVED: { tone: "warning", label: INVOICE_STATE_LABELS.RESERVED, icon: Hourglass },
-  SIGNED: { tone: "info", label: INVOICE_STATE_LABELS.SIGNED, icon: FileCheck2 },
-  SEND_UNKNOWN: { tone: "warning", label: INVOICE_STATE_LABELS.SEND_UNKNOWN, icon: SearchCheck },
-  RECEIVED: { tone: "info", label: INVOICE_STATE_LABELS.RECEIVED, icon: Clock3 },
-  RETURNED: { tone: "danger", label: INVOICE_STATE_LABELS.RETURNED, icon: Undo2 },
-  AUTHORIZED: { tone: "success", label: INVOICE_STATE_LABELS.AUTHORIZED, icon: BadgeCheck },
-  NOT_AUTHORIZED: { tone: "danger", label: INVOICE_STATE_LABELS.NOT_AUTHORIZED, icon: Ban },
-  MANUAL_REVIEW: {
-    tone: "danger",
-    label: INVOICE_STATE_LABELS.MANUAL_REVIEW,
-    icon: TriangleAlert,
-  },
-};
 
 export const STAGE_LABELS: Record<SigningAttemptStage, string> = {
   BUILD_XML: "Preparación del XML",

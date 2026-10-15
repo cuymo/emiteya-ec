@@ -28,7 +28,7 @@ import {
   formatDateTime,
   formatIssueDate,
 } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/invoices/invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import { RELATED_PARTY_LABELS, formatPeriod, formatSupportNumber } from "./withholding-format";
 import { useRetryWithholdingSigning, useWithholdingReceipt } from "./withholding-receipts-api";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";

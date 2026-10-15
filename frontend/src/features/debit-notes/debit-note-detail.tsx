@@ -27,7 +27,7 @@ import {
   formatDateTime,
   formatIssueDate,
 } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/invoices/invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import { useDebitNote, useRetryDebitNoteSigning } from "./debit-notes-api";
 import { treatmentLabel } from "./debit-note-format";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";

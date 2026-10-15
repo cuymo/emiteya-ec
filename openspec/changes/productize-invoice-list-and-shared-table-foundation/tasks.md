@@ -121,7 +121,7 @@
 
 ## 6. Presentación del estado de los comprobantes
 
-- [ ] 6.1 Crear `features/documents/document-status-badge.tsx` (D12) sobre `ui/badge`:
+- [x] 6.1 Crear `features/documents/document-status-badge.tsx` (D12) sobre `ui/badge`:
   - el mapeo aprobado de texto, variante e icono;
   - el botón de ayuda de «Verificando con el SRI» con «El envío pudo haber llegado. No emitas esta
     venta nuevamente.»;
@@ -134,14 +134,14 @@
   - SEND_UNKNOWN nunca destructivo y con su ayuda accesible;
   - MANUAL_REVIEW como advertencia, distinto de Devuelto y No autorizado;
   - siempre texto e icono.
-- [ ] 6.2 Según PO-1 (recomendado), convertir `StateCell` en una fachada que delega en
+- [x] 6.2 Según PO-1 (recomendado), convertir `StateCell` en una fachada que delega en
   `DocumentStatusBadge`, para que las pantallas de comprobantes que lo usan muestren el mismo mapeo
   sin cambiar su estructura. Actualizar las aserciones de estado que cambian
   (`invoice-transmission.test.tsx` y las de otras pantallas de comprobantes), explicándolas en el
   commit.
 
   Verificar con `corepack pnpm --filter @facturador/frontend test` que pasa todo.
-- [ ] 6.3 Actualizar `technical-debt.md`:
+- [x] 6.3 Actualizar `technical-debt.md`:
   - según PO-1, dar por resuelto el mapeo de colores de SEND_UNKNOWN, RESERVED y MANUAL_REVIEW;
   - conservar como pendiente que Producción se muestre en verde de éxito en la pantalla Ambiente,
     que va por `StatusBadge` y no por los estados de comprobantes;

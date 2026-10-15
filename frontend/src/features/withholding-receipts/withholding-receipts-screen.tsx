@@ -30,7 +30,7 @@ import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/invoices/invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import { formatPeriod, supportCountLabel, withholdingCountLabel } from "./withholding-format";
 import {
   useDeleteWithholdingDraft,

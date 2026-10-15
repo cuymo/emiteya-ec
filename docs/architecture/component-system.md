@@ -154,6 +154,7 @@ Shared components own interaction consistency, not business policy.
 - `SemanticToaster` owns visual variants; callers provide human-readable messages.
 - `ConfirmDialog` owns the confirmation ladder; the caller supplies the record label and the consequence. It may take its own content after the description (`children`, for example the separate declaration checkboxes of a credit note in `add-credit-notes`) and `confirmBlocked` while that content is incomplete; its body scrolls with the actions pinned, so a tall confirmation stays usable at 320 px, and the actions wrap to a second row when a long confirm label does not fit beside "Cancelar" (`add-purchase-settlements`).
 - `StatusBadge` owns the visual encoding of a state; the module maps its domain values onto it.
+- `DocumentStatusBadge` owns the presentation of fiscal document states (label, semantic variant, icon, and the help of the uncertain-send state); every document screen reaches it through the `StateCell` facade, so the mapping lives in one place. Environment and document state are independent: an authorized document in Pruebas is still not tax-valid.
 - `PermissionGate` may hide or disable controls, but cannot replace API authorization.
 - Date and number components own parsing/display boundaries and return canonical values.
 

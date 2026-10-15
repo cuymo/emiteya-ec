@@ -28,7 +28,7 @@ import {
   formatDateTime,
   formatIssueDate,
 } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/invoices/invoices-screen";
+import { StateCell } from "@/features/documents/document-status-badge";
 import {
   usePurchaseSettlement,
   useRetryPurchaseSettlementSigning,
