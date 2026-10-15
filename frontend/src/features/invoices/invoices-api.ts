@@ -161,6 +161,27 @@ export function useInvoices(query: InvoicesQuery, enabled: boolean) {
   });
 }
 
+/**
+ * Cuántas facturas de la empresa requieren atención (productize-invoice-list-and-shared-table-
+ * foundation, design D7, PO-2): `attention=true&pageSize=1` y su `meta.total`. La clave no lleva la
+ * página, las filas, el estado ni la búsqueda, así que cambiarlos no la repite; se renueva con la
+ * invalidación de las facturas, como la lista.
+ */
+export function useInvoiceAttentionCount(enabled: boolean) {
+  return useQuery({
+    queryKey: [...INVOICES_KEY, "attention-count"],
+    enabled,
+    queryFn: async ({ signal }) => {
+      const page = await apiFetchPage("/invoices?attention=true&pageSize=1", {
+        schema: z.array(invoiceSummaryViewSchema),
+        meta: invoiceListMetaSchema,
+        signal,
+      });
+      return page.meta.total;
+    },
+  });
+}
+
 /** Cada cuánto se refresca una factura con una interacción con el SRI en curso. */
 export const TRANSMISSION_REFRESH_MS = 5_000;
 

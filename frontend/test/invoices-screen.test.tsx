@@ -154,26 +154,33 @@ describe("pantalla Facturas", () => {
     });
     const table = await screen.findByRole("table", { name: "Facturas emitidas" });
     await within(table).findByText("001-001-000000002");
+    // El estado y la fecha tienen dos copias por fila (distribución amplia y compacta, D15).
     const rows = within(table).getAllByRole("row");
-    const reserved = rows.find((row) => within(row).queryByText("001-001-000000002"))!;
-    expect(within(reserved).getByText("Procesando")).toBeDefined();
+    const reserved = rows.find(
+      (row) => within(row).queryAllByText("001-001-000000002").length > 0,
+    )!;
+    expect(within(reserved).getAllByText("Procesando").length).toBeGreaterThan(0);
     expect(within(reserved).getByText("USD 28,75")).toBeDefined();
-    expect(within(reserved).getByText("03/10/2026")).toBeDefined();
-    const signed = rows.find((row) => within(row).queryByText("001-001-000000001"))!;
-    expect(within(signed).getByText("Pendiente de envío")).toBeDefined();
+    expect(within(reserved).getAllByText("03/10/2026").length).toBeGreaterThan(0);
+    const signed = rows.find((row) => within(row).queryAllByText("001-001-000000001").length > 0)!;
+    expect(within(signed).getAllByText("Pendiente de envío").length).toBeGreaterThan(0);
     expect(
       within(signed).getByRole("link", { name: "001-001-000000001" }).getAttribute("href"),
     ).toBe("/facturas/inv-1");
   });
 
-  it("filtra por estado desde la URL y busca por número o comprador", async () => {
+  it("filtra por estado desde la URL y busca por número, comprador o identificación", async () => {
+    // La búsqueda declara también la identificación, que el servidor ya buscaba (D8).
     navigation.search = new URLSearchParams("estado=procesando");
     const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices": paged([]) });
-    await screen.findAllByText("No hay facturas que coincidan");
+    await screen.findAllByText("No hay facturas con estos filtros");
     expect(calls.some((call) => call.key.includes("state=RESERVED"))).toBe(true);
     await userEvent
       .setup()
-      .type(screen.getByRole("searchbox", { name: "Buscar por número o comprador" }), "000000012");
+      .type(
+        screen.getByRole("searchbox", { name: "Buscar por número, comprador o identificación" }),
+        "000000012",
+      );
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith(
         expect.stringContaining("q=000000012"),

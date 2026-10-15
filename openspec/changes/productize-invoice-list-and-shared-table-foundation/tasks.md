@@ -151,7 +151,7 @@
 
 ## 7. Facturas sobre la base
 
-- [ ] 7.1 Componer `features/invoices/invoices-screen.tsx` con `PageHeader` («Facturas», «Nueva
+- [x] 7.1 Componer `features/invoices/invoices-screen.tsx` con `PageHeader` («Facturas», «Nueva
   factura» solo con `invoices.draft`, a la pantalla de nueva factura existente) y `useListUrlState`:
   - vistas «Todas» y «Requiere atención» con su conteo, mediante una consulta
     `attention=true&pageSize=1` con clave propia, que no se repite por página, filas, estado ni
@@ -166,7 +166,7 @@
   - la búsqueda con su espera;
   - restaurar desde la URL;
   - «Limpiar filtros» solo con filtros.
-- [ ] 7.2 Definir las columnas de D10:
+- [x] 7.2 Definir las columnas de D10:
   - número y fecha, estado, comprador e identificación, total y acciones;
   - número y total sin partir, `tabular-nums`, sin encabezados ordenables;
   - la marca de ambiente para las facturas de un ambiente distinto del vigente (PO-4): «Pruebas ·
@@ -180,7 +180,7 @@
   - que no hay «Descargar RIDE», notas ni acciones fiscales;
   - las marcas de ambiente y de atención;
   - que la tabla no pide nada por fila.
-- [ ] 7.3 Implementar los estados (D14) y las dos distribuciones (D15):
+- [x] 7.3 Implementar los estados (D14) y las dos distribuciones (D15):
   - primera carga, recarga, vacío inicial, vacío por filtros, error y sin permiso;
   - la distribución amplia desde `@xl` del contenedor;
   - la compacta, con la identidad en líneas, el total y la fecha;

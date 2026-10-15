@@ -1,125 +1,229 @@
-// Facturas (add-invoice-emission, design D15; add-sri-transmission, design D20). Usuario:
-// administrador u operador, a diario. Objetivo: encontrar una factura y saber si quedó autorizada.
-// Decisión: qué factura necesita atención. Información mínima: número, comprador, total, fecha y
-// estado. Acción principal: abrir la factura. P1: búsqueda y estado; P2: fecha; P3 (clave,
-// versiones): en el detalle o fuera.
+// Facturas (add-invoice-emission, design D15; add-sri-transmission, design D20; productize-invoice-
+// list-and-shared-table-foundation, design D4 a D15). Usuario: administrador u operador, a diario.
+// Objetivo: encontrar una factura, saber en qué estado está, atender lo que espera una intervención y
+// empezar una nueva. Decisión: cuál factura abrir o atender. Información mínima: número, estado,
+// comprador, total y fecha. Acción principal: «Nueva factura»; en cada fila, abrir la factura.
+// P0: título, «Nueva factura», el número de «Requiere atención», y el número y el estado de cada
+// fila. P1: comprador, total, fecha, búsqueda, vistas, estado, transmisión detenida y ambiente. P2:
+// identificación, acciones de la fila y paginación. P3 (clave, mensajes del SRI): en el detalle.
+// - Vistas «Todas» y «Requiere atención» y un filtro de un estado, como los admite la API (D6).
+// - Ni orden por columna ni filtro de ambiente: el servidor no los ofrece.
+// - Sin acciones fiscales en la fila ni consultas por fila (D11).
 "use client";
 
-import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
-  PAGE_SIZE_DEFAULT,
-  PAGE_SIZE_MAX,
+  INVOICE_STATE_LABELS,
+  INVOICE_STATES,
+  type Environment,
   type InvoiceState,
   type InvoiceSummaryView,
 } from "@facturador/contracts";
+import { Copy, Eye, FileText, Lock, Plus, SearchX } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { AppDataTable } from "@/components/data-table/app-data-table";
-import { ChipGroup, SearchInput } from "@/components/data-table/table-controls";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { DataTable } from "@/components/data-table/data-table";
+import {
+  DataTableActiveFilters,
+  type ActiveFilter,
+} from "@/components/data-table/data-table-active-filters";
+import {
+  DataTableOptionFilter,
+  type FilterOption,
+} from "@/components/data-table/data-table-option-filter";
+import { DataTableSearch } from "@/components/data-table/data-table-search";
+import { DataTableEmpty, DataTableError } from "@/components/data-table/data-table-state";
+import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { DataTableViews } from "@/components/data-table/data-table-views";
+import { RowActionsMenu, type RowAction } from "@/components/data-table/row-actions-menu";
+import { toast } from "@/components/feedback";
+import { PageHeader } from "@/components/layout/page-header";
 import { useSession } from "@/components/session";
-import { EmptyState, ErrorState, Skeleton } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCompanyStatus } from "@/features/company/company-api";
+import {
+  AttentionMarker,
+  DOCUMENT_STATE_PRESENTATION,
+  StateCell,
+  requiresAttention,
+} from "@/features/documents/document-status-badge";
+import { useListUrlState } from "@/hooks/use-list-url-state";
 import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
-import { StateCell } from "@/features/documents/document-status-badge";
 import { formatIssueDate } from "./invoice-format";
-import { useInvoices } from "./invoices-api";
+import { useInvoiceAttentionCount, useInvoices } from "./invoices-api";
 
-type StateFilter =
-  "todas" | "atencion" | "procesando" | "firmadas" | "autorizadas" | "devueltas" | "no-autorizadas";
-const STATE_FILTERS: readonly { value: StateFilter; label: string }[] = [
-  { value: "todas", label: "Todas" },
-  { value: "atencion", label: "Requiere atención" },
-  { value: "procesando", label: "Procesando" },
-  { value: "firmadas", label: "Pendientes de envío" },
-  { value: "autorizadas", label: "Autorizadas" },
-  { value: "devueltas", label: "Devueltas" },
-  { value: "no-autorizadas", label: "No autorizadas" },
-];
-const FILTER_TO_STATE: Record<StateFilter, InvoiceState | undefined> = {
-  todas: undefined,
-  atencion: undefined,
-  procesando: "RESERVED",
-  firmadas: "SIGNED",
-  autorizadas: "AUTHORIZED",
-  devueltas: "RETURNED",
-  "no-autorizadas": "NOT_AUTHORIZED",
+type View = "todas" | "atencion";
+
+/** Valor de `estado` en la URL de cada estado (D6); los de hoy se conservan. */
+const STATE_PARAMS: Record<InvoiceState, string> = {
+  RESERVED: "procesando",
+  SIGNED: "firmadas",
+  SEND_UNKNOWN: "verificando",
+  RECEIVED: "recibidas",
+  RETURNED: "devueltas",
+  AUTHORIZED: "autorizadas",
+  NOT_AUTHORIZED: "no-autorizadas",
+  MANUAL_REVIEW: "revision",
 };
-const isStateFilter = (value: string | null): value is StateFilter =>
-  STATE_FILTERS.some((filter) => filter.value === value);
+const STATE_OPTIONS: readonly FilterOption<InvoiceState>[] = INVOICE_STATES.map((state) => ({
+  value: state,
+  label: INVOICE_STATE_LABELS[state],
+  icon: DOCUMENT_STATE_PRESENTATION[state].icon,
+}));
+const stateFromParam = (param: string): InvoiceState | undefined =>
+  INVOICE_STATES.find((state) => STATE_PARAMS[state] === param);
 
-function useUrlState() {
-  const params = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const stateParam = params.get("estado");
-  const filter: StateFilter = isStateFilter(stateParam) ? stateParam : "todas";
-  const page = Math.max(1, Number.parseInt(params.get("pagina") ?? "1", 10) || 1);
-  const sizeParam = Number.parseInt(params.get("filas") ?? "", 10);
-  const pageSize = sizeParam >= 1 && sizeParam <= PAGE_SIZE_MAX ? sizeParam : PAGE_SIZE_DEFAULT;
-  const search = params.get("q") ?? "";
-  function update(changes: Record<string, string | null>, resetPage = true) {
-    const next = new URLSearchParams(params.toString());
-    for (const [key, value] of Object.entries(changes)) {
-      if (value === null || value === "") next.delete(key);
-      else next.set(key, value);
-    }
-    if (resetPage) next.delete("pagina");
-    const query = next.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }
-  return { filter, page, pageSize, search, update };
+/** Los enlaces anteriores abrían «Requiere atención» con `estado=atencion`. */
+function normalizeLegacyParams(params: URLSearchParams): boolean {
+  if (params.get("estado") !== "atencion") return false;
+  params.delete("estado");
+  params.set("vista", "atencion");
+  return true;
 }
 
-export function InvoicesScreen() {
-  const { me } = useSession();
-  const allowed = canSee(me.role, "invoices.read");
-  const url = useUrlState();
-  const [searchDraft, setSearchDraft] = useState(url.search);
-  const [visibility] = useState<VisibilityState>({});
+const SEARCH_LABEL = "Buscar por número, comprador o identificación";
+const SEARCH_MAX_LENGTH = 100;
 
-  useEffect(() => {
-    if (searchDraft.trim() === url.search) return;
-    const timer = setTimeout(() => url.update({ q: searchDraft.trim() }), 300);
-    return () => clearTimeout(timer);
-  }, [searchDraft, url]);
-
-  const invoices = useInvoices(
-    {
-      search: url.search,
-      state: FILTER_TO_STATE[url.filter],
-      attention: url.filter === "atencion",
-      page: url.page,
-      pageSize: url.pageSize,
-    },
-    allowed,
+/**
+ * Ambiente de una factura distinto del vigente (D13, PO-4). Si el vigente no se puede confirmar, se
+ * marcan las de Pruebas, para no presentarlas nunca como válidas. Es contexto: ni éxito ni rechazo.
+ */
+function EnvironmentMark({
+  invoice,
+  current,
+}: {
+  invoice: Environment;
+  current: Environment | undefined;
+}) {
+  if (invoice === current) return null;
+  if (invoice === "TEST") {
+    return (
+      <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+        <Badge variant="neutral">Pruebas</Badge>
+        <span className="sr-only">, </span>
+        sin validez tributaria
+      </span>
+    );
+  }
+  if (current === undefined) return null;
+  return (
+    <span className="flex">
+      <Badge variant="emphasis">Producción</Badge>
+    </span>
   );
-  const forbidden = invoices.error instanceof ApiError && invoices.error.status === 403;
-  const filtersActive = url.search !== "" || url.filter !== "todas";
+}
 
-  const columns = useMemo<ColumnDef<InvoiceSummaryView, unknown>[]>(
+async function copyNumber(documentNumber: string) {
+  try {
+    await navigator.clipboard.writeText(documentNumber);
+    toast.success(`Copiaste el número ${documentNumber}.`, { id: "copiar-numero" });
+  } catch {
+    toast.error("No pudimos copiar el número. Selecciónalo y cópialo.", { id: "copiar-numero" });
+  }
+}
+
+function invoiceActions(invoice: InvoiceSummaryView): RowAction[] {
+  return [
+    { key: "ver", label: "Ver factura", icon: Eye, href: `/facturas/${invoice.id}` },
+    {
+      key: "copiar",
+      label: "Copiar número",
+      icon: Copy,
+      onSelect: () => void copyNumber(invoice.documentNumber),
+    },
+  ];
+}
+
+function InvoiceActions({ invoice }: { invoice: InvoiceSummaryView }) {
+  return (
+    <RowActionsMenu
+      label={`Acciones de la factura ${invoice.documentNumber}`}
+      actions={invoiceActions(invoice)}
+    />
+  );
+}
+
+function NewInvoiceLink({ variant = "primary" }: { variant?: "primary" | "outline" }) {
+  return (
+    <Button asChild variant={variant} size="default">
+      <Link href="/borradores/nuevo">
+        <Plus aria-hidden="true" data-icon="inline-start" />
+        Nueva factura
+      </Link>
+    </Button>
+  );
+}
+
+/** Lo que nombra el vacío por filtros: la vista, el estado y la búsqueda activos. */
+function describeFilters(view: View, state: InvoiceState | undefined, search: string): string {
+  const parts = [
+    view === "atencion" ? "requiere atención" : null,
+    state ? `está en «${INVOICE_STATE_LABELS[state]}»` : null,
+    search ? `coincide con «${search}»` : null,
+  ].filter((part): part is string => part !== null);
+  if (parts.length === 0) return "Ninguna factura coincide con los filtros.";
+  const last = parts.pop()!;
+  return `Ninguna factura ${parts.length > 0 ? `${parts.join(", ")} y ${last}` : last}.`;
+}
+
+function useInvoiceColumns(currentEnvironment: Environment | undefined) {
+  return useMemo<ColumnDef<InvoiceSummaryView, unknown>[]>(
     () => [
       {
-        id: "number",
-        header: "Número",
+        id: "invoice",
+        header: "Factura",
+        meta: { cellClassName: "w-full py-2 @xl:w-auto" },
+        cell: ({ row }) => {
+          const invoice = row.original;
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="flex items-center gap-1.5">
+                {requiresAttention(invoice) && <AttentionMarker />}
+                <Link
+                  href={`/facturas/${invoice.id}`}
+                  className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
+                >
+                  {invoice.documentNumber}
+                </Link>
+              </span>
+              <span className="hidden text-xs text-muted-foreground tabular-nums @xl:inline">
+                {formatIssueDate(invoice.issueDate)}
+              </span>
+              <EnvironmentMark invoice={invoice.environment} current={currentEnvironment} />
+              <span className="line-clamp-2 text-sm break-words @xl:hidden">
+                {invoice.buyerName}
+              </span>
+              <span className="@xl:hidden">
+                <StateCell state={invoice.state} stopped={invoice.transmissionStopped} />
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "state",
+        header: "Estado",
+        meta: { headClassName: "hidden @xl:table-cell", cellClassName: "hidden @xl:table-cell" },
         cell: ({ row }) => (
-          <Link
-            href={`/facturas/${row.original.id}`}
-            className="font-medium tabular-nums underline-offset-2 hover:underline"
-          >
-            {row.original.documentNumber}
-          </Link>
+          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
         ),
       },
       {
         id: "buyer",
         header: "Comprador",
+        meta: {
+          headClassName: "hidden @xl:table-cell",
+          cellClassName: "hidden @xl:table-cell @xl:w-full @xl:max-w-0",
+        },
         cell: ({ row }) => (
           <span className="flex flex-col">
-            <span className="break-words">{row.original.buyerName}</span>
-            <span className="text-xs text-foreground-muted tabular-nums">
+            <span className="truncate">{row.original.buyerName}</span>
+            <span className="truncate text-xs text-muted-foreground tabular-nums">
               {row.original.buyerIdentification}
             </span>
           </span>
@@ -127,141 +231,208 @@ export function InvoicesScreen() {
       },
       {
         id: "total",
-        header: () => <span className="block text-right">Total</span>,
+        header: "Total",
+        meta: { headClassName: "text-right", cellClassName: "py-2 text-right" },
         cell: ({ row }) => (
-          <span className="block text-right tabular-nums">{formatUsd(row.original.total)}</span>
+          <span className="flex items-start justify-end gap-1">
+            <span className="flex flex-col items-end gap-1">
+              <span className="whitespace-nowrap tabular-nums">
+                {formatUsd(row.original.total)}
+              </span>
+              <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums @xl:hidden">
+                {formatIssueDate(row.original.issueDate)}
+              </span>
+            </span>
+            <span className="-my-1 @xl:hidden">
+              <InvoiceActions invoice={row.original} />
+            </span>
+          </span>
         ),
       },
       {
-        id: "date",
-        header: "Fecha",
-        cell: ({ row }) => (
-          <span className="tabular-nums">{formatIssueDate(row.original.issueDate)}</span>
-        ),
-      },
-      {
-        id: "state",
-        header: "Estado",
-        cell: ({ row }) => (
-          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
-        ),
+        id: "actions",
+        header: "Acciones",
+        meta: {
+          srOnlyHeader: true,
+          headClassName: "hidden w-12 @xl:table-cell",
+          cellClassName: "hidden w-12 text-right @xl:table-cell",
+        },
+        cell: ({ row }) => <InvoiceActions invoice={row.original} />,
       },
     ],
-    [],
+    [currentEnvironment],
+  );
+}
+
+export function InvoicesScreen() {
+  const { me } = useSession();
+  const router = useRouter();
+  const allowed = canSee(me.role, "invoices.read");
+  const canDraft = canSee(me.role, "invoices.draft");
+  const url = useListUrlState({ normalize: normalizeLegacyParams });
+  // `estado=atencion` ya se lee como la vista mientras la URL se reescribe: sin una consulta de más.
+  const view: View =
+    url.get("vista") === "atencion" || url.get("estado") === "atencion" ? "atencion" : "todas";
+  const state = stateFromParam(url.get("estado"));
+  const search = url.get("q").trim().slice(0, SEARCH_MAX_LENGTH);
+
+  const invoices = useInvoices(
+    { search, state, attention: view === "atencion", page: url.page, pageSize: url.pageSize },
+    allowed,
+  );
+  const attentionCount = useInvoiceAttentionCount(allowed);
+  const company = useCompanyStatus();
+  const columns = useInvoiceColumns(company.data?.environment);
+
+  const { clampPage } = url;
+  const total = invoices.data && !invoices.isPlaceholderData ? invoices.data.meta.total : null;
+  useEffect(() => {
+    if (total !== null) clampPage(total);
+  }, [clampPage, total]);
+
+  // Una página posterior a la última llega vacía con total: se espera a la última sin mostrar vacío.
+  const settlingPage =
+    invoices.data !== undefined &&
+    invoices.data.data.length === 0 &&
+    invoices.data.meta.total > 0 &&
+    !invoices.isError;
+  const forbidden = invoices.error instanceof ApiError && invoices.error.status === 403;
+  const header = (
+    <PageHeader
+      title="Facturas"
+      titleId="facturas-titulo"
+      primaryAction={canDraft && allowed && !forbidden ? <NewInvoiceLink /> : undefined}
+    />
   );
 
   if (!allowed || forbidden) {
     return (
       <section aria-labelledby="facturas-titulo" className="flex flex-col gap-6">
-        <h1 id="facturas-titulo" className="text-3xl font-bold">
-          Facturas
-        </h1>
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Facturas"
-          description="Pide a un administrador que revise tu rol."
-        />
+        {header}
+        <div className="rounded-xl border border-border bg-card">
+          <DataTableEmpty
+            icon={Lock}
+            title="No tienes acceso a Facturas"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
       </section>
     );
   }
 
+  const clearFilters = () => url.update({ vista: null, estado: null, q: null });
+  const filtersActive = view !== "todas" || state !== undefined || search !== "";
+  const activeFilters: ActiveFilter[] = [
+    ...(state
+      ? [
+          {
+            key: "estado",
+            label: `Estado: ${INVOICE_STATE_LABELS[state]}`,
+            onRemove: () => url.update({ estado: null }),
+          },
+        ]
+      : []),
+    ...(search
+      ? [{ key: "q", label: `Búsqueda: «${search}»`, onRemove: () => url.update({ q: null }) }]
+      : []),
+  ];
+
   const tableState = invoices.isError ? (
-    <ErrorState message="No pudimos cargar las facturas." onRetry={() => void invoices.refetch()} />
-  ) : invoices.data && invoices.data.data.length === 0 ? (
+    <DataTableError
+      message="No pudimos cargar las facturas."
+      onRetry={() => void invoices.refetch()}
+    />
+  ) : invoices.data && invoices.data.meta.total === 0 ? (
     filtersActive ? (
-      <EmptyState
-        kind="no-matches"
-        title="No hay facturas que coincidan"
-        description="Prueba con otro número o comprador, o quita el filtro."
+      <DataTableEmpty
+        icon={SearchX}
+        title="No hay facturas con estos filtros"
+        description={describeFilters(view, state, search)}
         action={
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchDraft("");
-              url.update({ q: null, estado: null });
-            }}
-          >
+          <Button variant="outline" size="sm" onClick={clearFilters}>
             Limpiar filtros
           </Button>
         }
       />
     ) : (
-      <EmptyState
-        kind="empty"
+      <DataTableEmpty
+        icon={FileText}
         title="Todavía no hay facturas"
-        description="Las facturas aparecen aquí cuando emites un borrador."
-        action={
-          <Button asChild variant="outline">
-            <Link href="/borradores/nuevo">Nueva factura</Link>
-          </Button>
-        }
+        description="Aquí aparecen las facturas que emites. Empieza con un borrador."
+        action={canDraft ? <NewInvoiceLink variant="outline" /> : undefined}
       />
     )
   ) : undefined;
 
   return (
     <section aria-labelledby="facturas-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 id="facturas-titulo" className="text-3xl font-bold">
-          Facturas
-        </h1>
-      </div>
-      <AppDataTable
+      {header}
+      <DataTable
         label="Facturas emitidas"
         columns={columns}
         data={invoices.data?.data ?? []}
         getRowId={(invoice) => invoice.id}
-        total={invoices.data?.meta.total ?? 0}
+        rowCount={invoices.data?.meta.total ?? 0}
         page={url.page}
         pageSize={url.pageSize}
-        onPageChange={(page) => url.update({ pagina: String(page) }, false)}
-        onPageSizeChange={(size) => url.update({ filas: String(size) })}
-        columnVisibility={visibility}
-        loading={invoices.isPending}
+        onPageChange={url.setPage}
+        onPageSizeChange={url.setPageSize}
+        loading={invoices.isPending || settlingPage}
         refreshing={invoices.isFetching}
         state={tableState}
+        onRowOpen={(invoice) => router.push(`/facturas/${invoice.id}`)}
         toolbar={
-          <div className="flex flex-wrap items-center gap-4">
-            <SearchInput
-              value={searchDraft}
-              onChange={setSearchDraft}
-              label="Buscar por número o comprador"
-              placeholder="Número o comprador"
+          <DataTableToolbar
+            activeFilters={
+              <DataTableActiveFilters
+                filters={activeFilters}
+                active={filtersActive}
+                onClear={clearFilters}
+              />
+            }
+          >
+            <DataTableSearch
+              label={SEARCH_LABEL}
+              placeholder="Número, comprador o identificación"
+              value={search}
+              onChange={(next) => url.update({ q: next })}
+              maxLength={SEARCH_MAX_LENGTH}
             />
-            <ChipGroup
+            <DataTableViews
+              label="Vista"
+              value={view}
+              views={[
+                { value: "todas", label: "Todas" },
+                {
+                  value: "atencion",
+                  label: "Requiere atención",
+                  ...(attentionCount.data !== undefined ? { count: attentionCount.data } : {}),
+                },
+              ]}
+              onChange={(next) => url.update({ vista: next === "todas" ? null : next })}
+            />
+            <DataTableOptionFilter
               label="Estado"
-              value={url.filter}
-              options={STATE_FILTERS}
-              onChange={(value) => url.update({ estado: value === "todas" ? null : value })}
+              value={state}
+              options={STATE_OPTIONS}
+              onChange={(next) => url.update({ estado: next ? STATE_PARAMS[next] : null })}
             />
-          </div>
+          </DataTableToolbar>
         }
-        renderCard={(invoice) => (
-          <div className="flex flex-col gap-2">
-            <Link
-              href={`/facturas/${invoice.id}`}
-              className="font-medium tabular-nums underline-offset-2 hover:underline"
-            >
-              {invoice.documentNumber}
-            </Link>
-            <span className="text-sm break-words">{invoice.buyerName}</span>
-            <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted tabular-nums">
-              {formatUsd(invoice.total)} · {formatIssueDate(invoice.issueDate)}
-              <StateCell state={invoice.state} stopped={invoice.transmissionStopped} />
-            </span>
-          </div>
-        )}
       />
     </section>
   );
 }
 
+/** Mientras llega la pantalla: el encabezado y la geometría de la barra y de la tabla. */
 export function InvoicesSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Facturas</h1>
-      <Skeleton className="h-10 w-full max-w-md" />
-      <Skeleton className="h-64 w-full" />
+    <section aria-busy="true" aria-labelledby="facturas-titulo" className="flex flex-col gap-6">
+      <PageHeader title="Facturas" titleId="facturas-titulo" />
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-8 w-full max-w-md" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
     </section>
   );
 }

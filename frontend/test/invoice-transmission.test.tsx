@@ -133,15 +133,19 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
     for (const [index, [, label]] of states.entries()) {
       const row = within(table)
         .getAllByRole("row")
-        .find((candidate) => within(candidate).queryByText(`001-001-00000000${index}`))!;
-      expect(within(row).getByText(label)).toBeDefined();
-      expect(within(row).getByText(label).parentElement?.querySelector("svg")).not.toBeNull();
+        .find(
+          (candidate) => within(candidate).queryAllByText(`001-001-00000000${index}`).length > 0,
+        )!;
+      // Dos copias por fila (distribución amplia y compacta): jsdom no aplica las container queries.
+      const [badge] = within(row).getAllByText(label);
+      expect(badge).toBeDefined();
+      expect(badge!.parentElement?.querySelector("svg")).not.toBeNull();
     }
     const stopped = within(table)
       .getAllByRole("row")
-      .find((candidate) => within(candidate).queryByText("001-001-000000009"))!;
-    expect(within(stopped).getByText("Pendiente de envío")).toBeDefined();
-    expect(within(stopped).getByText("Transmisión detenida")).toBeDefined();
+      .find((candidate) => within(candidate).queryAllByText("001-001-000000009").length > 0)!;
+    expect(within(stopped).getAllByText("Pendiente de envío").length).toBeGreaterThan(0);
+    expect(within(stopped).getAllByText("Transmisión detenida").length).toBeGreaterThan(0);
   });
 
   it("muestra la carga mientras llegan las facturas", async () => {
@@ -162,17 +166,23 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
   });
 
   it('"Requiere atención" y los estados del SRI se filtran desde la URL', async () => {
+    // Los siete chips «Estado» pasan a la vista «Requiere atención» y al filtro «Estado» (D6);
+    // `estado=atencion` sigue abriendo la vista y se reescribe como `vista=atencion`.
     navigation.search = new URLSearchParams("estado=atencion");
     const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices": paged([]) });
-    await screen.findAllByText("No hay facturas que coincidan");
-    const listCall = calls.find((call) => call.key.startsWith("GET /api/v1/invoices?"))!;
+    await screen.findAllByText("No hay facturas con estos filtros");
+    const listCall = calls.find((call) => call.key.startsWith("GET /api/v1/invoices?page="))!;
     expect(listCall.key).toContain("attention=true");
     expect(listCall.key).not.toContain("state=");
-    const chips = screen.getByRole("radiogroup", { name: "Estado" });
+    const views = screen.getByRole("radiogroup", { name: "Vista" });
     expect(
-      within(chips).getByRole("radio", { name: "Requiere atención" }).getAttribute("aria-checked"),
+      within(views)
+        .getByRole("radio", { name: /Requiere atención/ })
+        .getAttribute("aria-checked"),
     ).toBe("true");
-    await userEvent.setup().click(within(chips).getByRole("radio", { name: "Autorizadas" }));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Estado" }));
+    await user.click(screen.getByRole("menuitemradio", { name: "Autorizado" }));
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith(
         expect.stringContaining("estado=autorizadas"),
@@ -188,7 +198,7 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
     ] as const) {
       navigation.search = new URLSearchParams(`estado=${param}`);
       const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices": paged([]) });
-      await screen.findAllByText("No hay facturas que coincidan");
+      await screen.findAllByText("No hay facturas con estos filtros");
       expect(calls.some((call) => call.key.includes(`state=${state}`))).toBe(true);
       vi.unstubAllGlobals();
       document.body.innerHTML = "";
