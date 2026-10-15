@@ -109,12 +109,12 @@
 
 ## 5. Encabezado de página
 
-- [ ] 5.1 Crear `components/layout/page-header.tsx` (D4): título como `h1`, descripción y contexto
+- [x] 5.1 Crear `components/layout/page-header.tsx` (D4): título como `h1`, descripción y contexto
   opcionales, una única ranura `primaryAction` y acciones secundarias, sin migas.
 
   Verificar con pruebas unitarias que hay un solo `h1` y como mucho un botón principal, y la
   disposición en pantallas estrechas.
-- [ ] 5.2 Documentar `PageHeader` en `component-system.md` y en `interface-design.md` (encabezado de
+- [x] 5.2 Documentar `PageHeader` en `component-system.md` y en `interface-design.md` (encabezado de
   módulo).
 
   Verificar que la documentación remite a una sola acción principal por pantalla.

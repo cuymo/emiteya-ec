@@ -81,6 +81,16 @@ A standard list module should usually contain:
 Remove the module header when the page title and table title already communicate the
 same thing. Never repeat the same title and description in consecutive containers.
 
+In this repository, migrated screens use `PageHeader` (`frontend/src/components/layout/`,
+`productize-invoice-list-and-shared-table-foundation`) for steps 1 and 2:
+- the page title as the only `h1`;
+- an optional description and context;
+- one primary-action slot and separate secondary actions, so a screen cannot ship two primary
+  actions.
+
+Breadcrumbs come from the shell's top bar, not from `PageHeader`. The shell's Quick Create stays
+an `outline` secondary control.
+
 A module is complete when everything it offers works end to end against the real backend:
 list, create, edit, detail, and the removal or deactivation the domain allows. A list that
 renders while its create dialog fails is an unfinished module.

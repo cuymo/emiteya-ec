@@ -109,6 +109,7 @@ primitives -> system components -> domain components -> features -> pages
 | `TableToolbar`          | Stable arrangement of search, filters, columns, and table commands         |
 | `TablePagination`       | One footer for client and server pagination                                |
 | `DataTable<T>` and its pieces | The shared list base of migrated screens (`data-tables.md`, «Implementation In This Repository») |
+| `PageHeader`            | Page title (`h1`), optional description and context, one primary-action slot and secondary actions (`frontend/src/components/layout/page-header.tsx`) |
 | `ColumnVisibilityMenu`  | Business-facing optional column selection                                  |
 | `RowActionButton`       | Icon action with permission/state handling and opaque tooltip              |
 | `FormDialog`            | Accessible create/edit modal with stable header, body, and footer          |
