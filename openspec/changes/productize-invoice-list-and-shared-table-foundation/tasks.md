@@ -33,12 +33,12 @@
 
 ## 2. Primitivos derivados de la plantilla
 
-- [ ] 2.1 Derivar `components/ui/table.tsx` de `src/components/ui/table.tsx` de la plantilla, con
+- [x] 2.1 Derivar `components/ui/table.tsx` de `src/components/ui/table.tsx` de la plantilla, con
   comentario de procedencia y su fila en `THIRD_PARTY_NOTICES.md`.
 
   Verificar con una prueba unitaria la semántica (`table`, `caption`, `th` con `scope`) y el
   contenedor con desplazamiento horizontal.
-- [ ] 2.2 Derivar `components/ui/toggle.tsx` y `components/ui/toggle-group.tsx` (D3):
+- [x] 2.2 Derivar `components/ui/toggle.tsx` y `components/ui/toggle-group.tsx` (D3):
   - sin el atributo `style` de `--gap`, que la CSP bloquea; la separación va por clase;
   - con los estados de Radix 1.6.7;
   - con sus filas en `THIRD_PARTY_NOTICES.md`.

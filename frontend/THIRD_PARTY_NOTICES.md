@@ -191,6 +191,9 @@ destino relativo a `frontend/src/`.
 | `components/ui/separator.tsx` | `components/ui/separator.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/collapsible.tsx` | `components/ui/collapsible.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/skeleton.tsx` | `components/ui/skeleton.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/table.tsx` | `components/ui/table.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/toggle.tsx` | `components/ui/toggle.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/toggle-group.tsx` | `components/ui/toggle-group.tsx` (sin el `style` de `--gap`) | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `hooks/use-mobile.ts` | `hooks/use-mobile.ts` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/shell/app-shell.tsx` | `app/(main)/dashboard/layout.tsx` | MIT de «Studio Admin» |
 | `components/shell/topbar.tsx` | `app/(main)/dashboard/layout.tsx (cabecera)` | MIT de «Studio Admin» |
