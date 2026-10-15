@@ -17,7 +17,6 @@ pedido.
 #### Scenario: Pantalla autenticada
 - **WHEN** un operador con sesión abre la pantalla de facturas
 - **THEN** ve la navegación, la barra superior y el contenido de facturas dentro del shell
-- **AND** el contenido de la pantalla es el mismo que antes del shell nuevo
 
 #### Scenario: Verificación de la sesión
 - **WHEN** un usuario abre una pantalla autenticada y su sesión todavía se está verificando
