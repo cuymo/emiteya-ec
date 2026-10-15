@@ -167,3 +167,86 @@ corta nada.
   grupo.
 - **Variante de configuración:** queda escrita en `interface-design.md` para la migración de esas
   pantallas, sin consumidor en este cambio.
+
+## Grupos 5 y 6: primitivos de formulario y editor de facturas
+
+Los primitivos del grupo 5 no tienen consumidor hasta el editor, así que se miran juntos.
+
+- **Captura:** `REVIEW_LABEL=grupo-6 REVIEW_COMPARE_WITH=antes`, 94/94 con código 0, sobre `64be384`
+  con los cambios del grupo 6. Se capturó dos veces: la primera destapó un defecto (abajo), se
+  corrigió y la etiqueta se repitió entera.
+- **Matriz:** suma `borrador-barra-acciones-*`, la ventana real a media página con la barra de
+  acciones fija. La captura de página entera dibuja esa barra donde estaba la ventana, en mitad del
+  documento.
+- **Qué se miró:** el editor en sus estados y anchuras (listo, con problemas, con cambios, sin
+  totales, incompleto, nuevo y con datos, confirmación, Producción, ambiente sin confirmar, oscuro y
+  200 %), la geometría de los formularios y `compare-antes-editor.png`.
+- **`test:visual`:** 80 de 80 en verde, sin cambiar capturas. Una prueba de comportamiento buscaba
+  la barra superior con `locator("header")`, que ahora también encuentra el encabezado del editor.
+  Se cambió por el `banner`, que solo es la barra superior.
+
+### Defecto encontrado y corregido
+
+En la primera captura, con el resumen apilado, la barra fija sumaba el aviso de Pruebas en dos
+líneas, los botones y el motivo: unos 125 px a 1024 px, más en el teléfono, y una cuarta parte de la
+ventana a 200 %. Se compactó:
+
+- el aviso en texto pequeño cuando la barra está apilada;
+- 8 px de relleno vertical;
+- la reserva de alto para el foco, a 10rem.
+
+Ahora el aviso cabe en una línea a 390 px, y la barra mide unos 112 px a 1024 y a 390, y unos 97 px
+a 200 % (`borrador-barra-acciones-390-claro.png`, `-1024-claro.png`, `-1440z200-claro.png`).
+
+### Resuelto
+
+- **C2 (V4), el formulario a 1024 px.**
+  - Formulario y panel por contenedor, medidos: 824 y 288 px al lado a 1440, 664 a 1280 y 616 a 1024
+    con la barra colapsada. Apilado: 720 a 1024 con la barra expandida, 464 a 768 y 358 a 390.
+  - A 1024 con la barra expandida, la forma de pago mide 500 px y se lee entera
+    (`borrador-listo-1024-claro.png`; antes, 160 px y «SIN UTILIZACION I…»).
+  - Ninguna captura se desplaza a lo ancho.
+- **C3 (V3), la fila de pago.**
+  - «Forma de pago» e «Importe» comparten la y a 1440, 1280, 1024 y 200 % (665 y 665 a 1440;
+    antes, 839 y 819), aunque solo el importe lleve ayuda.
+  - La ayuda dice «Déjalo vacío para usar el total de la factura».
+  - «Quitar» está en la fila del importe y dentro del grupo «Forma de pago N», también en el
+    teléfono (`borrador-listo-390-claro.png`).
+- **C1, la mitad que faltaba.**
+  - Factura nueva y con cambios: «Guardar borrador» es la principal y «Emitir factura» se lee no
+    disponible, con su motivo debajo (`nueva-factura-vacia-1440-claro.png`,
+    `borrador-cambios-sin-guardar-1440-claro.png`).
+  - Listo: «Emitir factura» es la principal y «Guardar borrador», la secundaria.
+  - Con problemas: ninguna se destaca (`borrador-problemas-1440-claro.png`).
+- **C4 (V3), cambios sin guardar.** «Cambios sin guardar» junto al título y en el resumen. Los
+  totales se rotulan «Totales del último guardado», atenuados, con «Guarda para recalcularlos», y la
+  base imponible de cada línea pasa a «—».
+- **C5 (V3).** El problema del comprador va junto a él: borde rojo y el texto bajo su
+  identificación. No se repite en «Antes de emitir».
+- **C6 (V3), las líneas.**
+  - Una tabla con encabezados (producto, cantidad, precio unitario, descuento, base imponible y
+    quitar) desde 40rem de contenedor.
+  - Por debajo, dos filas por línea: la identidad con su base, y la cantidad, el precio y el
+    descuento.
+  - A 1440, cada línea mide unos 65 px (antes, una tarjeta de 128 px).
+- **C7 (V3), las acciones en un teléfono.** Están en la barra fija al pie, a la vista en cualquier
+  punto del desplazamiento (`borrador-barra-acciones-390-claro.png`). Antes había que bajar unos
+  980 px.
+- **C8 (V2).** El borrador sin líneas dice «Los totales aparecen cuando el borrador tiene
+  productos» (`borrador-incompleto-1440-claro.png`).
+- **B2, en el editor de facturas.** «Pruebas · esta factura no tendrá validez tributaria» va encima
+  de las acciones y en la confirmación (`borrador-confirmacion-1440-claro.png`). Con el ambiente sin
+  confirmar lo dice, y en Producción no aparece.
+- **A6, en el editor.** El editor usa el ancho de espacio de trabajo, y su panel de 18rem va al lado
+  solo cuando caben 36rem de formulario.
+
+### Lo que sigue y por qué
+
+- **C9 (V2), los decimales.** Los campos siguen mostrando el punto («4.5», «1.25») junto a importes
+  con coma. Es el formato del contrato de la API y cambiarlo no es de este cambio; queda en la deuda
+  técnica (8.4).
+- **El comprador como campo.** Su caja gris se lee como un dato de solo lectura, que es lo que es:
+  se elige con «Elegir comprador» o «Cambiar comprador», a su lado.
+- **Dos formas de pago** muestran la etiqueta «Forma de pago» dos veces. Cada fila es un grupo con
+  su número para las tecnologías de asistencia, y la separación entre filas las distingue a la
+  vista.

@@ -94,8 +94,10 @@ export function FormField({
   label,
   hint,
   error,
+  problem,
   action,
   className,
+  labelClassName,
   children,
 }: {
   id: string;
@@ -103,11 +105,18 @@ export function FormField({
   hint?: string;
   error?: string | undefined;
   /**
+   * Un problema que el servidor señala en este dato, junto a él y sin interrumpir como una alerta
+   * (productize-invoice-editor-and-composition-foundation, spec «Acción siguiente en el editor»).
+   */
+  problem?: string | undefined;
+  /**
    * Una acción en la fila del control, como quitar una forma de pago
    * (productize-invoice-editor-and-composition-foundation, design D7).
    */
   action?: ReactNode;
   className?: string;
+  /** Por ejemplo, la etiqueta solo para la asistencia donde una fila de encabezados la muestra. */
+  labelClassName?: string;
   children: ReactNode;
 }) {
   // Dentro de `FormGrid` o `FormFieldRow`, el campo ocupa tres filas de su `subgrid` (etiqueta,
@@ -115,7 +124,7 @@ export function FormField({
   const rowClass = useFormRowFieldClass();
   return (
     <div data-slot="form-field" className={cn("flex flex-col gap-1", rowClass, className)}>
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className={cn("text-sm font-medium", labelClassName)}>
         {label}
       </label>
       {action ? (
@@ -126,7 +135,12 @@ export function FormField({
       ) : (
         children
       )}
-      {hint && !error && (
+      {problem && !error && (
+        <p id={`${id}-problem`} className="text-xs text-danger">
+          {problem}
+        </p>
+      )}
+      {hint && !error && !problem && (
         <p id={`${id}-hint`} className="text-xs text-foreground-muted">
           {hint}
         </p>
@@ -141,11 +155,17 @@ export function FormField({
 }
 
 /** Atributos ARIA del control de un FormField. */
-export function fieldAria(id: string, error: string | undefined, hint?: string) {
-  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+export function fieldAria(id: string, error: string | undefined, hint?: string, problem?: string) {
+  const describedBy = error
+    ? `${id}-error`
+    : problem
+      ? `${id}-problem`
+      : hint
+        ? `${id}-hint`
+        : undefined;
   return {
     id,
-    "aria-invalid": error ? true : undefined,
+    "aria-invalid": error || problem ? true : undefined,
     ...(describedBy ? { "aria-describedby": describedBy } : {}),
   } as const;
 }

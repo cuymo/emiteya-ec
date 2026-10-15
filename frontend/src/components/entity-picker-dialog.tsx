@@ -44,6 +44,7 @@ export function EntityPickerDialog<T>({
   quickOption,
   emptyTitle,
   emptyDescription,
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,6 +70,12 @@ export function EntityPickerDialog<T>({
   quickOption?: QuickOption;
   emptyTitle: string;
   emptyDescription?: string;
+  /**
+   * Al cerrarse, quién recibe el foco: por defecto, el control que abrió el diálogo. El editor de
+   * facturas lo lleva a la cantidad de la línea nueva (productize-invoice-editor-and-composition-
+   * foundation, design D13).
+   */
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   const listboxId = useId();
   const optionId = (index: number) => `${listboxId}-option-${index}`;
@@ -251,6 +258,7 @@ export function EntityPickerDialog<T>({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent
         className="max-w-lg"
+        {...(onCloseAutoFocus ? { onCloseAutoFocus } : {})}
         {...(description ? {} : { "aria-describedby": undefined })}
       >
         <div className="flex flex-col gap-1 px-6 pt-6 pr-14">

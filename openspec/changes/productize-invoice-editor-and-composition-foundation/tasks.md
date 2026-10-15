@@ -179,7 +179,7 @@
 
 ## 5. Primitivos de composición de formularios
 
-- [ ] 5.1 `FormLayout` (D5): contenedor con `@container`, formulario y panel opcional de 18rem, al
+- [x] 5.1 `FormLayout` (D5): contenedor con `@container`, formulario y panel opcional de 18rem, al
   lado desde `--container-form-rail` y apilado por debajo.
 
   Verificar con una prueba unitaria la estructura y el orden de lectura, y con el navegador las
@@ -188,7 +188,7 @@
   `aria-labelledby`.
 
   Verificar con una prueba unitaria el nombre accesible de la sección y la acción local.
-- [ ] 5.3 `FormGrid` y `FormFieldRow` (D7), sobre el `FormField` existente:
+- [x] 5.3 `FormGrid` y `FormFieldRow` (D7), sobre el `FormField` existente:
   - columnas por contenedor;
   - filas en `grid-rows-subgrid` con etiqueta, control y mensaje;
   - acción en línea en la fila del control;
@@ -208,7 +208,7 @@
 
 ## 6. Editor de facturas productizado
 
-- [ ] 6.1 Componer `features/invoices/draft-editor.tsx` con `PageHeader` (variante de editor, dueño de
+- [x] 6.1 Componer `features/invoices/draft-editor.tsx` con `PageHeader` (variante de editor, dueño de
   las migas), `FormLayout`, `FormSection`, `FormGrid` y `FormFieldRow` (D13):
   - comprador y punto de emisión en dos columnas;
   - líneas con encabezados, la base imponible del servidor solo sin cambios, y el foco en la
@@ -221,7 +221,7 @@
   - el foco tras agregar un producto;
   - la base imponible solo con el borrador guardado y sin cambios;
   - una sola fila de migas.
-- [ ] 6.2 Guardar y emitir según D14:
+- [x] 6.2 Guardar y emitir según D14:
   - guardar disponible siempre salvo durante un guardado en curso, también con el borrador
     incompleto o con problemas;
   - el formulario sin edición mientras se guarda;
@@ -232,7 +232,7 @@
   Verificar con una prueba por situación de D14: la principal, la secundaria, la no disponible con
   su motivo y la llamada. Incluir que un borrador incompleto se guarda y que una edición durante el
   guardado no es posible.
-- [ ] 6.3 Resumen veraz (D8, PO-2 A–D):
+- [x] 6.3 Resumen veraz (D8, PO-2 A–D):
   - sin importes ni ceros en un borrador nuevo;
   - los totales del servidor con el borrador guardado y sin cambios;
   - el bloque rotulado «Totales del último guardado» con «Guarda para recalcularlos» mientras hay
@@ -243,19 +243,19 @@
 
   Verificar con pruebas de pantalla los escenarios de «Totales veraces», y que el navegador no
   calcula importes.
-- [ ] 6.4 Aviso de ambiente en el editor y en la confirmación (D21, D15): `EmissionEnvironmentNotice`
+- [x] 6.4 Aviso de ambiente en el editor y en la confirmación (D21, D15): `EmissionEnvironmentNotice`
   encima de las acciones y dentro de la confirmación.
 
   Verificar con pruebas de pantalla los escenarios de «Ambiente junto a la emisión» y de
   «Confirmación de la emisión», incluida la confirmación repetida con la misma `Idempotency-Key`.
-- [ ] 6.5 Formas de pago:
+- [x] 6.5 Formas de pago:
   - «Déjalo vacío para usar el total de la factura» con una forma de pago;
   - la ayuda de sección con varias;
   - quitar asociado a su fila en móvil.
 
   Verificar con pruebas de pantalla los escenarios de «Formas de pago en el editor», y que las
   reglas no cambian.
-- [ ] 6.6 Cambios sin guardar (D16, PO-3):
+- [x] 6.6 Cambios sin guardar (D16, PO-3):
   - «Cambios sin guardar» en el encabezado y en el resumen;
   - `beforeunload` solo mientras hay cambios, retirado al quedar limpio;
   - el estado limpio solo tras un guardado confirmado;
@@ -263,12 +263,12 @@
 
   Verificar con pruebas de pantalla los escenarios de «Cambios sin guardar», incluido que sin
   cambios no se registra el aviso.
-- [ ] 6.7 Mantener el borrador ajeno como inexistente, la carga, el error y la falta de permiso con
+- [x] 6.7 Mantener el borrador ajeno como inexistente, la carga, el error y la falta de permiso con
   la gramática nueva.
 
   Verificar con pruebas de pantalla «El borrador no existe», la carga sin saltos y el error con
   reintento.
-- [ ] 6.8 Actualizar `fiscal-emission.md` con el editor: guardar y emitir, resumen, aviso de
+- [x] 6.8 Actualizar `fiscal-emission.md` con el editor: guardar y emitir, resumen, aviso de
   ambiente, confirmación y cambios sin guardar.
 
   Verificar que el documento coincide con la pantalla.

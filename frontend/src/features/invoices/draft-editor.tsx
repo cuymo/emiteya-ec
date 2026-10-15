@@ -2,8 +2,15 @@
 // (frontend-checklist.md). Usuario: administrador u operador, a diario. Objetivo: preparar una
 // factura correcta. Decisión: si está lista para emitirse. Información mínima: comprador, líneas con
 // el precio del producto y el descuento, totales del servidor, formas de pago, problemas y ambiente.
-// Acción principal: Emitir factura; secundaria: Guardar borrador. El frontend no calcula dinero: los
-// totales y los problemas son la vista previa del servidor del borrador guardado.
+// El frontend no calcula dinero: los totales y los problemas son la vista previa del servidor del
+// borrador guardado.
+// Composición (productize-invoice-editor-and-composition-foundation, design D13 a D16):
+// - `PageHeader` de editor, dueño de sus migas, con el estado del borrador como contexto;
+// - `FormLayout` con las secciones a la izquierda y el resumen y las acciones en un carril fijo, que
+//   se apila debajo cuando no hay sitio;
+// - guardar está disponible siempre salvo durante un guardado, que deja el formulario sin edición;
+//   emitir solo con la versión guardada, sin cambios, sin problemas y con permiso;
+// - la acción principal es la siguiente acción válida, y la que no está disponible dice por qué.
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +25,7 @@ import {
   type ProductView,
   type StockWarning,
 } from "@facturador/contracts";
-import { Info, Plus, Trash2, UserRound } from "lucide-react";
+import { CircleDashed, CircleDot, CircleCheck, Info, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -28,18 +35,25 @@ import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
-import { AppBreadcrumbs } from "@/components/shell/app-breadcrumbs";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { FormFieldRow, FormGrid, useFormRowFieldClass } from "@/components/layout/form-grid";
+import { FormLayout, StickyFormActions, StickySummaryPanel } from "@/components/layout/form-layout";
+import { FormSection } from "@/components/layout/form-section";
+import { PageHeader } from "@/components/layout/page-header";
 import { useSession } from "@/components/session";
-import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
+import { EmptyState, ErrorState } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
+import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
 import {
   DEFAULT_POINT_KEY,
   pointLabel,
@@ -150,6 +164,12 @@ const asBuyer = (party: PartyView): Buyer => ({
   consumerFinal: party.systemRecord === "CONSUMER_FINAL",
 });
 
+/** Los problemas del servidor que señalan un dato de la cabecera, para mostrarlos junto a él. */
+const isBuyerIssue = (issue: InvoiceIssue) => issue.code.startsWith("BUYER_");
+const isPointIssue = (issue: InvoiceIssue) => issue.code.startsWith("EMISSION_POINT_");
+
+const ONE_PAYMENT_HINT = "Déjalo vacío para usar el total de la factura";
+
 function useDefaultPoint(enabled: boolean) {
   return useQuery({
     queryKey: DEFAULT_POINT_KEY,
@@ -157,18 +177,6 @@ function useDefaultPoint(enabled: boolean) {
     queryFn: ({ signal }) =>
       apiFetch("/me/default-emission-point", { schema: defaultEmissionPointViewSchema, signal }),
   });
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  const id = useId();
-  return (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className="text-lg font-semibold">
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
 }
 
 function IssueList({ issues }: { issues: readonly InvoiceIssue[] }) {
@@ -228,6 +236,80 @@ function OperationAlert({
   );
 }
 
+/** Estado del borrador (design D16), en texto: en el encabezado y en el resumen. */
+type DraftState = "new" | "saved" | "dirty";
+
+const STATE_PRESENTATION = {
+  new: { label: "Sin guardar", icon: CircleDashed, variant: "neutral" },
+  saved: { label: "Guardado", icon: CircleCheck, variant: "neutral" },
+  dirty: { label: "Cambios sin guardar", icon: CircleDot, variant: "warning" },
+} as const;
+
+function DraftStateBadge({ state }: { state: DraftState }) {
+  const { label, icon: Icon, variant } = STATE_PRESENTATION[state];
+  return (
+    <Badge variant={variant} data-slot="draft-state">
+      <Icon aria-hidden="true" />
+      {label}
+    </Badge>
+  );
+}
+
+/**
+ * El comprador como un campo (design D13): una caja de la altura de un control con su nombre, y el
+ * botón para elegirlo en la misma fila. La identificación y los problemas del servidor van debajo.
+ */
+function BuyerField({
+  buyer,
+  problem,
+  onPick,
+}: {
+  buyer: Buyer | null;
+  problem: string | undefined;
+  onPick: () => void;
+}) {
+  const rowClass = useFormRowFieldClass();
+  const labelId = useId();
+  const detailId = useId();
+  return (
+    <div data-slot="form-field" className={cn("flex flex-col gap-1", rowClass)}>
+      <span id={labelId} className="text-sm font-medium">
+        Comprador
+      </span>
+      <div className="flex items-center gap-2">
+        <div
+          role="group"
+          aria-labelledby={labelId}
+          aria-describedby={detailId}
+          aria-invalid={problem ? true : undefined}
+          className="flex h-10 min-w-0 flex-1 items-center rounded-md border border-input bg-muted px-3 text-sm aria-invalid:border-danger max-md:h-11"
+        >
+          {buyer ? (
+            <span className="truncate font-medium" title={buyer.legalName}>
+              {buyer.legalName}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Sin comprador</span>
+          )}
+        </div>
+        <Button variant="outline" size="default" onClick={onPick}>
+          {buyer ? "Cambiar comprador" : "Elegir comprador"}
+        </Button>
+      </div>
+      <div id={detailId} className="flex flex-col gap-1 text-xs">
+        {buyer && (
+          <p className="text-muted-foreground tabular-nums">
+            {buyer.consumerFinal
+              ? `Consumidor final · ${buyer.identification}`
+              : buyer.identification}
+          </p>
+        )}
+        {problem && <p className="text-danger">{problem}</p>}
+      </div>
+    </div>
+  );
+}
+
 function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -236,9 +318,14 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   const [pickingBuyer, setPickingBuyer] = useState(false);
   const [pickingProduct, setPickingProduct] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  // La línea recién agregada recibe el foco en su cantidad al cerrarse el selector (design D13).
+  const addedLine = useRef<number | null>(null);
   // Una clave por versión del borrador (el editor se vuelve a montar con cada versión): un
   // reintento de la misma solicitud la repite y el servidor devuelve o retoma la misma factura.
   const idempotencyKey = useRef<string>("");
+  // Una confirmación repetida (doble clic) no envía una segunda emisión; la misma clave ya haría que
+  // el servidor devolviera la misma factura.
+  const emitting = useRef(false);
   const establishments = useEstablishments();
   const paymentMethods = useCatalogEntries("payment-method", true);
   const status = useCompanyStatus();
@@ -254,17 +341,34 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   const pointId = useWatch({ control: form.control, name: "emissionPointId" });
 
   // Un borrador nuevo empieza en el punto predeterminado del usuario, si tiene uno y sigue
-  // disponible: uno desactivado no se preselecciona (taxpayer-setup).
+  // disponible: uno desactivado no se preselecciona (taxpayer-setup). Es el punto de partida, no un
+  // cambio del usuario: no marca el borrador con cambios sin guardar.
   useEffect(() => {
     const point = defaultPoint.data?.available ? defaultPoint.data.emissionPoint.id : undefined;
     if (point && !form.getValues("emissionPointId")) {
-      form.setValue("emissionPointId", point, { shouldDirty: true });
+      // Nuevo valor de partida: lo que el operador ya cambió se conserva como cambio.
+      form.reset(
+        { ...(form.formState.defaultValues as FormValues), emissionPointId: point },
+        { keepDirtyValues: true },
+      );
     }
   }, [defaultPoint.data, form]);
 
   useEffect(() => {
     if (operationError) alertRef.current?.focus();
   }, [operationError]);
+
+  // Con cambios sin guardar, cerrar o recargar la pestaña pide confirmación (design D16). Sin
+  // cambios no se registra nada, y el aviso se retira en cuanto el borrador queda limpio.
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [isDirty]);
 
   const fail = (error: unknown) => {
     setOperationError({
@@ -284,6 +388,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   const emit = useEmitInvoice({
     onSuccess: (invoice) => router.push(`/facturas/${invoice.id}`),
     onError: (error) => {
+      emitting.current = false;
       setConfirming(false);
       void queryClient.invalidateQueries({ queryKey: [...DRAFTS_KEY, "detail", draft?.id] });
       return fail(error);
@@ -307,21 +412,38 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
 
   const preview = draft?.preview;
   const issues = preview?.issues ?? [];
-  const lineIssues = (position: number) => issues.filter((issue) => issue.line === position);
-  const paymentIssues = (position: number) => issues.filter((issue) => issue.payment === position);
-  const generalIssues = issues.filter((issue) => issue.line === null && issue.payment === null);
+  // Los problemas de la última versión guardada solo se muestran mientras sigue siendo la que se ve.
+  const current = draft !== null && !isDirty;
+  const shown = current ? issues : [];
+  const lineIssues = (position: number) => shown.filter((issue) => issue.line === position);
+  const paymentIssues = (position: number) => shown.filter((issue) => issue.payment === position);
+  const headerIssues = shown.filter((issue) => issue.line === null && issue.payment === null);
+  const buyerProblem = headerIssues.find(isBuyerIssue)?.message;
+  const pointProblem = headerIssues.find(isPointIssue)?.message;
+  const generalIssues = headerIssues.filter(
+    (issue) => !isBuyerIssue(issue) && !isPointIssue(issue),
+  );
   const stockWarnings = preview?.stockWarnings ?? [];
   const environment = status.data ? ENVIRONMENT_LABELS[status.data.environment] : null;
-  // Mientras se guarda, la emisión espera: el guardado vuelve a montar el editor con la versión nueva.
-  const emitBlocked = !draft || isDirty || issues.length > 0 || save.isPending;
+  const saving = save.isPending;
+  const state: DraftState = isDirty ? "dirty" : draft ? "saved" : "new";
+
+  // Guardar y emitir según las cinco preguntas de D14.
+  const ready = current && issues.length === 0;
+  const emitBlocked = !ready || saving;
   const emitHintId = useId();
-  const emitHint = !draft
-    ? "Guarda el borrador para emitirlo."
-    : isDirty
-      ? "Guarda los cambios antes de emitir."
-      : issues.length > 0
-        ? "Resuelve los problemas del resumen antes de emitir."
-        : undefined;
+  const emitHint = saving
+    ? "Espera a que termine el guardado."
+    : !draft
+      ? "Guarda el borrador para emitirlo."
+      : isDirty
+        ? "Guarda los cambios antes de emitir."
+        : issues.length > 0
+          ? "Resuelve los problemas del resumen antes de emitir."
+          : undefined;
+  // Con el borrador guardado y con problemas, ninguna acción se destaca: se corrige un dato.
+  const emitPrimary = canEmit && ready;
+  const savePrimary = !emitPrimary && !(current && issues.length > 0 && canEmit);
 
   const onSave = form.handleSubmit((values) => {
     setOperationError(undefined);
@@ -348,289 +470,382 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
       </Button>
     ) : undefined;
 
+  const saveButton = (
+    <AsyncButton
+      key="guardar"
+      type="submit"
+      size="default"
+      variant={savePrimary ? "primary" : "outline"}
+      pending={saving}
+      pendingLabel="Guardando el borrador"
+    >
+      Guardar borrador
+    </AsyncButton>
+  );
+  const emitButton = canEmit ? (
+    <Button
+      key="emitir"
+      size="default"
+      variant={emitPrimary ? "primary" : "outline"}
+      disabled={emitBlocked}
+      aria-describedby={emitHint ? emitHintId : undefined}
+      onClick={() => {
+        idempotencyKey.current ||= crypto.randomUUID();
+        setConfirming(true);
+      }}
+    >
+      Emitir factura
+    </Button>
+  ) : null;
+
+  const totals = preview?.totals ?? null;
+  const totalsRows = totals && (
+    <dl className="flex flex-col gap-1 text-sm tabular-nums">
+      <div className="flex justify-between gap-4">
+        <dt>Subtotal sin impuestos</dt>
+        <dd>{formatUsd(totals.withoutTaxes)}</dd>
+      </div>
+      <div className="flex justify-between gap-4">
+        <dt>Descuento</dt>
+        <dd>{formatUsd(totals.discount)}</dd>
+      </div>
+      {totals.taxes.map((tax) => (
+        <div key={`${tax.taxCode}-${tax.rateCode}`} className="flex justify-between gap-4">
+          <dt>IVA {formatPercentage(tax.percentage)}</dt>
+          <dd>{formatUsd(tax.amount)}</dd>
+        </div>
+      ))}
+      <div className="flex justify-between gap-4 font-semibold">
+        <dt>Total</dt>
+        <dd>{formatUsd(totals.total)}</dd>
+      </div>
+    </dl>
+  );
+  const noTotals =
+    draft && draft.lines.length === 0
+      ? "Los totales aparecen cuando el borrador tiene productos."
+      : "Los totales aparecen cuando todas las líneas se pueden calcular.";
+
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <AppBreadcrumbs owner="page-header" />
-        <h1 id="editor-titulo" className="text-3xl font-bold">
-          {draft ? "Borrador de factura" : "Nueva factura"}
-        </h1>
-      </div>
+      <PageHeader
+        variant="editor"
+        title={draft ? "Borrador de factura" : "Nueva factura"}
+        titleId="editor-titulo"
+        context={<DraftStateBadge state={state} />}
+      />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
       )}
 
-      <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-6">
-          <Section title="Comprador y punto de emisión">
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2">
-              {buyer ? (
-                <span className="flex min-w-0 items-center gap-2">
-                  <UserRound aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-                  <span className="flex min-w-0 flex-col">
-                    <span className="font-medium break-words">{buyer.legalName}</span>
-                    <span className="text-sm text-foreground-muted tabular-nums">
-                      {buyer.identification}
-                    </span>
-                  </span>
-                  {buyer.consumerFinal && <StatusBadge tone="neutral" label="Consumidor final" />}
-                </span>
-              ) : (
-                <span className="text-sm text-foreground-muted">Sin comprador</span>
-              )}
-              <Button variant="outline" onClick={() => setPickingBuyer(true)}>
-                {buyer ? "Cambiar comprador" : "Elegir comprador"}
-              </Button>
-            </div>
-            <FormField id="punto" label="Punto de emisión">
-              <Select
-                {...fieldAria("punto", undefined)}
-                value={pointId}
-                onChange={(event) =>
-                  form.setValue("emissionPointId", event.target.value, { shouldDirty: true })
-                }
-              >
-                <option value="">Elige un punto</option>
-                {points.map((point) => (
-                  <option key={point.id} value={point.id}>
-                    {point.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-          </Section>
-
-          <Section title="Productos">
-            {lines.fields.length === 0 ? (
-              <p className="text-sm text-foreground-muted">
-                Agrega los productos o servicios que vendes en esta factura.
+      <form noValidate onSubmit={onSave}>
+        <FormLayout
+          panel={
+            <StickySummaryPanel title="Resumen">
+              <p className="text-sm text-muted-foreground">
+                Estado: {STATE_PRESENTATION[state].label}
               </p>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {lines.fields.map((field, index) => {
-                  const position = index + 1;
-                  const lineError = errors.lines?.[index];
-                  const problems = draft && !isDirty ? lineIssues(position) : [];
-                  // El aviso suma todas las líneas del producto: se muestra junto a la última.
-                  const lastOfProduct = !lines.fields
-                    .slice(index + 1)
-                    .some((other) => other.productId === field.productId);
-                  const warning =
-                    draft && !isDirty && lastOfProduct
-                      ? stockWarnings.find((candidate) => candidate.productId === field.productId)
-                      : undefined;
-                  return (
-                    <li
-                      key={field.id}
-                      aria-label={`Línea ${position}: ${field.name}`}
-                      aria-invalid={problems.length > 0 || undefined}
-                      className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="flex min-w-0 flex-col">
-                          <span className="font-medium break-words">{field.name}</span>
-                          {field.mainCode && (
-                            <span className="text-xs text-foreground-muted">{field.mainCode}</span>
-                          )}
-                        </span>
-                        <RowActionButton
-                          icon={Trash2}
-                          label={`Quitar la línea ${position}`}
-                          onClick={() => lines.remove(index)}
-                        />
-                      </div>
-                      <div className="grid gap-2 sm:grid-cols-3">
-                        <FormField
-                          id={`cantidad-${index}`}
-                          label="Cantidad"
-                          error={lineError?.quantity?.message}
+              {/* Totales veraces (PO-2): solo los del servidor, nunca ceros ni cálculos aquí. */}
+              {!draft ? (
+                <p className="text-sm text-muted-foreground">
+                  Guarda el borrador para obtener los totales calculados por el servidor.
+                </p>
+              ) : isDirty ? (
+                <div data-slot="stale-totals" className="flex flex-col gap-2">
+                  <p className="text-sm font-medium">Totales del último guardado</p>
+                  {totals ? (
+                    <div className="text-muted-foreground">{totalsRows}</div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{noTotals}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">Guarda para recalcularlos.</p>
+                </div>
+              ) : totals ? (
+                totalsRows
+              ) : (
+                <p className="text-sm text-muted-foreground">{noTotals}</p>
+              )}
+              {preview && (
+                <p className="text-xs text-muted-foreground">
+                  Vista previa del {formatIssueDate(preview.evaluatedOn)}, sin validez fiscal.
+                </p>
+              )}
+              {generalIssues.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-sm font-semibold">Antes de emitir</h3>
+                  <IssueList issues={generalIssues} />
+                </div>
+              )}
+            </StickySummaryPanel>
+          }
+          actions={
+            <StickyFormActions
+              notice={
+                canEmit ? (
+                  <EmissionEnvironmentNotice
+                    document="factura"
+                    className="@max-form-rail:py-1 @max-form-rail:text-xs"
+                  />
+                ) : undefined
+              }
+              reason={canEmit ? emitHint : undefined}
+              reasonId={emitHintId}
+            >
+              {emitPrimary ? [emitButton, saveButton] : [saveButton, emitButton]}
+            </StickyFormActions>
+          }
+        >
+          {/* Mientras se guarda, el formulario no se edita: lo persistido es lo que se ve (D14). */}
+          <fieldset
+            disabled={saving}
+            aria-busy={saving || undefined}
+            className="contents"
+            data-slot="draft-fields"
+          >
+            <FormSection title="Comprador y punto de emisión">
+              <FormGrid>
+                <BuyerField
+                  buyer={buyer}
+                  problem={buyerProblem}
+                  onPick={() => setPickingBuyer(true)}
+                />
+                <FormField id="punto" label="Punto de emisión" problem={pointProblem}>
+                  <Select
+                    {...fieldAria("punto", undefined, undefined, pointProblem)}
+                    value={pointId}
+                    onChange={(event) =>
+                      form.setValue("emissionPointId", event.target.value, { shouldDirty: true })
+                    }
+                  >
+                    <option value="">Elige un punto</option>
+                    {points.map((point) => (
+                      <option key={point.id} value={point.id}>
+                        {point.label}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              </FormGrid>
+            </FormSection>
+
+            <FormSection
+              title="Productos"
+              action={
+                <Button variant="outline" size="default" onClick={() => setPickingProduct(true)}>
+                  <Plus aria-hidden="true" data-icon="inline-start" />
+                  Agregar producto
+                </Button>
+              }
+            >
+              {lines.fields.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Agrega los productos o servicios que vendes en esta factura.
+                </p>
+              ) : (
+                <div className="@container">
+                  {/* Encabezados visibles desde 40rem de contenedor; las etiquetas siguen en cada
+                      campo para las tecnologías de asistencia. */}
+                  <div
+                    aria-hidden="true"
+                    className="hidden gap-x-2 border-b pb-2 text-xs font-medium text-muted-foreground @form-wide:grid @form-wide:grid-cols-invoice-lines"
+                  >
+                    <span>Producto</span>
+                    <span>Cantidad</span>
+                    <span className="text-right">Precio unitario</span>
+                    <span>Descuento</span>
+                    <span className="text-right">Base imponible</span>
+                    <span />
+                  </div>
+                  <ul className="flex flex-col">
+                    {lines.fields.map((field, index) => {
+                      const position = index + 1;
+                      const lineError = errors.lines?.[index];
+                      const problems = lineIssues(position);
+                      // El aviso suma todas las líneas del producto: se muestra junto a la última.
+                      const lastOfProduct = !lines.fields
+                        .slice(index + 1)
+                        .some((other) => other.productId === field.productId);
+                      const warning =
+                        current && lastOfProduct
+                          ? stockWarnings.find(
+                              (candidate) => candidate.productId === field.productId,
+                            )
+                          : undefined;
+                      // La base imponible es la del servidor, y solo vale para la versión guardada.
+                      const base = current
+                        ? preview?.lines.find((line) => line.position === position)?.taxableBase
+                        : undefined;
+                      const baseText = base ? (
+                        formatUsd(base)
+                      ) : (
+                        <>
+                          <span aria-hidden="true">—</span>
+                          <span className="sr-only">se calcula al guardar</span>
+                        </>
+                      );
+                      return (
+                        <li
+                          key={field.id}
+                          aria-label={`Línea ${position}: ${field.name}`}
+                          aria-invalid={problems.length > 0 || undefined}
+                          className="grid grid-cols-3 gap-x-2 gap-y-2 border-b py-3 aria-invalid:bg-danger/5 @form-wide:grid-cols-invoice-lines @form-wide:items-start"
                         >
-                          <Input
-                            inputMode="decimal"
-                            {...fieldAria(`cantidad-${index}`, lineError?.quantity?.message)}
-                            {...form.register(`lines.${index}.quantity`)}
-                          />
-                        </FormField>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium">Precio unitario</span>
-                          <span className="flex h-10 items-center text-sm tabular-nums max-md:h-11">
-                            {formatUsd(field.unitPrice)}
+                          <div className="col-span-2 flex min-w-0 flex-col @form-wide:col-span-1 @form-wide:min-h-10 @form-wide:justify-center">
+                            <span className="font-medium break-words">{field.name}</span>
+                            {field.mainCode && (
+                              <span className="text-xs text-muted-foreground">
+                                {field.mainCode}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground tabular-nums @form-wide:hidden">
+                              Base imponible {baseText}
+                            </span>
+                          </div>
+                          <div className="col-start-3 row-start-1 flex justify-end @form-wide:col-start-6 @form-wide:min-h-10 @form-wide:items-center @form-wide:justify-center">
+                            <RowActionButton
+                              icon={Trash2}
+                              label={`Quitar la línea ${position}`}
+                              onClick={() => lines.remove(index)}
+                            />
+                          </div>
+                          <FormField
+                            id={`cantidad-${index}`}
+                            label="Cantidad"
+                            labelClassName="@form-wide:sr-only"
+                            error={lineError?.quantity?.message}
+                          >
+                            <Input
+                              inputMode="decimal"
+                              {...fieldAria(`cantidad-${index}`, lineError?.quantity?.message)}
+                              {...form.register(`lines.${index}.quantity`)}
+                            />
+                          </FormField>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium @form-wide:sr-only">
+                              Precio unitario
+                            </span>
+                            <span className="flex h-10 items-center text-sm tabular-nums max-md:h-11 @form-wide:justify-end">
+                              {formatUsd(field.unitPrice)}
+                            </span>
+                          </div>
+                          <FormField
+                            id={`descuento-${index}`}
+                            label="Descuento"
+                            labelClassName="@form-wide:sr-only"
+                            error={lineError?.discount?.message}
+                          >
+                            <Input
+                              inputMode="decimal"
+                              placeholder="0,00"
+                              {...fieldAria(`descuento-${index}`, lineError?.discount?.message)}
+                              {...form.register(`lines.${index}.discount`)}
+                            />
+                          </FormField>
+                          <span className="hidden h-10 items-center justify-end text-sm tabular-nums @form-wide:flex">
+                            {baseText}
                           </span>
-                        </div>
-                        <FormField
-                          id={`descuento-${index}`}
-                          label="Descuento"
-                          error={lineError?.discount?.message}
-                        >
-                          <Input
-                            inputMode="decimal"
-                            placeholder="0,00"
-                            {...fieldAria(`descuento-${index}`, lineError?.discount?.message)}
-                            {...form.register(`lines.${index}.discount`)}
+                          {(problems.length > 0 || warning) && (
+                            <div className="col-span-full flex flex-col gap-2">
+                              <IssueList issues={problems} />
+                              {warning && <StockWarningNote warning={warning} />}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </FormSection>
+
+            <FormSection
+              title="Formas de pago"
+              description={
+                payments.fields.length > 1
+                  ? "Cada forma de pago lleva su importe y deben sumar el total."
+                  : undefined
+              }
+              action={
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => payments.append({ paymentMethod: "", amount: "" })}
+                >
+                  <Plus aria-hidden="true" data-icon="inline-start" />
+                  Agregar forma de pago
+                </Button>
+              }
+            >
+              <div className="flex flex-col gap-4">
+                {payments.fields.map((field, index) => {
+                  const position = index + 1;
+                  const paymentError = errors.payments?.[index];
+                  const problems = paymentIssues(position);
+                  const hint = payments.fields.length === 1 ? ONE_PAYMENT_HINT : undefined;
+                  return (
+                    <FormFieldRow
+                      key={field.id}
+                      legend={`Forma de pago ${position}`}
+                      layout="payment"
+                    >
+                      <FormField
+                        id={`forma-${index}`}
+                        label="Forma de pago"
+                        error={paymentError?.paymentMethod?.message}
+                      >
+                        <Controller
+                          control={form.control}
+                          name={`payments.${index}.paymentMethod`}
+                          render={({ field: method }) => (
+                            <Select
+                              {...fieldAria(`forma-${index}`, paymentError?.paymentMethod?.message)}
+                              value={method.value}
+                              onChange={method.onChange}
+                              onBlur={method.onBlur}
+                              ref={method.ref}
+                            >
+                              <option value="">Elige la forma de pago</option>
+                              {methodOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </Select>
+                          )}
+                        />
+                      </FormField>
+                      <FormField
+                        id={`importe-${index}`}
+                        label="Importe"
+                        {...(hint ? { hint } : {})}
+                        error={paymentError?.amount?.message}
+                        action={
+                          <RowActionButton
+                            icon={Trash2}
+                            label={`Quitar la forma de pago ${position}`}
+                            onClick={() => payments.remove(index)}
                           />
-                        </FormField>
-                      </div>
-                      <IssueList issues={problems} />
-                      {warning && <StockWarningNote warning={warning} />}
-                    </li>
+                        }
+                      >
+                        <Input
+                          inputMode="decimal"
+                          {...fieldAria(`importe-${index}`, paymentError?.amount?.message, hint)}
+                          {...form.register(`payments.${index}.amount`)}
+                        />
+                      </FormField>
+                      {problems.length > 0 && (
+                        <div className="col-span-full">
+                          <IssueList issues={problems} />
+                        </div>
+                      )}
+                    </FormFieldRow>
                   );
                 })}
-              </ul>
-            )}
-            <Button
-              variant="outline"
-              className="self-start"
-              onClick={() => setPickingProduct(true)}
-            >
-              <Plus aria-hidden="true" />
-              Agregar producto
-            </Button>
-          </Section>
-
-          <Section title="Formas de pago">
-            <ul className="flex flex-col gap-3">
-              {payments.fields.map((field, index) => {
-                const position = index + 1;
-                const paymentError = errors.payments?.[index];
-                const problems = draft && !isDirty ? paymentIssues(position) : [];
-                return (
-                  <li
-                    key={field.id}
-                    className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto]"
-                  >
-                    <FormField
-                      id={`forma-${index}`}
-                      label={`Forma de pago ${position}`}
-                      error={paymentError?.paymentMethod?.message}
-                    >
-                      <Controller
-                        control={form.control}
-                        name={`payments.${index}.paymentMethod`}
-                        render={({ field: method }) => (
-                          <Select
-                            {...fieldAria(`forma-${index}`, paymentError?.paymentMethod?.message)}
-                            value={method.value}
-                            onChange={method.onChange}
-                            onBlur={method.onBlur}
-                            ref={method.ref}
-                          >
-                            <option value="">Elige la forma de pago</option>
-                            {methodOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </Select>
-                        )}
-                      />
-                    </FormField>
-                    <FormField
-                      id={`importe-${index}`}
-                      label="Importe"
-                      hint={payments.fields.length === 1 ? "Vacío: el total" : undefined}
-                      error={paymentError?.amount?.message}
-                    >
-                      <Input
-                        inputMode="decimal"
-                        {...fieldAria(
-                          `importe-${index}`,
-                          paymentError?.amount?.message,
-                          payments.fields.length === 1 ? "Vacío: el total" : undefined,
-                        )}
-                        {...form.register(`payments.${index}.amount`)}
-                      />
-                    </FormField>
-                    <RowActionButton
-                      icon={Trash2}
-                      label={`Quitar la forma de pago ${position}`}
-                      onClick={() => payments.remove(index)}
-                    />
-                    <div className="sm:col-span-3">
-                      <IssueList issues={problems} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            <Button
-              variant="outline"
-              className="self-start"
-              onClick={() => payments.append({ paymentMethod: "", amount: "" })}
-            >
-              <Plus aria-hidden="true" />
-              Agregar forma de pago
-            </Button>
-          </Section>
-        </div>
-
-        <aside
-          aria-labelledby="resumen-titulo"
-          className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start"
-        >
-          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
-            <h2 id="resumen-titulo" className="text-lg font-semibold">
-              Resumen
-            </h2>
-            {!draft || isDirty ? (
-              <p className="text-sm text-foreground-muted">
-                Guarda el borrador para calcular los totales con los precios y tarifas vigentes.
-              </p>
-            ) : preview?.totals ? (
-              <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
-                <dt>Subtotal sin impuestos</dt>
-                <dd className="text-right">{formatUsd(preview.totals.withoutTaxes)}</dd>
-                <dt>Descuento</dt>
-                <dd className="text-right">{formatUsd(preview.totals.discount)}</dd>
-                {preview.totals.taxes.map((tax) => (
-                  <div key={`${tax.taxCode}-${tax.rateCode}`} className="contents">
-                    <dt>IVA {formatPercentage(tax.percentage)}</dt>
-                    <dd className="text-right">{formatUsd(tax.amount)}</dd>
-                  </div>
-                ))}
-                <dt className="font-semibold">Total</dt>
-                <dd className="text-right font-semibold">{formatUsd(preview.totals.total)}</dd>
-              </dl>
-            ) : (
-              <p className="text-sm text-foreground-muted">
-                Los totales aparecen cuando todas las líneas se pueden calcular.
-              </p>
-            )}
-            {preview && !isDirty && (
-              <p className="text-xs text-foreground-muted">
-                Vista previa del {formatIssueDate(preview.evaluatedOn)}, sin validez fiscal.
-              </p>
-            )}
-            {draft && !isDirty && generalIssues.length > 0 && (
-              <div className="flex flex-col gap-1">
-                <h3 className="text-sm font-semibold">Antes de emitir</h3>
-                <IssueList issues={generalIssues} />
               </div>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            {canEmit && (
-              <Button
-                disabled={emitBlocked}
-                aria-describedby={emitHint ? emitHintId : undefined}
-                onClick={() => {
-                  idempotencyKey.current ||= crypto.randomUUID();
-                  setConfirming(true);
-                }}
-              >
-                Emitir factura
-              </Button>
-            )}
-            {canEmit && emitHint && (
-              <p id={emitHintId} className="text-xs text-foreground-muted">
-                {emitHint}
-              </p>
-            )}
-            <AsyncButton type="submit" variant="outline" pending={save.isPending}>
-              Guardar borrador
-            </AsyncButton>
-          </div>
-        </aside>
+            </FormSection>
+          </fieldset>
+        </FormLayout>
       </form>
 
       <EntityPickerDialog<PartyView>
@@ -646,7 +861,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
         renderItem={(party) => (
           <span className="flex flex-col">
             <span className="font-medium">{party.legalName}</span>
-            <span className="text-sm text-foreground-muted tabular-nums">
+            <span className="text-sm text-muted-foreground tabular-nums">
               {party.identification}
             </span>
           </span>
@@ -681,22 +896,33 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
             <span className="flex min-w-0 flex-col">
               <span className="font-medium break-words">{product.name}</span>
               {product.mainCode && (
-                <span className="text-xs text-foreground-muted">{product.mainCode}</span>
+                <span className="text-xs text-muted-foreground">{product.mainCode}</span>
               )}
             </span>
             <span className="text-sm tabular-nums">{formatUsd(product.unitPrice)}</span>
           </span>
         )}
-        onSelect={(product) =>
-          lines.append({
-            productId: product.id,
-            name: product.name,
-            mainCode: product.mainCode,
-            unitPrice: product.unitPrice,
-            quantity: "1",
-            discount: "",
-          })
-        }
+        onSelect={(product) => {
+          addedLine.current = lines.fields.length;
+          lines.append(
+            {
+              productId: product.id,
+              name: product.name,
+              mainCode: product.mainCode,
+              unitPrice: product.unitPrice,
+              quantity: "1",
+              discount: "",
+            },
+            { shouldFocus: false },
+          );
+        }}
+        onCloseAutoFocus={(event) => {
+          // Para cargar rápido con el teclado, el foco va a la cantidad de la línea nueva.
+          if (addedLine.current === null) return;
+          event.preventDefault();
+          form.setFocus(`lines.${addedLine.current}.quantity`, { shouldSelect: true });
+          addedLine.current = null;
+        }}
         emptyTitle="Todavía no hay productos"
         emptyDescription="Registra en Productos lo que vendes, con su precio y su IVA."
       />
@@ -708,12 +934,14 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
           title="Emitir factura"
           confirmLabel="Emitir factura"
           pending={emit.isPending}
-          onConfirm={() =>
+          onConfirm={() => {
+            if (emitting.current) return;
+            emitting.current = true;
             emit.mutate({
               draft: { id: draft.id, version: draft.version },
               idempotencyKey: idempotencyKey.current,
-            })
-          }
+            });
+          }}
           description={
             <div className="flex flex-col gap-2">
               <p>La emisión reserva el número de la factura y la firma; no se puede deshacer.</p>
@@ -729,6 +957,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                 <dt className="text-foreground-muted">Líneas</dt>
                 <dd className="tabular-nums">{draft.lines.length}</dd>
               </dl>
+              <EmissionEnvironmentNotice document="factura" />
               {draft.buyer?.systemRecord === "CONSUMER_FINAL" && (
                 <p className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-foreground">
                   Una factura a consumidor final tiene restricciones para anularse o corregirse con
@@ -744,6 +973,11 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   );
 }
 
+/** Encabezado de los estados del editor: el mismo `PageHeader` de editor, con sus migas. */
+function EditorStateHeader() {
+  return <PageHeader variant="editor" title="Borrador de factura" titleId="editor-titulo" />;
+}
+
 /** Editor de un borrador existente (`draftId`) o de uno nuevo (`null`). */
 export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
   const { me } = useSession();
@@ -754,12 +988,7 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
   if (!allowed) {
     return (
       <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <AppBreadcrumbs owner="page-header" />
-          <h1 id="editor-titulo" className="text-3xl font-bold">
-            Borrador de factura
-          </h1>
-        </div>
+        <EditorStateHeader />
         <EmptyState
           kind="no-permission"
           title="No tienes acceso a los borradores"
@@ -772,15 +1001,11 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
   if (draftId && draft.isError) {
     const error = draft.error;
     const emitted = error instanceof ApiError && error.code === "INVOICE_DRAFT_ALREADY_EMITTED";
+    // Un borrador de otra empresa es, para esta, inexistente: el servidor responde 404.
     const missing = error instanceof ApiError && error.status === 404;
     return (
       <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <AppBreadcrumbs owner="page-header" />
-          <h1 id="editor-titulo" className="text-3xl font-bold">
-            Borrador de factura
-          </h1>
-        </div>
+        <EditorStateHeader />
         {emitted || missing ? (
           <EmptyState
             kind="empty"
@@ -817,12 +1042,19 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
   );
 }
 
+/** Carga sin saltos: el mismo encabezado y la misma distribución que el editor. */
 export function DraftEditorSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Borrador de factura</h1>
-      <Skeleton className="h-20 w-full" />
-      <Skeleton className="h-48 w-full" />
+    <section aria-busy="true" aria-labelledby="editor-titulo" className="flex flex-col gap-6">
+      <EditorStateHeader />
+      <span className="sr-only" role="status">
+        Cargando el borrador
+      </span>
+      <FormLayout panel={<Skeleton className="h-48 w-full rounded-xl" />}>
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </FormLayout>
     </section>
   );
 }

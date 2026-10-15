@@ -380,7 +380,8 @@ test.describe("ventas, borradores y archivo (D25)", () => {
     const crumbs = page.getByRole("navigation", { name: "Ruta de navegación" });
     await expect(crumbs).toHaveCount(1);
     await expect(crumbs).toHaveText(/^Facturas\s*Nueva factura$/);
-    await expect(page.locator("header").getByRole("navigation")).toHaveCount(0);
+    // La barra superior es el `banner`; el `header` del editor, que sí lleva las migas, no lo es.
+    await expect(page.getByRole("banner").getByRole("navigation")).toHaveCount(0);
     await page.context().close();
   });
 });

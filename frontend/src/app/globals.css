@@ -255,6 +255,11 @@
   /* El formulario fluido y el panel de 18rem. */
   grid-template-columns: minmax(0, 1fr) 18rem;
 }
+@utility grid-cols-invoice-lines {
+  /* Líneas de la factura (design D13): producto fluido, cantidad, precio unitario, descuento, base
+     imponible del servidor y quitar. */
+  grid-template-columns: minmax(8rem, 1fr) 5.5rem 6rem 6.5rem 6.5rem 2.5rem;
+}
 @utility grid-cols-payment {
   /* La forma de pago fluida, de al menos 14rem, y el importe de 10rem con su «Quitar» de 2.5rem. */
   grid-template-columns: minmax(14rem, 1fr) 13rem;
@@ -263,7 +268,7 @@
 /* Con una barra de acciones fija al pie (`StickyFormActions`), el foco que el navegador lleva a la
    vista nunca queda debajo de ella (design D8). */
 html:has([data-slot="sticky-form-actions"]) {
-  scroll-padding-bottom: 8rem;
+  scroll-padding-bottom: 10rem;
 }
 
 @layer base {

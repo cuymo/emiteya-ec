@@ -246,6 +246,21 @@ export const STATES: State[] = [
     },
   },
   {
+    // La barra de acciones fija al pie, tal como se ve al desplazarse cuando el resumen se apila
+    // (design D8). La captura entera la dibuja donde estaba la ventana; esta es la ventana real.
+    route: "borrador",
+    state: "barra-acciones",
+    path: "/borradores/borrador-listo",
+    group: "editor",
+    widths: ["1024", "390", "1440z200"],
+    viewportOnly: true,
+    ready: (page) => heading(page, "Borrador de factura"),
+    act: async (page) => {
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+      await expect(page.getByRole("button", { name: "Emitir factura" })).toBeInViewport();
+    },
+  },
+  {
     route: "borrador",
     state: "problemas",
     path: "/borradores/borrador-problemas",

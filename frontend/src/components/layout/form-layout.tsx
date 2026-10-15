@@ -94,7 +94,8 @@ export function StickyFormActions({
     <div
       data-slot="sticky-form-actions"
       className={cn(
-        "sticky bottom-0 z-(--z-sticky) -mx-4 flex flex-col gap-2 border-t bg-background px-4 py-3 md:-mx-6 md:px-6",
+        // Apilado, una barra compacta: cuanto menos alto, menos contenido tapa al desplazar.
+        "sticky bottom-0 z-(--z-sticky) -mx-4 flex flex-col gap-2 border-t bg-background px-4 py-2 md:-mx-6 md:px-6",
         "@form-rail:static @form-rail:mx-0 @form-rail:border-t-0 @form-rail:bg-transparent @form-rail:p-0",
         className,
       )}
