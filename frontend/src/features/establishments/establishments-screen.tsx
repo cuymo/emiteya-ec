@@ -36,6 +36,9 @@ import {
 } from "./establishments-api";
 import { PointSequences, type SequencesState } from "./point-sequences";
 
+/** «Desactivar» lleva el texto en rojo: quita disponibilidad para emitir. «Reactivar» no. */
+const DEACTIVATE_TONE = "text-destructive hover:text-destructive";
+
 function PointStatus({ point }: { point: EmissionPointView }) {
   if (point.available) return <StatusBadge tone="success" label="Disponible" />;
   if (point.status === "INACTIVE") return <StatusBadge tone="neutral" label="Inactivo" />;
@@ -139,6 +142,7 @@ function PointRow({
           variant="outline"
           size="sm"
           aria-label={`${pointActive ? "Desactivar" : "Reactivar"} el punto ${label}`}
+          className={cn(pointActive && DEACTIVATE_TONE)}
           disabled={changePoint.isPending}
           onClick={() =>
             changePoint.mutate({
@@ -202,6 +206,7 @@ function EstablishmentItem({
             variant="outline"
             size="sm"
             aria-label={`${active ? "Desactivar" : "Reactivar"} el establecimiento ${code}`}
+            className={cn(active && DEACTIVATE_TONE)}
             disabled={changeStatus.isPending}
             onClick={() =>
               changeStatus.mutate({

@@ -12,7 +12,7 @@ import {
   type Environment,
   type FiscalSequenceView,
 } from "@facturador/contracts";
-import { Pencil } from "lucide-react";
+import { FlaskConical, Globe, Pencil } from "lucide-react";
 import { ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
@@ -128,9 +128,13 @@ export function PointSequences({
   return (
     <div id={id} className="basis-full rounded-md border border-border bg-background">
       {state.environment !== null && (
-        <p className="border-b border-border px-3 py-2 text-xs text-foreground-muted">
-          Secuenciales de {ENVIRONMENT_LABELS[state.environment]}, el ambiente vigente.
-        </p>
+        <div className="border-b border-border px-3 py-2">
+          <StatusBadge
+            tone={state.environment === "TEST" ? "warning" : "info"}
+            icon={state.environment === "TEST" ? FlaskConical : Globe}
+            label={`Ambiente: ${ENVIRONMENT_LABELS[state.environment]}`}
+          />
+        </div>
       )}
       {body}
     </div>

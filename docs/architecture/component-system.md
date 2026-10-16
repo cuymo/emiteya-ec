@@ -99,8 +99,9 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     establishment is a dashed card that closes the list instead of a header button. Each
     establishment ends with a dashed «Agregar punto de emisión» row, and its actions («Corregir
     dirección», «Desactivar» or «Reactivar», also on each point) are outline buttons with their
-    name visible, because a bare icon is not recognized as a button. Each point also has a
-    «Secuenciales» toggle that unfolds its counters for the current environment, each with
+    name visible, because a bare icon is not recognized as a button; «Desactivar» has red text.
+    Each point also has a «Secuenciales» toggle that unfolds its counters for the current
+    environment, under a small «Ambiente: Pruebas» or «Ambiente: Producción» badge, each with
     «Ajustar» (`point-sequences.tsx`); they used to have their own tab.
   - Firma electrónica is centered the same way, with its `h1` only for screen readers. One card
     holds the certificate data, then the expiry notice, and a footer with «Guardar aviso»

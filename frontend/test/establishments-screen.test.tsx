@@ -136,9 +136,10 @@ describe("Establecimientos (design D14)", () => {
     expect(await screen.findByText("Punto 001-001")).toBeDefined();
     expect(screen.getByText("Disponible")).toBeDefined();
     // Las acciones se leen como botones: con su nombre a la vista, no solo un ícono.
-    expect(
-      screen.getByRole("button", { name: "Desactivar el punto 001-001" }).textContent,
-    ).toContain("Desactivar");
+    const deactivate = screen.getByRole("button", { name: "Desactivar el punto 001-001" });
+    expect(deactivate.textContent).toContain("Desactivar");
+    // «Desactivar» lleva el texto en rojo.
+    expect(deactivate.className).toContain("text-destructive");
     await user.click(
       screen.getByRole("button", { name: "Agregar punto de emisión al establecimiento 001" }),
     );

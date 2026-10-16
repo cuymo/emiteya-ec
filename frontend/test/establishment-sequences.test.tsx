@@ -149,7 +149,7 @@ describe("secuenciales de cada punto (design D14)", () => {
     expect(rows[0]!.textContent).toContain("Último reservado 000000100");
     expect(rows[1]!.textContent).toContain("Siguiente 001-001-000000001");
     expect(rows[1]!.textContent).toContain("Último reservado —");
-    expect(screen.getByText("Secuenciales de Pruebas, el ambiente vigente.")).toBeDefined();
+    expect(screen.getByText("Ambiente: Pruebas")).toBeDefined();
     // Plegados hasta que se piden: el otro punto no los muestra.
     expect(screen.queryByRole("list", { name: "Secuenciales del punto 001-002" })).toBeNull();
   });
@@ -195,7 +195,7 @@ describe("secuenciales de cada punto (design D14)", () => {
     );
     const production = await rowsOf("001-001");
     expect(production[0]!.textContent).toContain("Siguiente 001-001-000001501");
-    expect(screen.getByText("Secuenciales de Producción, el ambiente vigente.")).toBeDefined();
+    expect(screen.getByText("Ambiente: Producción")).toBeDefined();
     expect(screen.queryByRole("radio")).toBeNull();
     expect(calls.some((call) => call.key === "GET /api/v1/fiscal-sequences?environment=TEST")).toBe(
       false,
