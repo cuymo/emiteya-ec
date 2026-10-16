@@ -16,6 +16,7 @@ import {
   renderApp,
   type Route,
 } from "./harness";
+import { chooseFilter } from "./filters";
 
 const document = (overrides: Record<string, unknown> = {}) => ({
   id: "doc-1",
@@ -193,14 +194,18 @@ describe("Reportes", () => {
   it("ofrece exactamente los cinco reportes, con las dos vistas del inventario", async () => {
     navigation.search = new URLSearchParams("reporte=inventario");
     render({ "GET /api/v1/reports/inventory-balances": paged([], null) });
-    const select = await screen.findByLabelText("Reporte");
-    expect(
-      within(select)
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual(["Documentos emitidos", "Facturas", "Retenciones", "Inventario", "Terceros"]);
-    expect(screen.getByRole("radio", { name: "Existencias" })).toBeDefined();
-    fireEvent.click(screen.getByRole("radio", { name: "Movimientos" }));
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("combobox", { name: "Reporte" }));
+    expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual([
+      "Documentos emitidos",
+      "Facturas",
+      "Retenciones",
+      "Inventario",
+      "Terceros",
+    ]);
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("combobox", { name: "Vista" }).textContent).toContain("Existencias");
+    await chooseFilter("Vista", "Movimientos");
     expect(navigation.replace).toHaveBeenCalledWith(
       "/reportes?reporte=inventario&vista=movimientos",
       {

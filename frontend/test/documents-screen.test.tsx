@@ -20,6 +20,7 @@ import {
   renderApp,
   type Route,
 } from "./harness";
+import { chooseFilter } from "./filters";
 
 const item = (overrides: Record<string, unknown> = {}) => ({
   id: "doc-1",
@@ -375,9 +376,10 @@ describe("Comprobantes", () => {
     ).toBeGreaterThan(0);
     const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/documents?"))!;
     expect(new URLSearchParams(call.key.split("?")[1]).get("documentType")).toBe("04");
-    const select = screen.getByLabelText("Tipo de comprobante") as HTMLSelectElement;
-    expect(select.value).toBe("04");
-    expect([...select.options].map((option) => option.textContent)).toEqual([
+    const type = screen.getByRole("combobox", { name: "Tipo" });
+    expect(type.textContent).toContain("Nota de crédito");
+    await userEvent.setup().click(type);
+    expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual([
       "Todos",
       "Factura",
       "Liquidación de compra",
@@ -386,23 +388,23 @@ describe("Comprobantes", () => {
       "Guía de remisión",
       "Comprobante de retención",
     ]);
-    fireEvent.change(select, { target: { value: "03" } });
+    await userEvent.setup().click(screen.getByRole("option", { name: "Liquidación de compra" }));
     expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=03", {
       scroll: false,
     });
-    fireEvent.change(select, { target: { value: "06" } });
+    await chooseFilter("Tipo", "Guía de remisión");
     expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=06", {
       scroll: false,
     });
-    fireEvent.change(select, { target: { value: "07" } });
+    await chooseFilter("Tipo", "Comprobante de retención");
     expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=07", {
       scroll: false,
     });
-    fireEvent.change(select, { target: { value: "01" } });
+    await chooseFilter("Tipo", "Factura");
     expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?tipo=01", {
       scroll: false,
     });
-    fireEvent.change(select, { target: { value: "" } });
+    await chooseFilter("Tipo", "Todos");
     expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes", { scroll: false });
   });
 
@@ -458,7 +460,7 @@ describe("Comprobantes", () => {
       search: "perno",
     });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("radio", { name: "Devueltos" }));
+    await chooseFilter("Estado", "Devueltos");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining("estado=devueltos"),
       { scroll: false },

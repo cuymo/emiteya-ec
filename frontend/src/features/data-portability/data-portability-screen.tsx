@@ -21,6 +21,7 @@ import { useMemo, useState } from "react";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
+import { DataTableCard } from "@/components/data-table/data-table-card";
 import { errorMessage, toast } from "@/components/feedback";
 import { useSession } from "@/components/session";
 import {
@@ -307,11 +308,14 @@ function History({ polling, now, current }: { polling: boolean; now: number; cur
   ) : undefined;
 
   return (
-    <section aria-labelledby="portabilidad-historial" className="flex flex-col gap-2">
-      <h2 id="portabilidad-historial" className="text-lg font-semibold">
-        Historial
-      </h2>
+    <DataTableCard
+      title="Historial"
+      titleId="portabilidad-historial"
+      titleAs="h2"
+      description="Las exportaciones pedidas por la empresa y su resultado."
+    >
       <AppDataTable
+        bare
         label="Historial de exportaciones"
         columns={columns}
         data={history.data?.data ?? []}
@@ -342,7 +346,7 @@ function History({ polling, now, current }: { polling: boolean; now: number; cur
           </div>
         )}
       />
-    </section>
+    </DataTableCard>
   );
 }
 

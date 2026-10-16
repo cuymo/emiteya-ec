@@ -25,13 +25,14 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
-import { ChipGroup, RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
+import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
 import { DatePickerField } from "@/components/date-picker-field";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
@@ -77,6 +78,11 @@ const detailPath = (item: DocumentListItem) => documentKind(item.documentType)?.
 const counterpartyLabel = (item: DocumentListItem) =>
   documentKind(item.documentType)?.counterpartyLabel ?? null;
 
+const CARD = {
+  title: "Archivo de comprobantes",
+  titleId: "comprobantes-titulo",
+  description: "Todos los comprobantes que emites, con su estado ante el SRI y su RIDE.",
+};
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
@@ -280,16 +286,15 @@ export function DocumentsScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="comprobantes-titulo" className="flex flex-col gap-6">
-        <h1 id="comprobantes-titulo" className="text-3xl font-bold">
-          Archivo de comprobantes
-        </h1>
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso al Archivo de comprobantes"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso al Archivo de comprobantes"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
@@ -340,87 +345,107 @@ export function DocumentsScreen() {
     )
   ) : undefined;
 
-  const advancedFilters = (
-    <div
-      id="filtros-avanzados"
-      className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-2 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-[repeat(6,minmax(0,1fr))]`}
-    >
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="filtro-tipo">Tipo de comprobante</Label>
-        <Select
-          id="filtro-tipo"
-          value={url.documentType ?? ""}
-          onChange={(event) => url.update({ tipo: event.target.value })}
-        >
-          {TYPE_FILTERS.map((filter) => (
-            <option key={filter.value} value={filter.value}>
-              {filter.label}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <DatePickerField
-        label="Desde"
-        value={url.from}
-        max={url.to || undefined}
-        onChange={(value) => url.update({ desde: value })}
+  // En un teléfono, los filtros salvo el estado se pliegan tras «Filtros»; desde 768 px, a la vista.
+  // Desde 768 px, los desplegables comparten la fila del estado (`md:contents`) y las fechas van debajo.
+  const folded = filtersOpen ? "flex" : "hidden";
+  const filters = (
+    <>
+      <DataTableSelectFilter
+        label="Estado"
+        value={url.filter}
+        options={STATE_FILTERS}
+        onChange={(value) => url.update({ estado: value === "todos" ? null : value })}
       />
-      <DatePickerField
-        label="Hasta"
-        value={url.to}
-        min={url.from || undefined}
-        error={rangeError}
-        onChange={(value) => url.update({ hasta: value })}
-      />
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="filtro-identificacion">Identificación del receptor</Label>
-        <Input
-          id="filtro-identificacion"
-          inputMode="numeric"
-          value={identificationDraft}
-          onChange={(event) => setIdentificationDraft(event.target.value)}
-        />
+      <Button
+        variant="outline"
+        size="sm"
+        className="max-md:w-full md:hidden"
+        aria-expanded={filtersOpen}
+        aria-controls="filtros-avanzados"
+        onClick={() => setFiltersOpen((open) => !open)}
+      >
+        <SlidersHorizontal aria-hidden="true" />
+        Filtros
+      </Button>
+      <div id="filtros-avanzados" className={`${folded} w-full flex-col gap-3 md:contents`}>
+        <div className="flex flex-col gap-3 md:contents">
+          <DataTableSelectFilter
+            label="Tipo"
+            value={url.documentType}
+            allLabel="Todos"
+            options={TYPE_FILTERS.filter((filter) => filter.value !== "").map((filter) => ({
+              value: filter.value,
+              label: filter.label,
+            }))}
+            onChange={(next) => url.update({ tipo: next ?? null })}
+          />
+          <DataTableSelectFilter
+            label="Establecimiento"
+            value={url.establishmentId || undefined}
+            allLabel="Todos"
+            options={establishmentOptions.map((establishment) => ({
+              value: establishment.id,
+              label: `${establishment.code} · ${establishment.address}`,
+            }))}
+            onChange={(next) => url.update({ establecimiento: next ?? null, punto: null })}
+          />
+          <DataTableSelectFilter
+            label="Punto de emisión"
+            value={url.emissionPointId || undefined}
+            allLabel="Todos"
+            disabled={!selectedEstablishment}
+            options={
+              selectedEstablishment?.emissionPoints.map((point) => ({
+                value: point.id,
+                label: pointLabel(selectedEstablishment, point),
+              })) ?? []
+            }
+            onChange={(next) => url.update({ punto: next ?? null })}
+          />
+        </div>
+        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 md:w-auto md:min-w-xl">
+          <DatePickerField
+            label="Desde"
+            value={url.from}
+            max={url.to || undefined}
+            onChange={(value) => url.update({ desde: value })}
+          />
+          <DatePickerField
+            label="Hasta"
+            value={url.to}
+            min={url.from || undefined}
+            error={rangeError}
+            onChange={(value) => url.update({ hasta: value })}
+          />
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="filtro-identificacion">Identificación del receptor</Label>
+            <Input
+              id="filtro-identificacion"
+              inputMode="numeric"
+              value={identificationDraft}
+              onChange={(event) => setIdentificationDraft(event.target.value)}
+            />
+          </div>
+        </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="filtro-establecimiento">Establecimiento</Label>
-        <Select
-          id="filtro-establecimiento"
-          value={url.establishmentId}
-          onChange={(event) => url.update({ establecimiento: event.target.value, punto: null })}
-        >
-          <option value="">Todos</option>
-          {establishmentOptions.map((establishment) => (
-            <option key={establishment.id} value={establishment.id}>
-              {establishment.code} · {establishment.address}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="filtro-punto">Punto de emisión</Label>
-        <Select
-          id="filtro-punto"
-          value={url.emissionPointId}
-          disabled={!selectedEstablishment}
-          onChange={(event) => url.update({ punto: event.target.value })}
-        >
-          <option value="">Todos</option>
-          {selectedEstablishment?.emissionPoints.map((point) => (
-            <option key={point.id} value={point.id}>
-              {pointLabel(selectedEstablishment, point)}
-            </option>
-          ))}
-        </Select>
-      </div>
-    </div>
+    </>
   );
 
   return (
-    <section aria-labelledby="comprobantes-titulo" className="flex flex-col gap-6">
-      <h1 id="comprobantes-titulo" className="text-3xl font-bold">
-        Archivo de comprobantes
-      </h1>
+    <DataTableCard
+      {...CARD}
+      search={
+        <SearchInput
+          value={searchDraft}
+          onChange={setSearchDraft}
+          label="Buscar por número o receptor"
+          placeholder="Número o receptor"
+        />
+      }
+      filters={filters}
+    >
       <AppDataTable
+        bare
         label="Comprobantes emitidos"
         columns={columns}
         data={rangeError ? [] : (documents.data?.data ?? [])}
@@ -434,35 +459,6 @@ export function DocumentsScreen() {
         loading={!rangeError && documents.isPending}
         refreshing={documents.isFetching}
         state={tableState}
-        toolbar={
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-4">
-              <SearchInput
-                value={searchDraft}
-                onChange={setSearchDraft}
-                label="Buscar por número o receptor"
-                placeholder="Número o receptor"
-              />
-              <Button
-                variant="outline"
-                className="md:hidden"
-                aria-expanded={filtersOpen}
-                aria-controls="filtros-avanzados"
-                onClick={() => setFiltersOpen((open) => !open)}
-              >
-                <SlidersHorizontal aria-hidden="true" />
-                Filtros
-              </Button>
-              <ChipGroup
-                label="Estado"
-                value={url.filter}
-                options={STATE_FILTERS}
-                onChange={(value) => url.update({ estado: value === "todos" ? null : value })}
-              />
-            </div>
-            {advancedFilters}
-          </div>
-        }
         renderCard={(item) => {
           const base = detailPath(item);
           return (
@@ -504,15 +500,17 @@ export function DocumentsScreen() {
           );
         }}
       />
-    </section>
+    </DataTableCard>
   );
 }
 
 export function DocumentsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <Skeleton className="h-10 w-48" />
-      <Skeleton className="h-60 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-60 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

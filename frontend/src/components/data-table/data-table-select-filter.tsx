@@ -34,6 +34,8 @@ type SelectFilterProps<T extends string> = {
   label: string;
   options: readonly SelectFilterOption<T>[];
   align?: "start" | "end";
+  /** El filtro depende de otro todavía sin elegir, como el punto sin establecimiento. */
+  disabled?: boolean;
 } & (
   | {
       /** Nombre de la opción que quita el filtro, como «Todos». */
@@ -51,12 +53,14 @@ export function DataTableSelectFilter<T extends string>({
   onChange,
   allLabel,
   align = "start",
+  disabled = false,
 }: SelectFilterProps<T>) {
   // Sin `allLabel` nunca se elige la opción que quita el filtro: el valor siempre es una opción.
   const change = onChange as (value: T | undefined) => void;
   return (
     <SelectMenu
       value={value ?? ALL}
+      disabled={disabled}
       onValueChange={(next) => change(next === ALL ? undefined : (next as T))}
     >
       <SelectMenuTrigger

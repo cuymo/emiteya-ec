@@ -29,9 +29,10 @@ import { Download, Info, LoaderCircle, PackageSearch, SlidersHorizontal, X } fro
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
 import { DatePickerField } from "@/components/date-picker-field";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
-import { SegmentedControl } from "@/components/segmented-control";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,11 @@ const ENVIRONMENT_PARAMS = { pruebas: "TEST", produccion: "PRODUCTION", todos: "
 type EnvironmentParam = keyof typeof ENVIRONMENT_PARAMS;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+const CARD = {
+  title: "Reportes",
+  titleId: "reportes-titulo",
+  description: "Consulta lo que registra la empresa y expórtalo a una hoja de cálculo.",
+};
 function reportOf(param: ReportParam, view: InventoryView): ReportId {
   switch (param) {
     case "facturas":
@@ -306,16 +312,15 @@ export function ReportsScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="reportes-titulo" className="flex flex-col gap-6">
-        <h1 id="reportes-titulo" className="text-3xl font-bold">
-          Reportes
-        </h1>
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Reportes"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Reportes"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
@@ -657,14 +662,13 @@ export function ReportsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="reportes-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 id="reportes-titulo" className="text-3xl font-bold">
-          Reportes
-        </h1>
-        {canExport ? (
-          <div className="flex flex-col items-end gap-1">
+    <>
+      <DataTableCard
+        {...CARD}
+        actions={
+          canExport ? (
             <Button
+              size="sm"
               onClick={runExport}
               disabled={exportReport.isPending || rangeError !== null || report.isPending}
               aria-busy={exportReport.isPending}
@@ -676,97 +680,96 @@ export function ReportsScreen() {
               )}
               {exportReport.isPending ? "Generando XLSX…" : "Exportar XLSX"}
             </Button>
-          </div>
-        ) : null}
-      </div>
-      {exportProblem?.key === filterKey ? (
-        <p role="alert" className="rounded-md border border-warning/40 bg-warning/10 p-2 text-sm">
-          {exportProblem.message}
-        </p>
-      ) : null}
-      <div className="flex flex-wrap items-end gap-4">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="reporte">Reporte</Label>
-          <Select
-            id="reporte"
-            value={url.reportParam}
-            onChange={(event) => chooseReport(event.target.value as ReportParam)}
-          >
-            {REPORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-        {url.reportParam === "inventario" ? (
-          <div className="flex flex-col gap-1">
-            <span id="vista-inventario" className="text-sm font-medium">
-              Vista
-            </span>
-            <SegmentedControl
-              aria-labelledby="vista-inventario"
-              options={INVENTORY_VIEWS}
-              value={url.view}
-              onChange={(view) => url.update({ ...cleared, vista: view })}
-            />
-          </div>
-        ) : null}
-        <p className="text-sm text-foreground-muted" aria-live="polite">
-          <span className="font-medium text-foreground tabular-nums">
-            {new Intl.NumberFormat("es-EC").format(total)}
-          </span>{" "}
-          {total === 1 ? "registro" : "registros"}
-          {hasEnvironment(url.report) && effectiveEnvironment
-            ? ` · Ambiente: ${REPORT_ENVIRONMENT_LABELS[effectiveEnvironment]}`
-            : null}
-        </p>
-      </div>
-      <p className="flex items-start gap-1 text-sm text-foreground-muted">
-        <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-        {REPORT_NOTICE}
-      </p>
-      <AppDataTable
-        label={REPORT_LABELS[url.report]}
-        columns={presentation.columns}
-        data={rangeError ? [] : rows}
-        getRowId={presentation.rowId}
-        total={total}
-        page={url.page}
-        pageSize={url.pageSize}
-        onPageChange={(page) => url.update({ pagina: String(page) }, false)}
-        onPageSizeChange={(size) => url.update({ filas: String(size) })}
-        columnVisibility={{}}
-        loading={!rangeError && report.isPending}
-        refreshing={report.isFetching}
-        state={tableState}
-        toolbar={
-          <div className="flex flex-col gap-3">
-            <Button
-              variant="outline"
-              className="w-fit md:hidden"
-              aria-expanded={filtersOpen}
-              aria-controls="filtros-reporte"
-              onClick={() => setFiltersOpen((open) => !open)}
-            >
-              <SlidersHorizontal aria-hidden="true" />
-              Filtros
-            </Button>
-            <div
-              id="filtros-reporte"
-              className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-2 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-4`}
-            >
-              {reportFilters}
-            </div>
-            {filtersActive ? (
-              <Button variant="ghost" className="w-fit" onClick={clearFilters}>
-                Limpiar filtros
-              </Button>
+          ) : null
+        }
+        lead={
+          <div className="flex flex-col gap-2 empty:hidden">
+            {exportProblem?.key === filterKey ? (
+              <p
+                role="alert"
+                className="rounded-md border border-warning/40 bg-warning/10 p-2 text-sm"
+              >
+                {exportProblem.message}
+              </p>
             ) : null}
+            <p className="flex items-start gap-1 text-sm text-foreground-muted">
+              <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+              {REPORT_NOTICE}
+            </p>
           </div>
         }
-        renderCard={presentation.card}
-      />
+        filters={
+          <>
+            <DataTableSelectFilter<ReportParam>
+              label="Reporte"
+              value={url.reportParam}
+              options={REPORT_OPTIONS}
+              onChange={chooseReport}
+            />
+            {url.reportParam === "inventario" ? (
+              <DataTableSelectFilter<InventoryView>
+                label="Vista"
+                value={url.view}
+                options={INVENTORY_VIEWS}
+                onChange={(view) => url.update({ ...cleared, vista: view })}
+              />
+            ) : null}
+            <p className="text-sm text-foreground-muted" aria-live="polite">
+              <span className="font-medium text-foreground tabular-nums">
+                {new Intl.NumberFormat("es-EC").format(total)}
+              </span>{" "}
+              {total === 1 ? "registro" : "registros"}
+              {hasEnvironment(url.report) && effectiveEnvironment
+                ? ` · Ambiente: ${REPORT_ENVIRONMENT_LABELS[effectiveEnvironment]}`
+                : null}
+            </p>
+            {/* Los parámetros del reporte son campos con etiqueta (fechas, identificaciones,
+                producto): en un teléfono se pliegan tras «Filtros». */}
+            <div className="flex w-full flex-col gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-fit md:hidden"
+                aria-expanded={filtersOpen}
+                aria-controls="filtros-reporte"
+                onClick={() => setFiltersOpen((open) => !open)}
+              >
+                <SlidersHorizontal aria-hidden="true" />
+                Filtros
+              </Button>
+              <div
+                id="filtros-reporte"
+                className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-2 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-4`}
+              >
+                {reportFilters}
+              </div>
+              {filtersActive ? (
+                <Button variant="ghost" size="sm" className="w-fit" onClick={clearFilters}>
+                  Limpiar filtros
+                </Button>
+              ) : null}
+            </div>
+          </>
+        }
+      >
+        <AppDataTable
+          bare
+          label={REPORT_LABELS[url.report]}
+          columns={presentation.columns}
+          data={rangeError ? [] : rows}
+          getRowId={presentation.rowId}
+          total={total}
+          page={url.page}
+          pageSize={url.pageSize}
+          onPageChange={(page) => url.update({ pagina: String(page) }, false)}
+          onPageSizeChange={(size) => url.update({ filas: String(size) })}
+          columnVisibility={{}}
+          loading={!rangeError && report.isPending}
+          refreshing={report.isFetching}
+          state={tableState}
+          renderCard={presentation.card}
+        />
+      </DataTableCard>
       <EntityPickerDialog<ProductView>
         open={pickerOpen}
         onOpenChange={setPickerOpen}
@@ -790,15 +793,17 @@ export function ReportsScreen() {
         }}
         emptyTitle="No hay productos que coincidan"
       />
-    </section>
+    </>
   );
 }
 
 export function ReportsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <Skeleton className="h-10 w-48" />
-      <Skeleton className="h-60 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-60 w-full" />
+      </div>
+    </DataTableCard>
   );
 }
