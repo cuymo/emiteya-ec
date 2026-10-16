@@ -902,7 +902,9 @@ function seedDocumentsSql(context: {
     const issueDate = isoDate(Math.floor((180 - index) * 0.8));
     const consumerFinal = index % 11 === 0;
     const buyer = rand.pick(customers);
-    const chosen = Array.from({ length: rand.int(1, 5) }, () => rand.pick(products));
+    // La última factura lleva muchas líneas, para ver la búsqueda y las páginas de su detalle.
+    const lineCount = index === 179 ? 36 : rand.int(1, 5);
+    const chosen = Array.from({ length: lineCount }, () => rand.pick(products));
     const computed = chosen.map((product) => {
       const rate = { taxCode: "2", rateCode: product.iva, percentage: percentage(product.iva) };
       const quantity = String(product.kind === "SERVICE" ? rand.int(1, 3) : rand.int(1, 40));
