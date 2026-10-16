@@ -22,12 +22,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
-import { ChipGroup, RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
+import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
@@ -66,6 +66,11 @@ const CAUSE_PARAMS: Record<CreditNoteCause, string> = {
 const causeOf = (param: string | null): CreditNoteCause | undefined =>
   CREDIT_NOTE_CAUSES.find((cause) => CAUSE_PARAMS[cause] === param);
 
+const CARD = {
+  title: "Notas de crédito",
+  titleId: "notas-titulo",
+  description: "Las notas de crédito que corrigen tus facturas autorizadas.",
+};
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
@@ -252,29 +257,25 @@ export function CreditNotesScreen() {
     [],
   );
 
-  const title = (
-    <h1 id="notas-titulo" className="text-3xl font-bold">
-      Notas de crédito
-    </h1>
-  );
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="notas-titulo" className="flex flex-col gap-6">
-        {title}
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Notas de crédito"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Notas de crédito"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
   // La acción va en el encabezado como principal; el estado vacío la repite en `outline`, sin una
   // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
-  const newNote = (variant: "primary" | "outline") =>
+  const newNote = (variant: "primary" | "outline", size: "default" | "sm" = "default") =>
     canDraft ? (
-      <Button asChild variant={variant}>
+      <Button asChild variant={variant} size={size}>
         <Link href="/notas-credito/borradores/nueva">
           <Plus aria-hidden="true" />
           Nueva nota de crédito
@@ -315,13 +316,41 @@ export function CreditNotesScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="notas-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {title}
-        {newNote("primary")}
-      </div>
-      {canDraft && <DraftsPanel />}
+    <DataTableCard
+      {...CARD}
+      search={
+        <SearchInput
+          value={searchDraft}
+          onChange={setSearchDraft}
+          label="Buscar por número o comprador"
+          placeholder="Número o comprador"
+        />
+      }
+      actions={newNote("primary", "sm")}
+      lead={canDraft ? <DraftsPanel /> : undefined}
+      filters={
+        <>
+          <DataTableSelectFilter
+            label="Causa"
+            value={url.cause ? CAUSE_PARAMS[url.cause] : undefined}
+            allLabel="Todas"
+            options={CREDIT_NOTE_CAUSES.map((cause) => ({
+              value: CAUSE_PARAMS[cause],
+              label: CREDIT_NOTE_CAUSE_LABELS[cause],
+            }))}
+            onChange={(next) => url.update({ causa: next ?? null })}
+          />
+          <DataTableSelectFilter
+            label="Estado"
+            value={url.filter}
+            options={STATE_FILTERS}
+            onChange={(value) => url.update({ estado: value === "todas" ? null : value })}
+          />
+        </>
+      }
+    >
       <AppDataTable
+        bare
         label="Notas de crédito emitidas"
         columns={columns}
         data={notes.data?.data ?? []}
@@ -335,39 +364,6 @@ export function CreditNotesScreen() {
         loading={notes.isPending}
         refreshing={notes.isFetching}
         state={tableState}
-        toolbar={
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-end gap-4">
-              <SearchInput
-                value={searchDraft}
-                onChange={setSearchDraft}
-                label="Buscar por número o comprador"
-                placeholder="Número o comprador"
-              />
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="filtro-causa">Causa</Label>
-                <Select
-                  id="filtro-causa"
-                  value={url.cause ? CAUSE_PARAMS[url.cause] : ""}
-                  onChange={(event) => url.update({ causa: event.target.value })}
-                >
-                  <option value="">Todas</option>
-                  {CREDIT_NOTE_CAUSES.map((cause) => (
-                    <option key={cause} value={CAUSE_PARAMS[cause]}>
-                      {CREDIT_NOTE_CAUSE_LABELS[cause]}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-            <ChipGroup
-              label="Estado"
-              value={url.filter}
-              options={STATE_FILTERS}
-              onChange={(value) => url.update({ estado: value === "todas" ? null : value })}
-            />
-          </div>
-        }
         renderCard={(note) => (
           <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
@@ -389,16 +385,17 @@ export function CreditNotesScreen() {
           </div>
         )}
       />
-    </section>
+    </DataTableCard>
   );
 }
 
 export function CreditNotesSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Notas de crédito</h1>
-      <Skeleton className="h-10 w-full max-w-md" />
-      <Skeleton className="h-64 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

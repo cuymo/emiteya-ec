@@ -17,6 +17,7 @@ import {
   type Route,
 } from "./harness";
 import { settlementSummary } from "./purchase-settlement-fixtures";
+import { chooseFilter } from "./filters";
 
 // La política vigente da los permisos de la liquidación a los dos roles: se retiran para probarlos.
 const permissions = vi.hoisted(() => ({ deny: new Set<string>() }));
@@ -184,7 +185,7 @@ describe("pantalla Liquidaciones de compra", () => {
       state: "MANUAL_REVIEW",
     });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("radio", { name: "Devueltas" }));
+    await chooseFilter("Estado", "Devueltas");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining("estado=devueltas"),
       { scroll: false },

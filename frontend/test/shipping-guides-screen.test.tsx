@@ -17,6 +17,7 @@ import {
   type Route,
 } from "./harness";
 import { guideDraftSummary, guideSummary } from "./shipping-guide-fixtures";
+import { chooseFilter } from "./filters";
 
 const paged =
   (data: unknown[]): Route =>
@@ -160,7 +161,7 @@ describe("pantalla Guías de remisión", () => {
       state: "MANUAL_REVIEW",
     });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("radio", { name: "Devueltas" }));
+    await chooseFilter("Estado", "Devueltas");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining("estado=devueltas"),
       { scroll: false },

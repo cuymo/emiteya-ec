@@ -1,6 +1,6 @@
 // Notas de débito (add-debit-notes, tarea 11.1, design D23): carga, vacío, error con reintento, sin
 // permiso, filtros en la URL y los borradores en curso con su eliminación.
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -16,6 +16,7 @@ import {
   renderApp,
   type Route,
 } from "./harness";
+import { chooseFilter } from "./filters";
 
 const paged =
   (data: unknown[]): Route =>
@@ -154,11 +155,11 @@ describe("pantalla Notas de débito", () => {
       state: "MANUAL_REVIEW",
       cause: "LATE_PAYMENT_INTEREST",
     });
-    fireEvent.change(screen.getByLabelText("Causa"), { target: { value: "costos" } });
+    await chooseFilter("Causa", "Costos o gastos posteriores a la factura");
     expect(navigation.replace).toHaveBeenLastCalledWith(expect.stringContaining("causa=costos"), {
       scroll: false,
     });
-    await userEvent.setup().click(screen.getByRole("radio", { name: "Devueltas" }));
+    await chooseFilter("Estado", "Devueltas");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining("estado=devueltas"),
       { scroll: false },

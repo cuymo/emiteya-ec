@@ -383,7 +383,7 @@ export function InvoicesScreen() {
       actions={canDraft ? <NewInvoiceLink size="sm" /> : undefined}
       filters={
         <>
-          <DataTableSelectFilter
+          <DataTableSelectFilter<View>
             label="Vista"
             value={view}
             options={[
@@ -396,7 +396,7 @@ export function InvoicesScreen() {
             ]}
             onChange={(next) => url.update({ vista: next === "atencion" ? next : null })}
           />
-          <DataTableSelectFilter
+          <DataTableSelectFilter<InvoiceState>
             label="Estado"
             value={state}
             allLabel="Todos"

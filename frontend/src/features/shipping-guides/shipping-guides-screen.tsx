@@ -20,7 +20,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
-import { ChipGroup, RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
+import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -59,6 +61,11 @@ const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: Invoi
 const isStateFilter = (value: string | null): value is StateFilter =>
   STATE_FILTERS.some((filter) => filter.value === value);
 
+const CARD = {
+  title: "Guías de remisión",
+  titleId: "guias-titulo",
+  description: "Las guías que acompañan el traslado de tus mercaderías.",
+};
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
@@ -227,29 +234,25 @@ export function ShippingGuidesScreen() {
     [],
   );
 
-  const title = (
-    <h1 id="guias-titulo" className="text-3xl font-bold">
-      Guías de remisión
-    </h1>
-  );
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="guias-titulo" className="flex flex-col gap-6">
-        {title}
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Guías de remisión"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Guías de remisión"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
   // La acción va en el encabezado como principal; el estado vacío la repite en `outline`, sin una
   // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
-  const newGuide = (variant: "primary" | "outline") =>
+  const newGuide = (variant: "primary" | "outline", size: "default" | "sm" = "default") =>
     canDraft ? (
-      <Button asChild variant={variant}>
+      <Button asChild variant={variant} size={size}>
         <Link href="/guias-remision/borradores/nueva">
           <Plus aria-hidden="true" />
           Nueva guía de remisión
@@ -290,13 +293,31 @@ export function ShippingGuidesScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="guias-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {title}
-        {newGuide("primary")}
-      </div>
-      {canDraft && <DraftsPanel />}
+    <DataTableCard
+      {...CARD}
+      search={
+        <SearchInput
+          value={searchDraft}
+          onChange={setSearchDraft}
+          label="Buscar por número, transportista o destinatario"
+          placeholder="Número o identificación"
+        />
+      }
+      actions={newGuide("primary", "sm")}
+      lead={canDraft ? <DraftsPanel /> : undefined}
+      filters={
+        <>
+          <DataTableSelectFilter
+            label="Estado"
+            value={url.filter}
+            options={STATE_FILTERS}
+            onChange={(value) => url.update({ estado: value === "todas" ? null : value })}
+          />
+        </>
+      }
+    >
       <AppDataTable
+        bare
         label="Guías de remisión emitidas"
         columns={columns}
         data={guides.data?.data ?? []}
@@ -310,22 +331,6 @@ export function ShippingGuidesScreen() {
         loading={guides.isPending}
         refreshing={guides.isFetching}
         state={tableState}
-        toolbar={
-          <div className="flex flex-col gap-3">
-            <SearchInput
-              value={searchDraft}
-              onChange={setSearchDraft}
-              label="Buscar por número, transportista o destinatario"
-              placeholder="Número o identificación"
-            />
-            <ChipGroup
-              label="Estado"
-              value={url.filter}
-              options={STATE_FILTERS}
-              onChange={(value) => url.update({ estado: value === "todas" ? null : value })}
-            />
-          </div>
-        }
         renderCard={(guide) => (
           <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
@@ -347,16 +352,17 @@ export function ShippingGuidesScreen() {
           </div>
         )}
       />
-    </section>
+    </DataTableCard>
   );
 }
 
 export function ShippingGuidesSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Guías de remisión</h1>
-      <Skeleton className="h-10 w-full max-w-md" />
-      <Skeleton className="h-64 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

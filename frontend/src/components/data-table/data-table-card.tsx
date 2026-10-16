@@ -20,6 +20,7 @@ export function DataTableCard({
   actions,
   filters,
   filtersEnd,
+  lead,
   className,
   busy,
   children,
@@ -36,6 +37,8 @@ export function DataTableCard({
   filters?: ReactNode;
   /** Al final de la fila de filtros, como «Limpiar filtros». */
   filtersEnd?: ReactNode;
+  /** Antes de los filtros, como los borradores en curso del módulo. */
+  lead?: ReactNode;
   className?: string;
   /** La pantalla todavía lee sus parámetros: la región se anuncia ocupada. */
   busy?: boolean;
@@ -62,6 +65,7 @@ export function DataTableCard({
           )}
         </CardHeader>
         <CardContent className="flex flex-col gap-4 px-0">
+          {lead && <div className="px-4 empty:hidden">{lead}</div>}
           {(filters || filtersEnd) && (
             <div className="flex flex-wrap items-center justify-between gap-3 px-4">
               <div

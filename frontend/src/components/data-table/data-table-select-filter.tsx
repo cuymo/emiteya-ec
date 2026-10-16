@@ -30,6 +30,20 @@ export type SelectFilterOption<T extends string> = {
 /** Valor interno de la opción que quita el filtro: Radix no admite un valor vacío. */
 const ALL = "__todos__";
 
+type SelectFilterProps<T extends string> = {
+  label: string;
+  options: readonly SelectFilterOption<T>[];
+  align?: "start" | "end";
+} & (
+  | {
+      /** Nombre de la opción que quita el filtro, como «Todos». */
+      allLabel: string;
+      value: T | undefined;
+      onChange: (value: T | undefined) => void;
+    }
+  | { allLabel?: undefined; value: T; onChange: (value: T) => void }
+);
+
 export function DataTableSelectFilter<T extends string>({
   label,
   value,
@@ -37,18 +51,13 @@ export function DataTableSelectFilter<T extends string>({
   onChange,
   allLabel,
   align = "start",
-}: {
-  label: string;
-  value: T | undefined;
-  options: readonly SelectFilterOption<T>[];
-  onChange: (value: T | undefined) => void;
-  allLabel?: string;
-  align?: "start" | "end";
-}) {
+}: SelectFilterProps<T>) {
+  // Sin `allLabel` nunca se elige la opción que quita el filtro: el valor siempre es una opción.
+  const change = onChange as (value: T | undefined) => void;
   return (
     <SelectMenu
       value={value ?? ALL}
-      onValueChange={(next) => onChange(next === ALL ? undefined : (next as T))}
+      onValueChange={(next) => change(next === ALL ? undefined : (next as T))}
     >
       <SelectMenuTrigger
         size="sm"

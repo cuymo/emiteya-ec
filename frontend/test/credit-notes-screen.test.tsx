@@ -3,7 +3,7 @@
 // borradores en curso, las declaraciones mostradas como declaradas por el usuario, el reintento de
 // la firma, la transmisión y los documentos, y "Emitir nota de crédito" solo para una factura elegible
 // y con permiso.
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -26,6 +26,7 @@ import {
   renderApp,
   type Route,
 } from "./harness";
+import { chooseFilter } from "./filters";
 
 const ok =
   (data: unknown): Route =>
@@ -163,12 +164,12 @@ describe("pantalla Notas de crédito", () => {
       state: "MANUAL_REVIEW",
       cause: "TOTAL_ANNULMENT",
     });
-    fireEvent.change(screen.getByLabelText("Causa"), { target: { value: "devolucion" } });
+    await chooseFilter("Causa", "Devolución");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining("causa=devolucion"),
       { scroll: false },
     );
-    await userEvent.setup().click(screen.getByRole("radio", { name: "Devueltas" }));
+    await chooseFilter("Estado", "Devueltas");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining("estado=devueltas"),
       { scroll: false },

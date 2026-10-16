@@ -1,7 +1,7 @@
 // Retenciones (add-withholding-receipts, tarea 12.1, design D24): lista con número, proveedor,
 // período, total retenido y estado; carga, vacío, error con reintento, sin permiso, filtros de
 // estado y período en la URL y los borradores en curso con su eliminación.
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -17,6 +17,7 @@ import {
   type Route,
 } from "./harness";
 import { withholdingDraftSummary, withholdingSummary } from "./withholding-fixtures";
+import { chooseFilter } from "./filters";
 
 const paged =
   (data: unknown[]): Route =>
@@ -159,14 +160,15 @@ describe("pantalla Retenciones", () => {
       state: "MANUAL_REVIEW",
       fiscalPeriod: "09/2026",
     });
-    const period = screen.getByLabelText("Período fiscal") as HTMLSelectElement;
-    expect(period.value).toBe("2026-09");
-    fireEvent.change(period, { target: { value: "2026-08" } });
+    expect(screen.getByRole("combobox", { name: "Período fiscal" }).textContent).toContain(
+      "Septiembre de 2026",
+    );
+    await chooseFilter("Período fiscal", "Agosto de 2026");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining("periodo=2026-08"),
       { scroll: false },
     );
-    await userEvent.setup().click(screen.getByRole("radio", { name: "Devueltas" }));
+    await chooseFilter("Estado", "Devueltas");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       expect.stringContaining("estado=devueltas"),
       { scroll: false },

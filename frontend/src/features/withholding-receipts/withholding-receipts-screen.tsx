@@ -20,12 +20,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
-import { ChipGroup, RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
+import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
@@ -71,6 +71,12 @@ const periodOf = (param: string | null): string | undefined => {
 const periodParam = (period: string) => `${period.slice(3)}-${period.slice(0, 2)}`;
 
 /** El mes de hoy y los once anteriores, del más reciente al más antiguo. */
+
+const CARD = {
+  title: "Retenciones",
+  titleId: "retenciones-titulo",
+  description: "Los comprobantes de retención que emites a tus proveedores.",
+};
 function recentPeriods(today = new Date()): string[] {
   return Array.from({ length: 12 }, (_, offset) => {
     const date = new Date(today.getFullYear(), today.getMonth() - offset, 1);
@@ -268,29 +274,25 @@ export function WithholdingReceiptsScreen() {
     [],
   );
 
-  const title = (
-    <h1 id="retenciones-titulo" className="text-3xl font-bold">
-      Retenciones
-    </h1>
-  );
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="retenciones-titulo" className="flex flex-col gap-6">
-        {title}
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Retenciones"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Retenciones"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
   // La acción va en el encabezado como principal; el estado vacío la repite en `outline`, sin una
   // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
-  const newReceipt = (variant: "primary" | "outline") =>
+  const newReceipt = (variant: "primary" | "outline", size: "default" | "sm" = "default") =>
     canDraft ? (
-      <Button asChild variant={variant}>
+      <Button asChild variant={variant} size={size}>
         <Link href="/retenciones/borradores/nueva">
           <Plus aria-hidden="true" />
           Nueva retención
@@ -331,13 +333,41 @@ export function WithholdingReceiptsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="retenciones-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {title}
-        {newReceipt("primary")}
-      </div>
-      {canDraft && <DraftsPanel />}
+    <DataTableCard
+      {...CARD}
+      search={
+        <SearchInput
+          value={searchDraft}
+          onChange={setSearchDraft}
+          label="Buscar por número o proveedor"
+          placeholder="Número o proveedor"
+        />
+      }
+      actions={newReceipt("primary", "sm")}
+      lead={canDraft ? <DraftsPanel /> : undefined}
+      filters={
+        <>
+          <DataTableSelectFilter
+            label="Período fiscal"
+            value={url.period ? periodParam(url.period) : undefined}
+            allLabel="Todos"
+            options={periods.map((period) => ({
+              value: periodParam(period),
+              label: formatPeriod(period),
+            }))}
+            onChange={(next) => url.update({ periodo: next ?? null })}
+          />
+          <DataTableSelectFilter
+            label="Estado"
+            value={url.filter}
+            options={STATE_FILTERS}
+            onChange={(value) => url.update({ estado: value === "todas" ? null : value })}
+          />
+        </>
+      }
+    >
       <AppDataTable
+        bare
         label="Retenciones emitidas"
         columns={columns}
         data={receipts.data?.data ?? []}
@@ -351,39 +381,6 @@ export function WithholdingReceiptsScreen() {
         loading={receipts.isPending}
         refreshing={receipts.isFetching}
         state={tableState}
-        toolbar={
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-end gap-4">
-              <SearchInput
-                value={searchDraft}
-                onChange={setSearchDraft}
-                label="Buscar por número o proveedor"
-                placeholder="Número o proveedor"
-              />
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="filtro-periodo">Período fiscal</Label>
-                <Select
-                  id="filtro-periodo"
-                  value={url.period ? periodParam(url.period) : ""}
-                  onChange={(event) => url.update({ periodo: event.target.value })}
-                >
-                  <option value="">Todos</option>
-                  {periods.map((period) => (
-                    <option key={period} value={periodParam(period)}>
-                      {formatPeriod(period)}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-            <ChipGroup
-              label="Estado"
-              value={url.filter}
-              options={STATE_FILTERS}
-              onChange={(value) => url.update({ estado: value === "todas" ? null : value })}
-            />
-          </div>
-        }
         renderCard={(receipt) => (
           <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
@@ -404,16 +401,17 @@ export function WithholdingReceiptsScreen() {
           </div>
         )}
       />
-    </section>
+    </DataTableCard>
   );
 }
 
 export function WithholdingReceiptsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Retenciones</h1>
-      <Skeleton className="h-10 w-full max-w-md" />
-      <Skeleton className="h-64 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

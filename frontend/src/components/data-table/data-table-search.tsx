@@ -55,7 +55,7 @@ export function DataTableSearch({
         value={draft}
         maxLength={maxLength}
         onChange={(event) => setDraft(event.target.value)}
-        className="h-8 pr-9 pl-8 [&::-webkit-search-cancel-button]:hidden"
+        className="h-8 rounded-lg pr-9 pl-8 [&::-webkit-search-cancel-button]:hidden"
       />
       {draft !== "" && (
         <Button
