@@ -76,7 +76,9 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     prefix («Estado: Activos»). It is recognized by its text, not by color.
   - `SegmentedControl`: the chosen option is a raised `bg-background` piece with a small shadow and
     a `muted-foreground` ring, inside a `muted` track, like the template's `toggle-group`. The ring
-    contrasts at least 3:1 with the track and with the piece in both themes.
+    contrasts at least 3:1 with the track and with the piece in both themes. One exception, by
+    owner decision (2026-10-16): «Obligada a llevar contabilidad» in Empresa uses
+    `tone="primary"`, a raised `bg-primary` piece that keeps the same shape.
   - Facturas' views (`ui/toggle.tsx`) already followed this rule; the legacy lists and forms now
     match it without being migrated.
 - **One primary per surface, also when empty** (design D11). When the page header offers an

@@ -71,6 +71,28 @@ describe("SegmentedControl: selección neutra (productize-invoice-editor-and-com
     expect(chosen.className).not.toContain("bg-primary");
     expect(chosen.parentElement!.className.split(/\s+/)).toContain("bg-muted");
   });
+
+  it("con tone primary, la opción elegida va en el azul primario y conserva su forma", () => {
+    render(
+      <SegmentedControl
+        tone="primary"
+        options={[
+          { value: "SI", label: "Sí" },
+          { value: "NO", label: "No" },
+        ]}
+        value="SI"
+        onChange={() => undefined}
+      />,
+    );
+    const classes = screen.getByRole("radio", { name: "Sí" }).className.split(/\s+/);
+    for (const token of [
+      "data-[state=on]:bg-primary",
+      "data-[state=on]:text-primary-foreground",
+      "data-[state=on]:shadow-sm",
+      "data-[state=on]:ring-1",
+    ])
+      expect(classes, token).toContain(token);
+  });
 });
 
 describe("ConfirmDialog", () => {

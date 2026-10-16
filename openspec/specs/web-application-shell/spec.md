@@ -450,7 +450,8 @@ ese momento no puede ejecutarse SHALL percibirse como no disponible, sin el aspe
 principal, y su motivo SHALL estar escrito junto a ella. Cuando el encabezado de la pantalla ya
 ofrece la acción principal, el estado vacío SHALL ofrecer la misma acción solo como secundaria. Las
 opciones elegidas en vistas, filtros y controles segmentados SHALL distinguirse sin usar la
-presentación de la acción principal, y nunca solo por el color.
+presentación de la acción principal, y nunca solo por el color. La única excepción es «Obligada a
+llevar contabilidad» en Empresa, cuya opción elegida va en el azul primario sin perder su forma.
 
 #### Scenario: Acción no disponible
 - **WHEN** un operador ve la acción de cambiar a Producción mientras la empresa aún no puede emitir

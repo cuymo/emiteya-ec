@@ -152,6 +152,10 @@ describe("Empresa (design D14)", () => {
     // El pie lleva solo «Guardar datos»: sin la versión ni el aviso.
     expect(screen.queryByText(/Versión/)).toBeNull();
     expect(screen.queryByText(/Los cambios aplican/)).toBeNull();
+    // «Obligada a llevar contabilidad» marca la opción elegida en el azul primario.
+    expect(screen.getByRole("radio", { name: "Sí" }).className).toContain(
+      "data-[state=on]:bg-primary",
+    );
     expect(screen.queryByLabelText("Número de contribuyente especial")).toBeNull();
     await user.click(screen.getByLabelText("Es contribuyente especial"));
     await user.click(screen.getByRole("button", { name: "Guardar datos" }));
