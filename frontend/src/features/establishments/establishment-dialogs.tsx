@@ -87,7 +87,6 @@ export function CreateEstablishmentDialog({ open, onOpenChange }: DialogProps) {
           inputMode="numeric"
           maxLength={3}
           autoComplete="off"
-          className="max-w-48"
         />
       </FormField>
       <FormField id="establishment-address" label="Dirección" error={errors.address?.message}>
@@ -207,7 +206,6 @@ export function AddPointDialog({
           inputMode="numeric"
           maxLength={3}
           autoComplete="off"
-          className="max-w-48"
         />
       </FormField>
     </FormDialog>

@@ -4,7 +4,8 @@
 // enlace a su propia dirección, así que conserva su enlace directo, su permiso y su título; la barra
 // lateral solo lleva «Configuración».
 // Debajo de las pestañas, el panel toma el ancho que declara la pantalla (`data-panel-width`:
-// formulario o lectura), alineado con ellas, mientras las pestañas ocupan la columna entera.
+// formulario o lectura), alineado con ellas, mientras las pestañas ocupan la columna entera. Una
+// pantalla sin título propio puede centrarlo con `data-panel-align="center"` (Establecimientos).
 "use client";
 
 import Link from "next/link";
@@ -53,7 +54,7 @@ export function ConfigurationLayout({ children }: { children: ReactNode }) {
       </nav>
       <div
         data-slot="configuration-panel"
-        className="w-full has-data-[panel-width=form]:max-w-form has-data-[panel-width=reading]:max-w-reading"
+        className="w-full has-data-[panel-align=center]:mx-auto has-data-[panel-width=form]:max-w-form has-data-[panel-width=reading]:max-w-reading"
       >
         {children}
       </div>

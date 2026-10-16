@@ -66,10 +66,11 @@ describe("Establecimientos (design D14)", () => {
       },
     });
     const user = userEvent.setup();
-    expect(
-      await screen.findByText("Crea tu primer establecimiento para poder emitir"),
-    ).toBeDefined();
-    await user.click(screen.getByRole("button", { name: "Crear establecimiento" }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Crea tu primer establecimiento para poder emitir",
+      }),
+    );
     const dialog = screen.getByRole("dialog");
     await user.type(within(dialog).getByLabelText("Código"), "001");
     await user.type(within(dialog).getByLabelText("Dirección"), QUITO.address);
@@ -81,6 +82,12 @@ describe("Establecimientos (design D14)", () => {
     });
     expect(await screen.findByText("Establecimiento 001")).toBeDefined();
     expect(screen.getByText(/Sin puntos de emisión/)).toBeDefined();
+    // La pestaña nombra la pantalla: el título es solo para lectores de pantalla, y la tarjeta
+    // punteada que cierra la lista sigue ofreciendo crear otro.
+    expect(screen.getByRole("heading", { level: 1, name: "Establecimientos" }).className).toContain(
+      "sr-only",
+    );
+    expect(screen.getByRole("button", { name: "Agregar establecimiento" })).toBeDefined();
   });
 
   it("un código duplicado se muestra en su campo y conserva los valores", async () => {
@@ -94,7 +101,7 @@ describe("Establecimientos (design D14)", () => {
       }),
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Crear establecimiento" }));
+    await user.click(await screen.findByRole("button", { name: "Agregar establecimiento" }));
     const dialog = screen.getByRole("dialog");
     await user.type(within(dialog).getByLabelText("Código"), "001");
     await user.type(within(dialog).getByLabelText("Dirección"), "Otra");
@@ -108,7 +115,7 @@ describe("Establecimientos (design D14)", () => {
   it("valida el código de tres dígitos en el cliente", async () => {
     renderScreen(() => [QUITO]);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Crear establecimiento" }));
+    await user.click(await screen.findByRole("button", { name: "Agregar establecimiento" }));
     const dialog = screen.getByRole("dialog");
     await user.type(within(dialog).getByLabelText("Código"), "1");
     await user.type(within(dialog).getByLabelText("Dirección"), "Quito");
@@ -128,7 +135,13 @@ describe("Establecimientos (design D14)", () => {
     const user = userEvent.setup();
     expect(await screen.findByText("Punto 001-001")).toBeDefined();
     expect(screen.getByText("Disponible")).toBeDefined();
-    await user.click(screen.getByRole("button", { name: "Agregar punto de emisión" }));
+    // Las acciones se leen como botones: con su nombre a la vista, no solo un ícono.
+    expect(
+      screen.getByRole("button", { name: "Desactivar el punto 001-001" }).textContent,
+    ).toContain("Desactivar");
+    await user.click(
+      screen.getByRole("button", { name: "Agregar punto de emisión al establecimiento 001" }),
+    );
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText(/Establecimiento 001 · Av. Amazonas/)).toBeDefined();
     await user.type(within(dialog).getByLabelText("Código del punto"), "002");
@@ -149,7 +162,9 @@ describe("Establecimientos (design D14)", () => {
       }),
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Corregir la dirección" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Corregir dirección del establecimiento 001" }),
+    );
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("Establecimiento 001")).toBeDefined();
     expect(within(dialog).queryByLabelText("Código")).toBeNull();
@@ -184,7 +199,9 @@ describe("Establecimientos (design D14)", () => {
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Desactivar establecimiento" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Desactivar el establecimiento 001" }),
+    );
     expect(
       await screen.findByText(
         "Desactivaste el establecimiento 001. Sus puntos de emisión dejaron de estar disponibles.",
@@ -204,7 +221,7 @@ describe("Establecimientos (design D14)", () => {
     ]);
     expect(await screen.findByText("No disponible")).toBeDefined();
     expect(screen.getByText("El establecimiento está inactivo")).toBeDefined();
-    expect(screen.getByRole("button", { name: "Reactivar establecimiento" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Reactivar el establecimiento 001" })).toBeDefined();
   });
 
   it("el operador ve el estado sin permiso", async () => {
