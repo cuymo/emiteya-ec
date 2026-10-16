@@ -190,7 +190,9 @@ describe("pantalla Productos", () => {
     const cement = rows.find((r) => within(r).queryByText("Cemento 50 kg"))!;
     expect(within(cement).getByText("8,75")).toBeDefined();
     expect(within(cement).getByText("Listo")).toBeDefined();
-    expect(await screen.findByRole("radio", { name: "Revisar impuestos (2)" })).toBeDefined();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("combobox", { name: "Estado tributario" }));
+    expect(await screen.findByRole("option", { name: "Revisar impuestos (2)" })).toBeDefined();
   });
 
   it("en móvil, estado y tipo van tras Más filtros, que indica cuántos están activos", async () => {
@@ -203,9 +205,9 @@ describe("pantalla Productos", () => {
     await userEvent.setup().click(more);
     expect(more.getAttribute("aria-expanded")).toBe("true");
     expect(panel.className).not.toMatch(/(^| )hidden( |$)/);
-    expect(
-      within(panel).getByRole("radio", { name: "Servicios" }).getAttribute("aria-checked"),
-    ).toBe("true");
+    expect(within(panel).getByRole("combobox", { name: "Tipo" }).textContent).toContain(
+      "Servicios",
+    );
   });
 
   it("filtra por estado tributario desde la URL", async () => {

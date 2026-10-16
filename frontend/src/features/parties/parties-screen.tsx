@@ -19,7 +19,9 @@ import { Lock, Pencil, Plus, UserCheck, UserX } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
-import { ChipGroup, RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
+import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -45,6 +47,11 @@ const ROLE_FILTERS: readonly { value: RoleFilter; label: string }[] = [
   ...PARTY_ROLES.map((role) => ({ value: role, label: PARTY_ROLE_LABELS[role] })),
 ];
 
+const CARD = {
+  title: "Terceros",
+  titleId: "terceros-titulo",
+  description: "Tus clientes, proveedores y transportistas, para usarlos en los comprobantes.",
+};
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
@@ -209,16 +216,15 @@ export function PartiesScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="terceros-titulo" className="flex flex-col gap-6">
-        <h1 id="terceros-titulo" className="text-3xl font-bold">
-          Terceros
-        </h1>
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Terceros"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Terceros"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
@@ -252,71 +258,75 @@ export function PartiesScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="terceros-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 id="terceros-titulo" className="text-3xl font-bold">
-          Terceros
-        </h1>
-        {canManage && (
-          <Button onClick={() => setCreating(true)}>
-            <Plus aria-hidden="true" />
-            Nuevo tercero
-          </Button>
-        )}
-      </div>
-
-      <AppDataTable
-        label="Terceros de la empresa"
-        columns={columns}
-        data={parties.data?.data ?? []}
-        getRowId={(party) => party.id}
-        total={parties.data?.meta.total ?? 0}
-        page={url.page}
-        pageSize={url.pageSize}
-        onPageChange={(page) => url.update({ pagina: String(page) }, false)}
-        onPageSizeChange={(size) => url.update({ filas: String(size) })}
-        columnVisibility={visibility}
-        loading={parties.isPending}
-        refreshing={parties.isFetching}
-        state={tableState}
-        toolbar={
-          <div className="flex flex-wrap items-center gap-4">
-            <SearchInput
-              value={searchDraft}
-              onChange={setSearchDraft}
-              label="Buscar por identificación o razón social"
-              placeholder="Identificación o nombre"
-            />
-            <ChipGroup
+    <>
+      <DataTableCard
+        {...CARD}
+        search={
+          <SearchInput
+            value={searchDraft}
+            onChange={setSearchDraft}
+            label="Buscar por identificación o razón social"
+            placeholder="Identificación o nombre"
+          />
+        }
+        actions={
+          canManage && (
+            <Button size="sm" onClick={() => setCreating(true)}>
+              <Plus aria-hidden="true" />
+              Nuevo tercero
+            </Button>
+          )
+        }
+        filters={
+          <>
+            <DataTableSelectFilter
               label="Estado"
               value={url.filter}
               options={STATUS_FILTERS}
               onChange={(value) => url.update({ estado: value === "activos" ? null : value })}
             />
-            <ChipGroup
+            <DataTableSelectFilter
               label="Rol"
               value={url.role}
               options={ROLE_FILTERS}
               onChange={(value) => url.update({ rol: value === "todos" ? null : value })}
             />
-          </div>
+          </>
         }
-        renderCard={(party) => (
-          <div className="flex flex-col gap-2">
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="font-medium break-words">{party.legalName}</span>
-              <span className="text-sm text-foreground-muted tabular-nums">
-                {party.identificationTypeLabel ?? party.identificationType} · {party.identification}
-              </span>
-              <span className="flex flex-wrap items-center gap-2 text-sm">
-                {roles(party)}
-                <StatusCell party={party} />
-              </span>
+      >
+        <AppDataTable
+          bare
+          label="Terceros de la empresa"
+          columns={columns}
+          data={parties.data?.data ?? []}
+          getRowId={(party) => party.id}
+          total={parties.data?.meta.total ?? 0}
+          page={url.page}
+          pageSize={url.pageSize}
+          onPageChange={(page) => url.update({ pagina: String(page) }, false)}
+          onPageSizeChange={(size) => url.update({ filas: String(size) })}
+          columnVisibility={visibility}
+          loading={parties.isPending}
+          refreshing={parties.isFetching}
+          state={tableState}
+          renderCard={(party) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="font-medium break-words">{party.legalName}</span>
+                <span className="text-sm text-foreground-muted tabular-nums">
+                  {party.identificationTypeLabel ?? party.identificationType} ·{" "}
+                  {party.identification}
+                </span>
+                <span className="flex flex-wrap items-center gap-2 text-sm">
+                  {roles(party)}
+                  <StatusCell party={party} />
+                </span>
+              </div>
+              {canManage && <div className="-ml-2">{actions(party)}</div>}
             </div>
-            {canManage && <div className="-ml-2">{actions(party)}</div>}
-          </div>
-        )}
-      />
+          )}
+        />
+      </DataTableCard>
 
       <PartyDialog
         open={creating || editing !== null}
@@ -330,17 +340,18 @@ export function PartiesScreen() {
           url.update({ q: identification, estado: "todos", rol: null });
         }}
       />
-    </section>
+    </>
   );
 }
 
 /** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function PartiesSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Terceros</h1>
-      <Skeleton className="h-10 w-full max-w-md" />
-      <Skeleton className="h-64 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

@@ -14,8 +14,9 @@ import { Info, KeyRound, Plus, UserCheck, UserCog, UserX } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
 import {
-  ChipGroup,
   ColumnVisibilityMenu,
   RowActionButton,
   SearchInput,
@@ -45,6 +46,11 @@ const OWN_ACCESS = "No puedes cambiar tu propio acceso";
 
 const dateFormat = new Intl.DateTimeFormat("es-EC", { dateStyle: "medium" });
 
+const CARD = {
+  title: "Usuarios",
+  titleId: "usuarios-titulo",
+  description: "Las personas con acceso a la empresa, su rol y su estado.",
+};
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
@@ -220,16 +226,15 @@ export function UsersScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="usuarios-titulo" className="flex flex-col gap-6">
-        <h1 id="usuarios-titulo" className="text-3xl font-bold">
-          Usuarios
-        </h1>
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Usuarios"
-          description="Solo un administrador puede gestionar los usuarios de la empresa."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Usuarios"
+            description="Solo un administrador puede gestionar los usuarios de la empresa."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
@@ -263,99 +268,105 @@ export function UsersScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="usuarios-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 id="usuarios-titulo" className="text-3xl font-bold">
-          Usuarios
-        </h1>
-        <Button onClick={() => setCreating(true)}>
-          <Plus aria-hidden="true" />
-          Crear usuario
-        </Button>
-      </div>
-
-      <AppDataTable
-        label="Usuarios de la empresa"
-        columns={columns}
-        data={users.data?.data ?? []}
-        getRowId={(user) => user.id}
-        total={users.data?.meta.total ?? 0}
-        page={url.page}
-        pageSize={url.pageSize}
-        onPageChange={(page) => url.update({ pagina: String(page) }, false)}
-        onPageSizeChange={(size) => url.update({ filas: String(size) })}
-        columnVisibility={visibility}
-        loading={users.isPending}
-        refreshing={users.isFetching}
-        state={tableState}
-        toolbar={
-          <div className="flex flex-wrap items-center gap-4">
-            <SearchInput
-              value={searchDraft}
-              onChange={setSearchDraft}
-              label="Buscar por nombre o correo"
-              placeholder="Nombre o correo"
-            />
-            <ChipGroup
+    <>
+      <DataTableCard
+        {...CARD}
+        search={
+          <SearchInput
+            value={searchDraft}
+            onChange={setSearchDraft}
+            label="Buscar por nombre o correo"
+            placeholder="Nombre o correo"
+          />
+        }
+        actions={
+          <Button size="sm" onClick={() => setCreating(true)}>
+            <Plus aria-hidden="true" />
+            Crear usuario
+          </Button>
+        }
+        filters={
+          <>
+            <DataTableSelectFilter
               label="Estado"
               value={url.filter}
               options={STATUS_FILTERS}
               onChange={(value) => url.update({ estado: value === "todos" ? null : value })}
             />
-            <div className="ml-auto hidden md:block">
-              <ColumnVisibilityMenu
-                columns={OPTIONAL_COLUMNS}
-                visibility={visibility}
-                onChange={(id, visible) =>
-                  setVisibility((current) => ({ ...current, [id]: visible }))
-                }
-              />
-            </div>
+          </>
+        }
+        filtersEnd={
+          <div className="hidden md:block">
+            <ColumnVisibilityMenu
+              columns={OPTIONAL_COLUMNS}
+              visibility={visibility}
+              onChange={(id, visible) =>
+                setVisibility((current) => ({ ...current, [id]: visible }))
+              }
+            />
           </div>
         }
-        renderCard={(user) => (
-          <div className="flex flex-col gap-2">
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="font-medium break-words">{user.name}</span>
-              <span className="text-sm break-words text-foreground-muted">{user.email}</span>
-              <span className="flex flex-wrap items-center gap-2 text-sm">
-                {ROLE_LABELS[user.role]}
-                <StatusCell user={user} />
-              </span>
+      >
+        <AppDataTable
+          bare
+          label="Usuarios de la empresa"
+          columns={columns}
+          data={users.data?.data ?? []}
+          getRowId={(user) => user.id}
+          total={users.data?.meta.total ?? 0}
+          page={url.page}
+          pageSize={url.pageSize}
+          onPageChange={(page) => url.update({ pagina: String(page) }, false)}
+          onPageSizeChange={(size) => url.update({ filas: String(size) })}
+          columnVisibility={visibility}
+          loading={users.isPending}
+          refreshing={users.isFetching}
+          state={tableState}
+          renderCard={(user) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="font-medium break-words">{user.name}</span>
+                <span className="text-sm break-words text-foreground-muted">{user.email}</span>
+                <span className="flex flex-wrap items-center gap-2 text-sm">
+                  {ROLE_LABELS[user.role]}
+                  <StatusCell user={user} />
+                </span>
+              </div>
+              <div className="-ml-2">
+                <RowActions
+                  user={user}
+                  isSelf={isSelf(user)}
+                  busy={status.isPending && status.variables?.user.id === user.id}
+                  onChangeRole={() => setRoleTarget(user)}
+                  onSetPassword={() => setPasswordTarget(user)}
+                  onToggleStatus={() =>
+                    status.mutate({
+                      user,
+                      status: user.status === "ACTIVE" ? "DEACTIVATED" : "ACTIVE",
+                    })
+                  }
+                />
+              </div>
             </div>
-            <div className="-ml-2">
-              <RowActions
-                user={user}
-                isSelf={isSelf(user)}
-                busy={status.isPending && status.variables?.user.id === user.id}
-                onChangeRole={() => setRoleTarget(user)}
-                onSetPassword={() => setPasswordTarget(user)}
-                onToggleStatus={() =>
-                  status.mutate({
-                    user,
-                    status: user.status === "ACTIVE" ? "DEACTIVATED" : "ACTIVE",
-                  })
-                }
-              />
-            </div>
-          </div>
-        )}
-      />
+          )}
+        />
+      </DataTableCard>
 
       <CreateUserDialog open={creating} onOpenChange={setCreating} />
       <ChangeRoleDialog user={roleTarget} onClose={() => setRoleTarget(null)} />
       <SetPasswordDialog user={passwordTarget} onClose={() => setPasswordTarget(null)} />
-    </section>
+    </>
   );
 }
 
 /** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function UsersSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Usuarios</h1>
-      <Skeleton className="h-10 w-full max-w-md" />
-      <Skeleton className="h-64 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

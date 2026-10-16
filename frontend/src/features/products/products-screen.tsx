@@ -19,7 +19,9 @@ import { CircleDashed, PackageCheck, PackageX, Pencil, Plus, TriangleAlert } fro
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
-import { ChipGroup, RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
+import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -69,6 +71,11 @@ export const TAX_STATUS_BADGES: Record<
   INCOMPLETE: { tone: "info", label: "Incompleto", icon: CircleDashed },
 };
 
+const CARD = {
+  title: "Productos",
+  titleId: "productos-titulo",
+  description: "Lo que vendes, con su precio sin impuestos, su IVA y su estado tributario.",
+};
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
@@ -272,16 +279,15 @@ export function ProductsScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="productos-titulo" className="flex flex-col gap-6">
-        <h1 id="productos-titulo" className="text-3xl font-bold">
-          Productos
-        </h1>
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Productos"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Productos"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
@@ -318,52 +324,37 @@ export function ProductsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="productos-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 id="productos-titulo" className="text-3xl font-bold">
-          Productos
-        </h1>
-        {canManage && (
-          <Button onClick={() => setCreating(true)}>
-            <Plus aria-hidden="true" />
-            Nuevo producto
-          </Button>
-        )}
-      </div>
-
-      <AppDataTable
-        label="Productos y servicios de la empresa"
-        columns={columns}
-        data={products.data?.data ?? []}
-        getRowId={(product) => product.id}
-        total={products.data?.meta.total ?? 0}
-        page={url.page}
-        pageSize={url.pageSize}
-        onPageChange={(page) => url.update({ pagina: String(page) }, false)}
-        onPageSizeChange={(size) => url.update({ filas: String(size) })}
-        columnVisibility={visibility}
-        loading={products.isPending}
-        refreshing={products.isFetching}
-        state={tableState}
-        toolbar={
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-4">
-              <SearchInput
-                value={searchDraft}
-                onChange={setSearchDraft}
-                label="Buscar por código o nombre"
-                placeholder="Código o nombre"
-              />
-              <ChipGroup
-                label="Estado tributario"
-                value={url.tax}
-                options={taxFilters}
-                onChange={(value) => url.update({ tributario: value === "todos" ? null : value })}
-              />
-            </div>
+    <>
+      <DataTableCard
+        {...CARD}
+        search={
+          <SearchInput
+            value={searchDraft}
+            onChange={setSearchDraft}
+            label="Buscar por código o nombre"
+            placeholder="Código o nombre"
+          />
+        }
+        actions={
+          canManage && (
+            <Button size="sm" onClick={() => setCreating(true)}>
+              <Plus aria-hidden="true" />
+              Nuevo producto
+            </Button>
+          )
+        }
+        filters={
+          <>
+            <DataTableSelectFilter
+              label="Estado tributario"
+              value={url.tax}
+              options={taxFilters}
+              onChange={(value) => url.update({ tributario: value === "todos" ? null : value })}
+            />
             <Button
               variant="outline"
-              className="self-start md:hidden"
+              size="sm"
+              className="max-md:w-full md:hidden"
               aria-expanded={moreFilters}
               aria-controls={moreFiltersId}
               onClick={() => setMoreFilters((open) => !open)}
@@ -374,43 +365,60 @@ export function ProductsScreen() {
               id={moreFiltersId}
               className={cn(
                 moreFilters ? "flex" : "hidden",
-                "flex-wrap items-center gap-4 md:flex",
+                "flex-wrap items-center gap-3 max-md:w-full max-md:flex-col md:flex",
               )}
             >
-              <ChipGroup
+              <DataTableSelectFilter
                 label="Estado"
                 value={url.filter}
                 options={STATUS_FILTERS}
                 onChange={(value) => url.update({ estado: value === "activos" ? null : value })}
               />
-              <ChipGroup
+              <DataTableSelectFilter
                 label="Tipo"
                 value={url.kind}
                 options={KIND_FILTERS}
                 onChange={(value) => url.update({ tipo: value === "todos" ? null : value })}
               />
             </div>
-          </div>
+          </>
         }
-        renderCard={(product) => (
-          <div className="flex flex-col gap-2">
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="font-medium break-words">{product.name}</span>
-              <span className="text-sm text-foreground-muted tabular-nums">
-                {product.mainCode ? `${product.mainCode} · ` : ""}
-                {PRODUCT_KIND_LABELS[product.kind]} ·{" "}
-                {formatDecimal(product.unitPrice, { minFractionDigits: 2 })} · IVA{" "}
-                {ivaLabel(product)}
-              </span>
-              <span className="flex flex-wrap items-center gap-2 text-sm">
-                <TaxCell product={product} />
-                <StatusCell product={product} />
-              </span>
+      >
+        <AppDataTable
+          bare
+          label="Productos y servicios de la empresa"
+          columns={columns}
+          data={products.data?.data ?? []}
+          getRowId={(product) => product.id}
+          total={products.data?.meta.total ?? 0}
+          page={url.page}
+          pageSize={url.pageSize}
+          onPageChange={(page) => url.update({ pagina: String(page) }, false)}
+          onPageSizeChange={(size) => url.update({ filas: String(size) })}
+          columnVisibility={visibility}
+          loading={products.isPending}
+          refreshing={products.isFetching}
+          state={tableState}
+          renderCard={(product) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="font-medium break-words">{product.name}</span>
+                <span className="text-sm text-foreground-muted tabular-nums">
+                  {product.mainCode ? `${product.mainCode} · ` : ""}
+                  {PRODUCT_KIND_LABELS[product.kind]} ·{" "}
+                  {formatDecimal(product.unitPrice, { minFractionDigits: 2 })} · IVA{" "}
+                  {ivaLabel(product)}
+                </span>
+                <span className="flex flex-wrap items-center gap-2 text-sm">
+                  <TaxCell product={product} />
+                  <StatusCell product={product} />
+                </span>
+              </div>
+              {canManage && <div className="-ml-2">{actions(product)}</div>}
             </div>
-            {canManage && <div className="-ml-2">{actions(product)}</div>}
-          </div>
-        )}
-      />
+          )}
+        />
+      </DataTableCard>
 
       <ProductDialog
         open={creating || editing !== null}
@@ -420,17 +428,18 @@ export function ProductsScreen() {
           setEditing(null);
         }}
       />
-    </section>
+    </>
   );
 }
 
 /** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function ProductsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Productos</h1>
-      <Skeleton className="h-10 w-full max-w-md" />
-      <Skeleton className="h-64 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

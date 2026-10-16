@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
 import { InventoryScreen } from "@/features/inventory/inventory-screen";
 import { OPERATOR_ME, errorBody, mockApi, navigation, renderApp, type Route } from "./harness";
+import { chooseFilter } from "./filters";
 
 const item = (overrides: Record<string, unknown> = {}) => ({
   productId: "prod-1",
@@ -141,7 +142,7 @@ describe("Inventario", () => {
       pageSize: "25",
     });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("radio", { name: "Sin inicializar" }));
+    await chooseFilter("Estado", "Sin inicializar");
     expect(navigation.replace).toHaveBeenLastCalledWith(
       "/inventario?estado=sin-inicializar&q=cem",
       { scroll: false },

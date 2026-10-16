@@ -19,7 +19,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
-import { ChipGroup, SearchInput } from "@/components/data-table/table-controls";
+import { DataTableCard } from "@/components/data-table/data-table-card";
+import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
+import { SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,12 @@ const isStateFilter = (value: string | null): value is StateFilter =>
 
 export const stockItemPath = (productId: string) => `/inventario/${encodeURIComponent(productId)}`;
 
+const CARD = {
+  title: "Inventario",
+  titleId: "inventario-titulo",
+  description:
+    "Stock contabilizado con las facturas autorizadas, las entradas y los ajustes. No reserva existencias.",
+};
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
@@ -176,16 +184,15 @@ export function InventoryScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="inventario-titulo" className="flex flex-col gap-6">
-        <h1 id="inventario-titulo" className="text-3xl font-bold">
-          Inventario
-        </h1>
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Inventario"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Inventario"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
@@ -227,72 +234,72 @@ export function InventoryScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="inventario-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 id="inventario-titulo" className="text-3xl font-bold">
-          Inventario
-        </h1>
-        <p className="text-sm text-foreground-muted">
-          Stock contabilizado con las facturas autorizadas, las entradas y los ajustes. No reserva
-          existencias.
-        </p>
-      </div>
-      <AppDataTable
-        label="Productos con control de stock"
-        columns={columns}
-        data={items.data?.data ?? []}
-        getRowId={(item) => item.productId}
-        total={items.data?.meta.total ?? 0}
-        page={url.page}
-        pageSize={url.pageSize}
-        onPageChange={(page) => url.update({ pagina: String(page) }, false)}
-        onPageSizeChange={(size) => url.update({ filas: String(size) })}
-        columnVisibility={visibility}
-        loading={items.isPending}
-        refreshing={items.isFetching}
-        state={tableState}
-        toolbar={
-          <div className="flex flex-wrap items-center gap-4">
-            <SearchInput
-              value={searchDraft}
-              onChange={setSearchDraft}
-              label="Buscar por código o nombre"
-              placeholder="Código o nombre"
-            />
-            <ChipGroup
+    <>
+      <DataTableCard
+        {...CARD}
+        search={
+          <SearchInput
+            value={searchDraft}
+            onChange={setSearchDraft}
+            label="Buscar por código o nombre"
+            placeholder="Código o nombre"
+          />
+        }
+        filters={
+          <>
+            <DataTableSelectFilter
               label="Estado"
               value={url.filter}
               options={STATE_FILTERS}
               onChange={(value) => url.update({ estado: value === "todos" ? null : value })}
             />
-          </div>
+          </>
         }
-        renderCard={(item) => (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <ProductLink item={item} />
-              <BalanceCell item={item} />
+      >
+        <AppDataTable
+          bare
+          label="Productos con control de stock"
+          columns={columns}
+          data={items.data?.data ?? []}
+          getRowId={(item) => item.productId}
+          total={items.data?.meta.total ?? 0}
+          page={url.page}
+          pageSize={url.pageSize}
+          onPageChange={(page) => url.update({ pagina: String(page) }, false)}
+          onPageSizeChange={(size) => url.update({ filas: String(size) })}
+          columnVisibility={visibility}
+          loading={items.isPending}
+          refreshing={items.isFetching}
+          state={tableState}
+          renderCard={(item) => (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <ProductLink item={item} />
+                <BalanceCell item={item} />
+              </div>
+              <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <StockStateBadge state={item.state} />
+                {item.lastMovementAt && (
+                  <span className="tabular-nums text-foreground-muted">
+                    {formatDateTime(item.lastMovementAt)}
+                  </span>
+                )}
+              </span>
             </div>
-            <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <StockStateBadge state={item.state} />
-              {item.lastMovementAt && (
-                <span className="tabular-nums text-foreground-muted">
-                  {formatDateTime(item.lastMovementAt)}
-                </span>
-              )}
-            </span>
-          </div>
-        )}
-      />
-    </section>
+          )}
+        />
+      </DataTableCard>
+    </>
   );
 }
 
 export function InventorySkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <Skeleton className="h-10 w-48" />
-      <Skeleton className="h-60 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="flex flex-col gap-3 px-4 pb-4">
+        <Skeleton className="h-10 w-full max-w-md" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

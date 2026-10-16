@@ -12,6 +12,7 @@ import {
   renderApp,
   type Route,
 } from "./harness";
+import { chooseFilter } from "./filters";
 
 const users = [
   {
@@ -129,7 +130,7 @@ describe("pantalla Usuarios", () => {
     expect(screen.queryByText(/Mostrando 51/)).toBeNull();
   });
 
-  it("los chips de estado filtran desde la primera página", async () => {
+  it("el filtro de estado filtra desde la primera página", async () => {
     navigation.search = new URLSearchParams("pagina=1");
     mockApi({
       "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }),
@@ -137,7 +138,7 @@ describe("pantalla Usuarios", () => {
     });
     renderUsers();
     await screen.findByText("Mostrando 1-3 de 3");
-    await userEvent.setup().click(screen.getByRole("radio", { name: "Desactivados" }));
+    await chooseFilter("Estado", "Desactivados");
     expect(navigation.replace).toHaveBeenCalledWith("/configuracion/usuarios?estado=desactivados", {
       scroll: false,
     });
@@ -168,7 +169,8 @@ describe("pantalla Usuarios", () => {
       (await screen.findAllByText("No pudimos cargar los usuarios.", {}, { timeout: 5_000 }))
         .length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText(/Mostrando 0-0 de 0/)).toBeDefined();
+    // El pie solo aparece con filas: nunca «0-0 de 0» (data-tables.md).
+    expect(screen.queryByText(/Mostrando/)).toBeNull();
   });
 
   it("crear usuario: valida, conserva los valores ante un correo en uso y usa Operador por defecto", async () => {

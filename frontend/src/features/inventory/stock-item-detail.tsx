@@ -22,6 +22,7 @@ import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
+import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DatePickerField } from "@/components/date-picker-field";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
@@ -168,11 +169,37 @@ function Kardex({ productId }: { productId: string }) {
   ) : undefined;
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-2">
-      <h2 id={headingId} className="text-lg font-semibold">
-        Kárdex
-      </h2>
+    <DataTableCard
+      title="Kárdex"
+      titleId={headingId}
+      titleAs="h2"
+      description="Las entradas, salidas y ajustes del producto."
+      filters={
+        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:w-xl">
+          <DatePickerField
+            label="Desde"
+            value={from}
+            max={to || undefined}
+            onChange={(value) => {
+              setFrom(value);
+              setPage(1);
+            }}
+          />
+          <DatePickerField
+            label="Hasta"
+            value={to}
+            min={from || undefined}
+            error={rangeError}
+            onChange={(value) => {
+              setTo(value);
+              setPage(1);
+            }}
+          />
+        </div>
+      }
+    >
       <AppDataTable
+        bare
         label="Movimientos del producto"
         columns={columns}
         data={rangeError ? [] : (movements.data?.data ?? [])}
@@ -189,29 +216,6 @@ function Kardex({ productId }: { productId: string }) {
         loading={!rangeError && movements.isPending}
         refreshing={movements.isFetching}
         state={state}
-        toolbar={
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:max-w-xl">
-            <DatePickerField
-              label="Desde"
-              value={from}
-              max={to || undefined}
-              onChange={(value) => {
-                setFrom(value);
-                setPage(1);
-              }}
-            />
-            <DatePickerField
-              label="Hasta"
-              value={to}
-              min={from || undefined}
-              error={rangeError}
-              onChange={(value) => {
-                setTo(value);
-                setPage(1);
-              }}
-            />
-          </div>
-        }
         renderCard={(movement) => (
           <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
@@ -228,7 +232,7 @@ function Kardex({ productId }: { productId: string }) {
           </div>
         )}
       />
-    </section>
+    </DataTableCard>
   );
 }
 
