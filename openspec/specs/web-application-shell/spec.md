@@ -428,7 +428,7 @@ del destino ni solicitar sus datos. Es solo presentación: la API sigue rechazan
 La barra superior SHALL ocupar una sola línea a todas las anchuras soportadas, en la barra lateral
 expandida o colapsada, sin que ningún texto o control se parta en varias líneas, se salga de la
 barra ni se monte sobre otro. A la izquierda SHALL reunir el botón de navegación y, desde 768 px, las
-migas de la pantalla; a la derecha, el contexto global: el acceso a la paleta de
+migas de la pantalla, reducidas a Inicio y la pantalla actual cuando no caben completas; a la derecha, el contexto global: el acceso a la paleta de
 comandos, el contexto de la empresa y el menú de cuenta; el aviso del ambiente va encima, en su franja. No SHALL ofrecer
 controles que el producto no respalda, como notificaciones o ayuda.
 

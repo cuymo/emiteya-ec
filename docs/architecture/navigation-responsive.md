@@ -62,7 +62,9 @@ not repeat the screen title: the screen's own `h1`, right below, names it.
   announced with `aria-current="page"`. On a detail, the last breadcrumb is the record label when
   the screen provides it (the document number, the product name), or the route label. Inicio and Mi
   cuenta have no group.
-- **Truncation:** one line; only the last breadcrumb truncates.
+- **Truncation:** one line; only the last breadcrumb truncates. When the space the topbar leaves
+  is under 16rem (a tablet with the sidebar expanded), the trail keeps only Inicio and the current
+  page, so it never runs under the search button.
 - **Phone:** below 768px the trail is hidden: it does not fit next to the global context, and the
   screen `h1`, right below, already orients.
 - They are the only orientation of the screen: no «back» link repeats a breadcrumb.

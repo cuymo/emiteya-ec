@@ -26,7 +26,8 @@ export function TopbarHeading() {
   const crumbs = breadcrumbsFor(resolveRoute(pathname), record);
   if (crumbs.length === 0) return null;
   return (
-    <div data-slot="topbar-heading" className="flex min-w-0 max-md:hidden">
+    // El espacio que deja la barra es el contenedor: si no alcanza, quedan Inicio y la miga actual.
+    <div data-slot="topbar-heading" className="@container flex min-w-0 flex-1 max-md:hidden">
       <Breadcrumb className="min-w-0">
         <BreadcrumbList className="flex-nowrap gap-2 text-sm leading-none">
           <BreadcrumbItem className="shrink-0">
@@ -38,9 +39,11 @@ export function TopbarHeading() {
           </BreadcrumbItem>
           {crumbs.map((crumb, index) => (
             <Fragment key={`${crumb.label}-${index}`}>
-              <BreadcrumbSeparator>/</BreadcrumbSeparator>
-              {/* Solo la última miga se recorta; las anteriores conservan su ancho. */}
-              <BreadcrumbItem className={crumb.current ? "min-w-0" : "shrink-0"}>
+              <BreadcrumbSeparator className={crumb.current ? undefined : "@max-3xs:hidden"}>
+                /
+              </BreadcrumbSeparator>
+              {/* Solo la última miga se recorta; las anteriores conservan su ancho o se ocultan. */}
+              <BreadcrumbItem className={crumb.current ? "min-w-0" : "shrink-0 @max-3xs:hidden"}>
                 {crumb.current ? (
                   <BreadcrumbPage className="text-primary">{crumb.label}</BreadcrumbPage>
                 ) : crumb.href ? (
