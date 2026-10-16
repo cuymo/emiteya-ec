@@ -309,6 +309,21 @@ export const INVOICE_DRAFTS: Record<string, unknown> = {
 };
 
 /**
+ * Vista previa del editor mientras se escribe: la del borrador de ejemplo que corresponde al
+ * contenido enviado (vacío, con el comprador que no es cliente o listo).
+ */
+function previewReply(body: string | null): Reply {
+  const content = JSON.parse(body ?? "{}") as {
+    buyerPartyId?: string | null;
+    lines?: unknown[];
+  };
+  const pick = (id: string) => (INVOICE_DRAFTS[id] as { preview: unknown }).preview;
+  if (!content.lines?.length || !content.buyerPartyId) return ok(pick("borrador-incompleto"));
+  if (content.buyerPartyId === CUSTOMERS[1]!.id) return ok(pick("borrador-problemas"));
+  return ok(pick("borrador-listo"));
+}
+
+/**
  * Respuestas del editor y de los catálogos para las rutas que el harness común no declara. Devuelve
  * `null` si la ruta no es de estas pantallas.
  */
@@ -317,7 +332,9 @@ export function editorReply(
   path: string,
   query: URLSearchParams,
   environment: "TEST" | "PRODUCTION" = "TEST",
+  body: string | null = null,
 ): Reply | null {
+  if (method === "POST" && path === "/api/v1/invoices/drafts/preview") return previewReply(body);
   if (method !== "GET") return null;
   const draftMatch = /^\/api\/v1\/invoices\/drafts\/([^/]+)$/.exec(path);
   if (draftMatch) {

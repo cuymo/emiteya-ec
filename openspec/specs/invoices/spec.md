@@ -32,6 +32,26 @@ El sistema SHALL permitir guardar, corregir y eliminar borradores de factura sin
 - **WHEN** un usuario intenta corregir o eliminar un borrador que ya se emitió
 - **THEN** el sistema rechaza la solicitud y la factura emitida no cambia
 
+### Requirement: Vista previa de un borrador sin guardar
+El sistema SHALL calcular la vista previa de un contenido de borrador sin guardarlo: los totales,
+los impuestos por línea y los problemas que impedirían emitirlo, con la misma evaluación y la misma
+fecha que la vista previa de un borrador guardado. No SHALL crear ni cambiar ningún borrador, ni
+consumir el secuencial. Las referencias se resuelven en la empresa de la sesión, y una que no existe
+en ella se rechaza como en el guardado. Exige el mismo permiso que preparar borradores.
+
+#### Scenario: Mismos totales que al guardar
+- **WHEN** un usuario pide la vista previa de un contenido y después lo guarda tal cual
+- **THEN** la vista previa y la del borrador guardado tienen los mismos totales, impuestos y problemas
+- **AND** pedir la vista previa no creó ningún borrador
+
+#### Scenario: Contenido incompleto
+- **WHEN** un usuario pide la vista previa de un contenido sin comprador ni punto de emisión
+- **THEN** la vista previa dice qué le falta al borrador, sin guardarlo
+
+#### Scenario: Referencia de otra empresa
+- **WHEN** un usuario pide la vista previa con un comprador de otra empresa
+- **THEN** el sistema la rechaza como un comprador inexistente
+
 ### Requirement: Contenido de la factura
 Un borrador SHALL indicar el punto de emisión, el comprador, al menos una línea y al menos una forma de pago. El comprador es un tercero activo con rol de cliente o el consumidor final del sistema. Cada línea refiere un producto activo e indica cantidad (18 dígitos, 6 decimales) y descuento (2 decimales, entre 0 y el subtotal). El precio unitario sin impuestos es el del producto al emitir y no se edita.
 
@@ -472,33 +492,34 @@ desplazarse dentro de su propia superficie, sin desbordar la página ni converti
 - **THEN** lee el número, el comprador, el estado y el total de cada factura dentro de la tabla, y la página no se desplaza a lo ancho
 
 ### Requirement: Acción siguiente en el editor de facturas
-El editor de facturas SHALL distinguir guardar el borrador de emitir la factura. Guardar SHALL estar
-disponible siempre que no haya un guardado en curso, también con el borrador incompleto o con
-problemas que impiden emitir. Un guardado que el servidor rechaza SHALL explicar el motivo junto al
-dato que lo causa, o con la forma de recuperarse, sin perder lo escrito. Emitir SHALL estar
-disponible solo con la versión vigente guardada, sin cambios sin guardar, sin problemas del servidor
-y con permiso para emitir. El servidor vuelve a comprobarlo al emitir. El editor SHALL destacar como
-acción principal la siguiente acción válida: guardar mientras no haya una versión guardada sin
-cambios, y emitir cuando la emisión esté disponible. Una acción que no puede ejecutarse SHALL
-percibirse como no disponible y decir por qué. Sin permiso para emitir, la acción de emitir no SHALL
-aparecer.
+El editor de facturas SHALL distinguir guardar el borrador de emitir la factura, y SHALL destacar
+«Emitir factura» como la acción principal, con «Guardar borrador» como secundaria. Guardar SHALL
+estar disponible siempre que no haya un guardado o una emisión en curso, también con el borrador
+incompleto o con problemas. Emitir SHALL estar disponible cuando el contenido que se ve está completo,
+su vista previa del servidor está al día y no tiene problemas, y el usuario tiene permiso para
+emitir; no SHALL exigir guardar antes. Si hay cambios sin guardar o no hay borrador, la confirmación
+de la emisión SHALL guardar primero esa versión y emitirla. Mientras emitir no está disponible, SHALL
+decir qué falta en palabras del usuario. Un guardado o una emisión que el servidor rechaza SHALL
+explicar el motivo junto al dato que lo causa, o con la forma de recuperarse, sin perder lo escrito.
+Sin permiso para emitir, la acción de emitir no SHALL aparecer y guardar SHALL ser la principal.
 
 #### Scenario: Factura nueva
 - **WHEN** un operador abre la pantalla de nueva factura
-- **THEN** «Guardar borrador» es la acción principal
-- **AND** «Emitir factura» se percibe como no disponible y dice que primero hay que guardar el borrador
+- **THEN** «Emitir factura» es la acción principal, no está disponible y dice qué falta, como el comprador y los productos
+- **AND** «Guardar borrador» es una acción secundaria disponible
+
+#### Scenario: Factura completa sin guardar
+- **WHEN** un operador elige el comprador y agrega un producto a una factura nueva, sin guardarla
+- **THEN** «Emitir factura» queda disponible en cuanto llega la vista previa sin problemas
+- **AND** al confirmar la emisión, el borrador se guarda y esa versión se emite
 
 #### Scenario: Borrador incompleto
 - **WHEN** un operador guarda una factura nueva sin comprador ni líneas
-- **THEN** el borrador queda guardado, «Guardar borrador» sigue disponible, y «Emitir factura» se percibe como no disponible con el motivo de lo que falta
-
-#### Scenario: Cambios sin guardar
-- **WHEN** un operador cambia la cantidad de una línea de un borrador guardado
-- **THEN** guardar el borrador pasa a ser la acción principal y «Emitir factura» se percibe como no disponible, con el motivo de que hay cambios por guardar
+- **THEN** el borrador queda guardado y «Emitir factura» sigue diciendo qué falta
 
 #### Scenario: Borrador con problemas
-- **WHEN** un operador guarda un borrador cuyo comprador no es un cliente
-- **THEN** «Guardar borrador» sigue disponible, «Emitir factura» se percibe como no disponible con un motivo que remite a los problemas, y cada problema se muestra junto al dato que lo causa
+- **WHEN** la vista previa de un borrador dice que su comprador no es un cliente
+- **THEN** el problema se muestra junto al comprador, «Guardar borrador» sigue disponible y «Emitir factura» pide resolver lo indicado
 
 #### Scenario: Guardado en curso
 - **WHEN** un operador elige guardar el borrador
@@ -508,47 +529,39 @@ aparecer.
 - **WHEN** el servidor rechaza un guardado porque el borrador cambió en otra sesión
 - **THEN** el editor explica el conflicto, ofrece recargar el borrador y conserva lo escrito hasta que el operador decida
 
-#### Scenario: Listo para emitir
-- **WHEN** un operador guarda un borrador completo y sin problemas
-- **THEN** «Emitir factura» es la acción principal y guardar queda como acción secundaria
-
 #### Scenario: Rechazo al emitir
 - **WHEN** entre la vista previa y la emisión cambia una condición, como la firma electrónica, y el servidor rechaza la emisión
-- **THEN** no se emite ninguna factura, el editor muestra el motivo y vuelve a mostrar los problemas actuales del borrador
+- **THEN** no se emite ninguna factura, el editor muestra el motivo y vuelve a calcular la vista previa con los problemas actuales
 
 #### Scenario: Sin permiso para emitir
 - **WHEN** un usuario con permiso para preparar borradores pero no para emitir abre un borrador listo
-- **THEN** no ve la acción de emitir y guardar sigue siendo la acción principal
+- **THEN** no ve la acción de emitir y guardar es la acción principal
 
 ### Requirement: Totales veraces en el editor de facturas
-El editor SHALL mostrar solo los totales, los impuestos y los problemas que calcula el servidor para
-la versión guardada del borrador, sin calcular importes en el navegador. Sin borrador guardado, no
-SHALL mostrar importes ni ceros, y SHALL explicar que los totales se obtienen al guardar. Con el
-borrador guardado y sin cambios, SHALL mostrar los últimos totales del servidor. Con cambios sin
-guardar, no SHALL presentar los totales anteriores como vigentes: SHALL rotularlos como los del
-último guardado y explicar que hay que guardar para recalcularlos. Tras un guardado correcto, la
-respuesta del servidor SHALL ser la única fuente de los totales. Mientras alguna línea no pueda
-calcularse, SHALL decirlo en lugar de mostrar importes parciales o ceros.
+El editor SHALL mostrar los totales, los impuestos y los problemas que calcula el servidor para el
+contenido que se ve, mientras se escribe y sin guardar, con la vista previa de un borrador sin
+guardar. No SHALL calcular impuestos ni totales en el navegador; solo SHALL sumar los importes que
+el usuario reparte entre varias formas de pago, para decir cuánto falta o cuánto sobra. Mientras la
+vista previa del contenido actual no ha llegado, SHALL mostrar la anterior atenuada y decir que se
+actualiza. Sin productos, SHALL decir dónde aparecerá el total, sin importes ni ceros. Mientras
+alguna línea no pueda calcularse, SHALL decirlo en lugar de mostrar importes parciales o ceros.
+Cada línea SHALL mostrar su IVA y su subtotal del servidor.
 
-#### Scenario: Borrador guardado
-- **WHEN** un operador guarda un borrador con dos líneas calculables
-- **THEN** el resumen muestra el subtotal sin impuestos, el descuento, cada impuesto y el total que devolvió el servidor, con la fecha a la que se evaluaron
+#### Scenario: Factura nueva sin guardar
+- **WHEN** un operador agrega un producto a una factura nueva sin guardarla
+- **THEN** el resumen muestra el subtotal sin impuestos, el descuento, cada IVA y el total que calculó el servidor, y no se guardó ningún borrador
 
-#### Scenario: Totales tras editar
-- **WHEN** un operador cambia el descuento de una línea después de guardar
-- **THEN** el resumen rotula el total anterior como el del último guardado, no lo presenta como vigente, y explica que hay que guardar para recalcularlo
+#### Scenario: Totales al editar
+- **WHEN** un operador cambia la cantidad de una línea
+- **THEN** la línea y el resumen muestran los importes nuevos del servidor en cuanto deja de escribir, sin guardar
 
-#### Scenario: Después de guardar
-- **WHEN** un operador con cambios sin guardar guarda el borrador y el servidor lo acepta
-- **THEN** el resumen muestra los totales de esa respuesta del servidor como vigentes y deja de rotularlos como del último guardado
-
-#### Scenario: Sin borrador guardado
-- **WHEN** un operador agrega productos a una factura nueva sin guardarla
-- **THEN** el resumen no muestra importes ni ceros y explica que guardar el borrador da los totales calculados por el servidor
+#### Scenario: Sin productos
+- **WHEN** un operador abre una factura nueva sin productos
+- **THEN** el resumen dice que el total aparecerá al agregar el primer producto, sin importes ni ceros
 
 #### Scenario: Línea que no se puede calcular
-- **WHEN** un borrador guardado tiene una línea cuyo impuesto no puede calcularse
-- **THEN** el resumen no muestra totales ni ceros, y dice que los totales aparecen cuando todas las líneas se pueden calcular
+- **WHEN** la vista previa tiene una línea cuyo impuesto no puede calcularse
+- **THEN** el resumen no muestra totales ni ceros, dice que los totales aparecen cuando todas las líneas se pueden calcular, y el problema va junto a la línea
 
 ### Requirement: Ambiente junto a la emisión
 El editor SHALL mostrar el ambiente fiscal vigente junto a la acción de emitir. En Pruebas, SHALL
@@ -570,14 +583,15 @@ como Producción.
 
 ### Requirement: Confirmación de la emisión desde el editor
 Emitir desde el editor SHALL pedir una confirmación explícita que diga que la emisión reserva el
-número, firma la factura y no puede deshacerse, y que muestre el ambiente, el comprador, el total
-del servidor y el número de líneas. En Pruebas, SHALL recordar que la factura no tendrá validez
-tributaria. Con consumidor final, SHALL advertir sus restricciones de anulación y corrección.
-Confirmar dos veces la misma emisión SHALL producir una sola factura.
+número, firma la factura y no puede deshacerse, y que muestre el comprador con su identificación,
+el número de productos, las formas de pago, el ambiente y el total del servidor. En Pruebas, SHALL
+recordar que la factura no tendrá validez tributaria. Con consumidor final, SHALL advertir sus
+restricciones de anulación y corrección. Confirmar dos veces la misma emisión SHALL producir una sola
+factura, y reintentar la misma versión SHALL repetir su clave de idempotencia.
 
 #### Scenario: Confirmar
-- **WHEN** un operador elige emitir un borrador listo
-- **THEN** ve la confirmación con el ambiente, el comprador, el total y el número de líneas, y la factura solo se emite si confirma
+- **WHEN** un operador elige emitir una factura lista
+- **THEN** ve la confirmación con el comprador, los productos, el pago, el ambiente y el total, y la factura solo se emite si confirma
 
 #### Scenario: Cancelar
 - **WHEN** un operador abre la confirmación y la cancela
@@ -596,38 +610,46 @@ Confirmar dos veces la misma emisión SHALL producir una sola factura.
 - **THEN** se emite una sola factura con un solo número
 
 ### Requirement: Formas de pago en el editor de facturas
-El editor SHALL explicar en lenguaje natural cuándo puede dejarse vacío el importe de una forma de
-pago: con una sola forma de pago, el importe vacío usa el total de la factura. Con varias formas de
-pago, SHALL indicar que cada una lleva su importe y que deben sumar el total. La acción para quitar
-una forma de pago SHALL identificarla y quedar asociada a su fila a cualquier anchura. Las reglas de
-las formas de pago no cambian.
+El editor SHALL pedir las formas de pago cuando la factura tiene al menos un producto. Con una sola
+forma de pago, SHALL mostrar como su importe el total de la factura, sin pedirlo. Al dividir el pago,
+cada forma de pago SHALL llevar su importe, y el editor SHALL decir al momento cuánto falta por
+asignar o cuánto se asignó de más, y ofrecer asignar lo pendiente a una forma de pago sin importe.
+Cada forma de pago SHALL mostrar su nombre corriente y, como detalle, su código y su nombre oficial
+del SRI. La acción para quitar una forma de pago SHALL identificarla y quedar asociada a su fila a
+cualquier anchura; al volver a una sola, su importe vuelve a ser el total. Las reglas de las formas
+de pago no cambian.
 
 #### Scenario: Una forma de pago
 - **WHEN** un operador prepara una factura con una sola forma de pago
-- **THEN** el importe dice «Déjalo vacío para usar el total de la factura»
+- **THEN** su importe es el total de la factura, sin escribirlo, y ve «Efectivo» con el detalle «SRI 01»
 
-#### Scenario: Varias formas de pago
-- **WHEN** un operador agrega una segunda forma de pago
-- **THEN** el editor indica que cada forma de pago lleva su importe y que deben sumar el total
+#### Scenario: Dividir el pago
+- **WHEN** un operador divide el pago y asigna USD 10,00 de un total de USD 28,75 a la primera forma de pago
+- **THEN** el editor dice que faltan USD 18,75 y ofrece asignarlos a la segunda
+
+#### Scenario: Asignar de más
+- **WHEN** las formas de pago suman más que el total
+- **THEN** el editor dice cuánto se asignó de más y «Emitir factura» dice que falta la forma de pago
 
 #### Scenario: Quitar en un teléfono
 - **WHEN** un operador ve dos formas de pago en un teléfono
 - **THEN** cada acción de quitar está junto a su forma de pago y su nombre accesible dice cuál quita
 
 ### Requirement: Cambios sin guardar en el editor de facturas
-El editor SHALL indicar de forma visible «Cambios sin guardar» mientras haya cambios que no se han
-guardado. Al cerrar o recargar la pestaña con cambios sin guardar, el navegador SHALL pedir
-confirmación antes de descartarlos. El indicador y el aviso SHALL desaparecer solo tras un guardado
-que el servidor confirma, u otra operación confirmada que persista la versión que se ve. Un guardado
-fallido SHALL conservar los cambios y el indicador. Sin cambios, salir del editor no SHALL pedir nada.
+El editor SHALL indicar el estado del guardado como texto discreto y neutro junto al resumen,
+nunca como una advertencia: «Sin guardar», «Guardando…» o «Guardado». Al cerrar o recargar la
+pestaña con cambios sin guardar, el navegador SHALL pedir confirmación antes de descartarlos. El
+estado y el aviso SHALL limpiarse solo tras un guardado que el servidor confirma, u otra operación
+confirmada que persista la versión que se ve. Un guardado fallido SHALL conservar los cambios y el
+estado. Sin cambios, salir del editor no SHALL pedir nada.
 
-#### Scenario: Indicador de cambios
-- **WHEN** un operador cambia el punto de emisión de un borrador guardado
-- **THEN** el editor muestra «Cambios sin guardar» hasta que el servidor confirma el guardado
+#### Scenario: Estado del guardado
+- **WHEN** un operador cambia la cantidad de una línea de un borrador guardado
+- **THEN** el resumen dice «Sin guardar» hasta que el servidor confirma el guardado, y entonces dice «Guardado»
 
 #### Scenario: Guardado fallido
 - **WHEN** un operador con cambios sin guardar guarda y el servidor rechaza el guardado
-- **THEN** sus cambios siguen en el formulario, el editor sigue mostrando «Cambios sin guardar» y cerrar la pestaña sigue pidiendo confirmación
+- **THEN** sus cambios siguen en el formulario, el editor sigue diciendo «Sin guardar» y cerrar la pestaña sigue pidiendo confirmación
 
 #### Scenario: Cerrar la pestaña con cambios
 - **WHEN** un operador intenta cerrar o recargar la pestaña con cambios sin guardar

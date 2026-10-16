@@ -85,9 +85,9 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
   | Form | `--container-form` | `max-w-form` | 48rem (768 px) | One-column forms: Empresa, Mi cuenta, long dialogs |
   | Workspace | `--container-workspace` | `max-w-workspace` | 72rem (1152 px) | Lists and editors with a side panel |
 
-  - `--container-form-rail` (55rem) is the container width from which a form's side panel goes
-    beside the form, with the `@form-rail:` variant: 36rem of form, 1.5rem of gap and an 18rem
-    panel. Below it the panel stacks after the form.
+  - `--container-form-rail` (57.5rem) is the container width from which a form's side panel goes
+    beside the form, with the `@form-rail:` variant: 36rem of form, 1.5rem of gap and a 20rem
+    panel, the width the summary amounts need. Below it the panel stacks after the form.
   - The shell centers every screen in a workspace column. A screen narrows it by declaring its role
     on its root, also in its loading, error and no-permission states:
     `data-page-width="form"` (Mi cuenta and the Configuración forms: Empresa, Establecimientos,
@@ -150,7 +150,7 @@ primitives -> system components -> domain components -> features -> pages
 | `PageHeader`            | Page title (`h1`) in a 40px block, optional context; `list` variant with description, one primary-action slot and secondary actions; `editor` variant with no actions (the route's breadcrumbs live in the topbar) (`frontend/src/components/layout/page-header.tsx`; grammar in `interface-design.md`) |
 | `ColumnVisibilityMenu`  | Business-facing optional column selection                                  |
 | `RowActionButton`       | Icon action with permission/state handling and opaque tooltip              |
-| `FormLayout`            | Form and optional 18rem side panel, beside it from a 55rem container (`--container-form-rail`) and stacked after it below; reading order form, panel, actions (`frontend/src/components/layout/form-layout.tsx`) |
+| `FormLayout`            | Form and optional 20rem side panel, beside it from a 57.5rem container (`--container-form-rail`) and stacked after it below; reading order form, panel, actions (`frontend/src/components/layout/form-layout.tsx`) |
 | `FormSection`           | Form section with an `h2`, optional description, a local action in its header and a thin top rule; named by its title |
 | `FormGrid`              | Fields in columns by container (two from 40rem, `--container-form-wide`), aligned by label, control and message with `subgrid` |
 | `FormFieldRow`          | One row of fields read as a unit, such as a payment: a `fieldset` with its legend, `subgrid` alignment and the inline action in the control row |

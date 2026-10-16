@@ -280,6 +280,7 @@ Cambio 6. Código en `backend/src/modules/invoices/` y contratos en
 | --- | --- | --- |
 | `POST /api/v1/invoices/drafts` | Crear un borrador: líneas con producto, cantidad y descuento, sin precio | `invoices.draft` |
 | `GET /api/v1/invoices/drafts` | Listar borradores `DRAFT`, paginado | `invoices.draft` |
+| `POST /api/v1/invoices/drafts/preview` | Vista previa de un contenido sin guardarlo, con la evaluación de la emisión; no crea ni cambia borradores | `invoices.draft` |
 | `GET /api/v1/invoices/drafts/{draftId}` | Borrador con su vista previa y sus problemas | `invoices.draft` |
 | `PUT /api/v1/invoices/drafts/{draftId}` | Corregir con `expectedVersion` | `invoices.draft` |
 | `DELETE /api/v1/invoices/drafts/{draftId}` | Eliminar un borrador `DRAFT` | `invoices.draft` |
@@ -483,64 +484,69 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 - **Estados.** Esqueleto sin cifras de paginación, vacío inicial con «Nueva factura» en `outline`, vacío por filtros que los nombra y ofrece «Limpiar filtros», y error con «Intentar de nuevo», todo dentro de la superficie de la tabla.
 - **Brechas del backend.** En `../quality/technical-debt.md`.
 
-## Editor de facturas (`productize-invoice-editor-and-composition-foundation`)
+## Editor de facturas
 
 `frontend/src/features/invoices/draft-editor.tsx` (`/borradores/nuevo` y `/borradores/{id}`) compone
-la base de formularios (`component-system.md`) sobre las mismas rutas de borradores y de emisión, sin
-cambios en la API ni en las reglas del servidor.
+la base de formularios (`component-system.md`) sobre las rutas de borradores, la vista previa sin
+guardar y la emisión. Rediseño pedido por el propietario (2026-10-16): el recorrido es el de la
+persona, comprador, productos, pago, total y emitir, no el técnico de guardar para calcular.
 
-- **Lugar.** Pertenece a Facturas antes y después del primer guardado: Facturas es el destino actual
-  y las migas son «Facturas › Nueva factura» y «Facturas › Borrador de factura», pintadas por su
-  `PageHeader` de editor. El estado del borrador va como contexto: «Sin guardar», «Guardado» o
-  «Cambios sin guardar».
+- **Lugar.** Pertenece a Facturas antes y después del primer guardado; las migas van en la barra
+  superior («Inicio / Ventas / Facturas / Nueva factura»). El título es «Nueva factura» hasta el
+  primer guardado y «Borrador de factura» después. Guardar no vuelve a montar el editor: lleva la
+  versión guardada en su estado y, en un borrador nuevo, cambia la dirección a `/borradores/{id}`
+  con `window.history.replaceState`.
+- **Vista previa en vivo.** Mientras se escribe, el editor pide `POST /api/v1/invoices/drafts/preview`
+  con el contenido válido, 350 ms después del último cambio, y conserva la anterior atenuada mientras
+  llega la nueva («Actualizando»). Es la misma evaluación de la emisión y no guarda nada. El navegador
+  no calcula impuestos ni totales; solo suma los importes que se reparten entre varias formas de pago
+  para decir cuánto falta. Una forma de pago todavía sin elegir no detiene la vista previa.
 - **Secciones.**
-  - **Comprador y punto de emisión,** en dos columnas desde 40rem de contenedor. El comprador es un
-    campo con su nombre, la identificación debajo y «Elegir comprador» o «Cambiar comprador» en la
-    misma fila. Los problemas del servidor sobre el comprador (`BUYER_*`) y el punto
-    (`EMISSION_POINT_*`) van junto a su dato.
-  - **Productos,** con una fila de encabezados desde 40rem de contenedor: producto, cantidad, precio
-    unitario (solo lectura), descuento, base imponible y quitar. La base imponible es la del servidor
-    (`preview.lines[].taxableBase`), solo con el borrador guardado y sin cambios; si no, «—», que se
-    anuncia como «se calcula al guardar». Agregar un producto deja el foco en la cantidad de la línea
-    nueva.
-  - **Formas de pago,** cada una un grupo con su leyenda y su «Quitar» en la fila del importe. Con
-    una, el importe dice «Déjalo vacío para usar el total de la factura»; con varias, la sección dice
-    que cada una lleva su importe y que deben sumar el total.
-- **Guardar y emitir** (design D14), con cinco preguntas que ya existían en el código:
-  - guardar está disponible siempre salvo durante un guardado en curso, también con el borrador
-    incompleto o con problemas: el servidor solo rechaza el formato, las referencias inexistentes, el
-    límite de líneas, la versión y el permiso;
-  - mientras se guarda, el formulario no se edita (un `fieldset` deshabilitado), así que lo que se
-    persiste es lo que se ve;
-  - emitir solo con la versión guardada, sin cambios, sin problemas en su vista previa y con
-    `invoices.emit`; el servidor lo vuelve a evaluar al emitir;
-  - la acción principal es la siguiente válida: guardar en un borrador nuevo o con cambios, emitir
-    cuando está listo, ninguna con el borrador guardado y con problemas, y guardar sin
-    `invoices.emit`, que no muestra emitir;
-  - la acción no disponible dice por qué, en un texto asociado con `aria-describedby`.
-- **Resumen** (PO-2), solo con lo que calcula el servidor, nunca con cálculos del navegador:
-  - sin borrador guardado, ningún importe: «Guarda el borrador para obtener los totales calculados
-    por el servidor»;
-  - guardado y sin cambios, los totales de la vista previa, con su fecha;
-  - con cambios, el bloque se rotula «Totales del último guardado», atenuado, con «Guarda para
-    recalcularlos»;
-  - tras un guardado correcto, la respuesta del servidor; un guardado fallido deja el bloque
-    rotulado;
-  - sin totales calculables, lo dice, y los problemas generales van en «Antes de emitir».
-- **Acciones,** al pie del resumen cuando va al lado, y en una barra fija al pie cuando se apila
-  (menos de 55rem de contenedor), con el alto reservado para que el foco no quede debajo.
-- **Ambiente** (design D21). Encima de las acciones y en la confirmación, `EmissionEnvironmentNotice`:
-  «Pruebas · esta factura no tendrá validez tributaria», «No pudimos confirmar el ambiente…», o nada
-  en Producción, que la confirmación muestra como contexto.
-- **Confirmación.** Reserva el número y firma, no se puede deshacer, y muestra el ambiente, el
-  comprador, el total del servidor y las líneas, con el aviso de consumidor final cuando aplica. La
-  `Idempotency-Key` es la misma para la misma versión, y una confirmación repetida no envía una
-  segunda solicitud.
-- **Cambios sin guardar** (PO-3). «Cambios sin guardar» en el encabezado y en el resumen. Mientras
-  haya cambios, cerrar o recargar la pestaña pide confirmación (`beforeunload`), que se retira en
-  cuanto el servidor confirma el guardado. El punto predeterminado de un borrador nuevo es su punto de
-  partida, no un cambio. La navegación interna no se intercepta: el App Router no ofrece un bloqueo
-  fiable (brecha en `../quality/technical-debt.md`).
+  - **Datos de la factura.** El comprador es una ficha, no un campo: su nombre, su identificación con
+    el tipo («Cédula …», «RUC …», «Consumidor final · …») y «Cambiar» o «Elegir comprador». Con un
+    solo punto de emisión disponible, el punto se muestra como dato, sin selector. Los problemas del
+    servidor sobre el comprador (`BUYER_*`) y el punto (`EMISSION_POINT_*`) van junto a su dato.
+  - **Productos.** Sin productos, un vacío con «Agregar producto». Con productos, una fila de
+    encabezados desde 40rem de contenedor: producto, cantidad compacta, precio unitario (solo
+    lectura), descuento en USD, IVA y subtotal del servidor, con los números a la derecha. Agregar un
+    producto deja el foco en su cantidad. Quitar una línea no pide confirmación: el aviso ofrece
+    «Deshacer». Se acepta la coma decimal («1,5»).
+  - **Formas de pago,** cuando ya hay algún producto. Con una, su importe es el total de la factura,
+    sin pedirlo. «Dividir el pago» agrega otra: cada una lleva su importe, el editor dice cuánto falta
+    o cuánto sobra, y una forma de pago sin importe ofrece «Asignar lo pendiente». Una forma de pago
+    nueva propone lo que falta si las demás ya llevan su importe. Cada una muestra su nombre corriente
+    («Efectivo», «Tarjeta de crédito») y, como detalle, «SRI 01 · Sin utilización del sistema
+    financiero». Al volver a una sola, su importe vuelve a ser el total.
+- **Resumen,** en un carril fijo de 20rem al lado desde 57,5rem de contenedor: el número de
+  productos, el subtotal sin impuestos, el descuento, cada IVA y el total destacado; al dividir el
+  pago, lo asignado y lo pendiente. Debajo, «Para emitir» con lo que falta (comprador, punto de
+  emisión, productos, forma de pago), los problemas generales en «Antes de emitir», y el estado del
+  guardado junto al título del resumen: «Sin guardar», «Guardando…» o «Guardado», en texto neutro.
+- **Emitir y guardar.**
+  - «Emitir factura» es la acción principal; «Guardar borrador», secundaria (principal sin
+    `invoices.emit`, que no muestra emitir).
+  - Emitir está disponible con el contenido completo, la vista previa al día y sin problemas. No pide
+    guardar antes: si hay cambios o no hay borrador, la confirmación guarda primero y emite esa
+    versión. La `Idempotency-Key` es una por versión: un reintento de la misma versión la repite.
+  - Mientras no está disponible, dice qué falta en un texto asociado con `aria-describedby`.
+  - Guardar está disponible siempre salvo durante un guardado o una emisión, que dejan el
+    formulario sin edición (un `fieldset` deshabilitado). Ctrl/⌘ + S guarda.
+  - Un conflicto de versión ofrece «Recargar borrador», que trae la versión vigente sin perder el
+    editor.
+- **Acciones,** al pie del resumen cuando va al lado y, apilado, en una barra fija al pie con el
+  total, con el alto reservado para que el foco no quede debajo.
+- **Ambiente** (design D21). Además de la franja global de Pruebas, `EmissionEnvironmentNotice` va
+  encima de las acciones y en la confirmación: «Pruebas · esta factura no tendrá validez tributaria»,
+  «No pudimos confirmar el ambiente…», o nada en Producción, que la confirmación muestra como
+  contexto.
+- **Confirmación.** Reserva el número y firma, no se puede deshacer, y muestra el comprador con su
+  identificación, los productos, el pago, el ambiente y el total, con el aviso de consumidor final
+  cuando aplica. Una confirmación repetida no envía una segunda solicitud.
+- **Salir con cambios.** Mientras haya cambios, cerrar o recargar la pestaña pide confirmación
+  (`beforeunload`), que se retira en cuanto el servidor confirma el guardado. El punto
+  predeterminado de un borrador nuevo es su punto de partida, no un cambio. La navegación interna no
+  se intercepta: el App Router no ofrece un bloqueo fiable (brecha en
+  `../quality/technical-debt.md`).
 - **Estados.** El borrador de otra empresa es, para esta, inexistente (`404`): «El borrador no
   existe», sin ningún dato. La carga y el error usan el mismo encabezado y la misma distribución.
 

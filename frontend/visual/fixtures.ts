@@ -250,6 +250,7 @@ function reply(
   method: string,
   path: string,
   query: URLSearchParams,
+  body: string | null = null,
 ): Reply | null {
   const environment = scenario.environment ?? "TEST";
   if (scenario.persona === "anonymous") {
@@ -301,7 +302,7 @@ function reply(
       return invoiceList(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
     default:
       // El editor de facturas y los catálogos de sus pantallas vecinas (editor-fixtures.ts).
-      return editorReply(method, path, query, scenario.environment ?? "TEST");
+      return editorReply(method, path, query, scenario.environment ?? "TEST", body);
   }
 }
 
@@ -339,7 +340,13 @@ export async function openPage(
   await page.route("**/api/v1/**", (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    const found = reply(scenario, request.method(), url.pathname, url.searchParams);
+    const found = reply(
+      scenario,
+      request.method(),
+      url.pathname,
+      url.searchParams,
+      request.postData(),
+    );
     if (!found) {
       recorder.unexpected.push(`${request.method()} ${url.pathname}`);
       return route.fulfill({

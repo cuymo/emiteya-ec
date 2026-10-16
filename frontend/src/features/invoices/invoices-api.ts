@@ -1,5 +1,6 @@
 // Datos de Borradores y Facturas (add-invoice-emission, design D13 y D15; add-sri-transmission,
-// design D18 y D20): borradores con su vista previa del servidor, emisión con una Idempotency-Key
+// design D18 y D20): borradores con su vista previa del servidor, también la de un contenido sin
+// guardar mientras se edita, emisión con una Idempotency-Key
 // estable por solicitud, facturas desde su snapshot y reintento de la firma. La transmisión y su
 // reconciliación, compartidas con la nota de crédito, viven en la bandeja (`archive-api`). Toda
 // mutación pasa por useMutationFeedback.
@@ -9,6 +10,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   IDEMPOTENCY_KEY_HEADER,
   draftListMetaSchema,
+  draftPreviewViewSchema,
   draftSummaryViewSchema,
   draftViewSchema,
   invoiceListMetaSchema,
@@ -51,6 +53,9 @@ export function useDrafts(query: { page: number; pageSize: number }, enabled: bo
   });
 }
 
+/** Un borrador, leído de nuevo: para recargarlo tras un conflicto de versión. */
+export const fetchDraft = (id: string) => apiFetch(draftPath(id), { schema: draftViewSchema });
+
 export function useDraft(id: string | null, enabled: boolean) {
   return useQuery({
     queryKey: [...DRAFTS_KEY, "detail", id],
@@ -58,6 +63,33 @@ export function useDraft(id: string | null, enabled: boolean) {
     queryFn: ({ signal }) => apiFetch(draftPath(id!), { schema: draftViewSchema, signal }),
   });
 }
+
+/**
+ * Vista previa del servidor de un contenido sin guardar: los totales, los impuestos y los problemas
+ * mientras se edita, con el cálculo de la emisión. `null` mientras el contenido no es válido. La
+ * anterior se conserva mientras llega la nueva, para que el resumen no parpadee.
+ */
+export function useDraftPreview(input: CreateDraftInput | null) {
+  return useQuery({
+    queryKey: [...DRAFTS_KEY, "preview", input],
+    enabled: input !== null,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    queryFn: ({ signal }) =>
+      apiFetch("/invoices/drafts/preview", {
+        method: "POST",
+        json: input,
+        schema: draftPreviewViewSchema,
+        signal,
+      }),
+  });
+}
+
+/** Guarda un borrador nuevo o corrige uno existente; la usan el guardado y la emisión. */
+export const saveDraftRequest = (id: string | null, input: CreateDraftInput | UpdateDraftInput) =>
+  id
+    ? apiFetch(draftPath(id), { method: "PUT", json: input, schema: draftViewSchema })
+    : apiFetch("/invoices/drafts", { method: "POST", json: input, schema: draftViewSchema });
 
 export function useSaveDraft(options: {
   onSuccess: (draft: DraftView) => void;
@@ -70,10 +102,7 @@ export function useSaveDraft(options: {
     }: {
       id: string | null;
       input: CreateDraftInput | UpdateDraftInput;
-    }) =>
-      id
-        ? apiFetch(draftPath(id), { method: "PUT", json: input, schema: draftViewSchema })
-        : apiFetch("/invoices/drafts", { method: "POST", json: input, schema: draftViewSchema }),
+    }) => saveDraftRequest(id, input),
     success: () => "Guardaste el borrador.",
     invalidate: [DRAFTS_KEY],
     onSuccess: options.onSuccess,

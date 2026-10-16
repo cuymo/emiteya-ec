@@ -185,7 +185,7 @@ export const PAYMENT_METHODS = ok({
       officialLabel:
         code === "01" ? "Sin utilización del sistema financiero" : "Tarjeta de crédito",
       effectiveFrom: "2016-06-01",
-      effectiveFromBasis: "OFFICIAL",
+      effectiveFromBasis: "SOURCE_STATED",
       effectiveTo: null,
       normativeStatus: "OFFICIAL",
       sourceRef: "Ficha",
@@ -225,6 +225,8 @@ export function render(
       emissionPoint: { id: "ep-1", code: "001", status: "ACTIVE" },
       available: true,
     }),
+    // La vista previa del editor mientras se escribe: la del borrador de ejemplo.
+    "POST /api/v1/invoices/drafts/preview": ok(draft().preview),
     ...routes,
   });
   renderApp(<SessionGate fallback={<p>cargando</p>}>{ui}</SessionGate>);

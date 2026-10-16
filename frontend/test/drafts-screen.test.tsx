@@ -31,6 +31,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** «Emitir factura», en cuanto la vista previa del servidor lo deja disponible. */
+async function emitButton() {
+  const emit = await screen.findByRole("button", { name: "Emitir factura" });
+  await waitFor(() => expect(emit).toHaveProperty("disabled", false));
+  return emit;
+}
+
 describe("pantalla Borradores", () => {
   it("lista comprador, punto, total previo y actualización, con Nueva factura", async () => {
     render(<DraftsScreen />, {
@@ -139,9 +146,7 @@ describe("editor de factura", () => {
     const buyerDialog = await screen.findByRole("dialog", { name: "Elegir comprador" });
     await user.click(await within(buyerDialog).findByRole("option", { name: /EL PERNO/ }));
     expect(await screen.findByText("EL PERNO CIA. LTDA.")).toBeDefined();
-    await waitFor(() =>
-      expect((screen.getByLabelText("Punto de emisión") as HTMLSelectElement).value).toBe("ep-1"),
-    );
+    expect(await screen.findByText("001-001 · Av. Amazonas, Quito")).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Agregar producto" }));
     const productDialog = await screen.findByRole("dialog", { name: "Agregar producto" });
     await user.click(await within(productDialog).findByRole("option", { name: /Cemento 50 kg/ }));
@@ -152,9 +157,7 @@ describe("editor de factura", () => {
     const quantity = within(line).getByLabelText("Cantidad");
     await user.clear(quantity);
     await user.type(quantity, "3");
-    await user.type(within(line).getByLabelText("Descuento"), "1.25");
-    expect(screen.getByRole("button", { name: "Emitir factura" })).toHaveProperty("disabled", true);
-    expect(screen.getByText("Guarda el borrador para emitirlo.")).toBeDefined();
+    await user.type(within(line).getByLabelText("Descuento (USD)"), "1.25");
     await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
     expect(await screen.findByText("Guardaste el borrador.")).toBeDefined();
     const post = calls.find((call) => call.key === "POST /api/v1/invoices/drafts");
@@ -164,7 +167,7 @@ describe("editor de factura", () => {
       lines: [{ productId: "prod-1", quantity: "3", discount: "1.25" }],
       payments: [{ paymentMethod: "01", amount: null }],
     });
-    expect(navigation.replace).toHaveBeenCalledWith("/borradores/draft-1");
+    expect(window.location.pathname).toBe("/borradores/draft-1");
   });
 
   it("no preselecciona el punto predeterminado si dejó de estar disponible", async () => {
@@ -224,15 +227,12 @@ describe("editor de factura", () => {
       }),
     });
     const summary = await screen.findByRole("complementary", { name: "Resumen" });
-    expect(within(summary).getByText("USD 28,75")).toBeDefined();
+    expect(await within(summary).findByText("USD 28,75")).toBeDefined();
     expect(within(summary).getByText("IVA 15 %")).toBeDefined();
-    expect(
-      within(summary).getByText("Vista previa del 03/10/2026, sin validez fiscal."),
-    ).toBeDefined();
+    expect(within(summary).getByText(/Vista previa sin validez fiscal/)).toBeDefined();
     const user = userEvent.setup();
     const line = screen.getByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
     await user.type(within(line).getByLabelText("Cantidad"), "0");
-    expect(screen.getByText("Guarda los cambios antes de emitir.")).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Otro usuario cambió este borrador");
@@ -254,19 +254,19 @@ describe("editor de factura", () => {
             line(2, "prod-2", "Arena fina", "1"),
             line(3, "prod-1", "Cemento 50 kg", "4"),
           ],
-          preview: {
-            ...draft().preview,
-            lines: [],
-            stockWarnings: [
-              { code: "STOCK_BELOW_REQUESTED", productId: "prod-1", requested: "7", balance: "5" },
-              { code: "STOCK_NOT_INITIALIZED", productId: "prod-2", requested: "1", balance: null },
-            ],
-          },
         }),
       ),
+      "POST /api/v1/invoices/drafts/preview": ok({
+        ...draft().preview,
+        lines: [],
+        stockWarnings: [
+          { code: "STOCK_BELOW_REQUESTED", productId: "prod-1", requested: "7", balance: "5" },
+          { code: "STOCK_NOT_INITIALIZED", productId: "prod-2", requested: "1", balance: null },
+        ],
+      }),
     });
     const third = await screen.findByRole("listitem", { name: "Línea 3: Cemento 50 kg" });
-    expect(within(third).getByRole("note").textContent).toBe(
+    expect((await within(third).findByRole("note")).textContent).toBe(
       "Aviso de existencias: pides 7 y el saldo contabilizado es 5. Es orientativo y no impide emitir.",
     );
     const first = screen.getByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
@@ -296,7 +296,7 @@ describe("editor de factura", () => {
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Emitir factura" }));
+    await user.click(await emitButton());
     let dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
     expect(within(dialog).getByText("Pruebas")).toBeDefined();
     expect(within(dialog).getByText("USD 28,75")).toBeDefined();
@@ -331,7 +331,7 @@ describe("editor de factura", () => {
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Emitir factura" }));
+    await user.click(await emitButton());
     let dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
     await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
     expect(await screen.findByRole("alert")).toBeDefined();
@@ -370,7 +370,7 @@ describe("editor de factura", () => {
         }),
       ),
     });
-    await userEvent.setup().click(await screen.findByRole("button", { name: "Emitir factura" }));
+    await userEvent.setup().click(await emitButton());
     const dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
     expect(within(dialog).getByText(/restricciones para anularse o corregirse/)).toBeDefined();
   });
@@ -378,24 +378,24 @@ describe("editor de factura", () => {
   it("un rechazo de la emisión vuelve al editor y señala la línea", async () => {
     let rejected = false;
     render(<DraftEditorScreen draftId="draft-1" />, {
-      "GET /api/v1/invoices/drafts/draft-1": () =>
+      "GET /api/v1/invoices/drafts/draft-1": ok(draft()),
+      // Tras el rechazo, la vista previa vuelve a calcularse con lo que cambió.
+      "POST /api/v1/invoices/drafts/preview": () =>
         ok(
           rejected
-            ? draft({
-                preview: {
-                  ...draft().preview,
-                  totals: null,
-                  issues: [
-                    {
-                      code: "PRODUCT_INACTIVE",
-                      message: "Línea 1: el producto Cemento 50 kg está desactivado.",
-                      line: 1,
-                      payment: null,
-                    },
-                  ],
-                },
-              })
-            : draft(),
+            ? {
+                ...draft().preview,
+                totals: null,
+                issues: [
+                  {
+                    code: "PRODUCT_INACTIVE",
+                    message: "Línea 1: el producto Cemento 50 kg está desactivado.",
+                    line: 1,
+                    payment: null,
+                  },
+                ],
+              }
+            : draft().preview,
         )({}),
       "POST /api/v1/invoices": () => {
         rejected = true;
@@ -409,7 +409,7 @@ describe("editor de factura", () => {
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Emitir factura" }));
+    await user.click(await emitButton());
     const dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
     await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
     const alert = await screen.findByRole("alert");
@@ -443,9 +443,6 @@ describe("editor de factura", () => {
       { "GET /api/v1/invoices/drafts/draft-1": ok(draft()) },
       OPERATOR_ME,
     );
-    expect(await screen.findByRole("button", { name: "Emitir factura" })).toHaveProperty(
-      "disabled",
-      false,
-    );
+    expect(await emitButton()).toBeDefined();
   });
 });

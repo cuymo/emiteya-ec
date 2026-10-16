@@ -93,19 +93,15 @@ test.describe("teclado del editor (7.1)", () => {
     const line = page.getByRole("listitem", { name: /^Línea 1:/ });
     await expect(line.getByLabel("Cantidad")).toBeFocused();
     await tab();
-    await expect(line.getByLabel("Descuento")).toBeFocused();
+    await expect(line.getByLabel("Descuento (USD)")).toBeFocused();
     await tab();
-    await expect(page.getByRole("button", { name: "Quitar la línea 1" })).toBeFocused();
-    await tab();
-    await expect(page.getByRole("button", { name: "Agregar forma de pago" })).toBeFocused();
+    await expect(page.getByRole("button", { name: /^Quitar / }).first()).toBeFocused();
     await tab();
     await expect(page.getByLabel("Forma de pago", { exact: true })).toBeFocused();
     await tab();
-    await expect(page.getByLabel("Importe")).toBeFocused();
+    await expect(page.getByRole("button", { name: "Dividir el pago" })).toBeFocused();
     await tab();
-    await expect(page.getByRole("button", { name: "Quitar la forma de pago 1" })).toBeFocused();
-    await tab();
-    // «Emitir factura» no está disponible: el siguiente es guardar, la acción principal.
+    // «Emitir factura» no está disponible sin comprador: el siguiente es guardar.
     await expect(page.getByRole("button", { name: "Guardar borrador" })).toBeFocused();
     await finish(page, recorder);
   });
@@ -355,7 +351,7 @@ test.describe("capturas del editor (7.2)", () => {
       if (act === "dirty") {
         const quantity = page.getByRole("listitem", { name: /^Línea 1:/ }).getByLabel("Cantidad");
         await quantity.fill("5");
-        await expect(page.getByText("Totales del último guardado")).toBeVisible();
+        await expect(page.locator("[data-slot=draft-state]")).toHaveText("Sin guardar");
         await quantity.blur();
       }
       await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true });

@@ -66,7 +66,7 @@ workspace width, and narrows to reading or form when the screen root declares
 `data-page-width="reading"` or `data-page-width="form"`. Breadcrumbs, title and content share that
 column, so their left edges align at every width.
 
-`--container-form-rail` (55rem) is the container width from which a form's side panel sits beside
+`--container-form-rail` (57.5rem) is the container width from which a form's side panel sits beside
 the form (`@form-rail:`). The screens that used `max-w-xl`, `max-w-2xl`, `max-w-3xl` and
 `max-w-5xl` now declare their role, as listed in `component-system.md`.
 

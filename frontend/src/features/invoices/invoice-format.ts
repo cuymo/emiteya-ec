@@ -44,6 +44,40 @@ export function formatIssueDate(date: string): string {
 export const buyerLabel = (buyer: { legalName: string; identification: string }) =>
   `${buyer.legalName} · ${buyer.identification}`;
 
+/** Tipo de identificación del comprador en palabras, por su código del SRI. */
+const IDENTIFICATION_LABELS: Record<string, string> = {
+  "04": "RUC",
+  "05": "Cédula",
+  "06": "Pasaporte",
+  "07": "Consumidor final",
+  "08": "Identificación del exterior",
+};
+
+/** «Cédula 0431740372», «RUC 1790012345001»; un código desconocido muestra solo el número. */
+export function identificationText(type: string, identification: string): string {
+  const label = IDENTIFICATION_LABELS[type];
+  return label ? `${label} ${identification}` : identification;
+}
+
+/**
+ * Nombre corriente de cada forma de pago del catálogo del SRI. El nombre oficial y el código siguen a
+ * la vista como detalle: se envía siempre la entrada del catálogo, nunca este nombre.
+ */
+const PAYMENT_METHOD_NAMES: Record<string, string> = {
+  "01": "Efectivo",
+  "15": "Compensación de deudas",
+  "16": "Tarjeta de débito",
+  "17": "Dinero electrónico",
+  "18": "Tarjeta prepago",
+  "19": "Tarjeta de crédito",
+  "20": "Transferencia u otro medio financiero",
+  "21": "Endoso de títulos",
+};
+
+/** «Efectivo», o el nombre oficial si el código no tiene nombre corriente. */
+export const paymentMethodName = (code: string, officialLabel: string) =>
+  PAYMENT_METHOD_NAMES[code] ?? officialLabel;
+
 /** Operaciones con el SRI en lenguaje de negocio (add-sri-transmission, design D20). */
 export const OPERATION_LABELS: Record<SriOperation, string> = {
   RECEPTION: "Envío al SRI",

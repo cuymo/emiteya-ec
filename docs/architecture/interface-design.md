@@ -101,7 +101,7 @@ design D3). No screen builds its own header.
 | Variant | Breadcrumbs | Title | Description | Context | Primary action | Secondary actions |
 | --- | --- | --- | --- | --- | --- | --- |
 | List (`variant="list"`, Facturas) | None | `h1` | Optional | Optional | Right of the title | Next to the primary |
-| Editor (`variant="editor"`, invoice editor) | None (top bar) | `h1` | None | Draft state: «Sin guardar», «Guardado» or «Cambios sin guardar» | None: actions live next to the summary or in the action bar | None |
+| Editor (`variant="editor"`, invoice editor) | None (top bar) | `h1` | None | None: the save state («Sin guardar», «Guardado») sits in the summary, as neutral text | None: actions live next to the summary or in the action bar | None |
 | Configuration and reading (written for the migration of those screens) | None (top bar) | `h1` | Yes | Optional | Right, inside the width of its role (`max-w-form` or `max-w-reading`) | Next to the primary |
 
 - **Fixed rhythm:** the title block is at least 40px high, the height of the default button, with

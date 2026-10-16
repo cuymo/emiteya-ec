@@ -94,7 +94,7 @@ describe("CSS del sistema de diseño", () => {
 
   it("las columnas de los formularios son utilidades con nombre y responden al contenedor (D5, D7)", () => {
     expect(css).toMatch(
-      /@container \(width >= 55rem\)\s*\{\s*\.\\@form-rail\\:grid-cols-form-rail\s*\{\s*grid-template-columns: minmax\(0, 1fr\) 18rem/,
+      /@container \(width >= 57.5rem\)\s*\{\s*\.\\@form-rail\\:grid-cols-form-rail\s*\{\s*grid-template-columns: minmax\(0, 1fr\) 20rem/,
     );
     expect(css).toMatch(
       /@container \(width >= 32rem\)\s*\{\s*\.\\@lg\\:grid-cols-payment\s*\{\s*grid-template-columns: minmax\(14rem, 1fr\) 13rem/,
@@ -116,7 +116,7 @@ describe("CSS del sistema de diseño", () => {
       );
     }
     expect(css).toMatch(
-      /@container \(width >= 55rem\)\s*\{(?:\s*\.[^{]+\{[^}]*\})*?\s*\.\\@form-rail\\:flex-row\s*\{\s*flex-direction: row/,
+      /@container \(width >= 57.5rem\)\s*\{(?:\s*\.[^{]+\{[^}]*\})*?\s*\.\\@form-rail\\:flex-row\s*\{\s*flex-direction: row/,
     );
   });
 });

@@ -1,6 +1,6 @@
 // Distribución de un formulario con panel (productize-invoice-editor-and-composition-foundation,
-// design D5 y D8). Contenedor con `@container`: el panel de 18rem va al lado del formulario solo
-// desde `--container-form-rail` (55rem), que deja al menos 36rem de formulario; por debajo, el panel
+// design D5 y D8). Contenedor con `@container`: el panel de 20rem va al lado del formulario solo
+// desde `--container-form-rail` (57.5rem), que deja al menos 36rem de formulario; por debajo, el panel
 // se apila después del formulario. El orden de lectura es siempre el formulario, el panel y las
 // acciones. Por qué el contenedor y no la ventana: el ancho útil cambia con la barra lateral.
 // - Al lado, el panel y las acciones forman un carril fijo bajo la barra superior.
@@ -46,10 +46,13 @@ export function FormLayout({
 /** Panel de resumen: una superficie propia con su título, al lado o al final del formulario. */
 export function StickySummaryPanel({
   title,
+  aside,
   className,
   children,
 }: {
   title: string;
+  /** Un dato breve a la derecha del título, como el estado del guardado. */
+  aside?: ReactNode;
   className?: string;
   children: ReactNode;
 }) {
@@ -60,9 +63,12 @@ export function StickySummaryPanel({
       data-slot="sticky-summary-panel"
       className={cn("flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4", className)}
     >
-      <h2 id={titleId} className="text-lg font-semibold">
-        {title}
-      </h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 id={titleId} className="text-lg font-semibold">
+          {title}
+        </h2>
+        {aside}
+      </div>
       {children}
     </aside>
   );
