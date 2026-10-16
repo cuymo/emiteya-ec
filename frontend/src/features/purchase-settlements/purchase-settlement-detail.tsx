@@ -23,6 +23,7 @@ import {
   transmissionNeedsAttention,
 } from "@/features/documents/document-detail-tabs";
 import { DocumentsSection } from "@/features/archive/documents-section";
+import { LineItemList } from "@/features/documents/line-item-list";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
 import {
@@ -237,11 +238,13 @@ export function PurchaseSettlementDetailScreen({
                     </p>
                   </Section>
                   <Section title="Líneas">
-                    <ul className="flex flex-col gap-2">
-                      {data.lines.map((line) => (
-                        <LineItem key={line.position} line={line} />
-                      ))}
-                    </ul>
+                    <LineItemList
+                      items={data.lines}
+                      getKey={(line) => line.position}
+                      getSearchText={(line) => `${line.description} ${line.mainCode ?? ""}`}
+                      noun={{ one: "línea", many: "líneas" }}
+                      renderItem={(line) => <LineItem line={line} />}
+                    />
                   </Section>
                   <Section title="Pagos">
                     <ul className="flex flex-col gap-1 text-sm">

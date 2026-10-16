@@ -27,6 +27,7 @@ import {
   transmissionNeedsAttention,
 } from "@/features/documents/document-detail-tabs";
 import { DocumentsSection } from "@/features/archive/documents-section";
+import { LineItemList } from "@/features/documents/line-item-list";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
 import {
@@ -193,12 +194,13 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
                     </p>
                   </Section>
                   <Section title="Líneas">
-                    <ul className="flex flex-col gap-2">
-                      {data.lines.map((line) => (
-                        <li
-                          key={line.position}
-                          className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                        >
+                    <LineItemList
+                      items={data.lines}
+                      getKey={(line) => line.position}
+                      getSearchText={(line) => `${line.description} ${line.mainCode ?? ""}`}
+                      noun={{ one: "línea", many: "líneas" }}
+                      renderItem={(line) => (
+                        <li className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
                           <span className="flex min-w-0 flex-col">
                             <span className="font-medium break-words">{line.description}</span>
                             <span className="text-foreground-muted tabular-nums">
@@ -219,8 +221,8 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
                             {formatUsd(line.taxableBase)}
                           </span>
                         </li>
-                      ))}
-                    </ul>
+                      )}
+                    />
                   </Section>
                 </>
               ),

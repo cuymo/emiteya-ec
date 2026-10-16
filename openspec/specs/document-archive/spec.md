@@ -552,3 +552,18 @@ El detalle de cada comprobante que el sistema emite SHALL separar su informació
 #### Scenario: Comprobante esperando su firma
 - **WHEN** un operador abre el detalle de una guía de remisión que todavía no se firmó
 - **THEN** no ve la pestaña de la transmisión, y el encabezado explica la firma pendiente con la acción de reintentarla
+
+### Requirement: Líneas de un comprobante en su detalle
+El detalle de una factura, de una nota de crédito y de una liquidación de compra SHALL mostrar sus líneas enteras cuando son 10 o menos. Con más, SHALL ofrecer un buscador de texto, que no distingue mayúsculas ni tildes y busca en el nombre y el código de cada línea, y una paginación discreta de 10 líneas por página, con el rango visible y las acciones de página anterior y siguiente. Buscar SHALL volver a la primera página y decir cuántas líneas coinciden; sin coincidencias, SHALL decirlo. La búsqueda y las páginas no SHALL consultar al servidor.
+
+#### Scenario: Factura con muchos productos
+- **WHEN** un operador abre el detalle de una factura con 36 productos
+- **THEN** ve los 10 primeros, «1–10 de 36 productos» y la acción de página siguiente
+
+#### Scenario: Buscar un producto
+- **WHEN** el operador escribe «ceramica» en el buscador de esa factura
+- **THEN** ve solo los productos cuyo nombre o código contiene «Cerámica», con cuántos coinciden de los 36
+
+#### Scenario: Pocas líneas
+- **WHEN** un operador abre el detalle de una factura con 3 productos
+- **THEN** ve los 3 sin buscador ni paginación

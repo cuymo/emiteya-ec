@@ -8,9 +8,14 @@ import { beforeAll, describe, expect, it } from "vitest";
 const ROOT = join(__dirname, "..");
 let eslint: ESLint;
 
-beforeAll(() => {
+// El primer análisis carga la configuración y los plugins: se hace aquí, con margen, para que bajo
+// carga no agote el tiempo de la primera prueba.
+beforeAll(async () => {
   eslint = new ESLint({ cwd: ROOT, overrideConfigFile: join(ROOT, "eslint.config.js") });
-});
+  await eslint.lintText("export {};\n", {
+    filePath: join(ROOT, "src/components/shell/warmup.tsx"),
+  });
+}, 60_000);
 
 async function lint(code: string, file: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath: join(ROOT, file) });

@@ -26,6 +26,7 @@ import {
   transmissionNeedsAttention,
 } from "@/features/documents/document-detail-tabs";
 import { StateCell } from "@/features/documents/document-status-badge";
+import { LineItemList } from "@/features/documents/line-item-list";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { InvoiceCreditSection } from "@/features/credit-notes/invoice-credit-section";
@@ -192,12 +193,13 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
                     </p>
                   </Section>
                   <Section title="Productos">
-                    <ul className="flex flex-col gap-2">
-                      {data.lines.map((line) => (
-                        <li
-                          key={line.position}
-                          className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                        >
+                    <LineItemList
+                      items={data.lines}
+                      getKey={(line) => line.position}
+                      getSearchText={(line) => `${line.description} ${line.mainCode ?? ""}`}
+                      noun={{ one: "producto", many: "productos" }}
+                      renderItem={(line) => (
+                        <li className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
                           <span className="flex min-w-0 flex-col">
                             <span className="font-medium break-words">{line.description}</span>
                             <span className="text-foreground-muted tabular-nums">
@@ -213,8 +215,8 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
                             {formatUsd(line.taxableBase)}
                           </span>
                         </li>
-                      ))}
-                    </ul>
+                      )}
+                    />
                   </Section>
                   <Section title="Formas de pago">
                     <ul className="flex flex-col gap-1 text-sm">
