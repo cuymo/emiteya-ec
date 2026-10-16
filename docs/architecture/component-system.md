@@ -103,6 +103,10 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     name visible, because a bare icon is not recognized as a button. Each point also has a
     «Secuenciales» toggle that unfolds its counters for the current environment, each with
     «Ajustar» (`point-sequences.tsx`); they used to have their own tab.
+  - Firma electrónica is centered the same way, with its `h1` only for screen readers. One card
+    holds the certificate data, then the expiry notice, and a footer with «Guardar aviso»
+    (outline, always enabled: with no change it says so instead of sending) and «Reemplazar
+    firma» (primary).
   - Empresa uses the settings layout and the full width: the tab already names the screen, so its
     `h1` is only for screen readers, and each section puts its title and a one-line description
     to the left of its fields from the `--container-settings-split` container (48rem, variant

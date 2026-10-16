@@ -166,17 +166,28 @@ describe("Firma electrónica (design D14)", () => {
     const user = userEvent.setup();
     await user.clear(input);
     await user.type(input, "95");
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(screen.getByRole("button", { name: "Guardar aviso" }));
     expect(await screen.findByText(/entre 1 y 90/)).toBeDefined();
     await user.clear(input);
     await user.type(input, "45");
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(screen.getByRole("button", { name: "Guardar aviso" }));
     expect(
       await screen.findByText("El aviso de vencimiento aparecerá con 45 días de anticipación."),
     ).toBeDefined();
     expect(
       calls.find((call) => call.key === "PUT /api/v1/signing-certificate/expiry-alert")?.body,
     ).toEqual({ days: 45 });
+  });
+
+  it("sin cambios en el aviso lo dice y no envía nada", async () => {
+    const calls = renderScreen(() => certificate());
+    const save = await screen.findByRole("button", { name: "Guardar aviso" });
+    // Disponible siempre, como acción secundaria junto a «Reemplazar firma».
+    expect((save as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Reemplazar firma" })).toBeDefined();
+    await userEvent.setup().click(save);
+    expect(await screen.findByText(/El aviso ya está en \d+ días\./)).toBeDefined();
+    expect(calls.some((call) => call.key.startsWith("PUT"))).toBe(false);
   });
 });
 

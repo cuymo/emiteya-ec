@@ -2,10 +2,15 @@
 // una firma utilizable para emitir y saber cuándo renovarla. Decisión: si cargar o reemplazar la
 // firma. Acción principal: Cargar firma o Reemplazar firma. P0: estado, vencimiento y la acción.
 // P1: titular, RUC y su advertencia, anticipación del aviso. P2: emisor, serie y fecha de carga.
+// Todo va en un recuadro centrado bajo las pestañas, que ya nombran la pantalla (el título queda
+// para los lectores de pantalla): los datos, el aviso y, al pie, «Guardar aviso» como secundaria y
+// «Reemplazar firma» como principal.
 "use client";
 
 import { EXPIRY_ALERT_DAYS, type SigningCertificateView } from "@facturador/contracts";
-import { useState } from "react";
+import { FileKey } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { AsyncButton } from "@/components/async-button";
 import { errorMessage } from "@/components/feedback";
 import { useSession } from "@/components/session";
 import {
@@ -69,9 +74,11 @@ function RucComparison({ certificate }: { certificate: SigningCertificateView })
   );
 }
 
-function ExpiryAlertForm({ days }: { days: number }) {
+/** El aviso de vencimiento y el pie del recuadro, con sus dos acciones. */
+function ExpiryAlertForm({ days, onReplace }: { days: number; onReplace: () => void }) {
   const [value, setValue] = useState(String(days));
   const [error, setError] = useState<string>();
+  const [unchanged, setUnchanged] = useState(false);
   const save = useExpiryAlert({
     onError: (cause) => {
       if (cause instanceof ApiError && cause.status === 400) {
@@ -86,50 +93,74 @@ function ExpiryAlertForm({ days }: { days: number }) {
     /^\d{1,2}$/.test(value) && parsed >= EXPIRY_ALERT_DAYS.min && parsed <= EXPIRY_ALERT_DAYS.max;
   return (
     <form
-      className="flex flex-col gap-2"
       noValidate
+      className="border-t border-border"
       onSubmit={(event) => {
         event.preventDefault();
         setError(undefined);
+        setUnchanged(false);
         if (!valid) {
           setError(
             `La anticipación debe ser un número entero de días entre ${EXPIRY_ALERT_DAYS.min} y ${EXPIRY_ALERT_DAYS.max}.`,
           );
           return;
         }
+        // Sin cambios no hay nada que guardar: se dice, en lugar de deshabilitar el botón.
+        if (parsed === days) {
+          setUnchanged(true);
+          return;
+        }
         save.mutate(parsed);
       }}
     >
-      <label htmlFor="expiry-alert-days" className="text-sm font-medium">
-        Aviso de vencimiento
-      </label>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span>Avisar con</span>
-        <Input
-          id="expiry-alert-days"
-          inputMode="numeric"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? "expiry-alert-error" : "expiry-alert-hint"}
-          className="w-16"
-          maxLength={2}
-        />
-        <span>días de anticipación</span>
-        <Button type="submit" variant="outline" disabled={save.isPending || parsed === days}>
-          Guardar
+      <div className="flex flex-col gap-2 p-4">
+        <label htmlFor="expiry-alert-days" className="text-sm font-medium">
+          Aviso de vencimiento
+        </label>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span>Avisar con</span>
+          <Input
+            id="expiry-alert-days"
+            inputMode="numeric"
+            value={value}
+            onChange={(event) => {
+              setValue(event.target.value);
+              setUnchanged(false);
+            }}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "expiry-alert-error" : "expiry-alert-hint"}
+            className="w-16"
+            maxLength={2}
+          />
+          <span>días de anticipación</span>
+        </div>
+        {error ? (
+          <p id="expiry-alert-error" role="alert" className="text-xs text-danger">
+            {error}
+          </p>
+        ) : (
+          <p id="expiry-alert-hint" role="status" className="text-xs text-foreground-muted">
+            {unchanged
+              ? `El aviso ya está en ${days} días.`
+              : `Entre ${EXPIRY_ALERT_DAYS.min} y ${EXPIRY_ALERT_DAYS.max} días. Administradores y operadores ven el aviso.`}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center justify-end gap-2 rounded-b-lg border-t border-border bg-surface-subtle px-4 py-3">
+        <AsyncButton
+          type="submit"
+          variant="outline"
+          size="default"
+          pending={save.isPending}
+          pendingLabel="Guardando el aviso"
+        >
+          Guardar aviso
+        </AsyncButton>
+        <Button size="default" onClick={onReplace}>
+          <FileKey aria-hidden="true" />
+          Reemplazar firma
         </Button>
       </div>
-      {error ? (
-        <p id="expiry-alert-error" role="alert" className="text-xs text-danger">
-          {error}
-        </p>
-      ) : (
-        <p id="expiry-alert-hint" className="text-xs text-foreground-muted">
-          Entre {EXPIRY_ALERT_DAYS.min} y {EXPIRY_ALERT_DAYS.max} días. Administradores y operadores
-          ven el aviso.
-        </p>
-      )}
     </form>
   );
 }
@@ -139,69 +170,47 @@ export function SigningScreen() {
   const allowed = canSee(me.role, "certificate.read");
   const query = useSigningCertificate(allowed);
   const [dialogOpen, setDialogOpen] = useState(false);
+  // La pestaña ya nombra la pantalla: el título queda para los lectores de pantalla.
   const heading = (
-    <h1 id="firma-titulo" className="text-3xl font-bold">
+    <h1 id="firma-titulo" className="sr-only">
       Firma electrónica
     </h1>
   );
+  const frame = (children: ReactNode, busy = false) => (
+    <section
+      aria-labelledby="firma-titulo"
+      aria-busy={busy || undefined}
+      data-panel-width="form"
+      data-panel-align="center"
+      className="flex flex-col gap-6"
+    >
+      {heading}
+      {children}
+    </section>
+  );
 
   if (!allowed) {
-    return (
-      <section
-        aria-labelledby="firma-titulo"
-        data-panel-width="form"
-        className="flex flex-col gap-6"
-      >
-        {heading}
-        <EmptyState
-          kind="no-permission"
-          title="No tienes permiso para ver esta sección"
-          description="Solo un administrador carga y consulta la firma electrónica."
-        />
-      </section>
+    return frame(
+      <EmptyState
+        kind="no-permission"
+        title="No tienes permiso para ver esta sección"
+        description="Solo un administrador carga y consulta la firma electrónica."
+      />,
     );
   }
-  if (query.isPending) {
-    return (
-      <section
-        aria-labelledby="firma-titulo"
-        aria-busy="true"
-        data-panel-width="form"
-        className="flex flex-col gap-6"
-      >
-        {heading}
-        <Skeleton className="h-64 w-full" />
-      </section>
-    );
-  }
+  if (query.isPending) return frame(<Skeleton className="h-64 w-full" />, true);
   if (query.isError) {
-    return (
-      <section
-        aria-labelledby="firma-titulo"
-        data-panel-width="form"
-        className="flex flex-col gap-6"
-      >
-        {heading}
-        <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
-      </section>
+    return frame(
+      <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />,
     );
   }
 
   const { certificate, expiryAlertDays, maxBytes } = query.data;
-  const action = (
-    <Button onClick={() => setDialogOpen(true)}>
-      {certificate ? "Reemplazar firma" : "Cargar firma"}
-    </Button>
-  );
-  return (
-    <section aria-labelledby="firma-titulo" data-panel-width="form" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {heading}
-        {certificate && action}
-      </div>
+  return frame(
+    <>
       {certificate ? (
-        <>
-          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+        <div className="flex flex-col rounded-lg border border-border bg-surface">
+          <div className="flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge
                 tone={STATE[certificate.state].tone}
@@ -223,14 +232,23 @@ export function SigningScreen() {
             </dl>
             <RucComparison certificate={certificate} />
           </div>
-          <ExpiryAlertForm key={expiryAlertDays} days={expiryAlertDays} />
-        </>
+          <ExpiryAlertForm
+            key={expiryAlertDays}
+            days={expiryAlertDays}
+            onReplace={() => setDialogOpen(true)}
+          />
+        </div>
       ) : (
         <EmptyState
           kind="empty"
           title="Carga la firma electrónica para poder emitir"
           description="Es el archivo PKCS#12 (.p12 o .pfx) que entrega tu entidad certificadora, con su contraseña."
-          action={action}
+          action={
+            <Button onClick={() => setDialogOpen(true)}>
+              <FileKey aria-hidden="true" />
+              Cargar firma
+            </Button>
+          }
         />
       )}
       <UploadCertificateDialog
@@ -240,6 +258,6 @@ export function SigningScreen() {
         onOpenChange={setDialogOpen}
         onReload={() => query.refetch()}
       />
-    </section>
+    </>,
   );
 }
