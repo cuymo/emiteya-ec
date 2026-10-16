@@ -38,97 +38,39 @@ describe("shell autenticado: comportamiento conservado", () => {
     expect(screen.getByRole("button", { name: "Cuenta de Ana Admin" })).toBeDefined();
   });
 
-  it("el administrador ve el destino Usuarios en Configuración, marcado como actual", async () => {
-    api();
-    renderShell();
-    const link = await screen.findByRole("link", { name: "Usuarios" });
-    expect(link.getAttribute("href")).toBe("/configuracion/usuarios");
-    expect(link.getAttribute("aria-current")).toBe("page");
-    expect(within(mainNav()).getByText("Configuración")).toBeDefined();
-  });
-
-  it("la navegación vive dentro de la barra lateral, con todos sus destinos alcanzables", async () => {
-    // Antes se comprobaban las clases `sticky` y `overflow-y-auto`; el desplazamiento real de la
-    // barra con la ventana baja lo comprueba el harness visual en un navegador.
+  it("Configuración es un solo enlace de la barra, actual en cualquiera de sus pestañas", async () => {
     api();
     renderShell();
     await screen.findByText("contenido");
     expect(sidebar().contains(mainNav())).toBe(true);
-    expect(
-      within(mainNav()).getByRole("link", { name: "Portabilidad de datos" }).getAttribute("href"),
-    ).toBe("/configuracion/portabilidad");
-  });
-
-  it("el administrador ve los destinos de Configuración con sus direcciones", async () => {
-    api();
-    renderShell();
-    await screen.findByText("contenido");
-    const config: Record<string, string> = {
-      Empresa: "/configuracion/empresa",
-      Ambiente: "/configuracion/ambiente",
-      Establecimientos: "/configuracion/establecimientos",
-      Secuenciales: "/configuracion/secuenciales",
-      "Firma electrónica": "/configuracion/firma",
-      "Catálogos fiscales": "/configuracion/catalogos-fiscales",
-      Usuarios: "/configuracion/usuarios",
-      "Portabilidad de datos": "/configuracion/portabilidad",
-    };
-    for (const [name, href] of Object.entries(config)) {
-      expect(within(mainNav()).getByRole("link", { name }).getAttribute("href")).toBe(href);
+    const link = within(mainNav()).getByRole("link", { name: "Configuración" });
+    // Lleva a la primera pestaña que el rol ve.
+    expect(link.getAttribute("href")).toBe("/configuracion/empresa");
+    expect(link.getAttribute("aria-current")).toBe("page");
+    // Sus secciones no están en la barra ni se pliegan: son pestañas de la página.
+    for (const name of ["Empresa", "Usuarios", "Portabilidad de datos"]) {
+      expect(within(mainNav()).queryByRole("link", { name })).toBeNull();
     }
+    expect(within(mainNav()).queryByRole("button", { name: "Configuración" })).toBeNull();
   });
 
-  it("Configuración empieza plegada fuera de sus pantallas y se abre a mano (design D24)", async () => {
-    const user = userEvent.setup();
+  it("fuera de Configuración su enlace no es el actual", async () => {
     api();
     navigation.pathname = "/facturas";
     renderShell();
     await screen.findByText("contenido");
-    const section = within(mainNav()).getByRole("button", { name: "Configuración" });
-    expect(section.getAttribute("aria-expanded")).toBe("false");
-    expect(within(mainNav()).queryByRole("link", { name: "Usuarios" })).toBeNull();
-    await user.click(section);
-    expect(section.getAttribute("aria-expanded")).toBe("true");
-    expect(within(mainNav()).getByRole("link", { name: "Usuarios" }).getAttribute("href")).toBe(
-      "/configuracion/usuarios",
-    );
-    // Los grupos operativos no se pliegan.
+    const link = within(mainNav()).getByRole("link", { name: "Configuración" });
+    expect(link.getAttribute("aria-current")).toBeNull();
     expect(within(mainNav()).getByRole("link", { name: "Facturas" })).toBeDefined();
   });
 
-  it("en una pantalla de Configuración empieza abierta y el usuario puede plegarla", async () => {
-    const user = userEvent.setup();
-    api();
-    renderShell();
-    await screen.findByText("contenido");
-    const section = within(mainNav()).getByRole("button", { name: "Configuración" });
-    expect(section.getAttribute("aria-expanded")).toBe("true");
-    expect(
-      within(mainNav()).getByRole("link", { name: "Usuarios" }).getAttribute("aria-current"),
-    ).toBe("page");
-    await user.click(section);
-    expect(section.getAttribute("aria-expanded")).toBe("false");
-    expect(within(mainNav()).queryByRole("link", { name: "Usuarios" })).toBeNull();
-  });
-
-  it("el operador solo ve Catálogos fiscales en Configuración", async () => {
+  it("al operador, Configuración lo lleva a Catálogos fiscales, la única pestaña que ve", async () => {
     api({ me: OPERATOR_ME });
     navigation.pathname = "/configuracion/catalogos-fiscales";
     renderShell();
     await screen.findByText("contenido");
-    for (const name of [
-      "Usuarios",
-      "Empresa",
-      "Ambiente",
-      "Establecimientos",
-      "Secuenciales",
-      "Firma electrónica",
-      "Portabilidad de datos",
-    ]) {
-      expect(within(mainNav()).queryByRole("link", { name })).toBeNull();
-    }
     expect(
-      within(mainNav()).getByRole("link", { name: "Catálogos fiscales" }).getAttribute("href"),
+      within(mainNav()).getByRole("link", { name: "Configuración" }).getAttribute("href"),
     ).toBe("/configuracion/catalogos-fiscales");
   });
 

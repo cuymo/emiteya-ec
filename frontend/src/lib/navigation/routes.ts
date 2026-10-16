@@ -72,6 +72,16 @@ export type CreateAction = {
 };
 
 export const INICIO: Destination = { href: "/", label: "Inicio", icon: House, permission: null };
+/**
+ * `/configuracion`: la entrada a las pestañas de Configuración, que lleva a la primera que el rol ve.
+ * Sin permiso propio: cada pestaña tiene el suyo.
+ */
+export const CONFIGURATION_INDEX: Destination = {
+  href: "/configuracion",
+  label: "Configuración",
+  icon: Settings,
+  permission: null,
+};
 export const MI_CUENTA: Destination = {
   href: "/mi-cuenta",
   label: "Mi cuenta",
@@ -406,6 +416,11 @@ export function visibleGroups(can: PermissionCheck): NavGroup[] {
   })).filter((group) => group.destinations.length > 0);
 }
 
+/** Las secciones de Configuración que el rol ve, en el orden de la navegación: sus pestañas. */
+export function configurationDestinations(can: PermissionCheck): Destination[] {
+  return visibleGroups(can).find((group) => group.section)?.destinations ?? [];
+}
+
 export function visibleCreateActions(can: PermissionCheck): CreateAction[] {
   return CREATE_ACTIONS.filter((action) => can(action.permission));
 }
@@ -440,6 +455,9 @@ export function resolveRoute(pathname: string): ResolvedRoute | null {
       leaf: null,
       permission: exact.permission,
     };
+  }
+  if (path === CONFIGURATION_INDEX.href) {
+    return { destination: CONFIGURATION_INDEX, group: null, leaf: null, permission: null };
   }
   const internal = INTERNAL_ROUTES.find((route) => route.pattern.test(path));
   if (internal) {

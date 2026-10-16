@@ -178,9 +178,10 @@ el navegador SHALL recordar la elección al recargar. Colapsada, cada destino SH
 nombre accesible y mostrarlo como ayuda al enfocarlo o señalarlo. Expandida o colapsada, cada
 destino SHALL responder al puntero en toda su zona visible, y la navegación SHALL desplazarse dentro
 de la barra cuando la altura no alcanza, con rueda, panel táctil o teclado y sin desplazamiento
-horizontal, de modo que cada destino permitido se alcance con el puntero. Configuración SHALL
-empezar plegada fuera de sus pantallas y abierta en ellas. El usuario SHALL poder abrirla o
-plegarla durante la sesión sin perder ningún destino ni permiso. En móvil, la misma navegación
+horizontal, de modo que cada destino permitido se alcance con el puntero. Configuración SHALL ser
+un solo destino de la barra, que lleva a la primera de sus secciones que el rol ve y queda marcado
+como actual en cualquiera de ellas; sus secciones SHALL recorrerse con las pestañas de su página. En
+móvil, la misma navegación
 SHALL abrirse en un panel lateral desde un botón de navegación reconocible como menú, con nombre
 accesible.
 
@@ -200,17 +201,13 @@ accesible.
 - **WHEN** la altura de la ventana no alcanza para todos los destinos, con la barra expandida o colapsada
 - **THEN** el usuario desplaza la navegación dentro de la barra con la rueda o el panel táctil y llega con el puntero a cualquier destino permitido, sin desplazamiento horizontal
 
-#### Scenario: Configuración plegada fuera de sus pantallas
+#### Scenario: Configuración como un solo destino
 - **WHEN** un administrador abre Facturas
-- **THEN** Configuración aparece plegada, anunciada como plegada, y sus destinos se muestran al abrirla
+- **THEN** la barra muestra Configuración como un solo destino, que lleva a Empresa, sin sus secciones
 
-#### Scenario: Configuración abierta en sus pantallas
-- **WHEN** un administrador abre directamente Usuarios, o navega a Empresa con Configuración plegada
-- **THEN** Configuración aparece abierta, con el destino actual marcado
-
-#### Scenario: Plegar Configuración a mano
-- **WHEN** un administrador pliega Configuración en una de sus pantallas, o la abre en otra pantalla
-- **THEN** Configuración queda como la dejó mientras navega en esa sesión de la interfaz
+#### Scenario: Configuración actual en sus secciones
+- **WHEN** un administrador abre directamente Usuarios
+- **THEN** Configuración aparece marcada como destino actual en la barra
 
 #### Scenario: Panel móvil
 - **WHEN** un usuario en un teléfono abre el panel con el botón «Abrir navegación», elige un destino o pulsa Escape, toca fuera del panel o pulsa el botón de cerrar
@@ -466,3 +463,24 @@ presentación de la acción principal, y nunca solo por el color.
 #### Scenario: Filtro elegido
 - **WHEN** un operador elige el filtro «Activos» en la lista de productos
 - **THEN** el filtro se ve elegido por su forma y su texto, sin competir con la acción principal «Nuevo producto»
+
+### Requirement: Configuración en pestañas
+Las secciones de Configuración SHALL presentarse en una sola página con pestañas, en este orden:
+Empresa, Ambiente, Establecimientos, Secuenciales, Firma electrónica, Catálogos fiscales, Usuarios y
+Portabilidad de datos, solo las que el rol ve. Cada pestaña SHALL ser un enlace a la dirección de su
+sección, que conserva su enlace directo, su permiso y su título, y la sección abierta SHALL
+anunciarse como página actual. La dirección `/configuracion` SHALL llevar a la primera pestaña que
+el rol ve. En una pantalla estrecha, las pestañas SHALL desplazarse a lo ancho sin desplazar la
+página, con la actual a la vista.
+
+#### Scenario: Administrador
+- **WHEN** un administrador abre Usuarios
+- **THEN** ve las ocho pestañas en ese orden, con Usuarios marcada como página actual
+
+#### Scenario: Operador
+- **WHEN** un operador abre Configuración
+- **THEN** llega a Catálogos fiscales, la única pestaña que ve
+
+#### Scenario: Enlace directo
+- **WHEN** un administrador abre la dirección de Firma electrónica
+- **THEN** ve la pestaña Firma electrónica abierta, con las demás pestañas para cambiar de sección

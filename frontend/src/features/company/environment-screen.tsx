@@ -38,7 +38,7 @@ export function EnvironmentScreen() {
     return (
       <section
         aria-labelledby="ambiente-titulo"
-        data-page-width="reading"
+        data-panel-width="reading"
         className="flex flex-col gap-6"
       >
         {heading}
@@ -56,7 +56,7 @@ export function EnvironmentScreen() {
     return (
       <section
         aria-labelledby="ambiente-titulo"
-        data-page-width="reading"
+        data-panel-width="reading"
         className="flex flex-col gap-6"
       >
         {heading}
@@ -76,7 +76,7 @@ export function EnvironmentScreen() {
   return (
     <section
       aria-labelledby="ambiente-titulo"
-      data-page-width="reading"
+      data-panel-width="reading"
       className="flex flex-col gap-6"
     >
       {heading}
@@ -160,7 +160,7 @@ export function EnvironmentScreen() {
 
 export function EnvironmentSkeleton() {
   return (
-    <section aria-busy="true" data-page-width="reading" className="flex flex-col gap-6">
+    <section aria-busy="true" data-panel-width="reading" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Ambiente</h1>
       <Skeleton className="h-6 w-24" />
       <Skeleton className="h-8 w-full" />

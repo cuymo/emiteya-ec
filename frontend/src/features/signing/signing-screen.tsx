@@ -149,7 +149,7 @@ export function SigningScreen() {
     return (
       <section
         aria-labelledby="firma-titulo"
-        data-page-width="form"
+        data-panel-width="form"
         className="flex flex-col gap-6"
       >
         {heading}
@@ -166,7 +166,7 @@ export function SigningScreen() {
       <section
         aria-labelledby="firma-titulo"
         aria-busy="true"
-        data-page-width="form"
+        data-panel-width="form"
         className="flex flex-col gap-6"
       >
         {heading}
@@ -178,7 +178,7 @@ export function SigningScreen() {
     return (
       <section
         aria-labelledby="firma-titulo"
-        data-page-width="form"
+        data-panel-width="form"
         className="flex flex-col gap-6"
       >
         {heading}
@@ -194,7 +194,7 @@ export function SigningScreen() {
     </Button>
   );
   return (
-    <section aria-labelledby="firma-titulo" data-page-width="form" className="flex flex-col gap-6">
+    <section aria-labelledby="firma-titulo" data-panel-width="form" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {heading}
         {certificate && action}

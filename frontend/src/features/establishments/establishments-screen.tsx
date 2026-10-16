@@ -140,7 +140,7 @@ export function EstablishmentsScreen() {
     return (
       <section
         aria-labelledby="establecimientos-titulo"
-        data-page-width="form"
+        data-panel-width="form"
         className="flex flex-col gap-6"
       >
         {heading}
@@ -201,7 +201,7 @@ export function EstablishmentsScreen() {
   return (
     <section
       aria-labelledby="establecimientos-titulo"
-      data-page-width="form"
+      data-panel-width="form"
       className="flex flex-col gap-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-4">

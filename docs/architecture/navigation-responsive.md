@@ -75,6 +75,20 @@ Examples:
 - Inicio / Ventas / Facturas / Nueva factura;
 - Inicio / Configuración / Empresa.
 
+### Configuración in Tabs
+
+The Configuración sections share one page with tabs (`ConfigurationLayout`, the
+`app/(app)/configuracion/layout.tsx` layout): Empresa, Ambiente, Establecimientos, Secuenciales, Firma
+electrónica, Catálogos fiscales, Usuarios and Portabilidad de datos, in the navigation order and
+only those the role sees (`configurationDestinations`).
+- **Tabs are links.** Each tab is a link to its section's address (`aria-current="page"` on the open
+  one), so every section keeps its deep link, its permission guard and its own `h1`. They look like
+  the document detail tabs (`tabTriggerClassName`).
+- **`/configuracion`** has no permission of its own and redirects to the first tab the role sees.
+- **Width.** The tabs take the whole workspace column; the panel below takes the width its screen
+  declares with `data-panel-width` (`form` or `reading`), aligned with the tabs.
+- **Narrow screens.** The tab row scrolls horizontally, never the page, with the open tab in view.
+
 ## Application Shell
 
 The authenticated shell (`frontend/src/components/shell/`, spec `web-application-shell`) derives
@@ -96,14 +110,10 @@ from the reference template's dashboard layout (ADR 0028).
     scrolls just enough to show the current destination if it is outside its visible area. It never
     scrolls the page, does not move when the destination is already fully visible, and does not
     animate with reduced motion (design D23).
-  - **Configuración, progressively disclosed** (design D24):
-    - It starts folded outside its screens and open on them, and it opens by itself when the user
-      enters one.
-    - The user can open or fold it during the session. It never folds by itself, and it is not
-      persisted across devices.
-    - Its header is a button with the settings icon, «Configuración» and an expand indicator; when
-      the sidebar is collapsed it is the icon with its tooltip.
-    - The operational groups never fold, so they keep a strong information scent.
+  - **Configuración, one destination** (owner decision, 2026-10-16): a single link at the foot of
+    the sidebar, with the settings icon, to the first section the role sees; it is the current
+    destination on any of its sections. The sections are tabs of one page (see «Configuración in
+    tabs» below). The operational groups never fold, so they keep a strong information scent.
   - **Persistence:** the choice is kept in the `sidebar_state` cookie, which the layout reads on the
     server so a reload renders the same state without a flash.
   - **Below 768px:** the same navigation opens in a sheet from the «Abrir navegación» button, which

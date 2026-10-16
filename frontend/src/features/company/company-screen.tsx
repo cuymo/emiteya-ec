@@ -471,7 +471,7 @@ export function CompanyScreen() {
     return (
       <section
         aria-labelledby="empresa-titulo"
-        data-page-width="form"
+        data-panel-width="form"
         className="flex flex-col gap-6"
       >
         <h1 id="empresa-titulo" className="text-3xl font-bold">
@@ -490,7 +490,7 @@ export function CompanyScreen() {
     return (
       <section
         aria-labelledby="empresa-titulo"
-        data-page-width="form"
+        data-panel-width="form"
         className="flex flex-col gap-6"
       >
         <h1 id="empresa-titulo" className="text-3xl font-bold">
@@ -508,7 +508,7 @@ export function CompanyScreen() {
   return (
     <section
       aria-labelledby="empresa-titulo"
-      data-page-width="form"
+      data-panel-width="form"
       className="flex flex-col gap-6"
     >
       <div className="flex flex-col gap-1">
@@ -533,7 +533,7 @@ export function CompanyScreen() {
 
 export function CompanySkeleton() {
   return (
-    <section aria-busy="true" data-page-width="form" className="flex flex-col gap-6">
+    <section aria-busy="true" data-panel-width="form" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Empresa</h1>
       <Skeleton className="h-10 w-full max-w-xs" />
       <Skeleton className="h-10 w-full" />

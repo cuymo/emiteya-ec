@@ -90,9 +90,11 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     panel, the width the summary amounts need. Below it the panel stacks after the form.
   - The shell centers every screen in a workspace column. A screen narrows it by declaring its role
     on its root, also in its loading, error and no-permission states:
-    `data-page-width="form"` (Mi cuenta and the Configuración forms: Empresa, Establecimientos,
-    Secuenciales, Firma electrónica and Catálogos fiscales) or `data-page-width="reading"` (Inicio
-    and Ambiente). Portabilidad stays in the workspace column because it holds a data table.
+    `data-page-width="form"` (Mi cuenta) or `data-page-width="reading"` (the readiness screen).
+    The Configuración sections live under their tabs, which take the whole column: their screens
+    declare `data-panel-width="form"` (Empresa, Establecimientos, Secuenciales, Firma electrónica
+    and Catálogos fiscales) or `data-panel-width="reading"` (Ambiente), and the tab panel narrows
+    to it. Usuarios and Portabilidad keep the full width because they hold data tables.
   - Screens never set their own `max-w-*`, which would leave them aligned to the left inside the
     column.
 

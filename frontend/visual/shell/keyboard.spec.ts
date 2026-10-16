@@ -74,13 +74,9 @@ test.describe("teclado del shell", () => {
     await page.goto("/facturas");
     await settle(page);
     const nav = page.getByRole("navigation", { name: "Navegación principal" });
-    // Configuración empieza plegada fuera de sus pantallas (design D24): su cabecera es lo último.
-    const section = nav.getByRole("button", { name: "Configuración" });
-    await expect(section).not.toBeInViewport();
-    await section.scrollIntoViewIfNeeded();
-    await expect(section).toBeInViewport();
-    await section.click();
-    const last = nav.getByRole("link", { name: "Portabilidad de datos" });
+    // Configuración, un solo destino al pie, es lo último de la barra.
+    const last = nav.getByRole("link", { name: "Configuración" });
+    await expect(last).not.toBeInViewport();
     await last.scrollIntoViewIfNeeded();
     await expect(last).toBeInViewport();
     // Se desplazó la barra, no la página.

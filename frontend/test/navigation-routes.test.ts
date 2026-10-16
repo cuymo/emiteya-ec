@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import type { Permission } from "@/lib/permissions";
 import {
   breadcrumbsFor,
+  configurationDestinations,
   CREATE_ACTIONS,
   permissionsOf,
   resolveRoute,
@@ -40,9 +41,9 @@ const labels = (can: ReturnType<typeof permissionsOf>) =>
   ]);
 
 describe("modelo de rutas", () => {
-  it("cada una de las 41 páginas autenticadas encaja con un destino o una pantalla interna", () => {
-    // Las 42 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
-    expect(AUTHENTICATED).toHaveLength(41);
+  it("cada una de las 42 páginas autenticadas encaja con un destino o una pantalla interna", () => {
+    // Las 43 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
+    expect(AUTHENTICATED).toHaveLength(42);
     expect(pageUrls(join(APP, "(auth)"))).toEqual(["/iniciar-sesion"]);
     for (const url of AUTHENTICATED) {
       expect(resolveRoute(url), url).not.toBeNull();
@@ -103,6 +104,23 @@ describe("modelo de rutas", () => {
     expect(destination("/inventario/p1")).toBe("Inventario");
     expect(destination("/")).toBe("Inicio");
     expect(destination("/mi-cuenta")).toBe("Mi cuenta");
+  });
+
+  it("la entrada a Configuración no tiene permiso propio y las pestañas siguen el orden de la navegación", () => {
+    expect(resolveRoute("/configuracion")?.permission).toBeNull();
+    expect(configurationDestinations(permissionsOf("ADMIN")).map((tab) => tab.label)).toEqual([
+      "Empresa",
+      "Ambiente",
+      "Establecimientos",
+      "Secuenciales",
+      "Firma electrónica",
+      "Catálogos fiscales",
+      "Usuarios",
+      "Portabilidad de datos",
+    ]);
+    expect(configurationDestinations(permissionsOf("OPERATOR")).map((tab) => tab.href)).toEqual([
+      "/configuracion/catalogos-fiscales",
+    ]);
   });
 
   it("una ruta sin patrón conserva su destino por prefijo y no se guarda", () => {

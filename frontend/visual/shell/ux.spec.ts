@@ -12,7 +12,8 @@ type Viewport = { width: number; height: number };
 const nav = (page: Page) => page.getByRole("navigation", { name: "Navegación principal" });
 const content = (page: Page) =>
   page.locator('[data-slot="sidebar-container"] [data-sidebar="content"]');
-const section = (page: Page) => nav(page).getByRole("button", { name: "Configuración" });
+// Configuración es un solo destino de la barra; sus secciones son pestañas de su página.
+const section = (page: Page) => nav(page).getByRole("link", { name: "Configuración" });
 
 async function open(
   browser: Browser,
@@ -59,13 +60,6 @@ async function centerHits(target: Locator): Promise<boolean> {
   });
 }
 
-async function openConfiguracion(page: Page) {
-  if ((await section(page).getAttribute("aria-expanded")) === "true") return;
-  const box = await wheelIntoView(page, section(page));
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-  await expect(section(page)).toHaveAttribute("aria-expanded", "true");
-}
-
 async function destinationHrefs(page: Page): Promise<string[]> {
   return nav(page)
     .locator('a[data-sidebar="menu-button"]')
@@ -74,18 +68,17 @@ async function destinationHrefs(page: Page): Promise<string[]> {
 
 test.describe("SH-1: cada icono de la barra colapsada responde al clic en su centro", () => {
   for (const [persona, viewport, expected] of [
-    ["admin", { width: 1440, height: 900 }, 21],
-    ["admin", { width: 1024, height: 768 }, 21],
+    ["admin", { width: 1440, height: 900 }, 14],
+    ["admin", { width: 1024, height: 768 }, 14],
     ["operator", { width: 1440, height: 900 }, 14],
   ] as const) {
     test(`${persona} a ${viewport.width}x${viewport.height}`, async ({ browser }) => {
       test.setTimeout(240_000);
       const page = await open(browser, "/", viewport, { scenario: { persona }, collapsed: true });
       await expect(page.getByRole("button", { name: "Expandir barra lateral" })).toBeVisible();
-      await openConfiguracion(page);
       const hrefs = await destinationHrefs(page);
       // Inicio, 4 de Ventas, 2 de Compras, 2 de Logística, 1 de Documentos, 2 de Maestros, 1 de
-      // Análisis y los de Configuración que el rol ve (8 o 1).
+      // Análisis y Configuración, un solo destino hacia su primera pestaña.
       expect(hrefs).toHaveLength(expected);
       const dead: string[] = [];
       for (const href of hrefs) {
@@ -114,9 +107,8 @@ test.describe("SH-2: a poca altura, cada destino se alcanza con el puntero", () 
         browser,
       }) => {
         const page = await open(browser, "/facturas", viewport, { collapsed });
-        await openConfiguracion(page);
         const hrefs = await destinationHrefs(page);
-        expect(hrefs).toHaveLength(21);
+        expect(hrefs).toHaveLength(14);
         const unreachable: string[] = [];
         for (const href of hrefs) {
           const link = nav(page).locator(`a[href="${href}"]`);
@@ -183,7 +175,7 @@ test.describe("SH-3: el destino actual queda a la vista", () => {
     await dialog.getByRole("combobox").fill("usuarios");
     await dialog.getByRole("option", { name: /^Usuarios/ }).click();
     await page.waitForURL((url) => url.pathname === "/configuracion/usuarios");
-    await expect(section(page)).toHaveAttribute("aria-expanded", "true");
+    await expect(section(page)).toHaveAttribute("aria-current", "page");
     const active = nav(page).locator('a[aria-current="page"]');
     const bar = await area(page);
     await expect
@@ -198,52 +190,36 @@ test.describe("SH-3: el destino actual queda a la vista", () => {
   });
 });
 
-test.describe("Configuración se pliega fuera de sus pantallas (D24)", () => {
-  test("plegada en Facturas, abierta en Usuarios y abierta sola al entrar en Empresa", async ({
+test.describe("Configuración como un solo destino con pestañas", () => {
+  test("su enlace lleva a la primera pestaña y es el actual en cualquiera de ellas", async ({
     browser,
   }) => {
     const page = await open(browser, "/facturas", { width: 1440, height: 900 });
-    await expect(section(page)).toHaveAttribute("aria-expanded", "false");
+    await expect(section(page)).toHaveAttribute("href", "/configuracion/empresa");
+    await expect(section(page)).not.toHaveAttribute("aria-current", "page");
     await expect(nav(page).getByRole("link", { name: "Usuarios" })).toHaveCount(0);
-    // Los grupos operativos siguen abiertos.
-    await expect(nav(page).getByRole("link", { name: "Facturas", exact: true })).toBeVisible();
-    await page.goto("/configuracion/usuarios");
-    await settle(page);
-    await expect(section(page)).toHaveAttribute("aria-expanded", "true");
-    await expect(nav(page).getByRole("link", { name: "Usuarios" })).toHaveAttribute(
+    await section(page).click();
+    await page.waitForURL((url) => url.pathname === "/configuracion/empresa");
+    const tabs = page.getByRole("navigation", { name: "Secciones de configuración" });
+    await tabs.getByRole("link", { name: "Usuarios" }).click();
+    await page.waitForURL((url) => url.pathname === "/configuracion/usuarios");
+    await expect(tabs.getByRole("link", { name: "Usuarios" })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    // El usuario la pliega; navegar dentro de la sesión no la vuelve a plegar ni a abrir sola…
-    await section(page).click();
-    await expect(section(page)).toHaveAttribute("aria-expanded", "false");
-    await nav(page).getByRole("link", { name: "Facturas", exact: true }).click();
-    await page.waitForURL((url) => url.pathname === "/facturas");
-    await expect(section(page)).toHaveAttribute("aria-expanded", "false");
-    // …salvo al entrar en una de sus pantallas, que la abre.
-    await page.keyboard.press("Control+KeyK");
-    const dialog = page.getByRole("dialog", { name: "Paleta de comandos" });
-    await dialog.getByRole("combobox").fill("empresa");
-    await dialog.getByRole("option", { name: /^Empresa/ }).click();
-    await page.waitForURL((url) => url.pathname === "/configuracion/empresa");
-    await expect(section(page)).toHaveAttribute("aria-expanded", "true");
+    await expect(section(page)).toHaveAttribute("aria-current", "page");
     await page.context().close();
   });
 
-  test("colapsada, Configuración es un icono con su nombre y abre sus destinos", async ({
-    browser,
-  }) => {
+  test("colapsada la barra, Configuración es un icono con su nombre", async ({ browser }) => {
     const page = await open(
       browser,
       "/facturas",
       { width: 1440, height: 900 },
       { collapsed: true },
     );
-    await expect(section(page)).toHaveAttribute("aria-expanded", "false");
     await section(page).hover();
     await expect(page.getByRole("tooltip", { name: "Configuración" })).toBeVisible();
-    await section(page).click();
-    await expect(nav(page).locator('a[href="/configuracion/usuarios"]')).toBeVisible();
     await page.context().close();
   });
 });

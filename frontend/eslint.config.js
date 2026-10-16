@@ -55,6 +55,8 @@ export default defineConfig(
       "src/features/company/emission-environment-notice.tsx",
       // Tablero de Inicio.
       "src/features/dashboard/**/*.{ts,tsx}",
+      // Configuración en pestañas.
+      "src/features/configuration/**/*.{ts,tsx}",
     ],
     rules: {
       "no-restricted-imports": [

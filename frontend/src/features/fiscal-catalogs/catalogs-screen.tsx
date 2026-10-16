@@ -473,7 +473,7 @@ export function FiscalCatalogsScreen() {
       <section
         aria-labelledby="catalogos-titulo"
         aria-busy="true"
-        data-page-width="form"
+        data-panel-width="form"
         className="flex flex-col gap-6"
       >
         {heading}
@@ -485,7 +485,7 @@ export function FiscalCatalogsScreen() {
     return (
       <section
         aria-labelledby="catalogos-titulo"
-        data-page-width="form"
+        data-panel-width="form"
         className="flex flex-col gap-6"
       >
         {heading}
@@ -501,7 +501,7 @@ export function FiscalCatalogsScreen() {
   return (
     <section
       aria-labelledby="catalogos-titulo"
-      data-page-width="form"
+      data-panel-width="form"
       className="flex flex-col gap-8"
     >
       <div className="flex flex-col gap-2">

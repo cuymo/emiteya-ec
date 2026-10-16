@@ -3,16 +3,16 @@
 // Derivada de `app-sidebar.tsx` y `nav-main.tsx` de la plantilla «Studio Admin» (MIT;
 // frontend/THIRD_PARTY_NOTICES.md): los grupos y destinos salen del modelo de rutas canónico y del rol
 // de la sesión; sin tarjeta de soporte, Inbox, insignias ni navegación de demostración. En móvil, los
-// grupos se pliegan (navigation-responsive.md), con el del destino actual abierto. En escritorio, la
-// sección Configuración empieza plegada fuera de sus pantallas, se abre sola al entrar en una y el
-// usuario la abre o la pliega durante la sesión (design D24). El destino actual se desplaza a la vista
-// de la barra en la carga y en cada cambio de ruta (design D23).
+// grupos se pliegan (navigation-responsive.md), con el del destino actual abierto. La sección
+// Configuración es un solo enlace al pie, a su primera pestaña que el rol ve: sus secciones son
+// pestañas de una página (decisión del propietario, 2026-10-16). El destino actual se desplaza a la
+// vista de la barra en la carga y en cada cambio de ruta (design D23).
 "use client";
 
 import { ChevronDown, Receipt } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { useSession } from "@/components/session";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -74,6 +74,9 @@ function GroupMenu({ group, activeHref }: { group: NavGroup; activeHref: string 
 function NavSection({ group, activeHref }: { group: NavGroup; activeHref: string | undefined }) {
   const { isMobile } = useSidebar();
   const containsActive = group.destinations.some((destination) => destination.href === activeHref);
+  if (group.section) {
+    return <SectionLink group={group} active={containsActive} />;
+  }
   // Inicio es un destino suelto, sin etiqueta de grupo.
   if (group.id === "inicio") {
     return (
@@ -106,11 +109,6 @@ function NavSection({ group, activeHref }: { group: NavGroup; activeHref: string
       </Collapsible>
     );
   }
-  if (group.section) {
-    return (
-      <SectionDisclosure group={group} activeHref={activeHref} containsActive={containsActive} />
-    );
-  }
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
@@ -122,50 +120,23 @@ function NavSection({ group, activeHref }: { group: NavGroup; activeHref: string
 }
 
 /**
- * Sección plegable de escritorio (design D24): plegada fuera de sus pantallas y abierta en ellas. Se
- * abre sola al entrar en una de sus pantallas y nunca se pliega sola; el usuario decide durante la
- * sesión de la interfaz. Colapsada la barra, queda su icono con la ayuda del nombre.
+ * Una sección como un solo enlace al pie de la barra: lleva a su primera pantalla y queda activa en
+ * cualquiera de ellas, que se recorren con las pestañas de la página.
  */
-function SectionDisclosure({
-  group,
-  activeHref,
-  containsActive,
-}: {
-  group: NavGroup;
-  activeHref: string | undefined;
-  containsActive: boolean;
-}) {
-  const [open, setOpen] = useState(containsActive);
-  const [wasActive, setWasActive] = useState(containsActive);
-  if (containsActive !== wasActive) {
-    setWasActive(containsActive);
-    if (containsActive) setOpen(true);
-  }
-  const Icon = group.icon;
+function SectionLink({ group, active }: { group: NavGroup; active: boolean }) {
+  const first = group.destinations[0];
+  if (!first) return null;
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="group/collapsible mt-auto">
-      <SidebarGroup>
+    <SidebarGroup className="mt-auto">
+      <SidebarGroupContent>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <CollapsibleTrigger asChild>
-              <SidebarMenuButton tooltip={group.label}>
-                {Icon && <Icon aria-hidden="true" />}
-                <span>{group.label}</span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180"
-                />
-              </SidebarMenuButton>
-            </CollapsibleTrigger>
-          </SidebarMenuItem>
+          <DestinationLink
+            destination={{ ...first, label: group.label, icon: group.icon ?? first.icon }}
+            active={active}
+          />
         </SidebarMenu>
-        <CollapsibleContent>
-          <SidebarGroupContent className="pt-0.5">
-            <GroupMenu group={group} activeHref={activeHref} />
-          </SidebarGroupContent>
-        </CollapsibleContent>
-      </SidebarGroup>
-    </Collapsible>
+      </SidebarGroupContent>
+    </SidebarGroup>
   );
 }
 
