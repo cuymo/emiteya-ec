@@ -16,11 +16,13 @@ import { z } from "zod";
 import { useMutationFeedback, type SuccessFeedback } from "@/components/feedback";
 import { apiFetch } from "@/lib/api";
 import { COMPANY_STATUS_KEY } from "@/features/company/company-api";
+import { SEQUENCES_KEY } from "@/features/sequences/sequences-api";
 
 export const ESTABLISHMENTS_KEY = ["establishments"] as const;
 export const DEFAULT_POINT_KEY = ["default-emission-point"] as const;
-// La disponibilidad cambia la preparación para emitir y el predeterminado de cada usuario.
-const AFFECTED = [ESTABLISHMENTS_KEY, COMPANY_STATUS_KEY, DEFAULT_POINT_KEY];
+// La disponibilidad cambia la preparación para emitir y el predeterminado de cada usuario; un punto
+// nuevo trae sus secuenciales, que se ven en la misma pantalla.
+const AFFECTED = [ESTABLISHMENTS_KEY, COMPANY_STATUS_KEY, DEFAULT_POINT_KEY, SEQUENCES_KEY];
 
 export const pointLabel = (establishment: { code: string }, point: { code: string }) =>
   `${establishment.code}-${point.code}`;

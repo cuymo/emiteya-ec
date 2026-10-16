@@ -18,7 +18,6 @@ import {
   Globe,
   HardDriveDownload,
   House,
-  ListOrdered,
   Package,
   ReceiptText,
   Settings,
@@ -220,17 +219,12 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         permission: "environment.change",
       },
       {
+        // Los puntos de emisión llevan sus secuenciales (antes, su propia pestaña).
         href: "/configuracion/establecimientos",
         label: "Establecimientos",
         icon: Store,
         permission: "establishments.manage",
-      },
-      {
-        href: "/configuracion/secuenciales",
-        label: "Secuenciales",
-        icon: ListOrdered,
-        permission: "sequences.read",
-        keywords: ["secuencial", "numeración", "número"],
+        keywords: ["punto de emisión", "secuencial", "numeración", "número"],
       },
       {
         href: "/configuracion/firma",

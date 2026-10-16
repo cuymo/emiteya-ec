@@ -295,7 +295,7 @@ test.describe("paleta veraz sobre su alcance (D26)", () => {
       ["IVA", "Catálogos fiscales"],
       ["PKCS12", "Firma electrónica"],
       ["contraseña", "Mi cuenta"],
-      ["numeración", "Secuenciales"],
+      ["numeración", "Establecimientos"],
       ["documentos", "Archivo de comprobantes"],
       ["factura pendiente", "Borradores de facturas"],
     ] as const) {

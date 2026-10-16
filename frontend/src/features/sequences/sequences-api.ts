@@ -1,5 +1,5 @@
-// Datos de la pantalla Secuenciales (add-fiscal-numbering, design D12 y D14). El ajuste pasa por
-// useMutationFeedback e invalida la lista del ambiente.
+// Datos de los secuenciales, que se ven en cada punto de Establecimientos (add-fiscal-numbering,
+// design D12 y D14). El ajuste pasa por useMutationFeedback e invalida la lista del ambiente.
 "use client";
 
 import { useQuery } from "@tanstack/react-query";

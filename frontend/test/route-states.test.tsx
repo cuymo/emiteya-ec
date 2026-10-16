@@ -99,13 +99,13 @@ describe("destino no permitido", () => {
 
   it("el contenido de un destino no permitido nunca se monta", async () => {
     let mounted = false;
-    function Sequences() {
+    function Establishments() {
       mounted = true;
-      return <p>Secuenciales</p>;
+      return <p>Establecimientos</p>;
     }
     api({ me: OPERATOR_ME });
-    navigation.pathname = "/configuracion/secuenciales";
-    renderShell({ children: <Sequences /> });
+    navigation.pathname = "/configuracion/establecimientos";
+    renderShell({ children: <Establishments /> });
     await screen.findByRole("heading", { level: 1, name: "No tienes acceso a esta sección" });
     expect(mounted).toBe(false);
   });

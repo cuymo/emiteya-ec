@@ -122,7 +122,7 @@ mostrarse.
   - Documentos: Archivo de comprobantes;
   - Maestros: Terceros, Productos;
   - Análisis: Reportes;
-  - Configuración: Empresa, Ambiente, Establecimientos, Secuenciales, Firma electrónica, Catálogos fiscales, Usuarios, Portabilidad de datos.
+  - Configuración: Empresa, Ambiente, Establecimientos, Firma electrónica, Catálogos fiscales, Usuarios, Portabilidad de datos. Los secuenciales se consultan y ajustan en Establecimientos, en cada punto de emisión.
 
 #### Scenario: Operador
 - **WHEN** un operador abre la navegación
@@ -417,8 +417,8 @@ del destino ni solicitar sus datos. Es solo presentación: la API sigue rechazan
 - **AND** no se solicita la lista de usuarios
 
 #### Scenario: Sin destello del contenido
-- **WHEN** un operador abre directamente la dirección de Secuenciales
-- **THEN** en ningún momento se muestra el contenido de Secuenciales antes del estado sin acceso
+- **WHEN** un operador abre directamente la dirección de Establecimientos
+- **THEN** en ningún momento se muestra el contenido de Establecimientos antes del estado sin acceso
 
 #### Scenario: Destino permitido
 - **WHEN** un operador abre directamente la dirección de Catálogos fiscales
@@ -466,8 +466,9 @@ presentación de la acción principal, y nunca solo por el color.
 
 ### Requirement: Configuración en pestañas
 Las secciones de Configuración SHALL presentarse en una sola página con pestañas, en este orden:
-Empresa, Ambiente, Establecimientos, Secuenciales, Firma electrónica, Catálogos fiscales, Usuarios y
-Portabilidad de datos, solo las que el rol ve. Cada pestaña SHALL ser un enlace a la dirección de su
+Empresa, Ambiente, Establecimientos, Firma electrónica, Catálogos fiscales, Usuarios y Portabilidad
+de datos, solo las que el rol ve. La dirección de la antigua pestaña Secuenciales SHALL llevar a
+Establecimientos. Cada pestaña SHALL ser un enlace a la dirección de su
 sección, que conserva su enlace directo, su permiso y su título, y la sección abierta SHALL
 anunciarse como página actual. La dirección `/configuracion` SHALL llevar a la primera pestaña que
 el rol ve. En una pantalla estrecha, las pestañas SHALL desplazarse a lo ancho sin desplazar la
@@ -475,7 +476,7 @@ página, con la actual a la vista.
 
 #### Scenario: Administrador
 - **WHEN** un administrador abre Usuarios
-- **THEN** ve las ocho pestañas en ese orden, con Usuarios marcada como página actual
+- **THEN** ve las siete pestañas en ese orden, con Usuarios marcada como página actual
 
 #### Scenario: Operador
 - **WHEN** un operador abre Configuración

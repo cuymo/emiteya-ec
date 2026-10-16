@@ -40,7 +40,6 @@ describe("Configuración en pestañas", () => {
       ["Empresa", "/configuracion/empresa"],
       ["Ambiente", "/configuracion/ambiente"],
       ["Establecimientos", "/configuracion/establecimientos"],
-      ["Secuenciales", "/configuracion/secuenciales"],
       ["Firma electrónica", "/configuracion/firma"],
       ["Catálogos fiscales", "/configuracion/catalogos-fiscales"],
       ["Usuarios", "/configuracion/usuarios"],

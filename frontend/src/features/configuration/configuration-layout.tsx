@@ -1,8 +1,8 @@
 // Configuración en una sola página con pestañas (decisión del propietario, 2026-10-16): Empresa,
-// Ambiente, Establecimientos, Secuenciales, Firma electrónica, Catálogos fiscales, Usuarios y
-// Portabilidad de datos, en el orden de la navegación y solo las que el rol ve. Cada pestaña es un
-// enlace a su propia dirección, así que conserva su enlace directo, su permiso y su título; la barra
-// lateral solo lleva «Configuración».
+// Ambiente, Establecimientos (con los secuenciales de cada punto), Firma electrónica, Catálogos
+// fiscales, Usuarios y Portabilidad de datos, en el orden de la navegación y solo las que el rol
+// ve. Cada pestaña es un enlace a su propia dirección, así que conserva su enlace directo, su permiso
+// y su título; la barra lateral solo lleva «Configuración».
 // Debajo de las pestañas, el panel toma el ancho que declara la pantalla (`data-panel-width`:
 // formulario o lectura), alineado con ellas, mientras las pestañas ocupan la columna entera. Una
 // pantalla sin título propio puede centrarlo con `data-panel-align="center"` (Establecimientos).

@@ -92,15 +92,17 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     on its root, also in its loading, error and no-permission states:
     `data-page-width="form"` (Mi cuenta) or `data-page-width="reading"` (the readiness screen).
     The Configuración sections live under their tabs, which take the whole column: their screens
-    declare `data-panel-width="form"` (Establecimientos, Secuenciales, Firma electrónica and
-    Catálogos fiscales) or `data-panel-width="reading"` (Ambiente), and the tab panel narrows to
+    declare `data-panel-width="form"` (Establecimientos, Firma electrónica and Catálogos
+    fiscales) or `data-panel-width="reading"` (Ambiente), and the tab panel narrows to
     it. Usuarios and Portabilidad keep the full width because they hold data tables.
   - Establecimientos also adds `data-panel-align="center"`: with no visible title (the tab names
     it; its `h1` is only for screen readers), its list is centered under the tabs, and creating an
     establishment is a dashed card that closes the list instead of a header button. Each
     establishment ends with a dashed «Agregar punto de emisión» row, and its actions («Corregir
     dirección», «Desactivar» or «Reactivar», also on each point) are outline buttons with their
-    name visible, because a bare icon is not recognized as a button.
+    name visible, because a bare icon is not recognized as a button. Each point also has a
+    «Secuenciales» toggle that unfolds its counters for the current environment, each with
+    «Ajustar» (`point-sequences.tsx`); they used to have their own tab.
   - Empresa uses the settings layout and the full width: the tab already names the screen, so its
     `h1` is only for screen readers, and each section puts its title and a one-line description
     to the left of its fields from the `--container-settings-split` container (48rem, variant

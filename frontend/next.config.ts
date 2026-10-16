@@ -12,6 +12,17 @@ export default function nextConfig(phase: string): NextConfig {
   return {
     poweredByHeader: false,
     transpilePackages: ["@facturador/contracts"],
+    async redirects() {
+      // Los secuenciales viven en cada punto de Establecimientos (decisión del propietario,
+      // 2026-10-16): la dirección de la antigua pestaña lleva allí.
+      return [
+        {
+          source: "/configuracion/secuenciales",
+          destination: "/configuracion/establecimientos",
+          permanent: false,
+        },
+      ];
+    },
     async rewrites() {
       // `fallback`: después de las rutas dinámicas, para que la descarga del paquete de portabilidad
       // (app/api/v1/data-exports/[id]/download) se atienda en su ruta propia, sin el plazo de 30 s

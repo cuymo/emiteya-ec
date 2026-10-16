@@ -105,7 +105,7 @@ El sistema SHALL rechazar la reserva de un secuencial en un punto de emisión qu
 - **THEN** el sistema la rechaza y el contador no cambia
 
 ### Requirement: Consulta de los secuenciales
-El sistema SHALL mostrar al administrador, para el ambiente que elija, el siguiente secuencial y el último reservado de cada tipo de comprobante en cada punto de emisión de su empresa, incluidos los puntos no disponibles con su estado.
+El sistema SHALL permitir al administrador consultar, para cualquiera de los dos ambientes, el siguiente secuencial y el último reservado de cada tipo de comprobante en cada punto de emisión de su empresa, incluidos los puntos no disponibles. La interfaz SHALL mostrarlos en Establecimientos, dentro de cada punto de emisión, solo para el ambiente vigente de la empresa: en Pruebas, los de Pruebas; en Producción, los de Producción.
 
 #### Scenario: Empresa sin reservas
 - **WHEN** un administrador consulta los secuenciales de `Producción` de una empresa con un punto de emisión
@@ -114,6 +114,10 @@ El sistema SHALL mostrar al administrador, para el ambiente que elija, el siguie
 #### Scenario: Ambientes por separado
 - **WHEN** se reservaron facturas en `Pruebas` y el administrador consulta `Producción`
 - **THEN** ve los valores de `Producción`, que no cambiaron
+
+#### Scenario: Interfaz en el ambiente vigente
+- **WHEN** la empresa emite en `Producción` y el administrador despliega los secuenciales de un punto en Establecimientos
+- **THEN** ve los contadores de `Producción` de ese punto, sin un selector de ambiente
 
 #### Scenario: Contador agotado
 - **WHEN** el último secuencial reservado de un contador es 999999999

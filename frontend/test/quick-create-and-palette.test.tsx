@@ -195,7 +195,7 @@ describe("paleta de comandos", () => {
       ["contraseña", "Mi cuenta"],
       ["IVA", "Catálogos fiscales"],
       ["certificado", "Firma electrónica"],
-      ["numeración", "Secuenciales"],
+      ["numeración", "Establecimientos"],
       ["facturas emitidas", "Archivo de comprobantes"],
       ["factura sin emitir", "Borradores de facturas"],
     ] as const) {
@@ -289,7 +289,9 @@ describe("filtro de la paleta", () => {
       expect.arrayContaining(["certificado", "P12", "PKCS12"]),
     );
     expect(keywords("Mi cuenta")).toEqual(expect.arrayContaining(["contraseña", "password"]));
-    expect(keywords("Secuenciales")).toEqual(expect.arrayContaining(["numeración", "número"]));
+    expect(keywords("Establecimientos")).toEqual(
+      expect.arrayContaining(["secuencial", "numeración", "número"]),
+    );
     expect(paletteFilter("Terceros", "CLIENTE", keywords("Terceros"))).toBe(1);
     expect(paletteFilter("Mi cuenta", "contrasena", keywords("Mi cuenta"))).toBe(1);
   });

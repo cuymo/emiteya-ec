@@ -3,17 +3,26 @@
 // reactivar. Volumen pequeño: lista agrupada por establecimiento, sin tabla paginada, centrada bajo
 // las pestañas. La pestaña ya nombra la pantalla: el título queda solo para los lectores de
 // pantalla, y crear un establecimiento es la tarjeta punteada que cierra la lista, donde irá el
-// nuevo. P2 (fechas) y P3 (identificadores): fuera.
+// nuevo. Cada punto despliega sus secuenciales del ambiente vigente, que antes tenían su propia
+// pestaña (point-sequences.tsx). P2 (fechas) y P3 (identificadores): fuera.
 "use client";
 
-import type { EmissionPointView, EstablishmentView } from "@facturador/contracts";
-import { MapPin, Plus, Power, PowerOff } from "lucide-react";
-import { useId, useState } from "react";
+import type {
+  EmissionPointView,
+  EstablishmentView,
+  FiscalSequenceView,
+} from "@facturador/contracts";
+import { ChevronDown, ListOrdered, MapPin, Plus, Power, PowerOff } from "lucide-react";
+import { useId, useMemo, useState } from "react";
 import { errorMessage } from "@/components/feedback";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
+import { useCompanyStatus } from "@/features/company/company-api";
+import { AdjustSequenceDialog } from "@/features/sequences/adjust-dialog";
+import { sequenceKey, useSequences } from "@/features/sequences/sequences-api";
 import {
   AddPointDialog,
   CreateEstablishmentDialog,
@@ -25,6 +34,7 @@ import {
   useChangeEstablishmentStatus,
   useEstablishments,
 } from "./establishments-api";
+import { PointSequences, type SequencesState } from "./point-sequences";
 
 function PointStatus({ point }: { point: EmissionPointView }) {
   if (point.available) return <StatusBadge tone="success" label="Disponible" />;
@@ -83,17 +93,84 @@ function AddPointRow({ code, onClick }: { code: string; onClick: () => void }) {
   );
 }
 
+/** Un punto de emisión: su estado, sus acciones y, al desplegarlos, sus secuenciales. */
+function PointRow({
+  establishment,
+  point,
+  sequences,
+}: {
+  establishment: EstablishmentView;
+  point: EmissionPointView;
+  sequences: SequencesState | null;
+}) {
+  const changePoint = useChangeEmissionPointStatus();
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  const label = pointLabel(establishment, point);
+  const pointActive = point.status === "ACTIVE";
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
+      <span className="flex flex-wrap items-center gap-2 text-sm">
+        <span>Punto {label}</span>
+        <PointStatus point={point} />
+        {pointActive && establishment.status !== "ACTIVE" && (
+          <span className="text-xs text-foreground-muted">El establecimiento está inactivo</span>
+        )}
+      </span>
+      <span className="flex flex-wrap items-center gap-2">
+        {sequences && (
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={`Secuenciales del punto ${label}`}
+            aria-expanded={open}
+            aria-controls={open ? panelId : undefined}
+            onClick={() => setOpen((current) => !current)}
+          >
+            <ListOrdered aria-hidden="true" />
+            Secuenciales
+            <ChevronDown
+              aria-hidden="true"
+              className={cn("transition-transform", open && "rotate-180")}
+            />
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label={`${pointActive ? "Desactivar" : "Reactivar"} el punto ${label}`}
+          disabled={changePoint.isPending}
+          onClick={() =>
+            changePoint.mutate({
+              establishment,
+              point,
+              status: pointActive ? "INACTIVE" : "ACTIVE",
+            })
+          }
+        >
+          {pointActive ? <PowerOff aria-hidden="true" /> : <Power aria-hidden="true" />}
+          {pointActive ? "Desactivar" : "Reactivar"}
+        </Button>
+      </span>
+      {sequences && open && (
+        <PointSequences id={panelId} pointId={point.id} point={label} state={sequences} />
+      )}
+    </li>
+  );
+}
+
 function EstablishmentItem({
   establishment,
+  sequences,
   onEdit,
   onAddPoint,
 }: {
   establishment: EstablishmentView;
+  sequences: SequencesState | null;
   onEdit: () => void;
   onAddPoint: () => void;
 }) {
   const changeStatus = useChangeEstablishmentStatus();
-  const changePoint = useChangeEmissionPointStatus();
   const active = establishment.status === "ACTIVE";
   const code = establishment.code;
   return (
@@ -147,42 +224,14 @@ function EstablishmentItem({
           aria-label={`Puntos de emisión del establecimiento ${code}`}
           className="divide-y divide-border border-t border-border"
         >
-          {establishment.emissionPoints.map((point) => {
-            const label = pointLabel(establishment, point);
-            const pointActive = point.status === "ACTIVE";
-            return (
-              <li
-                key={point.id}
-                className="flex flex-wrap items-center justify-between gap-2 px-4 py-2"
-              >
-                <span className="flex flex-wrap items-center gap-2 text-sm">
-                  <span>Punto {label}</span>
-                  <PointStatus point={point} />
-                  {pointActive && !active && (
-                    <span className="text-xs text-foreground-muted">
-                      El establecimiento está inactivo
-                    </span>
-                  )}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-label={`${pointActive ? "Desactivar" : "Reactivar"} el punto ${label}`}
-                  disabled={changePoint.isPending}
-                  onClick={() =>
-                    changePoint.mutate({
-                      establishment,
-                      point,
-                      status: pointActive ? "INACTIVE" : "ACTIVE",
-                    })
-                  }
-                >
-                  {pointActive ? <PowerOff aria-hidden="true" /> : <Power aria-hidden="true" />}
-                  {pointActive ? "Desactivar" : "Reactivar"}
-                </Button>
-              </li>
-            );
-          })}
+          {establishment.emissionPoints.map((point) => (
+            <PointRow
+              key={point.id}
+              establishment={establishment}
+              point={point}
+              sequences={sequences}
+            />
+          ))}
         </ul>
       )}
       <AddPointRow code={code} onClick={onAddPoint} />
@@ -197,6 +246,36 @@ export function EstablishmentsScreen() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<EstablishmentView | null>(null);
   const [adding, setAdding] = useState<EstablishmentView | null>(null);
+
+  // Secuenciales del ambiente vigente, una sola consulta para todos los puntos.
+  const showSequences = allowed && canSee(me.role, "sequences.read");
+  const status = useCompanyStatus();
+  const environment = status.data?.environment ?? null;
+  const sequences = useSequences(environment, showSequences);
+  const [adjustingKey, setAdjustingKey] = useState<string | null>(null);
+  const adjusting = sequences.data?.find((view) => sequenceKey(view) === adjustingKey) ?? null;
+  const byPoint = useMemo(() => {
+    const groups = new Map<string, FiscalSequenceView[]>();
+    for (const view of sequences.data ?? []) {
+      groups.set(view.emissionPoint.id, [...(groups.get(view.emissionPoint.id) ?? []), view]);
+    }
+    return groups;
+  }, [sequences.data]);
+  const sequencesState: SequencesState | null = showSequences
+    ? {
+        environment,
+        loading: status.isPending || sequences.isPending,
+        error: status.isError
+          ? errorMessage(status.error)
+          : sequences.isError
+            ? errorMessage(sequences.error)
+            : null,
+        retry: () => void (status.isError ? status.refetch() : sequences.refetch()),
+        canAdjust: canSee(me.role, "sequences.adjust"),
+        onAdjust: (view) => setAdjustingKey(sequenceKey(view)),
+        byPoint,
+      }
+    : null;
 
   // La pestaña ya nombra la pantalla: el título queda para los lectores de pantalla.
   const heading = (
@@ -247,6 +326,7 @@ export function EstablishmentsScreen() {
             <EstablishmentItem
               key={establishment.id}
               establishment={establishment}
+              sequences={sequencesState}
               onEdit={() => setEditing(establishment)}
               onAddPoint={() => setAdding(establishment)}
             />
@@ -272,6 +352,13 @@ export function EstablishmentsScreen() {
         onOpenChange={(open) => !open && setEditing(null)}
       />
       <AddPointDialog establishment={adding} onOpenChange={(open) => !open && setAdding(null)} />
+      {showSequences && (
+        <AdjustSequenceDialog
+          view={adjusting}
+          onOpenChange={(open) => !open && setAdjustingKey(null)}
+          onReload={() => sequences.refetch()}
+        />
+      )}
     </section>
   );
 }

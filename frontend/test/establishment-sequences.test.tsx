@@ -1,9 +1,11 @@
+// Secuenciales en Establecimientos (decisión del propietario, 2026-10-16; add-fiscal-numbering,
+// design D14): cada punto despliega los contadores del ambiente vigente, y «Ajustar» abre el diálogo.
 import type { FiscalSequenceView } from "@facturador/contracts";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
-import { SequencesScreen } from "@/features/sequences/sequences-screen";
+import { EstablishmentsScreen } from "@/features/establishments/establishments-screen";
 import {
   ADMIN_ME,
   OPERATOR_ME,
@@ -40,6 +42,14 @@ function pointViews(
   }));
 }
 
+const ESTABLISHMENTS = [
+  {
+    ...ESTABLISHMENT,
+    address: "Av. Amazonas N24-03, Quito",
+    emissionPoints: [POINT, INACTIVE_POINT],
+  },
+];
+
 const STATUS = (environment: Environment) => ({
   environment,
   displayName: "Andina",
@@ -65,6 +75,7 @@ function renderScreen(
 ) {
   const calls = mockApi({
     "GET /api/v1/me": () => ({ status: 200, body: { data: me } }),
+    "GET /api/v1/establishments": () => ({ status: 200, body: { data: ESTABLISHMENTS } }),
     "GET /api/v1/company/status": () => ({ status: 200, body: { data: STATUS(environment) } }),
     "GET /api/v1/fiscal-sequences?environment=TEST": () => ({
       status: 200,
@@ -78,24 +89,28 @@ function renderScreen(
   });
   renderApp(
     <SessionGate fallback={<p>cargando</p>}>
-      <SequencesScreen />
+      <EstablishmentsScreen />
     </SessionGate>,
   );
   return calls;
 }
 
-const rowsOf = async (point: string) =>
-  within(await screen.findByRole("list", { name: `Secuenciales del punto ${point}` })).getAllByRole(
-    "listitem",
-  );
+/** Despliega los secuenciales del punto, si no lo están, y devuelve su lista. */
+async function sequencesOf(point: string) {
+  const toggle = await screen.findByRole("button", { name: `Secuenciales del punto ${point}` });
+  if (toggle.getAttribute("aria-expanded") !== "true") await userEvent.setup().click(toggle);
+  return screen.findByRole("list", { name: `Secuenciales del punto ${point}` });
+}
+
+const rowsOf = async (point: string) => within(await sequencesOf(point)).getAllByRole("listitem");
 
 async function openAdjust(type: string, point = "001-001") {
-  const list = await screen.findByRole("list", { name: `Secuenciales del punto ${point}` });
-  await userEvent
-    .setup()
-    .click(
-      within(list).getByRole("button", { name: `Ajustar el siguiente secuencial de ${type}` }),
-    );
+  const list = await sequencesOf(point);
+  await userEvent.setup().click(
+    within(list).getByRole("button", {
+      name: `Ajustar el siguiente secuencial de ${type} del punto ${point}`,
+    }),
+  );
   return screen.getByRole("dialog");
 }
 
@@ -111,14 +126,14 @@ const PUT_FACTURA = "PUT /api/v1/establishments/e1/emission-points/p1/sequences/
 const PUT_NOTA = "PUT /api/v1/establishments/e1/emission-points/p1/sequences/TEST/04";
 
 beforeEach(() => {
-  navigation.pathname = "/configuracion/secuenciales";
+  navigation.pathname = "/configuracion/establecimientos";
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("Secuenciales (design D14)", () => {
+describe("secuenciales de cada punto (design D14)", () => {
   it("lista por punto los seis tipos con el siguiente completo y el último reservado", async () => {
     renderScreen({ TEST: () => TEST_LIST });
     const rows = await rowsOf("001-001");
@@ -134,19 +149,22 @@ describe("Secuenciales (design D14)", () => {
     expect(rows[0]!.textContent).toContain("Último reservado 000000100");
     expect(rows[1]!.textContent).toContain("Siguiente 001-001-000000001");
     expect(rows[1]!.textContent).toContain("Último reservado —");
-    expect(screen.getByRole("radio", { name: "Pruebas" }).getAttribute("aria-checked")).toBe(
-      "true",
-    );
+    expect(screen.getByText("Secuenciales de Pruebas, el ambiente vigente.")).toBeDefined();
+    // Plegados hasta que se piden: el otro punto no los muestra.
+    expect(screen.queryByRole("list", { name: "Secuenciales del punto 001-002" })).toBeNull();
   });
 
-  it("muestra el punto no disponible con su motivo", async () => {
+  it("un punto inactivo también muestra y ajusta sus secuenciales", async () => {
     renderScreen({ TEST: () => TEST_LIST });
-    await rowsOf("001-002");
-    const block = screen.getByRole("heading", { name: "Punto 001-002" }).parentElement!;
-    expect(within(block).getByText("No disponible")).toBeDefined();
-    expect(within(block).getByText("El punto está inactivo")).toBeDefined();
-    const available = screen.getByRole("heading", { name: "Punto 001-001" }).parentElement!;
-    expect(within(available).queryByText("No disponible")).toBeNull();
+    const rows = await rowsOf("001-002");
+    expect(rows).toHaveLength(6);
+    expect(
+      (
+        within(rows[0]!).getByRole("button", {
+          name: "Ajustar el siguiente secuencial de factura del punto 001-002",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
   });
 
   it("un contador agotado se muestra Agotado, sin siguiente secuencial y sin ajuste", async () => {
@@ -160,13 +178,13 @@ describe("Secuenciales (design D14)", () => {
     expect(
       (
         within(guide).getByRole("button", {
-          name: "Ajustar el siguiente secuencial de guía de remisión",
+          name: "Ajustar el siguiente secuencial de guía de remisión del punto 001-001",
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
   });
 
-  it("parte del ambiente vigente y cambia de ambiente", async () => {
+  it("muestra solo los del ambiente vigente", async () => {
     const calls = renderScreen(
       {
         TEST: () => TEST_LIST,
@@ -177,31 +195,21 @@ describe("Secuenciales (design D14)", () => {
     );
     const production = await rowsOf("001-001");
     expect(production[0]!.textContent).toContain("Siguiente 001-001-000001501");
-    expect(screen.getByRole("radio", { name: "Producción" }).getAttribute("aria-checked")).toBe(
-      "true",
-    );
-    await userEvent.setup().click(screen.getByRole("radio", { name: "Pruebas" }));
-    await waitFor(async () =>
-      expect((await rowsOf("001-001"))[0]!.textContent).toContain("Siguiente 001-001-000000101"),
-    );
-    expect(calls.map((call) => call.key)).toEqual(
-      expect.arrayContaining([
-        "GET /api/v1/fiscal-sequences?environment=PRODUCTION",
-        "GET /api/v1/fiscal-sequences?environment=TEST",
-      ]),
+    expect(screen.getByText("Secuenciales de Producción, el ambiente vigente.")).toBeDefined();
+    expect(screen.queryByRole("radio")).toBeNull();
+    expect(calls.some((call) => call.key === "GET /api/v1/fiscal-sequences?environment=TEST")).toBe(
+      false,
     );
   });
 
-  it("sin puntos de emisión enlaza a Establecimientos", async () => {
-    renderScreen({ TEST: () => [] });
+  it("un punto sin secuenciales en el ambiente lo explica", async () => {
+    renderScreen({ TEST: () => pointViews("TEST") });
+    await userEvent
+      .setup()
+      .click(await screen.findByRole("button", { name: "Secuenciales del punto 001-002" }));
     expect(
-      await screen.findByText(
-        "Crea un establecimiento con un punto de emisión para ver sus secuenciales",
-      ),
+      await screen.findByText("Este punto todavía no tiene secuenciales en este ambiente."),
     ).toBeDefined();
-    expect(screen.getByRole("link", { name: "Ir a Establecimientos" }).getAttribute("href")).toBe(
-      "/configuracion/establecimientos",
-    );
   });
 
   it("un error de carga ofrece reintentar", async () => {
@@ -218,6 +226,9 @@ describe("Secuenciales (design D14)", () => {
             : { status: 200, body: { data: TEST_LIST } },
       },
     );
+    await userEvent
+      .setup()
+      .click(await screen.findByRole("button", { name: "Secuenciales del punto 001-001" }));
     // La consulta reintenta los fallos del servidor dos veces antes de mostrar el error.
     const alert = await screen.findByRole("alert", undefined, { timeout: 5_000 });
     fail = false;
