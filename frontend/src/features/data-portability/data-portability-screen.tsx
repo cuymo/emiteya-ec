@@ -315,7 +315,6 @@ function History({ polling, now, current }: { polling: boolean; now: number; cur
       description="Las exportaciones pedidas por la empresa y su resultado."
     >
       <AppDataTable
-        bare
         label="Historial de exportaciones"
         columns={columns}
         data={history.data?.data ?? []}

@@ -164,7 +164,6 @@ export function DraftsScreen() {
         }
       >
         <AppDataTable
-          bare
           label="Borradores de factura pendientes"
           columns={columns}
           data={drafts.data?.data ?? []}

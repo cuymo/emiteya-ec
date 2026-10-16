@@ -316,7 +316,6 @@ export function PurchaseSettlementsScreen() {
       }
     >
       <AppDataTable
-        bare
         label="Liquidaciones de compra emitidas"
         columns={columns}
         data={settlements.data?.data ?? []}

@@ -214,10 +214,7 @@ destino relativo a `frontend/src/`.
 | `components/shell/quick-create-menu.tsx` | `app/(main)/dashboard/_components/sidebar/nav-main.tsx` (Quick Create) | MIT de «Studio Admin» |
 | `components/shell/command-palette.tsx`, `components/shell/command-palette-dialog.tsx` | `app/(main)/dashboard/_components/header/search-dialog.tsx` | MIT de «Studio Admin» |
 | `components/data-table/data-table.tsx` | `app/(main)/dashboard/tasks/_components/tasks.tsx` y `users/_components/users-table.tsx` | MIT de «Studio Admin» |
-| `components/data-table/data-table-pagination.tsx` | `app/(main)/dashboard/tasks/_components/tasks.tsx` y `default/_components/recent-customers-table/table.tsx` | MIT de «Studio Admin» |
-| `components/data-table/data-table-toolbar.tsx`, `components/data-table/data-table-search.tsx` | `app/(main)/dashboard/tasks/_components/tasks-toolbar.tsx` | MIT de «Studio Admin» |
-| `components/data-table/data-table-option-filter.tsx` | `app/(main)/dashboard/tasks/_components/task-status-filter.tsx` | MIT de «Studio Admin» |
-| `components/data-table/data-table-views.tsx` | `app/(main)/dashboard/ecommerce/_components/recent-orders.tsx` | MIT de «Studio Admin» |
+| `components/data-table/data-table-search.tsx` | `app/(main)/dashboard/tasks/_components/tasks-toolbar.tsx` | MIT de «Studio Admin» |
 | `components/data-table/row-actions-menu.tsx` | `app/(main)/dashboard/users/_components/users-columns.tsx` | MIT de «Studio Admin» |
 | `components/layout/page-header.tsx` | `app/(main)/dashboard/file-manager/page.tsx` (encabezado) | MIT de «Studio Admin» |
 | `features/documents/document-status-badge.tsx` | `app/(main)/dashboard/tasks/_components/columns.tsx` (insignia de estado) | MIT de «Studio Admin» |

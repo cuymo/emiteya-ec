@@ -1,9 +1,8 @@
-// Controles compartidos de tabla (component-system.md): búsqueda con limpieza, chips de filtro,
-// menú de columnas opcionales y botón de acción de fila con tooltip.
+// Controles compartidos de tabla (component-system.md): búsqueda con limpieza, menú de columnas
+// opcionales y botón de acción de fila con tooltip. Los filtros son `DataTableSelectFilter`.
 "use client";
 
 import { Columns3, Search, X, type LucideIcon } from "lucide-react";
-import { ToggleGroup } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,7 +12,6 @@ import {
   MenuTrigger,
   Tooltip,
 } from "@/components/ui/menu-and-tooltip";
-import { cn } from "@/lib/utils";
 
 export function SearchInput({
   value,
@@ -52,47 +50,6 @@ export function SearchInput({
         </button>
       )}
     </div>
-  );
-}
-
-/** Chips de filtro de selección única: siempre hay una opción activa. */
-export function ChipGroup<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: readonly { value: T; label: string }[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <ToggleGroup.Root
-      type="single"
-      aria-label={label}
-      value={value}
-      onValueChange={(next) => {
-        if (next) onChange(next as T);
-      }}
-      className="flex flex-wrap gap-1"
-    >
-      {options.map((option) => (
-        <ToggleGroup.Item
-          key={option.value}
-          value={option.value}
-          className={cn(
-            "h-8 rounded-full border border-input px-3 text-sm text-foreground max-md:h-11",
-            "motion-safe:transition-colors motion-safe:duration-150",
-            // Selección neutra (productize-invoice-editor-and-composition-foundation, design D10):
-            // se reconoce por el borde y el peso, y no compite con la acción principal.
-            "hover:bg-surface-subtle data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:font-medium data-[state=on]:text-foreground",
-          )}
-        >
-          {option.label}
-        </ToggleGroup.Item>
-      ))}
-    </ToggleGroup.Root>
   );
 }
 

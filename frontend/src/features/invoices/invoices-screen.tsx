@@ -414,7 +414,6 @@ export function InvoicesScreen() {
       }
     >
       <DataTable
-        bare
         label="Facturas emitidas"
         columns={columns}
         data={invoices.data?.data ?? []}

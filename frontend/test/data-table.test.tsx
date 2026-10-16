@@ -1,19 +1,15 @@
 // Base de tabla compartida (productize-invoice-list-and-shared-table-foundation, design D5, D11 y
-// D14; tareas 4.1 a 4.3): la tabla con sus estados en la superficie y su pie, la búsqueda, las
-// vistas, el filtro de opción única, los filtros activos y el menú de acciones de una fila.
+// D14; tareas 4.1 a 4.3): la tabla con sus estados en la superficie y su pie, la búsqueda y el menú
+// de acciones de una fila. Los filtros y el pie numerado tienen su prueba en `data-table-card`.
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ColumnDef } from "@tanstack/react-table";
 import { FileText, Search } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DataTable } from "@/components/data-table/data-table";
-import { DataTableActiveFilters } from "@/components/data-table/data-table-active-filters";
-import { DataTableOptionFilter } from "@/components/data-table/data-table-option-filter";
 import { DataTableSearch } from "@/components/data-table/data-table-search";
 import { DataTableEmpty, DataTableError } from "@/components/data-table/data-table-state";
-import { DataTableViews } from "@/components/data-table/data-table-views";
 import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -81,16 +77,19 @@ describe("DataTable (D5, D14)", () => {
     const onPageSizeChange = vi.fn();
     table({ onPageChange, onPageSizeChange });
     expect(screen.getByText("Mostrando 26-50 de 60")).toBeDefined();
-    expect(screen.getByText("Página 2 de 3")).toBeDefined();
+    expect(screen.getByRole("button", { name: "Página 2" }).getAttribute("aria-current")).toBe(
+      "page",
+    );
     await user.click(screen.getByRole("button", { name: "Página siguiente" }));
     expect(onPageChange).toHaveBeenCalledWith(3);
-    await user.selectOptions(screen.getByLabelText("Filas por página"), "50");
+    await user.click(screen.getByRole("combobox", { name: "Filas por página" }));
+    await user.click(await screen.findByRole("option", { name: "50" }));
     expect(onPageSizeChange).toHaveBeenCalledWith(50);
   });
 
   it("en los límites deshabilita los botones que no llevan a ninguna página", () => {
     table({ page: 1, rowCount: 10 });
-    for (const name of ["Primera página", "Página anterior", "Página siguiente", "Última página"]) {
+    for (const name of ["Página anterior", "Página siguiente"]) {
       expect((screen.getByRole("button", { name }) as HTMLButtonElement).disabled).toBe(true);
     }
   });
@@ -196,103 +195,6 @@ describe("DataTableSearch (D8)", () => {
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("perno");
     rerender(<DataTableSearch label="Buscar" placeholder="Buscar" value="" onChange={vi.fn()} />);
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("");
-  });
-});
-
-function Views({ onChange }: { onChange: (value: string) => void }) {
-  const [value, setValue] = useState<"todas" | "atencion">("todas");
-  return (
-    <DataTableViews
-      label="Vista"
-      value={value}
-      views={[
-        { value: "todas", label: "Todas" },
-        { value: "atencion", label: "Requiere atención", count: 3 },
-      ]}
-      onChange={(next) => {
-        setValue(next);
-        onChange(next);
-      }}
-    />
-  );
-}
-
-describe("DataTableViews (D6)", () => {
-  it("es un grupo de radio con el conteo de la vista y siempre una vista elegida", async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<Views onChange={onChange} />);
-    screen.getByRole("radiogroup", { name: "Vista" });
-    const attention = screen.getByRole("radio", { name: /Requiere atención/ });
-    expect(attention.textContent).toContain("3");
-    await user.click(attention);
-    expect(onChange).toHaveBeenCalledWith("atencion");
-    await user.click(attention);
-    expect(attention.getAttribute("aria-checked")).toBe("true");
-  });
-});
-
-describe("DataTableOptionFilter (D6)", () => {
-  const OPTIONS = [
-    { value: "devueltas", label: "Devuelto" },
-    { value: "autorizadas", label: "Autorizado" },
-  ] as const;
-
-  it("elige una sola opción, dice el valor en el disparador y ofrece quitarlo", async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    const { rerender } = render(
-      <DataTableOptionFilter
-        label="Estado"
-        value={undefined}
-        options={OPTIONS}
-        onChange={onChange}
-      />,
-    );
-    await user.click(screen.getByRole("button", { name: "Estado" }));
-    expect(screen.queryByRole("menuitem", { name: "Quitar filtro" })).toBeNull();
-    await user.click(screen.getByRole("menuitemradio", { name: "Devuelto" }));
-    expect(onChange).toHaveBeenCalledWith("devueltas");
-    rerender(
-      <DataTableOptionFilter
-        label="Estado"
-        value="devueltas"
-        options={OPTIONS}
-        onChange={onChange}
-      />,
-    );
-    await user.click(screen.getByRole("button", { name: "Estado: Devuelto" }));
-    await user.click(screen.getByRole("menuitem", { name: "Quitar filtro" }));
-    expect(onChange).toHaveBeenLastCalledWith(undefined);
-  });
-});
-
-describe("DataTableActiveFilters (D5)", () => {
-  it("no aparece sin filtros activos", () => {
-    const { container } = render(
-      <DataTableActiveFilters filters={[]} active={false} onClear={vi.fn()} />,
-    );
-    expect(container.textContent).toBe("");
-  });
-
-  it("quita un filtro y limpia todos", async () => {
-    const user = userEvent.setup();
-    const onRemove = vi.fn();
-    const onClear = vi.fn();
-    render(
-      <DataTableActiveFilters
-        filters={[{ key: "q", label: "Búsqueda: «perno»", onRemove }]}
-        active
-        onClear={onClear}
-      />,
-    );
-    const group = screen.getByRole("group", { name: "Filtros activos" });
-    await user.click(
-      within(group).getByRole("button", { name: "Quitar filtro Búsqueda: «perno»" }),
-    );
-    expect(onRemove).toHaveBeenCalledOnce();
-    await user.click(within(group).getByRole("button", { name: "Limpiar filtros" }));
-    expect(onClear).toHaveBeenCalledOnce();
   });
 });
 

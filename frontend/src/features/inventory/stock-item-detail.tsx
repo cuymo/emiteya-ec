@@ -199,7 +199,6 @@ function Kardex({ productId }: { productId: string }) {
       }
     >
       <AppDataTable
-        bare
         label="Movimientos del producto"
         columns={columns}
         data={rangeError ? [] : (movements.data?.data ?? [])}

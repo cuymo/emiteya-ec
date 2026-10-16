@@ -355,7 +355,6 @@ export function DebitNotesScreen() {
       }
     >
       <AppDataTable
-        bare
         label="Notas de débito emitidas"
         columns={columns}
         data={notes.data?.data ?? []}

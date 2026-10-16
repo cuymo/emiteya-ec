@@ -445,7 +445,6 @@ export function DocumentsScreen() {
       filters={filters}
     >
       <AppDataTable
-        bare
         label="Comprobantes emitidos"
         columns={columns}
         data={rangeError ? [] : (documents.data?.data ?? [])}

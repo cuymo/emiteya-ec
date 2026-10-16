@@ -308,7 +308,6 @@ export function UsersScreen() {
         }
       >
         <AppDataTable
-          bare
           label="Usuarios de la empresa"
           columns={columns}
           data={users.data?.data ?? []}

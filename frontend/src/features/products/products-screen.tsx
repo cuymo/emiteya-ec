@@ -385,7 +385,6 @@ export function ProductsScreen() {
         }
       >
         <AppDataTable
-          bare
           label="Productos y servicios de la empresa"
           columns={columns}
           data={products.data?.data ?? []}

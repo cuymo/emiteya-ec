@@ -367,7 +367,6 @@ export function WithholdingReceiptsScreen() {
       }
     >
       <AppDataTable
-        bare
         label="Retenciones emitidas"
         columns={columns}
         data={receipts.data?.data ?? []}

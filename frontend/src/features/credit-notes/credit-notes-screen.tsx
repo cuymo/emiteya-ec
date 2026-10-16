@@ -350,7 +350,6 @@ export function CreditNotesScreen() {
       }
     >
       <AppDataTable
-        bare
         label="Notas de crédito emitidas"
         columns={columns}
         data={notes.data?.data ?? []}

@@ -295,7 +295,6 @@ export function PartiesScreen() {
         }
       >
         <AppDataTable
-          bare
           label="Terceros de la empresa"
           columns={columns}
           data={parties.data?.data ?? []}

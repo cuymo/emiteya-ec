@@ -1,11 +1,12 @@
 // Derivado de la plantilla «Studio Admin» 2.2.0, `src/components/ui/toggle-group.tsx` (MIT;
-// frontend/THIRD_PARTY_NOTICES.md). Base de las vistas de una lista
-// (productize-invoice-list-and-shared-table-foundation, D3 y D6). Adaptado a la CSP: la plantilla
+// frontend/THIRD_PARTY_NOTICES.md). Fue la base de las vistas de una lista
+// (productize-invoice-list-and-shared-table-foundation, D3 y D6), que hoy son desplegables
+// (`DataTableSelectFilter`); queda como primitivo sin uso en las pantallas. Adaptado a la CSP: la plantilla
 // escribe la separación en `style={{ "--gap": spacing }}`, que `style-src-attr 'none'` bloquea; aquí
 // la separación es una clase de la escala (0, 1 o 2). Con `type="single"`, Radix 1.6.7 expone un
 // grupo de radio que se recorre con las flechas. Su foco itinerante pone `outline:none` como estilo
 // de la raíz: las pantallas autenticadas lo pintan en el cliente, donde React lo aplica por CSSOM
-// (la CSP lo permite), igual que el `ChipGroup` heredado.
+// (la CSP lo permite).
 "use client";
 
 import type { VariantProps } from "class-variance-authority";

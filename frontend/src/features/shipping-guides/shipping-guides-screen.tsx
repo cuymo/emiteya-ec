@@ -317,7 +317,6 @@ export function ShippingGuidesScreen() {
       }
     >
       <AppDataTable
-        bare
         label="Guías de remisión emitidas"
         columns={columns}
         data={guides.data?.data ?? []}

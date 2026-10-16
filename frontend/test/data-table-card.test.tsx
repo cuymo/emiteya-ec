@@ -93,6 +93,26 @@ describe("DataTableSelectFilter", () => {
   });
 });
 
+describe("selección neutra del filtro (productize-invoice-editor-and-composition-foundation, D10)", () => {
+  it("el valor elegido se ve en un disparador neutro, sin el azul de la acción principal", () => {
+    render(
+      <DataTableSelectFilter
+        label="Estado"
+        value="activos"
+        options={[
+          { value: "activos", label: "Activos" },
+          { value: "inactivos", label: "Desactivados" },
+        ]}
+        onChange={() => {}}
+      />,
+    );
+    const trigger = screen.getByRole("combobox", { name: "Estado" });
+    expect(trigger.textContent).toContain("Activos");
+    expect(trigger.className).toContain("border-input");
+    expect(trigger.className).not.toMatch(/(^|\s)bg-primary(\s|$)/);
+  });
+});
+
 describe("DataTableFooter", () => {
   it("la ventana de páginas tiene hasta tres números centrados en la actual", () => {
     expect(pageWindow(1, 2)).toEqual([1, 2]);
@@ -128,7 +148,7 @@ describe("DataTableFooter", () => {
   });
 });
 
-describe("tablas sin marco dentro de la tarjeta", () => {
+describe("las tablas dentro de la tarjeta", () => {
   const paging = {
     page: 1,
     pageSize: 25,
@@ -137,10 +157,9 @@ describe("tablas sin marco dentro de la tarjeta", () => {
     loading: false,
   };
 
-  it("DataTable muestra las filas y el pie numerado, sin el pie anterior", () => {
+  it("DataTable muestra las filas y el pie numerado, sin saltos a la primera ni a la última", () => {
     render(
       <DataTable
-        bare
         label="Productos"
         columns={COLUMNS}
         data={ROWS}
@@ -154,22 +173,19 @@ describe("tablas sin marco dentro de la tarjeta", () => {
     expect(screen.queryByRole("button", { name: "Primera página" })).toBeNull();
   });
 
-  it("AppDataTable no pinta la barra propia y usa el pie numerado", () => {
+  it("AppDataTable usa el pie numerado", () => {
     render(
       <AppDataTable
-        bare
         label="Productos"
         columns={COLUMNS}
         data={ROWS}
         getRowId={(row) => row.id}
         total={2}
         columnVisibility={{}}
-        toolbar={<p>barra antigua</p>}
         renderCard={(row) => row.name}
         {...paging}
       />,
     );
-    expect(screen.queryByText("barra antigua")).toBeNull();
     expect(screen.getByRole("button", { name: "Página 1" })).toBeTruthy();
   });
 });

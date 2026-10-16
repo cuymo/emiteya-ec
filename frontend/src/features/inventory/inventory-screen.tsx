@@ -257,7 +257,6 @@ export function InventoryScreen() {
         }
       >
         <AppDataTable
-          bare
           label="Productos con control de stock"
           columns={columns}
           data={items.data?.data ?? []}

@@ -753,7 +753,6 @@ export function ReportsScreen() {
         }
       >
         <AppDataTable
-          bare
           label={REPORT_LABELS[url.report]}
           columns={presentation.columns}
           data={rangeError ? [] : rows}

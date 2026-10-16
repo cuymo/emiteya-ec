@@ -13,19 +13,21 @@ layout that fits them.
 ## Implementation In This Repository
 
 `productize-invoice-list-and-shared-table-foundation` introduced the shared list base in
-`frontend/src/components/data-table/`, over TanStack Table 8.21.3 with server pagination. Facturas
-is the first screen that adopts it, in that same change; the other lists still use the legacy
-`AppDataTable` until their own migration (see «Coexistence» below).
+`frontend/src/components/data-table/`, over TanStack Table 8.21.3 with server pagination. Every list
+now sits on the list card adapted from the «Studio Admin» users screen
+(`users/_components/users.tsx` and `users-table.tsx`; `frontend/THIRD_PARTY_NOTICES.md`): fifteen
+screens, the two tables (`DataTable` for Facturas, `AppDataTable` for the rest) and one set of
+controls.
 
 | Piece | File | Owns |
 | --- | --- | --- |
+| `DataTableCard` | `data-table-card.tsx` | The list surface: a card whose header holds the screen title (`h1`, or `h2` for a section of a larger page), a short description, the search and the actions; an optional `lead` (drafts in progress, notices); a filters row; and the table, edge to edge. It is a region named by its title |
+| `DataTableSelectFilter` | `data-table-select-filter.tsx` | Every filter and view as a prefixed listbox («Estado: Todos»), over `ui/select-menu`. With `allLabel` the first option clears the filter; an option may carry a server count («Requiere atención 3»). The trigger is named after the filter and reads its value from its content |
 | `DataTable<T>` | `data-table.tsx` | Typed columns with per-column `meta` classes, the accessible `caption`, skeleton rows, the empty or error state inside the surface, `aria-busy` while refreshing, the footer only with rows, and `onRowOpen` |
-| `DataTablePagination` | `data-table-pagination.tsx` | `Mostrando A-B de N`, `Filas por página`, first/previous/next/last and `Página X de Y`; pages derived from the server `total` |
-| `DataTableToolbar` | `data-table-toolbar.tsx` | Row 1: search, views and filters. Row 2, only with active filters: the active filters |
-| `DataTableSearch` | `data-table-search.tsx` | Server-backed search with debounce, trimming, the server length limit, `Limpiar búsqueda`, and a label that states what it really searches |
-| `DataTableViews` | `data-table-views.tsx` | Views over the same collection, a single-choice radio group with neutral selection and an optional server count |
-| `DataTableOptionFilter` | `data-table-option-filter.tsx` | A single-choice filter menu («Estado: Devuelto»), with `Quitar filtro`, for values the server accepts one at a time |
-| `DataTableActiveFilters` | `data-table-active-filters.tsx` | Removable active filters and `Limpiar filtros`, shown only when a filter is active |
+| `AppDataTable<T>` | `app-data-table.tsx` | The same surface for the other lists, with optional columns and a prioritized card list below 768 px |
+| `DataTableFooter` | `data-table-footer.tsx` | `Filas por página`, `Mostrando A-B de N` and a numbered pagination: previous, a window of three pages around the current one with ellipses, and next; pages derived from the server `total`. Never shown while loading, empty or failed |
+| `DataTableSearch`, `SearchInput` | `data-table-search.tsx`, `table-controls.tsx` | Server-backed search with debounce, trimming, `Limpiar búsqueda`, and a label that states what it really searches |
+| `ColumnVisibilityMenu`, `RowActionButton` | `table-controls.tsx` | `Columnas`, at the end of the filters row, and the icon action of a row |
 | `RowActionsMenu` | `row-actions-menu.tsx` | The `...` menu of a row, named after its record, with only the actions the module passes |
 | `DataTableEmpty`, `DataTableError` | `data-table-state.tsx` | Empty, filtered-empty and error states with a level-2 heading, over `ui/empty` |
 | `useListUrlState` | `hooks/use-list-url-state.ts` | Search, filters, page and page size in the URL, with quick changes accumulated, the page reset on filter changes, aliases and the out-of-range page |
@@ -34,17 +36,19 @@ is the first screen that adopts it, in that same change; the other lists still u
   convenience: a primary click on a non-interactive area opens the record, never from a link, a
   button, a menu (also in a portal), with a modifier key or with selected text. The row is never
   focusable, so there are no duplicate keyboard stops.
-- **Selection is neutral.** Selected views and filters use the muted surface; the primary blue stays
-  for the screen's primary action.
+- **Selection is neutral.** A chosen filter shows its value in a neutral trigger; the primary blue
+  stays for the screen's primary action.
+- **Active filters are visible where they are set.** Each filter shows its value in its own trigger
+  and clears from it; the search shows its text and has `Limpiar búsqueda`. `Limpiar filtros`
+  appears only with an active filter.
+- **No row selection.** There are no checkboxes or selected counters: the product has no bulk action
+  yet. They arrive with the first real bulk workflow.
+- **Phones.** Header actions drop under the title, filters take the full width, and secondary
+  filters stay behind `Más filtros` or `Filtros` where a screen has many.
+- **Report parameters.** Reportes keeps its date, identification and product parameters as labeled
+  fields under the filters row: they are a parameter form, not single-value filters.
 - **No client tricks.** No client-side search, sort or filtering of the loaded page. Headers are
   sortable only when the server sorts.
-
-### Coexistence
-
-`AppDataTable`, `ChipGroup`, `SearchInput` and `TablePagination` stay for the screens not yet
-migrated. That is a transitional exception to «one table system» (`component-system.md`), recorded
-in `../quality/technical-debt.md`. Exit criterion: once no screen imports them, they are deleted.
-New screens use the base above; the staged lint keeps migrated paths off the legacy pieces.
 
 ## Standard Anatomy
 
@@ -54,7 +58,7 @@ New screens use the base above; the staged lint keeps migrated paths off the leg
 4. `Columnas` visibility control when the table has optional columns.
 5. Refresh, export, import, or create actions when applicable.
 6. Sortable header, rows, and one actions column.
-7. Footer with result range, page size, numeric page state, and first/previous/next/last controls.
+7. Footer with page size, result range and a numbered pagination with previous and next.
 
 Keep controls in the same order and pagination component across the application.
 

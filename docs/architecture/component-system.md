@@ -68,8 +68,8 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     progress is not an unavailable action. Every disabled rule is written `disabled:not-aria-busy:`.
   - In dark mode `outline` is transparent, so it never reads as a filled block.
 - **Selection is neutral** (design D10). The primary blue is reserved for the main action.
-  - `ChipGroup`: the chosen option takes a `foreground` border, the `muted` surface, `foreground`
-    text and medium weight. It is recognized by shape and weight, not only by color.
+  - List filters (`DataTableSelectFilter`): the chosen value shows in a neutral trigger, after its
+    prefix («Estado: Activos»). It is recognized by its text, not by color.
   - `SegmentedControl`: the chosen option is a raised `bg-background` piece with a small shadow and
     a `muted-foreground` ring, inside a `muted` track, like the template's `toggle-group`. The ring
     contrasts at least 3:1 with the track and with the piece in both themes.
@@ -144,9 +144,9 @@ primitives -> system components -> domain components -> features -> pages
 | Example contract        | Responsibility                                                             |
 | ----------------------- | -------------------------------------------------------------------------- |
 | `AppDataTable<T>`       | Search, filters, sorting, columns, rows, selection, states, and pagination |
-| `TableToolbar`          | Stable arrangement of search, filters, columns, and table commands         |
-| `TablePagination`       | One footer for client and server pagination                                |
-| `DataTable<T>` and its pieces | The shared list base of migrated screens (`data-tables.md`, «Implementation In This Repository») |
+| `DataTableCard`         | The list card: title, search and actions in its header, then the filters row |
+| `DataTableFooter`       | One footer: page size, range and numbered pagination                      |
+| `DataTable<T>` and its pieces | The shared list base of every list (`data-tables.md`, «Implementation In This Repository») |
 | `PageHeader`            | Page title (`h1`) in a 40px block, optional context; `list` variant with description, one primary-action slot and secondary actions; `editor` variant with the route's breadcrumbs above the title and no actions (`frontend/src/components/layout/page-header.tsx`; grammar in `interface-design.md`) |
 | `ColumnVisibilityMenu`  | Business-facing optional column selection                                  |
 | `RowActionButton`       | Icon action with permission/state handling and opaque tooltip              |
@@ -166,7 +166,7 @@ primitives -> system components -> domain components -> features -> pages
 | `IntegerStepperField`   | Bounded whole-number input with increment/decrement controls               |
 | `SegmentedControl`      | Two to five visible, mutually exclusive options with stable geometry       |
 | `SelectionCardGroup`    | Radio-card choice among options with meaningful differences                |
-| `ChipGroup`             | Toggleable tags, categories, and filter values                             |
+| `DataTableSelectFilter` | One value of a list filter or view, as a prefixed listbox               |
 | `SliderField`           | Approximate value or range, with the selection always visible as text      |
 | `ComboboxField`         | Searchable single or multiple selection with keyboard navigation           |
 | `DateRangePickerField`  | Range selection with business presets and a custom range                   |

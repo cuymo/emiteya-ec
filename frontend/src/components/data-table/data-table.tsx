@@ -11,6 +11,9 @@
 //   página no se mueven, y el pie de paginación solo aparece con filas.
 // - `onRowOpen` abre el registro al pulsar una zona no interactiva de la fila. La fila no es un
 //   control: el teclado usa el enlace del registro, sin paradas duplicadas.
+// - Va dentro de `DataTableCard`, que pone el marco, la cabecera y los filtros: la tabla llega a los
+//   bordes de la tarjeta, con las filas holgadas y el pie numerado de
+//   `users/_components/users-table.tsx`.
 "use client";
 
 import {
@@ -34,7 +37,6 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { DataTableFooter } from "./data-table-footer";
-import { DataTablePagination } from "./data-table-pagination";
 
 declare module "@tanstack/react-table" {
   // TanStack exige los dos parámetros de tipo aunque la meta no los use.
@@ -73,14 +75,8 @@ export type DataTableProps<T> = {
   refreshing?: boolean;
   /** Vacío, vacío por filtros o error: sustituye a las filas dentro de la superficie. */
   state?: ReactNode;
-  toolbar?: ReactNode;
   /** Abre el registro desde una zona no interactiva de la fila. */
   onRowOpen?: (row: T) => void;
-  /**
-   * Dentro de `DataTableCard`: sin marco ni barra propios, con las filas holgadas y el pie numerado
-   * de la plantilla. La barra pasa a la cabecera y a la fila de filtros de la tarjeta.
-   */
-  bare?: boolean;
 };
 
 /** Un clic de fila abre el registro solo si es un clic primario sin modificadores ni selección. */
@@ -107,9 +103,7 @@ export function DataTable<T>({
   loading,
   refreshing = false,
   state,
-  toolbar,
   onRowOpen,
-  bare = false,
 }: DataTableProps<T>) {
   // TanStack Table devuelve funciones no memoizables; el compilador de React lo sabe y lo omite.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -128,14 +122,14 @@ export function DataTable<T>({
     if (onRowOpen && opensRow(event)) onRowOpen(row.original);
   };
 
-  const headClass = bare ? "h-11 px-4 font-normal" : undefined;
-  const cellClass = bare ? "px-4 py-3" : "h-11";
+  const headClass = "h-11 px-4 font-normal";
+  const cellClass = "px-4 py-3";
   const grid = (
     <Table>
       <TableCaption className="sr-only">{label}</TableCaption>
-      <TableHeader className={cn(!bare && "bg-muted/40")}>
+      <TableHeader>
         {table.getHeaderGroups().map((group) => (
-          <TableRow key={group.id} className={cn("hover:bg-transparent", bare && "border-t")}>
+          <TableRow key={group.id} className="border-t hover:bg-transparent">
             {group.headers.map((header) => {
               const meta = header.column.columnDef.meta;
               return (
@@ -182,7 +176,7 @@ export function DataTable<T>({
             <TableRow
               key={row.id}
               onClick={onRowOpen ? (event) => open(event, row) : undefined}
-              className={cn(onRowOpen && "cursor-pointer", bare && "hover:bg-muted/40")}
+              className={cn("hover:bg-muted/40", onRowOpen && "cursor-pointer")}
             >
               {row.getVisibleCells().map((cell) => (
                 <TableCell
@@ -197,38 +191,24 @@ export function DataTable<T>({
       </TableBody>
     </Table>
   );
-  const paging = {
-    total: rowCount,
-    page,
-    pageSize,
-    pageSizeOptions,
-    onPageChange,
-    onPageSizeChange,
-  };
 
-  if (bare) {
-    return (
-      <div
-        data-slot="data-table"
-        className="@container flex flex-col gap-4"
-        aria-busy={loading || refreshing}
-      >
-        {grid}
-        {showRows && rowCount > 0 && <DataTableFooter {...paging} />}
-      </div>
-    );
-  }
   return (
-    <div className="flex flex-col gap-3">
-      {toolbar}
-      <div
-        data-slot="data-table"
-        className="@container overflow-hidden rounded-xl border border-border bg-card"
-        aria-busy={loading || refreshing}
-      >
-        {grid}
-        {showRows && rowCount > 0 && <DataTablePagination {...paging} />}
-      </div>
+    <div
+      data-slot="data-table"
+      className="@container flex flex-col gap-4"
+      aria-busy={loading || refreshing}
+    >
+      {grid}
+      {showRows && rowCount > 0 && (
+        <DataTableFooter
+          total={rowCount}
+          page={page}
+          pageSize={pageSize}
+          pageSizeOptions={pageSizeOptions}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      )}
     </div>
   );
 }
