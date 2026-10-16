@@ -60,7 +60,7 @@ asistencia y al señalarlo.
 
 #### Scenario: Nombre largo
 - **WHEN** la empresa tiene un nombre comercial más largo que el espacio de la barra superior
-- **THEN** el nombre se recorta en una sola línea sin desplazar el acceso a la paleta, el ambiente ni la cuenta
+- **THEN** el nombre se recorta en una sola línea sin desplazar el título, el acceso a la paleta, el ambiente ni la cuenta
 - **AND** el nombre completo se anuncia a las tecnologías de asistencia y se muestra al señalarlo
 
 #### Scenario: Sin selector de empresas
@@ -232,53 +232,43 @@ accesible.
 - **THEN** ve los mismos destinos que en la barra lateral de escritorio, ni uno más
 
 ### Requirement: Migas de navegación
-Las pantallas internas SHALL mostrar una sola fila de migas que aporten jerarquía, derivadas de la
-misma navegación, encima del título de la pantalla y nunca en la barra superior, y nunca una miga que solo repita el
-título de la página. Los grupos operativos no son una miga. Configuración sí, porque agrupa
-secciones. En una pantalla interna, el destino SHALL ser un enlace, y la última miga SHALL anunciarse
-como página actual. Las migas SHALL ser el único mecanismo de orientación de la pantalla: no SHALL
-acompañarse de un enlace de vuelta que repita una miga.
+Toda pantalla autenticada SHALL mostrar en la barra superior, a la izquierda, su título y, debajo,
+una sola fila de migas derivadas de la misma navegación: un enlace a Inicio, el grupo de la
+navegación como texto, el destino y la pantalla actual. En una pantalla interna, el destino SHALL
+ser un enlace y la última miga SHALL ser la etiqueta del registro cuando la pantalla la conoce, o la
+de la ruta. La pantalla actual SHALL anunciarse como página actual. El título de la barra no SHALL
+ser un encabezado: el `h1` sigue siendo el de la pantalla. Las migas SHALL ser el único mecanismo de
+orientación de la pantalla: no SHALL acompañarse de un enlace de vuelta que repita una miga. En un
+teléfono, el título y las migas no SHALL mostrarse en la barra superior.
 
 #### Scenario: Pantalla interna
 - **WHEN** un usuario abre el detalle de la factura 001-001-000000123
-- **THEN** ve encima del título la ruta Facturas › 001-001-000000123, con Facturas como enlace a la lista y el número anunciado como página actual
+- **THEN** ve en la barra superior el título «Detalle de factura» y la ruta Inicio / Ventas / Facturas / 001-001-000000123, con Facturas como enlace a la lista y el número anunciado como página actual
 - **AND** mientras el número todavía no se conoce, la última miga es «Detalle de factura»
 
 #### Scenario: Borrador
 - **WHEN** un usuario abre un borrador de nota de crédito
-- **THEN** ve la ruta Notas de crédito › Borrador de nota de crédito, con Notas de crédito como enlace
+- **THEN** ve la ruta Inicio / Ventas / Notas de crédito / Borrador de nota de crédito, con Notas de crédito como enlace
 
 #### Scenario: Nueva factura
 - **WHEN** un usuario abre la pantalla de nueva factura
-- **THEN** ve la ruta Facturas › Nueva factura, con Facturas como enlace
-
-#### Scenario: Borrador de factura
-- **WHEN** un usuario abre un borrador de factura guardado
-- **THEN** ve la ruta Facturas › Borrador de factura, con Facturas como enlace
+- **THEN** ve el título «Nueva factura» y la ruta Inicio / Ventas / Facturas / Nueva factura, con Facturas como enlace
 
 #### Scenario: Una sola orientación
 - **WHEN** un usuario abre el editor de un borrador o el detalle de un comprobante
-- **THEN** la pantalla ofrece la vuelta al destino solo a través de las migas, sin un enlace de vuelta aparte
+- **THEN** la pantalla ofrece la vuelta al destino solo a través de las migas, sin un enlace de vuelta aparte, y el contenido no repite las migas
 
-#### Scenario: Sin migas duplicadas
-- **WHEN** un operador abre el editor de una factura o una pantalla interna heredada
-- **THEN** ve una sola fila de migas, encima del título, y ningún otro elemento de la pantalla repite esa orientación
-
-#### Scenario: Migas a cualquier anchura
-- **WHEN** un usuario abre una pantalla interna en escritorio, en una tableta o en un teléfono
-- **THEN** ve las migas en el mismo lugar, encima del título, y la barra superior no las muestra
-
-#### Scenario: Destino de primer nivel sin miga redundante
-- **WHEN** un usuario abre la lista de facturas o la de productos
-- **THEN** la pantalla no muestra migas, porque solo repetirían el título de la página
+#### Scenario: Destino de primer nivel
+- **WHEN** un usuario abre la lista de facturas
+- **THEN** ve el título «Facturas» y la ruta Inicio / Ventas / Facturas, con Facturas anunciada como página actual
 
 #### Scenario: Sección de configuración
-- **WHEN** un administrador abre Empresa o Secuenciales
-- **THEN** ve la ruta Configuración › Empresa o Configuración › Secuenciales, con la sección anunciada como página actual
+- **WHEN** un administrador abre Empresa
+- **THEN** ve la ruta Inicio / Configuración / Empresa, con Empresa anunciada como página actual
 
-#### Scenario: Inicio
-- **WHEN** un usuario abre Inicio
-- **THEN** la pantalla no muestra migas
+#### Scenario: Teléfono
+- **WHEN** un usuario abre cualquier pantalla autenticada en un teléfono
+- **THEN** la barra superior no muestra el título ni las migas, y el `h1` de la pantalla la orienta
 
 #### Scenario: Mismos nombres
 - **WHEN** un usuario abre una pantalla interna de inventario
@@ -451,14 +441,14 @@ del destino ni solicitar sus datos. Es solo presentación: la API sigue rechazan
 ### Requirement: Barra superior estable
 La barra superior SHALL ocupar una sola línea a todas las anchuras soportadas, en la barra lateral
 expandida o colapsada, sin que ningún texto o control se parta en varias líneas, se salga de la
-barra ni se monte sobre otro. SHALL reunir solo el contexto global: el botón de navegación, el
-contexto de la empresa, el acceso a la paleta de comandos, el ambiente fiscal y el menú de cuenta.
-No SHALL mostrar la jerarquía de la pantalla abierta, como migas o títulos.
+barra ni se monte sobre otro. A la izquierda SHALL reunir el botón de navegación y, desde 768 px, el
+título y las migas de la pantalla; a la derecha, el contexto global: el acceso a la paleta de
+comandos, el ambiente fiscal, el contexto de la empresa y el menú de cuenta. No SHALL ofrecer
+controles que el producto no respalda, como notificaciones o ayuda.
 
 #### Scenario: Pantalla interna en una tableta
 - **WHEN** un administrador abre Empresa, dentro de Configuración, en una ventana de 768 px de ancho
-- **THEN** la barra superior muestra en una sola línea, sin solaparse, el contexto de la empresa, el acceso a la paleta, el ambiente y la cuenta
-- **AND** la barra no muestra las migas de la pantalla
+- **THEN** la barra superior muestra en una sola línea, sin solaparse, el título con sus migas, el acceso a la paleta, el ambiente, la empresa y la cuenta
 
 #### Scenario: Editor en un portátil
 - **WHEN** un operador abre la pantalla de nueva factura en una ventana de 1024 o 1280 px, con la barra lateral expandida o colapsada
@@ -466,7 +456,7 @@ No SHALL mostrar la jerarquía de la pantalla abierta, como migas o títulos.
 
 #### Scenario: Teléfono
 - **WHEN** un usuario abre cualquier pantalla autenticada en un teléfono
-- **THEN** la barra superior muestra en una sola línea el botón de navegación, el contexto de la empresa, el acceso a la paleta, el ambiente y la cuenta
+- **THEN** la barra superior muestra en una sola línea el botón de navegación, el acceso a la paleta, el ambiente, el contexto de la empresa y la cuenta
 
 ### Requirement: Jerarquía de acciones de la pantalla
 Cada pantalla SHALL presentar como mucho una acción principal destacada a la vez. Una acción que en

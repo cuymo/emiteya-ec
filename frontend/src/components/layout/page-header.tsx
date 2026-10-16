@@ -8,11 +8,10 @@
 // - el bloque del título mide al menos 40 px, la altura del botón, con el título centrado: cae
 //   siempre en la misma y, haya acción o no;
 // - variante de lista: sin migas, acción principal a la derecha del título;
-// - variante de editor: las migas de la ruta encima del título, a 8 px, el estado del borrador como
-//   contexto y ninguna acción, porque las acciones viven junto al resumen;
+// - variante de editor: el estado del borrador como contexto y ninguna acción, porque las acciones
+//   viven junto al resumen; las migas de la ruta van en la barra superior, como en todas;
 // - la pantalla deja 24 px hasta el contenido (`gap-6` de su sección).
 import type { ReactNode } from "react";
-import { AppBreadcrumbs } from "@/components/shell/app-breadcrumbs";
 import { cn } from "@/lib/utils";
 
 type Common = {
@@ -33,7 +32,7 @@ type ListHeader = Common & {
   secondaryActions?: ReactNode;
 };
 
-/** Editor: dueño de sus migas (`orientation: "page-header"` en el modelo de rutas) y sin acciones. */
+/** Editor: sin acciones, que viven junto al resumen. */
 type EditorHeader = Common & { variant: "editor" };
 
 export function PageHeader(props: ListHeader | EditorHeader) {
@@ -46,7 +45,6 @@ export function PageHeader(props: ListHeader | EditorHeader) {
       data-variant={props.variant ?? "list"}
       className={cn("flex flex-col gap-2", className)}
     >
-      {props.variant === "editor" && <AppBreadcrumbs owner="page-header" />}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
           <div

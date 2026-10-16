@@ -252,7 +252,7 @@ test.describe("barra superior en una línea (D1, tarea 8.3)", () => {
         if (index > 0) expect(box.left).toBeGreaterThanOrEqual(boxes[index - 1]!.right - 0.5);
         expect(box.right).toBeLessThanOrEqual(bar!.x + bar!.width);
       }
-      // El nombre de la empresa se lee, aunque recortado: a 320 px la ficha le cede su sitio.
+      // El nombre de la empresa se lee, aunque recortado, también a 320 px.
       const name = await page
         .locator("[data-slot=company-context] > span:last-child")
         .boundingBox();

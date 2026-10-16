@@ -51,35 +51,31 @@ The groups and destinations, in this order:
   draft, draft) with their final breadcrumb and their permission, and the creation actions. No
   other component keeps its own map.
 
-### Breadcrumbs: Hierarchy, Never Repetition
+### Breadcrumbs: The Route From Inicio
 
-Breadcrumbs add hierarchy; they never repeat the page title.
-- **Operational groups.** Ventas, Compras, Logística, Documentos, Maestros and Análisis only group
-  the sidebar and are not breadcrumbs.
-- **Configuración** is a section, so it is a breadcrumb, shown as text.
-- **On an internal screen**, the destination is a link to its list, and the last breadcrumb is the
-  current page. That last breadcrumb is the label of the record when the screen provides it (the
-  document number, the product name), or the label of the route.
-- **A trail of one breadcrumb is not shown.** That covers Inicio, top-level destinations such as
-  Facturas and Productos, and Mi cuenta.
-- **Where** (`productize-invoice-editor-and-composition-foundation`, design D2): one row above the
-  page title, on a single line that truncates the last breadcrumb, at every width, never in the
-  topbar. They are the only orientation of the screen: no «back» link repeats a breadcrumb.
-- **One owner per route.** Each internal route of the model declares who paints its breadcrumbs:
-  - `shell` (the default): the shared row of the shell, at the start of the content area, for the
-    screens not yet migrated;
-  - `page-header`: the migrated screen paints them itself, above its title. Today only the invoice
-    editor (`/borradores/nuevo` and `/borradores/{id}`).
-
-  The shell row is not painted on a `page-header` route, so a screen never shows both.
+The breadcrumbs and the title of the open screen live in the topbar, on its left (owner decision on
+the header, 2026-10-16). They replace the breadcrumb row that used to sit above the page title.
+- **Title:** the destination label (Facturas, Empresa) or, on an internal screen, the route label
+  (Detalle de factura, Nueva factura, Borrador de nota de crédito). It is a paragraph, not a
+  heading: the screen keeps its own `h1`.
+- **Trail:** under the title, separated with «/»: a house icon linking to Inicio, the navigation
+  group (Ventas, Compras, Logística, Documentos, Maestros, Análisis or Configuración, as text), the
+  destination (a link on an internal screen) and the current page, in the brand colour and
+  announced with `aria-current="page"`. On a detail, the last breadcrumb is the record label when
+  the screen provides it (the document number, the product name), or the route label. Inicio and Mi
+  cuenta have no group.
+- **Truncation:** one line; only the last breadcrumb truncates.
+- **Phone:** below 768px the title and the trail are hidden: they do not fit next to the global
+  context, and the screen `h1`, right below, already orients.
+- They are the only orientation of the screen: no «back» link repeats a breadcrumb.
 - **Invoice editor** (design D12, PO-1): new invoice and draft belong to Facturas, before and after
   the first save. Borradores de facturas stays in Ventas as the list to resume drafts.
 
 Examples:
-- Facturas › 001-001-000000123;
-- Notas de crédito › Borrador de nota de crédito;
-- Facturas › Nueva factura, and Facturas › Borrador de factura;
-- Configuración › Empresa.
+- Inicio / Ventas / Facturas / 001-001-000000123;
+- Inicio / Ventas / Notas de crédito / Borrador de nota de crédito;
+- Inicio / Ventas / Facturas / Nueva factura;
+- Inicio / Configuración / Empresa.
 
 ## Application Shell
 
@@ -116,17 +112,18 @@ from the reference template's dashboard layout (ADR 0028).
     uses the conventional menu icon (design D29). The sheet has a visible «Cerrar menú» button,
     collapsible groups (the current one open) and 44px items. It closes on a destination, Escape,
     the overlay or the close button, and returns focus to the navigation button.
-- **Topbar** (`Topbar`), 48px high (56px on mobile), on one line at every width
-  (`productize-invoice-editor-and-composition-foundation`, design D1). Only the global context, in
-  three zones, with 8px inside a zone and 16px between zones:
-  - **start:** the sidebar toggle (or «Abrir navegación» on mobile) and the company context, at most
-    14rem from 768px and 10rem below, truncated. On a narrow phone (a start zone under 8rem, about
-    320px of window) the company initials give their space to the name, so it reads truncated
-    («Ferr…») instead of as a sliver;
-  - **flexible center:** the command palette trigger, an 18rem field from `xl` and an icon below;
-  - **end:** the environment indicator and the account menu.
+- **Topbar** (`Topbar`), 72px high (56px on mobile), on one line at every width, in two zones
+  (owner decision on the header, 2026-10-16):
+  - **start:** the sidebar toggle (or «Abrir navegación» on mobile), a divider and, from 768px, the
+    title of the screen with its breadcrumbs (see above);
+  - **end:** the global actions as round 36px buttons on the muted surface (the command palette
+    and, from 768px and where the browser allows it, «Pantalla completa»), the environment
+    indicator and the identity: a building tile (from 1024px), the company context and, under it,
+    the account menu trigger. The company context is at most 14rem from 768px and 7rem below,
+    truncated.
 
-  No breadcrumbs (they go above the title) and no theme control (it lives in the account menu).
+  No theme control (it lives in the account menu). There are no notification or help buttons:
+  the product has neither.
 - **Company context.** It is read-only: the trade name, or the legal name, of the session's
   company, from `/company/status`. It is not a control and never suggests switching companies.
   - **While loading:** it reserves its space.
@@ -151,7 +148,9 @@ from the reference template's dashboard layout (ADR 0028).
 - **Theme.** The «Tema» group (Claro, Oscuro, Sistema) lives in the account menu as radio items at
   every width, walked with the arrows; the choice is remembered by next-themes. The topbar has no
   theme control, so there is never more than one.
-- **Account menu.** Its accessible name is «Cuenta de {nombre}». It shows the name, email and role,
+- **Account menu.** Its trigger is the person's name with a chevron, under the company; on a phone
+  its touch area grows to 44px. Its accessible name is «Cuenta de {nombre}». It shows the name,
+  email and role,
   plus Mi cuenta and Cerrar sesión, which disables itself after the first selection.
 - **Skip link.** «Saltar al contenido» is the first focusable element and targets `main#contenido`.
 - **Quick Create** (`QuickCreateMenu`, «Nuevo», in the sidebar header).
@@ -163,8 +162,8 @@ from the reference template's dashboard layout (ADR 0028).
   - **Collapsed:** an icon button named «Nuevo». It is 44px on mobile.
 - **Command palette** (`CommandPalette`).
   - **Opening:** Ctrl/⌘ + K from any authenticated screen, or its trigger in the topbar.
-  - **Truthful scope** (design D26): the trigger says «Buscar pantalla o acción…» (from 1280px; below,
-    a compact button with the same accessible name and tooltip), and so does the field. It searches
+  - **Truthful scope** (design D26): the trigger is a round button named «Buscar pantalla o acción»,
+    with a tooltip that shows the shortcut, and the field says the same. It searches
     screens and actions, never documents, third parties or products, and is never called a global
     search.
   - **Contents:** «Ir a» (the permitted destinations and Mi cuenta) and «Crear» (the Quick Create

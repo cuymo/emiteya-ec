@@ -9,7 +9,7 @@ import type { Permission } from "@/lib/permissions";
 import {
   breadcrumbsFor,
   CREATE_ACTIONS,
-  INTERNAL_ROUTES,
+  pageTitleFor,
   permissionsOf,
   resolveRoute,
   visibleCreateActions,
@@ -124,50 +124,55 @@ describe("migas", () => {
           : crumb.label,
     );
 
-  it("una pantalla interna muestra su destino como enlace y la pantalla actual", () => {
-    expect(crumbs("/facturas/abc")).toEqual(["Facturas→/facturas", "[Detalle de factura]"]);
+  it("una pantalla interna muestra su grupo, su destino como enlace y la pantalla actual", () => {
+    expect(crumbs("/facturas/abc")).toEqual([
+      "Ventas",
+      "Facturas→/facturas",
+      "[Detalle de factura]",
+    ]);
     expect(crumbs("/facturas/abc", "001-001-000000123")).toEqual([
+      "Ventas",
       "Facturas→/facturas",
       "[001-001-000000123]",
     ]);
     expect(crumbs("/notas-credito/borradores/d1")).toEqual([
+      "Ventas",
       "Notas de crédito→/notas-credito",
       "[Borrador de nota de crédito]",
     ]);
     expect(crumbs("/inventario/p1", "Tornillo 3/8")).toEqual([
+      "Logística",
       "Inventario→/inventario",
       "[Tornillo 3/8]",
     ]);
     // productize-invoice-editor-and-composition-foundation, D12 y PO-1.
-    expect(crumbs("/borradores/nuevo")).toEqual(["Facturas→/facturas", "[Nueva factura]"]);
-    expect(crumbs("/borradores/d-1")).toEqual(["Facturas→/facturas", "[Borrador de factura]"]);
+    expect(crumbs("/borradores/nuevo")).toEqual([
+      "Ventas",
+      "Facturas→/facturas",
+      "[Nueva factura]",
+    ]);
+    expect(crumbs("/borradores/d-1")).toEqual([
+      "Ventas",
+      "Facturas→/facturas",
+      "[Borrador de factura]",
+    ]);
   });
 
-  it("cada ruta tiene un solo dueño de sus migas: el shell o su encabezado (D2)", () => {
-    const owners = new Set(["shell", "page-header"]);
-    for (const route of INTERNAL_ROUTES) {
-      expect(owners.has(route.orientation ?? "shell"), String(route.pattern)).toBe(true);
-    }
-    // Solo el editor de facturas, que es la pantalla migrada, pinta sus propias migas.
-    expect(
-      INTERNAL_ROUTES.filter((route) => route.orientation === "page-header").map((route) =>
-        String(route.pattern),
-      ),
-    ).toEqual([String(/^\/borradores\/nuevo$/), String(/^\/borradores\/[^/]+$/)]);
-    expect(resolveRoute("/borradores/nuevo")?.orientation).toBe("page-header");
-    expect(resolveRoute("/notas-credito/borradores/d1")?.orientation).toBe("shell");
-    expect(resolveRoute("/facturas")?.orientation).toBe("shell");
-  });
-
-  it("Configuración es una sección de las migas", () => {
+  it("un destino muestra su grupo y su nombre; Inicio y Mi cuenta, solo su nombre", () => {
     expect(crumbs("/configuracion/empresa")).toEqual(["Configuración", "[Empresa]"]);
-    expect(crumbs("/configuracion/secuenciales")).toEqual(["Configuración", "[Secuenciales]"]);
+    expect(crumbs("/facturas")).toEqual(["Ventas", "[Facturas]"]);
+    expect(crumbs("/comprobantes")).toEqual(["Documentos", "[Archivo de comprobantes]"]);
+    expect(crumbs("/")).toEqual(["[Inicio]"]);
+    expect(crumbs("/mi-cuenta")).toEqual(["[Mi cuenta]"]);
+    expect(crumbs("/nada-que-ver")).toEqual([]);
   });
 
-  it("no hay migas de una sola miga: destinos de primer nivel, Inicio y Mi cuenta", () => {
-    for (const url of ["/facturas", "/productos", "/", "/mi-cuenta", "/comprobantes"]) {
-      expect(crumbs(url), url).toEqual([]);
-    }
+  it("el título es el destino o, en una pantalla interna, su nombre", () => {
+    expect(pageTitleFor(resolveRoute("/facturas"))).toBe("Facturas");
+    expect(pageTitleFor(resolveRoute("/facturas/abc"))).toBe("Detalle de factura");
+    expect(pageTitleFor(resolveRoute("/borradores/nuevo"))).toBe("Nueva factura");
+    expect(pageTitleFor(resolveRoute("/configuracion/firma"))).toBe("Firma electrónica");
+    expect(pageTitleFor(resolveRoute("/nada-que-ver"))).toBeNull();
   });
 });
 

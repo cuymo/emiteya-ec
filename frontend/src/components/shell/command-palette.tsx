@@ -2,8 +2,8 @@
 // web-application-shell, «Paleta de comandos»). Derivada de `search-dialog.tsx` de la plantilla
 // «Studio Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md): se abre con Ctrl/⌘ + K (en la plantilla era
 // ⌘J) o con su disparador, y solo ofrece navegación y creación rápida. El disparador declara ese
-// alcance, «Buscar pantalla o acción» (design D26): no promete buscar registros. El texto completo
-// cabe desde 1280 px; por debajo, el botón compacto lleva el mismo nombre y su ayuda. El contenido se
+// alcance, «Buscar pantalla o acción» (design D26): no promete buscar registros. Es un botón redondo
+// de la barra superior, con ese nombre y una ayuda con el atajo. El contenido se
 // carga bajo demanda la primera vez que se abre, para no engordar la carga inicial de cada pantalla.
 "use client";
 
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useModifierLabel } from "./shortcut";
+import { TOPBAR_ACTION } from "./topbar";
 
 const SCOPE = "Buscar pantalla o acción";
 
@@ -43,27 +44,15 @@ export function CommandPalette() {
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        aria-label={SCOPE}
-        aria-keyshortcuts="Control+K Meta+K"
-        onClick={show}
-        className="hidden w-72 justify-start text-muted-foreground xl:inline-flex"
-      >
-        <Search aria-hidden="true" />
-        <span className="flex-1 truncate text-left">{SCOPE}…</span>
-        <Kbd>{modifier} K</Kbd>
-      </Button>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon"
             aria-label={SCOPE}
             aria-keyshortcuts="Control+K Meta+K"
             onClick={show}
-            className="xl:hidden"
+            className={TOPBAR_ACTION}
           >
             <Search aria-hidden="true" />
           </Button>

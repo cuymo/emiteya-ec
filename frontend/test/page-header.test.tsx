@@ -3,11 +3,9 @@
 // lista. Variante de editor y ritmo fijo: productize-invoice-editor-and-composition-foundation, D3.
 import { render, screen } from "@testing-library/react";
 import Link from "next/link";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { PageHeader } from "@/components/layout/page-header";
-import { BreadcrumbLabelProvider, useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 import { Button } from "@/components/ui/button";
-import { navigation } from "./navigation";
 
 describe("PageHeader (D4)", () => {
   it("tiene un solo h1 y la acción principal enlaza a su destino", () => {
@@ -71,50 +69,15 @@ describe("PageHeader (D4)", () => {
 });
 
 describe("PageHeader de editor (productize-invoice-editor-and-composition-foundation, D3)", () => {
-  afterEach(() => {
-    navigation.pathname = "/";
-  });
-
-  function Record({ label }: { label: string }) {
-    useBreadcrumbLabel(label);
-    return null;
-  }
-
-  it("pinta las migas de la ruta encima del título, el contexto y ninguna acción", () => {
-    navigation.pathname = "/borradores/nuevo";
+  it("pinta el título, el contexto y ninguna acción; las migas van en la barra superior", () => {
     const { container } = render(
-      <BreadcrumbLabelProvider>
-        <PageHeader variant="editor" title="Nueva factura" context={<span>Sin guardar</span>} />
-      </BreadcrumbLabelProvider>,
+      <PageHeader variant="editor" title="Nueva factura" context={<span>Sin guardar</span>} />,
     );
     const header = container.querySelector("header")!;
     expect(header.getAttribute("data-variant")).toBe("editor");
-    const crumbs = screen.getByRole("navigation", { name: "Ruta de navegación" });
-    // Las migas van antes que el título, y el título es el único h1.
-    expect(header.firstElementChild).toBe(crumbs);
-    expect(screen.getByRole("link", { name: "Facturas" }).getAttribute("href")).toBe("/facturas");
-    expect(screen.getByText("Nueva factura", { selector: "[aria-current=page]" })).toBeDefined();
+    expect(screen.queryByRole("navigation")).toBeNull();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByText("Sin guardar")).toBeDefined();
     expect(header.querySelectorAll("button, [data-slot=button]")).toHaveLength(0);
-  });
-
-  it("solo pinta migas donde la ruta se las da al encabezado", () => {
-    navigation.pathname = "/notas-credito/borradores/d1";
-    render(<PageHeader variant="editor" title="Borrador de nota de crédito" />);
-    expect(screen.queryByRole("navigation")).toBeNull();
-  });
-
-  it("la última miga toma la etiqueta del registro cuando la pantalla la da", () => {
-    navigation.pathname = "/borradores/d-1";
-    render(
-      <BreadcrumbLabelProvider>
-        <Record label="Borrador de EL PERNO" />
-        <PageHeader variant="editor" title="Borrador de factura" />
-      </BreadcrumbLabelProvider>,
-    );
-    expect(
-      screen.getByText("Borrador de EL PERNO", { selector: "[aria-current=page]" }),
-    ).toBeDefined();
   });
 });

@@ -8,7 +8,6 @@
 import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppBreadcrumbs } from "./app-breadcrumbs";
 import { AppSidebar } from "./app-sidebar";
 import { BreadcrumbLabelProvider } from "./breadcrumb-label";
 import { CommandPalette } from "./command-palette";
@@ -54,13 +53,9 @@ export function AppShell({
             className="min-w-0 flex-1 px-4 py-6 outline-none md:px-6"
           >
             {/* Columna centrada: el ancho de un espacio de trabajo, o el que declara la pantalla con
-                `data-page-width` en su raíz (lectura o formulario), para que las migas, el título y
-                el contenido compartan el mismo borde izquierdo. */}
+                `data-page-width` en su raíz (lectura o formulario). Las migas y el título de la
+                ruta van en la barra superior. */}
             <div className="mx-auto w-full max-w-workspace has-data-[page-width=form]:max-w-form has-data-[page-width=reading]:max-w-reading">
-              {/* Migas de las pantallas heredadas, encima del título a todas las anchuras (design D2
-                  de productize-invoice-editor-and-composition-foundation); las migradas las pintan
-                  ellas. */}
-              <AppBreadcrumbs owner="shell" className="mb-2" />
               <RouteGuard>{children}</RouteGuard>
             </div>
           </main>
@@ -84,9 +79,10 @@ export function ShellSkeleton() {
         <Skeleton className="h-8 w-3/5" />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-12 items-center justify-between border-b px-4 max-md:h-14">
+        <div className="flex h-14 items-center justify-between border-b px-4 md:h-18 md:px-6">
           <span className="text-base font-semibold md:hidden">EmiteYa</span>
-          <Skeleton className="ml-auto size-8 rounded-full" />
+          <Skeleton className="hidden h-9 w-48 md:block" />
+          <Skeleton className="ml-auto h-9 w-40" />
         </div>
         <div className="mx-auto flex w-full max-w-workspace flex-col gap-4 px-4 py-6 md:px-6">
           <Skeleton className="h-8 w-64" />

@@ -297,7 +297,6 @@ test.describe("paleta veraz sobre su alcance (D26)", () => {
         visible: true,
       });
       await expect(trigger).toHaveCount(1);
-      if (viewport.width >= 1280) await expect(trigger).toContainText("Buscar pantalla o acción…");
       await expect(page.getByRole("button", { name: "Buscar", exact: true })).toHaveCount(0);
       await trigger.click();
       const dialog = page.getByRole("dialog", { name: "Paleta de comandos" });
@@ -369,7 +368,7 @@ test.describe("ventas, borradores y archivo (D25)", () => {
 
   // productize-invoice-editor-and-composition-foundation, D12 y PO-1: el editor de facturas
   // pertenece a Facturas (sustituye a la D25, que lo colgaba de Borradores de facturas).
-  test("Nueva factura desde la creación rápida marca Ventas › Facturas, con sus migas encima del título", async ({
+  test("Nueva factura desde la creación rápida marca Ventas › Facturas, con sus migas en la barra superior", async ({
     browser,
   }) => {
     const page = await open(browser, "/facturas", { width: 1440, height: 900 });
@@ -379,9 +378,10 @@ test.describe("ventas, borradores y archivo (D25)", () => {
     await expect(nav(page).locator('a[aria-current="page"]')).toHaveText("Facturas");
     const crumbs = page.getByRole("navigation", { name: "Ruta de navegación" });
     await expect(crumbs).toHaveCount(1);
-    await expect(crumbs).toHaveText(/^Facturas\s*Nueva factura$/);
-    // La barra superior es el `banner`; el `header` del editor, que sí lleva las migas, no lo es.
-    await expect(page.getByRole("banner").getByRole("navigation")).toHaveCount(0);
+    await expect(crumbs).toHaveText(/^\/\s*Ventas\s*\/\s*Facturas\s*\/\s*Nueva factura$/);
+    // Las migas son de la barra superior, el `banner`, y el contenido no las repite.
+    await expect(page.getByRole("banner").getByRole("navigation")).toHaveCount(1);
+    await expect(page.getByRole("main").getByRole("navigation")).toHaveCount(0);
     await page.context().close();
   });
 });

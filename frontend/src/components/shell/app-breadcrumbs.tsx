@@ -1,11 +1,12 @@
-// Migas del shell (adopt-premium-design-foundation-and-shell, design D15; spec web-application-shell,
-// «Migas de navegación»). Compone el primitivo `breadcrumb` con el modelo de rutas canónico: jerarquía
-// sin repetir el título; una ruta de una sola miga no se muestra. Van siempre encima del título, nunca
-// en la barra superior, en una sola línea que recorta la última miga
-// (productize-invoice-editor-and-composition-foundation, design D2). Cada ruta tiene un solo dueño:
-// la fila compartida del shell o el encabezado de una pantalla migrada, según el modelo de rutas.
+// Título y migas de la pantalla en la barra superior, a la izquierda (decisión del propietario sobre
+// la cabecera; spec web-application-shell, «Migas de navegación»). Compone el primitivo `breadcrumb`
+// con el modelo de rutas canónico: el título de la pantalla encima y, debajo, la ruta desde Inicio,
+// separada con barras, con la pantalla actual en el color de marca. En un teléfono no se muestra: no
+// cabe junto al contexto global y el `h1` de la pantalla, justo debajo, ya orienta. El título no es
+// un encabezado: el `h1` sigue siendo el de la pantalla.
 "use client";
 
+import { House } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment } from "react";
@@ -17,44 +18,47 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { breadcrumbsFor, resolveRoute, type BreadcrumbOwner } from "@/lib/navigation/routes";
-import { cn } from "@/lib/utils";
+import { breadcrumbsFor, pageTitleFor, resolveRoute } from "@/lib/navigation/routes";
 import { useBreadcrumbLabelValue } from "./breadcrumb-label";
 
-export function AppBreadcrumbs({
-  owner,
-  className,
-}: {
-  /** Quién las pinta: solo se muestran si la ruta le da a él la orientación. */
-  owner: BreadcrumbOwner;
-  className?: string;
-}) {
+export function TopbarHeading() {
   const pathname = usePathname();
   const record = useBreadcrumbLabelValue();
   const route = resolveRoute(pathname);
+  const title = pageTitleFor(route);
   const crumbs = breadcrumbsFor(route, record);
-  if (crumbs.length === 0 || route?.orientation !== owner) return null;
+  if (!title) return null;
   return (
-    <Breadcrumb className={cn("min-w-0", className)}>
-      <BreadcrumbList className="flex-nowrap">
-        {crumbs.map((crumb, index) => (
-          <Fragment key={`${crumb.label}-${index}`}>
-            {index > 0 && <BreadcrumbSeparator />}
-            {/* Solo la última miga se recorta; las anteriores conservan su ancho. */}
-            <BreadcrumbItem className={crumb.current ? "min-w-0" : "shrink-0"}>
-              {crumb.current ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : crumb.href ? (
-                <BreadcrumbLink asChild>
-                  <Link href={crumb.href}>{crumb.label}</Link>
-                </BreadcrumbLink>
-              ) : (
-                <span>{crumb.label}</span>
-              )}
-            </BreadcrumbItem>
-          </Fragment>
-        ))}
-      </BreadcrumbList>
-    </Breadcrumb>
+    <div data-slot="topbar-heading" className="flex min-w-0 flex-col gap-1 max-md:hidden">
+      <p className="truncate text-lg leading-tight font-semibold">{title}</p>
+      <Breadcrumb className="min-w-0">
+        <BreadcrumbList className="flex-nowrap gap-2 text-sm leading-none">
+          <BreadcrumbItem className="shrink-0">
+            <BreadcrumbLink asChild>
+              <Link href="/" aria-label="Inicio">
+                <House aria-hidden="true" className="size-4" />
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {crumbs.map((crumb, index) => (
+            <Fragment key={`${crumb.label}-${index}`}>
+              <BreadcrumbSeparator>/</BreadcrumbSeparator>
+              {/* Solo la última miga se recorta; las anteriores conservan su ancho. */}
+              <BreadcrumbItem className={crumb.current ? "min-w-0" : "shrink-0"}>
+                {crumb.current ? (
+                  <BreadcrumbPage className="text-primary">{crumb.label}</BreadcrumbPage>
+                ) : crumb.href ? (
+                  <BreadcrumbLink asChild>
+                    <Link href={crumb.href}>{crumb.label}</Link>
+                  </BreadcrumbLink>
+                ) : (
+                  <span>{crumb.label}</span>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
+          ))}
+        </BreadcrumbList>
+      </Breadcrumb>
+    </div>
   );
 }

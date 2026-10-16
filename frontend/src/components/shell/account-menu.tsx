@@ -3,16 +3,16 @@
 // plantilla «Studio Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md), con la cuenta real de la sesión:
 // sin imagen remota, sin Billing ni Notifications de demostración. El tema vive aquí a todas las
 // anchuras y en ningún otro sitio: nunca hay dos controles de tema
-// (productize-invoice-editor-and-composition-foundation, spec «Tema accesible»).
+// (productize-invoice-editor-and-composition-foundation, spec «Tema accesible»). El disparador es el
+// nombre de la persona con un chevrón, debajo de la empresa en la barra superior; en un teléfono su
+// zona táctil crece hasta 44 px sin mover nada.
 "use client";
 
-import { LogOut, Monitor, Moon, Sun, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Monitor, Moon, Sun, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { useSession } from "@/components/session";
-import { Avatar, AvatarFallback, initials } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,18 +38,15 @@ export function AccountMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
+        <button
+          type="button"
           aria-label={`Cuenta de ${me.name}`}
-          className="rounded-full"
+          title={me.name}
+          className="relative flex max-w-28 min-w-0 items-center gap-1 rounded-sm text-xs text-foreground-muted outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring max-md:after:absolute max-md:after:-inset-y-3 max-md:after:inset-x-0 md:max-w-56"
         >
-          <Avatar size="sm">
-            <AvatarFallback className="bg-primary/15 text-xs font-semibold text-foreground">
-              {initials(me.name)}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
+          <span className="truncate">{me.name}</span>
+          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-56">
         <DropdownMenuLabel className="flex flex-col gap-0.5 px-2 py-1.5 font-normal">

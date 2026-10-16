@@ -47,8 +47,8 @@ export type NavGroup = {
   id: string;
   label: string;
   /**
-   * Una sección que agrupa ajustes y aparece en las migas; los grupos operativos solo agrupan. En la
-   * barra, una sección se pliega fuera de sus pantallas (design D24) y lleva su icono.
+   * Una sección que agrupa ajustes; los grupos operativos solo agrupan. En la barra, una sección se
+   * pliega fuera de sus pantallas (design D24) y lleva su icono. Los dos aparecen en las migas.
    */
   section: boolean;
   icon?: LucideIcon;
@@ -56,19 +56,11 @@ export type NavGroup = {
 };
 
 /** Una pantalla interna de un destino: su detalle o su editor. */
-/**
- * Quién pinta las migas de una pantalla (productize-invoice-editor-and-composition-foundation, design
- * D2): la fila compartida del shell, o el `PageHeader` de una pantalla migrada. Nunca los dos.
- */
-export type BreadcrumbOwner = "shell" | "page-header";
-
 type InternalRoute = {
   pattern: RegExp;
   destination: string;
   leaf: string;
   permission: Permission;
-  /** Por defecto, la fila compartida del shell. */
-  orientation?: BreadcrumbOwner;
 };
 
 export type CreateAction = {
@@ -299,20 +291,18 @@ export const INTERNAL_ROUTES: readonly InternalRoute[] = [
   },
   // El editor de facturas pertenece a Facturas, antes y después del primer guardado, que cambia
   // `/borradores/nuevo` por `/borradores/{id}` (design D12, PO-1). Borradores de facturas sigue
-  // siendo la lista para retomarlos. Sus migas las pinta el propio editor (D2).
+  // siendo la lista para retomarlos.
   {
     pattern: /^\/borradores\/nuevo$/,
     destination: "/facturas",
     leaf: "Nueva factura",
     permission: "invoices.draft",
-    orientation: "page-header",
   },
   {
     pattern: /^\/borradores\/[^/]+$/,
     destination: "/facturas",
     leaf: "Borrador de factura",
     permission: "invoices.draft",
-    orientation: "page-header",
   },
   ...documentRoutes(
     "/notas-credito",
@@ -427,8 +417,6 @@ export type ResolvedRoute = {
   leaf: string | null;
   /** El permiso que exige la pantalla, o `null` si no hay guarda (ruta sin patrón o libre). */
   permission: Permission | null;
-  /** Quién pinta las migas de la pantalla (design D2). */
-  orientation: BreadcrumbOwner;
 };
 
 function findDestination(href: string): { destination: Destination; group: NavGroup | null } {
@@ -451,7 +439,6 @@ export function resolveRoute(pathname: string): ResolvedRoute | null {
       ...findDestination(exact.href),
       leaf: null,
       permission: exact.permission,
-      orientation: "shell",
     };
   }
   const internal = INTERNAL_ROUTES.find((route) => route.pattern.test(path));
@@ -460,14 +447,13 @@ export function resolveRoute(pathname: string): ResolvedRoute | null {
       ...findDestination(internal.destination),
       leaf: internal.leaf,
       permission: internal.permission,
-      orientation: internal.orientation ?? "shell",
     };
   }
   // Una ruta sin patrón conserva su destino actual por prefijo, sin guarda.
   for (const group of NAV_GROUPS) {
     for (const destination of group.destinations) {
       if (destination.href !== "/" && path.startsWith(`${destination.href}/`)) {
-        return { destination, group, leaf: null, permission: null, orientation: "shell" };
+        return { destination, group, leaf: null, permission: null };
       }
     }
   }
@@ -477,19 +463,25 @@ export function resolveRoute(pathname: string): ResolvedRoute | null {
 export type Crumb = { label: string; href?: string; current?: boolean };
 
 /**
- * Migas jerárquicas (design D15): la sección (solo Configuración), el destino como enlace en una
- * pantalla interna y la miga final. Si queda una sola miga, la página actual, no hay migas: nunca
- * repiten el título de la pantalla.
+ * Migas jerárquicas de la barra superior, después del enlace a Inicio: el grupo de la navegación, el
+ * destino (un enlace en una pantalla interna) y la pantalla actual, que en un detalle es su registro.
+ * Inicio no repite su grupo.
  */
 export function breadcrumbsFor(route: ResolvedRoute | null, recordLabel?: string | null): Crumb[] {
   if (!route) return [];
   const crumbs: Crumb[] = [];
-  if (route.group?.section) crumbs.push({ label: route.group.label });
+  if (route.group && route.group.id !== "inicio") crumbs.push({ label: route.group.label });
   if (route.leaf) {
     crumbs.push({ label: route.destination.label, href: route.destination.href });
     crumbs.push({ label: recordLabel || route.leaf, current: true });
   } else {
     crumbs.push({ label: route.destination.label, current: true });
   }
-  return crumbs.length > 1 ? crumbs : [];
+  return crumbs;
+}
+
+/** El título de la pantalla en la barra superior: su destino o, en una pantalla interna, su nombre. */
+export function pageTitleFor(route: ResolvedRoute | null): string | null {
+  if (!route) return null;
+  return route.leaf ?? route.destination.label;
 }

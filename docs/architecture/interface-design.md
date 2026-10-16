@@ -88,11 +88,9 @@ In this repository, migrated screens use `PageHeader` (`frontend/src/components/
 - one primary-action slot and separate secondary actions, so a screen cannot ship two primary
   actions.
 
-Breadcrumbs never live in the shell's top bar (`productize-invoice-editor-and-composition-foundation`,
-design D2). They sit in one row above the page title: the shell paints that row for the screens not
-yet migrated, and a migrated screen paints its own above its title, as the invoice editor does. The
-route model says which one owns each route (`orientation: "page-header"` in `INTERNAL_ROUTES`), so a
-screen never shows both, and no «back» link repeats a breadcrumb. The shell's Quick Create stays an
+Breadcrumbs live in the shell's top bar, under the title of the route, for every screen (owner
+decision on the header, 2026-10-16; `navigation-responsive.md`). No screen paints its own, and no
+«back» link repeats a breadcrumb. The shell's Quick Create stays an
 `outline` secondary control.
 
 ### `PageHeader` grammar
@@ -103,8 +101,8 @@ design D3). No screen builds its own header.
 | Variant | Breadcrumbs | Title | Description | Context | Primary action | Secondary actions |
 | --- | --- | --- | --- | --- | --- | --- |
 | List (`variant="list"`, Facturas) | None | `h1` | Optional | Optional | Right of the title | Next to the primary |
-| Editor (`variant="editor"`, invoice editor) | The route's, inside the header, above the title | `h1` | None | Draft state: «Sin guardar», «Guardado» or «Cambios sin guardar» | None: actions live next to the summary or in the action bar | None |
-| Configuration and reading (written for the migration of those screens) | «Configuración › …», inside the header | `h1` | Yes | Optional | Right, inside the width of its role (`max-w-form` or `max-w-reading`) | Next to the primary |
+| Editor (`variant="editor"`, invoice editor) | None (top bar) | `h1` | None | Draft state: «Sin guardar», «Guardado» or «Cambios sin guardar» | None: actions live next to the summary or in the action bar | None |
+| Configuration and reading (written for the migration of those screens) | None (top bar) | `h1` | Yes | Optional | Right, inside the width of its role (`max-w-form` or `max-w-reading`) | Next to the primary |
 
 - **Fixed rhythm:** the title block is at least 40px high, the height of the default button, with
   the title centered. The title lands on the same y with or without an action.

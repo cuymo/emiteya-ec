@@ -166,16 +166,15 @@ describe("paleta de comandos", () => {
     expect(within(dialog).queryByRole("option", { name: /Usuarios/ })).toBeNull();
   });
 
-  it("declara su alcance en el disparador, en el botón compacto y en el campo", async () => {
+  it("declara su alcance en el disparador redondo y en el campo", async () => {
     const user = userEvent.setup();
     api();
     renderShell();
     await screen.findByText("contenido");
     const triggers = screen.getAllByRole("button", { name: "Buscar pantalla o acción" });
-    expect(triggers).toHaveLength(2);
-    expect(triggers[0]!.textContent).toContain("Buscar pantalla o acción…");
+    expect(triggers).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Buscar" })).toBeNull();
-    await user.click(triggers[1]!);
+    await user.click(triggers[0]!);
     const dialog = await screen.findByRole("dialog", { name: "Paleta de comandos" });
     const input = within(dialog).getByRole("combobox", { name: "Buscar pantalla o acción" });
     expect(input.getAttribute("placeholder")).toBe("Buscar pantalla o acción…");

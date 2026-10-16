@@ -342,8 +342,8 @@ describe("ambiente fiscal visible", () => {
   });
 });
 
-describe("barra superior estable (productize-invoice-editor-and-composition-foundation, D1)", () => {
-  it("tres zonas de contexto global: sin migas ni control de tema", async () => {
+describe("barra superior estable", () => {
+  it("dos zonas: el título con sus migas a la izquierda y el contexto global a la derecha", async () => {
     api();
     navigation.pathname = "/borradores/nuevo";
     renderShell();
@@ -353,8 +353,16 @@ describe("barra superior estable (productize-invoice-editor-and-composition-foun
       [...header.querySelectorAll(":scope > [data-slot^=topbar-]")].map((zone) =>
         zone.getAttribute("data-slot"),
       ),
-    ).toEqual(["topbar-start", "topbar-center", "topbar-end"]);
-    expect(within(header).queryByRole("navigation", { name: "Ruta de navegación" })).toBeNull();
+    ).toEqual(["topbar-start", "topbar-end"]);
+    const start = header.querySelector("[data-slot=topbar-start]")!;
+    expect(
+      within(start as HTMLElement).getByText("Nueva factura", { selector: "p" }),
+    ).toBeDefined();
+    expect(
+      within(start as HTMLElement).getByRole("navigation", { name: "Ruta de navegación" }),
+    ).toBeDefined();
+    // El título de la barra no es un encabezado: el `h1` sigue siendo el de la pantalla.
+    expect(within(header).queryByRole("heading")).toBeNull();
     expect(within(header).queryByRole("radiogroup", { name: "Tema" })).toBeNull();
     // Cada zona en una sola fila: sin saltos de línea.
     for (const zone of header.querySelectorAll(":scope > [data-slot^=topbar-]"))
@@ -371,9 +379,9 @@ describe("barra superior estable (productize-invoice-editor-and-composition-foun
     expect(context.getAttribute("title")).toBe(name);
     expect(context.textContent!.endsWith(`Empresa: ${name}`)).toBe(true);
     expect(screen.getByText(name).className.split(/\s+/)).toContain("truncate");
-    // El hueco de la empresa está acotado: 10rem en móvil y 14rem desde 768 px.
+    // El hueco de la empresa está acotado: 7rem en móvil y 14rem desde 768 px.
     expect(context.parentElement!.className.split(/\s+/)).toEqual(
-      expect.arrayContaining(["max-w-40", "md:max-w-56", "min-w-0"]),
+      expect.arrayContaining(["max-w-28", "md:max-w-56", "min-w-0"]),
     );
   });
 });
@@ -498,40 +506,35 @@ describe("migas", () => {
     expect(within(breadcrumb()[0]!).getByText("Detalle de factura")).toBeDefined();
   });
 
-  it("van encima del título, en el contenido, y nunca en la barra superior", async () => {
+  it("van en la barra superior, debajo del título, y nunca en el contenido", async () => {
     api();
-    for (const path of ["/facturas/abc", "/configuracion/empresa", "/notas-credito/borradores/x"]) {
+    for (const path of [
+      "/facturas/abc",
+      "/configuracion/empresa",
+      "/notas-credito/borradores/x",
+      "/borradores/nuevo",
+      "/borradores/d-1",
+    ]) {
       navigation.pathname = path;
       const view = renderShell();
       await screen.findByText("contenido");
       const navs = breadcrumb();
       expect(navs, path).toHaveLength(1);
-      expect(navs[0]!.closest("main"), path).not.toBeNull();
-      expect(navs[0]!.closest("header"), path).toBeNull();
+      expect(navs[0]!.closest("header"), path).not.toBeNull();
+      expect(navs[0]!.closest("main"), path).toBeNull();
       view.unmount();
     }
   });
 
-  it("en el editor de facturas, la fila compartida no se pinta: las migas son del editor (D2)", async () => {
+  it("un destino de primer nivel muestra Inicio, su grupo y su nombre", async () => {
     api();
-    for (const path of ["/borradores/nuevo", "/borradores/d-1"]) {
-      navigation.pathname = path;
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(breadcrumb(), path).toHaveLength(0);
-      view.unmount();
-    }
-  });
-
-  it("un destino de primer nivel no muestra migas", async () => {
-    api();
-    for (const path of ["/facturas", "/productos", "/"]) {
-      navigation.pathname = path;
-      const view = renderShell();
-      await screen.findByText("contenido");
-      expect(breadcrumb(), path).toHaveLength(0);
-      view.unmount();
-    }
+    navigation.pathname = "/facturas";
+    renderShell();
+    await screen.findByText("contenido");
+    const [nav] = breadcrumb();
+    expect(within(nav!).getByRole("link", { name: "Inicio" }).getAttribute("href")).toBe("/");
+    expect(within(nav!).getByText("Ventas")).toBeDefined();
+    expect(within(nav!).getByText("Facturas").getAttribute("aria-current")).toBe("page");
   });
 
   it("Configuración es una sección de las migas", async () => {

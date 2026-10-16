@@ -2,9 +2,9 @@
 // spec web-application-shell, «Contexto de la empresa visible»). Adapta el patrón visual de
 // `account-switcher.tsx` de la plantilla «Studio Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md) a un
 // contexto de solo lectura: no es un botón, no abre nada y no sugiere un cambio de empresa que el
-// sistema no tiene. Es presentación pura: el layout le pasa el estado de la empresa de la sesión.
+// sistema no tiene. Es presentación pura: el layout le pasa el estado de la empresa de la sesión. La
+// barra superior pone la ficha del edificio a su lado y la cuenta debajo.
 import { Building2, TriangleAlert } from "lucide-react";
-import { Avatar, AvatarFallback, initials } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -59,16 +59,9 @@ export function CompanyContext({
   return (
     <p
       data-slot="company-context"
-      className={cn("flex min-w-0 items-center gap-2 text-sm font-medium", className)}
+      className={cn("flex min-w-0 items-center gap-2 text-sm font-semibold", className)}
       title={state.name}
     >
-      {/* En un teléfono estrecho la ficha cede su sitio al nombre, que es lo que pide la spec
-          (productize-invoice-editor-and-composition-foundation, design D1). */}
-      <Avatar size="sm" className="rounded-md after:rounded-md max-md:@max-topbar-company:hidden">
-        <AvatarFallback className="rounded-md text-xs font-semibold">
-          {initials(state.name)}
-        </AvatarFallback>
-      </Avatar>
       <span className="sr-only">Empresa: </span>
       <span className="truncate">{state.name}</span>
     </p>
