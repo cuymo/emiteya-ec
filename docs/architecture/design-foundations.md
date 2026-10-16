@@ -59,11 +59,16 @@ without arbitrary values:
 | --- | --- | --- | --- |
 | Reading | `--container-reading` | `max-w-reading` | 42rem (672 px) |
 | Form | `--container-form` | `max-w-form` | 48rem (768 px) |
-| Workspace | none | `max-w-none` | Content width |
+| Workspace | `--container-workspace` | `max-w-workspace` | 72rem (1152 px) |
+
+Content is never full width: the shell centers every screen in one column. The column has the
+workspace width, and narrows to reading or form when the screen root declares
+`data-page-width="reading"` or `data-page-width="form"`. Breadcrumbs, title and content share that
+column, so their left edges align at every width.
 
 `--container-form-rail` (55rem) is the container width from which a form's side panel sits beside
-the form (`@form-rail:`). The legacy `max-w-xl`, `max-w-2xl`, `max-w-3xl` and `max-w-5xl` map to
-these roles as listed in `component-system.md`, when their screens migrate.
+the form (`@form-rail:`). The screens that used `max-w-xl`, `max-w-2xl`, `max-w-3xl` and
+`max-w-5xl` now declare their role, as listed in `component-system.md`.
 
 ## Typography
 

@@ -82,7 +82,11 @@ export function ReadinessScreen() {
   if (status.isPending) return <ReadinessSkeleton />;
   if (status.isError) {
     return (
-      <section aria-labelledby="inicio-titulo" className="flex max-w-2xl flex-col gap-6">
+      <section
+        aria-labelledby="inicio-titulo"
+        data-page-width="reading"
+        className="flex flex-col gap-6"
+      >
         <h1 id="inicio-titulo" className="text-3xl font-bold">
           Preparación para emitir
         </h1>
@@ -93,7 +97,11 @@ export function ReadinessScreen() {
 
   const { ready } = status.data.readiness;
   return (
-    <section aria-labelledby="inicio-titulo" className="flex max-w-2xl flex-col gap-6">
+    <section
+      aria-labelledby="inicio-titulo"
+      data-page-width="reading"
+      className="flex flex-col gap-6"
+    >
       <div className="flex flex-col gap-2">
         <h1 id="inicio-titulo" className="text-3xl font-bold">
           Preparación para emitir
@@ -124,7 +132,7 @@ export function ReadinessScreen() {
 
 export function ReadinessSkeleton() {
   return (
-    <section aria-busy="true" className="flex max-w-2xl flex-col gap-6">
+    <section aria-busy="true" data-page-width="reading" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Preparación para emitir</h1>
       <Skeleton className="h-6 w-32" />
       <Skeleton className="h-48 w-full" />

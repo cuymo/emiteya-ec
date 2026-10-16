@@ -93,7 +93,11 @@ export function SequencesScreen() {
   );
   if (!allowed) {
     return (
-      <section aria-labelledby="secuenciales-titulo" className="flex flex-col gap-6">
+      <section
+        aria-labelledby="secuenciales-titulo"
+        data-page-width="form"
+        className="flex flex-col gap-6"
+      >
         {heading}
         <EmptyState
           kind="no-permission"
@@ -171,7 +175,11 @@ export function SequencesScreen() {
   }
 
   return (
-    <section aria-labelledby="secuenciales-titulo" className="flex max-w-3xl flex-col gap-6">
+    <section
+      aria-labelledby="secuenciales-titulo"
+      data-page-width="form"
+      className="flex flex-col gap-6"
+    >
       <div className="flex flex-wrap items-center justify-between gap-4">
         {heading}
         <div className="flex items-center gap-2">
@@ -198,7 +206,7 @@ export function SequencesScreen() {
 
 export function SequencesSkeleton() {
   return (
-    <section aria-busy="true" className="flex max-w-3xl flex-col gap-6">
+    <section aria-busy="true" data-page-width="form" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Secuenciales</h1>
       <Skeleton className="h-32 w-full" />
     </section>

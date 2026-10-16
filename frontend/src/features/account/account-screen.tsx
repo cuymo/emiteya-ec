@@ -51,7 +51,7 @@ export function AccountScreen() {
   });
 
   return (
-    <section aria-labelledby="cuenta-titulo" className="flex max-w-xl flex-col gap-8">
+    <section aria-labelledby="cuenta-titulo" data-page-width="form" className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <h1 id="cuenta-titulo" className="text-3xl font-bold">
           Mi cuenta

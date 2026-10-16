@@ -387,7 +387,7 @@ export function DataPortabilityScreen() {
       <section
         aria-labelledby="portabilidad-titulo"
         aria-busy="true"
-        className="flex max-w-5xl flex-col gap-6"
+        className="flex flex-col gap-6"
       >
         {heading}
         <Skeleton className="h-64 w-full" />
@@ -396,7 +396,7 @@ export function DataPortabilityScreen() {
   }
   if (current.isError) {
     return (
-      <section aria-labelledby="portabilidad-titulo" className="flex max-w-5xl flex-col gap-6">
+      <section aria-labelledby="portabilidad-titulo" className="flex flex-col gap-6">
         {heading}
         <ErrorState message={errorMessage(current.error)} onRetry={() => void current.refetch()} />
       </section>
@@ -433,7 +433,7 @@ export function DataPortabilityScreen() {
   const outcome = !active && latest && latest.id !== ready?.id ? latest : null;
 
   return (
-    <section aria-labelledby="portabilidad-titulo" className="flex max-w-5xl flex-col gap-6">
+    <section aria-labelledby="portabilidad-titulo" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-4">
           {heading}

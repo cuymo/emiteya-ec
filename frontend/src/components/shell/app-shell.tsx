@@ -53,10 +53,16 @@ export function AppShell({
             tabIndex={-1}
             className="min-w-0 flex-1 px-4 py-6 outline-none md:px-6"
           >
-            {/* Migas de las pantallas heredadas, encima del título a todas las anchuras (design D2 de
-                productize-invoice-editor-and-composition-foundation); las migradas las pintan ellas. */}
-            <AppBreadcrumbs owner="shell" className="mb-2" />
-            <RouteGuard>{children}</RouteGuard>
+            {/* Columna centrada: el ancho de un espacio de trabajo, o el que declara la pantalla con
+                `data-page-width` en su raíz (lectura o formulario), para que las migas, el título y
+                el contenido compartan el mismo borde izquierdo. */}
+            <div className="mx-auto w-full max-w-workspace has-data-[page-width=form]:max-w-form has-data-[page-width=reading]:max-w-reading">
+              {/* Migas de las pantallas heredadas, encima del título a todas las anchuras (design D2
+                  de productize-invoice-editor-and-composition-foundation); las migradas las pintan
+                  ellas. */}
+              <AppBreadcrumbs owner="shell" className="mb-2" />
+              <RouteGuard>{children}</RouteGuard>
+            </div>
           </main>
         </SidebarInset>
       </SidebarProvider>
@@ -82,7 +88,7 @@ export function ShellSkeleton() {
           <span className="text-base font-semibold md:hidden">EmiteYa</span>
           <Skeleton className="ml-auto size-8 rounded-full" />
         </div>
-        <div className="flex flex-col gap-4 px-4 py-6 md:px-6">
+        <div className="mx-auto flex w-full max-w-workspace flex-col gap-4 px-4 py-6 md:px-6">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-6 w-full max-w-xl" />
           <Skeleton className="h-6 w-full max-w-lg" />

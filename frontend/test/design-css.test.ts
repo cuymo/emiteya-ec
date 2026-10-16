@@ -44,6 +44,9 @@ beforeAll(async () => {
     "disabled:not-aria-busy:bg-muted",
     "max-w-reading",
     "max-w-form",
+    "max-w-workspace",
+    "has-data-[page-width=form]:max-w-form",
+    "has-data-[page-width=reading]:max-w-reading",
     "@form-rail:flex-row",
     "@form-rail:grid-cols-form-rail",
     "@lg:grid-cols-payment",
@@ -103,6 +106,15 @@ describe("CSS del sistema de diseño", () => {
   it("los anchos por función y el punto de apilado del formulario generan sus utilidades (D4, D5)", () => {
     expect(css).toMatch(/\.max-w-reading\s*\{\s*max-width: var\(--container-reading\)/);
     expect(css).toMatch(/\.max-w-form\s*\{\s*max-width: var\(--container-form\)/);
+    expect(css).toMatch(/\.max-w-workspace\s*\{\s*max-width: var\(--container-workspace\)/);
+    // La columna del shell se estrecha según el ancho que declara la pantalla.
+    for (const role of ["form", "reading"]) {
+      expect(css).toMatch(
+        new RegExp(
+          `:max-w-${role}:has\\(\\[data-page-width="${role}"\\]\\)\\s*\\{\\s*max-width: var\\(--container-${role}\\)`,
+        ),
+      );
+    }
     expect(css).toMatch(
       /@container \(width >= 55rem\)\s*\{(?:\s*\.[^{]+\{[^}]*\})*?\s*\.\\@form-rail\\:flex-row\s*\{\s*flex-direction: row/,
     );

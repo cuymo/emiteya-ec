@@ -469,7 +469,11 @@ export function CompanyScreen() {
 
   if (!allowed) {
     return (
-      <section aria-labelledby="empresa-titulo" className="flex flex-col gap-6">
+      <section
+        aria-labelledby="empresa-titulo"
+        data-page-width="form"
+        className="flex flex-col gap-6"
+      >
         <h1 id="empresa-titulo" className="text-3xl font-bold">
           Empresa
         </h1>
@@ -484,7 +488,11 @@ export function CompanyScreen() {
   if (taxpayer.isPending) return <CompanySkeleton />;
   if (taxpayer.isError) {
     return (
-      <section aria-labelledby="empresa-titulo" className="flex flex-col gap-6">
+      <section
+        aria-labelledby="empresa-titulo"
+        data-page-width="form"
+        className="flex flex-col gap-6"
+      >
         <h1 id="empresa-titulo" className="text-3xl font-bold">
           Empresa
         </h1>
@@ -498,7 +506,11 @@ export function CompanyScreen() {
 
   const view = taxpayer.data;
   return (
-    <section aria-labelledby="empresa-titulo" className="flex max-w-3xl flex-col gap-6">
+    <section
+      aria-labelledby="empresa-titulo"
+      data-page-width="form"
+      className="flex flex-col gap-6"
+    >
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-baseline gap-2">
           <h1 id="empresa-titulo" className="text-3xl font-bold">
@@ -521,7 +533,7 @@ export function CompanyScreen() {
 
 export function CompanySkeleton() {
   return (
-    <section aria-busy="true" className="flex max-w-3xl flex-col gap-6">
+    <section aria-busy="true" data-page-width="form" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Empresa</h1>
       <Skeleton className="h-10 w-full max-w-xs" />
       <Skeleton className="h-10 w-full" />

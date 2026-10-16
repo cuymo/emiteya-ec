@@ -36,7 +36,11 @@ export function EnvironmentScreen() {
   );
   if (!allowed) {
     return (
-      <section aria-labelledby="ambiente-titulo" className="flex flex-col gap-6">
+      <section
+        aria-labelledby="ambiente-titulo"
+        data-page-width="reading"
+        className="flex flex-col gap-6"
+      >
         {heading}
         <EmptyState
           kind="no-permission"
@@ -50,7 +54,11 @@ export function EnvironmentScreen() {
   if (taxpayer.isError || status.isError) {
     const error = taxpayer.error ?? status.error;
     return (
-      <section aria-labelledby="ambiente-titulo" className="flex flex-col gap-6">
+      <section
+        aria-labelledby="ambiente-titulo"
+        data-page-width="reading"
+        className="flex flex-col gap-6"
+      >
         {heading}
         <ErrorState
           message={errorMessage(error)}
@@ -66,7 +74,11 @@ export function EnvironmentScreen() {
   const pending = status.data.readiness.checks.filter((check) => check.status === "PENDING");
 
   return (
-    <section aria-labelledby="ambiente-titulo" className="flex max-w-2xl flex-col gap-6">
+    <section
+      aria-labelledby="ambiente-titulo"
+      data-page-width="reading"
+      className="flex flex-col gap-6"
+    >
       {heading}
       <div className="flex flex-col gap-2">
         <div>
@@ -148,7 +160,7 @@ export function EnvironmentScreen() {
 
 export function EnvironmentSkeleton() {
   return (
-    <section aria-busy="true" className="flex max-w-2xl flex-col gap-6">
+    <section aria-busy="true" data-page-width="reading" className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold">Ambiente</h1>
       <Skeleton className="h-6 w-24" />
       <Skeleton className="h-8 w-full" />

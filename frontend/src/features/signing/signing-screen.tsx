@@ -147,7 +147,11 @@ export function SigningScreen() {
 
   if (!allowed) {
     return (
-      <section aria-labelledby="firma-titulo" className="flex flex-col gap-6">
+      <section
+        aria-labelledby="firma-titulo"
+        data-page-width="form"
+        className="flex flex-col gap-6"
+      >
         {heading}
         <EmptyState
           kind="no-permission"
@@ -162,7 +166,8 @@ export function SigningScreen() {
       <section
         aria-labelledby="firma-titulo"
         aria-busy="true"
-        className="flex max-w-3xl flex-col gap-6"
+        data-page-width="form"
+        className="flex flex-col gap-6"
       >
         {heading}
         <Skeleton className="h-64 w-full" />
@@ -171,7 +176,11 @@ export function SigningScreen() {
   }
   if (query.isError) {
     return (
-      <section aria-labelledby="firma-titulo" className="flex max-w-3xl flex-col gap-6">
+      <section
+        aria-labelledby="firma-titulo"
+        data-page-width="form"
+        className="flex flex-col gap-6"
+      >
         {heading}
         <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       </section>
@@ -185,7 +194,7 @@ export function SigningScreen() {
     </Button>
   );
   return (
-    <section aria-labelledby="firma-titulo" className="flex max-w-3xl flex-col gap-6">
+    <section aria-labelledby="firma-titulo" data-page-width="form" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {heading}
         {certificate && action}

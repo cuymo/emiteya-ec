@@ -138,7 +138,11 @@ export function EstablishmentsScreen() {
   );
   if (!allowed) {
     return (
-      <section aria-labelledby="establecimientos-titulo" className="flex flex-col gap-6">
+      <section
+        aria-labelledby="establecimientos-titulo"
+        data-page-width="form"
+        className="flex flex-col gap-6"
+      >
         {heading}
         <EmptyState
           kind="no-permission"
@@ -195,7 +199,11 @@ export function EstablishmentsScreen() {
   }
 
   return (
-    <section aria-labelledby="establecimientos-titulo" className="flex max-w-3xl flex-col gap-6">
+    <section
+      aria-labelledby="establecimientos-titulo"
+      data-page-width="form"
+      className="flex flex-col gap-6"
+    >
       <div className="flex flex-wrap items-center justify-between gap-4">
         {heading}
         {create}

@@ -473,7 +473,8 @@ export function FiscalCatalogsScreen() {
       <section
         aria-labelledby="catalogos-titulo"
         aria-busy="true"
-        className="flex max-w-3xl flex-col gap-6"
+        data-page-width="form"
+        className="flex flex-col gap-6"
       >
         {heading}
         <Skeleton className="h-64 w-full" />
@@ -482,7 +483,11 @@ export function FiscalCatalogsScreen() {
   }
   if (summaries.isError) {
     return (
-      <section aria-labelledby="catalogos-titulo" className="flex max-w-3xl flex-col gap-6">
+      <section
+        aria-labelledby="catalogos-titulo"
+        data-page-width="form"
+        className="flex flex-col gap-6"
+      >
         {heading}
         <ErrorState
           message={errorMessage(summaries.error)}
@@ -494,7 +499,11 @@ export function FiscalCatalogsScreen() {
   const summary = (type: FiscalCatalogType) =>
     summaries.data.find((catalog) => catalog.catalogType === type);
   return (
-    <section aria-labelledby="catalogos-titulo" className="flex max-w-3xl flex-col gap-8">
+    <section
+      aria-labelledby="catalogos-titulo"
+      data-page-width="form"
+      className="flex flex-col gap-8"
+    >
       <div className="flex flex-col gap-2">
         {heading}
         <p className="text-sm text-foreground-muted">

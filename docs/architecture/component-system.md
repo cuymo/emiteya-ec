@@ -83,14 +83,18 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
   | --- | --- | --- | --- | --- |
   | Reading | `--container-reading` | `max-w-reading` | 42rem (672 px) | Text and status: Inicio, Ambiente |
   | Form | `--container-form` | `max-w-form` | 48rem (768 px) | One-column forms: Empresa, Mi cuenta, long dialogs |
-  | Workspace | none | `max-w-none` | Content width | Lists and editors with a side panel |
+  | Workspace | `--container-workspace` | `max-w-workspace` | 72rem (1152 px) | Lists and editors with a side panel |
 
   - `--container-form-rail` (55rem) is the container width from which a form's side panel goes
     beside the form, with the `@form-rail:` variant: 36rem of form, 1.5rem of gap and an 18rem
     panel. Below it the panel stacks after the form.
-  - Legacy widths map to these roles when their screen migrates, and keep their values until then:
-    `max-w-xl` (Mi cuenta) and `max-w-3xl` (Configuración) to form; `max-w-2xl` (Inicio, Ambiente)
-    and `max-w-5xl` (Portabilidad) to reading.
+  - The shell centers every screen in a workspace column. A screen narrows it by declaring its role
+    on its root, also in its loading, error and no-permission states:
+    `data-page-width="form"` (Mi cuenta and the Configuración forms: Empresa, Establecimientos,
+    Secuenciales, Firma electrónica and Catálogos fiscales) or `data-page-width="reading"` (Inicio
+    and Ambiente). Portabilidad stays in the workspace column because it holds a data table.
+  - Screens never set their own `max-w-*`, which would leave them aligned to the left inside the
+    column.
 
 ### Staged Duplication Enforcement
 
