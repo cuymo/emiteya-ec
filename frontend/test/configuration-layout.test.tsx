@@ -32,17 +32,17 @@ afterEach(() => {
 });
 
 describe("Configuración en pestañas", () => {
-  it("el administrador ve las ocho secciones en orden, con la actual marcada", async () => {
+  it("el administrador ve las siete secciones en orden, con la actual marcada", async () => {
     renderLayout(ADMIN_ME);
     await screen.findByText("panel");
     const links = within(tabs()).getAllByRole("link");
     expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Usuarios", "/configuracion/usuarios"],
       ["Empresa", "/configuracion/empresa"],
-      ["Ambiente", "/configuracion/ambiente"],
       ["Establecimientos", "/configuracion/establecimientos"],
       ["Firma electrónica", "/configuracion/firma"],
       ["Catálogos fiscales", "/configuracion/catalogos-fiscales"],
-      ["Usuarios", "/configuracion/usuarios"],
+      ["Ambiente", "/configuracion/ambiente"],
       ["Portabilidad de datos", "/configuracion/portabilidad"],
     ]);
     expect(

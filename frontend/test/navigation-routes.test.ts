@@ -64,12 +64,12 @@ describe("modelo de rutas", () => {
       [
         "Configuración",
         [
+          "Usuarios",
           "Empresa",
-          "Ambiente",
           "Establecimientos",
           "Firma electrónica",
           "Catálogos fiscales",
-          "Usuarios",
+          "Ambiente",
           "Portabilidad de datos",
         ],
       ],
@@ -108,12 +108,12 @@ describe("modelo de rutas", () => {
   it("la entrada a Configuración no tiene permiso propio y las pestañas siguen el orden de la navegación", () => {
     expect(resolveRoute("/configuracion")?.permission).toBeNull();
     expect(configurationDestinations(permissionsOf("ADMIN")).map((tab) => tab.label)).toEqual([
+      "Usuarios",
       "Empresa",
-      "Ambiente",
       "Establecimientos",
       "Firma electrónica",
       "Catálogos fiscales",
-      "Usuarios",
+      "Ambiente",
       "Portabilidad de datos",
     ]);
     expect(configurationDestinations(permissionsOf("OPERATOR")).map((tab) => tab.href)).toEqual([

@@ -122,7 +122,7 @@ mostrarse.
   - Documentos: Archivo de comprobantes;
   - Maestros: Terceros, Productos;
   - Análisis: Reportes;
-  - Configuración: Empresa, Ambiente, Establecimientos, Firma electrónica, Catálogos fiscales, Usuarios, Portabilidad de datos. Los secuenciales se consultan y ajustan en Establecimientos, en cada punto de emisión.
+  - Configuración: Usuarios, Empresa, Establecimientos, Firma electrónica, Catálogos fiscales, Ambiente, Portabilidad de datos. Los secuenciales se consultan y ajustan en Establecimientos, en cada punto de emisión.
 
 #### Scenario: Operador
 - **WHEN** un operador abre la navegación
@@ -466,7 +466,7 @@ presentación de la acción principal, y nunca solo por el color.
 
 ### Requirement: Configuración en pestañas
 Las secciones de Configuración SHALL presentarse en una sola página con pestañas, en este orden:
-Empresa, Ambiente, Establecimientos, Firma electrónica, Catálogos fiscales, Usuarios y Portabilidad
+Usuarios, Empresa, Establecimientos, Firma electrónica, Catálogos fiscales, Ambiente y Portabilidad
 de datos, solo las que el rol ve. La dirección de la antigua pestaña Secuenciales SHALL llevar a
 Establecimientos. Cada pestaña SHALL ser un enlace a la dirección de su
 sección, que conserva su enlace directo, su permiso y su título, y la sección abierta SHALL

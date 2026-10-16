@@ -29,7 +29,7 @@ The groups and destinations, in this order:
 | Documentos    | Archivo de comprobantes                                                                                   |
 | Maestros      | Terceros, Productos                                                                                       |
 | Análisis      | Reportes                                                                                                  |
-| Configuración | Empresa, Ambiente, Establecimientos, Firma electrónica, Catálogos fiscales, Usuarios, Portabilidad de datos |
+| Configuración | Usuarios, Empresa, Establecimientos, Firma electrónica, Catálogos fiscales, Ambiente, Portabilidad de datos |
 
 - **Sales and documents.**
   - **Borradores de facturas** (`/borradores`) holds only invoice drafts. The other documents keep
@@ -80,9 +80,10 @@ Examples:
 ### Configuración in Tabs
 
 The Configuración sections share one page with tabs (`ConfigurationLayout`, the
-`app/(app)/configuracion/layout.tsx` layout): Empresa, Ambiente, Establecimientos, Firma
-electrónica, Catálogos fiscales, Usuarios and Portabilidad de datos, in the navigation order and
-only those the role sees (`configurationDestinations`).
+`app/(app)/configuracion/layout.tsx` layout): Usuarios, Empresa, Establecimientos, Firma
+electrónica, Catálogos fiscales, Ambiente and Portabilidad de datos (owner order, 2026-10-16), in
+the navigation order and only those the role sees (`configurationDestinations`). An administrator
+entering Configuración lands on Usuarios; an operator, on Catálogos fiscales.
 - **Secuenciales** is no longer a tab (owner decision, 2026-10-16): each emission point in
   Establecimientos unfolds its counters for the company's current environment, with «Ajustar» on
   each. `/configuracion/secuenciales` redirects to Establecimientos (`next.config.ts`), and the

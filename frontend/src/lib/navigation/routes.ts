@@ -205,18 +205,20 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: "Configuración",
     section: true,
     icon: Settings,
+    // Orden de las pestañas (decisión del propietario, 2026-10-16): Usuarios primero; la entrada
+    // `/configuracion` lleva a la primera que el rol ve.
     destinations: [
+      {
+        href: "/configuracion/usuarios",
+        label: "Usuarios",
+        icon: Users,
+        permission: "users.read",
+      },
       {
         href: "/configuracion/empresa",
         label: "Empresa",
         icon: Building2,
         permission: "taxpayer.read",
-      },
-      {
-        href: "/configuracion/ambiente",
-        label: "Ambiente",
-        icon: Globe,
-        permission: "environment.change",
       },
       {
         // Los puntos de emisión llevan sus secuenciales (antes, su propia pestaña).
@@ -241,10 +243,10 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         keywords: ["IVA", "ICE", "IRBPNR", "impuestos", "formas de pago", "retenciones"],
       },
       {
-        href: "/configuracion/usuarios",
-        label: "Usuarios",
-        icon: Users,
-        permission: "users.read",
+        href: "/configuracion/ambiente",
+        label: "Ambiente",
+        icon: Globe,
+        permission: "environment.change",
       },
       {
         href: "/configuracion/portabilidad",

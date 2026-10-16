@@ -45,7 +45,7 @@ describe("shell autenticado: comportamiento conservado", () => {
     expect(sidebar().contains(mainNav())).toBe(true);
     const link = within(mainNav()).getByRole("link", { name: "Configuración" });
     // Lleva a la primera pestaña que el rol ve.
-    expect(link.getAttribute("href")).toBe("/configuracion/empresa");
+    expect(link.getAttribute("href")).toBe("/configuracion/usuarios");
     expect(link.getAttribute("aria-current")).toBe("page");
     // Sus secciones no están en la barra ni se pliegan: son pestañas de la página.
     for (const name of ["Empresa", "Usuarios", "Portabilidad de datos"]) {

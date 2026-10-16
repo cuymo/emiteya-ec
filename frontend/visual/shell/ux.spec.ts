@@ -195,15 +195,15 @@ test.describe("Configuración como un solo destino con pestañas", () => {
     browser,
   }) => {
     const page = await open(browser, "/facturas", { width: 1440, height: 900 });
-    await expect(section(page)).toHaveAttribute("href", "/configuracion/empresa");
+    await expect(section(page)).toHaveAttribute("href", "/configuracion/usuarios");
     await expect(section(page)).not.toHaveAttribute("aria-current", "page");
     await expect(nav(page).getByRole("link", { name: "Usuarios" })).toHaveCount(0);
     await section(page).click();
-    await page.waitForURL((url) => url.pathname === "/configuracion/empresa");
-    const tabs = page.getByRole("navigation", { name: "Secciones de configuración" });
-    await tabs.getByRole("link", { name: "Usuarios" }).click();
     await page.waitForURL((url) => url.pathname === "/configuracion/usuarios");
-    await expect(tabs.getByRole("link", { name: "Usuarios" })).toHaveAttribute(
+    const tabs = page.getByRole("navigation", { name: "Secciones de configuración" });
+    await tabs.getByRole("link", { name: "Empresa" }).click();
+    await page.waitForURL((url) => url.pathname === "/configuracion/empresa");
+    await expect(tabs.getByRole("link", { name: "Empresa" })).toHaveAttribute(
       "aria-current",
       "page",
     );
