@@ -2,23 +2,18 @@
 // importa. El registro (el número del comprobante, el nombre del producto) es un enlace azul en
 // seminegrita; el importe va en verde y seminegrita con el signo de dólar; el tercero en peso medio
 // con su identificación debajo, atenuada; la fecha y los datos de contexto, atenuados. Los estados
-// ya llevan su color en su insignia. Fuera de las tablas los importes siguen como «USD 1,00».
+// ya llevan su color en su insignia. El importe sale de `components/money.tsx`, común con los
+// detalles.
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { formatDecimal } from "@/lib/decimal";
+import { Money } from "@/components/money";
 import { cn } from "@/lib/utils";
 
-/** «$17.355,05»: un importe en dólares de una tabla, con dos decimales. */
-export const formatMoney = (amount: string) =>
-  `$${formatDecimal(amount, { minFractionDigits: 2 })}`;
+export { formatMoney } from "@/components/money";
 
 /** El importe de una fila: verde, seminegrita y alineado por sus cifras. */
 export function MoneyCell({ amount, className }: { amount: string; className?: string }) {
-  return (
-    <span className={cn("font-semibold whitespace-nowrap text-money tabular-nums", className)}>
-      {formatMoney(amount)}
-    </span>
-  );
+  return <Money amount={amount} {...(className ? { className } : {})} />;
 }
 
 /** El registro de la fila, que abre su detalle. */

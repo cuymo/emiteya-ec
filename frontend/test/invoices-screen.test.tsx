@@ -225,7 +225,8 @@ describe("detalle de una factura", () => {
     expect(screen.getByText("Pendiente de envío")).toBeDefined();
     expect(screen.getByText("0310202601179001234500110010010000000011234567816")).toBeDefined();
     const totals = screen.getByRole("complementary", { name: "Totales" });
-    expect(within(totals).getByText("USD 28,75")).toBeDefined();
+    // El total va en verde con el signo de dólar, como los importes de las tablas.
+    expect(within(totals).getByText("$28,75").className).toContain("text-money");
     expect(within(totals).getByText("IVA 15 %")).toBeDefined();
     expect(screen.getByText("Cemento 50 kg")).toBeDefined();
     expect(screen.queryByRole("button", { name: "Reintentar firma" })).toBeNull();

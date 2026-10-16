@@ -323,9 +323,9 @@ describe("crédito en el detalle de la factura", () => {
       ),
     });
     const section = await screen.findByRole("region", { name: "Notas de crédito" });
-    await within(section).findByText("USD 48,75");
-    expect(within(section).getByText("USD 11,50")).toBeDefined();
-    expect(within(section).getByText("USD 5,75")).toBeDefined();
+    await within(section).findByText("$48,75");
+    expect(within(section).getByText("$11,50")).toBeDefined();
+    expect(within(section).getByText("$5,75")).toBeDefined();
     expect(
       within(section).getByRole("link", { name: "Emitir nota de crédito" }).getAttribute("href"),
     ).toBe("/notas-credito/borradores/nueva?factura=inv-1");

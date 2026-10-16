@@ -16,7 +16,7 @@ import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
-import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatDecimal, formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import {
   DocumentDetailTabs,
@@ -35,6 +35,7 @@ import { StateCell } from "@/features/documents/document-status-badge";
 import { RELATED_PARTY_LABELS, formatPeriod, formatSupportNumber } from "./withholding-format";
 import { useRetryWithholdingSigning, useWithholdingReceipt } from "./withholding-receipts-api";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
+import { Money, formatMoney } from "@/components/money";
 
 type Support = WithholdingReceiptView["supports"][number];
 
@@ -90,10 +91,10 @@ function SupportCard({ support }: { support: Support }) {
             </span>
             <span className="text-xs text-foreground-muted break-words">{item.label}</span>
             <span className="flex flex-wrap gap-x-2 tabular-nums">
-              <span className="whitespace-nowrap">Base {formatUsd(item.base)}</span>
+              <span className="whitespace-nowrap">Base {formatMoney(item.base)}</span>
               <span className="whitespace-nowrap">{formatPercentage(item.percentage)}</span>
               <span className="whitespace-nowrap font-medium">
-                Valor retenido {formatUsd(item.amount)}
+                Valor retenido <Money amount={item.amount} />
               </span>
             </span>
           </li>
@@ -128,11 +129,15 @@ function SupportCard({ support }: { support: Support }) {
                   <span className="text-xs text-foreground-muted break-words">{item.label}</span>
                 </span>
               </td>
-              <td className="py-1 pl-2 text-right whitespace-nowrap">{formatUsd(item.base)}</td>
+              <td className="py-1 pl-2 text-right whitespace-nowrap">
+                <Money amount={item.base} className="font-normal" />
+              </td>
               <td className="py-1 pl-2 text-right whitespace-nowrap">
                 {formatPercentage(item.percentage)}
               </td>
-              <td className="py-1 pl-2 text-right whitespace-nowrap">{formatUsd(item.amount)}</td>
+              <td className="py-1 pl-2 text-right whitespace-nowrap">
+                <Money amount={item.amount} />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -143,23 +148,31 @@ function SupportCard({ support }: { support: Support }) {
         </summary>
         <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 py-1 tabular-nums">
           <dt>Total sin impuestos</dt>
-          <dd className="text-right">{formatUsd(support.totalWithoutTaxes)}</dd>
+          <dd className="text-right">
+            <Money amount={support.totalWithoutTaxes} className="font-normal" />
+          </dd>
           <dt>Importe total</dt>
-          <dd className="text-right">{formatUsd(support.importTotal)}</dd>
+          <dd className="text-right">
+            <Money amount={support.importTotal} className="font-normal" />
+          </dd>
           {support.taxes.map((tax) => (
             <div key={`tax-${tax.position}`} className="contents">
               <dt className="break-words">
                 {tax.taxLabel} · {tax.rateLabel} · tarifa {formatDecimal(tax.rate)}
                 {tax.rateBasis === "USER_DECLARED" ? " (declarada)" : ""} · base{" "}
-                {formatUsd(tax.base)}
+                {formatMoney(tax.base)}
               </dt>
-              <dd className="text-right">{formatUsd(tax.amount)}</dd>
+              <dd className="text-right">
+                <Money amount={tax.amount} className="font-normal" />
+              </dd>
             </div>
           ))}
           {support.payments.map((payment) => (
             <div key={`payment-${payment.position}`} className="contents">
               <dt className="break-words">Pago: {payment.label}</dt>
-              <dd className="text-right">{formatUsd(payment.total)}</dd>
+              <dd className="text-right">
+                <Money amount={payment.total} className="font-normal" />
+              </dd>
             </div>
           ))}
         </dl>
@@ -234,7 +247,9 @@ export function WithholdingReceiptDetailScreen({
           <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]} ·{" "}
-            <span className="tabular-nums">Total retenido {formatUsd(data.totals.withheld)}</span>
+            <span className="tabular-nums">
+              Total retenido <Money amount={data.totals.withheld} />
+            </span>
           </span>
         </div>
         {reserved && canRetry && (
@@ -281,7 +296,9 @@ export function WithholdingReceiptDetailScreen({
                 <>
                   <Section title="Proveedor">
                     <p className="flex flex-col text-sm">
-                      <span className="font-medium break-words">{data.subject.legalName}</span>
+                      <span className="text-base font-semibold break-words">
+                        {data.subject.legalName}
+                      </span>
                       <span className="text-foreground-muted tabular-nums">
                         {data.subject.identification}
                       </span>
@@ -354,12 +371,16 @@ export function WithholdingReceiptDetailScreen({
                     {item.taxLabel} {item.code} ·{" "}
                     <span className="whitespace-nowrap">{formatSupportNumber(support.number)}</span>
                   </dt>
-                  <dd className="text-right">{formatUsd(item.amount)}</dd>
+                  <dd className="text-right">
+                    <Money amount={item.amount} className="font-normal" />
+                  </dd>
                 </div>
               )),
             )}
-            <dt className="font-semibold">Total retenido</dt>
-            <dd className="text-right font-semibold">{formatUsd(data.totals.withheld)}</dd>
+            <dt className="text-base font-semibold">Total retenido</dt>
+            <dd className="text-right">
+              <Money amount={data.totals.withheld} className="text-base" />
+            </dd>
           </dl>
           <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Clave de acceso</span>

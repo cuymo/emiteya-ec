@@ -11,8 +11,8 @@ import { useId } from "react";
 import { useSession } from "@/components/session";
 import { ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { Money } from "@/components/money";
 import { ApiError } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { useInvoiceCredit } from "./credit-notes-api";
 
@@ -43,11 +43,17 @@ export function InvoiceCreditSection({ invoice }: { invoice: Pick<InvoiceView, "
       <>
         <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums sm:max-w-sm">
           <dt>Aplicado en notas autorizadas</dt>
-          <dd className="text-right">{formatUsd(data.applied)}</dd>
+          <dd className="text-right">
+            <Money amount={data.applied} className="font-normal" />
+          </dd>
           <dt>Reservado por notas en curso</dt>
-          <dd className="text-right">{formatUsd(data.reserved)}</dd>
-          <dt className="font-semibold">Disponible</dt>
-          <dd className="text-right font-semibold">{formatUsd(data.available)}</dd>
+          <dd className="text-right">
+            <Money amount={data.reserved} className="font-normal" />
+          </dd>
+          <dt className="text-base font-semibold">Disponible</dt>
+          <dd className="text-right">
+            <Money amount={data.available} className="text-base" />
+          </dd>
         </dl>
         {data.consumerFinal ? (
           <p className="text-sm text-foreground-muted">

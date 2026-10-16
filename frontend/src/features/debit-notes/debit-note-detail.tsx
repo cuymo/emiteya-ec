@@ -16,7 +16,6 @@ import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import {
   DocumentDetailTabs,
@@ -35,6 +34,7 @@ import { StateCell } from "@/features/documents/document-status-badge";
 import { useDebitNote, useRetryDebitNoteSigning } from "./debit-notes-api";
 import { treatmentLabel } from "./debit-note-format";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
+import { Money } from "@/components/money";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -107,7 +107,7 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
           <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]} ·{" "}
-            <span className="tabular-nums">{formatUsd(data.totals.total)}</span>
+            <Money amount={data.totals.total} />
           </span>
         </div>
         {reserved && canRetry && (
@@ -170,7 +170,9 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
                   </Section>
                   <Section title="Comprador">
                     <p className="flex flex-col text-sm">
-                      <span className="font-medium break-words">{data.buyer.legalName}</span>
+                      <span className="text-base font-semibold break-words">
+                        {data.buyer.legalName}
+                      </span>
                       <span className="text-foreground-muted tabular-nums">
                         {data.buyer.identification}
                       </span>
@@ -190,9 +192,7 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
                               {treatmentLabel(concept.taxTreatment)}
                             </span>
                           </span>
-                          <span className="whitespace-nowrap tabular-nums">
-                            {formatUsd(concept.amount)}
-                          </span>
+                          <Money amount={concept.amount} />
                         </li>
                       ))}
                     </ol>
@@ -267,23 +267,30 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
           </h2>
           <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
             <dt>Subtotal sin impuestos</dt>
-            <dd className="text-right">{formatUsd(data.totals.withoutTaxes)}</dd>
+            <dd className="text-right">
+              <Money amount={data.totals.withoutTaxes} className="font-normal" />
+            </dd>
             {data.totals.taxes.map((tax) => (
               <div key={tax.key} className="contents">
                 <dt>Base {treatmentLabel(tax)}</dt>
-                <dd className="text-right">{formatUsd(tax.base)}</dd>
+                <dd className="text-right">
+                  <Money amount={tax.base} className="font-normal" />
+                </dd>
                 <dt>{treatmentLabel(tax)}</dt>
-                <dd className="text-right">{formatUsd(tax.amount)}</dd>
+                <dd className="text-right">
+                  <Money amount={tax.amount} className="font-normal" />
+                </dd>
               </div>
             ))}
-            <dt className="font-semibold">Valor total</dt>
-            <dd className="text-right font-semibold">{formatUsd(data.totals.total)}</dd>
+            <dt className="text-base font-semibold">Valor total</dt>
+            <dd className="text-right">
+              <Money amount={data.totals.total} className="text-base" />
+            </dd>
           </dl>
           <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Forma de pago</span>
             <span className="break-words">
-              {data.payment.label} ·{" "}
-              <span className="tabular-nums">{formatUsd(data.payment.amount)}</span>
+              {data.payment.label} · <Money amount={data.payment.amount} />
             </span>
           </div>
           <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">

@@ -20,7 +20,7 @@ import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
-import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatDecimal, formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import {
   DocumentDetailTabs,
@@ -39,6 +39,7 @@ import {
 import { StateCell } from "@/features/documents/document-status-badge";
 import { useCreditNote, useRetryCreditNoteSigning } from "./credit-notes-api";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
+import { Money, formatMoney } from "@/components/money";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -187,7 +188,9 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
                   </Section>
                   <Section title="Comprador">
                     <p className="flex flex-col text-sm">
-                      <span className="font-medium break-words">{data.buyer.legalName}</span>
+                      <span className="text-base font-semibold break-words">
+                        {data.buyer.legalName}
+                      </span>
                       <span className="text-foreground-muted tabular-nums">
                         {data.buyer.identification}
                       </span>
@@ -204,9 +207,9 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
                           <span className="flex min-w-0 flex-col">
                             <span className="font-medium break-words">{line.description}</span>
                             <span className="text-foreground-muted tabular-nums">
-                              {formatDecimal(line.quantity)} × {formatUsd(line.unitPrice)}
+                              {formatDecimal(line.quantity)} × {formatMoney(line.unitPrice)}
                               {line.discount !== "0.00" &&
-                                ` · Descuento ${formatUsd(line.discount)}`}
+                                ` · Descuento ${formatMoney(line.discount)}`}
                               {line.taxes.map(
                                 (tax) => ` · IVA ${formatPercentage(tax.percentage)}`,
                               )}
@@ -217,9 +220,7 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
                                 : "Sin retorno físico al inventario"}
                             </span>
                           </span>
-                          <span className="whitespace-nowrap tabular-nums">
-                            {formatUsd(line.taxableBase)}
-                          </span>
+                          <Money amount={line.taxableBase} />
                         </li>
                       )}
                     />
@@ -294,15 +295,21 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
           </h2>
           <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
             <dt>Subtotal sin impuestos</dt>
-            <dd className="text-right">{formatUsd(data.totals.withoutTaxes)}</dd>
+            <dd className="text-right">
+              <Money amount={data.totals.withoutTaxes} className="font-normal" />
+            </dd>
             {data.totals.taxes.map((tax) => (
               <div key={`${tax.taxCode}-${tax.rateCode}`} className="contents">
                 <dt>IVA {formatPercentage(tax.percentage)}</dt>
-                <dd className="text-right">{formatUsd(tax.amount)}</dd>
+                <dd className="text-right">
+                  <Money amount={tax.amount} className="font-normal" />
+                </dd>
               </div>
             ))}
-            <dt className="font-semibold">Valor de la modificación</dt>
-            <dd className="text-right font-semibold">{formatUsd(data.totals.total)}</dd>
+            <dt className="text-base font-semibold">Valor de la modificación</dt>
+            <dd className="text-right">
+              <Money amount={data.totals.total} className="text-base" />
+            </dd>
           </dl>
           <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Clave de acceso</span>

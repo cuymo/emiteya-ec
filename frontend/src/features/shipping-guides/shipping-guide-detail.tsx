@@ -105,7 +105,7 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
       className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 id={headingId} className="font-medium break-words">
+        <h3 id={headingId} className="text-base font-semibold break-words">
           {recipient.position}. {recipient.legalName}
         </h3>
         <span className="text-foreground-muted tabular-nums">{recipient.identification}</span>
@@ -285,7 +285,7 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
                     <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-4 gap-y-1 text-sm">
                       <dt className="text-foreground-muted">Transportista</dt>
                       <dd className="flex flex-col">
-                        <span className="font-medium break-words">
+                        <span className="font-semibold break-words">
                           {data.transporter.legalName}
                         </span>
                         <span className="text-foreground-muted tabular-nums">

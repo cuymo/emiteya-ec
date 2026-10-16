@@ -15,7 +15,7 @@ import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
-import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatDecimal, formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
 import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
@@ -34,6 +34,7 @@ import { useInvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-
 import { useInvoiceShippingGuideAction } from "@/features/shipping-guides/invoice-shipping-guide-action";
 import { HeaderActionsMenu, type HeaderAction } from "@/components/layout/header-actions-menu";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
+import { Money, formatMoney } from "@/components/money";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
@@ -181,7 +182,9 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
                 <>
                   <Section title="Comprador">
                     <p className="flex flex-col text-sm">
-                      <span className="font-medium break-words">{data.buyer.legalName}</span>
+                      <span className="text-base font-semibold break-words">
+                        {data.buyer.legalName}
+                      </span>
                       <span className="text-foreground-muted tabular-nums">
                         {data.buyer.identification}
                       </span>
@@ -203,17 +206,15 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
                           <span className="flex min-w-0 flex-col">
                             <span className="font-medium break-words">{line.description}</span>
                             <span className="text-foreground-muted tabular-nums">
-                              {formatDecimal(line.quantity)} × {formatUsd(line.unitPrice)}
+                              {formatDecimal(line.quantity)} × {formatMoney(line.unitPrice)}
                               {line.discount !== "0.00" &&
-                                ` · Descuento ${formatUsd(line.discount)}`}
+                                ` · Descuento ${formatMoney(line.discount)}`}
                               {line.taxes.map(
                                 (tax) => ` · IVA ${formatPercentage(tax.percentage)}`,
                               )}
                             </span>
                           </span>
-                          <span className="whitespace-nowrap tabular-nums">
-                            {formatUsd(line.taxableBase)}
-                          </span>
+                          <Money amount={line.taxableBase} />
                         </li>
                       )}
                     />
@@ -223,7 +224,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
                       {data.payments.map((payment, index) => (
                         <li key={index} className="flex justify-between gap-2 tabular-nums">
                           <span className="break-words">{methodLabel(payment.code)}</span>
-                          <span className="whitespace-nowrap">{formatUsd(payment.amount)}</span>
+                          <Money amount={payment.amount} />
                         </li>
                       ))}
                     </ul>
@@ -265,17 +266,25 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
           </h2>
           <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
             <dt>Subtotal sin impuestos</dt>
-            <dd className="text-right">{formatUsd(data.totals.withoutTaxes)}</dd>
+            <dd className="text-right">
+              <Money amount={data.totals.withoutTaxes} className="font-normal" />
+            </dd>
             <dt>Descuento</dt>
-            <dd className="text-right">{formatUsd(data.totals.discount)}</dd>
+            <dd className="text-right">
+              <Money amount={data.totals.discount} className="font-normal" />
+            </dd>
             {data.totals.taxes.map((tax) => (
               <div key={`${tax.taxCode}-${tax.rateCode}`} className="contents">
                 <dt>IVA {formatPercentage(tax.percentage)}</dt>
-                <dd className="text-right">{formatUsd(tax.amount)}</dd>
+                <dd className="text-right">
+                  <Money amount={tax.amount} className="font-normal" />
+                </dd>
               </div>
             ))}
-            <dt className="font-semibold">Total</dt>
-            <dd className="text-right font-semibold">{formatUsd(data.totals.total)}</dd>
+            <dt className="text-base font-semibold">Total</dt>
+            <dd className="text-right">
+              <Money amount={data.totals.total} className="text-base" />
+            </dd>
           </dl>
           <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
             <span className="text-foreground-muted">Clave de acceso</span>

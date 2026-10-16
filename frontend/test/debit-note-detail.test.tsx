@@ -104,13 +104,13 @@ describe("detalle de la nota de débito", () => {
     const items = within(concepts).getAllByRole("listitem");
     expect(within(items[0]!).getByText("Intereses por 30 días de mora")).toBeDefined();
     expect(within(items[0]!).getByText("Intereses de mora · IVA 15 %")).toBeDefined();
-    expect(within(items[0]!).getByText("USD 20,00")).toBeDefined();
+    expect(within(items[0]!).getByText("$20,00")).toBeDefined();
     expect(
       within(items[1]!).getByText("Costos o gastos posteriores a la factura · IVA 0 %"),
     ).toBeDefined();
     const totals = screen.getByRole("complementary", { name: "Totales" });
     expect(within(totals).getByText("Base IVA 15 %")).toBeDefined();
-    expect(within(totals).getByText("USD 3,00")).toBeDefined();
+    expect(within(totals).getByText("$3,00")).toBeDefined();
     expect(
       within(totals).getByText("OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO ·", { exact: false }),
     ).toBeDefined();

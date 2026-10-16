@@ -130,18 +130,18 @@ describe("detalle de la liquidación de compra", () => {
     const lines = screen.getByRole("region", { name: "Líneas" });
     expect(within(lines).getByText("Saco de cacao en grano, 45 kg")).toBeDefined();
     expect(
-      within(lines).getByText(/10 saco × USD 4,50 · Descuento USD 5,00 · IVA 15%/),
+      within(lines).getByText(/10 saco × \$4,50 · Descuento \$5,00 · IVA 15%/),
     ).toBeDefined();
     expect(within(lines).getByText("Código CAC-01")).toBeDefined();
-    expect(within(lines).getByText(/2 × USD 30,00 · IVA 0%/)).toBeDefined();
+    expect(within(lines).getByText(/2 × \$30,00 · IVA 0%/)).toBeDefined();
     const payments = screen.getByRole("region", { name: "Pagos" });
     expect(within(payments).getByText("01 · SIN UTILIZACION DEL SISTEMA FINANCIERO")).toBeDefined();
     expect(within(payments).getByText("Plazo 30 días")).toBeDefined();
-    expect(within(payments).getByText("USD 56,00")).toBeDefined();
+    expect(within(payments).getByText("$56,00")).toBeDefined();
     const totals = screen.getByRole("complementary", { name: "Totales" });
     expect(within(totals).getByText("Subtotal 15%")).toBeDefined();
     expect(within(totals).getByText("IVA 15 %")).toBeDefined();
-    expect(within(totals).getByText("USD 106,00")).toBeDefined();
+    expect(within(totals).getByText("$106,00")).toBeDefined();
     expect(within(totals).getByText(SETTLEMENT_KEY)).toBeDefined();
     await openTab(TRANSMISSION_TAB);
     expect(

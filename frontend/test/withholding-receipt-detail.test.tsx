@@ -92,13 +92,13 @@ describe("detalle de la retención", () => {
     const rows = within(within(card).getByRole("table")).getAllByRole("row");
     expect(within(rows[1]!).getByText("RENTA 312")).toBeDefined();
     expect(within(rows[1]!).getByText("1,75 %")).toBeDefined();
-    expect(within(rows[1]!).getAllByText("USD 1,75").length).toBe(1);
+    expect(within(rows[1]!).getAllByText("$1,75").length).toBe(1);
     expect(within(rows[2]!).getByText("IVA 9")).toBeDefined();
     expect(within(rows[2]!).getByText("10 %")).toBeDefined();
-    expect(within(rows[2]!).getByText("USD 1,50")).toBeDefined();
+    expect(within(rows[2]!).getByText("$1,50")).toBeDefined();
     // Los impuestos y pagos declarados del documento, plegados.
     await userEvent.setup().click(within(card).getByText("Totales, impuestos y pagos declarados"));
-    expect(within(card).getByText(/IVA · 15% · tarifa 15 · base USD 100,00/)).toBeDefined();
+    expect(within(card).getByText(/IVA · 15% · tarifa 15 · base \$100,00/)).toBeDefined();
     expect(
       within(card).getByText("Pago: OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO"),
     ).toBeDefined();
@@ -108,7 +108,7 @@ describe("detalle de la retención", () => {
     expect(within(related).getByText(/el sistema no puede comprobarla/)).toBeDefined();
     const totals = screen.getByRole("complementary", { name: "Totales" });
     expect(within(totals).getByText("Octubre de 2026")).toBeDefined();
-    expect(within(totals).getByText("USD 3,25")).toBeDefined();
+    expect(within(totals).getByText("$3,25")).toBeDefined();
     await openTab(TRANSMISSION_TAB);
     expect(
       screen.getByText("El SRI autorizó la retención: está lista para entregarse."),

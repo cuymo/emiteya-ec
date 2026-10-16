@@ -43,7 +43,10 @@ controls.
   history table follows it:
   - money: `MoneyCell`, «$17.355,05» (`formatMoney`, at least two decimals) in the `--money`
     green (6.2:1 light, 8.4:1 dark), semibold and tabular. Reports keep every amount green and
-    bold only the row's total or withheld value. Outside tables, amounts stay «USD 1,00»;
+    bold only the row's total or withheld value. Detail pages follow it too
+    (`components/money.tsx`): each line's amount, payments and every row of the totals panel in
+    green, the total larger and semibold, and «$» inside muted text (unit price, discount). The
+    editors still show «USD 1,00»;
   - the record: `RecordLink`, the number or name that opens its detail, semibold in primary blue;
     a record without a detail page is semibold text;
   - a party: `PartyCell`, the name in medium weight and its identification below, muted;

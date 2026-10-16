@@ -16,7 +16,7 @@ import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
-import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatDecimal, formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import {
   DocumentDetailTabs,
@@ -38,6 +38,7 @@ import {
   useRetryPurchaseSettlementSigning,
 } from "./purchase-settlements-api";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
+import { Money, formatMoney } from "@/components/money";
 
 type Line = PurchaseSettlementView["lines"][number];
 
@@ -65,13 +66,13 @@ function LineItem({ line }: { line: Line }) {
         <span className="font-medium break-words">{line.description}</span>
         <span className="text-foreground-muted tabular-nums">
           {formatDecimal(line.quantity)}
-          {line.unit ? ` ${line.unit}` : ""} × {formatUsd(line.unitPrice)}
-          {line.discount !== "0.00" && ` · Descuento ${formatUsd(line.discount)}`} · IVA{" "}
+          {line.unit ? ` ${line.unit}` : ""} × {formatMoney(line.unitPrice)}
+          {line.discount !== "0.00" && ` · Descuento ${formatMoney(line.discount)}`} · IVA{" "}
           {line.tax.label}
         </span>
         {codes && <span className="text-xs text-foreground-muted">Código {codes}</span>}
       </span>
-      <span className="whitespace-nowrap tabular-nums">{formatUsd(line.taxableBase)}</span>
+      <Money amount={line.taxableBase} />
     </li>
   );
 }
@@ -226,7 +227,9 @@ export function PurchaseSettlementDetailScreen({
                 <>
                   <Section title="Proveedor">
                     <p className="flex flex-col text-sm">
-                      <span className="font-medium break-words">{data.supplier.legalName}</span>
+                      <span className="text-base font-semibold break-words">
+                        {data.supplier.legalName}
+                      </span>
                       <span className="text-foreground-muted tabular-nums">
                         {IDENTIFICATION_LABELS[data.supplier.identificationType] ??
                           "Identificación"}{" "}
@@ -261,7 +264,7 @@ export function PurchaseSettlementDetailScreen({
                               Plazo {formatDecimal(payment.term)} {payment.timeUnit}
                             </span>
                           </span>
-                          <span className="whitespace-nowrap">{formatUsd(payment.total)}</span>
+                          <Money amount={payment.total} />
                         </li>
                       ))}
                     </ul>
@@ -309,23 +312,33 @@ export function PurchaseSettlementDetailScreen({
             {data.totals.taxes.map((tax) => (
               <div key={`base-${tax.rateCode}`} className="contents">
                 <dt>Subtotal {tax.label}</dt>
-                <dd className="text-right">{formatUsd(tax.base)}</dd>
+                <dd className="text-right">
+                  <Money amount={tax.base} className="font-normal" />
+                </dd>
               </div>
             ))}
             <dt>Subtotal sin impuestos</dt>
-            <dd className="text-right">{formatUsd(data.totals.withoutTaxes)}</dd>
+            <dd className="text-right">
+              <Money amount={data.totals.withoutTaxes} className="font-normal" />
+            </dd>
             <dt>Descuento</dt>
-            <dd className="text-right">{formatUsd(data.totals.discount)}</dd>
+            <dd className="text-right">
+              <Money amount={data.totals.discount} className="font-normal" />
+            </dd>
             {data.totals.taxes
               .filter((tax) => tax.rateKind === "PERCENTAGE" && tax.percentage !== "0")
               .map((tax) => (
                 <div key={`iva-${tax.rateCode}`} className="contents">
                   <dt>IVA {formatPercentage(tax.percentage)}</dt>
-                  <dd className="text-right">{formatUsd(tax.amount)}</dd>
+                  <dd className="text-right">
+                    <Money amount={tax.amount} className="font-normal" />
+                  </dd>
                 </div>
               ))}
-            <dt className="font-semibold">Importe total</dt>
-            <dd className="text-right font-semibold">{formatUsd(data.totals.total)}</dd>
+            <dt className="text-base font-semibold">Importe total</dt>
+            <dd className="text-right">
+              <Money amount={data.totals.total} className="text-base" />
+            </dd>
           </dl>
           <p className="text-xs text-foreground-muted">Moneda: dólar de los Estados Unidos.</p>
           <div className="flex flex-col gap-1 border-t border-border pt-2 text-sm">
