@@ -75,7 +75,7 @@ describe("pantalla Retenciones", () => {
     expect(within(row("001-001-000000004")).getByText("PROVEEDORA DEL SUR S.A.")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("Octubre de 2026")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("1 documento")).toBeDefined();
-    expect(within(row("001-001-000000004")).getByText("USD 3,25")).toBeDefined();
+    expect(within(row("001-001-000000004")).getByText("$3,25")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("Autorizado")).toBeDefined();
     expect(within(row("001-001-000000005")).getByText("Septiembre de 2026")).toBeDefined();
     expect(within(row("001-001-000000005")).getByText("3 documentos")).toBeDefined();
@@ -191,7 +191,8 @@ describe("pantalla Retenciones", () => {
     expect(
       within(panel).getByRole("link", { name: "Retención a PROVEEDORA DEL SUR S.A." }),
     ).toHaveProperty("href", expect.stringContaining("/retenciones/borradores/retd-1"));
-    expect(within(panel).getByText(/1 documento · 2 retenciones · USD 3,25/)).toBeDefined();
+    expect(within(panel).getByText(/1 documento · 2 retenciones ·/)).toBeDefined();
+    expect(within(panel).getByText("$3,25")).toBeDefined();
     const user = userEvent.setup();
     await user.click(
       within(panel).getByRole("button", {

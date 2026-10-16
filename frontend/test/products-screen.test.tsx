@@ -184,11 +184,11 @@ describe("pantalla Productos", () => {
     const rows = within(table).getAllByRole("row");
     const review = rows.find((r) => within(r).queryByText("Producto al 12"))!;
     // El precio se formatea desde el texto, sin pasar por number.
-    expect(within(review).getByText("999.999.999.999,999999")).toBeDefined();
+    expect(within(review).getByText("$999.999.999.999,999999")).toBeDefined();
     expect(within(review).getByText("Revisar impuestos")).toBeDefined();
     expect(within(review).getByText("12%")).toBeDefined();
     const cement = rows.find((r) => within(r).queryByText("Cemento 50 kg"))!;
-    expect(within(cement).getByText("8,75")).toBeDefined();
+    expect(within(cement).getByText("$8,75")).toBeDefined();
     expect(within(cement).getByText("Listo")).toBeDefined();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("combobox", { name: "Estado tributario" }));

@@ -25,8 +25,8 @@ import { RowActionButton, SearchInput } from "@/components/data-table/table-cont
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { MoneyCell, MutedCell } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
-import { formatDecimal } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { ProductDialog } from "./product-dialog";
@@ -76,6 +76,14 @@ const CARD = {
   titleId: "productos-titulo",
   description: "Lo que vendes, con su precio sin impuestos, su IVA y su estado tributario.",
 };
+
+/** El código del producto, en monoespaciada sobre un fondo suave, para ubicarlo de un vistazo. */
+function ProductCode({ code }: { code: string }) {
+  return (
+    <code className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs break-all">{code}</code>
+  );
+}
+
 function useUrlState() {
   const params = useSearchParams();
   const router = useRouter();
@@ -233,14 +241,19 @@ export function ProductsScreen() {
       {
         id: "code",
         header: "Código",
-        cell: ({ row }) => <span className="tabular-nums">{row.original.mainCode ?? "—"}</span>,
+        cell: ({ row }) =>
+          row.original.mainCode ? (
+            <ProductCode code={row.original.mainCode} />
+          ) : (
+            <MutedCell>—</MutedCell>
+          ),
       },
       {
         id: "name",
         header: "Nombre",
         cell: ({ row }) => (
           <span className="flex flex-col">
-            <span className="font-medium break-words">{row.original.name}</span>
+            <span className="font-semibold break-words">{row.original.name}</span>
             {row.original.auxiliaryCode && (
               <span className="text-xs text-foreground-muted">
                 Auxiliar {row.original.auxiliaryCode}
@@ -249,14 +262,16 @@ export function ProductsScreen() {
           </span>
         ),
       },
-      { id: "kind", header: "Tipo", cell: ({ row }) => PRODUCT_KIND_LABELS[row.original.kind] },
+      {
+        id: "kind",
+        header: "Tipo",
+        cell: ({ row }) => <MutedCell>{PRODUCT_KIND_LABELS[row.original.kind]}</MutedCell>,
+      },
       {
         id: "unitPrice",
         header: () => <span className="block text-right">Precio sin impuestos</span>,
         cell: ({ row }) => (
-          <span className="block text-right tabular-nums">
-            {formatDecimal(row.original.unitPrice, { minFractionDigits: 2 })}
-          </span>
+          <MoneyCell amount={row.original.unitPrice} className="block text-right" />
         ),
       },
       { id: "iva", header: "IVA", cell: ({ row }) => ivaLabel(row.original) },
@@ -401,12 +416,11 @@ export function ProductsScreen() {
           renderCard={(product) => (
             <div className="flex flex-col gap-2">
               <div className="flex min-w-0 flex-col gap-1">
-                <span className="font-medium break-words">{product.name}</span>
+                <span className="font-semibold break-words">{product.name}</span>
                 <span className="text-sm text-foreground-muted tabular-nums">
                   {product.mainCode ? `${product.mainCode} · ` : ""}
-                  {PRODUCT_KIND_LABELS[product.kind]} ·{" "}
-                  {formatDecimal(product.unitPrice, { minFractionDigits: 2 })} · IVA{" "}
-                  {ivaLabel(product)}
+                  {PRODUCT_KIND_LABELS[product.kind]} · <MoneyCell amount={product.unitPrice} /> ·
+                  IVA {ivaLabel(product)}
                 </span>
                 <span className="flex flex-wrap items-center gap-2 text-sm">
                   <TaxCell product={product} />

@@ -33,8 +33,13 @@ import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import {
+  MoneyCell,
+  MutedCell,
+  PartyCell,
+  RecordLink,
+} from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { pointLabel, useEstablishments } from "@/features/establishments/establishments-api";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
@@ -211,7 +216,7 @@ export function DocumentsScreen() {
           const base = detailPath(row.original);
           const label = (
             <span className="flex flex-col">
-              <span className="font-medium tabular-nums">{row.original.number}</span>
+              <span className="font-semibold tabular-nums">{row.original.number}</span>
               <span className="text-xs text-foreground-muted">
                 {DOCUMENT_TYPE_LABELS[row.original.documentType]}
               </span>
@@ -220,7 +225,7 @@ export function DocumentsScreen() {
           return base ? (
             <Link
               href={`${base}/${row.original.id}`}
-              className="underline-offset-2 hover:underline"
+              className="text-primary underline-offset-2 hover:underline"
             >
               {label}
             </Link>
@@ -232,9 +237,7 @@ export function DocumentsScreen() {
       {
         id: "date",
         header: "Fecha",
-        cell: ({ row }) => (
-          <span className="tabular-nums">{formatIssueDate(row.original.issueDate)}</span>
-        ),
+        cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
       },
       {
         id: "buyer",
@@ -243,14 +246,14 @@ export function DocumentsScreen() {
           const receiver = receiverOf(row.original);
           const role = counterpartyLabel(row.original);
           return (
-            <span className="flex flex-col">
-              <span className="break-words">{receiver.name}</span>
-              {receiver.identification || role ? (
-                <span className="text-xs text-foreground-muted tabular-nums">
-                  {[role, receiver.identification].filter(Boolean).join(" · ")}
-                </span>
-              ) : null}
-            </span>
+            <PartyCell
+              name={receiver.name}
+              identification={
+                receiver.identification || role
+                  ? [role, receiver.identification].filter(Boolean).join(" · ")
+                  : undefined
+              }
+            />
           );
         },
       },
@@ -265,7 +268,7 @@ export function DocumentsScreen() {
               <span className="sr-only">Sin total monetario</span>
             </span>
           ) : (
-            <span className="block text-right tabular-nums">{formatUsd(row.original.total)}</span>
+            <MoneyCell amount={row.original.total} className="block text-right" />
           ),
       },
       {
@@ -465,14 +468,9 @@ export function DocumentsScreen() {
               <div className="flex items-start justify-between gap-2">
                 <span className="flex flex-col">
                   {base ? (
-                    <Link
-                      href={`${base}/${item.id}`}
-                      className="font-medium tabular-nums underline-offset-2 hover:underline"
-                    >
-                      {item.number}
-                    </Link>
+                    <RecordLink href={`${base}/${item.id}`}>{item.number}</RecordLink>
                   ) : (
-                    <span className="font-medium tabular-nums">{item.number}</span>
+                    <span className="font-semibold tabular-nums">{item.number}</span>
                   )}
                   <span className="text-xs text-foreground-muted">
                     {DOCUMENT_TYPE_LABELS[item.documentType]}
@@ -484,15 +482,13 @@ export function DocumentsScreen() {
                 {counterpartyLabel(item) ? (
                   <span className="text-foreground-muted">{counterpartyLabel(item)}: </span>
                 ) : null}
-                {receiverOf(item).name}
+                <span className="font-medium">{receiverOf(item).name}</span>
               </span>
               <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="tabular-nums text-foreground-muted">
                   {formatIssueDate(item.issueDate)}
                 </span>
-                {item.total === null ? null : (
-                  <span className="tabular-nums">{formatUsd(item.total)}</span>
-                )}
+                {item.total === null ? null : <MoneyCell amount={item.total} />}
               </span>
               <StateCell state={item.state} stopped={item.transmissionStopped} />
             </div>

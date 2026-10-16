@@ -20,7 +20,9 @@ import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
 import { ColumnVisibilityMenu, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MutedCell } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee, ROLE_LABELS } from "@/lib/permissions";
 import { ChangeRoleDialog, CreateUserDialog, SetPasswordDialog } from "./user-dialogs";
@@ -173,22 +175,26 @@ export function UsersScreen() {
       {
         id: "name",
         header: "Nombre",
-        cell: ({ row }) => <span className="font-medium break-words">{row.original.name}</span>,
+        cell: ({ row }) => <span className="font-semibold break-words">{row.original.name}</span>,
       },
       {
         id: "email",
         header: "Correo",
-        cell: ({ row }) => <span className="break-words">{row.original.email}</span>,
+        cell: ({ row }) => <MutedCell className="break-words">{row.original.email}</MutedCell>,
       },
-      { id: "role", header: "Rol", cell: ({ row }) => ROLE_LABELS[row.original.role] },
+      {
+        id: "role",
+        header: "Rol",
+        cell: ({ row }) => <Badge variant="outline">{ROLE_LABELS[row.original.role]}</Badge>,
+      },
       { id: "status", header: "Estado", cell: ({ row }) => <StatusCell user={row.original} /> },
       {
         id: "createdAt",
         header: "Fecha de alta",
         cell: ({ row }) => (
-          <span className="whitespace-nowrap">
+          <MutedCell className="whitespace-nowrap">
             {dateFormat.format(new Date(row.original.createdAt))}
-          </span>
+          </MutedCell>
         ),
       },
       {

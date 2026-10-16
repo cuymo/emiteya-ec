@@ -94,7 +94,7 @@ describe("pantalla Liquidaciones de compra", () => {
     expect(within(first).getByText("María Quishpe")).toBeDefined();
     expect(within(first).getByText("0102030405")).toBeDefined();
     expect(within(first).getByText("07/10/2026")).toBeDefined();
-    expect(within(first).getByText("USD 106,00")).toBeDefined();
+    expect(within(first).getByText("$106,00")).toBeDefined();
     expect(within(first).getByText("Autorizado")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("Juan Pérez")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("Requiere revisión")).toBeDefined();
@@ -211,7 +211,8 @@ describe("pantalla Liquidaciones de compra", () => {
       "href",
       expect.stringContaining("/liquidaciones-compra/borradores/lcd-1"),
     );
-    expect(within(panel).getByText(/2 líneas · USD 106,00/)).toBeDefined();
+    expect(within(panel).getByText(/2 líneas ·/)).toBeDefined();
+    expect(within(panel).getByText("$106,00")).toBeDefined();
     const user = userEvent.setup();
     await user.click(
       within(panel).getByRole("button", {

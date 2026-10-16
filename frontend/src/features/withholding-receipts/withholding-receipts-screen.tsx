@@ -26,8 +26,13 @@ import { RowActionButton, SearchInput } from "@/components/data-table/table-cont
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import {
+  MoneyCell,
+  MutedCell,
+  PartyCell,
+  RecordLink,
+} from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/documents/document-status-badge";
@@ -134,17 +139,14 @@ function DraftsPanel() {
             className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
           >
             <span className="flex min-w-0 flex-col">
-              <Link
-                href={`/retenciones/borradores/${draft.id}`}
-                className="font-medium break-words underline-offset-2 hover:underline"
-              >
+              <RecordLink href={`/retenciones/borradores/${draft.id}`} className="break-words">
                 Retención a {nameOf(draft)}
-              </Link>
+              </RecordLink>
               <span className="text-foreground-muted break-words">
                 {draft.fiscalPeriod ? formatPeriod(draft.fiscalPeriod) : "Sin período"} ·{" "}
                 {supportCountLabel(draft.supportCount)} ·{" "}
                 {withholdingCountLabel(draft.withholdingCount)} ·{" "}
-                {draft.previewTotal ? formatUsd(draft.previewTotal) : "Sin calcular"} ·{" "}
+                {draft.previewTotal ? <MoneyCell amount={draft.previewTotal} /> : "Sin calcular"} ·{" "}
                 {formatDateTime(draft.updatedAt)}
               </span>
             </span>
@@ -217,24 +219,19 @@ export function WithholdingReceiptsScreen() {
         id: "number",
         header: "Número",
         cell: ({ row }) => (
-          <Link
-            href={`/retenciones/${row.original.id}`}
-            className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
-          >
+          <RecordLink href={`/retenciones/${row.original.id}`}>
             {row.original.documentNumber}
-          </Link>
+          </RecordLink>
         ),
       },
       {
         id: "subject",
         header: "Proveedor",
         cell: ({ row }) => (
-          <span className="flex flex-col">
-            <span className="break-words">{row.original.subjectName}</span>
-            <span className="text-xs text-foreground-muted tabular-nums">
-              {row.original.subjectIdentification}
-            </span>
-          </span>
+          <PartyCell
+            name={row.original.subjectName}
+            identification={row.original.subjectIdentification}
+          />
         ),
       },
       {
@@ -252,16 +249,12 @@ export function WithholdingReceiptsScreen() {
       {
         id: "total",
         header: () => <span className="block text-right">Total retenido</span>,
-        cell: ({ row }) => (
-          <span className="block text-right tabular-nums">{formatUsd(row.original.total)}</span>
-        ),
+        cell: ({ row }) => <MoneyCell amount={row.original.total} className="block text-right" />,
       },
       {
         id: "date",
         header: "Fecha",
-        cell: ({ row }) => (
-          <span className="tabular-nums">{formatIssueDate(row.original.issueDate)}</span>
-        ),
+        cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
       },
       {
         id: "state",
@@ -383,15 +376,10 @@ export function WithholdingReceiptsScreen() {
         renderCard={(receipt) => (
           <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
-              <Link
-                href={`/retenciones/${receipt.id}`}
-                className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
-              >
-                {receipt.documentNumber}
-              </Link>
-              <span className="tabular-nums">{formatUsd(receipt.total)}</span>
+              <RecordLink href={`/retenciones/${receipt.id}`}>{receipt.documentNumber}</RecordLink>
+              <MoneyCell amount={receipt.total} />
             </div>
-            <span className="text-sm break-words">{receipt.subjectName}</span>
+            <span className="text-sm font-medium break-words">{receipt.subjectName}</span>
             <span className="text-sm text-foreground-muted">
               {formatPeriod(receipt.fiscalPeriod)} · {supportCountLabel(receipt.supportCount)} ·{" "}
               {formatIssueDate(receipt.issueDate)}

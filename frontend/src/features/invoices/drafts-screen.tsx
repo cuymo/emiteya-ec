@@ -17,8 +17,8 @@ import { RowActionButton } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { MoneyCell, MutedCell, RecordLink } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { buyerLabel, formatDateTime } from "./invoice-format";
 import { useDeleteDraft, useDrafts } from "./invoices-api";
@@ -48,8 +48,13 @@ const pointOf = (draft: DraftSummaryView) =>
   draft.emissionPoint
     ? `${draft.emissionPoint.establishmentCode}-${draft.emissionPoint.code}`
     : "—";
+/** El total previo en verde, o «Incompleto», atenuado, si el borrador aún no lo tiene. */
 const totalOf = (draft: DraftSummaryView) =>
-  draft.previewTotal ? formatUsd(draft.previewTotal) : "Incompleto";
+  draft.previewTotal ? (
+    <MoneyCell amount={draft.previewTotal} />
+  ) : (
+    <MutedCell>Incompleto</MutedCell>
+  );
 
 const CARD = {
   title: "Borradores de facturas",
@@ -89,26 +94,25 @@ export function DraftsScreen() {
         id: "buyer",
         header: "Comprador",
         cell: ({ row }) => (
-          <Link
-            href={`/borradores/${row.original.id}`}
-            className="font-medium break-words underline-offset-2 hover:underline"
-          >
+          <RecordLink href={`/borradores/${row.original.id}`} className="break-words">
             {buyerOf(row.original)}
-          </Link>
+          </RecordLink>
         ),
       },
-      { id: "point", header: "Punto", cell: ({ row }) => pointOf(row.original) },
+      {
+        id: "point",
+        header: "Punto",
+        cell: ({ row }) => <MutedCell>{pointOf(row.original)}</MutedCell>,
+      },
       {
         id: "total",
         header: () => <span className="block text-right">Total previo</span>,
-        cell: ({ row }) => (
-          <span className="block text-right tabular-nums">{totalOf(row.original)}</span>
-        ),
+        cell: ({ row }) => <span className="block text-right">{totalOf(row.original)}</span>,
       },
       {
         id: "updatedAt",
         header: "Última actualización",
-        cell: ({ row }) => formatDateTime(row.original.updatedAt),
+        cell: ({ row }) => <MutedCell>{formatDateTime(row.original.updatedAt)}</MutedCell>,
       },
       {
         id: "actions",
@@ -179,12 +183,9 @@ export function DraftsScreen() {
           state={tableState}
           renderCard={(draft) => (
             <div className="flex flex-col gap-2">
-              <Link
-                href={`/borradores/${draft.id}`}
-                className="font-medium break-words underline-offset-2 hover:underline"
-              >
+              <RecordLink href={`/borradores/${draft.id}`} className="break-words">
                 {buyerOf(draft)}
-              </Link>
+              </RecordLink>
               <span className="text-sm text-foreground-muted tabular-nums">
                 {totalOf(draft)} · Punto {pointOf(draft)} · {formatDateTime(draft.updatedAt)}
               </span>

@@ -66,7 +66,7 @@ describe("pantalla Borradores", () => {
     await within(table).findByText("Sin comprador");
     const rows = within(table).getAllByRole("row");
     const first = rows.find((row) => within(row).queryByText(/EL PERNO/))!;
-    expect(within(first).getByText("USD 28,75")).toBeDefined();
+    expect(within(first).getByText("$28,75")).toBeDefined();
     expect(within(first).getByText("001-001")).toBeDefined();
     expect(within(table).getByText("Sin comprador")).toBeDefined();
     expect(within(table).getByText("Incompleto")).toBeDefined();

@@ -160,7 +160,7 @@ describe("pantalla Facturas", () => {
       (row) => within(row).queryAllByText("001-001-000000002").length > 0,
     )!;
     expect(within(reserved).getAllByText("Procesando").length).toBeGreaterThan(0);
-    expect(within(reserved).getByText("USD 28,75")).toBeDefined();
+    expect(within(reserved).getByText("$28,75")).toBeDefined();
     expect(within(reserved).getAllByText("03/10/2026").length).toBeGreaterThan(0);
     const signed = rows.find((row) => within(row).queryAllByText("001-001-000000001").length > 0)!;
     expect(within(signed).getAllByText("Pendiente de envío").length).toBeGreaterThan(0);

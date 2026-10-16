@@ -32,6 +32,7 @@ import {
   type StatusTone,
 } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { MutedCell } from "@/components/data-table/data-table-cells";
 import { formatDateTime } from "@/features/invoices/invoice-format";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
@@ -274,7 +275,7 @@ function History({ polling, now, current }: { polling: boolean; now: number; cur
         id: "requestedAt",
         header: "Solicitada",
         cell: ({ row }) => (
-          <span className="whitespace-nowrap tabular-nums">
+          <span className="font-medium whitespace-nowrap tabular-nums">
             {formatDateTime(row.original.requestedAt)}
           </span>
         ),
@@ -282,7 +283,9 @@ function History({ polling, now, current }: { polling: boolean; now: number; cur
       {
         id: "requestedBy",
         header: "Por",
-        cell: ({ row }) => <span className="break-words">{row.original.requestedBy.name}</span>,
+        cell: ({ row }) => (
+          <MutedCell className="break-words">{row.original.requestedBy.name}</MutedCell>
+        ),
       },
       {
         id: "status",
@@ -294,9 +297,9 @@ function History({ polling, now, current }: { polling: boolean; now: number; cur
         id: "size",
         header: "Tamaño",
         cell: ({ row }) => (
-          <span className="whitespace-nowrap tabular-nums">
+          <MutedCell className="whitespace-nowrap">
             {row.original.sizeBytes ? formatSize(row.original.sizeBytes) : "—"}
-          </span>
+          </MutedCell>
         ),
       },
     ],

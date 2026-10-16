@@ -26,8 +26,13 @@ import { RowActionButton, SearchInput } from "@/components/data-table/table-cont
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import {
+  MoneyCell,
+  MutedCell,
+  PartyCell,
+  RecordLink,
+} from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/documents/document-status-badge";
@@ -112,16 +117,20 @@ function DraftsPanel() {
             className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
           >
             <span className="flex min-w-0 flex-col">
-              <Link
+              <RecordLink
                 href={`/liquidaciones-compra/borradores/${draft.id}`}
-                className="font-medium break-words underline-offset-2 hover:underline"
+                className="break-words"
               >
                 {nameOf(draft)}
-              </Link>
+              </RecordLink>
               <span className="text-foreground-muted break-words">
                 {lineCountLabel(draft.lineCount)} ·{" "}
-                {draft.previewTotal ? formatUsd(draft.previewTotal) : "Sin importe calculado"} ·{" "}
-                {formatDateTime(draft.updatedAt)}
+                {draft.previewTotal ? (
+                  <MoneyCell amount={draft.previewTotal} />
+                ) : (
+                  "Sin importe calculado"
+                )}{" "}
+                · {formatDateTime(draft.updatedAt)}
               </span>
             </span>
             <RowActionButton
@@ -188,39 +197,30 @@ export function PurchaseSettlementsScreen() {
         id: "number",
         header: "Número",
         cell: ({ row }) => (
-          <Link
-            href={`/liquidaciones-compra/${row.original.id}`}
-            className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
-          >
+          <RecordLink href={`/liquidaciones-compra/${row.original.id}`}>
             {row.original.documentNumber}
-          </Link>
+          </RecordLink>
         ),
       },
       {
         id: "supplier",
         header: "Proveedor",
         cell: ({ row }) => (
-          <span className="flex flex-col">
-            <span className="break-words">{row.original.supplierName}</span>
-            <span className="text-xs text-foreground-muted tabular-nums">
-              {row.original.supplierIdentification}
-            </span>
-          </span>
+          <PartyCell
+            name={row.original.supplierName}
+            identification={row.original.supplierIdentification}
+          />
         ),
       },
       {
         id: "date",
         header: "Fecha",
-        cell: ({ row }) => (
-          <span className="tabular-nums">{formatIssueDate(row.original.issueDate)}</span>
-        ),
+        cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
       },
       {
         id: "total",
         header: () => <span className="block text-right">Importe total</span>,
-        cell: ({ row }) => (
-          <span className="block text-right tabular-nums">{formatUsd(row.original.total)}</span>
-        ),
+        cell: ({ row }) => <MoneyCell amount={row.original.total} className="block text-right" />,
       },
       {
         id: "state",
@@ -332,22 +332,19 @@ export function PurchaseSettlementsScreen() {
         renderCard={(settlement) => (
           <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
-              <Link
-                href={`/liquidaciones-compra/${settlement.id}`}
-                className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
-              >
+              <RecordLink href={`/liquidaciones-compra/${settlement.id}`}>
                 {settlement.documentNumber}
-              </Link>
+              </RecordLink>
               <span className="text-sm text-foreground-muted tabular-nums">
                 {formatIssueDate(settlement.issueDate)}
               </span>
             </div>
-            <span className="text-sm break-words">{settlement.supplierName}</span>
+            <span className="text-sm font-medium break-words">{settlement.supplierName}</span>
             <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span className="text-foreground-muted tabular-nums">
                 {settlement.supplierIdentification}
               </span>
-              <span className="tabular-nums">{formatUsd(settlement.total)}</span>
+              <MoneyCell amount={settlement.total} />
             </span>
             <StateCell state={settlement.state} stopped={settlement.transmissionStopped} />
           </div>

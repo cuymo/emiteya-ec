@@ -24,7 +24,9 @@ import { DataTableSelectFilter } from "@/components/data-table/data-table-select
 import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MutedCell } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { PartyDialog } from "./party-dialog";
@@ -91,8 +93,19 @@ function StatusCell({ party }: { party: PartyView }) {
   );
 }
 
+/** Los roles como insignias, para leerlos de un vistazo; sin rol, atenuado. */
 const roles = (party: PartyView) =>
-  party.roles.length > 0 ? party.roles.map((r) => PARTY_ROLE_LABELS[r]).join(", ") : "Sin rol";
+  party.roles.length > 0 ? (
+    <span className="flex flex-wrap gap-1">
+      {party.roles.map((role) => (
+        <Badge key={role} variant="outline">
+          {PARTY_ROLE_LABELS[role]}
+        </Badge>
+      ))}
+    </span>
+  ) : (
+    <MutedCell>Sin rol</MutedCell>
+  );
 
 function RowActions({
   party,
@@ -198,7 +211,7 @@ export function PartiesScreen() {
         id: "legalName",
         header: "Razón social",
         cell: ({ row }) => (
-          <span className="font-medium break-words">{row.original.legalName}</span>
+          <span className="font-semibold break-words">{row.original.legalName}</span>
         ),
       },
       { id: "roles", header: "Roles", cell: ({ row }) => roles(row.original) },
@@ -311,7 +324,7 @@ export function PartiesScreen() {
           renderCard={(party) => (
             <div className="flex flex-col gap-2">
               <div className="flex min-w-0 flex-col gap-1">
-                <span className="font-medium break-words">{party.legalName}</span>
+                <span className="font-semibold break-words">{party.legalName}</span>
                 <span className="text-sm text-foreground-muted tabular-nums">
                   {party.identificationTypeLabel ?? party.identificationType} ·{" "}
                   {party.identification}

@@ -11,6 +11,7 @@
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import {
   PAGE_SIZE_DEFAULT,
+  canonicalDecimal,
   compareDecimalStrings,
   type StockItemDetailView,
   type StockMovementType,
@@ -31,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { formatDecimal } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/features/invoices/invoice-format";
 import { useSetStockTracking, useStockItem, useStockMovements } from "./inventory-api";
 import { MOVEMENT_TYPE_LABELS, ORIGIN_LABELS, formatDelta } from "./inventory-format";
@@ -109,7 +111,7 @@ function Kardex({ productId }: { productId: string }) {
         id: "date",
         header: "Fecha",
         cell: ({ row }) => (
-          <span className="whitespace-nowrap tabular-nums">
+          <span className="whitespace-nowrap text-foreground-muted tabular-nums">
             {formatDateTime(row.original.occurredAt)}
           </span>
         ),
@@ -136,14 +138,26 @@ function Kardex({ productId }: { productId: string }) {
         id: "delta",
         header: () => <span className="block text-right">Variación</span>,
         cell: ({ row }) => (
-          <span className="block text-right tabular-nums">{formatDelta(row.original.delta)}</span>
+          // La entrada en verde y la salida en rojo, siempre con su signo.
+          <span
+            className={cn(
+              "block text-right font-semibold tabular-nums",
+              row.original.delta.startsWith("-")
+                ? "text-danger"
+                : canonicalDecimal(row.original.delta) === "0"
+                  ? "text-foreground-muted"
+                  : "text-money",
+            )}
+          >
+            {formatDelta(row.original.delta)}
+          </span>
         ),
       },
       {
         id: "balance",
         header: () => <span className="block text-right">Saldo</span>,
         cell: ({ row }) => (
-          <span className="block text-right tabular-nums">
+          <span className="block text-right font-semibold tabular-nums">
             {formatDecimal(row.original.balanceAfter)}
           </span>
         ),

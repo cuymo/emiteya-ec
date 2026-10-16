@@ -342,7 +342,7 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
     expect(within(row).getAllByText("Pendiente de envío").length).toBeGreaterThan(0);
     expect(within(row).getAllByText("EL PERNO CIA. LTDA.").length).toBeGreaterThan(0);
     expect(within(row).getByText("0992877878001")).toBeDefined();
-    expect(within(row).getByText("USD 1.250,00")).toBeDefined();
+    expect(within(row).getByText("$1.250,00")).toBeDefined();
     const headers = screen.getAllByRole("columnheader");
     expect(headers.map((header) => header.textContent)).toEqual([
       "Factura",
@@ -367,7 +367,7 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
     expect(navigation.push).toHaveBeenCalledWith("/facturas/inv-1");
     navigation.push.mockReset();
     fireEvent.click(within(row).getAllByRole("button", { name: /^Acciones de la factura/ })[0]!);
-    fireEvent.click(within(row).getByText("USD 1.250,00"), { ctrlKey: true });
+    fireEvent.click(within(row).getByText("$1.250,00"), { ctrlKey: true });
     expect(navigation.push).not.toHaveBeenCalled();
   });
 

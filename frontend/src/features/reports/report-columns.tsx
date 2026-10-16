@@ -19,7 +19,9 @@ import {
   type WithholdingRow,
 } from "@facturador/contracts";
 import type { ReactNode } from "react";
-import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
+import { MoneyCell, MutedCell, PartyCell } from "@/components/data-table/data-table-cells";
+import { formatDecimal, formatPercentage } from "@/lib/decimal";
+import { cn } from "@/lib/utils";
 import { BalanceCell } from "@/features/inventory/inventory-screen";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/documents/document-status-badge";
@@ -27,29 +29,25 @@ import { formatPeriod } from "@/features/withholding-receipts/withholding-format
 
 type Row = Record<string, unknown>;
 
-/** Un importe a la derecha; sin importe, "—" con su lectura para lectores de pantalla. */
-export function Amount({ value }: { value: string | null }) {
+/**
+ * Un importe a la derecha, en verde; el total de la fila, además en seminegrita. Sin importe, "—"
+ * con su lectura para lectores de pantalla.
+ */
+export function Amount({ value, emphasis = false }: { value: string | null; emphasis?: boolean }) {
   return value === null ? (
     <span className="block text-right text-foreground-muted">
       <span aria-hidden="true">—</span>
       <span className="sr-only">Sin importe</span>
     </span>
   ) : (
-    <span className="block text-right whitespace-nowrap tabular-nums">{formatUsd(value)}</span>
+    <MoneyCell amount={value} className={cn("block text-right", !emphasis && "font-normal")} />
   );
 }
 
 const right = (label: string) => () => <span className="block text-right">{label}</span>;
 
 function Person({ name, identification }: { name: string; identification: string | null }) {
-  return (
-    <span className="flex flex-col">
-      <span className="break-words">{name}</span>
-      {identification ? (
-        <span className="text-xs text-foreground-muted tabular-nums">{identification}</span>
-      ) : null}
-    </span>
-  );
+  return <PartyCell name={name} identification={identification ?? undefined} />;
 }
 
 const counterpartOf = (row: IssuedDocumentRow) =>
@@ -74,7 +72,9 @@ const issuedDocuments: Presentation<IssuedDocumentRow> = {
       header: "Número",
       cell: ({ row }) => (
         <span className="flex flex-col">
-          <span className="font-medium whitespace-nowrap tabular-nums">{row.original.number}</span>
+          <span className="font-semibold whitespace-nowrap tabular-nums">
+            {row.original.number}
+          </span>
           <span className="text-xs text-foreground-muted">
             {DOCUMENT_TYPE_LABELS[row.original.documentType]}
           </span>
@@ -84,9 +84,7 @@ const issuedDocuments: Presentation<IssuedDocumentRow> = {
     {
       id: "date",
       header: "Fecha",
-      cell: ({ row }) => (
-        <span className="tabular-nums">{formatIssueDate(row.original.issueDate)}</span>
-      ),
+      cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
     },
     {
       id: "counterpart",
@@ -106,19 +104,19 @@ const issuedDocuments: Presentation<IssuedDocumentRow> = {
     {
       id: "total",
       header: right("Total"),
-      cell: ({ row }) => <Amount value={row.original.total} />,
+      cell: ({ row }) => <Amount value={row.original.total} emphasis />,
     },
     { id: "state", header: "Estado", cell: ({ row }) => <StateCell state={row.original.state} /> },
     {
       id: "environment",
       header: "Ambiente",
-      cell: ({ row }) => environmentLabel(row.original.environment),
+      cell: ({ row }) => <MutedCell>{environmentLabel(row.original.environment)}</MutedCell>,
     },
   ],
   card: (row) => (
     <div className="flex flex-col gap-2">
       <span className="flex flex-col">
-        <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
+        <span className="font-semibold whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
           {DOCUMENT_TYPE_LABELS[row.documentType]} · {formatIssueDate(row.issueDate)} ·{" "}
           {environmentLabel(row.environment)}
@@ -136,7 +134,7 @@ const issuedDocuments: Presentation<IssuedDocumentRow> = {
         </dd>
         <dt className="text-foreground-muted">Total</dt>
         <dd>
-          <Amount value={row.total} />
+          <Amount value={row.total} emphasis />
         </dd>
       </dl>
       <StateCell state={row.state} />
@@ -151,15 +149,13 @@ const invoices: Presentation<InvoiceRow> = {
       id: "number",
       header: "Número",
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap tabular-nums">{row.original.number}</span>
+        <span className="font-semibold whitespace-nowrap tabular-nums">{row.original.number}</span>
       ),
     },
     {
       id: "date",
       header: "Fecha",
-      cell: ({ row }) => (
-        <span className="tabular-nums">{formatIssueDate(row.original.issueDate)}</span>
-      ),
+      cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
     },
     { id: "customer", header: "Cliente", cell: ({ row }) => <Person {...row.original.customer} /> },
     {
@@ -176,19 +172,19 @@ const invoices: Presentation<InvoiceRow> = {
     {
       id: "total",
       header: right("Total"),
-      cell: ({ row }) => <Amount value={row.original.total} />,
+      cell: ({ row }) => <Amount value={row.original.total} emphasis />,
     },
     { id: "state", header: "Estado", cell: ({ row }) => <StateCell state={row.original.state} /> },
     {
       id: "environment",
       header: "Ambiente",
-      cell: ({ row }) => environmentLabel(row.original.environment),
+      cell: ({ row }) => <MutedCell>{environmentLabel(row.original.environment)}</MutedCell>,
     },
   ],
   card: (row) => (
     <div className="flex flex-col gap-2">
       <span className="flex flex-col">
-        <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
+        <span className="font-semibold whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
           {formatIssueDate(row.issueDate)} · {environmentLabel(row.environment)}
         </span>
@@ -209,7 +205,7 @@ const invoices: Presentation<InvoiceRow> = {
         </dd>
         <dt className="text-foreground-muted">Total</dt>
         <dd>
-          <Amount value={row.total} />
+          <Amount value={row.total} emphasis />
         </dd>
       </dl>
       <StateCell state={row.state} />
@@ -224,15 +220,13 @@ const withholdings: Presentation<WithholdingRow> = {
       id: "number",
       header: "Número",
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap tabular-nums">{row.original.number}</span>
+        <span className="font-semibold whitespace-nowrap tabular-nums">{row.original.number}</span>
       ),
     },
     {
       id: "date",
       header: "Fecha",
-      cell: ({ row }) => (
-        <span className="tabular-nums">{formatIssueDate(row.original.issueDate)}</span>
-      ),
+      cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
     },
     {
       id: "supplier",
@@ -269,19 +263,19 @@ const withholdings: Presentation<WithholdingRow> = {
     {
       id: "amount",
       header: right("Valor retenido"),
-      cell: ({ row }) => <Amount value={row.original.amount} />,
+      cell: ({ row }) => <Amount value={row.original.amount} emphasis />,
     },
     { id: "state", header: "Estado", cell: ({ row }) => <StateCell state={row.original.state} /> },
     {
       id: "environment",
       header: "Ambiente",
-      cell: ({ row }) => environmentLabel(row.original.environment),
+      cell: ({ row }) => <MutedCell>{environmentLabel(row.original.environment)}</MutedCell>,
     },
   ],
   card: (row) => (
     <div className="flex flex-col gap-2">
       <span className="flex flex-col">
-        <span className="font-medium whitespace-nowrap tabular-nums">{row.number}</span>
+        <span className="font-semibold whitespace-nowrap tabular-nums">{row.number}</span>
         <span className="text-xs text-foreground-muted">
           {formatIssueDate(row.issueDate)} · Período {formatPeriod(row.fiscalPeriod)} ·{" "}
           {environmentLabel(row.environment)}
@@ -298,7 +292,7 @@ const withholdings: Presentation<WithholdingRow> = {
         </dd>
         <dt className="text-foreground-muted">Valor retenido</dt>
         <dd>
-          <Amount value={row.amount} />
+          <Amount value={row.amount} emphasis />
         </dd>
       </dl>
       <StateCell state={row.state} />

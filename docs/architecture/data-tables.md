@@ -29,6 +29,7 @@ controls.
 | `DataTableSearch`, `SearchInput` | `data-table-search.tsx`, `table-controls.tsx` | Server-backed search with debounce, trimming, `Limpiar búsqueda`, and a label that states what it really searches |
 | `ColumnVisibilityMenu`, `RowActionButton` | `table-controls.tsx` | `Columnas`, at the end of the filters row, and the icon action of a row |
 | `RowActionsMenu` | `row-actions-menu.tsx` | The `...` menu of a row, named after its record, with only the actions the module passes. `trigger="labeled"` turns the trigger into an outline «Acciones» button, for tables where a bare icon goes unnoticed (Usuarios) |
+| `MoneyCell`, `RecordLink`, `PartyCell`, `MutedCell` | `data-table-cells.tsx` | The emphasis of every table cell (owner decision, 2026-10-16), so the eye finds the key data first. See «Cell emphasis» below |
 | `DataTableEmpty`, `DataTableError` | `data-table-state.tsx` | Empty, filtered-empty and error states with a level-2 heading, over `ui/empty` |
 | `useListUrlState` | `hooks/use-list-url-state.ts` | Search, filters, page and page size in the URL, with quick changes accumulated, the page reset on filter changes, aliases and the out-of-range page |
 
@@ -38,6 +39,19 @@ controls.
   focusable, so there are no duplicate keyboard stops.
 - **Selection is neutral.** A chosen filter shows its value in a neutral trigger; the primary blue
   stays for the screen's primary action.
+- **Cell emphasis** (`data-table-cells.tsx`, owner decision 2026-10-16). Every list, report and
+  history table follows it:
+  - money: `MoneyCell`, «$17.355,05» (`formatMoney`, at least two decimals) in the `--money`
+    green (6.2:1 light, 8.4:1 dark), semibold and tabular. Reports keep every amount green and
+    bold only the row's total or withheld value. Outside tables, amounts stay «USD 1,00»;
+  - the record: `RecordLink`, the number or name that opens its detail, semibold in primary blue;
+    a record without a detail page is semibold text;
+  - a party: `PartyCell`, the name in medium weight and its identification below, muted;
+  - context (dates, causes, points, carriers, who requested): `MutedCell`;
+  - short categories (party roles, user role) are outline badges; a product code is monospace on
+    a soft background; a stock balance is semibold, and a kárdex change is green when it enters
+    and red when it leaves, always with its sign;
+  - states keep their `StatusBadge`.
 - **Active filters are visible where they are set.** Each filter shows its value in its own trigger
   and clears from it; the search shows its text and has `Limpiar búsqueda`. `Limpiar filtros`
   appears only with an active filter.

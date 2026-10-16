@@ -76,7 +76,7 @@ describe("pantalla Notas de débito", () => {
       ),
     ).toBeDefined();
     expect(within(row("001-001-000000003")).getByText("001-001-000000001")).toBeDefined();
-    expect(within(row("001-001-000000003")).getByText("USD 28,00")).toBeDefined();
+    expect(within(row("001-001-000000003")).getByText("$28,00")).toBeDefined();
     expect(within(row("001-001-000000003")).getByText("Autorizado")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("Intereses de mora")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("Requiere revisión")).toBeDefined();

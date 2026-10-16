@@ -98,7 +98,8 @@ export function BalanceCell({
       </span>
     );
   }
-  return <span className="tabular-nums">{formatDecimal(item.balance)}</span>;
+  // El saldo es el dato clave de la fila: en seminegrita.
+  return <span className="font-semibold tabular-nums">{formatDecimal(item.balance)}</span>;
 }
 
 export function StockStateBadge({ state }: { state: StockItemView["state"] }) {
@@ -112,7 +113,7 @@ function ProductLink({ item }: { item: StockItemView }) {
       href={stockItemPath(item.productId)}
       className="flex flex-col underline-offset-2 hover:underline"
     >
-      <span className="font-medium break-words">{item.name}</span>
+      <span className="font-semibold break-words text-primary">{item.name}</span>
       {item.mainCode && (
         <span className="text-xs text-foreground-muted tabular-nums">{item.mainCode}</span>
       )}
@@ -171,7 +172,7 @@ export function InventoryScreen() {
         header: "Último movimiento",
         cell: ({ row }) =>
           row.original.lastMovementAt ? (
-            <span className="whitespace-nowrap tabular-nums">
+            <span className="whitespace-nowrap text-foreground-muted tabular-nums">
               {formatDateTime(row.original.lastMovementAt)}
             </span>
           ) : (

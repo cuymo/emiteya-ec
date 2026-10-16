@@ -96,6 +96,9 @@
   --destructive-foreground: oklch(0.99 0 0);
   --success: oklch(0.53 0.14 150);
   --success-foreground: oklch(0.99 0 0);
+  /* Importes de las tablas (decisión del propietario, 2026-10-16): verde de texto con 6.2:1
+     sobre la tarjeta. */
+  --money: oklch(0.48 0.13 150);
   --warning: oklch(0.65 0.15 70);
   --warning-foreground: oklch(0.21 0 0);
   --info: oklch(0.54 0.13 240);
@@ -158,6 +161,8 @@
   --destructive-foreground: oklch(0.16 0.01 250);
   --success: oklch(0.7 0.14 150);
   --success-foreground: oklch(0.16 0.01 250);
+  /* 8.4:1 sobre la tarjeta oscura. */
+  --money: oklch(0.76 0.15 150);
   --warning: oklch(0.8 0.14 75);
   --warning-foreground: oklch(0.16 0.01 250);
   --info: oklch(0.72 0.12 240);
@@ -200,6 +205,7 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-money: var(--money);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);

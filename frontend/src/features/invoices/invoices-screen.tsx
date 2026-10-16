@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
+import { MoneyCell, PartyCell, RecordLink } from "@/components/data-table/data-table-cells";
 import { DataTableSearch } from "@/components/data-table/data-table-search";
 import {
   DataTableSelectFilter,
@@ -46,7 +47,6 @@ import {
 } from "@/features/documents/document-status-badge";
 import { useListUrlState } from "@/hooks/use-list-url-state";
 import { ApiError } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { formatIssueDate } from "./invoice-format";
@@ -185,12 +185,9 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
             <div className="flex flex-col gap-1">
               <span className="relative flex items-center">
                 {requiresAttention(invoice) && <AttentionMarker className="absolute -left-3" />}
-                <Link
-                  href={`/facturas/${invoice.id}`}
-                  className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
-                >
+                <RecordLink href={`/facturas/${invoice.id}`} className="whitespace-nowrap">
                   {invoice.documentNumber}
-                </Link>
+                </RecordLink>
               </span>
               <span
                 className={cn(
@@ -203,7 +200,7 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
                 </span>
                 {mark}
               </span>
-              <span className="line-clamp-2 text-sm break-words @table-wide:hidden">
+              <span className="line-clamp-2 text-sm font-medium break-words @table-wide:hidden">
                 {invoice.buyerName}
               </span>
               <span className="@table-wide:hidden">
@@ -234,12 +231,11 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
           skeletonClassName: "w-full max-w-56",
         },
         cell: ({ row }) => (
-          <span className="flex flex-col">
-            <span className="truncate">{row.original.buyerName}</span>
-            <span className="truncate text-xs text-muted-foreground tabular-nums">
-              {row.original.buyerIdentification}
-            </span>
-          </span>
+          <PartyCell
+            name={row.original.buyerName}
+            identification={row.original.buyerIdentification}
+            truncate
+          />
         ),
       },
       {
@@ -254,9 +250,7 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
         cell: ({ row }) => (
           <span className="flex items-start justify-end gap-0.5">
             <span className="flex flex-col items-end gap-1">
-              <span className="whitespace-nowrap tabular-nums">
-                {formatUsd(row.original.total)}
-              </span>
+              <MoneyCell amount={row.original.total} />
               <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums @table-wide:hidden">
                 {formatIssueDate(row.original.issueDate)}
               </span>

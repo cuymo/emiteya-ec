@@ -197,7 +197,7 @@ describe("Comprobantes", () => {
       .find((candidate) => within(candidate).queryByText("001-001-000000004"))!;
     expect(within(row).getByText("Comprobante de retención")).toBeDefined();
     expect(within(row).getByText("PROVEEDORA DEL SUR S.A.")).toBeDefined();
-    expect(within(row).getByText("USD 3,25")).toBeDefined();
+    expect(within(row).getByText("$3,25")).toBeDefined();
     expect(within(row).getByRole("link").getAttribute("href")).toBe("/retenciones/ret-1");
     // Firmada sin autorizar: no hay RIDE que descargar.
     expect(
@@ -317,7 +317,7 @@ describe("Comprobantes", () => {
     // La contraparte es el proveedor, nunca un comprador.
     expect(within(authorized).getByText("Proveedor · 0102030405")).toBeDefined();
     expect(within(authorized).queryByText(/Comprador/)).toBeNull();
-    expect(within(authorized).getByText("USD 106,00")).toBeDefined();
+    expect(within(authorized).getByText("$106,00")).toBeDefined();
     expect(within(authorized).getByRole("link").getAttribute("href")).toBe(
       "/liquidaciones-compra/lc-1",
     );

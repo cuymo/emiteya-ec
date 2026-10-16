@@ -26,6 +26,7 @@ import { RowActionButton, SearchInput } from "@/components/data-table/table-cont
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
+import { MutedCell, RecordLink } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
@@ -114,12 +115,9 @@ function DraftsPanel() {
             className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
           >
             <span className="flex min-w-0 flex-col">
-              <Link
-                href={`/guias-remision/borradores/${draft.id}`}
-                className="font-medium break-words underline-offset-2 hover:underline"
-              >
+              <RecordLink href={`/guias-remision/borradores/${draft.id}`} className="break-words">
                 {nameOf(draft)}
-              </Link>
+              </RecordLink>
               <span className="text-foreground-muted break-words">
                 {recipientCountLabel(draft.recipientCount)} · {detailCountLabel(draft.detailCount)}{" "}
                 ·{" "}
@@ -193,29 +191,30 @@ export function ShippingGuidesScreen() {
         id: "number",
         header: "Número",
         cell: ({ row }) => (
-          <Link
-            href={`/guias-remision/${row.original.id}`}
-            className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
-          >
+          <RecordLink href={`/guias-remision/${row.original.id}`}>
             {row.original.documentNumber}
-          </Link>
+          </RecordLink>
         ),
       },
       {
         id: "recipients",
         header: "Destinatarios",
-        cell: ({ row }) => <span className="break-words">{recipientsText(row.original)}</span>,
+        cell: ({ row }) => (
+          <span className="font-medium break-words">{recipientsText(row.original)}</span>
+        ),
       },
       {
         id: "carrier",
         header: "Transportista",
-        cell: ({ row }) => <span className="break-words">{row.original.carrierName}</span>,
+        cell: ({ row }) => (
+          <MutedCell className="break-words">{row.original.carrierName}</MutedCell>
+        ),
       },
       {
         id: "transport",
         header: "Transporte",
         cell: ({ row }) => (
-          <span className="flex flex-col tabular-nums">
+          <span className="flex flex-col text-foreground-muted tabular-nums">
             <span>Inicio {formatIssueDate(row.original.transportStart)}</span>
             <span className="text-xs text-foreground-muted">
               Fin {formatIssueDate(row.original.transportEnd)}
@@ -333,17 +332,12 @@ export function ShippingGuidesScreen() {
         renderCard={(guide) => (
           <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-2">
-              <Link
-                href={`/guias-remision/${guide.id}`}
-                className="font-medium whitespace-nowrap tabular-nums underline-offset-2 hover:underline"
-              >
-                {guide.documentNumber}
-              </Link>
+              <RecordLink href={`/guias-remision/${guide.id}`}>{guide.documentNumber}</RecordLink>
               <span className="text-sm text-foreground-muted tabular-nums">
                 {formatIssueDate(guide.transportStart)}
               </span>
             </div>
-            <span className="text-sm break-words">{recipientsText(guide)}</span>
+            <span className="text-sm font-medium break-words">{recipientsText(guide)}</span>
             <span className="text-sm text-foreground-muted break-words">
               {guide.carrierName} · Fin {formatIssueDate(guide.transportEnd)}
             </span>

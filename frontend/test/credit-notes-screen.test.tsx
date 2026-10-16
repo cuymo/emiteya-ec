@@ -86,7 +86,7 @@ describe("pantalla Notas de crédito", () => {
     );
     expect(within(row("001-001-000000007")).getByText("Devolución")).toBeDefined();
     expect(within(row("001-001-000000007")).getByText("001-001-000000001")).toBeDefined();
-    expect(within(row("001-001-000000007")).getByText("USD 11,50")).toBeDefined();
+    expect(within(row("001-001-000000007")).getByText("$11,50")).toBeDefined();
     expect(within(row("001-001-000000007")).getByText("Autorizado")).toBeDefined();
     expect(within(row("001-001-000000008")).getByText("Anulación total")).toBeDefined();
     expect(within(row("001-001-000000008")).getByText("Requiere revisión")).toBeDefined();
