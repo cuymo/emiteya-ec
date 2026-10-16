@@ -513,6 +513,17 @@ describe("Catálogos fiscales (design D17)", () => {
     ).toBeDefined();
   });
 
+  it("la pestaña nombra la pantalla y cada catálogo es una sección con su título", async () => {
+    renderScreen({});
+    await ivaList();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Catálogos fiscales" }).className,
+    ).toContain("sr-only");
+    for (const name of ["Tarifas de IVA", "Formas de pago", "Más datos oficiales"]) {
+      expect(screen.getByRole("region", { name })).toBeDefined();
+    }
+  });
+
   it("ICE se filtra por código o denominación y muestra la variante de los códigos repetidos", async () => {
     renderScreen();
     const list = await screen.findByRole("list", { name: "ICE" });

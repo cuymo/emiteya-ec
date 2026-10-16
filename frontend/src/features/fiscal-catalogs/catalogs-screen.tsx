@@ -7,6 +7,9 @@
 // Los catálogos de retención (add-withholding-receipts, design D24) muestran la clasificación de cada
 // entrada y, en las fuera de alcance, su razón, sin habilitación: solo los conceptos de renta y los
 // códigos de IVA soportados se habilitan por empresa.
+// Cada catálogo es una sección de ajustes (decisión del propietario, 2026-10-16): su título, su
+// descripción y su fuente a la izquierda, sus entradas a la derecha y un separador entre secciones.
+// La pestaña ya nombra la pantalla: el título queda solo para los lectores de pantalla.
 "use client";
 
 import {
@@ -20,6 +23,7 @@ import {
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { SettingsSection, SettingsSections } from "@/components/layout/settings-section";
 import { errorMessage } from "@/components/feedback";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
@@ -259,7 +263,6 @@ function CatalogSection({
 }) {
   const entries = useCatalogEntries(catalogType, true);
   const [filter, setFilter] = useState("");
-  const headingId = useId();
   const filterId = useId();
   const visible = (entries.data?.entries ?? []).filter((entry) => {
     if (!filter.trim()) return true;
@@ -267,12 +270,11 @@ function CatalogSection({
     return normalize(`${entry.code} ${entry.entryKey} ${entryLabel(entry)}`).includes(needle);
   });
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-2">
-      <h2 id={headingId} className="text-xl font-semibold">
-        {title}
-      </h2>
-      <p className="text-sm text-foreground-muted">{description}</p>
-      <SourceLine summary={summary} />
+    <SettingsSection
+      title={title}
+      description={description}
+      aside={<SourceLine summary={summary} />}
+    >
       {filterable && (
         <div className="flex max-w-sm flex-col gap-1">
           <label htmlFor={filterId} className="text-sm font-medium">
@@ -309,7 +311,7 @@ function CatalogSection({
           ))}
         </ul>
       )}
-    </section>
+    </SettingsSection>
   );
 }
 
@@ -450,8 +452,9 @@ export function FiscalCatalogsScreen() {
     );
   const review = productSummary.data?.byStatus.REVIEW_REQUIRED ?? 0;
   const none: ReadonlyMap<string, number> = new Map();
+  // La pestaña ya nombra la pantalla: el título queda para los lectores de pantalla.
   const heading = (
-    <h1 id="catalogos-titulo" className="text-3xl font-bold">
+    <h1 id="catalogos-titulo" className="sr-only">
       Catálogos fiscales
     </h1>
   );
@@ -470,12 +473,7 @@ export function FiscalCatalogsScreen() {
   }
   if (summaries.isPending) {
     return (
-      <section
-        aria-labelledby="catalogos-titulo"
-        aria-busy="true"
-        data-panel-width="form"
-        className="flex flex-col gap-6"
-      >
+      <section aria-labelledby="catalogos-titulo" aria-busy="true" className="flex flex-col gap-6">
         {heading}
         <Skeleton className="h-64 w-full" />
       </section>
@@ -483,11 +481,7 @@ export function FiscalCatalogsScreen() {
   }
   if (summaries.isError) {
     return (
-      <section
-        aria-labelledby="catalogos-titulo"
-        data-panel-width="form"
-        className="flex flex-col gap-6"
-      >
+      <section aria-labelledby="catalogos-titulo" className="flex flex-col gap-6">
         {heading}
         <ErrorState
           message={errorMessage(summaries.error)}
@@ -499,13 +493,9 @@ export function FiscalCatalogsScreen() {
   const summary = (type: FiscalCatalogType) =>
     summaries.data.find((catalog) => catalog.catalogType === type);
   return (
-    <section
-      aria-labelledby="catalogos-titulo"
-      data-panel-width="form"
-      className="flex flex-col gap-8"
-    >
+    <section aria-labelledby="catalogos-titulo" className="flex flex-col gap-8">
+      {heading}
       <div className="flex flex-col gap-2">
-        {heading}
         <p className="text-sm text-foreground-muted">
           Datos oficiales del SRI que trae esta versión del producto. Los códigos, las
           denominaciones, las tarifas y las vigencias no se editan:{" "}
@@ -525,99 +515,102 @@ export function FiscalCatalogsScreen() {
           </p>
         )}
       </div>
-      <CatalogSection
-        catalogType="iva-rate"
-        title="Tarifas de IVA"
-        description="Las tarifas habilitadas son las que la empresa podrá asignar a sus productos."
-        summary={summary("iva-rate")}
-        canManage={canManage}
-        usage={usageOf("iva-rate")}
-      />
-      <CatalogSection
-        catalogType="payment-method"
-        title="Formas de pago"
-        description="Las formas de pago habilitadas son las que se ofrecerán al emitir."
-        summary={summary("payment-method")}
-        canManage={canManage}
-        usage={none}
-      />
-      <CatalogSection
-        catalogType="ice-rate"
-        title="ICE"
-        description="Habilita solo los códigos de ICE que tu empresa factura. La ficha no publica sus tarifas vigentes."
-        summary={summary("ice-rate")}
-        canManage={canManage}
-        usage={usageOf("ice-rate")}
-        filterable
-      />
-      <CatalogSection
-        catalogType="irbpnr-rate"
-        title="IRBPNR"
-        description="Impuesto redimible a las botellas plásticas no retornables."
-        summary={summary("irbpnr-rate")}
-        canManage={canManage}
-        usage={usageOf("irbpnr-rate")}
-      />
-      <CatalogSection
-        catalogType="withholding-income-concept"
-        title="Conceptos de retención de la renta"
-        description="Del Catálogo ATS. Solo los conceptos de residentes con porcentaje fijo se pueden usar en una retención; los demás muestran por qué están fuera de alcance."
-        summary={summary("withholding-income-concept")}
-        canManage={canManage}
-        usage={none}
-        filterable
-      />
-      <CatalogSection
-        catalogType="withholding-iva-code"
-        title="Códigos de retención del IVA"
-        description="Habilita los códigos de retención del IVA que usa tu empresa."
-        summary={summary("withholding-iva-code")}
-        canManage={canManage}
-        usage={none}
-      />
-      <CatalogSection
-        catalogType="withholding-tax"
-        title="Impuestos a retener"
-        description="Renta e IVA se retienen; el ISD queda pendiente de evidencia."
-        summary={summary("withholding-tax")}
-        canManage={canManage}
-        usage={none}
-      />
-      <CatalogSection
-        catalogType="support-document-type"
-        title="Tipos de documento sustento"
-        description="Del Catálogo ATS. Una retención acepta facturas, notas de venta y liquidaciones de compra."
-        summary={summary("support-document-type")}
-        canManage={canManage}
-        usage={none}
-        filterable
-      />
-      <CatalogSection
-        catalogType="support-code"
-        title="Sustentos tributarios"
-        description="Del Catálogo ATS. Cada tipo de documento admite sus sustentos."
-        summary={summary("support-code")}
-        canManage={canManage}
-        usage={none}
-        filterable
-      />
-      <section aria-labelledby="mas-datos" className="flex flex-col gap-2">
-        <h2 id="mas-datos" className="text-xl font-semibold">
-          Más datos oficiales
-        </h2>
-        <ReadOnlyGroup title="Tipos de identificación">
-          <IdentificationTypes />
-        </ReadOnlyGroup>
-        <ReadOnlyGroup title="Consumidor final">
-          <ConsumerFinalPolicy />
-        </ReadOnlyGroup>
-        <ReadOnlyGroup title="Casos especiales">
-          <SpecialCases />
-        </ReadOnlyGroup>
-        <ReadOnlyGroup title="Esquemas XSD">
-          <Schemas />
-        </ReadOnlyGroup>
-      </section>
+      <SettingsSections>
+        <CatalogSection
+          catalogType="iva-rate"
+          title="Tarifas de IVA"
+          description="Las tarifas habilitadas son las que la empresa podrá asignar a sus productos."
+          summary={summary("iva-rate")}
+          canManage={canManage}
+          usage={usageOf("iva-rate")}
+        />
+        <CatalogSection
+          catalogType="payment-method"
+          title="Formas de pago"
+          description="Las formas de pago habilitadas son las que se ofrecerán al emitir."
+          summary={summary("payment-method")}
+          canManage={canManage}
+          usage={none}
+        />
+        <CatalogSection
+          catalogType="ice-rate"
+          title="ICE"
+          description="Habilita solo los códigos de ICE que tu empresa factura. La ficha no publica sus tarifas vigentes."
+          summary={summary("ice-rate")}
+          canManage={canManage}
+          usage={usageOf("ice-rate")}
+          filterable
+        />
+        <CatalogSection
+          catalogType="irbpnr-rate"
+          title="IRBPNR"
+          description="Impuesto redimible a las botellas plásticas no retornables."
+          summary={summary("irbpnr-rate")}
+          canManage={canManage}
+          usage={usageOf("irbpnr-rate")}
+        />
+        <CatalogSection
+          catalogType="withholding-income-concept"
+          title="Conceptos de retención de la renta"
+          description="Del Catálogo ATS. Solo los conceptos de residentes con porcentaje fijo se pueden usar en una retención; los demás muestran por qué están fuera de alcance."
+          summary={summary("withholding-income-concept")}
+          canManage={canManage}
+          usage={none}
+          filterable
+        />
+        <CatalogSection
+          catalogType="withholding-iva-code"
+          title="Códigos de retención del IVA"
+          description="Habilita los códigos de retención del IVA que usa tu empresa."
+          summary={summary("withholding-iva-code")}
+          canManage={canManage}
+          usage={none}
+        />
+        <CatalogSection
+          catalogType="withholding-tax"
+          title="Impuestos a retener"
+          description="Renta e IVA se retienen; el ISD queda pendiente de evidencia."
+          summary={summary("withholding-tax")}
+          canManage={canManage}
+          usage={none}
+        />
+        <CatalogSection
+          catalogType="support-document-type"
+          title="Tipos de documento sustento"
+          description="Del Catálogo ATS. Una retención acepta facturas, notas de venta y liquidaciones de compra."
+          summary={summary("support-document-type")}
+          canManage={canManage}
+          usage={none}
+          filterable
+        />
+        <CatalogSection
+          catalogType="support-code"
+          title="Sustentos tributarios"
+          description="Del Catálogo ATS. Cada tipo de documento admite sus sustentos."
+          summary={summary("support-code")}
+          canManage={canManage}
+          usage={none}
+          filterable
+        />
+        <SettingsSection
+          id="mas-datos"
+          title="Más datos oficiales"
+          description="De solo lectura: tipos de identificación, consumidor final, casos especiales y esquemas XSD."
+        >
+          <ReadOnlyGroup title="Tipos de identificación">
+            <IdentificationTypes />
+          </ReadOnlyGroup>
+          <ReadOnlyGroup title="Consumidor final">
+            <ConsumerFinalPolicy />
+          </ReadOnlyGroup>
+          <ReadOnlyGroup title="Casos especiales">
+            <SpecialCases />
+          </ReadOnlyGroup>
+          <ReadOnlyGroup title="Esquemas XSD">
+            <Schemas />
+          </ReadOnlyGroup>
+        </SettingsSection>
+      </SettingsSections>
     </section>
   );
 }

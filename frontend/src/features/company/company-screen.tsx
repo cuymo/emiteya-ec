@@ -13,7 +13,7 @@ import {
   type UpdateTaxpayerInput,
 } from "@facturador/contracts";
 import { Lock } from "lucide-react";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { useState, type ComponentProps } from "react";
 import { Controller, useForm, useWatch, type DefaultValues } from "react-hook-form";
 import { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
@@ -25,6 +25,7 @@ import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SettingsSection, SettingsSections } from "@/components/layout/settings-section";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { useTaxpayer, useUpdateTaxpayer } from "./company-api";
@@ -151,33 +152,6 @@ function toInput(values: FormOutput, expectedVersion: number | null): UpdateTaxp
   };
 }
 
-function Section({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string;
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <section
-      aria-labelledby={id}
-      className="grid gap-4 py-8 first:pt-0 @settings-split:grid-cols-3 @settings-split:gap-8"
-    >
-      <div className="flex flex-col gap-1">
-        <h2 id={id} className="text-base font-semibold">
-          {title}
-        </h2>
-        <p className="text-sm text-foreground-muted">{description}</p>
-      </div>
-      <div className="flex min-w-0 flex-col gap-4 @settings-split:col-span-2">{children}</div>
-    </section>
-  );
-}
-
 function Checkbox({
   id,
   label,
@@ -239,10 +213,10 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
       noValidate
       aria-label="Datos de la empresa"
       onSubmit={form.handleSubmit((values) => save.mutate(toInput(values, baseVersion)))}
-      className="@container flex flex-col gap-6"
+      className="flex flex-col gap-6"
     >
-      <div className="flex flex-col divide-y divide-border">
-        <Section
+      <SettingsSections>
+        <SettingsSection
           id="identificacion"
           title="Identificación"
           description="Con estos datos y este logo la empresa aparece en sus comprobantes."
@@ -301,9 +275,9 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
               {...form.register("tradeName")}
             />
           </FormField>
-        </Section>
+        </SettingsSection>
 
-        <Section
+        <SettingsSection
           id="contacto"
           title="Dirección y contacto"
           description="La dirección matriz va en cada comprobante; el teléfono y el correo, si los registras."
@@ -337,9 +311,9 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
               />
             </FormField>
           </div>
-        </Section>
+        </SettingsSection>
 
-        <Section
+        <SettingsSection
           id="atributos"
           title="Atributos tributarios"
           description="Lo que declaras aquí se imprime en los comprobantes y define cómo se emiten."
@@ -436,9 +410,9 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
               )}
             />
           </div>
-        </Section>
+        </SettingsSection>
 
-        <Section
+        <SettingsSection
           id="proveedor"
           title="Proveedor del sistema"
           description="Solo si un tercero te provee este sistema de facturación."
@@ -461,8 +435,8 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
               className="max-w-xs"
             />
           </FormField>
-        </Section>
-      </div>
+        </SettingsSection>
+      </SettingsSections>
 
       {conflict && (
         <div

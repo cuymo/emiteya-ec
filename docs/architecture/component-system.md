@@ -92,9 +92,8 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     on its root, also in its loading, error and no-permission states:
     `data-page-width="form"` (Mi cuenta) or `data-page-width="reading"` (the readiness screen).
     The Configuración sections live under their tabs, which take the whole column: their screens
-    declare `data-panel-width="form"` (Establecimientos, Firma electrónica and Catálogos
-    fiscales) or `data-panel-width="reading"` (Ambiente), and the tab panel narrows to
-    it. Usuarios and Portabilidad keep the full width because they hold data tables.
+    declare `data-panel-width="form"` (Establecimientos and Firma electrónica) or
+    `data-panel-width="reading"` (Ambiente), and the tab panel narrows to it. Usuarios and Portabilidad keep the full width because they hold data tables.
   - Establecimientos also adds `data-panel-align="center"`: with no visible title (the tab names
     it; its `h1` is only for screen readers), its list is centered under the tabs, and creating an
     establishment is a dashed card that closes the list instead of a header button. Each
@@ -107,11 +106,13 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     holds the certificate data, then the expiry notice, and a footer with «Guardar aviso»
     (outline, always enabled: with no change it says so instead of sending) and «Reemplazar
     firma» (primary).
-  - Empresa uses the settings layout and the full width: the tab already names the screen, so its
-    `h1` is only for screen readers, and each section puts its title and a one-line description
-    to the left of its fields from the `--container-settings-split` container (48rem, variant
-    `@settings-split:`), with a divider between sections and the save action at the end. The logo
-    control lives in Identificación and applies at once, without the save action.
+  - Empresa and Catálogos fiscales use the settings layout and the full width: the tab already
+    names the screen, so their `h1` is only for screen readers. `SettingsSections` and
+    `SettingsSection` (`components/layout/settings-section.tsx`) put each section's title and a
+    one-line description (and, in Catálogos, its source) to the left of its content from the
+    `--container-settings-split` container (48rem, variant `@settings-split:`), with a divider
+    between sections. Empresa ends with its save action; its logo control lives in
+    Identificación and applies at once, without the save action.
   - Screens never set their own `max-w-*`, which would leave them aligned to the left inside the
     column.
 
