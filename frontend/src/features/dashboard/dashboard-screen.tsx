@@ -5,9 +5,9 @@
 // vigente:
 // - si la empresa todavía no puede emitir, primero sus requisitos;
 // - cuatro indicadores: ventas autorizadas, facturas, lo que requiere atención y borradores;
-// - las ventas de los seis últimos meses, en barras SVG con una tabla para la asistencia;
-// - los comprobantes del mes por tipo, los mejores clientes, los productos más vendidos y el estado
-//   del sistema (firma, ambiente y existencias);
+// - las ventas de los seis últimos meses y los rankings de clientes y productos, con los charts de
+//   shadcn/ui (`dashboard-charts.tsx`), cada uno con su tabla para la asistencia;
+// - los comprobantes del mes por tipo y el estado del sistema (firma, ambiente y existencias);
 // - los últimos comprobantes, enlazados a su detalle.
 // Las ventas son las facturas autorizadas; los importes son los del servidor, sin cálculos aquí.
 "use client";
@@ -26,10 +26,10 @@ import {
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useSession } from "@/components/session";
-import { Avatar, AvatarFallback, initials } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,25 +59,19 @@ import { ReadinessChecks } from "@/features/home/readiness-screen";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { useCertificateValidity } from "@/features/signing/signing-api";
 import { useDashboard } from "./dashboard-api";
+import type { RankingRow } from "./dashboard-charts";
+import { monthName } from "./dashboard-format";
+import { RankingTable, SalesTable } from "./dashboard-tables";
 
-const MONTH = new Intl.DateTimeFormat("es-EC", { month: "long", timeZone: "UTC" });
-const MONTH_SHORT = new Intl.DateTimeFormat("es-EC", { month: "short", timeZone: "UTC" });
-const COMPACT = new Intl.NumberFormat("es-EC", { notation: "compact", maximumFractionDigits: 1 });
-
-/** «2026-09» → «septiembre». */
-const monthName = (month: string, format = MONTH) =>
-  format.format(new Date(`${month}-01T12:00:00Z`)).replace(".", "");
-
-/** Tonos de las iniciales, de los tokens del tema: el mismo nombre, el mismo tono. */
-const AVATAR_TONES = [
-  "bg-primary/10 text-primary",
-  "bg-success/10 text-success",
-  "bg-info/10 text-info",
-  "bg-warning/15 text-foreground",
-  "bg-danger/10 text-danger",
-];
-const avatarTone = (name: string) =>
-  AVATAR_TONES[[...name].reduce((sum, char) => sum + char.charCodeAt(0), 0) % AVATAR_TONES.length];
+// Los gráficos traen Recharts: se cargan aparte, después de los indicadores, y solo en el cliente.
+const SalesChart = dynamic(() => import("./dashboard-charts").then((module) => module.SalesChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-56 w-full" />,
+});
+const RankingChart = dynamic(
+  () => import("./dashboard-charts").then((module) => module.RankingChart),
+  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+);
 
 /** Un indicador: su cifra, una línea de contexto y, si aplica, adónde ir. */
 function Metric({
@@ -118,75 +112,6 @@ function Metric({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-/** Ventas autorizadas de los seis últimos meses: barras SVG y su tabla para la asistencia. */
-function SalesChart({ monthly }: { monthly: DashboardView["monthly"] }) {
-  // Solo para la altura de las barras: los importes se muestran como los da el servidor.
-  const values = monthly.map((month) => Number(month.authorizedTotal));
-  const max = Math.max(...values, 1);
-  const width = 100 / monthly.length;
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-6 gap-2 text-center text-xs text-foreground-muted tabular-nums">
-        {monthly.map((month, index) => (
-          <span key={month.month} aria-hidden="true">
-            {values[index]! > 0 ? COMPACT.format(values[index]!) : "—"}
-          </span>
-        ))}
-      </div>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 100 50"
-        preserveAspectRatio="none"
-        className="h-40 w-full"
-      >
-        {monthly.map((month, index) => {
-          const height = Math.max((values[index]! / max) * 48, values[index]! > 0 ? 1 : 0.4);
-          const current = index === monthly.length - 1;
-          return (
-            <rect
-              key={month.month}
-              x={index * width + width * 0.18}
-              y={50 - height}
-              width={width * 0.64}
-              height={height}
-              rx={0.8}
-              className={current ? "fill-primary" : "fill-primary/35"}
-            >
-              <title>{`${monthName(month.month)}: ${formatUsd(month.authorizedTotal)}`}</title>
-            </rect>
-          );
-        })}
-      </svg>
-      <div className="grid grid-cols-6 gap-2 text-center text-xs text-foreground-muted capitalize">
-        {monthly.map((month) => (
-          <span key={month.month} aria-hidden="true">
-            {monthName(month.month, MONTH_SHORT)}
-          </span>
-        ))}
-      </div>
-      <table className="sr-only">
-        <caption>Ventas autorizadas por mes</caption>
-        <thead>
-          <tr>
-            <th scope="col">Mes</th>
-            <th scope="col">Facturas autorizadas</th>
-            <th scope="col">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {monthly.map((month) => (
-            <tr key={month.month}>
-              <th scope="row">{monthName(month.month)}</th>
-              <td>{month.authorizedCount}</td>
-              <td>{formatUsd(month.authorizedTotal)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -254,6 +179,20 @@ function Dashboard({ data }: { data: DashboardView }) {
   const environment = ENVIRONMENT_LABELS[data.environment];
   const readiness = status.data?.readiness;
   const certificate = validity.data;
+  const customerRows: RankingRow[] = data.topCustomers.map((customer) => ({
+    key: customer.identification,
+    name: customer.name,
+    detail: `${customer.identification} · ${
+      customer.invoices === 1 ? "1 factura" : `${customer.invoices} facturas`
+    }`,
+    value: customer.authorizedTotal,
+  }));
+  const productRows: RankingRow[] = data.topProducts.map((product) => ({
+    key: `${product.mainCode ?? ""}-${product.description}`,
+    name: product.description,
+    detail: `${product.mainCode ? `${product.mainCode} · ` : ""}${formatDecimal(product.quantity)} unidades`,
+    value: product.total,
+  }));
 
   const certificateRow = !certificate
     ? { value: "Consultando…", tone: "neutral" as const }
@@ -372,6 +311,7 @@ function Dashboard({ data }: { data: DashboardView }) {
           </CardHeader>
           <CardContent>
             <SalesChart monthly={data.monthly} />
+            <SalesTable monthly={data.monthly} />
           </CardContent>
         </Card>
 
@@ -413,35 +353,21 @@ function Dashboard({ data }: { data: DashboardView }) {
             <CardDescription>Por lo facturado y autorizado en el mes.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ListOrEmpty
-              empty={
-                data.topCustomers.length === 0 ? "Aún no hay facturas autorizadas este mes." : null
-              }
-            >
-              {data.topCustomers.map((customer) => (
-                <li key={customer.identification} className="flex items-center gap-3 py-2.5">
-                  <Avatar size="lg">
-                    <AvatarFallback
-                      className={cn("text-xs font-semibold", avatarTone(customer.name))}
-                    >
-                      {initials(customer.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-sm font-medium" title={customer.name}>
-                      {customer.name}
-                    </span>
-                    <span className="text-xs text-foreground-muted tabular-nums">
-                      {customer.identification} ·{" "}
-                      {customer.invoices === 1 ? "1 factura" : `${customer.invoices} facturas`}
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium tabular-nums">
-                    {formatUsd(customer.authorizedTotal)}
-                  </span>
-                </li>
-              ))}
-            </ListOrEmpty>
+            {data.topCustomers.length === 0 ? (
+              <p className="text-sm text-foreground-muted">
+                Aún no hay facturas autorizadas este mes.
+              </p>
+            ) : (
+              <div data-slot="ranking-chart">
+                <RankingChart rows={customerRows} />
+                <RankingTable
+                  rows={customerRows}
+                  caption="Mejores clientes del mes"
+                  nameHeader="Cliente"
+                  detailHeader="Identificación y facturas"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -451,37 +377,21 @@ function Dashboard({ data }: { data: DashboardView }) {
             <CardDescription>Por subtotal facturado y autorizado en el mes.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ListOrEmpty
-              empty={
-                data.topProducts.length === 0 ? "Aún no hay facturas autorizadas este mes." : null
-              }
-            >
-              {data.topProducts.map((product, index) => (
-                <li
-                  key={`${product.mainCode ?? ""}-${product.description}`}
-                  className="flex items-center gap-3 py-2.5"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-foreground-muted tabular-nums"
-                  >
-                    {index + 1}
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-sm font-medium" title={product.description}>
-                      {product.description}
-                    </span>
-                    <span className="text-xs text-foreground-muted tabular-nums">
-                      {product.mainCode ? `${product.mainCode} · ` : ""}
-                      {formatDecimal(product.quantity)} unidades
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium tabular-nums">
-                    {formatUsd(product.total)}
-                  </span>
-                </li>
-              ))}
-            </ListOrEmpty>
+            {data.topProducts.length === 0 ? (
+              <p className="text-sm text-foreground-muted">
+                Aún no hay facturas autorizadas este mes.
+              </p>
+            ) : (
+              <div data-slot="ranking-chart">
+                <RankingChart rows={productRows} />
+                <RankingTable
+                  rows={productRows}
+                  caption="Productos más vendidos del mes"
+                  nameHeader="Producto"
+                  detailHeader="Código y unidades"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 

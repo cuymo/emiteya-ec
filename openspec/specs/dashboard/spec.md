@@ -22,7 +22,7 @@ El sistema SHALL calcular en el servidor un resumen de la empresa de la sesión 
 - **THEN** ninguna ve comprobantes, clientes ni productos de la otra
 
 ### Requirement: Tablero de Inicio
-Inicio SHALL mostrar el tablero a quien puede consultar facturas, y solo la preparación para emitir a cualquier otro rol. Mientras la empresa no pueda emitir, el tablero SHALL mostrar primero sus requisitos pendientes. Después SHALL mostrar cuatro indicadores (ventas autorizadas del mes con lo del mes anterior, facturas del mes, lo que requiere atención y borradores pendientes), las ventas autorizadas de los seis últimos meses en barras con una tabla equivalente para las tecnologías de asistencia, los comprobantes del mes por tipo, los mejores clientes, los productos más vendidos, el estado del sistema (firma electrónica, ambiente, productos agotados y comprobantes con atención) y los últimos comprobantes enlazados a su detalle. Sin comprobantes, SHALL invitar a emitir el primero. Un error al cargar SHALL poder reintentarse. El tablero no SHALL calcular importes en el navegador.
+Inicio SHALL mostrar el tablero a quien puede consultar facturas, y solo la preparación para emitir a cualquier otro rol. Mientras la empresa no pueda emitir, el tablero SHALL mostrar primero sus requisitos pendientes. Después SHALL mostrar cuatro indicadores (ventas autorizadas del mes con lo del mes anterior, facturas del mes, lo que requiere atención y borradores pendientes), las ventas autorizadas de los seis últimos meses en barras con una tabla equivalente para las tecnologías de asistencia, los comprobantes del mes por tipo, los mejores clientes y los productos más vendidos en barras horizontales con su importe y una tabla equivalente, el estado del sistema (firma electrónica, ambiente, productos agotados y comprobantes con atención) y los últimos comprobantes enlazados a su detalle. Sin comprobantes, SHALL invitar a emitir el primero. Un error al cargar SHALL poder reintentarse. El tablero no SHALL calcular importes en el navegador.
 
 #### Scenario: Empresa con actividad
 - **WHEN** un operador abre Inicio en una empresa que ya emite
@@ -36,6 +36,6 @@ Inicio SHALL mostrar el tablero a quien puede consultar facturas, y solo la prep
 - **WHEN** un usuario abre Inicio en una empresa que todavía no emite
 - **THEN** el tablero dice que aún no hay comprobantes en su ambiente y ofrece crear una factura
 
-#### Scenario: Gráfico accesible
-- **WHEN** un usuario de lector de pantalla llega a las ventas de los seis meses
-- **THEN** encuentra una tabla con cada mes, sus facturas autorizadas y su total
+#### Scenario: Gráficos accesibles
+- **WHEN** un usuario de lector de pantalla llega a las ventas de los seis meses o a los mejores clientes
+- **THEN** encuentra una tabla con cada mes, sus facturas autorizadas y su total, o con cada cliente, su identificación, sus facturas y lo facturado

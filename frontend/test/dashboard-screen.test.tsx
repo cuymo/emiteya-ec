@@ -1,7 +1,7 @@
 // Tablero de Inicio: indicadores, ventas de los seis últimos meses con su tabla para la asistencia,
 // comprobantes por tipo, mejores clientes y productos, estado del sistema, últimos comprobantes,
 // requisitos pendientes, vacío y error. El servidor está simulado.
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
@@ -130,7 +130,8 @@ const card = (title: string) =>
     .closest("[data-slot=card]") as HTMLElement;
 
 /** El tablero con datos, no su esqueleto, que también lleva el título. */
-const loaded = () => screen.findByText("Ventas autorizadas de octubre");
+const loaded = () =>
+  screen.findByText("Ventas autorizadas de octubre", undefined, { timeout: 5_000 });
 
 beforeEach(() => {
   navigation.pathname = "/";
@@ -165,7 +166,8 @@ describe("tablero de Inicio", () => {
 
   it("las ventas de los seis meses tienen su tabla para la asistencia", async () => {
     renderHome();
-    const table = await screen.findByRole("table", { name: "Ventas autorizadas por mes" });
+    await loaded();
+    const table = screen.getByRole("table", { name: "Ventas autorizadas por mes" });
     const rows = within(table).getAllByRole("row");
     expect(rows).toHaveLength(7);
     expect(rows.at(-1)!.textContent).toContain("octubre");
@@ -186,6 +188,25 @@ describe("tablero de Inicio", () => {
     expect(await within(system).findByText("Vigente · 257 días")).toBeDefined();
     expect(within(system).getByRole("link", { name: "1" }).getAttribute("href")).toBe(
       "/inventario",
+    );
+  });
+
+  it("los rankings de clientes y productos son gráficos con su tabla para la asistencia", async () => {
+    renderHome();
+    await loaded();
+    // Los gráficos llegan aparte; las tablas, con la pantalla.
+    await waitFor(() =>
+      expect(document.querySelectorAll("[data-slot=ranking-chart] [data-slot=chart]")).toHaveLength(
+        2,
+      ),
+    );
+    const customers = screen.getByRole("table", { name: "Mejores clientes del mes" });
+    const [header, first] = within(customers).getAllByRole("row");
+    expect(header!.textContent).toBe("ClienteIdentificación y facturasFacturado");
+    expect(first!.textContent).toBe("ANA JARAMILLO ORTIZ0929235760 · 1 facturaUSD 3.851,29");
+    const products = screen.getByRole("table", { name: "Productos más vendidos del mes" });
+    expect(within(products).getAllByRole("row")[1]!.textContent).toBe(
+      "Taladro percutor inalámbrico 18 VTAL-18V · 27 unidadesUSD 3.212,00",
     );
   });
 

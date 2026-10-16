@@ -100,6 +100,9 @@
   --warning-foreground: oklch(0.21 0 0);
   --info: oklch(0.54 0.13 240);
   --info-foreground: oklch(0.99 0 0);
+  /* Gráficos: una sola serie por gráfico, en el tono del primario. Validado contra la superficie
+     (contraste >= 3:1 y banda de luminosidad de cada modo). */
+  --chart-1: oklch(0.5 0.16 255);
 
   /* Barra lateral (plantilla), con el primario de EmiteYa. */
   --sidebar: oklch(0.985 0 0);
@@ -159,6 +162,7 @@
   --warning-foreground: oklch(0.16 0.01 250);
   --info: oklch(0.72 0.12 240);
   --info-foreground: oklch(0.16 0.01 250);
+  --chart-1: oklch(0.62 0.15 255);
 
   --sidebar: oklch(0.2 0 0);
   --sidebar-foreground: oklch(0.93 0 0);
@@ -200,6 +204,7 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-chart-1: var(--chart-1);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
