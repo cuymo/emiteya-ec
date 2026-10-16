@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { Suspense, type ReactNode } from "react";
 import { AppShell, ShellSkeleton } from "@/components/shell/app-shell";
 import { SessionGate } from "@/components/session";
-import { EnvironmentIndicator } from "@/features/company/environment-notice";
+import { EnvironmentBanner } from "@/features/company/environment-notice";
 import { ShellCompanyContext } from "@/features/company/shell-company-context";
 import { CertificateNotice } from "@/features/signing/certificate-notice";
 import { SIDEBAR_COOKIE_NAME, sidebarDefaultOpen } from "@/lib/navigation/sidebar-state";
@@ -18,7 +18,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
         <AppShell
           sidebarDefaultOpen={open}
           company={<ShellCompanyContext />}
-          environment={<EnvironmentIndicator />}
+          environment={<EnvironmentBanner />}
           notices={<CertificateNotice />}
         >
           {children}

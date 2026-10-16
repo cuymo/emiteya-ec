@@ -35,9 +35,9 @@ while the condition holds.
 
 - **`warning` and `danger`:** conditions that ask for an action, such as a signature about to expire
   or expired.
-- **The environment has no strip** (`productize-invoice-editor-and-composition-foundation`, design
-  D21). The compact indicator in the topbar is its persistent notice, at every width and not
-  dismissible, and explains Pruebas in a popover. The fiscal warning is repeated where it matters:
+- **The environment has its own strip** (`EnvironmentBanner`, owner decision on the header,
+  2026-10-16): full width above the topbar row, inside the sticky header, in Pruebas or when the
+  environment cannot be confirmed; none in Producción. The fiscal warning is repeated where it matters:
   `EmissionEnvironmentNotice` (`frontend/src/features/company/`) sits next to «Emitir» and inside the
   emission confirmation of every editor that emits, with icon and text. In Pruebas it says that the
   document will have no tax validity; when the environment cannot be confirmed it says so; in

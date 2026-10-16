@@ -76,45 +76,34 @@ asistencia y al señalarlo.
 - **THEN** solo ve el nombre de su empresa, y el shell no revela el nombre ni la existencia de ninguna otra empresa de la instalación
 
 ### Requirement: Ambiente fiscal visible en el shell
-El shell SHALL mostrar el ambiente fiscal vigente en todas las pantallas autenticadas y en todos sus
-estados (barra expandida o colapsada, panel móvil), con un indicador compacto en la barra superior
-que siga visible al desplazar el contenido, nunca solo color o icono. En Pruebas, el indicador SHALL
-ser el aviso persistente del ambiente: SHALL decir «Pruebas» con un icono de advertencia, no SHALL
-poder cerrarse, su nombre accesible SHALL decir que los comprobantes no tienen validez tributaria, y
-SHALL explicarlo al enfocarlo, señalarlo o tocarlo. El shell no SHALL mostrar además un aviso de
-ancho completo por el ambiente. Producción SHALL presentarse como contexto y no como resultado de
-una validación: su indicador no SHALL comunicar que todo está correcto. Si el ambiente no puede
-confirmarse, el indicador SHALL decir que no está confirmado y no SHALL presentarse como Producción.
+Mientras la empresa esté en Pruebas o su ambiente no pueda confirmarse, el shell SHALL mostrar en
+todas las pantallas autenticadas y en todos sus estados (barra expandida o colapsada, panel móvil)
+una franja de ancho completo encima de la barra superior, dentro de su bloque fijo, que siga visible
+al desplazar el contenido, con icono y texto, nunca solo color o icono, y que no pueda cerrarse. En
+Pruebas SHALL decir que los comprobantes no tienen validez tributaria y, a quien puede cambiar el
+ambiente, ofrecer ir a Configuración › Ambiente. Si el ambiente no puede confirmarse, SHALL decirlo
+y no SHALL presentarse como Producción. En Producción, el ambiente real, el shell no SHALL mostrar
+franja ni indicador del ambiente.
 
 #### Scenario: Pruebas con la barra colapsada
 - **WHEN** un operador de una empresa en Pruebas colapsa la barra lateral y navega a otra pantalla
-- **THEN** sigue viendo en la barra superior el indicador «Pruebas» con su icono de advertencia, y no puede cerrarlo
-- **AND** el nombre accesible del indicador dice que los comprobantes no tienen validez tributaria
+- **THEN** sigue viendo encima de la barra superior la franja que dice que está en Pruebas y que los comprobantes no tienen validez tributaria, y no puede cerrarla
 
 #### Scenario: Pruebas en móvil
-- **WHEN** un operador de una empresa en Pruebas abre y cierra la navegación en un teléfono
-- **THEN** la barra superior sigue mostrando el texto «Pruebas»
-- **AND** al tocar el indicador lee que los comprobantes no tienen validez tributaria
+- **WHEN** un operador de una empresa en Pruebas abre y cierra la navegación en un teléfono, o desplaza una pantalla larga
+- **THEN** sigue viendo la franja de Pruebas encima de la barra superior
 
-#### Scenario: Sin aviso de ancho completo
-- **WHEN** un operador navega por una empresa en Pruebas
-- **THEN** no ve una franja de ancho completo por el ambiente, y el indicador de la barra superior sigue diciendo «Pruebas»
+#### Scenario: Administrador en Pruebas
+- **WHEN** un administrador navega por una empresa en Pruebas
+- **THEN** la franja le ofrece ir a Configuración › Ambiente, y a un operador no se lo ofrece
 
-#### Scenario: Producción sin depender del color
-- **WHEN** un usuario navega por una empresa en Producción, en escritorio o en móvil
-- **THEN** ve un indicador con el texto «Producción» y un icono
-
-#### Scenario: Ambiente visible al desplazar en un teléfono
-- **WHEN** un usuario de una empresa en Producción o en Pruebas desplaza el contenido de una pantalla larga en un teléfono
-- **THEN** la barra superior sigue mostrando el texto del ambiente vigente
-
-#### Scenario: Producción no es un resultado
+#### Scenario: Producción
 - **WHEN** un usuario navega por una empresa en Producción
-- **THEN** el indicador de Producción no usa la presentación de éxito ni de validación correcta, porque el ambiente es contexto y no se comprueba ninguna conexión con el SRI
+- **THEN** no ve franja ni indicador del ambiente en el shell
 
 #### Scenario: Ambiente desconocido
 - **WHEN** el ambiente de la empresa no puede confirmarse
-- **THEN** el indicador de la barra superior dice que el ambiente no está confirmado, con un icono de advertencia, y no muestra «Producción»
+- **THEN** la franja dice que el ambiente no está confirmado, con un icono de advertencia, y no muestra «Producción»
 
 ### Requirement: Navegación según permisos
 La navegación SHALL agrupar los destinos en Inicio, Ventas, Compras, Logística, Documentos,
@@ -443,12 +432,12 @@ La barra superior SHALL ocupar una sola línea a todas las anchuras soportadas, 
 expandida o colapsada, sin que ningún texto o control se parta en varias líneas, se salga de la
 barra ni se monte sobre otro. A la izquierda SHALL reunir el botón de navegación y, desde 768 px, el
 título y las migas de la pantalla; a la derecha, el contexto global: el acceso a la paleta de
-comandos, el ambiente fiscal, el contexto de la empresa y el menú de cuenta. No SHALL ofrecer
+comandos, el contexto de la empresa y el menú de cuenta; el aviso del ambiente va encima, en su franja. No SHALL ofrecer
 controles que el producto no respalda, como notificaciones o ayuda.
 
 #### Scenario: Pantalla interna en una tableta
 - **WHEN** un administrador abre Empresa, dentro de Configuración, en una ventana de 768 px de ancho
-- **THEN** la barra superior muestra en una sola línea, sin solaparse, el título con sus migas, el acceso a la paleta, el ambiente, la empresa y la cuenta
+- **THEN** la barra superior muestra en una sola línea, sin solaparse, el título con sus migas, el acceso a la paleta, la empresa y la cuenta
 
 #### Scenario: Editor en un portátil
 - **WHEN** un operador abre la pantalla de nueva factura en una ventana de 1024 o 1280 px, con la barra lateral expandida o colapsada
@@ -456,7 +445,7 @@ controles que el producto no respalda, como notificaciones o ayuda.
 
 #### Scenario: Teléfono
 - **WHEN** un usuario abre cualquier pantalla autenticada en un teléfono
-- **THEN** la barra superior muestra en una sola línea el botón de navegación, el acceso a la paleta, el ambiente, el contexto de la empresa y la cuenta
+- **THEN** la barra superior muestra en una sola línea el botón de navegación, el acceso a la paleta, el contexto de la empresa y la cuenta
 
 ### Requirement: Jerarquía de acciones de la pantalla
 Cada pantalla SHALL presentar como mucho una acción principal destacada a la vez. Una acción que en

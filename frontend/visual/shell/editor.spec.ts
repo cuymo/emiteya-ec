@@ -239,7 +239,7 @@ test.describe("barra superior en una línea (D1, tarea 8.3)", () => {
     test(`${width} px: cada pieza en una sola línea y sin solaparse`, async ({ browser }) => {
       const { page, recorder } = await open(browser, READY, { viewport: { width, height } });
       const boxes = await page.getByRole("banner").evaluate((header) =>
-        [...header.querySelectorAll(":scope > [data-slot^=topbar-] > *")]
+        [...header.querySelectorAll("[data-slot=topbar-row] > [data-slot^=topbar-] > *")]
           .filter((element) => element.getClientRects().length > 0)
           .map((element) => {
             const rect = element.getBoundingClientRect();

@@ -7,7 +7,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 import { ADMIN_ME, OPERATOR_ME, errorBody, mockApi, navigation } from "./harness";
-import { TEST_NOTICE, api, renderShell } from "./shell-harness";
+import { api, renderShell } from "./shell-harness";
 import { resetViewport, setViewportWidth } from "./viewport";
 
 const sidebar = () => screen.getByRole("complementary", { name: "Barra lateral" });
@@ -279,54 +279,51 @@ describe("contexto de la empresa", () => {
 });
 
 describe("ambiente fiscal visible", () => {
-  const indicator = (name: string | RegExp) => screen.findByRole("button", { name });
+  const strip = () => screen.findByText(/Estás en el ambiente de Pruebas/);
 
-  it("el indicador de Pruebas sigue visible con la barra colapsada, sin forma de cerrarlo", async () => {
+  it("la franja de Pruebas sigue visible con la barra colapsada, sin forma de cerrarla", async () => {
     const user = userEvent.setup();
     setViewportWidth(1280);
     api();
     renderShell();
-    const pruebas = await indicator(TEST_NOTICE);
-    expect(pruebas.textContent).toBe("Pruebas");
+    await strip();
     await user.click(screen.getByRole("button", { name: "Contraer barra lateral" }));
-    expect(screen.getByRole("button", { name: TEST_NOTICE })).toBeDefined();
+    expect(screen.getByText(/Estás en el ambiente de Pruebas/)).toBeDefined();
     expect(screen.queryByRole("button", { name: /cerrar/i })).toBeNull();
   });
 
-  it("en móvil el indicador sigue visible al abrir y cerrar la navegación, y al tocarlo explica", async () => {
+  it("en móvil la franja sigue visible al abrir y cerrar la navegación", async () => {
     const user = userEvent.setup();
     setViewportWidth(390);
     api();
     renderShell();
-    await indicator(TEST_NOTICE);
+    await strip();
     await user.click(screen.getByRole("button", { name: "Abrir navegación" }));
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    await user.click(screen.getByRole("button", { name: TEST_NOTICE }));
-    const explanation = await screen.findByRole("dialog", { name: "Ambiente de Pruebas" });
-    expect(explanation.textContent).toContain("no tienen validez tributaria");
+    expect(screen.getByText(/Estás en el ambiente de Pruebas/)).toBeDefined();
   });
 
-  it("sin franja de ancho completo: el ambiente solo vive en la barra superior", async () => {
+  it("la franja va dentro del bloque fijo de la barra superior, encima de su fila", async () => {
     api();
     renderShell();
-    await indicator(TEST_NOTICE);
-    expect(screen.queryByText(/Ambiente de Pruebas: los comprobantes/)).toBeNull();
-    expect(document.querySelector("header [data-slot=environment-indicator]")).not.toBeNull();
+    await strip();
+    const header = screen.getByRole("banner");
+    expect(header.firstElementChild?.getAttribute("data-slot")).toBe("environment-banner");
+    expect(
+      header.querySelector("[data-slot=topbar-row] [data-slot=environment-banner]"),
+    ).toBeNull();
   });
 
-  it("Producción se indica con texto e icono", async () => {
+  it("Producción no lleva franja", async () => {
     api({ environment: "PRODUCTION" });
     renderShell();
-    const badge = (await screen.findByText("Producción")).closest(
-      "[data-slot=environment-indicator]",
-    )!;
-    expect(badge.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
-    expect(badge.textContent).toBe("Ambiente de Producción");
-    expect(screen.queryByRole("button", { name: TEST_NOTICE })).toBeNull();
+    await screen.findByText("contenido");
+    await waitFor(() => expect(screen.queryByText(/Pruebas/)).toBeNull());
+    expect(document.querySelector("[data-slot=environment-banner]")).toBeNull();
   });
 
-  it("el aviso de la firma convive con el indicador de Pruebas", async () => {
+  it("el aviso de la firma convive con la franja de Pruebas", async () => {
     api({
       validity: {
         state: "EXPIRING",
@@ -336,9 +333,9 @@ describe("ambiente fiscal visible", () => {
       },
     });
     renderShell();
-    await indicator(TEST_NOTICE);
+    await strip();
     expect(await screen.findByText(/La firma electrónica vence el/)).toBeDefined();
-    expect(screen.getByRole("button", { name: TEST_NOTICE })).toBeDefined();
+    expect(screen.getByText(/Estás en el ambiente de Pruebas/)).toBeDefined();
   });
 });
 
@@ -350,7 +347,7 @@ describe("barra superior estable", () => {
     await screen.findByText("contenido");
     const header = screen.getByRole("banner");
     expect(
-      [...header.querySelectorAll(":scope > [data-slot^=topbar-]")].map((zone) =>
+      [...header.querySelectorAll("[data-slot=topbar-row] > [data-slot^=topbar-]")].map((zone) =>
         zone.getAttribute("data-slot"),
       ),
     ).toEqual(["topbar-start", "topbar-end"]);
@@ -365,7 +362,7 @@ describe("barra superior estable", () => {
     expect(within(header).queryByRole("heading")).toBeNull();
     expect(within(header).queryByRole("radiogroup", { name: "Tema" })).toBeNull();
     // Cada zona en una sola fila: sin saltos de línea.
-    for (const zone of header.querySelectorAll(":scope > [data-slot^=topbar-]"))
+    for (const zone of header.querySelectorAll("[data-slot=topbar-row] > [data-slot^=topbar-]"))
       expect(zone.className.split(/\s+/)).not.toContain("flex-wrap");
   });
 

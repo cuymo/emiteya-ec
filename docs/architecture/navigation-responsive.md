@@ -112,13 +112,13 @@ from the reference template's dashboard layout (ADR 0028).
     uses the conventional menu icon (design D29). The sheet has a visible «Cerrar menú» button,
     collapsible groups (the current one open) and 44px items. It closes on a destination, Escape,
     the overlay or the close button, and returns focus to the navigation button.
-- **Topbar** (`Topbar`), 72px high (56px on mobile), on one line at every width, in two zones
+- **Topbar** (`Topbar`), a 72px row (56px on mobile) under the environment strip, on one line at every width, in two zones
   (owner decision on the header, 2026-10-16):
   - **start:** the sidebar toggle (or «Abrir navegación» on mobile), a divider and, from 768px, the
     title of the screen with its breadcrumbs (see above);
-  - **end:** the global actions as round 36px buttons on the muted surface (the command palette
-    and, from 768px and where the browser allows it, «Pantalla completa»), the environment
-    indicator and the identity: a building tile (from 1024px), the company context and, under it,
+  - **end:** the command palette trigger (an outline button with the magnifier, «Buscar» and the
+    shortcut; the magnifier alone on a phone), «Pantalla completa» as a round 36px button on the
+    muted surface (from 768px, where the browser allows it) and the identity: a building tile (from 1024px), the company context and, under it,
     the account menu trigger. The company context is at most 14rem from 768px and 7rem below,
     truncated.
 
@@ -129,19 +129,17 @@ from the reference template's dashboard layout (ADR 0028).
   - **While loading:** it reserves its space.
   - **On error:** it says it could not confirm the company, without guessing a name.
   - **Without registered data:** it says so.
-- **Environment** (`productize-invoice-editor-and-composition-foundation`, design D21). The
-  compact indicator in the topbar is the persistent environment notice; there is no full-width
-  strip.
-  - **Always visible:** it sits in the sticky topbar at every width, also on a phone after
-    scrolling, and cannot be dismissed or hidden.
-  - **Pruebas:** «Pruebas» with a warning icon. Its accessible name says the documents have no tax
-    validity, and a popover explains it, and that an administrator changes the environment in
-    Configuración › Ambiente. The popover opens on keyboard focus, on mouse hover and on tap or
-    click; it is a button with a popover, not a tooltip, so it works with touch and keyboard.
-  - **Producción:** context, not a result. Its indicator is neutral and high-attention (inverted
-    contrast), never the success green, and nothing checks the SRI connection.
-  - **Unknown environment:** «Sin confirmar» with a warning icon and its explanation; never shown
-    as Producción. A query that already failed stays unconfirmed while it retries.
+- **Environment** (`EnvironmentBanner`; owner decision on the header, 2026-10-16). A full-width
+  warning strip above the topbar row, inside the sticky header block, so it stays visible while
+  scrolling at every width and with the sidebar in any state. It has an icon and text and cannot be
+  dismissed. There is no environment badge in the topbar.
+  - **Pruebas:** «Estás en el ambiente de Pruebas: los comprobantes que emitas no tienen validez
+    tributaria.», plus «Cambiar ambiente» (to Configuración › Ambiente) for roles that can change it.
+  - **Producción:** no strip and no indicator: it is the company's real environment.
+  - **Unknown environment:** the strip says the environment could not be confirmed and asks to
+    reload before emitting; never shown as Producción. A query that already failed stays
+    unconfirmed while it retries.
+  - **While loading:** nothing, so it never announces an environment it does not know yet.
   - **Where the fiscal decision is made:** every editor that emits repeats the warning next to its
     «Emitir» and in its confirmation (`EmissionEnvironmentNotice`, spec `document-emission`).
   - **Signature:** the certificate expiry notice stays as a strip under the topbar.
@@ -162,8 +160,8 @@ from the reference template's dashboard layout (ADR 0028).
   - **Collapsed:** an icon button named «Nuevo». It is 44px on mobile.
 - **Command palette** (`CommandPalette`).
   - **Opening:** Ctrl/⌘ + K from any authenticated screen, or its trigger in the topbar.
-  - **Truthful scope** (design D26): the trigger is a round button named «Buscar pantalla o acción»,
-    with a tooltip that shows the shortcut, and the field says the same. It searches
+  - **Truthful scope** (design D26): the trigger reads «Buscar» with the shortcut, its accessible
+    name and tooltip are «Buscar pantalla o acción», and the field says the same. It searches
     screens and actions, never documents, third parties or products, and is never called a global
     search.
   - **Contents:** «Ir a» (the permitted destinations and Mi cuenta) and «Crear» (the Quick Create

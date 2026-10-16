@@ -1,10 +1,11 @@
 // Barra superior del shell (adopt-premium-design-foundation-and-shell, design D11). Derivada de la
 // cabecera de `src/app/(main)/dashboard/layout.tsx` de la plantilla «Studio Admin» (MIT;
 // frontend/THIRD_PARTY_NOTICES.md), sin preferencias de diseño, preajustes, menú de GitHub ni cuentas
-// de demostración. Composición pedida por el propietario, en una sola línea a todas las anchuras:
+// de demostración. Composición pedida por el propietario: encima, a todo el ancho, el aviso del
+// ambiente cuando lo hay; debajo, una sola línea a todas las anchuras:
 // - izquierda: la navegación, el título de la pantalla y sus migas;
-// - derecha: las acciones globales en botones redondos (la paleta y la pantalla completa), el
-//   ambiente y la identidad: la empresa de la sesión y, debajo, la cuenta, que abre su menú.
+// - derecha: la paleta, la pantalla completa y la identidad: la empresa de la sesión y, debajo, la
+//   cuenta, que abre su menú.
 // Sin tema, que vive en el menú de cuenta. El botón que abre el panel móvil usa el icono de menú,
 // «Abrir navegación» (adopt-premium-design-foundation-and-shell, design D29).
 "use client";
@@ -21,7 +22,7 @@ import { TopbarHeading } from "./app-breadcrumbs";
 import { useModifierLabel } from "./shortcut";
 
 /** Clase de las acciones globales: un botón redondo sobre el gris del tema. */
-export const TOPBAR_ACTION = "rounded-full bg-muted text-foreground-muted hover:bg-accent";
+const TOPBAR_ACTION = "rounded-full bg-muted text-foreground-muted hover:bg-accent";
 
 function SidebarToggle() {
   const { isMobile, open, openMobile } = useSidebar();
@@ -102,29 +103,36 @@ export function Topbar({
   search?: ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-(--z-sticky) flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-background px-3 md:h-18 md:px-6">
-      <div data-slot="topbar-start" className="flex min-w-0 flex-1 items-center gap-3">
-        <SidebarToggle />
-        <Separator
-          orientation="vertical"
-          className="hidden data-vertical:h-8 data-vertical:self-center md:block"
-        />
-        <TopbarHeading />
-      </div>
-      <div data-slot="topbar-end" className="flex shrink-0 items-center gap-2 md:gap-3">
-        {search}
-        <FullscreenToggle />
-        {environment}
-        <div data-slot="topbar-identity" className="flex min-w-0 items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="hidden size-9 shrink-0 items-center justify-center rounded-md bg-muted text-foreground-muted lg:inline-flex"
-          >
-            <Building2 className="size-5" />
-          </span>
-          <div className="flex min-w-0 flex-col items-start gap-0.5">
-            <div className="flex max-w-28 min-w-0 items-center text-sm md:max-w-56">{company}</div>
-            <AccountMenu />
+    <header className="sticky top-0 z-(--z-sticky) flex shrink-0 flex-col border-b bg-background">
+      {environment}
+      <div
+        data-slot="topbar-row"
+        className="flex h-14 items-center justify-between gap-4 px-3 md:h-18 md:px-6"
+      >
+        <div data-slot="topbar-start" className="flex min-w-0 flex-1 items-center gap-3">
+          <SidebarToggle />
+          <Separator
+            orientation="vertical"
+            className="hidden data-vertical:h-8 data-vertical:self-center md:block"
+          />
+          <TopbarHeading />
+        </div>
+        <div data-slot="topbar-end" className="flex shrink-0 items-center gap-2 md:gap-3">
+          {search}
+          <FullscreenToggle />
+          <div data-slot="topbar-identity" className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="hidden size-9 shrink-0 items-center justify-center rounded-md bg-muted text-foreground-muted lg:inline-flex"
+            >
+              <Building2 className="size-5" />
+            </span>
+            <div className="flex min-w-0 flex-col items-start gap-0.5">
+              <div className="flex max-w-28 min-w-0 items-center text-sm md:max-w-56">
+                {company}
+              </div>
+              <AccountMenu />
+            </div>
           </div>
         </div>
       </div>

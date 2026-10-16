@@ -8,7 +8,7 @@ import Loading from "@/app/(app)/loading";
 import NotFound from "@/app/not-found";
 import { UsersScreen } from "@/features/users/users-screen";
 import { OPERATOR_ME, mockApi, navigation, renderApp } from "./harness";
-import { TEST_NOTICE, api, renderShell } from "./shell-harness";
+import { api, renderShell } from "./shell-harness";
 
 beforeEach(() => {
   navigation.pathname = "/facturas";
@@ -28,7 +28,7 @@ describe("carga de una pantalla", () => {
     renderShell({ children: <Loading /> });
     expect((await screen.findByText("Cargando la pantalla")).getAttribute("role")).toBe("status");
     expect(within(mainNav()).getByRole("link", { name: "Facturas" })).toBeDefined();
-    expect(await screen.findByRole("button", { name: TEST_NOTICE })).toBeDefined();
+    expect(await screen.findByText(/Estás en el ambiente de Pruebas/)).toBeDefined();
   });
 });
 
