@@ -1,9 +1,10 @@
 // Empresa (add-taxpayer-setup, design D14). Usuario: administrador. Objetivo: registrar o corregir
 // los datos con que la empresa emite. Decisión: qué datos y atributos declarar, sabiendo que cada
-// cambio aplica a los comprobantes futuros. Acción principal: Guardar datos. P1: estado del RUC y
-// versión vigente. P2: logo, en Identificación. P3 (historial): fuera de la pantalla. La pestaña
-// ya nombra la pantalla: el título queda solo para los lectores de pantalla, y cada sección lleva
-// su título y su descripción a la izquierda de sus campos.
+// cambio aplica a los comprobantes futuros. Acción principal: Guardar datos, sola al pie (decisión
+// del propietario, 2026-10-16: sin la versión ni el aviso). P1: estado del RUC. P2: logo, en
+// Identificación. P3 (historial): fuera de la pantalla. La pestaña ya nombra la pantalla: el
+// título queda solo para los lectores de pantalla, y cada sección lleva su título y su descripción
+// a la izquierda de sus campos.
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -450,11 +451,7 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
-        <p className="flex flex-col text-sm text-foreground-muted">
-          {taxpayer.version !== null && <span>Versión {taxpayer.version}</span>}
-          <span>Los cambios aplican a los comprobantes que se emitan después.</span>
-        </p>
+      <div className="flex justify-end border-t border-border pt-6">
         {/* Pendiente también mientras se valida: un doble clic no envía dos veces. */}
         <AsyncButton
           type="submit"

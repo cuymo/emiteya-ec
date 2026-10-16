@@ -148,7 +148,10 @@ describe("Empresa (design D14)", () => {
   it("revela el número al marcar la casilla y lo exige", async () => {
     renderCompany(() => view());
     const user = userEvent.setup();
-    expect(await screen.findByText("Versión 1")).toBeDefined();
+    await screen.findByRole("form", { name: "Datos de la empresa" });
+    // El pie lleva solo «Guardar datos»: sin la versión ni el aviso.
+    expect(screen.queryByText(/Versión/)).toBeNull();
+    expect(screen.queryByText(/Los cambios aplican/)).toBeNull();
     expect(screen.queryByLabelText("Número de contribuyente especial")).toBeNull();
     await user.click(screen.getByLabelText("Es contribuyente especial"));
     await user.click(screen.getByRole("button", { name: "Guardar datos" }));
