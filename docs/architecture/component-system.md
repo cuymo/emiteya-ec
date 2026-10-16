@@ -59,7 +59,7 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
   `components/ui/use-return-focus.ts` (dialog and sheet).
 - **Disabled is neutral; pending is not disabled** (`productize-invoice-editor-and-composition-foundation`,
   design D9).
-  - A disabled `primary`, `secondary` or `destructive` button becomes `bg-muted
+  - A disabled `primary`, `secondary`, `destructive` or `danger` button becomes `bg-muted
     text-muted-foreground`, without shadow or variant color. A disabled `outline`, `ghost` or
     `link` keeps its surface and dims its text to `text-muted-foreground`; `outline` also dims its
     border. `aria-disabled` behaves the same.
@@ -67,6 +67,10 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
   - `AsyncButton` while pending (`aria-busy`) keeps its variant with the indicator: an action in
     progress is not an unavailable action. Every disabled rule is written `disabled:not-aria-busy:`.
   - In dark mode `outline` is transparent, so it never reads as a filled block.
+- **`danger` is the solid red main action** (owner decision, 2026-10-16) for the riskiest step,
+  such as switching to Producción, on the screen and in its confirmation (`ConfirmDialog`
+  `tone="danger"`). Like `primary`, one per screen. `destructive` stays the soft red for
+  deleting, and a red-text outline marks «Desactivar».
 - **Selection is neutral** (design D10). The primary blue is reserved for the main action.
   - List filters (`DataTableSelectFilter`): the chosen value shows in a neutral trigger, after its
     prefix («Estado: Activos»). It is recognized by its text, not by color.
@@ -103,6 +107,9 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
     Each point also has a «Secuenciales» toggle that unfolds its counters for the current
     environment, under a small «Ambiente: Pruebas» or «Ambiente: Producción» badge, each with
     «Ajustar» (`point-sequences.tsx`); they used to have their own tab.
+  - Ambiente is centered too, with its `h1` only for screen readers: one card with the current
+    environment and the readiness to emit, and a footer with the action («Cambiar a Producción» in
+    `danger`, «Volver a Pruebas» in `outline`).
   - Firma electrónica is centered the same way, with its `h1` only for screen readers. One card
     holds the certificate data, then the expiry notice, and a footer with «Guardar aviso»
     (outline, always enabled: with no change it says so instead of sending) and «Reemplazar

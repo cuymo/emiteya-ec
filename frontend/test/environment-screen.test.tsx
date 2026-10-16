@@ -80,11 +80,18 @@ describe("Ambiente (design D6 y D14)", () => {
   it("pasar a Producción exige escribir el RUC y envía la versión de partida", async () => {
     const calls = renderEnvironment(TAXPAYER);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Cambiar a Producción" }));
+    const action = await screen.findByRole("button", { name: "Cambiar a Producción" });
+    // La pestaña nombra la pantalla, y la acción de mayor riesgo es roja aquí y al confirmar.
+    expect(screen.getByRole("heading", { level: 1, name: "Ambiente" }).className).toContain(
+      "sr-only",
+    );
+    expect(action.className).toContain("bg-danger");
+    await user.click(action);
     const dialog = screen.getByRole("dialog");
     const confirm = Array.from(dialog.querySelectorAll("button")).find(
       (button) => button.textContent === "Cambiar a Producción",
     ) as HTMLButtonElement;
+    expect(confirm.className).toContain("bg-danger");
     expect(confirm.disabled).toBe(true);
     await user.type(screen.getByLabelText("RUC de la empresa"), "1790012345001");
     await user.click(confirm);

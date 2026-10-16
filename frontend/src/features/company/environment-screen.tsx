@@ -1,12 +1,14 @@
 // Ambiente (add-taxpayer-setup, design D6 y D14). Usuario: administrador. Objetivo: pasar de
 // Pruebas a Producción cuando la empresa está lista, o volver a Pruebas. Decisión: si emitir con
 // validez tributaria desde ahora. Acción principal: Cambiar a Producción o Volver a Pruebas.
-// Riesgo crítico: pasar a Producción exige escribir el RUC de la empresa (CTX §6).
+// Riesgo crítico: pasar a Producción exige escribir el RUC de la empresa (CTX §6), y su botón es
+// rojo sólido, aquí y en la confirmación. Un recuadro centrado bajo las pestañas reúne el ambiente,
+// la preparación para emitir y, al pie, la acción.
 "use client";
 
-import { CircleCheck, TriangleAlert } from "lucide-react";
+import { CircleCheck, FlaskConical, ShieldAlert, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { errorMessage } from "@/components/feedback";
 import { useSession } from "@/components/session";
@@ -29,42 +31,27 @@ export function EnvironmentScreen() {
   const [confirming, setConfirming] = useState(false);
   const change = useChangeEnvironment({ onSuccess: () => setConfirming(false) });
 
-  const heading = (
-    <h1 id="ambiente-titulo" className="text-3xl font-bold">
-      Ambiente
-    </h1>
-  );
   if (!allowed) {
     return (
-      <section
-        aria-labelledby="ambiente-titulo"
-        data-panel-width="reading"
-        className="flex flex-col gap-6"
-      >
-        {heading}
+      <EnvironmentFrame>
         <EmptyState
           kind="no-permission"
           title="No tienes permiso para ver esta sección"
           description="Solo un administrador cambia el ambiente."
         />
-      </section>
+      </EnvironmentFrame>
     );
   }
   if (taxpayer.isPending || status.isPending) return <EnvironmentSkeleton />;
   if (taxpayer.isError || status.isError) {
     const error = taxpayer.error ?? status.error;
     return (
-      <section
-        aria-labelledby="ambiente-titulo"
-        data-panel-width="reading"
-        className="flex flex-col gap-6"
-      >
-        {heading}
+      <EnvironmentFrame>
         <ErrorState
           message={errorMessage(error)}
           onRetry={() => void Promise.all([taxpayer.refetch(), status.refetch()])}
         />
-      </section>
+      </EnvironmentFrame>
     );
   }
 
@@ -74,62 +61,73 @@ export function EnvironmentScreen() {
   const pending = status.data.readiness.checks.filter((check) => check.status === "PENDING");
 
   return (
-    <section
-      aria-labelledby="ambiente-titulo"
-      data-panel-width="reading"
-      className="flex flex-col gap-6"
-    >
-      {heading}
-      <div className="flex flex-col gap-2">
-        <div>
-          {production ? (
-            <StatusBadge tone="success" label="Producción" icon={CircleCheck} />
+    <EnvironmentFrame>
+      <div className="flex flex-col rounded-lg border border-border bg-surface">
+        <div className="flex flex-col gap-4 p-4">
+          <div className="flex flex-col gap-2">
+            <div>
+              {production ? (
+                <StatusBadge tone="success" label="Producción" icon={CircleCheck} />
+              ) : (
+                <StatusBadge tone="warning" label="Pruebas" icon={TriangleAlert} />
+              )}
+            </div>
+            <p className="text-sm">
+              {production
+                ? "Los comprobantes autorizados tienen validez tributaria."
+                : "Los comprobantes que se emitan no tienen validez tributaria. En Producción, los comprobantes autorizados la tienen."}
+            </p>
+          </div>
+          <div className="flex flex-col gap-1 text-sm">
+            <p className="font-medium">
+              {status.data.readiness.ready ? "Lista para emitir" : "Aún no puede emitir"}
+            </p>
+            {pending.length > 0 && (
+              <p className="text-foreground-muted">
+                Pendiente: {pending.map((check) => READINESS_COPY[check.key].title).join(", ")}.
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 rounded-b-lg border-t border-border bg-surface-subtle px-4 py-3">
+          {view.configured ? (
+            // Pasar a Producción es la acción de mayor riesgo: rojo sólido, aquí y al confirmar.
+            <Button
+              size="default"
+              variant={production ? "outline" : "danger"}
+              onClick={() => setConfirming(true)}
+            >
+              {production ? (
+                <FlaskConical aria-hidden="true" />
+              ) : (
+                <ShieldAlert aria-hidden="true" />
+              )}
+              {production ? "Volver a Pruebas" : "Cambiar a Producción"}
+            </Button>
           ) : (
-            <StatusBadge tone="warning" label="Pruebas" icon={TriangleAlert} />
+            <>
+              <p id="ambiente-sin-datos" className="mr-auto text-sm text-foreground-muted">
+                Registra primero los datos de la empresa.{" "}
+                <Link
+                  href="/configuracion/empresa"
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Ir a Empresa
+                </Link>
+              </p>
+              <Button
+                size="default"
+                variant="danger"
+                disabled
+                aria-describedby="ambiente-sin-datos"
+              >
+                <ShieldAlert aria-hidden="true" />
+                Cambiar a Producción
+              </Button>
+            </>
           )}
         </div>
-        <p className="text-sm">
-          {production
-            ? "Los comprobantes autorizados tienen validez tributaria."
-            : "Los comprobantes que se emitan no tienen validez tributaria. En Producción, los comprobantes autorizados la tienen."}
-        </p>
       </div>
-
-      <div className="flex flex-col gap-1 text-sm">
-        <p className="font-medium">
-          {status.data.readiness.ready ? "Lista para emitir" : "Aún no puede emitir"}
-        </p>
-        {pending.length > 0 && (
-          <p className="text-foreground-muted">
-            Pendiente: {pending.map((check) => READINESS_COPY[check.key].title).join(", ")}.
-          </p>
-        )}
-      </div>
-
-      {view.configured ? (
-        <div>
-          <Button variant={production ? "outline" : "primary"} onClick={() => setConfirming(true)}>
-            {production ? "Volver a Pruebas" : "Cambiar a Producción"}
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          <div>
-            <Button disabled aria-describedby="ambiente-sin-datos">
-              Cambiar a Producción
-            </Button>
-          </div>
-          <p id="ambiente-sin-datos" className="text-sm text-foreground-muted">
-            Registra primero los datos de la empresa.{" "}
-            <Link
-              href="/configuracion/empresa"
-              className="font-medium text-primary underline-offset-2 hover:underline"
-            >
-              Ir a Empresa
-            </Link>
-          </p>
-        </div>
-      )}
 
       {view.configured && view.profile && view.version !== null && (
         <ConfirmDialog
@@ -142,6 +140,7 @@ export function EnvironmentScreen() {
               : "Desde ahora, los comprobantes autorizados tendrán validez tributaria. Escribe el RUC de la empresa para confirmar."
           }
           confirmLabel={production ? "Volver a Pruebas" : "Cambiar a Producción"}
+          tone={production ? "primary" : "danger"}
           pending={change.isPending}
           {...(production
             ? {}
@@ -154,17 +153,35 @@ export function EnvironmentScreen() {
       <span className="sr-only" aria-live="polite">
         {`Ambiente vigente: ${ENVIRONMENT_LABELS[view.environment]}`}
       </span>
+    </EnvironmentFrame>
+  );
+}
+
+/**
+ * Columna centrada bajo las pestañas, que ya nombran la pantalla: el título queda para los lectores
+ * de pantalla.
+ */
+function EnvironmentFrame({ busy = false, children }: { busy?: boolean; children: ReactNode }) {
+  return (
+    <section
+      aria-labelledby="ambiente-titulo"
+      aria-busy={busy || undefined}
+      data-panel-width="reading"
+      data-panel-align="center"
+      className="flex flex-col gap-6"
+    >
+      <h1 id="ambiente-titulo" className="sr-only">
+        Ambiente
+      </h1>
+      {children}
     </section>
   );
 }
 
 export function EnvironmentSkeleton() {
   return (
-    <section aria-busy="true" data-panel-width="reading" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Ambiente</h1>
-      <Skeleton className="h-6 w-24" />
-      <Skeleton className="h-8 w-full" />
-      <Skeleton className="h-10 w-48" />
-    </section>
+    <EnvironmentFrame busy>
+      <Skeleton className="h-40 w-full" />
+    </EnvironmentFrame>
   );
 }

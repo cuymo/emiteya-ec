@@ -40,7 +40,7 @@ export function ConfirmDialog({
   pending: boolean;
   /** Con `requiredText`, recibe ese texto recortado. */
   onConfirm: (text?: string) => void;
-  tone?: "primary" | "destructive";
+  tone?: "primary" | "destructive" | "danger";
   /** Texto que hay que escribir exactamente para habilitar la confirmación. */
   typedConfirmation?: { label: string; expected: string };
   /**
@@ -103,8 +103,9 @@ export function ConfirmDialog({
           className="flex min-h-0 flex-1 flex-col"
         >
           {/* Un contenido más alto que la pantalla se desplaza y las acciones quedan a la vista. */}
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 pt-6 pr-14 pb-4">
-            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+          {/* Solo el título deja sitio al botón de cerrar: los campos llegan al borde del cuerpo. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 pt-6 pb-4">
+            <DialogTitle className="pr-8 text-lg font-semibold">{title}</DialogTitle>
             <DialogDescription asChild>
               <div className="text-sm text-foreground-muted">{description}</div>
             </DialogDescription>

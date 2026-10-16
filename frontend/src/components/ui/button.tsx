@@ -46,6 +46,9 @@ export const buttonVariants = cva(
         outline: `border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-transparent dark:hover:bg-input/50 ${DISABLED_QUIET} disabled:not-aria-busy:border-border/60`,
         ghost: `hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 ${DISABLED_QUIET}`,
         destructive: `bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive focus-visible:ring-destructive dark:bg-destructive/20 dark:hover:bg-destructive/30 ${DISABLED_FILLED}`,
+        // Rojo sólido para la acción principal de mayor riesgo, como pasar a Producción (decisión
+        // del propietario, 2026-10-16). Como el primario, solo una por pantalla.
+        danger: `bg-danger text-danger-foreground hover:bg-danger/85 focus-visible:border-danger focus-visible:ring-danger ${DISABLED_FILLED}`,
         link: `text-primary underline-offset-4 hover:underline ${DISABLED_QUIET}`,
       },
       size: {
