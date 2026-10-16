@@ -88,7 +88,7 @@ In this repository, migrated screens use `PageHeader` (`frontend/src/components/
 - one primary-action slot and separate secondary actions, so a screen cannot ship two primary
   actions.
 
-Breadcrumbs live in the shell's top bar, under the title of the route, for every screen (owner
+Breadcrumbs live in the shell's top bar, without a title, for every screen (owner
 decision on the header, 2026-10-16; `navigation-responsive.md`). No screen paints its own, and no
 «back» link repeats a breadcrumb. The shell's Quick Create stays an
 `outline` secondary control.

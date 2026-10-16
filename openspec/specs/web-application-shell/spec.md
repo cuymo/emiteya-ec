@@ -221,18 +221,18 @@ accesible.
 - **THEN** ve los mismos destinos que en la barra lateral de escritorio, ni uno más
 
 ### Requirement: Migas de navegación
-Toda pantalla autenticada SHALL mostrar en la barra superior, a la izquierda, su título y, debajo,
-una sola fila de migas derivadas de la misma navegación: un enlace a Inicio, el grupo de la
-navegación como texto, el destino y la pantalla actual. En una pantalla interna, el destino SHALL
-ser un enlace y la última miga SHALL ser la etiqueta del registro cuando la pantalla la conoce, o la
-de la ruta. La pantalla actual SHALL anunciarse como página actual. El título de la barra no SHALL
-ser un encabezado: el `h1` sigue siendo el de la pantalla. Las migas SHALL ser el único mecanismo de
-orientación de la pantalla: no SHALL acompañarse de un enlace de vuelta que repita una miga. En un
-teléfono, el título y las migas no SHALL mostrarse en la barra superior.
+Toda pantalla autenticada SHALL mostrar en la barra superior, a la izquierda, una sola fila de migas
+derivadas de la misma navegación: un enlace a Inicio, el grupo de la navegación como texto, el
+destino y la pantalla actual. En una pantalla interna, el destino SHALL ser un enlace y la última
+miga SHALL ser la etiqueta del registro cuando la pantalla la conoce, o la de la ruta. La pantalla
+actual SHALL anunciarse como página actual. La barra superior no SHALL repetir el título de la
+pantalla: lo da su `h1`. Las migas SHALL ser el único mecanismo de orientación de la pantalla: no
+SHALL acompañarse de un enlace de vuelta que repita una miga. En un teléfono, las migas no SHALL
+mostrarse en la barra superior.
 
 #### Scenario: Pantalla interna
 - **WHEN** un usuario abre el detalle de la factura 001-001-000000123
-- **THEN** ve en la barra superior el título «Detalle de factura» y la ruta Inicio / Ventas / Facturas / 001-001-000000123, con Facturas como enlace a la lista y el número anunciado como página actual
+- **THEN** ve en la barra superior la ruta Inicio / Ventas / Facturas / 001-001-000000123, con Facturas como enlace a la lista y el número anunciado como página actual, sin un título aparte
 - **AND** mientras el número todavía no se conoce, la última miga es «Detalle de factura»
 
 #### Scenario: Borrador
@@ -241,7 +241,7 @@ teléfono, el título y las migas no SHALL mostrarse en la barra superior.
 
 #### Scenario: Nueva factura
 - **WHEN** un usuario abre la pantalla de nueva factura
-- **THEN** ve el título «Nueva factura» y la ruta Inicio / Ventas / Facturas / Nueva factura, con Facturas como enlace
+- **THEN** ve la ruta Inicio / Ventas / Facturas / Nueva factura, con Facturas como enlace
 
 #### Scenario: Una sola orientación
 - **WHEN** un usuario abre el editor de un borrador o el detalle de un comprobante
@@ -257,7 +257,7 @@ teléfono, el título y las migas no SHALL mostrarse en la barra superior.
 
 #### Scenario: Teléfono
 - **WHEN** un usuario abre cualquier pantalla autenticada en un teléfono
-- **THEN** la barra superior no muestra el título ni las migas, y el `h1` de la pantalla la orienta
+- **THEN** la barra superior no muestra las migas, y el `h1` de la pantalla la orienta
 
 #### Scenario: Mismos nombres
 - **WHEN** un usuario abre una pantalla interna de inventario
@@ -430,14 +430,14 @@ del destino ni solicitar sus datos. Es solo presentación: la API sigue rechazan
 ### Requirement: Barra superior estable
 La barra superior SHALL ocupar una sola línea a todas las anchuras soportadas, en la barra lateral
 expandida o colapsada, sin que ningún texto o control se parta en varias líneas, se salga de la
-barra ni se monte sobre otro. A la izquierda SHALL reunir el botón de navegación y, desde 768 px, el
-título y las migas de la pantalla; a la derecha, el contexto global: el acceso a la paleta de
+barra ni se monte sobre otro. A la izquierda SHALL reunir el botón de navegación y, desde 768 px, las
+migas de la pantalla; a la derecha, el contexto global: el acceso a la paleta de
 comandos, el contexto de la empresa y el menú de cuenta; el aviso del ambiente va encima, en su franja. No SHALL ofrecer
 controles que el producto no respalda, como notificaciones o ayuda.
 
 #### Scenario: Pantalla interna en una tableta
 - **WHEN** un administrador abre Empresa, dentro de Configuración, en una ventana de 768 px de ancho
-- **THEN** la barra superior muestra en una sola línea, sin solaparse, el título con sus migas, el acceso a la paleta, la empresa y la cuenta
+- **THEN** la barra superior muestra en una sola línea, sin solaparse, las migas, el acceso a la paleta, la empresa y la cuenta
 
 #### Scenario: Editor en un portátil
 - **WHEN** un operador abre la pantalla de nueva factura en una ventana de 1024 o 1280 px, con la barra lateral expandida o colapsada

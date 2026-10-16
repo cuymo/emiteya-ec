@@ -340,7 +340,7 @@ describe("ambiente fiscal visible", () => {
 });
 
 describe("barra superior estable", () => {
-  it("dos zonas: el título con sus migas a la izquierda y el contexto global a la derecha", async () => {
+  it("dos zonas: las migas a la izquierda, sin título, y el contexto global a la derecha", async () => {
     api();
     navigation.pathname = "/borradores/nuevo";
     renderShell();
@@ -351,14 +351,11 @@ describe("barra superior estable", () => {
         zone.getAttribute("data-slot"),
       ),
     ).toEqual(["topbar-start", "topbar-end"]);
-    const start = header.querySelector("[data-slot=topbar-start]")!;
-    expect(
-      within(start as HTMLElement).getByText("Nueva factura", { selector: "p" }),
-    ).toBeDefined();
-    expect(
-      within(start as HTMLElement).getByRole("navigation", { name: "Ruta de navegación" }),
-    ).toBeDefined();
-    // El título de la barra no es un encabezado: el `h1` sigue siendo el de la pantalla.
+    const start = header.querySelector("[data-slot=topbar-start]") as HTMLElement;
+    const crumbs = within(start).getByRole("navigation", { name: "Ruta de navegación" });
+    // La pantalla actual solo está en las migas: la barra no repite el título de la pantalla.
+    expect(within(crumbs).getByText("Nueva factura").getAttribute("aria-current")).toBe("page");
+    expect(within(start).getAllByText("Nueva factura")).toHaveLength(1);
     expect(within(header).queryByRole("heading")).toBeNull();
     expect(within(header).queryByRole("radiogroup", { name: "Tema" })).toBeNull();
     // Cada zona en una sola fila: sin saltos de línea.

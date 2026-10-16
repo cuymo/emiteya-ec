@@ -1,9 +1,8 @@
-// Título y migas de la pantalla en la barra superior, a la izquierda (decisión del propietario sobre
-// la cabecera; spec web-application-shell, «Migas de navegación»). Compone el primitivo `breadcrumb`
-// con el modelo de rutas canónico: el título de la pantalla encima y, debajo, la ruta desde Inicio,
-// separada con barras, con la pantalla actual en el color de marca. En un teléfono no se muestra: no
-// cabe junto al contexto global y el `h1` de la pantalla, justo debajo, ya orienta. El título no es
-// un encabezado: el `h1` sigue siendo el de la pantalla.
+// Migas de la pantalla en la barra superior, a la izquierda (decisión del propietario sobre la
+// cabecera; spec web-application-shell, «Migas de navegación»). Compone el primitivo `breadcrumb` con
+// el modelo de rutas canónico: la ruta desde Inicio, separada con barras, con la pantalla actual en el
+// color de marca. Sin título: el `h1` de la pantalla, justo debajo, ya la nombra. En un teléfono no se
+// muestran: no caben junto al contexto global.
 "use client";
 
 import { House } from "lucide-react";
@@ -18,19 +17,16 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { breadcrumbsFor, pageTitleFor, resolveRoute } from "@/lib/navigation/routes";
+import { breadcrumbsFor, resolveRoute } from "@/lib/navigation/routes";
 import { useBreadcrumbLabelValue } from "./breadcrumb-label";
 
 export function TopbarHeading() {
   const pathname = usePathname();
   const record = useBreadcrumbLabelValue();
-  const route = resolveRoute(pathname);
-  const title = pageTitleFor(route);
-  const crumbs = breadcrumbsFor(route, record);
-  if (!title) return null;
+  const crumbs = breadcrumbsFor(resolveRoute(pathname), record);
+  if (crumbs.length === 0) return null;
   return (
-    <div data-slot="topbar-heading" className="flex min-w-0 flex-col gap-1 max-md:hidden">
-      <p className="truncate text-lg leading-tight font-semibold">{title}</p>
+    <div data-slot="topbar-heading" className="flex min-w-0 max-md:hidden">
       <Breadcrumb className="min-w-0">
         <BreadcrumbList className="flex-nowrap gap-2 text-sm leading-none">
           <BreadcrumbItem className="shrink-0">

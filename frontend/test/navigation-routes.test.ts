@@ -9,7 +9,6 @@ import type { Permission } from "@/lib/permissions";
 import {
   breadcrumbsFor,
   CREATE_ACTIONS,
-  pageTitleFor,
   permissionsOf,
   resolveRoute,
   visibleCreateActions,
@@ -165,14 +164,6 @@ describe("migas", () => {
     expect(crumbs("/")).toEqual(["[Inicio]"]);
     expect(crumbs("/mi-cuenta")).toEqual(["[Mi cuenta]"]);
     expect(crumbs("/nada-que-ver")).toEqual([]);
-  });
-
-  it("el título es el destino o, en una pantalla interna, su nombre", () => {
-    expect(pageTitleFor(resolveRoute("/facturas"))).toBe("Facturas");
-    expect(pageTitleFor(resolveRoute("/facturas/abc"))).toBe("Detalle de factura");
-    expect(pageTitleFor(resolveRoute("/borradores/nuevo"))).toBe("Nueva factura");
-    expect(pageTitleFor(resolveRoute("/configuracion/firma"))).toBe("Firma electrónica");
-    expect(pageTitleFor(resolveRoute("/nada-que-ver"))).toBeNull();
   });
 });
 

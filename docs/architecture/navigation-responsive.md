@@ -53,20 +53,18 @@ The groups and destinations, in this order:
 
 ### Breadcrumbs: The Route From Inicio
 
-The breadcrumbs and the title of the open screen live in the topbar, on its left (owner decision on
-the header, 2026-10-16). They replace the breadcrumb row that used to sit above the page title.
-- **Title:** the destination label (Facturas, Empresa) or, on an internal screen, the route label
-  (Detalle de factura, Nueva factura, Borrador de nota de crédito). It is a paragraph, not a
-  heading: the screen keeps its own `h1`.
-- **Trail:** under the title, separated with «/»: a house icon linking to Inicio, the navigation
+The breadcrumbs of the open screen live in the topbar, on its left (owner decisions on the header,
+2026-10-16). They replace the breadcrumb row that used to sit above the page title. The topbar does
+not repeat the screen title: the screen's own `h1`, right below, names it.
+- **Trail:** separated with «/»: a house icon linking to Inicio, the navigation
   group (Ventas, Compras, Logística, Documentos, Maestros, Análisis or Configuración, as text), the
   destination (a link on an internal screen) and the current page, in the brand colour and
   announced with `aria-current="page"`. On a detail, the last breadcrumb is the record label when
   the screen provides it (the document number, the product name), or the route label. Inicio and Mi
   cuenta have no group.
 - **Truncation:** one line; only the last breadcrumb truncates.
-- **Phone:** below 768px the title and the trail are hidden: they do not fit next to the global
-  context, and the screen `h1`, right below, already orients.
+- **Phone:** below 768px the trail is hidden: it does not fit next to the global context, and the
+  screen `h1`, right below, already orients.
 - They are the only orientation of the screen: no «back» link repeats a breadcrumb.
 - **Invoice editor** (design D12, PO-1): new invoice and draft belong to Facturas, before and after
   the first save. Borradores de facturas stays in Ventas as the list to resume drafts.
@@ -115,7 +113,7 @@ from the reference template's dashboard layout (ADR 0028).
 - **Topbar** (`Topbar`), a 72px row (56px on mobile) under the environment strip, on one line at every width, in two zones
   (owner decision on the header, 2026-10-16):
   - **start:** the sidebar toggle (or «Abrir navegación» on mobile), a divider and, from 768px, the
-    title of the screen with its breadcrumbs (see above);
+    breadcrumbs of the screen (see above);
   - **end:** the command palette trigger (an outline button with the magnifier, «Buscar» and the
     shortcut; the magnifier alone on a phone), «Pantalla completa» as a round 36px button on the
     muted surface (from 768px, where the browser allows it) and the identity: a building tile (from 1024px), the company context and, under it,

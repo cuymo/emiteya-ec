@@ -479,9 +479,3 @@ export function breadcrumbsFor(route: ResolvedRoute | null, recordLabel?: string
   }
   return crumbs;
 }
-
-/** El título de la pantalla en la barra superior: su destino o, en una pantalla interna, su nombre. */
-export function pageTitleFor(route: ResolvedRoute | null): string | null {
-  if (!route) return null;
-  return route.leaf ?? route.destination.label;
-}
