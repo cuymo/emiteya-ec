@@ -203,6 +203,7 @@ Shared components own interaction consistency, not business policy.
 - `StatusBadge` owns the visual encoding of a state; the module maps its domain values onto it.
 - `DocumentStatusBadge` owns the presentation of fiscal document states (label, semantic variant, icon, and the help of the uncertain-send state); every document screen reaches it through the `StateCell` facade, so the mapping lives in one place. Environment and document state are independent: an authorized document in Pruebas is still not tax-valid.
 - `DocumentDetailTabs` owns the tabs of a document detail: every document screen hands it its tabs (content first, then transmission, RIDE and XML, and its own), and keeps the header and the totals panel outside them.
+- `HeaderActionsMenu` owns the secondary actions of a detail screen: a «⋯» button at the end of the title, naming the record, with only the actions the state and role allow. The screen primary action stays visible next to the header.
 - `PermissionGate` may hide or disable controls, but cannot replace API authorization.
 - Date and number components own parsing/display boundaries and return canonical values.
 

@@ -17,6 +17,7 @@ import {
   type StockMovementView,
 } from "@facturador/contracts";
 import { PackagePlus, Power, PowerOff, SlidersHorizontal } from "lucide-react";
+import { HeaderActionsMenu, type HeaderAction } from "@/components/layout/header-actions-menu";
 import Link from "next/link";
 import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
@@ -247,7 +248,6 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
   useBreadcrumbLabel(item.data?.name);
   const [dialog, setDialog] = useState<OpenDialog | null>(null);
   const summaryRef = useRef<HTMLHeadingElement>(null);
-  const disableNoteId = useId();
   // Tras cada acción el foco va al saldo, que anuncia el resultado, aunque quien abrió el diálogo
   // haya cambiado o desaparecido. Al cancelar, vuelve a quien abrió el diálogo.
   const focusAfterClose = useRef(false);
@@ -375,43 +375,45 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
       "El control está desactivado: las facturas nuevas no descuentan este producto. Un administrador puede reactivarlo.";
   }
 
-  const secondary = data.state === "TRACKED_INITIALIZED" && (canAdjust || canConfigure) && (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
-        {canAdjust && (
-          <Button variant="outline" onClick={() => open("adjust")}>
-            <SlidersHorizontal aria-hidden="true" />
-            Ajustar
-          </Button>
-        )}
-        {canConfigure && (
-          <Button
-            variant="outline"
-            disabled={!zeroBalance}
-            {...(zeroBalance ? {} : { "aria-describedby": disableNoteId })}
-            onClick={() => open("disable")}
-          >
-            <PowerOff aria-hidden="true" />
-            Desactivar control
-          </Button>
-        )}
-      </div>
-      {canConfigure && !zeroBalance && (
-        <p id={disableNoteId} className="text-xs text-foreground-muted">
-          Para desactivar el control, el saldo debe ser cero. Registra primero un ajuste que lo deje
-          en cero.
-        </p>
-      )}
-    </div>
-  );
+  // Las acciones secundarias van en el menú «⋯» del título; la principal sigue a la vista.
+  const moreActions: HeaderAction[] =
+    data.state === "TRACKED_INITIALIZED"
+      ? [
+          ...(canAdjust
+            ? [
+                {
+                  key: "ajustar",
+                  label: "Ajustar",
+                  icon: SlidersHorizontal,
+                  onSelect: () => open("adjust"),
+                },
+              ]
+            : []),
+          ...(canConfigure
+            ? [
+                {
+                  key: "desactivar",
+                  label: "Desactivar control",
+                  icon: PowerOff,
+                  disabled: !zeroBalance,
+                  hint: "Para desactivarlo, el saldo debe ser cero: registra primero un ajuste que lo deje en cero.",
+                  onSelect: () => open("disable"),
+                },
+              ]
+            : []),
+        ]
+      : [];
 
   return (
     <section aria-labelledby="inventario-detalle-titulo" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 id="inventario-detalle-titulo" className="text-3xl font-bold break-words">
-            {data.name}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 id="inventario-detalle-titulo" className="text-3xl font-bold break-words">
+              {data.name}
+            </h1>
+            <HeaderActionsMenu label={`Más acciones de ${data.name}`} actions={moreActions} />
+          </div>
           <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StockStateBadge state={data.state} />
             {data.mainCode && <span className="tabular-nums">{data.mainCode}</span>}
@@ -463,7 +465,6 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
       </div>
 
       {note && <Note>{note}</Note>}
-      {secondary}
 
       {initialized && <Kardex productId={data.productId} />}
 

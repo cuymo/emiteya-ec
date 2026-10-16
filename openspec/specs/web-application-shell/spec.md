@@ -484,3 +484,25 @@ página, con la actual a la vista.
 #### Scenario: Enlace directo
 - **WHEN** un administrador abre la dirección de Firma electrónica
 - **THEN** ve la pestaña Firma electrónica abierta, con las demás pestañas para cambiar de sección
+
+### Requirement: Más acciones de una pantalla de detalle
+Las acciones secundarias de una pantalla de detalle SHALL ofrecerse en un menú «⋯» al final de su
+título, en lugar de una fila de botones junto al encabezado: en la factura, emitir una nota de
+débito y crear una guía de remisión desde ella; en el inventario de un producto, ajustarlo y
+desactivar su control. La acción principal de la pantalla, como reintentar la firma o registrar una
+entrada, SHALL seguir a la vista. El botón SHALL nombrar el registro, el menú SHALL mostrar solo las
+acciones que el estado y el rol admiten, una acción no disponible SHALL verse como tal y decir por
+qué, y sin acciones el menú no SHALL aparecer.
+
+#### Scenario: Factura autorizada
+- **WHEN** un operador abre el detalle de una factura autorizada del ambiente vigente
+- **THEN** junto al título ve «Más acciones de la factura …», que ofrece emitir una nota de débito y crear una guía de remisión
+
+#### Scenario: Factura sin acciones
+- **WHEN** un operador abre el detalle de una factura que todavía no está autorizada
+- **THEN** no ve el menú de más acciones
+
+#### Scenario: Acción no disponible
+- **WHEN** un administrador abre el menú de un producto con saldo distinto de cero
+- **THEN** ve «Desactivar control» como no disponible, con el motivo de que el saldo debe ser cero
+

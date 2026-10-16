@@ -8,3 +8,9 @@ export async function openTab(name: string | RegExp) {
 }
 
 export const TRANSMISSION_TAB = /^Transmisión al SRI/;
+
+/** Abre el menú «⋯» de más acciones del encabezado de un detalle y devuelve el menú. */
+export async function openMoreActions() {
+  await userEvent.setup().click(await screen.findByRole("button", { name: /^Más acciones/ }));
+  return screen.findByRole("menu");
+}

@@ -216,6 +216,7 @@ destino relativo a `frontend/src/`.
 | `components/data-table/data-table.tsx` | `app/(main)/dashboard/tasks/_components/tasks.tsx` y `users/_components/users-table.tsx` | MIT de «Studio Admin» |
 | `components/data-table/data-table-search.tsx` | `app/(main)/dashboard/tasks/_components/tasks-toolbar.tsx` | MIT de «Studio Admin» |
 | `components/data-table/row-actions-menu.tsx` | `app/(main)/dashboard/users/_components/users-columns.tsx` | MIT de «Studio Admin» |
+| `components/layout/header-actions-menu.tsx`, el menú «⋯» de más acciones del título (composición visual, la del menú de las filas) | `app/(main)/dashboard/users/_components/users-columns.tsx` | MIT de «Studio Admin» |
 | `components/layout/page-header.tsx` | `app/(main)/dashboard/file-manager/page.tsx` (encabezado) | MIT de «Studio Admin» |
 | `features/documents/document-status-badge.tsx` | `app/(main)/dashboard/tasks/_components/columns.tsx` (insignia de estado) | MIT de «Studio Admin» |
 | `components/ui/tabs.tsx` (solo horizontal, con la variante de línea) | `components/ui/tabs.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |

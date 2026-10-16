@@ -16,6 +16,7 @@ import {
   renderApp,
   type Route,
 } from "./harness";
+import { openMoreActions } from "./tabs";
 
 type State =
   "NOT_TRACKED" | "TRACKED_NOT_INITIALIZED" | "TRACKED_INITIALIZED" | "DISABLED_INITIALIZED";
@@ -100,8 +101,8 @@ describe("detalle del inventario", () => {
   it("el operador registra entradas, pero no inicializa, ajusta ni configura", async () => {
     render({ "GET /api/v1/inventory/items/prod-1": itemRoute("TRACKED_INITIALIZED") }, OPERATOR_ME);
     expect(await screen.findByRole("button", { name: "Registrar entrada" })).toBeDefined();
-    expect(screen.queryByRole("button", { name: "Ajustar" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Desactivar control" })).toBeNull();
+    // Sin ajustar ni configurar, no hay más acciones: el menú «⋯» no aparece.
+    expect(screen.queryByRole("button", { name: /^Más acciones/ })).toBeNull();
   });
 
   it("el operador ve por qué no puede inicializar ni reactivar", async () => {
@@ -215,7 +216,7 @@ describe("detalle del inventario", () => {
     expect((within(dialog).getByLabelText("Cantidad") as HTMLInputElement).value).toBe("3");
     await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
 
-    await user.click(screen.getByRole("button", { name: "Ajustar" }));
+    await user.click(within(await openMoreActions()).getByRole("menuitem", { name: "Ajustar" }));
     dialog = await screen.findByRole("dialog", { name: "Ajustar existencias" });
     await user.type(within(dialog).getByLabelText("Cantidad"), "1");
     await user.type(within(dialog).getByLabelText("Motivo"), "Merma");
@@ -236,7 +237,7 @@ describe("detalle del inventario", () => {
       }),
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Ajustar" }));
+    await user.click(within(await openMoreActions()).getByRole("menuitem", { name: "Ajustar" }));
     const dialog = await screen.findByRole("dialog", { name: "Ajustar existencias" });
     await user.type(within(dialog).getByLabelText("Cantidad"), "4");
     await user.click(within(dialog).getByRole("button", { name: "Registrar ajuste" }));
@@ -266,7 +267,9 @@ describe("detalle del inventario", () => {
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Desactivar control" }));
+    await user.click(
+      within(await openMoreActions()).getByRole("menuitem", { name: "Desactivar control" }),
+    );
     const dialog = await screen.findByRole("dialog", { name: "¿Desactivar el control de stock?" });
     expect(
       within(dialog).getByText(/Las facturas ya emitidas con el control activo/),
@@ -284,11 +287,11 @@ describe("detalle del inventario", () => {
 
   it("con saldo distinto de cero, explica por qué no se puede desactivar", async () => {
     render({ "GET /api/v1/inventory/items/prod-1": itemRoute("TRACKED_INITIALIZED", "-3") });
-    const button = await screen.findByRole("button", { name: "Desactivar control" });
-    expect(button.hasAttribute("disabled")).toBe(true);
-    expect(
-      document.getElementById(button.getAttribute("aria-describedby")!)?.textContent,
-    ).toContain("el saldo debe ser cero");
+    const item = within(await openMoreActions()).getByRole("menuitem", {
+      name: /^Desactivar control/,
+    });
+    expect(item.getAttribute("aria-disabled")).toBe("true");
+    expect(item.textContent).toContain("el saldo debe ser cero");
     expect(screen.getAllByText("Saldo negativo").length).toBeGreaterThan(0);
   });
 

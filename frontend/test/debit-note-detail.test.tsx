@@ -8,10 +8,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { SessionGate } from "@/components/session";
 import { DebitNoteDetailScreen } from "@/features/debit-notes/debit-note-detail";
-import { InvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-note-action";
+import { HeaderActionsMenu } from "@/components/layout/header-actions-menu";
+import { useInvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-note-action";
 import { InvoiceDetailScreen } from "@/features/invoices/invoice-detail";
 import { authorizedInvoice, debitNoteDetail } from "./debit-note-fixtures";
-import { TRANSMISSION_TAB, openTab } from "./tabs";
+import { TRANSMISSION_TAB, openMoreActions, openTab } from "./tabs";
 import {
   ADMIN_ME,
   OPERATOR_ME,
@@ -168,23 +169,28 @@ describe("detalle de la nota de débito", () => {
 });
 
 describe("Emitir nota de débito en el detalle de la factura", () => {
-  const actionFor = (overrides: Record<string, unknown> = {}) => {
-    const invoice = authorizedInvoice(overrides) as unknown as Parameters<
-      typeof InvoiceDebitNoteAction
-    >[0]["invoice"];
-    return (
-      <>
-        <p>detalle</p>
-        <InvoiceDebitNoteAction invoice={invoice} />
-      </>
-    );
+  type Invoice = Parameters<typeof useInvoiceDebitNoteAction>[0];
+  /** La opción en el menú de más acciones, como en el encabezado del detalle. */
+  function Menu({ invoice }: { invoice: Invoice }) {
+    const action = useInvoiceDebitNoteAction(invoice);
+    return <HeaderActionsMenu label="Más acciones" actions={action ? [action] : []} />;
+  }
+  const actionFor = (overrides: Record<string, unknown> = {}) => (
+    <>
+      <p>detalle</p>
+      <Menu invoice={authorizedInvoice(overrides) as unknown as Invoice} />
+    </>
+  );
+  const menuItem = async () => {
+    const menu = await openMoreActions();
+    return within(menu).getByRole("menuitem", { name: "Emitir nota de débito" });
   };
 
   it("una factura autorizada, identificada y del ambiente vigente ofrece la acción", async () => {
     render(actionFor(), {});
-    expect(
-      (await screen.findByRole("link", { name: "Emitir nota de débito" })).getAttribute("href"),
-    ).toBe("/notas-debito/borradores/nueva?factura=inv-1");
+    expect((await menuItem()).getAttribute("href")).toBe(
+      "/notas-debito/borradores/nueva?factura=inv-1",
+    );
   });
 
   it.each([
@@ -209,7 +215,8 @@ describe("Emitir nota de débito en el detalle de la factura", () => {
       expect(calls.some((call) => call.key === "GET /api/v1/company/status")).toBe(true),
     );
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(screen.queryByRole("link", { name: "Emitir nota de débito" })).toBeNull();
+    // Sin opciones, el menú no aparece.
+    expect(screen.queryByRole("button", { name: /^Más acciones/ })).toBeNull();
   });
 
   it("se oculta sin permiso para preparar notas de débito", async () => {
@@ -217,10 +224,10 @@ describe("Emitir nota de débito en el detalle de la factura", () => {
     render(actionFor(), {});
     await screen.findByText("detalle");
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(screen.queryByRole("link", { name: "Emitir nota de débito" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Más acciones/ })).toBeNull();
   });
 
-  it("el detalle de una factura autorizada la ofrece junto a su encabezado", async () => {
+  it("el detalle de una factura autorizada la ofrece en el menú de su título", async () => {
     render(<InvoiceDetailScreen invoiceId="inv-1" />, {
       "GET /api/v1/invoices/inv-1": ok(authorizedInvoice()),
     });
@@ -228,8 +235,11 @@ describe("Emitir nota de débito en el detalle de la factura", () => {
       await screen.findByRole("heading", { level: 1, name: "Factura 001-001-000000001" }),
     ).toBeDefined();
     expect(
-      (await screen.findByRole("link", { name: "Emitir nota de débito" })).getAttribute("href"),
-    ).toBe("/notas-debito/borradores/nueva?factura=inv-1");
+      await screen.findByRole("button", { name: "Más acciones de la factura 001-001-000000001" }),
+    ).toBeDefined();
+    expect((await menuItem()).getAttribute("href")).toBe(
+      "/notas-debito/borradores/nueva?factura=inv-1",
+    );
   });
 
   it("sin el estado de la empresa no se ofrece", async () => {
@@ -237,8 +247,6 @@ describe("Emitir nota de débito en el detalle de la factura", () => {
       "GET /api/v1/company/status": () => ({ status: 500, body: errorBody("INTERNAL_ERROR", "x") }),
     });
     await screen.findByText("detalle");
-    await waitFor(() =>
-      expect(screen.queryByRole("link", { name: "Emitir nota de débito" })).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("button", { name: /^Más acciones/ })).toBeNull());
   });
 });

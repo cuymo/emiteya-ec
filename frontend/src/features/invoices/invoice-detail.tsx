@@ -8,6 +8,7 @@
 // design D19); P3 (versiones y metadatos técnicos): no se muestran.
 "use client";
 
+import type { InvoiceView } from "@facturador/contracts";
 import { RotateCw } from "lucide-react";
 import { useId, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
@@ -28,8 +29,9 @@ import { StateCell } from "@/features/documents/document-status-badge";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { InvoiceCreditSection } from "@/features/credit-notes/invoice-credit-section";
-import { InvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-note-action";
-import { InvoiceShippingGuideAction } from "@/features/shipping-guides/invoice-shipping-guide-action";
+import { useInvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-note-action";
+import { useInvoiceShippingGuideAction } from "@/features/shipping-guides/invoice-shipping-guide-action";
+import { HeaderActionsMenu, type HeaderAction } from "@/components/layout/header-actions-menu";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -41,6 +43,25 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       </h2>
       {children}
     </section>
+  );
+}
+
+/**
+ * Más acciones de la factura, en el menú «⋯» del título: crear otro comprobante desde ella. Cada
+ * opción aparece solo si la factura y el rol la admiten.
+ */
+function InvoiceMoreActions({ invoice }: { invoice: InvoiceView }) {
+  const debitNote = useInvoiceDebitNoteAction(invoice);
+  const guide = useInvoiceShippingGuideAction(invoice);
+  const actions = [debitNote, guide.action].filter(
+    (action): action is HeaderAction => action !== null,
+  );
+  return (
+    <HeaderActionsMenu
+      label={`Más acciones de la factura ${invoice.documentNumber}`}
+      actions={actions}
+      busy={guide.pending}
+    />
   );
 }
 
@@ -104,9 +125,12 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
     <section aria-labelledby="factura-titulo" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 id="factura-titulo" className="text-3xl font-bold tabular-nums">
-            Factura {data.documentNumber}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 id="factura-titulo" className="text-3xl font-bold tabular-nums">
+              Factura {data.documentNumber}
+            </h1>
+            <InvoiceMoreActions invoice={data} />
+          </div>
           <span className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
             <StateCell state={data.state} stopped={data.transmission.stopped !== null} />
             {formatIssueDate(data.issueDate)} · Ambiente de {ENVIRONMENT_LABELS[data.environment]}
@@ -118,8 +142,6 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
             Reintentar firma
           </AsyncButton>
         )}
-        <InvoiceDebitNoteAction invoice={data} />
-        <InvoiceShippingGuideAction invoice={data} />
       </div>
 
       {reserved && (

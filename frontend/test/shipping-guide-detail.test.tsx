@@ -9,7 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { SessionGate } from "@/components/session";
 import { formatDateTime } from "@/features/invoices/invoice-format";
-import { InvoiceShippingGuideAction } from "@/features/shipping-guides/invoice-shipping-guide-action";
+import { HeaderActionsMenu } from "@/components/layout/header-actions-menu";
+import { useInvoiceShippingGuideAction } from "@/features/shipping-guides/invoice-shipping-guide-action";
 import { ShippingGuideDetailScreen } from "@/features/shipping-guides/shipping-guide-detail";
 import {
   ADMIN_ME,
@@ -21,7 +22,7 @@ import {
   type Route,
 } from "./harness";
 import { guideDetail, guideDraft } from "./shipping-guide-fixtures";
-import { TRANSMISSION_TAB, openTab } from "./tabs";
+import { TRANSMISSION_TAB, openMoreActions, openTab } from "./tabs";
 
 // La política vigente da `shippingGuides.draft` a los dos roles: se retira para probar la acción oculta.
 const permissions = vi.hoisted(() => ({ deny: new Set<string>() }));
@@ -179,11 +180,18 @@ describe("Nueva guía de remisión en el detalle de la factura", () => {
       state: "AUTHORIZED",
       environment: "TEST",
       ...overrides,
-    }) as Parameters<typeof InvoiceShippingGuideAction>[0]["invoice"];
+    }) as Parameters<typeof useInvoiceShippingGuideAction>[0];
+  /** La opción en el menú de más acciones, como en el encabezado del detalle. */
+  function Menu({ overrides }: { overrides: Record<string, unknown> }) {
+    const { action, pending } = useInvoiceShippingGuideAction(invoice(overrides));
+    return (
+      <HeaderActionsMenu label="Más acciones" actions={action ? [action] : []} busy={pending} />
+    );
+  }
   const actionFor = (overrides: Record<string, unknown> = {}) => (
     <>
       <p>detalle</p>
-      <InvoiceShippingGuideAction invoice={invoice(overrides)} />
+      <Menu overrides={overrides} />
     </>
   );
 
@@ -195,9 +203,10 @@ describe("Nueva guía de remisión en el detalle de la factura", () => {
         return { status: 201, body: { data: guideDraft() } };
       },
     });
+    const menu = await openMoreActions();
     await userEvent
       .setup()
-      .click(await screen.findByRole("button", { name: "Nueva guía de remisión" }));
+      .click(within(menu).getByRole("menuitem", { name: "Nueva guía de remisión" }));
     await waitFor(() =>
       expect(navigation.push).toHaveBeenCalledWith("/guias-remision/borradores/grd-1"),
     );
@@ -216,13 +225,13 @@ describe("Nueva guía de remisión en el detalle de la factura", () => {
     await waitFor(() =>
       expect(calls.some((call) => call.key === "GET /api/v1/company/status")).toBe(true),
     );
-    expect(screen.queryByRole("button", { name: "Nueva guía de remisión" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Más acciones/ })).toBeNull();
   });
 
   it("sin shippingGuides.draft no se ofrece", async () => {
     permissions.deny.add("shippingGuides.draft");
     render(actionFor(), {});
     await screen.findByText("detalle");
-    expect(screen.queryByRole("button", { name: "Nueva guía de remisión" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Más acciones/ })).toBeNull();
   });
 });
