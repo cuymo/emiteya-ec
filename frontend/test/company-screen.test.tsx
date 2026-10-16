@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
@@ -77,10 +77,31 @@ describe("Empresa (design D14)", () => {
     renderCompany(() => EMPTY);
     expect(await screen.findByText("Registra los datos con que tu empresa emitirá.")).toBeDefined();
     expect(screen.getAllByRole("radio", { checked: false }).length).toBeGreaterThanOrEqual(2);
+    const identification = screen.getByRole("region", { name: "Identificación" });
     expect(
-      screen.getByText("Registra primero los datos de la empresa para cargar el logo."),
+      within(identification).getByText(
+        "Registra primero los datos de la empresa para cargar el logo.",
+      ),
     ).toBeDefined();
+    expect(
+      within(identification).getByRole("button", { name: "Subir logo" }).hasAttribute("disabled"),
+    ).toBe(true);
     expect(screen.queryByText(/Versión/)).toBeNull();
+  });
+
+  it("la pestaña ya nombra la pantalla: el título queda solo para lectores de pantalla", async () => {
+    renderCompany(() => view());
+    await screen.findByRole("form", { name: "Datos de la empresa" });
+    const title = screen.getByRole("heading", { level: 1, name: "Empresa" });
+    expect(title.className).toContain("sr-only");
+    for (const name of [
+      "Identificación",
+      "Dirección y contacto",
+      "Atributos tributarios",
+      "Proveedor del sistema",
+    ]) {
+      expect(screen.getByRole("region", { name })).toBeDefined();
+    }
   });
 
   it("valida en el cliente con las reglas del contrato y conserva los valores", async () => {
@@ -182,8 +203,48 @@ describe("Empresa (design D14)", () => {
         logo: { mimeType: "image/png", sizeBytes: 4096, sha256: "a".repeat(64) },
       }),
     );
-    expect(await screen.findByAltText("Logo vigente de la empresa")).toBeDefined();
-    expect(screen.getByText("PNG · 4 KB")).toBeDefined();
-    expect(screen.getByText("PNG o JPEG, hasta 512 KB.")).toBeDefined();
+    const identification = await screen.findByRole("region", { name: "Identificación" });
+    expect(await within(identification).findByAltText("Logo vigente de la empresa")).toBeDefined();
+    expect(within(identification).getByText("Vigente: PNG · 4 KB")).toBeDefined();
+    expect(within(identification).getByText("PNG o JPEG, hasta 512 KB.")).toBeDefined();
+    expect(within(identification).getByRole("button", { name: "Reemplazar logo" })).toBeDefined();
+  });
+
+  it("elimina el logo al confirmar, sin enviar los datos del formulario", async () => {
+    const calls = mockApi({
+      "GET /api/v1/me": () => ({ status: 200, body: { data: ADMIN_ME } }),
+      "GET /api/v1/taxpayer": () => ({
+        status: 200,
+        body: {
+          data: view({
+            version: 2,
+            logo: { mimeType: "image/png", sizeBytes: 4096, sha256: "a".repeat(64) },
+          }),
+        },
+      }),
+      "DELETE /api/v1/taxpayer/logo": () => ({
+        status: 200,
+        body: { data: view({ version: 3 }) },
+      }),
+      "PUT /api/v1/taxpayer": () => ({ status: 200, body: { data: view({ version: 3 }) } }),
+    });
+    renderApp(
+      <SessionGate fallback={<p>cargando</p>}>
+        <CompanyScreen />
+      </SessionGate>,
+    );
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Eliminar logo" }));
+    const dialog = await screen.findByRole("dialog", { name: "Eliminar el logo" });
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar logo" }));
+    expect(
+      await screen.findByText(
+        "Eliminaste el logo. Los comprobantes ya emitidos conservan el suyo.",
+      ),
+    ).toBeDefined();
+    expect(
+      calls.some((call) => call.key === "DELETE /api/v1/taxpayer/logo?expectedVersion=2"),
+    ).toBe(true);
+    expect(calls.some((call) => call.key === "PUT /api/v1/taxpayer")).toBe(false);
   });
 });

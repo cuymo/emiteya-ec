@@ -87,6 +87,9 @@ export function ConfirmDialog({
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
+            // El portal no corta el árbol de React: sin esto, confirmar dentro de un formulario
+            // también lo enviaría.
+            event.stopPropagation();
             if (!ready || pending) return;
             if (!requiredText) return onConfirm();
             const error = requiredText.validate(text);

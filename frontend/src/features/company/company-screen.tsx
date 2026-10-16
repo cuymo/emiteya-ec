@@ -1,7 +1,9 @@
 // Empresa (add-taxpayer-setup, design D14). Usuario: administrador. Objetivo: registrar o corregir
 // los datos con que la empresa emite. Decisión: qué datos y atributos declarar, sabiendo que cada
 // cambio aplica a los comprobantes futuros. Acción principal: Guardar datos. P1: estado del RUC y
-// versión vigente. P2: logo. P3 (historial): fuera de la pantalla.
+// versión vigente. P2: logo, en Identificación. P3 (historial): fuera de la pantalla. La pestaña
+// ya nombra la pantalla: el título queda solo para los lectores de pantalla, y cada sección lleva
+// su título y su descripción a la izquierda de sus campos.
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { useTaxpayer, useUpdateTaxpayer } from "./company-api";
-import { LogoSection } from "./logo-section";
+import { LogoField } from "./logo-field";
 
 const RIMPE_OPTIONS = [
   { value: "NONE", label: "No aplica", description: "La empresa no está en el régimen RIMPE." },
@@ -149,13 +151,29 @@ function toInput(values: FormOutput, expectedVersion: number | null): UpdateTaxp
   };
 }
 
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+function Section({
+  id,
+  title,
+  description,
+  children,
+}: {
+  id: string;
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-4">
-      <h2 id={id} className="text-lg font-semibold">
-        {title}
-      </h2>
-      {children}
+    <section
+      aria-labelledby={id}
+      className="grid gap-4 py-8 first:pt-0 @settings-split:grid-cols-3 @settings-split:gap-8"
+    >
+      <div className="flex flex-col gap-1">
+        <h2 id={id} className="text-base font-semibold">
+          {title}
+        </h2>
+        <p className="text-sm text-foreground-muted">{description}</p>
+      </div>
+      <div className="flex min-w-0 flex-col gap-4 @settings-split:col-span-2">{children}</div>
     </section>
   );
 }
@@ -217,14 +235,25 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
   const isWithholding = useWatch({ control: form.control, name: "isWithholdingAgent" });
 
   return (
-    <div className="flex flex-col gap-8">
-      <form
-        noValidate
-        aria-label="Datos de la empresa"
-        onSubmit={form.handleSubmit((values) => save.mutate(toInput(values, baseVersion)))}
-        className="flex flex-col gap-8"
-      >
-        <Section id="identificacion" title="Identificación">
+    <form
+      noValidate
+      aria-label="Datos de la empresa"
+      onSubmit={form.handleSubmit((values) => save.mutate(toInput(values, baseVersion)))}
+      className="@container flex flex-col gap-6"
+    >
+      <div className="flex flex-col divide-y divide-border">
+        <Section
+          id="identificacion"
+          title="Identificación"
+          description="Con estos datos y este logo la empresa aparece en sus comprobantes."
+        >
+          <LogoField
+            taxpayer={taxpayer}
+            onVersionChange={(previous, next) => {
+              // Un cambio propio del logo avanza la versión de partida solo si nadie más cambió nada.
+              setBaseVersion((current) => (current === previous ? next : current));
+            }}
+          />
           {locked ? (
             <div className="flex flex-col gap-1">
               <span className="text-sm font-medium">RUC</span>
@@ -274,7 +303,11 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
           </FormField>
         </Section>
 
-        <Section id="contacto" title="Dirección y contacto">
+        <Section
+          id="contacto"
+          title="Dirección y contacto"
+          description="La dirección matriz va en cada comprobante; el teléfono y el correo, si los registras."
+        >
           <FormField
             id="headOfficeAddress"
             label="Dirección matriz"
@@ -306,7 +339,11 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
           </div>
         </Section>
 
-        <Section id="atributos" title="Atributos tributarios">
+        <Section
+          id="atributos"
+          title="Atributos tributarios"
+          description="Lo que declaras aquí se imprime en los comprobantes y define cómo se emiten."
+        >
           <div className="flex flex-col gap-1">
             <span id="accounting-label" className="text-sm font-medium">
               Obligada a llevar contabilidad
@@ -401,7 +438,11 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
           </div>
         </Section>
 
-        <Section id="proveedor" title="Proveedor del sistema">
+        <Section
+          id="proveedor"
+          title="Proveedor del sistema"
+          description="Solo si un tercero te provee este sistema de facturación."
+        >
           <FormField
             id="providerRuc"
             label="RUC proveedor (opcional)"
@@ -421,44 +462,44 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
             />
           </FormField>
         </Section>
+      </div>
 
-        {conflict && (
-          <div
-            role="alert"
-            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
-          >
-            <span>Otro administrador cambió los datos. Recarga para ver la versión vigente.</span>
-            <Button variant="outline" size="legacy-sm" onClick={() => void reload()}>
-              Recargar
-            </Button>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2 border-t border-border pt-4">
-          <p className="text-sm text-foreground-muted">
-            Los cambios aplican a los comprobantes que se emitan después.
-          </p>
-          <div>
-            {/* Pendiente también mientras se valida: un doble clic no envía dos veces. */}
-            <AsyncButton
-              type="submit"
-              pending={save.isPending || form.formState.isSubmitting}
-              pendingLabel="Guardando los datos"
-            >
-              Guardar datos
-            </AsyncButton>
-          </div>
+      {conflict && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm"
+        >
+          <span>Otro administrador cambió los datos. Recarga para ver la versión vigente.</span>
+          <Button variant="outline" size="legacy-sm" onClick={() => void reload()}>
+            Recargar
+          </Button>
         </div>
-      </form>
+      )}
 
-      <LogoSection
-        taxpayer={taxpayer}
-        onVersionChange={(previous, next) => {
-          // Un cambio propio del logo avanza la versión de partida solo si nadie más cambió nada.
-          setBaseVersion((current) => (current === previous ? next : current));
-        }}
-      />
-    </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+        <p className="flex flex-col text-sm text-foreground-muted">
+          {taxpayer.version !== null && <span>Versión {taxpayer.version}</span>}
+          <span>Los cambios aplican a los comprobantes que se emitan después.</span>
+        </p>
+        {/* Pendiente también mientras se valida: un doble clic no envía dos veces. */}
+        <AsyncButton
+          type="submit"
+          pending={save.isPending || form.formState.isSubmitting}
+          pendingLabel="Guardando los datos"
+        >
+          Guardar datos
+        </AsyncButton>
+      </div>
+    </form>
+  );
+}
+
+/** El título de la pantalla, solo para los lectores de pantalla: la pestaña ya lo muestra. */
+function CompanyTitle() {
+  return (
+    <h1 id="empresa-titulo" className="sr-only">
+      Empresa
+    </h1>
   );
 }
 
@@ -469,14 +510,8 @@ export function CompanyScreen() {
 
   if (!allowed) {
     return (
-      <section
-        aria-labelledby="empresa-titulo"
-        data-panel-width="form"
-        className="flex flex-col gap-6"
-      >
-        <h1 id="empresa-titulo" className="text-3xl font-bold">
-          Empresa
-        </h1>
+      <section aria-labelledby="empresa-titulo" className="flex flex-col gap-6">
+        <CompanyTitle />
         <EmptyState
           kind="no-permission"
           title="No tienes permiso para ver esta sección"
@@ -488,14 +523,8 @@ export function CompanyScreen() {
   if (taxpayer.isPending) return <CompanySkeleton />;
   if (taxpayer.isError) {
     return (
-      <section
-        aria-labelledby="empresa-titulo"
-        data-panel-width="form"
-        className="flex flex-col gap-6"
-      >
-        <h1 id="empresa-titulo" className="text-3xl font-bold">
-          Empresa
-        </h1>
+      <section aria-labelledby="empresa-titulo" className="flex flex-col gap-6">
+        <CompanyTitle />
         <ErrorState
           message={errorMessage(taxpayer.error)}
           onRetry={() => void taxpayer.refetch()}
@@ -506,26 +535,13 @@ export function CompanyScreen() {
 
   const view = taxpayer.data;
   return (
-    <section
-      aria-labelledby="empresa-titulo"
-      data-panel-width="form"
-      className="flex flex-col gap-6"
-    >
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-baseline gap-2">
-          <h1 id="empresa-titulo" className="text-3xl font-bold">
-            Empresa
-          </h1>
-          {view.version !== null && (
-            <span className="text-sm text-foreground-muted">Versión {view.version}</span>
-          )}
-        </div>
-        {!view.configured && (
-          <p className="text-sm text-foreground-muted">
-            Registra los datos con que tu empresa emitirá.
-          </p>
-        )}
-      </div>
+    <section aria-labelledby="empresa-titulo" className="flex flex-col gap-6">
+      <CompanyTitle />
+      {!view.configured && (
+        <p className="text-sm text-foreground-muted">
+          Registra los datos con que tu empresa emitirá.
+        </p>
+      )}
       <CompanyForm taxpayer={view} />
     </section>
   );
@@ -533,12 +549,20 @@ export function CompanyScreen() {
 
 export function CompanySkeleton() {
   return (
-    <section aria-busy="true" data-panel-width="form" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Empresa</h1>
-      <Skeleton className="h-10 w-full max-w-xs" />
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-48 w-full" />
+    <section aria-busy="true" className="@container flex flex-col gap-6">
+      <h1 className="sr-only">Empresa</h1>
+      <div className="grid gap-4 @settings-split:grid-cols-3 @settings-split:gap-8">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-4 w-full" />
+        </div>
+        <div className="flex flex-col gap-4 @settings-split:col-span-2">
+          <Skeleton className="size-20" />
+          <Skeleton className="h-10 w-full max-w-xs" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
     </section>
   );
 }

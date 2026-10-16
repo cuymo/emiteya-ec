@@ -17,6 +17,30 @@ export type CurrentFile = {
 export const formatSize = (bytes: number) =>
   bytes < 1024 ? `${bytes} B` : `${Math.round(bytes / 1024)} KB`;
 
+/** La alerta temprana del cliente sobre el tipo y el tamaño, o null si el archivo puede enviarse. */
+export function fileProblem(
+  file: File,
+  {
+    accept,
+    acceptLabel,
+    maxBytes,
+    formatBytes = formatSize,
+  }: {
+    accept: readonly string[];
+    acceptLabel: string;
+    maxBytes: number;
+    formatBytes?: (bytes: number) => string;
+  },
+): string | null {
+  const name = file.name.toLowerCase();
+  // Algunos sistemas informan un tipo vacío o distinto para extensiones como .p12.
+  if (!accept.some((type) => (type.startsWith(".") ? name.endsWith(type) : type === file.type))) {
+    return `El archivo debe ser ${acceptLabel}.`;
+  }
+  if (file.size > maxBytes) return `El archivo supera el límite de ${formatBytes(maxBytes)}.`;
+  return null;
+}
+
 export function FileField({
   id,
   label,
@@ -57,18 +81,9 @@ export function FileField({
 
   function choose(file: File | undefined) {
     if (!file) return;
-    const name = file.name.toLowerCase();
-    // Algunos sistemas informan un tipo vacío o distinto para extensiones como .p12.
-    if (!accept.some((type) => (type.startsWith(".") ? name.endsWith(type) : type === file.type))) {
-      setLocalError(`El archivo debe ser ${acceptLabel}.`);
-      return;
-    }
-    if (file.size > maxBytes) {
-      setLocalError(`El archivo supera el límite de ${formatBytes(maxBytes)}.`);
-      return;
-    }
-    setLocalError(null);
-    onSelect(file);
+    const problem = fileProblem(file, { accept, acceptLabel, maxBytes, formatBytes });
+    setLocalError(problem);
+    if (!problem) onSelect(file);
   }
 
   return (

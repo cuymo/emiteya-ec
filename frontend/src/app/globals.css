@@ -255,6 +255,9 @@
   /* Contenedor desde el que una rejilla de campos va en dos columnas y la lista de líneas muestra su
      fila de encabezados, con la variante `@form-wide:` (design D7 y D13). */
   --container-form-wide: 40rem;
+  /* Contenedor desde el que una sección de configuración pone su título y su descripción a la
+     izquierda de sus campos, con la variante `@settings-split:` (Empresa). */
+  --container-settings-split: 48rem;
 }
 
 /* Columnas de los formularios (productize-invoice-editor-and-composition-foundation, design D5 y
