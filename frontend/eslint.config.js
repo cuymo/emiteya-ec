@@ -53,6 +53,8 @@ export default defineConfig(
       // Ambiente compacto y aviso de la emisión (productize-invoice-editor-and-composition-foundation, D21).
       "src/features/company/environment-notice.tsx",
       "src/features/company/emission-environment-notice.tsx",
+      // Tablero de Inicio.
+      "src/features/dashboard/**/*.{ts,tsx}",
     ],
     rules: {
       "no-restricted-imports": [

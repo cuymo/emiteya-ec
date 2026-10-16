@@ -18,7 +18,14 @@ import {
   useCompanyStatus,
 } from "@/features/company/company-api";
 
-function Checks({ status, canConfigure }: { status: CompanyStatus; canConfigure: boolean }) {
+/** Los requisitos para emitir, con el enlace al primero pendiente; también los usa el tablero. */
+export function ReadinessChecks({
+  status,
+  canConfigure,
+}: {
+  status: CompanyStatus;
+  canConfigure: boolean;
+}) {
   const primary = status.readiness.checks.find(
     (check) => check.status === "PENDING" && READINESS_COPY[check.key].action,
   );
@@ -117,7 +124,7 @@ export function ReadinessScreen() {
           )}
         </div>
       </div>
-      <Checks status={status.data} canConfigure={canConfigure} />
+      <ReadinessChecks status={status.data} canConfigure={canConfigure} />
       {!ready && !canConfigure && (
         <p className="text-sm text-foreground-muted">
           Pide a un administrador que complete la configuración.
