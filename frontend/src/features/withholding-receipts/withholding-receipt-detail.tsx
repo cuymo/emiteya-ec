@@ -18,6 +18,10 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
 import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import {
+  DocumentDetailTabs,
+  transmissionNeedsAttention,
+} from "@/features/documents/document-detail-tabs";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
@@ -267,36 +271,72 @@ export function WithholdingReceiptDetailScreen({
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-6">
-          {!reserved && <TransmissionSection document={data} />}
-          <DocumentsSection document={data} />
-          <Section title="Proveedor">
-            <p className="flex flex-col text-sm">
-              <span className="font-medium break-words">{data.subject.legalName}</span>
-              <span className="text-foreground-muted tabular-nums">
-                {data.subject.identification}
-              </span>
-            </p>
-          </Section>
-          <Section title="Documentos sustento">
-            <ol className="flex flex-col gap-2">
-              {data.supports.map((support) => (
-                <SupportCard key={support.position} support={support} />
-              ))}
-            </ol>
-          </Section>
-          <Section title="Parte relacionada">
-            <p className="flex flex-col text-sm">
-              <span>
-                {RELATED_PARTY_LABELS[related.value]} · Declarada por{" "}
-                {related.declaredByName ?? "un usuario"} · {formatDateTime(related.declaredAt)}
-              </span>
-              <span className="text-foreground-muted">
-                Es una declaración del usuario: el sistema no puede comprobarla.
-              </span>
-            </p>
-          </Section>
-        </div>
+        <DocumentDetailTabs
+          label="Secciones de la retención"
+          tabs={[
+            {
+              id: "detalle",
+              label: "Detalle",
+              content: (
+                <>
+                  <Section title="Proveedor">
+                    <p className="flex flex-col text-sm">
+                      <span className="font-medium break-words">{data.subject.legalName}</span>
+                      <span className="text-foreground-muted tabular-nums">
+                        {data.subject.identification}
+                      </span>
+                    </p>
+                  </Section>
+                  <Section title="Parte relacionada">
+                    <p className="flex flex-col text-sm">
+                      <span>
+                        {RELATED_PARTY_LABELS[related.value]} · Declarada por{" "}
+                        {related.declaredByName ?? "un usuario"} ·{" "}
+                        {formatDateTime(related.declaredAt)}
+                      </span>
+                      <span className="text-foreground-muted">
+                        Es una declaración del usuario: el sistema no puede comprobarla.
+                      </span>
+                    </p>
+                  </Section>
+                </>
+              ),
+            },
+            {
+              id: "sustentos",
+              label: "Documentos sustento",
+              content: (
+                <>
+                  <Section title="Documentos sustento">
+                    <ol className="flex flex-col gap-2">
+                      {data.supports.map((support) => (
+                        <SupportCard key={support.position} support={support} />
+                      ))}
+                    </ol>
+                  </Section>
+                </>
+              ),
+            },
+            ...(reserved
+              ? []
+              : [
+                  {
+                    id: "transmision",
+                    label: "Transmisión al SRI",
+                    attention: transmissionNeedsAttention(
+                      data.state,
+                      data.transmission.stopped !== null,
+                    ),
+                    content: <TransmissionSection document={data} />,
+                  },
+                ]),
+            {
+              id: "documentos",
+              label: "RIDE y XML",
+              content: <DocumentsSection document={data} />,
+            },
+          ]}
+        />
         <aside
           aria-labelledby="totales-titulo"
           className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"

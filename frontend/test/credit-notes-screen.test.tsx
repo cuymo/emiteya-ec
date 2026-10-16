@@ -27,6 +27,7 @@ import {
   type Route,
 } from "./harness";
 import { chooseFilter } from "./filters";
+import { TRANSMISSION_TAB, openTab } from "./tabs";
 
 const ok =
   (data: unknown): Route =>
@@ -251,6 +252,7 @@ describe("detalle de la nota de crédito", () => {
     expect(screen.getByText("Devolución de mercadería")).toBeDefined();
     expect(screen.getByText("Retorno físico al inventario: 1")).toBeDefined();
     expect(screen.getByText("Su crédito está aplicado en la factura.")).toBeDefined();
+    await openTab("Declaraciones");
     const declarations = screen.getByRole("region", { name: "Declaraciones del usuario" });
     expect(within(declarations).getByText(/Declaradas por Óscar Operador/)).toBeDefined();
     expect(within(declarations).getByText(/el sistema no puede comprobarlas/)).toBeDefined();
@@ -264,9 +266,11 @@ describe("detalle de la nota de crédito", () => {
         "Declaro que esta factura no sustentó una solicitud de devolución de impuestos.",
       ),
     ).toBeDefined();
+    await openTab(TRANSMISSION_TAB);
     expect(
       screen.getByText("El SRI autorizó la nota de crédito: está lista para entregarse."),
     ).toBeDefined();
+    await openTab("RIDE y XML");
     expect(await screen.findByRole("button", { name: "Descargar RIDE" })).toBeDefined();
     expect(screen.getByText("Valor de la modificación")).toBeDefined();
   });
@@ -292,6 +296,7 @@ describe("detalle de la nota de crédito", () => {
     expect(
       calls.some((call) => call.key === "POST /api/v1/credit-notes/nc-1/signing-attempts"),
     ).toBe(true);
+    await openTab(TRANSMISSION_TAB);
     expect(
       await screen.findByText("La nota de crédito está firmada y espera su envío al SRI."),
     ).toBeDefined();

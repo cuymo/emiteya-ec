@@ -205,6 +205,11 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
 });
 
 describe("sección de la transmisión en el detalle (tarea 13.2)", () => {
+  // El detalle abre en la pestaña de la transmisión, como un enlace con `?seccion=transmision`.
+  beforeEach(() => {
+    navigation.search = new URLSearchParams("seccion=transmision");
+  });
+
   it("la autorizada muestra el número, la fecha y el ambiente, sin acción", async () => {
     render(<InvoiceDetailScreen invoiceId="inv-1" />, {
       "GET /api/v1/invoices/inv-1": ok(
@@ -415,6 +420,11 @@ describe("sección de la transmisión en el detalle (tarea 13.2)", () => {
 });
 
 describe("revisión de la interfaz (tarea 13.3)", () => {
+  // El detalle abre en la pestaña de la transmisión, como un enlace con `?seccion=transmision`.
+  beforeEach(() => {
+    navigation.search = new URLSearchParams("seccion=transmision");
+  });
+
   it("con la reconciliación pedida, la revisión manual explica que está en curso", async () => {
     render(<InvoiceDetailScreen invoiceId="inv-1" />, {
       "GET /api/v1/invoices/inv-1": ok(detail("MANUAL_REVIEW", { inProgress: true })),

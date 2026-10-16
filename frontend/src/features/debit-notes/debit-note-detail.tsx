@@ -18,6 +18,10 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
 import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import {
+  DocumentDetailTabs,
+  transmissionNeedsAttention,
+} from "@/features/documents/document-detail-tabs";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
@@ -140,82 +144,120 @@ export function DebitNoteDetailScreen({ debitNoteId }: { debitNoteId: string }) 
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-6">
-          {!reserved && <TransmissionSection document={data} />}
-          <DocumentsSection document={data} />
-          <Section title="Factura modificada">
-            <p className="flex flex-col text-sm">
-              <Link
-                href={`/facturas/${data.invoice.id}`}
-                className="self-start font-medium tabular-nums underline-offset-2 hover:underline"
-              >
-                Factura {data.invoice.documentNumber}
-              </Link>
-              <span className="text-foreground-muted">
-                Emitida el {formatIssueDate(data.invoice.issueDate)}
-              </span>
-            </p>
-            <p className="text-sm text-foreground-muted">
-              La nota de débito no cambia la factura ni su crédito.
-            </p>
-          </Section>
-          <Section title="Comprador">
-            <p className="flex flex-col text-sm">
-              <span className="font-medium break-words">{data.buyer.legalName}</span>
-              <span className="text-foreground-muted tabular-nums">
-                {data.buyer.identification}
-              </span>
-            </p>
-          </Section>
-          <Section title="Conceptos">
-            <ol className="flex flex-col gap-2">
-              {data.concepts.map((concept) => (
-                <li
-                  key={concept.position}
-                  className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                >
-                  <span className="flex min-w-0 flex-col">
-                    <span className="font-medium break-words">{concept.description}</span>
-                    <span className="text-foreground-muted">
-                      {DEBIT_NOTE_CAUSE_LABELS[concept.cause]} ·{" "}
-                      {treatmentLabel(concept.taxTreatment)}
-                    </span>
-                  </span>
-                  <span className="whitespace-nowrap tabular-nums">
-                    {formatUsd(concept.amount)}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </Section>
-          <Section title="Declaración del usuario">
-            <p className="flex flex-col text-sm">
-              <span>
-                Declarada por {declarations.declaredByName ?? "un usuario"} ·{" "}
-                {formatDateTime(declarations.declaredAt)}
-              </span>
-              <span className="text-foreground-muted">
-                Es una declaración del usuario: el sistema no puede comprobarla.
-              </span>
-            </p>
-            <ul className="flex flex-col gap-2">
-              {declarations.statements.map((statement) => (
-                <li
-                  key={statement.id}
-                  className="flex flex-col gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                >
-                  <span>{statement.text}</span>
-                  <span className="text-xs text-foreground-muted">Fuente: {statement.source}</span>
-                </li>
-              ))}
-            </ul>
-            {declarations.version !== DEBIT_NOTE_ELIGIBILITY_DECLARATION.version && (
-              <p className="text-xs text-foreground-muted">
-                Texto de la versión {declarations.version} de la declaración, vigente al emitir.
-              </p>
-            )}
-          </Section>
-        </div>
+        <DocumentDetailTabs
+          label="Secciones de la nota de débito"
+          tabs={[
+            {
+              id: "detalle",
+              label: "Detalle",
+              content: (
+                <>
+                  <Section title="Factura modificada">
+                    <p className="flex flex-col text-sm">
+                      <Link
+                        href={`/facturas/${data.invoice.id}`}
+                        className="self-start font-medium tabular-nums underline-offset-2 hover:underline"
+                      >
+                        Factura {data.invoice.documentNumber}
+                      </Link>
+                      <span className="text-foreground-muted">
+                        Emitida el {formatIssueDate(data.invoice.issueDate)}
+                      </span>
+                    </p>
+                    <p className="text-sm text-foreground-muted">
+                      La nota de débito no cambia la factura ni su crédito.
+                    </p>
+                  </Section>
+                  <Section title="Comprador">
+                    <p className="flex flex-col text-sm">
+                      <span className="font-medium break-words">{data.buyer.legalName}</span>
+                      <span className="text-foreground-muted tabular-nums">
+                        {data.buyer.identification}
+                      </span>
+                    </p>
+                  </Section>
+                  <Section title="Conceptos">
+                    <ol className="flex flex-col gap-2">
+                      {data.concepts.map((concept) => (
+                        <li
+                          key={concept.position}
+                          className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                        >
+                          <span className="flex min-w-0 flex-col">
+                            <span className="font-medium break-words">{concept.description}</span>
+                            <span className="text-foreground-muted">
+                              {DEBIT_NOTE_CAUSE_LABELS[concept.cause]} ·{" "}
+                              {treatmentLabel(concept.taxTreatment)}
+                            </span>
+                          </span>
+                          <span className="whitespace-nowrap tabular-nums">
+                            {formatUsd(concept.amount)}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </Section>
+                </>
+              ),
+            },
+            {
+              id: "declaracion",
+              label: "Declaración",
+              content: (
+                <>
+                  <Section title="Declaración del usuario">
+                    <p className="flex flex-col text-sm">
+                      <span>
+                        Declarada por {declarations.declaredByName ?? "un usuario"} ·{" "}
+                        {formatDateTime(declarations.declaredAt)}
+                      </span>
+                      <span className="text-foreground-muted">
+                        Es una declaración del usuario: el sistema no puede comprobarla.
+                      </span>
+                    </p>
+                    <ul className="flex flex-col gap-2">
+                      {declarations.statements.map((statement) => (
+                        <li
+                          key={statement.id}
+                          className="flex flex-col gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                        >
+                          <span>{statement.text}</span>
+                          <span className="text-xs text-foreground-muted">
+                            Fuente: {statement.source}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    {declarations.version !== DEBIT_NOTE_ELIGIBILITY_DECLARATION.version && (
+                      <p className="text-xs text-foreground-muted">
+                        Texto de la versión {declarations.version} de la declaración, vigente al
+                        emitir.
+                      </p>
+                    )}
+                  </Section>
+                </>
+              ),
+            },
+            ...(reserved
+              ? []
+              : [
+                  {
+                    id: "transmision",
+                    label: "Transmisión al SRI",
+                    attention: transmissionNeedsAttention(
+                      data.state,
+                      data.transmission.stopped !== null,
+                    ),
+                    content: <TransmissionSection document={data} />,
+                  },
+                ]),
+            {
+              id: "documentos",
+              label: "RIDE y XML",
+              content: <DocumentsSection document={data} />,
+            },
+          ]}
+        />
         <aside
           aria-labelledby="totales-titulo"
           className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"

@@ -218,5 +218,6 @@ destino relativo a `frontend/src/`.
 | `components/data-table/row-actions-menu.tsx` | `app/(main)/dashboard/users/_components/users-columns.tsx` | MIT de «Studio Admin» |
 | `components/layout/page-header.tsx` | `app/(main)/dashboard/file-manager/page.tsx` (encabezado) | MIT de «Studio Admin» |
 | `features/documents/document-status-badge.tsx` | `app/(main)/dashboard/tasks/_components/columns.tsx` (insignia de estado) | MIT de «Studio Admin» |
+| `components/ui/tabs.tsx` (solo horizontal, con la variante de línea) | `components/ui/tabs.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/chart.tsx` (sin `ChartStyle` ni atributos `style`: colores de los tokens del tema) | `components/ui/chart.tsx` de shadcn/ui, sobre Recharts 3 (MIT, dependencia) | MIT de shadcn/ui |
 | `features/dashboard/dashboard-screen.tsx`, el tablero en tarjetas con cabecera, descripción y acción (composición visual) | `app/(main)/dashboard/users/_components/users.tsx` | MIT de «Studio Admin» |

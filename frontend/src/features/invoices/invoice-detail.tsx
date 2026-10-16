@@ -20,6 +20,10 @@ import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
 import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
 import { CLASS_LABELS, STAGE_LABELS, formatDateTime, formatIssueDate } from "./invoice-format";
 import { useInvoice, useRetrySigning } from "./invoices-api";
+import {
+  DocumentDetailTabs,
+  transmissionNeedsAttention,
+} from "@/features/documents/document-detail-tabs";
 import { StateCell } from "@/features/documents/document-status-badge";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
@@ -144,54 +148,90 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-6">
-          {!reserved && <TransmissionSection document={data} />}
-          <DocumentsSection document={data} />
-          <InvoiceCreditSection invoice={data} />
-          <Section title="Comprador">
-            <p className="flex flex-col text-sm">
-              <span className="font-medium break-words">{data.buyer.legalName}</span>
-              <span className="text-foreground-muted tabular-nums">
-                {data.buyer.identification}
-              </span>
-              {data.buyer.address && (
-                <span className="text-foreground-muted break-words">{data.buyer.address}</span>
-              )}
-            </p>
-          </Section>
-          <Section title="Productos">
-            <ul className="flex flex-col gap-2">
-              {data.lines.map((line) => (
-                <li
-                  key={line.position}
-                  className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                >
-                  <span className="flex min-w-0 flex-col">
-                    <span className="font-medium break-words">{line.description}</span>
-                    <span className="text-foreground-muted tabular-nums">
-                      {formatDecimal(line.quantity)} × {formatUsd(line.unitPrice)}
-                      {line.discount !== "0.00" && ` · Descuento ${formatUsd(line.discount)}`}
-                      {line.taxes.map((tax) => ` · IVA ${formatPercentage(tax.percentage)}`)}
-                    </span>
-                  </span>
-                  <span className="whitespace-nowrap tabular-nums">
-                    {formatUsd(line.taxableBase)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-          <Section title="Formas de pago">
-            <ul className="flex flex-col gap-1 text-sm">
-              {data.payments.map((payment, index) => (
-                <li key={index} className="flex justify-between gap-2 tabular-nums">
-                  <span className="break-words">{methodLabel(payment.code)}</span>
-                  <span className="whitespace-nowrap">{formatUsd(payment.amount)}</span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        </div>
+        <DocumentDetailTabs
+          label="Secciones de la factura"
+          tabs={[
+            {
+              id: "detalle",
+              label: "Detalle",
+              content: (
+                <>
+                  <Section title="Comprador">
+                    <p className="flex flex-col text-sm">
+                      <span className="font-medium break-words">{data.buyer.legalName}</span>
+                      <span className="text-foreground-muted tabular-nums">
+                        {data.buyer.identification}
+                      </span>
+                      {data.buyer.address && (
+                        <span className="text-foreground-muted break-words">
+                          {data.buyer.address}
+                        </span>
+                      )}
+                    </p>
+                  </Section>
+                  <Section title="Productos">
+                    <ul className="flex flex-col gap-2">
+                      {data.lines.map((line) => (
+                        <li
+                          key={line.position}
+                          className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                        >
+                          <span className="flex min-w-0 flex-col">
+                            <span className="font-medium break-words">{line.description}</span>
+                            <span className="text-foreground-muted tabular-nums">
+                              {formatDecimal(line.quantity)} × {formatUsd(line.unitPrice)}
+                              {line.discount !== "0.00" &&
+                                ` · Descuento ${formatUsd(line.discount)}`}
+                              {line.taxes.map(
+                                (tax) => ` · IVA ${formatPercentage(tax.percentage)}`,
+                              )}
+                            </span>
+                          </span>
+                          <span className="whitespace-nowrap tabular-nums">
+                            {formatUsd(line.taxableBase)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                  <Section title="Formas de pago">
+                    <ul className="flex flex-col gap-1 text-sm">
+                      {data.payments.map((payment, index) => (
+                        <li key={index} className="flex justify-between gap-2 tabular-nums">
+                          <span className="break-words">{methodLabel(payment.code)}</span>
+                          <span className="whitespace-nowrap">{formatUsd(payment.amount)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                </>
+              ),
+            },
+            ...(reserved
+              ? []
+              : [
+                  {
+                    id: "transmision",
+                    label: "Transmisión al SRI",
+                    attention: transmissionNeedsAttention(
+                      data.state,
+                      data.transmission.stopped !== null,
+                    ),
+                    content: <TransmissionSection document={data} />,
+                  },
+                ]),
+            {
+              id: "documentos",
+              label: "RIDE y XML",
+              content: <DocumentsSection document={data} />,
+            },
+            {
+              id: "notas-credito",
+              label: "Notas de crédito",
+              content: <InvoiceCreditSection invoice={data} />,
+            },
+          ]}
+        />
         <aside
           aria-labelledby="totales-titulo"
           className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"

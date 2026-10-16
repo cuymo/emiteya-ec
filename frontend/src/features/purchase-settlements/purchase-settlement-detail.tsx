@@ -18,6 +18,10 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
 import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import {
+  DocumentDetailTabs,
+  transmissionNeedsAttention,
+} from "@/features/documents/document-detail-tabs";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
@@ -211,48 +215,86 @@ export function PurchaseSettlementDetailScreen({
       </p>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-6">
-          {!reserved && <TransmissionSection document={data} />}
-          <DocumentsSection document={data} />
-          <Section title="Proveedor">
-            <p className="flex flex-col text-sm">
-              <span className="font-medium break-words">{data.supplier.legalName}</span>
-              <span className="text-foreground-muted tabular-nums">
-                {IDENTIFICATION_LABELS[data.supplier.identificationType] ?? "Identificación"}{" "}
-                {data.supplier.identification}
-              </span>
-              <span className="text-foreground-muted break-words">{data.supplier.address}</span>
-            </p>
-          </Section>
-          <DeclarationsSection eligibility={data.eligibility} />
-          <Section title="Líneas">
-            <ul className="flex flex-col gap-2">
-              {data.lines.map((line) => (
-                <LineItem key={line.position} line={line} />
-              ))}
-            </ul>
-          </Section>
-          <Section title="Pagos">
-            <ul className="flex flex-col gap-1 text-sm">
-              {data.payments.map((payment) => (
-                <li
-                  key={payment.position}
-                  className="flex flex-wrap justify-between gap-2 tabular-nums"
-                >
-                  <span className="flex min-w-0 flex-col">
-                    <span className="break-words">
-                      {payment.code} · {payment.label}
-                    </span>
-                    <span className="text-foreground-muted">
-                      Plazo {formatDecimal(payment.term)} {payment.timeUnit}
-                    </span>
-                  </span>
-                  <span className="whitespace-nowrap">{formatUsd(payment.total)}</span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        </div>
+        <DocumentDetailTabs
+          label="Secciones de la liquidación de compra"
+          tabs={[
+            {
+              id: "detalle",
+              label: "Detalle",
+              content: (
+                <>
+                  <Section title="Proveedor">
+                    <p className="flex flex-col text-sm">
+                      <span className="font-medium break-words">{data.supplier.legalName}</span>
+                      <span className="text-foreground-muted tabular-nums">
+                        {IDENTIFICATION_LABELS[data.supplier.identificationType] ??
+                          "Identificación"}{" "}
+                        {data.supplier.identification}
+                      </span>
+                      <span className="text-foreground-muted break-words">
+                        {data.supplier.address}
+                      </span>
+                    </p>
+                  </Section>
+                  <Section title="Líneas">
+                    <ul className="flex flex-col gap-2">
+                      {data.lines.map((line) => (
+                        <LineItem key={line.position} line={line} />
+                      ))}
+                    </ul>
+                  </Section>
+                  <Section title="Pagos">
+                    <ul className="flex flex-col gap-1 text-sm">
+                      {data.payments.map((payment) => (
+                        <li
+                          key={payment.position}
+                          className="flex flex-wrap justify-between gap-2 tabular-nums"
+                        >
+                          <span className="flex min-w-0 flex-col">
+                            <span className="break-words">
+                              {payment.code} · {payment.label}
+                            </span>
+                            <span className="text-foreground-muted">
+                              Plazo {formatDecimal(payment.term)} {payment.timeUnit}
+                            </span>
+                          </span>
+                          <span className="whitespace-nowrap">{formatUsd(payment.total)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                </>
+              ),
+            },
+            {
+              id: "procedencia",
+              label: "Procedencia",
+              content: (
+                <>
+                  <DeclarationsSection eligibility={data.eligibility} />
+                </>
+              ),
+            },
+            ...(reserved
+              ? []
+              : [
+                  {
+                    id: "transmision",
+                    label: "Transmisión al SRI",
+                    attention: transmissionNeedsAttention(
+                      data.state,
+                      data.transmission.stopped !== null,
+                    ),
+                    content: <TransmissionSection document={data} />,
+                  },
+                ]),
+            {
+              id: "documentos",
+              label: "RIDE y XML",
+              content: <DocumentsSection document={data} />,
+            },
+          ]}
+        />
         <aside
           aria-labelledby="totales-titulo"
           className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"

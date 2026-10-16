@@ -200,6 +200,7 @@ Shared components own interaction consistency, not business policy.
 - `PageHeader` owns the page's header grammar and its vertical rhythm; the screen supplies the title, the context and, in a list, its actions (`interface-design.md`, «`PageHeader` grammar»). Breadcrumbs are not part of it: `TopbarHeading` paints the screen breadcrumbs in the top bar for every route, without repeating the title (`navigation-responsive.md`, «Breadcrumbs: The Route From Inicio»).
 - `StatusBadge` owns the visual encoding of a state; the module maps its domain values onto it.
 - `DocumentStatusBadge` owns the presentation of fiscal document states (label, semantic variant, icon, and the help of the uncertain-send state); every document screen reaches it through the `StateCell` facade, so the mapping lives in one place. Environment and document state are independent: an authorized document in Pruebas is still not tax-valid.
+- `DocumentDetailTabs` owns the tabs of a document detail: every document screen hands it its tabs (content first, then transmission, RIDE and XML, and its own), and keeps the header and the totals panel outside them.
 - `PermissionGate` may hide or disable controls, but cannot replace API authorization.
 - Date and number components own parsing/display boundaries and return canonical values.
 

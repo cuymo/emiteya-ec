@@ -19,6 +19,10 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
 import { formatDecimal } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import {
+  DocumentDetailTabs,
+  transmissionNeedsAttention,
+} from "@/features/documents/document-detail-tabs";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
@@ -269,42 +273,80 @@ export function ShippingGuideDetailScreen({ shippingGuideId }: { shippingGuideId
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-6">
-          {!reserved && <TransmissionSection document={data} />}
-          <DocumentsSection document={data} />
-          <Section title="Transporte">
-            <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-4 gap-y-1 text-sm">
-              <dt className="text-foreground-muted">Transportista</dt>
-              <dd className="flex flex-col">
-                <span className="font-medium break-words">{data.transporter.legalName}</span>
-                <span className="text-foreground-muted tabular-nums">
-                  {TRANSPORTER_SOURCE_LABELS[data.transporter.source]} ·{" "}
-                  {data.transporter.identification}
-                </span>
-              </dd>
-              <dt className="text-foreground-muted">Placa</dt>
-              <dd className="tabular-nums">{data.plate}</dd>
-              <dt className="text-foreground-muted">Fechas</dt>
-              <dd className="tabular-nums">
-                Del {formatIssueDate(data.transportStart)} al {formatIssueDate(data.transportEnd)}
-              </dd>
-              <dt className="text-foreground-muted">Partida</dt>
-              <dd className="flex flex-col">
-                <span className="break-words">{data.departure.address}</span>
-                <span className="text-foreground-muted">
-                  {departureSourceLabel(data.departure)}
-                </span>
-              </dd>
-            </dl>
-          </Section>
-          <Section title="Destinatarios">
-            <ol className="flex flex-col gap-2">
-              {data.recipients.map((recipient) => (
-                <RecipientCard key={recipient.position} recipient={recipient} />
-              ))}
-            </ol>
-          </Section>
-        </div>
+        <DocumentDetailTabs
+          label="Secciones de la guía de remisión"
+          tabs={[
+            {
+              id: "transporte",
+              label: "Transporte",
+              content: (
+                <>
+                  <Section title="Transporte">
+                    <dl className="grid grid-cols-[minmax(0,10rem)_1fr] gap-x-4 gap-y-1 text-sm">
+                      <dt className="text-foreground-muted">Transportista</dt>
+                      <dd className="flex flex-col">
+                        <span className="font-medium break-words">
+                          {data.transporter.legalName}
+                        </span>
+                        <span className="text-foreground-muted tabular-nums">
+                          {TRANSPORTER_SOURCE_LABELS[data.transporter.source]} ·{" "}
+                          {data.transporter.identification}
+                        </span>
+                      </dd>
+                      <dt className="text-foreground-muted">Placa</dt>
+                      <dd className="tabular-nums">{data.plate}</dd>
+                      <dt className="text-foreground-muted">Fechas</dt>
+                      <dd className="tabular-nums">
+                        Del {formatIssueDate(data.transportStart)} al{" "}
+                        {formatIssueDate(data.transportEnd)}
+                      </dd>
+                      <dt className="text-foreground-muted">Partida</dt>
+                      <dd className="flex flex-col">
+                        <span className="break-words">{data.departure.address}</span>
+                        <span className="text-foreground-muted">
+                          {departureSourceLabel(data.departure)}
+                        </span>
+                      </dd>
+                    </dl>
+                  </Section>
+                </>
+              ),
+            },
+            {
+              id: "destinatarios",
+              label: "Destinatarios",
+              content: (
+                <>
+                  <Section title="Destinatarios">
+                    <ol className="flex flex-col gap-2">
+                      {data.recipients.map((recipient) => (
+                        <RecipientCard key={recipient.position} recipient={recipient} />
+                      ))}
+                    </ol>
+                  </Section>
+                </>
+              ),
+            },
+            ...(reserved
+              ? []
+              : [
+                  {
+                    id: "transmision",
+                    label: "Transmisión al SRI",
+                    attention: transmissionNeedsAttention(
+                      data.state,
+                      data.transmission.stopped !== null,
+                    ),
+                    content: <TransmissionSection document={data} />,
+                  },
+                ]),
+            {
+              id: "documentos",
+              label: "RIDE y XML",
+              content: <DocumentsSection document={data} />,
+            },
+          ]}
+        />
         <aside
           aria-labelledby="resumen-titulo"
           className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"

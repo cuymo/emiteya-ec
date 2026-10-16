@@ -21,6 +21,7 @@ import {
   type Route,
 } from "./harness";
 import { guideDetail, guideDraft } from "./shipping-guide-fixtures";
+import { TRANSMISSION_TAB, openTab } from "./tabs";
 
 // La política vigente da `shippingGuides.draft` a los dos roles: se retira para probar la acción oculta.
 const permissions = vi.hoisted(() => ({ deny: new Set<string>() }));
@@ -102,6 +103,7 @@ describe("detalle de la guía", () => {
     expect(within(transport).getByText("PAA-1234")).toBeDefined();
     expect(within(transport).getByText("Del 06/10/2026 al 07/10/2026")).toBeDefined();
     expect(within(transport).getByText("Desde el establecimiento 001")).toBeDefined();
+    await openTab("Destinatarios");
     const recipients = screen.getByRole("region", { name: "Destinatarios" });
     const first = within(recipients).getByRole("listitem", { name: "1. EL PERNO CIA. LTDA." });
     expect(
@@ -129,7 +131,9 @@ describe("detalle de la guía", () => {
     const summary = screen.getByRole("complementary", { name: "Resumen" });
     expect(within(summary).getByText("2 destinatarios")).toBeDefined();
     expect(within(summary).queryByText(/USD/)).toBeNull();
+    await openTab(TRANSMISSION_TAB);
     expect(screen.getByText("El SRI autorizó la guía: está lista para entregarse.")).toBeDefined();
+    await openTab("RIDE y XML");
     expect(await screen.findByRole("button", { name: "Descargar RIDE" })).toBeDefined();
   });
 
@@ -153,6 +157,7 @@ describe("detalle de la guía", () => {
     expect(
       calls.some((call) => call.key === "POST /api/v1/shipping-guides/gr-1/signing-attempts"),
     ).toBe(true);
+    await openTab(TRANSMISSION_TAB);
     expect(await screen.findByText("La guía está firmada y espera su envío al SRI.")).toBeDefined();
   });
 

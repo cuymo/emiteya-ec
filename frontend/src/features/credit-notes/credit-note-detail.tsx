@@ -22,6 +22,10 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { ApiError } from "@/lib/api";
 import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import {
+  DocumentDetailTabs,
+  transmissionNeedsAttention,
+} from "@/features/documents/document-detail-tabs";
 import { DocumentsSection } from "@/features/archive/documents-section";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
@@ -150,94 +154,135 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-6">
-          {!reserved && <TransmissionSection document={data} />}
-          <DocumentsSection document={data} />
-          <Section title="Factura modificada">
-            <p className="flex flex-col text-sm">
-              <Link
-                href={`/facturas/${data.invoice.id}`}
-                className="self-start font-medium tabular-nums underline-offset-2 hover:underline"
-              >
-                Factura {data.invoice.documentNumber}
-              </Link>
-              <span className="text-foreground-muted">
-                Emitida el {formatIssueDate(data.invoice.issueDate)}
-              </span>
-            </p>
-            <p className="text-sm">{creditStatus(data.state)}</p>
-          </Section>
-          <Section title="Causa y motivo">
-            <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-              <dt className="text-foreground-muted">Causa</dt>
-              <dd>{CREDIT_NOTE_CAUSE_LABELS[data.cause]}</dd>
-              <dt className="text-foreground-muted">Motivo</dt>
-              <dd className="break-words">{data.reason}</dd>
-            </dl>
-          </Section>
-          <Section title="Comprador">
-            <p className="flex flex-col text-sm">
-              <span className="font-medium break-words">{data.buyer.legalName}</span>
-              <span className="text-foreground-muted tabular-nums">
-                {data.buyer.identification}
-              </span>
-            </p>
-          </Section>
-          <Section title="Líneas">
-            <ul className="flex flex-col gap-2">
-              {data.lines.map((line) => (
-                <li
-                  key={line.position}
-                  className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                >
-                  <span className="flex min-w-0 flex-col">
-                    <span className="font-medium break-words">{line.description}</span>
-                    <span className="text-foreground-muted tabular-nums">
-                      {formatDecimal(line.quantity)} × {formatUsd(line.unitPrice)}
-                      {line.discount !== "0.00" && ` · Descuento ${formatUsd(line.discount)}`}
-                      {line.taxes.map((tax) => ` · IVA ${formatPercentage(tax.percentage)}`)}
-                    </span>
-                    <span className="text-foreground-muted">
-                      {compareDecimalStrings(line.physicalReturn, "0") > 0
-                        ? `Retorno físico al inventario: ${formatDecimal(line.physicalReturn)}`
-                        : "Sin retorno físico al inventario"}
-                    </span>
-                  </span>
-                  <span className="whitespace-nowrap tabular-nums">
-                    {formatUsd(line.taxableBase)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-          <Section title="Declaraciones del usuario">
-            <p className="flex flex-col text-sm">
-              <span>
-                Declaradas por {declarations.declaredByName ?? "un usuario"} ·{" "}
-                {formatDateTime(declarations.declaredAt)}
-              </span>
-              <span className="text-foreground-muted">
-                Son declaraciones del usuario: el sistema no puede comprobarlas.
-              </span>
-            </p>
-            <ul className="flex flex-col gap-2">
-              {declarations.statements.map((statement) => (
-                <li
-                  key={statement.id}
-                  className="flex flex-col gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                >
-                  <span>{statement.text}</span>
-                  <span className="text-xs text-foreground-muted">Fuente: {statement.source}</span>
-                </li>
-              ))}
-            </ul>
-            {declarations.version !== CREDIT_NOTE_ELIGIBILITY_DECLARATION.version && (
-              <p className="text-xs text-foreground-muted">
-                Texto de la versión {declarations.version} de las declaraciones, vigente al emitir.
-              </p>
-            )}
-          </Section>
-        </div>
+        <DocumentDetailTabs
+          label="Secciones de la nota de crédito"
+          tabs={[
+            {
+              id: "detalle",
+              label: "Detalle",
+              content: (
+                <>
+                  <Section title="Factura modificada">
+                    <p className="flex flex-col text-sm">
+                      <Link
+                        href={`/facturas/${data.invoice.id}`}
+                        className="self-start font-medium tabular-nums underline-offset-2 hover:underline"
+                      >
+                        Factura {data.invoice.documentNumber}
+                      </Link>
+                      <span className="text-foreground-muted">
+                        Emitida el {formatIssueDate(data.invoice.issueDate)}
+                      </span>
+                    </p>
+                    <p className="text-sm">{creditStatus(data.state)}</p>
+                  </Section>
+                  <Section title="Causa y motivo">
+                    <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+                      <dt className="text-foreground-muted">Causa</dt>
+                      <dd>{CREDIT_NOTE_CAUSE_LABELS[data.cause]}</dd>
+                      <dt className="text-foreground-muted">Motivo</dt>
+                      <dd className="break-words">{data.reason}</dd>
+                    </dl>
+                  </Section>
+                  <Section title="Comprador">
+                    <p className="flex flex-col text-sm">
+                      <span className="font-medium break-words">{data.buyer.legalName}</span>
+                      <span className="text-foreground-muted tabular-nums">
+                        {data.buyer.identification}
+                      </span>
+                    </p>
+                  </Section>
+                  <Section title="Líneas">
+                    <ul className="flex flex-col gap-2">
+                      {data.lines.map((line) => (
+                        <li
+                          key={line.position}
+                          className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                        >
+                          <span className="flex min-w-0 flex-col">
+                            <span className="font-medium break-words">{line.description}</span>
+                            <span className="text-foreground-muted tabular-nums">
+                              {formatDecimal(line.quantity)} × {formatUsd(line.unitPrice)}
+                              {line.discount !== "0.00" &&
+                                ` · Descuento ${formatUsd(line.discount)}`}
+                              {line.taxes.map(
+                                (tax) => ` · IVA ${formatPercentage(tax.percentage)}`,
+                              )}
+                            </span>
+                            <span className="text-foreground-muted">
+                              {compareDecimalStrings(line.physicalReturn, "0") > 0
+                                ? `Retorno físico al inventario: ${formatDecimal(line.physicalReturn)}`
+                                : "Sin retorno físico al inventario"}
+                            </span>
+                          </span>
+                          <span className="whitespace-nowrap tabular-nums">
+                            {formatUsd(line.taxableBase)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                </>
+              ),
+            },
+            {
+              id: "declaraciones",
+              label: "Declaraciones",
+              content: (
+                <>
+                  <Section title="Declaraciones del usuario">
+                    <p className="flex flex-col text-sm">
+                      <span>
+                        Declaradas por {declarations.declaredByName ?? "un usuario"} ·{" "}
+                        {formatDateTime(declarations.declaredAt)}
+                      </span>
+                      <span className="text-foreground-muted">
+                        Son declaraciones del usuario: el sistema no puede comprobarlas.
+                      </span>
+                    </p>
+                    <ul className="flex flex-col gap-2">
+                      {declarations.statements.map((statement) => (
+                        <li
+                          key={statement.id}
+                          className="flex flex-col gap-1 rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                        >
+                          <span>{statement.text}</span>
+                          <span className="text-xs text-foreground-muted">
+                            Fuente: {statement.source}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    {declarations.version !== CREDIT_NOTE_ELIGIBILITY_DECLARATION.version && (
+                      <p className="text-xs text-foreground-muted">
+                        Texto de la versión {declarations.version} de las declaraciones, vigente al
+                        emitir.
+                      </p>
+                    )}
+                  </Section>
+                </>
+              ),
+            },
+            ...(reserved
+              ? []
+              : [
+                  {
+                    id: "transmision",
+                    label: "Transmisión al SRI",
+                    attention: transmissionNeedsAttention(
+                      data.state,
+                      data.transmission.stopped !== null,
+                    ),
+                    content: <TransmissionSection document={data} />,
+                  },
+                ]),
+            {
+              id: "documentos",
+              label: "RIDE y XML",
+              content: <DocumentsSection document={data} />,
+            },
+          ]}
+        />
         <aside
           aria-labelledby="totales-titulo"
           className="flex flex-col gap-3 self-start rounded-lg border border-border bg-surface p-4"

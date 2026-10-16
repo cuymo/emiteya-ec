@@ -17,6 +17,7 @@ import {
   renderApp,
   type Route,
 } from "./harness";
+import { TRANSMISSION_TAB, openTab } from "./tabs";
 import { withholdingDetail } from "./withholding-fixtures";
 
 const ok =
@@ -77,6 +78,7 @@ describe("detalle de la retención", () => {
     ).toBeDefined();
     const supplier = screen.getByRole("region", { name: "Proveedor" });
     expect(within(supplier).getByText("PROVEEDORA DEL SUR S.A.")).toBeDefined();
+    await openTab("Documentos sustento");
     const supports = screen.getByRole("region", { name: "Documentos sustento" });
     const card = within(supports).getByRole("listitem", { name: "Factura 001-001-000000123" });
     expect(within(card).getByText(/Sustento 01: Crédito Tributario/)).toBeDefined();
@@ -100,15 +102,18 @@ describe("detalle de la retención", () => {
     expect(
       within(card).getByText("Pago: OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO"),
     ).toBeDefined();
+    await openTab("Detalle");
     const related = screen.getByRole("region", { name: "Parte relacionada" });
     expect(within(related).getByText(/No · Declarada por Óscar Operador/)).toBeDefined();
     expect(within(related).getByText(/el sistema no puede comprobarla/)).toBeDefined();
     const totals = screen.getByRole("complementary", { name: "Totales" });
     expect(within(totals).getByText("Octubre de 2026")).toBeDefined();
     expect(within(totals).getByText("USD 3,25")).toBeDefined();
+    await openTab(TRANSMISSION_TAB);
     expect(
       screen.getByText("El SRI autorizó la retención: está lista para entregarse."),
     ).toBeDefined();
+    await openTab("RIDE y XML");
     expect(await screen.findByRole("button", { name: "Descargar RIDE" })).toBeDefined();
   });
 
@@ -132,6 +137,7 @@ describe("detalle de la retención", () => {
     expect(
       calls.some((call) => call.key === "POST /api/v1/withholding-receipts/ret-1/signing-attempts"),
     ).toBe(true);
+    await openTab(TRANSMISSION_TAB);
     expect(
       await screen.findByText("La retención está firmada y espera su envío al SRI."),
     ).toBeDefined();

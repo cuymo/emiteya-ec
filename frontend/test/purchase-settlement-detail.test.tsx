@@ -20,6 +20,7 @@ import {
   type Route,
 } from "./harness";
 import { SETTLEMENT_KEY, settlementDetail } from "./purchase-settlement-fixtures";
+import { TRANSMISSION_TAB, openTab } from "./tabs";
 
 // La política vigente da `purchaseSettlements.read` a los dos roles: se retira para probar el acceso.
 const permissions = vi.hoisted(() => ({ deny: new Set<string>() }));
@@ -102,6 +103,7 @@ describe("detalle de la liquidación de compra", () => {
     expect(within(supplier).getByText("Comunidad San Pablo, Cayambe")).toBeDefined();
 
     // Las cuatro declaraciones, declaradas por el usuario con su momento; nunca verificadas.
+    await openTab("Procedencia");
     const origin = screen.getByRole("region", { name: "Procedencia" });
     const declarations = within(origin).getAllByRole("listitem");
     expect(declarations).toHaveLength(4);
@@ -124,6 +126,7 @@ describe("detalle de la liquidación de compra", () => {
     ).toBeDefined();
     expect(document.body.textContent).not.toMatch(/retención (emitida|asociada|registrada)/i);
 
+    await openTab("Detalle");
     const lines = screen.getByRole("region", { name: "Líneas" });
     expect(within(lines).getByText("Saco de cacao en grano, 45 kg")).toBeDefined();
     expect(
@@ -140,9 +143,11 @@ describe("detalle de la liquidación de compra", () => {
     expect(within(totals).getByText("IVA 15 %")).toBeDefined();
     expect(within(totals).getByText("USD 106,00")).toBeDefined();
     expect(within(totals).getByText(SETTLEMENT_KEY)).toBeDefined();
+    await openTab(TRANSMISSION_TAB);
     expect(
       screen.getByText("El SRI autorizó la liquidación: está lista para entregarse."),
     ).toBeDefined();
+    await openTab("RIDE y XML");
     expect(await screen.findByRole("button", { name: "Descargar RIDE" })).toBeDefined();
   });
 
@@ -166,6 +171,7 @@ describe("detalle de la liquidación de compra", () => {
     expect(
       calls.some((call) => call.key === "POST /api/v1/purchase-settlements/lc-1/signing-attempts"),
     ).toBe(true);
+    await openTab(TRANSMISSION_TAB);
     expect(
       await screen.findByText("La liquidación está firmada y espera su envío al SRI."),
     ).toBeDefined();

@@ -533,3 +533,22 @@ La bandeja SHALL incluir las liquidaciones de compra desde que se reservan, con 
 #### Scenario: Enlace al detalle por tipo
 - **WHEN** un usuario abre una liquidación de compra desde la bandeja
 - **THEN** llega al detalle de la liquidación, no al de otro tipo
+
+### Requirement: Detalle de un comprobante en pestañas
+El detalle de cada comprobante que el sistema emite SHALL separar su información en pestañas, con el encabezado (número, estado, ambiente y acciones) y el panel de totales siempre a la vista fuera de ellas. La primera pestaña SHALL ser el contenido del comprobante; las demás SHALL ser la transmisión al SRI, que no aparece mientras el comprobante espera su firma, el RIDE y el XML, y lo propio de cada tipo: las notas de crédito de una factura, las declaraciones de una nota de crédito o de débito, los documentos sustento de una retención, los destinatarios de una guía de remisión y la procedencia de una liquidación de compra. La pestaña elegida SHALL quedar en la dirección, para volver a ella al recargar o al compartir el enlace. La pestaña de la transmisión SHALL indicar con un punto y con su nombre accesible cuando requiere atención: transmisión detenida, resultado incierto, revisión manual, devuelto o no autorizado. Las pestañas SHALL recorrerse con el teclado.
+
+#### Scenario: Abrir el detalle
+- **WHEN** un operador abre el detalle de una factura autorizada
+- **THEN** ve el encabezado, los totales y la pestaña Detalle con el comprador, los productos y las formas de pago, y las pestañas Transmisión al SRI, RIDE y XML y Notas de crédito
+
+#### Scenario: Enlace a una pestaña
+- **WHEN** un operador abre el detalle de una nota de crédito con la pestaña de su transmisión en la dirección
+- **THEN** el detalle abre en esa pestaña
+
+#### Scenario: Transmisión que requiere atención
+- **WHEN** un operador abre el detalle de una retención con la transmisión detenida
+- **THEN** la pestaña Transmisión al SRI lleva un punto y su nombre accesible dice que requiere atención
+
+#### Scenario: Comprobante esperando su firma
+- **WHEN** un operador abre el detalle de una guía de remisión que todavía no se firmó
+- **THEN** no ve la pestaña de la transmisión, y el encabezado explica la firma pendiente con la acción de reintentarla

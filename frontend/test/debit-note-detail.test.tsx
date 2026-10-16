@@ -11,6 +11,7 @@ import { DebitNoteDetailScreen } from "@/features/debit-notes/debit-note-detail"
 import { InvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-note-action";
 import { InvoiceDetailScreen } from "@/features/invoices/invoice-detail";
 import { authorizedInvoice, debitNoteDetail } from "./debit-note-fixtures";
+import { TRANSMISSION_TAB, openTab } from "./tabs";
 import {
   ADMIN_ME,
   OPERATOR_ME,
@@ -112,6 +113,7 @@ describe("detalle de la nota de débito", () => {
     expect(
       within(totals).getByText("OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO ·", { exact: false }),
     ).toBeDefined();
+    await openTab("Declaración");
     const declaration = screen.getByRole("region", { name: "Declaración del usuario" });
     expect(within(declaration).getByText(/Declarada por Óscar Operador/)).toBeDefined();
     expect(within(declaration).getByText(/el sistema no puede comprobarla/)).toBeDefined();
@@ -120,9 +122,11 @@ describe("detalle de la nota de débito", () => {
         "Declaro que esta factura no es una factura comercial negociable que haya sido efectivamente negociada.",
       ),
     ).toBeDefined();
+    await openTab(TRANSMISSION_TAB);
     expect(
       screen.getByText("El SRI autorizó la nota de débito: está lista para entregarse."),
     ).toBeDefined();
+    await openTab("RIDE y XML");
     expect(await screen.findByRole("button", { name: "Descargar RIDE" })).toBeDefined();
   });
 
@@ -146,6 +150,7 @@ describe("detalle de la nota de débito", () => {
     expect(
       calls.some((call) => call.key === "POST /api/v1/debit-notes/nd-1/signing-attempts"),
     ).toBe(true);
+    await openTab(TRANSMISSION_TAB);
     expect(
       await screen.findByText("La nota de débito está firmada y espera su envío al SRI."),
     ).toBeDefined();
