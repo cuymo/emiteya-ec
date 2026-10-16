@@ -135,6 +135,7 @@ describe("generación de OpenAPI", () => {
       "/inventory/items/{productId}/tracking",
       "/invoices",
       "/invoices/drafts",
+      "/invoices/drafts/preview",
       "/invoices/drafts/{draftId}",
       "/invoices/{invoiceId}",
       "/invoices/{invoiceId}/reconciliations",

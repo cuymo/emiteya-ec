@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
-import type { DraftView, InvoiceView } from "@facturador/contracts";
+import type { DraftPreviewView, DraftView, InvoiceView } from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import type { InvoiceSnapshot } from "../../src/modules/invoices/domain/snapshot.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
@@ -135,6 +135,45 @@ describe("emisión de facturas hasta RESERVED", () => {
   afterAll(async () => {
     await pool.close();
     await db?.drop();
+  });
+
+  describe("vista previa sin guardar (spec invoices: Vista previa de un borrador sin guardar)", () => {
+    it("da los mismos totales y problemas que el borrador guardado, sin crear ningún borrador", async () => {
+      const a = companies.a!;
+      const content = {
+        emissionPointId: a.emissionPointId,
+        buyerPartyId: a.customerId,
+        lines: [{ productId: a.productId, quantity: "3", discount: "1.25" }],
+        payments: [{ paymentMethod: "01" }],
+      };
+      const prisma = db.database.prisma;
+      const before = await prisma.invoiceDraft.count({ where: { companyId: a.companyId } });
+      const res = await call(a.cookies.operator, "post", "/invoices/drafts/preview").send(content);
+      expect(res.status, JSON.stringify(res.body)).toBe(200);
+      const preview = (res.body as { data: DraftPreviewView }).data;
+      expect(await prisma.invoiceDraft.count({ where: { companyId: a.companyId } })).toBe(before);
+      const saved = await draftFor(a);
+      expect(preview).toEqual((saved as unknown as DraftView).preview);
+      expect(preview.totals).not.toBeNull();
+
+      // Un contenido incompleto se calcula igual y dice qué falta.
+      const partial = await call(a.cookies.admin, "post", "/invoices/drafts/preview").send({
+        lines: content.lines,
+      });
+      expect(partial.status).toBe(200);
+      const codes = (partial.body as { data: DraftPreviewView }).data.issues.map(
+        (issue) => issue.code,
+      );
+      expect(codes).toContain("INVOICE_DRAFT_INCOMPLETE");
+    });
+
+    it("una referencia de otra empresa se rechaza como inexistente", async () => {
+      const res = await call(companies.a!.cookies.admin, "post", "/invoices/drafts/preview").send({
+        buyerPartyId: companies.r!.customerId,
+      });
+      expect(res.status).toBe(400);
+      expect((res.body as { error: { code: string } }).error.code).toBe("BUYER_NOT_FOUND");
+    });
   });
 
   describe("reserva (spec document-emission: Comprobante reservado de forma atómica)", () => {

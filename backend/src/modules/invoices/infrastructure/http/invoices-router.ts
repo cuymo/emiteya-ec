@@ -6,6 +6,7 @@ import { Router, type Response } from "express";
 import {
   IDEMPOTENCY_KEY_HEADER,
   type DraftSummaryView,
+  type DraftPreviewView,
   type DraftView,
   type InvoiceSummaryView,
   type InvoiceTotalsView,
@@ -22,7 +23,7 @@ import {
 import type { StoredDocument } from "../../../fiscal/application/ports.ts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
 import { diagnosticMessage, isAttemptCode } from "../../application/diagnostics.ts";
-import type { DraftDetails, Drafts } from "../../application/drafts.ts";
+import type { DraftDetails, Drafts, PreviewDetails } from "../../application/drafts.ts";
 import type { Emission } from "../../application/emission.ts";
 import type {
   InvoiceDetails,
@@ -78,6 +79,28 @@ function buyerView({ input }: DraftDetails): DraftView["buyer"] {
   };
 }
 
+/** Vista previa no fiscal de un borrador o de un contenido sin guardar. */
+export function toDraftPreviewView({ input, evaluation }: PreviewDetails): DraftPreviewView {
+  return {
+    evaluatedOn: input.issueDate,
+    lines: evaluation.lines.map((line) => ({
+      position: line.position,
+      unitPrice: line.unitPrice,
+      taxableBase: line.taxableBase,
+      taxes: line.taxes.map(({ taxCode, rateCode, percentage, base, amount }) => ({
+        taxCode,
+        rateCode,
+        percentage,
+        base,
+        amount,
+      })),
+    })),
+    totals: evaluation.totals ? totalsView(evaluation.totals) : null,
+    issues: [...evaluation.issues],
+    stockWarnings: stockWarnings(input),
+  };
+}
+
 export function toDraftView(details: DraftDetails): DraftView {
   const { draft, input, evaluation } = details;
   return {
@@ -110,24 +133,7 @@ export function toDraftView(details: DraftDetails): DraftView {
         amount: payment.amount,
       };
     }),
-    preview: {
-      evaluatedOn: input.issueDate,
-      lines: evaluation.lines.map((line) => ({
-        position: line.position,
-        unitPrice: line.unitPrice,
-        taxableBase: line.taxableBase,
-        taxes: line.taxes.map(({ taxCode, rateCode, percentage, base, amount }) => ({
-          taxCode,
-          rateCode,
-          percentage,
-          base,
-          amount,
-        })),
-      })),
-      totals: evaluation.totals ? totalsView(evaluation.totals) : null,
-      issues: [...evaluation.issues],
-      stockWarnings: stockWarnings(input),
-    },
+    preview: toDraftPreviewView({ input, evaluation }),
     createdAt: draft.createdAt.toISOString(),
     createdBy: draft.createdBy,
     updatedAt: draft.updatedAt.toISOString(),
@@ -356,6 +362,10 @@ export function invoicesRouter({
 
   router.post("/invoices/drafts", async (req, res) => {
     send(res, 201, toDraftView(await drafts.create(contextOf(res), req.body)));
+  });
+
+  router.post("/invoices/drafts/preview", async (req, res) => {
+    send(res, 200, toDraftPreviewView(await drafts.preview(contextOf(res), req.body)));
   });
 
   router.get("/invoices/drafts/:draftId", async (req, res) => {

@@ -1,7 +1,9 @@
 // Borradores de factura (add-invoice-emission, design D2 y D13). Se guardan, corrigen con versión y
 // eliminan sin consumir el secuencial ni crear datos fiscales, y sin auditoría (D14). Las referencias
 // se resuelven en la empresa del contexto. Cada consulta devuelve una vista previa no fiscal,
-// calculada con la fecha de hoy en Ecuador y la misma evaluación de la emisión (D6).
+// calculada con la fecha de hoy en Ecuador y la misma evaluación de la emisión (D6). La vista previa
+// también se pide para un contenido sin guardar: el editor muestra los totales y los problemas
+// mientras se escribe, sin guardar el borrador ni duplicar el cálculo en el cliente.
 import {
   createDraftSchema,
   listDraftsQuerySchema,
@@ -32,6 +34,9 @@ export type DraftsDependencies = {
   /** `INVOICE_MAX_LINES`: defensa de recursos de la aplicación, no una regla del SRI. */
   maxLines: number;
 };
+
+/** Vista previa de un contenido, guardado o no. */
+export type PreviewDetails = Readonly<{ input: EvaluationInput; evaluation: Evaluation }>;
 
 /** Borrador con sus referencias resueltas y su vista previa. */
 export type DraftDetails = Readonly<{
@@ -120,6 +125,21 @@ export function createDrafts(deps: DraftsDependencies) {
         tx.create(ctx.companyId, content, ctx.userId),
       );
       return details(draft);
+    },
+
+    /** La vista previa de un contenido sin guardar: no crea ni cambia ningún borrador. */
+    async preview(ctx: RequestContext, body: unknown): Promise<PreviewDetails> {
+      authorizer.requirePermission(ctx, "invoices.draft");
+      const content = contentOf(parseInput(createDraftSchema, body));
+      await checkReferences(ctx.companyId, content);
+      const { input } = await readEvaluation(
+        deps.reads,
+        ctx.companyId,
+        content,
+        deps.today(),
+        deps.maxLines,
+      );
+      return { input, evaluation: evaluateInvoice(input) };
     },
 
     async get(ctx: RequestContext, draftId: string): Promise<DraftDetails> {

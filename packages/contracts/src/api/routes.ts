@@ -81,6 +81,7 @@ import {
   draftIdParamsSchema,
   draftListMetaSchema,
   draftSummaryViewSchema,
+  draftPreviewViewSchema,
   draftViewSchema,
   emitInvoiceHeadersSchema,
   emitInvoiceSchema,
@@ -1194,6 +1195,23 @@ export const apiRoutes: readonly RouteDefinition[] = [
       201: {
         description: "Borrador guardado, con su vista previa no fiscal.",
         schema: successEnvelope(draftViewSchema),
+      },
+      400: draftReferenceErrors,
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/invoices/drafts/preview",
+    summary:
+      "Calcular la vista previa de un borrador sin guardarlo, con sus totales y sus problemas",
+    request: { body: createDraftSchema },
+    responses: {
+      200: {
+        description:
+          "Vista previa no fiscal calculada hoy en Ecuador con los precios vigentes de los productos, como la de un borrador guardado; no crea ni cambia ningún borrador.",
+        schema: successEnvelope(draftPreviewViewSchema),
       },
       400: draftReferenceErrors,
       401: errors[401],

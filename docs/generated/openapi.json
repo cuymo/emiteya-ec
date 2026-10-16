@@ -15706,6 +15706,488 @@
         }
       }
     },
+    "/invoices/drafts/preview": {
+      "post": {
+        "summary": "Calcular la vista previa de un borrador sin guardarlo, con sus totales y sus problemas",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "emissionPointId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "buyerPartyId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lines": {
+                    "default": [],
+                    "maxItems": 1000,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "productId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "quantity": {
+                          "type": "string"
+                        },
+                        "discount": {
+                          "default": "0",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "productId",
+                        "quantity"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "payments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "paymentMethod": {
+                          "type": "string",
+                          "pattern": "^[0-9A-Z][0-9A-Z-]{0,63}$"
+                        },
+                        "amount": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "paymentMethod"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vista previa no fiscal calculada hoy en Ecuador con los precios vigentes de los productos, como la de un borrador guardado; no crea ni cambia ningún borrador.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "evaluatedOn": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "unitPrice": {
+                                "type": "string"
+                              },
+                              "taxableBase": {
+                                "type": "string"
+                              },
+                              "taxes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "taxCode": {
+                                      "type": "string"
+                                    },
+                                    "rateCode": {
+                                      "type": "string"
+                                    },
+                                    "percentage": {
+                                      "type": "string"
+                                    },
+                                    "base": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "taxCode",
+                                    "rateCode",
+                                    "percentage",
+                                    "base",
+                                    "amount"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "unitPrice",
+                              "taxableBase",
+                              "taxes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "totals": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "withoutTaxes": {
+                                  "type": "string"
+                                },
+                                "discount": {
+                                  "type": "string"
+                                },
+                                "taxes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "taxCode": {
+                                        "type": "string"
+                                      },
+                                      "rateCode": {
+                                        "type": "string"
+                                      },
+                                      "percentage": {
+                                        "type": "string"
+                                      },
+                                      "base": {
+                                        "type": "string"
+                                      },
+                                      "amount": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "taxCode",
+                                      "rateCode",
+                                      "percentage",
+                                      "base",
+                                      "amount"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "total": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "withoutTaxes",
+                                "discount",
+                                "taxes",
+                                "total"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "issues": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": [
+                                  "INVOICE_DRAFT_NOT_FOUND",
+                                  "INVOICE_NOT_FOUND",
+                                  "INVOICE_DRAFT_CHANGED",
+                                  "INVOICE_DRAFT_ALREADY_EMITTED",
+                                  "INVOICE_DRAFT_INCOMPLETE",
+                                  "INVOICE_TOO_MANY_LINES",
+                                  "IDEMPOTENCY_KEY_REQUIRED",
+                                  "IDEMPOTENCY_KEY_REUSED",
+                                  "TAXPAYER_NOT_CONFIGURED",
+                                  "EMISSION_POINT_NOT_FOUND",
+                                  "EMISSION_POINT_UNAVAILABLE",
+                                  "SIGNING_CERTIFICATE_NOT_USABLE",
+                                  "BUYER_NOT_FOUND",
+                                  "BUYER_NOT_CUSTOMER",
+                                  "BUYER_INACTIVE",
+                                  "BUYER_IDENTIFICATION_TYPE_NOT_USABLE",
+                                  "PRODUCT_NOT_FOUND",
+                                  "PRODUCT_INACTIVE",
+                                  "DISCOUNT_EXCEEDS_SUBTOTAL",
+                                  "TAX_REFERENCE_NOT_USABLE",
+                                  "TAX_CALCULATION_DATA_MISSING",
+                                  "AMOUNT_OUT_OF_RANGE",
+                                  "PAYMENT_METHOD_NOT_FOUND",
+                                  "PAYMENT_METHOD_NOT_USABLE",
+                                  "PAYMENTS_DO_NOT_MATCH_TOTAL",
+                                  "CONSUMER_FINAL_POLICY_MISSING",
+                                  "CONSUMER_FINAL_LIMIT_EXCEEDED",
+                                  "SPECIAL_CASE_UNSUPPORTED",
+                                  "SCHEMA_NOT_AVAILABLE",
+                                  "SEQUENCE_EXHAUSTED",
+                                  "SRI_INTERACTION_IN_PROGRESS",
+                                  "INVOICE_NOT_RECONCILABLE"
+                                ]
+                              },
+                              "message": {
+                                "type": "string"
+                              },
+                              "line": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "payment": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "message",
+                              "line",
+                              "payment"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "stockWarnings": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "enum": [
+                                  "STOCK_BELOW_REQUESTED",
+                                  "STOCK_NOT_INITIALIZED"
+                                ]
+                              },
+                              "productId": {
+                                "type": "string"
+                              },
+                              "requested": {
+                                "type": "string"
+                              },
+                              "balance": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "productId",
+                              "requested",
+                              "balance"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "evaluatedOn",
+                        "lines",
+                        "totals",
+                        "issues",
+                        "stockWarnings"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos, más líneas que el límite de la aplicación (INVOICE_TOO_MANY_LINES) o una referencia que no existe en la empresa (EMISSION_POINT_NOT_FOUND, BUYER_NOT_FOUND, PRODUCT_NOT_FOUND, PAYMENT_METHOD_NOT_FOUND).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/invoices/drafts/{draftId}": {
       "get": {
         "summary": "Consultar un borrador con su vista previa y sus problemas",
