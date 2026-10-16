@@ -53,7 +53,7 @@ export function SelectMenuTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon aria-hidden="true" className="size-4 text-muted-foreground" />
+        <ChevronDownIcon aria-hidden="true" className="ml-auto size-4 text-muted-foreground" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );

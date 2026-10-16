@@ -6,6 +6,7 @@
 //   parte de una página mayor.
 // - En un teléfono, las acciones bajan debajo del título y la búsqueda ocupa la fila entera.
 // - Sin casillas de selección ni contador: el producto no tiene acciones masivas.
+// - Es una región con el nombre de su título, como las pantallas a las que sustituye.
 import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ export function DataTableCard({
   filters,
   filtersEnd,
   className,
+  busy,
   children,
 }: {
   title: ReactNode;
@@ -35,38 +37,47 @@ export function DataTableCard({
   /** Al final de la fila de filtros, como «Limpiar filtros». */
   filtersEnd?: ReactNode;
   className?: string;
+  /** La pantalla todavía lee sus parámetros: la región se anuncia ocupada. */
+  busy?: boolean;
   /** La tabla, su estado o su esqueleto. */
   children: ReactNode;
 }) {
   return (
-    <Card data-slot="data-table-card" className={className}>
-      <CardHeader className="flex flex-col gap-3 border-b md:flex-row md:items-start md:justify-between">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Heading id={titleId} className="text-xl leading-none font-semibold">
-            {title}
-          </Heading>
-          {description && (
-            <CardDescription className="max-w-prose leading-snug">{description}</CardDescription>
-          )}
-        </div>
-        {(search || actions) && (
-          <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:flex-nowrap md:justify-end">
-            {search}
-            {actions}
+    <section aria-labelledby={titleId} aria-busy={busy || undefined}>
+      <Card data-slot="data-table-card" className={className}>
+        <CardHeader className="flex flex-col gap-3 border-b md:flex-row md:items-start md:justify-between">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Heading id={titleId} className="text-xl leading-none font-semibold">
+              {title}
+            </Heading>
+            {description && (
+              <CardDescription className="max-w-prose leading-snug">{description}</CardDescription>
+            )}
           </div>
-        )}
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4 px-0">
-        {(filters || filtersEnd) && (
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4">
-            <div className={cn("flex flex-wrap items-center gap-3", !filters && "hidden")}>
-              {filters}
+          {(search || actions) && (
+            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:flex-nowrap md:justify-end">
+              {search}
+              {actions}
             </div>
-            {filtersEnd}
-          </div>
-        )}
-        {children}
-      </CardContent>
-    </Card>
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 px-0">
+          {(filters || filtersEnd) && (
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4">
+              <div
+                className={cn(
+                  "flex flex-wrap items-center gap-3 max-md:w-full",
+                  !filters && "hidden",
+                )}
+              >
+                {filters}
+              </div>
+              {filtersEnd}
+            </div>
+          )}
+          {children}
+        </CardContent>
+      </Card>
+    </section>
   );
 }

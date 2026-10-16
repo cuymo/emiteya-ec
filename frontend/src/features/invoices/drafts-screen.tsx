@@ -12,6 +12,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
+import { DataTableCard } from "@/components/data-table/data-table-card";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
@@ -49,6 +50,12 @@ const pointOf = (draft: DraftSummaryView) =>
     : "—";
 const totalOf = (draft: DraftSummaryView) =>
   draft.previewTotal ? formatUsd(draft.previewTotal) : "Incompleto";
+
+const CARD = {
+  title: "Borradores de facturas",
+  titleId: "borradores-titulo",
+  description: "Las facturas que preparaste y todavía no emitiste.",
+};
 
 export function DraftsScreen() {
   const { me } = useSession();
@@ -116,16 +123,15 @@ export function DraftsScreen() {
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="borradores-titulo" className="flex flex-col gap-6">
-        <h1 id="borradores-titulo" className="text-3xl font-bold">
-          Borradores de facturas
-        </h1>
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a Borradores de facturas"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </section>
+      <DataTableCard {...CARD}>
+        <div className="px-4 pb-4">
+          <EmptyState
+            kind="no-permission"
+            title="No tienes acceso a Borradores de facturas"
+            description="Pide a un administrador que revise tu rol."
+          />
+        </div>
+      </DataTableCard>
     );
   }
 
@@ -145,48 +151,49 @@ export function DraftsScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="borradores-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 id="borradores-titulo" className="text-3xl font-bold">
-          Borradores de facturas
-        </h1>
-        <Button asChild>
-          <Link href="/borradores/nuevo">
-            <Plus aria-hidden="true" />
-            Nueva factura
-          </Link>
-        </Button>
-      </div>
-
-      <AppDataTable
-        label="Borradores de factura pendientes"
-        columns={columns}
-        data={drafts.data?.data ?? []}
-        getRowId={(draft) => draft.id}
-        total={drafts.data?.meta.total ?? 0}
-        page={paging.page}
-        pageSize={paging.pageSize}
-        onPageChange={(page) => paging.update({ pagina: String(page) })}
-        onPageSizeChange={(size) => paging.update({ filas: String(size), pagina: null })}
-        columnVisibility={visibility}
-        loading={drafts.isPending}
-        refreshing={drafts.isFetching}
-        state={tableState}
-        renderCard={(draft) => (
-          <div className="flex flex-col gap-2">
-            <Link
-              href={`/borradores/${draft.id}`}
-              className="font-medium break-words underline-offset-2 hover:underline"
-            >
-              {buyerOf(draft)}
+    <>
+      <DataTableCard
+        {...CARD}
+        actions={
+          <Button asChild size="sm">
+            <Link href="/borradores/nuevo">
+              <Plus aria-hidden="true" />
+              Nueva factura
             </Link>
-            <span className="text-sm text-foreground-muted tabular-nums">
-              {totalOf(draft)} · Punto {pointOf(draft)} · {formatDateTime(draft.updatedAt)}
-            </span>
-            <div className="-ml-2">{actions(draft)}</div>
-          </div>
-        )}
-      />
+          </Button>
+        }
+      >
+        <AppDataTable
+          bare
+          label="Borradores de factura pendientes"
+          columns={columns}
+          data={drafts.data?.data ?? []}
+          getRowId={(draft) => draft.id}
+          total={drafts.data?.meta.total ?? 0}
+          page={paging.page}
+          pageSize={paging.pageSize}
+          onPageChange={(page) => paging.update({ pagina: String(page) })}
+          onPageSizeChange={(size) => paging.update({ filas: String(size), pagina: null })}
+          columnVisibility={visibility}
+          loading={drafts.isPending}
+          refreshing={drafts.isFetching}
+          state={tableState}
+          renderCard={(draft) => (
+            <div className="flex flex-col gap-2">
+              <Link
+                href={`/borradores/${draft.id}`}
+                className="font-medium break-words underline-offset-2 hover:underline"
+              >
+                {buyerOf(draft)}
+              </Link>
+              <span className="text-sm text-foreground-muted tabular-nums">
+                {totalOf(draft)} · Punto {pointOf(draft)} · {formatDateTime(draft.updatedAt)}
+              </span>
+              <div className="-ml-2">{actions(draft)}</div>
+            </div>
+          )}
+        />
+      </DataTableCard>
 
       <ConfirmDialog
         open={deleting !== null}
@@ -204,16 +211,17 @@ export function DraftsScreen() {
         pending={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
       />
-    </section>
+    </>
   );
 }
 
 /** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function DraftsSkeleton() {
   return (
-    <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Borradores de facturas</h1>
-      <Skeleton className="h-64 w-full" />
-    </section>
+    <DataTableCard {...CARD} busy>
+      <div className="px-4 pb-4">
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </DataTableCard>
   );
 }

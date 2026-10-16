@@ -71,24 +71,31 @@ async function lineCounts(page: Page, selector: string): Promise<number[]> {
 }
 
 test.describe("teclado de Facturas (D16)", () => {
-  test("acción principal, búsqueda, vistas con flechas, estado, número y menú con su foco", async ({
+  test("búsqueda, acción principal, vistas con flechas, estado, número y menú con su foco", async ({
     browser,
   }) => {
     const { page } = await open(browser, "/facturas");
     await page.locator("main#contenido").focus();
     const tab = () => page.keyboard.press("Tab");
-    await tab();
-    await expect(page.getByRole("link", { name: "Nueva factura" })).toBeFocused();
+    // La cabecera de la tarjeta: la búsqueda y después la acción principal, como en la plantilla.
     await tab();
     await expect(
       page.getByRole("searchbox", { name: "Buscar por número, comprador o identificación" }),
     ).toBeFocused();
     await tab();
-    await expect(page.getByRole("radio", { name: "Todas" })).toBeFocused();
-    await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("radio", { name: "Requiere atención 3" })).toBeFocused();
+    await expect(page.getByRole("link", { name: "Nueva factura" })).toBeFocused();
+    // Las vistas se recorren con las flechas dentro de su desplegable, y Escape vuelve sin cambiar.
     await tab();
-    await expect(page.getByRole("button", { name: "Estado", exact: true })).toBeFocused();
+    const views = page.getByRole("combobox", { name: "Vista" });
+    await expect(views).toBeFocused();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByRole("option", { name: "Requiere atención 3" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(views).toBeFocused();
+    await expect(page).toHaveURL(/\/facturas$/);
+    await tab();
+    await expect(page.getByRole("combobox", { name: "Estado" })).toBeFocused();
     // Cada fila: el número y su menú, sin parada en la fila ni en la copia oculta del menú.
     await tab();
     await expect(table(page).getByRole("link", { name: FIRST })).toBeFocused();
@@ -267,11 +274,12 @@ test.describe("peticiones de Facturas (D18)", () => {
     await settle(page);
     expect(counts()).toHaveLength(1);
     expect(requests.filter((key) => key.includes("page="))).toHaveLength(1);
-    await page.getByRole("button", { name: "Estado", exact: true }).click();
-    await page.getByRole("menuitemradio", { name: "Devuelto" }).click();
+    await page.getByRole("combobox", { name: "Estado" }).click();
+    await page.getByRole("option", { name: "Devuelto" }).click();
     await expect(page).toHaveURL(/estado=devueltas/);
     await settle(page);
-    await page.getByRole("radio", { name: /Requiere atención/ }).click();
+    await page.getByRole("combobox", { name: "Vista" }).click();
+    await page.getByRole("option", { name: /Requiere atención/ }).click();
     await expect(page).toHaveURL(/vista=atencion/);
     await settle(page);
     await page.getByRole("searchbox").fill("Andina");
@@ -280,7 +288,8 @@ test.describe("peticiones de Facturas (D18)", () => {
     await page.getByRole("button", { name: "Limpiar filtros" }).first().click();
     await expect(page).toHaveURL(/\/facturas$/);
     await settle(page);
-    await page.getByRole("combobox", { name: "Filas por página" }).selectOption("10");
+    await page.getByRole("combobox", { name: "Filas por página" }).click();
+    await page.getByRole("option", { name: "10", exact: true }).click();
     await expect(page).toHaveURL(/filas=10/);
     await settle(page);
     expect(counts()).toHaveLength(1);
@@ -342,7 +351,11 @@ test.describe("capturas de Facturas (D17)", () => {
     );
     await page.goto("/facturas");
     await expect(page.locator("[data-slot=data-table][aria-busy=true]")).toBeVisible();
-    await expect(page.getByRole("radio", { name: "Requiere atención 3" })).toBeVisible();
+    // El número de «Requiere atención» llega aunque la lista siga cargando.
+    await page.getByRole("combobox", { name: "Vista" }).click();
+    await expect(page.getByRole("option", { name: "Requiere atención 3" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.locator("main#contenido").focus();
     await expect(page.getByText(/Mostrando/)).toHaveCount(0);
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     await finish(page, recorder, "facturas-loading");

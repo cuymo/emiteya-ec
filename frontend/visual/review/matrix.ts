@@ -122,7 +122,9 @@ export const STATES: State[] = [
     widths: PAIR,
     ready: async (page) => {
       await heading(page, "Facturas");
-      await expect(page.getByRole("radio", { name: /Requiere atención/ })).toBeChecked();
+      await expect(page.getByRole("combobox", { name: "Vista" })).toContainText(
+        "Requiere atención",
+      );
     },
   },
   {

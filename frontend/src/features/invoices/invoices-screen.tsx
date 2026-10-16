@@ -24,21 +24,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { DataTable } from "@/components/data-table/data-table";
-import {
-  DataTableActiveFilters,
-  type ActiveFilter,
-} from "@/components/data-table/data-table-active-filters";
-import {
-  DataTableOptionFilter,
-  type FilterOption,
-} from "@/components/data-table/data-table-option-filter";
+import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSearch } from "@/components/data-table/data-table-search";
+import {
+  DataTableSelectFilter,
+  type SelectFilterOption,
+} from "@/components/data-table/data-table-select-filter";
 import { DataTableEmpty, DataTableError } from "@/components/data-table/data-table-state";
-import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
-import { DataTableViews } from "@/components/data-table/data-table-views";
 import { RowActionsMenu, type RowAction } from "@/components/data-table/row-actions-menu";
 import { toast } from "@/components/feedback";
-import { PageHeader } from "@/components/layout/page-header";
 import { useSession } from "@/components/session";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,7 +65,7 @@ const STATE_PARAMS: Record<InvoiceState, string> = {
   NOT_AUTHORIZED: "no-autorizadas",
   MANUAL_REVIEW: "revision",
 };
-const STATE_OPTIONS: readonly FilterOption<InvoiceState>[] = INVOICE_STATES.map((state) => ({
+const STATE_OPTIONS: readonly SelectFilterOption<InvoiceState>[] = INVOICE_STATES.map((state) => ({
   value: state,
   label: INVOICE_STATE_LABELS[state],
   icon: DOCUMENT_STATE_PRESENTATION[state].icon,
@@ -142,9 +136,15 @@ function InvoiceActions({ invoice }: { invoice: InvoiceSummaryView }) {
   );
 }
 
-function NewInvoiceLink({ variant = "primary" }: { variant?: "primary" | "outline" }) {
+function NewInvoiceLink({
+  variant = "primary",
+  size = "default",
+}: {
+  variant?: "primary" | "outline";
+  size?: "default" | "sm";
+}) {
   return (
-    <Button asChild variant={variant} size="default">
+    <Button asChild variant={variant} size={size}>
       <Link href="/borradores/nuevo">
         <Plus aria-hidden="true" data-icon="inline-start" />
         Nueva factura
@@ -316,47 +316,30 @@ export function InvoicesScreen() {
     invoices.data.meta.total > 0 &&
     !invoices.isError;
   const forbidden = invoices.error instanceof ApiError && invoices.error.status === 403;
-  const header = (
-    <PageHeader
-      title="Facturas"
-      titleId="facturas-titulo"
-      primaryAction={canDraft && allowed && !forbidden ? <NewInvoiceLink /> : undefined}
-    />
-  );
+  const card = {
+    title: "Facturas",
+    titleId: "facturas-titulo",
+    description: "Las facturas que emites y su estado ante el SRI.",
+  };
 
   if (!allowed || forbidden) {
     return (
-      <section aria-labelledby="facturas-titulo" className="flex flex-col gap-6">
-        {header}
-        <div className="rounded-xl border border-border bg-card">
-          <DataTableEmpty
-            icon={Lock}
-            title="No tienes acceso a Facturas"
-            description="Pide a un administrador que revise tu rol."
-          />
-        </div>
-      </section>
+      <DataTableCard {...card}>
+        <DataTableEmpty
+          icon={Lock}
+          title="No tienes acceso a Facturas"
+          description="Pide a un administrador que revise tu rol."
+        />
+      </DataTableCard>
     );
   }
 
   const clearFilters = () => url.update({ vista: null, estado: null, q: null });
-  // La vista cuenta para el vacío por filtros; la fila de filtros activos aparece solo con un estado
-  // o una búsqueda, porque «Todas» ya deshace la vista.
+  // La vista cuenta para el vacío por filtros; «Limpiar filtros» aparece solo con un estado o una
+  // búsqueda, porque «Todas» ya deshace la vista. Cada filtro activo se ve en su control y se quita
+  // desde él: el estado eligiendo «Todos» y la búsqueda con su botón.
   const filtersActive = view !== "todas" || state !== undefined || search !== "";
-  const activeFilters: ActiveFilter[] = [
-    ...(state
-      ? [
-          {
-            key: "estado",
-            label: `Estado: ${INVOICE_STATE_LABELS[state]}`,
-            onRemove: () => url.update({ estado: null }),
-          },
-        ]
-      : []),
-    ...(search
-      ? [{ key: "q", label: `Búsqueda: «${search}»`, onRemove: () => url.update({ q: null }) }]
-      : []),
-  ];
+  const clearable = state !== undefined || search !== "";
 
   const tableState = invoices.isError ? (
     <DataTableError
@@ -386,9 +369,52 @@ export function InvoicesScreen() {
   ) : undefined;
 
   return (
-    <section aria-labelledby="facturas-titulo" className="flex flex-col gap-6">
-      {header}
+    <DataTableCard
+      {...card}
+      search={
+        <DataTableSearch
+          label={SEARCH_LABEL}
+          placeholder="Número, comprador o identificación"
+          value={search}
+          onChange={(next) => url.update({ q: next })}
+          maxLength={SEARCH_MAX_LENGTH}
+        />
+      }
+      actions={canDraft ? <NewInvoiceLink size="sm" /> : undefined}
+      filters={
+        <>
+          <DataTableSelectFilter
+            label="Vista"
+            value={view}
+            options={[
+              { value: "todas", label: "Todas" },
+              {
+                value: "atencion",
+                label: "Requiere atención",
+                ...(attentionCount.data !== undefined ? { count: attentionCount.data } : {}),
+              },
+            ]}
+            onChange={(next) => url.update({ vista: next === "atencion" ? next : null })}
+          />
+          <DataTableSelectFilter
+            label="Estado"
+            value={state}
+            allLabel="Todos"
+            options={STATE_OPTIONS}
+            onChange={(next) => url.update({ estado: next ? STATE_PARAMS[next] : null })}
+          />
+        </>
+      }
+      filtersEnd={
+        clearable ? (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            Limpiar filtros
+          </Button>
+        ) : undefined
+      }
+    >
       <DataTable
+        bare
         label="Facturas emitidas"
         columns={columns}
         data={invoices.data?.data ?? []}
@@ -402,58 +428,24 @@ export function InvoicesScreen() {
         refreshing={invoices.isFetching}
         state={tableState}
         onRowOpen={(invoice) => router.push(`/facturas/${invoice.id}`)}
-        toolbar={
-          <DataTableToolbar
-            activeFilters={
-              <DataTableActiveFilters
-                filters={activeFilters}
-                active={activeFilters.length > 0}
-                onClear={clearFilters}
-              />
-            }
-          >
-            <DataTableSearch
-              label={SEARCH_LABEL}
-              placeholder="Número, comprador o identificación"
-              value={search}
-              onChange={(next) => url.update({ q: next })}
-              maxLength={SEARCH_MAX_LENGTH}
-            />
-            <DataTableViews
-              label="Vista"
-              value={view}
-              views={[
-                { value: "todas", label: "Todas" },
-                {
-                  value: "atencion",
-                  label: "Requiere atención",
-                  ...(attentionCount.data !== undefined ? { count: attentionCount.data } : {}),
-                },
-              ]}
-              onChange={(next) => url.update({ vista: next === "todas" ? null : next })}
-            />
-            <DataTableOptionFilter
-              label="Estado"
-              value={state}
-              options={STATE_OPTIONS}
-              onChange={(next) => url.update({ estado: next ? STATE_PARAMS[next] : null })}
-            />
-          </DataTableToolbar>
-        }
       />
-    </section>
+    </DataTableCard>
   );
 }
 
-/** Mientras llega la pantalla: el encabezado y la geometría de la barra y de la tabla. */
+/** Geometría de la pantalla mientras se leen los parámetros de la URL. */
 export function InvoicesSkeleton() {
   return (
-    <section aria-busy="true" aria-labelledby="facturas-titulo" className="flex flex-col gap-6">
-      <PageHeader title="Facturas" titleId="facturas-titulo" />
-      <div className="flex flex-col gap-3">
+    <DataTableCard
+      busy
+      title="Facturas"
+      titleId="facturas-titulo"
+      description="Las facturas que emites y su estado ante el SRI."
+    >
+      <div className="flex flex-col gap-3 px-4 pb-4">
         <Skeleton className="h-8 w-full max-w-md" />
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
-    </section>
+    </DataTableCard>
   );
 }

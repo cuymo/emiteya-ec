@@ -9,6 +9,7 @@
 // - Una opción puede llevar un número que viene del servidor, como «Requiere atención 3».
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import {
   SelectMenu,
   SelectMenuContent,
@@ -21,6 +22,7 @@ import {
 export type SelectFilterOption<T extends string> = {
   value: T;
   label: string;
+  icon?: LucideIcon;
   /** Número de registros según el servidor; sin número, no se muestra. */
   count?: number;
 };
@@ -48,17 +50,23 @@ export function DataTableSelectFilter<T extends string>({
       value={value ?? ALL}
       onValueChange={(next) => onChange(next === ALL ? undefined : (next as T))}
     >
-      <SelectMenuTrigger size="sm" aria-label={label} className="max-md:w-full">
+      <SelectMenuTrigger
+        size="sm"
+        aria-label={label}
+        className="max-md:w-full max-md:justify-start"
+      >
         <span aria-hidden="true" className="text-muted-foreground">
           {label}:
         </span>
-        <SelectMenuValue />
+        {/* En un teléfono el control ocupa la fila: el valor sigue a su prefijo y el icono va al final. */}
+        <SelectMenuValue className="text-left" />
       </SelectMenuTrigger>
       <SelectMenuContent align={align}>
         <SelectMenuGroup>
           {allLabel && <SelectMenuItem value={ALL}>{allLabel}</SelectMenuItem>}
           {options.map((option) => (
             <SelectMenuItem key={option.value} value={option.value}>
+              {option.icon && <option.icon aria-hidden="true" />}
               {option.label}
               {/* El espacio separa el número en el nombre accesible: «Requiere atención 3». */}
               {option.count !== undefined && " "}

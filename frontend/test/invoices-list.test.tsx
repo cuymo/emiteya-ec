@@ -130,12 +130,12 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
       "GET /api/v1/invoices": paged([summary()]),
       [COUNT]: paged([summary({ state: "SEND_UNKNOWN" })], 3, 1, 1),
     });
-    const views = await screen.findByRole("radiogroup", { name: "Vista" });
-    const attention = await within(views).findByRole("radio", { name: "Requiere atención 3" });
-    expect(within(views).getByRole("radio", { name: "Todas" }).getAttribute("aria-checked")).toBe(
-      "true",
-    );
-    await userEvent.setup().click(attention);
+    const user = userEvent.setup();
+    const views = await screen.findByRole("combobox", { name: "Vista" });
+    expect(views.textContent).toContain("Todas");
+    await waitFor(() => expect(countCalls(calls)).toHaveLength(1));
+    await user.click(views);
+    await user.click(await screen.findByRole("option", { name: "Requiere atención 3" }));
     expect(navigation.replace).toHaveBeenCalledWith("/facturas?vista=atencion", { scroll: false });
     expect(countCalls(calls)).toHaveLength(1);
   });
@@ -145,7 +145,7 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
       "GET /api/v1/invoices": paged([summary()], 60),
       [COUNT]: paged([], 2, 1, 1),
     });
-    await screen.findByRole("radio", { name: "Requiere atención 2" });
+    await waitFor(() => expect(countCalls(calls)).toHaveLength(1));
     for (const search of ["pagina=2", "pagina=2&filas=50", "estado=devueltas", "q=perno"]) {
       navigation.search = new URLSearchParams(search);
       rerender();
@@ -191,9 +191,10 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
     render({ "GET /api/v1/invoices": paged([summary()]) });
     await rowOf("001-001-000000001");
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Estado" }));
-    const options = screen.getAllByRole("menuitemradio").map((option) => option.textContent);
+    await user.click(screen.getByRole("combobox", { name: "Estado" }));
+    const options = (await screen.findAllByRole("option")).map((option) => option.textContent);
     expect(options).toEqual([
+      "Todos",
       "Procesando",
       "Pendiente de envío",
       "Verificando con el SRI",
@@ -203,7 +204,7 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
       "No autorizado",
       "Requiere revisión",
     ]);
-    await user.click(screen.getByRole("menuitemradio", { name: "Pendiente de autorización" }));
+    await user.click(screen.getByRole("option", { name: "Pendiente de autorización" }));
     expect(navigation.replace).toHaveBeenCalledWith("/facturas?estado=recibidas", {
       scroll: false,
     });
@@ -215,11 +216,14 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
     await screen.findByText("No hay facturas con estos filtros");
     expect(listCalls(calls).every((call) => call.key.includes("attention=true"))).toBe(true);
     expect(listCalls(calls).some((call) => call.key.includes("state="))).toBe(false);
-    expect(
-      screen.getByRole("radio", { name: /Requiere atención/ }).getAttribute("aria-checked"),
-    ).toBe("true");
-    // Solo la vista: «Todas» la deshace, así que no aparece la fila de filtros activos.
-    expect(screen.queryByRole("group", { name: "Filtros activos" })).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Vista" }).textContent).toContain(
+      "Requiere atención",
+    );
+    // Solo la vista: «Todas» la deshace, así que la fila de filtros no ofrece «Limpiar filtros». El
+    // único es el del vacío por filtros, dentro de la tabla.
+    const clear = screen.getAllByRole("button", { name: "Limpiar filtros" });
+    expect(clear).toHaveLength(1);
+    expect(screen.getByRole("table", { name: "Facturas emitidas" }).contains(clear[0]!)).toBe(true);
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/facturas?vista=atencion", {
         scroll: false,
@@ -262,10 +266,10 @@ describe("búsqueda y estado en la URL (D8 y D9)", () => {
     expect(listCalls(calls)[0]!.key).toBe(
       "GET /api/v1/invoices?page=2&pageSize=50&search=perno&state=RETURNED&attention=true",
     );
-    expect(
-      screen.getByRole("radio", { name: /Requiere atención/ }).getAttribute("aria-checked"),
-    ).toBe("true");
-    expect(screen.getByRole("button", { name: "Estado: Devuelto" })).toBeDefined();
+    expect(screen.getByRole("combobox", { name: "Vista" }).textContent).toContain(
+      "Requiere atención",
+    );
+    expect(screen.getByRole("combobox", { name: "Estado" }).textContent).toContain("Devuelto");
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("perno");
     expect(screen.getByText("Mostrando 51-60 de 60")).toBeDefined();
   });
@@ -275,7 +279,7 @@ describe("búsqueda y estado en la URL (D8 y D9)", () => {
     const { calls } = render({ "GET /api/v1/invoices": paged([summary()]) });
     await rowOf("001-001-000000001");
     expect(listCalls(calls)[0]!.key).toBe("GET /api/v1/invoices?page=1&pageSize=25");
-    expect(screen.queryByRole("group", { name: "Filtros activos" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Limpiar filtros" })).toBeNull();
   });
 
   it("una página posterior a la última lleva a la última, sin vacío", async () => {
@@ -295,10 +299,13 @@ describe("búsqueda y estado en la URL (D8 y D9)", () => {
     expect(screen.queryByRole("button", { name: "Limpiar filtros" })).toBeNull();
     navigation.search = new URLSearchParams("q=perno&estado=firmadas");
     rerender();
-    const active = await screen.findByRole("group", { name: "Filtros activos" });
-    expect(within(active).getByText("Búsqueda: «perno»")).toBeDefined();
-    expect(within(active).getByText("Estado: Pendiente de envío")).toBeDefined();
-    await userEvent.setup().click(within(active).getByRole("button", { name: "Limpiar filtros" }));
+    // Cada filtro activo se ve en su control: la búsqueda en su campo y el estado en su desplegable.
+    const clear = await screen.findByRole("button", { name: "Limpiar filtros" });
+    expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("perno");
+    expect(screen.getByRole("combobox", { name: "Estado" }).textContent).toContain(
+      "Pendiente de envío",
+    );
+    await userEvent.setup().click(clear);
     expect(navigation.replace).toHaveBeenLastCalledWith("/facturas", { scroll: false });
   });
 

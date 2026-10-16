@@ -166,7 +166,8 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
   });
 
   it('"Requiere atención" y los estados del SRI se filtran desde la URL', async () => {
-    // Los siete chips «Estado» pasan a la vista «Requiere atención» y al filtro «Estado» (D6);
+    // Los siete chips «Estado» pasaron a la vista «Requiere atención» y al filtro «Estado» (D6),
+    // hoy desplegables;
     // `estado=atencion` sigue abriendo la vista y se reescribe como `vista=atencion`.
     navigation.search = new URLSearchParams("estado=atencion");
     const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices": paged([]) });
@@ -174,15 +175,12 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
     const listCall = calls.find((call) => call.key.startsWith("GET /api/v1/invoices?page="))!;
     expect(listCall.key).toContain("attention=true");
     expect(listCall.key).not.toContain("state=");
-    const views = screen.getByRole("radiogroup", { name: "Vista" });
-    expect(
-      within(views)
-        .getByRole("radio", { name: /Requiere atención/ })
-        .getAttribute("aria-checked"),
-    ).toBe("true");
+    expect(screen.getByRole("combobox", { name: "Vista" }).textContent).toContain(
+      "Requiere atención",
+    );
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Estado" }));
-    await user.click(screen.getByRole("menuitemradio", { name: "Autorizado" }));
+    await user.click(screen.getByRole("combobox", { name: "Estado" }));
+    await user.click(await screen.findByRole("option", { name: "Autorizado" }));
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith(
         expect.stringContaining("estado=autorizadas"),
