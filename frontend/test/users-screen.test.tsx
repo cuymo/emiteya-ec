@@ -54,6 +54,12 @@ function renderUsers() {
   );
 }
 
+/** Abre el menú «Acciones» de la fila de un usuario y devuelve el menú. */
+async function openRowActions(name: string) {
+  await userEvent.setup().click(screen.getAllByRole("button", { name: `Acciones de ${name}` })[0]!);
+  return screen.findByRole("menu");
+}
+
 beforeEach(() => {
   navigation.pathname = "/configuracion/usuarios";
   navigation.search = new URLSearchParams();
@@ -103,16 +109,23 @@ describe("pantalla Usuarios", () => {
     });
     renderUsers();
     await screen.findByText("Mostrando 1-3 de 3");
+    // La fila propia lo dice, sin acciones.
+    expect(screen.getAllByText(/Tu cuenta/)[0]!.textContent).toBe(
+      "Tu cuenta: no puedes cambiar tu propio acceso",
+    );
+    expect(screen.queryByRole("button", { name: "Acciones de Ana Admin" })).toBeNull();
+    // Un botón «Acciones» con borde por fila, con las opciones con su nombre.
+    const oscar = screen.getAllByRole("button", { name: "Acciones de Óscar Operador" })[0]!;
+    expect(oscar.textContent).toContain("Acciones");
     expect(
-      screen.getAllByRole("button", { name: "No puedes cambiar tu propio acceso" }).length,
-    ).toBeGreaterThan(0);
-    expect(screen.queryByRole("button", { name: "Cambiar rol de Ana Admin" })).toBeNull();
+      within(await openRowActions("Óscar Operador"))
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(["Cambiar rol", "Establecer contraseña", "Desactivar"]);
+    await userEvent.setup().keyboard("{Escape}");
     expect(
-      screen.getAllByRole("button", { name: "Desactivar a Óscar Operador" }).length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByRole("button", { name: "Reactivar a Inés Inactiva" }).length,
-    ).toBeGreaterThan(0);
+      within(await openRowActions("Inés Inactiva")).getByRole("menuitem", { name: "Reactivar" }),
+    ).toBeDefined();
   });
 
   it("una página que ya no existe lleva a la última, sin mostrar un intervalo imposible", async () => {
@@ -214,7 +227,9 @@ describe("pantalla Usuarios", () => {
     renderUsers();
     await screen.findByText("Mostrando 1-3 de 3");
     const user = userEvent.setup();
-    await user.click(screen.getAllByRole("button", { name: "Desactivar a Óscar Operador" })[0]!);
+    await user.click(
+      within(await openRowActions("Óscar Operador")).getByRole("menuitem", { name: "Desactivar" }),
+    );
     expect(
       await screen.findByText("Desactivaste a Óscar Operador. Sus sesiones se cerraron."),
     ).toBeDefined();

@@ -10,21 +10,17 @@ import {
   type MembershipStatus,
   type UserView,
 } from "@facturador/contracts";
-import { Info, KeyRound, Plus, UserCheck, UserCog, UserX } from "lucide-react";
+import { KeyRound, Plus, UserCheck, UserCog, UserX } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
-import {
-  ColumnVisibilityMenu,
-  RowActionButton,
-  SearchInput,
-} from "@/components/data-table/table-controls";
+import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
+import { ColumnVisibilityMenu, SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/menu-and-tooltip";
 import { ApiError } from "@/lib/api";
 import { canSee, ROLE_LABELS } from "@/lib/permissions";
 import { ChangeRoleDialog, CreateUserDialog, SetPasswordDialog } from "./user-dialogs";
@@ -101,41 +97,37 @@ function RowActions({
   onSetPassword: () => void;
   onToggleStatus: () => void;
 }) {
+  // Un botón «Acciones» con borde y las opciones con su nombre: un ícono suelto no se reconoce
+  // como botón, y tres botones con texto no caben en la fila.
   if (isSelf) {
     return (
-      <Tooltip label={OWN_ACCESS}>
-        <button
-          type="button"
-          aria-label={OWN_ACCESS}
-          className="inline-flex size-10 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-subtle max-md:size-11"
-        >
-          <Info aria-hidden="true" className="size-5" />
-        </button>
-      </Tooltip>
+      <span className="text-sm whitespace-nowrap text-foreground-muted">
+        Tu cuenta<span className="sr-only">: {OWN_ACCESS.toLowerCase()}</span>
+      </span>
     );
   }
   const active = user.status === "ACTIVE";
   return (
-    <div className="inline-flex items-center gap-1">
-      <RowActionButton
-        icon={UserCog}
-        label={`Cambiar rol de ${user.name}`}
-        onClick={onChangeRole}
-        disabled={busy}
-      />
-      <RowActionButton
-        icon={KeyRound}
-        label={`Establecer contraseña de ${user.name}`}
-        onClick={onSetPassword}
-        disabled={busy}
-      />
-      <RowActionButton
-        icon={active ? UserX : UserCheck}
-        label={active ? `Desactivar a ${user.name}` : `Reactivar a ${user.name}`}
-        onClick={onToggleStatus}
-        disabled={busy}
-      />
-    </div>
+    <RowActionsMenu
+      trigger="labeled"
+      label={`Acciones de ${user.name}`}
+      disabled={busy}
+      actions={[
+        { key: "role", label: "Cambiar rol", icon: UserCog, onSelect: onChangeRole },
+        {
+          key: "password",
+          label: "Establecer contraseña",
+          icon: KeyRound,
+          onSelect: onSetPassword,
+        },
+        {
+          key: "status",
+          label: active ? "Desactivar" : "Reactivar",
+          icon: active ? UserX : UserCheck,
+          onSelect: onToggleStatus,
+        },
+      ]}
+    />
   );
 }
 

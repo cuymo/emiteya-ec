@@ -28,7 +28,7 @@ controls.
 | `DataTableFooter` | `data-table-footer.tsx` | `Filas por página`, `Mostrando A-B de N` and a numbered pagination: previous, a window of three pages around the current one with ellipses, and next; pages derived from the server `total`. Never shown while loading, empty or failed |
 | `DataTableSearch`, `SearchInput` | `data-table-search.tsx`, `table-controls.tsx` | Server-backed search with debounce, trimming, `Limpiar búsqueda`, and a label that states what it really searches |
 | `ColumnVisibilityMenu`, `RowActionButton` | `table-controls.tsx` | `Columnas`, at the end of the filters row, and the icon action of a row |
-| `RowActionsMenu` | `row-actions-menu.tsx` | The `...` menu of a row, named after its record, with only the actions the module passes |
+| `RowActionsMenu` | `row-actions-menu.tsx` | The `...` menu of a row, named after its record, with only the actions the module passes. `trigger="labeled"` turns the trigger into an outline «Acciones» button, for tables where a bare icon goes unnoticed (Usuarios) |
 | `DataTableEmpty`, `DataTableError` | `data-table-state.tsx` | Empty, filtered-empty and error states with a level-2 heading, over `ui/empty` |
 | `useListUrlState` | `hooks/use-list-url-state.ts` | Search, filters, page and page size in the URL, with quick changes accumulated, the page reset on filter changes, aliases and the out-of-range page |
 
