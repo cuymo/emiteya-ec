@@ -124,3 +124,5 @@ export function inventoryModule({
 }
 // Fuente de portabilidad (add-data-portability, design D1).
 export { createInventoryPortabilitySources } from "./portability-sources.ts";
+// Tablero de Inicio: los productos agotados.
+export { outOfStockCount } from "./dashboard-reads.ts";

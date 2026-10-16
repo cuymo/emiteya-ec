@@ -20,7 +20,17 @@ import {
 } from "../../src/modules/identity/application/authorization.ts";
 import { createUserAdministration } from "../../src/modules/identity/application/user-administration.ts";
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
-import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
+import {
+  currentEnvironment,
+  taxpayerRouters,
+} from "../../src/modules/taxpayer/infrastructure/index.ts";
+import { dashboardModule } from "../../src/modules/dashboard/infrastructure/index.ts";
+import {
+  createDocumentSummary,
+  createTransmissionReader,
+} from "../../src/modules/fiscal/infrastructure/index.ts";
+import { invoiceDraftCount } from "../../src/modules/invoices/infrastructure/index.ts";
+import { outOfStockCount } from "../../src/modules/inventory/infrastructure/index.ts";
 import {
   fiscalRouters,
   signingPipelines,
@@ -495,6 +505,22 @@ export function buildTaxpayerApp(
           ...(purchase?.metrics ? { metrics: purchase.metrics } : {}),
           ...(purchase?.stageTimings ? { stageTimings: true } : {}),
           ...(invoicesNow ? { now: invoicesNow } : {}),
+        }).routers,
+      );
+      // El tablero de Inicio, con las mismas lecturas que compone main.ts.
+      const dashboardTransmission = createTransmissionReader(db.database.prisma);
+      router.use(
+        ...dashboardModule({
+          prisma: db.database.prisma,
+          authorizer,
+          sources: {
+            currentEnvironment,
+            stoppedDocumentIds: (companyId) => dashboardTransmission.stoppedDocumentIds(companyId),
+            documents: createDocumentSummary(db.name),
+            invoiceDrafts: invoiceDraftCount,
+            outOfStock: outOfStockCount,
+          },
+          ...(options.now ? { now: options.now } : {}),
         }).routers,
       );
       return router;

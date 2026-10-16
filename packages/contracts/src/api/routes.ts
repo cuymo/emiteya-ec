@@ -239,6 +239,7 @@ import {
   dataExportViewSchema,
   listDataExportsQuerySchema,
 } from "../data-portability.ts";
+import { dashboardViewSchema } from "../dashboard.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -741,6 +742,20 @@ export const apiRoutes: readonly RouteDefinition[] = [
       200: {
         description: "Ambiente, nombre visible y requisitos de la preparación para emitir.",
         schema: successEnvelope(companyStatusSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/dashboard",
+    summary: "Consultar el resumen de la actividad de la empresa para el tablero de Inicio",
+    responses: {
+      200: {
+        description:
+          "Ventas autorizadas del mes y de los seis últimos meses, comprobantes por tipo, lo que requiere atención, borradores, existencias agotadas, mejores clientes y productos, y los últimos comprobantes, en el ambiente vigente.",
+        schema: successEnvelope(dashboardViewSchema),
       },
       401: errors[401],
       403: errors[403],

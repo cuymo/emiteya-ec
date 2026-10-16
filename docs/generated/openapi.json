@@ -5951,6 +5951,431 @@
         }
       }
     },
+    "/dashboard": {
+      "get": {
+        "summary": "Consultar el resumen de la actividad de la empresa para el tablero de Inicio",
+        "responses": {
+          "200": {
+            "description": "Ventas autorizadas del mes y de los seis últimos meses, comprobantes por tipo, lo que requiere atención, borradores, existencias agotadas, mejores clientes y productos, y los últimos comprobantes, en el ambiente vigente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "environment": {
+                          "type": "string",
+                          "enum": [
+                            "TEST",
+                            "PRODUCTION"
+                          ]
+                        },
+                        "today": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "month": {
+                          "type": "object",
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "invoices": {
+                              "type": "object",
+                              "properties": {
+                                "authorizedTotal": {
+                                  "type": "string"
+                                },
+                                "authorizedCount": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "issuedCount": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "previousAuthorizedTotal": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "authorizedTotal",
+                                "authorizedCount",
+                                "issuedCount",
+                                "previousAuthorizedTotal"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "byType": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "documentType": {
+                                    "type": "string",
+                                    "enum": [
+                                      "01",
+                                      "03",
+                                      "04",
+                                      "05",
+                                      "06",
+                                      "07"
+                                    ]
+                                  },
+                                  "issued": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "authorized": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "authorizedTotal": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "documentType",
+                                  "issued",
+                                  "authorized",
+                                  "authorizedTotal"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "start",
+                            "invoices",
+                            "byType"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "monthly": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "month": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}$"
+                              },
+                              "authorizedTotal": {
+                                "type": "string"
+                              },
+                              "authorizedCount": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "month",
+                              "authorizedTotal",
+                              "authorizedCount"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "attention": {
+                          "type": "object",
+                          "properties": {
+                            "count": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "rejectedLast30Days": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "count",
+                            "rejectedLast30Days"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "drafts": {
+                          "type": "object",
+                          "properties": {
+                            "invoices": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "invoices"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "inventory": {
+                          "type": "object",
+                          "properties": {
+                            "outOfStock": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "outOfStock"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "topCustomers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "identification": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "authorizedTotal": {
+                                "type": "string"
+                              },
+                              "invoices": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "identification",
+                              "name",
+                              "authorizedTotal",
+                              "invoices"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "topProducts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "mainCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "mainCode",
+                              "description",
+                              "quantity",
+                              "total"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "recent": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "documentType": {
+                                "type": "string",
+                                "enum": [
+                                  "01",
+                                  "03",
+                                  "04",
+                                  "05",
+                                  "06",
+                                  "07"
+                                ]
+                              },
+                              "documentNumber": {
+                                "type": "string"
+                              },
+                              "issueDate": {
+                                "type": "string",
+                                "format": "date",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                              },
+                              "counterpart": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "total": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "RESERVED",
+                                  "SIGNED",
+                                  "SEND_UNKNOWN",
+                                  "RECEIVED",
+                                  "RETURNED",
+                                  "AUTHORIZED",
+                                  "NOT_AUTHORIZED",
+                                  "MANUAL_REVIEW"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "documentType",
+                              "documentNumber",
+                              "issueDate",
+                              "counterpart",
+                              "total",
+                              "state"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "environment",
+                        "today",
+                        "month",
+                        "monthly",
+                        "attention",
+                        "drafts",
+                        "inventory",
+                        "topCustomers",
+                        "topProducts",
+                        "recent"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o sin membresía activa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso para esta acción, o la petición no proviene del origen de la aplicación (REQUEST_ORIGIN_REJECTED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requestId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/fiscal-sequences": {
       "get": {
         "summary": "Consultar los secuenciales de un ambiente: siguiente y último reservado por punto y tipo de comprobante",

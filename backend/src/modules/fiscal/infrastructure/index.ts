@@ -85,3 +85,5 @@ export {
 export type { InvoiceTaxProjection, ReportAmountProjection } from "./reports/amount-projections.ts";
 // Fuentes de portabilidad (add-data-portability, design D1).
 export { createFiscalPortabilitySources } from "./portability/portability-sources.ts";
+// Tablero de Inicio: el resumen de los comprobantes, compuesto en main.ts como puerto.
+export { createDocumentSummary } from "./dashboard/document-summary.ts";

@@ -9,7 +9,12 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import request from "../support/http-client.ts";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
-import type { DraftPreviewView, DraftView, InvoiceView } from "@facturador/contracts";
+import type {
+  DashboardView,
+  DraftPreviewView,
+  DraftView,
+  InvoiceView,
+} from "@facturador/contracts";
 import { loadInstalledFiscalCatalogs } from "../../src/modules/catalogs/infrastructure/index.ts";
 import type { InvoiceSnapshot } from "../../src/modules/invoices/domain/snapshot.ts";
 import { certificateTasksEntry } from "../../src/modules/signing/infrastructure/index.ts";
@@ -173,6 +178,28 @@ describe("emisión de facturas hasta RESERVED", () => {
       });
       expect(res.status).toBe(400);
       expect((res.body as { error: { code: string } }).error.code).toBe("BUYER_NOT_FOUND");
+    });
+  });
+
+  describe("tablero de Inicio (spec dashboard)", () => {
+    it("resume los comprobantes del ambiente vigente sin contar los de otra empresa", async () => {
+      const a = companies.a!;
+      const draft = await draftFor(a);
+      expect((await emit(a, draft)).status).toBe(201);
+      await draftFor(a);
+      const res = await call(a.cookies.operator, "get", "/dashboard");
+      expect(res.status, JSON.stringify(res.body)).toBe(200);
+      const view = (res.body as { data: DashboardView }).data;
+      expect(view.environment).toBe("TEST");
+      expect(view.monthly).toHaveLength(6);
+      expect(view.month.invoices.issuedCount).toBeGreaterThanOrEqual(1);
+      // Una factura reservada todavía no es una venta autorizada.
+      expect(view.month.invoices.authorizedCount).toBe(0);
+      expect(view.recent[0]?.documentType).toBe("01");
+      expect(view.drafts.invoices).toBeGreaterThanOrEqual(1);
+      const other = await call(companies.r!.cookies.admin, "get", "/dashboard");
+      const otherView = (other.body as { data: DashboardView }).data;
+      expect(otherView.recent.map((row) => row.id)).not.toContain(view.recent[0]?.id);
     });
   });
 

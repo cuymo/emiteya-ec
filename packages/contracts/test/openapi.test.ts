@@ -94,6 +94,7 @@ describe("generación de OpenAPI", () => {
       "/credit-notes/{creditNoteId}/reconciliations",
       "/credit-notes/{creditNoteId}/signing-attempts",
       "/credit-notes/{creditNoteId}/transmission",
+      "/dashboard",
       "/data-exports",
       "/data-exports/{id}",
       "/data-exports/{id}/download",

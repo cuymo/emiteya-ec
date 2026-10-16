@@ -43,9 +43,17 @@ import {
 } from "./modules/parties/infrastructure/index.ts";
 import { createPartiesReportSource } from "./modules/parties/infrastructure/index.ts";
 import { registerReportMetrics, reportsModule } from "./modules/reports/infrastructure/index.ts";
+import { dashboardModule } from "./modules/dashboard/infrastructure/index.ts";
 import { createCatalogPortabilitySources } from "./modules/catalogs/infrastructure/index.ts";
-import { createFiscalPortabilitySources } from "./modules/fiscal/infrastructure/index.ts";
-import { createInventoryPortabilitySources } from "./modules/inventory/infrastructure/index.ts";
+import {
+  createDocumentSummary,
+  createFiscalPortabilitySources,
+  createTransmissionReader,
+} from "./modules/fiscal/infrastructure/index.ts";
+import {
+  createInventoryPortabilitySources,
+  outOfStockCount,
+} from "./modules/inventory/infrastructure/index.ts";
 import { createPartiesPortabilitySources } from "./modules/parties/infrastructure/index.ts";
 import { createProductsPortabilitySources } from "./modules/products/infrastructure/index.ts";
 import { createSigningPortabilitySources } from "./modules/signing/infrastructure/index.ts";
@@ -75,6 +83,7 @@ import {
 } from "./modules/inventory/infrastructure/index.ts";
 import {
   invoiceCreditSource,
+  invoiceDraftCount,
   invoiceReportAmounts,
   invoiceReportTaxes,
   invoiceSigningProfile,
@@ -554,6 +563,23 @@ apiRouter.use(
       maxConcurrent: env.REPORT_EXPORT_MAX_CONCURRENT,
     },
     observer: registerReportMetrics(metrics.registry),
+  }).routers,
+);
+
+// Tablero de Inicio: cada cifra la lee su módulo dueño y se compone aquí como puerto; `dashboard` no
+// lee tablas.
+const dashboardTransmission = createTransmissionReader(database.prisma);
+apiRouter.use(
+  ...dashboardModule({
+    prisma: database.prisma,
+    authorizer,
+    sources: {
+      currentEnvironment,
+      stoppedDocumentIds: (companyId) => dashboardTransmission.stoppedDocumentIds(companyId),
+      documents: createDocumentSummary(reportSchema),
+      invoiceDrafts: invoiceDraftCount,
+      outOfStock: outOfStockCount,
+    },
   }).routers,
 );
 

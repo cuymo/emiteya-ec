@@ -22,3 +22,4 @@ export * from "./shipping-guides.ts";
 export * from "./purchase-settlements.ts";
 export * from "./reports.ts";
 export * from "./data-portability.ts";
+export * from "./dashboard.ts";

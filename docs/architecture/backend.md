@@ -286,6 +286,26 @@ leer tablas: cada módulo dueño exporta la fuente de su reporte y `main.ts` la 
 - **Ambiente.** `taxpayer` exporta `currentEnvironment`, el de la configuración vigente de la empresa, leído en cada solicitud.
 - **Dirección.** Ningún módulo importa `reports`, salvo `main.ts`, y `reports` solo importa `identity` y `audit`; `test/architecture/reports-dependency-direction.test.ts` lo comprueba.
 
+## Tablero de Inicio
+
+El módulo `dashboard` (spec `dashboard`) responde `GET /api/v1/dashboard` con el resumen de la
+empresa en su ambiente vigente, sin leer tablas: cada módulo dueño exporta su lectura y `main.ts` la
+compone como puerto (`DashboardSources`).
+
+| Dato | Módulo dueño | Lee |
+| --- | --- | --- |
+| Ventas por mes, comprobantes por tipo, atención, rechazos, mejores clientes y productos, últimos comprobantes | `fiscal` (`createDocumentSummary`) | `electronic_document` del ambiente: sus columnas congeladas y las líneas de su snapshot |
+| Comprobantes con la transmisión detenida | `fiscal` (`createTransmissionReader().stoppedDocumentIds`) | Los `sri.*` detenidos sin un job posterior |
+| Borradores pendientes | `invoices` (`invoiceDraftCount`) | `invoice_draft` en `DRAFT` |
+| Productos agotados | `inventory` (`outOfStockCount`) | `stock_balance` con saldo cero o negativo |
+| Ambiente | `taxpayer` (`currentEnvironment`) | La configuración vigente |
+
+- **Ventas.** Solo las facturas `AUTHORIZED`; los meses son los de la fecha de emisión, que ya es la
+  de Ecuador. Las sumas son `NUMERIC` en SQL y salen como cadenas decimales canónicas.
+- **Permiso.** `invoices.read`.
+- **Dirección.** Ningún módulo importa `dashboard`, salvo `main.ts`, y `dashboard` solo importa
+  `identity` y `catalogs`; `test/architecture/dashboard-dependency-direction.test.ts` lo comprueba.
+
 ## Portabilidad de datos
 
 El módulo `data-portability` (`add-data-portability`) genera el paquete de portabilidad sin leer

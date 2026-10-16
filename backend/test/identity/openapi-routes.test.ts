@@ -51,6 +51,8 @@ import { inventoryRouter } from "../../src/modules/inventory/infrastructure/http
 import type { JobStore } from "../../src/platform/jobs/jobs.ts";
 import type { Reports } from "../../src/modules/reports/application/reports.ts";
 import { reportsRouter } from "../../src/modules/reports/infrastructure/http/reports-router.ts";
+import type { Dashboard } from "../../src/modules/dashboard/application/dashboard.ts";
+import { dashboardRouter } from "../../src/modules/dashboard/infrastructure/http/dashboard-router.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -115,6 +117,7 @@ describe("rutas documentadas", () => {
       }),
       reportsRouter({} as Reports),
       dataPortabilityRouter({} as DataExports),
+      dashboardRouter({} as Dashboard),
     ];
     const documented = apiRoutes.map((route) => `${route.method} ${route.path}`).sort();
     expect(routers.flatMap(served).sort()).toEqual(documented);
