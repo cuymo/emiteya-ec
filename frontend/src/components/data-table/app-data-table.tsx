@@ -12,6 +12,8 @@ import {
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { Skeleton } from "@/components/states";
+import { cn } from "@/lib/utils";
+import { DataTableFooter } from "./data-table-footer";
 import { TablePagination } from "./table-pagination";
 
 export type AppDataTableProps<T> = {
@@ -36,6 +38,11 @@ export type AppDataTableProps<T> = {
   toolbar?: ReactNode;
   /** Representación de una fila como tarjeta en pantallas pequeñas. */
   renderCard: (row: T) => ReactNode;
+  /**
+   * Dentro de `DataTableCard`: sin marco ni barra propios, con las filas holgadas y el pie numerado
+   * de la plantilla. La barra pasa a la cabecera y a la fila de filtros de la tarjeta.
+   */
+  bare?: boolean;
 };
 
 export function AppDataTable<T>({
@@ -55,6 +62,7 @@ export function AppDataTable<T>({
   state,
   toolbar,
   renderCard,
+  bare = false,
 }: AppDataTableProps<T>) {
   // TanStack Table devuelve funciones no memoizables; el compilador de React lo sabe y lo omite.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -72,22 +80,35 @@ export function AppDataTable<T>({
 
   return (
     <div className="flex flex-col gap-4">
-      {toolbar}
+      {!bare && toolbar}
       <div
-        className="overflow-hidden rounded-lg border border-border bg-surface"
+        data-slot="data-table"
+        className={cn(
+          bare
+            ? "flex flex-col gap-4"
+            : "overflow-hidden rounded-lg border border-border bg-surface",
+        )}
         aria-busy={loading || refreshing}
       >
         {/* Escritorio y tableta: tabla. */}
         <div className="relative hidden overflow-x-auto md:block">
           <table aria-label={label} className="w-full border-collapse text-sm">
-            <thead className="bg-surface-subtle text-left text-xs text-foreground-muted">
+            <thead
+              className={cn(
+                "text-left text-foreground-muted",
+                bare ? "text-sm" : "bg-surface-subtle text-xs",
+              )}
+            >
               {table.getHeaderGroups().map((group) => (
-                <tr key={group.id}>
+                <tr key={group.id} className={cn(bare && "border-t border-border")}>
                   {group.headers.map((header) => (
                     <th
                       key={header.id}
                       scope="col"
-                      className="h-10 px-3 font-medium whitespace-nowrap last:text-right"
+                      className={cn(
+                        "whitespace-nowrap last:text-right",
+                        bare ? "h-11 px-4 font-normal" : "h-10 px-3 font-medium",
+                      )}
                     >
                       {header.isPlaceholder
                         ? null
@@ -102,7 +123,7 @@ export function AppDataTable<T>({
                 Array.from({ length: Math.min(pageSize, 8) }, (_, index) => (
                   <tr key={`skeleton-${index}`} className="border-t border-border">
                     {Array.from({ length: visibleColumns }, (_, cell) => (
-                      <td key={cell} className="h-12 px-3">
+                      <td key={cell} className={cn(bare ? "h-14 px-4" : "h-12 px-3")}>
                         <Skeleton className="h-4 w-full max-w-48" />
                       </td>
                     ))}
@@ -115,11 +136,20 @@ export function AppDataTable<T>({
               )}
               {showRows &&
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="border-t border-border hover:bg-surface-subtle/60">
+                  <tr
+                    key={row.id}
+                    className={cn(
+                      "border-t border-border",
+                      bare ? "hover:bg-muted/40" : "hover:bg-surface-subtle/60",
+                    )}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className="h-12 px-3 align-middle last:w-px last:text-right"
+                        className={cn(
+                          "align-middle last:w-px last:text-right",
+                          bare ? "px-4 py-3" : "h-12 px-3",
+                        )}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
@@ -136,7 +166,10 @@ export function AppDataTable<T>({
               {Array.from({ length: 4 }, (_, index) => (
                 <li
                   key={index}
-                  className="flex flex-col gap-2 border-t border-border p-4 first:border-t-0"
+                  className={cn(
+                    "flex flex-col gap-2 border-t border-border p-4",
+                    !bare && "first:border-t-0",
+                  )}
                 >
                   <Skeleton className="h-4 w-48" />
                   <Skeleton className="h-4 w-64" />
@@ -148,21 +181,38 @@ export function AppDataTable<T>({
           {showRows && (
             <ul aria-label={label} className="flex flex-col">
               {data.map((row) => (
-                <li key={getRowId(row)} className="border-t border-border p-4 first:border-t-0">
+                <li
+                  key={getRowId(row)}
+                  className={cn("border-t border-border p-4", !bare && "first:border-t-0")}
+                >
                   {renderCard(row)}
                 </li>
               ))}
             </ul>
           )}
         </div>
-        <TablePagination
-          total={total}
-          page={page}
-          pageSize={pageSize}
-          pageSizeOptions={pageSizeOptions}
-          onPageChange={onPageChange}
-          onPageSizeChange={onPageSizeChange}
-        />
+        {bare ? (
+          showRows &&
+          total > 0 && (
+            <DataTableFooter
+              total={total}
+              page={page}
+              pageSize={pageSize}
+              pageSizeOptions={pageSizeOptions}
+              onPageChange={onPageChange}
+              onPageSizeChange={onPageSizeChange}
+            />
+          )
+        ) : (
+          <TablePagination
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={onPageChange}
+            onPageSizeChange={onPageSizeChange}
+          />
+        )}
       </div>
     </div>
   );

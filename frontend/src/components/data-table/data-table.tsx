@@ -33,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { DataTableFooter } from "./data-table-footer";
 import { DataTablePagination } from "./data-table-pagination";
 
 declare module "@tanstack/react-table" {
@@ -75,6 +76,11 @@ export type DataTableProps<T> = {
   toolbar?: ReactNode;
   /** Abre el registro desde una zona no interactiva de la fila. */
   onRowOpen?: (row: T) => void;
+  /**
+   * Dentro de `DataTableCard`: sin marco ni barra propios, con las filas holgadas y el pie numerado
+   * de la plantilla. La barra pasa a la cabecera y a la fila de filtros de la tarjeta.
+   */
+  bare?: boolean;
 };
 
 /** Un clic de fila abre el registro solo si es un clic primario sin modificadores ni selección. */
@@ -103,6 +109,7 @@ export function DataTable<T>({
   state,
   toolbar,
   onRowOpen,
+  bare = false,
 }: DataTableProps<T>) {
   // TanStack Table devuelve funciones no memoizables; el compilador de React lo sabe y lo omite.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -121,6 +128,96 @@ export function DataTable<T>({
     if (onRowOpen && opensRow(event)) onRowOpen(row.original);
   };
 
+  const headClass = bare ? "h-11 px-4 font-normal" : undefined;
+  const cellClass = bare ? "px-4 py-3" : "h-11";
+  const grid = (
+    <Table>
+      <TableCaption className="sr-only">{label}</TableCaption>
+      <TableHeader className={cn(!bare && "bg-muted/40")}>
+        {table.getHeaderGroups().map((group) => (
+          <TableRow key={group.id} className={cn("hover:bg-transparent", bare && "border-t")}>
+            {group.headers.map((header) => {
+              const meta = header.column.columnDef.meta;
+              return (
+                <TableHead key={header.id} className={cn(headClass, meta?.headClassName)}>
+                  {header.isPlaceholder ? null : (
+                    <span className={cn(meta?.srOnlyHeader && "sr-only")}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </span>
+                  )}
+                </TableHead>
+              );
+            })}
+          </TableRow>
+        ))}
+      </TableHeader>
+      <TableBody>
+        {loading &&
+          Array.from({ length: Math.min(pageSize, 8) }, (_, index) => (
+            <TableRow key={`esqueleto-${index}`} className="hover:bg-transparent">
+              {leafColumns.map((column) => (
+                <TableCell
+                  key={column.id}
+                  className={cn(cellClass, column.columnDef.meta?.cellClassName)}
+                >
+                  <Skeleton
+                    className={cn(
+                      "h-4",
+                      column.columnDef.meta?.skeletonClassName ?? "w-full max-w-40",
+                    )}
+                  />
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        {state && (
+          <TableRow className="hover:bg-transparent">
+            <TableCell colSpan={leafColumns.length} className="p-0">
+              {state}
+            </TableCell>
+          </TableRow>
+        )}
+        {showRows &&
+          table.getRowModel().rows.map((row) => (
+            <TableRow
+              key={row.id}
+              onClick={onRowOpen ? (event) => open(event, row) : undefined}
+              className={cn(onRowOpen && "cursor-pointer", bare && "hover:bg-muted/40")}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell
+                  key={cell.id}
+                  className={cn(cellClass, cell.column.columnDef.meta?.cellClassName)}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+      </TableBody>
+    </Table>
+  );
+  const paging = {
+    total: rowCount,
+    page,
+    pageSize,
+    pageSizeOptions,
+    onPageChange,
+    onPageSizeChange,
+  };
+
+  if (bare) {
+    return (
+      <div
+        data-slot="data-table"
+        className="@container flex flex-col gap-4"
+        aria-busy={loading || refreshing}
+      >
+        {grid}
+        {showRows && rowCount > 0 && <DataTableFooter {...paging} />}
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-3">
       {toolbar}
@@ -129,81 +226,8 @@ export function DataTable<T>({
         className="@container overflow-hidden rounded-xl border border-border bg-card"
         aria-busy={loading || refreshing}
       >
-        <Table>
-          <TableCaption className="sr-only">{label}</TableCaption>
-          <TableHeader className="bg-muted/40">
-            {table.getHeaderGroups().map((group) => (
-              <TableRow key={group.id} className="hover:bg-transparent">
-                {group.headers.map((header) => {
-                  const meta = header.column.columnDef.meta;
-                  return (
-                    <TableHead key={header.id} className={meta?.headClassName}>
-                      {header.isPlaceholder ? null : (
-                        <span className={cn(meta?.srOnlyHeader && "sr-only")}>
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                        </span>
-                      )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {loading &&
-              Array.from({ length: Math.min(pageSize, 8) }, (_, index) => (
-                <TableRow key={`esqueleto-${index}`} className="hover:bg-transparent">
-                  {leafColumns.map((column) => (
-                    <TableCell
-                      key={column.id}
-                      className={cn("h-11", column.columnDef.meta?.cellClassName)}
-                    >
-                      <Skeleton
-                        className={cn(
-                          "h-4",
-                          column.columnDef.meta?.skeletonClassName ?? "w-full max-w-40",
-                        )}
-                      />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            {state && (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={leafColumns.length} className="p-0">
-                  {state}
-                </TableCell>
-              </TableRow>
-            )}
-            {showRows &&
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  onClick={onRowOpen ? (event) => open(event, row) : undefined}
-                  className={cn(onRowOpen && "cursor-pointer")}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn("h-11", cell.column.columnDef.meta?.cellClassName)}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-        {showRows && rowCount > 0 && (
-          <DataTablePagination
-            total={rowCount}
-            page={page}
-            pageSize={pageSize}
-            pageSizeOptions={pageSizeOptions}
-            onPageChange={onPageChange}
-            onPageSizeChange={onPageSizeChange}
-          />
-        )}
+        {grid}
+        {showRows && rowCount > 0 && <DataTablePagination {...paging} />}
       </div>
     </div>
   );

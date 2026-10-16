@@ -184,6 +184,11 @@ destino relativo a `frontend/src/`.
 | `components/ui/dropdown-menu.tsx` | `components/ui/dropdown-menu.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/tooltip.tsx` | `components/ui/tooltip.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
 | `components/ui/popover.tsx` | `components/ui/popover.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/card.tsx` | `components/ui/card.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/select-menu.tsx` | `components/ui/select.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/ui/pagination.tsx` | `components/ui/pagination.tsx` | MIT de «Studio Admin», sobre primitivos MIT de shadcn/ui |
+| `components/data-table/data-table-card.tsx` y `data-table-select-filter.tsx`, la tarjeta de la lista con su cabecera y los filtros con prefijo (composición visual) | `app/(main)/dashboard/users/_components/users.tsx` | MIT de «Studio Admin» |
+| `components/data-table/data-table-footer.tsx`, el pie con filas por página y paginación numerada (composición visual) | `app/(main)/dashboard/users/_components/users-table.tsx` | MIT de «Studio Admin» |
 | `features/invoices/draft-editor.tsx`, líneas con su fila de encabezados y «Agregar producto» en la cabecera de la sección (composición visual, sin arrastrar ni total de línea calculado en el navegador) | `app/(main)/dashboard/invoice/_components/invoice-items.tsx` | MIT de «Studio Admin» |
 | `features/invoices/draft-editor.tsx`, el comprador como campo con su etiqueta y su control a todo el ancho de la columna (composición visual) | `app/(main)/dashboard/invoice/_components/client-selector.tsx` | MIT de «Studio Admin» |
 | `features/invoices/draft-editor.tsx`, filas de importe del resumen con la columna numérica a la derecha (composición visual) | `app/(main)/dashboard/invoice/_components/invoice-adjustments.tsx` | MIT de «Studio Admin» |
