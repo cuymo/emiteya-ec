@@ -110,6 +110,8 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
   - Ambiente is centered too, with its `h1` only for screen readers: one card with the current
     environment and the readiness to emit, and a footer with the action («Cambiar a Producción» in
     `danger`, «Volver a Pruebas» in `outline`).
+  - Portabilidad de datos keeps the full width for its history table; its `h1` is only for screen
+    readers, and its one-line description sits beside «Generar exportación».
   - Firma electrónica is centered the same way, with its `h1` only for screen readers. One card
     holds the certificate data, then the expiry notice, and a footer with «Guardar aviso»
     (outline, always enabled: with no change it says so instead of sending) and «Reemplazar

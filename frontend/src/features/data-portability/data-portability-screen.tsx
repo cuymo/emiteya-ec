@@ -366,8 +366,9 @@ export function DataPortabilityScreen() {
       return false;
     },
   });
+  // La pestaña ya nombra la pantalla: el título queda para los lectores de pantalla.
   const heading = (
-    <h1 id="portabilidad-titulo" className="text-3xl font-bold">
+    <h1 id="portabilidad-titulo" className="sr-only">
       Portabilidad de datos
     </h1>
   );
@@ -437,15 +438,13 @@ export function DataPortabilityScreen() {
 
   return (
     <section aria-labelledby="portabilidad-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          {heading}
-          {latest && generateButton}
-        </div>
+      {heading}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="max-w-prose text-sm text-foreground-muted">
           Descarga en un solo archivo los datos y los comprobantes de tu empresa para llevarlos a
           otro sistema.
         </p>
+        {latest && generateButton}
       </div>
 
       {!latest ? (

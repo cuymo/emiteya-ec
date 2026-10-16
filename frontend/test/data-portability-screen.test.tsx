@@ -118,6 +118,10 @@ describe("Portabilidad de datos (design D23)", () => {
     expect(content).toContain("SHA256SUMS");
     // Sin exportaciones no hay historia.
     expect(screen.queryByRole("region", { name: "Historial" })).toBeNull();
+    // La pestaña nombra la pantalla: el título es solo para lectores de pantalla.
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Portabilidad de datos" }).className,
+    ).toContain("sr-only");
   });
 
   it("muestra el error con reintento", { timeout: 10_000 }, async () => {
