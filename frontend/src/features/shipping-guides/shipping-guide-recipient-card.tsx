@@ -585,7 +585,6 @@ export function RecipientCard({
           />
           <PartyDialog
             open={creatingParty}
-            party={null}
             initialRoles={NO_ROLES}
             onClose={() => setCreatingParty(false)}
             onShowExisting={() => {

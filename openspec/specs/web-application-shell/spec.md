@@ -501,6 +501,26 @@ página, con la actual a la vista.
 - **WHEN** un administrador abre la dirección de Firma electrónica
 - **THEN** ve la pestaña Firma electrónica abierta, con las demás pestañas para cambiar de sección
 
+### Requirement: Terceros y Productos en su página
+Terceros y Productos SHALL registrar y corregir un registro en su propia página, no en un diálogo:
+«Nuevo tercero» y «Nuevo producto» SHALL llevar a la página del alta, y «Corregir» de cada fila, a
+la de la corrección de ese registro. El formulario SHALL presentarse en secciones con su título a la
+izquierda, como Empresa, con «Cancelar», que vuelve a la lista, y la acción principal al pie. Al
+guardar, la página SHALL volver a la lista con el aviso. Dentro de un comprobante, el alta de un
+tercero SHALL seguir en un diálogo, para no abandonar el borrador.
+
+#### Scenario: Nuevo producto
+- **WHEN** un operador elige «Nuevo producto» en la lista de productos
+- **THEN** llega a la página Inicio / Maestros / Productos / Nuevo producto, con las secciones del formulario y «Registrar producto» al pie
+
+#### Scenario: Corregir un tercero
+- **WHEN** un operador elige «Corregir» en la fila de Comercial Andina S.A. y guarda los cambios
+- **THEN** la página muestra sus datos con Comercial Andina S.A. como última miga, y al guardar vuelve a la lista con el aviso
+
+#### Scenario: Proveedor desde una retención
+- **WHEN** un operador registra un proveedor nuevo mientras prepara una retención
+- **THEN** lo registra en un diálogo, sin salir del borrador
+
 ### Requirement: Más acciones de una pantalla de detalle
 Las acciones secundarias de una pantalla de detalle SHALL ofrecerse en un menú «⋯» al final de su
 título, en lugar de una fila de botones junto al encabezado: en la factura, emitir una nota de

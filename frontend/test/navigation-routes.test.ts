@@ -41,9 +41,9 @@ const labels = (can: ReturnType<typeof permissionsOf>) =>
   ]);
 
 describe("modelo de rutas", () => {
-  it("cada una de las 40 páginas autenticadas encaja con un destino o una pantalla interna", () => {
-    // Las 41 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
-    expect(AUTHENTICATED).toHaveLength(40);
+  it("cada una de las 44 páginas autenticadas encaja con un destino o una pantalla interna", () => {
+    // Las 45 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
+    expect(AUTHENTICATED).toHaveLength(44);
     expect(pageUrls(join(APP, "(auth)"))).toEqual(["/iniciar-sesion"]);
     for (const url of AUTHENTICATED) {
       expect(resolveRoute(url), url).not.toBeNull();
@@ -159,6 +159,17 @@ describe("migas", () => {
       "Inventario→/inventario",
       "[Tornillo 3/8]",
     ]);
+    // Terceros y Productos registran y corrigen en su página (decisión del propietario, 2026-10-17).
+    expect(crumbs("/productos/nuevo")).toEqual([
+      "Maestros",
+      "Productos→/productos",
+      "[Nuevo producto]",
+    ]);
+    expect(crumbs("/terceros/p-1", "Comercial Andina S.A.")).toEqual([
+      "Maestros",
+      "Terceros→/terceros",
+      "[Comercial Andina S.A.]",
+    ]);
     // productize-invoice-editor-and-composition-foundation, D12 y PO-1.
     expect(crumbs("/borradores/nuevo")).toEqual([
       "Ventas",
@@ -231,6 +242,10 @@ describe("paridad de permisos con las pantallas", () => {
     "/liquidaciones-compra/borradores/nueva": "purchaseSettlements.draft",
     "/liquidaciones-compra/borradores/x1": "purchaseSettlements.draft",
     "/inventario/x1": "inventory.read",
+    "/terceros/nuevo": "parties.manage",
+    "/terceros/x1": "parties.manage",
+    "/productos/nuevo": "products.manage",
+    "/productos/x1": "products.manage",
   };
 
   it("cada pantalla interna exige el permiso que comprueba su pantalla", () => {

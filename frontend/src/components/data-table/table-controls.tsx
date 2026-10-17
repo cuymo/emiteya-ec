@@ -1,8 +1,9 @@
 // Controles compartidos de tabla (component-system.md): búsqueda con limpieza, menú de columnas
-// opcionales y botón de acción de fila con tooltip. Los filtros son `DataTableSelectFilter`.
+// opcionales y botón o enlace de acción de fila con tooltip. Los filtros son `DataTableSelectFilter`.
 "use client";
 
 import { Columns3, Search, X, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -108,6 +109,27 @@ export function RowActionButton({
         className="max-md:size-11"
       >
         <Icon aria-hidden="true" />
+      </Button>
+    </Tooltip>
+  );
+}
+
+/** Como `RowActionButton`, para una acción que lleva a otra página, como corregir el registro. */
+export function RowActionLink({
+  icon: Icon,
+  label,
+  href,
+}: {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+}) {
+  return (
+    <Tooltip label={label}>
+      <Button variant="ghost" size="legacy-icon-sm" className="max-md:size-11" asChild>
+        <Link href={href} aria-label={label}>
+          <Icon aria-hidden="true" />
+        </Link>
       </Button>
     </Tooltip>
   );

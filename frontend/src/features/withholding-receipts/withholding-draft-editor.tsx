@@ -204,7 +204,6 @@ function SupplierChooser({
       />
       <PartyDialog
         open={creating}
-        party={null}
         initialRoles={SUPPLIER_ROLES}
         onClose={() => {
           setCreating(false);

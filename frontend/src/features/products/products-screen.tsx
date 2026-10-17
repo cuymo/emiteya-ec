@@ -2,7 +2,8 @@
 // tener los ítems que se venden con su precio sin impuestos y sus impuestos correctos. Decisión:
 // ¿este producto está listo para facturar, o qué hay que corregir? Información mínima: código,
 // nombre, tipo, precio, IVA y estado tributario. Acción principal: Nuevo producto. P1: filtros con
-// recuentos y formulario; P2: motivos del estado tributario, en el diálogo; P3 (historial): fuera.
+// recuentos y formulario, en su propia página; P2: motivos del estado tributario, en el formulario;
+// P3 (historial): fuera.
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -16,12 +17,17 @@ import {
   type TaxConfigurationStatus,
 } from "@facturador/contracts";
 import { CircleDashed, PackageCheck, PackageX, Pencil, Plus, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useMemo, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
-import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import {
+  RowActionButton,
+  RowActionLink,
+  SearchInput,
+} from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -29,7 +35,6 @@ import { MoneyCell, MutedCell } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { ProductDialog } from "./product-dialog";
 import { useChangeProductStatus, useProducts, useProductTaxSummary } from "./products-api";
 
 type StatusFilter = "activos" | "desactivados" | "todos";
@@ -140,23 +145,20 @@ function RowActions({
   product,
   canChangeStatus,
   busy,
-  onEdit,
   onToggleStatus,
 }: {
   product: ProductView;
   canChangeStatus: boolean;
   busy: boolean;
-  onEdit: () => void;
   onToggleStatus: () => void;
 }) {
   const active = product.status === "ACTIVE";
   return (
     <div className="inline-flex items-center gap-1">
-      <RowActionButton
+      <RowActionLink
         icon={Pencil}
         label={`Corregir ${product.name}`}
-        onClick={onEdit}
-        disabled={busy}
+        href={`/productos/${encodeURIComponent(product.id)}`}
       />
       {canChangeStatus && (
         <RowActionButton
@@ -178,8 +180,6 @@ export function ProductsScreen() {
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
-  const [editing, setEditing] = useState<ProductView | null>(null);
-  const [creating, setCreating] = useState(false);
   const status = useChangeProductStatus();
   const summary = useProductTaxSummary(allowed);
   // En móvil, estado y tipo van tras "Más filtros" (data-tables.md); desde 768 px, a la vista.
@@ -231,7 +231,6 @@ export function ProductsScreen() {
       product={product}
       canChangeStatus={canChangeStatus}
       busy={status.isPending && status.variables?.product.id === product.id}
-      onEdit={() => setEditing(product)}
       onToggleStatus={() => toggle(product)}
     />
   );
@@ -339,109 +338,100 @@ export function ProductsScreen() {
   ) : undefined;
 
   return (
-    <>
-      <DataTableCard
-        {...CARD}
-        search={
-          <SearchInput
-            value={searchDraft}
-            onChange={setSearchDraft}
-            label="Buscar por código o nombre"
-            placeholder="Código o nombre"
-          />
-        }
-        actions={
-          canManage && (
-            <Button size="sm" onClick={() => setCreating(true)}>
+    <DataTableCard
+      {...CARD}
+      search={
+        <SearchInput
+          value={searchDraft}
+          onChange={setSearchDraft}
+          label="Buscar por código o nombre"
+          placeholder="Código o nombre"
+        />
+      }
+      actions={
+        canManage && (
+          <Button size="sm" asChild>
+            <Link href="/productos/nuevo">
               <Plus aria-hidden="true" />
               Nuevo producto
-            </Button>
-          )
-        }
-        filters={
-          <>
+            </Link>
+          </Button>
+        )
+      }
+      filters={
+        <>
+          <DataTableSelectFilter
+            label="Estado tributario"
+            value={url.tax}
+            options={taxFilters}
+            onChange={(value) => url.update({ tributario: value === "todos" ? null : value })}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="max-md:w-full md:hidden"
+            aria-expanded={moreFilters}
+            aria-controls={moreFiltersId}
+            onClick={() => setMoreFilters((open) => !open)}
+          >
+            {secondaryActive > 0 ? `Más filtros (${secondaryActive})` : "Más filtros"}
+          </Button>
+          <div
+            id={moreFiltersId}
+            className={cn(
+              moreFilters ? "flex" : "hidden",
+              "flex-wrap items-center gap-3 max-md:w-full max-md:flex-col md:flex",
+            )}
+          >
             <DataTableSelectFilter
-              label="Estado tributario"
-              value={url.tax}
-              options={taxFilters}
-              onChange={(value) => url.update({ tributario: value === "todos" ? null : value })}
+              label="Estado"
+              value={url.filter}
+              options={STATUS_FILTERS}
+              onChange={(value) => url.update({ estado: value === "activos" ? null : value })}
             />
-            <Button
-              variant="outline"
-              size="sm"
-              className="max-md:w-full md:hidden"
-              aria-expanded={moreFilters}
-              aria-controls={moreFiltersId}
-              onClick={() => setMoreFilters((open) => !open)}
-            >
-              {secondaryActive > 0 ? `Más filtros (${secondaryActive})` : "Más filtros"}
-            </Button>
-            <div
-              id={moreFiltersId}
-              className={cn(
-                moreFilters ? "flex" : "hidden",
-                "flex-wrap items-center gap-3 max-md:w-full max-md:flex-col md:flex",
-              )}
-            >
-              <DataTableSelectFilter
-                label="Estado"
-                value={url.filter}
-                options={STATUS_FILTERS}
-                onChange={(value) => url.update({ estado: value === "activos" ? null : value })}
-              />
-              <DataTableSelectFilter
-                label="Tipo"
-                value={url.kind}
-                options={KIND_FILTERS}
-                onChange={(value) => url.update({ tipo: value === "todos" ? null : value })}
-              />
+            <DataTableSelectFilter
+              label="Tipo"
+              value={url.kind}
+              options={KIND_FILTERS}
+              onChange={(value) => url.update({ tipo: value === "todos" ? null : value })}
+            />
+          </div>
+        </>
+      }
+    >
+      <AppDataTable
+        label="Productos y servicios de la empresa"
+        columns={columns}
+        data={products.data?.data ?? []}
+        getRowId={(product) => product.id}
+        total={products.data?.meta.total ?? 0}
+        page={url.page}
+        pageSize={url.pageSize}
+        onPageChange={(page) => url.update({ pagina: String(page) }, false)}
+        onPageSizeChange={(size) => url.update({ filas: String(size) })}
+        columnVisibility={visibility}
+        loading={products.isPending}
+        refreshing={products.isFetching}
+        state={tableState}
+        renderCard={(product) => (
+          <div className="flex flex-col gap-2">
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="font-semibold break-words">{product.name}</span>
+              <span className="text-sm text-foreground-muted tabular-nums">
+                {product.mainCode ? `${product.mainCode} · ` : ""}
+                {PRODUCT_KIND_LABELS[product.kind]} · <MoneyCell amount={product.unitPrice} /> · IVA{" "}
+                {ivaLabel(product)}
+              </span>
+              <span className="flex flex-wrap items-center gap-2 text-sm">
+                <TaxCell product={product} />
+                <StatusCell product={product} />
+              </span>
             </div>
-          </>
-        }
-      >
-        <AppDataTable
-          label="Productos y servicios de la empresa"
-          columns={columns}
-          data={products.data?.data ?? []}
-          getRowId={(product) => product.id}
-          total={products.data?.meta.total ?? 0}
-          page={url.page}
-          pageSize={url.pageSize}
-          onPageChange={(page) => url.update({ pagina: String(page) }, false)}
-          onPageSizeChange={(size) => url.update({ filas: String(size) })}
-          columnVisibility={visibility}
-          loading={products.isPending}
-          refreshing={products.isFetching}
-          state={tableState}
-          renderCard={(product) => (
-            <div className="flex flex-col gap-2">
-              <div className="flex min-w-0 flex-col gap-1">
-                <span className="font-semibold break-words">{product.name}</span>
-                <span className="text-sm text-foreground-muted tabular-nums">
-                  {product.mainCode ? `${product.mainCode} · ` : ""}
-                  {PRODUCT_KIND_LABELS[product.kind]} · <MoneyCell amount={product.unitPrice} /> ·
-                  IVA {ivaLabel(product)}
-                </span>
-                <span className="flex flex-wrap items-center gap-2 text-sm">
-                  <TaxCell product={product} />
-                  <StatusCell product={product} />
-                </span>
-              </div>
-              {canManage && <div className="-ml-2">{actions(product)}</div>}
-            </div>
-          )}
-        />
-      </DataTableCard>
-
-      <ProductDialog
-        open={creating || editing !== null}
-        product={editing}
-        onClose={() => {
-          setCreating(false);
-          setEditing(null);
-        }}
+            {canManage && <div className="-ml-2">{actions(product)}</div>}
+          </div>
+        )}
       />
-    </>
+    </DataTableCard>
   );
 }
 

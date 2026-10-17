@@ -2,7 +2,7 @@
 // encontrar o registrar a quien se le vende, compra o encarga un traslado, con su identificación
 // correcta. Decisión: ¿ya existe o lo registro? Información mínima: identificación con su tipo,
 // razón social, roles y estado. Acción principal: Nuevo tercero. P1: filtros de estado y rol y
-// corrección; P2: contacto, en el diálogo; P3 (historial): fuera.
+// corrección, en su propia página; P2: contacto, en el formulario; P3 (historial): fuera.
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -16,12 +16,17 @@ import {
   type RecordStatus,
 } from "@facturador/contracts";
 import { Lock, Pencil, Plus, UserCheck, UserX } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
-import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import {
+  RowActionButton,
+  RowActionLink,
+  SearchInput,
+} from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton, StatusBadge } from "@/components/states";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +34,6 @@ import { Button } from "@/components/ui/button";
 import { MutedCell } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
-import { PartyDialog } from "./party-dialog";
 import { useChangePartyStatus, useParties } from "./parties-api";
 
 type StatusFilter = "activos" | "desactivados" | "todos";
@@ -111,13 +115,11 @@ function RowActions({
   party,
   canChangeStatus,
   busy,
-  onEdit,
   onToggleStatus,
 }: {
   party: PartyView;
   canChangeStatus: boolean;
   busy: boolean;
-  onEdit: () => void;
   onToggleStatus: () => void;
 }) {
   // El consumidor final es un registro del sistema: sin acciones.
@@ -125,11 +127,10 @@ function RowActions({
   const active = party.status === "ACTIVE";
   return (
     <div className="inline-flex items-center gap-1">
-      <RowActionButton
+      <RowActionLink
         icon={Pencil}
         label={`Corregir a ${party.legalName}`}
-        onClick={onEdit}
-        disabled={busy}
+        href={`/terceros/${encodeURIComponent(party.id)}`}
       />
       {canChangeStatus && (
         <RowActionButton
@@ -151,8 +152,6 @@ export function PartiesScreen() {
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
-  const [editing, setEditing] = useState<PartyView | null>(null);
-  const [creating, setCreating] = useState(false);
   const status = useChangePartyStatus();
 
   // La búsqueda libre consulta al servidor tras una pausa; los chips filtran al instante.
@@ -188,7 +187,6 @@ export function PartiesScreen() {
       party={party}
       canChangeStatus={canChangeStatus}
       busy={status.isPending && status.variables?.party.id === party.id}
-      onEdit={() => setEditing(party)}
       onToggleStatus={() => toggle(party)}
     />
   );
@@ -271,88 +269,74 @@ export function PartiesScreen() {
   ) : undefined;
 
   return (
-    <>
-      <DataTableCard
-        {...CARD}
-        search={
-          <SearchInput
-            value={searchDraft}
-            onChange={setSearchDraft}
-            label="Buscar por identificación o razón social"
-            placeholder="Identificación o nombre"
-          />
-        }
-        actions={
-          canManage && (
-            <Button size="sm" onClick={() => setCreating(true)}>
+    <DataTableCard
+      {...CARD}
+      search={
+        <SearchInput
+          value={searchDraft}
+          onChange={setSearchDraft}
+          label="Buscar por identificación o razón social"
+          placeholder="Identificación o nombre"
+        />
+      }
+      actions={
+        canManage && (
+          <Button size="sm" asChild>
+            <Link href="/terceros/nuevo">
               <Plus aria-hidden="true" />
               Nuevo tercero
-            </Button>
-          )
-        }
-        filters={
-          <>
-            <DataTableSelectFilter
-              label="Estado"
-              value={url.filter}
-              options={STATUS_FILTERS}
-              onChange={(value) => url.update({ estado: value === "activos" ? null : value })}
-            />
-            <DataTableSelectFilter
-              label="Rol"
-              value={url.role}
-              options={ROLE_FILTERS}
-              onChange={(value) => url.update({ rol: value === "todos" ? null : value })}
-            />
-          </>
-        }
-      >
-        <AppDataTable
-          label="Terceros de la empresa"
-          columns={columns}
-          data={parties.data?.data ?? []}
-          getRowId={(party) => party.id}
-          total={parties.data?.meta.total ?? 0}
-          page={url.page}
-          pageSize={url.pageSize}
-          onPageChange={(page) => url.update({ pagina: String(page) }, false)}
-          onPageSizeChange={(size) => url.update({ filas: String(size) })}
-          columnVisibility={visibility}
-          loading={parties.isPending}
-          refreshing={parties.isFetching}
-          state={tableState}
-          renderCard={(party) => (
-            <div className="flex flex-col gap-2">
-              <div className="flex min-w-0 flex-col gap-1">
-                <span className="font-semibold break-words">{party.legalName}</span>
-                <span className="text-sm text-foreground-muted tabular-nums">
-                  {party.identificationTypeLabel ?? party.identificationType} ·{" "}
-                  {party.identification}
-                </span>
-                <span className="flex flex-wrap items-center gap-2 text-sm">
-                  {roles(party)}
-                  <StatusCell party={party} />
-                </span>
-              </div>
-              {canManage && <div className="-ml-2">{actions(party)}</div>}
+            </Link>
+          </Button>
+        )
+      }
+      filters={
+        <>
+          <DataTableSelectFilter
+            label="Estado"
+            value={url.filter}
+            options={STATUS_FILTERS}
+            onChange={(value) => url.update({ estado: value === "activos" ? null : value })}
+          />
+          <DataTableSelectFilter
+            label="Rol"
+            value={url.role}
+            options={ROLE_FILTERS}
+            onChange={(value) => url.update({ rol: value === "todos" ? null : value })}
+          />
+        </>
+      }
+    >
+      <AppDataTable
+        label="Terceros de la empresa"
+        columns={columns}
+        data={parties.data?.data ?? []}
+        getRowId={(party) => party.id}
+        total={parties.data?.meta.total ?? 0}
+        page={url.page}
+        pageSize={url.pageSize}
+        onPageChange={(page) => url.update({ pagina: String(page) }, false)}
+        onPageSizeChange={(size) => url.update({ filas: String(size) })}
+        columnVisibility={visibility}
+        loading={parties.isPending}
+        refreshing={parties.isFetching}
+        state={tableState}
+        renderCard={(party) => (
+          <div className="flex flex-col gap-2">
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="font-semibold break-words">{party.legalName}</span>
+              <span className="text-sm text-foreground-muted tabular-nums">
+                {party.identificationTypeLabel ?? party.identificationType} · {party.identification}
+              </span>
+              <span className="flex flex-wrap items-center gap-2 text-sm">
+                {roles(party)}
+                <StatusCell party={party} />
+              </span>
             </div>
-          )}
-        />
-      </DataTableCard>
-
-      <PartyDialog
-        open={creating || editing !== null}
-        party={editing}
-        onClose={() => {
-          setCreating(false);
-          setEditing(null);
-        }}
-        onShowExisting={(identification) => {
-          setSearchDraft(identification);
-          url.update({ q: identification, estado: "todos", rol: null });
-        }}
+            {canManage && <div className="-ml-2">{actions(party)}</div>}
+          </div>
+        )}
       />
-    </>
+    </DataTableCard>
   );
 }
 

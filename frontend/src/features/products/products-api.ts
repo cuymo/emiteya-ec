@@ -57,6 +57,16 @@ export function useProducts(query: ProductsQuery, enabled: boolean) {
   });
 }
 
+/** Un producto, para corregirlo en su página. */
+export function useProduct(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...PRODUCTS_KEY, "detail", id],
+    enabled,
+    queryFn: ({ signal }) =>
+      apiFetch(`/products/${encodeURIComponent(id)}`, { schema: productViewSchema, signal }),
+  });
+}
+
 /** Recuentos de productos activos por estado tributario y por entrada (design D8). */
 export function useProductTaxSummary(enabled: boolean) {
   return useQuery({

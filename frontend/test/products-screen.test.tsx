@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
+import { ProductFormScreen } from "@/features/products/product-form";
 import { ProductsScreen } from "@/features/products/products-screen";
 import {
   ADMIN_ME,
@@ -125,6 +126,7 @@ const entries =
 function renderProducts(
   routes: Record<string, Route>,
   me: typeof ADMIN_ME | typeof OPERATOR_ME = ADMIN_ME,
+  ui: React.ReactNode = <ProductsScreen />,
 ) {
   const calls = mockApi({
     "GET /api/v1/me": () => ({ status: 200, body: { data: me } }),
@@ -141,13 +143,19 @@ function renderProducts(
     ]),
     ...routes,
   });
-  renderApp(
-    <SessionGate fallback={<p>cargando</p>}>
-      <ProductsScreen />
-    </SessionGate>,
-  );
+  renderApp(<SessionGate fallback={<p>cargando</p>}>{ui}</SessionGate>);
   return calls;
 }
+
+/** La página del formulario: un alta o, con `productId`, la corrección de ese producto. */
+const renderForm = (routes: Record<string, Route>, productId?: string) =>
+  renderProducts(
+    routes,
+    ADMIN_ME,
+    productId ? <ProductFormScreen productId={productId} /> : <ProductFormScreen />,
+  );
+const formOf = (name: string) => screen.findByRole("form", { name });
+const user = () => userEvent.setup();
 
 beforeEach(() => {
   navigation.pathname = "/productos";
@@ -240,26 +248,40 @@ describe("pantalla Productos", () => {
   it("el operador registra y corrige, pero no desactiva", async () => {
     renderProducts({ "GET /api/v1/products": page([product()]) }, OPERATOR_ME);
     await screen.findAllByText("Cemento 50 kg");
-    expect(screen.getByRole("button", { name: "Nuevo producto" })).toBeDefined();
+    expect(screen.getByRole("link", { name: "Nuevo producto" })).toBeDefined();
     expect(screen.queryAllByRole("button", { name: /Desactivar / })).toEqual([]);
   });
 
-  it("registra un producto con el precio como texto y el IVA del catálogo", async () => {
-    const calls = renderProducts({
-      "GET /api/v1/products": page([]),
+  it("«Nuevo producto» y «Corregir» llevan a la página del formulario, no a un diálogo", async () => {
+    renderProducts({ "GET /api/v1/products": page([product()]) });
+    expect((await screen.findByRole("link", { name: "Nuevo producto" })).getAttribute("href")).toBe(
+      "/productos/nuevo",
+    );
+    const [edit] = await screen.findAllByRole("link", { name: "Corregir Cemento 50 kg" });
+    expect(edit!.getAttribute("href")).toBe("/productos/prod-1");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
+describe("página del formulario de producto", () => {
+  it("registra un producto con el precio como texto y el IVA del catálogo, y vuelve a la lista", async () => {
+    navigation.push.mockReset();
+    const calls = renderForm({
       "POST /api/v1/products": () => ({ status: 201, body: { data: product() } }),
     });
-    const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Nuevo producto" }));
-    const dialog = await screen.findByRole("dialog", { name: "Nuevo producto" });
-    await user.type(within(dialog).getByLabelText("Nombre"), "Cemento 50 kg");
-    await user.type(within(dialog).getByLabelText("Código principal (opcional)"), "CEM-50");
-    await user.type(within(dialog).getByLabelText("Precio unitario sin impuestos"), "8.75");
-    await within(dialog).findByRole("option", { name: /15% · código 4/ });
+    expect(await screen.findByRole("heading", { level: 1, name: "Nuevo producto" })).toBeDefined();
+    const form = await formOf("Nuevo producto");
+    // Secciones con su título, como Empresa.
+    for (const name of ["Datos del producto", "Precio e impuestos", "Inventario", "Uso interno"])
+      expect(within(form).getByRole("region", { name })).toBeDefined();
+    await user().type(within(form).getByLabelText("Nombre"), "Cemento 50 kg");
+    await user().type(within(form).getByLabelText("Código principal (opcional)"), "CEM-50");
+    await user().type(within(form).getByLabelText("Precio unitario sin impuestos"), "8.75");
+    await within(form).findByRole("option", { name: /15% · código 4/ });
     // Solo las entradas utilizables: el 12 % deshabilitado no se ofrece.
-    expect(within(dialog).queryByRole("option", { name: /12%/ })).toBeNull();
-    await user.selectOptions(within(dialog).getByLabelText("Tarifa de IVA"), "4");
-    await user.click(within(dialog).getByRole("button", { name: "Registrar producto" }));
+    expect(within(form).queryByRole("option", { name: /12%/ })).toBeNull();
+    await user().selectOptions(within(form).getByLabelText("Tarifa de IVA"), "4");
+    await user().click(within(form).getByRole("button", { name: "Registrar producto" }));
     expect(await screen.findByText("Registraste Cemento 50 kg.")).toBeDefined();
     expect(calls.find((c) => c.key === "POST /api/v1/products")?.body).toEqual({
       kind: "GOOD",
@@ -271,29 +293,35 @@ describe("pantalla Productos", () => {
       stockTracked: false,
       taxes: { iva: "4", ice: null, irbpnr: null },
     });
+    expect(navigation.push).toHaveBeenCalledWith("/productos");
+  });
+
+  it("«Cancelar» vuelve a la lista", async () => {
+    renderForm({});
+    const form = await formOf("Nuevo producto");
+    expect(within(form).getByRole("link", { name: "Cancelar" }).getAttribute("href")).toBe(
+      "/productos",
+    );
   });
 
   it("un precio con más de 6 decimales se rechaza en el campo, sin redondear ni enviar", async () => {
-    const calls = renderProducts({ "GET /api/v1/products": page([]) });
-    const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Nuevo producto" }));
-    const dialog = await screen.findByRole("dialog", { name: "Nuevo producto" });
-    await user.type(within(dialog).getByLabelText("Nombre"), "Tornillo");
-    await user.type(within(dialog).getByLabelText("Precio unitario sin impuestos"), "1.1234567");
-    await within(dialog).findByRole("option", { name: /15% · código 4/ });
-    await user.selectOptions(within(dialog).getByLabelText("Tarifa de IVA"), "4");
-    await user.click(within(dialog).getByRole("button", { name: "Registrar producto" }));
-    expect(await within(dialog).findByText("Admite como máximo 6 decimales.")).toBeDefined();
+    const calls = renderForm({});
+    const form = await formOf("Nuevo producto");
+    await user().type(within(form).getByLabelText("Nombre"), "Tornillo");
+    await user().type(within(form).getByLabelText("Precio unitario sin impuestos"), "1.1234567");
+    await within(form).findByRole("option", { name: /15% · código 4/ });
+    await user().selectOptions(within(form).getByLabelText("Tarifa de IVA"), "4");
+    await user().click(within(form).getByRole("button", { name: "Registrar producto" }));
+    expect(await within(form).findByText("Admite como máximo 6 decimales.")).toBeDefined();
     expect(
-      (within(dialog).getByLabelText("Precio unitario sin impuestos") as HTMLInputElement).value,
+      (within(form).getByLabelText("Precio unitario sin impuestos") as HTMLInputElement).value,
     ).toBe("1.1234567");
     expect(calls.some((c) => c.key === "POST /api/v1/products")).toBe(false);
   });
 
-  it("el código en uso vuelve a su campo y un impuesto no disponible se explica en el diálogo", async () => {
+  it("el código en uso vuelve a su campo y un impuesto no disponible se explica en el formulario", async () => {
     let code = "PRODUCT_MAIN_CODE_TAKEN";
-    renderProducts({
-      "GET /api/v1/products": page([]),
+    renderForm({
       "POST /api/v1/products": () =>
         code === "PRODUCT_MAIN_CODE_TAKEN"
           ? {
@@ -311,34 +339,30 @@ describe("pantalla Productos", () => {
               ),
             },
     });
-    const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Nuevo producto" }));
-    const dialog = await screen.findByRole("dialog", { name: "Nuevo producto" });
-    await user.type(within(dialog).getByLabelText("Nombre"), "Cemento");
-    await user.type(within(dialog).getByLabelText("Código principal (opcional)"), "CEM-50");
-    await user.type(within(dialog).getByLabelText("Precio unitario sin impuestos"), "1");
-    await within(dialog).findByRole("option", { name: /15% · código 4/ });
-    await user.selectOptions(within(dialog).getByLabelText("Tarifa de IVA"), "4");
-    await user.click(within(dialog).getByRole("button", { name: "Registrar producto" }));
-    const field = within(dialog).getByLabelText("Código principal (opcional)");
+    const form = await formOf("Nuevo producto");
+    await user().type(within(form).getByLabelText("Nombre"), "Cemento");
+    await user().type(within(form).getByLabelText("Código principal (opcional)"), "CEM-50");
+    await user().type(within(form).getByLabelText("Precio unitario sin impuestos"), "1");
+    await within(form).findByRole("option", { name: /15% · código 4/ });
+    await user().selectOptions(within(form).getByLabelText("Tarifa de IVA"), "4");
+    await user().click(within(form).getByRole("button", { name: "Registrar producto" }));
+    const field = within(form).getByLabelText("Código principal (opcional)");
     await waitFor(() => expect(field.getAttribute("aria-invalid")).toBe("true"));
     code = "PRODUCT_TAX_UNAVAILABLE";
-    await user.click(within(dialog).getByRole("button", { name: "Registrar producto" }));
-    expect(await within(dialog).findByText(/no está habilitada para tu empresa/)).toBeDefined();
+    await user().click(within(form).getByRole("button", { name: "Registrar producto" }));
+    expect(await within(form).findByText(/no está habilitada para tu empresa/)).toBeDefined();
   });
 
   it("un servicio no ofrece IRBPNR ni control de stock", async () => {
-    renderProducts({ "GET /api/v1/products": page([]) });
-    const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Nuevo producto" }));
-    const dialog = await screen.findByRole("dialog", { name: "Nuevo producto" });
-    expect(within(dialog).getByLabelText("IRBPNR (opcional)")).toBeDefined();
-    expect(within(dialog).getByLabelText("Controlar stock de este bien")).toBeDefined();
-    await user.click(within(dialog).getByRole("radio", { name: "Servicio" }));
-    expect(within(dialog).queryByLabelText("IRBPNR (opcional)")).toBeNull();
-    expect(within(dialog).queryByLabelText("Controlar stock de este bien")).toBeNull();
+    renderForm({});
+    const form = await formOf("Nuevo producto");
+    expect(within(form).getByLabelText("IRBPNR (opcional)")).toBeDefined();
+    expect(within(form).getByLabelText("Controlar stock de este bien")).toBeDefined();
+    await user().click(within(form).getByRole("radio", { name: "Servicio" }));
+    expect(within(form).queryByLabelText("IRBPNR (opcional)")).toBeNull();
+    expect(within(form).queryByLabelText("Controlar stock de este bien")).toBeNull();
     expect(
-      within(dialog).getByText("Un servicio no lleva IRBPNR ni control de stock."),
+      within(form).getByText("Un servicio no lleva IRBPNR ni control de stock."),
     ).toBeDefined();
   });
 
@@ -361,74 +385,110 @@ describe("pantalla Productos", () => {
         },
       },
     });
-    let state = "TRACKED_INITIALIZED";
-    const calls = renderProducts({
-      "GET /api/v1/products": page([product({ stockTracked: true })]),
-      "GET /api/v1/inventory/items/prod-1": () => stockItem(state),
-      "PUT /api/v1/products/prod-1": () => ({ status: 200, body: { data: product() } }),
-    });
-    const user = userEvent.setup();
-    await user.click(
-      (await screen.findAllByRole("button", { name: "Corregir Cemento 50 kg" }))[0]!,
+    const calls = renderForm(
+      {
+        "GET /api/v1/products/prod-1": () => ({
+          status: 200,
+          body: { data: product({ stockTracked: true }) },
+        }),
+        "GET /api/v1/inventory/items/prod-1": () => stockItem("TRACKED_INITIALIZED"),
+        "PUT /api/v1/products/prod-1": () => ({ status: 200, body: { data: product() } }),
+      },
+      "prod-1",
     );
-    let dialog = await screen.findByRole("dialog", { name: "Corregir producto" });
-    expect(await within(dialog).findByText(/El control se gestiona en Inventario/)).toBeDefined();
-    const checkbox = within(dialog).getByLabelText("Controlar stock de este bien");
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Corregir producto" }),
+    ).toBeDefined();
+    const form = await formOf("Corregir producto");
+    expect(await within(form).findByText(/El control se gestiona en Inventario/)).toBeDefined();
+    const checkbox = within(form).getByLabelText("Controlar stock de este bien");
     expect(checkbox).toHaveProperty("disabled", true);
     expect(checkbox).toHaveProperty("checked", true);
     expect(
-      within(dialog)
+      within(form)
         .getByRole("link", { name: "Ir al inventario del producto" })
         .getAttribute("href"),
     ).toBe("/inventario/prod-1");
-    await user.click(within(dialog).getByRole("button", { name: "Guardar cambios" }));
+    await user().click(within(form).getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() =>
       expect(calls.find((call) => call.key === "PUT /api/v1/products/prod-1")?.body).toMatchObject({
         stockTracked: true,
+        expectedVersion: 1,
       }),
     );
+  });
 
-    state = "TRACKED_NOT_INITIALIZED";
-    await user.click(
-      (await screen.findAllByRole("button", { name: "Corregir Cemento 50 kg" }))[0]!,
+  it("sin el inventario inicializado, la marca se puede cambiar", async () => {
+    renderForm(
+      {
+        "GET /api/v1/products/prod-1": () => ({
+          status: 200,
+          body: { data: product({ stockTracked: true }) },
+        }),
+        "GET /api/v1/inventory/items/prod-1": () => ({
+          status: 200,
+          body: {
+            data: {
+              productId: "prod-1",
+              mainCode: "CEM-50",
+              auxiliaryCode: null,
+              name: "Cemento 50 kg",
+              productStatus: "ACTIVE",
+              state: "TRACKED_NOT_INITIALIZED",
+              balance: null,
+              negative: false,
+              lastMovementAt: null,
+              initializedAt: null,
+              initializedByName: null,
+            },
+          },
+        }),
+      },
+      "prod-1",
     );
-    dialog = await screen.findByRole("dialog", { name: "Corregir producto" });
+    const form = await formOf("Corregir producto");
     await waitFor(() =>
-      expect(within(dialog).getByLabelText("Controlar stock de este bien")).toHaveProperty(
+      expect(within(form).getByLabelText("Controlar stock de este bien")).toHaveProperty(
         "disabled",
         false,
       ),
     );
-    expect(within(dialog).queryByText(/El control se gestiona en Inventario/)).toBeNull();
+    expect(within(form).queryByText(/El control se gestiona en Inventario/)).toBeNull();
   });
 
   it("al corregir un producto en revisión explica el motivo y conserva su tarifa actual", async () => {
-    renderProducts({ "GET /api/v1/products": page([REVIEW]) });
-    const user = userEvent.setup();
-    await user.click(
-      (await screen.findAllByRole("button", { name: "Corregir Producto al 12" }))[0]!,
+    renderForm(
+      { "GET /api/v1/products/prod-2": () => ({ status: 200, body: { data: REVIEW } }) },
+      "prod-2",
     );
-    const dialog = await screen.findByRole("dialog", { name: "Corregir producto" });
+    const form = await formOf("Corregir producto");
     expect(
-      within(dialog).getByText("La tarifa de IVA 2 no está habilitada para tu empresa."),
+      within(form).getByText("La tarifa de IVA 2 no está habilitada para tu empresa."),
     ).toBeDefined();
-    expect(within(dialog).getByRole("link", { name: "Ir a Catálogos fiscales" })).toBeDefined();
+    expect(within(form).getByRole("link", { name: "Ir a Catálogos fiscales" })).toBeDefined();
     expect(
-      await within(dialog).findByRole("option", { name: /12% · código 2 \(no disponible hoy\)/ }),
+      await within(form).findByRole("option", { name: /12% · código 2 \(no disponible hoy\)/ }),
     ).toBeDefined();
-    expect((within(dialog).getByLabelText("Tarifa de IVA") as HTMLSelectElement).value).toBe("2");
+    expect((within(form).getByLabelText("Tarifa de IVA") as HTMLSelectElement).value).toBe("2");
   });
 
-  it("el diálogo se abre con el teclado y Escape lo cierra", async () => {
-    renderProducts({ "GET /api/v1/products": page([]) });
-    const user = userEvent.setup();
-    const button = await screen.findByRole("button", { name: "Nuevo producto" });
-    button.focus();
-    await user.keyboard("{Enter}");
-    expect(await screen.findByRole("dialog", { name: "Nuevo producto" })).toBeDefined();
-    await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  });
+  it("un producto que no existe en la empresa lo dice y lleva a la lista", async () => {
+    renderForm(
+      {
+        "GET /api/v1/products/otro": () => ({
+          status: 404,
+          body: errorBody("PRODUCT_NOT_FOUND", "El producto no existe."),
+        }),
+      },
+      "otro",
+    );
+    expect(
+      await screen.findByText("El producto no existe", undefined, { timeout: 5_000 }),
+    ).toBeDefined();
+    expect(screen.getByRole("link", { name: "Ir a Productos" }).getAttribute("href")).toBe(
+      "/productos",
+    );
+  }, 10_000);
 });
 
 describe("pantalla Productos sin permiso", () => {

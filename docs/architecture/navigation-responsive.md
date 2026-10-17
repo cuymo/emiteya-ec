@@ -39,6 +39,20 @@ The groups and destinations, in this order:
   - **Archivo de comprobantes** (`/comprobantes`) is the cross-document archive of every type, and
     never shows drafts.
 
+- **Maestros register and correct on a page** (owner decision, 2026-10-17). Terceros and Productos
+  no longer use a dialog for their long forms:
+  - **Routes:** `/terceros/nuevo`, `/terceros/{id}`, `/productos/nuevo` and `/productos/{id}`, with
+    `parties.manage` or `products.manage`. «Nuevo tercero» and «Nuevo producto» are links in the
+    list header, and each row's «Corregir» is a link (`RowActionLink`).
+  - **Breadcrumbs:** «Nuevo tercero», «Nuevo producto», or the record's name once the correction
+    loads («Corregir tercero» or «Corregir producto» until then).
+  - **Form** (`party-form.tsx`, `product-form.tsx`): sections with their title on the left, like
+    Empresa (`SettingsSections`), «Cancelar» back to the list and the primary action at the foot.
+    Saving returns to the list with the toast. The correction sends the version that was opened,
+    so a change by someone else still arrives as a conflict.
+  - **Exception:** inside a document, registering a party stays in `PartyDialog`, so the draft is
+    not left behind. It shares the fields and the save logic of `party-form.tsx`.
+
 - **Mi cuenta** lives in the account menu, not in the sidebar.
 - **Permissions.** Each destination keeps the permission of the earlier navigation. The operator
   sees every group up to Análisis and, in Configuración, only Catálogos fiscales.
@@ -50,8 +64,8 @@ The groups and destinations, in this order:
   - the forbidden-destination guard.
 
   It holds the groups, the destinations, the internal routes of each destination (detail, new
-  draft, draft) with their final breadcrumb and their permission, and the creation actions. No
-  other component keeps its own map.
+  draft, draft, and the form pages of Terceros and Productos) with their final breadcrumb and their
+  permission, and the creation actions. No other component keeps its own map.
 
 ### Breadcrumbs: The Route From Inicio
 

@@ -174,7 +174,6 @@ function CarrierChooser({
       />
       <PartyDialog
         open={creating}
-        party={null}
         initialRoles={CARRIER_ROLES}
         onClose={() => setCreating(false)}
         onShowExisting={() => {

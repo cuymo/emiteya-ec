@@ -411,17 +411,16 @@ export const STATES: State[] = [
       await shows(page, "Cemento Holcim tipo GU 50 kg");
     },
   },
+  // El alta de un producto es una página, no un diálogo (decisión del propietario, 2026-10-17).
   {
     route: "productos",
-    state: "dialogo-nuevo",
-    path: "/productos",
+    state: "nuevo",
+    path: "/productos/nuevo",
     group: "listas",
     widths: ALL,
-    viewportOnly: true,
-    ready: (page) => heading(page, "Productos"),
-    act: async (page) => {
-      await page.getByRole("button", { name: "Nuevo producto" }).first().click();
-      await expect(page.getByRole("dialog", { name: "Nuevo producto" })).toBeVisible();
+    ready: async (page) => {
+      await heading(page, "Nuevo producto");
+      await expect(page.getByRole("form", { name: "Nuevo producto" })).toBeVisible();
     },
   },
 ];

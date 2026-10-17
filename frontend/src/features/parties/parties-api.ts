@@ -59,6 +59,16 @@ export type IdentificationTypeOption = {
   rule: string;
 };
 
+/** Un tercero, para corregirlo en su página. */
+export function useParty(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...PARTIES_KEY, "detail", id],
+    enabled,
+    queryFn: ({ signal }) =>
+      apiFetch(`/parties/${encodeURIComponent(id)}`, { schema: partyViewSchema, signal }),
+  });
+}
+
 /** Tipos vigentes del catálogo fiscal, sin el reservado al consumidor final. */
 export function useIdentificationTypes(enabled: boolean) {
   return useQuery({

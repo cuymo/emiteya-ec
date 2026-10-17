@@ -345,6 +345,32 @@ export const INTERNAL_ROUTES: readonly InternalRoute[] = [
     leaf: "Detalle de inventario",
     permission: "inventory.read",
   },
+  // Terceros y Productos registran y corrigen en su propia página (decisión del propietario,
+  // 2026-10-17); la corrección muestra el nombre del registro en la miga.
+  {
+    pattern: /^\/terceros\/nuevo$/,
+    destination: "/terceros",
+    leaf: "Nuevo tercero",
+    permission: "parties.manage",
+  },
+  {
+    pattern: /^\/terceros\/[^/]+$/,
+    destination: "/terceros",
+    leaf: "Corregir tercero",
+    permission: "parties.manage",
+  },
+  {
+    pattern: /^\/productos\/nuevo$/,
+    destination: "/productos",
+    leaf: "Nuevo producto",
+    permission: "products.manage",
+  },
+  {
+    pattern: /^\/productos\/[^/]+$/,
+    destination: "/productos",
+    leaf: "Corregir producto",
+    permission: "products.manage",
+  },
 ];
 
 /** Creación rápida: solo lleva a las pantallas de creación existentes; nunca crea ni emite. */

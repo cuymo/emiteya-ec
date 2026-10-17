@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
 import { PartiesScreen } from "@/features/parties/parties-screen";
+import { PartyFormScreen } from "@/features/parties/party-form";
 import {
   ADMIN_ME,
   OPERATOR_ME,
@@ -96,19 +97,25 @@ const TYPES: Route = () => ({
 function renderParties(
   routes: Record<string, Route>,
   me: typeof ADMIN_ME | typeof OPERATOR_ME = ADMIN_ME,
+  ui: React.ReactNode = <PartiesScreen />,
 ) {
   const calls = mockApi({
     "GET /api/v1/me": () => ({ status: 200, body: { data: me } }),
     "GET /api/v1/fiscal-catalogs/identification-type/entries": TYPES,
     ...routes,
   });
-  renderApp(
-    <SessionGate fallback={<p>cargando</p>}>
-      <PartiesScreen />
-    </SessionGate>,
-  );
+  renderApp(<SessionGate fallback={<p>cargando</p>}>{ui}</SessionGate>);
   return calls;
 }
+
+/** La página del formulario: un alta o, con `partyId`, la corrección de ese tercero. */
+const renderForm = (routes: Record<string, Route>, partyId?: string) =>
+  renderParties(
+    routes,
+    ADMIN_ME,
+    partyId ? <PartyFormScreen partyId={partyId} /> : <PartyFormScreen />,
+  );
+const formOf = (name: string) => screen.findByRole("form", { name });
 
 const table = () => screen.findByRole("table", { name: "Terceros de la empresa" });
 
@@ -133,11 +140,14 @@ describe("pantalla Terceros", () => {
     expect(within(andina).getByText("Cliente")).toBeDefined();
     expect(within(andina).getByText("Activo")).toBeDefined();
     expect(
-      within(andina).getByRole("button", { name: "Corregir a Comercial Andina S.A." }),
-    ).toBeDefined();
+      within(andina)
+        .getByRole("link", { name: "Corregir a Comercial Andina S.A." })
+        .getAttribute("href"),
+    ).toBe("/terceros/p-1");
     const consumer = rows.find((r) => within(r).queryByText("CONSUMIDOR FINAL"))!;
     expect(within(consumer).getByText("Del sistema")).toBeDefined();
     expect(within(consumer).queryAllByRole("button")).toEqual([]);
+    expect(within(consumer).queryAllByRole("link")).toEqual([]);
   });
 
   it("muestra la carga mientras llega la lista", async () => {
@@ -177,38 +187,43 @@ describe("pantalla Terceros", () => {
   it("el operador registra y corrige, pero no desactiva", async () => {
     renderParties({ "GET /api/v1/parties": page([party()]) }, OPERATOR_ME);
     await screen.findAllByText("Comercial Andina S.A.");
-    expect(screen.getByRole("button", { name: "Nuevo tercero" })).toBeDefined();
+    expect(screen.getByRole("link", { name: "Nuevo tercero" }).getAttribute("href")).toBe(
+      "/terceros/nuevo",
+    );
     expect(screen.queryAllByRole("button", { name: /Desactivar a/ })).toEqual([]);
     expect(
-      screen.getAllByRole("button", { name: "Corregir a Comercial Andina S.A." }).length,
+      screen.getAllByRole("link", { name: "Corregir a Comercial Andina S.A." }).length,
     ).toBeGreaterThan(0);
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
+});
 
-  it("registra un tercero con roles en chips y confirma con un aviso", async () => {
-    const calls = renderParties({
-      "GET /api/v1/parties": page([]),
+describe("página del formulario de tercero", () => {
+  it("registra un tercero con roles en chips, confirma con un aviso y vuelve a la lista", async () => {
+    navigation.push.mockReset();
+    const calls = renderForm({
       "POST /api/v1/parties": () => ({
         status: 201,
         body: { data: party({ roles: ["CUSTOMER", "CARRIER"] }) },
       }),
     });
+    expect(await screen.findByRole("heading", { level: 1, name: "Nuevo tercero" })).toBeDefined();
+    const form = await formOf("Nuevo tercero");
+    // Secciones con su título, como Empresa.
+    for (const name of ["Datos del tercero", "Roles", "Contacto"])
+      expect(within(form).getByRole("region", { name })).toBeDefined();
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Nuevo tercero" }));
-    const dialog = await screen.findByRole("dialog", { name: "Nuevo tercero" });
-    expect(await within(dialog).findByText("Regla: 13 dígitos terminados en 001.")).toBeDefined();
+    expect(await within(form).findByText("Regla: 13 dígitos terminados en 001.")).toBeDefined();
     // El tipo reservado no se ofrece.
-    expect(within(dialog).queryByRole("option", { name: "VENTA A CONSUMIDOR FINAL" })).toBeNull();
-    await user.type(within(dialog).getByLabelText("Identificación"), "1790012345001");
-    await user.type(
-      within(dialog).getByLabelText("Razón social o nombres"),
-      "Comercial Andina S.A.",
+    expect(within(form).queryByRole("option", { name: "VENTA A CONSUMIDOR FINAL" })).toBeNull();
+    await user.type(within(form).getByLabelText("Identificación"), "1790012345001");
+    await user.type(within(form).getByLabelText("Razón social o nombres"), "Comercial Andina S.A.");
+    await user.click(within(form).getByRole("button", { name: "Transportista" }));
+    await user.click(within(form).getByRole("button", { name: "Cliente" }));
+    expect(within(form).getByRole("button", { name: "Cliente" }).getAttribute("aria-pressed")).toBe(
+      "true",
     );
-    await user.click(within(dialog).getByRole("button", { name: "Transportista" }));
-    await user.click(within(dialog).getByRole("button", { name: "Cliente" }));
-    expect(
-      within(dialog).getByRole("button", { name: "Cliente" }).getAttribute("aria-pressed"),
-    ).toBe("true");
-    await user.click(within(dialog).getByRole("button", { name: "Registrar tercero" }));
+    await user.click(within(form).getByRole("button", { name: "Registrar tercero" }));
     expect(await screen.findByText("Registraste a Comercial Andina S.A.")).toBeDefined();
     expect(calls.find((c) => c.key === "POST /api/v1/parties")?.body).toEqual({
       identificationType: "04",
@@ -219,11 +234,15 @@ describe("pantalla Terceros", () => {
       phone: null,
       roles: ["CUSTOMER", "CARRIER"],
     });
+    expect(navigation.push).toHaveBeenCalledWith("/terceros");
+    expect(within(form).getByRole("link", { name: "Cancelar" }).getAttribute("href")).toBe(
+      "/terceros",
+    );
   });
 
   it("una identificación repetida vuelve al campo y ofrece ver el tercero existente", async () => {
-    renderParties({
-      "GET /api/v1/parties": page([]),
+    navigation.push.mockReset();
+    renderForm({
       "POST /api/v1/parties": () => ({
         status: 409,
         body: errorBody(
@@ -232,55 +251,76 @@ describe("pantalla Terceros", () => {
         ),
       }),
     });
+    const form = await formOf("Nuevo tercero");
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Nuevo tercero" }));
-    const dialog = await screen.findByRole("dialog", { name: "Nuevo tercero" });
-    await user.type(within(dialog).getByLabelText("Identificación"), "1790012345001");
-    await user.type(within(dialog).getByLabelText("Razón social o nombres"), "Otra S.A.");
-    await user.click(within(dialog).getByRole("button", { name: "Registrar tercero" }));
-    const field = within(dialog).getByLabelText("Identificación");
+    await user.type(within(form).getByLabelText("Identificación"), "1790012345001");
+    await user.type(within(form).getByLabelText("Razón social o nombres"), "Otra S.A.");
+    await user.click(within(form).getByRole("button", { name: "Registrar tercero" }));
+    const field = within(form).getByLabelText("Identificación");
     await waitFor(() => expect(field.getAttribute("aria-invalid")).toBe("true"));
-    expect(within(dialog).getByText(/Ya existe un tercero con esa identificación/)).toBeDefined();
-    await user.click(within(dialog).getByRole("button", { name: "Ver el tercero existente" }));
-    expect(navigation.replace).toHaveBeenCalledWith("/terceros?q=1790012345001&estado=todos", {
-      scroll: false,
-    });
+    expect(within(form).getByText(/Ya existe un tercero con esa identificación/)).toBeDefined();
+    await user.click(within(form).getByRole("button", { name: "Ver el tercero existente" }));
+    expect(navigation.push).toHaveBeenCalledWith("/terceros?q=1790012345001&estado=todos");
   });
 
-  it("un conflicto de versión se explica en el diálogo sin perder lo escrito", async () => {
-    renderParties({
-      "GET /api/v1/parties": page([party()]),
-      "PUT /api/v1/parties/p-1": () => ({
-        status: 409,
-        body: errorBody(
-          "PARTY_CHANGED",
-          "Otro usuario cambió este tercero después de que lo abriste. Recarga para ver sus datos.",
-        ),
-      }),
-    });
-    const user = userEvent.setup();
-    await user.click(
-      (await screen.findAllByRole("button", { name: "Corregir a Comercial Andina S.A." }))[0]!,
+  it("un conflicto de versión se explica en el formulario sin perder lo escrito", async () => {
+    const calls = renderForm(
+      {
+        "GET /api/v1/parties/p-1": () => ({ status: 200, body: { data: party() } }),
+        "PUT /api/v1/parties/p-1": () => ({
+          status: 409,
+          body: errorBody(
+            "PARTY_CHANGED",
+            "Otro usuario cambió este tercero después de que lo abriste. Recarga para ver sus datos.",
+          ),
+        }),
+      },
+      "p-1",
     );
-    const dialog = await screen.findByRole("dialog", { name: "Corregir tercero" });
-    const name = within(dialog).getByLabelText("Razón social o nombres");
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Corregir tercero" }),
+    ).toBeDefined();
+    const form = await formOf("Corregir tercero");
+    const user = userEvent.setup();
+    const name = within(form).getByLabelText("Razón social o nombres");
+    expect((name as HTMLInputElement).value).toBe("Comercial Andina S.A.");
     await user.clear(name);
     await user.type(name, "Andina Corregida S.A.");
-    await user.click(within(dialog).getByRole("button", { name: "Guardar cambios" }));
-    expect(await within(dialog).findByText(/Otro usuario cambió este tercero/)).toBeDefined();
+    await user.click(within(form).getByRole("button", { name: "Guardar cambios" }));
+    expect(await within(form).findByText(/Otro usuario cambió este tercero/)).toBeDefined();
     expect((name as HTMLInputElement).value).toBe("Andina Corregida S.A.");
+    expect(calls.find((c) => c.key === "PUT /api/v1/parties/p-1")?.body).toMatchObject({
+      legalName: "Andina Corregida S.A.",
+      expectedVersion: 1,
+    });
   });
 
-  it("el diálogo se abre con el teclado y Escape lo cierra", async () => {
-    renderParties({ "GET /api/v1/parties": page([]) });
-    const user = userEvent.setup();
-    const button = await screen.findByRole("button", { name: "Nuevo tercero" });
-    button.focus();
-    await user.keyboard("{Enter}");
-    expect(await screen.findByRole("dialog", { name: "Nuevo tercero" })).toBeDefined();
-    await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  it("el consumidor final no se corrige", async () => {
+    renderForm(
+      { "GET /api/v1/parties/p-cf": () => ({ status: 200, body: { data: CONSUMER } }) },
+      "p-cf",
+    );
+    expect(await screen.findByText("Este tercero es del sistema")).toBeDefined();
+    expect(screen.queryByRole("form")).toBeNull();
   });
+
+  it("un tercero que no existe en la empresa lo dice y lleva a la lista", async () => {
+    renderForm(
+      {
+        "GET /api/v1/parties/otro": () => ({
+          status: 404,
+          body: errorBody("PARTY_NOT_FOUND", "El tercero no existe."),
+        }),
+      },
+      "otro",
+    );
+    expect(
+      await screen.findByText("El tercero no existe", undefined, { timeout: 5_000 }),
+    ).toBeDefined();
+    expect(screen.getByRole("link", { name: "Ir a Terceros" }).getAttribute("href")).toBe(
+      "/terceros",
+    );
+  }, 10_000);
 });
 
 describe("pantalla Terceros sin permiso", () => {
