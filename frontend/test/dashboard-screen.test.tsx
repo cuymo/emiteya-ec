@@ -158,7 +158,7 @@ describe("tablero de Inicio", () => {
       within(metrics[3] as HTMLElement)
         .getByRole("link", { name: "Ver borradores" })
         .getAttribute("href"),
-    ).toBe("/borradores");
+    ).toBe("/facturas?estado=borradores");
     expect(screen.getByRole("link", { name: "Nueva factura" }).getAttribute("href")).toBe(
       "/borradores/nuevo",
     );

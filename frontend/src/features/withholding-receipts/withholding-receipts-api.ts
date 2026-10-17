@@ -4,17 +4,17 @@
 // confirmación y el reintento de la firma. Toda mutación pasa por useMutationFeedback.
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   IDEMPOTENCY_KEY_HEADER,
-  withholdingDraftSummaryViewSchema,
   withholdingDraftViewSchema,
   withholdingListMetaSchema,
   withholdingOptionsViewSchema,
-  withholdingReceiptSummaryViewSchema,
+  withholdingReceiptEntryViewSchema,
   withholdingReceiptViewSchema,
   withholdingSupplierViewSchema,
   type CreateWithholdingDraftInput,
+  type EntryState,
   type InvoiceState,
   type UpdateWithholdingDraftInput,
   type WithholdingDraftView,
@@ -25,9 +25,12 @@ import { z } from "zod";
 import type { EntityPage, EntityPickerQuery } from "@/components/entity-picker-dialog";
 import { useMutationFeedback, type SuccessFeedback } from "@/components/feedback";
 import { apiFetch, apiFetchPage } from "@/lib/api";
+import { useDocumentEntries } from "@/features/documents/use-document-entries";
 
 export const WITHHOLDINGS_KEY = ["withholding-receipts"] as const;
 export const WITHHOLDING_DRAFTS_KEY = ["withholding-receipt-drafts"] as const;
+/** La lista unificada cuelga de las retenciones y se renueva también con cada cambio de un borrador. */
+export const WITHHOLDING_ENTRIES_KEY = [...WITHHOLDINGS_KEY, "entries"] as const;
 export const WITHHOLDING_OPTIONS_KEY = ["withholding-receipt-options"] as const;
 
 const draftPath = (id: string) => `/withholding-receipts/drafts/${encodeURIComponent(id)}`;
@@ -67,25 +70,23 @@ export type WithholdingReceiptsQuery = {
   pageSize: number;
 };
 
-export function useWithholdingReceipts(query: WithholdingReceiptsQuery, enabled: boolean) {
-  return useQuery({
-    queryKey: [...WITHHOLDINGS_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => {
-      const params = new URLSearchParams({
-        page: String(query.page),
-        pageSize: String(query.pageSize),
-      });
-      if (query.search) params.set("search", query.search);
-      if (query.state) params.set("state", query.state);
-      if (query.fiscalPeriod) params.set("fiscalPeriod", query.fiscalPeriod);
-      return apiFetchPage(`/withholding-receipts?${params.toString()}`, {
-        schema: z.array(withholdingReceiptSummaryViewSchema),
-        meta: withholdingListMetaSchema,
-        signal,
-      });
+/** La lista de Retenciones: borradores primero y después las retenciones emitidas (D1 y D5). */
+export function useWithholdingReceiptEntries(
+  query: Omit<WithholdingReceiptsQuery, "state"> & { state: EntryState | undefined },
+  enabled: boolean,
+) {
+  return useDocumentEntries({
+    key: WITHHOLDING_ENTRIES_KEY,
+    path: "/withholding-receipts/entries",
+    params: {
+      page: query.page,
+      pageSize: query.pageSize,
+      search: query.search,
+      state: query.state,
+      fiscalPeriod: query.fiscalPeriod,
     },
+    entry: withholdingReceiptEntryViewSchema,
+    enabled,
   });
 }
 
@@ -98,20 +99,6 @@ export function useWithholdingReceipt(id: string, enabled: boolean) {
     // Mientras el SRI procesa, el estado se actualiza solo.
     refetchInterval: (query) =>
       query.state.data?.transmission.inProgress ? TRANSMISSION_REFRESH_MS : false,
-  });
-}
-
-export function useWithholdingDrafts(query: { page: number; pageSize: number }, enabled: boolean) {
-  return useQuery({
-    queryKey: [...WITHHOLDING_DRAFTS_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) =>
-      apiFetchPage(`/withholding-receipts/drafts?page=${query.page}&pageSize=${query.pageSize}`, {
-        schema: z.array(withholdingDraftSummaryViewSchema),
-        meta: withholdingListMetaSchema,
-        signal,
-      }),
   });
 }
 
@@ -160,7 +147,7 @@ export function useSaveWithholdingDraft(options: {
             schema: withholdingDraftViewSchema,
           }),
     success: () => options.success ?? "Guardaste el borrador.",
-    invalidate: [WITHHOLDING_DRAFTS_KEY],
+    invalidate: [WITHHOLDING_DRAFTS_KEY, WITHHOLDING_ENTRIES_KEY],
     errorMessages: WITHHOLDING_CONFLICT_MESSAGES,
     onSuccess: options.onSuccess,
     onError: options.onError,
@@ -171,7 +158,7 @@ export function useDeleteWithholdingDraft(options: { onSuccess?: () => void } = 
   return useMutationFeedback({
     mutationFn: (id: string) => apiFetch(draftPath(id), { method: "DELETE" }),
     success: () => "Eliminaste el borrador.",
-    invalidate: [WITHHOLDING_DRAFTS_KEY],
+    invalidate: [WITHHOLDING_DRAFTS_KEY, WITHHOLDING_ENTRIES_KEY],
     ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }

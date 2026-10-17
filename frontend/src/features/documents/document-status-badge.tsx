@@ -24,6 +24,7 @@ import {
   Clock3,
   FileCheck2,
   Hourglass,
+  PencilLine,
   SearchCheck,
   TriangleAlert,
   Undo2,
@@ -149,5 +150,18 @@ export function StateCell({
       <DocumentStatusBadge state={state} />
       {stopped && <TransmissionStoppedBadge />}
     </span>
+  );
+}
+
+/**
+ * Un borrador en la lista de su tipo (unify-drafts-into-document-lists, design D5): todavía no es un
+ * comprobante, así que su insignia es neutra, con su icono y su texto.
+ */
+export function DraftStateBadge() {
+  return (
+    <Badge variant="neutral" data-document-state="DRAFT">
+      <PencilLine aria-hidden="true" />
+      Borrador
+    </Badge>
   );
 }

@@ -10,7 +10,6 @@ import {
   Contact,
   FileKey,
   FileMinus,
-  FilePenLine,
   FilePlus,
   FileSpreadsheet,
   FileText,
@@ -97,13 +96,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: "Ventas",
     section: false,
     destinations: [
-      { href: "/facturas", label: "Facturas", icon: FileText, permission: "invoices.read" },
       {
-        // Solo borradores de factura: los demás comprobantes guardan los suyos en su destino.
-        href: "/borradores",
-        label: "Borradores de facturas",
-        icon: FilePenLine,
-        permission: "invoices.draft",
+        // Los borradores van en la propia lista, con el estado «Borrador»
+        // (unify-drafts-into-document-lists, design D6): sin un destino aparte.
+        href: "/facturas",
+        label: "Facturas",
+        icon: FileText,
+        permission: "invoices.read",
         keywords: ["borradores", "factura pendiente", "factura sin emitir"],
       },
       {

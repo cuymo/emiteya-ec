@@ -1,6 +1,7 @@
 // Liquidaciones de compra (add-purchase-settlements, tarea 12.1, design D24): lista con número,
 // proveedor, fecha, importe total y estado; carga, vacío, error con reintento, sin permiso, búsqueda
-// y filtro de estado en la URL, y los borradores en curso con su eliminación.
+// y filtro de estado en la URL, y los borradores primero en la misma tabla, con su estado «Borrador»
+// filtrable y su eliminación desde la fila (unify-drafts-into-document-lists, design D5).
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,6 +34,19 @@ vi.mock("@/lib/permissions", async (importOriginal) => {
 const paged =
   (data: unknown[]): Route =>
   () => ({ status: 200, body: { data, meta: { page: 1, pageSize: 25, total: data.length } } });
+/** La lista unificada: los borradores primero y después las liquidaciones emitidas. */
+const entries =
+  (documents: unknown[], drafts: unknown[] = []): Route =>
+  () => ({
+    status: 200,
+    body: {
+      data: [
+        ...drafts.map((draft) => ({ kind: "DRAFT", draft })),
+        ...documents.map((document) => ({ kind: "DOCUMENT", document })),
+      ],
+      meta: { page: 1, pageSize: 25, total: drafts.length + documents.length },
+    },
+  });
 const DRAFT_SUMMARY = {
   id: "lcd-1",
   version: 3,
@@ -71,7 +85,7 @@ afterEach(() => {
 describe("pantalla Liquidaciones de compra", () => {
   it("lista número, proveedor, fecha, importe total y estado, con enlace al detalle", async () => {
     render(<PurchaseSettlementsScreen />, {
-      "GET /api/v1/purchase-settlements": paged([
+      "GET /api/v1/purchase-settlements/entries": entries([
         settlementSummary(),
         settlementSummary({
           id: "lc-2",
@@ -83,7 +97,9 @@ describe("pantalla Liquidaciones de compra", () => {
         }),
       ]),
     });
-    const table = await screen.findByRole("table", { name: "Liquidaciones de compra emitidas" });
+    const table = await screen.findByRole("table", {
+      name: "Liquidaciones de compra y borradores",
+    });
     const row = (number: string) =>
       within(table)
         .getAllByRole("row")
@@ -107,28 +123,28 @@ describe("pantalla Liquidaciones de compra", () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
     render(<PurchaseSettlementsScreen />, {
-      "GET /api/v1/purchase-settlements": paged([settlementSummary()]),
+      "GET /api/v1/purchase-settlements/entries": entries([settlementSummary()]),
     });
     const fetch = globalThis.fetch;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string, init?: RequestInit) => {
-        if (input.startsWith("/api/v1/purchase-settlements?")) await gate;
+        if (input.startsWith("/api/v1/purchase-settlements/entries?")) await gate;
         return fetch(input, init);
       }),
     );
     await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).not.toBeNull());
     release();
     expect(
-      await screen.findByRole("table", { name: "Liquidaciones de compra emitidas" }),
+      await screen.findByRole("table", { name: "Liquidaciones de compra y borradores" }),
     ).toBeDefined();
   });
 
   it("vacía explica cuándo se emite y ofrece crear la primera; el error se reintenta", async () => {
     let fail = true;
     render(<PurchaseSettlementsScreen />, {
-      "GET /api/v1/purchase-settlements": () =>
-        fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : paged([])({}),
+      "GET /api/v1/purchase-settlements/entries": () =>
+        fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : entries([])({}),
     });
     expect(
       (
@@ -146,7 +162,9 @@ describe("pantalla Liquidaciones de compra", () => {
   });
 
   it("vacía: la única principal está en el encabezado y el vacío la repite en outline (D11)", async () => {
-    render(<PurchaseSettlementsScreen />, { "GET /api/v1/purchase-settlements": paged([]) });
+    render(<PurchaseSettlementsScreen />, {
+      "GET /api/v1/purchase-settlements/entries": entries([]),
+    });
     await waitFor(() =>
       expect(
         screen.getAllByRole("link", { name: "Nueva liquidación de compra" }).length,
@@ -163,7 +181,7 @@ describe("pantalla Liquidaciones de compra", () => {
 
   it("sin permiso explica el acceso", async () => {
     render(<PurchaseSettlementsScreen />, {
-      "GET /api/v1/purchase-settlements": () => ({
+      "GET /api/v1/purchase-settlements/entries": () => ({
         status: 403,
         body: errorBody("FORBIDDEN", "x"),
       }),
@@ -174,12 +192,14 @@ describe("pantalla Liquidaciones de compra", () => {
   it("la búsqueda y el estado viven en la URL y llegan a la API", async () => {
     navigation.search = new URLSearchParams("q=pérez&estado=revision");
     const calls = render(<PurchaseSettlementsScreen />, {
-      "GET /api/v1/purchase-settlements": paged([]),
+      "GET /api/v1/purchase-settlements/entries": entries([]),
     });
     expect(
       (await screen.findAllByText("No hay liquidaciones que coincidan")).length,
     ).toBeGreaterThan(0);
-    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/purchase-settlements?"))!;
+    const call = calls.find((entry) =>
+      entry.key.startsWith("GET /api/v1/purchase-settlements/entries?"),
+    )!;
     expect(Object.fromEntries(new URLSearchParams(call.key.split("?")[1]))).toMatchObject({
       search: "pérez",
       state: "MANUAL_REVIEW",
@@ -196,46 +216,85 @@ describe("pantalla Liquidaciones de compra", () => {
     });
   });
 
-  it("muestra los borradores en curso con su enlace y los elimina con confirmación", async () => {
+  it("muestra los borradores primero, con su estado, y los elimina desde su fila", async () => {
     let drafts = [DRAFT_SUMMARY];
     const calls = render(<PurchaseSettlementsScreen />, {
-      "GET /api/v1/purchase-settlements": paged([]),
-      "GET /api/v1/purchase-settlements/drafts": () => paged(drafts)({}),
+      "GET /api/v1/purchase-settlements/entries": () => entries([settlementSummary()], drafts)({}),
       "DELETE /api/v1/purchase-settlements/drafts/lcd-1": () => {
         drafts = [];
         return { status: 204 };
       },
     });
-    const panel = await screen.findByRole("region", { name: "Borradores en curso" });
-    expect(within(panel).getByRole("link", { name: "Liquidación a María Quishpe" })).toHaveProperty(
+    const table = await screen.findByRole("table", {
+      name: "Liquidaciones de compra y borradores",
+    });
+    await within(table).findByRole("link", { name: "Borrador" });
+    const [, first, second] = within(table).getAllByRole("row");
+    expect(within(first!).getByRole("link", { name: "Borrador" })).toHaveProperty(
       "href",
       expect.stringContaining("/liquidaciones-compra/borradores/lcd-1"),
     );
-    expect(within(panel).getByText(/2 líneas ·/)).toBeDefined();
-    expect(within(panel).getByText("$106,00")).toBeDefined();
+    expect(within(first!).getByText("María Quishpe")).toBeDefined();
+    expect(within(first!).getByText("$106,00")).toBeDefined();
+    expect(within(first!).getByText(/^Editado /)).toBeDefined();
+    expect(first!.querySelector('[data-document-state="DRAFT"]')?.textContent).toBe("Borrador");
+    expect(second!.querySelector('[data-document-state="DRAFT"]')).toBeNull();
     const user = userEvent.setup();
     await user.click(
-      within(panel).getByRole("button", {
-        name: "Eliminar el borrador: Liquidación a María Quishpe",
+      within(first!).getByRole("button", {
+        name: "Acciones del borrador: Liquidación a María Quishpe",
       }),
     );
+    await user.click(await screen.findByRole("menuitem", { name: "Eliminar borrador" }));
     const dialog = await screen.findByRole("dialog", { name: "Eliminar borrador" });
-    await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar borrador" }));
     expect(await screen.findByText("Eliminaste el borrador.")).toBeDefined();
     expect(
       calls.some((call) => call.key === "DELETE /api/v1/purchase-settlements/drafts/lcd-1"),
     ).toBe(true);
-    await waitFor(() =>
-      expect(screen.queryByRole("region", { name: "Borradores en curso" })).toBeNull(),
-    );
+    await waitFor(() => expect(within(table).queryByRole("link", { name: "Borrador" })).toBeNull());
   });
 
-  it("sin purchaseSettlements.draft no ofrece crear ni muestra los borradores", async () => {
+  it("un borrador sin proveedor ni importe lo dice en su fila", async () => {
+    render(<PurchaseSettlementsScreen />, {
+      "GET /api/v1/purchase-settlements/entries": entries(
+        [],
+        [{ ...DRAFT_SUMMARY, supplierName: null, lineCount: 0, previewTotal: null }],
+      ),
+    });
+    const table = await screen.findByRole("table", {
+      name: "Liquidaciones de compra y borradores",
+    });
+    await within(table).findByRole("link", { name: "Borrador" });
+    const [, row] = within(table).getAllByRole("row");
+    expect(within(row!).getByText("Sin proveedor")).toBeDefined();
+    expect(within(row!).getByText("Incompleto")).toBeDefined();
+    expect(
+      within(row!).getByRole("button", {
+        name: "Acciones del borrador: Liquidación sin proveedor",
+      }),
+    ).toBeDefined();
+  });
+
+  it("«Borradores» en el filtro de estado pide DRAFT", async () => {
+    navigation.search = new URLSearchParams("estado=borradores");
+    const calls = render(<PurchaseSettlementsScreen />, {
+      "GET /api/v1/purchase-settlements/entries": entries([], [DRAFT_SUMMARY]),
+    });
+    await within(
+      await screen.findByRole("table", { name: "Liquidaciones de compra y borradores" }),
+    ).findByRole("link", { name: "Borrador" });
+    expect(
+      calls.find((call) => call.key.startsWith("GET /api/v1/purchase-settlements/entries?"))!.key,
+    ).toContain("state=DRAFT");
+  });
+
+  it("sin purchaseSettlements.draft no ofrece crear ni pide los borradores aparte", async () => {
     permissions.deny.add("purchaseSettlements.draft");
     const calls = render(<PurchaseSettlementsScreen />, {
-      "GET /api/v1/purchase-settlements": paged([settlementSummary()]),
+      "GET /api/v1/purchase-settlements/entries": entries([settlementSummary()]),
     });
-    await screen.findByRole("table", { name: "Liquidaciones de compra emitidas" });
+    await screen.findByRole("table", { name: "Liquidaciones de compra y borradores" });
     expect(screen.queryByRole("link", { name: "Nueva liquidación de compra" })).toBeNull();
     expect(
       calls.some((call) => call.key.startsWith("GET /api/v1/purchase-settlements/drafts")),

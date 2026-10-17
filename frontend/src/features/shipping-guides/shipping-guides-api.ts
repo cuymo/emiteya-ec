@@ -5,20 +5,20 @@
 // useMutationFeedback.
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   IDEMPOTENCY_KEY_HEADER,
   shippingCarrierViewSchema,
   shippingEligibleInvoiceViewSchema,
-  shippingGuideDraftSummaryViewSchema,
   shippingGuideDraftViewSchema,
+  shippingGuideEntryViewSchema,
   shippingGuideListMetaSchema,
   shippingGuideOptionsViewSchema,
-  shippingGuideSummaryViewSchema,
   shippingGuideViewSchema,
   shippingInvoiceGoodsViewSchema,
   shippingRecipientPartyViewSchema,
   type CreateShippingGuideDraftInput,
+  type EntryState,
   type InvoiceState,
   productListMetaSchema,
   productViewSchema,
@@ -34,9 +34,12 @@ import { z } from "zod";
 import type { EntityPage, EntityPickerQuery } from "@/components/entity-picker-dialog";
 import { useMutationFeedback, type SuccessFeedback } from "@/components/feedback";
 import { apiFetch, apiFetchPage } from "@/lib/api";
+import { useDocumentEntries } from "@/features/documents/use-document-entries";
 
 export const SHIPPING_GUIDES_KEY = ["shipping-guides"] as const;
 export const SHIPPING_GUIDE_DRAFTS_KEY = ["shipping-guide-drafts"] as const;
+/** La lista unificada cuelga de las guías y se renueva también con cada cambio de un borrador. */
+export const SHIPPING_GUIDE_ENTRIES_KEY = [...SHIPPING_GUIDES_KEY, "entries"] as const;
 export const SHIPPING_GUIDE_OPTIONS_KEY = ["shipping-guide-options"] as const;
 
 const draftPath = (id: string) => `/shipping-guides/drafts/${encodeURIComponent(id)}`;
@@ -76,24 +79,22 @@ export type ShippingGuidesQuery = {
   pageSize: number;
 };
 
-export function useShippingGuides(query: ShippingGuidesQuery, enabled: boolean) {
-  return useQuery({
-    queryKey: [...SHIPPING_GUIDES_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => {
-      const params = new URLSearchParams({
-        page: String(query.page),
-        pageSize: String(query.pageSize),
-      });
-      if (query.search) params.set("search", query.search);
-      if (query.state) params.set("state", query.state);
-      return apiFetchPage(`/shipping-guides?${params.toString()}`, {
-        schema: z.array(shippingGuideSummaryViewSchema),
-        meta: shippingGuideListMetaSchema,
-        signal,
-      });
+/** La lista de Guías de remisión: borradores primero y después las guías emitidas (D1 y D5). */
+export function useShippingGuideEntries(
+  query: Omit<ShippingGuidesQuery, "state"> & { state: EntryState | undefined },
+  enabled: boolean,
+) {
+  return useDocumentEntries({
+    key: SHIPPING_GUIDE_ENTRIES_KEY,
+    path: "/shipping-guides/entries",
+    params: {
+      page: query.page,
+      pageSize: query.pageSize,
+      search: query.search,
+      state: query.state,
     },
+    entry: shippingGuideEntryViewSchema,
+    enabled,
   });
 }
 
@@ -105,23 +106,6 @@ export function useShippingGuide(id: string, enabled: boolean) {
     // Mientras el SRI procesa, el estado se actualiza solo.
     refetchInterval: (query) =>
       query.state.data?.transmission.inProgress ? TRANSMISSION_REFRESH_MS : false,
-  });
-}
-
-export function useShippingGuideDrafts(
-  query: { page: number; pageSize: number },
-  enabled: boolean,
-) {
-  return useQuery({
-    queryKey: [...SHIPPING_GUIDE_DRAFTS_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) =>
-      apiFetchPage(`/shipping-guides/drafts?page=${query.page}&pageSize=${query.pageSize}`, {
-        schema: z.array(shippingGuideDraftSummaryViewSchema),
-        meta: shippingGuideListMetaSchema,
-        signal,
-      }),
   });
 }
 
@@ -183,7 +167,7 @@ export function useSaveShippingGuideDraft(options: {
             schema: shippingGuideDraftViewSchema,
           }),
     success: () => options.success ?? "Guardaste el borrador.",
-    invalidate: [SHIPPING_GUIDE_DRAFTS_KEY],
+    invalidate: [SHIPPING_GUIDE_DRAFTS_KEY, SHIPPING_GUIDE_ENTRIES_KEY],
     errorMessages: SHIPPING_GUIDE_CONFLICT_MESSAGES,
     onSuccess: options.onSuccess,
     onError: options.onError,
@@ -194,7 +178,7 @@ export function useDeleteShippingGuideDraft(options: { onSuccess?: () => void } 
   return useMutationFeedback({
     mutationFn: (id: string) => apiFetch(draftPath(id), { method: "DELETE" }),
     success: () => "Eliminaste el borrador.",
-    invalidate: [SHIPPING_GUIDE_DRAFTS_KEY],
+    invalidate: [SHIPPING_GUIDE_DRAFTS_KEY, SHIPPING_GUIDE_ENTRIES_KEY],
     ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }

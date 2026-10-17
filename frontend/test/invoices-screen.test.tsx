@@ -107,7 +107,13 @@ const RESERVED = detail({
 });
 const paged =
   (data: unknown[], total = data.length): Route =>
-  () => ({ status: 200, body: { data, meta: { page: 1, pageSize: 25, total } } });
+  () => ({
+    status: 200,
+    body: {
+      data: data.map((document) => ({ kind: "DOCUMENT", document })),
+      meta: { page: 1, pageSize: 25, total },
+    },
+  });
 const ok =
   (data: unknown): Route =>
   () => ({ status: 200, body: { data } });
@@ -142,7 +148,7 @@ afterEach(() => {
 describe("pantalla Facturas", () => {
   it("lista número, comprador, total, fecha y estado con icono y texto", async () => {
     render(<InvoicesScreen />, {
-      "GET /api/v1/invoices": paged([
+      "GET /api/v1/invoices/entries": paged([
         summary({
           id: "inv-2",
           documentNumber: "001-001-000000002",
@@ -152,7 +158,7 @@ describe("pantalla Facturas", () => {
         summary(),
       ]),
     });
-    const table = await screen.findByRole("table", { name: "Facturas emitidas" });
+    const table = await screen.findByRole("table", { name: "Facturas y borradores" });
     await within(table).findByText("001-001-000000002");
     // El estado y la fecha tienen dos copias por fila (distribución amplia y compacta, D15).
     const rows = within(table).getAllByRole("row");
@@ -172,7 +178,7 @@ describe("pantalla Facturas", () => {
   it("filtra por estado desde la URL y busca por número, comprador o identificación", async () => {
     // La búsqueda declara también la identificación, que el servidor ya buscaba (D8).
     navigation.search = new URLSearchParams("estado=procesando");
-    const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices": paged([]) });
+    const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices/entries": paged([]) });
     await screen.findAllByText("No hay facturas con estos filtros");
     expect(calls.some((call) => call.key.includes("state=RESERVED"))).toBe(true);
     await userEvent
@@ -192,7 +198,7 @@ describe("pantalla Facturas", () => {
   it("muestra el vacío, el error con reintento y la falta de permiso", async () => {
     let fail = true;
     render(<InvoicesScreen />, {
-      "GET /api/v1/invoices": () =>
+      "GET /api/v1/invoices/entries": () =>
         fail
           ? { status: 500, body: errorBody("INTERNAL_ERROR", "Error") }
           : { status: 200, body: { data: [], meta: { page: 1, pageSize: 25, total: 0 } } },
@@ -208,7 +214,7 @@ describe("pantalla Facturas", () => {
 
   it("sin permiso en el servidor, muestra el aviso de acceso", async () => {
     render(<InvoicesScreen />, {
-      "GET /api/v1/invoices": () => ({ status: 403, body: errorBody("FORBIDDEN", "No.") }),
+      "GET /api/v1/invoices/entries": () => ({ status: 403, body: errorBody("FORBIDDEN", "No.") }),
     });
     expect(await screen.findByText("No tienes acceso a Facturas")).toBeDefined();
   });

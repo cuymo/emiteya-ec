@@ -5,19 +5,19 @@
 // useMutationFeedback.
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   IDEMPOTENCY_KEY_HEADER,
   productListMetaSchema,
   productViewSchema,
-  purchaseSettlementDraftSummaryViewSchema,
   purchaseSettlementDraftViewSchema,
+  purchaseSettlementEntryViewSchema,
   purchaseSettlementListMetaSchema,
   purchaseSettlementOptionsViewSchema,
-  purchaseSettlementSummaryViewSchema,
   purchaseSettlementSupplierViewSchema,
   purchaseSettlementViewSchema,
   type CreatePurchaseSettlementDraftInput,
+  type EntryState,
   type InvoiceState,
   type ProductView,
   type PurchaseSettlementDraftView,
@@ -30,9 +30,12 @@ import { z } from "zod";
 import type { EntityPage, EntityPickerQuery } from "@/components/entity-picker-dialog";
 import { useMutationFeedback, type SuccessFeedback } from "@/components/feedback";
 import { apiFetch, apiFetchPage } from "@/lib/api";
+import { useDocumentEntries } from "@/features/documents/use-document-entries";
 
 export const PURCHASE_SETTLEMENTS_KEY = ["purchase-settlements"] as const;
 export const PURCHASE_SETTLEMENT_DRAFTS_KEY = ["purchase-settlement-drafts"] as const;
+/** La lista unificada cuelga de las liquidaciones y se renueva también con cada cambio de un borrador. */
+export const PURCHASE_SETTLEMENT_ENTRIES_KEY = [...PURCHASE_SETTLEMENTS_KEY, "entries"] as const;
 export const PURCHASE_SETTLEMENT_OPTIONS_KEY = ["purchase-settlement-options"] as const;
 
 const draftPath = (id: string) => `/purchase-settlements/drafts/${encodeURIComponent(id)}`;
@@ -66,24 +69,22 @@ export type PurchaseSettlementsQuery = {
   pageSize: number;
 };
 
-export function usePurchaseSettlements(query: PurchaseSettlementsQuery, enabled: boolean) {
-  return useQuery({
-    queryKey: [...PURCHASE_SETTLEMENTS_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => {
-      const params = new URLSearchParams({
-        page: String(query.page),
-        pageSize: String(query.pageSize),
-      });
-      if (query.search) params.set("search", query.search);
-      if (query.state) params.set("state", query.state);
-      return apiFetchPage(`/purchase-settlements?${params.toString()}`, {
-        schema: z.array(purchaseSettlementSummaryViewSchema),
-        meta: purchaseSettlementListMetaSchema,
-        signal,
-      });
+/** La lista de Liquidaciones de compra: borradores primero y después las emitidas (D1 y D5). */
+export function usePurchaseSettlementEntries(
+  query: Omit<PurchaseSettlementsQuery, "state"> & { state: EntryState | undefined },
+  enabled: boolean,
+) {
+  return useDocumentEntries({
+    key: PURCHASE_SETTLEMENT_ENTRIES_KEY,
+    path: "/purchase-settlements/entries",
+    params: {
+      page: query.page,
+      pageSize: query.pageSize,
+      search: query.search,
+      state: query.state,
     },
+    entry: purchaseSettlementEntryViewSchema,
+    enabled,
   });
 }
 
@@ -96,23 +97,6 @@ export function usePurchaseSettlement(id: string, enabled: boolean) {
     // Mientras el SRI procesa, el estado se actualiza solo.
     refetchInterval: (query) =>
       query.state.data?.transmission.inProgress ? TRANSMISSION_REFRESH_MS : false,
-  });
-}
-
-export function usePurchaseSettlementDrafts(
-  query: { page: number; pageSize: number },
-  enabled: boolean,
-) {
-  return useQuery({
-    queryKey: [...PURCHASE_SETTLEMENT_DRAFTS_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) =>
-      apiFetchPage(`/purchase-settlements/drafts?page=${query.page}&pageSize=${query.pageSize}`, {
-        schema: z.array(purchaseSettlementDraftSummaryViewSchema),
-        meta: purchaseSettlementListMetaSchema,
-        signal,
-      }),
   });
 }
 
@@ -167,7 +151,7 @@ export function useSavePurchaseSettlementDraft(options: {
             schema: purchaseSettlementDraftViewSchema,
           }),
     success: () => options.success ?? "Guardaste el borrador.",
-    invalidate: [PURCHASE_SETTLEMENT_DRAFTS_KEY],
+    invalidate: [PURCHASE_SETTLEMENT_DRAFTS_KEY, PURCHASE_SETTLEMENT_ENTRIES_KEY],
     errorMessages: PURCHASE_SETTLEMENT_CONFLICT_MESSAGES,
     onSuccess: options.onSuccess,
     onError: options.onError,
@@ -178,7 +162,7 @@ export function useDeletePurchaseSettlementDraft(options: { onSuccess?: () => vo
   return useMutationFeedback({
     mutationFn: (id: string) => apiFetch(draftPath(id), { method: "DELETE" }),
     success: () => "Eliminaste el borrador.",
-    invalidate: [PURCHASE_SETTLEMENT_DRAFTS_KEY],
+    invalidate: [PURCHASE_SETTLEMENT_DRAFTS_KEY, PURCHASE_SETTLEMENT_ENTRIES_KEY],
     ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }

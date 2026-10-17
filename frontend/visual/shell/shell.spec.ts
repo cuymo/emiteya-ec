@@ -140,7 +140,7 @@ test.describe("shell premium", () => {
     );
     await page
       .getByRole("navigation", { name: "Navegación principal" })
-      // Exacto: «Borradores de facturas» también contiene «Facturas» (design D25).
+      // Exacto: ningún otro destino debe coincidir por contener «Facturas».
       .getByRole("link", { name: "Facturas", exact: true })
       .click();
     await expect(
@@ -160,10 +160,10 @@ test.describe("shell premium", () => {
       scenario: {
         persona: "admin",
         overrides: {
-          "GET /api/v1/invoices": {
+          "GET /api/v1/invoices/entries": {
             status: 200,
             body: {
-              data: [{ ...INVOICES[0], issueDate: "1999-01-01" }],
+              data: [{ kind: "DOCUMENT", document: { ...INVOICES[0], issueDate: "1999-01-01" } }],
               meta: { page: 1, pageSize: 25, total: 1 },
             },
           },

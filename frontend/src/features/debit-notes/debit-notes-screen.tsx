@@ -2,7 +2,8 @@
 // encontrar una nota y su estado. Decisión: qué nota abrir. Información mínima: número, factura
 // modificada, causas, comprador, valor total y estado. Acción principal: abrir la nota; secundaria:
 // "Nueva nota de débito". P0: número, estado y valor; P1: factura, comprador, causas y fecha; P2:
-// búsqueda, filtros y los borradores en curso; P3 (identificadores): no se muestran.
+// búsqueda y filtros; P3 (identificadores): no se muestran. Los borradores van en la misma tabla,
+// primero, con su estado «Borrador» filtrable (unify-drafts-into-document-lists, design D5).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -13,18 +14,19 @@ import {
   PAGE_SIZE_MAX,
   type DebitNoteCause,
   type DebitNoteDraftSummaryView,
-  type DebitNoteSummaryView,
-  type InvoiceState,
+  type DebitNoteEntryView,
+  type EntryState,
 } from "@facturador/contracts";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
-import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
+import { SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -36,12 +38,19 @@ import {
 } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
-import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/documents/document-status-badge";
-import { useDebitNoteDrafts, useDebitNotes, useDeleteDebitNoteDraft } from "./debit-notes-api";
+import { formatIssueDate } from "@/features/invoices/invoice-format";
+import { DraftStateBadge, StateCell } from "@/features/documents/document-status-badge";
+import {
+  DRAFT_FILTER_LABEL,
+  DRAFT_STATE_PARAM,
+  DraftEditedAt,
+  draftRowActions,
+} from "@/features/documents/draft-entries";
+import { useDebitNoteEntries, useDeleteDebitNoteDraft } from "./debit-notes-api";
 
 type StateFilter =
   | "todas"
+  | typeof DRAFT_STATE_PARAM
   | "autorizadas"
   | "pendientes-autorizacion"
   | "pendientes-envio"
@@ -50,8 +59,9 @@ type StateFilter =
   | "devueltas"
   | "no-autorizadas"
   | "procesando";
-const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: InvoiceState }[] = [
+const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: EntryState }[] = [
   { value: "todas", label: "Todas" },
+  { value: DRAFT_STATE_PARAM, label: DRAFT_FILTER_LABEL, state: "DRAFT" },
   { value: "autorizadas", label: "Autorizadas", state: "AUTHORIZED" },
   { value: "pendientes-autorizacion", label: "Pendientes de autorización", state: "RECEIVED" },
   { value: "pendientes-envio", label: "Pendientes de envío", state: "SIGNED" },
@@ -110,69 +120,9 @@ function useUrlState() {
   };
 }
 
-/** Borradores en curso: se abren para seguir editándolos o se eliminan. */
-function DraftsPanel() {
-  const headingId = useId();
-  const drafts = useDebitNoteDrafts({ page: 1, pageSize: 10 }, true);
-  const [deleting, setDeleting] = useState<DebitNoteDraftSummaryView | null>(null);
-  const remove = useDeleteDebitNoteDraft({ onSuccess: () => setDeleting(null) });
-  if (drafts.isPending || drafts.isError || drafts.data.data.length === 0) return null;
-  const { data, meta } = drafts.data;
-  return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-2">
-      <h2 id={headingId} className="text-lg font-semibold">
-        Borradores en curso
-      </h2>
-      <ul className="flex flex-col gap-1">
-        {data.map((draft) => (
-          <li
-            key={draft.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-          >
-            <span className="flex min-w-0 flex-col">
-              <RecordLink href={`/notas-debito/borradores/${draft.id}`}>
-                Nota de débito de la factura{" "}
-                <span className="whitespace-nowrap tabular-nums">
-                  {draft.invoice.documentNumber}
-                </span>
-              </RecordLink>
-              <span className="text-foreground-muted break-words">
-                {draft.buyerName} · {conceptCount(draft.conceptCount)} ·{" "}
-                {draft.previewTotal ? <MoneyCell amount={draft.previewTotal} /> : "Sin calcular"} ·{" "}
-                {formatDateTime(draft.updatedAt)}
-              </span>
-            </span>
-            <RowActionButton
-              icon={Trash2}
-              label={`Eliminar el borrador de la factura ${draft.invoice.documentNumber}`}
-              onClick={() => setDeleting(draft)}
-            />
-          </li>
-        ))}
-      </ul>
-      {meta.total > data.length && (
-        <p className="text-sm text-foreground-muted">
-          Se muestran los {data.length} borradores más recientes de {meta.total}.
-        </p>
-      )}
-      <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        title="Eliminar borrador"
-        description={
-          <p>
-            Se elimina el borrador de la factura {deleting?.invoice.documentNumber}. No reserva
-            nada: no consume números ni cambia la factura.
-          </p>
-        }
-        confirmLabel="Eliminar"
-        tone="destructive"
-        pending={remove.isPending}
-        onConfirm={() => deleting && remove.mutate(deleting.id)}
-      />
-    </section>
-  );
-}
+const draftHref = (draft: DebitNoteDraftSummaryView) => `/notas-debito/borradores/${draft.id}`;
+const entryId = (entry: DebitNoteEntryView) =>
+  entry.kind === "DRAFT" ? `borrador-${entry.draft.id}` : entry.document.id;
 
 export function DebitNotesScreen() {
   const { me } = useSession();
@@ -181,6 +131,8 @@ export function DebitNotesScreen() {
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
+  const [deleting, setDeleting] = useState<DebitNoteDraftSummaryView | null>(null);
+  const remove = useDeleteDebitNoteDraft({ onSuccess: () => setDeleting(null) });
 
   useEffect(() => {
     if (searchDraft.trim() === url.search) return;
@@ -188,7 +140,7 @@ export function DebitNotesScreen() {
     return () => clearTimeout(timer);
   }, [searchDraft, url]);
 
-  const notes = useDebitNotes(
+  const notes = useDebitNoteEntries(
     {
       search: url.search,
       state: STATE_FILTERS.find((filter) => filter.value === url.filter)?.state,
@@ -201,56 +153,105 @@ export function DebitNotesScreen() {
   const forbidden = notes.error instanceof ApiError && notes.error.status === 403;
   const filtersActive = url.search !== "" || url.filter !== "todas" || url.cause !== undefined;
 
-  const columns = useMemo<ColumnDef<DebitNoteSummaryView, unknown>[]>(
+  const columns = useMemo<ColumnDef<DebitNoteEntryView, unknown>[]>(
     () => [
       {
         id: "number",
         header: "Número",
-        cell: ({ row }) => (
-          <RecordLink href={`/notas-debito/${row.original.id}`}>
-            {row.original.documentNumber}
-          </RecordLink>
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <RecordLink href={draftHref(row.original.draft)}>Borrador</RecordLink>
+          ) : (
+            <RecordLink href={`/notas-debito/${row.original.document.id}`}>
+              {row.original.document.documentNumber}
+            </RecordLink>
+          ),
       },
       {
         id: "invoice",
         header: "Factura",
-        cell: ({ row }) => <MutedCell>{row.original.invoice.documentNumber}</MutedCell>,
+        cell: ({ row }) => (
+          <MutedCell>
+            {row.original.kind === "DRAFT"
+              ? row.original.draft.invoice.documentNumber
+              : row.original.document.invoice.documentNumber}
+          </MutedCell>
+        ),
       },
       {
         id: "causes",
         header: "Causas",
-        cell: ({ row }) => <MutedCell>{causesLabel(row.original.causes)}</MutedCell>,
+        // El resumen del borrador no trae las causas de sus conceptos.
+        cell: ({ row }) => (
+          <MutedCell>
+            {row.original.kind === "DRAFT" ? "—" : causesLabel(row.original.document.causes)}
+          </MutedCell>
+        ),
       },
       {
         id: "buyer",
         header: "Comprador",
-        cell: ({ row }) => (
-          <PartyCell
-            name={row.original.buyerName}
-            identification={row.original.buyerIdentification}
-          />
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <PartyCell name={row.original.draft.buyerName} />
+          ) : (
+            <PartyCell
+              name={row.original.document.buyerName}
+              identification={row.original.document.buyerIdentification}
+            />
+          ),
       },
       {
         id: "total",
         header: () => <span className="block text-right">Valor</span>,
-        cell: ({ row }) => <MoneyCell amount={row.original.total} className="block text-right" />,
+        cell: ({ row }) => {
+          const amount =
+            row.original.kind === "DRAFT"
+              ? row.original.draft.previewTotal
+              : row.original.document.total;
+          return amount === null ? (
+            <MutedCell className="block text-right">Incompleto</MutedCell>
+          ) : (
+            <MoneyCell amount={amount} className="block text-right" />
+          );
+        },
       },
       {
         id: "date",
         header: "Fecha",
-        cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftEditedAt updatedAt={row.original.draft.updatedAt} />
+          ) : (
+            <MutedCell>{formatIssueDate(row.original.document.issueDate)}</MutedCell>
+          ),
       },
       {
         id: "state",
         header: "Estado",
-        cell: ({ row }) => (
-          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftStateBadge />
+          ) : (
+            <StateCell
+              state={row.original.document.state}
+              stopped={row.original.document.transmissionStopped}
+            />
+          ),
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Acciones</span>,
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftActions
+              draft={row.original.draft}
+              onDelete={canDraft ? setDeleting : undefined}
+            />
+          ) : null,
       },
     ],
-    [],
+    [canDraft],
   );
 
   if (!allowed || forbidden) {
@@ -323,7 +324,6 @@ export function DebitNotesScreen() {
         />
       }
       actions={newNote("primary", "sm")}
-      lead={canDraft ? <DraftsPanel /> : undefined}
       filters={
         <>
           <DataTableSelectFilter
@@ -346,10 +346,10 @@ export function DebitNotesScreen() {
       }
     >
       <AppDataTable
-        label="Notas de débito emitidas"
+        label="Notas de débito y borradores"
         columns={columns}
         data={notes.data?.data ?? []}
-        getRowId={(note) => note.id}
+        getRowId={entryId}
         total={notes.data?.meta.total ?? 0}
         page={url.page}
         pageSize={url.pageSize}
@@ -359,23 +359,88 @@ export function DebitNotesScreen() {
         loading={notes.isPending}
         refreshing={notes.isFetching}
         state={tableState}
-        renderCard={(note) => (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <RecordLink href={`/notas-debito/${note.id}`}>{note.documentNumber}</RecordLink>
-              <MoneyCell amount={note.total} />
+        renderCard={(entry) =>
+          entry.kind === "DRAFT" ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <RecordLink href={draftHref(entry.draft)}>Borrador</RecordLink>
+                {entry.draft.previewTotal === null ? (
+                  <MutedCell>Incompleto</MutedCell>
+                ) : (
+                  <MoneyCell amount={entry.draft.previewTotal} />
+                )}
+              </div>
+              <span className="text-sm font-medium break-words">{entry.draft.buyerName}</span>
+              <span className="text-sm text-foreground-muted">
+                {conceptCount(entry.draft.conceptCount)} · Factura{" "}
+                <span className="whitespace-nowrap tabular-nums">
+                  {entry.draft.invoice.documentNumber}
+                </span>
+              </span>
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                <DraftStateBadge />
+                <DraftActions draft={entry.draft} onDelete={canDraft ? setDeleting : undefined} />
+              </span>
             </div>
-            <span className="text-sm font-medium break-words">{note.buyerName}</span>
-            <span className="text-sm text-foreground-muted">
-              {causesLabel(note.causes)} · Factura{" "}
-              <span className="whitespace-nowrap tabular-nums">{note.invoice.documentNumber}</span>{" "}
-              · {formatIssueDate(note.issueDate)}
-            </span>
-            <StateCell state={note.state} stopped={note.transmissionStopped} />
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <RecordLink href={`/notas-debito/${entry.document.id}`}>
+                  {entry.document.documentNumber}
+                </RecordLink>
+                <MoneyCell amount={entry.document.total} />
+              </div>
+              <span className="text-sm font-medium break-words">{entry.document.buyerName}</span>
+              <span className="text-sm text-foreground-muted">
+                {causesLabel(entry.document.causes)} · Factura{" "}
+                <span className="whitespace-nowrap tabular-nums">
+                  {entry.document.invoice.documentNumber}
+                </span>{" "}
+                · {formatIssueDate(entry.document.issueDate)}
+              </span>
+              <StateCell
+                state={entry.document.state}
+                stopped={entry.document.transmissionStopped}
+              />
+            </div>
+          )
+        }
+      />
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Eliminar borrador"
+        description={
+          <p>
+            Se elimina el borrador de la factura {deleting?.invoice.documentNumber}. No reserva
+            nada: no consume números ni cambia la factura.
+          </p>
+        }
+        confirmLabel="Eliminar borrador"
+        tone="destructive"
+        pending={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
       />
     </DataTableCard>
+  );
+}
+
+/** «Continuar» y, con permiso, «Eliminar borrador» (design D5). */
+function DraftActions({
+  draft,
+  onDelete,
+}: {
+  draft: DebitNoteDraftSummaryView;
+  onDelete: ((draft: DebitNoteDraftSummaryView) => void) | undefined;
+}) {
+  return (
+    <RowActionsMenu
+      label={`Acciones del borrador de la factura ${draft.invoice.documentNumber}`}
+      actions={draftRowActions({
+        editHref: draftHref(draft),
+        onDelete: onDelete && (() => onDelete(draft)),
+      })}
+    />
   );
 }
 

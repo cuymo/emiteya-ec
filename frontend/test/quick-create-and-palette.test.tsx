@@ -197,7 +197,7 @@ describe("paleta de comandos", () => {
       ["certificado", "Firma electrónica"],
       ["numeración", "Establecimientos"],
       ["facturas emitidas", "Archivo de comprobantes"],
-      ["factura sin emitir", "Borradores de facturas"],
+      ["factura sin emitir", "Facturas"],
     ] as const) {
       await user.clear(input);
       await user.type(input, query);

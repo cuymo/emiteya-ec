@@ -15,23 +15,31 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   INVOICE_STATE_LABELS,
   INVOICE_STATES,
+  type DraftSummaryView,
+  type EntryState,
   type Environment,
-  type InvoiceState,
+  type InvoiceEntryView,
   type InvoiceSummaryView,
 } from "@facturador/contracts";
 import { Copy, Eye, FileText, Lock, Plus, SearchX } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
-import { MoneyCell, PartyCell, RecordLink } from "@/components/data-table/data-table-cells";
+import {
+  MoneyCell,
+  MutedCell,
+  PartyCell,
+  RecordLink,
+} from "@/components/data-table/data-table-cells";
 import { DataTableSearch } from "@/components/data-table/data-table-search";
 import {
   DataTableSelectFilter,
   type SelectFilterOption,
 } from "@/components/data-table/data-table-select-filter";
 import { DataTableEmpty, DataTableError } from "@/components/data-table/data-table-state";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionsMenu, type RowAction } from "@/components/data-table/row-actions-menu";
 import { toast } from "@/components/feedback";
 import { useSession } from "@/components/session";
@@ -42,20 +50,29 @@ import { useCompanyStatus } from "@/features/company/company-api";
 import {
   AttentionMarker,
   DOCUMENT_STATE_PRESENTATION,
+  DraftStateBadge,
   StateCell,
   requiresAttention,
 } from "@/features/documents/document-status-badge";
+import {
+  DRAFT_FILTER_LABEL,
+  DRAFT_STATE_PARAM,
+  DraftEditedAt,
+  DraftParty,
+  draftRowActions,
+} from "@/features/documents/draft-entries";
 import { useListUrlState } from "@/hooks/use-list-url-state";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { formatIssueDate } from "./invoice-format";
-import { useInvoiceAttentionCount, useInvoices } from "./invoices-api";
+import { buyerLabel, formatIssueDate } from "./invoice-format";
+import { useDeleteDraft, useInvoiceAttentionCount, useInvoiceEntries } from "./invoices-api";
 
 type View = "todas" | "atencion";
 
 /** Valor de `estado` en la URL de cada estado (D6); los de hoy se conservan. */
-const STATE_PARAMS: Record<InvoiceState, string> = {
+const STATE_PARAMS: Record<EntryState, string> = {
+  DRAFT: DRAFT_STATE_PARAM,
   RESERVED: "procesando",
   SIGNED: "firmadas",
   SEND_UNKNOWN: "verificando",
@@ -65,13 +82,17 @@ const STATE_PARAMS: Record<InvoiceState, string> = {
   NOT_AUTHORIZED: "no-autorizadas",
   MANUAL_REVIEW: "revision",
 };
-const STATE_OPTIONS: readonly SelectFilterOption<InvoiceState>[] = INVOICE_STATES.map((state) => ({
-  value: state,
-  label: INVOICE_STATE_LABELS[state],
-  icon: DOCUMENT_STATE_PRESENTATION[state].icon,
-}));
-const stateFromParam = (param: string): InvoiceState | undefined =>
-  INVOICE_STATES.find((state) => STATE_PARAMS[state] === param);
+/** «Borradores» primero, justo después de «Todos»; después los estados del glosario. */
+const STATE_OPTIONS: readonly SelectFilterOption<EntryState>[] = [
+  { value: "DRAFT", label: DRAFT_FILTER_LABEL },
+  ...INVOICE_STATES.map((state) => ({
+    value: state,
+    label: INVOICE_STATE_LABELS[state],
+    icon: DOCUMENT_STATE_PRESENTATION[state].icon,
+  })),
+];
+const stateFromParam = (param: string): EntryState | undefined =>
+  (Object.keys(STATE_PARAMS) as EntryState[]).find((state) => STATE_PARAMS[state] === param);
 
 /** Los enlaces anteriores abrían «Requiere atención» con `estado=atencion`. */
 function normalizeLegacyParams(params: URLSearchParams): boolean {
@@ -154,10 +175,14 @@ function NewInvoiceLink({
 }
 
 /** Lo que nombra el vacío por filtros: la vista, el estado y la búsqueda activos. */
-function describeFilters(view: View, state: InvoiceState | undefined, search: string): string {
+function describeFilters(view: View, state: EntryState | undefined, search: string): string {
   const parts = [
     view === "atencion" ? "requiere atención" : null,
-    state ? `está en «${INVOICE_STATE_LABELS[state]}»` : null,
+    state === "DRAFT"
+      ? "es un borrador"
+      : state
+        ? `está en «${INVOICE_STATE_LABELS[state]}»`
+        : null,
     search ? `coincide con «${search}»` : null,
   ].filter((part): part is string => part !== null);
   if (parts.length === 0) return "Ninguna factura coincide con los filtros.";
@@ -165,8 +190,28 @@ function describeFilters(view: View, state: InvoiceState | undefined, search: st
   return `Ninguna factura ${parts.length > 0 ? `${parts.join(", ")} y ${last}` : last}.`;
 }
 
-function useInvoiceColumns(currentEnvironment: Environment | undefined) {
-  return useMemo<ColumnDef<InvoiceSummaryView, unknown>[]>(
+/** Lo que una fila sabe hacer con su borrador: abrirlo y pedir su eliminación. */
+type DraftHandlers = { onDeleteDraft: ((draft: DraftSummaryView) => void) | undefined };
+
+const draftHref = (draft: DraftSummaryView) => `/borradores/${draft.id}`;
+const draftBuyer = (draft: DraftSummaryView) => (draft.buyer ? buyerLabel(draft.buyer) : null);
+
+function EntryActions({ entry, handlers }: { entry: InvoiceEntryView; handlers: DraftHandlers }) {
+  if (entry.kind === "DOCUMENT") return <InvoiceActions invoice={entry.document} />;
+  const draft = entry.draft;
+  return (
+    <RowActionsMenu
+      label={`Acciones del borrador de ${draftBuyer(draft) ?? "factura sin comprador"}`}
+      actions={draftRowActions({
+        editHref: draftHref(draft),
+        onDelete: handlers.onDeleteDraft && (() => handlers.onDeleteDraft?.(draft)),
+      })}
+    />
+  );
+}
+
+function useInvoiceColumns(currentEnvironment: Environment | undefined, handlers: DraftHandlers) {
+  return useMemo<ColumnDef<InvoiceEntryView, unknown>[]>(
     () => [
       {
         id: "invoice",
@@ -179,7 +224,27 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
             "w-full py-2 pr-2 pl-4 @table-wide:w-auto @table-wide:pr-3 @table-wide:pl-5",
         },
         cell: ({ row }) => {
-          const invoice = row.original;
+          const entry = row.original;
+          if (entry.kind === "DRAFT") {
+            const draft = entry.draft;
+            return (
+              <div className="flex flex-col gap-1">
+                <RecordLink href={draftHref(draft)} className="whitespace-nowrap">
+                  Borrador
+                </RecordLink>
+                <span className="text-xs">
+                  <DraftEditedAt updatedAt={draft.updatedAt} />
+                </span>
+                <span className="line-clamp-2 text-sm break-words @table-wide:hidden">
+                  <DraftParty name={draftBuyer(draft)} missing="Sin comprador" />
+                </span>
+                <span className="@table-wide:hidden">
+                  <DraftStateBadge />
+                </span>
+              </div>
+            );
+          }
+          const invoice = entry.document;
           const mark = environmentMark(invoice.environment, currentEnvironment);
           return (
             <div className="flex flex-col gap-1">
@@ -218,9 +283,15 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
           cellClassName: "hidden @table-wide:table-cell",
           skeletonClassName: "w-36",
         },
-        cell: ({ row }) => (
-          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftStateBadge />
+          ) : (
+            <StateCell
+              state={row.original.document.state}
+              stopped={row.original.document.transmissionStopped}
+            />
+          ),
       },
       {
         id: "buyer",
@@ -230,13 +301,24 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
           cellClassName: "hidden @table-wide:table-cell @table-wide:w-full @table-wide:max-w-0",
           skeletonClassName: "w-full max-w-56",
         },
-        cell: ({ row }) => (
-          <PartyCell
-            name={row.original.buyerName}
-            identification={row.original.buyerIdentification}
-            truncate
-          />
-        ),
+        cell: ({ row }) => {
+          const entry = row.original;
+          if (entry.kind === "DRAFT") {
+            const buyer = entry.draft.buyer;
+            return buyer ? (
+              <PartyCell name={buyer.legalName} identification={buyer.identification} truncate />
+            ) : (
+              <MutedCell>Sin comprador</MutedCell>
+            );
+          }
+          return (
+            <PartyCell
+              name={entry.document.buyerName}
+              identification={entry.document.buyerIdentification}
+              truncate
+            />
+          );
+        },
       },
       {
         id: "total",
@@ -247,19 +329,27 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
           cellClassName: "py-2 pr-2 pl-2 text-right @table-wide:pr-3 @table-wide:pl-3",
           skeletonClassName: "ml-auto w-24",
         },
-        cell: ({ row }) => (
-          <span className="flex items-start justify-end gap-0.5">
-            <span className="flex flex-col items-end gap-1">
-              <MoneyCell amount={row.original.total} />
-              <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums @table-wide:hidden">
-                {formatIssueDate(row.original.issueDate)}
+        cell: ({ row }) => {
+          const entry = row.original;
+          const amount = entry.kind === "DRAFT" ? entry.draft.previewTotal : entry.document.total;
+          return (
+            <span className="flex items-start justify-end gap-0.5">
+              <span className="flex flex-col items-end gap-1">
+                {amount === null ? (
+                  <MutedCell>Incompleto</MutedCell>
+                ) : (
+                  <MoneyCell amount={amount} />
+                )}
+                <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums @table-wide:hidden">
+                  {entry.kind === "DOCUMENT" && formatIssueDate(entry.document.issueDate)}
+                </span>
+              </span>
+              <span className="-my-1 @table-wide:hidden">
+                <EntryActions entry={entry} handlers={handlers} />
               </span>
             </span>
-            <span className="-my-1 @table-wide:hidden">
-              <InvoiceActions invoice={row.original} />
-            </span>
-          </span>
-        ),
+          );
+        },
       },
       {
         id: "actions",
@@ -270,10 +360,10 @@ function useInvoiceColumns(currentEnvironment: Environment | undefined) {
           cellClassName: "hidden w-12 text-right @table-wide:table-cell",
           skeletonClassName: "ml-auto size-6",
         },
-        cell: ({ row }) => <InvoiceActions invoice={row.original} />,
+        cell: ({ row }) => <EntryActions entry={row.original} handlers={handlers} />,
       },
     ],
-    [currentEnvironment],
+    [currentEnvironment, handlers],
   );
 }
 
@@ -289,13 +379,19 @@ export function InvoicesScreen() {
   const state = stateFromParam(url.get("estado"));
   const search = url.get("q").trim().slice(0, SEARCH_MAX_LENGTH);
 
-  const invoices = useInvoices(
+  const invoices = useInvoiceEntries(
     { search, state, attention: view === "atencion", page: url.page, pageSize: url.pageSize },
     allowed,
   );
   const attentionCount = useInvoiceAttentionCount(allowed);
   const company = useCompanyStatus();
-  const columns = useInvoiceColumns(company.data?.environment);
+  const [deleting, setDeleting] = useState<DraftSummaryView | null>(null);
+  const deleteDraft = useDeleteDraft({ onSuccess: () => setDeleting(null) });
+  const handlers = useMemo<DraftHandlers>(
+    () => ({ onDeleteDraft: canDraft ? setDeleting : undefined }),
+    [canDraft],
+  );
+  const columns = useInvoiceColumns(company.data?.environment, handlers);
 
   const { clampPage } = url;
   const total = invoices.data && !invoices.isPlaceholderData ? invoices.data.meta.total : null;
@@ -390,7 +486,7 @@ export function InvoicesScreen() {
             ]}
             onChange={(next) => url.update({ vista: next === "atencion" ? next : null })}
           />
-          <DataTableSelectFilter<InvoiceState>
+          <DataTableSelectFilter<EntryState>
             label="Estado"
             value={state}
             allLabel="Todos"
@@ -408,10 +504,12 @@ export function InvoicesScreen() {
       }
     >
       <DataTable
-        label="Facturas emitidas"
+        label="Facturas y borradores"
         columns={columns}
         data={invoices.data?.data ?? []}
-        getRowId={(invoice) => invoice.id}
+        getRowId={(entry) =>
+          entry.kind === "DRAFT" ? `borrador-${entry.draft.id}` : entry.document.id
+        }
         rowCount={invoices.data?.meta.total ?? 0}
         page={url.page}
         pageSize={url.pageSize}
@@ -420,7 +518,29 @@ export function InvoicesScreen() {
         loading={invoices.isPending || settlingPage}
         refreshing={invoices.isFetching}
         state={tableState}
-        onRowOpen={(invoice) => router.push(`/facturas/${invoice.id}`)}
+        onRowOpen={(entry) =>
+          router.push(
+            entry.kind === "DRAFT" ? draftHref(entry.draft) : `/facturas/${entry.document.id}`,
+          )
+        }
+      />
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null);
+        }}
+        title="Eliminar borrador"
+        description={
+          deleting
+            ? `Eliminarás el borrador de ${draftBuyer(deleting) ?? "factura sin comprador"}. No se puede recuperar; no tiene número ni datos fiscales.`
+            : ""
+        }
+        confirmLabel="Eliminar borrador"
+        tone="destructive"
+        pending={deleteDraft.isPending}
+        onConfirm={() => {
+          if (deleting) deleteDraft.mutate(deleting.id);
+        }}
       />
     </DataTableCard>
   );

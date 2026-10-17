@@ -46,6 +46,16 @@ const summary = (overrides: Record<string, unknown> = {}) => ({
 });
 const paged =
   (data: unknown[], total = data.length, page = 1, pageSize = 25): Route =>
+  () => ({
+    status: 200,
+    body: {
+      data: data.map((document) => ({ kind: "DOCUMENT", document })),
+      meta: { page, pageSize, total },
+    },
+  });
+/** El conteo de «Requiere atención» sigue en la lista de facturas emitidas, sin entradas. */
+const issued =
+  (data: unknown[], total = data.length, page = 1, pageSize = 25): Route =>
   () => ({ status: 200, body: { data, meta: { page, pageSize, total } } });
 const companyStatus =
   (environment: "TEST" | "PRODUCTION"): Route =>
@@ -68,7 +78,7 @@ function render(
   const calls = mockApi({
     "GET /api/v1/me": () => ({ status: 200, body: { data: me } }),
     "GET /api/v1/company/status": companyStatus("TEST"),
-    [COUNT]: paged([], 0),
+    [COUNT]: issued([], 0),
     ...routes,
   });
   const ui = (): ReactNode => (
@@ -81,10 +91,10 @@ function render(
 }
 
 const listCalls = (calls: { key: string }[]) =>
-  calls.filter((call) => call.key.startsWith("GET /api/v1/invoices?page="));
+  calls.filter((call) => call.key.startsWith("GET /api/v1/invoices/entries?page="));
 const countCalls = (calls: { key: string }[]) => calls.filter((call) => call.key === COUNT);
 const rowOf = async (number: string) => {
-  const table = await screen.findByRole("table", { name: "Facturas emitidas" });
+  const table = await screen.findByRole("table", { name: "Facturas y borradores" });
   await within(table).findAllByText(number);
   return within(table)
     .getAllByRole("row")
@@ -105,7 +115,7 @@ afterEach(() => {
 
 describe("encabezado de Facturas (D4)", () => {
   it("tiene un solo h1 y «Nueva factura» como única acción principal, hacia la pantalla existente", async () => {
-    render({ "GET /api/v1/invoices": paged([summary()]) });
+    render({ "GET /api/v1/invoices/entries": paged([summary()]) });
     await rowOf("001-001-000000001");
     expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual([
       "Facturas",
@@ -118,7 +128,7 @@ describe("encabezado de Facturas (D4)", () => {
 
   it("sin permiso para preparar borradores no ofrece «Nueva factura», tampoco en el vacío", async () => {
     permissions.deny.add("invoices.draft");
-    render({ "GET /api/v1/invoices": paged([]) });
+    render({ "GET /api/v1/invoices/entries": paged([]) });
     expect(await screen.findByText("Todavía no hay facturas")).toBeDefined();
     expect(screen.queryByRole("link", { name: "Nueva factura" })).toBeNull();
   });
@@ -127,8 +137,8 @@ describe("encabezado de Facturas (D4)", () => {
 describe("vistas, conteo y estado (D6 y D7)", () => {
   it("«Requiere atención» muestra el número de la empresa y elegirla cambia la vista", async () => {
     const { calls } = render({
-      "GET /api/v1/invoices": paged([summary()]),
-      [COUNT]: paged([summary({ state: "SEND_UNKNOWN" })], 3, 1, 1),
+      "GET /api/v1/invoices/entries": paged([summary()]),
+      [COUNT]: issued([summary({ state: "SEND_UNKNOWN" })], 3, 1, 1),
     });
     const user = userEvent.setup();
     const views = await screen.findByRole("combobox", { name: "Vista" });
@@ -142,8 +152,8 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
 
   it("el conteo no se repite al cambiar de página, filas, estado o búsqueda", async () => {
     const { calls, rerender } = render({
-      "GET /api/v1/invoices": paged([summary()], 60),
-      [COUNT]: paged([], 2, 1, 1),
+      "GET /api/v1/invoices/entries": paged([summary()], 60),
+      [COUNT]: issued([], 2, 1, 1),
     });
     await waitFor(() => expect(countCalls(calls)).toHaveLength(1));
     for (const search of ["pagina=2", "pagina=2&filas=50", "estado=devueltas", "q=perno"]) {
@@ -167,7 +177,7 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
       "no-autorizadas": "NOT_AUTHORIZED",
       revision: "MANUAL_REVIEW",
     } as const;
-    const { calls, rerender } = render({ "GET /api/v1/invoices": paged([summary()]) });
+    const { calls, rerender } = render({ "GET /api/v1/invoices/entries": paged([summary()]) });
     await rowOf("001-001-000000001");
     for (const [param, state] of Object.entries(expected)) {
       navigation.search = new URLSearchParams(`estado=${param}`);
@@ -188,13 +198,14 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
   });
 
   it("el filtro ofrece los ocho estados del glosario y escribe su valor en la URL", async () => {
-    render({ "GET /api/v1/invoices": paged([summary()]) });
+    render({ "GET /api/v1/invoices/entries": paged([summary()]) });
     await rowOf("001-001-000000001");
     const user = userEvent.setup();
     await user.click(screen.getByRole("combobox", { name: "Estado" }));
     const options = (await screen.findAllByRole("option")).map((option) => option.textContent);
     expect(options).toEqual([
       "Todos",
+      "Borradores",
       "Procesando",
       "Pendiente de envío",
       "Verificando con el SRI",
@@ -212,7 +223,7 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
 
   it("un enlace anterior con `estado=atencion` abre la vista «Requiere atención»", async () => {
     navigation.search = new URLSearchParams("estado=atencion");
-    const { calls } = render({ "GET /api/v1/invoices": paged([]) });
+    const { calls } = render({ "GET /api/v1/invoices/entries": paged([]) });
     await screen.findByText("No hay facturas con estos filtros");
     expect(listCalls(calls).every((call) => call.key.includes("attention=true"))).toBe(true);
     expect(listCalls(calls).some((call) => call.key.includes("state="))).toBe(false);
@@ -223,7 +234,9 @@ describe("vistas, conteo y estado (D6 y D7)", () => {
     // único es el del vacío por filtros, dentro de la tabla.
     const clear = screen.getAllByRole("button", { name: "Limpiar filtros" });
     expect(clear).toHaveLength(1);
-    expect(screen.getByRole("table", { name: "Facturas emitidas" }).contains(clear[0]!)).toBe(true);
+    expect(screen.getByRole("table", { name: "Facturas y borradores" }).contains(clear[0]!)).toBe(
+      true,
+    );
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/facturas?vista=atencion", {
         scroll: false,
@@ -243,7 +256,7 @@ function searchToApi(search: string): string {
 describe("búsqueda y estado en la URL (D8 y D9)", () => {
   it("declara lo que busca y consulta al servidor tras la espera, desde la primera página", async () => {
     navigation.search = new URLSearchParams("pagina=3");
-    render({ "GET /api/v1/invoices": paged([summary()], 80) });
+    render({ "GET /api/v1/invoices/entries": paged([summary()], 80) });
     const search = await screen.findByRole("searchbox", {
       name: "Buscar por número, comprador o identificación",
     });
@@ -261,10 +274,10 @@ describe("búsqueda y estado en la URL (D8 y D9)", () => {
     navigation.search = new URLSearchParams(
       "vista=atencion&estado=devueltas&q=perno&pagina=2&filas=50",
     );
-    const { calls } = render({ "GET /api/v1/invoices": paged([summary()], 60, 2, 50) });
+    const { calls } = render({ "GET /api/v1/invoices/entries": paged([summary()], 60, 2, 50) });
     await rowOf("001-001-000000001");
     expect(listCalls(calls)[0]!.key).toBe(
-      "GET /api/v1/invoices?page=2&pageSize=50&search=perno&state=RETURNED&attention=true",
+      "GET /api/v1/invoices/entries?page=2&pageSize=50&search=perno&state=RETURNED&attention=true",
     );
     expect(screen.getByRole("combobox", { name: "Vista" }).textContent).toContain(
       "Requiere atención",
@@ -275,16 +288,16 @@ describe("búsqueda y estado en la URL (D8 y D9)", () => {
   });
 
   it("los valores no válidos vuelven a los de por defecto", async () => {
-    navigation.search = new URLSearchParams("vista=otra&estado=borradores&filas=500&pagina=-2");
-    const { calls } = render({ "GET /api/v1/invoices": paged([summary()]) });
+    navigation.search = new URLSearchParams("vista=otra&estado=papelera&filas=500&pagina=-2");
+    const { calls } = render({ "GET /api/v1/invoices/entries": paged([summary()]) });
     await rowOf("001-001-000000001");
-    expect(listCalls(calls)[0]!.key).toBe("GET /api/v1/invoices?page=1&pageSize=25");
+    expect(listCalls(calls)[0]!.key).toBe("GET /api/v1/invoices/entries?page=1&pageSize=25");
     expect(screen.queryByRole("button", { name: "Limpiar filtros" })).toBeNull();
   });
 
   it("una página posterior a la última lleva a la última, sin vacío", async () => {
     navigation.search = new URLSearchParams("pagina=9");
-    render({ "GET /api/v1/invoices": paged([], 30, 9) });
+    render({ "GET /api/v1/invoices/entries": paged([], 30, 9) });
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/facturas?pagina=2", { scroll: false }),
     );
@@ -294,7 +307,7 @@ describe("búsqueda y estado en la URL (D8 y D9)", () => {
   });
 
   it("«Limpiar filtros» aparece solo con filtros y vuelve a todas las facturas", async () => {
-    const { rerender } = render({ "GET /api/v1/invoices": paged([summary()]) });
+    const { rerender } = render({ "GET /api/v1/invoices/entries": paged([summary()]) });
     await rowOf("001-001-000000001");
     expect(screen.queryByRole("button", { name: "Limpiar filtros" })).toBeNull();
     navigation.search = new URLSearchParams("q=perno&estado=firmadas");
@@ -312,16 +325,16 @@ describe("búsqueda y estado en la URL (D8 y D9)", () => {
   it("la paginación usa la base compartida y no aparece mientras carga", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
-    render({ "GET /api/v1/invoices": paged([summary()], 30) });
+    render({ "GET /api/v1/invoices/entries": paged([summary()], 30) });
     const fetch = globalThis.fetch;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string, init?: RequestInit) => {
-        if (input.startsWith("/api/v1/invoices?page=")) await gate;
+        if (input.startsWith("/api/v1/invoices/entries?page=")) await gate;
         return fetch(input, init);
       }),
     );
-    await screen.findByRole("table", { name: "Facturas emitidas" });
+    await screen.findByRole("table", { name: "Facturas y borradores" });
     expect(screen.queryByText(/Mostrando/)).toBeNull();
     expect(screen.queryByText(/0-0/)).toBeNull();
     release();
@@ -333,7 +346,7 @@ describe("búsqueda y estado en la URL (D8 y D9)", () => {
 
 describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
   it("cada fila tiene el número enlazado, la fecha, el estado, el comprador y el total, sin orden falso", async () => {
-    render({ "GET /api/v1/invoices": paged([summary()]) });
+    render({ "GET /api/v1/invoices/entries": paged([summary()]) });
     const row = await rowOf("001-001-000000001");
     expect(within(row).getByRole("link", { name: "001-001-000000001" }).getAttribute("href")).toBe(
       "/facturas/inv-1",
@@ -361,7 +374,7 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
   });
 
   it("el clic en una zona no interactiva abre la factura; el menú y la selección no", async () => {
-    render({ "GET /api/v1/invoices": paged([summary()]) });
+    render({ "GET /api/v1/invoices/entries": paged([summary()]) });
     const row = await rowOf("001-001-000000001");
     fireEvent.click(within(row).getByText("0992877878001"));
     expect(navigation.push).toHaveBeenCalledWith("/facturas/inv-1");
@@ -374,7 +387,7 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
   it("el menú de la fila tiene solo «Ver factura» y «Copiar número», y copia el número visible", async () => {
     // `userEvent.setup()` pone un portapapeles de prueba en `navigator.clipboard`.
     const user = userEvent.setup();
-    render({ "GET /api/v1/invoices": paged([summary({ state: "AUTHORIZED" })]) });
+    render({ "GET /api/v1/invoices/entries": paged([summary({ state: "AUTHORIZED" })]) });
     const row = await rowOf("001-001-000000001");
     await user.click(
       within(row).getAllByRole("button", { name: "Acciones de la factura 001-001-000000001" })[0]!,
@@ -398,7 +411,7 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
 
   it("marca las facturas que requieren atención con un nombre accesible", async () => {
     render({
-      "GET /api/v1/invoices": paged([
+      "GET /api/v1/invoices/entries": paged([
         summary({ id: "a", documentNumber: "001-001-000000010", state: "SEND_UNKNOWN" }),
         summary({ id: "b", documentNumber: "001-001-000000011", state: "MANUAL_REVIEW" }),
         summary({ id: "c", documentNumber: "001-001-000000012", transmissionStopped: true }),
@@ -420,7 +433,7 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
 
   it("la lista no pide nada por fila: solo la lista, el conteo y el contexto de la empresa", async () => {
     const { calls } = render({
-      "GET /api/v1/invoices": paged([
+      "GET /api/v1/invoices/entries": paged([
         summary({ id: "a", documentNumber: "001-001-000000040" }),
         summary({ id: "b", documentNumber: "001-001-000000041", state: "AUTHORIZED" }),
         summary({ id: "c", documentNumber: "001-001-000000042", state: "SEND_UNKNOWN" }),
@@ -431,6 +444,7 @@ describe("columnas, marcas y apertura (D10, D11 y D13)", () => {
     expect([...keys].sort()).toEqual([
       "GET /api/v1/company/status",
       "GET /api/v1/invoices",
+      "GET /api/v1/invoices/entries",
       "GET /api/v1/me",
     ]);
     expect(listCalls(calls)).toHaveLength(1);
@@ -460,7 +474,7 @@ describe("ambiente de cada factura (PO-4, tarea 11.1)", () => {
   async function renderUnknown() {
     const { calls } = render({
       "GET /api/v1/company/status": UNKNOWN,
-      "GET /api/v1/invoices": ROWS,
+      "GET /api/v1/invoices/entries": ROWS,
     });
     await waitFor(() =>
       expect(calls.some((call) => call.key === "GET /api/v1/company/status")).toBe(true),
@@ -487,7 +501,7 @@ describe("ambiente de cada factura (PO-4, tarea 11.1)", () => {
   it("empresa en Producción + factura de Pruebas: «Pruebas» con «sin validez tributaria»", async () => {
     render({
       "GET /api/v1/company/status": companyStatus("PRODUCTION"),
-      "GET /api/v1/invoices": ROWS,
+      "GET /api/v1/invoices/entries": ROWS,
     });
     const production = await rowOf(PRODUCTION_ROW);
     // Con el vigente confirmado, la fila de Producción deja de llevar marca: coincide.
@@ -498,7 +512,10 @@ describe("ambiente de cada factura (PO-4, tarea 11.1)", () => {
   });
 
   it("empresa en Pruebas + factura de Producción: «Producción» como contexto, sin el tono de éxito", async () => {
-    render({ "GET /api/v1/company/status": companyStatus("TEST"), "GET /api/v1/invoices": ROWS });
+    render({
+      "GET /api/v1/company/status": companyStatus("TEST"),
+      "GET /api/v1/invoices/entries": ROWS,
+    });
     const test = await rowOf(TEST_ROW);
     await waitFor(() => expect(within(test).queryByText("Pruebas")).toBeNull());
     const row = await rowOf(PRODUCTION_ROW);
@@ -510,12 +527,12 @@ describe("ambiente de cada factura (PO-4, tarea 11.1)", () => {
   it("mismo ambiente: ninguna marca redundante", async () => {
     render({
       "GET /api/v1/company/status": companyStatus("TEST"),
-      "GET /api/v1/invoices": paged([
+      "GET /api/v1/invoices/entries": paged([
         summary({ id: "a", documentNumber: "001-001-000000040" }),
         summary({ id: "b", documentNumber: "001-001-000000041", state: "AUTHORIZED" }),
       ]),
     });
-    const table = await screen.findByRole("table", { name: "Facturas emitidas" });
+    const table = await screen.findByRole("table", { name: "Facturas y borradores" });
     await within(table).findAllByText("001-001-000000041");
     await waitFor(() => expect(within(table).queryByText("Pruebas")).toBeNull());
     expect(within(table).queryByText("sin validez tributaria")).toBeNull();
@@ -525,7 +542,7 @@ describe("ambiente de cada factura (PO-4, tarea 11.1)", () => {
   it("el ambiente y el estado son independientes: «Autorizado» en Pruebas sigue sin validez", async () => {
     render({
       "GET /api/v1/company/status": companyStatus("PRODUCTION"),
-      "GET /api/v1/invoices": ROWS,
+      "GET /api/v1/invoices/entries": ROWS,
     });
     const production = await rowOf(PRODUCTION_ROW);
     await waitFor(() => expect(within(production).queryByText("Producción")).toBeNull());
@@ -543,14 +560,14 @@ describe("ambiente de cada factura (PO-4, tarea 11.1)", () => {
 
 describe("carga, vacío y error (D14)", () => {
   it("vacío inicial: explica qué aparece y ofrece «Nueva factura» en outline, sin paginación", async () => {
-    render({ "GET /api/v1/invoices": paged([]) });
+    render({ "GET /api/v1/invoices/entries": paged([]) });
     const title = await screen.findByRole("heading", { level: 2, name: "Todavía no hay facturas" });
     expect(
       screen.getByText("Aquí aparecen las facturas que emites. Empieza con un borrador."),
     ).toBeDefined();
     const creates = screen.getAllByRole("link", { name: "Nueva factura" });
     expect(creates).toHaveLength(2);
-    const table = screen.getByRole("table", { name: "Facturas emitidas" });
+    const table = screen.getByRole("table", { name: "Facturas y borradores" });
     expect(
       within(table).getByRole("link", { name: "Nueva factura" }).getAttribute("data-variant"),
     ).toBe("outline");
@@ -560,14 +577,14 @@ describe("carga, vacío y error (D14)", () => {
 
   it("vacío por filtros: nombra los filtros y ofrece limpiarlos, no crear", async () => {
     navigation.search = new URLSearchParams("q=zzz&estado=devueltas");
-    render({ "GET /api/v1/invoices": paged([]) });
+    render({ "GET /api/v1/invoices/entries": paged([]) });
     expect(
       await screen.findByRole("heading", { level: 2, name: "No hay facturas con estos filtros" }),
     ).toBeDefined();
     expect(
       screen.getByText("Ninguna factura está en «Devuelto» y coincide con «zzz»."),
     ).toBeDefined();
-    const table = screen.getByRole("table", { name: "Facturas emitidas" });
+    const table = screen.getByRole("table", { name: "Facturas y borradores" });
     expect(within(table).getByRole("button", { name: "Limpiar filtros" })).toBeDefined();
     expect(within(table).queryByRole("link", { name: "Nueva factura" })).toBeNull();
     expect(screen.queryByText(/Mostrando/)).toBeNull();
@@ -576,10 +593,16 @@ describe("carga, vacío y error (D14)", () => {
   it("error: mantiene el encabezado y las herramientas y ofrece reintentar", async () => {
     let fail = true;
     render({
-      "GET /api/v1/invoices": () =>
+      "GET /api/v1/invoices/entries": () =>
         fail
           ? { status: 500, body: errorBody("INTERNAL_ERROR", "Error") }
-          : { status: 200, body: { data: [summary()], meta: { page: 1, pageSize: 25, total: 1 } } },
+          : {
+              status: 200,
+              body: {
+                data: [{ kind: "DOCUMENT", document: summary() }],
+                meta: { page: 1, pageSize: 25, total: 1 },
+              },
+            },
     });
     const alert = await screen.findByRole("alert", undefined, { timeout: 5_000 });
     expect(alert.textContent).toContain("No pudimos cargar las facturas.");
@@ -593,10 +616,91 @@ describe("carga, vacío y error (D14)", () => {
 
   it("sin permiso en el servidor, el aviso va bajo el encabezado y sin acción principal", async () => {
     render({
-      "GET /api/v1/invoices": () => ({ status: 403, body: errorBody("FORBIDDEN", "No.") }),
+      "GET /api/v1/invoices/entries": () => ({ status: 403, body: errorBody("FORBIDDEN", "No.") }),
     });
     expect(await screen.findByText("No tienes acceso a Facturas")).toBeDefined();
     expect(screen.getByRole("heading", { level: 1, name: "Facturas" })).toBeDefined();
     expect(screen.queryByRole("link", { name: "Nueva factura" })).toBeNull();
+  });
+});
+
+describe("borradores en la lista (unify-drafts-into-document-lists, D5)", () => {
+  const draft = {
+    id: "d-1",
+    version: 3,
+    emissionPoint: { id: "p-1", establishmentCode: "001", code: "001", available: true },
+    buyer: {
+      id: "party-1",
+      identificationType: "04",
+      identification: "0992877878001",
+      legalName: "Ferretería El Perno",
+      status: "ACTIVE",
+      systemRecord: null,
+    },
+    lineCount: 2,
+    previewTotal: "28.75",
+    updatedAt: "2026-10-15T15:30:00.000Z",
+  };
+  const entries: Route = () => ({
+    status: 200,
+    body: {
+      data: [
+        { kind: "DRAFT", draft },
+        { kind: "DRAFT", draft: { ...draft, id: "d-2", buyer: null, previewTotal: null } },
+        { kind: "DOCUMENT", document: summary() },
+      ],
+      meta: { page: 1, pageSize: 25, total: 3 },
+    },
+  });
+
+  it("muestra los borradores primero, con su estado, su comprador y su total previo", async () => {
+    render({ "GET /api/v1/invoices/entries": entries });
+    const row = await rowOf("Ferretería El Perno");
+    expect(within(row).getByRole("link", { name: "Borrador" }).getAttribute("href")).toBe(
+      "/borradores/d-1",
+    );
+    expect(row.querySelector('[data-document-state="DRAFT"]')?.textContent).toBe("Borrador");
+    expect(within(row).getByText("$28,75")).toBeDefined();
+    const incomplete = await rowOf("Sin comprador");
+    expect(within(incomplete).getByText("Incompleto")).toBeDefined();
+    const rows = within(screen.getByRole("table", { name: "Facturas y borradores" }))
+      .getAllByRole("row")
+      .slice(1);
+    expect(rows.map((item) => item.textContent?.includes("Borrador"))).toEqual([true, true, false]);
+  });
+
+  it("abrir la fila de un borrador abre su editor", async () => {
+    render({ "GET /api/v1/invoices/entries": entries });
+    const row = await rowOf("Ferretería El Perno");
+    fireEvent.click(within(row).getByText("$28,75"));
+    expect(navigation.push).toHaveBeenCalledWith("/borradores/d-1");
+  });
+
+  it("«Borradores» en el filtro pide DRAFT y vive en la dirección", async () => {
+    navigation.search = new URLSearchParams("estado=borradores");
+    const { calls } = render({ "GET /api/v1/invoices/entries": entries });
+    await rowOf("Ferretería El Perno");
+    expect(listCalls(calls)[0]!.key).toContain("state=DRAFT");
+    expect(screen.getByRole("combobox", { name: "Estado" }).textContent).toContain("Borradores");
+  });
+
+  it("elimina un borrador desde su fila, después de confirmar", async () => {
+    const { calls } = render({
+      "GET /api/v1/invoices/entries": entries,
+      "DELETE /api/v1/invoices/drafts/d-1": () => ({ status: 204 }),
+    });
+    const user = userEvent.setup();
+    await rowOf("Ferretería El Perno");
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "Acciones del borrador de Ferretería El Perno · 0992877878001",
+      })[0]!,
+    );
+    await user.click(await screen.findByRole("menuitem", { name: "Eliminar borrador" }));
+    const dialog = await screen.findByRole("dialog", { name: "Eliminar borrador" });
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar borrador" }));
+    await waitFor(() =>
+      expect(calls.some((call) => call.key === "DELETE /api/v1/invoices/drafts/d-1")).toBe(true),
+    );
   });
 });

@@ -17,6 +17,13 @@ export default function nextConfig(phase: string): NextConfig {
       // 2026-10-16): la dirección de la antigua pestaña lleva allí.
       return [
         {
+          // Los borradores de factura viven en Facturas, con el filtro «Borradores»
+          // (unify-drafts-into-document-lists, design D6). Los editores no cambian de dirección.
+          source: "/borradores",
+          destination: "/facturas?estado=borradores",
+          permanent: false,
+        },
+        {
           source: "/configuracion/secuenciales",
           destination: "/configuracion/establecimientos",
           permanent: false,

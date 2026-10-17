@@ -1,17 +1,16 @@
-// Borradores y editor de factura (add-invoice-emission, tarea 10.2, design D15): carga, vacío,
-// error, sin permiso, alta con los selectores, conflicto de versión y emisión con su confirmación,
-// la Idempotency-Key estable de la misma solicitud y el error señalado en su línea.
+// Editor de factura (add-invoice-emission, tarea 10.2, design D15): alta con los selectores,
+// conflicto de versión y emisión con su confirmación, la Idempotency-Key estable de la misma
+// solicitud y el error señalado en su línea. La lista de borradores vive ahora en Facturas
+// (unify-drafts-into-document-lists, design D5), con sus pruebas en invoices-list.test.tsx.
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DraftEditorScreen } from "@/features/invoices/draft-editor";
-import { DraftsScreen } from "@/features/invoices/drafts-screen";
 import { OPERATOR_ME, errorBody, navigation } from "./harness";
 
 import {
   CONSUMER_FINAL,
   CUSTOMER,
-  POINT,
   PRODUCT,
   draft,
   invoice,
@@ -37,102 +36,6 @@ async function emitButton() {
   await waitFor(() => expect(emit).toHaveProperty("disabled", false));
   return emit;
 }
-
-describe("pantalla Borradores", () => {
-  it("lista comprador, punto, total previo y actualización, con Nueva factura", async () => {
-    render(<DraftsScreen />, {
-      "GET /api/v1/invoices/drafts": paged([
-        {
-          id: "draft-1",
-          version: 2,
-          emissionPoint: POINT,
-          buyer: draft().buyer,
-          lineCount: 1,
-          previewTotal: "28.75",
-          updatedAt: "2026-10-03T15:00:00.000Z",
-        },
-        {
-          id: "draft-2",
-          version: 1,
-          emissionPoint: null,
-          buyer: null,
-          lineCount: 0,
-          previewTotal: null,
-          updatedAt: "2026-10-03T14:00:00.000Z",
-        },
-      ]),
-    });
-    const table = await screen.findByRole("table", { name: "Borradores de factura pendientes" });
-    await within(table).findByText("Sin comprador");
-    const rows = within(table).getAllByRole("row");
-    const first = rows.find((row) => within(row).queryByText(/EL PERNO/))!;
-    expect(within(first).getByText("$28,75")).toBeDefined();
-    expect(within(first).getByText("001-001")).toBeDefined();
-    expect(within(table).getByText("Sin comprador")).toBeDefined();
-    expect(within(table).getByText("Incompleto")).toBeDefined();
-    expect(screen.getByRole("link", { name: "Nueva factura" }).getAttribute("href")).toBe(
-      "/borradores/nuevo",
-    );
-  });
-
-  it("muestra el vacío, el error con reintento y la falta de permiso", async () => {
-    let fail = true;
-    render(<DraftsScreen />, {
-      "GET /api/v1/invoices/drafts": () =>
-        fail
-          ? { status: 500, body: errorBody("INTERNAL_ERROR", "Error") }
-          : { status: 200, body: { data: [], meta: { page: 1, pageSize: 25, total: 0 } } },
-    });
-    expect(
-      (
-        await screen.findAllByText("No pudimos cargar los borradores.", undefined, {
-          timeout: 5_000,
-        })
-      ).length,
-    ).toBeGreaterThan(0);
-    fail = false;
-    await userEvent.setup().click(screen.getAllByRole("button", { name: "Intentar de nuevo" })[0]!);
-    expect((await screen.findAllByText("No tienes borradores pendientes")).length).toBeGreaterThan(
-      0,
-    );
-  }, 10_000);
-
-  it("sin permiso en el servidor, muestra el aviso de acceso", async () => {
-    render(<DraftsScreen />, {
-      "GET /api/v1/invoices/drafts": () => ({
-        status: 403,
-        body: errorBody("FORBIDDEN", "No tienes permiso."),
-      }),
-    });
-    // El destino se llama «Borradores de facturas» (design D25); el aviso usa el mismo nombre.
-    expect(await screen.findByText("No tienes acceso a Borradores de facturas")).toBeDefined();
-  });
-
-  it("elimina un borrador con una confirmación", async () => {
-    const calls = render(<DraftsScreen />, {
-      "GET /api/v1/invoices/drafts": paged([
-        {
-          id: "draft-1",
-          version: 1,
-          emissionPoint: POINT,
-          buyer: draft().buyer,
-          lineCount: 1,
-          previewTotal: "28.75",
-          updatedAt: "2026-10-03T15:00:00.000Z",
-        },
-      ]),
-      "DELETE /api/v1/invoices/drafts/draft-1": () => ({ status: 204 }),
-    });
-    const user = userEvent.setup();
-    await user.click(
-      (await screen.findAllByRole("button", { name: /Eliminar el borrador de EL PERNO/ }))[0]!,
-    );
-    const dialog = await screen.findByRole("dialog", { name: "Eliminar borrador" });
-    await user.click(within(dialog).getByRole("button", { name: "Eliminar borrador" }));
-    expect(await screen.findByText("Eliminaste el borrador.")).toBeDefined();
-    expect(calls.some((call) => call.key === "DELETE /api/v1/invoices/drafts/draft-1")).toBe(true);
-  });
-});
 
 describe("editor de factura", () => {
   it("prepara una factura nueva con los selectores y la guarda con importes como texto", async () => {

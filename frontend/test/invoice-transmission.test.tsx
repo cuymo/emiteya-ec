@@ -78,7 +78,13 @@ const detail = (state: string, transmission: Record<string, unknown> = {}) => ({
 });
 const paged =
   (data: unknown[]): Route =>
-  () => ({ status: 200, body: { data, meta: { page: 1, pageSize: 25, total: data.length } } });
+  () => ({
+    status: 200,
+    body: {
+      data: data.map((document) => ({ kind: "DOCUMENT", document })),
+      meta: { page: 1, pageSize: 25, total: data.length },
+    },
+  });
 const ok =
   (data: unknown): Route =>
   () => ({ status: 200, body: { data } });
@@ -121,14 +127,14 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
       ["MANUAL_REVIEW", "Requiere revisión"],
     ] as const;
     render(<InvoicesScreen />, {
-      "GET /api/v1/invoices": paged([
+      "GET /api/v1/invoices/entries": paged([
         ...states.map(([state], index) =>
           summary({ id: `inv-${index}`, documentNumber: `001-001-00000000${index}`, state }),
         ),
         summary({ id: "inv-9", documentNumber: "001-001-000000009", transmissionStopped: true }),
       ]),
     });
-    const table = await screen.findByRole("table", { name: "Facturas emitidas" });
+    const table = await screen.findByRole("table", { name: "Facturas y borradores" });
     await within(table).findByText("001-001-000000009");
     for (const [index, [, label]] of states.entries()) {
       const row = within(table)
@@ -151,18 +157,18 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
   it("muestra la carga mientras llegan las facturas", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
-    render(<InvoicesScreen />, { "GET /api/v1/invoices": paged([summary()]) });
+    render(<InvoicesScreen />, { "GET /api/v1/invoices/entries": paged([summary()]) });
     const fetch = globalThis.fetch;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string, init?: RequestInit) => {
-        if (input.startsWith("/api/v1/invoices")) await gate;
+        if (input.startsWith("/api/v1/invoices/entries")) await gate;
         return fetch(input, init);
       }),
     );
     await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).not.toBeNull());
     release();
-    expect(await screen.findByRole("table", { name: "Facturas emitidas" })).toBeDefined();
+    expect(await screen.findByRole("table", { name: "Facturas y borradores" })).toBeDefined();
   });
 
   it('"Requiere atención" y los estados del SRI se filtran desde la URL', async () => {
@@ -170,9 +176,11 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
     // hoy desplegables;
     // `estado=atencion` sigue abriendo la vista y se reescribe como `vista=atencion`.
     navigation.search = new URLSearchParams("estado=atencion");
-    const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices": paged([]) });
+    const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices/entries": paged([]) });
     await screen.findAllByText("No hay facturas con estos filtros");
-    const listCall = calls.find((call) => call.key.startsWith("GET /api/v1/invoices?page="))!;
+    const listCall = calls.find((call) =>
+      call.key.startsWith("GET /api/v1/invoices/entries?page="),
+    )!;
     expect(listCall.key).toContain("attention=true");
     expect(listCall.key).not.toContain("state=");
     expect(screen.getByRole("combobox", { name: "Vista" }).textContent).toContain(
@@ -195,7 +203,7 @@ describe("Facturas con los estados de la transmisión (tarea 13.1)", () => {
       ["no-autorizadas", "NOT_AUTHORIZED"],
     ] as const) {
       navigation.search = new URLSearchParams(`estado=${param}`);
-      const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices": paged([]) });
+      const calls = render(<InvoicesScreen />, { "GET /api/v1/invoices/entries": paged([]) });
       await screen.findAllByText("No hay facturas con estos filtros");
       expect(calls.some((call) => call.key.includes(`state=${state}`))).toBe(true);
       vi.unstubAllGlobals();

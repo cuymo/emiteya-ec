@@ -28,10 +28,10 @@
 
 ## 3. Frontend
 
-- [ ] 3.1 Hacer que las seis listas consuman `entries`: estado «Borrador» y opción «Borradores» en
+- [x] 3.1 Hacer que las seis listas consuman `entries`: estado «Borrador» y opción «Borradores» en
   el filtro, fila de borrador según D5 con apertura y eliminación, sin el panel «Borradores en
   curso». Actualizar sus pruebas.
-- [ ] 3.2 Retirar «Borradores de facturas» de la navegación y su pantalla. Redirigir `/borradores`
+- [x] 3.2 Retirar «Borradores de facturas» de la navegación y su pantalla. Redirigir `/borradores`
   a `/facturas?estado=borradores`, mover las palabras clave a Facturas y enlazar ahí el indicador
   del tablero. Actualizar sus pruebas.
 

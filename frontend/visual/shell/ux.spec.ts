@@ -240,9 +240,12 @@ test.describe("ambiente siempre visible en un teléfono (D27)", () => {
           persona: "operator",
           environment,
           overrides: {
-            "GET /api/v1/invoices": {
+            "GET /api/v1/invoices/entries": {
               status: 200,
-              body: { data: many, meta: { page: 1, pageSize: 25, total: many.length } },
+              body: {
+                data: many.map((document) => ({ kind: "DOCUMENT", document })),
+                meta: { page: 1, pageSize: 25, total: many.length },
+              },
             },
           },
         },
@@ -297,7 +300,7 @@ test.describe("paleta veraz sobre su alcance (D26)", () => {
       ["contraseña", "Mi cuenta"],
       ["numeración", "Establecimientos"],
       ["documentos", "Archivo de comprobantes"],
-      ["factura pendiente", "Borradores de facturas"],
+      ["factura pendiente", "Facturas"],
     ] as const) {
       await input.fill(query);
       await expect(dialog.getByRole("option", { name: new RegExp(`^${label}`) })).toBeVisible();
@@ -315,24 +318,16 @@ test.describe("paleta veraz sobre su alcance (D26)", () => {
   });
 });
 
-test.describe("ventas, borradores y archivo (D25)", () => {
-  test("Borradores de facturas va en Ventas y Archivo de comprobantes en Documentos", async ({
+test.describe("ventas, borradores y archivo (D25; unify-drafts-into-document-lists, D6)", () => {
+  test("Ventas no tiene un destino de borradores y Archivo de comprobantes va en Documentos", async ({
     browser,
   }) => {
     const page = await open(browser, "/facturas", { width: 1440, height: 900 });
     const labels = await nav(page)
       .locator('a[data-sidebar="menu-button"]')
       .evaluateAll((links) => links.map((link) => link.textContent!.trim()));
-    expect(labels.slice(1, 5)).toEqual([
-      "Facturas",
-      "Borradores de facturas",
-      "Notas de crédito",
-      "Notas de débito",
-    ]);
-    await expect(nav(page).getByRole("link", { name: "Borradores de facturas" })).toHaveAttribute(
-      "href",
-      "/borradores",
-    );
+    expect(labels.slice(1, 4)).toEqual(["Facturas", "Notas de crédito", "Notas de débito"]);
+    await expect(nav(page).getByRole("link", { name: /Borradores/ })).toHaveCount(0);
     await expect(nav(page).getByRole("link", { name: "Archivo de comprobantes" })).toHaveAttribute(
       "href",
       "/comprobantes",

@@ -80,9 +80,8 @@ describe("shell autenticado: comportamiento conservado", () => {
     const destinations: Record<string, string> = {
       Inicio: "/",
       Facturas: "/facturas",
-      // Corrección del control de calidad UX (design D25): Borradores pasa a Ventas como
-      // «Borradores de facturas» y Comprobantes se llama «Archivo de comprobantes».
-      "Borradores de facturas": "/borradores",
+      // Comprobantes se llama «Archivo de comprobantes» (design D25). Los borradores de factura
+      // van en la lista de Facturas (unify-drafts-into-document-lists, design D6).
       "Notas de crédito": "/notas-credito",
       "Notas de débito": "/notas-debito",
       "Liquidaciones de compra": "/liquidaciones-compra",

@@ -41,9 +41,9 @@ const labels = (can: ReturnType<typeof permissionsOf>) =>
   ]);
 
 describe("modelo de rutas", () => {
-  it("cada una de las 41 páginas autenticadas encaja con un destino o una pantalla interna", () => {
-    // Las 42 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
-    expect(AUTHENTICATED).toHaveLength(41);
+  it("cada una de las 40 páginas autenticadas encaja con un destino o una pantalla interna", () => {
+    // Las 41 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
+    expect(AUTHENTICATED).toHaveLength(40);
     expect(pageUrls(join(APP, "(auth)"))).toEqual(["/iniciar-sesion"]);
     for (const url of AUTHENTICATED) {
       expect(resolveRoute(url), url).not.toBeNull();
@@ -55,7 +55,7 @@ describe("modelo de rutas", () => {
       ["Inicio", ["Inicio"]],
       // Corrección del control de calidad UX (design D25): Borradores pasa a Ventas como «Borradores
       // de facturas» y Comprobantes se llama «Archivo de comprobantes»; las rutas no cambian.
-      ["Ventas", ["Facturas", "Borradores de facturas", "Notas de crédito", "Notas de débito"]],
+      ["Ventas", ["Facturas", "Notas de crédito", "Notas de débito"]],
       ["Compras", ["Liquidaciones de compra", "Retenciones"]],
       ["Logística", ["Guías de remisión", "Inventario"]],
       ["Documentos", ["Archivo de comprobantes"]],
@@ -98,7 +98,6 @@ describe("modelo de rutas", () => {
     expect(destination("/borradores/nuevo")).toBe("Facturas");
     expect(destination("/borradores/d-1")).toBe("Facturas");
     expect(resolveRoute("/borradores/nuevo")?.group?.label).toBe("Ventas");
-    expect(resolveRoute("/borradores")?.destination.href).toBe("/borradores");
     expect(resolveRoute("/comprobantes")?.destination.label).toBe("Archivo de comprobantes");
     expect(destination("/inventario/p1")).toBe("Inventario");
     expect(destination("/")).toBe("Inicio");

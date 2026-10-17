@@ -35,6 +35,19 @@ const ok =
 const paged =
   (data: unknown[]): Route =>
   () => ({ status: 200, body: { data, meta: { page: 1, pageSize: 25, total: data.length } } });
+/** La lista unificada: los borradores primero y después las notas emitidas. */
+const entries =
+  (documents: unknown[], drafts: unknown[] = []): Route =>
+  () => ({
+    status: 200,
+    body: {
+      data: [
+        ...drafts.map((draft) => ({ kind: "DRAFT", draft })),
+        ...documents.map((document) => ({ kind: "DOCUMENT", document })),
+      ],
+      meta: { page: 1, pageSize: 25, total: drafts.length + documents.length },
+    },
+  });
 
 function render(
   ui: ReactNode,
@@ -64,7 +77,7 @@ afterEach(() => {
 describe("pantalla Notas de crédito", () => {
   it("lista número, factura, causa, comprador, valor y estado, con enlace al detalle", async () => {
     render(<CreditNotesScreen />, {
-      "GET /api/v1/credit-notes": paged([
+      "GET /api/v1/credit-notes/entries": entries([
         creditNoteSummary(),
         creditNoteSummary({
           id: "nc-2",
@@ -75,7 +88,7 @@ describe("pantalla Notas de crédito", () => {
         }),
       ]),
     });
-    const table = await screen.findByRole("table", { name: "Notas de crédito emitidas" });
+    const table = await screen.findByRole("table", { name: "Notas de crédito y borradores" });
     const row = (number: string) =>
       within(table)
         .getAllByRole("row")
@@ -98,25 +111,29 @@ describe("pantalla Notas de crédito", () => {
   it("muestra la carga mientras llegan las notas", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
-    render(<CreditNotesScreen />, { "GET /api/v1/credit-notes": paged([creditNoteSummary()]) });
+    render(<CreditNotesScreen />, {
+      "GET /api/v1/credit-notes/entries": entries([creditNoteSummary()]),
+    });
     const fetch = globalThis.fetch;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string, init?: RequestInit) => {
-        if (input.startsWith("/api/v1/credit-notes?")) await gate;
+        if (input.startsWith("/api/v1/credit-notes/entries?")) await gate;
         return fetch(input, init);
       }),
     );
     await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).not.toBeNull());
     release();
-    expect(await screen.findByRole("table", { name: "Notas de crédito emitidas" })).toBeDefined();
+    expect(
+      await screen.findByRole("table", { name: "Notas de crédito y borradores" }),
+    ).toBeDefined();
   });
 
   it("vacía ofrece crear la primera; el error se reintenta", async () => {
     let fail = true;
     render(<CreditNotesScreen />, {
-      "GET /api/v1/credit-notes": () =>
-        fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : paged([])({}),
+      "GET /api/v1/credit-notes/entries": () =>
+        fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : entries([])({}),
     });
     expect(
       (
@@ -133,7 +150,7 @@ describe("pantalla Notas de crédito", () => {
   });
 
   it("vacía: la única principal está en el encabezado y el vacío la repite en outline (D11)", async () => {
-    render(<CreditNotesScreen />, { "GET /api/v1/credit-notes": paged([]) });
+    render(<CreditNotesScreen />, { "GET /api/v1/credit-notes/entries": entries([]) });
     await waitFor(() =>
       expect(screen.getAllByRole("link", { name: "Nueva nota de crédito" }).length).toBeGreaterThan(
         1,
@@ -150,16 +167,21 @@ describe("pantalla Notas de crédito", () => {
 
   it("sin permiso explica el acceso", async () => {
     render(<CreditNotesScreen />, {
-      "GET /api/v1/credit-notes": () => ({ status: 403, body: errorBody("FORBIDDEN", "x") }),
+      "GET /api/v1/credit-notes/entries": () => ({
+        status: 403,
+        body: errorBody("FORBIDDEN", "x"),
+      }),
     });
     expect(await screen.findByText("No tienes acceso a Notas de crédito")).toBeDefined();
   });
 
   it("la búsqueda, el estado y la causa viven en la URL y llegan a la API", async () => {
     navigation.search = new URLSearchParams("q=perno&estado=revision&causa=anulacion");
-    const calls = render(<CreditNotesScreen />, { "GET /api/v1/credit-notes": paged([]) });
+    const calls = render(<CreditNotesScreen />, {
+      "GET /api/v1/credit-notes/entries": entries([]),
+    });
     expect((await screen.findAllByText("No hay notas que coincidan")).length).toBeGreaterThan(0);
-    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/credit-notes?"))!;
+    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/credit-notes/entries?"))!;
     expect(Object.fromEntries(new URLSearchParams(call.key.split("?")[1]))).toMatchObject({
       search: "perno",
       state: "MANUAL_REVIEW",
@@ -179,35 +201,51 @@ describe("pantalla Notas de crédito", () => {
     expect(navigation.replace).toHaveBeenLastCalledWith("/notas-credito", { scroll: false });
   });
 
-  it("muestra los borradores en curso con su enlace y los elimina con confirmación", async () => {
+  it("muestra los borradores primero, con su estado, y los elimina desde su fila", async () => {
     let drafts = [creditNoteDraftSummary()];
     const calls = render(<CreditNotesScreen />, {
-      "GET /api/v1/credit-notes": paged([]),
-      "GET /api/v1/credit-notes/drafts": () => paged(drafts)({}),
+      "GET /api/v1/credit-notes/entries": () => entries([creditNoteSummary()], drafts)({}),
       "DELETE /api/v1/credit-notes/drafts/cnd-1": () => {
         drafts = [];
         return { status: 204 };
       },
     });
-    const panel = await screen.findByRole("region", { name: "Borradores en curso" });
-    expect(
-      within(panel).getByRole("link", { name: /Devolución de la factura 001-001-000000001/ }),
-    ).toHaveProperty("href", expect.stringContaining("/notas-credito/borradores/cnd-1"));
+    const table = await screen.findByRole("table", { name: "Notas de crédito y borradores" });
+    await within(table).findByRole("link", { name: "Borrador" });
+    const [, first, second] = within(table).getAllByRole("row");
+    expect(within(first!).getByRole("link", { name: "Borrador" })).toHaveProperty(
+      "href",
+      expect.stringContaining("/notas-credito/borradores/cnd-1"),
+    );
+    expect(first!.querySelector('[data-document-state="DRAFT"]')?.textContent).toBe("Borrador");
+    expect(second!.querySelector('[data-document-state="DRAFT"]')).toBeNull();
     const user = userEvent.setup();
     await user.click(
-      within(panel).getByRole("button", {
-        name: "Eliminar el borrador de la factura 001-001-000000001",
+      within(first!).getByRole("button", {
+        name: "Acciones del borrador de la factura 001-001-000000001",
       }),
     );
+    await user.click(await screen.findByRole("menuitem", { name: "Eliminar borrador" }));
     const dialog = await screen.findByRole("dialog", { name: "Eliminar borrador" });
-    await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar borrador" }));
     expect(await screen.findByText("Eliminaste el borrador.")).toBeDefined();
     expect(calls.some((call) => call.key === "DELETE /api/v1/credit-notes/drafts/cnd-1")).toBe(
       true,
     );
-    await waitFor(() =>
-      expect(screen.queryByRole("region", { name: "Borradores en curso" })).toBeNull(),
-    );
+    await waitFor(() => expect(within(table).queryByRole("link", { name: "Borrador" })).toBeNull());
+  });
+
+  it("«Borradores» en el filtro de estado pide DRAFT", async () => {
+    navigation.search = new URLSearchParams("estado=borradores");
+    const calls = render(<CreditNotesScreen />, {
+      "GET /api/v1/credit-notes/entries": entries([], [creditNoteDraftSummary()]),
+    });
+    await within(
+      await screen.findByRole("table", { name: "Notas de crédito y borradores" }),
+    ).findByRole("link", { name: "Borrador" });
+    expect(
+      calls.find((call) => call.key.startsWith("GET /api/v1/credit-notes/entries?"))!.key,
+    ).toContain("state=DRAFT");
   });
 });
 

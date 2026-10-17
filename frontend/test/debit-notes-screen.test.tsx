@@ -1,5 +1,5 @@
 // Notas de débito (add-debit-notes, tarea 11.1, design D23): carga, vacío, error con reintento, sin
-// permiso, filtros en la URL y los borradores en curso con su eliminación.
+// permiso, filtros en la URL y los borradores primero en la misma tabla, con su eliminación.
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +21,19 @@ import { chooseFilter } from "./filters";
 const paged =
   (data: unknown[]): Route =>
   () => ({ status: 200, body: { data, meta: { page: 1, pageSize: 25, total: data.length } } });
+/** La lista unificada: los borradores primero y después las notas emitidas. */
+const entries =
+  (documents: unknown[], drafts: unknown[] = []): Route =>
+  () => ({
+    status: 200,
+    body: {
+      data: [
+        ...drafts.map((draft) => ({ kind: "DRAFT", draft })),
+        ...documents.map((document) => ({ kind: "DOCUMENT", document })),
+      ],
+      meta: { page: 1, pageSize: 25, total: drafts.length + documents.length },
+    },
+  });
 
 function render(
   ui: ReactNode,
@@ -50,7 +63,7 @@ afterEach(() => {
 describe("pantalla Notas de débito", () => {
   it("lista número, factura, causas, comprador, valor y estado, con enlace al detalle", async () => {
     render(<DebitNotesScreen />, {
-      "GET /api/v1/debit-notes": paged([
+      "GET /api/v1/debit-notes/entries": entries([
         debitNoteSummary(),
         debitNoteSummary({
           id: "nd-2",
@@ -61,7 +74,7 @@ describe("pantalla Notas de débito", () => {
         }),
       ]),
     });
-    const table = await screen.findByRole("table", { name: "Notas de débito emitidas" });
+    const table = await screen.findByRole("table", { name: "Notas de débito y borradores" });
     const row = (number: string) =>
       within(table)
         .getAllByRole("row")
@@ -88,25 +101,29 @@ describe("pantalla Notas de débito", () => {
   it("muestra la carga mientras llegan las notas", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
-    render(<DebitNotesScreen />, { "GET /api/v1/debit-notes": paged([debitNoteSummary()]) });
+    render(<DebitNotesScreen />, {
+      "GET /api/v1/debit-notes/entries": entries([debitNoteSummary()]),
+    });
     const fetch = globalThis.fetch;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string, init?: RequestInit) => {
-        if (input.startsWith("/api/v1/debit-notes?")) await gate;
+        if (input.startsWith("/api/v1/debit-notes/entries?")) await gate;
         return fetch(input, init);
       }),
     );
     await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).not.toBeNull());
     release();
-    expect(await screen.findByRole("table", { name: "Notas de débito emitidas" })).toBeDefined();
+    expect(
+      await screen.findByRole("table", { name: "Notas de débito y borradores" }),
+    ).toBeDefined();
   });
 
   it("vacía ofrece crear la primera; el error se reintenta", async () => {
     let fail = true;
     render(<DebitNotesScreen />, {
-      "GET /api/v1/debit-notes": () =>
-        fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : paged([])({}),
+      "GET /api/v1/debit-notes/entries": () =>
+        fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : entries([])({}),
     });
     expect(
       (
@@ -123,7 +140,7 @@ describe("pantalla Notas de débito", () => {
   });
 
   it("vacía: la única principal está en el encabezado y el vacío la repite en outline (D11)", async () => {
-    render(<DebitNotesScreen />, { "GET /api/v1/debit-notes": paged([]) });
+    render(<DebitNotesScreen />, { "GET /api/v1/debit-notes/entries": entries([]) });
     await waitFor(() =>
       expect(screen.getAllByRole("link", { name: "Nueva nota de débito" }).length).toBeGreaterThan(
         1,
@@ -140,16 +157,21 @@ describe("pantalla Notas de débito", () => {
 
   it("sin permiso explica el acceso", async () => {
     render(<DebitNotesScreen />, {
-      "GET /api/v1/debit-notes": () => ({ status: 403, body: errorBody("FORBIDDEN", "x") }),
+      "GET /api/v1/debit-notes/entries": () => ({
+        status: 403,
+        body: errorBody("FORBIDDEN", "x"),
+      }),
     });
     expect(await screen.findByText("No tienes acceso a Notas de débito")).toBeDefined();
   });
 
   it("la búsqueda, el estado y la causa viven en la URL y llegan a la API", async () => {
     navigation.search = new URLSearchParams("q=perno&estado=revision&causa=intereses");
-    const calls = render(<DebitNotesScreen />, { "GET /api/v1/debit-notes": paged([]) });
+    const calls = render(<DebitNotesScreen />, {
+      "GET /api/v1/debit-notes/entries": entries([]),
+    });
     expect((await screen.findAllByText("No hay notas que coincidan")).length).toBeGreaterThan(0);
-    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/debit-notes?"))!;
+    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/debit-notes/entries?"))!;
     expect(Object.fromEntries(new URLSearchParams(call.key.split("?")[1]))).toMatchObject({
       search: "perno",
       state: "MANUAL_REVIEW",
@@ -168,33 +190,48 @@ describe("pantalla Notas de débito", () => {
     expect(navigation.replace).toHaveBeenLastCalledWith("/notas-debito", { scroll: false });
   });
 
-  it("muestra los borradores en curso con su enlace y los elimina con confirmación", async () => {
+  it("muestra los borradores primero, con su estado, y los elimina desde su fila", async () => {
     let drafts = [debitNoteDraftSummary()];
     const calls = render(<DebitNotesScreen />, {
-      "GET /api/v1/debit-notes": paged([]),
-      "GET /api/v1/debit-notes/drafts": () => paged(drafts)({}),
+      "GET /api/v1/debit-notes/entries": () => entries([debitNoteSummary()], drafts)({}),
       "DELETE /api/v1/debit-notes/drafts/ndd-1": () => {
         drafts = [];
         return { status: 204 };
       },
     });
-    const panel = await screen.findByRole("region", { name: "Borradores en curso" });
-    expect(
-      within(panel).getByRole("link", { name: /Nota de débito de la factura 001-001-000000001/ }),
-    ).toHaveProperty("href", expect.stringContaining("/notas-debito/borradores/ndd-1"));
-    expect(within(panel).getByText(/2 conceptos/)).toBeDefined();
+    const table = await screen.findByRole("table", { name: "Notas de débito y borradores" });
+    await within(table).findByRole("link", { name: "Borrador" });
+    const [, first, second] = within(table).getAllByRole("row");
+    expect(within(first!).getByRole("link", { name: "Borrador" })).toHaveProperty(
+      "href",
+      expect.stringContaining("/notas-debito/borradores/ndd-1"),
+    );
+    expect(first!.querySelector('[data-document-state="DRAFT"]')?.textContent).toBe("Borrador");
+    expect(second!.querySelector('[data-document-state="DRAFT"]')).toBeNull();
     const user = userEvent.setup();
     await user.click(
-      within(panel).getByRole("button", {
-        name: "Eliminar el borrador de la factura 001-001-000000001",
+      within(first!).getByRole("button", {
+        name: "Acciones del borrador de la factura 001-001-000000001",
       }),
     );
+    await user.click(await screen.findByRole("menuitem", { name: "Eliminar borrador" }));
     const dialog = await screen.findByRole("dialog", { name: "Eliminar borrador" });
-    await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar borrador" }));
     expect(await screen.findByText("Eliminaste el borrador.")).toBeDefined();
     expect(calls.some((call) => call.key === "DELETE /api/v1/debit-notes/drafts/ndd-1")).toBe(true);
-    await waitFor(() =>
-      expect(screen.queryByRole("region", { name: "Borradores en curso" })).toBeNull(),
-    );
+    await waitFor(() => expect(within(table).queryByRole("link", { name: "Borrador" })).toBeNull());
+  });
+
+  it("«Borradores» en el filtro de estado pide DRAFT", async () => {
+    navigation.search = new URLSearchParams("estado=borradores");
+    const calls = render(<DebitNotesScreen />, {
+      "GET /api/v1/debit-notes/entries": entries([], [debitNoteDraftSummary()]),
+    });
+    await within(
+      await screen.findByRole("table", { name: "Notas de débito y borradores" }),
+    ).findByRole("link", { name: "Borrador" });
+    expect(
+      calls.find((call) => call.key.startsWith("GET /api/v1/debit-notes/entries?"))!.key,
+    ).toContain("state=DRAFT");
   });
 });

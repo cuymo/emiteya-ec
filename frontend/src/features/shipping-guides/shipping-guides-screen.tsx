@@ -2,44 +2,51 @@
 // encontrar una guía y su estado. Decisión: qué guía abrir. Información mínima: número,
 // destinatarios, transportista, fechas del transporte y estado. Acción principal: abrir la guía;
 // secundaria: "Nueva guía de remisión". P0: número y estado; P1: destinatarios ("N destinatarios" o
-// el nombre), transportista y fecha de inicio; P2: búsqueda y filtro de estado en la URL, fecha de
-// fin y los borradores en curso; P3 (identificadores): no se muestran.
+// el nombre), transportista y fecha de inicio; P2: búsqueda y filtro de estado en la URL y fecha de
+// fin; P3 (identificadores): no se muestran. Los borradores van en la misma tabla, primero, con su
+// estado «Borrador» filtrable (unify-drafts-into-document-lists, design D5).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import {
   PAGE_SIZE_DEFAULT,
   PAGE_SIZE_MAX,
-  type InvoiceState,
+  type EntryState,
   type ShippingGuideDraftSummaryView,
+  type ShippingGuideEntryView,
   type ShippingGuideSummaryView,
 } from "@facturador/contracts";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
-import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
+import { SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { MutedCell, RecordLink } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
-import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/documents/document-status-badge";
-import { detailCountLabel, recipientCountLabel } from "./shipping-guide-format";
+import { formatIssueDate } from "@/features/invoices/invoice-format";
+import { DraftStateBadge, StateCell } from "@/features/documents/document-status-badge";
 import {
-  useDeleteShippingGuideDraft,
-  useShippingGuideDrafts,
-  useShippingGuides,
-} from "./shipping-guides-api";
+  DRAFT_FILTER_LABEL,
+  DRAFT_STATE_PARAM,
+  DraftEditedAt,
+  DraftParty,
+  draftRowActions,
+} from "@/features/documents/draft-entries";
+import { detailCountLabel, recipientCountLabel } from "./shipping-guide-format";
+import { useDeleteShippingGuideDraft, useShippingGuideEntries } from "./shipping-guides-api";
 
 type StateFilter =
   | "todas"
+  | typeof DRAFT_STATE_PARAM
   | "autorizadas"
   | "pendientes-autorizacion"
   | "pendientes-envio"
@@ -48,8 +55,9 @@ type StateFilter =
   | "devueltas"
   | "no-autorizadas"
   | "procesando";
-const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: InvoiceState }[] = [
+const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: EntryState }[] = [
   { value: "todas", label: "Todas" },
+  { value: DRAFT_STATE_PARAM, label: DRAFT_FILTER_LABEL, state: "DRAFT" },
   { value: "autorizadas", label: "Autorizadas", state: "AUTHORIZED" },
   { value: "pendientes-autorizacion", label: "Pendientes de autorización", state: "RECEIVED" },
   { value: "pendientes-envio", label: "Pendientes de envío", state: "SIGNED" },
@@ -93,71 +101,18 @@ function useUrlState() {
 const recipientsText = (guide: ShippingGuideSummaryView) =>
   guide.recipients.name ?? recipientCountLabel(guide.recipients.count);
 
-/** Borradores en curso: se abren para seguir editándolos o se eliminan. */
-function DraftsPanel() {
-  const headingId = useId();
-  const drafts = useShippingGuideDrafts({ page: 1, pageSize: 10 }, true);
-  const [deleting, setDeleting] = useState<ShippingGuideDraftSummaryView | null>(null);
-  const remove = useDeleteShippingGuideDraft({ onSuccess: () => setDeleting(null) });
-  if (drafts.isPending || drafts.isError || drafts.data.data.length === 0) return null;
-  const { data, meta } = drafts.data;
-  const nameOf = (draft: ShippingGuideDraftSummaryView) =>
-    draft.carrierName ? `Guía con ${draft.carrierName}` : "Guía sin transportista";
-  return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-2">
-      <h2 id={headingId} className="text-lg font-semibold">
-        Borradores en curso
-      </h2>
-      <ul className="flex flex-col gap-1">
-        {data.map((draft) => (
-          <li
-            key={draft.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-          >
-            <span className="flex min-w-0 flex-col">
-              <RecordLink href={`/guias-remision/borradores/${draft.id}`} className="break-words">
-                {nameOf(draft)}
-              </RecordLink>
-              <span className="text-foreground-muted break-words">
-                {recipientCountLabel(draft.recipientCount)} · {detailCountLabel(draft.detailCount)}{" "}
-                ·{" "}
-                {draft.transportStart
-                  ? `Desde el ${formatIssueDate(draft.transportStart)}`
-                  : "Sin fecha de inicio"}{" "}
-                · {formatDateTime(draft.updatedAt)}
-              </span>
-            </span>
-            <RowActionButton
-              icon={Trash2}
-              label={`Eliminar el borrador: ${nameOf(draft)}`}
-              onClick={() => setDeleting(draft)}
-            />
-          </li>
-        ))}
-      </ul>
-      {meta.total > data.length && (
-        <p className="text-sm text-foreground-muted">
-          Se muestran los {data.length} borradores más recientes de {meta.total}.
-        </p>
-      )}
-      <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        title="Eliminar borrador"
-        description={
-          <p>
-            Se elimina el borrador {deleting ? `"${nameOf(deleting)}"` : ""}. No reserva nada: no
-            consume números.
-          </p>
-        }
-        confirmLabel="Eliminar"
-        tone="destructive"
-        pending={remove.isPending}
-        onConfirm={() => deleting && remove.mutate(deleting.id)}
-      />
-    </section>
-  );
-}
+/** Un borrador puede no tener destinatarios todavía. */
+const draftRecipientsText = (draft: ShippingGuideDraftSummaryView) =>
+  draft.recipientCount === 0 ? "Sin destinatarios" : recipientCountLabel(draft.recipientCount);
+
+/** "Guía con TRANSPORTES ANDINOS S.A." o "Guía sin transportista": un borrador no tiene número. */
+const draftName = (draft: ShippingGuideDraftSummaryView) =>
+  draft.carrierName ? `Guía con ${draft.carrierName}` : "Guía sin transportista";
+
+const draftHref = (draft: ShippingGuideDraftSummaryView) =>
+  `/guias-remision/borradores/${draft.id}`;
+const entryId = (entry: ShippingGuideEntryView) =>
+  entry.kind === "DRAFT" ? `borrador-${entry.draft.id}` : entry.document.id;
 
 export function ShippingGuidesScreen() {
   const { me } = useSession();
@@ -166,6 +121,8 @@ export function ShippingGuidesScreen() {
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
+  const [deleting, setDeleting] = useState<ShippingGuideDraftSummaryView | null>(null);
+  const remove = useDeleteShippingGuideDraft({ onSuccess: () => setDeleting(null) });
 
   useEffect(() => {
     if (searchDraft.trim() === url.search) return;
@@ -173,7 +130,7 @@ export function ShippingGuidesScreen() {
     return () => clearTimeout(timer);
   }, [searchDraft, url]);
 
-  const guides = useShippingGuides(
+  const guides = useShippingGuideEntries(
     {
       search: url.search,
       state: STATE_FILTERS.find((filter) => filter.value === url.filter)?.state,
@@ -185,52 +142,90 @@ export function ShippingGuidesScreen() {
   const forbidden = guides.error instanceof ApiError && guides.error.status === 403;
   const filtersActive = url.search !== "" || url.filter !== "todas";
 
-  const columns = useMemo<ColumnDef<ShippingGuideSummaryView, unknown>[]>(
+  const columns = useMemo<ColumnDef<ShippingGuideEntryView, unknown>[]>(
     () => [
       {
         id: "number",
         header: "Número",
-        cell: ({ row }) => (
-          <RecordLink href={`/guias-remision/${row.original.id}`}>
-            {row.original.documentNumber}
-          </RecordLink>
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <RecordLink href={draftHref(row.original.draft)}>Borrador</RecordLink>
+          ) : (
+            <RecordLink href={`/guias-remision/${row.original.document.id}`}>
+              {row.original.document.documentNumber}
+            </RecordLink>
+          ),
       },
       {
         id: "recipients",
         header: "Destinatarios",
-        cell: ({ row }) => (
-          <span className="font-medium break-words">{recipientsText(row.original)}</span>
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <MutedCell>{draftRecipientsText(row.original.draft)}</MutedCell>
+          ) : (
+            <span className="font-medium break-words">{recipientsText(row.original.document)}</span>
+          ),
       },
       {
         id: "carrier",
         header: "Transportista",
-        cell: ({ row }) => (
-          <MutedCell className="break-words">{row.original.carrierName}</MutedCell>
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            // Como en las guías emitidas, el transportista es contexto: atenuado.
+            <MutedCell className="break-words">
+              {row.original.draft.carrierName ?? "Sin transportista"}
+            </MutedCell>
+          ) : (
+            <MutedCell className="break-words">{row.original.document.carrierName}</MutedCell>
+          ),
       },
       {
         id: "transport",
         header: "Transporte",
-        cell: ({ row }) => (
-          <span className="flex flex-col text-foreground-muted tabular-nums">
-            <span>Inicio {formatIssueDate(row.original.transportStart)}</span>
-            <span className="text-xs text-foreground-muted">
-              Fin {formatIssueDate(row.original.transportEnd)}
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            // El borrador muestra su inicio, si ya lo tiene, y cuándo se editó por última vez.
+            <span className="flex flex-col text-foreground-muted tabular-nums">
+              {row.original.draft.transportStart && (
+                <span>Inicio {formatIssueDate(row.original.draft.transportStart)}</span>
+              )}
+              <DraftEditedAt updatedAt={row.original.draft.updatedAt} />
             </span>
-          </span>
-        ),
+          ) : (
+            <span className="flex flex-col text-foreground-muted tabular-nums">
+              <span>Inicio {formatIssueDate(row.original.document.transportStart)}</span>
+              <span className="text-xs text-foreground-muted">
+                Fin {formatIssueDate(row.original.document.transportEnd)}
+              </span>
+            </span>
+          ),
       },
       {
         id: "state",
         header: "Estado",
-        cell: ({ row }) => (
-          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftStateBadge />
+          ) : (
+            <StateCell
+              state={row.original.document.state}
+              stopped={row.original.document.transmissionStopped}
+            />
+          ),
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Acciones</span>,
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftActions
+              draft={row.original.draft}
+              onDelete={canDraft ? setDeleting : undefined}
+            />
+          ) : null,
       },
     ],
-    [],
+    [canDraft],
   );
 
   if (!allowed || forbidden) {
@@ -303,7 +298,6 @@ export function ShippingGuidesScreen() {
         />
       }
       actions={newGuide("primary", "sm")}
-      lead={canDraft ? <DraftsPanel /> : undefined}
       filters={
         <>
           <DataTableSelectFilter
@@ -316,10 +310,10 @@ export function ShippingGuidesScreen() {
       }
     >
       <AppDataTable
-        label="Guías de remisión emitidas"
+        label="Guías de remisión y borradores"
         columns={columns}
         data={guides.data?.data ?? []}
-        getRowId={(guide) => guide.id}
+        getRowId={entryId}
         total={guides.data?.meta.total ?? 0}
         page={url.page}
         pageSize={url.pageSize}
@@ -329,23 +323,85 @@ export function ShippingGuidesScreen() {
         loading={guides.isPending}
         refreshing={guides.isFetching}
         state={tableState}
-        renderCard={(guide) => (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <RecordLink href={`/guias-remision/${guide.id}`}>{guide.documentNumber}</RecordLink>
-              <span className="text-sm text-foreground-muted tabular-nums">
-                {formatIssueDate(guide.transportStart)}
+        renderCard={(entry) =>
+          entry.kind === "DRAFT" ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <RecordLink href={draftHref(entry.draft)}>Borrador</RecordLink>
+                <DraftEditedAt updatedAt={entry.draft.updatedAt} />
+              </div>
+              <span className="text-sm">
+                <DraftParty name={entry.draft.carrierName} missing="Sin transportista" />
+              </span>
+              <span className="text-sm text-foreground-muted break-words">
+                {draftRecipientsText(entry.draft)} · {detailCountLabel(entry.draft.detailCount)}
+                {entry.draft.transportStart &&
+                  ` · Inicio ${formatIssueDate(entry.draft.transportStart)}`}
+              </span>
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                <DraftStateBadge />
+                <DraftActions draft={entry.draft} onDelete={canDraft ? setDeleting : undefined} />
               </span>
             </div>
-            <span className="text-sm font-medium break-words">{recipientsText(guide)}</span>
-            <span className="text-sm text-foreground-muted break-words">
-              {guide.carrierName} · Fin {formatIssueDate(guide.transportEnd)}
-            </span>
-            <StateCell state={guide.state} stopped={guide.transmissionStopped} />
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <RecordLink href={`/guias-remision/${entry.document.id}`}>
+                  {entry.document.documentNumber}
+                </RecordLink>
+                <span className="text-sm text-foreground-muted tabular-nums">
+                  {formatIssueDate(entry.document.transportStart)}
+                </span>
+              </div>
+              <span className="text-sm font-medium break-words">
+                {recipientsText(entry.document)}
+              </span>
+              <span className="text-sm text-foreground-muted break-words">
+                {entry.document.carrierName} · Fin {formatIssueDate(entry.document.transportEnd)}
+              </span>
+              <StateCell
+                state={entry.document.state}
+                stopped={entry.document.transmissionStopped}
+              />
+            </div>
+          )
+        }
+      />
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Eliminar borrador"
+        description={
+          <p>
+            Se elimina el borrador {deleting ? `"${draftName(deleting)}"` : ""}. No reserva nada: no
+            consume números.
+          </p>
+        }
+        confirmLabel="Eliminar borrador"
+        tone="destructive"
+        pending={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
       />
     </DataTableCard>
+  );
+}
+
+/** «Continuar» y, con permiso, «Eliminar borrador» (design D5). */
+function DraftActions({
+  draft,
+  onDelete,
+}: {
+  draft: ShippingGuideDraftSummaryView;
+  onDelete: ((draft: ShippingGuideDraftSummaryView) => void) | undefined;
+}) {
+  return (
+    <RowActionsMenu
+      label={`Acciones del borrador: ${draftName(draft)}`}
+      actions={draftRowActions({
+        editHref: draftHref(draft),
+        onDelete: onDelete && (() => onDelete(draft)),
+      })}
+    />
   );
 }
 

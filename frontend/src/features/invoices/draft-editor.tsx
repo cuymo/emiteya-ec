@@ -1406,7 +1406,7 @@ export function DraftEditorScreen({ draftId }: { draftId: string | null }) {
             }
             action={
               <Button asChild variant="outline">
-                <Link href={emitted ? "/facturas" : "/borradores"}>
+                <Link href={emitted ? "/facturas" : "/facturas?estado=borradores"}>
                   {emitted ? "Ver facturas" : "Ver borradores"}
                 </Link>
               </Button>

@@ -4,15 +4,14 @@
 // elegibles para el selector. Toda mutación pasa por useMutationFeedback.
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   DEBIT_NOTE_ELIGIBILITY_DECLARATION,
   IDEMPOTENCY_KEY_HEADER,
   debitEligibleInvoiceViewSchema,
-  debitNoteDraftSummaryViewSchema,
   debitNoteDraftViewSchema,
+  debitNoteEntryViewSchema,
   debitNoteListMetaSchema,
-  debitNoteSummaryViewSchema,
   debitNoteViewSchema,
   type CreateDebitNoteDraftInput,
   type DebitEligibleInvoiceView,
@@ -20,6 +19,7 @@ import {
   type DebitNoteDeclarationStatement,
   type DebitNoteDraftView,
   type DebitNoteView,
+  type EntryState,
   type InvoiceState,
   type UpdateDebitNoteDraftInput,
 } from "@facturador/contracts";
@@ -27,9 +27,12 @@ import { z } from "zod";
 import type { EntityPage, EntityPickerQuery } from "@/components/entity-picker-dialog";
 import { useMutationFeedback, type SuccessFeedback } from "@/components/feedback";
 import { apiFetch, apiFetchPage } from "@/lib/api";
+import { useDocumentEntries } from "@/features/documents/use-document-entries";
 
 export const DEBIT_NOTES_KEY = ["debit-notes"] as const;
 export const DEBIT_NOTE_DRAFTS_KEY = ["debit-note-drafts"] as const;
+/** La lista unificada cuelga de las notas y se renueva también con cada cambio de un borrador. */
+export const DEBIT_NOTE_ENTRIES_KEY = [...DEBIT_NOTES_KEY, "entries"] as const;
 
 const draftPath = (id: string) => `/debit-notes/drafts/${encodeURIComponent(id)}`;
 const notePath = (id: string) => `/debit-notes/${encodeURIComponent(id)}`;
@@ -64,25 +67,23 @@ export type DebitNotesQuery = {
   pageSize: number;
 };
 
-export function useDebitNotes(query: DebitNotesQuery, enabled: boolean) {
-  return useQuery({
-    queryKey: [...DEBIT_NOTES_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => {
-      const params = new URLSearchParams({
-        page: String(query.page),
-        pageSize: String(query.pageSize),
-      });
-      if (query.search) params.set("search", query.search);
-      if (query.state) params.set("state", query.state);
-      if (query.cause) params.set("cause", query.cause);
-      return apiFetchPage(`/debit-notes?${params.toString()}`, {
-        schema: z.array(debitNoteSummaryViewSchema),
-        meta: debitNoteListMetaSchema,
-        signal,
-      });
+/** La lista de Notas de débito: borradores primero y después las notas emitidas (D1 y D5). */
+export function useDebitNoteEntries(
+  query: Omit<DebitNotesQuery, "state"> & { state: EntryState | undefined },
+  enabled: boolean,
+) {
+  return useDocumentEntries({
+    key: DEBIT_NOTE_ENTRIES_KEY,
+    path: "/debit-notes/entries",
+    params: {
+      page: query.page,
+      pageSize: query.pageSize,
+      search: query.search,
+      state: query.state,
+      cause: query.cause,
     },
+    entry: debitNoteEntryViewSchema,
+    enabled,
   });
 }
 
@@ -94,20 +95,6 @@ export function useDebitNote(id: string, enabled: boolean) {
     // Mientras el SRI procesa, el estado se actualiza solo.
     refetchInterval: (query) =>
       query.state.data?.transmission.inProgress ? TRANSMISSION_REFRESH_MS : false,
-  });
-}
-
-export function useDebitNoteDrafts(query: { page: number; pageSize: number }, enabled: boolean) {
-  return useQuery({
-    queryKey: [...DEBIT_NOTE_DRAFTS_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) =>
-      apiFetchPage(`/debit-notes/drafts?page=${query.page}&pageSize=${query.pageSize}`, {
-        schema: z.array(debitNoteDraftSummaryViewSchema),
-        meta: debitNoteListMetaSchema,
-        signal,
-      }),
   });
 }
 
@@ -141,7 +128,7 @@ export function useSaveDebitNoteDraft(options: {
             schema: debitNoteDraftViewSchema,
           }),
     success: () => options.success ?? "Guardaste el borrador.",
-    invalidate: [DEBIT_NOTE_DRAFTS_KEY],
+    invalidate: [DEBIT_NOTE_DRAFTS_KEY, DEBIT_NOTE_ENTRIES_KEY],
     errorMessages: DEBIT_NOTE_CONFLICT_MESSAGES,
     onSuccess: options.onSuccess,
     onError: options.onError,
@@ -152,7 +139,7 @@ export function useDeleteDebitNoteDraft(options: { onSuccess?: () => void } = {}
   return useMutationFeedback({
     mutationFn: (id: string) => apiFetch(draftPath(id), { method: "DELETE" }),
     success: () => "Eliminaste el borrador.",
-    invalidate: [DEBIT_NOTE_DRAFTS_KEY],
+    invalidate: [DEBIT_NOTE_DRAFTS_KEY, DEBIT_NOTE_ENTRIES_KEY],
     ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }

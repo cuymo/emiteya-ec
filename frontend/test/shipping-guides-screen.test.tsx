@@ -1,6 +1,7 @@
 // Guías de remisión (add-shipping-guides, tarea 12.1, design D25): lista con número, destinatarios
 // ("N destinatarios" o el nombre), transportista, fechas y estado; carga, vacío, error con reintento,
-// sin permiso, búsqueda y filtro de estado en la URL, y los borradores en curso con su eliminación.
+// sin permiso, búsqueda y filtro de estado en la URL, y los borradores primero en la misma tabla con
+// su estado «Borrador» y su eliminación (unify-drafts-into-document-lists, design D5).
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -22,6 +23,19 @@ import { chooseFilter } from "./filters";
 const paged =
   (data: unknown[]): Route =>
   () => ({ status: 200, body: { data, meta: { page: 1, pageSize: 25, total: data.length } } });
+/** La lista unificada: los borradores primero y después las guías emitidas. */
+const entries =
+  (documents: unknown[], drafts: unknown[] = []): Route =>
+  () => ({
+    status: 200,
+    body: {
+      data: [
+        ...drafts.map((draft) => ({ kind: "DRAFT", draft })),
+        ...documents.map((document) => ({ kind: "DOCUMENT", document })),
+      ],
+      meta: { page: 1, pageSize: 25, total: drafts.length + documents.length },
+    },
+  });
 
 function render(
   ui: ReactNode,
@@ -51,7 +65,7 @@ afterEach(() => {
 describe("pantalla Guías de remisión", () => {
   it("lista número, destinatarios, transportista, fechas y estado, con enlace al detalle", async () => {
     render(<ShippingGuidesScreen />, {
-      "GET /api/v1/shipping-guides": paged([
+      "GET /api/v1/shipping-guides/entries": entries([
         guideSummary(),
         guideSummary({
           id: "gr-2",
@@ -62,7 +76,7 @@ describe("pantalla Guías de remisión", () => {
         }),
       ]),
     });
-    const table = await screen.findByRole("table", { name: "Guías de remisión emitidas" });
+    const table = await screen.findByRole("table", { name: "Guías de remisión y borradores" });
     const row = (number: string) =>
       within(table)
         .getAllByRole("row")
@@ -88,26 +102,28 @@ describe("pantalla Guías de remisión", () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
     render(<ShippingGuidesScreen />, {
-      "GET /api/v1/shipping-guides": paged([guideSummary()]),
+      "GET /api/v1/shipping-guides/entries": entries([guideSummary()]),
     });
     const fetch = globalThis.fetch;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string, init?: RequestInit) => {
-        if (input.startsWith("/api/v1/shipping-guides?")) await gate;
+        if (input.startsWith("/api/v1/shipping-guides/entries?")) await gate;
         return fetch(input, init);
       }),
     );
     await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).not.toBeNull());
     release();
-    expect(await screen.findByRole("table", { name: "Guías de remisión emitidas" })).toBeDefined();
+    expect(
+      await screen.findByRole("table", { name: "Guías de remisión y borradores" }),
+    ).toBeDefined();
   });
 
   it("vacía ofrece crear la primera; el error se reintenta", async () => {
     let fail = true;
     render(<ShippingGuidesScreen />, {
-      "GET /api/v1/shipping-guides": () =>
-        fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : paged([])({}),
+      "GET /api/v1/shipping-guides/entries": () =>
+        fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : entries([])({}),
     });
     expect(
       (
@@ -124,7 +140,7 @@ describe("pantalla Guías de remisión", () => {
   });
 
   it("vacía: la única principal está en el encabezado y el vacío la repite en outline (D11)", async () => {
-    render(<ShippingGuidesScreen />, { "GET /api/v1/shipping-guides": paged([]) });
+    render(<ShippingGuidesScreen />, { "GET /api/v1/shipping-guides/entries": entries([]) });
     await waitFor(() =>
       expect(
         screen.getAllByRole("link", { name: "Nueva guía de remisión" }).length,
@@ -141,7 +157,7 @@ describe("pantalla Guías de remisión", () => {
 
   it("sin permiso explica el acceso", async () => {
     render(<ShippingGuidesScreen />, {
-      "GET /api/v1/shipping-guides": () => ({
+      "GET /api/v1/shipping-guides/entries": () => ({
         status: 403,
         body: errorBody("FORBIDDEN", "x"),
       }),
@@ -152,10 +168,12 @@ describe("pantalla Guías de remisión", () => {
   it("la búsqueda y el estado viven en la URL y llegan a la API", async () => {
     navigation.search = new URLSearchParams("q=1710034065&estado=revision");
     const calls = render(<ShippingGuidesScreen />, {
-      "GET /api/v1/shipping-guides": paged([]),
+      "GET /api/v1/shipping-guides/entries": entries([]),
     });
     expect((await screen.findAllByText("No hay guías que coincidan")).length).toBeGreaterThan(0);
-    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/shipping-guides?"))!;
+    const call = calls.find((entry) =>
+      entry.key.startsWith("GET /api/v1/shipping-guides/entries?"),
+    )!;
     expect(Object.fromEntries(new URLSearchParams(call.key.split("?")[1]))).toMatchObject({
       search: "1710034065",
       state: "MANUAL_REVIEW",
@@ -170,37 +188,68 @@ describe("pantalla Guías de remisión", () => {
     expect(navigation.replace).toHaveBeenLastCalledWith("/guias-remision", { scroll: false });
   });
 
-  it("muestra los borradores en curso con su enlace y los elimina con confirmación", async () => {
+  it("muestra los borradores primero, con su estado, y los elimina desde su fila", async () => {
     let drafts = [guideDraftSummary()];
     const calls = render(<ShippingGuidesScreen />, {
-      "GET /api/v1/shipping-guides": paged([]),
-      "GET /api/v1/shipping-guides/drafts": () => paged(drafts)({}),
+      "GET /api/v1/shipping-guides/entries": () => entries([guideSummary()], drafts)({}),
       "DELETE /api/v1/shipping-guides/drafts/grd-1": () => {
         drafts = [];
         return { status: 204 };
       },
     });
-    const panel = await screen.findByRole("region", { name: "Borradores en curso" });
-    expect(
-      within(panel).getByRole("link", { name: "Guía con TRANSPORTES ANDINOS S.A." }),
-    ).toHaveProperty("href", expect.stringContaining("/guias-remision/borradores/grd-1"));
-    expect(
-      within(panel).getByText(/2 destinatarios · 3 detalles · Desde el 06\/10\/2026/),
-    ).toBeDefined();
+    const table = await screen.findByRole("table", { name: "Guías de remisión y borradores" });
+    await within(table).findByRole("link", { name: "Borrador" });
+    const [, first, second] = within(table).getAllByRole("row");
+    expect(within(first!).getByRole("link", { name: "Borrador" })).toHaveProperty(
+      "href",
+      expect.stringContaining("/guias-remision/borradores/grd-1"),
+    );
+    expect(within(first!).getByText("2 destinatarios")).toBeDefined();
+    expect(within(first!).getByText("TRANSPORTES ANDINOS S.A.")).toBeDefined();
+    expect(within(first!).getByText("Inicio 06/10/2026")).toBeDefined();
+    expect(within(first!).getByText(/^Editado /)).toBeDefined();
+    expect(first!.querySelector('[data-document-state="DRAFT"]')?.textContent).toBe("Borrador");
+    expect(second!.querySelector('[data-document-state="DRAFT"]')).toBeNull();
     const user = userEvent.setup();
     await user.click(
-      within(panel).getByRole("button", {
-        name: "Eliminar el borrador: Guía con TRANSPORTES ANDINOS S.A.",
+      within(first!).getByRole("button", {
+        name: "Acciones del borrador: Guía con TRANSPORTES ANDINOS S.A.",
       }),
     );
+    await user.click(await screen.findByRole("menuitem", { name: "Eliminar borrador" }));
     const dialog = await screen.findByRole("dialog", { name: "Eliminar borrador" });
-    await user.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+    await user.click(within(dialog).getByRole("button", { name: "Eliminar borrador" }));
     expect(await screen.findByText("Eliminaste el borrador.")).toBeDefined();
     expect(calls.some((call) => call.key === "DELETE /api/v1/shipping-guides/drafts/grd-1")).toBe(
       true,
     );
-    await waitFor(() =>
-      expect(screen.queryByRole("region", { name: "Borradores en curso" })).toBeNull(),
-    );
+    await waitFor(() => expect(within(table).queryByRole("link", { name: "Borrador" })).toBeNull());
+  });
+
+  it("un borrador sin transportista ni destinatarios lo dice en su fila", async () => {
+    render(<ShippingGuidesScreen />, {
+      "GET /api/v1/shipping-guides/entries": entries(
+        [],
+        [guideDraftSummary({ carrierName: null, recipientCount: 0, transportStart: null })],
+      ),
+    });
+    const table = await screen.findByRole("table", { name: "Guías de remisión y borradores" });
+    await within(table).findByRole("link", { name: "Borrador" });
+    expect(within(table).getByText("Sin transportista")).toBeDefined();
+    expect(within(table).getByText("Sin destinatarios")).toBeDefined();
+    expect(within(table).queryByText(/^Inicio /)).toBeNull();
+  });
+
+  it("«Borradores» en el filtro de estado pide DRAFT", async () => {
+    navigation.search = new URLSearchParams("estado=borradores");
+    const calls = render(<ShippingGuidesScreen />, {
+      "GET /api/v1/shipping-guides/entries": entries([], [guideDraftSummary()]),
+    });
+    await within(
+      await screen.findByRole("table", { name: "Guías de remisión y borradores" }),
+    ).findByRole("link", { name: "Borrador" });
+    expect(
+      calls.find((call) => call.key.startsWith("GET /api/v1/shipping-guides/entries?"))!.key,
+    ).toContain("state=DRAFT");
   });
 });

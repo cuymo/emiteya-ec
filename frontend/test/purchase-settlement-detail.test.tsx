@@ -129,9 +129,7 @@ describe("detalle de la liquidación de compra", () => {
     await openTab("Detalle");
     const lines = screen.getByRole("region", { name: "Líneas" });
     expect(within(lines).getByText("Saco de cacao en grano, 45 kg")).toBeDefined();
-    expect(
-      within(lines).getByText(/10 saco × \$4,50 · Descuento \$5,00 · IVA 15%/),
-    ).toBeDefined();
+    expect(within(lines).getByText(/10 saco × \$4,50 · Descuento \$5,00 · IVA 15%/)).toBeDefined();
     expect(within(lines).getByText("Código CAC-01")).toBeDefined();
     expect(within(lines).getByText(/2 × \$30,00 · IVA 0%/)).toBeDefined();
     const payments = screen.getByRole("region", { name: "Pagos" });

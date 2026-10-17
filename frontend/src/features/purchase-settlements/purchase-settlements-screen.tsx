@@ -2,27 +2,29 @@
 // Objetivo: encontrar una liquidación y su estado. Decisión: cuál abrir. Información mínima: número,
 // proveedor, fecha, importe total y estado. Acción principal: abrir la liquidación; secundaria:
 // "Nueva liquidación de compra". P0: número y estado; P1: proveedor, fecha e importe total; P2:
-// búsqueda y filtro de estado en la URL, y los borradores en curso; P3 (identificadores): no se
-// muestran.
+// búsqueda y filtro de estado en la URL; P3 (identificadores): no se muestran. Los borradores van
+// en la misma tabla, primero, con su estado «Borrador» filtrable (unify-drafts-into-document-lists,
+// design D5).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import {
   PAGE_SIZE_DEFAULT,
   PAGE_SIZE_MAX,
-  type InvoiceState,
+  type EntryState,
   type PurchaseSettlementDraftSummaryView,
-  type PurchaseSettlementSummaryView,
+  type PurchaseSettlementEntryView,
 } from "@facturador/contracts";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
-import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
+import { SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -34,16 +36,23 @@ import {
 } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
-import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/documents/document-status-badge";
+import { formatIssueDate } from "@/features/invoices/invoice-format";
+import { DraftStateBadge, StateCell } from "@/features/documents/document-status-badge";
+import {
+  DRAFT_FILTER_LABEL,
+  DRAFT_STATE_PARAM,
+  DraftEditedAt,
+  DraftParty,
+  draftRowActions,
+} from "@/features/documents/draft-entries";
 import {
   useDeletePurchaseSettlementDraft,
-  usePurchaseSettlementDrafts,
-  usePurchaseSettlements,
+  usePurchaseSettlementEntries,
 } from "./purchase-settlements-api";
 
 type StateFilter =
   | "todas"
+  | typeof DRAFT_STATE_PARAM
   | "autorizadas"
   | "pendientes-autorizacion"
   | "pendientes-envio"
@@ -52,8 +61,9 @@ type StateFilter =
   | "devueltas"
   | "no-autorizadas"
   | "procesando";
-const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: InvoiceState }[] = [
+const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: EntryState }[] = [
   { value: "todas", label: "Todas" },
+  { value: DRAFT_STATE_PARAM, label: DRAFT_FILTER_LABEL, state: "DRAFT" },
   { value: "autorizadas", label: "Autorizadas", state: "AUTHORIZED" },
   { value: "pendientes-autorizacion", label: "Pendientes de autorización", state: "RECEIVED" },
   { value: "pendientes-envio", label: "Pendientes de envío", state: "SIGNED" },
@@ -93,77 +103,13 @@ function useUrlState() {
   return { filter, page, pageSize, search: params.get("q") ?? "", update };
 }
 
-const lineCountLabel = (count: number) => (count === 1 ? "1 línea" : `${count} líneas`);
-
-/** Borradores en curso: se abren para seguir editándolos o se eliminan. */
-function DraftsPanel() {
-  const headingId = useId();
-  const drafts = usePurchaseSettlementDrafts({ page: 1, pageSize: 10 }, true);
-  const [deleting, setDeleting] = useState<PurchaseSettlementDraftSummaryView | null>(null);
-  const remove = useDeletePurchaseSettlementDraft({ onSuccess: () => setDeleting(null) });
-  if (drafts.isPending || drafts.isError || drafts.data.data.length === 0) return null;
-  const { data, meta } = drafts.data;
-  const nameOf = (draft: PurchaseSettlementDraftSummaryView) =>
-    draft.supplierName ? `Liquidación a ${draft.supplierName}` : "Liquidación sin proveedor";
-  return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-2">
-      <h2 id={headingId} className="text-lg font-semibold">
-        Borradores en curso
-      </h2>
-      <ul className="flex flex-col gap-1">
-        {data.map((draft) => (
-          <li
-            key={draft.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-          >
-            <span className="flex min-w-0 flex-col">
-              <RecordLink
-                href={`/liquidaciones-compra/borradores/${draft.id}`}
-                className="break-words"
-              >
-                {nameOf(draft)}
-              </RecordLink>
-              <span className="text-foreground-muted break-words">
-                {lineCountLabel(draft.lineCount)} ·{" "}
-                {draft.previewTotal ? (
-                  <MoneyCell amount={draft.previewTotal} />
-                ) : (
-                  "Sin importe calculado"
-                )}{" "}
-                · {formatDateTime(draft.updatedAt)}
-              </span>
-            </span>
-            <RowActionButton
-              icon={Trash2}
-              label={`Eliminar el borrador: ${nameOf(draft)}`}
-              onClick={() => setDeleting(draft)}
-            />
-          </li>
-        ))}
-      </ul>
-      {meta.total > data.length && (
-        <p className="text-sm text-foreground-muted">
-          Se muestran los {data.length} borradores más recientes de {meta.total}.
-        </p>
-      )}
-      <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        title="Eliminar borrador"
-        description={
-          <p>
-            Se elimina el borrador {deleting ? `"${nameOf(deleting)}"` : ""}. No reserva nada: no
-            consume números.
-          </p>
-        }
-        confirmLabel="Eliminar"
-        tone="destructive"
-        pending={remove.isPending}
-        onConfirm={() => deleting && remove.mutate(deleting.id)}
-      />
-    </section>
-  );
-}
+const draftHref = (draft: PurchaseSettlementDraftSummaryView) =>
+  `/liquidaciones-compra/borradores/${draft.id}`;
+const entryId = (entry: PurchaseSettlementEntryView) =>
+  entry.kind === "DRAFT" ? `borrador-${entry.draft.id}` : entry.document.id;
+/** El nombre del borrador en su menú y en la confirmación de su eliminación. */
+const draftName = (draft: PurchaseSettlementDraftSummaryView) =>
+  draft.supplierName ? `Liquidación a ${draft.supplierName}` : "Liquidación sin proveedor";
 
 export function PurchaseSettlementsScreen() {
   const { me } = useSession();
@@ -172,6 +118,8 @@ export function PurchaseSettlementsScreen() {
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
+  const [deleting, setDeleting] = useState<PurchaseSettlementDraftSummaryView | null>(null);
+  const remove = useDeletePurchaseSettlementDraft({ onSuccess: () => setDeleting(null) });
 
   useEffect(() => {
     if (searchDraft.trim() === url.search) return;
@@ -179,7 +127,7 @@ export function PurchaseSettlementsScreen() {
     return () => clearTimeout(timer);
   }, [searchDraft, url]);
 
-  const settlements = usePurchaseSettlements(
+  const settlements = usePurchaseSettlementEntries(
     {
       search: url.search,
       state: STATE_FILTERS.find((filter) => filter.value === url.filter)?.state,
@@ -191,46 +139,84 @@ export function PurchaseSettlementsScreen() {
   const forbidden = settlements.error instanceof ApiError && settlements.error.status === 403;
   const filtersActive = url.search !== "" || url.filter !== "todas";
 
-  const columns = useMemo<ColumnDef<PurchaseSettlementSummaryView, unknown>[]>(
+  const columns = useMemo<ColumnDef<PurchaseSettlementEntryView, unknown>[]>(
     () => [
       {
         id: "number",
         header: "Número",
-        cell: ({ row }) => (
-          <RecordLink href={`/liquidaciones-compra/${row.original.id}`}>
-            {row.original.documentNumber}
-          </RecordLink>
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <RecordLink href={draftHref(row.original.draft)}>Borrador</RecordLink>
+          ) : (
+            <RecordLink href={`/liquidaciones-compra/${row.original.document.id}`}>
+              {row.original.document.documentNumber}
+            </RecordLink>
+          ),
       },
       {
         id: "supplier",
         header: "Proveedor",
-        cell: ({ row }) => (
-          <PartyCell
-            name={row.original.supplierName}
-            identification={row.original.supplierIdentification}
-          />
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftParty name={row.original.draft.supplierName} missing="Sin proveedor" />
+          ) : (
+            <PartyCell
+              name={row.original.document.supplierName}
+              identification={row.original.document.supplierIdentification}
+            />
+          ),
       },
       {
         id: "date",
         header: "Fecha",
-        cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftEditedAt updatedAt={row.original.draft.updatedAt} />
+          ) : (
+            <MutedCell>{formatIssueDate(row.original.document.issueDate)}</MutedCell>
+          ),
       },
       {
         id: "total",
         header: () => <span className="block text-right">Importe total</span>,
-        cell: ({ row }) => <MoneyCell amount={row.original.total} className="block text-right" />,
+        cell: ({ row }) => {
+          const amount =
+            row.original.kind === "DRAFT"
+              ? row.original.draft.previewTotal
+              : row.original.document.total;
+          return amount === null ? (
+            <MutedCell className="block text-right">Incompleto</MutedCell>
+          ) : (
+            <MoneyCell amount={amount} className="block text-right" />
+          );
+        },
       },
       {
         id: "state",
         header: "Estado",
-        cell: ({ row }) => (
-          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftStateBadge />
+          ) : (
+            <StateCell
+              state={row.original.document.state}
+              stopped={row.original.document.transmissionStopped}
+            />
+          ),
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Acciones</span>,
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftActions
+              draft={row.original.draft}
+              onDelete={canDraft ? setDeleting : undefined}
+            />
+          ) : null,
       },
     ],
-    [],
+    [canDraft],
   );
 
   if (!allowed || forbidden) {
@@ -303,7 +289,6 @@ export function PurchaseSettlementsScreen() {
         />
       }
       actions={newSettlement("primary", "sm")}
-      lead={canDraft ? <DraftsPanel /> : undefined}
       filters={
         <>
           <DataTableSelectFilter
@@ -316,10 +301,10 @@ export function PurchaseSettlementsScreen() {
       }
     >
       <AppDataTable
-        label="Liquidaciones de compra emitidas"
+        label="Liquidaciones de compra y borradores"
         columns={columns}
         data={settlements.data?.data ?? []}
-        getRowId={(settlement) => settlement.id}
+        getRowId={entryId}
         total={settlements.data?.meta.total ?? 0}
         page={url.page}
         pageSize={url.pageSize}
@@ -329,28 +314,88 @@ export function PurchaseSettlementsScreen() {
         loading={settlements.isPending}
         refreshing={settlements.isFetching}
         state={tableState}
-        renderCard={(settlement) => (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <RecordLink href={`/liquidaciones-compra/${settlement.id}`}>
-                {settlement.documentNumber}
-              </RecordLink>
-              <span className="text-sm text-foreground-muted tabular-nums">
-                {formatIssueDate(settlement.issueDate)}
+        renderCard={(entry) =>
+          entry.kind === "DRAFT" ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <RecordLink href={draftHref(entry.draft)}>Borrador</RecordLink>
+                {entry.draft.previewTotal === null ? (
+                  <MutedCell>Incompleto</MutedCell>
+                ) : (
+                  <MoneyCell amount={entry.draft.previewTotal} />
+                )}
+              </div>
+              <span className="text-sm break-words">
+                <DraftParty name={entry.draft.supplierName} missing="Sin proveedor" />
+              </span>
+              <span className="text-sm">
+                <DraftEditedAt updatedAt={entry.draft.updatedAt} />
+              </span>
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                <DraftStateBadge />
+                <DraftActions draft={entry.draft} onDelete={canDraft ? setDeleting : undefined} />
               </span>
             </div>
-            <span className="text-sm font-medium break-words">{settlement.supplierName}</span>
-            <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span className="text-foreground-muted tabular-nums">
-                {settlement.supplierIdentification}
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <RecordLink href={`/liquidaciones-compra/${entry.document.id}`}>
+                  {entry.document.documentNumber}
+                </RecordLink>
+                <span className="text-sm text-foreground-muted tabular-nums">
+                  {formatIssueDate(entry.document.issueDate)}
+                </span>
+              </div>
+              <span className="text-sm font-medium break-words">{entry.document.supplierName}</span>
+              <span className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="text-foreground-muted tabular-nums">
+                  {entry.document.supplierIdentification}
+                </span>
+                <MoneyCell amount={entry.document.total} />
               </span>
-              <MoneyCell amount={settlement.total} />
-            </span>
-            <StateCell state={settlement.state} stopped={settlement.transmissionStopped} />
-          </div>
-        )}
+              <StateCell
+                state={entry.document.state}
+                stopped={entry.document.transmissionStopped}
+              />
+            </div>
+          )
+        }
+      />
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Eliminar borrador"
+        description={
+          <p>
+            Se elimina el borrador {deleting ? `"${draftName(deleting)}"` : ""}. No reserva nada: no
+            consume números.
+          </p>
+        }
+        confirmLabel="Eliminar borrador"
+        tone="destructive"
+        pending={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
       />
     </DataTableCard>
+  );
+}
+
+/** «Continuar» y, con permiso, «Eliminar borrador» (design D5). */
+function DraftActions({
+  draft,
+  onDelete,
+}: {
+  draft: PurchaseSettlementDraftSummaryView;
+  onDelete: ((draft: PurchaseSettlementDraftSummaryView) => void) | undefined;
+}) {
+  return (
+    <RowActionsMenu
+      label={`Acciones del borrador: ${draftName(draft)}`}
+      actions={draftRowActions({
+        editHref: draftHref(draft),
+        onDelete: onDelete && (() => onDelete(draft)),
+      })}
+    />
   );
 }
 

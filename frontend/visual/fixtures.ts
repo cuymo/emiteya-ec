@@ -243,6 +243,28 @@ function invoiceList(rows: InvoiceSummary[], query: URLSearchParams): Reply {
   };
 }
 
+/**
+ * La lista unificada de Facturas (unify-drafts-into-document-lists): el catálogo no tiene borradores,
+ * así que son las facturas como entradas, y el filtro de borradores queda vacío.
+ */
+function invoiceEntries(rows: InvoiceSummary[], query: URLSearchParams): Reply {
+  const draftsOnly = query.get("state") === "DRAFT";
+  const filtered = new URLSearchParams(query);
+  filtered.delete("state");
+  if (!draftsOnly && query.get("state")) filtered.set("state", query.get("state")!);
+  const list = invoiceList(draftsOnly ? [] : rows, filtered).body as {
+    data: InvoiceSummary[];
+    meta: { page: number; pageSize: number; total: number };
+  };
+  return {
+    status: 200,
+    body: {
+      data: list.data.map((document) => ({ kind: "DOCUMENT", document })),
+      meta: list.meta,
+    },
+  };
+}
+
 export type Reply = { status: number; body?: unknown };
 
 function reply(
@@ -300,6 +322,8 @@ function reply(
       };
     case "GET /api/v1/invoices":
       return invoiceList(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
+    case "GET /api/v1/invoices/entries":
+      return invoiceEntries(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
     default:
       // El editor de facturas y los catálogos de sus pantallas vecinas (editor-fixtures.ts).
       return editorReply(method, path, query, scenario.environment ?? "TEST", body);

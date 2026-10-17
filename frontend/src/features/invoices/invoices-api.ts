@@ -9,10 +9,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   IDEMPOTENCY_KEY_HEADER,
-  draftListMetaSchema,
   draftPreviewViewSchema,
-  draftSummaryViewSchema,
   draftViewSchema,
+  documentEntryListMetaSchema,
+  invoiceEntryViewSchema,
   invoiceListMetaSchema,
   invoiceSummaryViewSchema,
   invoiceViewSchema,
@@ -22,6 +22,7 @@ import {
   productViewSchema,
   type CreateDraftInput,
   type DraftView,
+  type EntryState,
   type InvoiceState,
   type InvoiceView,
   type PartyView,
@@ -35,23 +36,11 @@ import { apiFetch, apiFetchPage } from "@/lib/api";
 
 export const DRAFTS_KEY = ["invoice-drafts"] as const;
 export const INVOICES_KEY = ["invoices"] as const;
+/** La lista unificada cuelga de las facturas y se renueva también con cada cambio de un borrador. */
+export const INVOICE_ENTRIES_KEY = [...INVOICES_KEY, "entries"] as const;
 
 const draftPath = (id: string) => `/invoices/drafts/${encodeURIComponent(id)}`;
 const invoicePath = (id: string) => `/invoices/${encodeURIComponent(id)}`;
-
-export function useDrafts(query: { page: number; pageSize: number }, enabled: boolean) {
-  return useQuery({
-    queryKey: [...DRAFTS_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) =>
-      apiFetchPage(`/invoices/drafts?page=${query.page}&pageSize=${query.pageSize}`, {
-        schema: z.array(draftSummaryViewSchema),
-        meta: draftListMetaSchema,
-        signal,
-      }),
-  });
-}
 
 /** Un borrador, leído de nuevo: para recargarlo tras un conflicto de versión. */
 export const fetchDraft = (id: string) => apiFetch(draftPath(id), { schema: draftViewSchema });
@@ -104,7 +93,7 @@ export function useSaveDraft(options: {
       input: CreateDraftInput | UpdateDraftInput;
     }) => saveDraftRequest(id, input),
     success: () => "Guardaste el borrador.",
-    invalidate: [DRAFTS_KEY],
+    invalidate: [DRAFTS_KEY, INVOICE_ENTRIES_KEY],
     onSuccess: options.onSuccess,
     onError: options.onError,
   });
@@ -114,7 +103,7 @@ export function useDeleteDraft(options: { onSuccess?: () => void } = {}) {
   return useMutationFeedback({
     mutationFn: (id: string) => apiFetch(draftPath(id), { method: "DELETE" }),
     success: () => "Eliminaste el borrador.",
-    invalidate: [DRAFTS_KEY],
+    invalidate: [DRAFTS_KEY, INVOICE_ENTRIES_KEY],
     ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }
@@ -159,18 +148,22 @@ export function useEmitInvoice(options: {
   });
 }
 
-export type InvoicesQuery = {
+export type InvoiceEntriesQuery = {
   search: string;
-  state: InvoiceState | undefined;
-  /** "Requiere atención": resultado incierto, revisión manual o transmisión detenida. */
+  /** Un estado de factura emitida, o `DRAFT` para solo los borradores. */
+  state: EntryState | undefined;
   attention?: boolean;
   page: number;
   pageSize: number;
 };
 
-export function useInvoices(query: InvoicesQuery, enabled: boolean) {
+/**
+ * La lista de Facturas (unify-drafts-into-document-lists, design D1 y D5): los borradores primero y
+ * después las facturas emitidas, en una sola página del servidor.
+ */
+export function useInvoiceEntries(query: InvoiceEntriesQuery, enabled: boolean) {
   return useQuery({
-    queryKey: [...INVOICES_KEY, "list", query],
+    queryKey: [...INVOICE_ENTRIES_KEY, query],
     enabled,
     placeholderData: keepPreviousData,
     queryFn: ({ signal }) => {
@@ -181,14 +174,23 @@ export function useInvoices(query: InvoicesQuery, enabled: boolean) {
       if (query.search) params.set("search", query.search);
       if (query.state) params.set("state", query.state);
       if (query.attention) params.set("attention", "true");
-      return apiFetchPage(`/invoices?${params.toString()}`, {
-        schema: z.array(invoiceSummaryViewSchema),
-        meta: invoiceListMetaSchema,
+      return apiFetchPage(`/invoices/entries?${params.toString()}`, {
+        schema: z.array(invoiceEntryViewSchema),
+        meta: documentEntryListMetaSchema,
         signal,
       });
     },
   });
 }
+
+export type InvoicesQuery = {
+  search: string;
+  state: InvoiceState | undefined;
+  /** "Requiere atención": resultado incierto, revisión manual o transmisión detenida. */
+  attention?: boolean;
+  page: number;
+  pageSize: number;
+};
 
 /**
  * Cuántas facturas de la empresa requieren atención (productize-invoice-list-and-shared-table-

@@ -295,7 +295,7 @@ function Dashboard({ data }: { data: DashboardView }) {
           icon={FilePen}
           value={formatDecimal(String(data.drafts.invoices))}
           detail={data.drafts.invoices > 0 ? "Pendientes de emitir" : "Ninguno pendiente"}
-          href="/borradores"
+          href="/facturas?estado=borradores"
           hrefLabel="Ver borradores"
         />
       </div>

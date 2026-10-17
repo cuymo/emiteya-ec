@@ -2,27 +2,29 @@
 // encontrar una retención y su estado. Decisión: qué retención abrir. Información mínima: número,
 // proveedor, período fiscal, total retenido y estado. Acción principal: abrir la retención;
 // secundaria: "Nueva retención". P0: número, estado y total retenido; P1: proveedor, período y
-// fecha; P2: búsqueda, filtros de estado y período en la URL y los borradores en curso; P3
-// (identificadores): no se muestran.
+// fecha; P2: búsqueda y filtros de estado y período en la URL; P3 (identificadores): no se
+// muestran. Los borradores van en la misma tabla, primero, con su estado «Borrador» filtrable
+// (unify-drafts-into-document-lists, design D5).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
 import {
   PAGE_SIZE_DEFAULT,
   PAGE_SIZE_MAX,
-  type InvoiceState,
+  type EntryState,
   type WithholdingDraftSummaryView,
-  type WithholdingReceiptSummaryView,
+  type WithholdingReceiptEntryView,
 } from "@facturador/contracts";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
-import { RowActionButton, SearchInput } from "@/components/data-table/table-controls";
+import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
+import { SearchInput } from "@/components/data-table/table-controls";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -34,17 +36,24 @@ import {
 } from "@/components/data-table/data-table-cells";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
-import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
-import { StateCell } from "@/features/documents/document-status-badge";
+import { formatIssueDate } from "@/features/invoices/invoice-format";
+import { DraftStateBadge, StateCell } from "@/features/documents/document-status-badge";
+import {
+  DRAFT_FILTER_LABEL,
+  DRAFT_STATE_PARAM,
+  DraftEditedAt,
+  DraftParty,
+  draftRowActions,
+} from "@/features/documents/draft-entries";
 import { formatPeriod, supportCountLabel, withholdingCountLabel } from "./withholding-format";
 import {
   useDeleteWithholdingDraft,
-  useWithholdingDrafts,
-  useWithholdingReceipts,
+  useWithholdingReceiptEntries,
 } from "./withholding-receipts-api";
 
 type StateFilter =
   | "todas"
+  | typeof DRAFT_STATE_PARAM
   | "autorizadas"
   | "pendientes-autorizacion"
   | "pendientes-envio"
@@ -53,8 +62,9 @@ type StateFilter =
   | "devueltas"
   | "no-autorizadas"
   | "procesando";
-const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: InvoiceState }[] = [
+const STATE_FILTERS: readonly { value: StateFilter; label: string; state?: EntryState }[] = [
   { value: "todas", label: "Todas" },
+  { value: DRAFT_STATE_PARAM, label: DRAFT_FILTER_LABEL, state: "DRAFT" },
   { value: "autorizadas", label: "Autorizadas", state: "AUTHORIZED" },
   { value: "pendientes-autorizacion", label: "Pendientes de autorización", state: "RECEIVED" },
   { value: "pendientes-envio", label: "Pendientes de envío", state: "SIGNED" },
@@ -118,69 +128,10 @@ function useUrlState() {
   };
 }
 
-/** Borradores en curso: se abren para seguir editándolos o se eliminan. */
-function DraftsPanel() {
-  const headingId = useId();
-  const drafts = useWithholdingDrafts({ page: 1, pageSize: 10 }, true);
-  const [deleting, setDeleting] = useState<WithholdingDraftSummaryView | null>(null);
-  const remove = useDeleteWithholdingDraft({ onSuccess: () => setDeleting(null) });
-  if (drafts.isPending || drafts.isError || drafts.data.data.length === 0) return null;
-  const { data, meta } = drafts.data;
-  const nameOf = (draft: WithholdingDraftSummaryView) => draft.partyName ?? "Sin proveedor";
-  return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-2">
-      <h2 id={headingId} className="text-lg font-semibold">
-        Borradores en curso
-      </h2>
-      <ul className="flex flex-col gap-1">
-        {data.map((draft) => (
-          <li
-            key={draft.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm"
-          >
-            <span className="flex min-w-0 flex-col">
-              <RecordLink href={`/retenciones/borradores/${draft.id}`} className="break-words">
-                Retención a {nameOf(draft)}
-              </RecordLink>
-              <span className="text-foreground-muted break-words">
-                {draft.fiscalPeriod ? formatPeriod(draft.fiscalPeriod) : "Sin período"} ·{" "}
-                {supportCountLabel(draft.supportCount)} ·{" "}
-                {withholdingCountLabel(draft.withholdingCount)} ·{" "}
-                {draft.previewTotal ? <MoneyCell amount={draft.previewTotal} /> : "Sin calcular"} ·{" "}
-                {formatDateTime(draft.updatedAt)}
-              </span>
-            </span>
-            <RowActionButton
-              icon={Trash2}
-              label={`Eliminar el borrador de la retención a ${nameOf(draft)}`}
-              onClick={() => setDeleting(draft)}
-            />
-          </li>
-        ))}
-      </ul>
-      {meta.total > data.length && (
-        <p className="text-sm text-foreground-muted">
-          Se muestran los {data.length} borradores más recientes de {meta.total}.
-        </p>
-      )}
-      <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        title="Eliminar borrador"
-        description={
-          <p>
-            Se elimina el borrador de la retención a {deleting ? nameOf(deleting) : ""}. No reserva
-            nada: no consume números.
-          </p>
-        }
-        confirmLabel="Eliminar"
-        tone="destructive"
-        pending={remove.isPending}
-        onConfirm={() => deleting && remove.mutate(deleting.id)}
-      />
-    </section>
-  );
-}
+const draftHref = (draft: WithholdingDraftSummaryView) => `/retenciones/borradores/${draft.id}`;
+const draftParty = (draft: WithholdingDraftSummaryView) => draft.partyName ?? "Sin proveedor";
+const entryId = (entry: WithholdingReceiptEntryView) =>
+  entry.kind === "DRAFT" ? `borrador-${entry.draft.id}` : entry.document.id;
 
 export function WithholdingReceiptsScreen() {
   const { me } = useSession();
@@ -189,6 +140,8 @@ export function WithholdingReceiptsScreen() {
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
+  const [deleting, setDeleting] = useState<WithholdingDraftSummaryView | null>(null);
+  const remove = useDeleteWithholdingDraft({ onSuccess: () => setDeleting(null) });
   const periods = useMemo(() => {
     const recent = recentPeriods();
     return url.period && !recent.includes(url.period) ? [url.period, ...recent] : recent;
@@ -200,7 +153,7 @@ export function WithholdingReceiptsScreen() {
     return () => clearTimeout(timer);
   }, [searchDraft, url]);
 
-  const receipts = useWithholdingReceipts(
+  const receipts = useWithholdingReceiptEntries(
     {
       search: url.search,
       state: STATE_FILTERS.find((filter) => filter.value === url.filter)?.state,
@@ -213,58 +166,109 @@ export function WithholdingReceiptsScreen() {
   const forbidden = receipts.error instanceof ApiError && receipts.error.status === 403;
   const filtersActive = url.search !== "" || url.filter !== "todas" || url.period !== undefined;
 
-  const columns = useMemo<ColumnDef<WithholdingReceiptSummaryView, unknown>[]>(
+  const columns = useMemo<ColumnDef<WithholdingReceiptEntryView, unknown>[]>(
     () => [
       {
         id: "number",
         header: "Número",
-        cell: ({ row }) => (
-          <RecordLink href={`/retenciones/${row.original.id}`}>
-            {row.original.documentNumber}
-          </RecordLink>
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <RecordLink href={draftHref(row.original.draft)}>Borrador</RecordLink>
+          ) : (
+            <RecordLink href={`/retenciones/${row.original.document.id}`}>
+              {row.original.document.documentNumber}
+            </RecordLink>
+          ),
       },
       {
         id: "subject",
         header: "Proveedor",
-        cell: ({ row }) => (
-          <PartyCell
-            name={row.original.subjectName}
-            identification={row.original.subjectIdentification}
-          />
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftParty name={row.original.draft.partyName} missing="Sin proveedor" />
+          ) : (
+            <PartyCell
+              name={row.original.document.subjectName}
+              identification={row.original.document.subjectIdentification}
+            />
+          ),
       },
       {
         id: "period",
         header: "Período fiscal",
-        cell: ({ row }) => (
-          <span className="flex flex-col">
-            <span>{formatPeriod(row.original.fiscalPeriod)}</span>
-            <span className="text-xs text-foreground-muted">
-              {supportCountLabel(row.original.supportCount)}
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <span className="flex flex-col">
+              {row.original.draft.fiscalPeriod ? (
+                <span>{formatPeriod(row.original.draft.fiscalPeriod)}</span>
+              ) : (
+                <MutedCell>Sin período</MutedCell>
+              )}
+              <span className="text-xs text-foreground-muted">
+                {supportCountLabel(row.original.draft.supportCount)} ·{" "}
+                {withholdingCountLabel(row.original.draft.withholdingCount)}
+              </span>
             </span>
-          </span>
-        ),
+          ) : (
+            <span className="flex flex-col">
+              <span>{formatPeriod(row.original.document.fiscalPeriod)}</span>
+              <span className="text-xs text-foreground-muted">
+                {supportCountLabel(row.original.document.supportCount)}
+              </span>
+            </span>
+          ),
       },
       {
         id: "total",
         header: () => <span className="block text-right">Total retenido</span>,
-        cell: ({ row }) => <MoneyCell amount={row.original.total} className="block text-right" />,
+        cell: ({ row }) => {
+          const amount =
+            row.original.kind === "DRAFT"
+              ? row.original.draft.previewTotal
+              : row.original.document.total;
+          return amount === null ? (
+            <MutedCell className="block text-right">Incompleto</MutedCell>
+          ) : (
+            <MoneyCell amount={amount} className="block text-right" />
+          );
+        },
       },
       {
         id: "date",
         header: "Fecha",
-        cell: ({ row }) => <MutedCell>{formatIssueDate(row.original.issueDate)}</MutedCell>,
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftEditedAt updatedAt={row.original.draft.updatedAt} />
+          ) : (
+            <MutedCell>{formatIssueDate(row.original.document.issueDate)}</MutedCell>
+          ),
       },
       {
         id: "state",
         header: "Estado",
-        cell: ({ row }) => (
-          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftStateBadge />
+          ) : (
+            <StateCell
+              state={row.original.document.state}
+              stopped={row.original.document.transmissionStopped}
+            />
+          ),
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Acciones</span>,
+        cell: ({ row }) =>
+          row.original.kind === "DRAFT" ? (
+            <DraftActions
+              draft={row.original.draft}
+              onDelete={canDraft ? setDeleting : undefined}
+            />
+          ) : null,
       },
     ],
-    [],
+    [canDraft],
   );
 
   if (!allowed || forbidden) {
@@ -337,7 +341,6 @@ export function WithholdingReceiptsScreen() {
         />
       }
       actions={newReceipt("primary", "sm")}
-      lead={canDraft ? <DraftsPanel /> : undefined}
       filters={
         <>
           <DataTableSelectFilter
@@ -360,10 +363,10 @@ export function WithholdingReceiptsScreen() {
       }
     >
       <AppDataTable
-        label="Retenciones emitidas"
+        label="Retenciones y borradores"
         columns={columns}
         data={receipts.data?.data ?? []}
-        getRowId={(receipt) => receipt.id}
+        getRowId={entryId}
         total={receipts.data?.meta.total ?? 0}
         page={url.page}
         pageSize={url.pageSize}
@@ -373,22 +376,87 @@ export function WithholdingReceiptsScreen() {
         loading={receipts.isPending}
         refreshing={receipts.isFetching}
         state={tableState}
-        renderCard={(receipt) => (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <RecordLink href={`/retenciones/${receipt.id}`}>{receipt.documentNumber}</RecordLink>
-              <MoneyCell amount={receipt.total} />
+        renderCard={(entry) =>
+          entry.kind === "DRAFT" ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <RecordLink href={draftHref(entry.draft)}>Borrador</RecordLink>
+                {entry.draft.previewTotal === null ? (
+                  <MutedCell>Incompleto</MutedCell>
+                ) : (
+                  <MoneyCell amount={entry.draft.previewTotal} />
+                )}
+              </div>
+              <span className="text-sm break-words">
+                <DraftParty name={entry.draft.partyName} missing="Sin proveedor" />
+              </span>
+              <span className="text-sm text-foreground-muted">
+                {entry.draft.fiscalPeriod ? formatPeriod(entry.draft.fiscalPeriod) : "Sin período"}{" "}
+                · {supportCountLabel(entry.draft.supportCount)} ·{" "}
+                {withholdingCountLabel(entry.draft.withholdingCount)}
+              </span>
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                <DraftStateBadge />
+                <DraftActions draft={entry.draft} onDelete={canDraft ? setDeleting : undefined} />
+              </span>
             </div>
-            <span className="text-sm font-medium break-words">{receipt.subjectName}</span>
-            <span className="text-sm text-foreground-muted">
-              {formatPeriod(receipt.fiscalPeriod)} · {supportCountLabel(receipt.supportCount)} ·{" "}
-              {formatIssueDate(receipt.issueDate)}
-            </span>
-            <StateCell state={receipt.state} stopped={receipt.transmissionStopped} />
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <RecordLink href={`/retenciones/${entry.document.id}`}>
+                  {entry.document.documentNumber}
+                </RecordLink>
+                <MoneyCell amount={entry.document.total} />
+              </div>
+              <span className="text-sm font-medium break-words">{entry.document.subjectName}</span>
+              <span className="text-sm text-foreground-muted">
+                {formatPeriod(entry.document.fiscalPeriod)} ·{" "}
+                {supportCountLabel(entry.document.supportCount)} ·{" "}
+                {formatIssueDate(entry.document.issueDate)}
+              </span>
+              <StateCell
+                state={entry.document.state}
+                stopped={entry.document.transmissionStopped}
+              />
+            </div>
+          )
+        }
+      />
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Eliminar borrador"
+        description={
+          <p>
+            Se elimina el borrador de la retención a {deleting ? draftParty(deleting) : ""}. No
+            reserva nada: no consume números.
+          </p>
+        }
+        confirmLabel="Eliminar borrador"
+        tone="destructive"
+        pending={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
       />
     </DataTableCard>
+  );
+}
+
+/** «Continuar» y, con permiso, «Eliminar borrador» (design D5). */
+function DraftActions({
+  draft,
+  onDelete,
+}: {
+  draft: WithholdingDraftSummaryView;
+  onDelete: ((draft: WithholdingDraftSummaryView) => void) | undefined;
+}) {
+  return (
+    <RowActionsMenu
+      label={`Acciones del borrador de la retención a ${draftParty(draft)}`}
+      actions={draftRowActions({
+        editHref: draftHref(draft),
+        onDelete: onDelete && (() => onDelete(draft)),
+      })}
+    />
   );
 }
 

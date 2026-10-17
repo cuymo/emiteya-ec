@@ -4,14 +4,13 @@
 // una factura y las facturas elegibles para el selector. Toda mutación pasa por useMutationFeedback.
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   CREDIT_NOTE_ELIGIBILITY_DECLARATION,
   IDEMPOTENCY_KEY_HEADER,
-  creditNoteDraftSummaryViewSchema,
   creditNoteDraftViewSchema,
+  creditNoteEntryViewSchema,
   creditNoteListMetaSchema,
-  creditNoteSummaryViewSchema,
   creditNoteViewSchema,
   eligibleInvoiceViewSchema,
   invoiceCreditViewSchema,
@@ -21,6 +20,7 @@ import {
   type CreditNoteDraftView,
   type CreditNoteView,
   type EligibleInvoiceView,
+  type EntryState,
   type InvoiceState,
   type UpdateCreditNoteDraftInput,
 } from "@facturador/contracts";
@@ -28,9 +28,12 @@ import { z } from "zod";
 import type { EntityPage, EntityPickerQuery } from "@/components/entity-picker-dialog";
 import { useMutationFeedback, type SuccessFeedback } from "@/components/feedback";
 import { apiFetch, apiFetchPage } from "@/lib/api";
+import { useDocumentEntries } from "@/features/documents/use-document-entries";
 
 export const CREDIT_NOTES_KEY = ["credit-notes"] as const;
 export const CREDIT_NOTE_DRAFTS_KEY = ["credit-note-drafts"] as const;
+/** La lista unificada cuelga de las notas y se renueva también con cada cambio de un borrador. */
+export const CREDIT_NOTE_ENTRIES_KEY = [...CREDIT_NOTES_KEY, "entries"] as const;
 /** El crédito de una factura cambia con cada nota: se invalida con las notas. */
 const INVOICE_CREDIT_KEY = [...CREDIT_NOTES_KEY, "invoice-credit"] as const;
 
@@ -67,25 +70,23 @@ export type CreditNotesQuery = {
   pageSize: number;
 };
 
-export function useCreditNotes(query: CreditNotesQuery, enabled: boolean) {
-  return useQuery({
-    queryKey: [...CREDIT_NOTES_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => {
-      const params = new URLSearchParams({
-        page: String(query.page),
-        pageSize: String(query.pageSize),
-      });
-      if (query.search) params.set("search", query.search);
-      if (query.state) params.set("state", query.state);
-      if (query.cause) params.set("cause", query.cause);
-      return apiFetchPage(`/credit-notes?${params.toString()}`, {
-        schema: z.array(creditNoteSummaryViewSchema),
-        meta: creditNoteListMetaSchema,
-        signal,
-      });
+/** La lista de Notas de crédito: borradores primero y después las notas emitidas (D1 y D5). */
+export function useCreditNoteEntries(
+  query: Omit<CreditNotesQuery, "state"> & { state: EntryState | undefined },
+  enabled: boolean,
+) {
+  return useDocumentEntries({
+    key: CREDIT_NOTE_ENTRIES_KEY,
+    path: "/credit-notes/entries",
+    params: {
+      page: query.page,
+      pageSize: query.pageSize,
+      search: query.search,
+      state: query.state,
+      cause: query.cause,
     },
+    entry: creditNoteEntryViewSchema,
+    enabled,
   });
 }
 
@@ -97,20 +98,6 @@ export function useCreditNote(id: string, enabled: boolean) {
     // Mientras el SRI procesa, el estado se actualiza solo.
     refetchInterval: (query) =>
       query.state.data?.transmission.inProgress ? TRANSMISSION_REFRESH_MS : false,
-  });
-}
-
-export function useCreditNoteDrafts(query: { page: number; pageSize: number }, enabled: boolean) {
-  return useQuery({
-    queryKey: [...CREDIT_NOTE_DRAFTS_KEY, "list", query],
-    enabled,
-    placeholderData: keepPreviousData,
-    queryFn: ({ signal }) =>
-      apiFetchPage(`/credit-notes/drafts?page=${query.page}&pageSize=${query.pageSize}`, {
-        schema: z.array(creditNoteDraftSummaryViewSchema),
-        meta: creditNoteListMetaSchema,
-        signal,
-      }),
   });
 }
 
@@ -156,7 +143,7 @@ export function useSaveCreditNoteDraft(options: {
             schema: creditNoteDraftViewSchema,
           }),
     success: () => "Guardaste el borrador.",
-    invalidate: [CREDIT_NOTE_DRAFTS_KEY],
+    invalidate: [CREDIT_NOTE_DRAFTS_KEY, CREDIT_NOTE_ENTRIES_KEY],
     errorMessages: CREDIT_NOTE_CONFLICT_MESSAGES,
     onSuccess: options.onSuccess,
     onError: options.onError,
@@ -167,7 +154,7 @@ export function useDeleteCreditNoteDraft(options: { onSuccess?: () => void } = {
   return useMutationFeedback({
     mutationFn: (id: string) => apiFetch(draftPath(id), { method: "DELETE" }),
     success: () => "Eliminaste el borrador.",
-    invalidate: [CREDIT_NOTE_DRAFTS_KEY],
+    invalidate: [CREDIT_NOTE_DRAFTS_KEY, CREDIT_NOTE_ENTRIES_KEY],
     ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }

@@ -44,7 +44,7 @@ async function open(
   return { page, recorder };
 }
 
-const table = (page: Page) => page.getByRole("table", { name: "Facturas emitidas" });
+const table = (page: Page) => page.getByRole("table", { name: "Facturas y borradores" });
 
 async function violations(page: Page) {
   const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
@@ -294,7 +294,12 @@ test.describe("peticiones de Facturas (D18)", () => {
     await settle(page);
     expect(counts()).toHaveLength(1);
     // Sin consultas por fila: ningún detalle, RIDE ni estado de una factura.
-    expect(requests.filter((key) => !key.startsWith("/api/v1/invoices?"))).toEqual([]);
+    expect(
+      requests.filter(
+        (key) =>
+          !key.startsWith("/api/v1/invoices?") && !key.startsWith("/api/v1/invoices/entries?"),
+      ),
+    ).toEqual([]);
     await page.context().close();
   });
 });
