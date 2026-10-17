@@ -2,6 +2,7 @@
 // empresa, el rol y el autor salen del contexto de la sesión; un recurso de otra empresa es `404`.
 // Ninguna ruta envía al SRI ni expone XML o respuestas originales.
 import { Router, type Response } from "express";
+import type { WithholdingReceiptEntries } from "../../application/entries.ts";
 import {
   IDEMPOTENCY_KEY_HEADER,
   type ListMeta,
@@ -33,6 +34,7 @@ const param = (value: unknown) => String(value);
 
 export type WithholdingReceiptsRouterDependencies = {
   drafts: WithholdingDrafts;
+  entries: WithholdingReceiptEntries;
   options: WithholdingOptions;
   emission: WithholdingEmission;
   withholdings: WithholdingReceipts;
@@ -42,6 +44,7 @@ export type WithholdingReceiptsRouterDependencies = {
 
 export function withholdingReceiptsRouter({
   drafts,
+  entries,
   options,
   emission,
   withholdings,
@@ -102,6 +105,24 @@ export function withholdingReceiptsRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  // Antes de `/withholding-receipts/:id`: borradores primero y después comprobantes emitidos.
+  router.get("/withholding-receipts/entries", async (req, res) => {
+    const { items, meta } = await entries.list(contextOf(res), req.query);
+    send(
+      res,
+      200,
+      items.map((entry) =>
+        entry.kind === "DRAFT"
+          ? entry
+          : {
+              kind: "DOCUMENT" as const,
+              document: toWithholdingReceiptSummaryView(entry.document),
+            },
+      ),
+      meta,
+    );
   });
 
   router.get("/withholding-receipts", async (req, res) => {

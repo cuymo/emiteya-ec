@@ -215,4 +215,80 @@ describe("consulta de facturas", () => {
       .set("Cookie", a.cookies.admin);
     expect(res.status).toBe(400);
   });
+  describe("lista unificada (unify-drafts-into-document-lists, D1 a D4)", () => {
+    type Entries = {
+      data: (
+        { kind: "DRAFT"; draft: { id: string } } | { kind: "DOCUMENT"; document: { id: string } }
+      )[];
+      meta: { page: number; pageSize: number; total: number };
+    };
+    const drafts: string[] = [];
+    const entries = async (company: ReadyCompany, query = "") =>
+      (
+        await request(api.app)
+          .get(`/api/v1/invoices/entries${query}`)
+          .set("Cookie", company.cookies.operator)
+      ).body as Entries;
+    const ids = (body: Entries) =>
+      body.data.map((entry) => (entry.kind === "DRAFT" ? entry.draft.id : entry.document.id));
+
+    beforeAll(async () => {
+      // Dos borradores pendientes: el del cliente y, editado después, el de consumidor final.
+      for (const buyerPartyId of [a.customerId, a.consumerFinalId]) {
+        const res = await request(api.app)
+          .post("/api/v1/invoices/drafts")
+          .set("Cookie", a.cookies.operator)
+          .send({
+            emissionPointId: a.emissionPointId,
+            buyerPartyId,
+            lines: [{ productId: a.productId, quantity: "1" }],
+            payments: [{ paymentMethod: "01" }],
+          });
+        drafts.push(bodyOf(res).data.id);
+      }
+    });
+
+    it("pone los borradores primero, el último editado arriba, con un total exacto", async () => {
+      const all = await entries(a);
+      expect(all.meta).toEqual({ page: 1, pageSize: 25, total: 5 });
+      expect(all.data.map((entry) => entry.kind)).toEqual([
+        "DRAFT",
+        "DRAFT",
+        "DOCUMENT",
+        "DOCUMENT",
+        "DOCUMENT",
+      ]);
+      expect(ids(all)).toEqual([
+        drafts[1],
+        drafts[0],
+        invoices[2]!.id,
+        invoices[1]!.id,
+        invoices[0]!.id,
+      ]);
+      // Posiciones 3 y 4: las dos facturas más recientes, aunque la página cruce los dos orígenes.
+      expect(ids(await entries(a, "?pageSize=2&page=2"))).toEqual([
+        invoices[2]!.id,
+        invoices[1]!.id,
+      ]);
+    });
+
+    it("DRAFT deja solo los borradores; un estado emitido o «Requiere atención» los excluye", async () => {
+      expect(ids(await entries(a, "?state=DRAFT"))).toEqual([drafts[1], drafts[0]]);
+      const signed = await entries(a, "?state=SIGNED");
+      expect(signed.meta.total).toBe(2);
+      expect(signed.data.every((entry) => entry.kind === "DOCUMENT")).toBe(true);
+      const attention = await entries(a, "?attention=true");
+      expect(attention.data.every((entry) => entry.kind === "DOCUMENT")).toBe(true);
+    });
+
+    it("la búsqueda encuentra también los borradores, por su comprador", async () => {
+      expect(ids(await entries(a, "?search=consumidor"))).toEqual([drafts[1], invoices[1]!.id]);
+    });
+
+    it("otra empresa no ve los borradores de la empresa ni los cuenta", async () => {
+      const other = await entries(b);
+      expect(other.meta.total).toBe(1);
+      expect(other.data.every((entry) => entry.kind === "DOCUMENT")).toBe(true);
+    });
+  });
 });

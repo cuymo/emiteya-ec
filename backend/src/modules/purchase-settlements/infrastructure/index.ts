@@ -33,6 +33,8 @@ import type { PurchaseProductReader, PurchaseSupplierReader } from "../applicati
 import { createPurchaseSettlements } from "../application/purchase-settlements.ts";
 import { purchaseSettlementSigningProfile as createPurchaseSettlementSigningProfile } from "../application/signing-profile.ts";
 import { purchaseSettlementsRouter } from "./http/purchase-settlements-router.ts";
+import { createPurchaseSettlementEntries } from "../application/entries.ts";
+import { toPurchaseSettlementDraftSummaryView } from "./http/views.ts";
 import { registerPurchaseSettlementMetrics } from "./metrics.ts";
 import { createPurchaseSettlementDraftRepository } from "./prisma-drafts.ts";
 import { createPurchaseSettlementListReader } from "./prisma-purchase-settlement-list.ts";
@@ -147,10 +149,17 @@ export function purchaseSettlementsModule(options: PurchaseSettlementsModuleOpti
       : { continueToSigned: options.signing.continueToSigned }),
     ...(options.metrics ? { observer: registerPurchaseSettlementMetrics(options.metrics) } : {}),
   });
+  const entries = createPurchaseSettlementEntries({
+    authorizer: options.authorizer,
+    drafts,
+    settlements,
+    draftView: (_ctx, draft) => toPurchaseSettlementDraftSummaryView(draft),
+  });
   return {
     routers: [
       purchaseSettlementsRouter({
         drafts,
+        entries,
         options: settlementOptions,
         emission,
         settlements,

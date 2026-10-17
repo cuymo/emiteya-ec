@@ -53,6 +53,12 @@ import type { Reports } from "../../src/modules/reports/application/reports.ts";
 import { reportsRouter } from "../../src/modules/reports/infrastructure/http/reports-router.ts";
 import type { Dashboard } from "../../src/modules/dashboard/application/dashboard.ts";
 import { dashboardRouter } from "../../src/modules/dashboard/infrastructure/http/dashboard-router.ts";
+import type { InvoiceEntries } from "../../src/modules/invoices/application/entries.ts";
+import type { CreditNoteEntries } from "../../src/modules/credit-notes/application/entries.ts";
+import type { DebitNoteEntries } from "../../src/modules/debit-notes/application/entries.ts";
+import type { WithholdingReceiptEntries } from "../../src/modules/withholding-receipts/application/entries.ts";
+import type { ShippingGuideEntries } from "../../src/modules/shipping-guides/application/entries.ts";
+import type { PurchaseSettlementEntries } from "../../src/modules/purchase-settlements/application/entries.ts";
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
@@ -80,31 +86,41 @@ describe("rutas documentadas", () => {
       partiesRouter({} as Parties),
       inventoryRouter({} as Inventory),
       productsRouter({} as Products),
-      invoicesRouter({ drafts: {} as Drafts, emission: {} as Emission, invoices: {} as Invoices }),
+      invoicesRouter({
+        drafts: {} as Drafts,
+        emission: {} as Emission,
+        entries: {} as InvoiceEntries,
+        invoices: {} as Invoices,
+      }),
       creditNotesRouter({
         drafts: {} as CreditNoteDrafts,
+        entries: {} as CreditNoteEntries,
         emission: {} as CreditNoteEmission,
         creditNotes: {} as CreditNotes,
       }),
       debitNotesRouter({
         drafts: {} as DebitNoteDrafts,
+        entries: {} as DebitNoteEntries,
         emission: {} as DebitNoteEmission,
         debitNotes: {} as DebitNotes,
       }),
       withholdingReceiptsRouter({
         drafts: {} as WithholdingDrafts,
+        entries: {} as WithholdingReceiptEntries,
         options: {} as WithholdingOptions,
         emission: {} as WithholdingEmission,
         withholdings: {} as WithholdingReceipts,
       }),
       shippingGuidesRouter({
         drafts: {} as ShippingGuideDrafts,
+        entries: {} as ShippingGuideEntries,
         options: {} as ShippingGuideOptions,
         emission: {} as ShippingGuideEmission,
         guides: {} as ShippingGuides,
       }),
       purchaseSettlementsRouter({
         drafts: {} as PurchaseSettlementDrafts,
+        entries: {} as PurchaseSettlementEntries,
         options: {} as PurchaseSettlementOptions,
         emission: {} as PurchaseSettlementEmission,
         settlements: {} as PurchaseSettlements,

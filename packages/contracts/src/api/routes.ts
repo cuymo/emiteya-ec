@@ -3,6 +3,21 @@
 import { z } from "zod";
 import { errorEnvelopeSchema, successEnvelope } from "../envelope.ts";
 import {
+  creditNoteEntryViewSchema,
+  debitNoteEntryViewSchema,
+  documentEntryListMetaSchema,
+  invoiceEntryViewSchema,
+  listCreditNoteEntriesQuerySchema,
+  listDebitNoteEntriesQuerySchema,
+  listInvoiceEntriesQuerySchema,
+  listPurchaseSettlementEntriesQuerySchema,
+  listShippingGuideEntriesQuerySchema,
+  listWithholdingReceiptEntriesQuerySchema,
+  purchaseSettlementEntryViewSchema,
+  shippingGuideEntryViewSchema,
+  withholdingReceiptEntryViewSchema,
+} from "../document-entries.ts";
+import {
   listUsersQuerySchema,
   meSchema,
   userIdParamsSchema,
@@ -477,6 +492,36 @@ const creditNoteResponse = (description: string) => ({
   description,
   schema: successEnvelope(creditNoteViewSchema),
 });
+
+/**
+ * La lista unificada de un tipo (unify-drafts-into-document-lists, design D1): borradores primero y
+ * después comprobantes emitidos, en una sola página.
+ */
+const entriesRoute = <Q extends z.ZodObject, V extends z.ZodType>(
+  path: string,
+  plural: string,
+  query: Q,
+  view: V,
+) =>
+  defineRoute({
+    method: "get",
+    path,
+    summary: `Listar ${plural} con sus borradores primero (el último editado arriba) y después los emitidos, por estado (también DRAFT) y búsqueda`,
+    request: { query },
+    responses: {
+      200: {
+        description:
+          "Página de entradas `DRAFT` (con su resumen de borrador) o `DOCUMENT` (con su resumen de comprobante), con el total de las dos en `meta`. Los borradores solo aparecen con el permiso de borrador del tipo.",
+        schema: z.strictObject({
+          data: z.array(view),
+          meta: documentEntryListMetaSchema,
+        }),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+    },
+  });
 
 export const apiRoutes: readonly RouteDefinition[] = [
   defineRoute({
@@ -3018,4 +3063,40 @@ export const apiRoutes: readonly RouteDefinition[] = [
       },
     },
   }),
+  entriesRoute(
+    "/invoices/entries",
+    "facturas",
+    listInvoiceEntriesQuerySchema,
+    invoiceEntryViewSchema,
+  ),
+  entriesRoute(
+    "/credit-notes/entries",
+    "notas de crédito",
+    listCreditNoteEntriesQuerySchema,
+    creditNoteEntryViewSchema,
+  ),
+  entriesRoute(
+    "/debit-notes/entries",
+    "notas de débito",
+    listDebitNoteEntriesQuerySchema,
+    debitNoteEntryViewSchema,
+  ),
+  entriesRoute(
+    "/purchase-settlements/entries",
+    "liquidaciones de compra",
+    listPurchaseSettlementEntriesQuerySchema,
+    purchaseSettlementEntryViewSchema,
+  ),
+  entriesRoute(
+    "/withholding-receipts/entries",
+    "retenciones",
+    listWithholdingReceiptEntriesQuerySchema,
+    withholdingReceiptEntryViewSchema,
+  ),
+  entriesRoute(
+    "/shipping-guides/entries",
+    "guías de remisión",
+    listShippingGuideEntriesQuerySchema,
+    shippingGuideEntryViewSchema,
+  ),
 ];

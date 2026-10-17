@@ -3,6 +3,7 @@
 // `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing` (design D25), como la
 // de la factura. Ninguna ruta envía al SRI ni expone XML o respuestas originales.
 import { Router, type Response } from "express";
+import type { DebitNoteEntries } from "../../application/entries.ts";
 import { IDEMPOTENCY_KEY_HEADER, type DebitNoteView, type ListMeta } from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
 import {
@@ -29,6 +30,7 @@ const param = (value: unknown) => String(value);
 
 export type DebitNotesRouterDependencies = {
   drafts: DebitNoteDrafts;
+  entries: DebitNoteEntries;
   emission: DebitNoteEmission;
   debitNotes: DebitNotes;
   /** EMISSION_STAGE_TIMINGS: cabecera `Server-Timing` en la emisión. */
@@ -37,6 +39,7 @@ export type DebitNotesRouterDependencies = {
 
 export function debitNotesRouter({
   drafts,
+  entries,
   emission,
   debitNotes,
   serverTiming = false,
@@ -92,6 +95,21 @@ export function debitNotesRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  // Antes de `/debit-notes/:id`: borradores primero y después comprobantes emitidos.
+  router.get("/debit-notes/entries", async (req, res) => {
+    const { items, meta } = await entries.list(contextOf(res), req.query);
+    send(
+      res,
+      200,
+      items.map((entry) =>
+        entry.kind === "DRAFT"
+          ? entry
+          : { kind: "DOCUMENT" as const, document: toDebitNoteSummaryView(entry.document) },
+      ),
+      meta,
+    );
   });
 
   router.get("/debit-notes", async (req, res) => {

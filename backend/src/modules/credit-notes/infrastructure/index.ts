@@ -31,6 +31,8 @@ import { creditNoteSigningProfile as createCreditNoteSigningProfile } from "../a
 import { createEligibleInvoiceReader } from "./eligible-invoices.ts";
 import { createCreditNoteListReader } from "./prisma-credit-note-list.ts";
 import { creditNotesRouter } from "./http/credit-notes-router.ts";
+import { createCreditNoteEntries } from "../application/entries.ts";
+import { toCreditNoteDraftSummaryView } from "./http/views.ts";
 import { registerCreditNoteMetrics } from "./metrics.ts";
 import { createCreditCapacityRepository } from "./prisma-credit-capacity.ts";
 import { createCreditNoteDraftRepository } from "./prisma-drafts.ts";
@@ -145,10 +147,17 @@ export function creditNotesModule(options: CreditNotesModuleOptions) {
       ? { observer: registerCreditNoteMetrics(options.metrics, { prisma: options.prisma, now }) }
       : {}),
   });
+  const entries = createCreditNoteEntries({
+    authorizer: options.authorizer,
+    drafts,
+    creditNotes,
+    draftView: (_ctx, draft) => toCreditNoteDraftSummaryView(draft),
+  });
   return {
     routers: [
       creditNotesRouter({
         drafts,
+        entries,
         emission,
         creditNotes,
         serverTiming: options.stageTimings ?? false,

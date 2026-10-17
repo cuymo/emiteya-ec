@@ -38,6 +38,8 @@ import { createShippingGuides } from "../application/shipping-guides.ts";
 import { shippingGuideSigningProfile as createShippingGuideSigningProfile } from "../application/signing-profile.ts";
 import { createShippingEligibleInvoiceReader } from "./eligible-invoices.ts";
 import { shippingGuidesRouter } from "./http/shipping-guides-router.ts";
+import { createShippingGuideEntries } from "../application/entries.ts";
+import { toShippingGuideDraftSummaryView } from "./http/views.ts";
 
 export {
   isShippingGuideDraftBody,
@@ -164,10 +166,26 @@ export function shippingGuidesModule(options: ShippingGuidesModuleOptions) {
     }
     return (await context.parties.find(companyId, partyId))?.legalName ?? null;
   };
+  const entries = createShippingGuideEntries({
+    authorizer: options.authorizer,
+    drafts,
+    guides,
+    draftView: async (ctx, draft) =>
+      toShippingGuideDraftSummaryView(
+        draft,
+        draft.transporter === null
+          ? null
+          : await carrierName(
+              ctx.companyId,
+              draft.transporter.source === "PARTY" ? draft.transporter.partyId : null,
+            ),
+      ),
+  });
   return {
     routers: [
       shippingGuidesRouter({
         drafts,
+        entries,
         options: shippingOptions,
         emission,
         guides,

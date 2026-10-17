@@ -4,6 +4,7 @@
 // leen su cuerpo con un límite propio de 4 MiB (design D22); el resto, también la emisión, conserva el
 // parser global de 100 KB.
 import express, { Router, type Request, type Response } from "express";
+import type { PurchaseSettlementEntries } from "../../application/entries.ts";
 import {
   IDEMPOTENCY_KEY_HEADER,
   type ListMeta,
@@ -54,6 +55,7 @@ const param = (value: unknown) => String(value);
 
 export type PurchaseSettlementsRouterDependencies = {
   drafts: PurchaseSettlementDrafts;
+  entries: PurchaseSettlementEntries;
   options: PurchaseSettlementOptions;
   emission: PurchaseSettlementEmission;
   settlements: PurchaseSettlements;
@@ -63,6 +65,7 @@ export type PurchaseSettlementsRouterDependencies = {
 
 export function purchaseSettlementsRouter({
   drafts,
+  entries,
   options,
   emission,
   settlements,
@@ -121,6 +124,24 @@ export function purchaseSettlementsRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  // Antes de `/purchase-settlements/:id`: borradores primero y después comprobantes emitidos.
+  router.get("/purchase-settlements/entries", async (req, res) => {
+    const { items, meta } = await entries.list(contextOf(res), req.query);
+    send(
+      res,
+      200,
+      items.map((entry) =>
+        entry.kind === "DRAFT"
+          ? entry
+          : {
+              kind: "DOCUMENT" as const,
+              document: toPurchaseSettlementSummaryView(entry.document),
+            },
+      ),
+      meta,
+    );
   });
 
   router.get("/purchase-settlements", async (req, res) => {

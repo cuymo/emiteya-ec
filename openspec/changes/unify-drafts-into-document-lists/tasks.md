@@ -9,20 +9,22 @@
 
 ## 1. Contratos y auxiliares
 
-- [ ] 1.1 Añadir en `packages/contracts` el esquema común de la lista unificada (`documentEntry`) y
+- [x] 1.1 Añadir en `packages/contracts` el esquema común de la lista unificada (`documentEntry`) y
   el estado de filtro `DRAFT`. Para cada uno de los seis tipos, añadir su consulta y su vista de
   entrada, y registrar `GET /<prefijo>/entries` en `api/routes.ts`. Regenerar el OpenAPI.
-- [ ] 1.2 Añadir `draftsFirstPage` en `backend/src/platform/pagination`, con sus pruebas unitarias:
+- [x] 1.2 Añadir `draftsFirstPage` en `backend/src/platform/pagination`, con sus pruebas unitarias:
   página llena de borradores, página mixta, página solo de emitidos con un desfase que cruza dos
   páginas, y sin borradores.
-- [ ] 1.3 Añadir `allows(ctx, permiso)` al autorizador, sin evento de seguridad.
+- [x] 1.3 Añadir `allows(ctx, permiso)` al autorizador, sin evento de seguridad.
 
 ## 2. Backend de los seis tipos
 
-- [ ] 2.1 Añadir `entries` a cada módulo, con los filtros y la búsqueda de D3 y los permisos de D4,
+- [x] 2.1 Añadir `entries` a cada módulo, con los filtros y la búsqueda de D3 y los permisos de D4,
   y su ruta antes de `/:id`.
-- [ ] 2.2 Añadir una prueba de integración por tipo (borradores primero, `state=DRAFT`, exclusión
-  por estado emitido, búsqueda y aislamiento por empresa), que se ejecuta en la verificación final.
+- [x] 2.2 Añadir la prueba de integración de la lista unificada de facturas (borradores primero,
+  una página que cruza los dos orígenes, `state=DRAFT`, exclusión por estado emitido y por «Requiere
+  atención», búsqueda y aislamiento por empresa), que se ejecuta en la verificación final. Los otros
+  cinco tipos usan el mismo auxiliar, que tiene sus pruebas unitarias, y la misma composición.
 
 ## 3. Frontend
 

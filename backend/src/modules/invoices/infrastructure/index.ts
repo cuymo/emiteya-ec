@@ -22,6 +22,7 @@ import { createInvoiceXmlBuilder } from "../../sri-engine/infrastructure/invoice
 import { createDrafts } from "../application/drafts.ts";
 import { createEmission } from "../application/emission.ts";
 import { createInvoices } from "../application/invoices.ts";
+import { createInvoiceEntries } from "../application/entries.ts";
 import { invoiceSigningProfile as createInvoiceSigningProfile } from "../application/signing-profile.ts";
 import { createEmissionUnitOfWork } from "./emission-unit-of-work.ts";
 import { createEvaluationReads, type SigningReads } from "./evaluation-reads.ts";
@@ -132,11 +133,13 @@ export function invoicesModule(options: InvoicesModuleOptions) {
     ...(options.signAfterReserve === false ? {} : { continueToSigned: pipeline.continueToSigned }),
     ...(options.logger ? { logger: options.logger } : {}),
   });
+  const entries = createInvoiceEntries({ authorizer: options.authorizer, drafts, invoices });
   return {
     routers: [
       invoicesRouter({
         drafts,
         emission,
+        entries,
         invoices,
         serverTiming: options.stageTimings ?? false,
         ...(options.metrics ? { observeEmission: registerEmissionMetrics(options.metrics) } : {}),

@@ -32,6 +32,8 @@ import type { WithheldPartyReader } from "../application/ports.ts";
 import { withholdingReceiptSigningProfile as createWithholdingSigningProfile } from "../application/signing-profile.ts";
 import { createWithholdingReceipts } from "../application/withholding-receipts.ts";
 import { withholdingReceiptsRouter } from "./http/withholding-receipts-router.ts";
+import { createWithholdingReceiptEntries } from "../application/entries.ts";
+import { toWithholdingDraftSummaryView } from "./http/views.ts";
 import { registerWithholdingMetrics } from "./metrics.ts";
 import { createWithholdingReceiptListReader } from "./prisma-withholding-list.ts";
 import { createWithholdingDraftRepository } from "./prisma-drafts.ts";
@@ -138,10 +140,17 @@ export function withholdingReceiptsModule(options: WithholdingReceiptsModuleOpti
       : { continueToSigned: options.signing.continueToSigned }),
     ...(options.metrics ? { observer: registerWithholdingMetrics(options.metrics) } : {}),
   });
+  const entries = createWithholdingReceiptEntries({
+    authorizer: options.authorizer,
+    drafts,
+    withholdings,
+    draftView: (_ctx, draft) => toWithholdingDraftSummaryView(draft),
+  });
   return {
     routers: [
       withholdingReceiptsRouter({
         drafts,
+        entries,
         options: withholdingOptions,
         emission,
         withholdings,

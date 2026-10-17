@@ -3,6 +3,7 @@
 // `EMISSION_STAGE_TIMINGS`, la emisión devuelve sus etapas en `Server-Timing` (design D21), como la
 // de la factura. Ninguna ruta envía al SRI ni expone XML o respuestas originales.
 import { Router, type Response } from "express";
+import type { CreditNoteEntries } from "../../application/entries.ts";
 import { IDEMPOTENCY_KEY_HEADER, type CreditNoteView, type ListMeta } from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
 import {
@@ -30,6 +31,7 @@ const param = (value: unknown) => String(value);
 
 export type CreditNotesRouterDependencies = {
   drafts: CreditNoteDrafts;
+  entries: CreditNoteEntries;
   emission: CreditNoteEmission;
   creditNotes: CreditNotes;
   /** EMISSION_STAGE_TIMINGS: cabecera `Server-Timing` en la emisión. */
@@ -38,6 +40,7 @@ export type CreditNotesRouterDependencies = {
 
 export function creditNotesRouter({
   drafts,
+  entries,
   emission,
   creditNotes,
   serverTiming = false,
@@ -93,6 +96,21 @@ export function creditNotesRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  // Antes de `/credit-notes/:id`: borradores primero y después comprobantes emitidos.
+  router.get("/credit-notes/entries", async (req, res) => {
+    const { items, meta } = await entries.list(contextOf(res), req.query);
+    send(
+      res,
+      200,
+      items.map((entry) =>
+        entry.kind === "DRAFT"
+          ? entry
+          : { kind: "DOCUMENT" as const, document: toCreditNoteSummaryView(entry.document) },
+      ),
+      meta,
+    );
   });
 
   router.get("/credit-notes", async (req, res) => {

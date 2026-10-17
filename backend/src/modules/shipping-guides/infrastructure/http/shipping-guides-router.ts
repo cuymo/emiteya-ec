@@ -3,6 +3,7 @@
 // al SRI ni expone XML o respuestas originales. Crear y actualizar un borrador leen su cuerpo con un
 // límite propio de 2 MiB (design D23, segunda capa); el resto conserva el parser global de 100 KB.
 import express, { Router, type Request, type Response } from "express";
+import type { ShippingGuideEntries } from "../../application/entries.ts";
 import {
   IDEMPOTENCY_KEY_HEADER,
   type ListMeta,
@@ -54,6 +55,7 @@ const param = (value: unknown) => String(value);
 
 export type ShippingGuidesRouterDependencies = {
   drafts: ShippingGuideDrafts;
+  entries: ShippingGuideEntries;
   options: ShippingGuideOptions;
   emission: ShippingGuideEmission;
   guides: ShippingGuides;
@@ -65,6 +67,7 @@ export type ShippingGuidesRouterDependencies = {
 
 export function shippingGuidesRouter({
   drafts,
+  entries,
   options,
   emission,
   guides,
@@ -153,6 +156,21 @@ export function shippingGuidesRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  // Antes de `/shipping-guides/:id`: borradores primero y después comprobantes emitidos.
+  router.get("/shipping-guides/entries", async (req, res) => {
+    const { items, meta } = await entries.list(contextOf(res), req.query);
+    send(
+      res,
+      200,
+      items.map((entry) =>
+        entry.kind === "DRAFT"
+          ? entry
+          : { kind: "DOCUMENT" as const, document: toShippingGuideSummaryView(entry.document) },
+      ),
+      meta,
+    );
   });
 
   router.get("/shipping-guides", async (req, res) => {

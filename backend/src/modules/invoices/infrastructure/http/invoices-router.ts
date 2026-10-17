@@ -31,6 +31,7 @@ import type {
   InvoiceTransmission,
   Invoices,
 } from "../../application/invoices.ts";
+import type { InvoiceEntries } from "../../application/entries.ts";
 import { stopMessage } from "../../application/transmission-messages.ts";
 import type { InvoiceTotals } from "../../domain/amounts.ts";
 import type { InvoiceSnapshot } from "../../domain/snapshot.ts";
@@ -337,6 +338,7 @@ const param = (value: unknown) => String(value);
 export type InvoicesRouterDependencies = {
   drafts: Drafts;
   emission: Emission;
+  entries: InvoiceEntries;
   invoices: Invoices;
   /** Histograma de las etapas de la emisión, si hay registro de métricas. */
   observeEmission?: EmissionObserver;
@@ -349,6 +351,7 @@ const invoiceOf = (details: InvoiceDetails) => toInvoiceView(details);
 export function invoicesRouter({
   drafts,
   emission,
+  entries,
   invoices,
   observeEmission,
   serverTiming,
@@ -409,6 +412,21 @@ export function invoicesRouter({
       if (serverTiming) res.setHeader("Server-Timing", serverTimingHeader(timings.entries()));
     }
     send(res, result.replayed ? 200 : 201, result.view);
+  });
+
+  // Antes de `/invoices/:invoiceId`: borradores primero y después facturas emitidas.
+  router.get("/invoices/entries", async (req, res) => {
+    const { items, meta } = await entries.list(contextOf(res), req.query);
+    send(
+      res,
+      200,
+      items.map((entry) =>
+        entry.kind === "DRAFT"
+          ? { kind: "DRAFT" as const, draft: toDraftSummaryView(entry.draft) }
+          : { kind: "DOCUMENT" as const, document: toInvoiceSummaryView(entry.document) },
+      ),
+      meta,
+    );
   });
 
   router.get("/invoices", async (req, res) => {

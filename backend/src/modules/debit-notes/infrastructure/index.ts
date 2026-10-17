@@ -31,6 +31,8 @@ import { debitNoteSigningProfile as createDebitNoteSigningProfile } from "../app
 import { createDebitEligibleInvoiceReader } from "./eligible-invoices.ts";
 import { createDebitNoteListReader } from "./prisma-debit-note-list.ts";
 import { debitNotesRouter } from "./http/debit-notes-router.ts";
+import { createDebitNoteEntries } from "../application/entries.ts";
+import { toDebitNoteDraftSummaryView } from "./http/views.ts";
 import { registerDebitNoteMetrics } from "./metrics.ts";
 import { createDebitNoteDraftRepository } from "./prisma-drafts.ts";
 import { createDebitNotesReads, type SigningReads } from "./reads.ts";
@@ -132,10 +134,17 @@ export function debitNotesModule(options: DebitNotesModuleOptions) {
       : { continueToSigned: options.signing.continueToSigned }),
     ...(options.metrics ? { observer: registerDebitNoteMetrics(options.metrics) } : {}),
   });
+  const entries = createDebitNoteEntries({
+    authorizer: options.authorizer,
+    drafts,
+    debitNotes,
+    draftView: (_ctx, draft) => toDebitNoteDraftSummaryView(draft),
+  });
   return {
     routers: [
       debitNotesRouter({
         drafts,
+        entries,
         emission,
         debitNotes,
         serverTiming: options.stageTimings ?? false,

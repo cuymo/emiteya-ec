@@ -70,7 +70,15 @@ export function createAuthorizer({ memberships, securityEvents }: AuthorizationD
     return error;
   }
 
-  return { requirePermission, requireMember, missingResource };
+  /**
+   * Si el rol tiene el permiso, sin denegar ni emitir un evento: decide la forma de una respuesta,
+   * como los borradores de una lista unificada (unify-drafts-into-document-lists, design D4).
+   */
+  function allows(ctx: RequestContext, action: Permission): boolean {
+    return can(ctx.role, action);
+  }
+
+  return { requirePermission, requireMember, missingResource, allows };
 }
 
 export type Authorizer = ReturnType<typeof createAuthorizer>;
