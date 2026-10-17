@@ -97,6 +97,10 @@ describe("Reportes", () => {
     expect(within(table).getByText("3 destinatarios")).toBeDefined();
     expect(within(table).getAllByText("Sin importe").length).toBe(3);
     expect(within(table).getByText("Guía de remisión")).toBeDefined();
+    // Solo el total de la fila va en verde; el subtotal y los impuestos, en el color del texto.
+    expect(within(table).getByText("$115,00").className).toContain("text-money");
+    expect(within(table).getByText("$100,00").className).not.toContain("text-money");
+    expect(within(table).getByText("$15,00").className).not.toContain("text-money");
   });
 
   it("marca la tabla como ocupada mientras carga, sin inventar filas", async () => {

@@ -42,8 +42,9 @@ controls.
 - **Cell emphasis** (`data-table-cells.tsx`, owner decision 2026-10-16). Every list, report and
   history table follows it:
   - money: `MoneyCell`, «$17.355,05» (`formatMoney`, at least two decimals) in the `--money`
-    green (6.2:1 light, 8.4:1 dark), semibold and tabular. Reports keep every amount green and
-    bold only the row's total or withheld value. Detail pages follow it too
+    green (6.2:1 light, 8.4:1 dark), semibold and tabular. Reports color only the row's total or
+    withheld value; their other amounts (subtotal, taxes, base) keep «$» in the text color, so a
+    row is not crowded with highlighted figures (owner decision, 2026-10-17). Detail pages follow it too
     (`components/money.tsx`): each line's amount, payments and every row of the totals panel in
     green, the total larger and semibold, and «$» inside muted text (unit price, discount). The
     editors still show «USD 1,00»;

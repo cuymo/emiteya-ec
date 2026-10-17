@@ -19,9 +19,13 @@ import {
   type WithholdingRow,
 } from "@facturador/contracts";
 import type { ReactNode } from "react";
-import { MoneyCell, MutedCell, PartyCell } from "@/components/data-table/data-table-cells";
+import {
+  MoneyCell,
+  MutedCell,
+  PartyCell,
+  formatMoney,
+} from "@/components/data-table/data-table-cells";
 import { formatDecimal, formatPercentage } from "@/lib/decimal";
-import { cn } from "@/lib/utils";
 import { BalanceCell } from "@/features/inventory/inventory-screen";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/documents/document-status-badge";
@@ -30,17 +34,23 @@ import { formatPeriod } from "@/features/withholding-receipts/withholding-format
 type Row = Record<string, unknown>;
 
 /**
- * Un importe a la derecha, en verde; el total de la fila, además en seminegrita. Sin importe, "—"
- * con su lectura para lectores de pantalla.
+ * Un importe a la derecha. Solo el total de la fila (o el valor retenido) va en verde y seminegrita;
+ * los demás, en el color del texto, para que la fila no se sature de cifras destacadas (decisión del
+ * propietario, 2026-10-17). Sin importe, "—" con su lectura para lectores de pantalla.
  */
 export function Amount({ value, emphasis = false }: { value: string | null; emphasis?: boolean }) {
-  return value === null ? (
-    <span className="block text-right text-foreground-muted">
-      <span aria-hidden="true">—</span>
-      <span className="sr-only">Sin importe</span>
-    </span>
+  if (value === null) {
+    return (
+      <span className="block text-right text-foreground-muted">
+        <span aria-hidden="true">—</span>
+        <span className="sr-only">Sin importe</span>
+      </span>
+    );
+  }
+  return emphasis ? (
+    <MoneyCell amount={value} className="block text-right" />
   ) : (
-    <MoneyCell amount={value} className={cn("block text-right", !emphasis && "font-normal")} />
+    <span className="block text-right whitespace-nowrap tabular-nums">{formatMoney(value)}</span>
   );
 }
 
