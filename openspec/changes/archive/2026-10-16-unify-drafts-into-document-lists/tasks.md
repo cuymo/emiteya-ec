@@ -39,4 +39,4 @@
 
 - [x] 4.1 Actualizar `docs/architecture` (navegación, tablas, emisión fiscal) y anotar en
   `technical-debt.md` la cota de búsqueda de D3.
-- [ ] 4.2 Validar el change, sincronizar las specs y archivarlo.
+- [x] 4.2 Validar el change, sincronizar las specs y archivarlo.

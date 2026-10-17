@@ -110,13 +110,14 @@ La navegación SHALL agrupar los destinos en Inicio, Ventas, Compras, Logística
 Maestros, Análisis y Configuración, en ese orden y con dos niveles como máximo. SHALL mostrar solo
 los destinos que el rol del usuario puede usar, con la misma regla de permisos que aplica la
 aplicación. La API sigue autorizando cada operación. Un grupo sin destinos visibles no SHALL
-mostrarse.
+mostrarse. Los borradores no SHALL tener un destino propio: cada lista de comprobantes los muestra
+y los filtra.
 
 #### Scenario: Administrador
 - **WHEN** un administrador abre la navegación
 - **THEN** ve:
   - Inicio;
-  - Ventas: Facturas, Borradores de facturas, Notas de crédito, Notas de débito;
+  - Ventas: Facturas, Notas de crédito, Notas de débito;
   - Compras: Liquidaciones de compra, Retenciones;
   - Logística: Guías de remisión, Inventario;
   - Documentos: Archivo de comprobantes;
@@ -130,8 +131,8 @@ mostrarse.
 
 #### Scenario: Borradores de facturas y archivo de comprobantes
 - **WHEN** un usuario busca dónde continuar una factura sin emitir y dónde consultar comprobantes de cualquier tipo
-- **THEN** encuentra Borradores de facturas en Ventas, que solo contiene borradores de factura, y Archivo de comprobantes en Documentos, que reúne los comprobantes de todos los tipos
-- **AND** las direcciones de esas pantallas no cambian
+- **THEN** encuentra la factura sin emitir en Facturas, con el estado «Borrador», y Archivo de comprobantes en Documentos, que reúne los comprobantes de todos los tipos
+- **AND** la antigua dirección de los borradores de factura lleva a Facturas con el filtro «Borradores»
 
 #### Scenario: Navegación no es autorización
 - **WHEN** un operador solicita a la API una operación de un destino que su navegación no muestra
@@ -157,7 +158,7 @@ barra expandida, colapsada o en el panel móvil.
 - **THEN** Facturas figura como destino actual en todo momento, también después del primer guardado
 
 #### Scenario: Borrador abierto desde su lista
-- **WHEN** un operador abre un borrador de factura desde Borradores de facturas
+- **WHEN** un operador abre un borrador de factura desde la lista de Facturas
 - **THEN** Facturas figura como destino actual del editor
 
 #### Scenario: Barra colapsada
