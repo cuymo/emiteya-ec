@@ -80,6 +80,8 @@ test.describe("teclado del editor (7.1)", () => {
     await tab();
     await expect(page.getByRole("button", { name: "Elegir comprador" })).toBeFocused();
     await tab();
+    await expect(page.getByLabel("Establecimiento", { exact: true })).toBeFocused();
+    await tab();
     await expect(page.getByLabel("Punto de emisión", { exact: true })).toBeFocused();
     await tab();
     await expect(page.getByRole("button", { name: "Agregar producto" })).toBeFocused();

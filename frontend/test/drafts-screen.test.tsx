@@ -49,7 +49,7 @@ describe("editor de factura", () => {
     const buyerDialog = await screen.findByRole("dialog", { name: "Elegir comprador" });
     await user.click(await within(buyerDialog).findByRole("option", { name: /EL PERNO/ }));
     expect(await screen.findByText("EL PERNO CIA. LTDA.")).toBeDefined();
-    expect(await screen.findByText("001-001 · Av. Amazonas, Quito")).toBeDefined();
+    expect(await screen.findByText("001 · Av. Amazonas, Quito")).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Agregar producto" }));
     const productDialog = await screen.findByRole("dialog", { name: "Agregar producto" });
     await user.click(await within(productDialog).findByRole("option", { name: /Cemento 50 kg/ }));
@@ -102,6 +102,52 @@ describe("editor de factura", () => {
     await screen.findByRole("option", { name: /001-002/ });
     expect(select.value).toBe("");
     expect(screen.queryByRole("option", { name: /001-001/ })).toBeNull();
+  });
+
+  it("elige el punto entre los del establecimiento elegido (dos selectores dependientes)", async () => {
+    render(<DraftEditorScreen draftId={null} />, {
+      "GET /api/v1/establishments": ok([
+        {
+          id: "est-1",
+          code: "001",
+          address: "Av. Amazonas, Quito",
+          status: "ACTIVE",
+          emissionPoints: [
+            { id: "ep-1", code: "001", status: "ACTIVE", available: true },
+            { id: "ep-2", code: "002", status: "ACTIVE", available: true },
+          ],
+        },
+        {
+          id: "est-2",
+          code: "002",
+          address: "Av. 9 de Octubre, Guayaquil",
+          status: "ACTIVE",
+          emissionPoints: [{ id: "ep-3", code: "001", status: "ACTIVE", available: true }],
+        },
+      ]),
+      "GET /api/v1/me/default-emission-point": ok(null),
+    });
+    const user = userEvent.setup();
+    const establishment = (await screen.findByLabelText("Establecimiento")) as HTMLSelectElement;
+    const point = screen.getByLabelText("Punto de emisión") as HTMLSelectElement;
+    // Sin establecimiento, el punto espera.
+    expect(point.disabled).toBe(true);
+    await screen.findByRole("option", { name: "002 · Av. 9 de Octubre, Guayaquil" });
+    await user.selectOptions(establishment, "est-1");
+    expect(point.disabled).toBe(false);
+    expect([...point.options].map((option) => option.textContent)).toEqual([
+      "Elige un punto",
+      "001-001",
+      "001-002",
+    ]);
+    await user.selectOptions(point, "ep-2");
+    // Otro establecimiento con un solo punto: queda elegido.
+    await user.selectOptions(establishment, "est-2");
+    await waitFor(() => expect(point.value).toBe("ep-3"));
+    expect([...point.options].map((option) => option.textContent)).toEqual([
+      "Elige un punto",
+      "002-001",
+    ]);
   });
 
   it("rechaza una cantidad de 7 decimales sin redondearla ni enviarla", async () => {

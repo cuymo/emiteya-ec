@@ -419,6 +419,8 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   const values = useWatch({ control: form.control }) as FormValues;
   const buyer = values.buyer ?? null;
   const pointId = values.emissionPointId ?? "";
+  // El establecimiento elegido mientras todavía no hay punto; con un punto, manda el suyo.
+  const [establishmentChoice, setEstablishmentChoice] = useState("");
 
   // Un borrador nuevo empieza en el punto predeterminado del usuario, si tiene uno y sigue
   // disponible: uno desactivado no se preselecciona (taxpayer-setup). Es el punto de partida, no un
@@ -573,16 +575,51 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
     }
   };
 
-  const allPoints = (establishments.data ?? []).flatMap((establishment) =>
-    establishment.emissionPoints
-      .filter((point) => point.available || point.id === pointId)
-      .map((point) => ({
-        id: point.id,
-        label: `${pointLabel(establishment, point)} · ${establishment.address}`,
-      })),
+  // Establecimiento y punto en dos selectores dependientes (decisión del propietario,
+  // 2026-10-17): el punto se elige entre los del establecimiento elegido. Solo se ofrecen los puntos
+  // disponibles, más el guardado aunque haya dejado de estarlo.
+  const establishmentChoices = (establishments.data ?? [])
+    .map((establishment) => ({
+      establishment,
+      points: establishment.emissionPoints.filter(
+        (point) => point.available || point.id === pointId,
+      ),
+    }))
+    .filter(({ points }) => points.length > 0);
+  const establishmentId =
+    establishmentChoices.find(({ points }) => points.some((point) => point.id === pointId))
+      ?.establishment.id ??
+    (establishmentChoice ||
+      (establishmentChoices.length === 1 ? establishmentChoices[0]!.establishment.id : ""));
+  const chosen = establishmentChoices.find(
+    ({ establishment }) => establishment.id === establishmentId,
   );
-  // Un solo punto no es una decisión: se muestra como dato, sin selector.
-  const singlePoint = allPoints.length === 1 && allPoints[0]!.id === pointId ? allPoints[0] : null;
+  const chooseEstablishment = (id: string) => {
+    setEstablishmentChoice(id);
+    const points = establishmentChoices.find(
+      ({ establishment }) => establishment.id === id,
+    )?.points;
+    if (points?.some((point) => point.id === pointId)) return;
+    // Con un solo punto disponible no hay nada que decidir: queda elegido.
+    form.setValue("emissionPointId", points?.length === 1 ? points[0]!.id : "", {
+      shouldDirty: true,
+    });
+  };
+  const establishmentText = (establishment: { code: string; address: string }) =>
+    `${establishment.code} · ${establishment.address}`;
+  // Un solo punto en la empresa no es una decisión: se muestra como dato, sin selectores.
+  const singlePoint =
+    establishmentChoices.length === 1 &&
+    establishmentChoices[0]!.points.length === 1 &&
+    establishmentChoices[0]!.points[0]!.id === pointId
+      ? {
+          establishment: establishmentText(establishmentChoices[0]!.establishment),
+          point: pointLabel(
+            establishmentChoices[0]!.establishment,
+            establishmentChoices[0]!.points[0]!,
+          ),
+        }
+      : null;
   const methods = new Map(
     (paymentMethods.data?.entries ?? [])
       .filter((entry) => entry.usable)
@@ -885,33 +922,58 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                   onPick={() => setPickingBuyer(true)}
                 />
                 {singlePoint ? (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium">Punto de emisión</span>
-                    <p className="text-sm text-foreground-muted">{singlePoint.label}</p>
-                    {pointProblem && <p className="text-xs text-danger">{pointProblem}</p>}
+                  <div className="grid gap-4 @form-wide:grid-cols-2">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium">Establecimiento</span>
+                      <p className="text-sm text-foreground-muted">{singlePoint.establishment}</p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium">Punto de emisión</span>
+                      <p className="text-sm text-foreground-muted tabular-nums">
+                        {singlePoint.point}
+                      </p>
+                      {pointProblem && <p className="text-xs text-danger">{pointProblem}</p>}
+                    </div>
                   </div>
                 ) : (
-                  <FormField
-                    id="punto"
-                    label="Punto de emisión"
-                    problem={pointProblem}
-                    className="@form-wide:max-w-md"
-                  >
-                    <Select
-                      {...fieldAria("punto", undefined, undefined, pointProblem)}
-                      value={pointId}
-                      onChange={(event) =>
-                        form.setValue("emissionPointId", event.target.value, { shouldDirty: true })
-                      }
-                    >
-                      <option value="">Elige un punto</option>
-                      {allPoints.map((point) => (
-                        <option key={point.id} value={point.id}>
-                          {point.label}
+                  <div className="grid gap-4 @form-wide:grid-cols-2">
+                    <FormField id="establecimiento" label="Establecimiento">
+                      <Select
+                        id="establecimiento"
+                        value={establishmentId}
+                        onChange={(event) => chooseEstablishment(event.target.value)}
+                      >
+                        <option value="">Elige un establecimiento</option>
+                        {establishmentChoices.map(({ establishment }) => (
+                          <option key={establishment.id} value={establishment.id}>
+                            {establishmentText(establishment)}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormField>
+                    <FormField id="punto" label="Punto de emisión" problem={pointProblem}>
+                      <Select
+                        {...fieldAria("punto", undefined, undefined, pointProblem)}
+                        value={pointId}
+                        disabled={!chosen}
+                        onChange={(event) =>
+                          form.setValue("emissionPointId", event.target.value, {
+                            shouldDirty: true,
+                          })
+                        }
+                      >
+                        <option value="">
+                          {chosen ? "Elige un punto" : "Elige primero el establecimiento"}
                         </option>
-                      ))}
-                    </Select>
-                  </FormField>
+                        {chosen?.points.map((point) => (
+                          <option key={point.id} value={point.id}>
+                            {pointLabel(chosen.establishment, point)}
+                            {point.available ? "" : " (no disponible)"}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormField>
+                  </div>
                 )}
               </div>
             </FormSection>

@@ -531,9 +531,13 @@ persona, comprador, productos, pago, total y emitir, no el técnico de guardar p
   para decir cuánto falta. Una forma de pago todavía sin elegir no detiene la vista previa.
 - **Secciones.**
   - **Datos de la factura.** El comprador es una ficha, no un campo: su nombre, su identificación con
-    el tipo («Cédula …», «RUC …», «Consumidor final · …») y «Cambiar» o «Elegir comprador». Con un
-    solo punto de emisión disponible, el punto se muestra como dato, sin selector. Los problemas del
-    servidor sobre el comprador (`BUYER_*`) y el punto (`EMISSION_POINT_*`) van junto a su dato.
+    el tipo («Cédula …», «RUC …», «Consumidor final · …») y «Cambiar» o «Elegir comprador». El
+    establecimiento y el punto van en dos selectores lado a lado, y el punto se elige entre los del
+    establecimiento elegido (decisión del propietario, 2026-10-17). Con un solo establecimiento,
+    este queda elegido; al cambiarlo, uno con un solo punto disponible lo elige y otro vacía el
+    punto. Con un solo punto en la empresa, los dos se muestran como datos, sin selectores. Los
+    problemas del servidor sobre el comprador (`BUYER_*`) y el punto (`EMISSION_POINT_*`) van junto
+    a su dato.
   - **Productos.** Sin productos, un vacío con «Agregar producto». Con productos, una fila de
     encabezados desde 40rem de contenedor: producto, cantidad compacta, precio unitario (solo
     lectura), descuento en USD, IVA y subtotal del servidor, con los números a la derecha. Agregar un

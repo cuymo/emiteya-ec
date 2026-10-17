@@ -75,8 +75,11 @@ describe("composición del editor", () => {
     expect(within(card).getByRole("button", { name: "Cambiar comprador" })).toBeDefined();
     // No parece un campo editable.
     expect(within(section).queryByRole("textbox")).toBeNull();
-    expect(await within(section).findByText("001-001 · Av. Amazonas, Quito")).toBeDefined();
+    // Un solo punto: el establecimiento y el punto como datos, lado a lado, sin selectores.
+    expect(await within(section).findByText("001 · Av. Amazonas, Quito")).toBeDefined();
+    expect(within(section).getByText("001-001")).toBeDefined();
     expect(within(section).queryByRole("combobox", { name: "Punto de emisión" })).toBeNull();
+    expect(within(section).queryByRole("combobox", { name: "Establecimiento" })).toBeNull();
     // Las migas son de la barra superior; el editor no repite su propia fila.
     expect(screen.queryAllByRole("navigation", { name: "Ruta de navegación" })).toHaveLength(0);
   });
@@ -189,7 +192,7 @@ describe("emitir como acción principal", () => {
         body: { data: draft({ buyer: null, lines: [] }) },
       }),
     });
-    await screen.findByText("001-001 · Av. Amazonas, Quito");
+    await screen.findByText("001 · Av. Amazonas, Quito");
     await userEvent.setup().click(button("Guardar borrador"));
     expect(await screen.findByText("Guardaste el borrador.")).toBeDefined();
     expect(calls.find((call) => call.key === "POST /api/v1/invoices/drafts")?.body).toEqual({
@@ -582,7 +585,7 @@ describe("estado del guardado", () => {
   it("una factura nueva sin tocar no pide confirmar, aunque tome el punto predeterminado", async () => {
     navigation.pathname = "/borradores/nuevo";
     render(<DraftEditorScreen draftId={null} />, {});
-    await screen.findByText("001-001 · Av. Amazonas, Quito");
+    await screen.findByText("001 · Av. Amazonas, Quito");
     expect(saveState()).toBe("Sin guardar");
     expect(beforeUnload()).toBe(false);
   });
