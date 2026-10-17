@@ -522,6 +522,16 @@ describe("nueva retención", () => {
     },
   });
 
+  it("«Nueva retención» abre el selector de entrada; cerrarlo sin elegir vuelve a la lista", async () => {
+    navigation.pathname = "/retenciones/borradores/nueva";
+    render(<NewWithholdingDraftScreen />, {
+      "GET /api/v1/withholding-receipts/suppliers": SUPPLIERS,
+    });
+    await screen.findByRole("dialog", { name: "Elegir proveedor" });
+    await userEvent.setup().keyboard("{Escape}");
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/retenciones"));
+  });
+
   it("elegir el proveedor crea el borrador y abre su ruta", async () => {
     let created: unknown;
     navigation.pathname = "/retenciones/borradores/nueva";
@@ -533,12 +543,14 @@ describe("nueva retención", () => {
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Elegir proveedor" }));
+    // El selector se abre de entrada, sin la página intermedia.
     const dialog = await screen.findByRole("dialog", { name: "Elegir proveedor" });
     await user.click(await within(dialog).findByText("PROVEEDORA DEL SUR S.A."));
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/retenciones/borradores/retd-9"),
     );
+    // Elegir o registrar el proveedor cierra el selector sin volver a la lista.
+    expect(navigation.replace).not.toHaveBeenCalledWith("/retenciones");
     expect(created).toEqual({ partyId: "prov-1" });
   });
 
@@ -603,7 +615,7 @@ describe("nueva retención", () => {
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Elegir proveedor" }));
+    // El selector se abre de entrada, sin la página intermedia.
     const picker = await screen.findByRole("dialog", { name: "Elegir proveedor" });
     await user.click(await within(picker).findByText("Nuevo proveedor"));
     const form = await screen.findByRole("dialog", { name: "Nuevo tercero" });
@@ -619,6 +631,8 @@ describe("nueva retención", () => {
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/retenciones/borradores/retd-9"),
     );
+    // Elegir o registrar el proveedor cierra el selector sin volver a la lista.
+    expect(navigation.replace).not.toHaveBeenCalledWith("/retenciones");
     expect(party).toMatchObject({ roles: ["SUPPLIER"], identification: "1792345678001" });
     expect(created).toEqual({ partyId: "prov-2" });
   });

@@ -792,9 +792,20 @@ function DraftEditor({
   );
 }
 
-/** Antes de elegir la factura: el selector de las facturas elegibles. */
-function InvoiceChooser({ onChoose }: { onChoose: (invoiceId: string) => void }) {
-  const [picking, setPicking] = useState(false);
+/**
+ * Antes de elegir la factura: el selector de las facturas elegibles, abierto de entrada (decisión
+ * del propietario, 2026-10-17: «Nueva nota de crédito» abre la elección sin un clic de más).
+ * Cerrarlo sin elegir llama a `onCancel`: volver a la lista, o a la factura que ya estaba elegida.
+ */
+function InvoiceChooser({
+  onChoose,
+  onCancel,
+}: {
+  onChoose: (invoiceId: string) => void;
+  onCancel: () => void;
+}) {
+  const [picking, setPicking] = useState(true);
+  const chose = useRef(false);
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -812,7 +823,10 @@ function InvoiceChooser({ onChoose }: { onChoose: (invoiceId: string) => void })
       </Section>
       <EntityPickerDialog<EligibleInvoiceView>
         open={picking}
-        onOpenChange={setPicking}
+        onOpenChange={(next) => {
+          setPicking(next);
+          if (!next && !chose.current) onCancel();
+        }}
         title="Elegir factura"
         searchLabel="Buscar por número o comprador"
         searchPlaceholder="Número o comprador"
@@ -831,7 +845,10 @@ function InvoiceChooser({ onChoose }: { onChoose: (invoiceId: string) => void })
             <span className="text-sm tabular-nums">Disponible {formatUsd(invoice.available)}</span>
           </span>
         )}
-        onSelect={(invoice) => onChoose(invoice.id)}
+        onSelect={(invoice) => {
+          chose.current = true;
+          onChoose(invoice.id);
+        }}
         emptyTitle="No hay facturas elegibles"
         emptyDescription="Una nota de crédito corrige una factura autorizada, identificada y con valor acreditable."
       />
@@ -862,7 +879,10 @@ export function CreditNoteDraftScreen({
   const allowed = canSee(me.role, "creditNotes.draft");
   const canEmit = canSee(me.role, "creditNotes.emit");
   const draft = useCreditNoteDraft(draftId, allowed);
+  const router = useRouter();
   const [chosen, setChosen] = useState<string | null>(invoiceId);
+  // La factura de antes de «Cambiar factura»: cancelar la elección vuelve a ella.
+  const [previous, setPrevious] = useState<string | null>(null);
   const target = draftId ? (draft.data?.invoice.id ?? null) : chosen;
   const credit = useInvoiceCredit(target, allowed);
 
@@ -908,7 +928,14 @@ export function CreditNoteDraftScreen({
       </Fallback>
     );
   }
-  if (!target) return <InvoiceChooser onChoose={setChosen} />;
+  if (!target) {
+    return (
+      <InvoiceChooser
+        onChoose={setChosen}
+        onCancel={() => (previous ? setChosen(previous) : router.replace("/notas-credito"))}
+      />
+    );
+  }
   if (credit.isPending) return <CreditNoteDraftSkeleton />;
   if (credit.isError) {
     const missing = credit.error instanceof ApiError && credit.error.status === 404;
@@ -941,7 +968,14 @@ export function CreditNoteDraftScreen({
       draft={data}
       credit={credit.data}
       canEmit={canEmit}
-      {...(data ? {} : { onChangeInvoice: () => setChosen(null) })}
+      {...(data
+        ? {}
+        : {
+            onChangeInvoice: () => {
+              setPrevious(chosen);
+              setChosen(null);
+            },
+          })}
     />
   );
 }

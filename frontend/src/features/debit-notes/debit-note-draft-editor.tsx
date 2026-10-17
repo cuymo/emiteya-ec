@@ -892,8 +892,11 @@ export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: stri
   const router = useRouter();
   const queryClient = useQueryClient();
   const allowed = canSee(me.role, "debitNotes.draft");
-  const [chosen, setChosen] = useState<string | null>(invoiceId);
-  const [picking, setPicking] = useState(false);
+  const chosen = invoiceId;
+  // Sin una factura que llegue elegida, el selector se abre de entrada (decisión del propietario,
+  // 2026-10-17); cerrarlo sin elegir vuelve a la lista.
+  const [picking, setPicking] = useState(invoiceId === null);
+  const choseInPicker = useRef(false);
   const [error, setError] = useState<string>();
   const alertRef = useRef<HTMLDivElement>(null);
   const create = useSaveDebitNoteDraft({
@@ -935,10 +938,7 @@ export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: stri
             invoiceId={chosen}
             pending={create.isPending}
             onPrepare={() => prepare(chosen)}
-            onChooseOther={() => {
-              setChosen(null);
-              setPicking(true);
-            }}
+            onChooseOther={() => setPicking(true)}
           />
         ) : (
           <>
@@ -958,7 +958,10 @@ export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: stri
       </Section>
       <EntityPickerDialog<DebitEligibleInvoiceView>
         open={picking}
-        onOpenChange={setPicking}
+        onOpenChange={(next) => {
+          setPicking(next);
+          if (!next && !choseInPicker.current && chosen === null) router.replace("/notas-debito");
+        }}
         title="Elegir factura"
         searchLabel="Buscar por número o comprador"
         searchPlaceholder="Número o comprador"
@@ -977,7 +980,10 @@ export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: stri
             <span className="text-sm tabular-nums">{formatUsd(invoice.total)}</span>
           </span>
         )}
-        onSelect={(invoice) => prepare(invoice.id)}
+        onSelect={(invoice) => {
+          choseInPicker.current = true;
+          prepare(invoice.id);
+        }}
         emptyTitle="No hay facturas elegibles"
         emptyDescription="Una nota de débito modifica una factura autorizada, identificada y del ambiente vigente."
       />

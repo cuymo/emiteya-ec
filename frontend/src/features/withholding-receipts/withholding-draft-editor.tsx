@@ -149,17 +149,27 @@ function SupplierChooser({
   open,
   onOpenChange,
   onChoose,
+  onDismiss,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChoose: (subject: Subject) => void;
+  /** Se cerró sin elegir ni registrar un proveedor. */
+  onDismiss?: () => void;
 }) {
   const [creating, setCreating] = useState(false);
+  // Elegir, registrar o volver a la lista también cierran el selector: no son abandonarlo.
+  const acted = useRef(false);
+  const saved = useRef(false);
   return (
     <>
       <EntityPickerDialog<WithholdingSupplierView>
         open={open}
-        onOpenChange={onOpenChange}
+        onOpenChange={(next) => {
+          onOpenChange(next);
+          if (next) acted.current = false;
+          else if (!acted.current) onDismiss?.();
+        }}
         title="Elegir proveedor"
         description="Proveedores activos con RUC, cédula o pasaporte."
         searchLabel="Buscar por identificación o razón social"
@@ -176,11 +186,18 @@ function SupplierChooser({
             </span>
           </span>
         )}
-        onSelect={onChoose}
+        onSelect={(subject) => {
+          acted.current = true;
+          onChoose(subject);
+        }}
         quickOption={{
           label: "Nuevo proveedor",
           description: "Registrar un tercero con el rol de proveedor.",
-          onSelect: () => setCreating(true),
+          onSelect: () => {
+            acted.current = true;
+            saved.current = false;
+            setCreating(true);
+          },
         }}
         emptyTitle="No hay proveedores que coincidan"
         emptyDescription="Registra el proveedor o revisa que tenga el rol de proveedor en Terceros."
@@ -189,12 +206,19 @@ function SupplierChooser({
         open={creating}
         party={null}
         initialRoles={SUPPLIER_ROLES}
-        onClose={() => setCreating(false)}
+        onClose={() => {
+          setCreating(false);
+          if (!saved.current) onDismiss?.();
+        }}
         onShowExisting={() => {
           setCreating(false);
+          acted.current = false;
           onOpenChange(true);
         }}
-        onSaved={(party: PartyView) => onChoose(party)}
+        onSaved={(party: PartyView) => {
+          saved.current = true;
+          onChoose(party);
+        }}
       />
     </>
   );
@@ -701,7 +725,9 @@ export function NewWithholdingDraftScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const allowed = canSee(me.role, "withholdings.draft");
-  const [choosing, setChoosing] = useState(false);
+  // El selector se abre de entrada (decisión del propietario, 2026-10-17); cerrarlo sin elegir ni
+  // registrar un proveedor vuelve a la lista.
+  const [choosing, setChoosing] = useState(true);
   const [error, setError] = useState<string>();
   const alertRef = useRef<HTMLDivElement>(null);
   const create = useSaveWithholdingDraft({
@@ -753,6 +779,7 @@ export function NewWithholdingDraftScreen() {
           setError(undefined);
           create.mutate({ id: null, input: { partyId: subject.id } });
         }}
+        onDismiss={() => router.replace("/retenciones")}
       />
     </Fallback>
   );

@@ -358,6 +358,18 @@ describe("borrador de nota de crédito", () => {
     });
   });
 
+  it("«Nueva nota de crédito» abre el selector de entrada; cerrarlo sin elegir vuelve a la lista", async () => {
+    render(<CreditNoteDraftScreen draftId={null} />, {
+      "GET /api/v1/credit-notes/eligible-invoices": () => ({
+        status: 200,
+        body: { data: [], meta: { page: 1, pageSize: 10, total: 0 } },
+      }),
+    });
+    await screen.findByRole("dialog", { name: "Elegir factura" });
+    await userEvent.setup().keyboard("{Escape}");
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/notas-credito"));
+  });
+
   it("sin factura elegida ofrece el selector de facturas elegibles", async () => {
     render(<CreditNoteDraftScreen draftId={null} />, {
       "GET /api/v1/credit-notes/eligible-invoices": () => ({
@@ -379,11 +391,19 @@ describe("borrador de nota de crédito", () => {
       }),
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Elegir factura" }));
+    // El selector se abre de entrada, sin la página intermedia.
     const dialog = await screen.findByRole("dialog", { name: "Elegir factura" });
     await user.click(await within(dialog).findByText("001-001-000000001"));
     expect(await screen.findByText("Factura 001-001-000000001")).toBeDefined();
     expect(screen.getByRole("button", { name: "Cambiar factura" })).toBeDefined();
+    // Elegir cierra el selector, pero no es cancelarlo: no vuelve a la lista.
+    expect(navigation.replace).not.toHaveBeenCalledWith("/notas-credito");
+    // «Cambiar factura» abre el selector; cancelarlo vuelve a la factura elegida.
+    await user.click(screen.getByRole("button", { name: "Cambiar factura" }));
+    await screen.findByRole("dialog", { name: "Elegir factura" });
+    await user.keyboard("{Escape}");
+    expect(await screen.findByText("Factura 001-001-000000001")).toBeDefined();
+    expect(navigation.replace).not.toHaveBeenCalledWith("/notas-credito");
   });
 
   it("un borrador ya emitido lo explica con el enlace a las notas", async () => {

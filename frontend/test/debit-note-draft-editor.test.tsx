@@ -426,6 +426,19 @@ describe("nueva nota de débito", () => {
     expect(created).toEqual({ invoiceId: "inv-1" });
   });
 
+  it("«Nueva nota de débito» abre el selector de entrada; cerrarlo sin elegir vuelve a la lista", async () => {
+    navigation.pathname = "/notas-debito/borradores/nueva";
+    render(<NewDebitNoteDraftScreen />, {
+      "GET /api/v1/debit-notes/eligible-invoices": () => ({
+        status: 200,
+        body: { data: [], meta: { page: 1, pageSize: 10, total: 0 } },
+      }),
+    });
+    await screen.findByRole("dialog", { name: "Elegir factura" });
+    await userEvent.setup().keyboard("{Escape}");
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/notas-debito"));
+  });
+
   it("sin factura elegida, elegirla en el selector crea el borrador", async () => {
     let created: unknown;
     navigation.pathname = "/notas-debito/borradores/nueva";
@@ -452,12 +465,14 @@ describe("nueva nota de débito", () => {
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Elegir factura" }));
+    // El selector se abre de entrada, sin la página intermedia.
     const dialog = await screen.findByRole("dialog", { name: "Elegir factura" });
     await user.click(await within(dialog).findByText("001-001-000000001"));
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/notas-debito/borradores/ndd-9"),
     );
+    // Elegir cierra el selector, pero no es cancelarlo: no vuelve a la lista.
+    expect(navigation.replace).not.toHaveBeenCalledWith("/notas-debito");
     expect(created).toEqual({ invoiceId: "inv-1" });
   });
 
