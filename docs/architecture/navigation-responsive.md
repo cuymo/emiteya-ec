@@ -23,7 +23,7 @@ The groups and destinations, in this order:
 | Group         | Destinations                                                                                              |
 | ------------- | --------------------------------------------------------------------------------------------------------- |
 | Inicio        | Inicio (shown as a loose destination, without a group label)                                              |
-| Ventas        | Facturas, Borradores de facturas, Notas de crédito, Notas de débito                                       |
+| Ventas        | Facturas, Notas de crédito, Notas de débito                                                               |
 | Compras       | Liquidaciones de compra, Retenciones                                                                      |
 | Logística     | Guías de remisión, Inventario                                                                             |
 | Documentos    | Archivo de comprobantes                                                                                   |
@@ -32,10 +32,12 @@ The groups and destinations, in this order:
 | Configuración | Usuarios, Empresa, Establecimientos, Firma electrónica, Catálogos fiscales, Ambiente, Portabilidad de datos |
 
 - **Sales and documents.**
-  - **Borradores de facturas** (`/borradores`) holds only invoice drafts. The other documents keep
-    their drafts inside their own destination.
-  - **Archivo de comprobantes** (`/comprobantes`) is the cross-document archive of every type.
-  - The routes did not change. «Nueva factura» lands in Ventas › Borradores de facturas.
+  - **Drafts have no destination of their own** (unify-drafts-into-document-lists, design D6):
+    every document list shows its drafts first, with the «Borrador» state and the «Borradores»
+    filter. `/borradores` redirects to `/facturas?estado=borradores` (`next.config.ts`); the
+    palette finds Facturas by «borradores» or «factura sin emitir».
+  - **Archivo de comprobantes** (`/comprobantes`) is the cross-document archive of every type, and
+    never shows drafts.
 
 - **Mi cuenta** lives in the account menu, not in the sidebar.
 - **Permissions.** Each destination keeps the permission of the earlier navigation. The operator
@@ -69,7 +71,7 @@ not repeat the screen title: the screen's own `h1`, right below, names it.
   screen `h1`, right below, already orients.
 - They are the only orientation of the screen: no «back» link repeats a breadcrumb.
 - **Invoice editor** (design D12, PO-1): new invoice and draft belong to Facturas, before and after
-  the first save. Borradores de facturas stays in Ventas as the list to resume drafts.
+  the first save. Drafts are resumed from the Facturas list.
 
 Examples:
 - Inicio / Ventas / Facturas / 001-001-000000123;

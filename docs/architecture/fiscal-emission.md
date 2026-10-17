@@ -469,12 +469,40 @@ Cambio 7. Código en `backend/src/modules/fiscal/`, `backend/src/modules/sri-eng
 | Decisiones del cambio 7 | API orientada a la factura | Historial y reconciliación del administrador; ninguna ruta de envío ni de SOAP. |
 | `add-invoice-emission` | Envía siempre los mismos bytes | El envío y el reenvío usan el `SIGNED_XML` persistido; nunca se regenera. |
 
+## Borradores en las listas (`unify-drafts-into-document-lists`)
+
+Cada tipo de comprobante lista sus borradores en su propia tabla, sin un destino aparte.
+
+- **API.** `GET /<prefijo>/entries` en facturas, notas de crédito, notas de débito, liquidaciones de
+  compra, retenciones y guías de remisión. Devuelve entradas `{ kind: "DRAFT", draft }` o
+  `{ kind: "DOCUMENT", document }` con las vistas de resumen de siempre. Las listas
+  `GET /<prefijo>` y `GET /<prefijo>/drafts` no cambian.
+- **Orden y paginación.** Los borradores ocupan las primeras posiciones (el último editado arriba)
+  y los emitidos las siguientes, con un total exacto. `draftsFirstPage`
+  (`backend/src/platform/pagination/drafts-first.ts`) arma cada página con la paginación de las
+  dos listas: una página de borradores y como mucho dos de emitidos.
+- **Filtros.**
+  - `state=DRAFT` deja solo los borradores; un estado emitido y «Requiere atención» los excluyen.
+  - La causa de las notas de crédito y el período de las retenciones filtran también los
+    borradores; la causa de las notas de débito los excluye.
+  - La búsqueda los encuentra por el tercero o por la factura modificada que muestran. Recorre en
+    memoria los 500 borradores más recientes del tipo (`DRAFT_SEARCH_LIMIT`).
+- **Permisos.** La ruta exige el permiso de consulta del tipo. Los borradores aparecen solo con el
+  de borrador (`authorizer.allows`, sin evento de seguridad).
+- **Pantallas.**
+  - El borrador muestra «Borrador» en la columna del número, con enlace a su editor, y la insignia
+    neutra `DraftStateBadge`.
+  - Su total previo va en verde, o «Incompleto».
+  - Muestra «Editado» con su fecha y hora (`features/documents/draft-entries.tsx`).
+  - Sus acciones son «Continuar» y «Eliminar borrador», con confirmación.
+  - El filtro de estado ofrece «Borradores» (`?estado=borradores`) justo después de «Todos».
+
 ## Lista de facturas (`productize-invoice-list-and-shared-table-foundation`)
 
-`frontend/src/features/invoices/invoices-screen.tsx` compone la base de listas (`data-tables.md`) sobre `GET /api/v1/invoices`, sin cambios en la API.
+`frontend/src/features/invoices/invoices-screen.tsx` compone la base de listas (`data-tables.md`) sobre `GET /api/v1/invoices/entries`: los borradores primero y después las facturas emitidas (`unify-drafts-into-document-lists`, ver «Borradores en las listas» más abajo).
 
 - **Encabezado.** `PageHeader` con «Facturas» y «Nueva factura» como única acción principal, hacia `/borradores/nuevo`, solo con `invoices.draft`.
-- **Vistas y estado.** Vistas «Todas» y «Requiere atención» (`vista=atencion`, `attention=true`) y un filtro «Estado» de opción única con los ocho estados del glosario (`estado=procesando`, `firmadas`, `verificando`, `recibidas`, `devueltas`, `autorizadas`, `no-autorizadas` y `revision`), que se combina con la vista como en el servidor. `estado=atencion`, de los enlaces anteriores, abre la vista y se reescribe.
+- **Vistas y estado.** Vistas «Todas» y «Requiere atención» (`vista=atencion`, `attention=true`) y un filtro «Estado» de opción única con «Borradores» (`estado=borradores`, `state=DRAFT`) y los ocho estados del glosario (`estado=procesando`, `firmadas`, `verificando`, `recibidas`, `devueltas`, `autorizadas`, `no-autorizadas` y `revision`), que se combina con la vista como en el servidor. `estado=atencion`, de los enlaces anteriores, abre la vista y se reescribe.
 - **Conteo de atención.** Una consulta `attention=true&pageSize=1` lee `meta.total`, con su propia clave: cuenta toda la empresa con la semántica vigente (`SEND_UNKNOWN`, `MANUAL_REVIEW` o transmisión detenida) y no se repite al cambiar la página, las filas, el estado ni la búsqueda.
 - **Búsqueda.** «Número, comprador o identificación», lo que busca el servidor, con 300 ms de espera, hasta 100 caracteres y de vuelta a la primera página.
 - **URL.** `vista`, `estado`, `q`, `pagina` y `filas` (`useListUrlState`). Los valores no válidos se ignoran, y una página posterior a la última lleva a la última.

@@ -21,7 +21,7 @@ controls.
 
 | Piece | File | Owns |
 | --- | --- | --- |
-| `DataTableCard` | `data-table-card.tsx` | The list surface: a card whose header holds the screen title (`h1`, or `h2` for a section of a larger page), a short description, the search and the actions; an optional `lead` (drafts in progress, notices); a filters row; and the table, edge to edge. It is a region named by its title |
+| `DataTableCard` | `data-table-card.tsx` | The list surface: a card whose header holds the screen title (`h1`, or `h2` for a section of a larger page), a short description, the search and the actions; an optional `lead` (notices; drafts now go in the table itself, unify-drafts-into-document-lists); a filters row; and the table, edge to edge. It is a region named by its title |
 | `DataTableSelectFilter` | `data-table-select-filter.tsx` | Every filter and view as a prefixed listbox («Estado: Todos»), over `ui/select-menu`. With `allLabel` the first option clears the filter; an option may carry a server count («Requiere atención 3»). The trigger is named after the filter and reads its value from its content |
 | `DataTable<T>` | `data-table.tsx` | Typed columns with per-column `meta` classes, the accessible `caption`, skeleton rows, the empty or error state inside the surface, `aria-busy` while refreshing, the footer only with rows, and `onRowOpen` |
 | `AppDataTable<T>` | `app-data-table.tsx` | The same surface for the other lists, with optional columns and a prioritized card list below 768 px |
