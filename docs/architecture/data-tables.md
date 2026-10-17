@@ -37,8 +37,9 @@ controls.
   convenience: a primary click on a non-interactive area opens the record, never from a link, a
   button, a menu (also in a portal), with a modifier key or with selected text. The row is never
   focusable, so there are no duplicate keyboard stops.
-- **Selection is neutral.** A chosen filter shows its value in a neutral trigger; the primary blue
-  stays for the screen's primary action.
+- **Active is blue** (owner decision, 2026-10-17). A chosen filter shows its value in its neutral
+  trigger, and its checked option in the menu is primary blue with its check. The current page and
+  the chosen view use the soft `--active` tint with blue text (`component-system.md`).
 - **Cell emphasis** (`data-table-cells.tsx`, owner decision 2026-10-16). Every list, report and
   history table follows it:
   - money: `MoneyCell`, «$17.355,05» (`formatMoney`, at least two decimals) in the `--money`

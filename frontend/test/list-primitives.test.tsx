@@ -81,11 +81,12 @@ describe("ToggleGroup", () => {
     expect(todas!.getAttribute("aria-checked")).toBe("false");
   });
 
-  it("la selección es neutra, no el azul principal", () => {
+  it("la selección va en el azul activo, con el texto en azul primario", () => {
     render(<Views />);
-    const selected = screen.getByRole("radio", { name: "Todas" });
-    expect(selected.className).toContain("data-[state=on]:bg-muted");
-    expect(selected.className).not.toContain("bg-primary");
+    const classes = screen.getByRole("radio", { name: "Todas" }).className.split(/\s+/);
+    expect(classes).toContain("data-[state=on]:bg-active");
+    expect(classes).toContain("data-[state=on]:text-active-foreground");
+    expect(classes).not.toContain("data-[state=on]:bg-muted");
   });
 
   it("no escribe la separación en un atributo style, que la CSP bloquea", () => {

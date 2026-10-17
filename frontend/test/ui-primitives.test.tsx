@@ -423,9 +423,11 @@ describe("Sidebar", () => {
     expect(sidebar.getAttribute("data-state")).toBe("expanded");
     expect(document.cookie).toContain("sidebar_state=true");
     // El destino conserva su nombre accesible también colapsado.
-    expect(screen.getByRole("link", { name: "Facturas" }).getAttribute("aria-current")).toBe(
-      "page",
-    );
+    const link = screen.getByRole("link", { name: "Facturas" });
+    expect(link.getAttribute("aria-current")).toBe("page");
+    // El destino actual va en el azul activo, no en gris.
+    expect(link.className.split(/\s+/)).toContain("data-active:bg-active");
+    expect(link.className.split(/\s+/)).toContain("data-active:text-active-foreground");
   });
 
   it("en móvil abre un panel con botón de cerrar y devuelve el foco al botón de menú", async () => {

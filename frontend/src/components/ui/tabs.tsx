@@ -39,7 +39,7 @@ export function TabsList({ className, ...props }: ComponentProps<typeof TabsPrim
  */
 export const tabTriggerClassName = cn(
   "relative inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-t-md px-3 text-sm font-medium whitespace-nowrap text-foreground-muted transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 max-md:h-11 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-  "after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 after:transition-opacity data-active:text-foreground data-active:after:opacity-100 aria-[current=page]:text-foreground aria-[current=page]:after:opacity-100",
+  "after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-primary after:opacity-0 after:transition-opacity data-active:text-primary data-active:after:opacity-100 aria-[current=page]:text-primary aria-[current=page]:after:opacity-100",
 );
 
 export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Trigger>) {

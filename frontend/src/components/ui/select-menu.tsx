@@ -111,12 +111,14 @@ export function SelectMenuItem({
       className={cn(
         "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1.5 pr-8 pl-2 text-sm outline-hidden select-none max-md:min-h-11",
         "focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50",
+        // La opción elegida va en el azul primario, con la marca de verificación además del color.
+        "data-[state=checked]:font-medium data-[state=checked]:text-primary",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
     >
-      <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center">
+      <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center text-primary">
         <SelectPrimitive.ItemIndicator>
           <CheckIcon aria-hidden="true" />
         </SelectPrimitive.ItemIndicator>

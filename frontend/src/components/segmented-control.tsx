@@ -1,9 +1,8 @@
 // SegmentedControl (component-system.md): de dos a cinco opciones excluyentes y visibles a la vez,
 // con geometría estable. Admite empezar sin selección cuando el dato debe declararse (no inferirse).
-// La opción elegida es una pieza elevada dentro de una pista neutra, como el `toggle-group` de la
-// plantilla, sin el azul principal (productize-invoice-editor-and-composition-foundation, D10). Con
-// `tone="primary"` la pieza elegida va en el azul primario: solo donde el propietario lo pidió
-// (2026-10-16: «Obligada a llevar contabilidad» en Empresa).
+// La opción elegida es una pieza elevada en el azul primario dentro de una pista neutra (decisión del
+// propietario, 2026-10-17: lo activo va en azul en toda la aplicación); su forma la distingue además
+// del color.
 "use client";
 
 import { ToggleGroup } from "radix-ui";
@@ -20,7 +19,6 @@ export function SegmentedControl<T extends string>({
   "aria-describedby": describedBy,
   "aria-invalid": invalid,
   disabled,
-  tone = "neutral",
 }: {
   options: readonly SegmentedOption<T>[];
   value: T | undefined;
@@ -30,8 +28,6 @@ export function SegmentedControl<T extends string>({
   "aria-describedby"?: string;
   "aria-invalid"?: boolean;
   disabled?: boolean;
-  /** «neutral» (por defecto) o «primary», con la opción elegida en el azul primario. */
-  tone?: "neutral" | "primary";
 }) {
   return (
     <ToggleGroup.Root
@@ -61,9 +57,7 @@ export function SegmentedControl<T extends string>({
             "motion-safe:transition-colors motion-safe:duration-150",
             "hover:text-foreground",
             // El borde de la pieza elegida contrasta con la pista y con su relleno en los dos temas.
-            tone === "primary"
-              ? "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:ring-1 data-[state=on]:ring-primary data-[state=on]:hover:text-primary-foreground"
-              : "data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:ring-1 data-[state=on]:ring-muted-foreground",
+            "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:ring-1 data-[state=on]:ring-primary data-[state=on]:hover:text-primary-foreground",
             "disabled:opacity-50",
           )}
         >

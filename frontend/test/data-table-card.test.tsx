@@ -136,9 +136,14 @@ describe("DataTableFooter", () => {
     );
     expect(screen.getByText("Mostrando 1-25 de 52")).toBeTruthy();
     const nav = screen.getByRole("navigation", { name: "Paginación" });
-    expect(within(nav).getByRole("button", { name: "Página 1" }).getAttribute("aria-current")).toBe(
-      "page",
-    );
+    const current = within(nav).getByRole("button", { name: "Página 1" });
+    expect(current.getAttribute("aria-current")).toBe("page");
+    // La página actual va en el azul activo, como todo lo activo de la aplicación.
+    expect(current.className.split(/\s+/)).toContain("bg-active");
+    expect(current.className.split(/\s+/)).toContain("text-active-foreground");
+    expect(
+      within(nav).getByRole("button", { name: "Página 2" }).className.split(/\s+/),
+    ).not.toContain("bg-active");
     expect(within(nav).getByRole("button", { name: "Página anterior" }).matches(":disabled")).toBe(
       true,
     );

@@ -143,8 +143,8 @@ export function CommandItem({
       data-slot="command-item"
       className={cn(
         "group/command-item relative flex cursor-default items-center gap-2 rounded-lg px-2 py-1.5 text-sm outline-hidden select-none max-md:min-h-11",
-        "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-muted data-selected:text-foreground",
-        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-selected:*:[svg]:text-foreground",
+        "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-active data-selected:text-active-foreground",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-selected:*:[svg]:text-active-foreground",
         className,
       )}
       {...props}

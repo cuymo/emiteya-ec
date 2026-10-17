@@ -46,8 +46,8 @@ describe("SegmentedControl", () => {
   });
 });
 
-describe("SegmentedControl: selección neutra (productize-invoice-editor-and-composition-foundation, D10)", () => {
-  it("la opción elegida es una pieza elevada con borde, no el azul principal", () => {
+describe("SegmentedControl: la opción elegida va en el azul primario (decisión del propietario, 2026-10-17)", () => {
+  it("la opción elegida es una pieza elevada en azul primario, con borde, dentro de una pista neutra", () => {
     render(
       <SegmentedControl
         options={[
@@ -62,36 +62,15 @@ describe("SegmentedControl: selección neutra (productize-invoice-editor-and-com
     expect(chosen.getAttribute("data-state")).toBe("on");
     const classes = chosen.className.split(/\s+/);
     for (const token of [
-      "data-[state=on]:bg-background",
-      "data-[state=on]:text-foreground",
-      "data-[state=on]:shadow-sm",
-      "data-[state=on]:ring-muted-foreground",
-    ])
-      expect(classes, token).toContain(token);
-    expect(chosen.className).not.toContain("bg-primary");
-    expect(chosen.parentElement!.className.split(/\s+/)).toContain("bg-muted");
-  });
-
-  it("con tone primary, la opción elegida va en el azul primario y conserva su forma", () => {
-    render(
-      <SegmentedControl
-        tone="primary"
-        options={[
-          { value: "SI", label: "Sí" },
-          { value: "NO", label: "No" },
-        ]}
-        value="SI"
-        onChange={() => undefined}
-      />,
-    );
-    const classes = screen.getByRole("radio", { name: "Sí" }).className.split(/\s+/);
-    for (const token of [
       "data-[state=on]:bg-primary",
       "data-[state=on]:text-primary-foreground",
       "data-[state=on]:shadow-sm",
       "data-[state=on]:ring-1",
+      "data-[state=on]:ring-primary",
     ])
       expect(classes, token).toContain(token);
+    expect(screen.getByRole("radio", { name: "Servicio" }).getAttribute("data-state")).toBe("off");
+    expect(chosen.parentElement!.className.split(/\s+/)).toContain("bg-muted");
   });
 });
 

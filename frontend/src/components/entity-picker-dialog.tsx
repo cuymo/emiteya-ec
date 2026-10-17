@@ -242,9 +242,7 @@ export function EntityPickerDialog<T>({
             className={cn(
               "flex min-h-11 cursor-pointer items-center rounded-md px-2 py-1 text-sm",
               option.disabled && "cursor-not-allowed text-foreground-muted",
-              index === activeIndex
-                ? "bg-surface-subtle ring-1 ring-primary"
-                : "hover:bg-surface-subtle",
+              index === activeIndex ? "bg-active ring-1 ring-primary" : "hover:bg-surface-subtle",
             )}
           >
             {option.content}

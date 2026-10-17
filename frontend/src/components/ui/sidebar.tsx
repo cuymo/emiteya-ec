@@ -345,7 +345,8 @@ export const sidebarMenuButtonVariants = cva(
     "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground",
     "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
     "data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground",
-    "data-active:bg-sidebar-accent data-active:font-medium data-active:text-sidebar-accent-foreground",
+    // Lo activo en el azul primario (decisión del propietario, 2026-10-17); el puntero, en gris.
+    "data-active:bg-active data-active:font-medium data-active:text-active-foreground data-active:hover:bg-active data-active:hover:text-active-foreground",
     "[&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
   ],
   {

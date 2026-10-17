@@ -449,10 +449,8 @@ controles que el producto no respalda, como notificaciones o ayuda.
 Cada pantalla SHALL presentar como mucho una acción principal destacada a la vez. Una acción que en
 ese momento no puede ejecutarse SHALL percibirse como no disponible, sin el aspecto de la acción
 principal, y su motivo SHALL estar escrito junto a ella. Cuando el encabezado de la pantalla ya
-ofrece la acción principal, el estado vacío SHALL ofrecer la misma acción solo como secundaria. Las
-opciones elegidas en vistas, filtros y controles segmentados SHALL distinguirse sin usar la
-presentación de la acción principal, y nunca solo por el color. La única excepción es «Obligada a
-llevar contabilidad» en Empresa, cuya opción elegida va en el azul primario sin perder su forma.
+ofrece la acción principal, el estado vacío SHALL ofrecer la misma acción solo como secundaria. Una
+opción elegida SHALL NOT tomar la forma de un botón de acción principal.
 
 #### Scenario: Acción no disponible
 - **WHEN** un operador ve la acción de cambiar a Producción mientras la empresa aún no puede emitir
@@ -464,7 +462,22 @@ llevar contabilidad» en Empresa, cuya opción elegida va en el azul primario si
 
 #### Scenario: Filtro elegido
 - **WHEN** un operador elige el filtro «Activos» en la lista de productos
-- **THEN** el filtro se ve elegido por su forma y su texto, sin competir con la acción principal «Nuevo producto»
+- **THEN** el disparador muestra «Activos» en su texto, sin competir con la acción principal «Nuevo producto», y al abrir el menú la opción marcada va en azul primario con su marca
+
+### Requirement: Lo activo va en azul
+Lo activo y lo elegido SHALL ir en el azul primario, nunca en gris. El destino actual de la barra
+lateral, la página actual de una tabla, la vista elegida y la opción resaltada de un menú SHALL
+llevar un fondo azul suave con el texto en azul primario; la pestaña actual y la opción marcada de un
+menú, el texto azul con su subrayado o su marca; la opción elegida de un control segmentado, una
+pieza azul primario dentro de su pista. Ninguna SHALL distinguirse solo por el color.
+
+#### Scenario: Destino actual
+- **WHEN** un operador está en Facturas
+- **THEN** «Facturas» en la barra lateral se ve sobre un fondo azul suave con el texto en azul primario, no en gris, y se anuncia como página actual
+
+#### Scenario: Control segmentado
+- **WHEN** un administrador marca «Sí» en «Obligada a llevar contabilidad»
+- **THEN** «Sí» es una pieza azul primario elevada dentro de la pista, y «No» queda sin relleno
 
 ### Requirement: Configuración en pestañas
 Las secciones de Configuración SHALL presentarse en una sola página con pestañas, en este orden:

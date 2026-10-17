@@ -328,7 +328,6 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
               name="accountingRequired"
               render={({ field }) => (
                 <SegmentedControl
-                  tone="primary"
                   options={ACCOUNTING_OPTIONS}
                   value={field.value}
                   onChange={field.onChange}

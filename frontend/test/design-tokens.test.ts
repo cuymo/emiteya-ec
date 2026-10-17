@@ -71,6 +71,7 @@ const TEXT_PAIRS: [string, string][] = [
   ["sidebar-accent-foreground", "sidebar-accent"],
   ["secondary-foreground", "secondary"],
   ["accent-foreground", "accent"],
+  ["active-foreground", "active"],
   ["popover-foreground", "popover"],
   ["primary", "background"],
   ["destructive", "background"],

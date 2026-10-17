@@ -71,16 +71,22 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
   such as switching to Producción, on the screen and in its confirmation (`ConfirmDialog`
   `tone="danger"`). Like `primary`, one per screen. `destructive` stays the soft red for
   deleting, and a red-text outline marks «Desactivar».
-- **Selection is neutral** (design D10). The primary blue is reserved for the main action.
-  - List filters (`DataTableSelectFilter`): the chosen value shows in a neutral trigger, after its
-    prefix («Estado: Activos»). It is recognized by its text, not by color.
-  - `SegmentedControl`: the chosen option is a raised `bg-background` piece with a small shadow and
-    a `muted-foreground` ring, inside a `muted` track, like the template's `toggle-group`. The ring
-    contrasts at least 3:1 with the track and with the piece in both themes. One exception, by
-    owner decision (2026-10-16): «Obligada a llevar contabilidad» in Empresa uses
-    `tone="primary"`, a raised `bg-primary` piece that keeps the same shape.
-  - Facturas' views (`ui/toggle.tsx`) already followed this rule; the legacy lists and forms now
-    match it without being migrated.
+- **Active is blue** (owner decision, 2026-10-17; replaces the neutral selection of design D10).
+  Everything active or chosen uses the primary blue, never gray, and never by color alone.
+  - **Tokens:** `--active` is a soft blue tint and `--active-foreground` is the primary blue
+    (light 5.25:1; dark `oklch(0.82 0.11 255)` on `oklch(0.3 0.06 255)`, 7.73:1).
+    `--accent` maps to them, so menu highlights (`focus:bg-accent`) and the topbar hover are blue
+    too. `frontend/test/design-tokens.test.ts` guards both pairs.
+  - **Soft tint with blue text:** the sidebar's current destination (`data-active:bg-active`, hover
+    stays the neutral `sidebar-accent`), Facturas' views (`ui/toggle.tsx`), the current page in
+    pagination (with a `primary/40` border), the highlighted command palette item and the active
+    option in `EntityPickerDialog` (with a `primary` ring).
+  - **Blue text and mark:** the current tab (`text-primary` and its underline), and the checked
+    option of `SelectMenu` and dropdown menus (`text-primary` and its check).
+  - **Solid blue piece:** `SegmentedControl`. The chosen option is a raised `bg-primary` piece with
+    a `primary` ring and a small shadow inside a `muted` track. The `tone` prop is gone.
+  - **Still neutral:** a list filter's trigger (`DataTableSelectFilter`) shows its value in its text
+    («Estado: Activos»), because it is a form control, not a selection.
 - **One primary per surface, also when empty** (design D11). When the page header offers an
   action, the empty state offers the same action as `outline`, never as a second primary.
 - **Content widths by role** (design D4), as `--container-*` tokens in `globals.css`:

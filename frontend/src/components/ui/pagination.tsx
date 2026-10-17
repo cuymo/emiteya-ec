@@ -45,7 +45,13 @@ export function PaginationButton({
       aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
       data-active={isActive}
-      className={cn("tabular-nums", className)}
+      className={cn(
+        "tabular-nums",
+        // La página actual en el azul primario (decisión del propietario, 2026-10-17).
+        isActive &&
+          "border-primary/40 bg-active text-active-foreground hover:bg-active hover:text-active-foreground",
+        className,
+      )}
       {...props}
     />
   );
