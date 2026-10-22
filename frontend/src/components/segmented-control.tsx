@@ -19,6 +19,7 @@ export function SegmentedControl<T extends string>({
   "aria-describedby": describedBy,
   "aria-invalid": invalid,
   disabled,
+  fullWidth = false,
 }: {
   options: readonly SegmentedOption<T>[];
   value: T | undefined;
@@ -28,6 +29,8 @@ export function SegmentedControl<T extends string>({
   "aria-describedby"?: string;
   "aria-invalid"?: boolean;
   disabled?: boolean;
+  /** Ocupa todo el ancho, con las opciones en partes iguales (decisión del propietario, 2026-10-22). */
+  fullWidth?: boolean;
 }) {
   return (
     <ToggleGroup.Root
@@ -43,7 +46,8 @@ export function SegmentedControl<T extends string>({
       {...(invalid ? { "aria-invalid": true } : {})}
       {...(disabled ? { disabled } : {})}
       className={cn(
-        "inline-flex w-fit rounded-md border border-input bg-muted p-1",
+        "rounded-md border border-input bg-muted p-1",
+        fullWidth ? "flex w-full" : "inline-flex w-fit",
         invalid && "border-danger",
       )}
     >
@@ -54,6 +58,7 @@ export function SegmentedControl<T extends string>({
           className={cn(
             // Altura mínima, no fija: una etiqueta larga que se parte en líneas crece dentro del borde.
             "min-h-8 min-w-16 rounded-sm px-3 py-1 text-sm leading-tight font-medium text-foreground-muted max-md:min-h-11",
+            fullWidth && "flex-1",
             "motion-safe:transition-colors motion-safe:duration-150",
             "hover:text-foreground",
             // El borde de la pieza elegida contrasta con la pista y con su relleno en los dos temas.

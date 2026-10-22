@@ -204,6 +204,28 @@ Un usuario SHALL preparar la nota en un borrador: la factura, los conceptos con 
 - **WHEN** un usuario emite con una versión del borrador que otro cambio ya reemplazó
 - **THEN** el sistema rechaza la emisión indicando que el borrador cambió, sin reservar número
 
+### Requirement: Editor de la nota de débito
+El editor SHALL presentar, en este orden, la factura que se modifica, el establecimiento y el punto
+de emisión, los conceptos y la forma de pago. El establecimiento y el punto SHALL elegirse en dos
+selectores lado a lado, y el punto solo entre los del establecimiento elegido. Un concepto nuevo
+SHALL empezar con la causa de intereses de mora elegida, en un control de dos opciones que ocupa todo
+el ancho; su descripción SHALL escribirse en un área de texto que muestra cuántos de los 300
+caracteres lleva y que no admite saltos de línea; su importe y su tratamiento de IVA SHALL ocupar la
+fila en tres cuartos y un cuarto. «Agregar concepto» SHALL ocupar todo el ancho, y quitar un concepto
+SHALL ir en rojo. Los importes SHALL mostrarse con «$», y el valor total en verde.
+
+#### Scenario: Concepto nuevo
+- **WHEN** un operador agrega un concepto
+- **THEN** el concepto nuevo tiene elegida la causa de intereses de mora, y puede cambiarla a costos o gastos posteriores
+
+#### Scenario: Punto de otro establecimiento
+- **WHEN** un operador cambia el establecimiento por uno con dos puntos de emisión
+- **THEN** el punto anterior deja de estar elegido y el selector de puntos ofrece solo los dos del establecimiento elegido
+
+#### Scenario: Descripción en una línea
+- **WHEN** un operador pulsa Enter o pega un texto con saltos de línea en la descripción
+- **THEN** la descripción sigue en una sola línea
+
 ### Requirement: Comprobante de la nota de débito
 La nota de débito SHALL ser un comprobante propio (tipo 05, versión 1.0.0) con su secuencial, independiente de los de las facturas y las notas de crédito, su clave de acceso y su snapshot. Lleva los datos del emisor vigentes al reservar, el comprador de la factura, el tipo, número y fecha de la factura modificada, un motivo por concepto con su descripción y su base, los impuestos por tratamiento, el valor total y la forma de pago.
 

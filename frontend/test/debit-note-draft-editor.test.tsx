@@ -69,6 +69,7 @@ const concept = (position: number) =>
   screen.getByRole("listitem", { name: `Concepto ${position}` });
 const findConcept = (position: number) =>
   screen.findByRole("listitem", { name: `Concepto ${position}` });
+const concepts = () => screen.getAllByRole("listitem", { name: /^Concepto / });
 const openEmission = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(await screen.findByRole("button", { name: "Emitir nota de débito" }));
   return screen.findByRole("dialog", { name: "Emitir nota de débito" });
@@ -123,9 +124,9 @@ describe("borrador de nota de débito", () => {
     expect(method).toHaveProperty("value", "20");
     const summary = screen.getByRole("complementary", { name: "Resumen" });
     expect(within(summary).getByText("Base IVA 15 %")).toBeDefined();
-    expect(within(summary).getByText("USD 3,00")).toBeDefined();
+    expect(within(summary).getByText("$3,00")).toBeDefined();
     // El valor total y el total de la única forma de pago son el mismo valor exacto.
-    expect(within(summary).getAllByText("USD 28,00")).toHaveLength(2);
+    expect(within(summary).getAllByText("$28,00")).toHaveLength(2);
     expect(
       within(summary).getByText(/Forma de pago: OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO/),
     ).toBeDefined();
@@ -283,7 +284,7 @@ describe("borrador de nota de débito", () => {
     ).toBeDefined();
     expect(within(dialog).getByText(/Reglamento de Comprobantes de Venta/)).toBeDefined();
     expect(within(dialog).getByText(/título valor/)).toBeDefined();
-    expect(within(dialog).getByText("USD 28,00")).toBeDefined();
+    expect(within(dialog).getByText("$28,00")).toBeDefined();
     expect(within(dialog).getByText("OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO")).toBeDefined();
     const confirm = within(dialog).getByRole("button", { name: "Emitir nota de débito" });
     expect(confirm).toHaveProperty("disabled", true);
@@ -525,4 +526,99 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
       expect(within(dialog).queryByText("Producción")).toBeNull();
     });
   }
+});
+
+describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => {
+  it("el punto de emisión va antes de los conceptos, y la forma de pago al final", async () => {
+    render(<DebitNoteDraftScreen draftId="ndd-1" />, {
+      "GET /api/v1/debit-notes/drafts/ndd-1": ok(debitNoteDraft()),
+    });
+    await findConcept(1);
+    // Las secciones del editor, nombradas por su título (la zona de avisos usa `aria-label`).
+    const sections = screen
+      .getAllByRole("region")
+      .map((region) => region.getAttribute("aria-labelledby"))
+      .filter((id) => id !== null)
+      .map((id) => document.getElementById(id)?.textContent);
+    expect(sections).toEqual([
+      "Borrador de nota de débito",
+      "Factura que se modifica",
+      "Establecimiento y punto de emisión",
+      "Conceptos",
+      "Forma de pago",
+    ]);
+  });
+
+  it("el establecimiento y luego su punto, en dos selectores dependientes", async () => {
+    let saved: { emissionPointId?: string } | undefined;
+    render(<DebitNoteDraftScreen draftId="ndd-1" />, {
+      "GET /api/v1/debit-notes/drafts/ndd-1": ok(debitNoteDraft()),
+      "GET /api/v1/establishments": ok([
+        {
+          id: "est-1",
+          code: "001",
+          address: "Av. Amazonas, Quito",
+          status: "ACTIVE",
+          emissionPoints: [{ id: "ep-1", code: "001", status: "ACTIVE", available: true }],
+        },
+        {
+          id: "est-2",
+          code: "002",
+          address: "Av. 9 de Octubre, Guayaquil",
+          status: "ACTIVE",
+          emissionPoints: [
+            { id: "ep-2", code: "001", status: "ACTIVE", available: true },
+            { id: "ep-3", code: "002", status: "ACTIVE", available: true },
+          ],
+        },
+      ]),
+      "PUT /api/v1/debit-notes/drafts/ndd-1": (init) => {
+        saved = JSON.parse(init.body as string) as { emissionPointId?: string };
+        return { status: 200, body: { data: debitNoteDraft({ version: 2 }) } };
+      },
+    });
+    const user = userEvent.setup();
+    const establishment = await screen.findByLabelText("Establecimiento");
+    const point = screen.getByLabelText("Punto de emisión") as HTMLSelectElement;
+    // Con los establecimientos cargados, el punto guardado queda elegido.
+    await waitFor(() => expect(point.value).toBe("ep-1"));
+    await user.selectOptions(establishment, "est-2");
+    // El punto anterior no es de este establecimiento: hay que elegir uno de los suyos.
+    expect(point.value).toBe("");
+    expect(
+      within(point)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Elige un punto", "002-001", "002-002"]);
+    await user.selectOptions(point, "ep-3");
+    await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    await waitFor(() => expect(saved?.emissionPointId).toBe("ep-3"));
+  });
+
+  it("un concepto nuevo empieza con su causa elegida, a todo el ancho, y su descripción es un área de una línea", async () => {
+    render(<DebitNoteDraftScreen draftId="ndd-1" />, {
+      "GET /api/v1/debit-notes/drafts/ndd-1": ok(debitNoteDraft()),
+    });
+    const user = userEvent.setup();
+    await findConcept(1);
+    const add = screen.getByRole("button", { name: "Agregar concepto" });
+    // «Agregar concepto» ocupa todo el ancho, punteado.
+    expect(add.className).toContain("w-full");
+    expect(add.className).toContain("border-dashed");
+    await user.click(add);
+    const fresh = concept(concepts().length);
+    const interest = within(fresh).getByRole("radio", { name: "Intereses de mora" });
+    expect(interest.getAttribute("aria-checked")).toBe("true");
+    expect(interest.parentElement!.className).toContain("w-full");
+    const description = within(fresh).getByRole("textbox", { name: "Descripción" });
+    expect(description.tagName).toBe("TEXTAREA");
+    await user.type(description, "Mora{Enter}de 30 días");
+    // Enter no parte la línea: el comprobante la lleva en una sola.
+    expect((description as HTMLTextAreaElement).value).toBe("Morade 30 días");
+    expect(within(fresh).getByText(/14\/300/)).toBeDefined();
+    // Quitar un concepto va en rojo.
+    expect(screen.getByRole("button", { name: "Quitar el concepto 2" }).className).toContain(
+      "text-danger",
+    );
+  });
 });

@@ -36,6 +36,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { formatMoney, Money } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
@@ -43,15 +44,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
-import {
-  DEFAULT_POINT_KEY,
-  pointLabel,
-  useEstablishments,
-} from "@/features/establishments/establishments-api";
+import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
+import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
 import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
 import { newDocumentHref } from "@/features/documents/new-document";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
@@ -68,7 +65,10 @@ import { DebitInvoicePicker, useCreateDebitNoteDraft } from "./new-debit-note";
 import { treatmentLabel } from "./debit-note-format";
 
 type ConceptValues = {
-  /** Vacía hasta que el usuario la elige: la causa se declara, no se infiere. */
+  /**
+   * Un concepto nuevo empieza con la primera causa elegida (decisión del propietario, 2026-10-22);
+   * un concepto guardado sin causa sigue vacío hasta que el usuario la elige.
+   */
   cause: DebitNoteCause | "";
   description: string;
   amount: string;
@@ -85,7 +85,7 @@ type FormValues = {
 const SEGMENTED_TREATMENTS_MAX = 5;
 
 const blankConcept = (): ConceptValues => ({
-  cause: "",
+  cause: DEBIT_NOTE_CAUSES[0],
   description: "",
   amount: "",
   taxTreatment: "",
@@ -300,6 +300,7 @@ function TreatmentField({
         </span>
         <SegmentedControl
           aria-labelledby={labelId}
+          fullWidth
           options={treatments.map((treatment) => ({
             value: treatment.key,
             label: treatmentLabel(treatment),
@@ -416,14 +417,6 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
     },
   });
 
-  const points = (establishments.data ?? []).flatMap((establishment) =>
-    establishment.emissionPoints
-      .filter((point) => point.available || point.id === form.getValues("emissionPointId"))
-      .map((point) => ({
-        id: point.id,
-        label: `${pointLabel(establishment, point)} · ${establishment.address}`,
-      })),
-  );
   // Solo las formas de pago vigentes y habilitadas; la guardada que dejó de serlo se muestra para
   // que el usuario la cambie (la vista previa lo explica).
   const methodOptions = (paymentMethods.data?.entries ?? [])
@@ -503,20 +496,39 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
           <Section title="Factura que se modifica">
             <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
               <FileText aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-              <span className="flex min-w-0 flex-col">
+              <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="font-medium tabular-nums">
                   Factura {draft.invoice.documentNumber}
                 </span>
                 <span className="text-sm text-foreground-muted break-words">
                   {draft.invoice.buyerName} · {draft.invoice.buyerIdentification} ·{" "}
                   {formatIssueDate(draft.invoice.issueDate)} · Total{" "}
-                  {formatUsd(draft.invoice.total)}
+                  <Money amount={draft.invoice.total} />
                 </span>
-                <span className="text-sm text-foreground-muted">
-                  Tratamientos de IVA de la factura: {treatments.map(treatmentLabel).join(", ")}
+                <span className="flex flex-wrap items-center gap-1.5 text-sm text-foreground-muted">
+                  Tratamientos de IVA de la factura:
+                  {treatments.map((treatment) => (
+                    <span
+                      key={treatment.key}
+                      className="rounded-full bg-info/10 px-2 py-0.5 text-xs font-medium text-info"
+                    >
+                      {treatmentLabel(treatment)}
+                    </span>
+                  ))}
                 </span>
               </span>
             </div>
+          </Section>
+
+          {/* Antes de los conceptos (decisión del propietario, 2026-10-22): de dónde sale la nota. */}
+          <Section title="Establecimiento y punto de emisión">
+            <EstablishmentPointFields
+              establishments={establishments.data ?? []}
+              pointId={pointId}
+              onPointChange={(next) =>
+                form.setValue("emissionPointId", next, { shouldDirty: true })
+              }
+            />
           </Section>
 
           <Section title="Conceptos">
@@ -531,18 +543,23 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 const conceptError = errors.concepts?.[index];
                 const problems = fresh ? conceptIssues(position) : [];
                 const causeLabelId = `causa-${field.id}`;
+                const description = form.register(`concepts.${index}.description`);
+                const descriptionHint = `Aparece en la nota de débito en una sola línea · ${
+                  (current?.description ?? "").length
+                }/${DEBIT_NOTE_DESCRIPTION_MAX}`;
                 return (
                   <li
                     key={field.id}
                     aria-label={`Concepto ${position}`}
                     aria-invalid={problems.length > 0 || undefined}
-                    className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
+                    className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-3 aria-invalid:border-danger"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="font-medium">Concepto {position}</h3>
                       {concepts.fields.length > 1 && (
                         <RowActionButton
                           icon={Trash2}
+                          tone="danger"
                           label={`Quitar el concepto ${position}`}
                           onClick={() => removeConcept(index)}
                         />
@@ -554,6 +571,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                       </span>
                       <SegmentedControl
                         aria-labelledby={causeLabelId}
+                        fullWidth
                         options={DEBIT_NOTE_CAUSES.map((cause) => ({
                           value: cause,
                           label: DEBIT_NOTE_CAUSE_LABELS[cause],
@@ -564,23 +582,37 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                         }
                       />
                     </div>
+                    {/* Hasta 300 caracteres: un área de texto que crece con lo escrito, pero en una
+                        sola línea, como la exige el comprobante. */}
                     <FormField
                       id={`descripcion-${field.id}`}
                       label="Descripción"
-                      hint="Aparece en la nota de débito. Una sola línea."
+                      hint={descriptionHint}
                       error={conceptError?.description?.message}
                     >
-                      <Input
+                      <textarea
+                        rows={2}
                         maxLength={DEBIT_NOTE_DESCRIPTION_MAX}
                         {...fieldAria(
                           `descripcion-${field.id}`,
                           conceptError?.description?.message,
-                          "Aparece en la nota de débito. Una sola línea.",
+                          descriptionHint,
                         )}
-                        {...form.register(`concepts.${index}.description`)}
+                        {...description}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") event.preventDefault();
+                        }}
+                        onChange={(event) => {
+                          // Los saltos de línea pegados se vuelven espacios.
+                          if (/[\r\n]/.test(event.target.value)) {
+                            event.target.value = event.target.value.replace(/[\r\n]+/g, " ");
+                          }
+                          void description.onChange(event);
+                        }}
+                        className="field-sizing-content min-h-16 w-full min-w-0 resize-none rounded-md border border-input bg-surface px-3 py-2 text-base text-foreground sm:text-sm aria-invalid:border-danger"
                       />
                     </FormField>
-                    <div className="grid gap-2 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
+                    <div className="grid gap-3 sm:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
                       <FormField
                         id={`importe-${field.id}`}
                         label="Importe"
@@ -589,6 +621,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                       >
                         <Input
                           inputMode="decimal"
+                          className="text-right tabular-nums"
                           {...fieldAria(
                             `importe-${field.id}`,
                             conceptError?.amount?.message,
@@ -613,10 +646,11 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 );
               })}
             </ol>
+            {/* A todo el ancho y punteado: el lugar donde nace otro concepto. */}
             <Button
               ref={addRef}
               variant="outline"
-              className="self-start"
+              className="w-full border-dashed"
               disabled={concepts.fields.length >= DEBIT_NOTE_CONCEPTS_MAX}
               onClick={addConcept}
             >
@@ -625,7 +659,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
             </Button>
           </Section>
 
-          <Section title="Forma de pago y punto de emisión">
+          <Section title="Forma de pago">
             <FormField
               id="forma-pago"
               label="Forma de pago"
@@ -646,22 +680,6 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 {methodOptions.map((method) => (
                   <option key={method.value} value={method.value}>
                     {method.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-            <FormField id="punto" label="Punto de emisión">
-              <Select
-                {...fieldAria("punto", undefined)}
-                value={pointId}
-                onChange={(event) =>
-                  form.setValue("emissionPointId", event.target.value, { shouldDirty: true })
-                }
-              >
-                <option value="">Elige un punto</option>
-                {points.map((point) => (
-                  <option key={point.id} value={point.id}>
-                    {point.label}
                   </option>
                 ))}
               </Select>
@@ -689,17 +707,19 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
             ) : preview.totals ? (
               <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
                 <dt>Subtotal sin impuestos</dt>
-                <dd className="text-right">{formatUsd(preview.totals.withoutTaxes)}</dd>
+                <dd className="text-right">{formatMoney(preview.totals.withoutTaxes)}</dd>
                 {preview.totals.taxes.map((tax) => (
                   <div key={tax.key} className="contents">
                     <dt>Base {treatmentLabel(tax)}</dt>
-                    <dd className="text-right">{formatUsd(tax.base)}</dd>
+                    <dd className="text-right">{formatMoney(tax.base)}</dd>
                     <dt>{treatmentLabel(tax)}</dt>
-                    <dd className="text-right">{formatUsd(tax.amount)}</dd>
+                    <dd className="text-right">{formatMoney(tax.amount)}</dd>
                   </div>
                 ))}
                 <dt className="font-semibold">Valor total</dt>
-                <dd className="text-right font-semibold">{formatUsd(preview.totals.total)}</dd>
+                <dd className="text-right text-lg font-semibold text-money">
+                  {formatMoney(preview.totals.total)}
+                </dd>
               </dl>
             ) : (
               <p className="text-sm text-foreground-muted">
@@ -708,8 +728,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
             )}
             {fresh && preview.payment && (
               <p className="text-sm">
-                Forma de pago: {preview.payment.label} ·{" "}
-                <span className="tabular-nums">{formatUsd(preview.payment.amount)}</span>
+                Forma de pago: {preview.payment.label} · <Money amount={preview.payment.amount} />
               </p>
             )}
             {fresh && (
@@ -792,7 +811,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
               </dd>
               <dt className="text-foreground-muted">Valor total</dt>
               <dd className="tabular-nums max-sm:mb-1">
-                {preview.totals ? formatUsd(preview.totals.total) : "—"}
+                {preview.totals ? <Money amount={preview.totals.total} /> : "—"}
               </dd>
               <dt className="text-foreground-muted">Forma de pago</dt>
               <dd>{preview.payment?.label ?? "—"}</dd>
@@ -866,7 +885,7 @@ function ChosenInvoice({
           <span className="font-medium tabular-nums">Factura {data.documentNumber}</span>
           <span className="text-sm text-foreground-muted break-words">
             {data.buyer.legalName} · {formatIssueDate(data.issueDate)} · Total{" "}
-            {formatUsd(data.totals.total)}
+            {formatMoney(data.totals.total)}
           </span>
         </span>
       </div>

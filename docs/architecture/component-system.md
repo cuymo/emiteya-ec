@@ -84,7 +84,9 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
   - **Blue text and mark:** the current tab (`text-primary` and its underline), and the checked
     option of `SelectMenu` and dropdown menus (`text-primary` and its check).
   - **Solid blue piece:** `SegmentedControl`. The chosen option is a raised `bg-primary` piece with
-    a `primary` ring and a small shadow inside a `muted` track. The `tone` prop is gone.
+    a `primary` ring and a small shadow inside a `muted` track. The `tone` prop is gone. With
+    `fullWidth` it fills its container and splits it equally among the options (owner decision,
+    2026-10-22; the debit note's cause and IVA treatment).
   - **Still neutral:** a list filter's trigger (`DataTableSelectFilter`) shows its value in its text
     («Estado: Activos»), because it is a form control, not a selection.
 - **One primary per surface, also when empty** (design D11). When the page header offers an
