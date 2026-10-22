@@ -4,8 +4,8 @@
 // de demostración. Composición pedida por el propietario: encima, a todo el ancho, el aviso del
 // ambiente cuando lo hay; debajo, una sola línea a todas las anchuras:
 // - izquierda: la navegación, el título de la pantalla y sus migas;
-// - derecha: la paleta, la pantalla completa y la identidad: la empresa de la sesión y, debajo, la
-//   cuenta, que abre su menú.
+// - derecha: la paleta, la pantalla completa, los avisos (decisión del propietario, 2026-10-22) y la
+//   identidad: la empresa de la sesión y, debajo, la cuenta, que abre su menú.
 // Sin tema, que vive en el menú de cuenta. El botón que abre el panel móvil usa el icono de menú,
 // «Abrir navegación» (adopt-premium-design-foundation-and-shell, design D29).
 "use client";
@@ -22,7 +22,7 @@ import { TopbarHeading } from "./app-breadcrumbs";
 import { useModifierLabel } from "./shortcut";
 
 /** Clase de las acciones globales: un botón redondo sobre el gris del tema. */
-const TOPBAR_ACTION = "rounded-full bg-muted text-foreground-muted hover:bg-accent";
+export const TOPBAR_ACTION = "rounded-full bg-muted text-foreground-muted hover:bg-accent";
 
 function SidebarToggle() {
   const { isMobile, open, openMobile } = useSidebar();
@@ -97,10 +97,13 @@ export function Topbar({
   company,
   environment,
   search,
+  notifications,
 }: {
   company: ReactNode;
   environment: ReactNode;
   search?: ReactNode;
+  /** La campana de avisos, a la izquierda de la identidad. */
+  notifications?: ReactNode;
 }) {
   return (
     <header className="sticky top-0 z-(--z-sticky) flex shrink-0 flex-col border-b bg-background">
@@ -120,6 +123,7 @@ export function Topbar({
         <div data-slot="topbar-end" className="flex shrink-0 items-center gap-2 md:gap-3">
           {search}
           <FullscreenToggle />
+          {notifications}
           <div data-slot="topbar-identity" className="flex min-w-0 items-center gap-3">
             <span
               aria-hidden="true"

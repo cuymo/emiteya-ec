@@ -13,7 +13,8 @@ import { BreadcrumbLabelProvider } from "./breadcrumb-label";
 import { CommandPalette } from "./command-palette";
 import { QuickCreateMenu } from "./quick-create-menu";
 import { RouteGuard } from "./route-guard";
-import { Topbar } from "./topbar";
+import { NotificationsMenu } from "@/features/notifications/notifications-menu";
+import { TOPBAR_ACTION, Topbar } from "./topbar";
 
 function SkipLink() {
   return (
@@ -45,7 +46,12 @@ export function AppShell({
       <SidebarProvider defaultOpen={sidebarDefaultOpen}>
         <AppSidebar headerAction={<QuickCreateMenu />} />
         <SidebarInset>
-          <Topbar company={company} environment={environment} search={<CommandPalette />} />
+          <Topbar
+            company={company}
+            environment={environment}
+            search={<CommandPalette />}
+            notifications={<NotificationsMenu className={TOPBAR_ACTION} />}
+          />
           {notices}
           <main
             id="contenido"

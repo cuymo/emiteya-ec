@@ -149,12 +149,26 @@ from the reference template's dashboard layout (ADR 0028).
     breadcrumbs of the screen (see above);
   - **end:** the command palette trigger (an outline button with the magnifier, «Buscar» and the
     shortcut; the magnifier alone on a phone), «Pantalla completa» as a round 36px button on the
-    muted surface (from 768px, where the browser allows it) and the identity: a building tile (from 1024px), the company context and, under it,
-    the account menu trigger. The company context is at most 14rem from 768px and 7rem below,
+    muted surface (from 768px, where the browser allows it), the notifications bell (see below)
+    and the identity: a building tile (from 1024px), the company context and, under it, the
+    account menu trigger. The company context is at most 14rem from 768px and 7rem below,
     truncated.
 
-  No theme control (it lives in the account menu). There are no notification or help buttons:
-  the product has neither.
+  No theme control (it lives in the account menu) and no help button: the product has none.
+- **Notifications** (`NotificationsMenu`, `features/notifications/notifications-menu.tsx`; owner
+  decision, 2026-10-22). A round bell left of the identity, at every width, with the number of
+  pending notices (red when one blocks emission, amber otherwise; «9+» past nine) and the name
+  «Avisos: N pendientes». It opens a popover with the list. Each notice is a condition the server
+  already reports, not an event, so it disappears once resolved; there is no read state.
+  - **Signature** (`/signing-certificate/validity`): expired or without its key (red), or expiring
+    with its date and the days left (amber).
+  - **Readiness** (`/company/status`): the company cannot emit yet, with what is missing (red). An
+    expired or unavailable signature is not repeated here.
+  - **Dashboard summary** (`/dashboard`, `invoices.read`, shared with Inicio but cached for five
+    minutes and not refetched on focus): documents that need attention, returned or not
+    authorized in the last 30 days, and out-of-stock products (amber).
+  - **Links:** each notice links to its section only when the role can open it (the permission of
+    `resolveRoute`); otherwise it says to ask an administrator. Following a link closes the list.
 - **Company context.** It is read-only: the trade name, or the legal name, of the session's
   company, from `/company/status`. It is not a control and never suggests switching companies.
   - **While loading:** it reserves its space.
@@ -173,7 +187,8 @@ from the reference template's dashboard layout (ADR 0028).
   - **While loading:** nothing, so it never announces an environment it does not know yet.
   - **Where the fiscal decision is made:** every editor that emits repeats the warning next to its
     «Emitir» and in its confirmation (`EmissionEnvironmentNotice`, spec `document-emission`).
-  - **Signature:** the certificate expiry notice stays as a strip under the topbar.
+  - **Signature:** the certificate expiry notice stays as a strip under the topbar, and is also
+    one of the notifications.
 - **Theme.** The «Tema» group (Claro, Oscuro, Sistema) lives in the account menu as radio items at
   every width, walked with the arrows; the choice is remembered by next-themes. The topbar has no
   theme control, so there is never more than one.

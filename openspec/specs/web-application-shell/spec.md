@@ -435,12 +435,12 @@ La barra superior SHALL ocupar una sola línea a todas las anchuras soportadas, 
 expandida o colapsada, sin que ningún texto o control se parta en varias líneas, se salga de la
 barra ni se monte sobre otro. A la izquierda SHALL reunir el botón de navegación y, desde 768 px, las
 migas de la pantalla, reducidas a Inicio y la pantalla actual cuando no caben completas; a la derecha, el contexto global: el acceso a la paleta de
-comandos, el contexto de la empresa y el menú de cuenta; el aviso del ambiente va encima, en su franja. No SHALL ofrecer
-controles que el producto no respalda, como notificaciones o ayuda.
+comandos, los avisos, el contexto de la empresa y el menú de cuenta; el aviso del ambiente va encima, en su franja. No SHALL ofrecer
+controles que el producto no respalda, como la ayuda.
 
 #### Scenario: Pantalla interna en una tableta
 - **WHEN** un administrador abre Empresa, dentro de Configuración, en una ventana de 768 px de ancho
-- **THEN** la barra superior muestra en una sola línea, sin solaparse, las migas, el acceso a la paleta, la empresa y la cuenta
+- **THEN** la barra superior muestra en una sola línea, sin solaparse, las migas, el acceso a la paleta, los avisos, la empresa y la cuenta
 
 #### Scenario: Editor en un portátil
 - **WHEN** un operador abre la pantalla de nueva factura en una ventana de 1024 o 1280 px, con la barra lateral expandida o colapsada
@@ -448,7 +448,33 @@ controles que el producto no respalda, como notificaciones o ayuda.
 
 #### Scenario: Teléfono
 - **WHEN** un usuario abre cualquier pantalla autenticada en un teléfono
-- **THEN** la barra superior muestra en una sola línea el botón de navegación, el acceso a la paleta, el contexto de la empresa y la cuenta
+- **THEN** la barra superior muestra en una sola línea el botón de navegación, el acceso a la paleta, los avisos, el contexto de la empresa y la cuenta
+
+### Requirement: Avisos de la barra superior
+La barra superior SHALL ofrecer, a la izquierda de la identidad, una campana de avisos con el número
+de avisos pendientes, que abre su lista. Cada aviso SHALL salir de una condición que el servidor
+informa, y SHALL desaparecer cuando se resuelve: la firma electrónica vencida, sin su clave o por
+vencer; la empresa que todavía no puede emitir, con lo que le falta; los comprobantes que requieren
+atención; los devueltos o no autorizados en los últimos 30 días; y los productos agotados. Los que
+impiden emitir SHALL ir primero y teñir el contador de rojo. Cada aviso SHALL llevar a su sección
+solo si el rol puede abrirla; si no, SHALL decir a quién pedírselo. Un mismo problema no SHALL
+avisarse dos veces.
+
+#### Scenario: Firma por vencer
+- **WHEN** a la firma electrónica le faltan 21 días para vencer
+- **THEN** la campana cuenta un aviso, y su lista dice que la firma vence pronto, con la fecha y los días que faltan, y el enlace a Firma electrónica para un administrador
+
+#### Scenario: Operador
+- **WHEN** un operador ve el aviso de la firma por vencer
+- **THEN** el aviso le pide que un administrador la renueve, sin un enlace a Configuración
+
+#### Scenario: Firma vencida
+- **WHEN** la firma electrónica venció y por eso la empresa no puede emitir
+- **THEN** la lista tiene un solo aviso, el de la firma vencida, y el contador va en rojo
+
+#### Scenario: Sin avisos
+- **WHEN** no hay ninguna condición pendiente
+- **THEN** la campana no lleva contador y su lista dice que todo está en orden
 
 ### Requirement: Jerarquía de acciones de la pantalla
 Cada pantalla SHALL presentar como mucho una acción principal destacada a la vez. Una acción que en
