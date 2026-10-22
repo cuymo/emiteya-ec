@@ -16,6 +16,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  compareDecimalStrings,
   defaultEmissionPointViewSchema,
   invoiceAmountSchema,
   invoiceQuantitySchema,
@@ -24,7 +25,6 @@ import {
   type DraftView,
   type InvoiceIssue,
   type PartyView,
-  type ProductView,
   type StockWarning,
 } from "@facturador/contracts";
 import {
@@ -36,6 +36,8 @@ import {
   PackagePlus,
   Plus,
   Trash2,
+  TriangleAlert,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -51,6 +53,7 @@ import { fieldAria, FormField } from "@/components/form-dialog";
 import { FormLayout, StickyFormActions, StickySummaryPanel } from "@/components/layout/form-layout";
 import { FormSection } from "@/components/layout/form-section";
 import { PageHeader } from "@/components/layout/page-header";
+import { formatMoney } from "@/components/money";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -58,7 +61,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatDecimal, formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
@@ -70,12 +73,12 @@ import {
 } from "@/features/establishments/establishments-api";
 import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
 import { identificationText, paymentMethodName } from "./invoice-format";
+import { ProductPickerDialog } from "./product-picker-dialog";
 import {
   DRAFTS_KEY,
   fetchConsumerFinal,
   fetchCustomers,
   fetchDraft,
-  fetchProducts,
   saveDraftRequest,
   useDraft,
   useDraftPreview,
@@ -319,16 +322,22 @@ function SaveStatus({ state }: { state: SaveState }) {
 
 /**
  * El comprador como una ficha, no como un campo: su nombre, su identificación con el tipo, y el botón
- * para elegirlo o cambiarlo. Sin comprador, una ficha vacía que invita a elegirlo.
+ * para elegirlo o cambiarlo. Sin comprador, una ficha vacía que invita a elegirlo, con «Elegir
+ * comprador» en el azul primario (decisión del propietario, 2026-10-22). A su izquierda,
+ * «Consumidor final» lo elige en un clic, salvo que ya sea el comprador.
  */
 function BuyerCard({
   buyer,
   problem,
   onPick,
+  onConsumerFinal,
+  consumerPending,
 }: {
   buyer: Buyer | null;
   problem: string | undefined;
   onPick: () => void;
+  onConsumerFinal: () => void;
+  consumerPending: boolean;
 }) {
   const labelId = useId();
   const problemId = useId();
@@ -344,7 +353,7 @@ function BuyerCard({
         aria-invalid={problem ? true : undefined}
         data-slot="buyer-card"
         className={cn(
-          "flex items-center justify-between gap-3 rounded-lg border px-4 py-3 aria-invalid:border-danger",
+          "flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 aria-invalid:border-danger",
           !buyer && "border-dashed",
         )}
       >
@@ -362,14 +371,28 @@ function BuyerCard({
         ) : (
           <span className="text-sm text-foreground-muted">Aún no eliges a quién facturas.</span>
         )}
-        <Button
-          variant="outline"
-          size="default"
-          aria-label={buyer ? "Cambiar comprador" : "Elegir comprador"}
-          onClick={onPick}
-        >
-          {buyer ? "Cambiar" : "Elegir comprador"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {!buyer?.consumerFinal && (
+            <AsyncButton
+              variant="outline"
+              size="default"
+              pending={consumerPending}
+              pendingLabel="Eligiendo al consumidor final"
+              onClick={onConsumerFinal}
+            >
+              <UserRound aria-hidden="true" data-icon="inline-start" />
+              Consumidor final
+            </AsyncButton>
+          )}
+          <Button
+            variant={buyer ? "outline" : "primary"}
+            size="default"
+            aria-label={buyer ? "Cambiar comprador" : "Elegir comprador"}
+            onClick={onPick}
+          >
+            {buyer ? "Cambiar" : "Elegir comprador"}
+          </Button>
+        </div>
       </div>
       {problem && (
         <p id={problemId} className="text-xs text-danger">
@@ -414,6 +437,22 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
     mode: "onTouched",
   });
   const { errors, isDirty } = form.formState;
+  const [consumerPending, setConsumerPending] = useState(false);
+  /** El consumidor final del sistema como comprador: desde su botón o desde el selector. */
+  const chooseConsumerFinal = () => {
+    setConsumerPending(true);
+    fetchConsumerFinal()
+      .then((party) => {
+        if (party)
+          form.setValue("buyer", asBuyer(party), { shouldDirty: true, shouldValidate: true });
+      })
+      .catch(() => {
+        toast.error("No pudimos elegir al consumidor final. Inténtalo de nuevo.", {
+          id: "consumidor-final",
+        });
+      })
+      .finally(() => setConsumerPending(false));
+  };
   const lines = useFieldArray({ control: form.control, name: "lines" });
   const payments = useFieldArray({ control: form.control, name: "payments" });
   const values = useWatch({ control: form.control }) as FormValues;
@@ -728,6 +767,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
     payments.append({ paymentMethod: "", amount: proposal });
   };
 
+  const hasDiscount = totals !== null && compareDecimalStrings(totals.discount, "0") > 0;
   const totalsPanel =
     lines.fields.length === 0 ? (
       <p className="text-sm text-foreground-muted">
@@ -742,38 +782,49 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
         <dl className="flex flex-col gap-1.5 text-sm tabular-nums">
           <div className="flex justify-between gap-4">
             <dt className="text-foreground-muted">Subtotal sin impuestos</dt>
-            <dd>{formatUsd(totals.withoutTaxes)}</dd>
+            <dd>{formatMoney(totals.withoutTaxes)}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-foreground-muted">Descuento</dt>
-            <dd>{formatUsd(totals.discount)}</dd>
+            {/* El descuento resta: en rojo y con su signo, solo cuando lo hay. */}
+            <dd className={cn(hasDiscount && "font-medium text-danger")}>
+              {hasDiscount ? `−${formatMoney(totals.discount)}` : formatMoney(totals.discount)}
+            </dd>
           </div>
           {totals.taxes.map((tax) => (
             <div key={`${tax.taxCode}-${tax.rateCode}`} className="flex justify-between gap-4">
               <dt className="text-foreground-muted">IVA {formatPercentage(tax.percentage)}</dt>
-              <dd>{formatUsd(tax.amount)}</dd>
+              <dd>{formatMoney(tax.amount)}</dd>
             </div>
           ))}
         </dl>
         <div className="flex items-baseline justify-between gap-4 border-t pt-3">
           <span className="font-medium">Total</span>
-          <span className="text-2xl font-semibold tabular-nums">{formatUsd(totals.total)}</span>
+          <span className="text-2xl font-semibold text-money tabular-nums">
+            {formatMoney(totals.total)}
+          </span>
         </div>
         {split && pending !== null && (
           <dl className="flex flex-col gap-1.5 text-sm tabular-nums">
             <div className="flex justify-between gap-4">
               <dt className="text-foreground-muted">Asignado al pago</dt>
-              <dd>{assigned !== null ? formatUsd(fromCents(assigned)) : "—"}</dd>
+              <dd>{assigned !== null ? formatMoney(fromCents(assigned)) : "—"}</dd>
             </div>
             <div
               className={cn(
                 "flex justify-between gap-4",
                 pending !== 0 && "font-medium",
+                pending === 0 && "text-success",
                 pending < 0 && "text-danger",
               )}
             >
-              <dt>{pending < 0 ? "Asignado de más" : "Pendiente"}</dt>
-              <dd>{formatUsd(fromCents(Math.abs(pending)))}</dd>
+              <dt className="flex items-center gap-1.5">
+                {pending > 0 && (
+                  <TriangleAlert aria-hidden="true" className="size-4 shrink-0 text-warning" />
+                )}
+                {pending < 0 ? "Asignado de más" : "Pendiente"}
+              </dt>
+              <dd>{formatMoney(fromCents(Math.abs(pending)))}</dd>
             </div>
           </dl>
         )}
@@ -854,12 +905,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                         {check.ok ? (
                           <CircleCheck aria-hidden="true" className="size-4 text-success" />
                         ) : (
-                          <CircleDashed
-                            aria-hidden="true"
-                            className="size-4 text-foreground-muted"
-                          />
+                          <CircleDashed aria-hidden="true" className="size-4 text-warning" />
                         )}
-                        <span className={cn(!check.ok && "text-foreground-muted")}>
+                        <span className={cn(check.ok ? "text-foreground-muted" : "font-medium")}>
                           {check.label}
                         </span>
                         <span className="sr-only">{check.ok ? ": listo" : ": falta"}</span>
@@ -893,8 +941,8 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                   {totals && lines.fields.length > 0 && (
                     <p className="flex items-baseline justify-between text-sm @form-rail:hidden">
                       <span className="text-foreground-muted">Total</span>
-                      <span className="text-lg font-semibold tabular-nums">
-                        {formatUsd(totals.total)}
+                      <span className="text-lg font-semibold text-money tabular-nums">
+                        {formatMoney(totals.total)}
                       </span>
                     </p>
                   )}
@@ -920,6 +968,8 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                   buyer={buyer}
                   problem={buyerProblem}
                   onPick={() => setPickingBuyer(true)}
+                  onConsumerFinal={chooseConsumerFinal}
+                  consumerPending={consumerPending}
                 />
                 {singlePoint ? (
                   <div className="grid gap-4 @form-wide:grid-cols-2">
@@ -982,7 +1032,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
               title="Productos"
               action={
                 lines.fields.length > 0 ? (
-                  <Button variant="outline" size="default" onClick={() => setPickingProduct(true)}>
+                  <Button variant="primary" size="default" onClick={() => setPickingProduct(true)}>
                     <Plus aria-hidden="true" data-icon="inline-start" />
                     Agregar producto
                   </Button>
@@ -995,7 +1045,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                   <p className="text-sm text-foreground-muted">
                     Todavía no hay productos en esta factura.
                   </p>
-                  <Button variant="outline" size="default" onClick={() => setPickingProduct(true)}>
+                  <Button variant="primary" size="default" onClick={() => setPickingProduct(true)}>
                     <Plus aria-hidden="true" data-icon="inline-start" />
                     Agregar producto
                   </Button>
@@ -1037,7 +1087,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                       const iva = computed?.taxes.find((tax) => tax.taxCode === "2");
                       const stale = !fresh && computed !== undefined;
                       const subtotal = computed ? (
-                        formatUsd(computed.taxableBase)
+                        formatMoney(computed.taxableBase)
                       ) : (
                         <>
                           <span aria-hidden="true">—</span>
@@ -1053,11 +1103,14 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                         >
                           <div className="col-span-2 flex min-w-0 flex-col @form-wide:col-span-1 @form-wide:min-h-10 @form-wide:justify-center">
                             <span className="font-medium break-words">{field.name}</span>
-                            <span className="text-xs text-foreground-muted tabular-nums">
-                              {field.mainCode}
+                            <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-foreground-muted tabular-nums">
+                              {field.mainCode && (
+                                <code className="rounded-sm bg-muted px-1 py-0.5 font-mono">
+                                  {field.mainCode}
+                                </code>
+                              )}
                               <span className="@form-wide:hidden">
-                                {field.mainCode ? " · " : ""}
-                                {formatUsd(field.unitPrice)} c/u
+                                {formatMoney(field.unitPrice)} c/u
                                 {iva ? ` · IVA ${formatPercentage(iva.percentage)}` : ""}
                               </span>
                             </span>
@@ -1076,7 +1129,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                             />
                           </FormField>
                           <span className="hidden h-10 items-center justify-end text-sm tabular-nums @form-wide:flex">
-                            {formatUsd(field.unitPrice)}
+                            {formatMoney(field.unitPrice)}
                           </span>
                           <FormField
                             id={`descuento-${index}`}
@@ -1092,14 +1145,21 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                               {...form.register(`lines.${index}.discount`)}
                             />
                           </FormField>
-                          <span className="hidden h-10 items-center justify-end text-sm text-foreground-muted tabular-nums @form-wide:flex">
-                            {iva ? formatPercentage(iva.percentage) : "—"}
+                          <span className="hidden h-10 items-center justify-end text-sm tabular-nums @form-wide:flex">
+                            {iva ? (
+                              <span className="rounded-full bg-info/10 px-2 py-0.5 text-xs font-medium text-info">
+                                {formatPercentage(iva.percentage)}
+                              </span>
+                            ) : (
+                              <span className="text-foreground-muted">—</span>
+                            )}
                           </span>
                           <div className="flex flex-col gap-1 @form-wide:contents">
                             <span className="text-sm font-medium @form-wide:hidden">Subtotal</span>
                             <span
                               className={cn(
-                                "flex h-10 items-center justify-end text-sm font-medium tabular-nums transition-opacity max-md:h-11",
+                                "flex h-10 items-center justify-end text-sm font-semibold tabular-nums transition-opacity max-md:h-11",
+                                computed && "text-money",
                                 stale && "opacity-50",
                               )}
                             >
@@ -1111,6 +1171,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                           <div className="col-start-3 row-start-1 flex justify-end @form-wide:col-start-7 @form-wide:min-h-10 @form-wide:items-center @form-wide:justify-center">
                             <RowActionButton
                               icon={Trash2}
+                              tone="danger"
                               label={`Quitar ${field.name}`}
                               onClick={() => removeLine(index)}
                             />
@@ -1193,6 +1254,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                             action={
                               <RowActionButton
                                 icon={Trash2}
+                                tone="danger"
                                 label={`Quitar la forma de pago ${position}${method ? ` (${method.name})` : ""}`}
                                 onClick={() => removePayment(index)}
                               />
@@ -1214,8 +1276,13 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                         ) : (
                           <div className="flex flex-col gap-1">
                             <span className="text-sm font-medium">Importe</span>
-                            <span className="flex h-10 items-center justify-end text-sm font-medium tabular-nums max-md:h-11">
-                              {totals ? formatUsd(totals.total) : "—"}
+                            <span
+                              className={cn(
+                                "flex h-10 items-center justify-end text-sm font-semibold tabular-nums max-md:h-11",
+                                totals && "text-money",
+                              )}
+                            >
+                              {totals ? formatMoney(totals.total) : "—"}
                             </span>
                             <span className="text-right text-xs text-foreground-muted">
                               El total de la factura
@@ -1234,7 +1301,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                               })
                             }
                           >
-                            Asignar lo pendiente ({formatUsd(fromCents(pending))})
+                            Asignar lo pendiente ({formatMoney(fromCents(pending))})
                           </Button>
                         )}
                         {!split && problems.length > 0 && (
@@ -1245,8 +1312,15 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                       </fieldset>
                     );
                   })}
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Button variant="ghost" size="default" onClick={addPayment}>
+                  <div className="flex flex-col gap-2">
+                    {/* A todo el ancho y punteado: se ve como el lugar donde nace otra forma de pago
+                        (decisión del propietario, 2026-10-22). */}
+                    <Button
+                      variant="outline"
+                      size="default"
+                      className="w-full border-dashed"
+                      onClick={addPayment}
+                    >
                       <Plus aria-hidden="true" data-icon="inline-start" />
                       {split ? "Agregar otra forma de pago" : "Dividir el pago"}
                     </Button>
@@ -1254,16 +1328,24 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                       <p
                         role="status"
                         className={cn(
-                          "text-sm tabular-nums",
-                          pending === 0 ? "text-foreground-muted" : "font-medium",
+                          "flex items-center gap-1.5 text-sm font-medium tabular-nums",
+                          pending === 0 && "text-success",
                           pending < 0 && "text-danger",
                         )}
                       >
+                        {pending === 0 ? (
+                          <CircleCheck aria-hidden="true" className="size-4 shrink-0" />
+                        ) : (
+                          <TriangleAlert
+                            aria-hidden="true"
+                            className={cn("size-4 shrink-0", pending > 0 && "text-warning")}
+                          />
+                        )}
                         {pending === 0
                           ? "El pago cubre el total."
                           : pending > 0
-                            ? `Faltan ${formatUsd(fromCents(pending))} por asignar.`
-                            : `Asignaste ${formatUsd(fromCents(-pending))} más que el total.`}
+                            ? `Faltan ${formatMoney(fromCents(pending))} por asignar.`
+                            : `Asignaste ${formatMoney(fromCents(-pending))} más que el total.`}
                       </p>
                     )}
                   </div>
@@ -1303,59 +1385,37 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
         quickOption={{
           label: "Consumidor final",
           description: "Sin identificar al comprador, hasta el monto máximo vigente.",
-          onSelect: () => {
-            void fetchConsumerFinal().then((party) => {
-              if (party) form.setValue("buyer", asBuyer(party), { shouldDirty: true });
-            });
-          },
+          highlight: true,
+          onSelect: chooseConsumerFinal,
         }}
         emptyTitle="Todavía no hay clientes"
         emptyDescription="Registra al comprador en Terceros con el rol de cliente."
       />
-      <EntityPickerDialog<ProductView>
+      <ProductPickerDialog
         open={pickingProduct}
         onOpenChange={setPickingProduct}
-        title="Agregar producto"
-        searchLabel="Buscar por código o nombre"
-        searchPlaceholder="Código o nombre"
-        queryKey={["products", "picker"]}
-        fetchPage={fetchProducts}
-        getKey={(product) => product.id}
-        getLabel={(product) => `${product.name}, ${formatUsd(product.unitPrice)}`}
-        renderItem={(product) => (
-          <span className="flex w-full items-center justify-between gap-2">
-            <span className="flex min-w-0 flex-col">
-              <span className="font-medium break-words">{product.name}</span>
-              {product.mainCode && (
-                <span className="text-xs text-foreground-muted">{product.mainCode}</span>
-              )}
-            </span>
-            <span className="text-sm tabular-nums">{formatUsd(product.unitPrice)}</span>
-          </span>
-        )}
-        onSelect={(product) => {
+        inInvoice={new Set(lines.fields.map((field) => field.productId))}
+        onAdd={(products) => {
           addedLine.current = lines.fields.length;
           lines.append(
-            {
+            products.map((product) => ({
               productId: product.id,
               name: product.name,
               mainCode: product.mainCode,
               unitPrice: product.unitPrice,
               quantity: "1",
               discount: "",
-            },
+            })),
             { shouldFocus: false },
           );
         }}
         onCloseAutoFocus={(event) => {
-          // Para cargar rápido con el teclado, el foco va a la cantidad de la línea nueva.
+          // Para cargar rápido con el teclado, el foco va a la cantidad de la primera línea nueva.
           if (addedLine.current === null) return;
           event.preventDefault();
           form.setFocus(`lines.${addedLine.current}.quantity`, { shouldSelect: true });
           addedLine.current = null;
         }}
-        emptyTitle="Todavía no hay productos"
-        emptyDescription="Registra en Productos lo que vendes, con su precio y su IVA."
       />
 
       <ConfirmDialog
@@ -1396,7 +1456,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                     <span key={index} className="block tabular-nums">
                       {name}
                       {split && payment.amount
-                        ? ` · ${formatUsd(normalizeDecimal(payment.amount))}`
+                        ? ` · ${formatMoney(normalizeDecimal(payment.amount))}`
                         : ""}
                     </span>
                   );
@@ -1405,8 +1465,8 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
               <dt className="text-foreground-muted">Ambiente</dt>
               <dd>{environment ?? "Desconocido"}</dd>
               <dt className="font-medium text-foreground">Total</dt>
-              <dd className="text-lg font-semibold tabular-nums">
-                {totals ? formatUsd(totals.total) : "—"}
+              <dd className={cn("text-lg font-semibold tabular-nums", totals && "text-money")}>
+                {totals ? formatMoney(totals.total) : "—"}
               </dd>
             </dl>
             <EmissionEnvironmentNotice document="factura" />

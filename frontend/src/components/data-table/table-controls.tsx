@@ -13,6 +13,7 @@ import {
   MenuTrigger,
   Tooltip,
 } from "@/components/ui/menu-and-tooltip";
+import { cn } from "@/lib/utils";
 
 export function SearchInput({
   value,
@@ -92,11 +93,14 @@ export function RowActionButton({
   label,
   onClick,
   disabled,
+  tone = "neutral",
 }: {
   icon: LucideIcon;
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  /** `danger`: quitar o eliminar, con el icono en rojo (decisión del propietario, 2026-10-22). */
+  tone?: "neutral" | "danger";
 }) {
   return (
     <Tooltip label={label}>
@@ -106,7 +110,10 @@ export function RowActionButton({
         aria-label={label}
         onClick={onClick}
         disabled={disabled}
-        className="max-md:size-11"
+        className={cn(
+          "max-md:size-11",
+          tone === "danger" && "text-danger hover:bg-danger/10 hover:text-danger",
+        )}
       >
         <Icon aria-hidden="true" />
       </Button>

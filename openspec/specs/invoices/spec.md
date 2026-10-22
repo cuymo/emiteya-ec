@@ -635,6 +635,25 @@ de pago no cambian.
 - **WHEN** un operador ve dos formas de pago en un teléfono
 - **THEN** cada acción de quitar está junto a su forma de pago y su nombre accesible dice cuál quita
 
+### Requirement: Comprador y productos en el editor de facturas
+En el editor de facturas, «Elegir comprador», mientras no hay comprador, y «Agregar producto» SHALL ir
+en el azul primario, como los pasos que completan el borrador; «Emitir factura» SHALL seguir siendo
+la acción principal. Junto a «Elegir comprador» SHALL ofrecerse «Consumidor final», que lo elige en un
+clic, salvo que ya sea el comprador, y en el selector de comprador el consumidor final SHALL ir
+destacado. «Agregar producto» SHALL abrir una tabla de los productos activos con búsqueda, filtro por
+tipo y paginación, donde se eligen varios a la vez, también en páginas distintas, y se agregan como
+líneas en el orden en que se eligieron. Los importes SHALL mostrarse con «$»; los subtotales, el
+importe del pago y el total, en verde; el descuento, en rojo y con su signo; y las acciones de quitar,
+en rojo. «Dividir el pago» SHALL ocupar todo el ancho de las formas de pago.
+
+#### Scenario: Consumidor final en un clic
+- **WHEN** un operador elige «Consumidor final» en una factura nueva sin comprador
+- **THEN** el consumidor final queda como comprador sin abrir el selector, y el botón rápido desaparece
+
+#### Scenario: Varios productos a la vez
+- **WHEN** un operador marca la varilla y luego el cemento en la tabla de productos y elige «Agregar 2 productos»
+- **THEN** la factura gana dos líneas, la varilla primero y el cemento después
+
 ### Requirement: Cambios sin guardar en el editor de facturas
 El editor SHALL indicar el estado del guardado como texto discreto y neutro junto al resumen,
 nunca como una advertencia: «Sin guardar», «Guardando…» o «Guardado». Al cerrar o recargar la

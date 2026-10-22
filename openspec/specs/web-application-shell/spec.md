@@ -477,7 +477,9 @@ avisarse dos veces.
 - **THEN** la campana no lleva contador y su lista dice que todo está en orden
 
 ### Requirement: Jerarquía de acciones de la pantalla
-Cada pantalla SHALL presentar como mucho una acción principal destacada a la vez. Una acción que en
+Cada pantalla SHALL presentar como mucho una acción principal destacada a la vez; en el editor de
+facturas, «Elegir comprador» y «Agregar producto» también van en el azul primario como los pasos que
+completan el borrador (spec `invoices`). Una acción que en
 ese momento no puede ejecutarse SHALL percibirse como no disponible, sin el aspecto de la acción
 principal, y su motivo SHALL estar escrito junto a ella. Cuando el encabezado de la pantalla ya
 ofrece la acción principal, el estado vacío SHALL ofrecer la misma acción solo como secundaria. Una

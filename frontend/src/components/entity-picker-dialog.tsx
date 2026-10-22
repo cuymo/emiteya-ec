@@ -22,7 +22,13 @@ export type EntityPickerQuery = {
 };
 
 /** Opción fija antes de los resultados, como "Consumidor final". */
-export type QuickOption = { label: string; description?: string; onSelect: () => void };
+export type QuickOption = {
+  label: string;
+  description?: string;
+  onSelect: () => void;
+  /** La destaca con el degradado del primario, como «Consumidor final» al elegir comprador. */
+  highlight?: boolean;
+};
 
 const SEARCH_DELAY_MS = 300;
 
@@ -108,12 +114,14 @@ export function EntityPickerDialog<T>({
   // La opción rápida solo acompaña a la primera página sin búsqueda, ni escrita ni aplicada.
   const pending = draft.trim() !== search;
   const showQuick = quickOption !== undefined && search === "" && !pending && page === 1;
+  const highlight = quickOption?.highlight === true;
   const options: {
     key: string;
     label: string;
     select: () => void;
     content: ReactNode;
     disabled?: boolean;
+    highlight?: boolean;
   }[] = [
     ...(showQuick
       ? [
@@ -121,11 +129,16 @@ export function EntityPickerDialog<T>({
             key: "quick",
             label: quickOption.label,
             select: quickOption.onSelect,
+            highlight,
             content: (
               <span className="flex flex-col">
                 <span className="font-medium">{quickOption.label}</span>
                 {quickOption.description && (
-                  <span className="text-sm text-foreground-muted">{quickOption.description}</span>
+                  <span
+                    className={cn("text-sm", highlight ? "opacity-90" : "text-foreground-muted")}
+                  >
+                    {quickOption.description}
+                  </span>
                 )}
               </span>
             ),
@@ -242,7 +255,15 @@ export function EntityPickerDialog<T>({
             className={cn(
               "flex min-h-11 cursor-pointer items-center rounded-md px-2 py-1 text-sm",
               option.disabled && "cursor-not-allowed text-foreground-muted",
-              index === activeIndex ? "bg-active ring-1 ring-primary" : "hover:bg-surface-subtle",
+              option.highlight
+                ? cn(
+                    "bg-linear-to-r from-primary to-primary-gradient px-3 py-2 text-primary-foreground",
+                    index === activeIndex &&
+                      "ring-2 ring-primary ring-offset-2 ring-offset-surface",
+                  )
+                : index === activeIndex
+                  ? "bg-active ring-1 ring-primary"
+                  : "hover:bg-surface-subtle",
             )}
           >
             {option.content}

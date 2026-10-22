@@ -531,28 +531,38 @@ persona, comprador, productos, pago, total y emitir, no el técnico de guardar p
   para decir cuánto falta. Una forma de pago todavía sin elegir no detiene la vista previa.
 - **Secciones.**
   - **Datos de la factura.** El comprador es una ficha, no un campo: su nombre, su identificación con
-    el tipo («Cédula …», «RUC …», «Consumidor final · …») y «Cambiar» o «Elegir comprador». El
+    el tipo («Cédula …», «RUC …», «Consumidor final · …») y «Cambiar» o «Elegir comprador», este en
+    el azul primario (decisión del propietario, 2026-10-22). A su izquierda, «Consumidor final» lo
+    elige en un clic, salvo que ya sea el comprador; en el selector de comprador, el consumidor final
+    va primero con el degradado del primario (`QuickOption.highlight`, token `--primary-gradient`). El
     establecimiento y el punto van en dos selectores lado a lado, y el punto se elige entre los del
     establecimiento elegido (decisión del propietario, 2026-10-17). Con un solo establecimiento,
     este queda elegido; al cambiarlo, uno con un solo punto disponible lo elige y otro vacía el
     punto. Con un solo punto en la empresa, los dos se muestran como datos, sin selectores. Los
     problemas del servidor sobre el comprador (`BUYER_*`) y el punto (`EMISSION_POINT_*`) van junto
     a su dato.
-  - **Productos.** Sin productos, un vacío con «Agregar producto». Con productos, una fila de
-    encabezados desde 40rem de contenedor: producto, cantidad compacta, precio unitario (solo
-    lectura), descuento en USD, IVA y subtotal del servidor, con los números a la derecha. Agregar un
-    producto deja el foco en su cantidad. Quitar una línea no pide confirmación: el aviso ofrece
-    «Deshacer». Se acepta la coma decimal («1,5»).
+  - **Productos.** Sin productos, un vacío con «Agregar producto»; con productos, la misma acción en
+    el encabezado; las dos en el azul primario. «Agregar producto» abre una tabla de los productos
+    activos (`ProductPickerDialog`, `product-picker-dialog.tsx`) con búsqueda, filtro por tipo y
+    paginación, donde se marcan varios con sus casillas, también en páginas distintas; «Agregar N
+    productos» los suma como líneas en el orden en que se eligieron, y el foco va a la cantidad de la
+    primera. Con productos, una fila de encabezados desde 40rem de contenedor: producto (con su código
+    en monoespaciada), cantidad compacta, precio unitario (solo lectura), descuento en USD, IVA (una
+    etiqueta en el tono informativo) y subtotal del servidor en verde, con los números a la derecha.
+    Quitar una línea no pide confirmación (el aviso ofrece «Deshacer») y su botón va en rojo. Se
+    acepta la coma decimal («1,5»).
   - **Formas de pago,** cuando ya hay algún producto. Con una, su importe es el total de la factura,
-    sin pedirlo. «Dividir el pago» agrega otra: cada una lleva su importe, el editor dice cuánto falta
-    o cuánto sobra, y una forma de pago sin importe ofrece «Asignar lo pendiente». Una forma de pago
+    en verde, sin pedirlo. «Dividir el pago», un botón punteado a todo el ancho, agrega otra: cada una
+    lleva su importe, el editor dice cuánto falta (con el ícono de aviso), cuánto sobra (en rojo) o que
+    el pago cubre el total (en verde), y una forma de pago sin importe ofrece «Asignar lo pendiente». Una forma de pago
     nueva propone lo que falta si las demás ya llevan su importe. Cada una muestra su nombre corriente
     («Efectivo», «Tarjeta de crédito») y, como detalle, «SRI 01 · Sin utilización del sistema
     financiero». Al volver a una sola, su importe vuelve a ser el total.
 - **Resumen,** en un carril fijo de 20rem al lado desde 57,5rem de contenedor: el número de
-  productos, el subtotal sin impuestos, el descuento, cada IVA y el total destacado; al dividir el
-  pago, lo asignado y lo pendiente. Debajo, «Para emitir» con lo que falta (comprador, punto de
-  emisión, productos, forma de pago), los problemas generales en «Antes de emitir», y el estado del
+  productos, el subtotal sin impuestos, el descuento (en rojo y con su signo cuando lo hay), cada IVA
+  y el total destacado en verde; al dividir el pago, lo asignado y lo pendiente. Los importes del
+  editor van con «$», como en tablas y detalles. Debajo, «Para emitir» con lo que falta en ámbar
+  (comprador, punto de emisión, productos, forma de pago), los problemas generales en «Antes de emitir», y el estado del
   guardado junto al título del resumen: «Sin guardar», «Guardando…» o «Guardado», en texto neutro.
 - **Emitir y guardar.**
   - «Emitir factura» es la acción principal; «Guardar borrador», secundaria (principal sin

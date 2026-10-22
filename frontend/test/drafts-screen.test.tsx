@@ -51,11 +51,14 @@ describe("editor de factura", () => {
     expect(await screen.findByText("EL PERNO CIA. LTDA.")).toBeDefined();
     expect(await screen.findByText("001 · Av. Amazonas, Quito")).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Agregar producto" }));
-    const productDialog = await screen.findByRole("dialog", { name: "Agregar producto" });
-    await user.click(await within(productDialog).findByRole("option", { name: /Cemento 50 kg/ }));
+    const productDialog = await screen.findByRole("dialog", { name: "Agregar productos" });
+    await user.click(
+      await within(productDialog).findByRole("checkbox", { name: "Elegir Cemento 50 kg" }),
+    );
+    await user.click(within(productDialog).getByRole("button", { name: "Agregar producto" }));
     const line = await screen.findByRole("listitem", { name: "Línea 1: Cemento 50 kg" });
     // El precio es el del producto y no se edita.
-    expect(within(line).getByText("USD 8,75")).toBeDefined();
+    expect(within(line).getByText("$8,75")).toBeDefined();
     expect(within(line).queryByLabelText(/Precio/)).toBeNull();
     const quantity = within(line).getByLabelText("Cantidad");
     await user.clear(quantity);
@@ -176,7 +179,7 @@ describe("editor de factura", () => {
       }),
     });
     const summary = await screen.findByRole("complementary", { name: "Resumen" });
-    expect(await within(summary).findByText("USD 28,75")).toBeDefined();
+    expect(await within(summary).findByText("$28,75")).toBeDefined();
     expect(within(summary).getByText("IVA 15 %")).toBeDefined();
     expect(within(summary).getByText(/Vista previa sin validez fiscal/)).toBeDefined();
     const user = userEvent.setup();
@@ -248,7 +251,7 @@ describe("editor de factura", () => {
     await user.click(await emitButton());
     let dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
     expect(within(dialog).getByText("Pruebas")).toBeDefined();
-    expect(within(dialog).getByText("USD 28,75")).toBeDefined();
+    expect(within(dialog).getByText("$28,75")).toBeDefined();
     expect(within(dialog).getByText(/EL PERNO CIA. LTDA./)).toBeDefined();
     await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
     // El primer intento falla: el aviso queda en el editor.

@@ -1,7 +1,8 @@
 // Importes en dólares (decisión del propietario, 2026-10-16): «$17.355,05» con el formato local y
 // al menos dos decimales. En tablas y detalles, el importe que importa va en el verde `--money`, en
-// seminegrita y con cifras alineadas; dentro de un texto atenuado basta `formatMoney`. Los editores
-// siguen con «USD 1,00» hasta que se revisen.
+// seminegrita y con cifras alineadas; dentro de un texto atenuado basta `formatMoney`. El editor de
+// facturas ya los usa (decisión del propietario, 2026-10-22); los demás editores siguen con «USD 1,00»
+// hasta que se revisen.
 import { formatDecimal } from "@/lib/decimal";
 import { cn } from "@/lib/utils";
 

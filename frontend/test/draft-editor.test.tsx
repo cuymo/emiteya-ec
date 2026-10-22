@@ -9,7 +9,16 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DraftEditorScreen } from "@/features/invoices/draft-editor";
 import { errorBody, navigation, type Route } from "./harness";
-import { CUSTOMER, PRODUCT, draft, invoice, ok, paged, render } from "./invoice-draft-fixtures";
+import {
+  CONSUMER_FINAL,
+  CUSTOMER,
+  PRODUCT,
+  draft,
+  invoice,
+  ok,
+  paged,
+  render,
+} from "./invoice-draft-fixtures";
 
 const button = (name: string) => screen.getByRole("button", { name });
 const summary = () => screen.getByRole("complementary", { name: "Resumen" });
@@ -36,11 +45,12 @@ function holdRoute(method: string, path: string) {
   return () => release();
 }
 
-/** Agrega el cemento desde el selector de productos. */
+/** Agrega el cemento desde la tabla de productos: se marca su casilla y se confirma. */
 async function addCement(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole("button", { name: "Agregar producto" }));
-  const dialog = await screen.findByRole("dialog", { name: "Agregar producto" });
-  await user.click(await within(dialog).findByRole("option", { name: /Cemento 50 kg/ }));
+  const dialog = await screen.findByRole("dialog", { name: "Agregar productos" });
+  await user.click(await within(dialog).findByRole("checkbox", { name: "Elegir Cemento 50 kg" }));
+  await user.click(within(dialog).getByRole("button", { name: "Agregar producto" }));
   return line1();
 }
 
@@ -117,10 +127,10 @@ describe("composición del editor", () => {
       },
     });
     const line = await line1();
-    expect(await within(line).findByText("USD 25,00")).toBeDefined();
+    expect(await within(line).findByText("$25,00")).toBeDefined();
     expect(within(line).getAllByText(/15 %/).length).toBeGreaterThan(0);
     await userEvent.setup().type(within(line).getByLabelText("Cantidad"), "0");
-    expect(await within(line).findByText("USD 261,25")).toBeDefined();
+    expect(await within(line).findByText("$261,25")).toBeDefined();
     const sent = calls.filter((call) => call.key === "POST /api/v1/invoices/drafts/preview");
     expect(sent.at(-1)?.body).toMatchObject({ lines: [{ productId: "prod-1", quantity: "30" }] });
     // La vista previa no guarda nada.
@@ -169,7 +179,7 @@ describe("emitir como acción principal", () => {
     await waitFor(() => expect(emit).toHaveProperty("disabled", false));
     await user.click(emit);
     const dialog = await screen.findByRole("dialog", { name: "Emitir factura" });
-    expect(within(dialog).getByText("USD 28,75")).toBeDefined();
+    expect(within(dialog).getByText("$28,75")).toBeDefined();
     expect(within(dialog).getByText(CUSTOMER.legalName)).toBeDefined();
     expect(within(dialog).getByText("Efectivo", { exact: false })).toBeDefined();
     await user.click(within(dialog).getByRole("button", { name: "Emitir factura" }));
@@ -338,7 +348,7 @@ describe("resumen con los totales del servidor", () => {
     expect(
       within(panel).getByText("El total aparecerá aquí cuando agregues el primer producto."),
     ).toBeDefined();
-    expect(within(summary()).queryByText(/USD/)).toBeNull();
+    expect(within(summary()).queryByText(/\$/)).toBeNull();
   });
 
   it("una factura nueva muestra subtotal, descuento, IVA y total sin guardarla", async () => {
@@ -347,7 +357,7 @@ describe("resumen con los totales del servidor", () => {
       "GET /api/v1/products": paged([PRODUCT]),
     });
     await addCement(userEvent.setup());
-    expect(await within(summary()).findByText("USD 28,75")).toBeDefined();
+    expect(await within(summary()).findByText("$28,75")).toBeDefined();
     expect(within(summary()).getByText("Subtotal sin impuestos")).toBeDefined();
     expect(within(summary()).getByText("IVA 15 %")).toBeDefined();
     expect(within(summary()).getByText("1 producto")).toBeDefined();
@@ -382,7 +392,7 @@ describe("resumen con los totales del servidor", () => {
         "El total aparece cuando todas las líneas se pueden calcular.",
       ),
     ).toBeDefined();
-    expect(within(summary()).queryByText(/USD/)).toBeNull();
+    expect(within(summary()).queryByText(/\$/)).toBeNull();
     expect(within(summary()).getByText("La firma electrónica no es utilizable.")).toBeDefined();
     expect(within(await line1()).getByText(/la tarifa de IVA ya no está habilitada/)).toBeDefined();
   });
@@ -489,7 +499,7 @@ describe("formas de pago", () => {
     });
     await line1();
     const first = screen.getByRole("group", { name: "Forma de pago 1" });
-    expect(await within(first).findByText("USD 28,75")).toBeDefined();
+    expect(await within(first).findByText("$28,75")).toBeDefined();
     expect(within(first).getByText("El total de la factura")).toBeDefined();
     expect(
       await within(first).findByText("SRI 01 · Sin utilización del sistema financiero"),
@@ -498,12 +508,12 @@ describe("formas de pago", () => {
     const user = userEvent.setup();
     await user.click(button("Dividir el pago"));
     expect(screen.getByText("Reparte el total entre las formas de pago.")).toBeDefined();
-    expect(await screen.findByText("Faltan USD 28,75 por asignar.")).toBeDefined();
+    expect(await screen.findByText("Faltan $28,75 por asignar.")).toBeDefined();
     await user.type(within(first).getByLabelText("Importe (USD)"), "10");
     const second = screen.getByRole("group", { name: "Forma de pago 2" });
     await user.selectOptions(within(second).getByLabelText("Forma de pago"), "19");
     await user.click(
-      await within(second).findByRole("button", { name: "Asignar lo pendiente (USD 18,75)" }),
+      await within(second).findByRole("button", { name: "Asignar lo pendiente ($18,75)" }),
     );
     expect(await screen.findByText("El pago cubre el total.")).toBeDefined();
     expect(
@@ -516,7 +526,7 @@ describe("formas de pago", () => {
     const amount = within(second).getByLabelText("Importe (USD)") as HTMLInputElement;
     await user.clear(amount);
     await user.type(amount, "20");
-    expect(await screen.findByText("Asignaste USD 1,25 más que el total.")).toBeDefined();
+    expect(await screen.findByText("Asignaste $1,25 más que el total.")).toBeDefined();
     expect(reasonOf(button("Emitir factura"))).toBe("Para emitir falta: forma de pago.");
   });
 
@@ -622,4 +632,68 @@ describe("estados del editor", () => {
     await userEvent.setup().click(screen.getByRole("button", { name: "Intentar de nuevo" }));
     expect(await line1()).toBeDefined();
   }, 10_000);
+});
+
+describe("pedidos del propietario sobre el editor (2026-10-22)", () => {
+  const VARILLA = { ...PRODUCT, id: "prod-2", mainCode: "VAR-10", name: "Varilla 10 mm" };
+
+  it("«Elegir comprador» y «Agregar producto» van en azul, y «Consumidor final» lo elige en un clic", async () => {
+    navigation.pathname = "/borradores/nuevo";
+    render(<DraftEditorScreen draftId={null} />, {
+      "GET /api/v1/parties": paged([CONSUMER_FINAL]),
+      "GET /api/v1/products": paged([PRODUCT]),
+    });
+    const user = userEvent.setup();
+    const pick = await screen.findByRole("button", { name: "Elegir comprador" });
+    expect(pick.getAttribute("data-variant")).toBe("primary");
+    expect(
+      screen.getByRole("button", { name: "Agregar producto" }).getAttribute("data-variant"),
+    ).toBe("primary");
+    await user.click(screen.getByRole("button", { name: "Consumidor final" }));
+    expect(await screen.findByText("CONSUMIDOR FINAL")).toBeDefined();
+    // Ya es el comprador: su botón rápido desaparece y el otro pasa a «Cambiar».
+    expect(screen.queryByRole("button", { name: "Consumidor final" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Cambiar comprador" })).toBeDefined();
+  });
+
+  it("en el selector de comprador, «Consumidor final» va destacado con el degradado del primario", async () => {
+    navigation.pathname = "/borradores/nuevo";
+    render(<DraftEditorScreen draftId={null} />, {
+      "GET /api/v1/parties": paged([CUSTOMER]),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Elegir comprador" }));
+    const dialog = await screen.findByRole("dialog", { name: "Elegir comprador" });
+    const quick = await within(dialog).findByRole("option", { name: "Consumidor final" });
+    expect(quick.className).toContain("bg-linear-to-r");
+    expect(quick.className).toContain("from-primary");
+  });
+
+  it("la tabla de productos elige varios a la vez y los agrega en el orden en que se eligieron", async () => {
+    navigation.pathname = "/borradores/nuevo";
+    render(<DraftEditorScreen draftId={null} />, {
+      "GET /api/v1/products": paged([PRODUCT, VARILLA]),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Agregar producto" }));
+    const dialog = await screen.findByRole("dialog", { name: "Agregar productos" });
+    expect(within(dialog).getByRole("table", { name: "Productos activos" })).toBeDefined();
+    await user.click(await within(dialog).findByRole("checkbox", { name: "Elegir Varilla 10 mm" }));
+    await user.click(within(dialog).getByRole("checkbox", { name: "Elegir Cemento 50 kg" }));
+    expect(within(dialog).getByText("2 productos elegidos")).toBeDefined();
+    await user.click(within(dialog).getByRole("button", { name: "Agregar 2 productos" }));
+    expect(await screen.findByRole("listitem", { name: "Línea 1: Varilla 10 mm" })).toBeDefined();
+    expect(screen.getByRole("listitem", { name: "Línea 2: Cemento 50 kg" })).toBeDefined();
+  });
+
+  it("quitar va en rojo y «Dividir el pago» ocupa todo el ancho, punteado", async () => {
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": ok(draft()),
+    });
+    const [remove] = await screen.findAllByRole("button", { name: /^Quitar / });
+    expect(remove!.className).toContain("text-danger");
+    const split = screen.getByRole("button", { name: "Dividir el pago" });
+    expect(split.className).toContain("w-full");
+    expect(split.className).toContain("border-dashed");
+  });
 });
