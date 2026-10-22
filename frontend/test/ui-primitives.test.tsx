@@ -36,6 +36,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyTitle } from "@/components/ui/empty";
 import { Kbd } from "@/components/ui/kbd";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -167,6 +169,36 @@ describe("Button", () => {
     expect(screen.getByRole("button", { name: "Continuar" }).getAttribute("data-size")).toBe(
       "legacy-md",
     );
+  });
+});
+
+describe("Select", () => {
+  it("lleva el mismo borde que un campo de texto, sin la apariencia nativa, y su flecha del tema", () => {
+    render(
+      <>
+        <label htmlFor="tipo">Tipo</label>
+        <Select id="tipo" className="max-w-sm" disabled>
+          <option>RUC</option>
+        </Select>
+        <Input aria-label="Identificación" />
+      </>,
+    );
+    const select = screen.getByLabelText("Tipo");
+    const classes = select.className.split(/\s+/);
+    // El control nativo pintaba su propio borde oscuro en algunos navegadores.
+    expect(classes).toContain("appearance-none");
+    for (const token of ["border", "border-input", "rounded-md", "h-10", "bg-surface"]) {
+      expect(classes, token).toContain(token);
+      expect(screen.getByLabelText("Identificación").className.split(/\s+/), token).toContain(
+        token,
+      );
+    }
+    // El ancho lo fija el contenedor, donde también vive la flecha.
+    const wrapper = select.parentElement!;
+    expect(wrapper.className).toContain("max-w-sm");
+    const arrow = wrapper.querySelector("svg")!;
+    expect(arrow.getAttribute("aria-hidden")).toBe("true");
+    expect(arrow.getAttribute("class")).toContain("pointer-events-none");
   });
 });
 
