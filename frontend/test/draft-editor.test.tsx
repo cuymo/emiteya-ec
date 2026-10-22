@@ -653,7 +653,9 @@ describe("pedidos del propietario sobre el editor (2026-10-22)", () => {
     expect(await screen.findByText("CONSUMIDOR FINAL")).toBeDefined();
     // Ya es el comprador: su botón rápido desaparece y el otro pasa a «Cambiar».
     expect(screen.queryByRole("button", { name: "Consumidor final" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Cambiar comprador" })).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: "Cambiar comprador" }).getAttribute("data-variant"),
+    ).toBe("primary");
   });
 
   it("en el selector de comprador, «Consumidor final» va destacado con el degradado del primario", async () => {

@@ -530,11 +530,13 @@ persona, comprador, productos, pago, total y emitir, no el técnico de guardar p
   no calcula impuestos ni totales; solo suma los importes que se reparten entre varias formas de pago
   para decir cuánto falta. Una forma de pago todavía sin elegir no detiene la vista previa.
 - **Secciones.**
-  - **Datos de la factura.** El comprador es una ficha, no un campo: su nombre, su identificación con
-    el tipo («Cédula …», «RUC …», «Consumidor final · …») y «Cambiar» o «Elegir comprador», este en
-    el azul primario (decisión del propietario, 2026-10-22). A su izquierda, «Consumidor final» lo
-    elige en un clic, salvo que ya sea el comprador; en el selector de comprador, el consumidor final
-    va primero con el degradado del primario (`QuickOption.highlight`, token `--primary-gradient`). El
+  - **Datos de la factura.** El comprador es una ficha, no un campo (decisiones del propietario,
+    2026-10-22): a la izquierda, el ícono de la persona (azul con comprador, gris sin él); su nombre
+    y su identificación con el tipo («Cédula …», «RUC …», «Consumidor final · …»); y a la derecha
+    «Cambiar» o «Elegir comprador», los dos en el azul primario. Antes de ellos, «Consumidor final»
+    lo elige en un clic, salvo que ya sea el comprador. En el selector de comprador, el consumidor
+    final va primero con un degradado azulado suave y su título en azul (`QuickOption.highlight`).
+    Todos los botones del editor llevan su ícono. El
     establecimiento y el punto van en dos selectores lado a lado, y el punto se elige entre los del
     establecimiento elegido (decisión del propietario, 2026-10-17). Con un solo establecimiento,
     este queda elegido; al cambiarlo, uno con un solo punto disponible lo elige y otro vacía el
@@ -552,7 +554,8 @@ persona, comprador, productos, pago, total y emitir, no el técnico de guardar p
     Quitar una línea no pide confirmación (el aviso ofrece «Deshacer») y su botón va en rojo. Se
     acepta la coma decimal («1,5»).
   - **Formas de pago,** cuando ya hay algún producto. Con una, su importe es el total de la factura,
-    en verde, sin pedirlo. «Dividir el pago», un botón punteado a todo el ancho, agrega otra: cada una
+    en verde, sin pedirlo. «Dividir el pago», un botón punteado alto a todo el ancho que al pasar el
+    ratón toma un degradado azulado, agrega otra: cada una
     lleva su importe, el editor dice cuánto falta (con el ícono de aviso), cuánto sobra (en rojo) o que
     el pago cubre el total (en verde), y una forma de pago sin importe ofrece «Asignar lo pendiente». Una forma de pago
     nueva propone lo que falta si las demás ya llevan su importe. Cada una muestra su nombre corriente

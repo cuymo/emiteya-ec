@@ -35,9 +35,14 @@ import {
   LoaderCircle,
   PackagePlus,
   Plus,
+  Save,
+  Send,
+  Split,
   Trash2,
   TriangleAlert,
   UserRound,
+  UserRoundPen,
+  UserSearch,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -357,20 +362,32 @@ function BuyerCard({
           !buyer && "border-dashed",
         )}
       >
-        {buyer ? (
-          <div className="flex min-w-0 flex-col">
-            <span className="truncate font-medium" title={buyer.legalName}>
-              {buyer.legalName}
-            </span>
-            <span className="text-sm text-foreground-muted tabular-nums">
-              {buyer.consumerFinal
-                ? `Consumidor final · ${buyer.identification}`
-                : identificationText(buyer.identificationType, buyer.identification)}
-            </span>
-          </div>
-        ) : (
-          <span className="text-sm text-foreground-muted">Aún no eliges a quién facturas.</span>
-        )}
+        <div className="flex min-w-0 items-center gap-3">
+          {/* La persona del comprador, para reconocer la ficha de un vistazo. */}
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-full",
+              buyer ? "bg-primary/10 text-primary" : "bg-muted text-foreground-muted",
+            )}
+          >
+            <UserRound className="size-5" />
+          </span>
+          {buyer ? (
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate font-medium" title={buyer.legalName}>
+                {buyer.legalName}
+              </span>
+              <span className="text-sm text-foreground-muted tabular-nums">
+                {buyer.consumerFinal
+                  ? `Consumidor final · ${buyer.identification}`
+                  : identificationText(buyer.identificationType, buyer.identification)}
+              </span>
+            </div>
+          ) : (
+            <span className="text-sm text-foreground-muted">Aún no eliges a quién facturas.</span>
+          )}
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           {!buyer?.consumerFinal && (
             <AsyncButton
@@ -385,11 +402,16 @@ function BuyerCard({
             </AsyncButton>
           )}
           <Button
-            variant={buyer ? "outline" : "primary"}
+            variant="primary"
             size="default"
             aria-label={buyer ? "Cambiar comprador" : "Elegir comprador"}
             onClick={onPick}
           >
+            {buyer ? (
+              <UserRoundPen aria-hidden="true" data-icon="inline-start" />
+            ) : (
+              <UserSearch aria-hidden="true" data-icon="inline-start" />
+            )}
             {buyer ? "Cambiar" : "Elegir comprador"}
           </Button>
         </div>
@@ -848,6 +870,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
       aria-describedby={emitReason ? emitReasonId : undefined}
       onClick={() => setConfirming(true)}
     >
+      <Send aria-hidden="true" data-icon="inline-start" />
       Emitir factura
     </Button>
   ) : null;
@@ -861,6 +884,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
       pendingLabel="Guardando el borrador"
       disabled={emitPending}
     >
+      <Save aria-hidden="true" data-icon="inline-start" />
       Guardar borrador
     </AsyncButton>
   );
@@ -1033,7 +1057,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
               action={
                 lines.fields.length > 0 ? (
                   <Button variant="primary" size="default" onClick={() => setPickingProduct(true)}>
-                    <Plus aria-hidden="true" data-icon="inline-start" />
+                    <PackagePlus aria-hidden="true" data-icon="inline-start" />
                     Agregar producto
                   </Button>
                 ) : undefined
@@ -1046,7 +1070,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                     Todavía no hay productos en esta factura.
                   </p>
                   <Button variant="primary" size="default" onClick={() => setPickingProduct(true)}>
-                    <Plus aria-hidden="true" data-icon="inline-start" />
+                    <PackagePlus aria-hidden="true" data-icon="inline-start" />
                     Agregar producto
                   </Button>
                 </div>
@@ -1318,10 +1342,14 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                     <Button
                       variant="outline"
                       size="default"
-                      className="w-full border-dashed"
+                      className="h-12 w-full border-dashed hover:border-primary/50 hover:bg-transparent hover:bg-linear-to-r hover:from-primary/15 hover:via-primary/5 hover:to-primary/15 hover:text-primary max-md:h-12"
                       onClick={addPayment}
                     >
-                      <Plus aria-hidden="true" data-icon="inline-start" />
+                      {split ? (
+                        <Plus aria-hidden="true" data-icon="inline-start" />
+                      ) : (
+                        <Split aria-hidden="true" data-icon="inline-start" />
+                      )}
                       {split ? "Agregar otra forma de pago" : "Dividir el pago"}
                     </Button>
                     {split && pending !== null && (

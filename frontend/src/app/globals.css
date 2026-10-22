@@ -93,9 +93,6 @@
   /* Único primario: el azul de EmiteYa. El foco usa su anillo sólido. */
   --primary: oklch(0.5 0.16 255);
   --primary-foreground: oklch(0.99 0 0);
-  /* Final del degradado del primario (decisión del propietario, 2026-10-22: la opción rápida de
-     «Consumidor final»): más profundo que el primario, para que su texto conserve el contraste. */
-  --primary-gradient: oklch(0.42 0.15 258);
   --ring: oklch(0.55 0.16 255);
 
   /* Colores semánticos de EmiteYa. En el tema claro, éxito, información y advertencia bajan algo de
@@ -176,7 +173,6 @@
 
   --primary: oklch(0.68 0.15 255);
   --primary-foreground: oklch(0.16 0.01 250);
-  --primary-gradient: oklch(0.76 0.12 250);
   --ring: oklch(0.72 0.14 255);
 
   --destructive: oklch(0.68 0.19 27);
@@ -222,7 +218,6 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-gradient: var(--primary-gradient);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

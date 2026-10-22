@@ -26,7 +26,7 @@ export type QuickOption = {
   label: string;
   description?: string;
   onSelect: () => void;
-  /** La destaca con el degradado del primario, como «Consumidor final» al elegir comprador. */
+  /** La destaca con un degradado azulado, como «Consumidor final» al elegir comprador. */
   highlight?: boolean;
 };
 
@@ -132,13 +132,11 @@ export function EntityPickerDialog<T>({
             highlight,
             content: (
               <span className="flex flex-col">
-                <span className="font-medium">{quickOption.label}</span>
+                <span className={cn("font-medium", highlight && "font-semibold text-primary")}>
+                  {quickOption.label}
+                </span>
                 {quickOption.description && (
-                  <span
-                    className={cn("text-sm", highlight ? "opacity-90" : "text-foreground-muted")}
-                  >
-                    {quickOption.description}
-                  </span>
+                  <span className="text-sm text-foreground-muted">{quickOption.description}</span>
                 )}
               </span>
             ),
@@ -255,11 +253,11 @@ export function EntityPickerDialog<T>({
             className={cn(
               "flex min-h-11 cursor-pointer items-center rounded-md px-2 py-1 text-sm",
               option.disabled && "cursor-not-allowed text-foreground-muted",
+              // Un degradado azulado suave, no un bloque sólido: el texto sigue en sus tokens.
               option.highlight
                 ? cn(
-                    "bg-linear-to-r from-primary to-primary-gradient px-3 py-2 text-primary-foreground",
-                    index === activeIndex &&
-                      "ring-2 ring-primary ring-offset-2 ring-offset-surface",
+                    "border border-primary/30 bg-linear-to-r from-primary/20 via-primary/10 to-primary/5 px-3 py-2",
+                    index === activeIndex && "ring-2 ring-primary",
                   )
                 : index === activeIndex
                   ? "bg-active ring-1 ring-primary"

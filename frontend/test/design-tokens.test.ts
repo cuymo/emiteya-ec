@@ -63,7 +63,6 @@ const TEXT_PAIRS: [string, string][] = [
   ["muted-foreground", "card"],
   ["muted-foreground", "sidebar"],
   ["primary-foreground", "primary"],
-  ["primary-foreground", "primary-gradient"],
   ["destructive-foreground", "destructive"],
   ["success-foreground", "success"],
   ["warning-foreground", "warning"],

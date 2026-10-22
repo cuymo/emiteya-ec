@@ -104,9 +104,9 @@ success  warning  destructive  info   (each with its -foreground)
 
 - **Neutrals and surfaces** come from the reference template.
 - **`primary`** is the single EmiteYa blue. It is used for primary actions and purposeful emphasis,
-  never to encode a fiscal state. **`primary-gradient`** is the end stop of its gradient (owner
-  decision, 2026-10-22; the highlighted «Consumidor final» option): deeper than `primary` in the
-  light theme and lighter in the dark one, so `primary-foreground` keeps 4.5:1 along the gradient.
+  never to encode a fiscal state. A highlighted option uses a soft bluish gradient of `primary` at
+  20 %, 10 % and 5 % (owner decision, 2026-10-22; «Consumidor final» when choosing a buyer), so its
+  text keeps its own tokens instead of sitting on a solid block.
 - **Semantic colors** come from EmiteYa. In the light theme, `success`, `info` and `warning` were
   darkened slightly so that text on them reaches 4.5:1 and their icons reach 3:1 on the background.
 - **`input`** is the border of every field (owner decision, 2026-10-22): a soft gray, one step
