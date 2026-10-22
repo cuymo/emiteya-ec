@@ -10,13 +10,14 @@
 // - los comprobantes del mes por tipo, en barras apiladas de lo autorizado sobre lo emitido, también
 //   con su tabla para la asistencia;
 // - el estado del sistema (firma, ambiente y existencias): cuatro estados distintos, en una lista con
-//   icono y texto, no en un gráfico;
+//   icono y texto, no en un gráfico, cada uno con un acceso rápido «Ir» a su sección si el rol la ve;
 // - los últimos comprobantes, enlazados a su detalle.
 // Las ventas son las facturas autorizadas; los importes son los del servidor, sin cálculos aquí.
 "use client";
 
 import { DOCUMENT_TYPE_LABELS, type DashboardView } from "@facturador/contracts";
 import {
+  ArrowRight,
   CircleAlert,
   CircleCheck,
   FileClock,
@@ -53,6 +54,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDecimal, formatUsd } from "@/lib/decimal";
+import { resolveRoute } from "@/lib/navigation/routes";
 import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { DOCUMENT_KINDS } from "@/features/archive/document-kinds";
@@ -122,7 +124,11 @@ function Metric({
   );
 }
 
-/** Un dato del estado del sistema: su nombre, su valor y su tono, con icono y texto. */
+/**
+ * Un dato del estado del sistema: su nombre, debajo su valor con icono y tono, y a la derecha el
+ * acceso rápido «Ir» a su sección (decisión del propietario, 2026-10-22). El botón solo aparece si
+ * el rol puede abrir esa sección, con el permiso que exige la navegación.
+ */
 function StatusRow({
   icon: Icon,
   label,
@@ -134,35 +140,44 @@ function StatusRow({
   label: string;
   value: string;
   tone: "success" | "warning" | "danger" | "neutral";
-  href?: string;
+  /** La sección del dato, como `/inventario`. */
+  href: string;
 }) {
+  const { me } = useSession();
+  const route = resolveRoute(href);
+  const reachable =
+    route !== null && (route.permission === null || canSee(me.role, route.permission));
   const ToneIcon = tone === "success" ? CircleCheck : tone === "neutral" ? null : TriangleAlert;
   return (
     <li className="flex items-center gap-3 py-2.5">
       <Icon aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-      <span className="min-w-0 flex-1 text-sm">{label}</span>
-      <span
-        className={cn(
-          "flex items-center gap-1 text-sm font-medium",
-          tone === "success" && "text-success",
-          tone === "warning" && "text-foreground",
-          tone === "danger" && "text-danger",
-        )}
-      >
-        {ToneIcon && (
-          <ToneIcon
-            aria-hidden="true"
-            className={cn("size-4", tone === "warning" && "text-warning")}
-          />
-        )}
-        {href ? (
-          <Link href={href} className="hover:underline">
-            {value}
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-sm">{label}</span>
+        <span
+          className={cn(
+            "flex items-center gap-1 text-sm font-medium",
+            tone === "success" && "text-success",
+            tone === "warning" && "text-foreground",
+            tone === "danger" && "text-danger",
+          )}
+        >
+          {ToneIcon && (
+            <ToneIcon
+              aria-hidden="true"
+              className={cn("size-4 shrink-0", tone === "warning" && "text-warning")}
+            />
+          )}
+          {value}
+        </span>
+      </div>
+      {reachable && (
+        <Button asChild variant="outline" size="sm" className="shrink-0">
+          <Link href={href} aria-label={`Ir a ${route.destination.label}`}>
+            Ir
+            <ArrowRight aria-hidden="true" data-icon="inline-end" />
           </Link>
-        ) : (
-          value
-        )}
-      </span>
+        </Button>
+      )}
     </li>
   );
 }
@@ -402,13 +417,14 @@ function Dashboard({ data }: { data: DashboardView }) {
                 label="Firma electrónica"
                 value={certificateRow.value}
                 tone={certificateRow.tone}
-                {...(canConfigure ? { href: "/configuracion/firma" } : {})}
+                href="/configuracion/firma"
               />
               <StatusRow
                 icon={FileClock}
                 label="Ambiente"
                 value={environment}
                 tone={data.environment === "TEST" ? "warning" : "neutral"}
+                href="/configuracion/ambiente"
               />
               <StatusRow
                 icon={Warehouse}

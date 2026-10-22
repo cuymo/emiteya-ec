@@ -195,9 +195,20 @@ describe("tablero de Inicio", () => {
     expect(card("Productos más vendidos").textContent).toContain("TAL-18V · 27 unidades");
     const system = card("Estado del sistema");
     expect(await within(system).findByText("Vigente · 257 días")).toBeDefined();
-    expect(within(system).getByRole("link", { name: "1" }).getAttribute("href")).toBe(
+    // Cada dato tiene su acceso rápido «Ir» a la sección.
+    const shortcuts = within(system).getAllByRole("link");
+    expect(shortcuts.map((link) => [link.textContent, link.getAttribute("aria-label")])).toEqual([
+      ["Ir", "Ir a Firma electrónica"],
+      ["Ir", "Ir a Ambiente"],
+      ["Ir", "Ir a Inventario"],
+      ["Ir", "Ir a Archivo de comprobantes"],
+    ]);
+    expect(shortcuts.map((link) => link.getAttribute("href"))).toEqual([
+      "/configuracion/firma",
+      "/configuracion/ambiente",
       "/inventario",
-    );
+      "/comprobantes",
+    ]);
   });
 
   it("los rankings de clientes y productos son gráficos con su tabla para la asistencia", async () => {
@@ -275,8 +286,16 @@ describe("tablero de Inicio", () => {
     expect((await screen.findAllByText("USD 18.162,13")).length).toBeGreaterThan(0);
   }, 10_000);
 
-  it("el operador también ve el tablero", async () => {
+  it("el operador también ve el tablero, con los accesos rápidos de las secciones que abre", async () => {
     renderHome({}, OPERATOR_ME);
     expect(await loaded()).toBeDefined();
+    // La firma y el ambiente son de Configuración, que el operador no abre: su estado sí se ve.
+    const system = card("Estado del sistema");
+    expect(within(system).getByText("Firma electrónica")).toBeDefined();
+    expect(
+      within(system)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("aria-label")),
+    ).toEqual(["Ir a Inventario", "Ir a Archivo de comprobantes"]);
   });
 });
