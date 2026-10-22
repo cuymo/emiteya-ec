@@ -107,7 +107,13 @@ success  warning  destructive  info   (each with its -foreground)
   never to encode a fiscal state.
 - **Semantic colors** come from EmiteYa. In the light theme, `success`, `info` and `warning` were
   darkened slightly so that text on them reaches 4.5:1 and their icons reach 3:1 on the background.
-- **`input`** keeps 3:1 against background and surface for form borders (WCAG 1.4.11).
+- **`input`** is the border of every field (owner decision, 2026-10-22): a soft gray, one step
+  darker than the card `border` (`oklch(0.87 0 0)` light, `oklch(0.37 0 0)` dark). It covers
+  inputs, selects, filter triggers, segmented controls, chips, the switch and the native
+  checkboxes, which drop their own dark border for it. It used to keep 3:1 against background and
+  surface (WCAG 1.4.11); the owner traded that for a lighter look. Every field keeps a visible
+  label, and focus keeps its solid 3:1 ring. The token test checks that the border stays visible
+  (at least 1.3:1) and below 3:1, and darker than the card border in the light theme.
 - **`ring`** is solid, never translucent.
 - **Legacy aliases** (`surface`, `surface-subtle`, `foreground-muted`, `danger`,
   `danger-foreground`, `neutral`) map to the canonical tokens until every screen migrates. New code
@@ -120,7 +126,8 @@ success  warning  destructive  info   (each with its -foreground)
     foreground and muted foreground (0.72) taken from the template's Tangerine preset.
   - **Surfaces:** neutral and stepped: sidebar 0.2, card and popover 0.225, muted, secondary and
     accent 0.285.
-  - **Unchanged:** primary, semantic colors, `input` and `ring`.
+  - **Unchanged:** primary, semantic colors, `input` and `ring` (`input` changed later, on
+    2026-10-22).
 
   | Pair | Before | After |
   | --- | --- | --- |
@@ -131,7 +138,7 @@ success  warning  destructive  info   (each with its -foreground)
   | Foreground / accent (hover, active) | 14.48:1 | 11.68:1 |
   | Primary foreground / primary | 6.71:1 | 6.71:1 |
   | Primary (link) / background | 6.85:1 | 6.50:1 |
-  | Form border / card | 3.69:1 | 3.52:1 |
+  | Form border / card | 3.69:1 | 3.52:1 (until the soft field border of 2026-10-22; see `input`) |
 
   Everything stays at WCAG AA or better, and the token test guards against near-pure black and
   white in the dark theme.

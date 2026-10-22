@@ -85,8 +85,10 @@
   --accent: var(--active);
   --accent-foreground: var(--active-foreground);
   --border: oklch(0.922 0 0);
-  /* Borde de los controles de formulario: 3:1 frente a fondo y superficie (WCAG 1.4.11). */
-  --input: oklch(0.62 0 0);
+  /* Borde de los campos (decisión del propietario, 2026-10-22): un gris suave, un paso más oscuro que
+     el de las tarjetas. Ya no llega al 3:1 de WCAG 1.4.11: cada campo se reconoce por su etiqueta
+     visible y el foco conserva su anillo sólido de 3:1. */
+  --input: oklch(0.87 0 0);
 
   /* Único primario: el azul de EmiteYa. El foco usa su anillo sólido. */
   --primary: oklch(0.5 0.16 255);
@@ -160,7 +162,7 @@
   --accent: var(--active);
   --accent-foreground: var(--active-foreground);
   --border: oklch(1 0 0 / 12%);
-  --input: oklch(0.55 0 0);
+  --input: oklch(0.37 0 0);
 
   --primary: oklch(0.68 0.15 255);
   --primary-foreground: oklch(0.16 0.01 250);
@@ -321,6 +323,37 @@ html:has([data-slot="sticky-form-actions"]) {
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
+  }
+  /* Casillas de verificación sin la apariencia nativa, cuyo borde oscuro pintaba el navegador: el
+     mismo borde `input` que los demás campos y, marcadas, el azul primario con su marca. El tamaño
+     y el margen los ponen sus clases. */
+  input[type="checkbox"] {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    border: 1px solid var(--color-input);
+    border-radius: 0.25rem;
+    background-color: var(--color-surface);
+    cursor: pointer;
+  }
+  input[type="checkbox"]::before {
+    content: "";
+    width: 0.625rem;
+    height: 0.625rem;
+    background-color: var(--color-primary-foreground);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    transform: scale(0);
+  }
+  input[type="checkbox"]:checked {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+  }
+  input[type="checkbox"]:checked::before {
+    transform: scale(1);
+  }
+  input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 }
 

@@ -81,8 +81,6 @@ const TEXT_PAIRS: [string, string][] = [
 const NON_TEXT_PAIRS: [string, string][] = [
   ["chart-1", "card"],
   ["chart-muted", "card"],
-  ["input", "background"],
-  ["input", "card"],
   ["ring", "background"],
   ["ring", "sidebar"],
   ["success", "background"],
@@ -173,5 +171,19 @@ describe("contraste de los tokens", () => {
     it.each(NON_TEXT_PAIRS)(`tema ${name}: %s sobre %s, al menos 3:1`, (element, background) => {
       expect(contrast(theme, element, background)).toBeGreaterThanOrEqual(3);
     });
+    // Decisión del propietario (2026-10-22): el borde de los campos es un gris suave, por debajo del
+    // 3:1 de WCAG 1.4.11; sigue visible frente al fondo y la tarjeta, y el foco conserva su 3:1.
+    it(`tema ${name}: el borde de los campos es suave pero visible`, () => {
+      for (const surface of ["background", "card"]) {
+        const ratio = contrast(theme, "input", surface);
+        expect(ratio, surface).toBeGreaterThanOrEqual(1.3);
+        expect(ratio, surface).toBeLessThan(3);
+      }
+    });
   }
+  it("tema claro: el borde de los campos es un paso más oscuro que el de las tarjetas", () => {
+    expect(contrast(ROOT, "input", "background")).toBeGreaterThan(
+      contrast(ROOT, "border", "background"),
+    );
+  });
 });
