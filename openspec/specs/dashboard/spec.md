@@ -22,7 +22,7 @@ El sistema SHALL calcular en el servidor un resumen de la empresa de la sesión 
 - **THEN** ninguna ve comprobantes, clientes ni productos de la otra
 
 ### Requirement: Tablero de Inicio
-Inicio SHALL mostrar el tablero a quien puede consultar facturas, y solo la preparación para emitir a cualquier otro rol. Mientras la empresa no pueda emitir, el tablero SHALL mostrar primero sus requisitos pendientes. Después SHALL mostrar cuatro indicadores (ventas autorizadas del mes con lo del mes anterior, facturas del mes, lo que requiere atención y borradores pendientes), las ventas autorizadas de los seis últimos meses en barras con una tabla equivalente para las tecnologías de asistencia, los comprobantes del mes por tipo en barras apiladas de lo autorizado sobre lo emitido, con su total autorizado, su leyenda y una tabla equivalente, los mejores clientes y los productos más vendidos en barras horizontales con su importe y una tabla equivalente, el estado del sistema (firma electrónica, ambiente, productos agotados y comprobantes con atención), cada dato con un acceso rápido a su sección cuando el rol puede abrirla, y los últimos comprobantes enlazados a su detalle. Sin comprobantes, SHALL invitar a emitir el primero. Un error al cargar SHALL poder reintentarse. El tablero no SHALL calcular importes en el navegador.
+Inicio SHALL mostrar el tablero a quien puede consultar facturas, y solo la preparación para emitir a cualquier otro rol. Mientras la empresa no pueda emitir, el tablero SHALL mostrar primero sus requisitos pendientes. Después SHALL mostrar cuatro indicadores (ventas autorizadas del mes con lo del mes anterior, facturas del mes, lo que requiere atención y borradores pendientes), las ventas autorizadas de los seis últimos meses en una línea con área y una tabla equivalente para las tecnologías de asistencia, los comprobantes del mes por tipo en barras apiladas de lo autorizado sobre lo emitido, con su total autorizado, su leyenda y una tabla equivalente, los mejores clientes en una dona con su leyenda de nombres e importes y los productos más vendidos en columnas con su código, cada uno con una tabla equivalente, el estado del sistema (firma electrónica, ambiente, productos agotados y comprobantes con atención), cada dato con un acceso rápido a su sección cuando el rol puede abrirla, y los últimos comprobantes enlazados a su detalle. Sin comprobantes, SHALL invitar a emitir el primero. Un error al cargar SHALL poder reintentarse. El tablero no SHALL calcular importes en el navegador.
 
 #### Scenario: Empresa con actividad
 - **WHEN** un operador abre Inicio en una empresa que ya emite
@@ -39,6 +39,10 @@ Inicio SHALL mostrar el tablero a quien puede consultar facturas, y solo la prep
 #### Scenario: Comprobantes del mes por tipo
 - **WHEN** un operador abre Inicio en un mes con 18 facturas emitidas, 15 de ellas autorizadas
 - **THEN** la barra de Factura mide 18, con 15 en azul y 3 en gris, dice «15 de 18» en su extremo y «Factura» con su total autorizado encima, y la leyenda nombra «Autorizados» y «Sin autorizar»
+
+#### Scenario: Mejores clientes en una dona
+- **WHEN** un operador abre Inicio en un mes con cinco clientes con facturas autorizadas
+- **THEN** ve una dona con una porción por cliente, cada una con su color en un orden fijo, y una leyenda en el mismo orden con el nombre y lo facturado de cada uno
 
 #### Scenario: Accesos rápidos del estado del sistema
 - **WHEN** un administrador ve en el estado del sistema que la firma electrónica vence en 21 días

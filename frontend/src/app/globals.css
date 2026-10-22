@@ -113,6 +113,13 @@
      énfasis (lo emitido sin autorizar), un gris neutro. Validados contra la superficie con el
      validador de paletas: contraste >= 3:1 y separación ΔE >= 15 también con daltonismo. */
   --chart-1: oklch(0.5 0.16 255);
+  /* Categorías 2 a 5 (naranja, aqua, amarillo, rosa), en ese orden fijo, de la paleta de referencia
+     del método de visualización: los pares vecinos pasan el validador en los dos temas. En el claro,
+     aqua, amarillo y rosa quedan bajo 3:1 frente a la superficie: van siempre con leyenda visible. */
+  --chart-2: oklch(0.671 0.175 40.6);
+  --chart-3: oklch(0.669 0.141 162.1);
+  --chart-4: oklch(0.764 0.161 75.1);
+  --chart-5: oklch(0.716 0.141 357.4);
   --chart-muted: oklch(0.65 0.01 255);
 
   /* Barra lateral (plantilla), con el primario de EmiteYa. */
@@ -179,6 +186,10 @@
   --info: oklch(0.72 0.12 240);
   --info-foreground: oklch(0.16 0.01 250);
   --chart-1: oklch(0.62 0.15 255);
+  --chart-2: oklch(0.622 0.173 40.1);
+  --chart-3: oklch(0.621 0.128 163.1);
+  --chart-4: oklch(0.67 0.143 73.2);
+  --chart-5: oklch(0.622 0.171 0.8);
   --chart-muted: oklch(0.54 0.01 255);
 
   --sidebar: oklch(0.2 0 0);
@@ -225,6 +236,10 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
   --color-chart-muted: var(--chart-muted);
   --color-border: var(--border);
   --color-input: var(--input);

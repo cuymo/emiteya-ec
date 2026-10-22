@@ -5,8 +5,9 @@
 // vigente:
 // - si la empresa todavía no puede emitir, primero sus requisitos;
 // - cuatro indicadores: ventas autorizadas, facturas, lo que requiere atención y borradores;
-// - las ventas de los seis últimos meses y los rankings de clientes y productos, con los charts de
-//   shadcn/ui (`dashboard-charts.tsx`), cada uno con su tabla para la asistencia;
+// - con los charts de shadcn/ui (`dashboard-charts.tsx`), cada uno con su tabla para la asistencia:
+//   las ventas de los seis últimos meses en una línea con área, los mejores clientes en una dona con
+//   su leyenda y los productos más vendidos en columnas con su código;
 // - los comprobantes del mes por tipo, en barras apiladas de lo autorizado sobre lo emitido, también
 //   con su tabla para la asistencia;
 // - el estado del sistema (firma, ambiente y existencias): cuatro estados distintos, en una lista con
@@ -71,11 +72,15 @@ import { DocumentsTable, RankingTable, SalesTable } from "./dashboard-tables";
 // Los gráficos traen Recharts: se cargan aparte, después de los indicadores, y solo en el cliente.
 const SalesChart = dynamic(() => import("./dashboard-charts").then((module) => module.SalesChart), {
   ssr: false,
-  loading: () => <Skeleton className="h-56 w-full" />,
+  loading: () => <Skeleton className="h-64 w-full" />,
 });
-const RankingChart = dynamic(
-  () => import("./dashboard-charts").then((module) => module.RankingChart),
-  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+const ShareChart = dynamic(() => import("./dashboard-charts").then((module) => module.ShareChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-72 w-full" />,
+});
+const ColumnChart = dynamic(
+  () => import("./dashboard-charts").then((module) => module.ColumnChart),
+  { ssr: false, loading: () => <Skeleton className="h-60 w-full" /> },
 );
 const DocumentsChart = dynamic(
   () => import("./dashboard-charts").then((module) => module.DocumentsChart),
@@ -215,6 +220,12 @@ function Dashboard({ data }: { data: DashboardView }) {
     name: product.description,
     detail: `${product.mainCode ? `${product.mainCode} · ` : ""}${formatDecimal(product.quantity)} unidades`,
     value: product.total,
+    // Bajo cada columna cabe el código; sin código, el comienzo de la descripción.
+    short:
+      product.mainCode ??
+      (product.description.length > 8
+        ? `${product.description.slice(0, 7)}…`
+        : product.description),
   }));
 
   const certificateRow = !certificate
@@ -369,7 +380,7 @@ function Dashboard({ data }: { data: DashboardView }) {
               </p>
             ) : (
               <div data-slot="ranking-chart">
-                <RankingChart rows={customerRows} />
+                <ShareChart rows={customerRows} />
                 <RankingTable
                   rows={customerRows}
                   caption="Mejores clientes del mes"
@@ -393,7 +404,7 @@ function Dashboard({ data }: { data: DashboardView }) {
               </p>
             ) : (
               <div data-slot="ranking-chart">
-                <RankingChart rows={productRows} />
+                <ColumnChart rows={productRows} />
                 <RankingTable
                   rows={productRows}
                   caption="Productos más vendidos del mes"

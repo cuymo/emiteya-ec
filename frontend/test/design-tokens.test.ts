@@ -181,6 +181,14 @@ describe("contraste de los tokens", () => {
       }
     });
   }
+  it("los colores de categoría de los gráficos: 3:1 en el oscuro; en el claro, con leyenda", () => {
+    // En el claro, aqua, amarillo y rosa quedan bajo 3:1 (paleta de referencia del método de
+    // visualización): los gráficos que los usan llevan siempre su leyenda visible y su tabla.
+    for (const slot of ["chart-2", "chart-3", "chart-4", "chart-5"]) {
+      expect(contrast(DARK, slot, "card"), slot).toBeGreaterThanOrEqual(3);
+    }
+    expect(contrast(ROOT, "chart-2", "card")).toBeGreaterThanOrEqual(3);
+  });
   it("tema claro: el borde de los campos es un paso más oscuro que el de las tarjetas", () => {
     expect(contrast(ROOT, "input", "background")).toBeGreaterThan(
       contrast(ROOT, "border", "background"),
