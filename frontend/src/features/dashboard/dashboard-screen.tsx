@@ -7,7 +7,10 @@
 // - cuatro indicadores: ventas autorizadas, facturas, lo que requiere atención y borradores;
 // - las ventas de los seis últimos meses y los rankings de clientes y productos, con los charts de
 //   shadcn/ui (`dashboard-charts.tsx`), cada uno con su tabla para la asistencia;
-// - los comprobantes del mes por tipo y el estado del sistema (firma, ambiente y existencias);
+// - los comprobantes del mes por tipo, en barras apiladas de lo autorizado sobre lo emitido, también
+//   con su tabla para la asistencia;
+// - el estado del sistema (firma, ambiente y existencias): cuatro estados distintos, en una lista con
+//   icono y texto, no en un gráfico;
 // - los últimos comprobantes, enlazados a su detalle.
 // Las ventas son las facturas autorizadas; los importes son los del servidor, sin cálculos aquí.
 "use client";
@@ -59,9 +62,9 @@ import { ReadinessChecks } from "@/features/home/readiness-screen";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { useCertificateValidity } from "@/features/signing/signing-api";
 import { useDashboard } from "./dashboard-api";
-import type { RankingRow } from "./dashboard-charts";
+import type { DocumentTypeRow, RankingRow } from "./dashboard-charts";
 import { monthName } from "./dashboard-format";
-import { RankingTable, SalesTable } from "./dashboard-tables";
+import { DocumentsTable, RankingTable, SalesTable } from "./dashboard-tables";
 
 // Los gráficos traen Recharts: se cargan aparte, después de los indicadores, y solo en el cliente.
 const SalesChart = dynamic(() => import("./dashboard-charts").then((module) => module.SalesChart), {
@@ -70,6 +73,10 @@ const SalesChart = dynamic(() => import("./dashboard-charts").then((module) => m
 });
 const RankingChart = dynamic(
   () => import("./dashboard-charts").then((module) => module.RankingChart),
+  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+);
+const DocumentsChart = dynamic(
+  () => import("./dashboard-charts").then((module) => module.DocumentsChart),
   { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
 );
 
@@ -113,12 +120,6 @@ function Metric({
       </CardContent>
     </Card>
   );
-}
-
-/** Una lista de la tarjeta, o el texto que explica por qué está vacía. */
-function ListOrEmpty({ empty, children }: { empty: string | null; children: ReactNode }) {
-  if (empty) return <p className="text-sm text-foreground-muted">{empty}</p>;
-  return <ul className="flex flex-col divide-y divide-border">{children}</ul>;
 }
 
 /** Un dato del estado del sistema: su nombre, su valor y su tono, con icono y texto. */
@@ -186,6 +187,13 @@ function Dashboard({ data }: { data: DashboardView }) {
       customer.invoices === 1 ? "1 factura" : `${customer.invoices} facturas`
     }`,
     value: customer.authorizedTotal,
+  }));
+  const typeRows: DocumentTypeRow[] = data.month.byType.map((row) => ({
+    key: row.documentType,
+    name: DOCUMENT_TYPE_LABELS[row.documentType],
+    issued: row.issued,
+    authorized: row.authorized,
+    amount: row.authorizedTotal,
   }));
   const productRows: RankingRow[] = data.topProducts.map((product) => ({
     key: `${product.mainCode ?? ""}-${product.description}`,
@@ -321,27 +329,14 @@ function Dashboard({ data }: { data: DashboardView }) {
             <CardDescription>Emitidos y autorizados, por tipo.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ListOrEmpty
-              empty={
-                data.month.byType.length === 0 ? "Todavía no hay comprobantes este mes." : null
-              }
-            >
-              {data.month.byType.map((row) => (
-                <li key={row.documentType} className="flex items-center gap-3 py-2.5">
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-sm font-medium">
-                      {DOCUMENT_TYPE_LABELS[row.documentType]}
-                    </span>
-                    <span className="text-xs text-foreground-muted tabular-nums">
-                      {row.issued} emitidos · {row.authorized} autorizados
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium tabular-nums">
-                    {row.authorizedTotal === null ? "—" : formatUsd(row.authorizedTotal)}
-                  </span>
-                </li>
-              ))}
-            </ListOrEmpty>
+            {typeRows.length === 0 ? (
+              <p className="text-sm text-foreground-muted">Todavía no hay comprobantes este mes.</p>
+            ) : (
+              <div data-slot="documents-chart">
+                <DocumentsChart rows={typeRows} />
+                <DocumentsTable rows={typeRows} />
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

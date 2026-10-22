@@ -177,10 +177,19 @@ describe("tablero de Inicio", () => {
   it("los comprobantes por tipo, los clientes, los productos y el estado del sistema", async () => {
     renderHome();
     await loaded();
-    const types = card("Comprobantes del mes");
-    expect(types.textContent).toContain("19 emitidos · 15 autorizados");
+    // Los comprobantes por tipo van en un gráfico de barras apiladas con su tabla para la asistencia.
+    const types = screen.getByRole("table", { name: "Comprobantes del mes por tipo" });
+    const [typesHeader, invoices, guides] = within(types).getAllByRole("row");
+    expect(typesHeader!.textContent).toBe("TipoEmitidosAutorizadosTotal autorizado");
+    expect(invoices!.textContent).toBe("Factura1915USD 18.162,13");
     // La guía de remisión no tiene total.
-    expect(within(types).getAllByText("—")).toHaveLength(1);
+    expect(guides!.textContent).toBe("Guía de remisión21—");
+    await waitFor(() =>
+      expect(
+        card("Comprobantes del mes").querySelector("[data-slot=documents-chart] [data-slot=chart]"),
+      ).not.toBeNull(),
+    );
+    expect(card("Comprobantes del mes").textContent).toContain("AutorizadosSin autorizar");
     expect(card("Mejores clientes").textContent).toContain("ANA JARAMILLO ORTIZ");
     expect(card("Mejores clientes").textContent).toContain("USD 3.851,29");
     expect(card("Productos más vendidos").textContent).toContain("TAL-18V · 27 unidades");

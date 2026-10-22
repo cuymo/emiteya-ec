@@ -79,6 +79,8 @@ const TEXT_PAIRS: [string, string][] = [
 
 /** Elementos no textuales con significado (bordes de formulario, foco, iconos de estado): 3:1. */
 const NON_TEXT_PAIRS: [string, string][] = [
+  ["chart-1", "card"],
+  ["chart-muted", "card"],
   ["input", "background"],
   ["input", "card"],
   ["ring", "background"],

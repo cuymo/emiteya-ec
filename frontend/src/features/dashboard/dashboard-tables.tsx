@@ -2,7 +2,7 @@
 // pantalla, sin esperar a que lleguen los gráficos, y con los importes como los da el servidor.
 import type { DashboardView } from "@facturador/contracts";
 import { formatUsd } from "@/lib/decimal";
-import type { RankingRow } from "./dashboard-charts";
+import type { DocumentTypeRow, RankingRow } from "./dashboard-charts";
 import { monthName } from "./dashboard-format";
 
 export function SalesTable({ monthly }: { monthly: DashboardView["monthly"] }) {
@@ -56,6 +56,32 @@ export function RankingTable({
             <th scope="row">{row.name}</th>
             <td>{row.detail}</td>
             <td>{formatUsd(row.value)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+export function DocumentsTable({ rows }: { rows: readonly DocumentTypeRow[] }) {
+  return (
+    <table className="sr-only">
+      <caption>Comprobantes del mes por tipo</caption>
+      <thead>
+        <tr>
+          <th scope="col">Tipo</th>
+          <th scope="col">Emitidos</th>
+          <th scope="col">Autorizados</th>
+          <th scope="col">Total autorizado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key}>
+            <th scope="row">{row.name}</th>
+            <td>{row.issued}</td>
+            <td>{row.authorized}</td>
+            <td>{row.amount === null ? "—" : formatUsd(row.amount)}</td>
           </tr>
         ))}
       </tbody>
