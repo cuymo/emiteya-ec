@@ -18,7 +18,6 @@ import {
   type EntryState,
 } from "@facturador/contracts";
 import { Plus } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -27,6 +26,7 @@ import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
 import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
 import { SearchInput } from "@/components/data-table/table-controls";
+import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ import {
   DraftEditedAt,
   draftRowActions,
 } from "@/features/documents/draft-entries";
+import { useNewDebitNote } from "./new-debit-note";
 import { useDebitNoteEntries, useDeleteDebitNoteDraft } from "./debit-notes-api";
 
 type StateFilter =
@@ -128,6 +129,9 @@ export function DebitNotesScreen() {
   const { me } = useSession();
   const allowed = canSee(me.role, "debitNotes.read");
   const canDraft = canSee(me.role, "debitNotes.draft");
+  // «Nueva nota de débito» se abre sobre la lista, sin una página intermedia (decisión del propietario,
+  // 2026-10-22).
+  const creation = useNewDebitNote(canDraft);
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
@@ -272,12 +276,15 @@ export function DebitNotesScreen() {
   // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
   const newNote = (variant: "primary" | "outline", size: "default" | "sm" = "default") =>
     canDraft ? (
-      <Button asChild variant={variant} size={size}>
-        <Link href="/notas-debito/borradores/nueva">
-          <Plus aria-hidden="true" />
-          Nueva nota de débito
-        </Link>
-      </Button>
+      <AsyncButton
+        variant={variant}
+        size={size}
+        pending={creation.pending}
+        onClick={creation.start}
+      >
+        <Plus aria-hidden="true" />
+        Nueva nota de débito
+      </AsyncButton>
     ) : null;
   const tableState = notes.isError ? (
     <ErrorState
@@ -421,6 +428,7 @@ export function DebitNotesScreen() {
         pending={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
       />
+      {creation.element}
     </DataTableCard>
   );
 }

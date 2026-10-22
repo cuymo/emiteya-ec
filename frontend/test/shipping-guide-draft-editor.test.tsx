@@ -10,10 +10,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
-import {
-  NewShippingGuideDraftScreen,
-  ShippingGuideDraftScreen,
-} from "@/features/shipping-guides/shipping-guide-draft-editor";
+import { useNewShippingGuide } from "@/features/shipping-guides/new-shipping-guide";
+import { ShippingGuideDraftScreen } from "@/features/shipping-guides/shipping-guide-draft-editor";
 import {
   ADMIN_ME,
   OPERATOR_ME,
@@ -657,24 +655,72 @@ describe("borrador de guía de remisión", () => {
   });
 });
 
-describe("nueva guía de remisión", () => {
-  it("preparar el borrador lo crea con el punto predeterminado y abre su ruta", async () => {
-    let created: unknown;
-    navigation.pathname = "/guias-remision/borradores/nueva";
-    render(<NewShippingGuideDraftScreen />, {
-      "POST /api/v1/shipping-guides/drafts": (init) => {
-        created = JSON.parse(init.body as string);
-        return { status: 201, body: { data: guideDraft({ id: "grd-9" }) } };
-      },
-    });
+/** «Nueva guía de remisión» como la ofrece la lista: el botón y la confirmación de `?nueva`. */
+function NewShippingGuide() {
+  const creation = useNewShippingGuide(true);
+  return (
+    <>
+      <button type="button" disabled={creation.pending} onClick={creation.start}>
+        Nueva guía de remisión
+      </button>
+      {creation.element}
+    </>
+  );
+}
+
+describe("nueva guía de remisión sobre la lista (decisión del propietario, 2026-10-22)", () => {
+  const prepared = () => {
+    const state: { created?: unknown } = {};
+    const route: Route = (init) => {
+      state.created = JSON.parse(init.body as string);
+      return { status: 201, body: { data: guideDraft({ id: "grd-9" }) } };
+    };
+    return { state, route };
+  };
+
+  it("el botón prepara el borrador con el punto predeterminado y abre su editor, sin página intermedia", async () => {
+    navigation.pathname = "/guias-remision";
+    const { state, route } = prepared();
+    render(<NewShippingGuide />, { "POST /api/v1/shipping-guides/drafts": route });
     const user = userEvent.setup();
-    const prepare = await screen.findByRole("button", { name: "Preparar borrador" });
-    await waitFor(() => expect(prepare).toHaveProperty("disabled", false));
-    await user.click(prepare);
+    const button = await screen.findByRole("button", { name: "Nueva guía de remisión" });
+    await waitFor(() => expect(button).toHaveProperty("disabled", false));
+    await user.click(button);
     await waitFor(() =>
-      expect(navigation.replace).toHaveBeenCalledWith("/guias-remision/borradores/grd-9"),
+      expect(navigation.push).toHaveBeenCalledWith("/guias-remision/borradores/grd-9"),
     );
-    expect(created).toEqual({ emissionPointId: "pto-1" });
+    expect(state.created).toEqual({ emissionPointId: "pto-1" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("desde la creación rápida (`?nueva`) pide confirmar: cancelar no crea nada", async () => {
+    navigation.pathname = "/guias-remision";
+    navigation.search = new URLSearchParams("nueva=1");
+    const { state, route } = prepared();
+    const calls = render(<NewShippingGuide />, { "POST /api/v1/shipping-guides/drafts": route });
+    const user = userEvent.setup();
+    const dialog = await screen.findByRole("dialog", { name: "Nueva guía de remisión" });
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledWith("/guias-remision", { scroll: false }),
+    );
+    expect(calls.some((call) => call.key.startsWith("POST "))).toBe(false);
+    expect(state.created).toBeUndefined();
+  });
+
+  it("desde la creación rápida, «Preparar borrador» lo crea y abre su editor", async () => {
+    navigation.pathname = "/guias-remision";
+    navigation.search = new URLSearchParams("nueva=1");
+    const { state, route } = prepared();
+    render(<NewShippingGuide />, { "POST /api/v1/shipping-guides/drafts": route });
+    const user = userEvent.setup();
+    const dialog = await screen.findByRole("dialog", { name: "Nueva guía de remisión" });
+    // Mientras llega el punto predeterminado, el botón está pendiente.
+    await user.click(await within(dialog).findByRole("button", { name: "Preparar borrador" }));
+    await waitFor(() =>
+      expect(navigation.push).toHaveBeenCalledWith("/guias-remision/borradores/grd-9"),
+    );
+    expect(state.created).toEqual({ emissionPointId: "pto-1" });
   });
 });
 

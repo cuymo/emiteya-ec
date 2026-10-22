@@ -21,7 +21,6 @@ import {
   type CreditNoteDeclarationStatement,
   type CreditNoteDraftView,
   type CreditNoteIssue,
-  type EligibleInvoiceView,
   type InvoiceCreditView,
 } from "@facturador/contracts";
 import { FileText } from "lucide-react";
@@ -32,7 +31,6 @@ import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { SegmentedControl } from "@/components/segmented-control";
@@ -51,17 +49,18 @@ import {
   pointLabel,
   useEstablishments,
 } from "@/features/establishments/establishments-api";
+import { newDocumentHref } from "@/features/documents/new-document";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import {
   CREDIT_NOTE_CONFLICT_MESSAGES,
   CREDIT_NOTE_DRAFTS_KEY,
   CREDIT_NOTES_KEY,
-  fetchEligibleInvoices,
   useCreditNoteDraft,
   useEmitCreditNote,
   useInvoiceCredit,
   useSaveCreditNoteDraft,
 } from "./credit-notes-api";
+import { CreditInvoicePicker, newCreditNoteHref } from "./new-credit-note";
 
 type LineValues = {
   position: number;
@@ -792,70 +791,6 @@ function DraftEditor({
   );
 }
 
-/**
- * Antes de elegir la factura: el selector de las facturas elegibles, abierto de entrada (decisión
- * del propietario, 2026-10-17: «Nueva nota de crédito» abre la elección sin un clic de más).
- * Cerrarlo sin elegir llama a `onCancel`: volver a la lista, o a la factura que ya estaba elegida.
- */
-function InvoiceChooser({
-  onChoose,
-  onCancel,
-}: {
-  onChoose: (invoiceId: string) => void;
-  onCancel: () => void;
-}) {
-  const [picking, setPicking] = useState(true);
-  const chose = useRef(false);
-  return (
-    <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 id="editor-titulo" className="text-3xl font-bold">
-          Nueva nota de crédito
-        </h1>
-      </div>
-      <Section title="Factura que se modifica">
-        <p className="text-sm text-foreground-muted">
-          Elige una factura autorizada, identificada y con valor acreditable.
-        </p>
-        <Button className="self-start" onClick={() => setPicking(true)}>
-          Elegir factura
-        </Button>
-      </Section>
-      <EntityPickerDialog<EligibleInvoiceView>
-        open={picking}
-        onOpenChange={(next) => {
-          setPicking(next);
-          if (!next && !chose.current) onCancel();
-        }}
-        title="Elegir factura"
-        searchLabel="Buscar por número o comprador"
-        searchPlaceholder="Número o comprador"
-        queryKey={[...CREDIT_NOTES_KEY, "eligible-invoices"]}
-        fetchPage={fetchEligibleInvoices}
-        getKey={(invoice) => invoice.id}
-        getLabel={(invoice) => `Factura ${invoice.documentNumber}, ${invoice.buyerName}`}
-        renderItem={(invoice) => (
-          <span className="flex w-full items-center justify-between gap-2">
-            <span className="flex min-w-0 flex-col">
-              <span className="font-medium tabular-nums">{invoice.documentNumber}</span>
-              <span className="text-sm break-words text-foreground-muted">
-                {invoice.buyerName} · {formatIssueDate(invoice.issueDate)}
-              </span>
-            </span>
-            <span className="text-sm tabular-nums">Disponible {formatUsd(invoice.available)}</span>
-          </span>
-        )}
-        onSelect={(invoice) => {
-          chose.current = true;
-          onChoose(invoice.id);
-        }}
-        emptyTitle="No hay facturas elegibles"
-        emptyDescription="Una nota de crédito corrige una factura autorizada, identificada y con valor acreditable."
-      />
-    </section>
-  );
-}
-
 function Fallback({ children }: { children: ReactNode }) {
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
@@ -881,10 +816,16 @@ export function CreditNoteDraftScreen({
   const draft = useCreditNoteDraft(draftId, allowed);
   const router = useRouter();
   const [chosen, setChosen] = useState<string | null>(invoiceId);
-  // La factura de antes de «Cambiar factura»: cancelar la elección vuelve a ella.
-  const [previous, setPrevious] = useState<string | null>(null);
+  // «Cambiar factura» abre el selector encima del editor; cancelarlo deja la factura que había.
+  const [changing, setChanging] = useState(false);
   const target = draftId ? (draft.data?.invoice.id ?? null) : chosen;
   const credit = useInvoiceCredit(target, allowed);
+  // Sin factura no hay nota que editar: la elección vive sobre la lista (decisión del propietario,
+  // 2026-10-22), sin una página intermedia.
+  const missingInvoice = allowed && !draftId && !target;
+  useEffect(() => {
+    if (missingInvoice) router.replace(newDocumentHref("/notas-credito"));
+  }, [missingInvoice, router]);
 
   if (!allowed) {
     return (
@@ -928,14 +869,7 @@ export function CreditNoteDraftScreen({
       </Fallback>
     );
   }
-  if (!target) {
-    return (
-      <InvoiceChooser
-        onChoose={setChosen}
-        onCancel={() => (previous ? setChosen(previous) : router.replace("/notas-credito"))}
-      />
-    );
-  }
+  if (!target) return <CreditNoteDraftSkeleton />;
   if (credit.isPending) return <CreditNoteDraftSkeleton />;
   if (credit.isError) {
     const missing = credit.error instanceof ApiError && credit.error.status === 404;
@@ -948,7 +882,7 @@ export function CreditNoteDraftScreen({
             description="Elige otra factura para la nota de crédito."
             action={
               <Button asChild variant="outline">
-                <Link href="/notas-credito/borradores/nueva">Elegir otra factura</Link>
+                <Link href={newDocumentHref("/notas-credito")}>Elegir otra factura</Link>
               </Button>
             }
           />
@@ -963,20 +897,25 @@ export function CreditNoteDraftScreen({
   }
   const data = draftId ? (draft.data ?? null) : null;
   return (
-    <DraftEditor
-      key={data ? `${data.id}-${data.version}` : `nueva-${target}`}
-      draft={data}
-      credit={credit.data}
-      canEmit={canEmit}
-      {...(data
-        ? {}
-        : {
-            onChangeInvoice: () => {
-              setPrevious(chosen);
-              setChosen(null);
-            },
-          })}
-    />
+    <>
+      <DraftEditor
+        key={data ? `${data.id}-${data.version}` : `nueva-${target}`}
+        draft={data}
+        credit={credit.data}
+        canEmit={canEmit}
+        {...(data ? {} : { onChangeInvoice: () => setChanging(true) })}
+      />
+      {!data && (
+        <CreditInvoicePicker
+          open={changing}
+          onOpenChange={setChanging}
+          onSelect={(invoice) => {
+            setChosen(invoice.id);
+            router.replace(newCreditNoteHref(invoice.id));
+          }}
+        />
+      )}
+    </>
   );
 }
 

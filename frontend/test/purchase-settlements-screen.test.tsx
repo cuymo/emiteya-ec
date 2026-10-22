@@ -114,9 +114,8 @@ describe("pantalla Liquidaciones de compra", () => {
     expect(within(first).getByText("Autorizado")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("Juan Pérez")).toBeDefined();
     expect(within(row("001-001-000000004")).getByText("Requiere revisión")).toBeDefined();
-    expect(
-      screen.getByRole("link", { name: "Nueva liquidación de compra" }).getAttribute("href"),
-    ).toBe("/liquidaciones-compra/borradores/nueva");
+    // «Nueva liquidación de compra» abre su creación sobre la lista: es un botón, no un enlace a otra página.
+    expect(screen.getByRole("button", { name: "Nueva liquidación de compra" })).toBeDefined();
   });
 
   it("muestra la carga mientras llegan las liquidaciones", async () => {
@@ -167,11 +166,11 @@ describe("pantalla Liquidaciones de compra", () => {
     });
     await waitFor(() =>
       expect(
-        screen.getAllByRole("link", { name: "Nueva liquidación de compra" }).length,
+        screen.getAllByRole("button", { name: "Nueva liquidación de compra" }).length,
       ).toBeGreaterThan(1),
     );
     const variants = screen
-      .getAllByRole("link", { name: "Nueva liquidación de compra" })
+      .getAllByRole("button", { name: "Nueva liquidación de compra" })
       .map((link) => link.getAttribute("data-variant"));
     expect(variants.filter((variant) => variant === "primary")).toHaveLength(1);
     expect(variants.filter((variant) => variant !== "primary").every((v) => v === "outline")).toBe(
@@ -295,7 +294,7 @@ describe("pantalla Liquidaciones de compra", () => {
       "GET /api/v1/purchase-settlements/entries": entries([settlementSummary()]),
     });
     await screen.findByRole("table", { name: "Liquidaciones de compra y borradores" });
-    expect(screen.queryByRole("link", { name: "Nueva liquidación de compra" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Nueva liquidación de compra" })).toBeNull();
     expect(
       calls.some((call) => call.key.startsWith("GET /api/v1/purchase-settlements/drafts")),
     ).toBe(false);

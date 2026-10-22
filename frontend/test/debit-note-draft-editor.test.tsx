@@ -426,30 +426,25 @@ describe("nueva nota de débito", () => {
     expect(created).toEqual({ invoiceId: "inv-1" });
   });
 
-  it("«Nueva nota de débito» abre el selector de entrada; cerrarlo sin elegir vuelve a la lista", async () => {
+  it("sin factura elegida no hay página intermedia: lleva a la lista con su creación abierta", async () => {
     navigation.pathname = "/notas-debito/borradores/nueva";
-    render(<NewDebitNoteDraftScreen />, {
-      "GET /api/v1/debit-notes/eligible-invoices": () => ({
-        status: 200,
-        body: { data: [], meta: { page: 1, pageSize: 10, total: 0 } },
-      }),
-    });
-    await screen.findByRole("dialog", { name: "Elegir factura" });
-    await userEvent.setup().keyboard("{Escape}");
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/notas-debito"));
+    render(<NewDebitNoteDraftScreen />, {});
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/notas-debito?nueva=1"));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("sin factura elegida, elegirla en el selector crea el borrador", async () => {
+  it("«Elegir otra factura» abre el selector, y elegirla crea el borrador de esa factura", async () => {
     let created: unknown;
     navigation.pathname = "/notas-debito/borradores/nueva";
-    render(<NewDebitNoteDraftScreen />, {
+    render(<NewDebitNoteDraftScreen invoiceId="inv-1" />, {
+      "GET /api/v1/invoices/inv-1": ok(authorizedInvoice()),
       "GET /api/v1/debit-notes/eligible-invoices": () => ({
         status: 200,
         body: {
           data: [
             {
-              id: "inv-1",
-              documentNumber: "001-001-000000001",
+              id: "inv-2",
+              documentNumber: "001-001-000000002",
               issueDate: "2026-10-01",
               buyerIdentification: "0992877878001",
               buyerName: "EL PERNO CIA. LTDA.",
@@ -465,15 +460,14 @@ describe("nueva nota de débito", () => {
       },
     });
     const user = userEvent.setup();
-    // El selector se abre de entrada, sin la página intermedia.
+    await screen.findByText("Factura 001-001-000000001");
+    await user.click(screen.getByRole("button", { name: "Elegir otra factura" }));
     const dialog = await screen.findByRole("dialog", { name: "Elegir factura" });
-    await user.click(await within(dialog).findByText("001-001-000000001"));
+    await user.click(await within(dialog).findByText("001-001-000000002"));
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/notas-debito/borradores/ndd-9"),
     );
-    // Elegir cierra el selector, pero no es cancelarlo: no vuelve a la lista.
-    expect(navigation.replace).not.toHaveBeenCalledWith("/notas-debito");
-    expect(created).toEqual({ invoiceId: "inv-1" });
+    expect(created).toEqual({ invoiceId: "inv-2" });
   });
 
   it("una factura que ya no es elegible se explica con el foco en el aviso", async () => {

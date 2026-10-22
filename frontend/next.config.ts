@@ -28,6 +28,19 @@ export default function nextConfig(phase: string): NextConfig {
           destination: "/configuracion/establecimientos",
           permanent: false,
         },
+        // Crear un comprobante empieza sobre su lista, con `?nueva=1` (decisión del propietario,
+        // 2026-10-22). Las notas conservan su página nueva solo con la factura ya elegida.
+        ...["/notas-credito", "/notas-debito"].map((list) => ({
+          source: `${list}/borradores/nueva`,
+          missing: [{ type: "query" as const, key: "factura" }],
+          destination: `${list}?nueva=1`,
+          permanent: false,
+        })),
+        ...["/retenciones", "/guias-remision", "/liquidaciones-compra"].map((list) => ({
+          source: `${list}/borradores/nueva`,
+          destination: `${list}?nueva=1`,
+          permanent: false,
+        })),
       ];
     },
     async rewrites() {

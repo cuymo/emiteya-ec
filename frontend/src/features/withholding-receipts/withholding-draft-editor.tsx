@@ -15,12 +15,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   defaultEmissionPointViewSchema,
-  type PartyRole,
-  type PartyView,
   type WithholdingDraftView,
   type WithholdingIssue,
   type WithholdingOptionsView,
-  type WithholdingSupplierView,
 } from "@facturador/contracts";
 import { Plus, UserRound } from "lucide-react";
 import Link from "next/link";
@@ -29,7 +26,6 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { SegmentedControl } from "@/components/segmented-control";
@@ -48,7 +44,6 @@ import {
   useEstablishments,
 } from "@/features/establishments/establishments-api";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
-import { PartyDialog } from "@/features/parties/party-dialog";
 import {
   blankSupport,
   formSchema,
@@ -67,20 +62,16 @@ import {
   WITHHOLDINGS_KEY,
   WITHHOLDING_CONFLICT_MESSAGES,
   WITHHOLDING_DRAFTS_KEY,
-  fetchWithholdingSuppliers,
   useEmitWithholding,
   useSaveWithholdingDraft,
   useWithholdingDraft,
   useWithholdingOptions,
 } from "./withholding-receipts-api";
+import { SupplierChooser, type Subject } from "./supplier-chooser";
 import { IssueList, SupportCard } from "./withholding-support-card";
 
-/** Rol con que nace un tercero creado desde la retención: constante, para no reiniciar el diálogo. */
-const SUPPLIER_ROLES: readonly PartyRole[] = ["SUPPLIER"];
 /** Años que ofrece el período: el de emisión y los cuatro anteriores; nunca uno futuro. */
 const PERIOD_YEARS = 5;
-
-type Subject = Pick<WithholdingSupplierView, "id" | "legalName" | "identification">;
 
 /** Tras guardar, el editor se vuelve a montar con la versión nueva: el foco va al resumen. */
 const focusAfterSave = { summary: false };
@@ -138,88 +129,6 @@ function SubjectCard({ subject }: { subject: Subject }) {
         <span className="text-sm text-foreground-muted tabular-nums">{subject.identification}</span>
       </span>
     </div>
-  );
-}
-
-/**
- * Elegir el proveedor (conjunto grande, con búsqueda) o registrar uno nuevo con el rol de proveedor.
- * El tercero nuevo vuelve elegido.
- */
-function SupplierChooser({
-  open,
-  onOpenChange,
-  onChoose,
-  onDismiss,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onChoose: (subject: Subject) => void;
-  /** Se cerró sin elegir ni registrar un proveedor. */
-  onDismiss?: () => void;
-}) {
-  const [creating, setCreating] = useState(false);
-  // Elegir, registrar o volver a la lista también cierran el selector: no son abandonarlo.
-  const acted = useRef(false);
-  const saved = useRef(false);
-  return (
-    <>
-      <EntityPickerDialog<WithholdingSupplierView>
-        open={open}
-        onOpenChange={(next) => {
-          onOpenChange(next);
-          if (next) acted.current = false;
-          else if (!acted.current) onDismiss?.();
-        }}
-        title="Elegir proveedor"
-        description="Proveedores activos con RUC, cédula o pasaporte."
-        searchLabel="Buscar por identificación o razón social"
-        searchPlaceholder="Identificación o razón social"
-        queryKey={[...WITHHOLDINGS_KEY, "suppliers"]}
-        fetchPage={fetchWithholdingSuppliers}
-        getKey={(supplier) => supplier.id}
-        getLabel={(supplier) => `${supplier.legalName}, ${supplier.identification}`}
-        renderItem={(supplier) => (
-          <span className="flex min-w-0 flex-col">
-            <span className="font-medium break-words">{supplier.legalName}</span>
-            <span className="text-sm text-foreground-muted tabular-nums">
-              {supplier.identification}
-            </span>
-          </span>
-        )}
-        onSelect={(subject) => {
-          acted.current = true;
-          onChoose(subject);
-        }}
-        quickOption={{
-          label: "Nuevo proveedor",
-          description: "Registrar un tercero con el rol de proveedor.",
-          onSelect: () => {
-            acted.current = true;
-            saved.current = false;
-            setCreating(true);
-          },
-        }}
-        emptyTitle="No hay proveedores que coincidan"
-        emptyDescription="Registra el proveedor o revisa que tenga el rol de proveedor en Terceros."
-      />
-      <PartyDialog
-        open={creating}
-        initialRoles={SUPPLIER_ROLES}
-        onClose={() => {
-          setCreating(false);
-          if (!saved.current) onDismiss?.();
-        }}
-        onShowExisting={() => {
-          setCreating(false);
-          acted.current = false;
-          onOpenChange(true);
-        }}
-        onSaved={(party: PartyView) => {
-          saved.current = true;
-          onChoose(party);
-        }}
-      />
-    </>
   );
 }
 
@@ -712,75 +621,6 @@ function Fallback({ title, children }: { title: string; children: ReactNode }) {
       <Header title={title} />
       {children}
     </section>
-  );
-}
-
-/**
- * Nueva retención: elegir el proveedor (o registrarlo) crea el borrador con el período del mes de
- * hoy, y el editor sigue en su ruta.
- */
-export function NewWithholdingDraftScreen() {
-  const { me } = useSession();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const allowed = canSee(me.role, "withholdings.draft");
-  // El selector se abre de entrada (decisión del propietario, 2026-10-17); cerrarlo sin elegir ni
-  // registrar un proveedor vuelve a la lista.
-  const [choosing, setChoosing] = useState(true);
-  const [error, setError] = useState<string>();
-  const alertRef = useRef<HTMLDivElement>(null);
-  const create = useSaveWithholdingDraft({
-    success: "Preparaste el borrador de la retención.",
-    onSuccess: (draft) => {
-      queryClient.setQueryData([...WITHHOLDING_DRAFTS_KEY, "detail", draft.id], draft);
-      router.replace(`/retenciones/borradores/${draft.id}`);
-    },
-    onError: (failure) => {
-      setError(errorMessage(failure, WITHHOLDING_CONFLICT_MESSAGES));
-      return true;
-    },
-  });
-  useEffect(() => {
-    if (error) alertRef.current?.focus();
-  }, [error]);
-
-  if (!allowed) {
-    return (
-      <Fallback title="Nueva retención">
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a los borradores de retenciones"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </Fallback>
-    );
-  }
-  return (
-    <Fallback title="Nueva retención">
-      {error && <OperationAlert message={error} alertRef={alertRef} />}
-      <Section title="Proveedor">
-        <p className="text-sm text-foreground-muted">
-          Elige el proveedor al que retuviste, o regístralo. Debe estar activo y tener RUC, cédula o
-          pasaporte.
-        </p>
-        <AsyncButton
-          className="self-start"
-          pending={create.isPending}
-          onClick={() => setChoosing(true)}
-        >
-          Elegir proveedor
-        </AsyncButton>
-      </Section>
-      <SupplierChooser
-        open={choosing}
-        onOpenChange={setChoosing}
-        onChoose={(subject) => {
-          setError(undefined);
-          create.mutate({ id: null, input: { partyId: subject.id } });
-        }}
-        onDismiss={() => router.replace("/retenciones")}
-      />
-    </Fallback>
   );
 }
 

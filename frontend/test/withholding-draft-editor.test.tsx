@@ -8,10 +8,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
-import {
-  NewWithholdingDraftScreen,
-  WithholdingDraftScreen,
-} from "@/features/withholding-receipts/withholding-draft-editor";
+import { useNewWithholding } from "@/features/withholding-receipts/new-withholding";
+import { WithholdingDraftScreen } from "@/features/withholding-receipts/withholding-draft-editor";
 import {
   ADMIN_ME,
   OPERATOR_ME,
@@ -506,7 +504,20 @@ const RUC_VERSION = {
   withholding: null,
 };
 
-describe("nueva retención", () => {
+/** «Nueva retención» como la ofrece la lista: el botón y el selector sobre ella. */
+function NewWithholding() {
+  const creation = useNewWithholding(true);
+  return (
+    <>
+      <button type="button" onClick={creation.start}>
+        Nueva retención
+      </button>
+      {creation.element}
+    </>
+  );
+}
+
+describe("nueva retención sobre la lista (decisión del propietario, 2026-10-22)", () => {
   const SUPPLIERS: Route = () => ({
     status: 200,
     body: {
@@ -522,20 +533,24 @@ describe("nueva retención", () => {
     },
   });
 
-  it("«Nueva retención» abre el selector de entrada; cerrarlo sin elegir vuelve a la lista", async () => {
-    navigation.pathname = "/retenciones/borradores/nueva";
-    render(<NewWithholdingDraftScreen />, {
+  it("con `?nueva` el selector se abre sobre la lista; cerrarlo sin elegir quita el parámetro", async () => {
+    navigation.pathname = "/retenciones";
+    navigation.search = new URLSearchParams("nueva=1");
+    render(<NewWithholding />, {
       "GET /api/v1/withholding-receipts/suppliers": SUPPLIERS,
     });
     await screen.findByRole("dialog", { name: "Elegir proveedor" });
     await userEvent.setup().keyboard("{Escape}");
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/retenciones"));
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledWith("/retenciones", { scroll: false }),
+    );
+    expect(navigation.push).not.toHaveBeenCalled();
   });
 
   it("elegir el proveedor crea el borrador y abre su ruta", async () => {
     let created: unknown;
-    navigation.pathname = "/retenciones/borradores/nueva";
-    render(<NewWithholdingDraftScreen />, {
+    navigation.pathname = "/retenciones";
+    render(<NewWithholding />, {
       "GET /api/v1/withholding-receipts/suppliers": SUPPLIERS,
       "POST /api/v1/withholding-receipts/drafts": (init) => {
         created = JSON.parse(init.body as string);
@@ -543,22 +558,22 @@ describe("nueva retención", () => {
       },
     });
     const user = userEvent.setup();
-    // El selector se abre de entrada, sin la página intermedia.
+    await user.click(await screen.findByRole("button", { name: "Nueva retención" }));
     const dialog = await screen.findByRole("dialog", { name: "Elegir proveedor" });
     await user.click(await within(dialog).findByText("PROVEEDORA DEL SUR S.A."));
     await waitFor(() =>
-      expect(navigation.replace).toHaveBeenCalledWith("/retenciones/borradores/retd-9"),
+      expect(navigation.push).toHaveBeenCalledWith("/retenciones/borradores/retd-9"),
     );
-    // Elegir o registrar el proveedor cierra el selector sin volver a la lista.
-    expect(navigation.replace).not.toHaveBeenCalledWith("/retenciones");
+    // Elegir o registrar el proveedor cierra el selector sin tocar la lista.
+    expect(navigation.replace).not.toHaveBeenCalled();
     expect(created).toEqual({ partyId: "prov-1" });
   });
 
   it("Nuevo proveedor registra el tercero con el rol de proveedor y lo elige", async () => {
     let party: unknown;
     let created: unknown;
-    navigation.pathname = "/retenciones/borradores/nueva";
-    render(<NewWithholdingDraftScreen />, {
+    navigation.pathname = "/retenciones";
+    render(<NewWithholding />, {
       "GET /api/v1/withholding-receipts/suppliers": SUPPLIERS,
       "GET /api/v1/fiscal-catalogs/identification-type/entries": ok({
         catalog: {
@@ -615,7 +630,7 @@ describe("nueva retención", () => {
       },
     });
     const user = userEvent.setup();
-    // El selector se abre de entrada, sin la página intermedia.
+    await user.click(await screen.findByRole("button", { name: "Nueva retención" }));
     const picker = await screen.findByRole("dialog", { name: "Elegir proveedor" });
     await user.click(await within(picker).findByText("Nuevo proveedor"));
     const form = await screen.findByRole("dialog", { name: "Nuevo tercero" });
@@ -629,10 +644,10 @@ describe("nueva retención", () => {
     );
     await user.click(within(form).getByRole("button", { name: "Registrar tercero" }));
     await waitFor(() =>
-      expect(navigation.replace).toHaveBeenCalledWith("/retenciones/borradores/retd-9"),
+      expect(navigation.push).toHaveBeenCalledWith("/retenciones/borradores/retd-9"),
     );
-    // Elegir o registrar el proveedor cierra el selector sin volver a la lista.
-    expect(navigation.replace).not.toHaveBeenCalledWith("/retenciones");
+    // Elegir o registrar el proveedor cierra el selector sin tocar la lista.
+    expect(navigation.replace).not.toHaveBeenCalled();
     expect(party).toMatchObject({ roles: ["SUPPLIER"], identification: "1792345678001" });
     expect(created).toEqual({ partyId: "prov-2" });
   });

@@ -262,15 +262,20 @@ mostrarse en la barra superior.
 - **THEN** el destino de las migas, el destino actual de la navegación y el destino que ofrece la paleta de comandos se llaman igual, Inventario
 
 ### Requirement: Creación rápida
-El shell SHALL ofrecer en todas las pantallas autenticadas una creación rápida con las pantallas de
-creación existentes que el rol permite: factura, nota de crédito, nota de débito, retención, guía de
-remisión y liquidación de compra. Elegir una acción SHALL llevar a esa pantalla. Nunca SHALL crear un
-borrador, reservar un número ni emitir por sí misma.
+El shell SHALL ofrecer en todas las pantallas autenticadas una creación rápida con las acciones de
+creación que el rol permite: factura, nota de crédito, nota de débito, retención, guía de remisión y
+liquidación de compra. Elegir «Nueva factura» SHALL llevar a la pantalla de nueva factura; elegir
+cualquiera de las demás SHALL llevar a la lista de ese comprobante con su creación abierta. Nunca
+SHALL crear un borrador, reservar un número ni emitir por sí misma.
 
 #### Scenario: Nueva factura desde la creación rápida
 - **WHEN** un operador elige «Nueva factura» en la creación rápida
 - **THEN** llega a la pantalla de nueva factura, igual que desde la lista de facturas
 - **AND** la navegación marca Facturas, en Ventas, como destino actual
+
+#### Scenario: Nueva guía de remisión desde la creación rápida
+- **WHEN** un operador elige «Nueva guía de remisión» en la creación rápida
+- **THEN** llega a la lista de guías de remisión con la confirmación para preparar el borrador abierta, y ningún borrador se crea hasta que la confirma
 
 #### Scenario: Abrir sin elegir
 - **WHEN** un usuario abre la creación rápida y la cierra sin elegir una acción
@@ -500,6 +505,25 @@ página, con la actual a la vista.
 #### Scenario: Enlace directo
 - **WHEN** un administrador abre la dirección de Firma electrónica
 - **THEN** ve la pestaña Firma electrónica abierta, con las demás pestañas para cambiar de sección
+
+### Requirement: Crear un comprobante sobre su lista
+«Nueva nota de crédito», «Nueva nota de débito» y «Nueva retención» SHALL abrir, encima de la lista y
+sin cambiar de página, el selector de la factura o del proveedor del que dependen; elegir SHALL seguir
+al editor del borrador, y cerrarlo sin elegir SHALL dejar la lista como estaba. «Nueva guía de
+remisión» y «Nueva liquidación de compra» SHALL preparar el borrador y abrir su editor con un solo
+clic. Ninguna creación SHALL pasar por una página intermedia que solo ofrezca un texto y un botón.
+
+#### Scenario: Nueva nota de crédito
+- **WHEN** un operador elige «Nueva nota de crédito» en la lista de notas de crédito
+- **THEN** el selector de facturas elegibles se abre encima de la tabla, y elegir una factura lo lleva al editor de la nota con esa factura
+
+#### Scenario: Cerrar sin elegir
+- **WHEN** un operador abre «Nueva retención» y cierra el selector sin elegir ni registrar un proveedor
+- **THEN** sigue en la lista de retenciones y no se creó ningún borrador
+
+#### Scenario: Nueva guía de remisión
+- **WHEN** un operador elige «Nueva guía de remisión» en la lista de guías
+- **THEN** se prepara el borrador con su punto de emisión predeterminado y se abre su editor
 
 ### Requirement: Terceros y Productos en su página
 Terceros y Productos SHALL registrar y corregir un registro en su propia página, no en un diálogo:

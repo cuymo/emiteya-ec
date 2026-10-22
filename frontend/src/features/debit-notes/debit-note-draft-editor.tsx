@@ -19,7 +19,6 @@ import {
   debitNoteAmountSchema,
   debitNoteDescriptionSchema,
   defaultEmissionPointViewSchema,
-  type DebitEligibleInvoiceView,
   type DebitNoteCause,
   type DebitNoteDeclarationStatement,
   type DebitNoteDraftView,
@@ -35,7 +34,6 @@ import { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
-import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { SegmentedControl } from "@/components/segmented-control";
@@ -55,17 +53,18 @@ import {
   useEstablishments,
 } from "@/features/establishments/establishments-api";
 import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
+import { newDocumentHref } from "@/features/documents/new-document";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { useInvoice } from "@/features/invoices/invoices-api";
 import {
   DEBIT_NOTE_CONFLICT_MESSAGES,
   DEBIT_NOTE_DRAFTS_KEY,
   DEBIT_NOTES_KEY,
-  fetchDebitEligibleInvoices,
   useDebitNoteDraft,
   useEmitDebitNote,
   useSaveDebitNoteDraft,
 } from "./debit-notes-api";
+import { DebitInvoicePicker, useCreateDebitNoteDraft } from "./new-debit-note";
 import { treatmentLabel } from "./debit-note-format";
 
 type ConceptValues = {
@@ -884,35 +883,25 @@ function ChosenInvoice({
 }
 
 /**
- * Nueva nota de débito: elegir la factura crea el borrador, porque los tratamientos que se ofrecen
- * son los de la factura y los devuelve la vista previa del servidor; el editor sigue en su ruta.
+ * Nueva nota de débito desde el detalle de una factura (`?factura={id}`): la factura elegida, para
+ * confirmarla antes de preparar el borrador, que nace con sus tratamientos. Sin factura, la elección
+ * vive sobre la lista (decisión del propietario, 2026-10-22), sin una página intermedia.
  */
 export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: string | null }) {
   const { me } = useSession();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const allowed = canSee(me.role, "debitNotes.draft");
-  const chosen = invoiceId;
-  // Sin una factura que llegue elegida, el selector se abre de entrada (decisión del propietario,
-  // 2026-10-17); cerrarlo sin elegir vuelve a la lista.
-  const [picking, setPicking] = useState(invoiceId === null);
-  const choseInPicker = useRef(false);
+  const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string>();
   const alertRef = useRef<HTMLDivElement>(null);
-  const create = useSaveDebitNoteDraft({
-    success: "Preparaste el borrador de la nota de débito.",
-    onSuccess: (draft) => {
-      queryClient.setQueryData([...DEBIT_NOTE_DRAFTS_KEY, "detail", draft.id], draft);
-      router.replace(`/notas-debito/borradores/${draft.id}`);
-    },
-    onError: (failure) => {
-      setError(errorMessage(failure, DEBIT_NOTE_CONFLICT_MESSAGES));
-      return true;
-    },
-  });
+  const create = useCreateDebitNoteDraft({ replace: true, onError: setError });
   useEffect(() => {
     if (error) alertRef.current?.focus();
   }, [error]);
+  const missingInvoice = allowed && invoiceId === null;
+  useEffect(() => {
+    if (missingInvoice) router.replace(newDocumentHref("/notas-debito"));
+  }, [missingInvoice, router]);
   const prepare = (id: string) => {
     setError(undefined);
     create.mutate({ id: null, input: { invoiceId: id } });
@@ -929,63 +918,22 @@ export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: stri
       </Fallback>
     );
   }
+  if (invoiceId === null) return <Skeleton className="h-40 w-full" />;
   return (
     <Fallback title="Nueva nota de débito">
       {error && <OperationAlert message={error} alertRef={alertRef} />}
       <Section title="Factura que se modifica">
-        {chosen ? (
-          <ChosenInvoice
-            invoiceId={chosen}
-            pending={create.isPending}
-            onPrepare={() => prepare(chosen)}
-            onChooseOther={() => setPicking(true)}
-          />
-        ) : (
-          <>
-            <p className="text-sm text-foreground-muted">
-              Elige una factura autorizada, identificada y del ambiente vigente. Sus tratamientos de
-              IVA son los únicos que la nota puede usar.
-            </p>
-            <AsyncButton
-              className="self-start"
-              pending={create.isPending}
-              onClick={() => setPicking(true)}
-            >
-              Elegir factura
-            </AsyncButton>
-          </>
-        )}
+        <ChosenInvoice
+          invoiceId={invoiceId}
+          pending={create.isPending}
+          onPrepare={() => prepare(invoiceId)}
+          onChooseOther={() => setPicking(true)}
+        />
       </Section>
-      <EntityPickerDialog<DebitEligibleInvoiceView>
+      <DebitInvoicePicker
         open={picking}
-        onOpenChange={(next) => {
-          setPicking(next);
-          if (!next && !choseInPicker.current && chosen === null) router.replace("/notas-debito");
-        }}
-        title="Elegir factura"
-        searchLabel="Buscar por número o comprador"
-        searchPlaceholder="Número o comprador"
-        queryKey={[...DEBIT_NOTES_KEY, "eligible-invoices"]}
-        fetchPage={fetchDebitEligibleInvoices}
-        getKey={(invoice) => invoice.id}
-        getLabel={(invoice) => `Factura ${invoice.documentNumber}, ${invoice.buyerName}`}
-        renderItem={(invoice) => (
-          <span className="flex w-full items-center justify-between gap-2">
-            <span className="flex min-w-0 flex-col">
-              <span className="font-medium tabular-nums">{invoice.documentNumber}</span>
-              <span className="text-sm break-words text-foreground-muted">
-                {invoice.buyerName} · {formatIssueDate(invoice.issueDate)}
-              </span>
-            </span>
-            <span className="text-sm tabular-nums">{formatUsd(invoice.total)}</span>
-          </span>
-        )}
-        onSelect={(invoice) => {
-          choseInPicker.current = true;
-          prepare(invoice.id);
-        }}
-        emptyTitle="No hay facturas elegibles"
-        emptyDescription="Una nota de débito modifica una factura autorizada, identificada y del ambiente vigente."
+        onOpenChange={setPicking}
+        onSelect={(invoice) => prepare(invoice.id)}
       />
     </Fallback>
   );

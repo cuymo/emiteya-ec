@@ -11,10 +11,8 @@ import userEvent from "@testing-library/user-event";
 import { PURCHASE_SETTLEMENT_STATEMENTS } from "@facturador/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
-import {
-  NewPurchaseSettlementDraftScreen,
-  PurchaseSettlementDraftScreen,
-} from "@/features/purchase-settlements/purchase-settlement-draft-editor";
+import { useNewPurchaseSettlement } from "@/features/purchase-settlements/new-purchase-settlement";
+import { PurchaseSettlementDraftScreen } from "@/features/purchase-settlements/purchase-settlement-draft-editor";
 import {
   ADMIN_ME,
   OPERATOR_ME,
@@ -618,22 +616,53 @@ describe("borrador de liquidación de compra", () => {
   });
 });
 
-describe("nueva liquidación de compra", () => {
-  it("prepara el borrador con el punto predeterminado y sigue en su ruta", async () => {
+/** «Nueva liquidación de compra» como la ofrece la lista: el botón y la confirmación de `?nueva`. */
+function NewPurchaseSettlement() {
+  const creation = useNewPurchaseSettlement(true);
+  return (
+    <>
+      <button type="button" disabled={creation.pending} onClick={creation.start}>
+        Nueva liquidación de compra
+      </button>
+      {creation.element}
+    </>
+  );
+}
+
+describe("nueva liquidación de compra sobre la lista (decisión del propietario, 2026-10-22)", () => {
+  it("el botón prepara el borrador con el punto predeterminado y abre su editor", async () => {
     let created: unknown;
-    navigation.pathname = "/liquidaciones-compra/borradores/nueva";
-    render(<NewPurchaseSettlementDraftScreen />, {
+    navigation.pathname = "/liquidaciones-compra";
+    render(<NewPurchaseSettlement />, {
       "POST /api/v1/purchase-settlements/drafts": (init) => {
         created = JSON.parse(init.body as string);
         return { status: 201, body: { data: emptySettlementDraft() } };
       },
     });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Preparar borrador" }));
+    const button = await screen.findByRole("button", { name: "Nueva liquidación de compra" });
+    await waitFor(() => expect(button).toHaveProperty("disabled", false));
+    await user.click(button);
     await waitFor(() =>
-      expect(navigation.replace).toHaveBeenCalledWith("/liquidaciones-compra/borradores/lcd-1"),
+      expect(navigation.push).toHaveBeenCalledWith("/liquidaciones-compra/borradores/lcd-1"),
     );
     expect(created).toEqual({ emissionPointId: "pto-1" });
+  });
+
+  it("desde la creación rápida (`?nueva`) pide confirmar antes de preparar el borrador", async () => {
+    navigation.pathname = "/liquidaciones-compra";
+    navigation.search = new URLSearchParams("nueva=1");
+    const calls = render(<NewPurchaseSettlement />, {
+      "POST /api/v1/purchase-settlements/drafts": () => ({
+        status: 201,
+        body: { data: emptySettlementDraft() },
+      }),
+    });
+    const dialog = await screen.findByRole("dialog", { name: "Nueva liquidación de compra" });
+    expect(
+      within(dialog).getByText(/persona natural no obligada a llevar contabilidad/),
+    ).toBeDefined();
+    expect(calls.some((call) => call.key.startsWith("POST "))).toBe(false);
   });
 });
 

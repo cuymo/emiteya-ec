@@ -358,52 +358,53 @@ describe("borrador de nota de crédito", () => {
     });
   });
 
-  it("«Nueva nota de crédito» abre el selector de entrada; cerrarlo sin elegir vuelve a la lista", async () => {
-    render(<CreditNoteDraftScreen draftId={null} />, {
-      "GET /api/v1/credit-notes/eligible-invoices": () => ({
-        status: 200,
-        body: { data: [], meta: { page: 1, pageSize: 10, total: 0 } },
-      }),
-    });
-    await screen.findByRole("dialog", { name: "Elegir factura" });
-    await userEvent.setup().keyboard("{Escape}");
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/notas-credito"));
+  it("sin factura elegida no hay página intermedia: lleva a la lista con su creación abierta", async () => {
+    render(<CreditNoteDraftScreen draftId={null} />, {});
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/notas-credito?nueva=1"));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("sin factura elegida ofrece el selector de facturas elegibles", async () => {
-    render(<CreditNoteDraftScreen draftId={null} />, {
+  it("«Cambiar factura» abre el selector sobre el editor: cancelarlo conserva la factura y elegir otra la cambia", async () => {
+    const eligible = (id: string, number: string, buyer: string) => ({
+      id,
+      documentNumber: number,
+      issueDate: "2026-10-01",
+      buyerIdentification: "0992877878001",
+      buyerName: buyer,
+      total: "66.00",
+      available: "66.00",
+    });
+    render(<CreditNoteDraftScreen draftId={null} invoiceId="inv-1" />, {
       "GET /api/v1/credit-notes/eligible-invoices": () => ({
         status: 200,
         body: {
           data: [
-            {
-              id: "inv-1",
-              documentNumber: "001-001-000000001",
-              issueDate: "2026-10-01",
-              buyerIdentification: "0992877878001",
-              buyerName: "EL PERNO CIA. LTDA.",
-              total: "66.00",
-              available: "66.00",
-            },
+            eligible("inv-1", "001-001-000000001", "EL PERNO CIA. LTDA."),
+            eligible("inv-2", "001-001-000000002", "FERRETERÍA LA LLAVE"),
           ],
-          meta: { page: 1, pageSize: 10, total: 1 },
+          meta: { page: 1, pageSize: 10, total: 2 },
         },
       }),
+      "GET /api/v1/credit-notes/invoices/inv-2/credit": ok(
+        invoiceCredit({ invoiceId: "inv-2", documentNumber: "001-001-000000002" }),
+      ),
     });
     const user = userEvent.setup();
-    // El selector se abre de entrada, sin la página intermedia.
-    const dialog = await screen.findByRole("dialog", { name: "Elegir factura" });
-    await user.click(await within(dialog).findByText("001-001-000000001"));
     expect(await screen.findByText("Factura 001-001-000000001")).toBeDefined();
-    expect(screen.getByRole("button", { name: "Cambiar factura" })).toBeDefined();
-    // Elegir cierra el selector, pero no es cancelarlo: no vuelve a la lista.
-    expect(navigation.replace).not.toHaveBeenCalledWith("/notas-credito");
-    // «Cambiar factura» abre el selector; cancelarlo vuelve a la factura elegida.
     await user.click(screen.getByRole("button", { name: "Cambiar factura" }));
     await screen.findByRole("dialog", { name: "Elegir factura" });
     await user.keyboard("{Escape}");
-    expect(await screen.findByText("Factura 001-001-000000001")).toBeDefined();
-    expect(navigation.replace).not.toHaveBeenCalledWith("/notas-credito");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.getByText("Factura 001-001-000000001")).toBeDefined();
+    expect(navigation.replace).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Cambiar factura" }));
+    const dialog = await screen.findByRole("dialog", { name: "Elegir factura" });
+    await user.click(await within(dialog).findByText("001-001-000000002"));
+    expect(await screen.findByText("Factura 001-001-000000002")).toBeDefined();
+    expect(navigation.replace).toHaveBeenCalledWith(
+      "/notas-credito/borradores/nueva?factura=inv-2",
+    );
   });
 
   it("un borrador ya emitido lo explica con el enlace a las notas", async () => {

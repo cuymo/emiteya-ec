@@ -135,7 +135,8 @@ describe("paleta de comandos", () => {
     const dialog = await screen.findByRole("dialog", { name: "Paleta de comandos" });
     await user.type(within(dialog).getByRole("combobox"), "guia de remision");
     await user.click(within(dialog).getByRole("option", { name: "Nueva guía de remisión" }));
-    expect(navigation.push).toHaveBeenCalledWith("/guias-remision/borradores/nueva");
+    // Lleva a la lista con su creación abierta, que pide confirmar antes de preparar el borrador.
+    expect(navigation.push).toHaveBeenCalledWith("/guias-remision?nueva=1");
     expect(apiCalls(calls).filter((call) => !call.key.startsWith("GET "))).toEqual([]);
   });
 

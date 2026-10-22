@@ -4,6 +4,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  defaultEmissionPointViewSchema,
   emissionPointViewSchema,
   establishmentViewSchema,
   type CreateEmissionPointInput,
@@ -26,6 +27,16 @@ const AFFECTED = [ESTABLISHMENTS_KEY, COMPANY_STATUS_KEY, DEFAULT_POINT_KEY, SEQ
 
 export const pointLabel = (establishment: { code: string }, point: { code: string }) =>
   `${establishment.code}-${point.code}`;
+
+/** El punto de emisión predeterminado del usuario, con el que nace un borrador nuevo. */
+export function useDefaultEmissionPoint(enabled: boolean) {
+  return useQuery({
+    queryKey: DEFAULT_POINT_KEY,
+    enabled,
+    queryFn: ({ signal }) =>
+      apiFetch("/me/default-emission-point", { schema: defaultEmissionPointViewSchema, signal }),
+  });
+}
 
 export function useEstablishments(enabled = true) {
   return useQuery({

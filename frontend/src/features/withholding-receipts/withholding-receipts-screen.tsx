@@ -16,7 +16,6 @@ import {
   type WithholdingReceiptEntryView,
 } from "@facturador/contracts";
 import { Plus } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -25,6 +24,7 @@ import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
 import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
 import { SearchInput } from "@/components/data-table/table-controls";
+import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ import {
   DraftParty,
   draftRowActions,
 } from "@/features/documents/draft-entries";
+import { useNewWithholding } from "./new-withholding";
 import { formatPeriod, supportCountLabel, withholdingCountLabel } from "./withholding-format";
 import {
   useDeleteWithholdingDraft,
@@ -137,6 +138,9 @@ export function WithholdingReceiptsScreen() {
   const { me } = useSession();
   const allowed = canSee(me.role, "withholdings.read");
   const canDraft = canSee(me.role, "withholdings.draft");
+  // «Nueva retención» se abre sobre la lista, sin una página intermedia (decisión del propietario,
+  // 2026-10-22).
+  const creation = useNewWithholding(canDraft);
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
@@ -289,12 +293,15 @@ export function WithholdingReceiptsScreen() {
   // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
   const newReceipt = (variant: "primary" | "outline", size: "default" | "sm" = "default") =>
     canDraft ? (
-      <Button asChild variant={variant} size={size}>
-        <Link href="/retenciones/borradores/nueva">
-          <Plus aria-hidden="true" />
-          Nueva retención
-        </Link>
-      </Button>
+      <AsyncButton
+        variant={variant}
+        size={size}
+        pending={creation.pending}
+        onClick={creation.start}
+      >
+        <Plus aria-hidden="true" />
+        Nueva retención
+      </AsyncButton>
     ) : null;
   const tableState = receipts.isError ? (
     <ErrorState
@@ -437,6 +444,7 @@ export function WithholdingReceiptsScreen() {
         pending={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
       />
+      {creation.element}
     </DataTableCard>
   );
 }

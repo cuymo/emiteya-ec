@@ -74,6 +74,57 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("«Nueva nota de crédito» sobre la lista (decisión del propietario, 2026-10-22)", () => {
+  const ELIGIBLE: Route = () => ({
+    status: 200,
+    body: {
+      data: [
+        {
+          id: "inv-1",
+          documentNumber: "001-001-000000001",
+          issueDate: "2026-10-01",
+          buyerIdentification: "0992877878001",
+          buyerName: "EL PERNO CIA. LTDA.",
+          total: "66.00",
+          available: "66.00",
+        },
+      ],
+      meta: { page: 1, pageSize: 10, total: 1 },
+    },
+  });
+
+  it("abre el selector encima de la tabla, sin cambiar de página, y elegir lleva al editor", async () => {
+    render(<CreditNotesScreen />, {
+      "GET /api/v1/credit-notes/entries": entries([]),
+      "GET /api/v1/credit-notes/eligible-invoices": ELIGIBLE,
+    });
+    const user = userEvent.setup();
+    await user.click((await screen.findAllByRole("button", { name: "Nueva nota de crédito" }))[0]!);
+    const dialog = await screen.findByRole("dialog", { name: "Elegir factura" });
+    // La lista sigue debajo, oculta a la asistencia mientras el selector está abierto: no hubo
+    // navegación.
+    expect(navigation.push).not.toHaveBeenCalled();
+    expect(screen.getByRole("heading", { name: "Notas de crédito", hidden: true })).toBeDefined();
+    await user.click(await within(dialog).findByText("001-001-000000001"));
+    expect(navigation.push).toHaveBeenCalledWith("/notas-credito/borradores/nueva?factura=inv-1");
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
+
+  it("la creación rápida llega con `?nueva` y cerrar sin elegir lo quita", async () => {
+    navigation.search = new URLSearchParams("nueva=1");
+    render(<CreditNotesScreen />, {
+      "GET /api/v1/credit-notes/entries": entries([]),
+      "GET /api/v1/credit-notes/eligible-invoices": ELIGIBLE,
+    });
+    await screen.findByRole("dialog", { name: "Elegir factura" });
+    await userEvent.setup().keyboard("{Escape}");
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledWith("/notas-credito", { scroll: false }),
+    );
+    expect(navigation.push).not.toHaveBeenCalled();
+  });
+});
+
 describe("pantalla Notas de crédito", () => {
   it("lista número, factura, causa, comprador, valor y estado, con enlace al detalle", async () => {
     render(<CreditNotesScreen />, {
@@ -103,9 +154,8 @@ describe("pantalla Notas de crédito", () => {
     expect(within(row("001-001-000000007")).getByText("Autorizado")).toBeDefined();
     expect(within(row("001-001-000000008")).getByText("Anulación total")).toBeDefined();
     expect(within(row("001-001-000000008")).getByText("Requiere revisión")).toBeDefined();
-    expect(screen.getByRole("link", { name: "Nueva nota de crédito" }).getAttribute("href")).toBe(
-      "/notas-credito/borradores/nueva",
-    );
+    // «Nueva nota de crédito» abre su creación sobre la lista: es un botón, no un enlace a otra página.
+    expect(screen.getByRole("button", { name: "Nueva nota de crédito" })).toBeDefined();
   });
 
   it("muestra la carga mientras llegan las notas", async () => {
@@ -152,12 +202,12 @@ describe("pantalla Notas de crédito", () => {
   it("vacía: la única principal está en el encabezado y el vacío la repite en outline (D11)", async () => {
     render(<CreditNotesScreen />, { "GET /api/v1/credit-notes/entries": entries([]) });
     await waitFor(() =>
-      expect(screen.getAllByRole("link", { name: "Nueva nota de crédito" }).length).toBeGreaterThan(
-        1,
-      ),
+      expect(
+        screen.getAllByRole("button", { name: "Nueva nota de crédito" }).length,
+      ).toBeGreaterThan(1),
     );
     const variants = screen
-      .getAllByRole("link", { name: "Nueva nota de crédito" })
+      .getAllByRole("button", { name: "Nueva nota de crédito" })
       .map((link) => link.getAttribute("data-variant"));
     expect(variants.filter((variant) => variant === "primary")).toHaveLength(1);
     expect(variants.filter((variant) => variant !== "primary").every((v) => v === "outline")).toBe(

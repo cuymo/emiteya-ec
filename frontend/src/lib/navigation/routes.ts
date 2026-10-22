@@ -257,20 +257,28 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   },
 ];
 
-/** Pantallas internas de los comprobantes: detalle, nuevo borrador y borrador. */
+/**
+ * Pantallas internas de los comprobantes: detalle, borrador y, si existe, la nota nueva con su
+ * factura ya elegida (`?factura={id}`). La creación sin documento de origen empieza sobre la lista
+ * (decisión del propietario, 2026-10-22).
+ */
 function documentRoutes(
   base: string,
   noun: string,
   permissions: { read: Permission; draft: Permission },
-  newLabel: string,
+  newLabel: string | null,
 ): InternalRoute[] {
   return [
-    {
-      pattern: new RegExp(`^${base}/borradores/nueva$`),
-      destination: base,
-      leaf: newLabel,
-      permission: permissions.draft,
-    },
+    ...(newLabel
+      ? [
+          {
+            pattern: new RegExp(`^${base}/borradores/nueva$`),
+            destination: base,
+            leaf: newLabel,
+            permission: permissions.draft,
+          },
+        ]
+      : []),
     {
       pattern: new RegExp(`^${base}/borradores/[^/]+$`),
       destination: base,
@@ -325,19 +333,19 @@ export const INTERNAL_ROUTES: readonly InternalRoute[] = [
     "/retenciones",
     "retención",
     { read: "withholdings.read", draft: "withholdings.draft" },
-    "Nueva retención",
+    null,
   ),
   ...documentRoutes(
     "/guias-remision",
     "guía de remisión",
     { read: "shippingGuides.read", draft: "shippingGuides.draft" },
-    "Nueva guía de remisión",
+    null,
   ),
   ...documentRoutes(
     "/liquidaciones-compra",
     "liquidación de compra",
     { read: "purchaseSettlements.read", draft: "purchaseSettlements.draft" },
-    "Nueva liquidación de compra",
+    null,
   ),
   {
     pattern: /^\/inventario\/[^/]+$/,
@@ -373,7 +381,11 @@ export const INTERNAL_ROUTES: readonly InternalRoute[] = [
   },
 ];
 
-/** Creación rápida: solo lleva a las pantallas de creación existentes; nunca crea ni emite. */
+/**
+ * Creación rápida: solo lleva a las pantallas de creación; nunca crea ni emite. Los comprobantes que
+ * dependen de otro documento, o que se preparan con un clic, se crean sobre su lista: `?nueva=1` abre
+ * allí el selector o la confirmación (decisión del propietario, 2026-10-22).
+ */
 export const CREATE_ACTIONS: readonly CreateAction[] = [
   {
     id: "factura",
@@ -385,35 +397,35 @@ export const CREATE_ACTIONS: readonly CreateAction[] = [
   {
     id: "nota-credito",
     label: "Nueva nota de crédito",
-    href: "/notas-credito/borradores/nueva",
+    href: "/notas-credito?nueva=1",
     icon: FileMinus,
     permission: "creditNotes.draft",
   },
   {
     id: "nota-debito",
     label: "Nueva nota de débito",
-    href: "/notas-debito/borradores/nueva",
+    href: "/notas-debito?nueva=1",
     icon: FilePlus,
     permission: "debitNotes.draft",
   },
   {
     id: "retencion",
     label: "Nueva retención",
-    href: "/retenciones/borradores/nueva",
+    href: "/retenciones?nueva=1",
     icon: ReceiptText,
     permission: "withholdings.draft",
   },
   {
     id: "guia-remision",
     label: "Nueva guía de remisión",
-    href: "/guias-remision/borradores/nueva",
+    href: "/guias-remision?nueva=1",
     icon: Truck,
     permission: "shippingGuides.draft",
   },
   {
     id: "liquidacion-compra",
     label: "Nueva liquidación de compra",
-    href: "/liquidaciones-compra/borradores/nueva",
+    href: "/liquidaciones-compra?nueva=1",
     icon: ShoppingBasket,
     permission: "purchaseSettlements.draft",
   },

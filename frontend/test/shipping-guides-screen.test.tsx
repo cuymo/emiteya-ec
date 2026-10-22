@@ -93,9 +93,8 @@ describe("pantalla Guías de remisión", () => {
     expect(within(row("001-001-000000006")).getByText("María Pérez")).toBeDefined();
     expect(within(row("001-001-000000006")).getByText("Requiere revisión")).toBeDefined();
     expect(within(table).queryByText(/USD/)).toBeNull();
-    expect(screen.getByRole("link", { name: "Nueva guía de remisión" }).getAttribute("href")).toBe(
-      "/guias-remision/borradores/nueva",
-    );
+    // «Nueva guía de remisión» abre su creación sobre la lista: es un botón, no un enlace a otra página.
+    expect(screen.getByRole("button", { name: "Nueva guía de remisión" })).toBeDefined();
   });
 
   it("muestra la carga mientras llegan las guías", async () => {
@@ -143,11 +142,11 @@ describe("pantalla Guías de remisión", () => {
     render(<ShippingGuidesScreen />, { "GET /api/v1/shipping-guides/entries": entries([]) });
     await waitFor(() =>
       expect(
-        screen.getAllByRole("link", { name: "Nueva guía de remisión" }).length,
+        screen.getAllByRole("button", { name: "Nueva guía de remisión" }).length,
       ).toBeGreaterThan(1),
     );
     const variants = screen
-      .getAllByRole("link", { name: "Nueva guía de remisión" })
+      .getAllByRole("button", { name: "Nueva guía de remisión" })
       .map((link) => link.getAttribute("data-variant"));
     expect(variants.filter((variant) => variant === "primary")).toHaveLength(1);
     expect(variants.filter((variant) => variant !== "primary").every((v) => v === "outline")).toBe(

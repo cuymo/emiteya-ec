@@ -805,69 +805,6 @@ function Fallback({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/**
- * Nueva guía de remisión: preparar el borrador lo crea con el punto predeterminado del usuario (el
- * servidor propone la partida desde su establecimiento), y el editor sigue en su ruta.
- */
-export function NewShippingGuideDraftScreen() {
-  const { me } = useSession();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const allowed = canSee(me.role, "shippingGuides.draft");
-  const defaultPoint = useDefaultPoint(allowed);
-  const [error, setError] = useState<string>();
-  const alertRef = useRef<HTMLDivElement>(null);
-  const create = useSaveShippingGuideDraft({
-    success: "Preparaste el borrador de la guía de remisión.",
-    onSuccess: (draft) => {
-      queryClient.setQueryData([...SHIPPING_GUIDE_DRAFTS_KEY, "detail", draft.id], draft);
-      router.replace(`/guias-remision/borradores/${draft.id}`);
-    },
-    onError: (failure) => {
-      setError(errorMessage(failure, SHIPPING_GUIDE_CONFLICT_MESSAGES));
-      return true;
-    },
-  });
-  useEffect(() => {
-    if (error) alertRef.current?.focus();
-  }, [error]);
-
-  if (!allowed) {
-    return (
-      <Fallback title="Nueva guía de remisión">
-        <EmptyState
-          kind="no-permission"
-          title="No tienes acceso a los borradores de guías de remisión"
-          description="Pide a un administrador que revise tu rol."
-        />
-      </Fallback>
-    );
-  }
-  const point = defaultPoint.data?.available ? defaultPoint.data.emissionPoint.id : null;
-  return (
-    <Fallback title="Nueva guía de remisión">
-      {error && <OperationAlert message={error} alertRef={alertRef} />}
-      <Section title="Traslado">
-        <p className="text-sm text-foreground-muted">
-          Prepara la guía antes de que salga la mercadería: el transportista, la placa, las fechas y
-          cada destinatario con su sustento. Para una venta, también puedes empezar desde el detalle
-          de una factura autorizada.
-        </p>
-        <AsyncButton
-          className="self-start"
-          pending={create.isPending || defaultPoint.isPending}
-          onClick={() => {
-            setError(undefined);
-            create.mutate({ id: null, input: point ? { emissionPointId: point } : {} });
-          }}
-        >
-          Preparar borrador
-        </AsyncButton>
-      </Section>
-    </Fallback>
-  );
-}
-
 /** Editor de un borrador guardado, con las opciones de la empresa. */
 export function ShippingGuideDraftScreen({ draftId }: { draftId: string }) {
   const { me } = useSession();

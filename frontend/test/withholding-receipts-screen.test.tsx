@@ -93,9 +93,8 @@ describe("pantalla Retenciones", () => {
     expect(within(row("001-001-000000005")).getByText("Septiembre de 2026")).toBeDefined();
     expect(within(row("001-001-000000005")).getByText("3 documentos")).toBeDefined();
     expect(within(row("001-001-000000005")).getByText("Requiere revisión")).toBeDefined();
-    expect(screen.getByRole("link", { name: "Nueva retención" }).getAttribute("href")).toBe(
-      "/retenciones/borradores/nueva",
-    );
+    // «Nueva retención» abre su creación sobre la lista: es un botón, no un enlace a otra página.
+    expect(screen.getByRole("button", { name: "Nueva retención" })).toBeDefined();
   });
 
   it("muestra la carga mientras llegan las retenciones", async () => {
@@ -140,10 +139,10 @@ describe("pantalla Retenciones", () => {
       "GET /api/v1/withholding-receipts/entries": entries([]),
     });
     await waitFor(() =>
-      expect(screen.getAllByRole("link", { name: "Nueva retención" }).length).toBeGreaterThan(1),
+      expect(screen.getAllByRole("button", { name: "Nueva retención" }).length).toBeGreaterThan(1),
     );
     const variants = screen
-      .getAllByRole("link", { name: "Nueva retención" })
+      .getAllByRole("button", { name: "Nueva retención" })
       .map((link) => link.getAttribute("data-variant"));
     expect(variants.filter((variant) => variant === "primary")).toHaveLength(1);
     expect(variants.filter((variant) => variant !== "primary").every((v) => v === "outline")).toBe(

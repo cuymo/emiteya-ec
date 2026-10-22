@@ -17,7 +17,6 @@ import {
   type ShippingGuideSummaryView,
 } from "@facturador/contracts";
 import { Plus } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -26,6 +25,7 @@ import { DataTableCard } from "@/components/data-table/data-table-card";
 import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
 import { RowActionsMenu } from "@/components/data-table/row-actions-menu";
 import { SearchInput } from "@/components/data-table/table-controls";
+import { AsyncButton } from "@/components/async-button";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ import {
   DraftParty,
   draftRowActions,
 } from "@/features/documents/draft-entries";
+import { useNewShippingGuide } from "./new-shipping-guide";
 import { detailCountLabel, recipientCountLabel } from "./shipping-guide-format";
 import { useDeleteShippingGuideDraft, useShippingGuideEntries } from "./shipping-guides-api";
 
@@ -118,6 +119,9 @@ export function ShippingGuidesScreen() {
   const { me } = useSession();
   const allowed = canSee(me.role, "shippingGuides.read");
   const canDraft = canSee(me.role, "shippingGuides.draft");
+  // «Nueva guía de remisión» se abre sobre la lista, sin una página intermedia (decisión del propietario,
+  // 2026-10-22).
+  const creation = useNewShippingGuide(canDraft);
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
   const [visibility] = useState<VisibilityState>({});
@@ -246,12 +250,15 @@ export function ShippingGuidesScreen() {
   // segunda principal (productize-invoice-editor-and-composition-foundation, design D11).
   const newGuide = (variant: "primary" | "outline", size: "default" | "sm" = "default") =>
     canDraft ? (
-      <Button asChild variant={variant} size={size}>
-        <Link href="/guias-remision/borradores/nueva">
-          <Plus aria-hidden="true" />
-          Nueva guía de remisión
-        </Link>
-      </Button>
+      <AsyncButton
+        variant={variant}
+        size={size}
+        pending={creation.pending}
+        onClick={creation.start}
+      >
+        <Plus aria-hidden="true" />
+        Nueva guía de remisión
+      </AsyncButton>
     ) : null;
   const tableState = guides.isError ? (
     <ErrorState
@@ -382,6 +389,7 @@ export function ShippingGuidesScreen() {
         pending={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
       />
+      {creation.element}
     </DataTableCard>
   );
 }

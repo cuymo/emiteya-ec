@@ -41,9 +41,9 @@ const labels = (can: ReturnType<typeof permissionsOf>) =>
   ]);
 
 describe("modelo de rutas", () => {
-  it("cada una de las 44 páginas autenticadas encaja con un destino o una pantalla interna", () => {
-    // Las 45 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
-    expect(AUTHENTICATED).toHaveLength(44);
+  it("cada una de las 41 páginas autenticadas encaja con un destino o una pantalla interna", () => {
+    // Las 42 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
+    expect(AUTHENTICATED).toHaveLength(41);
     expect(pageUrls(join(APP, "(auth)"))).toEqual(["/iniciar-sesion"]);
     for (const url of AUTHENTICATED) {
       expect(resolveRoute(url), url).not.toBeNull();
@@ -198,11 +198,13 @@ describe("creación rápida", () => {
     for (const role of ["ADMIN", "OPERATOR"] as const) {
       expect(visibleCreateActions(permissionsOf(role)).map((action) => action.href)).toEqual([
         "/borradores/nuevo",
-        "/notas-credito/borradores/nueva",
-        "/notas-debito/borradores/nueva",
-        "/retenciones/borradores/nueva",
-        "/guias-remision/borradores/nueva",
-        "/liquidaciones-compra/borradores/nueva",
+        // Los demás se crean sobre su lista, que abre su creación con `?nueva=1` (decisión del
+        // propietario, 2026-10-22).
+        "/notas-credito?nueva=1",
+        "/notas-debito?nueva=1",
+        "/retenciones?nueva=1",
+        "/guias-remision?nueva=1",
+        "/liquidaciones-compra?nueva=1",
       ]);
     }
   });
@@ -215,7 +217,7 @@ describe("creación rápida", () => {
 
   it("cada acción lleva a una página que existe", () => {
     for (const action of CREATE_ACTIONS) {
-      expect(AUTHENTICATED, action.href).toContain(action.href);
+      expect(AUTHENTICATED, action.href).toContain(action.href.split("?")[0]);
     }
   });
 });
@@ -233,13 +235,10 @@ describe("paridad de permisos con las pantallas", () => {
     "/notas-debito/borradores/nueva": "debitNotes.draft",
     "/notas-debito/borradores/x1": "debitNotes.draft",
     "/retenciones/x1": "withholdings.read",
-    "/retenciones/borradores/nueva": "withholdings.draft",
     "/retenciones/borradores/x1": "withholdings.draft",
     "/guias-remision/x1": "shippingGuides.read",
-    "/guias-remision/borradores/nueva": "shippingGuides.draft",
     "/guias-remision/borradores/x1": "shippingGuides.draft",
     "/liquidaciones-compra/x1": "purchaseSettlements.read",
-    "/liquidaciones-compra/borradores/nueva": "purchaseSettlements.draft",
     "/liquidaciones-compra/borradores/x1": "purchaseSettlements.draft",
     "/inventario/x1": "inventory.read",
     "/terceros/nuevo": "parties.manage",
