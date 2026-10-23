@@ -1,7 +1,8 @@
 // Alta y corrección de un tercero (add-parties-and-products, design D17). Desde Terceros, en su
-// propia página con secciones como Empresa (decisión del propietario, 2026-10-17); desde un
-// comprobante, el alta rápida sigue en `PartyDialog` para no abandonar el borrador. Los dos usan este
-// formulario: React Hook Form con el esquema del contrato. La regla de formato del tipo elegido se
+// propia página (decisión del propietario, 2026-10-17): una sola columna centrada, sin secciones, con
+// los roles primero como pestañas de selección múltiple (decisión del propietario, 2026-10-22); desde
+// un comprobante, el alta rápida sigue en `PartyDialog` para no abandonar el borrador. Los dos usan
+// este formulario: React Hook Form con el esquema del contrato. La regla de formato del tipo elegido se
 // muestra como ayuda; la valida el servidor con el catálogo vigente y su error vuelve al campo.
 "use client";
 
@@ -24,7 +25,6 @@ import { ChipMultiSelect } from "@/components/chip-multi-select";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
-import { SettingsSection, SettingsSections } from "@/components/layout/settings-section";
 import { useSession } from "@/components/session";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
@@ -37,6 +37,8 @@ import { useIdentificationTypes, useParty, useSaveParty } from "./parties-api";
 
 const LIST = "/terceros";
 const TITLE_ID = "tercero-titulo";
+/** Una sola columna centrada en la página (decisión del propietario, 2026-10-22). */
+const PAGE = "mx-auto flex w-full max-w-2xl flex-col gap-6";
 
 type FormInput = z.input<typeof createPartySchema>;
 const ROLE_OPTIONS = PARTY_ROLES.map((role) => ({ value: role, label: PARTY_ROLE_LABELS[role] }));
@@ -190,18 +192,16 @@ export function PartyNameField({ state }: { state: PartyFormState }) {
   );
 }
 
-export function PartyRolesField({
-  state,
-  hideLabel = false,
-}: {
-  state: PartyFormState;
-  /** Solo para la asistencia, donde el título de la sección ya lo dice. */
-  hideLabel?: boolean;
-}) {
+/**
+ * Los roles, opcionales y combinables (spec de terceros): pestañas a todo el ancho donde se elige uno,
+ * varios o ninguno.
+ */
+export function PartyRolesField({ state }: { state: PartyFormState }) {
   const rolesLabel = useId();
+  const rolesHint = `${rolesLabel}-ayuda`;
   return (
     <div className="flex flex-col gap-1">
-      <span id={rolesLabel} className={hideLabel ? "sr-only" : "text-sm font-medium"}>
+      <span id={rolesLabel} className="text-sm font-medium">
         Roles <span className="font-normal text-foreground-muted">(opcional)</span>
       </span>
       <Controller
@@ -209,13 +209,18 @@ export function PartyRolesField({
         name="roles"
         render={({ field }) => (
           <ChipMultiSelect<PartyRole>
+            appearance="tabs"
             aria-labelledby={rolesLabel}
+            aria-describedby={rolesHint}
             options={ROLE_OPTIONS}
             value={field.value ?? []}
             onChange={field.onChange}
           />
         )}
       />
+      <p id={rolesHint} className="text-xs text-foreground-muted">
+        Puedes elegir varios, o ninguno: solo sirven para encontrarlo al hacer un comprobante.
+      </p>
     </div>
   );
 }
@@ -267,34 +272,17 @@ function PartyForm({ initial }: { initial: PartyView | null }) {
       noValidate
       aria-labelledby={TITLE_ID}
       onSubmit={state.onSubmit}
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-5"
     >
-      <SettingsSections>
-        <SettingsSection
-          title="Datos del tercero"
-          description="Con su identificación y su razón social aparece en los comprobantes."
-        >
-          <PartyIdentificationFields
-            state={state}
-            onShowExisting={(identification) =>
-              router.push(`${LIST}?${new URLSearchParams({ q: identification, estado: "todos" })}`)
-            }
-          />
-          <PartyNameField state={state} />
-        </SettingsSection>
-        <SettingsSection
-          title="Roles"
-          description="Opcionales. Para encontrarlo como cliente, proveedor o transportista al hacer un comprobante."
-        >
-          <PartyRolesField state={state} hideLabel />
-        </SettingsSection>
-        <SettingsSection
-          title="Contacto"
-          description="Datos opcionales para ubicarlo y escribirle."
-        >
-          <PartyContactFields state={state} />
-        </SettingsSection>
-      </SettingsSections>
+      <PartyRolesField state={state} />
+      <PartyIdentificationFields
+        state={state}
+        onShowExisting={(identification) =>
+          router.push(`${LIST}?${new URLSearchParams({ q: identification, estado: "todos" })}`)
+        }
+      />
+      <PartyNameField state={state} />
+      <PartyContactFields state={state} />
 
       {state.error && (
         <p
@@ -340,7 +328,7 @@ export function PartyFormScreen({ partyId }: { partyId?: string }) {
 
   if (!allowed) {
     return (
-      <section aria-labelledby={TITLE_ID} className="flex flex-col gap-6">
+      <section aria-labelledby={TITLE_ID} className={PAGE}>
         <Header editing={editing} />
         <EmptyState
           kind="no-permission"
@@ -352,7 +340,7 @@ export function PartyFormScreen({ partyId }: { partyId?: string }) {
   }
   if (!editing) {
     return (
-      <section aria-labelledby={TITLE_ID} className="flex flex-col gap-6">
+      <section aria-labelledby={TITLE_ID} className={PAGE}>
         <Header editing={false} />
         <PartyForm initial={null} />
       </section>
@@ -365,7 +353,7 @@ export function PartyFormScreen({ partyId }: { partyId?: string }) {
     (query.data !== undefined && query.data.systemRecord !== null);
   if (query.isError || missing) {
     return (
-      <section aria-labelledby={TITLE_ID} className="flex flex-col gap-6">
+      <section aria-labelledby={TITLE_ID} className={PAGE}>
         <Header editing />
         {missing ? (
           <EmptyState
@@ -394,7 +382,7 @@ export function PartyFormScreen({ partyId }: { partyId?: string }) {
     );
   }
   return (
-    <section aria-labelledby={TITLE_ID} className="flex flex-col gap-6">
+    <section aria-labelledby={TITLE_ID} className={PAGE}>
       <Header editing description={query.data.legalName} />
       <PartyForm key={query.data.id} initial={query.data} />
     </section>
@@ -403,17 +391,12 @@ export function PartyFormScreen({ partyId }: { partyId?: string }) {
 
 export function PartyFormSkeleton() {
   return (
-    <section aria-busy="true" className="@container flex flex-col gap-6">
+    <section aria-busy="true" className={PAGE}>
       <Skeleton className="h-10 w-64" />
-      <div className="grid gap-4 @settings-split:grid-cols-3 @settings-split:gap-8">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-4 w-full" />
-        </div>
-        <div className="flex flex-col gap-4 @settings-split:col-span-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
       </div>
     </section>
   );

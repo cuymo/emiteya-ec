@@ -57,6 +57,8 @@ export function PartyDialog({
       error={state.error}
       onSubmit={state.onSubmit}
     >
+      {/* Los roles primero, como en la página de Terceros (decisión del propietario, 2026-10-22). */}
+      <PartyRolesField state={state} />
       <PartyIdentificationFields
         state={state}
         onShowExisting={(identification) => {
@@ -65,7 +67,6 @@ export function PartyDialog({
         }}
       />
       <PartyNameField state={state} />
-      <PartyRolesField state={state} />
       <PartyContactFields state={state} />
     </FormDialog>
   );

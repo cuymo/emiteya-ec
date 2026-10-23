@@ -209,9 +209,14 @@ describe("página del formulario de tercero", () => {
     });
     expect(await screen.findByRole("heading", { level: 1, name: "Nuevo tercero" })).toBeDefined();
     const form = await formOf("Nuevo tercero");
-    // Secciones con su título, como Empresa.
-    for (const name of ["Datos del tercero", "Roles", "Contacto"])
-      expect(within(form).getByRole("region", { name })).toBeDefined();
+    // Una sola columna centrada, sin secciones, con los roles primero como pestañas a todo el ancho
+    // (decisión del propietario, 2026-10-22).
+    expect(within(form).queryAllByRole("region")).toEqual([]);
+    expect(form.closest("section")?.className).toContain("mx-auto");
+    const roles = within(form).getByRole("toolbar", { name: "Roles (opcional)" });
+    expect(form.querySelector("[role=toolbar]")).toBe(roles);
+    expect(roles.className).toContain("w-full");
+    expect(within(form).getByText(/Puedes elegir varios, o ninguno/)).toBeDefined();
     const user = userEvent.setup();
     expect(await within(form).findByText("Regla: 13 dígitos terminados en 001.")).toBeDefined();
     // El tipo reservado no se ofrece.
@@ -223,6 +228,10 @@ describe("página del formulario de tercero", () => {
     expect(within(form).getByRole("button", { name: "Cliente" }).getAttribute("aria-pressed")).toBe(
       "true",
     );
+    // Se combinan: los dos elegidos siguen marcados.
+    expect(
+      within(form).getByRole("button", { name: "Transportista" }).getAttribute("aria-pressed"),
+    ).toBe("true");
     await user.click(within(form).getByRole("button", { name: "Registrar tercero" }));
     expect(await screen.findByText("Registraste a Comercial Andina S.A.")).toBeDefined();
     expect(calls.find((c) => c.key === "POST /api/v1/parties")?.body).toEqual({
