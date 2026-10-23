@@ -148,15 +148,11 @@ export function AdjustSequenceDialog({
       <FormField
         id="sequence-next"
         label="Siguiente secuencial"
-        hint={consequence(current, next) ?? `Un número entero entre 1 y ${SEQUENTIAL_MAX}.`}
+        hint={`Un número entero entre 1 y ${SEQUENTIAL_MAX}.`}
         error={errors.nextNumber?.message}
       >
         <Input
-          {...fieldAria(
-            "sequence-next",
-            errors.nextNumber?.message,
-            consequence(current, next) ?? `Un número entero entre 1 y ${SEQUENTIAL_MAX}.`,
-          )}
+          {...fieldAria("sequence-next", errors.nextNumber?.message, "hint")}
           {...form.register("nextNumber")}
           inputMode="numeric"
           autoComplete="off"
@@ -164,6 +160,12 @@ export function AdjustSequenceDialog({
           className="max-w-80"
         />
       </FormField>
+      {/* Lo que pasará con el cambio se ve siempre: no es una ayuda, es su consecuencia. */}
+      {!errors.nextNumber && consequence(current, next) && (
+        <p role="status" className="-mt-2 text-sm text-foreground">
+          {consequence(current, next)}
+        </p>
+      )}
       {decreasing && (
         <FormField id="sequence-reason" label="Motivo" error={errors.reason?.message}>
           <Input

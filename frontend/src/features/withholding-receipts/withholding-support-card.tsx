@@ -20,6 +20,7 @@ import { AddRowButton } from "@/components/add-row-button";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { DatePickerField } from "@/components/date-picker-field";
 import { EntityPickerDialog, type EntityPickerQuery } from "@/components/entity-picker-dialog";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
@@ -132,13 +133,24 @@ function OptionPicker<T extends { entryKey: string; code: string; label: string 
   );
 }
 
-function SubList({ title, children }: { title: string; children: ReactNode }) {
+function SubList({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  /** La nota de la lista, en el tooltip de su título (decisión del propietario, 2026-10-22). */
+  hint?: string;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
     <section aria-labelledby={id} className="flex flex-col gap-2">
-      <h4 id={id} className="text-sm font-semibold">
-        {title}
-      </h4>
+      <LabelWithHint label={title} hint={hint}>
+        <h4 id={id} className="text-sm font-semibold">
+          {title}
+        </h4>
+      </LabelWithHint>
       {children}
     </section>
   );
@@ -332,11 +344,10 @@ export function SupportCard({
         </FormField>
       </div>
 
-      <SubList title="Impuestos del documento">
-        <p className="text-xs text-foreground-muted">
-          Transcribe los impuestos del documento. El código de porcentaje es el vigente en su fecha;
-          el sistema no recalcula la base ni el valor.
-        </p>
+      <SubList
+        title="Impuestos del documento"
+        hint="Transcribe los impuestos del documento. El código de porcentaje es el vigente en su fecha; el sistema no recalcula la base ni el valor."
+      >
         <ol className="flex flex-col gap-2">
           {taxes.fields.map((field, t) => {
             const taxPosition = t + 1;

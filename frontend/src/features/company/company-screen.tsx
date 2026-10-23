@@ -19,6 +19,7 @@ import { Controller, useForm, useWatch, type DefaultValues } from "react-hook-fo
 import { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
 import { errorMessage } from "@/components/feedback";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SelectionCardGroup } from "@/components/selection-card-group";
@@ -231,13 +232,16 @@ function CompanyForm({ taxpayer }: { taxpayer: TaxpayerView }) {
           />
           {locked ? (
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium">RUC</span>
-              <span className="text-base">{taxpayer.profile?.ruc}</span>
-              <p className="flex items-center gap-1 text-xs text-foreground-muted">
-                <Lock aria-hidden="true" className="size-3" />
-                El RUC ya no puede cambiar en esta empresa. Para emitir con otro RUC se necesita
-                otra empresa.
-              </p>
+              <LabelWithHint
+                label="RUC"
+                hint="El RUC ya no puede cambiar en esta empresa. Para emitir con otro RUC se necesita otra empresa."
+              >
+                <span className="text-sm font-medium">RUC</span>
+              </LabelWithHint>
+              <span className="flex items-center gap-1.5 text-base">
+                <Lock aria-hidden="true" className="size-3.5 text-foreground-muted" />
+                {taxpayer.profile?.ruc}
+              </span>
             </div>
           ) : (
             <FormField

@@ -23,6 +23,7 @@ import type { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
 import { ChipMultiSelect } from "@/components/chip-multi-select";
 import { errorMessage } from "@/components/feedback";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { useSession } from "@/components/session";
@@ -201,9 +202,15 @@ export function PartyRolesField({ state }: { state: PartyFormState }) {
   const rolesHint = `${rolesLabel}-ayuda`;
   return (
     <div className="flex flex-col gap-1">
-      <span id={rolesLabel} className="text-sm font-medium">
-        Roles <span className="font-normal text-foreground-muted">(opcional)</span>
-      </span>
+      <LabelWithHint
+        label="Roles"
+        hintId={rolesHint}
+        hint="Puedes elegir varios, o ninguno: solo sirven para encontrarlo al hacer un comprobante."
+      >
+        <span id={rolesLabel} className="text-sm font-medium">
+          Roles <span className="font-normal text-foreground-muted">(opcional)</span>
+        </span>
+      </LabelWithHint>
       <Controller
         control={state.form.control}
         name="roles"
@@ -218,9 +225,6 @@ export function PartyRolesField({ state }: { state: PartyFormState }) {
           />
         )}
       />
-      <p id={rolesHint} className="text-xs text-foreground-muted">
-        Puedes elegir varios, o ninguno: solo sirven para encontrarlo al hacer un comprobante.
-      </p>
     </div>
   );
 }

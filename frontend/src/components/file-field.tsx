@@ -5,6 +5,7 @@
 
 import { FileUp, LoaderCircle, Trash2 } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
+import { LabelWithHint } from "@/components/field-hint";
 import { Button } from "@/components/ui/button";
 
 export type CurrentFile = {
@@ -88,12 +89,22 @@ export function FileField({
 
   return (
     <div className="flex flex-col gap-2">
-      <span id={`${id}-label`} className="text-sm font-medium">
-        {label}
-      </span>
-      <p id={hintId} className="text-xs text-foreground-muted">
-        {disabledReason ?? `${acceptLabel}, hasta ${formatBytes(maxBytes)}.`}
-      </p>
+      {/* Los formatos, en el tooltip de la etiqueta (decisión del propietario, 2026-10-22); el
+          motivo de un campo deshabilitado se ve siempre. */}
+      <LabelWithHint
+        label={label}
+        hintId={hintId}
+        hint={disabledReason ? undefined : `${acceptLabel}, hasta ${formatBytes(maxBytes)}.`}
+      >
+        <span id={`${id}-label`} className="text-sm font-medium">
+          {label}
+        </span>
+      </LabelWithHint>
+      {disabledReason && (
+        <p id={hintId} className="text-xs text-foreground-muted">
+          {disabledReason}
+        </p>
+      )}
       {current && (
         <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-surface p-2">
           {current.preview}

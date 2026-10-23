@@ -37,6 +37,7 @@ import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 import { AddRowButton } from "@/components/add-row-button";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { Money } from "@/components/money";
 import { PickedCard } from "@/components/picked-card";
@@ -101,16 +102,17 @@ function ReadOnly({ label, value, hint }: { label: string; value: string; hint?:
   const id = useId();
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <span id={id} className="text-sm font-medium">
-        {label}
-      </span>
+      <LabelWithHint label={label} hint={hint}>
+        <span id={id} className="text-sm font-medium">
+          {label}
+        </span>
+      </LabelWithHint>
       <p
         aria-labelledby={id}
         className="flex min-h-10 items-center rounded-md border border-border bg-surface-subtle px-3 py-2 text-sm break-words"
       >
         {value || "—"}
       </p>
-      {hint && <p className="text-xs text-foreground-muted">{hint}</p>}
     </div>
   );
 }
@@ -265,7 +267,8 @@ function DetailRow({
   const set = (name: Parameters<typeof form.setValue>[0], value: string) =>
     form.setValue(name, value, { shouldDirty: true });
   const description = detail.description;
-  const descriptionHint = "Por ejemplo: 10 cajas de 12 botellas de 1 litro.";
+  const descriptionHint =
+    "Identifica lo que se traslada, con su unidad, tal como irá en el XML y el RIDE. Por ejemplo: 10 cajas de 12 botellas de 1 litro.";
   const chooseProduct = (product: ProductView) => {
     set(`${base}.productId`, product.id);
     set(`${base}.productName`, product.name);
@@ -400,6 +403,7 @@ function DetailRow({
           id={id("descripcion")}
           label="Descripción (incluye unidad y características)"
           hint={descriptionHint}
+          counter={`${description.length}/${DESCRIPTION_MAX}`}
           error={errors?.description?.message}
         >
           <Input
@@ -417,16 +421,6 @@ function DetailRow({
           />
         </FormField>
       </div>
-      <p className="flex flex-wrap justify-between gap-2 text-xs text-foreground-muted">
-        <span className="min-w-0 break-words">
-          {description.trim()
-            ? `En el XML y el RIDE: «${description.trim()}»`
-            : "La descripción identifica lo que se traslada, con su unidad."}
-        </span>
-        <span aria-live="polite" className="tabular-nums">
-          {description.length}/{DESCRIPTION_MAX}
-        </span>
-      </p>
       <IssueList issues={issues} />
     </li>
   );
@@ -512,7 +506,8 @@ export function RecipientCard({
   const previewSupport = previewRecipient?.support;
   const previewInvoice =
     fresh && previewSupport?.kind === "INTERNAL_INVOICE" ? previewSupport.invoice : null;
-  const motiveHint = `En una sola línea · ${recipient.motive.length}/${MOTIVE_MAX}`;
+  const motiveHint = "En una sola línea, como irá en la guía.";
+  const motiveCount = `${recipient.motive.length}/${MOTIVE_MAX}`;
 
   const chooseParty = (
     party: Pick<ShippingRecipientPartyView, "id" | "legalName" | "identification" | "address">,
@@ -714,6 +709,7 @@ export function RecipientCard({
             id={id("motivo")}
             label="Motivo del traslado"
             hint={motiveHint}
+            counter={motiveCount}
             error={errors?.motive?.message}
           >
             <SingleLineTextarea
@@ -866,18 +862,20 @@ export function RecipientCard({
                 )}
                 {recipient.supportKind === "DECLARED_EXCEPTION" && (
                   <div className="flex flex-col gap-1">
-                    <span id={caseLabelId} className="text-sm font-medium">
-                      Caso del art. 30, numeral 8, del Reglamento de Comprobantes
-                    </span>
+                    <LabelWithHint
+                      label="Caso del art. 30"
+                      hint="Al emitir confirmarás esta declaración. El sistema no puede comprobarla."
+                    >
+                      <span id={caseLabelId} className="text-sm font-medium">
+                        Caso del art. 30, numeral 8, del Reglamento de Comprobantes
+                      </span>
+                    </LabelWithHint>
                     <SelectionCardGroup
                       aria-labelledby={caseLabelId}
                       options={caseOptions}
                       value={recipient.exceptionCase as ShippingExceptionCase}
                       onChange={(next) => set(`${base}.exceptionCase`, next)}
                     />
-                    <p className="text-xs text-foreground-muted">
-                      Al emitir confirmarás esta declaración. El sistema no puede comprobarla.
-                    </p>
                   </div>
                 )}
               </>

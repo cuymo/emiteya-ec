@@ -162,7 +162,7 @@ describe("Firma electrónica (design D14)", () => {
         body: { data: { expiryAlertDays: 45 } },
       }),
     });
-    const input = await screen.findByLabelText(/Avisar con|Aviso de vencimiento/);
+    const input = await screen.findByLabelText("Aviso de vencimiento");
     const user = userEvent.setup();
     await user.clear(input);
     await user.type(input, "95");

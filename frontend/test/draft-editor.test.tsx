@@ -500,7 +500,7 @@ describe("formas de pago", () => {
     await line1();
     const first = screen.getByRole("group", { name: "Forma de pago 1" });
     expect(await within(first).findByText("$28,75")).toBeDefined();
-    expect(within(first).getByText("El total de la factura")).toBeDefined();
+    expect(within(first).getByText("El total de la factura.")).toBeDefined();
     expect(
       await within(first).findByText("SRI 01 · Sin utilización del sistema financiero"),
     ).toBeDefined();
@@ -545,7 +545,7 @@ describe("formas de pago", () => {
     const first = screen.getByRole("group", { name: "Forma de pago 1" });
     await user.type(within(first).getByLabelText("Importe (USD)"), "10");
     await user.click(screen.getByRole("button", { name: /Quitar la forma de pago 2/ }));
-    expect(await within(first).findByText("El total de la factura")).toBeDefined();
+    expect(await within(first).findByText("El total de la factura.")).toBeDefined();
     expect(within(first).queryByLabelText("Importe (USD)")).toBeNull();
   });
 });

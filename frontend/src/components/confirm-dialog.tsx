@@ -7,6 +7,7 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
+import { LabelWithHint } from "@/components/field-hint";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -112,9 +113,11 @@ export function ConfirmDialog({
             {children}
             {requiredText && (
               <div className="mt-2 flex flex-col gap-1">
-                <label htmlFor={textId} className="text-sm font-medium">
-                  {requiredText.label}
-                </label>
+                <LabelWithHint label={requiredText.label} hintId={hintId} hint={requiredText.hint}>
+                  <label htmlFor={textId} className="text-sm font-medium">
+                    {requiredText.label}
+                  </label>
+                </LabelWithHint>
                 <textarea
                   id={textId}
                   value={text}
@@ -134,8 +137,9 @@ export function ConfirmDialog({
                     {problem}
                   </p>
                 )}
-                <p id={hintId} className="text-xs text-foreground-muted">
-                  {requiredText.hint} {text.length}/{requiredText.maxLength}
+                {/* La ayuda va en el tooltip de la etiqueta; la cuenta se ve siempre. */}
+                <p className="text-right text-xs text-foreground-muted tabular-nums">
+                  {text.length}/{requiredText.maxLength}
                 </p>
               </div>
             )}

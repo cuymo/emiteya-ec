@@ -125,7 +125,9 @@ renders while its create dialog fails is an unfinished module.
 - Put primary actions at the top-right of the surface they affect.
 - Keep filters physically attached to the data they filter.
 - Put row-specific detail and commands in row actions.
-- Use helper text only when it prevents a realistic error.
+- Use helper text only when it prevents a realistic error. It goes beside the label, behind an
+  exclamation icon with a tooltip (`FieldHint`), not as small text below the field (owner decision,
+  2026-10-22); a live value such as a character count stays visible below.
 - Use labels, not placeholder-only inputs.
 - Prefer domain language over technical abbreviations.
 

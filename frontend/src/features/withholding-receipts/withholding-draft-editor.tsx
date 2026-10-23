@@ -28,6 +28,7 @@ import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { errorMessage } from "@/components/feedback";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney, Money } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
@@ -351,9 +352,15 @@ function DraftEditor({
 
           <Section title="Parte relacionada">
             <div className="flex flex-col gap-1">
-              <span id={relatedLabelId} className="text-sm font-medium">
-                ¿El proveedor es parte relacionada?
-              </span>
+              <LabelWithHint
+                label="¿El proveedor es parte relacionada?"
+                hintId={`${relatedLabelId}-hint`}
+                hint="Es una declaración tuya: el sistema no puede comprobarla."
+              >
+                <span id={relatedLabelId} className="text-sm font-medium">
+                  ¿El proveedor es parte relacionada?
+                </span>
+              </LabelWithHint>
               <SegmentedControl
                 fullWidth
                 aria-labelledby={relatedLabelId}
@@ -365,9 +372,6 @@ function DraftEditor({
                 value={relatedParty || undefined}
                 onChange={(next) => form.setValue("relatedParty", next, { shouldDirty: true })}
               />
-              <p id={`${relatedLabelId}-hint`} className="text-xs text-foreground-muted">
-                Es una declaración tuya: el sistema no puede comprobarla.
-              </p>
             </div>
           </Section>
 

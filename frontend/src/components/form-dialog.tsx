@@ -4,6 +4,7 @@
 
 import type { FormEventHandler, ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
+import { FieldHint } from "@/components/field-hint";
 import { useFormRowFieldClass } from "@/components/layout/form-grid";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -98,11 +99,18 @@ export function FormField({
   action,
   className,
   labelClassName,
+  counter,
   children,
 }: {
   id: string;
   label: string;
-  hint?: string;
+  /**
+   * Ayuda del campo: un ícono junto a la etiqueta con el texto en un tooltip (decisión del
+   * propietario, 2026-10-22), nombrado por el control en `aria-describedby` (`fieldAria`).
+   */
+  hint?: string | undefined;
+  /** Un dato vivo que se ve siempre debajo del control, como la cuenta «15/300» de un texto. */
+  counter?: string | undefined;
   error?: string | undefined;
   /**
    * Un problema que el servidor señala en este dato, junto a él y sin interrumpir como una alerta
@@ -124,9 +132,20 @@ export function FormField({
   const rowClass = useFormRowFieldClass();
   return (
     <div data-slot="form-field" className={cn("flex flex-col gap-1", rowClass, className)}>
-      <label htmlFor={id} className={cn("text-sm font-medium", labelClassName)}>
-        {label}
-      </label>
+      {hint ? (
+        <div className={cn("flex items-center gap-1.5", labelClassName)}>
+          <label htmlFor={id} className="text-sm font-medium">
+            {label}
+          </label>
+          <FieldHint id={`${id}-hint`} label={label}>
+            {hint}
+          </FieldHint>
+        </div>
+      ) : (
+        <label htmlFor={id} className={cn("text-sm font-medium", labelClassName)}>
+          {label}
+        </label>
+      )}
       {action ? (
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">{children}</div>
@@ -140,9 +159,9 @@ export function FormField({
           {problem}
         </p>
       )}
-      {hint && !error && !problem && (
-        <p id={`${id}-hint`} className="text-xs text-foreground-muted">
-          {hint}
+      {counter && (
+        <p aria-live="polite" className="text-right text-xs text-foreground-muted tabular-nums">
+          {counter}
         </p>
       )}
       {error && (

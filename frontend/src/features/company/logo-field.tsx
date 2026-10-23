@@ -8,6 +8,7 @@ import type { TaxpayerView } from "@facturador/contracts";
 import { ImageIcon, ImageUp, LoaderCircle, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { LabelWithHint } from "@/components/field-hint";
 import { fileProblem, formatSize } from "@/components/file-field";
 import { Button } from "@/components/ui/button";
 import { useRemoveLogo, useReplaceLogo } from "./company-api";
@@ -54,9 +55,25 @@ export function LogoField({
 
   return (
     <div className="flex flex-col gap-2">
-      <span id="logo-label" className="text-sm font-medium">
-        Logo
-      </span>
+      {/* Los formatos y el logo vigente, en el tooltip de la etiqueta (decisión del propietario,
+          2026-10-22); sin datos registrados, el motivo se ve debajo del botón. */}
+      <LabelWithHint
+        label="Logo"
+        hintId="logo-hint"
+        hint={
+          version === null
+            ? undefined
+            : `${ACCEPT_LABEL}, hasta ${formatSize(taxpayer.logoMaxBytes)}.${
+                logo
+                  ? ` Vigente: ${TYPE_LABELS[logo.mimeType] ?? logo.mimeType} · ${formatSize(logo.sizeBytes)}.`
+                  : ""
+              } Se aplica en el acto, sin «Guardar datos».`
+        }
+      >
+        <span id="logo-label" className="text-sm font-medium">
+          Logo
+        </span>
+      </LabelWithHint>
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-surface-subtle">
           {logo ? (
@@ -99,24 +116,11 @@ export function LogoField({
               </Button>
             )}
           </div>
-          <p id="logo-hint" className="flex flex-col text-xs text-foreground-muted">
-            {version === null ? (
-              <span>Registra primero los datos de la empresa para cargar el logo.</span>
-            ) : (
-              <>
-                <span>
-                  {ACCEPT_LABEL}, hasta {formatSize(taxpayer.logoMaxBytes)}.
-                </span>
-                {logo && (
-                  <span>
-                    Vigente: {TYPE_LABELS[logo.mimeType] ?? logo.mimeType} ·{" "}
-                    {formatSize(logo.sizeBytes)}
-                  </span>
-                )}
-                <span>Se aplica en el acto, sin «Guardar datos».</span>
-              </>
-            )}
-          </p>
+          {version === null && (
+            <p id="logo-hint" className="text-xs text-foreground-muted">
+              Registra primero los datos de la empresa para cargar el logo.
+            </p>
+          )}
         </div>
       </div>
       <input

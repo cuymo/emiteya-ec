@@ -134,7 +134,8 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
   const { errors } = form.formState;
   const kind = useWatch({ control: form.control, name: "kind" });
   const description = useWatch({ control: form.control, name: "description" }) ?? "";
-  const descriptionHint = `No aparece en los comprobantes · ${description.length}/${PRODUCT_DESCRIPTION_MAX_LENGTH}`;
+  const descriptionHint = "No aparece en los comprobantes.";
+  const descriptionCount = `${description.length}/${PRODUCT_DESCRIPTION_MAX_LENGTH}`;
   // add-minimal-inventory, design D11: con el inventario inicializado, la marca la cambia el
   // inventario. Mientras se consulta, la marca tampoco se puede cambiar.
   const inventory = useStockItem(
@@ -375,6 +376,7 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
         id="product-description"
         label="Descripción interna (opcional)"
         hint={descriptionHint}
+        counter={descriptionCount}
         error={errors.description?.message}
       >
         <Textarea

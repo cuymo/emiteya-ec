@@ -31,6 +31,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DatePickerField } from "@/components/date-picker-field";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { errorMessage } from "@/components/feedback";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { PickedCard } from "@/components/picked-card";
 import { SegmentedControl } from "@/components/segmented-control";
@@ -489,6 +490,7 @@ function DraftEditor({
             <div className="grid gap-2 sm:grid-cols-2">
               <DatePickerField
                 label="Fecha de inicio del transporte"
+                hint="No puede ser anterior a la fecha de emisión, que es la del día en que emitas."
                 value={values.transportStart ?? ""}
                 min={options.evaluatedOn}
                 onChange={(next) => set("transportStart", next)}
@@ -500,10 +502,6 @@ function DraftEditor({
                 onChange={(next) => set("transportEnd", next)}
               />
             </div>
-            <p className="text-xs text-foreground-muted">
-              El inicio no puede ser anterior a la fecha de emisión, que es la del día en que
-              emitas.
-            </p>
             <div className="flex flex-col gap-1">
               <span id={departureLabelId} className="text-sm font-medium">
                 Punto de partida
@@ -536,16 +534,20 @@ function DraftEditor({
                   </Select>
                 </FormField>
                 <div className="flex min-w-0 flex-col gap-1">
-                  <span id="partida-derivada" className="text-sm font-medium">
-                    Dirección de partida
-                  </span>
+                  <LabelWithHint
+                    label="Dirección de partida"
+                    hint="La del establecimiento de origen."
+                  >
+                    <span id="partida-derivada" className="text-sm font-medium">
+                      Dirección de partida
+                    </span>
+                  </LabelWithHint>
                   <p
                     aria-labelledby="partida-derivada"
                     className="flex min-h-10 items-center rounded-md border border-border bg-surface-subtle px-3 py-2 text-sm break-words"
                   >
                     {origin?.address ?? "—"}
                   </p>
-                  <p className="text-xs text-foreground-muted">La del establecimiento de origen.</p>
                 </div>
               </div>
             ) : (

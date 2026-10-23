@@ -23,6 +23,9 @@ export function DialogOverlay({
   );
 }
 
+const TABBABLE =
+  'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), a[href], [tabindex]';
+
 export function DialogContent({
   className,
   children,
@@ -33,6 +36,20 @@ export function DialogContent({
 }: ComponentProps<typeof DialogPrimitive.Content> & { closeLabel?: string; children: ReactNode }) {
   // Radix devuelve el foco solo a un DialogTrigger; los diálogos controlados recuerdan quién los abrió.
   const focus = useReturnFocus({ onOpenAutoFocus, onCloseAutoFocus });
+  // Al abrir, el foco va al primer control y no a la ayuda de su etiqueta (`FieldHint`), que la
+  // precede en el documento (decisión del propietario, 2026-10-22: la ayuda va junto a la etiqueta).
+  const openAutoFocus = (event: Event) => {
+    focus.onOpenAutoFocus(event);
+    if (event.defaultPrevented || !(event.target instanceof HTMLElement)) return;
+    const tabbable = Array.from(event.target.querySelectorAll<HTMLElement>(TABBABLE)).filter(
+      (element) => element.tabIndex >= 0,
+    );
+    if (tabbable[0]?.dataset.slot !== "field-hint") return;
+    const control = tabbable.find((element) => element.dataset.slot !== "field-hint");
+    if (!control) return;
+    event.preventDefault();
+    control.focus();
+  };
   return (
     <DialogPrimitive.Portal>
       <DialogOverlay />
@@ -43,7 +60,7 @@ export function DialogContent({
           className,
         )}
         {...props}
-        onOpenAutoFocus={focus.onOpenAutoFocus}
+        onOpenAutoFocus={openAutoFocus}
         onCloseAutoFocus={focus.onCloseAutoFocus}
       >
         {children}

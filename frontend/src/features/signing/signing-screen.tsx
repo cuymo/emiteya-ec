@@ -12,6 +12,7 @@ import { FileKey } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { AsyncButton } from "@/components/async-button";
 import { errorMessage } from "@/components/feedback";
+import { LabelWithHint } from "@/components/field-hint";
 import { useSession } from "@/components/session";
 import {
   EmptyState,
@@ -114,9 +115,15 @@ function ExpiryAlertForm({ days, onReplace }: { days: number; onReplace: () => v
       }}
     >
       <div className="flex flex-col gap-2 p-4">
-        <label htmlFor="expiry-alert-days" className="text-sm font-medium">
-          Aviso de vencimiento
-        </label>
+        <LabelWithHint
+          label="Aviso de vencimiento"
+          hintId="expiry-alert-hint"
+          hint={`Entre ${EXPIRY_ALERT_DAYS.min} y ${EXPIRY_ALERT_DAYS.max} días. Administradores y operadores ven el aviso.`}
+        >
+          <label htmlFor="expiry-alert-days" className="text-sm font-medium">
+            Aviso de vencimiento
+          </label>
+        </LabelWithHint>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span>Avisar con</span>
           <Input
@@ -139,10 +146,9 @@ function ExpiryAlertForm({ days, onReplace }: { days: number; onReplace: () => v
             {error}
           </p>
         ) : (
-          <p id="expiry-alert-hint" role="status" className="text-xs text-foreground-muted">
-            {unchanged
-              ? `El aviso ya está en ${days} días.`
-              : `Entre ${EXPIRY_ALERT_DAYS.min} y ${EXPIRY_ALERT_DAYS.max} días. Administradores y operadores ven el aviso.`}
+          // «Guardar» sin cambios se responde aquí: es un estado, no la ayuda del campo.
+          <p role="status" className="text-xs text-foreground-muted">
+            {unchanged ? `El aviso ya está en ${days} días.` : ""}
           </p>
         )}
       </div>

@@ -529,9 +529,8 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 const current = values[index];
                 const conceptError = errors.concepts?.[index];
                 const problems = fresh ? conceptIssues(position) : [];
-                const descriptionHint = `Aparece en la nota de débito en una sola línea · ${
-                  (current?.description ?? "").length
-                }/${DEBIT_NOTE_DESCRIPTION_MAX}`;
+                const descriptionHint = "Aparece en la nota de débito en una sola línea.";
+                const descriptionCount = `${(current?.description ?? "").length}/${DEBIT_NOTE_DESCRIPTION_MAX}`;
                 return (
                   <li
                     key={field.id}
@@ -610,6 +609,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                       id={`descripcion-${field.id}`}
                       label="Descripción"
                       hint={descriptionHint}
+                      counter={descriptionCount}
                       error={conceptError?.description?.message}
                     >
                       <SingleLineTextarea

@@ -18,6 +18,7 @@ import { useState } from "react";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,9 +84,8 @@ export function LineCard({
     set(`${base}.productId`, "");
     set(`${base}.productName`, "");
   };
-  const descriptionHint = `Lo que se compra, como figurará en el comprobante, en una sola línea · ${
-    (line.description ?? "").length
-  }/${PURCHASE_SETTLEMENT_TEXT_MAX.description}`;
+  const descriptionHint = "Lo que se compra, como figurará en el comprobante, en una sola línea.";
+  const descriptionCount = `${(line.description ?? "").length}/${PURCHASE_SETTLEMENT_TEXT_MAX.description}`;
   const unitHint = "Opcional. Por ejemplo: kg, saco, jornal.";
   return (
     <li
@@ -104,6 +104,14 @@ export function LineCard({
           />
         )}
       </div>
+      <LabelWithHint
+        label="Producto"
+        hint="El producto solo propone el código y la descripción; el precio es el de esta compra."
+      >
+        <span className="text-sm font-medium">
+          Producto <span className="font-normal text-foreground-muted">(opcional)</span>
+        </span>
+      </LabelWithHint>
       {/* El producto y «Quitar producto» en tres cuartos y un cuarto; sin producto, la elección
           ocupa toda la fila (decisión del propietario, 2026-10-22). */}
       <div
@@ -142,9 +150,6 @@ export function LineCard({
           </Button>
         )}
       </div>
-      <p className="text-xs text-foreground-muted">
-        El producto solo propone el código y la descripción; el precio es el de esta compra.
-      </p>
       <EntityPickerDialog<ProductView>
         open={choosing}
         onOpenChange={setChoosing}
@@ -194,6 +199,7 @@ export function LineCard({
         id={id("descripcion")}
         label="Descripción"
         hint={descriptionHint}
+        counter={descriptionCount}
         error={errors?.description?.message}
       >
         <SingleLineTextarea

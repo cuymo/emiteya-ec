@@ -254,7 +254,16 @@ Shared components own interaction consistency, not business policy.
 - `SingleLineTextarea` (`components/single-line-textarea.tsx`) is a `Textarea` for long texts the
   document carries on one line (the debit note concept and the purchase
   settlement line descriptions): Enter does not break the line and pasted line breaks become
-  spaces. The field hint shows the character count.
+  spaces. The character count stays visible below the field (`FormField`'s `counter`).
+- `FieldHint` (`components/field-hint.tsx`) is a field's help beside its label (owner decision,
+  2026-10-22): an exclamation icon whose tooltip shows the text on hover, on keyboard focus or on
+  a tap, instead of small text below the field. The text stays in the document, visually hidden,
+  under the `id` the control names in `aria-describedby`, so a screen reader reads it on reaching
+  the field. `FormField` renders its `hint` this way; `LabelWithHint` does it for labels outside
+  `FormField` (segmented controls, read-only data, file fields, sub-headings). What is not help
+  stays visible: errors, server problems, live counts, the consequence of a change (adjusting a
+  sequence), the reason a control is disabled, and the declarations with their context and
+  source. When a dialog opens, focus goes to the first control, not to the help of its label.
 - `SemanticToaster` owns visual variants; callers provide human-readable messages.
 - `ConfirmDialog` owns the confirmation ladder; the caller supplies the record label and the consequence. It may take its own content after the description (`children`, for example the separate declaration checkboxes of a credit note in `add-credit-notes`) and `confirmBlocked` while that content is incomplete; its body scrolls with the actions pinned, so a tall confirmation stays usable at 320 px, and the actions wrap to a second row when a long confirm label does not fit beside "Cancelar" (`add-purchase-settlements`).
 - `PageHeader` owns the page's header grammar and its vertical rhythm; the screen supplies the title, the context and, in a list, its actions (`interface-design.md`, «`PageHeader` grammar»). Breadcrumbs are not part of it: `TopbarHeading` paints the screen breadcrumbs in the top bar for every route, without repeating the title (`navigation-responsive.md`, «Breadcrumbs: The Route From Inicio»).

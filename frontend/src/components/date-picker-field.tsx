@@ -9,6 +9,7 @@
 
 import { CalendarDays, X } from "lucide-react";
 import { useId, useState } from "react";
+import { LabelWithHint } from "@/components/field-hint";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,11 +35,14 @@ export function DatePickerField({
   error,
   min,
   max,
+  hint,
   className,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  /** Ayuda del campo, en el tooltip de su etiqueta (decisión del propietario, 2026-10-22). */
+  hint?: string;
   error?: string | null;
   min?: string;
   max?: string;
@@ -48,6 +52,8 @@ export function DatePickerField({
   const labelId = `${id}-label`;
   const valueId = `${id}-value`;
   const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy = error ? errorId : hint ? hintId : undefined;
   const [open, setOpen] = useState(false);
   const selected = value ? fromIso(value) : undefined;
   const minDate = min ? fromIso(min) : undefined;
@@ -61,9 +67,11 @@ export function DatePickerField({
     (minDate && minDate > today ? minDate : maxDate && maxDate < today ? maxDate : today);
   return (
     <div className={cn("flex flex-col gap-1", className)}>
-      <Label id={labelId} htmlFor={id}>
-        {label}
-      </Label>
+      <LabelWithHint label={label} hint={hint} hintId={hintId}>
+        <Label id={labelId} htmlFor={id}>
+          {label}
+        </Label>
+      </LabelWithHint>
       <div className="relative">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -72,7 +80,7 @@ export function DatePickerField({
               type="button"
               aria-labelledby={`${labelId} ${valueId}`}
               aria-invalid={error ? true : undefined}
-              aria-describedby={error ? errorId : undefined}
+              aria-describedby={describedBy}
               className={cn(
                 "flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-surface pl-3 text-left text-base text-foreground sm:text-sm max-md:h-11",
                 "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none aria-invalid:border-danger",

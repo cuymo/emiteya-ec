@@ -32,6 +32,7 @@ import { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { errorMessage } from "@/components/feedback";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney, Money } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
@@ -488,12 +489,22 @@ function DraftEditor({
 
           <Section title="Causa y motivo">
             <div className="flex flex-col gap-1">
-              <span id={causeLabelId} className="text-sm font-medium">
-                Causa
-              </span>
+              <LabelWithHint
+                label="Causa"
+                hintId={causeHintId}
+                hint={
+                  cause === "TOTAL_ANNULMENT"
+                    ? "Acredita la factura completa: todas sus líneas y cantidades."
+                    : "Una devolución acredita las líneas y cantidades que elijas."
+                }
+              >
+                <span id={causeLabelId} className="text-sm font-medium">
+                  Causa
+                </span>
+              </LabelWithHint>
               <SegmentedControl
                 aria-labelledby={causeLabelId}
-                aria-describedby={causeHintId}
+                aria-describedby={errors.cause ? `${causeHintId}-error` : causeHintId}
                 aria-invalid={errors.cause ? true : undefined}
                 fullWidth
                 options={[
@@ -505,17 +516,23 @@ function DraftEditor({
                   form.setValue("cause", next, { shouldDirty: true, shouldValidate: true })
                 }
               />
-              <p
-                id={causeHintId}
-                className={errors.cause ? "text-sm text-danger" : "text-xs text-foreground-muted"}
-              >
-                {errors.cause?.message ??
-                  (cause === "TOTAL_ANNULMENT"
-                    ? credit.totalAnnulmentAvailable
-                      ? "Acredita la factura completa: todas sus líneas y cantidades."
-                      : "La factura ya tiene créditos reservados o aplicados: la anulación total no procede."
-                    : "Una devolución acredita las líneas y cantidades que elijas.")}
-              </p>
+              {/* El error y el caso que impide la anulación total se ven siempre: no son una ayuda. */}
+              {errors.cause ? (
+                <p id={`${causeHintId}-error`} className="text-sm text-danger">
+                  {errors.cause.message}
+                </p>
+              ) : (
+                cause === "TOTAL_ANNULMENT" &&
+                !credit.totalAnnulmentAvailable && (
+                  <p
+                    role="status"
+                    className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-sm"
+                  >
+                    La factura ya tiene créditos reservados o aplicados: la anulación total no
+                    procede.
+                  </p>
+                )
+              )}
             </div>
             <FormField
               id="motivo"

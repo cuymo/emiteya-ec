@@ -212,8 +212,9 @@ describe("Empresa (design D14)", () => {
     );
     const identification = await screen.findByRole("region", { name: "Identificación" });
     expect(await within(identification).findByAltText("Logo vigente de la empresa")).toBeDefined();
-    expect(within(identification).getByText("Vigente: PNG · 4 KB")).toBeDefined();
-    expect(within(identification).getByText("PNG o JPEG, hasta 512 KB.")).toBeDefined();
+    // Los formatos y el logo vigente van en la ayuda de la etiqueta (decisión del propietario, 2026-10-22).
+    expect(within(identification).getByText(/Vigente: PNG · 4 KB\./)).toBeDefined();
+    expect(within(identification).getByText(/PNG o JPEG, hasta 512 KB\./)).toBeDefined();
     expect(within(identification).getByRole("button", { name: "Reemplazar logo" })).toBeDefined();
   });
 

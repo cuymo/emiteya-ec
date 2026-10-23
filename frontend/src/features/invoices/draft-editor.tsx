@@ -54,6 +54,7 @@ import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
+import { LabelWithHint } from "@/components/field-hint";
 import { errorMessage, toast, useMutationFeedback } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { FormLayout, StickyFormActions, StickySummaryPanel } from "@/components/layout/form-layout";
@@ -1323,7 +1324,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                           </FormField>
                         ) : (
                           <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium">Importe</span>
+                            <LabelWithHint label="Importe" hint="El total de la factura.">
+                              <span className="text-sm font-medium">Importe</span>
+                            </LabelWithHint>
                             <span
                               className={cn(
                                 "flex h-10 items-center justify-end text-sm font-semibold tabular-nums max-md:h-11",
@@ -1331,9 +1334,6 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                               )}
                             >
                               {totals ? formatMoney(totals.total) : "—"}
-                            </span>
-                            <span className="text-right text-xs text-foreground-muted">
-                              El total de la factura
                             </span>
                           </div>
                         )}
