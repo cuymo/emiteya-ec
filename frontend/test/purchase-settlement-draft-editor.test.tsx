@@ -647,6 +647,10 @@ describe("pedidos del propietario sobre la liquidación (2026-10-22)", () => {
     // Las notas del proveedor y de los pagos van en el tooltip de su título.
     expect(screen.getByRole("button", { name: "Ayuda: Proveedor" })).toBeDefined();
     expect(screen.getByRole("button", { name: "Ayuda: Pagos" })).toBeDefined();
+    // La base y el IVA de la línea, en su fila y centrados; un separador debajo de «Agregar línea».
+    expect(within(line).getByText(/^Base imponible/).className).toContain("text-center");
+    const pagos = screen.getByRole("region", { name: "Pagos" });
+    expect(pagos.previousElementSibling?.getAttribute("data-slot")).toBe("separator");
   });
 
   it("el proveedor es una ficha con «Cambiar proveedor» en azul, y las líneas siguen el diseño de los otros editores", async () => {

@@ -281,8 +281,10 @@ export function LineCard({
           </Select>
         </FormField>
       </div>
+      {/* La base y el IVA de la línea, en su propia fila y centrados (decisión del propietario,
+          2026-10-22). */}
       {previewLine?.tax && (
-        <p className="text-sm text-foreground-muted tabular-nums">
+        <p className="w-full text-center text-sm text-foreground-muted tabular-nums">
           Base imponible {formatMoney(previewLine.taxableBase)} · IVA{" "}
           {formatPercentage(previewLine.tax.percentage)} {formatMoney(previewLine.tax.amount)}
         </p>

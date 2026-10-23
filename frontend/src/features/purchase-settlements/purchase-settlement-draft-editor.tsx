@@ -39,6 +39,7 @@ import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
@@ -503,6 +504,10 @@ function DraftEditor({
               </p>
             )}
           </Section>
+
+          {/* Un separador debajo de «Agregar línea», antes de los pagos (decisión del propietario,
+              2026-10-22). */}
+          <Separator />
 
           <Section
             title="Pagos"
