@@ -27,6 +27,7 @@ corepack pnpm verify
 - Prisma for database access.
 - PostgreSQL as the primary database.
 - Axios for external HTTP APIs; excepción: el adaptador SOAP del SRI usa el `fetch` nativo de Node, solo en infraestructura (ADR 0018, enmienda del transporte).
+- nodemailer para el correo SMTP, que no es HTTP, solo en la infraestructura del módulo `email` (ADR 0029).
 
 ## Frontend
 
@@ -81,6 +82,8 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | Pruebas del XLSX | `fflate` 0.8.3, solo de desarrollo (MIT, sin dependencias) | Descomprime el libro con una implementación independiente del escritor; el XML lo lee `fast-xml-parser`, ya presente (ADR 0023). |
 | Paquete de portabilidad | Contenedor ZIP64 propio sobre `node:zlib`, sin dependencias | Tamaño y CRC antes de cada cabecera, sin descriptor de datos; STORE o DEFLATE por entrada; directorio central volcado a un temporal, con memoria acotada (ADR 0024). yazl, zip-stream y @zip.js/zip.js se descartaron por su memoria por entrada (de 7 a 8.7 KiB) y porque Info-ZIP rechaza los archivos de más de 4 GiB de las dos últimas; fflate no escribe ZIP64. Las pruebas leen el paquete con `zipfile` de Python. |
 | Aritmética decimal | `decimal.js` 10.6.0, versión exacta | Importes y tarifas exactos detrás de `platform/decimal`; es la biblioteca que Prisma usa para `Decimal`. Ningún importe pasa por `number` (`decimal-policy.md`). |
+| Correo SMTP | `nodemailer` 10.2.1, versión exacta (MIT-0, sin dependencias, con sus tipos) | Entrega por correo del XML y el RIDE con el servidor SMTP de cada empresa, detrás del puerto `MailTransport` del módulo `email`: un transporte por envío, TLS con certificado verificado y TLS 1.2 o superior (ADR 0029). |
+| Pruebas del correo | `smtp-server` 3.21.1, solo de desarrollo (MIT-0) | Servidor SMTP falso en proceso para las pruebas de integración del transporte y del envío (ADR 0029). El buzón de pruebas del despliegue de revisión es Mailpit, fuera del código. |
 | pnpm | 12.4.2 vía Corepack | `packageManager`; configuración en `pnpm-workspace.yaml`. |
 | TypeScript | 6.0.3 | `typescript-eslint` no admite todavía la 7. |
 | ESLint / typescript-eslint | 10.11.0 / 8.71.0 | Frontend sin `eslint-config-next` (ADR 0016). |

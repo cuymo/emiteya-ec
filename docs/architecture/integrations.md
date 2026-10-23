@@ -7,7 +7,7 @@
 | SRI — Recepción | Recibir el comprobante firmado: `RECIBIDA` o `DEVUELTA`. | Ninguna; el XML va firmado con el certificado del contribuyente. | Adaptador SOAP propio de `sri-engine` (ADR 0018) |
 | SRI — Autorización | Consultar por clave de acceso: en procesamiento, `AUTORIZADO` o no autorizado (`NO AUTORIZADO` o `RECHAZADO`, ficha v2.34, §7.2.3). Es también la consulta por clave con que se reconcilia. | Ninguna. | Adaptador SOAP propio de `sri-engine` |
 | SRI — Consulta de validez | `ConsultaComprobante`: guarda de la reconciliación antes de un reenvío; un estado informado impide reenviar (design D15 de `add-sri-transmission`). Nunca observa anulaciones: eso es una capacidad futura (Q-16). | Ninguna. | Adaptador SOAP propio de `sri-engine` |
-| SMTP (P1, fuera del MVP) | Entrega por correo del RIDE y el XML. Q-24, resuelta el 2026-10-04: el MVP no integra proveedor, no envía ni reintenta correos y no guarda credenciales; deja el puerto de notificación. | Credenciales SMTP del operador, cuando llegue. | Puerto de notificación |
+| SMTP de la empresa | Entrega por correo del XML y el RIDE de cada comprobante autorizado (`add-email-delivery`; Q-24 decidió el 2026-10-04 dejarlo para P1). | Usuario y contraseña SMTP de cada empresa, cifrada en reposo. | Transporte nodemailer del módulo `email` (ADR 0029) |
 
 ## Integration Rules
 
@@ -16,7 +16,7 @@
 - Normalize provider errors before exposing them internally.
 - Avoid provider names in user-facing UI unless necessary.
 - Document rate limits and usage gates.
-- Use Axios for server-side external API calls; excepción: el adaptador SOAP del SRI usa el `fetch` nativo de Node, solo en infraestructura (ADR 0018, enmienda del transporte).
+- Use Axios for server-side external API calls; excepción: el adaptador SOAP del SRI usa el `fetch` nativo de Node, solo en infraestructura (ADR 0018, enmienda del transporte). El correo usa SMTP, no HTTP, con nodemailer en la infraestructura del módulo `email` (ADR 0029).
 - Do not call external provider APIs directly from the browser when tokens are required.
 - Add runtime timeout configuration.
 - Add backoff, queueing, or persisted jobs for bulk provider calls.

@@ -53,6 +53,7 @@
     "fontkit": "2.0.4",
     "helmet": "8.3.0",
     "node-forge": "1.4.0",
+    "nodemailer": "10.2.1",
     "pdfmake": "0.3.11",
     "pino": "10.3.1",
     "pino-http": "11.0.0",
@@ -68,6 +69,7 @@
     "fflate": "0.8.3",
     "pdfjs-dist": "6.3.289",
     "prisma": "7.10.0",
+    "smtp-server": "3.21.1",
     "supertest": "7.3.0",
     "zxing-wasm": "3.1.4"
   }
