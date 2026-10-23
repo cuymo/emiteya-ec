@@ -89,6 +89,8 @@ describe("título de un formulario (decisión del propietario, 2026-10-22)", () 
     render(<EditorTitle entity="Nota de crédito" feminine state="new" />);
     const title = screen.getByRole("heading", { level: 1, name: "Nota de crédito Nueva" });
     expect(title.id).toBe("editor-titulo");
+    // El badge, al final de la fila del título.
+    expect(title.className).toContain("justify-between");
     const badge = title.querySelector("[data-form-state]");
     expect(badge?.getAttribute("data-form-state")).toBe("new");
     expect(badge?.getAttribute("data-variant")).toBe("info");

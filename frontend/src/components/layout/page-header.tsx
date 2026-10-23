@@ -51,7 +51,7 @@ export function PageHeader(props: ListHeader | EditorHeader) {
       className={cn("flex flex-col gap-2", className)}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-1">
+        <div className={cn("flex min-w-0 flex-col gap-1", badge && "flex-1")}>
           <div
             data-slot="page-header-title"
             className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1"
@@ -60,7 +60,8 @@ export function PageHeader(props: ListHeader | EditorHeader) {
               id={titleId}
               className={cn(
                 "text-3xl font-bold break-words",
-                badge && "flex flex-wrap items-center gap-x-3 gap-y-1",
+                // El badge, al final de la fila del título (decisión del propietario, 2026-10-22).
+                badge && "flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1",
               )}
             >
               {title}

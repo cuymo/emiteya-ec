@@ -105,7 +105,7 @@ design D3). No screen builds its own header.
 | Configuration and reading (written for the migration of those screens) | None (top bar) | `h1` | Yes | Optional | Right, inside the width of its role (`max-w-form` or `max-w-reading`) | Next to the primary |
 
 - **Form titles** (owner decision, 2026-10-22): a form names only its entity («Factura»,
-  «Tercero») and carries its state in a `FormStateBadge` inside the `h1`: «Nuevo»/«Nueva» before
+  «Tercero») and carries its state in a `FormStateBadge` inside the `h1`, at the end of the title row: «Nuevo»/«Nueva» before
   the first save (informative tone), «Borrador» for a saved document draft (the neutral badge of
   the lists) and «Corrección» when correcting a record. Document editors use `EditorTitle`; the
   entity creation dialogs (tercero, usuario, establecimiento) pass the same badge to `FormDialog`.

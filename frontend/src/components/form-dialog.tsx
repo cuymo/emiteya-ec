@@ -61,7 +61,7 @@ export function FormDialog({
             <DialogTitle
               className={cn(
                 "text-lg font-semibold",
-                badge && "flex flex-wrap items-center gap-x-2 gap-y-1",
+                badge && "flex flex-wrap items-center justify-between gap-x-2 gap-y-1",
               )}
             >
               {title}

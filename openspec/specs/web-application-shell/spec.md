@@ -597,7 +597,7 @@ qué, y sin acciones el menú no SHALL aparecer.
 ### Requirement: Título de los formularios
 El título de cada formulario de alta o de edición SHALL nombrar solo la entidad («Factura», «Nota de
 crédito», «Nota de débito», «Liquidación de compra», «Retención», «Guía de remisión», «Tercero»,
-«Producto», «Usuario», «Establecimiento») y llevar a su derecha un badge con su estado: «Nuevo» o
+«Producto», «Usuario», «Establecimiento») y llevar al final de su fila un badge con su estado: «Nuevo» o
 «Nueva» antes del primer guardado, «Borrador» en un comprobante guardado sin emitir y «Corrección»
 al corregir un registro. El badge SHALL formar parte del título para la asistencia, y «Borrador»
 SHALL verse como el estado de los borradores en las listas. Las migas de la barra superior no
