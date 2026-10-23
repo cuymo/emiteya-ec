@@ -156,6 +156,13 @@ Let the user recognize a value without reading every cell.
 - Use an inline control in a cell only for a reversible change with immediate feedback.
 - Do not color whole rows for routine states; reserve that for a condition that needs attention now.
 
+In the document archive, the last email of each row sits next to its state (`EmailIndicator`,
+add-email-delivery). In the table it is an icon with its accessible name and a tooltip
+(«Correo: no enviado»). On the phone card it also carries its text, because a phone has no hover.
+A row without emails shows nothing. The «Correo» filter offers «No enviado» (`correo=no-enviado` in
+the URL, `emailStatus=FAILED` in the API). It counts in `filtersActive`, `Limpiar filtros` clears
+it, and an unknown value in the URL does not filter.
+
 ## Row Actions
 
 - Use familiar Lucide icons with accessible names and opaque light/dark tooltips.

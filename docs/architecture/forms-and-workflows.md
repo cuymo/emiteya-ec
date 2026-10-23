@@ -119,6 +119,9 @@ relationship blocks it.
 - File inputs show filename, type, size, validation state, and replacement intent without exposing server paths.
 - Validate sensitive files server-side; client extension checks are only early feedback.
 - Never display secret references or certificate locations in tables.
+- Configuración → Correos (add-email-delivery) follows these rules for the SMTP password. The field
+  shows «Contraseña guardada» and stays empty, and an empty field keeps the stored password. The
+  API answers only `passwordSet`.
 
 ### Managed Files
 
@@ -186,6 +189,21 @@ and `Avanzado`.
 - Use a wizard with review and summary when configuration must be assembled in order or validated before it takes effect.
 - Show the effect where the setting is made: a preview, the resulting value, or the records it will affect.
 - State whether a change applies immediately or on save, and keep that rule consistent across groups.
+
+Configuración → Correos is one card with its state on top: «Listo», «Desactivado» by the
+deployment, or «Sin configurar». The state always reflects what is saved, never unsaved edits.
+Below come the server, the sender and the sending options. The footer holds «Enviar correo de
+prueba» as the secondary action and «Guardar servidor» as the primary one. Automatic sending is a
+checkbox, because it waits for «Guardar». «Sin cifrado» appears only if the deployment allows it.
+Server rejections go to their field, and a version conflict shows «Recargar». The test dialog
+uses the saved server and warns when there are unsaved changes. It shows its result inside the
+dialog, accepted or the server's reason, instead of a toast.
+
+An editable list of emails, such as a party's emails (up to three) or the addresses of a resend
+(up to ten), uses one row per address. Each row is validated in its own position, so an invalid or
+repeated address is marked at its field. Empty rows are not sent. «Agregar correo» gives way to a
+note with the limit, and removing a row moves focus to «Agregar correo»
+(`features/email/email-rows.ts`).
 
 ## Import And Background Work
 

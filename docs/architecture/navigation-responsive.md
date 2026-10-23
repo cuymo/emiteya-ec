@@ -175,7 +175,8 @@ from the reference template's dashboard layout (ADR 0028).
     expired or unavailable signature is not repeated here.
   - **Dashboard summary** (`/dashboard`, `invoices.read`, shared with Inicio but cached for five
     minutes and not refetched on focus): documents that need attention, returned or not
-    authorized in the last 30 days, and out-of-stock products (amber).
+    authorized in the last 30 days, documents whose last email failed (with a link to the archive
+    filtered by «Correo: No enviado», add-email-delivery), and out-of-stock products (amber).
   - **Links:** each notice links to its section only when the role can open it (the permission of
     `resolveRoute`); otherwise it says to ask an administrator. Following a link closes the list.
 - **Company context.** It is read-only: the trade name, or the legal name, of the session's
