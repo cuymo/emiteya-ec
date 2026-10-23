@@ -41,9 +41,11 @@ import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SingleLineTextarea } from "@/components/single-line-textarea";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDecimal, formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
 import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
@@ -195,11 +197,31 @@ function useDefaultPoint(enabled: boolean) {
   });
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Sección del editor. Su título puede verse como la etiqueta de un campo (`compact`) o quedar solo
+ * para la asistencia (`hideTitle`), cuando los campos ya lo dicen (decisión del propietario,
+ * 2026-10-22).
+ */
+function Section({
+  title,
+  compact = false,
+  hideTitle = false,
+  children,
+}: {
+  title: string;
+  compact?: boolean;
+  hideTitle?: boolean;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className="text-lg font-semibold">
+    <section aria-labelledby={id} className={cn("flex flex-col", compact ? "gap-1" : "gap-3")}>
+      <h2
+        id={id}
+        className={
+          hideTitle ? "sr-only" : compact ? "text-sm font-medium" : "text-lg font-semibold"
+        }
+      >
         {title}
       </h2>
       {children}
@@ -333,6 +355,7 @@ function DraftEditor({
   const cause = useWatch({ control: form.control, name: "cause" });
   const lines = useWatch({ control: form.control, name: "lines" });
   const pointId = useWatch({ control: form.control, name: "emissionPointId" });
+  const reason = useWatch({ control: form.control, name: "reason" }) ?? "";
   const causeLabelId = useId();
   const causeHintId = useId();
 
@@ -449,7 +472,7 @@ function DraftEditor({
 
       <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
-          <Section title="Factura que se modifica">
+          <Section title="Factura que se modifica" compact>
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-3 sm:flex-nowrap">
               <span className="flex min-w-0 flex-1 items-center gap-3">
                 {/* La factura con su ícono grande, como en la nota de débito (decisión del
@@ -484,7 +507,7 @@ function DraftEditor({
             />
           </Section>
 
-          <Section title="Causa y motivo">
+          <Section title="Causa y motivo" hideTitle>
             <div className="flex flex-col gap-1">
               <LabelWithHint
                 label="Causa"
@@ -535,9 +558,10 @@ function DraftEditor({
               id="motivo"
               label="Motivo"
               hint="Aparece en la nota de crédito. Una sola línea."
+              counter={`${reason.length}/${CREDIT_NOTE_REASON_MAX}`}
               error={errors.reason?.message}
             >
-              <Input
+              <SingleLineTextarea
                 maxLength={CREDIT_NOTE_REASON_MAX}
                 {...fieldAria(
                   "motivo",
@@ -732,15 +756,17 @@ function DraftEditor({
                 Emitir nota de crédito
               </Button>
             )}
-            {canEmit && emitHint && (
-              <p id={emitHintId} className="text-xs text-foreground-muted">
-                {emitHint}
-              </p>
-            )}
             <AsyncButton type="submit" variant="outline" pending={save.isPending}>
               <Save aria-hidden="true" data-icon="inline-start" />
               Guardar borrador
             </AsyncButton>
+            {/* Por qué no se puede emitir todavía, centrado debajo de «Guardar borrador»
+                (decisión del propietario, 2026-10-22); sigue describiendo «Emitir». */}
+            {canEmit && emitHint && (
+              <p id={emitHintId} className="text-center text-xs text-foreground-muted">
+                {emitHint}
+              </p>
+            )}
           </div>
         </aside>
       </form>

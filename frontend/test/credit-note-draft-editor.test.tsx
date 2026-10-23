@@ -420,6 +420,35 @@ describe("borrador de nota de crédito", () => {
   });
 });
 
+describe("pedidos del propietario sobre la nota de crédito (2026-10-22)", () => {
+  it("títulos más discretos, el motivo en un área de texto y el aviso de emitir bajo «Guardar borrador»", async () => {
+    render(<CreditNoteDraftScreen draftId="cnd-1" />, {
+      "GET /api/v1/credit-notes/drafts/cnd-1": ok(creditNoteDraft()),
+    });
+    const user = userEvent.setup();
+    const reason = await screen.findByRole("textbox", { name: "Motivo" });
+    expect(reason.tagName).toBe("TEXTAREA");
+    // «Causa y motivo» queda para la asistencia; «Factura que se modifica», como una etiqueta.
+    expect(screen.getByRole("heading", { level: 2, name: "Causa y motivo" }).className).toContain(
+      "sr-only",
+    );
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Factura que se modifica" }).className,
+    ).toContain("text-sm");
+    // Con cambios sin guardar, el motivo de no poder emitir va centrado debajo de «Guardar borrador».
+    await user.type(reason, " más");
+    const hint = await screen.findByText("Guarda los cambios antes de emitir.");
+    expect(hint.className).toContain("text-center");
+    const save = screen.getByRole("button", { name: "Guardar borrador" });
+    expect(save.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "Emitir nota de crédito" })
+        .getAttribute("aria-describedby"),
+    ).toBe(hint.id);
+  });
+});
+
 describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-foundation, D21)", () => {
   const companyStatus = (environment: "TEST" | "PRODUCTION" | "UNKNOWN"): Route =>
     environment === "UNKNOWN"
