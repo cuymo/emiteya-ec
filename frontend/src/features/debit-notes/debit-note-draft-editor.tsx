@@ -174,11 +174,20 @@ function useDefaultPoint(enabled: boolean) {
   });
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({
+  title,
+  hideTitle = false,
+  children,
+}: {
+  title: string;
+  /** El título solo para la asistencia, cuando la etiqueta del campo ya lo dice. */
+  hideTitle?: boolean;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className="text-lg font-semibold">
+      <h2 id={id} className={hideTitle ? "sr-only" : "text-lg font-semibold"}>
         {title}
       </h2>
       {children}
@@ -635,7 +644,9 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
             </AddRowButton>
           </Section>
 
-          <Section title="Forma de pago">
+          {/* Sin título visible: la etiqueta del campo ya dice «Forma de pago», como en la factura
+              (decisión del propietario, 2026-10-22). */}
+          <Section title="Forma de pago" hideTitle>
             <FormField
               id="forma-pago"
               label="Forma de pago"

@@ -581,6 +581,10 @@ describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => 
       "Conceptos",
       "Forma de pago",
     ]);
+    // La forma de pago no repite su título: la etiqueta del campo ya lo dice.
+    expect(screen.getByRole("heading", { level: 2, name: "Forma de pago" }).className).toContain(
+      "sr-only",
+    );
   });
 
   it("el establecimiento y luego su punto, en dos selectores dependientes", async () => {
