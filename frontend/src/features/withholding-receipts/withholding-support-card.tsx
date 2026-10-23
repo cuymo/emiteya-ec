@@ -25,10 +25,12 @@ import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatPercentage } from "@/lib/decimal";
+import { cn } from "@/lib/utils";
 import {
   blankItem,
   blankPayment,
@@ -349,10 +351,11 @@ export function SupportCard({
         </FormField>
       </div>
 
-      <SubList
-        title="Impuestos del documento"
-        hint="Transcribe los impuestos del documento. El código de porcentaje es el vigente en su fecha; el sistema no recalcula la base ni el valor."
-      >
+      {/* Un separador entre cada grupo con su botón de agregar (decisión del propietario,
+          2026-10-22). */}
+      <Separator />
+      {/* Sin título visible: su nota va en la etiqueta del primer «Impuesto». */}
+      <SubList title="Impuestos del documento" hideTitle>
         <ol className="flex flex-col gap-2">
           {taxes.fields.map((field, t) => {
             const taxPosition = t + 1;
@@ -361,7 +364,6 @@ export function SupportCard({
             const problems = fresh ? taxIssues(taxPosition) : [];
             const labelId = `impuesto-${field.id}`;
             const rates = current?.tax ? ratesOn(options, current.tax, support.issueDate) : [];
-            const chosenRate = rates.find((rate) => rate.entryKey === current?.rateEntryKey);
             return (
               <li
                 key={field.id}
@@ -373,9 +375,18 @@ export function SupportCard({
                     propietario, 2026-10-22); quitar, en rojo, a su derecha. */}
                 <div className="flex items-end gap-2">
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span id={labelId} className="text-sm font-medium">
-                      Impuesto
-                    </span>
+                    <LabelWithHint
+                      label="Impuesto"
+                      hint={
+                        t === 0
+                          ? "Transcribe los impuestos del documento. El código de porcentaje es el vigente en su fecha; el sistema no recalcula la base ni el valor."
+                          : undefined
+                      }
+                    >
+                      <span id={labelId} className="text-sm font-medium">
+                        Impuesto
+                      </span>
+                    </LabelWithHint>
                     <SegmentedControl
                       fullWidth
                       aria-labelledby={labelId}
@@ -433,8 +444,18 @@ export function SupportCard({
                     </Select>
                   </FormField>
                 )}
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {current?.tax && current.tax !== IVA_SUPPORT ? (
+                {/* Con IVA la tarifa sale del código, sin campo: la base y el valor ocupan la fila; con
+                    ICE o IRBPNR, la tarifa declarada va primero (decisión del propietario,
+                    2026-10-22). */}
+                <div
+                  className={cn(
+                    "grid gap-2",
+                    current?.tax && current.tax !== IVA_SUPPORT
+                      ? "sm:grid-cols-3"
+                      : "sm:grid-cols-2",
+                  )}
+                >
+                  {current?.tax && current.tax !== IVA_SUPPORT && (
                     <FormField
                       id={`tarifa-declarada-${field.id}`}
                       label="Tarifa"
@@ -451,15 +472,6 @@ export function SupportCard({
                         {...form.register(`${base}.taxes.${t}.rate`)}
                       />
                     </FormField>
-                  ) : (
-                    <div className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium">Tarifa</span>
-                      <span className="flex min-h-8 items-center text-foreground-muted tabular-nums">
-                        {chosenRate?.percentage
-                          ? `${formatPercentage(chosenRate.percentage)} (catálogo)`
-                          : "Del catálogo"}
-                      </span>
-                    </div>
                   )}
                   <FormField
                     id={`base-impuesto-${field.id}`}
@@ -503,6 +515,7 @@ export function SupportCard({
         </AddRowButton>
       </SubList>
 
+      <Separator />
       <SubList title="Formas de pago" hideTitle>
         <ol className="flex flex-col gap-2">
           {payments.fields.map((field, p) => {
@@ -585,6 +598,7 @@ export function SupportCard({
         </AddRowButton>
       </SubList>
 
+      <Separator />
       <SubList title="Retenciones" hideTitle>
         <ol className="flex flex-col gap-2">
           {items.fields.map((field, i) => {

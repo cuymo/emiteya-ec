@@ -702,6 +702,31 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
 });
 
 describe("pedidos del propietario sobre la retención (2026-10-22)", () => {
+  it("con IVA no hay tarifa y la base y el valor ocupan la fila; con ICE la tarifa vuelve a su lugar", async () => {
+    render(<WithholdingDraftScreen draftId="retd-1" />, {
+      "GET /api/v1/withholding-receipts/drafts/retd-1": ok(withholdingDraft()),
+    });
+    await findSupport(1);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Agregar documento sustento" }));
+    const fresh = support(2);
+    const tax = within(fresh).getByRole("listitem", { name: "Impuesto 1 del documento 2" });
+    // Sin título visible de los impuestos: su nota va en el primer «Impuesto».
+    expect(
+      within(fresh).getByRole("heading", { level: 4, name: "Impuestos del documento" }).className,
+    ).toContain("sr-only");
+    expect(within(tax).getByRole("button", { name: "Ayuda: Impuesto" })).toBeDefined();
+    expect(within(tax).queryByRole("textbox", { name: "Tarifa" })).toBeNull();
+    expect(within(tax).queryByText("Del catálogo")).toBeNull();
+    const row = within(tax).getByRole("textbox", { name: "Base imponible" }).closest(".grid");
+    expect(row?.className).toContain("sm:grid-cols-2");
+    await user.click(within(tax).getByRole("radio", { name: "ICE" }));
+    expect(within(tax).getByRole("textbox", { name: "Tarifa" })).toBeDefined();
+    expect(row?.className).toContain("sm:grid-cols-3");
+    // Un separador entre cada grupo con su botón de agregar.
+    expect(fresh.querySelectorAll("[data-slot=separator]")).toHaveLength(3);
+  });
+
   it("títulos más discretos, el documento con su número en la franja y Factura por defecto", async () => {
     render(<WithholdingDraftScreen draftId="retd-1" />, {
       "GET /api/v1/withholding-receipts/drafts/retd-1": ok(withholdingDraft()),
