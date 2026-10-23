@@ -508,14 +508,19 @@ describe("formas de pago", () => {
     const user = userEvent.setup();
     await user.click(button("Dividir el pago"));
     expect(screen.getByText("Reparte el total entre las formas de pago.")).toBeDefined();
-    expect(await screen.findByText("Faltan $28,75 por asignar.")).toBeDefined();
+    // Lo que falta va como insignia junto al título de la sección (decisión del propietario, 2026-10-22).
+    const pendingBadge = (await screen.findByText("Faltan $28,75 por asignar")).closest(
+      "[data-slot=badge]",
+    );
+    expect(pendingBadge?.getAttribute("data-variant")).toBe("warning");
+    expect(pendingBadge?.parentElement?.querySelector("h2")?.textContent).toBe("Formas de pago");
     await user.type(within(first).getByLabelText("Importe (USD)"), "10");
     const second = screen.getByRole("group", { name: "Forma de pago 2" });
     await user.selectOptions(within(second).getByLabelText("Forma de pago"), "19");
     await user.click(
       await within(second).findByRole("button", { name: "Asignar lo pendiente ($18,75)" }),
     );
-    expect(await screen.findByText("El pago cubre el total.")).toBeDefined();
+    expect(await screen.findByText("El pago cubre el total")).toBeDefined();
     expect(
       within(second).getByRole("button", {
         name: "Quitar la forma de pago 2 (Tarjeta de crédito)",
@@ -526,7 +531,7 @@ describe("formas de pago", () => {
     const amount = within(second).getByLabelText("Importe (USD)") as HTMLInputElement;
     await user.clear(amount);
     await user.type(amount, "20");
-    expect(await screen.findByText("Asignaste $1,25 más que el total.")).toBeDefined();
+    expect(await screen.findByText("Asignaste $1,25 más que el total")).toBeDefined();
     expect(reasonOf(button("Emitir factura"))).toBe("Para emitir falta: forma de pago.");
   });
 

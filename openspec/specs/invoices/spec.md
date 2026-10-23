@@ -612,8 +612,9 @@ factura, y reintentar la misma versión SHALL repetir su clave de idempotencia.
 ### Requirement: Formas de pago en el editor de facturas
 El editor SHALL pedir las formas de pago cuando la factura tiene al menos un producto. Con una sola
 forma de pago, SHALL mostrar como su importe el total de la factura, sin pedirlo. Al dividir el pago,
-cada forma de pago SHALL llevar su importe, y el editor SHALL decir al momento cuánto falta por
-asignar o cuánto se asignó de más, y ofrecer asignar lo pendiente a una forma de pago sin importe.
+cada forma de pago SHALL llevar su importe, y el editor SHALL decir al momento, en una insignia junto
+al título «Formas de pago», cuánto falta por asignar, cuánto se asignó de más o que el pago cubre el
+total, y ofrecer asignar lo pendiente a una forma de pago sin importe.
 Cada forma de pago SHALL mostrar su nombre corriente y, como detalle, su código y su nombre oficial
 del SRI. La acción para quitar una forma de pago SHALL identificarla y quedar asociada a su fila a
 cualquier anchura; al volver a una sola, su importe vuelve a ser el total. Las reglas de las formas
@@ -625,7 +626,7 @@ de pago no cambian.
 
 #### Scenario: Dividir el pago
 - **WHEN** un operador divide el pago y asigna USD 10,00 de un total de USD 28,75 a la primera forma de pago
-- **THEN** el editor dice que faltan USD 18,75 y ofrece asignarlos a la segunda
+- **THEN** la insignia junto al título dice que faltan USD 18,75 y el editor ofrece asignarlos a la segunda
 
 #### Scenario: Asignar de más
 - **WHEN** las formas de pago suman más que el total

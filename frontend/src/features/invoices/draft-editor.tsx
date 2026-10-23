@@ -62,6 +62,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { formatMoney } from "@/components/money";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState } from "@/components/states";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -1220,6 +1221,28 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
               <FormSection
                 title="Formas de pago"
                 description={split ? "Reparte el total entre las formas de pago." : undefined}
+                // Lo que falta, sobra o cubre, junto al título (decisión del propietario, 2026-10-22).
+                badge={
+                  split &&
+                  pending !== null && (
+                    <Badge
+                      role="status"
+                      variant={pending === 0 ? "success" : pending > 0 ? "warning" : "destructive"}
+                      className="h-6 px-2.5 text-sm tabular-nums [&>svg]:size-3.5!"
+                    >
+                      {pending === 0 ? (
+                        <CircleCheck aria-hidden="true" data-icon="inline-start" />
+                      ) : (
+                        <TriangleAlert aria-hidden="true" data-icon="inline-start" />
+                      )}
+                      {pending === 0
+                        ? "El pago cubre el total"
+                        : pending > 0
+                          ? `Faltan ${formatMoney(fromCents(pending))} por asignar`
+                          : `Asignaste ${formatMoney(fromCents(-pending))} más que el total`}
+                    </Badge>
+                  )
+                }
               >
                 <div className="@container flex flex-col gap-4">
                   {payments.fields.map((field, index) => {
@@ -1337,42 +1360,16 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                       </fieldset>
                     );
                   })}
-                  <div className="flex flex-col gap-2">
-                    {/* A todo el ancho y punteado: se ve como el lugar donde nace otra forma de pago
-                        (decisión del propietario, 2026-10-22). */}
-                    <AddRowButton onClick={addPayment}>
-                      {split ? (
-                        <Plus aria-hidden="true" data-icon="inline-start" />
-                      ) : (
-                        <Split aria-hidden="true" data-icon="inline-start" />
-                      )}
-                      {split ? "Agregar otra forma de pago" : "Dividir el pago"}
-                    </AddRowButton>
-                    {split && pending !== null && (
-                      <p
-                        role="status"
-                        className={cn(
-                          "flex items-center gap-1.5 text-sm font-medium tabular-nums",
-                          pending === 0 && "text-success",
-                          pending < 0 && "text-danger",
-                        )}
-                      >
-                        {pending === 0 ? (
-                          <CircleCheck aria-hidden="true" className="size-4 shrink-0" />
-                        ) : (
-                          <TriangleAlert
-                            aria-hidden="true"
-                            className={cn("size-4 shrink-0", pending > 0 && "text-warning")}
-                          />
-                        )}
-                        {pending === 0
-                          ? "El pago cubre el total."
-                          : pending > 0
-                            ? `Faltan ${formatMoney(fromCents(pending))} por asignar.`
-                            : `Asignaste ${formatMoney(fromCents(-pending))} más que el total.`}
-                      </p>
+                  {/* A todo el ancho y punteado: se ve como el lugar donde nace otra forma de pago
+                      (decisión del propietario, 2026-10-22). */}
+                  <AddRowButton onClick={addPayment}>
+                    {split ? (
+                      <Plus aria-hidden="true" data-icon="inline-start" />
+                    ) : (
+                      <Split aria-hidden="true" data-icon="inline-start" />
                     )}
-                  </div>
+                    {split ? "Agregar otra forma de pago" : "Dividir el pago"}
+                  </AddRowButton>
                   {paymentsProblem && pending === null && (
                     <p className="text-sm text-danger">{paymentsProblem}</p>
                   )}

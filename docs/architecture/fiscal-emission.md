@@ -556,8 +556,9 @@ persona, comprador, productos, pago, total y emitir, no el técnico de guardar p
   - **Formas de pago,** cuando ya hay algún producto. Con una, su importe es el total de la factura,
     en verde, sin pedirlo. «Dividir el pago», un botón punteado alto a todo el ancho que al pasar el
     ratón toma un degradado azulado, agrega otra: cada una
-    lleva su importe, el editor dice cuánto falta (con el ícono de aviso), cuánto sobra (en rojo) o que
-    el pago cubre el total (en verde), y una forma de pago sin importe ofrece «Asignar lo pendiente». Una forma de pago
+    lleva su importe, una insignia junto al título «Formas de pago» dice cuánto falta (en el tono de
+    aviso), cuánto sobra (en rojo) o que el pago cubre el total (en verde), y una forma de pago sin
+    importe ofrece «Asignar lo pendiente». Una forma de pago
     nueva propone lo que falta si las demás ya llevan su importe. Cada una muestra su nombre corriente
     («Efectivo», «Tarjeta de crédito») y, como detalle, «SRI 01 · Sin utilización del sistema
     financiero». Al volver a una sola, su importe vuelve a ser el total.
