@@ -244,6 +244,10 @@ Shared components own interaction consistency, not business policy.
   pago», «Agregar concepto», «Agregar línea», «Agregar pago» and the withholding editor's «Agregar
   impuesto», «Agregar forma de pago», «Agregar retención» and «Agregar documento sustento», and the
   shipping guide editor's «Agregar detalle» and «Agregar destinatario» use it, so they always match.
+- `NumberedItem` (`components/numbered-item.tsx`) is a numbered item of a form list, such as a
+  debit note concept or a purchase settlement line (owner decisions, 2026-10-22): two columns, 10 %
+  and 90 %; the first holds its label («Concepto 1», «Línea 2») vertical in primary blue over a soft
+  primary gradient strip, the second its fields. On a phone the label sits horizontal on top.
 - `PickedCard` (`components/picked-card.tsx`) shows what a form picked as a card: a large icon in a
   circle, the data, and on the same row, at the right, the actions to choose or change it (stacked
   when there are several). Without a pick the border is dashed and the icon muted. The shipping

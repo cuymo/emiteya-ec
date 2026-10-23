@@ -19,6 +19,7 @@ import { useWatch, type UseFormReturn } from "react-hook-form";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { LabelWithHint } from "@/components/field-hint";
+import { NumberedItem } from "@/components/numbered-item";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,13 +89,23 @@ export function LineCard({
   const descriptionCount = `${(line.description ?? "").length}/${PURCHASE_SETTLEMENT_TEXT_MAX.description}`;
   const unitHint = "Opcional. Por ejemplo: kg, saco, jornal.";
   return (
-    <li
+    // La línea con su número en la franja de la izquierda, como los conceptos de la nota de débito
+    // (`NumberedItem`, decisión del propietario, 2026-10-22).
+    <NumberedItem
       aria-label={`Línea ${position}`}
-      aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
+      label={`Línea ${position}`}
+      invalid={issues.length > 0}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Línea {position}</h3>
+      {/* Quitar la línea, en rojo, al final de la fila del producto. */}
+      <div className="flex items-center justify-between gap-2">
+        <LabelWithHint
+          label="Producto"
+          hint="El producto solo propone el código y la descripción; el precio es el de esta compra."
+        >
+          <span className="text-sm font-medium">
+            Producto <span className="font-normal text-foreground-muted">(opcional)</span>
+          </span>
+        </LabelWithHint>
         {canRemove && (
           <RowActionButton
             icon={Trash2}
@@ -104,14 +115,6 @@ export function LineCard({
           />
         )}
       </div>
-      <LabelWithHint
-        label="Producto"
-        hint="El producto solo propone el código y la descripción; el precio es el de esta compra."
-      >
-        <span className="text-sm font-medium">
-          Producto <span className="font-normal text-foreground-muted">(opcional)</span>
-        </span>
-      </LabelWithHint>
       {/* El producto y «Quitar producto» en tres cuartos y un cuarto; sin producto, la elección
           ocupa toda la fila (decisión del propietario, 2026-10-22). */}
       <div
@@ -285,7 +288,7 @@ export function LineCard({
         </p>
       )}
       <IssueList issues={issues} />
-    </li>
+    </NumberedItem>
   );
 }
 

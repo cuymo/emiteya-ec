@@ -29,6 +29,7 @@ import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form
 import { EditorTitle } from "@/components/layout/editor-title";
 import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
+import { LabelWithHint } from "@/components/field-hint";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { errorMessage } from "@/components/feedback";
@@ -86,13 +87,37 @@ function useDefaultPoint(enabled: boolean) {
   });
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Sección del editor. Su título puede verse como la etiqueta de un campo (`compact`), llevar su nota
+ * en un tooltip (`hint`) o quedar solo para la asistencia (`hideTitle`), cuando los campos ya lo
+ * dicen (decisiones del propietario, 2026-10-22).
+ */
+function Section({
+  title,
+  compact = false,
+  hint,
+  hideTitle = false,
+  children,
+}: {
+  title: string;
+  compact?: boolean;
+  hint?: string;
+  hideTitle?: boolean;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className="text-lg font-semibold">
-        {title}
-      </h2>
+    <section aria-labelledby={id} className={cn("flex flex-col", compact ? "gap-1" : "gap-3")}>
+      <LabelWithHint label={title} hint={hint}>
+        <h2
+          id={id}
+          className={
+            hideTitle ? "sr-only" : compact ? "text-sm font-medium" : "text-lg font-semibold"
+          }
+        >
+          {title}
+        </h2>
+      </LabelWithHint>
       {children}
     </section>
   );
@@ -376,7 +401,7 @@ function DraftEditor({
               alertRef={alertRef}
             />
           )}
-          <Section title="Establecimiento y punto de emisión">
+          <Section title="Establecimiento y punto de emisión" hideTitle>
             <EstablishmentPointFields
               establishments={establishments.data ?? []}
               pointId={pointId}
@@ -386,10 +411,11 @@ function DraftEditor({
             />
           </Section>
 
-          <Section title="Proveedor">
-            <p className="text-sm text-foreground-muted">
-              Una persona natural con cédula o pasaporte y el rol de proveedor en Terceros.
-            </p>
+          <Section
+            title="Proveedor"
+            compact
+            hint="Una persona natural con cédula o pasaporte y el rol de proveedor en Terceros."
+          >
             {/* El proveedor como una ficha: su ícono grande, sus datos y, en la misma fila, el botón
                 para elegirlo o cambiarlo (decisión del propietario, 2026-10-22). */}
             <div
@@ -478,11 +504,10 @@ function DraftEditor({
             )}
           </Section>
 
-          <Section title="Pagos">
-            <p className="text-sm text-foreground-muted">
-              Cada pago lleva su forma de pago, su total, su plazo y su unidad de tiempo. La suma de
-              los pagos debe ser exactamente el importe total.
-            </p>
+          <Section
+            title="Pagos"
+            hint="Cada pago lleva su forma de pago, su total, su plazo y su unidad de tiempo. La suma de los pagos debe ser exactamente el importe total."
+          >
             <ol className="flex flex-col gap-3">
               {payments.fields.map((field, index) => (
                 <PaymentRow

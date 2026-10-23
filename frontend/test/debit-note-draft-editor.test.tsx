@@ -544,7 +544,7 @@ describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => 
     // 10 % para el número, vertical en su franja con un degradado azul discreto, y 90 % para los
     // campos.
     expect(first.className).toContain("sm:grid-cols-[minmax(0,10fr)_minmax(0,90fr)]");
-    const number = first.querySelector("[data-slot=concept-number]") as HTMLElement;
+    const number = first.querySelector("[data-slot=item-number]") as HTMLElement;
     expect(number.className).toContain("bg-linear-to-b");
     expect(number.className).toContain("text-primary");
     expect(within(number).getByRole("heading", { level: 3 }).textContent).toBe("Concepto 1");

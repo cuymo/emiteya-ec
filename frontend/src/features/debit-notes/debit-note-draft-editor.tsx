@@ -38,6 +38,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { errorMessage } from "@/components/feedback";
 import { LabelWithHint } from "@/components/field-hint";
+import { NumberedItem } from "@/components/numbered-item";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney, Money } from "@/components/money";
 import { useSession } from "@/components/session";
@@ -566,110 +567,98 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 const descriptionHint = "Aparece en la nota de débito en una sola línea.";
                 const descriptionCount = `${(current?.description ?? "").length}/${DEBIT_NOTE_DESCRIPTION_MAX}`;
                 return (
-                  <li
+                  // El concepto con su número en la franja de la izquierda (`NumberedItem`).
+                  <NumberedItem
                     key={field.id}
                     aria-label={`Concepto ${position}`}
-                    aria-invalid={problems.length > 0 || undefined}
-                    className="grid overflow-hidden rounded-md border border-border bg-surface aria-invalid:border-danger sm:grid-cols-[minmax(0,10fr)_minmax(0,90fr)]"
+                    label={`Concepto ${position}`}
+                    invalid={problems.length > 0}
                   >
-                    {/* El número del concepto en una franja con un degradado azul discreto, vertical en su
-                        columna del 10 % (decisiones del propietario, 2026-10-22); en un teléfono,
-                        horizontal arriba. */}
-                    <div
-                      data-slot="concept-number"
-                      className="flex items-center justify-center border-primary/15 bg-linear-to-b from-primary/20 via-primary/10 to-primary/5 px-3 py-2 text-primary max-sm:border-b sm:border-r sm:py-4"
-                    >
-                      <h3 className="font-semibold whitespace-nowrap sm:rotate-180 sm:[writing-mode:vertical-rl]">
-                        Concepto {position}
-                      </h3>
-                    </div>
-                    <div className="@container flex min-w-0 flex-col gap-3 p-3">
-                      {/* Causa, importe y tratamiento en una fila de tres columnas (decisión del
+                    {/* Causa, importe y tratamiento en una fila de tres columnas (decisión del
                         propietario, 2026-10-22); en un concepto angosto, uno debajo del otro. */}
-                      <div
-                        data-slot="concept-fields"
-                        className="grid gap-3 @xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.3fr)] @xl:items-start"
-                      >
-                        <FormField id={`causa-${field.id}`} label="Causa">
-                          <Select
-                            id={`causa-${field.id}`}
-                            value={current?.cause ?? ""}
-                            onChange={(event) =>
-                              form.setValue(
-                                `concepts.${index}.cause`,
-                                event.target.value as DebitNoteCause | "",
-                                { shouldDirty: true },
-                              )
-                            }
-                          >
-                            {!current?.cause && <option value="">Elige la causa</option>}
-                            {DEBIT_NOTE_CAUSES.map((cause) => (
-                              <option key={cause} value={cause}>
-                                {DEBIT_NOTE_CAUSE_LABELS[cause]}
-                              </option>
-                            ))}
-                          </Select>
-                        </FormField>
-                        <FormField
-                          id={`importe-${field.id}`}
-                          label="Importe"
-                          hint="Sin IVA, en dólares."
-                          error={conceptError?.amount?.message}
-                        >
-                          <Input
-                            inputMode="decimal"
-                            className="text-right tabular-nums"
-                            {...fieldAria(
-                              `importe-${field.id}`,
-                              conceptError?.amount?.message,
-                              "Sin IVA, en dólares.",
-                            )}
-                            {...form.register(`concepts.${index}.amount`)}
-                          />
-                        </FormField>
-                        <TreatmentField
-                          position={position}
-                          treatments={treatments}
-                          action={
-                            concepts.fields.length > 1 && (
-                              <RowActionButton
-                                icon={Trash2}
-                                tone="danger"
-                                label={`Quitar el concepto ${position}`}
-                                onClick={() => removeConcept(index)}
-                              />
+                    <div
+                      data-slot="concept-fields"
+                      className="grid gap-3 @xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.3fr)] @xl:items-start"
+                    >
+                      <FormField id={`causa-${field.id}`} label="Causa">
+                        <Select
+                          id={`causa-${field.id}`}
+                          value={current?.cause ?? ""}
+                          onChange={(event) =>
+                            form.setValue(
+                              `concepts.${index}.cause`,
+                              event.target.value as DebitNoteCause | "",
+                              { shouldDirty: true },
                             )
                           }
-                          value={current?.taxTreatment ?? ""}
-                          onChange={(next) =>
-                            form.setValue(`concepts.${index}.taxTreatment`, next, {
-                              shouldDirty: true,
-                            })
-                          }
-                        />
-                      </div>
-                      {/* Hasta 300 caracteres: un área de texto de tres líneas que se puede agrandar,
-                        pero en una sola línea de texto, como la exige el comprobante. */}
+                        >
+                          {!current?.cause && <option value="">Elige la causa</option>}
+                          {DEBIT_NOTE_CAUSES.map((cause) => (
+                            <option key={cause} value={cause}>
+                              {DEBIT_NOTE_CAUSE_LABELS[cause]}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormField>
                       <FormField
-                        id={`descripcion-${field.id}`}
-                        label="Descripción"
-                        hint={descriptionHint}
-                        counter={descriptionCount}
-                        error={conceptError?.description?.message}
+                        id={`importe-${field.id}`}
+                        label="Importe"
+                        hint="Sin IVA, en dólares."
+                        error={conceptError?.amount?.message}
                       >
-                        <SingleLineTextarea
-                          maxLength={DEBIT_NOTE_DESCRIPTION_MAX}
+                        <Input
+                          inputMode="decimal"
+                          className="text-right tabular-nums"
                           {...fieldAria(
-                            `descripcion-${field.id}`,
-                            conceptError?.description?.message,
-                            descriptionHint,
+                            `importe-${field.id}`,
+                            conceptError?.amount?.message,
+                            "Sin IVA, en dólares.",
                           )}
-                          {...form.register(`concepts.${index}.description`)}
+                          {...form.register(`concepts.${index}.amount`)}
                         />
                       </FormField>
-                      <IssueList issues={problems} />
+                      <TreatmentField
+                        position={position}
+                        treatments={treatments}
+                        action={
+                          concepts.fields.length > 1 && (
+                            <RowActionButton
+                              icon={Trash2}
+                              tone="danger"
+                              label={`Quitar el concepto ${position}`}
+                              onClick={() => removeConcept(index)}
+                            />
+                          )
+                        }
+                        value={current?.taxTreatment ?? ""}
+                        onChange={(next) =>
+                          form.setValue(`concepts.${index}.taxTreatment`, next, {
+                            shouldDirty: true,
+                          })
+                        }
+                      />
                     </div>
-                  </li>
+                    {/* Hasta 300 caracteres: un área de texto de tres líneas que se puede agrandar,
+                        pero en una sola línea de texto, como la exige el comprobante. */}
+                    <FormField
+                      id={`descripcion-${field.id}`}
+                      label="Descripción"
+                      hint={descriptionHint}
+                      counter={descriptionCount}
+                      error={conceptError?.description?.message}
+                    >
+                      <SingleLineTextarea
+                        maxLength={DEBIT_NOTE_DESCRIPTION_MAX}
+                        {...fieldAria(
+                          `descripcion-${field.id}`,
+                          conceptError?.description?.message,
+                          descriptionHint,
+                        )}
+                        {...form.register(`concepts.${index}.description`)}
+                      />
+                    </FormField>
+                    <IssueList issues={problems} />
+                  </NumberedItem>
                 );
               })}
             </ol>

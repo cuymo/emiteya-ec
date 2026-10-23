@@ -625,6 +625,30 @@ function NewPurchaseSettlement() {
 }
 
 describe("pedidos del propietario sobre la liquidación (2026-10-22)", () => {
+  it("la línea lleva su número en la franja de la izquierda y los títulos son más discretos", async () => {
+    render(<PurchaseSettlementDraftScreen draftId="lcd-1" />, {
+      "GET /api/v1/purchase-settlements/drafts/lcd-1": ok(settlementDraft()),
+    });
+    await screen.findByRole("button", { name: "Cambiar proveedor" });
+    const line = lineCard(1);
+    // 10 % para el número, vertical en su franja con un degradado azul discreto, y 90 % para los
+    // campos, con quitar la línea al final de la fila del producto.
+    expect(line.className).toContain("sm:grid-cols-[minmax(0,10fr)_minmax(0,90fr)]");
+    const number = line.querySelector("[data-slot=item-number]") as HTMLElement;
+    expect(number.className).toContain("bg-linear-to-b");
+    expect(within(number).getByRole("heading", { level: 3 }).textContent).toBe("Línea 1");
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Establecimiento y punto de emisión" })
+        .className,
+    ).toContain("sr-only");
+    expect(screen.getByRole("heading", { level: 2, name: "Proveedor" }).className).toContain(
+      "text-sm",
+    );
+    // Las notas del proveedor y de los pagos van en el tooltip de su título.
+    expect(screen.getByRole("button", { name: "Ayuda: Proveedor" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Ayuda: Pagos" })).toBeDefined();
+  });
+
   it("el proveedor es una ficha con «Cambiar proveedor» en azul, y las líneas siguen el diseño de los otros editores", async () => {
     render(<PurchaseSettlementDraftScreen draftId="lcd-1" />, {
       "GET /api/v1/purchase-settlements/drafts/lcd-1": ok(settlementDraft()),
