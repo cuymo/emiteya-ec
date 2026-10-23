@@ -10,20 +10,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createPartySchema,
   partyEmailsSchema,
+  PARTY_EMAILS_MAX,
   PARTY_ROLE_LABELS,
   PARTY_ROLES,
   type PartyData,
   type PartyRole,
   type PartyView,
 } from "@facturador/contracts";
+import { Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useEffect, useId, useRef, useState } from "react";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
+import { AddRowButton } from "@/components/add-row-button";
 import { FormStateBadge } from "@/components/form-state-badge";
 import { AsyncButton } from "@/components/async-button";
 import { ChipMultiSelect } from "@/components/chip-multi-select";
+import { RowActionButton } from "@/components/data-table/table-controls";
 import { errorMessage } from "@/components/feedback";
 import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
@@ -44,16 +48,38 @@ const TITLE_ID = "tercero-titulo";
 const PAGE = "mx-auto flex w-full max-w-2xl flex-col gap-6";
 
 /**
- * El formulario edita por ahora el primer correo y conserva los demás; los campos vacíos no se
- * envían (add-email-delivery; la interfaz de los tres correos llega en su fase de interfaz).
+ * Hasta tres correos (add-email-delivery, design D14), una fila por correo porque `useFieldArray`
+ * trabaja con objetos. Cada fila se valida en su posición con la regla del contrato, así el error
+ * queda junto a su campo; una fila vacía no se envía.
  */
-const partyFormSchema = createPartySchema.extend({
-  emails: z
-    .array(z.string())
-    .default([])
-    .transform((emails) => emails.map((email) => email.trim()).filter((email) => email !== ""))
-    .pipe(partyEmailsSchema),
-});
+const emailRowsSchema = z
+  .array(z.object({ address: z.string() }))
+  .max(PARTY_EMAILS_MAX, `Un tercero admite como máximo ${PARTY_EMAILS_MAX} correos.`)
+  .superRefine((rows, ctx) => {
+    const seen = new Set<string>();
+    rows.forEach(({ address }, index) => {
+      const email = address.trim();
+      if (email === "") return;
+      const result = partyEmailsSchema.element.safeParse(email);
+      if (!result.success) {
+        const message = result.error.issues[0]?.message ?? "El correo no tiene un formato válido.";
+        ctx.addIssue({ code: "custom", path: [index, "address"], message });
+        return;
+      }
+      const key = email.toLowerCase();
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [index, "address"],
+          message: "El correo está repetido.",
+        });
+      }
+      seen.add(key);
+    });
+  })
+  .transform((rows) => rows.map(({ address }) => address.trim()).filter((email) => email !== ""));
+
+const partyFormSchema = createPartySchema.extend({ emails: emailRowsSchema });
 type FormInput = z.input<typeof partyFormSchema>;
 const ROLE_OPTIONS = PARTY_ROLES.map((role) => ({ value: role, label: PARTY_ROLE_LABELS[role] }));
 const IDENTIFICATION_ERRORS = new Set([
@@ -76,7 +102,7 @@ const toForm = (
   identification: party?.identification ?? "",
   legalName: party?.legalName ?? "",
   address: party?.address ?? "",
-  emails: party?.emails.length ? [...party.emails] : [""],
+  emails: (party?.emails.length ? party.emails : [""]).map((address) => ({ address })),
   phone: party?.phone ?? "",
   roles: party?.roles ?? [...initialRoles],
 });
@@ -250,11 +276,25 @@ export function PartyRolesField({ state }: { state: PartyFormState }) {
   );
 }
 
-/** Dirección, correo y teléfono, todos opcionales. */
+const EMAILS_HINT = "Hasta tres. Cada comprobante autorizado se le envía a todos.";
+
+/** Dirección, hasta tres correos y teléfono, todos opcionales. */
 export function PartyContactFields({ state }: { state: PartyFormState }) {
   const { form } = state;
   const { errors } = form.formState;
-  const emailError = errors.emails?.[0]?.message ?? errors.emails?.message;
+  const emails = useFieldArray({ control: form.control, name: "emails" });
+  const legendId = useId();
+  const hintId = `${legendId}-ayuda`;
+  const addRef = useRef<HTMLButtonElement>(null);
+  // Quitar el tercer correo vuelve a mostrar «Agregar correo»: el foco va a él cuando aparece.
+  const focusAdd = useRef(false);
+  useEffect(() => {
+    if (!focusAdd.current) return;
+    focusAdd.current = false;
+    addRef.current?.focus();
+  });
+  const full = emails.fields.length >= PARTY_EMAILS_MAX;
+
   return (
     <>
       <FormField id="party-address" label="Dirección (opcional)" error={errors.address?.message}>
@@ -263,17 +303,73 @@ export function PartyContactFields({ state }: { state: PartyFormState }) {
           {...form.register("address")}
         />
       </FormField>
+      <fieldset aria-labelledby={legendId} className="flex min-w-0 flex-col gap-2">
+        <LabelWithHint label="Correos" hintId={hintId} hint={EMAILS_HINT}>
+          <span id={legendId} className="text-sm font-medium">
+            Correos <span className="font-normal text-foreground-muted">(opcional)</span>
+          </span>
+        </LabelWithHint>
+        {emails.fields.map((field, index) => {
+          const id = `party-email-${index}`;
+          const error = errors.emails?.[index]?.address?.message;
+          return (
+            <FormField
+              key={field.id}
+              id={id}
+              label={`Correo ${index + 1}`}
+              labelClassName="sr-only"
+              error={error}
+              action={
+                emails.fields.length > 1 ? (
+                  <RowActionButton
+                    icon={Trash2}
+                    tone="danger"
+                    label={`Quitar el correo ${index + 1}`}
+                    onClick={() => {
+                      emails.remove(index);
+                      focusAdd.current = true;
+                    }}
+                  />
+                ) : undefined
+              }
+            >
+              <Input
+                {...fieldAria(id, error)}
+                {...(index === 0 && !error ? { "aria-describedby": hintId } : {})}
+                {...form.register(`emails.${index}.address`)}
+                type="email"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+              />
+            </FormField>
+          );
+        })}
+        {full ? (
+          <p className="text-sm text-foreground-muted">
+            Un tercero admite hasta {PARTY_EMAILS_MAX} correos.
+          </p>
+        ) : (
+          <AddRowButton
+            ref={addRef}
+            onClick={() =>
+              emails.append(
+                { address: "" },
+                { focusName: `emails.${emails.fields.length}.address` },
+              )
+            }
+          >
+            <Plus aria-hidden="true" data-icon="inline-start" />
+            Agregar correo
+          </AddRowButton>
+        )}
+        {errors.emails?.root?.message && (
+          <p role="alert" className="text-xs text-danger">
+            {errors.emails.root.message}
+          </p>
+        )}
+      </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField id="party-email" label="Correo (opcional)" error={emailError}>
-          <Input
-            {...fieldAria("party-email", emailError)}
-            {...form.register("emails.0")}
-            type="email"
-            inputMode="email"
-            autoCapitalize="none"
-            spellCheck={false}
-          />
-        </FormField>
         <FormField id="party-phone" label="Teléfono (opcional)" error={errors.phone?.message}>
           <Input
             {...fieldAria("party-phone", errors.phone?.message)}

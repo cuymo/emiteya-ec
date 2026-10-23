@@ -244,7 +244,9 @@ Shared components own interaction consistency, not business policy.
   full width, 48 px tall, with a soft bluish gradient on hover instead of a solid fill. «Dividir el
   pago», «Agregar concepto», «Agregar línea», «Agregar pago» and the withholding editor's «Agregar
   impuesto», «Agregar forma de pago», «Agregar retención» and «Agregar documento sustento», and the
-  shipping guide editor's «Agregar detalle» and «Agregar destinatario» use it, so they always match.
+  shipping guide editor's «Agregar detalle» and «Agregar destinatario», and the party form's «Agregar
+  correo» use it, so they always match. A party holds up to three emails: at three, «Agregar correo»
+  gives way to a note with the limit, and each extra email has its own «Quitar» (add-email-delivery).
 - `NumberedItem` (`components/numbered-item.tsx`) is a numbered item of a form list, such as a
   debit note concept or a purchase settlement line (owner decisions, 2026-10-22): two columns, 10 %
   and 90 %; the first holds its label («Concepto 1», «Línea 2») vertical in primary blue over a soft

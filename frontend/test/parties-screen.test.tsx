@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
 import { PartiesScreen } from "@/features/parties/parties-screen";
+import { PartyDialog } from "@/features/parties/party-dialog";
 import { PartyFormScreen } from "@/features/parties/party-form";
 import {
   ADMIN_ME,
@@ -308,34 +309,6 @@ describe("página del formulario de tercero", () => {
     });
   });
 
-  it("corrige el primer correo y conserva los demás (add-email-delivery)", async () => {
-    const calls = renderForm(
-      {
-        "GET /api/v1/parties/p-1": () => ({
-          status: 200,
-          body: { data: party({ emails: ["compras@cliente.ec", "pagos@cliente.ec"] }) },
-        }),
-        "PUT /api/v1/parties/p-1": () => ({
-          status: 200,
-          body: { data: party({ emails: ["ventas@cliente.ec", "pagos@cliente.ec"], version: 2 }) },
-        }),
-      },
-      "p-1",
-    );
-    const form = await formOf("Tercero Corrección");
-    const user = userEvent.setup();
-    const email = within(form).getByLabelText("Correo (opcional)");
-    expect((email as HTMLInputElement).value).toBe("compras@cliente.ec");
-    await user.clear(email);
-    await user.type(email, " ventas@cliente.ec ");
-    await user.click(within(form).getByRole("button", { name: "Guardar cambios" }));
-    await vi.waitFor(() =>
-      expect(calls.find((c) => c.key === "PUT /api/v1/parties/p-1")?.body).toMatchObject({
-        emails: ["ventas@cliente.ec", "pagos@cliente.ec"],
-      }),
-    );
-  });
-
   it("el consumidor final no se corrige", async () => {
     renderForm(
       { "GET /api/v1/parties/p-cf": () => ({ status: 200, body: { data: CONSUMER } }) },
@@ -362,6 +335,175 @@ describe("página del formulario de tercero", () => {
       "/terceros",
     );
   }, 10_000);
+});
+
+// Hasta tres correos por tercero (add-email-delivery, tarea 9.1, design D14).
+describe("correos del tercero", () => {
+  const SAVED: Route = () => ({ status: 201, body: { data: party() } });
+  const emailInput = (form: HTMLElement, position: number) =>
+    within(form).getByLabelText(`Correo ${position}`) as HTMLInputElement;
+  const fillRequired = async (user: ReturnType<typeof userEvent.setup>, form: HTMLElement) => {
+    await within(form).findByText("Regla: 13 dígitos terminados en 001.");
+    await user.type(within(form).getByLabelText("Identificación"), "1790012345001");
+    await user.type(within(form).getByLabelText("Razón social o nombres"), "Comercial Andina S.A.");
+  };
+
+  it("registra un tercero con varios correos, recortados y en su orden", async () => {
+    const user = userEvent.setup();
+    const calls = renderForm({ "POST /api/v1/parties": SAVED });
+    const form = await formOf("Tercero Nuevo");
+    await fillRequired(user, form);
+    expect(within(form).getByRole("group", { name: "Correos (opcional)" })).toBeDefined();
+    await user.type(emailInput(form, 1), " compras@cliente.ec ");
+    await user.click(within(form).getByRole("button", { name: "Agregar correo" }));
+    // El correo nuevo recibe el foco.
+    expect(document.activeElement).toBe(emailInput(form, 2));
+    await user.keyboard("pagos@cliente.ec");
+    await user.click(within(form).getByRole("button", { name: "Registrar tercero" }));
+    await waitFor(() =>
+      expect(calls.find((c) => c.key === "POST /api/v1/parties")?.body).toMatchObject({
+        emails: ["compras@cliente.ec", "pagos@cliente.ec"],
+      }),
+    );
+  });
+
+  it("admite hasta tres correos: el tercero esconde «Agregar correo» y lo explica", async () => {
+    const user = userEvent.setup();
+    renderForm({});
+    const form = await formOf("Tercero Nuevo");
+    await user.click(within(form).getByRole("button", { name: "Agregar correo" }));
+    await user.click(within(form).getByRole("button", { name: "Agregar correo" }));
+    expect(emailInput(form, 3)).toBeDefined();
+    expect(within(form).queryByRole("button", { name: "Agregar correo" })).toBeNull();
+    expect(within(form).getByText("Un tercero admite hasta 3 correos.")).toBeDefined();
+  });
+
+  it("un correo repetido o inválido se marca junto a su campo y no se envía", async () => {
+    const user = userEvent.setup();
+    const calls = renderForm({ "POST /api/v1/parties": SAVED });
+    const form = await formOf("Tercero Nuevo");
+    await fillRequired(user, form);
+    await user.type(emailInput(form, 1), "compras@cliente.ec");
+    await user.click(within(form).getByRole("button", { name: "Agregar correo" }));
+    await user.keyboard("COMPRAS@cliente.ec");
+    await user.click(within(form).getByRole("button", { name: "Agregar correo" }));
+    await user.keyboard("no-es-correo");
+    await user.click(within(form).getByRole("button", { name: "Registrar tercero" }));
+    expect(await within(form).findByText("El correo está repetido.")).toBeDefined();
+    expect(emailInput(form, 1).getAttribute("aria-invalid")).toBeNull();
+    expect(emailInput(form, 2).getAttribute("aria-invalid")).toBe("true");
+    expect(emailInput(form, 2).getAttribute("aria-describedby")).toBe("party-email-1-error");
+    expect(emailInput(form, 3).getAttribute("aria-invalid")).toBe("true");
+    expect(calls.some((c) => c.key === "POST /api/v1/parties")).toBe(false);
+  });
+
+  it("quitar un correo deja los demás en su orden y lleva el foco a «Agregar correo»", async () => {
+    const user = userEvent.setup();
+    const calls = renderForm({ "POST /api/v1/parties": SAVED });
+    const form = await formOf("Tercero Nuevo");
+    await fillRequired(user, form);
+    await user.type(emailInput(form, 1), "a@cliente.ec");
+    await user.click(within(form).getByRole("button", { name: "Agregar correo" }));
+    await user.keyboard("b@cliente.ec");
+    await user.click(within(form).getByRole("button", { name: "Agregar correo" }));
+    await user.keyboard("c@cliente.ec");
+    await user.click(within(form).getByRole("button", { name: "Quitar el correo 2" }));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        within(form).getByRole("button", { name: "Agregar correo" }),
+      ),
+    );
+    expect([emailInput(form, 1).value, emailInput(form, 2).value]).toEqual([
+      "a@cliente.ec",
+      "c@cliente.ec",
+    ]);
+    // Con un solo correo no hay qué quitar: se deja vacío.
+    await user.click(within(form).getByRole("button", { name: "Quitar el correo 2" }));
+    expect(within(form).queryByRole("button", { name: /Quitar el correo/ })).toBeNull();
+    await user.click(within(form).getByRole("button", { name: "Registrar tercero" }));
+    await waitFor(() =>
+      expect(calls.find((c) => c.key === "POST /api/v1/parties")?.body).toMatchObject({
+        emails: ["a@cliente.ec"],
+      }),
+    );
+  });
+
+  it("al corregir un tercero muestra sus correos y conserva los que no se tocan", async () => {
+    const user = userEvent.setup();
+    const calls = renderForm(
+      {
+        "GET /api/v1/parties/p-1": () => ({
+          status: 200,
+          body: { data: party({ emails: ["compras@cliente.ec", "pagos@cliente.ec"] }) },
+        }),
+        "PUT /api/v1/parties/p-1": () => ({
+          status: 200,
+          body: { data: party({ emails: ["ventas@cliente.ec", "pagos@cliente.ec"], version: 2 }) },
+        }),
+      },
+      "p-1",
+    );
+    const form = await formOf("Tercero Corrección");
+    expect(emailInput(form, 1).value).toBe("compras@cliente.ec");
+    expect(emailInput(form, 2).value).toBe("pagos@cliente.ec");
+    await user.clear(emailInput(form, 1));
+    await user.type(emailInput(form, 1), " ventas@cliente.ec ");
+    await user.click(within(form).getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() =>
+      expect(calls.find((c) => c.key === "PUT /api/v1/parties/p-1")?.body).toMatchObject({
+        emails: ["ventas@cliente.ec", "pagos@cliente.ec"],
+        expectedVersion: 1,
+      }),
+    );
+  });
+
+  it("se recorre con el teclado: la ayuda, cada correo con su «Quitar» y luego «Agregar correo»", async () => {
+    const user = userEvent.setup();
+    renderForm(
+      {
+        "GET /api/v1/parties/p-1": () => ({
+          status: 200,
+          body: { data: party({ emails: ["compras@cliente.ec", "pagos@cliente.ec"] }) },
+        }),
+      },
+      "p-1",
+    );
+    const form = await formOf("Tercero Corrección");
+    within(form).getByLabelText("Dirección (opcional)").focus();
+    const order = [
+      within(form).getByRole("button", { name: "Ayuda: Correos" }),
+      emailInput(form, 1),
+      within(form).getByRole("button", { name: "Quitar el correo 1" }),
+      emailInput(form, 2),
+      within(form).getByRole("button", { name: "Quitar el correo 2" }),
+      within(form).getByRole("button", { name: "Agregar correo" }),
+      within(form).getByLabelText("Teléfono (opcional)"),
+    ];
+    for (const element of order) {
+      await user.tab();
+      expect(document.activeElement).toBe(element);
+    }
+  });
+
+  it("el alta rápida desde un comprobante también admite varios correos", async () => {
+    const user = userEvent.setup();
+    const calls = renderParties(
+      { "POST /api/v1/parties": SAVED },
+      ADMIN_ME,
+      <PartyDialog open onClose={() => undefined} onShowExisting={() => undefined} />,
+    );
+    const dialog = await screen.findByRole("dialog", { name: /Tercero/ });
+    await fillRequired(user, dialog);
+    await user.type(emailInput(dialog, 1), "compras@cliente.ec");
+    await user.click(within(dialog).getByRole("button", { name: "Agregar correo" }));
+    await user.keyboard("pagos@cliente.ec");
+    await user.click(within(dialog).getByRole("button", { name: "Registrar tercero" }));
+    await waitFor(() =>
+      expect(calls.find((c) => c.key === "POST /api/v1/parties")?.body).toMatchObject({
+        emails: ["compras@cliente.ec", "pagos@cliente.ec"],
+      }),
+    );
+  });
 });
 
 describe("pantalla Terceros sin permiso", () => {

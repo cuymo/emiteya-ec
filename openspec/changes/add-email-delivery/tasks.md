@@ -54,7 +54,7 @@ al terminarlo.
 
 ## 9. Fase 9 · Interfaz: terceros con hasta tres correos
 
-- [ ] 9.1 Llevar `PartyContactFields` (formulario y `PartyDialog`) a una lista de hasta tres correos con «Agregar correo» y quitar, y el error de cada uno junto a su campo; verificar con pruebas de componentes: alta con varios, límite de tres, repetido, inválido, quitar, edición de un tercero existente que conserva sus correos y teclado.
+- [x] 9.1 Llevar `PartyContactFields` (formulario y `PartyDialog`) a una lista de hasta tres correos con «Agregar correo» y quitar, y el error de cada uno junto a su campo; verificar con pruebas de componentes: alta con varios, límite de tres, repetido, inválido, quitar, edición de un tercero existente que conserva sus correos y teclado.
 
 ## 10. Fase 10 · Interfaz: el correo del comprobante
 
