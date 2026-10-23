@@ -150,23 +150,16 @@ describe("shell autenticado: comportamiento conservado", () => {
     await screen.findByText("contenido");
   });
 
-  it("el tema se elige en el menú de cuenta, también con las flechas", async () => {
-    // productize-invoice-editor-and-composition-foundation, spec «Tema accesible»: el grupo «Tema»
-    // vive solo en el menú de cuenta, a todas las anchuras.
+  it("la interfaz va siempre en claro y no ofrece elegir el tema", async () => {
+    // Decisión del propietario, 2026-10-22: siempre el tema claro, sin control de tema.
     const user = userEvent.setup();
     setViewportWidth(1280);
     api();
     renderShell();
     await user.click(await screen.findByRole("button", { name: "Cuenta de Ana Admin" }));
-    await user.click(await screen.findByRole("menuitemradio", { name: "Oscuro" }));
-    expect(document.documentElement.classList.contains("dark")).toBe(true);
-    await user.click(screen.getByRole("button", { name: "Cuenta de Ana Admin" }));
-    const dark = await screen.findByRole("menuitemradio", { name: "Oscuro" });
-    expect(dark.getAttribute("aria-checked")).toBe("true");
-    dark.focus();
-    await user.keyboard("{ArrowDown}");
-    expect(document.activeElement).toBe(screen.getByRole("menuitemradio", { name: "Sistema" }));
-    await user.keyboard("{Enter}");
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).queryAllByRole("menuitemradio")).toEqual([]);
+    expect(within(menu).queryByText("Tema")).toBeNull();
     expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 });
@@ -188,8 +181,11 @@ describe("contexto de la empresa", () => {
     const name = await screen.findByText("Ferretería Andina");
     const context = name.closest("[data-slot=company-context]") as HTMLElement;
     expect(context).not.toBeNull();
-    // No es un control: no abre ningún menú ni ofrece cambiar de empresa.
-    expect(context.closest("button, a, [role=button], [role=combobox]")).toBeNull();
+    // Va dentro de la identidad, que abre el menú de cuenta (decisión del propietario, 2026-10-22),
+    // y nunca ofrece cambiar de empresa.
+    const identity = context.closest("button") as HTMLElement;
+    expect(identity.getAttribute("aria-label")).toBe("Cuenta de Ana Admin");
+    expect(identity.getAttribute("aria-describedby")).toBe(context.closest("[id]:not(button)")?.id);
     expect(screen.queryByRole("menu")).toBeNull();
     expect(screen.queryByText(/cambiar de empresa/i)).toBeNull();
   });
@@ -498,8 +494,8 @@ describe("menú de cuenta", () => {
       "/mi-cuenta",
     );
     expect(within(menu).getByRole("menuitem", { name: "Cerrar sesión" })).toBeDefined();
-    // También en escritorio el tema vive en el menú de cuenta, y en ningún otro sitio.
-    expect(within(menu).getAllByRole("menuitemradio")).toHaveLength(3);
+    // Sin grupo de tema: la interfaz va siempre en claro.
+    expect(within(menu).queryAllByRole("menuitemradio")).toEqual([]);
   });
 
   it("cerrar sesión termina la sesión una sola vez y lleva al inicio de sesión", async () => {
@@ -514,19 +510,17 @@ describe("menú de cuenta", () => {
     expect(calls.filter((call) => call.key.startsWith("POST /api/auth/sign-out"))).toHaveLength(1);
   });
 
-  it("en un teléfono y en escritorio el tema está en el menú de cuenta, con la opción vigente marcada", async () => {
+  it("toda la identidad abre el menú de cuenta, también en un teléfono", async () => {
     const user = userEvent.setup();
     setViewportWidth(390);
-    api();
+    api({ displayName: "Ferretería Andina" });
     navigation.pathname = "/";
     renderShell();
-    await user.click(await screen.findByRole("button", { name: "Cuenta de Ana Admin" }));
+    // Un clic en el nombre de la empresa, dentro de la identidad, abre el menú.
+    await user.click(await screen.findByText("Ferretería Andina"));
     const menu = await screen.findByRole("menu");
-    const options = within(menu).getAllByRole("menuitemradio");
-    expect(options.map((option) => option.textContent)).toEqual(["Claro", "Oscuro", "Sistema"]);
-    expect(
-      within(menu).getByRole("menuitemradio", { name: "Sistema" }).getAttribute("aria-checked"),
-    ).toBe("true");
+    expect(within(menu).getByRole("menuitem", { name: "Mi cuenta" })).toBeDefined();
+    expect(within(menu).queryAllByRole("menuitemradio")).toEqual([]);
   });
 });
 

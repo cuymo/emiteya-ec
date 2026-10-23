@@ -1,11 +1,11 @@
 // Contexto de la empresa en la barra superior (adopt-premium-design-foundation-and-shell, design D11;
 // spec web-application-shell, «Contexto de la empresa visible»). Adapta el patrón visual de
 // `account-switcher.tsx` de la plantilla «Studio Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md) a un
-// contexto de solo lectura: no es un botón, no abre nada y no sugiere un cambio de empresa que el
-// sistema no tiene. Es presentación pura: el layout le pasa el estado de la empresa de la sesión. La
-// barra superior pone la ficha del edificio a su lado y la cuenta debajo.
+// contexto de solo lectura: no abre nada propio y no sugiere un cambio de empresa que el sistema no
+// tiene. Es presentación pura: el layout le pasa el estado de la empresa de la sesión. Va dentro del
+// disparador del menú de cuenta, con la ficha del edificio a su lado y la cuenta debajo (decisión del
+// propietario, 2026-10-22), así que solo usa elementos en línea.
 import { Building2, TriangleAlert } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export type CompanyContextState =
@@ -24,15 +24,15 @@ export function CompanyContext({
 }) {
   if (state.status === "loading") {
     return (
-      <div className={cn("flex min-w-0 items-center gap-2", className)}>
-        <Skeleton className="size-6 rounded-full" />
-        <Skeleton className="h-4 w-28" />
-      </div>
+      <span aria-hidden="true" className={cn("flex min-w-0 items-center gap-2", className)}>
+        <span className="size-6 rounded-full bg-muted motion-safe:animate-pulse" />
+        <span className="h-4 w-28 rounded-md bg-muted motion-safe:animate-pulse" />
+      </span>
     );
   }
   if (state.status === "error") {
     return (
-      <p
+      <span
         className={cn(
           "flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-warning",
           className,
@@ -40,12 +40,12 @@ export function CompanyContext({
       >
         <TriangleAlert aria-hidden="true" />
         <span className="truncate">No pudimos confirmar la empresa</span>
-      </p>
+      </span>
     );
   }
   if (state.status === "unnamed") {
     return (
-      <p
+      <span
         className={cn(
           "flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground [&>svg]:size-4 [&>svg]:shrink-0",
           className,
@@ -53,17 +53,17 @@ export function CompanyContext({
       >
         <Building2 aria-hidden="true" />
         <span className="truncate">Empresa sin datos registrados</span>
-      </p>
+      </span>
     );
   }
   return (
-    <p
+    <span
       data-slot="company-context"
       className={cn("flex min-w-0 items-center gap-2 text-sm font-semibold", className)}
       title={state.name}
     >
       <span className="sr-only">Empresa: </span>
       <span className="truncate">{state.name}</span>
-    </p>
+    </span>
   );
 }

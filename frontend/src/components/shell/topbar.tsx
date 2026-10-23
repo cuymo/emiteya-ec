@@ -10,7 +10,7 @@
 // «Abrir navegación» (adopt-premium-design-foundation-and-shell, design D29).
 "use client";
 
-import { Building2, Maximize, Menu, Minimize } from "lucide-react";
+import { Maximize, Menu, Minimize } from "lucide-react";
 import { useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -124,20 +124,8 @@ export function Topbar({
           {search}
           <FullscreenToggle />
           {notifications}
-          <div data-slot="topbar-identity" className="flex min-w-0 items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="hidden size-9 shrink-0 items-center justify-center rounded-md bg-muted text-foreground-muted lg:inline-flex"
-            >
-              <Building2 className="size-5" />
-            </span>
-            <div className="flex min-w-0 flex-col items-start gap-0.5">
-              <div className="flex max-w-28 min-w-0 items-center text-sm md:max-w-56">
-                {company}
-              </div>
-              <AccountMenu />
-            </div>
-          </div>
+          {/* Toda la identidad abre el menú de cuenta (decisión del propietario, 2026-10-22). */}
+          <AccountMenu company={company} />
         </div>
       </div>
     </header>

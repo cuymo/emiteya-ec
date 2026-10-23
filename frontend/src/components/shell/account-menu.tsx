@@ -1,51 +1,62 @@
 // Menú de cuenta (adopt-premium-design-foundation-and-shell, design D8 y D11; spec
-// web-application-shell, «Menú de cuenta» y «Tema accesible»). Derivado de `nav-user.tsx` de la
-// plantilla «Studio Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md), con la cuenta real de la sesión:
-// sin imagen remota, sin Billing ni Notifications de demostración. El tema vive aquí a todas las
-// anchuras y en ningún otro sitio: nunca hay dos controles de tema
-// (productize-invoice-editor-and-composition-foundation, spec «Tema accesible»). El disparador es el
-// nombre de la persona con un chevrón, debajo de la empresa en la barra superior; en un teléfono su
-// zona táctil crece hasta 44 px sin mover nada.
+// web-application-shell, «Menú de cuenta»). Derivado de `nav-user.tsx` de la plantilla «Studio
+// Admin» (MIT; frontend/THIRD_PARTY_NOTICES.md), con la cuenta real de la sesión: sin imagen remota,
+// sin Billing ni Notifications de demostración. El disparador es toda la identidad de la barra
+// superior (decisión del propietario, 2026-10-22): la ficha del edificio, la empresa y, debajo, el
+// nombre de la persona con un chevrón; en un teléfono su zona táctil crece hasta 44 px sin mover
+// nada. Sin control de tema: la interfaz siempre va en claro (decisión del propietario, 2026-10-22).
 "use client";
 
-import { ChevronDown, LogOut, Monitor, Moon, Sun, UserRound } from "lucide-react";
+import { Building2, ChevronDown, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useSession } from "@/components/session";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ROLE_LABELS } from "@/lib/permissions";
 
-const THEMES = [
-  { value: "light", label: "Claro", icon: Sun },
-  { value: "dark", label: "Oscuro", icon: Moon },
-  { value: "system", label: "Sistema", icon: Monitor },
-] as const;
-
-export function AccountMenu() {
+export function AccountMenu({ company }: { company?: ReactNode }) {
   const { me, signOut } = useSession();
-  const { theme, setTheme } = useTheme();
   const [leaving, setLeaving] = useState(false);
+  const companyId = useId();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
           aria-label={`Cuenta de ${me.name}`}
+          // La empresa, que el nombre accesible no repite, se anuncia como descripción.
+          {...(company ? { "aria-describedby": companyId } : {})}
           title={me.name}
-          className="relative flex max-w-28 min-w-0 items-center gap-1 rounded-sm text-xs text-foreground-muted outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring max-md:after:absolute max-md:after:-inset-y-3 max-md:after:inset-x-0 md:max-w-56"
+          data-slot="topbar-identity"
+          className="group/identity relative flex min-w-0 items-center gap-3 rounded-md px-1.5 py-1 text-left outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring max-md:after:absolute max-md:after:-inset-y-1.5 max-md:after:inset-x-0"
         >
-          <span className="truncate">{me.name}</span>
-          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+          <span
+            aria-hidden="true"
+            className="hidden size-9 shrink-0 items-center justify-center rounded-md bg-muted text-foreground-muted group-hover/identity:bg-surface lg:inline-flex"
+          >
+            <Building2 className="size-5" />
+          </span>
+          <span className="flex min-w-0 flex-col items-start gap-0.5">
+            {company && (
+              <span
+                id={companyId}
+                className="flex max-w-28 min-w-0 items-center text-sm md:max-w-56"
+              >
+                {company}
+              </span>
+            )}
+            <span className="flex max-w-28 min-w-0 items-center gap-1 text-xs text-foreground-muted group-hover/identity:text-foreground md:max-w-56">
+              <span className="truncate">{me.name}</span>
+              <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+            </span>
+          </span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-56">
@@ -61,20 +72,6 @@ export function AccountMenu() {
             Mi cuenta
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Tema</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          aria-label="Tema"
-          value={theme ?? "system"}
-          onValueChange={setTheme}
-        >
-          {THEMES.map(({ value, label, icon: Icon }) => (
-            <DropdownMenuRadioItem key={value} value={value}>
-              <Icon aria-hidden="true" />
-              {label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={leaving}

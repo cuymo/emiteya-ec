@@ -184,7 +184,6 @@ export function NotificationsMenu({ className }: { className?: string }) {
   const notices = useNotices();
   const [open, setOpen] = useState(false);
   const pending = notices.length;
-  const urgent = notices.some((notice) => notice.tone === "danger");
   const label =
     pending === 0
       ? "Avisos: ninguno pendiente"
@@ -205,12 +204,9 @@ export function NotificationsMenu({ className }: { className?: string }) {
                 <span
                   aria-hidden="true"
                   data-slot="notifications-count"
-                  className={cn(
-                    "absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[0.6875rem] leading-none font-semibold tabular-nums ring-2 ring-background",
-                    urgent
-                      ? "bg-danger text-danger-foreground"
-                      : "bg-warning text-warning-foreground",
-                  )}
+                  // Siempre en verde (decisión del propietario, 2026-10-22); los que impiden emitir
+                  // siguen primero en la lista, con su tono.
+                  className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-success px-1 text-[0.6875rem] leading-none font-semibold text-success-foreground tabular-nums ring-2 ring-background"
                 >
                   {pending > 9 ? "9+" : pending}
                 </span>

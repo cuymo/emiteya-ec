@@ -330,31 +330,23 @@ resultados de registros concretos.
 - **WHEN** un operador busca «Usuarios» en la paleta
 - **THEN** no aparece el destino Usuarios
 
-### Requirement: Tema accesible
-El shell SHALL permitir elegir el tema Claro, Oscuro o Sistema con un grupo de opciones accesible
-llamado «Tema», que se recorre con las flechas, dentro del menú de cuenta a todas las anchuras. La
-elección SHALL recordarse y, sin elección, SHALL seguirse la preferencia del sistema. La barra
-superior no SHALL mostrar un control de tema, y a ningún ancho SHALL haber dos controles de tema.
+### Requirement: Tema claro
+La interfaz SHALL mostrarse siempre en el tema claro, sin seguir la preferencia del sistema, y no
+SHALL ofrecer ningún control para cambiar el tema: ni en la barra superior ni en el menú de cuenta
+(decisión del propietario, 2026-10-22).
 
-#### Scenario: Cambiar el tema
-- **WHEN** un usuario abre el menú de cuenta, elige Oscuro en el grupo «Tema» y recarga la pantalla
-- **THEN** la interfaz sigue en tema oscuro
+#### Scenario: Sistema en modo oscuro
+- **WHEN** un usuario abre la aplicación con su sistema en modo oscuro
+- **THEN** la interfaz se muestra en el tema claro
 
-#### Scenario: Teclado
-- **WHEN** un usuario enfoca el grupo «Tema» del menú de cuenta y pulsa la flecha derecha
-- **THEN** se selecciona la opción siguiente y la interfaz cambia de tema
-
-#### Scenario: Pantalla estrecha
-- **WHEN** un usuario abre el menú de cuenta en un teléfono, o en escritorio
-- **THEN** encuentra las opciones de tema Claro, Oscuro y Sistema, con la vigente marcada
-
-#### Scenario: Un solo control por ancho
-- **WHEN** un usuario usa la aplicación en escritorio y luego en un teléfono
-- **THEN** en ninguno de los dos hay un control de tema en la barra superior, y el del menú de cuenta cambia el mismo tema
+#### Scenario: Sin control de tema
+- **WHEN** un usuario abre el menú de cuenta, en un teléfono o en escritorio
+- **THEN** el menú no ofrece elegir el tema, y la barra superior tampoco
 
 ### Requirement: Menú de cuenta
 El shell SHALL ofrecer un menú de cuenta, con nombre accesible «Cuenta de» seguido del nombre del
-usuario, que muestre su nombre y su rol, lleve a Mi cuenta y permita cerrar sesión. Cerrar sesión
+usuario, que muestre su nombre y su rol, lleve a Mi cuenta y permita cerrar sesión. Toda la identidad
+de la barra superior, la empresa y el nombre de la persona, SHALL abrir el menú. Cerrar sesión
 SHALL terminar la sesión y llevar al inicio de sesión.
 
 #### Scenario: Contenido del menú
@@ -456,7 +448,7 @@ de avisos pendientes, que abre su lista. Cada aviso SHALL salir de una condició
 informa, y SHALL desaparecer cuando se resuelve: la firma electrónica vencida, sin su clave o por
 vencer; la empresa que todavía no puede emitir, con lo que le falta; los comprobantes que requieren
 atención; los devueltos o no autorizados en los últimos 30 días; y los productos agotados. Los que
-impiden emitir SHALL ir primero y teñir el contador de rojo. Cada aviso SHALL llevar a su sección
+impiden emitir SHALL ir primero; el contador SHALL ir siempre en verde. Cada aviso SHALL llevar a su sección
 solo si el rol puede abrirla; si no, SHALL decir a quién pedírselo. Un mismo problema no SHALL
 avisarse dos veces.
 
@@ -470,7 +462,7 @@ avisarse dos veces.
 
 #### Scenario: Firma vencida
 - **WHEN** la firma electrónica venció y por eso la empresa no puede emitir
-- **THEN** la lista tiene un solo aviso, el de la firma vencida, y el contador va en rojo
+- **THEN** la lista tiene un solo aviso, el de la firma vencida, y el contador cuenta uno
 
 #### Scenario: Sin avisos
 - **WHEN** no hay ninguna condición pendiente

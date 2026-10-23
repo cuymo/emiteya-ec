@@ -161,7 +161,7 @@ from the reference template's dashboard layout (ADR 0028).
   No theme control (it lives in the account menu) and no help button: the product has none.
 - **Notifications** (`NotificationsMenu`, `features/notifications/notifications-menu.tsx`; owner
   decision, 2026-10-22). A round bell left of the identity, at every width, with the number of
-  pending notices (red when one blocks emission, amber otherwise; «9+» past nine) and the name
+  pending notices (always green, owner decision 2026-10-22; «9+» past nine) and the name
   «Avisos: N pendientes». It opens a popover with the list. Each notice is a condition the server
   already reports, not an event, so it disappears once resolved; there is no read state.
   - **Signature** (`/signing-certificate/validity`): expired or without its key (red), or expiring
@@ -193,11 +193,12 @@ from the reference template's dashboard layout (ADR 0028).
     «Emitir» and in its confirmation (`EmissionEnvironmentNotice`, spec `document-emission`).
   - **Signature:** the certificate expiry notice stays as a strip under the topbar, and is also
     one of the notifications.
-- **Theme.** The «Tema» group (Claro, Oscuro, Sistema) lives in the account menu as radio items at
-  every width, walked with the arrows; the choice is remembered by next-themes. The topbar has no
-  theme control, so there is never more than one.
-- **Account menu.** Its trigger is the person's name with a chevron, under the company; on a phone
-  its touch area grows to 44px. Its accessible name is «Cuenta de {nombre}». It shows the name,
+- **Theme.** Always light (owner decision, 2026-10-22): next-themes forces the light theme and
+  ignores the system preference, and there is no theme control anywhere. The dark tokens stay in
+  `globals.css`, unused.
+- **Account menu.** Its trigger is the whole identity (owner decision, 2026-10-22): the building
+  tile, the company and, under it, the person's name with a chevron; the company is announced as
+  its description. On a phone its touch area grows to 44px. Its accessible name is «Cuenta de {nombre}». It shows the name,
   email and role,
   plus Mi cuenta and Cerrar sesión, which disables itself after the first selection.
 - **Skip link.** «Saltar al contenido» is the first focusable element and targets `main#contenido`.

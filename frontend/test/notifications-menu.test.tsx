@@ -103,9 +103,10 @@ describe("avisos de la barra superior", () => {
       "GET /api/v1/dashboard": summary({ attention: 3, rejected: 2, outOfStock: 1 }),
     });
     await waitFor(async () => expect(await bell("Avisos: 5 pendientes")).toBeDefined());
-    // Hay un aviso que impide emitir: el contador va en rojo.
+    // El contador va siempre en verde (decisión del propietario, 2026-10-22); lo que impide emitir
+    // va primero en la lista.
     expect(document.querySelector("[data-slot=notifications-count]")?.className).toContain(
-      "bg-danger",
+      "bg-success",
     );
     const list = await open("Avisos: 5 pendientes");
     const items = within(list).getAllByRole("listitem");
