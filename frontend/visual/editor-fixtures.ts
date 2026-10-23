@@ -26,8 +26,29 @@ type CatalogRow = {
   code: string;
   label: string;
   rate?: { taxKind: "IVA" | "ICE" | "IRBPNR"; rateKind: string; percentage: string | null };
+  /** Tipos de identificación: su regla de formato y si está reservado. */
+  rule?: { description: string; reservedFor: "CONSUMER_FINAL" | null };
 };
 const CATALOG_ROWS: Record<string, CatalogRow[]> = {
+  // El alta de un tercero (add-email-delivery, tarea 11.3).
+  "identification-type": [
+    {
+      code: "04",
+      label: "RUC",
+      rule: { description: "13 dígitos terminados en 001", reservedFor: null },
+    },
+    { code: "05", label: "CÉDULA", rule: { description: "10 dígitos", reservedFor: null } },
+    {
+      code: "06",
+      label: "PASAPORTE",
+      rule: { description: "Hasta 20 caracteres", reservedFor: null },
+    },
+    {
+      code: "07",
+      label: "VENTA A CONSUMIDOR FINAL",
+      rule: { description: "Reservado", reservedFor: "CONSUMER_FINAL" },
+    },
+  ],
   "payment-method": [
     { code: "01", label: "SIN UTILIZACION DEL SISTEMA FINANCIERO" },
     { code: "16", label: "TARJETA DE DÉBITO" },
@@ -81,7 +102,7 @@ function catalogEntries(catalogType: string): Reply | null {
         datasetVersion: 1,
         rate: row.rate ? { ...row.rate, sriTaxCode: row.rate.taxKind === "IVA" ? "2" : "3" } : null,
         taxKind: null,
-        identificationRule: null,
+        identificationRule: row.rule ? { pattern: null, ...row.rule } : null,
         withholding: null,
       };
       return {
@@ -116,7 +137,7 @@ const party = (id: string, identification: string, legalName: string, extra = {}
   identification,
   legalName,
   address: "Quito",
-  email: null,
+  emails: [] as string[],
   phone: null,
   roles: ["CUSTOMER"],
   status: "ACTIVE",
@@ -126,7 +147,10 @@ const party = (id: string, identification: string, legalName: string, extra = {}
   ...extra,
 });
 const CUSTOMERS = [
-  party("party-1", "0992877878001", "EL PERNO CIA. LTDA."),
+  // Con dos correos: la confirmación de la emisión dice adónde irá el correo (add-email-delivery).
+  party("party-1", "0992877878001", "EL PERNO CIA. LTDA.", {
+    emails: ["compras@elperno.ec", "pagos@elperno.ec"],
+  }),
   party("party-2", "1790012345001", "Comercial Andina S.A."),
   party("party-3", "0102030405", "María José Paredes"),
 ];
@@ -352,6 +376,11 @@ export function editorReply(
           },
         };
   }
+  const partyMatch = /^\/api\/v1\/parties\/([^/]+)$/.exec(path);
+  if (partyMatch) {
+    const found = [...CUSTOMERS, CONSUMER_FINAL].find((row) => row.id === partyMatch[1]);
+    if (found) return ok(found);
+  }
   const catalogMatch = /^\/api\/v1\/fiscal-catalogs\/([a-z-]+)\/entries$/.exec(path);
   if (catalogMatch) return catalogEntries(catalogMatch[1]!);
   switch (path) {
@@ -381,6 +410,14 @@ export function editorReply(
         query,
       );
     }
+    // El correo de la empresa listo, con su correo de prueba (add-email-delivery).
+    case "/api/v1/email/availability":
+      return ok({
+        configured: true,
+        deliveryEnabled: true,
+        autoSend: true,
+        testRecipient: "pruebas@ferreteriaandina.ec",
+      });
     case "/api/v1/products":
       return page(PRODUCTS, query);
     case "/api/v1/products/tax-summary":

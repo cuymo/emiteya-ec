@@ -320,6 +320,37 @@ function reply(
           },
         },
       };
+    // El resumen que leen Inicio y la campana de Avisos, con dos comprobantes sin enviar por correo
+    // (add-email-delivery).
+    case "GET /api/v1/dashboard":
+      return {
+        status: 200,
+        body: {
+          data: {
+            environment,
+            today: "2026-10-14",
+            month: {
+              start: "2026-10-01",
+              invoices: {
+                authorizedTotal: "0.00",
+                authorizedCount: 0,
+                issuedCount: 0,
+                previousAuthorizedTotal: "0.00",
+              },
+              byType: [],
+            },
+            monthly: ["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"].map(
+              (month) => ({ month, authorizedTotal: "0.00", authorizedCount: 0 }),
+            ),
+            attention: { count: 0, rejectedLast30Days: 0, emailFailed: 2 },
+            drafts: { invoices: 0 },
+            inventory: { outOfStock: 0 },
+            topCustomers: [],
+            topProducts: [],
+            recent: [],
+          },
+        },
+      };
     case "GET /api/v1/invoices":
       return invoiceList(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
     case "GET /api/v1/invoices/entries":

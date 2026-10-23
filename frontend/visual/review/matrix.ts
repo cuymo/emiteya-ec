@@ -278,7 +278,7 @@ export const STATES: State[] = [
     widths: MAIN,
     dark: PAIR,
     ready: async (page) => {
-      await heading(page, "Borrador de factura");
+      await heading(page, "Factura Borrador");
       await shows(page, "USD 61,81");
     },
   },
@@ -291,7 +291,7 @@ export const STATES: State[] = [
     group: "editor",
     widths: ["1024", "390", "1440z200"],
     viewportOnly: true,
-    ready: (page) => heading(page, "Borrador de factura"),
+    ready: (page) => heading(page, "Factura Borrador"),
     act: async (page) => {
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
       await expect(page.getByRole("button", { name: "Emitir factura" })).toBeInViewport();
@@ -304,7 +304,7 @@ export const STATES: State[] = [
     group: "editor",
     widths: KEY,
     ready: async (page) => {
-      await heading(page, "Borrador de factura");
+      await heading(page, "Factura Borrador");
       await shows(page, /no tiene el rol de cliente/);
     },
   },
@@ -314,7 +314,7 @@ export const STATES: State[] = [
     path: "/borradores/borrador-listo",
     group: "editor",
     widths: KEY,
-    ready: (page) => heading(page, "Borrador de factura"),
+    ready: (page) => heading(page, "Factura Borrador"),
     act: async (page) => {
       const quantity = page.getByLabel("Cantidad").first();
       await quantity.fill("5");
@@ -328,7 +328,7 @@ export const STATES: State[] = [
     group: "editor",
     widths: PAIR,
     ready: async (page) => {
-      await heading(page, "Borrador de factura");
+      await heading(page, "Factura Borrador");
       await shows(page, /ya no está habilitada/);
     },
   },
@@ -338,7 +338,7 @@ export const STATES: State[] = [
     path: "/borradores/borrador-incompleto",
     group: "editor",
     widths: PAIR,
-    ready: (page) => heading(page, "Borrador de factura"),
+    ready: (page) => heading(page, "Factura Borrador"),
   },
   {
     route: "borrador",
@@ -347,10 +347,25 @@ export const STATES: State[] = [
     group: "editor",
     widths: PAIR,
     viewportOnly: true,
-    ready: (page) => heading(page, "Borrador de factura"),
+    ready: (page) => heading(page, "Factura Borrador"),
     act: async (page) => {
       await page.getByRole("button", { name: "Emitir factura" }).click();
       await expect(page.getByRole("alertdialog").or(page.getByRole("dialog"))).toBeVisible();
+    },
+  },
+  // En Producción, la confirmación dice a qué correos del comprador irá (add-email-delivery).
+  {
+    route: "borrador",
+    state: "confirmacion-produccion",
+    path: "/borradores/borrador-listo",
+    group: "editor",
+    scenario: { environment: "PRODUCTION" },
+    widths: PAIR,
+    viewportOnly: true,
+    ready: (page) => heading(page, "Factura Borrador"),
+    act: async (page) => {
+      await page.getByRole("button", { name: "Emitir factura" }).click();
+      await expect(page.getByText(/^Se enviará por correo a: /)).toBeVisible();
     },
   },
   {
@@ -360,7 +375,7 @@ export const STATES: State[] = [
     group: "editor",
     widths: ["1440"],
     viewportOnly: true,
-    ready: (page) => heading(page, "Borrador de factura"),
+    ready: (page) => heading(page, "Factura Borrador"),
     act: async (page) => {
       await page.getByRole("button", { name: "Emitir factura" }).click();
       await expect(page.getByRole("alertdialog").or(page.getByRole("dialog"))).toBeVisible();
@@ -373,7 +388,7 @@ export const STATES: State[] = [
     group: "editor",
     scenario: { environment: "PRODUCTION" },
     widths: PAIR,
-    ready: (page) => heading(page, "Borrador de factura"),
+    ready: (page) => heading(page, "Factura Borrador"),
   },
   {
     route: "borrador",
@@ -382,7 +397,7 @@ export const STATES: State[] = [
     group: "editor",
     scenario: { persona: "operator", overrides: UNKNOWN_ENVIRONMENT },
     widths: PAIR,
-    ready: (page) => heading(page, "Borrador de factura"),
+    ready: (page) => heading(page, "Factura Borrador"),
   },
   // Un editor heredado que emite: la nota de crédito.
   {
@@ -458,6 +473,25 @@ export const STATES: State[] = [
     act: async (page) => {
       await page.getByRole("button", { name: "Enviar correo de prueba" }).click();
       await expect(page.getByRole("dialog", { name: "Enviar correo de prueba" })).toBeVisible();
+    },
+  },
+  // Un tercero con varios correos (add-email-delivery, tarea 9.1).
+  {
+    route: "tercero",
+    state: "nuevo-con-correos",
+    path: "/terceros/nuevo",
+    group: "listas",
+    widths: PAIR,
+    ready: async (page) => {
+      await heading(page, "Tercero");
+      await expect(page.getByRole("button", { name: "Agregar correo" })).toBeVisible();
+    },
+    act: async (page) => {
+      await page.getByRole("textbox", { name: "Correo 1", exact: true }).fill("compras@elperno.ec");
+      await page.getByRole("button", { name: "Agregar correo" }).click();
+      await page.getByRole("textbox", { name: "Correo 2", exact: true }).fill("pagos@elperno.ec");
+      await page.getByRole("button", { name: "Agregar correo" }).click();
+      await expect(page.getByText("Un tercero admite hasta 3 correos.")).toBeVisible();
     },
   },
   {
