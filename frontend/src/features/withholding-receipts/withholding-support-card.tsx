@@ -25,7 +25,6 @@ import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -351,9 +350,6 @@ export function SupportCard({
         </FormField>
       </div>
 
-      {/* Un separador entre cada grupo con su botón de agregar (decisión del propietario,
-          2026-10-22). */}
-      <Separator />
       {/* Sin título visible: su nota va en la etiqueta del primer «Impuesto». */}
       <SubList title="Impuestos del documento" hideTitle>
         <ol className="flex flex-col gap-2">
@@ -515,7 +511,6 @@ export function SupportCard({
         </AddRowButton>
       </SubList>
 
-      <Separator />
       <SubList title="Formas de pago" hideTitle>
         <ol className="flex flex-col gap-2">
           {payments.fields.map((field, p) => {
@@ -598,7 +593,6 @@ export function SupportCard({
         </AddRowButton>
       </SubList>
 
-      <Separator />
       <SubList title="Retenciones" hideTitle>
         <ol className="flex flex-col gap-2">
           {items.fields.map((field, i) => {

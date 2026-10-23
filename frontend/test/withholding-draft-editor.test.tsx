@@ -723,8 +723,8 @@ describe("pedidos del propietario sobre la retención (2026-10-22)", () => {
     await user.click(within(tax).getByRole("radio", { name: "ICE" }));
     expect(within(tax).getByRole("textbox", { name: "Tarifa" })).toBeDefined();
     expect(row?.className).toContain("sm:grid-cols-3");
-    // Un separador entre cada grupo con su botón de agregar.
-    expect(fresh.querySelectorAll("[data-slot=separator]")).toHaveLength(3);
+    // Sin separadores entre los grupos (decisión del propietario, 2026-10-23).
+    expect(fresh.querySelectorAll("[data-slot=separator]")).toHaveLength(0);
   });
 
   it("títulos más discretos, el documento con su número en la franja y Factura por defecto", async () => {
