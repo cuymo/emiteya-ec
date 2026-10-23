@@ -7,7 +7,7 @@ al terminarlo.
 ## 1. Fase 1 · Base: dependencias, secretos y configuración
 
 - [x] 1.1 Escribir el ADR 0029 (cliente SMTP nodemailer; `smtp-server` solo para pruebas; Mailpit solo en el despliegue de revisión) y agregar las dependencias al backend en versión exacta, con sus filas en `docs/architecture/stack.md` y la excepción en `docs/architecture/integrations.md`; verificar con `corepack pnpm security:dependencies`.
-- [ ] 1.2 Mover el cifrado de sobres AES-256-GCM de `certificate-vault.ts` a `backend/src/platform/secrets/` como función genérica y hacer que la bóveda de la firma la use sin cambiar su formato ni sus AAD; verificar con las pruebas existentes de la bóveda y pruebas unitarias nuevas del sobre (ida y vuelta, AAD distinto, versión de clave desconocida, datos alterados).
+- [x] 1.2 Mover el cifrado de sobres AES-256-GCM de `certificate-vault.ts` a `backend/src/platform/secrets/` como función genérica y hacer que la bóveda de la firma la use sin cambiar su formato ni sus AAD; verificar con las pruebas existentes de la bóveda y pruebas unitarias nuevas del sobre (ida y vuelta, AAD distinto, versión de clave desconocida, datos alterados).
 - [ ] 1.3 Agregar a `backend/src/config/env.ts` `EMAIL_DELIVERY_ENABLED` (por defecto `0`), `EMAIL_ALLOW_PLAINTEXT_SMTP` (por defecto `0`), `EMAIL_SMTP_CONNECTION_TIMEOUT_MS`, `EMAIL_SMTP_SOCKET_TIMEOUT_MS` y `EMAIL_JOB_*`, con `backend/.env.example`; verificar con las pruebas de configuración (valores por defecto, rangos y rechazos sin secretos).
 
 ## 2. Fase 2 · Datos

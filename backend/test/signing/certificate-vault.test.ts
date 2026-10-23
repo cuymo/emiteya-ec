@@ -103,4 +103,26 @@ describe("custodia cifrada (design D5, ADR 0011)", () => {
       expect((error as Error).cause).toBeUndefined();
     }
   });
+
+  it("abre un secreto sellado antes de mover el cifrado a platform/secrets (formato 1 intacto)", () => {
+    // Sellado con la bóveda anterior (add-email-delivery, tarea 1.2): clave de prueba, sin secretos.
+    const hex = (value: string) => Buffer.from(value, "hex");
+    const golden = {
+      formatVersion: 1,
+      keyVersion: "1",
+      keyCheck: hex("1f253e362d60fbf0e08631c6f4703cda6397b25a5b0bd39acbf947e9c906b9fa"),
+      wrappedKey: hex(
+        "1ce52f40f3c83f108bbbbd1a695a679e04306031cf9a120c231a2b2570290f708a26860a91fbf69b318205ba11b45672",
+      ),
+      wrappedKeyNonce: hex("dbdebba5f366fc0424edf2cd"),
+      p12Ciphertext: hex("2013c4a183f3490ed7590a4b04df1134f9ae1f369899e25389a5"),
+      p12Nonce: hex("15d730866b3e9665affc5382"),
+      passwordCiphertext: hex("161cb8cc809bba4cbca1e21c2ac14f97091a49d92e4a14c7881f6021a04c8c"),
+      passwordNonce: hex("f717e04428be0c828aaa5f0f"),
+    };
+    expect(vault.canOpen(golden)).toBe(true);
+    const opened = vault.open(golden, binding);
+    expect(opened.p12.reveal().toString()).toBe("p12-dorado");
+    expect(opened.password.reveal()).toBe("clave-dorada-ñ");
+  });
 });

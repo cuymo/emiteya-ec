@@ -21,7 +21,8 @@ backend/src/
 ├── config/          entorno validado con Zod (env.ts)
 ├── platform/        http (correlación, errores, 404), logging, metrics (y tiempos por etapa), health,
 │                    lifecycle, db, decimal, idempotency, search, workers (primitiva de pool y sus
-│                    instancias criptográfica y del RIDE) y jobs (cola durable)
+│                    instancias criptográfica y del RIDE), jobs (cola durable) y secrets (sobre
+│                    AES-256-GCM con la clave maestra de custodia, para la firma y la contraseña SMTP)
 ├── generated/       cliente de Prisma generado (no versionado)
 ├── commands/        comandos de servidor sin ruta HTTP (admin:recover)
 └── modules/         un directorio por módulo con domain / application / infrastructure

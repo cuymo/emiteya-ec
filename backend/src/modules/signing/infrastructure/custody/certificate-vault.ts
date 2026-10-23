@@ -1,14 +1,17 @@
 // Cifrado envolvente de la firma (ADR 0011, design D5, formato 1). Una clave de datos aleatoria
 // por certificado cifra el P12 y la contraseña con AES-256-GCM; la clave maestra la envuelve. Cada
 // secreto guarda la versión de la clave maestra y un HMAC que permite saber si la clave configurada
-// es la correcta sin descifrar nada. Rotar será volver a envolver la clave de datos.
+// es la correcta sin descifrar nada. Rotar será volver a envolver la clave de datos. El cifrado es el
+// sobre genérico de `platform/secrets` (add-email-delivery, design D9); los AAD y la etiqueta de la
+// comprobación son los de siempre, así que los secretos ya guardados se siguen abriendo.
 import {
-  createCipheriv,
-  createDecipheriv,
-  createHmac,
-  randomBytes,
-  timingSafeEqual,
-} from "node:crypto";
+  type EnvelopeContext,
+  EnvelopeError,
+  keyCheckMatches,
+  type MasterKeyring,
+  openEnvelope,
+  sealEnvelope,
+} from "../../../../platform/secrets/envelope.ts";
 import {
   CustodyError,
   type CertificateVault,
@@ -17,108 +20,77 @@ import {
 } from "../../application/ports.ts";
 import { SecretBytes, SecretText, type SigningMaterial } from "../../domain/secret.ts";
 
-export const FORMAT_VERSION = 1;
-const NONCE_BYTES = 12;
-const TAG_BYTES = 16;
+export type { MasterKeyring } from "../../../../platform/secrets/envelope.ts";
 
-/** Claves maestras por versión; hoy se configura una, la activa. */
-export type MasterKeyring = Readonly<{ activeVersion: string; keys: ReadonlyMap<string, Buffer> }>;
+export const FORMAT_VERSION = 1;
 
 const fieldAad = (b: SecretBinding, field: "p12" | "password") =>
   Buffer.from(`signing-certificate|${FORMAT_VERSION}|${b.companyId}|${b.certificateId}|${field}`);
-const wrapAad = (b: SecretBinding, keyVersion: string) =>
-  Buffer.from(
-    `signing-certificate-key|${FORMAT_VERSION}|${keyVersion}|${b.companyId}|${b.certificateId}`,
-  );
-const keyCheckOf = (masterKey: Buffer, keyVersion: string) =>
-  createHmac("sha256", masterKey).update(`signing-certificate-key-check|${keyVersion}`).digest();
 
-function encrypt(key: Buffer, plaintext: Buffer, aad: Buffer) {
-  const nonce = randomBytes(NONCE_BYTES);
-  const cipher = createCipheriv("aes-256-gcm", key, nonce).setAAD(aad);
-  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final(), cipher.getAuthTag()]);
-  return { ciphertext, nonce };
-}
+const contextOf = (b: SecretBinding): EnvelopeContext => ({
+  wrapAad: (keyVersion) =>
+    Buffer.from(
+      `signing-certificate-key|${FORMAT_VERSION}|${keyVersion}|${b.companyId}|${b.certificateId}`,
+    ),
+  keyCheckLabel: (keyVersion) => `signing-certificate-key-check|${keyVersion}`,
+});
 
-function decrypt(key: Buffer, ciphertext: Buffer, nonce: Buffer, aad: Buffer): Buffer {
-  const tag = ciphertext.subarray(ciphertext.length - TAG_BYTES);
-  const body = ciphertext.subarray(0, ciphertext.length - TAG_BYTES);
-  const decipher = createDecipheriv("aes-256-gcm", key, nonce).setAAD(aad).setAuthTag(tag);
-  return Buffer.concat([decipher.update(body), decipher.final()]);
-}
+// La comprobación de la clave no depende del certificado: solo de la clave maestra y su versión.
+const KEY_CHECK_CONTEXT = contextOf({ companyId: "", certificateId: "" });
 
 export function createCertificateVault(keyring: MasterKeyring): CertificateVault {
-  const masterKey = (version: string) => {
-    const key = keyring.keys.get(version);
-    if (!key) throw new CustodyError();
-    return key;
-  };
-
   return {
     seal({ p12, password }, binding) {
-      const keyVersion = keyring.activeVersion;
-      const master = masterKey(keyVersion);
-      const dataKey = randomBytes(32);
+      const passwordBytes = Buffer.from(password.reveal(), "utf8");
       try {
-        const passwordBytes = Buffer.from(password.reveal(), "utf8");
-        const sealedP12 = encrypt(dataKey, p12.reveal(), fieldAad(binding, "p12"));
-        const sealedPassword = encrypt(dataKey, passwordBytes, fieldAad(binding, "password"));
-        passwordBytes.fill(0);
-        const wrapped = encrypt(master, dataKey, wrapAad(binding, keyVersion));
+        const sealed = sealEnvelope(keyring, contextOf(binding), {
+          p12: { plaintext: p12.reveal(), aad: fieldAad(binding, "p12") },
+          password: { plaintext: passwordBytes, aad: fieldAad(binding, "password") },
+        });
         return {
           formatVersion: FORMAT_VERSION,
-          keyVersion,
-          keyCheck: keyCheckOf(master, keyVersion),
-          wrappedKey: wrapped.ciphertext,
-          wrappedKeyNonce: wrapped.nonce,
-          p12Ciphertext: sealedP12.ciphertext,
-          p12Nonce: sealedP12.nonce,
-          passwordCiphertext: sealedPassword.ciphertext,
-          passwordNonce: sealedPassword.nonce,
+          keyVersion: sealed.keyVersion,
+          keyCheck: sealed.keyCheck,
+          wrappedKey: sealed.wrappedKey,
+          wrappedKeyNonce: sealed.wrappedKeyNonce,
+          p12Ciphertext: sealed.fields.p12.ciphertext,
+          p12Nonce: sealed.fields.p12.nonce,
+          passwordCiphertext: sealed.fields.password.ciphertext,
+          passwordNonce: sealed.fields.password.nonce,
         };
+      } catch (error) {
+        if (error instanceof EnvelopeError) throw new CustodyError();
+        throw error;
       } finally {
-        dataKey.fill(0);
+        passwordBytes.fill(0);
       }
     },
 
     open(sealed: SealedSecret, binding): SigningMaterial {
       if (sealed.formatVersion !== FORMAT_VERSION) throw new CustodyError();
-      let dataKey: Buffer | undefined;
       try {
-        const master = masterKey(sealed.keyVersion);
-        dataKey = decrypt(
-          master,
-          sealed.wrappedKey,
-          sealed.wrappedKeyNonce,
-          wrapAad(binding, sealed.keyVersion),
-        );
-        const p12 = decrypt(
-          dataKey,
-          sealed.p12Ciphertext,
-          sealed.p12Nonce,
-          fieldAad(binding, "p12"),
-        );
-        const passwordBytes = decrypt(
-          dataKey,
-          sealed.passwordCiphertext,
-          sealed.passwordNonce,
-          fieldAad(binding, "password"),
-        );
-        const password = passwordBytes.toString("utf8");
-        passwordBytes.fill(0);
-        return { p12: new SecretBytes(p12), password: new SecretText(password) };
+        const opened = openEnvelope(keyring, contextOf(binding), sealed, {
+          p12: {
+            ciphertext: sealed.p12Ciphertext,
+            nonce: sealed.p12Nonce,
+            aad: fieldAad(binding, "p12"),
+          },
+          password: {
+            ciphertext: sealed.passwordCiphertext,
+            nonce: sealed.passwordNonce,
+            aad: fieldAad(binding, "password"),
+          },
+        });
+        const password = opened.password.toString("utf8");
+        opened.password.fill(0);
+        return { p12: new SecretBytes(opened.p12), password: new SecretText(password) };
       } catch {
         throw new CustodyError();
-      } finally {
-        dataKey?.fill(0);
       }
     },
 
-    canOpen({ keyVersion, keyCheck }) {
-      const key = keyring.keys.get(keyVersion);
-      if (!key) return false;
-      const expected = keyCheckOf(key, keyVersion);
-      return expected.length === keyCheck.length && timingSafeEqual(expected, keyCheck);
+    canOpen(secret) {
+      return keyCheckMatches(keyring, KEY_CHECK_CONTEXT, secret);
     },
   };
 }
