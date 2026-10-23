@@ -492,7 +492,8 @@ opción elegida SHALL NOT tomar la forma de un botón de acción principal.
 ### Requirement: Lo activo va en azul
 Lo activo y lo elegido SHALL ir en el azul primario, nunca en gris. El destino actual de la barra
 lateral, la página actual de una tabla, la vista elegida y la opción resaltada de un menú SHALL
-llevar un fondo azul suave con el texto en azul primario; la pestaña actual y la opción marcada de un
+llevar un fondo azul suave con el texto en azul primario, y un destino de la barra lateral bajo el
+puntero, el mismo efecto; la pestaña actual y la opción marcada de un
 menú, el texto azul con su subrayado o su marca; la opción elegida de un control segmentado, una
 pieza azul primario dentro de su pista. Ninguna SHALL distinguirse solo por el color.
 

@@ -342,17 +342,18 @@ export const sidebarMenuButtonVariants = cva(
   [
     "peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding]",
     "group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! in-data-[mobile=true]:h-11",
-    "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground",
+    // El puntero con el mismo efecto que lo activo (decisión del propietario, 2026-10-22).
+    "hover:bg-active hover:text-active-foreground focus-visible:ring-2 active:bg-active active:text-active-foreground",
     "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
-    "data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground",
-    // Lo activo en el azul primario (decisión del propietario, 2026-10-17); el puntero, en gris.
+    "data-open:hover:bg-active data-open:hover:text-active-foreground",
+    // Lo activo en el azul primario (decisión del propietario, 2026-10-17), además con su peso.
     "data-active:bg-active data-active:font-medium data-active:text-active-foreground data-active:hover:bg-active data-active:hover:text-active-foreground",
     "[&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
   ],
   {
     variants: {
       variant: {
-        default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        default: "hover:bg-active hover:text-active-foreground",
       },
       size: {
         default: "h-8 text-sm",

@@ -33,7 +33,14 @@ describe("creación rápida", () => {
     const calls = api();
     renderShell();
     await screen.findByText("contenido");
-    await user.click(screen.getByRole("button", { name: "Nuevo" }));
+    // En el azul primario, a todo el ancho y centrado (decisión del propietario, 2026-10-22).
+    const trigger = screen.getByRole("button", { name: "Nuevo" });
+    expect(trigger.getAttribute("data-variant")).toBe("primary");
+    expect(trigger.className).toContain("justify-center");
+    expect(trigger.className).toContain("w-full");
+    // Al pasar el puntero, los destinos de la barra lateral toman el mismo efecto que el activo.
+    expect(screen.getByRole("link", { name: "Facturas" }).className).toContain("hover:bg-active");
+    await user.click(trigger);
     const menu = await screen.findByRole("menu");
     expect(
       within(menu)

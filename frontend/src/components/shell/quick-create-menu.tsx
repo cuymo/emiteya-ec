@@ -26,13 +26,15 @@ export function QuickCreateMenu() {
   if (actions.length === 0) return null;
   const collapsed = state === "collapsed" && !isMobile;
 
+  // En el azul primario, a todo el ancho y con el texto centrado (decisión del propietario,
+  // 2026-10-22).
   const trigger = collapsed ? (
-    <Button variant="outline" size="icon-sm" aria-label="Nuevo" className="self-center">
+    <Button variant="primary" size="icon-sm" aria-label="Nuevo" className="self-center">
       <Plus aria-hidden="true" />
     </Button>
   ) : (
-    <Button variant="outline" size="sm" className="w-full justify-start">
-      <Plus aria-hidden="true" />
+    <Button variant="primary" size="default" className="h-10 w-full justify-center">
+      <Plus aria-hidden="true" data-icon="inline-start" />
       Nuevo
     </Button>
   );
