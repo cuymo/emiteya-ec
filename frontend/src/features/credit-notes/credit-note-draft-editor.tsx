@@ -23,7 +23,7 @@ import {
   type CreditNoteIssue,
   type InvoiceCreditView,
 } from "@facturador/contracts";
-import { FileText } from "lucide-react";
+import { FilePen, FileText, Save, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -33,22 +33,19 @@ import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { formatMoney, Money } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatDecimal, formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatDecimal, formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
-import {
-  DEFAULT_POINT_KEY,
-  pointLabel,
-  useEstablishments,
-} from "@/features/establishments/establishments-api";
+import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
+import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
 import { newDocumentHref } from "@/features/documents/new-document";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import {
@@ -138,7 +135,8 @@ const toForm = (draft: CreditNoteDraftView | null, credit: InvoiceCreditView): F
   const returning = draft?.cause === "RETURN";
   return {
     emissionPointId: draft?.emissionPoint?.id ?? "",
-    cause: draft?.cause ?? "",
+    // Una nota nueva empieza con la devolución elegida (decisión del propietario, 2026-10-22).
+    cause: draft?.cause ?? "RETURN",
     reason: draft?.reason ?? "",
     lines: credit.lines.map((line) => {
       const stored = saved.get(line.position);
@@ -396,15 +394,6 @@ function DraftEditor({
     },
   });
 
-  const points = (establishments.data ?? []).flatMap((establishment) =>
-    establishment.emissionPoints
-      .filter((point) => point.available || point.id === form.getValues("emissionPointId"))
-      .map((point) => ({
-        id: point.id,
-        label: `${pointLabel(establishment, point)} · ${establishment.address}`,
-      })),
-  );
-
   const preview = draft?.preview;
   const fresh = draft !== null && !isDirty;
   const issues = preview?.issues ?? [];
@@ -463,39 +452,38 @@ function DraftEditor({
       <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
           <Section title="Factura que se modifica">
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2">
-              <span className="flex min-w-0 items-center gap-2">
-                <FileText aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-                <span className="flex min-w-0 flex-col">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-3 sm:flex-nowrap">
+              <span className="flex min-w-0 flex-1 items-center gap-3">
+                {/* La factura con su ícono grande, como en la nota de débito (decisión del
+                    propietario, 2026-10-22). */}
+                <span
+                  aria-hidden="true"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                >
+                  <FileText className="size-5" />
+                </span>
+                <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="font-medium tabular-nums">Factura {credit.documentNumber}</span>
                   <span className="text-sm text-foreground-muted break-words">
                     {credit.buyerName} · {credit.buyerIdentification} ·{" "}
-                    {formatIssueDate(credit.issueDate)} · Total {formatUsd(credit.total)}
+                    {formatIssueDate(credit.issueDate)} · Total <Money amount={credit.total} />
                   </span>
                 </span>
               </span>
               {onChangeInvoice && (
-                <Button variant="outline" onClick={onChangeInvoice}>
+                <Button variant="primary" className="shrink-0" onClick={onChangeInvoice}>
+                  <FilePen aria-hidden="true" data-icon="inline-start" />
                   Cambiar factura
                 </Button>
               )}
             </div>
-            <FormField id="punto" label="Punto de emisión">
-              <Select
-                {...fieldAria("punto", undefined)}
-                value={pointId}
-                onChange={(event) =>
-                  form.setValue("emissionPointId", event.target.value, { shouldDirty: true })
-                }
-              >
-                <option value="">Elige un punto</option>
-                {points.map((point) => (
-                  <option key={point.id} value={point.id}>
-                    {point.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
+            <EstablishmentPointFields
+              establishments={establishments.data ?? []}
+              pointId={pointId}
+              onPointChange={(next) =>
+                form.setValue("emissionPointId", next, { shouldDirty: true })
+              }
+            />
           </Section>
 
           <Section title="Causa y motivo">
@@ -507,6 +495,7 @@ function DraftEditor({
                 aria-labelledby={causeLabelId}
                 aria-describedby={causeHintId}
                 aria-invalid={errors.cause ? true : undefined}
+                fullWidth
                 options={[
                   { value: "RETURN", label: CREDIT_NOTE_CAUSE_LABELS.RETURN },
                   { value: "TOTAL_ANNULMENT", label: CREDIT_NOTE_CAUSE_LABELS.TOTAL_ANNULMENT },
@@ -576,8 +565,9 @@ function DraftEditor({
                           <span className="font-medium break-words">{line.description}</span>
                           <span className="text-xs text-foreground-muted tabular-nums">
                             {line.mainCode && `${line.mainCode} · `}
-                            {formatDecimal(line.quantity)} × {formatUsd(line.unitPrice)}
-                            {line.discount !== "0.00" && ` · Descuento ${formatUsd(line.discount)}`}
+                            {formatDecimal(line.quantity)} × {formatMoney(line.unitPrice)}
+                            {line.discount !== "0.00" &&
+                              ` · Descuento ${formatMoney(line.discount)}`}
                             {line.taxes.map((tax) => ` · IVA ${formatPercentage(tax.percentage)}`)}
                           </span>
                         </span>
@@ -646,7 +636,7 @@ function DraftEditor({
                       {computed && (
                         <p className="text-sm text-foreground-muted tabular-nums">
                           En la nota: {formatDecimal(computed.quantity)} por una base imponible de{" "}
-                          {formatUsd(computed.taxableBase)}. Después de esta nota quedan{" "}
+                          {formatMoney(computed.taxableBase)}. Después de esta nota quedan{" "}
                           {formatDecimal(computed.remainingQuantity)} acreditables.
                         </p>
                       )}
@@ -679,15 +669,17 @@ function DraftEditor({
             ) : preview?.totals ? (
               <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm tabular-nums">
                 <dt>Subtotal sin impuestos</dt>
-                <dd className="text-right">{formatUsd(preview.totals.withoutTaxes)}</dd>
+                <dd className="text-right">{formatMoney(preview.totals.withoutTaxes)}</dd>
                 {preview.totals.taxes.map((tax) => (
                   <div key={`${tax.taxCode}-${tax.rateCode}`} className="contents">
                     <dt>IVA {formatPercentage(tax.percentage)}</dt>
-                    <dd className="text-right">{formatUsd(tax.amount)}</dd>
+                    <dd className="text-right">{formatMoney(tax.amount)}</dd>
                   </div>
                 ))}
                 <dt className="font-semibold">Valor de la nota</dt>
-                <dd className="text-right font-semibold">{formatUsd(preview.totals.total)}</dd>
+                <dd className="text-right text-lg font-semibold text-money">
+                  {formatMoney(preview.totals.total)}
+                </dd>
               </dl>
             ) : (
               <p className="text-sm text-foreground-muted">
@@ -695,7 +687,7 @@ function DraftEditor({
               </p>
             )}
             <p className="text-sm text-foreground-muted tabular-nums">
-              Disponible en la factura: {formatUsd(credit.available)}
+              Disponible en la factura: <Money amount={credit.available} />
             </p>
             {preview && fresh && (
               <p className="text-xs text-foreground-muted">
@@ -722,6 +714,7 @@ function DraftEditor({
                   setConfirming(true);
                 }}
               >
+                <Send aria-hidden="true" data-icon="inline-start" />
                 Emitir nota de crédito
               </Button>
             )}
@@ -731,6 +724,7 @@ function DraftEditor({
               </p>
             )}
             <AsyncButton type="submit" variant="outline" pending={save.isPending}>
+              <Save aria-hidden="true" data-icon="inline-start" />
               Guardar borrador
             </AsyncButton>
           </div>
@@ -777,7 +771,7 @@ function DraftEditor({
                 <dd>{CREDIT_NOTE_CAUSE_LABELS[draft.cause]}</dd>
                 <dt className="text-foreground-muted">Valor</dt>
                 <dd className="tabular-nums">
-                  {draft.preview.totals ? formatUsd(draft.preview.totals.total) : "—"}
+                  {draft.preview.totals ? formatMoney(draft.preview.totals.total) : "—"}
                 </dd>
               </dl>
               <EmissionEnvironmentNotice document="nota de crédito" />

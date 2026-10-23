@@ -300,14 +300,18 @@ describe("borrador de nota de crédito", () => {
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   });
 
-  it("una devolución exige cantidad en la línea elegida y la causa elegida", async () => {
+  it("una nota nueva empieza en devolución, a todo el ancho, que exige cantidad en la línea elegida", async () => {
     render(<CreditNoteDraftScreen draftId={null} invoiceId="inv-1" />, {});
     await screen.findByRole("heading", { name: "Nueva nota de crédito" });
     expect(screen.getByText("Factura 001-001-000000001")).toBeDefined();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
-    expect(await screen.findByText("Elige la causa de la nota.")).toBeDefined();
-    await user.click(screen.getByRole("radio", { name: "Devolución" }));
+    // La devolución, la opción de la izquierda, viene elegida (decisión del propietario, 2026-10-22).
+    const returnCause = screen.getByRole("radio", { name: "Devolución" });
+    expect(returnCause.getAttribute("aria-checked")).toBe("true");
+    expect(returnCause.parentElement!.className).toContain("w-full");
+    expect(
+      screen.getByRole("button", { name: "Cambiar factura" }).getAttribute("data-variant"),
+    ).toBe("primary");
     const good = lineItem(1, "Perno de acero");
     await user.click(within(good).getByRole("checkbox", { name: "Devolver esta línea" }));
     await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
@@ -333,18 +337,13 @@ describe("borrador de nota de crédito", () => {
     });
     await screen.findByRole("heading", { name: "Nueva nota de crédito" });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("radio", { name: "Devolución" }));
     const good = lineItem(1, "Perno de acero");
     await user.click(within(good).getByRole("checkbox", { name: "Devolver esta línea" }));
     await user.type(within(good).getByRole("textbox", { name: "Cantidad acreditada" }), "1");
     await user.type(within(good).getByRole("textbox", { name: "Retorno físico" }), "1");
     await user.type(screen.getByRole("textbox", { name: "Motivo" }), "  Devolución de mercadería ");
-    await waitFor(() =>
-      expect(screen.getByRole("combobox", { name: "Punto de emisión" })).toHaveProperty(
-        "value",
-        "ep-1",
-      ),
-    );
+    // Con un solo punto en la empresa, el punto predeterminado se muestra como dato.
+    expect(await screen.findByText("001-001")).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith("/notas-credito/borradores/cnd-9"),

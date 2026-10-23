@@ -300,6 +300,21 @@ Un usuario SHALL preparar la nota en un borrador: factura, causa, punto de emisi
 - **WHEN** otra nota de la misma factura se reserva después de guardar el borrador
 - **THEN** la vista previa se recalcula con la capacidad vigente y la emisión vuelve a comprobarla al reservar
 
+### Requirement: Editor de la nota de crédito
+En una nota nueva, la causa SHALL empezar en devolución, la opción de la izquierda, en un control de
+dos opciones que ocupa todo el ancho. Junto a la factura que se modifica, con su ícono grande y su
+total en verde, «Cambiar factura» SHALL ir en el azul primario. El establecimiento y el punto de
+emisión SHALL elegirse en dos selectores lado a lado, y el punto solo entre los del establecimiento
+elegido. Cada botón del editor SHALL llevar su ícono, y los importes SHALL mostrarse con «$».
+
+#### Scenario: Nota nueva
+- **WHEN** un operador elige una factura para una nota de crédito nueva
+- **THEN** la causa «Devolución» ya está elegida y las líneas ofrecen elegir lo que se devuelve
+
+#### Scenario: Punto de otro establecimiento
+- **WHEN** un operador cambia el establecimiento por uno con dos puntos de emisión
+- **THEN** el selector de puntos ofrece solo los dos del establecimiento elegido
+
 ### Requirement: Comprobante de la nota de crédito
 La nota de crédito SHALL ser un comprobante propio (tipo 04, versión 1.1.0) con su secuencial, independiente del de las facturas, su clave de acceso y su snapshot. Lleva los datos del emisor vigentes al reservar, el comprador de la factura, el tipo, número y fecha de la factura modificada, el valor de la modificación, el motivo y sus líneas.
 
