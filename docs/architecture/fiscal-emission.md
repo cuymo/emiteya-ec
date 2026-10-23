@@ -634,7 +634,7 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 - **Cabeceras:** `Content-Type`, `Content-Length`, `Content-Disposition: attachment` con `{tipo}-{número}.pdf` o `-autorizado.xml` y `-firmado.xml` (sin texto del cliente), `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store` y el SHA-256 como `ETag`.
 - **`HEAD`:** las rutas de descarga responden `405` con `Allow: GET`; un `HEAD` no envía el documento y nunca registra una descarga.
 - **Impresión:** una acción explícita; ningún `GET` registra una solicitud de impresión. La interfaz pide después el mismo RIDE, que registra su `DOWNLOAD`.
-- **Entregas:** `document_delivery_event`, de solo agregado y sin auditoría duplicada. `DocumentNotificationPort` (`fiscal/application/ports.ts`) es el punto de extensión del correo en P1, sin implementación.
+- **Entregas:** `document_delivery_event`, de solo agregado y sin auditoría duplicada. El correo, que Q-24 dejó para P1 con un puerto de notificación, lo implementa el módulo `email` (`add-email-delivery`): el seguidor del RIDE guardado crea el envío automático, y `fiscal` le da los comprobantes por `createDeliverableDocumentSource`.
 
 ### RIDE
 

@@ -275,15 +275,3 @@ export type SignedScope = {
 export interface SignedUnitOfWork {
   run<T>(work: (scope: SignedScope) => Promise<T>): Promise<T>;
 }
-
-/**
- * Notificación de un documento a su receptor (add-document-archive, design D9; Q-24): el punto de
- * extensión del correo en P1. No tiene implementación ni cableado: el MVP no envía correos. Sus
- * eventos futuros reflejarán la evidencia del proveedor (enviado, aceptado o rebotado), nunca que el
- * receptor lo leyó.
- */
-export interface DocumentNotificationPort {
-  notify(
-    input: Readonly<{ companyId: string; documentId: string; recipient: string }>,
-  ): Promise<Readonly<{ providerMessageId: string }>>;
-}
