@@ -104,6 +104,12 @@ design D3). No screen builds its own header.
 | Editor (`variant="editor"`, invoice editor) | None (top bar) | `h1` | None | None: the save state («Sin guardar», «Guardado») sits in the summary, as neutral text | None: actions live next to the summary or in the action bar | None |
 | Configuration and reading (written for the migration of those screens) | None (top bar) | `h1` | Yes | Optional | Right, inside the width of its role (`max-w-form` or `max-w-reading`) | Next to the primary |
 
+- **Form titles** (owner decision, 2026-10-22): a form names only its entity («Factura»,
+  «Tercero») and carries its state in a `FormStateBadge` inside the `h1`: «Nuevo»/«Nueva» before
+  the first save (informative tone), «Borrador» for a saved document draft (the neutral badge of
+  the lists) and «Corrección» when correcting a record. Document editors use `EditorTitle`; the
+  entity creation dialogs (tercero, usuario, establecimiento) pass the same badge to `FormDialog`.
+  Breadcrumbs keep their wording.
 - **Fixed rhythm:** the title block is at least 40px high, the height of the default button, with
   the title centered. The title lands on the same y with or without an action.
 - **Spacing:** 8px between the breadcrumb row and the title, and 24px from the header to the content

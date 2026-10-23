@@ -270,7 +270,7 @@ describe("borrador de liquidación de compra", () => {
     await user.click(await screen.findByRole("button", { name: "Elegir proveedor" }));
     const picker = await screen.findByRole("dialog", { name: "Elegir proveedor" });
     await user.click(await within(picker).findByText("Nuevo proveedor"));
-    const form = await screen.findByRole("dialog", { name: "Nuevo tercero" });
+    const form = await screen.findByRole("dialog", { name: "Tercero Nuevo" });
     expect(
       within(form).getByRole("button", { name: "Proveedor" }).getAttribute("aria-pressed"),
     ).toBe("true");

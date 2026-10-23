@@ -26,6 +26,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
+import { EditorTitle } from "@/components/layout/editor-title";
 import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -363,7 +364,7 @@ function DraftEditor({
 
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <Header title="Borrador de liquidación de compra" />
+      <Header />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
@@ -725,20 +726,14 @@ function DraftEditor({
   );
 }
 
-function Header({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <h1 id="editor-titulo" className="text-3xl font-bold">
-        {title}
-      </h1>
-    </div>
-  );
+function Header() {
+  return <EditorTitle entity="Liquidación de compra" feminine state="draft" />;
 }
 
-function Fallback({ title, children }: { title: string; children: ReactNode }) {
+function Fallback({ children }: { children: ReactNode }) {
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <Header title={title} />
+      <Header />
       {children}
     </section>
   );
@@ -754,7 +749,7 @@ export function PurchaseSettlementDraftScreen({ draftId }: { draftId: string }) 
 
   if (!allowed) {
     return (
-      <Fallback title="Borrador de liquidación de compra">
+      <Fallback>
         <EmptyState
           kind="no-permission"
           title="No tienes acceso a los borradores de liquidaciones de compra"
@@ -770,7 +765,7 @@ export function PurchaseSettlementDraftScreen({ draftId }: { draftId: string }) 
       error instanceof ApiError && error.code === "PURCHASE_SETTLEMENT_DRAFT_ALREADY_EMITTED";
     const missing = error instanceof ApiError && error.status === 404;
     return (
-      <Fallback title="Borrador de liquidación de compra">
+      <Fallback>
         {emitted || missing ? (
           <EmptyState
             kind="empty"
@@ -797,7 +792,7 @@ export function PurchaseSettlementDraftScreen({ draftId }: { draftId: string }) 
   }
   if (options.isError) {
     return (
-      <Fallback title="Borrador de liquidación de compra">
+      <Fallback>
         <ErrorState
           message="No pudimos cargar las tarifas de IVA, las formas de pago y la política de procedencia."
           onRetry={() => void options.refetch()}
@@ -819,7 +814,7 @@ export function PurchaseSettlementDraftScreen({ draftId }: { draftId: string }) 
 export function PurchaseSettlementDraftSkeleton() {
   return (
     <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Borrador de liquidación de compra</h1>
+      <EditorTitle entity="Liquidación de compra" feminine state="draft" titleId={null} />
       <Skeleton className="h-20 w-full" />
       <Skeleton className="h-48 w-full" />
     </section>

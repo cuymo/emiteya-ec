@@ -207,8 +207,8 @@ describe("página del formulario de tercero", () => {
         body: { data: party({ roles: ["CUSTOMER", "CARRIER"] }) },
       }),
     });
-    expect(await screen.findByRole("heading", { level: 1, name: "Nuevo tercero" })).toBeDefined();
-    const form = await formOf("Nuevo tercero");
+    expect(await screen.findByRole("heading", { level: 1, name: "Tercero Nuevo" })).toBeDefined();
+    const form = await formOf("Tercero Nuevo");
     // Una sola columna centrada, sin secciones, con los roles primero como pestañas a todo el ancho
     // (decisión del propietario, 2026-10-22).
     expect(within(form).queryAllByRole("region")).toEqual([]);
@@ -260,7 +260,7 @@ describe("página del formulario de tercero", () => {
         ),
       }),
     });
-    const form = await formOf("Nuevo tercero");
+    const form = await formOf("Tercero Nuevo");
     const user = userEvent.setup();
     await user.type(within(form).getByLabelText("Identificación"), "1790012345001");
     await user.type(within(form).getByLabelText("Razón social o nombres"), "Otra S.A.");
@@ -287,9 +287,9 @@ describe("página del formulario de tercero", () => {
       "p-1",
     );
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Corregir tercero" }),
+      await screen.findByRole("heading", { level: 1, name: "Tercero Corrección" }),
     ).toBeDefined();
-    const form = await formOf("Corregir tercero");
+    const form = await formOf("Tercero Corrección");
     const user = userEvent.setup();
     const name = within(form).getByLabelText("Razón social o nombres");
     expect((name as HTMLInputElement).value).toBe("Comercial Andina S.A.");

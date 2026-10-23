@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import type { z } from "zod";
+import { FormStateBadge } from "@/components/form-state-badge";
 import { AsyncButton } from "@/components/async-button";
 import { ChipMultiSelect } from "@/components/chip-multi-select";
 import { errorMessage } from "@/components/feedback";
@@ -313,8 +314,9 @@ function PartyForm({ initial }: { initial: PartyView | null }) {
 function Header({ editing, description }: { editing: boolean; description?: string }) {
   return (
     <PageHeader
-      title={editing ? "Corregir tercero" : "Nuevo tercero"}
+      title="Tercero"
       titleId={TITLE_ID}
+      badge={<FormStateBadge state={editing ? "edit" : "new"} />}
       description={
         description ?? "Un cliente, proveedor o transportista, para usarlo en los comprobantes."
       }

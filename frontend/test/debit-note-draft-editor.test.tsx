@@ -575,7 +575,7 @@ describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => 
       .filter((id) => id !== null)
       .map((id) => document.getElementById(id)?.textContent);
     expect(sections).toEqual([
-      "Borrador de nota de débito",
+      "Nota de débito Borrador",
       "Factura que se modifica",
       "Establecimiento y punto de emisión",
       "Conceptos",

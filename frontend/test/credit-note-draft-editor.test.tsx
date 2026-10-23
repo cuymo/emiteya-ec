@@ -302,7 +302,7 @@ describe("borrador de nota de crédito", () => {
 
   it("una nota nueva empieza en devolución, a todo el ancho, que exige cantidad en la línea elegida", async () => {
     render(<CreditNoteDraftScreen draftId={null} invoiceId="inv-1" />, {});
-    await screen.findByRole("heading", { name: "Nueva nota de crédito" });
+    await screen.findByRole("heading", { name: "Nota de crédito Nueva" });
     expect(screen.getByText("Factura 001-001-000000001")).toBeDefined();
     const user = userEvent.setup();
     // La devolución, la opción de la izquierda, viene elegida (decisión del propietario, 2026-10-22).
@@ -335,7 +335,7 @@ describe("borrador de nota de crédito", () => {
         return { status: 201, body: { data: creditNoteDraft({ id: "cnd-9" }) } };
       },
     });
-    await screen.findByRole("heading", { name: "Nueva nota de crédito" });
+    await screen.findByRole("heading", { name: "Nota de crédito Nueva" });
     const user = userEvent.setup();
     const good = lineItem(1, "Perno de acero");
     await user.click(within(good).getByRole("checkbox", { name: "Devolver esta línea" }));

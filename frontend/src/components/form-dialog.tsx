@@ -27,10 +27,13 @@ export function FormDialog({
   children,
   error,
   onCloseAutoFocus,
+  badge,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  /** El estado de lo que se registra (`FormStateBadge`), junto al título, como en las páginas. */
+  badge?: ReactNode;
   description?: string;
   submitLabel: string;
   pending: boolean;
@@ -55,7 +58,16 @@ export function FormDialog({
       >
         <form onSubmit={onSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="flex flex-col gap-1 px-6 pt-6 pr-14">
-            <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+            <DialogTitle
+              className={cn(
+                "text-lg font-semibold",
+                badge && "flex flex-wrap items-center gap-x-2 gap-y-1",
+              )}
+            >
+              {title}
+              {badge && " "}
+              {badge}
+            </DialogTitle>
             {description && (
               <DialogDescription className="text-sm text-foreground-muted">
                 {description}

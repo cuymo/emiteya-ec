@@ -20,6 +20,11 @@ type Common = {
   titleId?: string;
   /** Un estado o una marca junto al título, solo si aporta a la decisión. */
   context?: ReactNode;
+  /**
+   * El estado de lo que se edita (`FormStateBadge`), dentro del `h1`: el título nombra la entidad y el
+   * badge dice si es nueva, un borrador o una corrección (decisión del propietario, 2026-10-22).
+   */
+  badge?: ReactNode;
   className?: string;
 };
 
@@ -36,7 +41,7 @@ type ListHeader = Common & {
 type EditorHeader = Common & { variant: "editor" };
 
 export function PageHeader(props: ListHeader | EditorHeader) {
-  const { title, titleId, context, className } = props;
+  const { title, titleId, context, badge, className } = props;
   const list = props.variant !== "editor" ? props : null;
   const actions = list && (list.primaryAction || list.secondaryActions);
   return (
@@ -51,8 +56,17 @@ export function PageHeader(props: ListHeader | EditorHeader) {
             data-slot="page-header-title"
             className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1"
           >
-            <h1 id={titleId} className="text-3xl font-bold break-words">
+            <h1
+              id={titleId}
+              className={cn(
+                "text-3xl font-bold break-words",
+                badge && "flex flex-wrap items-center gap-x-3 gap-y-1",
+              )}
+            >
               {title}
+              {/* Un espacio entre los dos: el nombre del título queda «Factura Borrador». */}
+              {badge && " "}
+              {badge}
             </h1>
             {context}
           </div>

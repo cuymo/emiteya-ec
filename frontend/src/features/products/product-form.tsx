@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { z } from "zod";
+import { FormStateBadge } from "@/components/form-state-badge";
 import { AsyncButton } from "@/components/async-button";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
@@ -411,8 +412,9 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
 function Header({ editing, description }: { editing: boolean; description?: string }) {
   return (
     <PageHeader
-      title={editing ? "Corregir producto" : "Nuevo producto"}
+      title="Producto"
       titleId={TITLE_ID}
+      badge={<FormStateBadge state={editing ? "edit" : "new"} />}
       description={description ?? "Lo que vendes, con su precio sin impuestos y sus impuestos."}
     />
   );

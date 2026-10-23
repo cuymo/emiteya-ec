@@ -199,7 +199,7 @@ describe("pantalla Usuarios", () => {
     await screen.findByText("Mostrando 1-3 de 3");
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Crear usuario" }));
-    const dialog = await screen.findByRole("dialog", { name: "Crear usuario" });
+    const dialog = await screen.findByRole("dialog", { name: "Usuario Nuevo" });
     expect(
       within(dialog)
         .getByRole("radio", { name: /Operador/ })

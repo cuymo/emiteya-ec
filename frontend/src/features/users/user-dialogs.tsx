@@ -7,6 +7,7 @@ import { userSchemas, type CreateUserInput, type Role, type UserView } from "@fa
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { FormStateBadge } from "@/components/form-state-badge";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormDialog, FormField } from "@/components/form-dialog";
 import { PasswordField } from "@/components/password-field";
@@ -78,7 +79,8 @@ export function CreateUserDialog({
     <FormDialog
       open={open}
       onOpenChange={(next) => (next ? onOpenChange(true) : close())}
-      title="Crear usuario"
+      title="Usuario"
+      badge={<FormStateBadge state="new" />}
       description="La persona entra con su correo y la contraseña inicial que definas."
       submitLabel="Crear usuario"
       pending={create.isPending}

@@ -633,7 +633,7 @@ describe("nueva retención sobre la lista (decisión del propietario, 2026-10-22
     await user.click(await screen.findByRole("button", { name: "Nueva retención" }));
     const picker = await screen.findByRole("dialog", { name: "Elegir proveedor" });
     await user.click(await within(picker).findByText("Nuevo proveedor"));
-    const form = await screen.findByRole("dialog", { name: "Nuevo tercero" });
+    const form = await screen.findByRole("dialog", { name: "Tercero Nuevo" });
     expect(
       within(form).getByRole("button", { name: "Proveedor" }).getAttribute("aria-pressed"),
     ).toBe("true");

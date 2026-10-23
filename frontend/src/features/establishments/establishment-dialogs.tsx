@@ -14,6 +14,7 @@ import {
 } from "@facturador/contracts";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { FormStateBadge } from "@/components/form-state-badge";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormDialog, FormField } from "@/components/form-dialog";
 import { Input } from "@/components/ui/input";
@@ -61,7 +62,8 @@ export function CreateEstablishmentDialog({ open, onOpenChange }: DialogProps) {
     <FormDialog
       open={open}
       onOpenChange={(next) => (next ? onOpenChange(true) : close())}
-      title="Crear establecimiento"
+      title="Establecimiento"
+      badge={<FormStateBadge state="new" />}
       description="Usa el código de tres dígitos con que el establecimiento está registrado en el SRI."
       submitLabel="Crear establecimiento"
       pending={create.isPending || form.formState.isSubmitting}

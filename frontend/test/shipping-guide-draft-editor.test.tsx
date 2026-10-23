@@ -249,7 +249,7 @@ describe("borrador de guía de remisión", () => {
     await user.click(screen.getByRole("button", { name: "Cambiar transportista" }));
     const again = await screen.findByRole("dialog", { name: "Elegir transportista" });
     await user.click(await within(again).findByText("Nuevo transportista"));
-    const form = await screen.findByRole("dialog", { name: "Nuevo tercero" });
+    const form = await screen.findByRole("dialog", { name: "Tercero Nuevo" });
     expect(
       within(form).getByRole("button", { name: "Transportista" }).getAttribute("aria-pressed"),
     ).toBe("true");

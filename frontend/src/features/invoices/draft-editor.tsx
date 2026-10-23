@@ -59,7 +59,7 @@ import { errorMessage, toast, useMutationFeedback } from "@/components/feedback"
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { FormLayout, StickyFormActions, StickySummaryPanel } from "@/components/layout/form-layout";
 import { FormSection } from "@/components/layout/form-section";
-import { PageHeader } from "@/components/layout/page-header";
+import { EditorTitle } from "@/components/layout/editor-title";
 import { formatMoney } from "@/components/money";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState } from "@/components/states";
@@ -894,11 +894,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
 
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <PageHeader
-        variant="editor"
-        title={saved ? "Borrador de factura" : "Nueva factura"}
-        titleId="editor-titulo"
-      />
+      <EditorTitle entity="Factura" feminine state={saved ? "draft" : "new"} />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
@@ -1505,9 +1501,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
   );
 }
 
-/** Encabezado de los estados del editor: el mismo `PageHeader` de editor. */
+/** Encabezado de los estados del editor: el mismo título de editor. */
 function EditorStateHeader() {
-  return <PageHeader variant="editor" title="Borrador de factura" titleId="editor-titulo" />;
+  return <EditorTitle entity="Factura" feminine state="draft" />;
 }
 
 /** Editor de un borrador existente (`draftId`) o de uno nuevo (`null`). */

@@ -25,6 +25,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
+import { EditorTitle } from "@/components/layout/editor-title";
 import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -396,7 +397,7 @@ function DraftEditor({
 
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <Header title="Borrador de guía de remisión" />
+      <Header />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
@@ -799,20 +800,14 @@ function DraftEditor({
   );
 }
 
-function Header({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <h1 id="editor-titulo" className="text-3xl font-bold">
-        {title}
-      </h1>
-    </div>
-  );
+function Header() {
+  return <EditorTitle entity="Guía de remisión" feminine state="draft" />;
 }
 
-function Fallback({ title, children }: { title: string; children: ReactNode }) {
+function Fallback({ children }: { children: ReactNode }) {
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <Header title={title} />
+      <Header />
       {children}
     </section>
   );
@@ -828,7 +823,7 @@ export function ShippingGuideDraftScreen({ draftId }: { draftId: string }) {
 
   if (!allowed) {
     return (
-      <Fallback title="Borrador de guía de remisión">
+      <Fallback>
         <EmptyState
           kind="no-permission"
           title="No tienes acceso a los borradores de guías de remisión"
@@ -844,7 +839,7 @@ export function ShippingGuideDraftScreen({ draftId }: { draftId: string }) {
       error instanceof ApiError && error.code === "SHIPPING_GUIDE_DRAFT_ALREADY_EMITTED";
     const missing = error instanceof ApiError && error.status === 404;
     return (
-      <Fallback title="Borrador de guía de remisión">
+      <Fallback>
         {emitted || missing ? (
           <EmptyState
             kind="empty"
@@ -871,7 +866,7 @@ export function ShippingGuideDraftScreen({ draftId }: { draftId: string }) {
   }
   if (options.isError) {
     return (
-      <Fallback title="Borrador de guía de remisión">
+      <Fallback>
         <ErrorState
           message="No pudimos cargar los establecimientos y los casos de excepción."
           onRetry={() => void options.refetch()}
@@ -893,7 +888,7 @@ export function ShippingGuideDraftScreen({ draftId }: { draftId: string }) {
 export function ShippingGuideDraftSkeleton() {
   return (
     <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Borrador de guía de remisión</h1>
+      <EditorTitle entity="Guía de remisión" feminine state="draft" titleId={null} />
       <Skeleton className="h-20 w-full" />
       <Skeleton className="h-48 w-full" />
     </section>

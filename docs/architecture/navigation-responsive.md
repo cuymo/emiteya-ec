@@ -45,7 +45,8 @@ The groups and destinations, in this order:
     `parties.manage` or `products.manage`. «Nuevo tercero» and «Nuevo producto» are links in the
     list header, and each row's «Corregir» is a link (`RowActionLink`).
   - **Breadcrumbs:** «Nuevo tercero», «Nuevo producto», or the record's name once the correction
-    loads («Corregir tercero» or «Corregir producto» until then).
+    loads («Corregir tercero» or «Corregir producto» until then). The page title itself is the
+    entity («Tercero», «Producto») with the «Nuevo» or «Corrección» badge.
   - **Form** (`party-form.tsx`, `product-form.tsx`): one centered column without sections (owner
     decision, 2026-10-22), with «Cancelar» back to the list and the primary action at the foot. The
     party form puts the roles first, as full-width tabs. The product form puts the kind at full

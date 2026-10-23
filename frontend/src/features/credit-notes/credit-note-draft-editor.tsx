@@ -29,6 +29,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { z } from "zod";
+import { EditorTitle } from "@/components/layout/editor-title";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { errorMessage } from "@/components/feedback";
@@ -440,11 +441,7 @@ function DraftEditor({
 
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 id="editor-titulo" className="text-3xl font-bold">
-          {draft ? "Borrador de nota de crédito" : "Nueva nota de crédito"}
-        </h1>
-      </div>
+      <EditorTitle entity="Nota de crédito" feminine state={draft ? "draft" : "new"} />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
@@ -805,9 +802,7 @@ function DraftEditor({
 function Fallback({ children }: { children: ReactNode }) {
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <h1 id="editor-titulo" className="text-3xl font-bold">
-        Borrador de nota de crédito
-      </h1>
+      <EditorTitle entity="Nota de crédito" feminine state="draft" />
       {children}
     </section>
   );
@@ -933,7 +928,7 @@ export function CreditNoteDraftScreen({
 export function CreditNoteDraftSkeleton() {
   return (
     <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Borrador de nota de crédito</h1>
+      <EditorTitle entity="Nota de crédito" feminine state="draft" titleId={null} />
       <Skeleton className="h-20 w-full" />
       <Skeleton className="h-48 w-full" />
     </section>

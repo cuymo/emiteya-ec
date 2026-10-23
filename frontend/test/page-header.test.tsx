@@ -4,6 +4,8 @@
 import { render, screen } from "@testing-library/react";
 import Link from "next/link";
 import { describe, expect, it } from "vitest";
+import { FormStateBadge } from "@/components/form-state-badge";
+import { EditorTitle } from "@/components/layout/editor-title";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 
@@ -79,5 +81,30 @@ describe("PageHeader de editor (productize-invoice-editor-and-composition-founda
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByText("Sin guardar")).toBeDefined();
     expect(header.querySelectorAll("button, [data-slot=button]")).toHaveLength(0);
+  });
+});
+
+describe("título de un formulario (decisión del propietario, 2026-10-22)", () => {
+  it("nombra solo la entidad, con su estado en un badge dentro del h1", () => {
+    render(<EditorTitle entity="Nota de crédito" feminine state="new" />);
+    const title = screen.getByRole("heading", { level: 1, name: "Nota de crédito Nueva" });
+    expect(title.id).toBe("editor-titulo");
+    const badge = title.querySelector("[data-form-state]");
+    expect(badge?.getAttribute("data-form-state")).toBe("new");
+    expect(badge?.getAttribute("data-variant")).toBe("info");
+  });
+
+  it("«Borrador» es el badge neutro de las listas, y «Corrección» al corregir", () => {
+    render(
+      <>
+        <PageHeader title="Factura" badge={<FormStateBadge state="draft" />} />
+        <FormStateBadge state="edit" />
+        <FormStateBadge state="new" />
+      </>,
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "Factura Borrador" })).toBeDefined();
+    expect(screen.getByText("Borrador").getAttribute("data-variant")).toBe("neutral");
+    expect(screen.getByText("Corrección")).toBeDefined();
+    expect(screen.getByText("Nuevo")).toBeDefined();
   });
 });

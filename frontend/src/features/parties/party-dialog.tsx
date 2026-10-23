@@ -5,6 +5,7 @@
 
 import type { PartyRole, PartyView } from "@facturador/contracts";
 import { useEffect } from "react";
+import { FormStateBadge } from "@/components/form-state-badge";
 import { FormDialog } from "@/components/form-dialog";
 import {
   PartyContactFields,
@@ -51,7 +52,8 @@ export function PartyDialog({
     <FormDialog
       open={open}
       onOpenChange={(next) => (next ? undefined : onClose())}
-      title="Nuevo tercero"
+      title="Tercero"
+      badge={<FormStateBadge state="new" />}
       submitLabel="Registrar tercero"
       pending={state.save.isPending}
       error={state.error}

@@ -31,6 +31,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
 import { z } from "zod";
+import { EditorTitle } from "@/components/layout/editor-title";
 import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -462,11 +463,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
 
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 id="editor-titulo" className="text-3xl font-bold">
-          Borrador de nota de débito
-        </h1>
-      </div>
+      <EditorTitle entity="Nota de débito" feminine state="draft" />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
@@ -805,20 +802,10 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
   );
 }
 
-function Header({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <h1 id="editor-titulo" className="text-3xl font-bold">
-        {title}
-      </h1>
-    </div>
-  );
-}
-
-function Fallback({ title, children }: { title: string; children: ReactNode }) {
+function Fallback({ state, children }: { state: "new" | "draft"; children: ReactNode }) {
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <Header title={title} />
+      <EditorTitle entity="Nota de débito" feminine state={state} />
       {children}
     </section>
   );
@@ -907,7 +894,7 @@ export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: stri
 
   if (!allowed) {
     return (
-      <Fallback title="Nueva nota de débito">
+      <Fallback state="new">
         <EmptyState
           kind="no-permission"
           title="No tienes acceso a los borradores de notas de débito"
@@ -918,7 +905,7 @@ export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: stri
   }
   if (invoiceId === null) return <Skeleton className="h-40 w-full" />;
   return (
-    <Fallback title="Nueva nota de débito">
+    <Fallback state="new">
       {error && <OperationAlert message={error} alertRef={alertRef} />}
       <Section title="Factura que se modifica">
         <ChosenInvoice
@@ -946,7 +933,7 @@ export function DebitNoteDraftScreen({ draftId }: { draftId: string }) {
 
   if (!allowed) {
     return (
-      <Fallback title="Borrador de nota de débito">
+      <Fallback state="draft">
         <EmptyState
           kind="no-permission"
           title="No tienes acceso a los borradores de notas de débito"
@@ -961,7 +948,7 @@ export function DebitNoteDraftScreen({ draftId }: { draftId: string }) {
     const emitted = error instanceof ApiError && error.code === "DEBIT_NOTE_DRAFT_ALREADY_EMITTED";
     const missing = error instanceof ApiError && error.status === 404;
     return (
-      <Fallback title="Borrador de nota de débito">
+      <Fallback state="draft">
         {emitted || missing ? (
           <EmptyState
             kind="empty"
@@ -993,7 +980,7 @@ export function DebitNoteDraftScreen({ draftId }: { draftId: string }) {
 export function DebitNoteDraftSkeleton() {
   return (
     <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Borrador de nota de débito</h1>
+      <EditorTitle entity="Nota de débito" feminine state="draft" titleId={null} />
       <Skeleton className="h-20 w-full" />
       <Skeleton className="h-48 w-full" />
     </section>

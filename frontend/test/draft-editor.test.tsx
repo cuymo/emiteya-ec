@@ -212,7 +212,7 @@ describe("emitir como acción principal", () => {
       payments: [{ paymentMethod: "01", amount: null }],
     });
     // El editor pasa a ser el del borrador guardado, sin volver a montarse.
-    expect(screen.getByRole("heading", { level: 1, name: "Borrador de factura" })).toBeDefined();
+    expect(screen.getByRole("heading", { level: 1, name: "Factura Borrador" })).toBeDefined();
     expect(window.location.pathname).toBe("/borradores/draft-1");
     expect(saveState()).toBe("Guardado");
   });
@@ -629,7 +629,7 @@ describe("estados del editor", () => {
         fail ? { status: 500, body: errorBody("INTERNAL_ERROR", "x") } : ok(draft())({}),
     });
     expect((await screen.findByRole("status")).textContent).toBe("Cargando el borrador");
-    expect(screen.getByRole("heading", { level: 1, name: "Borrador de factura" })).toBeDefined();
+    expect(screen.getByRole("heading", { level: 1, name: "Factura Borrador" })).toBeDefined();
     expect(
       await screen.findByText("No pudimos cargar el borrador.", undefined, { timeout: 5_000 }),
     ).toBeDefined();

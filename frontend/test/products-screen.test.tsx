@@ -269,8 +269,8 @@ describe("página del formulario de producto", () => {
     const calls = renderForm({
       "POST /api/v1/products": () => ({ status: 201, body: { data: product() } }),
     });
-    expect(await screen.findByRole("heading", { level: 1, name: "Nuevo producto" })).toBeDefined();
-    const form = await formOf("Nuevo producto");
+    expect(await screen.findByRole("heading", { level: 1, name: "Producto Nuevo" })).toBeDefined();
+    const form = await formOf("Producto Nuevo");
     // Una sola columna centrada, sin secciones, como Terceros (decisión del propietario, 2026-10-22).
     expect(within(form).queryAllByRole("region")).toEqual([]);
     expect(form.closest("section")?.className).toContain("mx-auto");
@@ -305,7 +305,7 @@ describe("página del formulario de producto", () => {
 
   it("«Cancelar» vuelve a la lista", async () => {
     renderForm({});
-    const form = await formOf("Nuevo producto");
+    const form = await formOf("Producto Nuevo");
     expect(within(form).getByRole("link", { name: "Cancelar" }).getAttribute("href")).toBe(
       "/productos",
     );
@@ -313,7 +313,7 @@ describe("página del formulario de producto", () => {
 
   it("un precio con más de 6 decimales se rechaza en el campo, sin redondear ni enviar", async () => {
     const calls = renderForm({});
-    const form = await formOf("Nuevo producto");
+    const form = await formOf("Producto Nuevo");
     await user().type(within(form).getByLabelText("Nombre"), "Tornillo");
     await user().type(within(form).getByLabelText("Precio unitario sin impuestos"), "1.1234567");
     await within(form).findByRole("option", { name: /15% · código 4/ });
@@ -346,7 +346,7 @@ describe("página del formulario de producto", () => {
               ),
             },
     });
-    const form = await formOf("Nuevo producto");
+    const form = await formOf("Producto Nuevo");
     await user().type(within(form).getByLabelText("Nombre"), "Cemento");
     await user().type(within(form).getByLabelText("Código principal (opcional)"), "CEM-50");
     await user().type(within(form).getByLabelText("Precio unitario sin impuestos"), "1");
@@ -362,7 +362,7 @@ describe("página del formulario de producto", () => {
 
   it("un servicio no ofrece IRBPNR ni control de stock", async () => {
     renderForm({});
-    const form = await formOf("Nuevo producto");
+    const form = await formOf("Producto Nuevo");
     expect(within(form).getByLabelText("IRBPNR (opcional)")).toBeDefined();
     expect(within(form).getByLabelText("Controlar stock de este bien")).toBeDefined();
     await user().click(within(form).getByRole("radio", { name: "Servicio" }));
@@ -404,9 +404,9 @@ describe("página del formulario de producto", () => {
       "prod-1",
     );
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Corregir producto" }),
+      await screen.findByRole("heading", { level: 1, name: "Producto Corrección" }),
     ).toBeDefined();
-    const form = await formOf("Corregir producto");
+    const form = await formOf("Producto Corrección");
     expect(await within(form).findByText(/El control se gestiona en Inventario/)).toBeDefined();
     const checkbox = within(form).getByLabelText("Controlar stock de este bien");
     expect(checkbox).toHaveProperty("disabled", true);
@@ -453,7 +453,7 @@ describe("página del formulario de producto", () => {
       },
       "prod-1",
     );
-    const form = await formOf("Corregir producto");
+    const form = await formOf("Producto Corrección");
     await waitFor(() =>
       expect(within(form).getByLabelText("Controlar stock de este bien")).toHaveProperty(
         "disabled",
@@ -468,7 +468,7 @@ describe("página del formulario de producto", () => {
       { "GET /api/v1/products/prod-2": () => ({ status: 200, body: { data: REVIEW } }) },
       "prod-2",
     );
-    const form = await formOf("Corregir producto");
+    const form = await formOf("Producto Corrección");
     expect(
       within(form).getByText("La tarifa de IVA 2 no está habilitada para tu empresa."),
     ).toBeDefined();

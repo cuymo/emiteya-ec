@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
+import { EditorTitle } from "@/components/layout/editor-title";
 import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -318,7 +319,7 @@ function DraftEditor({
 
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <Header title="Borrador de retención" />
+      <Header />
 
       {operationError && (
         <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
@@ -619,20 +620,14 @@ function DraftEditor({
   );
 }
 
-function Header({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <h1 id="editor-titulo" className="text-3xl font-bold">
-        {title}
-      </h1>
-    </div>
-  );
+function Header() {
+  return <EditorTitle entity="Retención" feminine state="draft" />;
 }
 
-function Fallback({ title, children }: { title: string; children: ReactNode }) {
+function Fallback({ children }: { children: ReactNode }) {
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <Header title={title} />
+      <Header />
       {children}
     </section>
   );
@@ -648,7 +643,7 @@ export function WithholdingDraftScreen({ draftId }: { draftId: string }) {
 
   if (!allowed) {
     return (
-      <Fallback title="Borrador de retención">
+      <Fallback>
         <EmptyState
           kind="no-permission"
           title="No tienes acceso a los borradores de retenciones"
@@ -663,7 +658,7 @@ export function WithholdingDraftScreen({ draftId }: { draftId: string }) {
     const emitted = error instanceof ApiError && error.code === "WITHHOLDING_DRAFT_ALREADY_EMITTED";
     const missing = error instanceof ApiError && error.status === 404;
     return (
-      <Fallback title="Borrador de retención">
+      <Fallback>
         {emitted || missing ? (
           <EmptyState
             kind="empty"
@@ -690,7 +685,7 @@ export function WithholdingDraftScreen({ draftId }: { draftId: string }) {
   }
   if (options.isError) {
     return (
-      <Fallback title="Borrador de retención">
+      <Fallback>
         <ErrorState
           message="No pudimos cargar los conceptos y códigos de retención."
           onRetry={() => void options.refetch()}
@@ -712,7 +707,7 @@ export function WithholdingDraftScreen({ draftId }: { draftId: string }) {
 export function WithholdingDraftSkeleton() {
   return (
     <section aria-busy="true" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Borrador de retención</h1>
+      <EditorTitle entity="Retención" feminine state="draft" titleId={null} />
       <Skeleton className="h-20 w-full" />
       <Skeleton className="h-48 w-full" />
     </section>

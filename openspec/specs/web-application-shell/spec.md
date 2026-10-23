@@ -556,14 +556,14 @@ clic. Ninguna creación SHALL pasar por una página intermedia que solo ofrezca 
 ### Requirement: Terceros y Productos en su página
 Terceros y Productos SHALL registrar y corregir un registro en su propia página, no en un diálogo:
 «Nuevo tercero» y «Nuevo producto» SHALL llevar a la página del alta, y «Corregir» de cada fila, a
-la de la corrección de ese registro. El formulario SHALL presentarse en secciones con su título a la
-izquierda, como Empresa, con «Cancelar», que vuelve a la lista, y la acción principal al pie. Al
+la de la corrección de ese registro. El formulario SHALL presentarse en una sola columna centrada, sin
+secciones, con «Cancelar», que vuelve a la lista, y la acción principal al pie. Al
 guardar, la página SHALL volver a la lista con el aviso. Dentro de un comprobante, el alta de un
 tercero SHALL seguir en un diálogo, para no abandonar el borrador.
 
 #### Scenario: Nuevo producto
 - **WHEN** un operador elige «Nuevo producto» en la lista de productos
-- **THEN** llega a la página Inicio / Maestros / Productos / Nuevo producto, con las secciones del formulario y «Registrar producto» al pie
+- **THEN** llega a la página Inicio / Maestros / Productos / Nuevo producto, con el formulario en una columna centrada y «Registrar producto» al pie
 
 #### Scenario: Corregir un tercero
 - **WHEN** un operador elige «Corregir» en la fila de Comercial Andina S.A. y guarda los cambios
@@ -594,3 +594,19 @@ qué, y sin acciones el menú no SHALL aparecer.
 - **WHEN** un administrador abre el menú de un producto con saldo distinto de cero
 - **THEN** ve «Desactivar control» como no disponible, con el motivo de que el saldo debe ser cero
 
+### Requirement: Título de los formularios
+El título de cada formulario de alta o de edición SHALL nombrar solo la entidad («Factura», «Nota de
+crédito», «Nota de débito», «Liquidación de compra», «Retención», «Guía de remisión», «Tercero»,
+«Producto», «Usuario», «Establecimiento») y llevar a su derecha un badge con su estado: «Nuevo» o
+«Nueva» antes del primer guardado, «Borrador» en un comprobante guardado sin emitir y «Corrección»
+al corregir un registro. El badge SHALL formar parte del título para la asistencia, y «Borrador»
+SHALL verse como el estado de los borradores en las listas. Las migas de la barra superior no
+cambian.
+
+#### Scenario: Factura nueva y guardada
+- **WHEN** un operador abre una factura nueva y la guarda
+- **THEN** el título es «Factura» con el badge «Nueva», y después del guardado con el badge «Borrador»
+
+#### Scenario: Corregir un producto
+- **WHEN** un operador abre la corrección de un producto
+- **THEN** el título es «Producto» con el badge «Corrección»
