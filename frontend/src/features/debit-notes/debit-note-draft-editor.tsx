@@ -47,6 +47,7 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { ApiError, apiFetch } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -608,7 +609,9 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                       >
                         <Input
                           inputMode="decimal"
-                          className="text-right tabular-nums"
+                          // El importe se escribe desde el inicio del campo (decisión del propietario,
+                          // 2026-10-22).
+                          className="tabular-nums"
                           {...fieldAria(
                             `importe-${field.id}`,
                             conceptError?.amount?.message,
@@ -672,6 +675,10 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
               Agregar concepto
             </AddRowButton>
           </Section>
+
+          {/* Un separador debajo de «Agregar concepto», antes de la forma de pago (decisión del
+              propietario, 2026-10-22). */}
+          <Separator />
 
           {/* Sin título visible: la etiqueta del campo ya dice «Forma de pago», como en la factura
               (decisión del propietario, 2026-10-22). */}

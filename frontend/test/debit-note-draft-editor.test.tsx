@@ -557,6 +557,16 @@ describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => 
     ).toContain("text-sm");
     // La nota de los conceptos va en el tooltip de su título.
     expect(screen.getByRole("button", { name: "Ayuda: Conceptos" })).toBeDefined();
+    // El importe se escribe desde el inicio; un separador debajo de «Agregar concepto».
+    expect(within(first).getByRole("textbox", { name: "Importe" }).className).not.toContain(
+      "text-right",
+    );
+    expect(
+      screen
+        .getByRole("button", { name: "Agregar concepto" })
+        .closest("section")
+        ?.nextElementSibling?.getAttribute("data-slot"),
+    ).toBe("separator");
     // Con cambios sin guardar, el aviso de emitir va centrado debajo de «Guardar borrador».
     const user = userEvent.setup();
     await user.type(within(first).getByRole("textbox", { name: "Descripción" }), " extra");
