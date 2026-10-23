@@ -4,6 +4,7 @@ import { Router } from "express";
 import type { EmailSettingsResponse } from "@facturador/contracts";
 import { contextOf } from "../../../identity/infrastructure/http/request-context.ts";
 import type { EmailSettings, EmailSettingsState } from "../../application/settings.ts";
+import type { TestEmail } from "../../application/test-email.ts";
 
 export function toEmailSettingsResponse(state: EmailSettingsState): EmailSettingsResponse {
   const { settings } = state;
@@ -29,7 +30,13 @@ export function toEmailSettingsResponse(state: EmailSettingsState): EmailSetting
   };
 }
 
-export function emailRouter(settings: EmailSettings): Router {
+export function emailRouter({
+  settings,
+  testEmail,
+}: {
+  settings: EmailSettings;
+  testEmail: TestEmail;
+}): Router {
   const router = Router();
 
   router.get("/email/settings", async (_req, res) => {
@@ -39,6 +46,10 @@ export function emailRouter(settings: EmailSettings): Router {
   router.put("/email/settings", async (req, res) => {
     const state = await settings.update(contextOf(res), req.body);
     res.status(200).json({ data: toEmailSettingsResponse(state) });
+  });
+
+  router.post("/email/test", async (req, res) => {
+    res.status(200).json({ data: await testEmail.send(contextOf(res), req.body) });
   });
 
   return router;

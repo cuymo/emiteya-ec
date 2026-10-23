@@ -362,6 +362,10 @@ const email = emailModule({
     deliveryEnabled: env.EMAIL_DELIVERY_ENABLED,
     plaintextAllowed: env.EMAIL_ALLOW_PLAINTEXT_SMTP,
   },
+  smtp: {
+    connectionTimeoutMs: env.EMAIL_SMTP_CONNECTION_TIMEOUT_MS,
+    socketTimeoutMs: env.EMAIL_SMTP_SOCKET_TIMEOUT_MS,
+  },
 });
 apiRouter.use(...email.routers);
 apiRouter.use(...catalogsModule({ prisma: database.prisma, authorizer }).routers);

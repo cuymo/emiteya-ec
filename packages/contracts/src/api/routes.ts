@@ -255,7 +255,12 @@ import {
   listDataExportsQuerySchema,
 } from "../data-portability.ts";
 import { dashboardViewSchema } from "../dashboard.ts";
-import { emailSettingsResponseSchema, updateEmailSettingsSchema } from "../email.ts";
+import {
+  emailSettingsResponseSchema,
+  sendTestEmailSchema,
+  testEmailResultSchema,
+  updateEmailSettingsSchema,
+} from "../email.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -952,6 +957,33 @@ export const apiRoutes: readonly RouteDefinition[] = [
       409: {
         description:
           "La configuración cambió después de abrirla (EMAIL_SETTINGS_CHANGED) o la instalación no tiene custodia de secretos para guardar la contraseña (EMAIL_CUSTODY_DISABLED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/email/test",
+    summary:
+      "Enviar un correo de prueba con el servidor de correo guardado, a una dirección que elige el administrador",
+    request: { body: sendTestEmailSchema },
+    responses: {
+      200: {
+        description:
+          "Si el servidor aceptó el correo (no prueba que llegó al buzón) o el motivo del rechazo en lenguaje claro, sin secretos.",
+        schema: successEnvelope(testEmailResultSchema),
+      },
+      400: errors[400],
+      401: errors[401],
+      403: errors[403],
+      409: {
+        description:
+          "El envío de correos está desactivado en este despliegue (EMAIL_DELIVERY_DISABLED) o la empresa no tiene servidor de correo (EMAIL_NOT_CONFIGURED).",
+        schema: errorEnvelopeSchema,
+      },
+      429: {
+        description:
+          "Más de 5 correos de prueba por minuto en la empresa (EMAIL_TEST_RATE_LIMITED).",
         schema: errorEnvelopeSchema,
       },
     },

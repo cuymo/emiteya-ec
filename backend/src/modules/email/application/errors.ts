@@ -34,3 +34,25 @@ export const emailCustodyDisabled = () =>
     "EMAIL_CUSTODY_DISABLED",
     "Esta instalación no tiene custodia de secretos, así que no puede guardar la contraseña del servidor de correo.",
   );
+
+export const emailDeliveryDisabled = () =>
+  new ConflictError(
+    "EMAIL_DELIVERY_DISABLED",
+    "El envío de correos está desactivado en este despliegue.",
+  );
+
+export const emailNotConfigured = () =>
+  new ConflictError(
+    "EMAIL_NOT_CONFIGURED",
+    "Registra primero el servidor de correo de la empresa.",
+  );
+
+/** Correos de prueba por minuto y empresa: una defensa de recursos (design D10). */
+export const TEST_EMAILS_PER_MINUTE = 5;
+
+export const emailTestRateLimited = () =>
+  new AppError(
+    "EMAIL_TEST_RATE_LIMITED",
+    429,
+    `Puedes enviar hasta ${TEST_EMAILS_PER_MINUTE} correos de prueba por minuto. Espera un momento.`,
+  );

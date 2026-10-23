@@ -17,6 +17,7 @@ export const TEST_CUSTODY: CertificateCustodyConfig = {
 export type EmailHarnessOptions = {
   policy?: Partial<EmailDeploymentPolicy>;
   custody?: CertificateCustodyConfig;
+  now?: () => Date;
 };
 
 export function buildEmailApp(db: MigratedSchema, options: EmailHarnessOptions = {}) {
@@ -29,6 +30,8 @@ export function buildEmailApp(db: MigratedSchema, options: EmailHarnessOptions =
         authorizer,
         custody: options.custody ?? TEST_CUSTODY,
         policy: { deliveryEnabled: false, plaintextAllowed: false, ...options.policy },
+        smtp: { connectionTimeoutMs: 2_000, socketTimeoutMs: 5_000 },
+        ...(options.now ? { now: options.now } : {}),
       });
       return Router()
         .use(context)
