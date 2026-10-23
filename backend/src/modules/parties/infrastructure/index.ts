@@ -300,3 +300,4 @@ export function purchaseSupplierReader(db: DbClient) {
 }
 // Fuente de portabilidad (add-data-portability, design D1).
 export { createPartiesPortabilitySources } from "./portability-sources.ts";
+export { createPartyEmailSource } from "./party-email-source.ts";

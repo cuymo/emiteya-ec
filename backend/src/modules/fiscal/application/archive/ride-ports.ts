@@ -1,4 +1,5 @@
 // Puertos del job del RIDE (add-document-archive, design D3 a D5 y D14).
+import type { Environment } from "@facturador/contracts";
 import type { DbClient } from "../../../../platform/db/database.ts";
 import type { ArtifactStore } from "../ports.ts";
 
@@ -18,6 +19,17 @@ export type RideLogoSource = (
 
 /** Transacción que guarda el RIDE y completa su job, guardada por el arriendo. */
 export type RideScope = Readonly<{ db: DbClient; artifacts: ArtifactStore }>;
+
+/**
+ * Lo que sigue a un RIDE recién guardado, en su misma transacción (add-email-delivery, design D2):
+ * el envío automático del correo nace aquí para llevar siempre los dos archivos. Recibe el ambiente
+ * en que se autorizó el comprobante. No corre si el RIDE ya existía.
+ */
+export type RideFollower = (
+  db: DbClient,
+  document: Readonly<{ id: string; companyId: string; environment: Environment }>,
+  at: Date,
+) => Promise<void>;
 
 export interface RideUnitOfWork {
   run<T>(work: (scope: RideScope) => Promise<T>): Promise<T>;

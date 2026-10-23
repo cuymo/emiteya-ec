@@ -27,6 +27,7 @@ export type { RideLogoSource } from "../../application/archive/ride-ports.ts";
 export { createRideSweeper, type RideSweeper } from "./ride-sweeper.ts";
 export { createRideUnitOfWork } from "./ride-unit-of-work.ts";
 export { registerRideMetrics } from "./ride-metrics.ts";
+export { createDeliverableDocumentSource } from "./deliverable-documents.ts";
 
 /** Rutas de la bandeja de comprobantes, sus documentos, sus descargas y sus entregas. */
 export function archiveRouters(deps: {

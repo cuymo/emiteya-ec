@@ -41,7 +41,10 @@ import {
   shippingPartyReader,
   supplierReader,
 } from "./modules/parties/infrastructure/index.ts";
-import { createPartiesReportSource } from "./modules/parties/infrastructure/index.ts";
+import {
+  createPartiesReportSource,
+  createPartyEmailSource,
+} from "./modules/parties/infrastructure/index.ts";
 import { registerReportMetrics, reportsModule } from "./modules/reports/infrastructure/index.ts";
 import { dashboardModule } from "./modules/dashboard/infrastructure/index.ts";
 import { createCatalogPortabilitySources } from "./modules/catalogs/infrastructure/index.ts";
@@ -148,6 +151,7 @@ import {
   DOCUMENT_JOB_PREFIX,
   RIDE_JOB_TYPE,
   archiveRouters,
+  createDeliverableDocumentSource,
   createRideHandler,
   createRideSweeper,
   createRideUnitOfWork,
@@ -353,21 +357,6 @@ apiRouter.use(
 );
 apiRouter.use(...fiscalRouters({ prisma: database.prisma, authorizer }));
 apiRouter.use(...signing.routers);
-// Entrega por correo (add-email-delivery): el servidor de correo de la empresa y su prueba.
-const email = emailModule({
-  prisma: database.prisma,
-  authorizer,
-  custody: certificateCustody,
-  policy: {
-    deliveryEnabled: env.EMAIL_DELIVERY_ENABLED,
-    plaintextAllowed: env.EMAIL_ALLOW_PLAINTEXT_SMTP,
-  },
-  smtp: {
-    connectionTimeoutMs: env.EMAIL_SMTP_CONNECTION_TIMEOUT_MS,
-    socketTimeoutMs: env.EMAIL_SMTP_SOCKET_TIMEOUT_MS,
-  },
-});
-apiRouter.use(...email.routers);
 apiRouter.use(...catalogsModule({ prisma: database.prisma, authorizer }).routers);
 apiRouter.use(
   ...partiesModule({ prisma: database.prisma, authorizer, rules: catalogQueries }).routers,
@@ -392,6 +381,39 @@ const jobStore = createPrismaJobStore(database.prisma, parseDatabaseUrl(env.DATA
 const transmissionSettings = transmissionSettingsFromEnv(env);
 const rideSettings = rideSettingsFromEnv(env);
 
+// Entrega por correo (add-email-delivery): el servidor de correo de la empresa, su prueba y el
+// envío de los comprobantes autorizados, que nace con el RIDE guardado y corre en su propia cola.
+const email = emailModule({
+  prisma: database.prisma,
+  authorizer,
+  custody: certificateCustody,
+  policy: {
+    deliveryEnabled: env.EMAIL_DELIVERY_ENABLED,
+    plaintextAllowed: env.EMAIL_ALLOW_PLAINTEXT_SMTP,
+  },
+  smtp: {
+    connectionTimeoutMs: env.EMAIL_SMTP_CONNECTION_TIMEOUT_MS,
+    socketTimeoutMs: env.EMAIL_SMTP_SOCKET_TIMEOUT_MS,
+  },
+  schema: parseDatabaseUrl(env.DATABASE_URL).schema ?? "public",
+  delivery: {
+    jobs: jobStore,
+    documents: createDeliverableDocumentSource(database.prisma),
+    parties: createPartyEmailSource(database.prisma),
+    job: {
+      maxAttempts: env.EMAIL_JOB_MAX_ATTEMPTS,
+      backoff: {
+        baseMs: env.EMAIL_RETRY_BASE_SECONDS * 1_000,
+        capMs: env.EMAIL_RETRY_CAP_SECONDS * 1_000,
+        minMs: Math.min(30_000, env.EMAIL_RETRY_BASE_SECONDS * 1_000),
+      },
+      deadlineMs: env.EMAIL_DELIVERY_DEADLINE_HOURS * 3_600_000,
+    },
+    metrics: metrics.registry,
+    logger,
+  },
+});
+apiRouter.use(...email.routers);
 // Bandeja de comprobantes y sus documentos (add-document-archive, design D2, D5, D8 a D10).
 apiRouter.use(
   ...archiveRouters({
@@ -795,6 +817,7 @@ const rideHandler = createRideHandler({
   jobs: jobStore,
   settings: rideSettings.job,
   observer: registerRideMetrics(metrics.registry, { prisma: database.prisma }),
+  followers: email.rideFollowers,
   logger,
 });
 const rideSweeper = createRideSweeper({
@@ -815,6 +838,19 @@ const rideRunner = createJobRunner({
   logger,
 });
 closers.unshift({ name: "ride-jobs", close: rideRunner.close });
+// La cola del correo nunca se pausa: con el envío apagado, cada envío termina desactivado sin
+// conectar (design D7). Un servidor de correo lento no frena el RIDE ni la transmisión.
+const emailRunner = createJobRunner({
+  store: jobStore,
+  db: database.prisma,
+  handlers: email.handlers,
+  workers: env.EMAIL_JOB_WORKERS,
+  pollIntervalMs: env.EMAIL_JOB_POLL_INTERVAL_MS,
+  leaseMs: env.EMAIL_JOB_LEASE_SECONDS * 1_000,
+  pausedPrefixes: () => [],
+  logger,
+});
+closers.unshift({ name: "email-jobs", close: emailRunner.close });
 
 const app = createApp({
   logger,
@@ -865,6 +901,7 @@ void transmissionSweeper.sweep().then(
 );
 transmissionSweeper.start(env.SRI_SWEEP_INTERVAL_SECONDS * 1_000);
 rideRunner.start();
+emailRunner.start();
 void rideSweeper.sweep().then(
   (created) => {
     if (created > 0) logger.info({ created }, "barrido del RIDE al arrancar");

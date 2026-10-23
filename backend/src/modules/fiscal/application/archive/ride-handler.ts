@@ -29,7 +29,7 @@ import type {
   StoredDocument,
 } from "../ports.ts";
 import type { RideJobSettings } from "./ride-jobs.ts";
-import type { RideLogoSource, RideObserver, RideUnitOfWork } from "./ride-ports.ts";
+import type { RideFollower, RideLogoSource, RideObserver, RideUnitOfWork } from "./ride-ports.ts";
 
 /** Procedencia del RIDE: nunca se presenta un XML firmado como autorizado (design D3). */
 export type RideProvenance = "AUTHORIZED_XML" | "SIGNED_XML_FALLBACK";
@@ -57,6 +57,8 @@ export type RideHandlerDependencies = Readonly<{
   jobs: Pick<JobStore, "complete" | "reschedule" | "fail" | "stop">;
   settings: RideJobSettings;
   observer?: RideObserver;
+  /** Lo que sigue al RIDE guardado, en su misma transacción: el envío automático del correo. */
+  followers?: readonly RideFollower[];
   logger: Readonly<{
     info(details: object, message: string): void;
     warn(details: object, message: string): void;
@@ -325,6 +327,17 @@ export function createRideHandler(deps: RideHandlerDependencies): JobHandler {
           content: Buffer.from(outcome.pdf),
           metadata,
         });
+        for (const follower of deps.followers ?? []) {
+          await follower(
+            scope.db,
+            {
+              id: document.id,
+              companyId: document.companyId,
+              environment: document.authorization?.environment ?? document.environment,
+            },
+            now,
+          );
+        }
         await jobs.complete(scope.db, job, now);
       });
     } catch (error) {
