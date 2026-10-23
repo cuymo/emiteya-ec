@@ -24,3 +24,4 @@ export * from "./reports.ts";
 export * from "./data-portability.ts";
 export * from "./dashboard.ts";
 export * from "./document-entries.ts";
+export * from "./email.ts";
