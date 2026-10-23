@@ -223,11 +223,15 @@ describe("página del formulario de tercero", () => {
     expect(within(form).queryByRole("option", { name: "VENTA A CONSUMIDOR FINAL" })).toBeNull();
     await user.type(within(form).getByLabelText("Identificación"), "1790012345001");
     await user.type(within(form).getByLabelText("Razón social o nombres"), "Comercial Andina S.A.");
-    await user.click(within(form).getByRole("button", { name: "Transportista" }));
-    await user.click(within(form).getByRole("button", { name: "Cliente" }));
+    // «Cliente» viene elegido en un alta (decisión del propietario, 2026-10-22).
     expect(within(form).getByRole("button", { name: "Cliente" }).getAttribute("aria-pressed")).toBe(
       "true",
     );
+    await user.click(within(form).getByRole("button", { name: "Transportista" }));
+    // Sin línea separadora encima de las acciones.
+    expect(
+      within(form).getByRole("button", { name: "Registrar tercero" }).closest("div")?.className,
+    ).not.toContain("border-t");
     // Se combinan: los dos elegidos siguen marcados.
     expect(
       within(form).getByRole("button", { name: "Transportista" }).getAttribute("aria-pressed"),

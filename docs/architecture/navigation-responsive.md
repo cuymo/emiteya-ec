@@ -49,7 +49,7 @@ The groups and destinations, in this order:
     entity («Tercero», «Producto») with the «Nuevo» or «Corrección» badge.
   - **Form** (`party-form.tsx`, `product-form.tsx`): one centered column without sections (owner
     decision, 2026-10-22), with «Cancelar» back to the list and the primary action at the foot. The
-    party form puts the roles first, as full-width tabs. The product form puts the kind at full
+    party form puts the roles first, as full-width tabs, with «Cliente» chosen in a new party (dialogs inside a document keep the roles they pass). No rule above the actions. The product form puts the kind at full
     width, the price with the stock control at its right, the IVA and the ICE in one row, and the
     internal description in a `Textarea` with its count.
     Saving returns to the list with the toast. The correction sends the version that was opened,

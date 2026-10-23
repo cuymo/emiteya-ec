@@ -51,7 +51,15 @@ const IDENTIFICATION_ERRORS = new Set([
   "PARTY_IDENTIFICATION_TAKEN",
 ]);
 
-const toForm = (party: PartyView | null, initialRoles: readonly PartyRole[] = []): FormInput => ({
+// Un alta sin roles indicados empieza como cliente, el uso más común (decisión del propietario,
+// 2026-10-22); los diálogos de un comprobante indican los suyos (proveedor, transportista o
+// ninguno) y los conservan.
+const DEFAULT_ROLES: readonly PartyRole[] = ["CUSTOMER"];
+
+const toForm = (
+  party: PartyView | null,
+  initialRoles: readonly PartyRole[] = DEFAULT_ROLES,
+): FormInput => ({
   identificationType: party?.identificationType ?? "04",
   identification: party?.identification ?? "",
   legalName: party?.legalName ?? "",
@@ -298,7 +306,8 @@ function PartyForm({ initial }: { initial: PartyView | null }) {
         </p>
       )}
 
-      <div className="flex justify-end gap-2 border-t border-border pt-6">
+      {/* Sin línea separadora encima de las acciones (decisión del propietario, 2026-10-22). */}
+      <div className="flex justify-end gap-2 pt-2">
         <Button variant="ghost" asChild>
           <Link href={LIST}>Cancelar</Link>
         </Button>

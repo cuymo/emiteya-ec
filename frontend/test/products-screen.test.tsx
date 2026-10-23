@@ -281,6 +281,10 @@ describe("página del formulario de producto", () => {
     expect(row("Tarifa de IVA")).toBe(row("ICE (opcional)"));
     expect(row("Tarifa de IVA")?.className).toContain("sm:grid-cols-2");
     expect(within(form).getByLabelText("Descripción interna (opcional)").tagName).toBe("TEXTAREA");
+    // Sin línea separadora encima de las acciones (decisión del propietario, 2026-10-22).
+    expect(
+      within(form).getByRole("button", { name: "Registrar producto" }).closest("div")?.className,
+    ).not.toContain("border-t");
     await user().type(within(form).getByLabelText("Nombre"), "Cemento 50 kg");
     await user().type(within(form).getByLabelText("Código principal (opcional)"), "CEM-50");
     await user().type(within(form).getByLabelText("Precio unitario sin impuestos"), "8.75");

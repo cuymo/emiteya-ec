@@ -396,7 +396,8 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
         </p>
       )}
 
-      <div className="flex justify-end gap-2 border-t border-border pt-6">
+      {/* Sin línea separadora encima de las acciones (decisión del propietario, 2026-10-22). */}
+      <div className="flex justify-end gap-2 pt-2">
         <Button variant="ghost" asChild>
           <Link href={LIST}>Cancelar</Link>
         </Button>
