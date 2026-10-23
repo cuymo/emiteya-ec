@@ -97,7 +97,7 @@ describe("CSS del sistema de diseño", () => {
       /@container \(width >= 57.5rem\)\s*\{\s*\.\\@form-rail\\:grid-cols-form-rail\s*\{\s*grid-template-columns: minmax\(0, 1fr\) 20rem/,
     );
     expect(css).toMatch(
-      /@container \(width >= 32rem\)\s*\{\s*\.\\@lg\\:grid-cols-payment\s*\{\s*grid-template-columns: minmax\(14rem, 1fr\) 13rem/,
+      /@container \(width >= 32rem\)\s*\{\s*\.\\@lg\\:grid-cols-payment\s*\{\s*grid-template-columns: minmax\(0, 4fr\) minmax\(10rem, 1fr\)/,
     );
     expect(css).toMatch(/@container \(width >= 40rem\)\s*\{\s*\.\\@form-wide\\:grid-cols-2/);
     expect(css).toMatch(/\.\\@form-wide\\:grid-rows-subgrid\s*\{\s*grid-template-rows: subgrid/);

@@ -112,6 +112,7 @@ export function FormField({
   className,
   labelClassName,
   counter,
+  badge,
   children,
 }: {
   id: string;
@@ -123,6 +124,8 @@ export function FormField({
   hint?: string | undefined;
   /** Un dato vivo que se ve siempre debajo del control, como la cuenta «15/300» de un texto. */
   counter?: string | undefined;
+  /** Un estado breve junto a la etiqueta, como lo que falta asignar del pago. */
+  badge?: ReactNode;
   error?: string | undefined;
   /**
    * Un problema que el servidor señala en este dato, junto a él y sin interrumpir como una alerta
@@ -144,14 +147,17 @@ export function FormField({
   const rowClass = useFormRowFieldClass();
   return (
     <div data-slot="form-field" className={cn("flex flex-col gap-1", rowClass, className)}>
-      {hint ? (
-        <div className={cn("flex items-center gap-1.5", labelClassName)}>
+      {hint || badge ? (
+        <div className={cn("flex flex-wrap items-center gap-x-1.5 gap-y-1", labelClassName)}>
           <label htmlFor={id} className="text-sm font-medium">
             {label}
           </label>
-          <FieldHint id={`${id}-hint`} label={label}>
-            {hint}
-          </FieldHint>
+          {hint && (
+            <FieldHint id={`${id}-hint`} label={label}>
+              {hint}
+            </FieldHint>
+          )}
+          {badge && <span className="ml-1.5 inline-flex">{badge}</span>}
         </div>
       ) : (
         <label htmlFor={id} className={cn("text-sm font-medium", labelClassName)}>

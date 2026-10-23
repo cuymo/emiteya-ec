@@ -54,7 +54,6 @@ import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
-import { LabelWithHint } from "@/components/field-hint";
 import { errorMessage, toast, useMutationFeedback } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { FormLayout, StickyFormActions, StickySummaryPanel } from "@/components/layout/form-layout";
@@ -892,6 +891,26 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
     </AsyncButton>
   );
 
+  // Lo que falta, sobra o cubre al dividir el pago, junto a la primera «Forma de pago».
+  const pendingBadge = split && pending !== null && (
+    <Badge
+      role="status"
+      variant={pending === 0 ? "success" : pending > 0 ? "warning" : "destructive"}
+      className="tabular-nums"
+    >
+      {pending === 0 ? (
+        <CircleCheck aria-hidden="true" data-icon="inline-start" />
+      ) : (
+        <TriangleAlert aria-hidden="true" data-icon="inline-start" />
+      )}
+      {pending === 0
+        ? "El pago cubre el total"
+        : pending > 0
+          ? `Faltan ${formatMoney(fromCents(pending))} por asignar`
+          : `Asignaste ${formatMoney(fromCents(-pending))} más que el total`}
+    </Badge>
+  );
+
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
       <EditorTitle entity="Factura" feminine state={saved ? "draft" : "new"} />
@@ -1215,32 +1234,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
 
             {/* El pago se pide cuando ya hay algo que cobrar. */}
             {lines.fields.length > 0 && (
-              <FormSection
-                title="Formas de pago"
-                description={split ? "Reparte el total entre las formas de pago." : undefined}
-                // Lo que falta, sobra o cubre, junto al título (decisión del propietario, 2026-10-22).
-                badge={
-                  split &&
-                  pending !== null && (
-                    <Badge
-                      role="status"
-                      variant={pending === 0 ? "success" : pending > 0 ? "warning" : "destructive"}
-                      className="h-6 px-2.5 text-sm tabular-nums [&>svg]:size-3.5!"
-                    >
-                      {pending === 0 ? (
-                        <CircleCheck aria-hidden="true" data-icon="inline-start" />
-                      ) : (
-                        <TriangleAlert aria-hidden="true" data-icon="inline-start" />
-                      )}
-                      {pending === 0
-                        ? "El pago cubre el total"
-                        : pending > 0
-                          ? `Faltan ${formatMoney(fromCents(pending))} por asignar`
-                          : `Asignaste ${formatMoney(fromCents(-pending))} más que el total`}
-                    </Badge>
-                  )
-                }
-              >
+              // Sin título visible: cada campo lleva su etiqueta, y la ayuda y lo que falta asignar van
+              // en la del primer «Forma de pago» (decisión del propietario, 2026-10-22).
+              <FormSection title="Formas de pago" hideTitle>
                 <div className="@container flex flex-col gap-4">
                   {payments.fields.map((field, index) => {
                     const position = index + 1;
@@ -1253,6 +1249,14 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                     const methodHint = method
                       ? `SRI ${method.code} · ${sentenceCase(method.official)}`
                       : undefined;
+                    const first = index === 0;
+                    const paymentHint =
+                      [
+                        first && split ? "Reparte el total entre las formas de pago." : null,
+                        methodHint,
+                      ]
+                        .filter(Boolean)
+                        .join(" ") || undefined;
                     return (
                       <fieldset
                         key={field.id}
@@ -1262,7 +1266,8 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                         <FormField
                           id={`forma-${index}`}
                           label="Forma de pago"
-                          {...(methodHint ? { hint: methodHint } : {})}
+                          hint={paymentHint}
+                          badge={first && pendingBadge}
                           error={paymentError?.paymentMethod?.message}
                         >
                           <Controller
@@ -1273,7 +1278,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                                 {...fieldAria(
                                   `forma-${index}`,
                                   paymentError?.paymentMethod?.message,
-                                  methodHint,
+                                  paymentHint,
                                 )}
                                 value={select.value}
                                 onChange={select.onChange}
@@ -1319,19 +1324,21 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                             />
                           </FormField>
                         ) : (
-                          <div className="flex flex-col gap-1">
-                            <LabelWithHint label="Importe" hint="El total de la factura.">
-                              <span className="text-sm font-medium">Importe</span>
-                            </LabelWithHint>
-                            <span
-                              className={cn(
-                                "flex h-10 items-center justify-end text-sm font-semibold tabular-nums max-md:h-11",
-                                totals && "text-money",
-                              )}
-                            >
-                              {totals ? formatMoney(totals.total) : "—"}
-                            </span>
-                          </div>
+                          // Con una sola forma de pago, su importe es el total: un campo que se ve
+                          // pero no se edita (decisión del propietario, 2026-10-22).
+                          <FormField
+                            id={`importe-${index}`}
+                            label="Importe"
+                            hint="El total de la factura."
+                          >
+                            <Input
+                              {...fieldAria(`importe-${index}`, undefined, "hint")}
+                              disabled
+                              readOnly
+                              value={totals ? formatMoney(totals.total) : "—"}
+                              className="text-right font-semibold tabular-nums"
+                            />
+                          </FormField>
                         )}
                         {split && !current?.amount && pending !== null && pending > 0 && (
                           <Button

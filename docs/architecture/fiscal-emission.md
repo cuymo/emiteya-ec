@@ -554,12 +554,15 @@ persona, comprador, productos, pago, total y emitir, no el técnico de guardar p
     etiqueta en el tono informativo) y subtotal del servidor en verde, con los números a la derecha.
     Quitar una línea no pide confirmación (el aviso ofrece «Deshacer») y su botón va en rojo. Se
     acepta la coma decimal («1,5»).
-  - **Formas de pago,** cuando ya hay algún producto. Con una, su importe es el total de la factura,
-    en verde, sin pedirlo. «Dividir el pago», un botón punteado alto a todo el ancho que al pasar el
-    ratón toma un degradado azulado, agrega otra: cada una
-    lleva su importe, una insignia junto al título «Formas de pago» dice cuánto falta (en el tono de
-    aviso), cuánto sobra (en rojo) o que el pago cubre el total (en verde), y una forma de pago sin
-    importe ofrece «Asignar lo pendiente». Una forma de pago
+  - **Formas de pago,** cuando ya hay algún producto, sin título visible (el de la sección queda
+    para la asistencia: cada campo lleva su etiqueta) y con la forma de pago y el importe en cuatro
+    quintos y un quinto (decisión del propietario, 2026-10-22). Con una, su importe es el total de
+    la factura en un campo deshabilitado, sin pedirlo. «Dividir el pago», un botón punteado alto a
+    todo el ancho que al pasar el ratón toma un degradado azulado, agrega otra: cada una lleva su
+    importe; en la etiqueta de la primera «Forma de pago», la ayuda («Reparte el total entre las
+    formas de pago.») va en su tooltip y una insignia dice cuánto falta (en el tono de aviso), cuánto
+    sobra (en rojo) o que el pago cubre el total (en verde); una forma de pago sin importe ofrece
+    «Asignar lo pendiente». Una forma de pago
     nueva propone lo que falta si las demás ya llevan su importe. Cada una muestra su nombre corriente
     («Efectivo», «Tarjeta de crédito») y, como detalle, «SRI 01 · Sin utilización del sistema
     financiero». Al volver a una sola, su importe vuelve a ser el total.

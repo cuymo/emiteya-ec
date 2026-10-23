@@ -308,8 +308,9 @@
   grid-template-columns: minmax(8rem, 1fr) 4.5rem 6rem 6rem 3.5rem 6.5rem 2.5rem;
 }
 @utility grid-cols-payment {
-  /* La forma de pago fluida, de al menos 14rem, y el importe de 10rem con su «Quitar» de 2.5rem. */
-  grid-template-columns: minmax(14rem, 1fr) 13rem;
+  /* La forma de pago y el importe en cuatro quintos y un quinto (decisión del propietario,
+     2026-10-22); el importe, de al menos 10rem para la cifra y su «Quitar». */
+  grid-template-columns: minmax(0, 4fr) minmax(10rem, 1fr);
 }
 
 /* Con una barra de acciones fija al pie (`StickyFormActions`), el foco que el navegador lleva a la

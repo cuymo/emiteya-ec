@@ -191,7 +191,7 @@ primitives -> system components -> domain components -> features -> pages
 | `ColumnVisibilityMenu`  | Business-facing optional column selection                                  |
 | `RowActionButton`       | Icon action with permission/state handling and opaque tooltip              |
 | `FormLayout`            | Form and optional 20rem side panel, beside it from a 57.5rem container (`--container-form-rail`) and stacked after it below; reading order form, panel, actions (`frontend/src/components/layout/form-layout.tsx`) |
-| `FormSection`           | Form section with an `h2`, an optional badge beside it, optional description, a local action in its header and a thin top rule; named by its title |
+| `FormSection`           | Form section with an `h2`, an optional badge beside it, optional description, a local action in its header and a thin top rule; named by its title, which `hideTitle` keeps only for assistive technology when the field labels already say it |
 | `FormGrid`              | Fields in columns by container (two from 40rem, `--container-form-wide`), aligned by label, control and message with `subgrid` |
 | `FormFieldRow`          | One row of fields read as a unit, such as a payment: a `fieldset` with its legend, `subgrid` alignment and the inline action in the control row |
 | `StickySummaryPanel`    | The summary surface of a form, sticky beside it or a section after it |

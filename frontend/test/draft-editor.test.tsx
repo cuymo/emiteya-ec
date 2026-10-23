@@ -499,21 +499,29 @@ describe("formas de pago", () => {
     });
     await line1();
     const first = screen.getByRole("group", { name: "Forma de pago 1" });
-    expect(await within(first).findByText("$28,75")).toBeDefined();
+    // Con una forma de pago, el importe es un campo deshabilitado con el total
+    // (decisión del propietario, 2026-10-22).
+    const total = within(first).getByLabelText("Importe") as HTMLInputElement;
+    await waitFor(() => expect(total.value).toBe("$28,75"));
+    expect(total.disabled).toBe(true);
     expect(within(first).getByText("El total de la factura.")).toBeDefined();
+    // Sin título visible de la sección: el de las formas de pago queda para la asistencia.
+    expect(screen.getByRole("heading", { level: 2, name: "Formas de pago" }).className).toContain(
+      "sr-only",
+    );
     expect(
       await within(first).findByText("SRI 01 · Sin utilización del sistema financiero"),
     ).toBeDefined();
     expect(within(first).getByRole("option", { name: "Efectivo" })).toBeDefined();
     const user = userEvent.setup();
     await user.click(button("Dividir el pago"));
-    expect(screen.getByText("Reparte el total entre las formas de pago.")).toBeDefined();
-    // Lo que falta va como insignia junto al título de la sección (decisión del propietario, 2026-10-22).
-    const pendingBadge = (await screen.findByText("Faltan $28,75 por asignar")).closest(
+    // La ayuda de la sección y lo que falta van en la etiqueta del primer «Forma de pago».
+    expect(within(first).getByText(/^Reparte el total entre las formas de pago\./)).toBeDefined();
+    const pendingBadge = (await within(first).findByText("Faltan $28,75 por asignar")).closest(
       "[data-slot=badge]",
     );
     expect(pendingBadge?.getAttribute("data-variant")).toBe("warning");
-    expect(pendingBadge?.parentElement?.querySelector("h2")?.textContent).toBe("Formas de pago");
+    expect(pendingBadge?.closest("div")?.querySelector("label")?.textContent).toBe("Forma de pago");
     await user.type(within(first).getByLabelText("Importe (USD)"), "10");
     const second = screen.getByRole("group", { name: "Forma de pago 2" });
     await user.selectOptions(within(second).getByLabelText("Forma de pago"), "19");
