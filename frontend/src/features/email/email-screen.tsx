@@ -23,6 +23,7 @@ import { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { FormGrid } from "@/components/layout/form-grid";
 import { PasswordField } from "@/components/password-field";
 import { useSession } from "@/components/session";
 import {
@@ -290,7 +291,7 @@ function EmailForm({ response }: { response: EmailSettingsResponse }) {
               )}
             />
           </FormField>
-          <div className="grid items-start gap-4 sm:grid-cols-2">
+          <FormGrid>
             <FormField
               id="email-username"
               label="Usuario (opcional)"
@@ -323,11 +324,11 @@ function EmailForm({ response }: { response: EmailSettingsResponse }) {
                 placeholder={settings?.passwordSet ? "Déjala vacía para conservarla" : undefined}
               />
             </FormField>
-          </div>
+          </FormGrid>
         </Group>
 
         <Group id="correos-remitente" title="Remitente">
-          <div className="grid items-start gap-4 sm:grid-cols-2">
+          <FormGrid>
             <FormField id="email-from-name" label="Nombre" error={errors.fromName?.message}>
               <Input
                 {...fieldAria("email-from-name", errors.fromName?.message)}
@@ -348,7 +349,7 @@ function EmailForm({ response }: { response: EmailSettingsResponse }) {
                 autoComplete="email"
               />
             </FormField>
-          </div>
+          </FormGrid>
           <FormField
             id="email-bcc"
             label="Copia oculta (opcional)"
