@@ -50,6 +50,8 @@ export const dashboardViewSchema = z.strictObject({
     count,
     /** Devueltos o no autorizados en los últimos 30 días. */
     rejectedLast30Days: count,
+    /** Autorizados cuyo último envío por correo falló (add-email-delivery). */
+    emailFailed: count,
   }),
   drafts: z.strictObject({ invoices: count }),
   inventory: z.strictObject({

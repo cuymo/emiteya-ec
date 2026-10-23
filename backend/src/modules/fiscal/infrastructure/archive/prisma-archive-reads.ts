@@ -94,6 +94,7 @@ function whereOf(companyId: string, filters: ArchiveFilters): Prisma.ElectronicD
     ...(filters.state ? { state: filters.state } : {}),
     ...(filters.establishmentId ? { establishmentId: filters.establishmentId } : {}),
     ...(filters.emissionPointId ? { emissionPointId: filters.emissionPointId } : {}),
+    ...(filters.documentIds ? { id: { in: [...filters.documentIds] } } : {}),
     AND: [
       // La identificación del receptor encuentra una guía por cualquiera de sus destinatarios
       // (design D10), con el índice por identificación de cada tabla.

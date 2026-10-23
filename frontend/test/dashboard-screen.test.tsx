@@ -38,7 +38,7 @@ const SUMMARY = {
     authorizedTotal: index === 5 ? "18162.13" : "40000.00",
     authorizedCount: index === 5 ? 15 : 30,
   })),
-  attention: { count: 3, rejectedLast30Days: 2 },
+  attention: { count: 3, rejectedLast30Days: 2, emailFailed: 0 },
   drafts: { invoices: 4 },
   inventory: { outOfStock: 1 },
   topCustomers: [

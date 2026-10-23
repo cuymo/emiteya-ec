@@ -38,6 +38,7 @@ export function toDocumentListItem(document: ArchiveDocument): DocumentListItem 
     state: document.state,
     transmissionStopped: document.transmissionStopped,
     documents: availabilityOf(document),
+    email: document.emailStatus ? { status: document.emailStatus } : null,
   };
 }
 

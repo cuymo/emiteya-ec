@@ -25,10 +25,11 @@ export function createDashboard({ db, sources, authorizer, today }: DashboardDep
       const date = today();
       const environment = await sources.currentEnvironment(db, ctx.companyId);
       const stoppedIds = await sources.stoppedDocumentIds(ctx.companyId);
-      const [documents, invoiceDrafts, outOfStock] = await Promise.all([
+      const [documents, invoiceDrafts, outOfStock, emailFailed] = await Promise.all([
         sources.documents(db, ctx.companyId, { environment, today: date, stoppedIds }),
         sources.invoiceDrafts(db, ctx.companyId),
         sources.outOfStock(db, ctx.companyId),
+        sources.emailFailed(ctx.companyId, environment),
       ]);
       const invoices = documents.byType.find((row) => row.documentType === "01");
       const current = documents.monthly.at(-1);
@@ -50,6 +51,7 @@ export function createDashboard({ db, sources, authorizer, today }: DashboardDep
         attention: {
           count: documents.attention,
           rejectedLast30Days: documents.rejectedLast30Days,
+          emailFailed,
         },
         drafts: { invoices: invoiceDrafts },
         inventory: { outOfStock },

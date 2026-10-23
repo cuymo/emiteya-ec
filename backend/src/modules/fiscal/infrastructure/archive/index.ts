@@ -30,12 +30,16 @@ export { registerRideMetrics } from "./ride-metrics.ts";
 export { createDeliverableDocumentSource } from "./deliverable-documents.ts";
 
 /** Rutas de la bandeja de comprobantes, sus documentos, sus descargas y sus entregas. */
+import type { ArchiveEmailStatuses } from "../../application/archive/archive-ports.ts";
+
 export function archiveRouters(deps: {
   prisma: PrismaClient;
   authorizer: Authorizer;
   /** La cola durable y la configuración del job del RIDE, para el reintento manual. */
   jobs: Pick<JobStore, "enqueueIn">;
   rideSettings: RideJobSettings;
+  /** El estado del correo que exporta el módulo de correo (add-email-delivery). */
+  emailStatuses?: ArchiveEmailStatuses;
   metrics?: Registry;
   logger?: Readonly<{ error(details: object, message: string): void }>;
 }) {
@@ -45,6 +49,7 @@ export function archiveRouters(deps: {
     authorizer: deps.authorizer,
     retries: createRideRetryUnitOfWork(deps.prisma, deps.jobs),
     rideSettings: deps.rideSettings,
+    ...(deps.emailStatuses ? { emailStatuses: deps.emailStatuses } : {}),
   });
   const downloads = createDownloads({
     reads,

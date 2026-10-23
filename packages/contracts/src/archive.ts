@@ -5,6 +5,7 @@
 // estrictas: un `companyId` en la consulta se ignora, porque la empresa sale siempre de la sesión.
 // Las vistas nunca llevan bytes ni XML.
 import { z } from "zod";
+import { emailDeliveryStatusSchema } from "./email.ts";
 import { decimalString, DECIMAL_SPECS } from "./decimal.ts";
 import { documentTypeSchema } from "./fiscal-numbering.ts";
 import { INVOICE_STATES } from "./invoices.ts";
@@ -44,6 +45,8 @@ export const listDocumentsQuerySchema = z
     search: searchParam,
     establishmentId: idFilter("El establecimiento no es válido.").optional(),
     emissionPointId: idFilter("El punto de emisión no es válido.").optional(),
+    /** Solo los comprobantes cuyo último envío por correo falló (add-email-delivery). */
+    emailStatus: z.enum(["FAILED"], { error: "El estado del correo no es válido." }).optional(),
     ...pageParams,
   })
   .refine((query) => !query.from || !query.to || query.from <= query.to, {
@@ -95,6 +98,8 @@ const documentListItemShape = z.strictObject({
   /** Transmisión detenida: la lectura del cambio 7. */
   transmissionStopped: z.boolean(),
   documents: documentAvailabilitySchema,
+  /** El estado del último envío por correo, o null sin envíos (add-email-delivery). */
+  email: z.strictObject({ status: emailDeliveryStatusSchema }).nullable().default(null),
 });
 
 /**

@@ -25,6 +25,7 @@ import {
   taxpayerRouters,
 } from "../../src/modules/taxpayer/infrastructure/index.ts";
 import { dashboardModule } from "../../src/modules/dashboard/infrastructure/index.ts";
+import { createEmailStatusSource } from "../../src/modules/email/infrastructure/email-status-source.ts";
 import {
   createDocumentSummary,
   createTransmissionReader,
@@ -519,6 +520,11 @@ export function buildTaxpayerApp(
             documents: createDocumentSummary(db.name),
             invoiceDrafts: invoiceDraftCount,
             outOfStock: outOfStockCount,
+            emailFailed: (companyId, environment) =>
+              createEmailStatusSource(db.database.prisma, db.name).countFailedDocuments(
+                companyId,
+                environment,
+              ),
           },
           ...(options.now ? { now: options.now } : {}),
         }).routers,

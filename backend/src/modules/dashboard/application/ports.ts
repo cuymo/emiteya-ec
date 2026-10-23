@@ -29,4 +29,6 @@ export type DashboardSources = Readonly<{
   documents(db: DbClient, companyId: string, query: DocumentSummaryQuery): Promise<DocumentSummary>;
   invoiceDrafts(db: DbClient, companyId: string): Promise<number>;
   outOfStock(db: DbClient, companyId: string): Promise<number>;
+  /** Autorizados del ambiente con su último envío por correo fallido (add-email-delivery). */
+  emailFailed(companyId: string, environment: Environment): Promise<number>;
 }>;

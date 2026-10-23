@@ -1,5 +1,6 @@
 // Modelo de lectura de la bandeja de comprobantes (add-document-archive, design D2): comprobantes
 // de una empresa con sus artefactos, la generación de su RIDE y su transmisión, sin bytes.
+import type { EmailDeliveryStatus } from "@facturador/contracts";
 import type { NewJob } from "../../../../platform/jobs/jobs.ts";
 import type { DocumentType } from "../../domain/numbering.ts";
 import type { ArtifactKind, DocumentState } from "../../domain/document.ts";
@@ -13,6 +14,10 @@ export type ArchiveFilters = Readonly<{
   search?: string | undefined;
   establishmentId?: string | undefined;
   emissionPointId?: string | undefined;
+  /** Solo los comprobantes cuyo último envío por correo falló (add-email-delivery). */
+  emailStatus?: "FAILED" | undefined;
+  /** Restringe la lista a estos comprobantes: los que resuelve el filtro del correo. */
+  documentIds?: readonly string[] | undefined;
   page: number;
   pageSize: number;
 }>;
@@ -49,7 +54,21 @@ export type ArchiveDocument = Readonly<{
   artifacts: readonly ArchiveArtifact[];
   rideJob: ArchiveRideJob | null;
   transmissionStopped: boolean;
+  /** El estado del último envío por correo; lo completa la bandeja con la fuente del correo. */
+  emailStatus?: EmailDeliveryStatus | null;
 }>;
+
+/**
+ * El estado del correo de los comprobantes (add-email-delivery, design D10): lo exporta el módulo de
+ * correo y el arranque lo pasa como puerto; la bandeja no lee sus tablas.
+ */
+export interface ArchiveEmailStatuses {
+  lastStatuses(
+    companyId: string,
+    documentIds: readonly string[],
+  ): Promise<ReadonlyMap<string, EmailDeliveryStatus>>;
+  failedDocumentIds(companyId: string): Promise<readonly string[]>;
+}
 
 export interface ArchiveReads {
   list(

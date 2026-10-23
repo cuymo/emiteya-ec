@@ -152,6 +152,8 @@ describe("bandeja de comprobantes sobre HTTP", () => {
       state: "AUTHORIZED",
       transmissionStopped: false,
       documents: { ride: "AVAILABLE", authorizedXml: true, signedXml: true },
+      // Sin envíos por correo (add-email-delivery).
+      email: null,
     });
   });
 

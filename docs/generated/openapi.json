@@ -6102,11 +6102,17 @@
                               "type": "integer",
                               "minimum": 0,
                               "maximum": 9007199254740991
+                            },
+                            "emailFailed": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
                             }
                           },
                           "required": [
                             "count",
-                            "rejectedLast30Days"
+                            "rejectedLast30Days",
+                            "emailFailed"
                           ],
                           "additionalProperties": false
                         },
@@ -24010,6 +24016,18 @@
             }
           },
           {
+            "name": "emailStatus",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "enum": [
+                "FAILED"
+              ]
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -24166,6 +24184,34 @@
                               "signedXml"
                             ],
                             "additionalProperties": false
+                          },
+                          "email": {
+                            "default": null,
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "PENDING",
+                                      "RETRYING",
+                                      "SENT",
+                                      "FAILED",
+                                      "NO_RECIPIENT",
+                                      "DISABLED"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "status"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -24487,6 +24533,34 @@
                             "signedXml"
                           ],
                           "additionalProperties": false
+                        },
+                        "email": {
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PENDING",
+                                    "RETRYING",
+                                    "SENT",
+                                    "FAILED",
+                                    "NO_RECIPIENT",
+                                    "DISABLED"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "artifacts": {
                           "type": "array",
@@ -25881,6 +25955,34 @@
                             "signedXml"
                           ],
                           "additionalProperties": false
+                        },
+                        "email": {
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PENDING",
+                                    "RETRYING",
+                                    "SENT",
+                                    "FAILED",
+                                    "NO_RECIPIENT",
+                                    "DISABLED"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "artifacts": {
                           "type": "array",

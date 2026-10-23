@@ -25,6 +25,7 @@ import { emailRouter } from "./http/email-router.ts";
 import { createSmtpPasswordVault } from "./password-vault.ts";
 import { createEmailSettingsRepository } from "./prisma-email-settings.ts";
 import { createSmtpMailTransport } from "./smtp-transport.ts";
+import { createEmailStatusSource } from "./email-status-source.ts";
 import { createEmailUnitOfWork } from "./unit-of-work.ts";
 import { createEmailDeliveryUnitOfWork } from "./delivery-unit-of-work.ts";
 import { registerEmailMetrics } from "./metrics.ts";
@@ -140,5 +141,7 @@ export function emailModule(options: EmailModuleOptions) {
     transport,
     rideFollowers,
     handlers,
+    /** El estado del correo de los comprobantes, para la bandeja y el tablero. */
+    statuses: createEmailStatusSource(options.prisma, schema),
   };
 }

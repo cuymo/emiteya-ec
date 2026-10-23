@@ -29,7 +29,11 @@ const summary = (signals: {
       byType: [],
     },
     monthly: months.map((month) => ({ month, authorizedTotal: "0.00", authorizedCount: 0 })),
-    attention: { count: signals.attention ?? 0, rejectedLast30Days: signals.rejected ?? 0 },
+    attention: {
+      count: signals.attention ?? 0,
+      rejectedLast30Days: signals.rejected ?? 0,
+      emailFailed: 0,
+    },
     drafts: { invoices: 0 },
     inventory: { outOfStock: signals.outOfStock ?? 0 },
     topCustomers: [],

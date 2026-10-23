@@ -421,6 +421,7 @@ apiRouter.use(
     authorizer,
     jobs: jobStore,
     rideSettings: rideSettings.job,
+    emailStatuses: email.statuses,
     metrics: metrics.registry,
     logger,
   }),
@@ -617,6 +618,8 @@ apiRouter.use(
       documents: createDocumentSummary(reportSchema),
       invoiceDrafts: invoiceDraftCount,
       outOfStock: outOfStockCount,
+      emailFailed: (companyId, environment) =>
+        email.statuses.countFailedDocuments(companyId, environment),
     },
   }).routers,
 );

@@ -34,7 +34,7 @@ al terminarlo.
 
 - [x] 5.1 Implementar `GET /api/v1/documents/:id/email-deliveries` y `GET …/email-recipients`; verificar con pruebas de integración: orden, intentos, sin contenido ni configuración, otra empresa `404`, sin sesión `401` y permisos.
 - [x] 5.2 Implementar `POST /api/v1/documents/:id/email-deliveries` con `Idempotency-Key` (de 1 a 10 direcciones válidas sin repetir; no autorizado, interruptor apagado o sin configuración `409`; Pruebas al correo de prueba; auditoría `email.resent`); verificar con pruebas de integración: la misma solicitud dos veces con un solo correo, la misma clave con otro cuerpo `409`, dos solicitudes a la vez, operador permitido, otra empresa `404` y direcciones inválidas.
-- [ ] 5.3 Agregar a la bandeja el filtro `emailStatus=FAILED` y el estado del último envío por fila, y al tablero `attention.emailFailed`, con sus contratos y el OpenAPI; verificar con pruebas de integración del filtro, de un valor inválido, del conteo que baja tras un reenvío aceptado y del aislamiento por empresa.
+- [x] 5.3 Agregar a la bandeja el filtro `emailStatus=FAILED` y el estado del último envío por fila, y al tablero `attention.emailFailed`, con sus contratos y el OpenAPI; verificar con pruebas de integración del filtro, de un valor inválido, del conteo que baja tras un reenvío aceptado y del aislamiento por empresa.
 
 ## 6. Fase 6 · Despliegue
 

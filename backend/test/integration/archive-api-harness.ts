@@ -7,6 +7,7 @@ import {
   archiveRouters,
 } from "../../src/modules/fiscal/infrastructure/archive/index.ts";
 import { createPrismaJobStore } from "../../src/platform/jobs/prisma-job-store.ts";
+import { createEmailStatusSource } from "../../src/modules/email/infrastructure/email-status-source.ts";
 import { createAuthorizer } from "../../src/modules/identity/application/authorization.ts";
 import { buildAuthApp, createMember } from "./auth-harness.ts";
 import type { MigratedSchema } from "./database.ts";
@@ -28,6 +29,8 @@ export function buildArchiveApp(db: MigratedSchema) {
             authorizer,
             jobs: createPrismaJobStore(db.database.prisma, db.name),
             rideSettings: { maxAttempts: 5, backoff: RIDE_BACKOFF },
+            // Como main.ts: el estado del correo que exporta el módulo de correo.
+            emailStatuses: createEmailStatusSource(db.database.prisma, db.name),
             metrics: archiveMetrics,
             logger: { error: (details, message) => void errors.push({ details, message }) },
           }),
