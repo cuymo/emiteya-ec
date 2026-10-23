@@ -271,9 +271,16 @@ describe("página del formulario de producto", () => {
     });
     expect(await screen.findByRole("heading", { level: 1, name: "Nuevo producto" })).toBeDefined();
     const form = await formOf("Nuevo producto");
-    // Secciones con su título, como Empresa.
-    for (const name of ["Datos del producto", "Precio e impuestos", "Inventario", "Uso interno"])
-      expect(within(form).getByRole("region", { name })).toBeDefined();
+    // Una sola columna centrada, sin secciones, como Terceros (decisión del propietario, 2026-10-22).
+    expect(within(form).queryAllByRole("region")).toEqual([]);
+    expect(form.closest("section")?.className).toContain("mx-auto");
+    expect(within(form).getByRole("radiogroup", { name: "Tipo" }).className).toContain("w-full");
+    // El precio con el control de stock a su derecha; el IVA y el ICE en una fila.
+    const row = (label: string) => within(form).getByLabelText(label).closest(".grid");
+    expect(row("Precio unitario sin impuestos")).toBe(row("Controlar stock de este bien"));
+    expect(row("Tarifa de IVA")).toBe(row("ICE (opcional)"));
+    expect(row("Tarifa de IVA")?.className).toContain("sm:grid-cols-2");
+    expect(within(form).getByLabelText("Descripción interna (opcional)").tagName).toBe("TEXTAREA");
     await user().type(within(form).getByLabelText("Nombre"), "Cemento 50 kg");
     await user().type(within(form).getByLabelText("Código principal (opcional)"), "CEM-50");
     await user().type(within(form).getByLabelText("Precio unitario sin impuestos"), "8.75");

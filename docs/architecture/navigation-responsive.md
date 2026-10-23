@@ -46,10 +46,11 @@ The groups and destinations, in this order:
     list header, and each row's «Corregir» is a link (`RowActionLink`).
   - **Breadcrumbs:** «Nuevo tercero», «Nuevo producto», or the record's name once the correction
     loads («Corregir tercero» or «Corregir producto» until then).
-  - **Form** (`party-form.tsx`, `product-form.tsx`): «Cancelar» back to the list and the primary
-    action at the foot. The product form keeps sections with their title on the left, like Empresa
-    (`SettingsSections`); the party form is one centered column without sections, with the roles
-    first as full-width tabs (owner decision, 2026-10-22).
+  - **Form** (`party-form.tsx`, `product-form.tsx`): one centered column without sections (owner
+    decision, 2026-10-22), with «Cancelar» back to the list and the primary action at the foot. The
+    party form puts the roles first, as full-width tabs. The product form puts the kind at full
+    width, the price with the stock control at its right, the IVA and the ICE in one row, and the
+    internal description in a `Textarea` with its count.
     Saving returns to the list with the toast. The correction sends the version that was opened,
     so a change by someone else still arrives as a conflict.
   - **Exception:** inside a document, registering a party stays in `PartyDialog`, so the draft is

@@ -248,8 +248,11 @@ Shared components own interaction consistency, not business policy.
   circle, the data, and on the same row, at the right, the actions to choose or change it (stacked
   when there are several). Without a pick the border is dashed and the icon muted. The shipping
   guide editor uses it for the carrier, the recipient and the support invoice.
-- `SingleLineTextarea` (`components/single-line-textarea.tsx`) is a three-line, resizable textarea
-  for long texts the document carries on one line (the debit note concept and the purchase
+- `Textarea` (`components/ui/textarea.tsx`) is the system textarea: three lines, resizable
+  downward, with the border, surface and type of `Input`; the product's internal description uses
+  it.
+- `SingleLineTextarea` (`components/single-line-textarea.tsx`) is a `Textarea` for long texts the
+  document carries on one line (the debit note concept and the purchase
   settlement line descriptions): Enter does not break the line and pasted line breaks become
   spaces. The field hint shows the character count.
 - `SemanticToaster` owns visual variants; callers provide human-readable messages.

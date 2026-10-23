@@ -5,18 +5,11 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 
-export function SingleLineTextarea({
-  onChange,
-  onKeyDown,
-  className,
-  rows = 3,
-  ...props
-}: ComponentProps<"textarea">) {
+export function SingleLineTextarea({ onChange, onKeyDown, ...props }: ComponentProps<"textarea">) {
   return (
-    <textarea
-      rows={rows}
+    <Textarea
       {...props}
       onKeyDown={(event) => {
         if (event.key === "Enter") event.preventDefault();
@@ -28,10 +21,6 @@ export function SingleLineTextarea({
         }
         onChange?.(event);
       }}
-      className={cn(
-        "min-h-24 w-full min-w-0 resize-y rounded-md border border-input bg-surface px-3 py-2 text-base text-foreground sm:text-sm aria-invalid:border-danger",
-        className,
-      )}
     />
   );
 }

@@ -1,6 +1,9 @@
 // Alta y corrección de un producto o servicio (add-parties-and-products, design D17), en su propia
 // página (decisión del propietario, 2026-10-17: el formulario largo no cabe bien en un diálogo).
-// Secciones con su título a la izquierda, como Empresa. React Hook Form con el esquema del contrato:
+// Una sola columna centrada, sin secciones, como Terceros (decisión del propietario, 2026-10-22): el
+// tipo a todo el ancho; el nombre y los códigos; el precio con el control de stock a su derecha; el
+// IVA y el ICE en una fila; el IRBPNR de un bien; y la descripción interna en un área de texto con su
+// cuenta. React Hook Form con el esquema del contrato:
 // precio sin impuestos como texto decimal, IVA obligatorio e ICE e IRBPNR opcionales entre las
 // entradas utilizables del catálogo fiscal. Pasar a servicio quita en la misma solicitud el IRBPNR y
 // el control de stock. Al guardar, vuelve a la lista con el aviso.
@@ -9,6 +12,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createProductSchema,
+  PRODUCT_DESCRIPTION_MAX_LENGTH,
   PRODUCT_KIND_LABELS,
   PRODUCT_KINDS,
   productTaxesSchema,
@@ -27,7 +31,6 @@ import { AsyncButton } from "@/components/async-button";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
-import { SettingsSection, SettingsSections } from "@/components/layout/settings-section";
 import { SegmentedControl } from "@/components/segmented-control";
 import { useSession } from "@/components/session";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-label";
@@ -35,6 +38,7 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { useStockItem } from "@/features/inventory/inventory-api";
@@ -42,6 +46,8 @@ import { useProduct, useSaveProduct, useTaxOptions, type TaxOption } from "./pro
 
 const LIST = "/productos";
 const TITLE_ID = "producto-titulo";
+/** Una sola columna centrada en la página, como Terceros (decisión del propietario, 2026-10-22). */
+const PAGE = "mx-auto flex w-full max-w-2xl flex-col gap-6";
 
 type FormInput = {
   kind: ProductKind;
@@ -127,6 +133,8 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
   });
   const { errors } = form.formState;
   const kind = useWatch({ control: form.control, name: "kind" });
+  const description = useWatch({ control: form.control, name: "description" }) ?? "";
+  const descriptionHint = `No aparece en los comprobantes · ${description.length}/${PRODUCT_DESCRIPTION_MAX_LENGTH}`;
   // add-minimal-inventory, design D11: con el inventario inicializado, la marca la cambia el
   // inventario. Mientras se consulta, la marca tampoco se puede cambiar.
   const inventory = useStockItem(
@@ -170,7 +178,7 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
             : { input },
         );
       })}
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-5"
     >
       {review && (
         <div
@@ -196,145 +204,90 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
           )}
         </div>
       )}
-      <SettingsSections>
-        <SettingsSection
-          title="Datos del producto"
-          description="El nombre es la descripción del ítem en los comprobantes."
-        >
-          <div className="flex flex-col gap-1">
-            <span id={kindLabel} className="text-sm font-medium">
-              Tipo
-            </span>
-            <Controller
-              control={form.control}
-              name="kind"
-              render={({ field }) => (
-                <SegmentedControl<ProductKind>
-                  aria-labelledby={kindLabel}
-                  options={KIND_OPTIONS}
-                  value={field.value}
-                  onChange={(next) => {
-                    field.onChange(next);
-                    if (next === "SERVICE") {
-                      form.setValue("taxes.irbpnr", "");
-                      form.setValue("stockTracked", false);
-                    }
-                  }}
-                />
-              )}
+      <div className="flex flex-col gap-1">
+        <span id={kindLabel} className="text-sm font-medium">
+          Tipo
+        </span>
+        <Controller
+          control={form.control}
+          name="kind"
+          render={({ field }) => (
+            <SegmentedControl<ProductKind>
+              fullWidth
+              aria-labelledby={kindLabel}
+              options={KIND_OPTIONS}
+              value={field.value}
+              onChange={(next) => {
+                field.onChange(next);
+                if (next === "SERVICE") {
+                  form.setValue("taxes.irbpnr", "");
+                  form.setValue("stockTracked", false);
+                }
+              }}
             />
-          </div>
-          <FormField id="product-name" label="Nombre" error={errors.name?.message}>
-            <Input
-              {...fieldAria("product-name", errors.name?.message)}
-              {...form.register("name")}
-              autoComplete="off"
-            />
-          </FormField>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              id="product-main-code"
-              label="Código principal (opcional)"
-              error={errors.mainCode?.message}
-            >
-              <Input
-                {...fieldAria("product-main-code", errors.mainCode?.message)}
-                {...form.register("mainCode")}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </FormField>
-            <FormField
-              id="product-aux-code"
-              label="Código auxiliar (opcional)"
-              error={errors.auxiliaryCode?.message}
-            >
-              <Input
-                {...fieldAria("product-aux-code", errors.auxiliaryCode?.message)}
-                {...form.register("auxiliaryCode")}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </FormField>
-          </div>
-        </SettingsSection>
-
-        <SettingsSection
-          title="Precio e impuestos"
-          description="El precio va sin impuestos; los impuestos se calculan sobre él en cada comprobante."
-        >
-          <FormField
-            id="product-price"
-            label="Precio unitario sin impuestos"
-            hint="Con punto decimal y hasta 6 decimales, por ejemplo 8.75."
-            error={errors.unitPrice?.message}
-          >
-            <Input
-              {...fieldAria("product-price", errors.unitPrice?.message, "hint")}
-              {...form.register("unitPrice")}
-              inputMode="decimal"
-              autoComplete="off"
-              className="max-w-xs"
-            />
-          </FormField>
-          <FormField
-            id="product-iva"
-            label="Tarifa de IVA"
-            error={errors.taxes?.iva?.message ?? errors.taxes?.message}
-          >
-            <Select
-              id="product-iva"
-              {...form.register("taxes.iva")}
-              aria-invalid={errors.taxes ? true : undefined}
-            >
-              <option value="">Elige una tarifa</option>
-              {withCurrent(iva.data, product, "iva").map((option) => (
-                <option key={option.entryKey} value={option.entryKey}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          <FormField
-            id="product-ice"
-            label="ICE (opcional)"
-            hint="Solo los códigos que tu empresa habilitó en Catálogos fiscales."
-          >
-            <Select id="product-ice" {...form.register("taxes.ice")}>
-              <option value="">Sin ICE</option>
-              {withCurrent(ice.data, product, "ice").map((option) => (
-                <option key={option.entryKey} value={option.entryKey}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          {kind === "GOOD" && (
-            <FormField id="product-irbpnr" label="IRBPNR (opcional)">
-              <Select id="product-irbpnr" {...form.register("taxes.irbpnr")}>
-                <option value="">Sin IRBPNR</option>
-                {withCurrent(irbpnr.data, product, "irbpnr").map((option) => (
-                  <option key={option.entryKey} value={option.entryKey}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
           )}
-        </SettingsSection>
-
-        <SettingsSection
-          title="Inventario"
-          description="El stock de un bien se lleva en Inventario."
+        />
+      </div>
+      <FormField id="product-name" label="Nombre" error={errors.name?.message}>
+        <Input
+          {...fieldAria("product-name", errors.name?.message)}
+          {...form.register("name")}
+          autoComplete="off"
+        />
+      </FormField>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField
+          id="product-main-code"
+          label="Código principal (opcional)"
+          error={errors.mainCode?.message}
         >
+          <Input
+            {...fieldAria("product-main-code", errors.mainCode?.message)}
+            {...form.register("mainCode")}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </FormField>
+        <FormField
+          id="product-aux-code"
+          label="Código auxiliar (opcional)"
+          error={errors.auxiliaryCode?.message}
+        >
+          <Input
+            {...fieldAria("product-aux-code", errors.auxiliaryCode?.message)}
+            {...form.register("auxiliaryCode")}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </FormField>
+      </div>
+
+      {/* El precio y, a su derecha, el control de stock de un bien (decisión del propietario,
+          2026-10-22). */}
+      <div className="grid items-start gap-4 sm:grid-cols-2">
+        <FormField
+          id="product-price"
+          label="Precio unitario sin impuestos"
+          hint="Con punto decimal y hasta 6 decimales, por ejemplo 8.75."
+          error={errors.unitPrice?.message}
+        >
+          <Input
+            {...fieldAria("product-price", errors.unitPrice?.message, "hint")}
+            {...form.register("unitPrice")}
+            inputMode="decimal"
+            autoComplete="off"
+          />
+        </FormField>
+        {/* Alineado con el campo del precio, debajo de su etiqueta. */}
+        <div className="flex flex-col gap-1 sm:pt-6">
           {kind !== "GOOD" ? (
-            <p className="text-sm text-foreground-muted">
+            <p className="flex min-h-10 items-center text-sm text-foreground-muted">
               Un servicio no lleva IRBPNR ni control de stock.
             </p>
           ) : stockManaged && product ? (
             // Sin registrar: la marca conserva su valor y no se envía cambiada.
-            <div className="flex flex-col gap-1">
-              <label className="flex min-h-11 items-center gap-2 text-sm text-foreground-muted">
+            <>
+              <label className="flex min-h-10 items-center gap-2 text-sm text-foreground-muted">
                 <input
                   type="checkbox"
                   className="size-5 accent-primary"
@@ -356,9 +309,9 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
                   </Link>
                 </p>
               )}
-            </div>
+            </>
           ) : (
-            <label className="flex min-h-11 items-center gap-2 text-sm">
+            <label className="flex min-h-10 items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 className="size-5 accent-primary"
@@ -367,22 +320,69 @@ function ProductForm({ initial }: { initial: ProductView | null }) {
               Controlar stock de este bien
             </label>
           )}
-        </SettingsSection>
+        </div>
+      </div>
 
-        <SettingsSection title="Uso interno" description="Notas para tu equipo sobre este ítem.">
-          <FormField
-            id="product-description"
-            label="Descripción interna (opcional)"
-            hint="No aparece en los comprobantes."
-            error={errors.description?.message}
+      {/* El IVA y el ICE en una fila (decisión del propietario, 2026-10-22). */}
+      <div className="grid items-start gap-4 sm:grid-cols-2">
+        <FormField
+          id="product-iva"
+          label="Tarifa de IVA"
+          error={errors.taxes?.iva?.message ?? errors.taxes?.message}
+        >
+          <Select
+            id="product-iva"
+            {...form.register("taxes.iva")}
+            aria-invalid={errors.taxes ? true : undefined}
           >
-            <Input
-              {...fieldAria("product-description", errors.description?.message, "hint")}
-              {...form.register("description")}
-            />
-          </FormField>
-        </SettingsSection>
-      </SettingsSections>
+            <option value="">Elige una tarifa</option>
+            {withCurrent(iva.data, product, "iva").map((option) => (
+              <option key={option.entryKey} value={option.entryKey}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+        <FormField
+          id="product-ice"
+          label="ICE (opcional)"
+          hint="Solo los códigos que tu empresa habilitó en Catálogos fiscales."
+        >
+          <Select id="product-ice" {...form.register("taxes.ice")}>
+            <option value="">Sin ICE</option>
+            {withCurrent(ice.data, product, "ice").map((option) => (
+              <option key={option.entryKey} value={option.entryKey}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+      </div>
+      {kind === "GOOD" && (
+        <FormField id="product-irbpnr" label="IRBPNR (opcional)">
+          <Select id="product-irbpnr" {...form.register("taxes.irbpnr")}>
+            <option value="">Sin IRBPNR</option>
+            {withCurrent(irbpnr.data, product, "irbpnr").map((option) => (
+              <option key={option.entryKey} value={option.entryKey}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+      )}
+
+      <FormField
+        id="product-description"
+        label="Descripción interna (opcional)"
+        hint={descriptionHint}
+        error={errors.description?.message}
+      >
+        <Textarea
+          maxLength={PRODUCT_DESCRIPTION_MAX_LENGTH}
+          {...fieldAria("product-description", errors.description?.message, "hint")}
+          {...form.register("description")}
+        />
+      </FormField>
 
       {error && (
         <p
@@ -426,7 +426,7 @@ export function ProductFormScreen({ productId }: { productId?: string }) {
 
   if (!allowed) {
     return (
-      <section aria-labelledby={TITLE_ID} className="flex flex-col gap-6">
+      <section aria-labelledby={TITLE_ID} className={PAGE}>
         <Header editing={editing} />
         <EmptyState
           kind="no-permission"
@@ -438,7 +438,7 @@ export function ProductFormScreen({ productId }: { productId?: string }) {
   }
   if (!editing) {
     return (
-      <section aria-labelledby={TITLE_ID} className="flex flex-col gap-6">
+      <section aria-labelledby={TITLE_ID} className={PAGE}>
         <Header editing={false} />
         <ProductForm initial={null} />
       </section>
@@ -448,7 +448,7 @@ export function ProductFormScreen({ productId }: { productId?: string }) {
   if (query.isError) {
     const missing = query.error instanceof ApiError && query.error.status === 404;
     return (
-      <section aria-labelledby={TITLE_ID} className="flex flex-col gap-6">
+      <section aria-labelledby={TITLE_ID} className={PAGE}>
         <Header editing />
         {missing ? (
           <EmptyState
@@ -471,7 +471,7 @@ export function ProductFormScreen({ productId }: { productId?: string }) {
     );
   }
   return (
-    <section aria-labelledby={TITLE_ID} className="flex flex-col gap-6">
+    <section aria-labelledby={TITLE_ID} className={PAGE}>
       <Header editing description={query.data.name} />
       <ProductForm key={query.data.id} initial={query.data} />
     </section>
@@ -480,18 +480,12 @@ export function ProductFormScreen({ productId }: { productId?: string }) {
 
 export function ProductFormSkeleton() {
   return (
-    <section aria-busy="true" className="@container flex flex-col gap-6">
+    <section aria-busy="true" className={PAGE}>
       <Skeleton className="h-10 w-64" />
-      <div className="grid gap-4 @settings-split:grid-cols-3 @settings-split:gap-8">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-4 w-full" />
-        </div>
-        <div className="flex flex-col gap-4 @settings-split:col-span-2">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
       </div>
     </section>
   );
