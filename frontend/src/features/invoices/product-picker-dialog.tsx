@@ -26,8 +26,9 @@ import { cn } from "@/lib/utils";
 import { useProducts } from "@/features/products/products-api";
 
 type KindFilter = "todos" | "bienes" | "servicios";
+// «Todos» y no «Bienes y servicios»: cabe en el cuarto de fila que deja la búsqueda.
 const KIND_FILTERS: readonly { value: KindFilter; label: string }[] = [
-  { value: "todos", label: "Bienes y servicios" },
+  { value: "todos", label: "Todos" },
   { value: "bienes", label: "Bienes" },
   { value: "servicios", label: "Servicios" },
 ];
@@ -267,8 +268,9 @@ export function ProductPickerDialog({
             Elige uno o varios productos activos; se agregan como líneas de la factura.
           </DialogDescription>
         </div>
-        <div className="flex flex-col gap-3 px-6 pt-4 sm:flex-row sm:items-center">
-          <div className="relative w-full sm:max-w-xs">
+        {/* Búsqueda y tipo en tres cuartos y un cuarto: la fila queda llena, sin huecos. */}
+        <div className="grid gap-3 px-6 pt-4 sm:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
+          <div className="relative w-full">
             <Search
               aria-hidden="true"
               className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-foreground-muted"
@@ -287,6 +289,7 @@ export function ProductPickerDialog({
           </div>
           <DataTableSelectFilter
             label="Tipo"
+            fullWidth
             value={kind}
             options={KIND_FILTERS}
             onChange={(value) => {

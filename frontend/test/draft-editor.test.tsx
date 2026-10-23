@@ -680,6 +680,8 @@ describe("pedidos del propietario sobre el editor (2026-10-22)", () => {
     await user.click(await screen.findByRole("button", { name: "Agregar producto" }));
     const dialog = await screen.findByRole("dialog", { name: "Agregar productos" });
     expect(within(dialog).getByRole("table", { name: "Productos activos" })).toBeDefined();
+    // El filtro de tipo llena su cuarto de la fila, junto a la búsqueda.
+    expect(within(dialog).getByRole("combobox", { name: "Tipo" }).className).toContain("w-full");
     await user.click(await within(dialog).findByRole("checkbox", { name: "Elegir Varilla 10 mm" }));
     await user.click(within(dialog).getByRole("checkbox", { name: "Elegir Cemento 50 kg" }));
     expect(within(dialog).getByText("2 productos elegidos")).toBeDefined();

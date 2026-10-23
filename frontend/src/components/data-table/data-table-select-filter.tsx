@@ -36,6 +36,11 @@ type SelectFilterProps<T extends string> = {
   align?: "start" | "end";
   /** El filtro depende de otro todavía sin elegir, como el punto sin establecimiento. */
   disabled?: boolean;
+  /**
+   * Ocupa todo su espacio, a la altura de un campo, como junto a la búsqueda de un diálogo
+   * (decisión del propietario, 2026-10-22).
+   */
+  fullWidth?: boolean;
 } & (
   | {
       /** Nombre de la opción que quita el filtro, como «Todos». */
@@ -54,6 +59,7 @@ export function DataTableSelectFilter<T extends string>({
   allLabel,
   align = "start",
   disabled = false,
+  fullWidth = false,
 }: SelectFilterProps<T>) {
   // Sin `allLabel` nunca se elige la opción que quita el filtro: el valor siempre es una opción.
   const change = onChange as (value: T | undefined) => void;
@@ -66,7 +72,9 @@ export function DataTableSelectFilter<T extends string>({
       <SelectMenuTrigger
         size="sm"
         aria-label={label}
-        className="max-md:w-full max-md:justify-start"
+        className={
+          fullWidth ? "h-10 w-full justify-start max-md:h-11" : "max-md:w-full max-md:justify-start"
+        }
       >
         <span aria-hidden="true" className="text-muted-foreground">
           {label}:
