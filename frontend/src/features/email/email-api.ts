@@ -12,13 +12,16 @@ import {
   emailRecipientsViewSchema,
   emailSettingsResponseSchema,
   testEmailResultSchema,
+  type DocumentState,
+  type EmailDeliveryStatus,
   type EmailSettingsResponse,
   type UpdateEmailSettingsInput,
 } from "@facturador/contracts";
 import { z } from "zod";
 import { errorMessage, toast, useMutationFeedback } from "@/components/feedback";
-import { isUnauthenticated } from "@/components/session";
+import { isUnauthenticated, useSession } from "@/components/session";
 import { apiFetch } from "@/lib/api";
+import { canSee } from "@/lib/permissions";
 import { DOCUMENTS_KEY } from "@/features/archive/archive-api";
 import { DASHBOARD_KEY } from "@/features/dashboard/dashboard-api";
 
@@ -105,7 +108,13 @@ export function useSendTestEmail(options: { onError: (error: unknown) => boolean
   });
 }
 
-/** El historial de envíos de un comprobante; perezoso, como el historial de entregas. */
+/** Mientras el último envío espera su intento, el historial se vuelve a consultar solo. */
+const POLL_MS: Partial<Record<EmailDeliveryStatus, number>> = { PENDING: 5_000, RETRYING: 30_000 };
+
+/**
+ * El historial de envíos de un comprobante, del más reciente al más antiguo. Solo para un
+ * comprobante autorizado: la tarjeta «Correo» y la atención de su pestaña comparten la consulta.
+ */
 export function useDocumentEmailDeliveries(documentId: string, enabled: boolean) {
   return useQuery({
     queryKey: emailDeliveriesKey(documentId),
@@ -115,7 +124,22 @@ export function useDocumentEmailDeliveries(documentId: string, enabled: boolean)
         schema: z.array(emailDeliveryViewSchema),
         signal,
       }),
+    refetchInterval: (query) => {
+      const latest = query.state.data?.[0];
+      return (latest && POLL_MS[latest.status]) ?? false;
+    },
   });
+}
+
+/**
+ * La pestaña de documentos pide atención cuando el último envío del comprobante falló. Sin el
+ * comprobante todavía (mientras carga su detalle), no consulta.
+ */
+export function useEmailNeedsAttention(document: { id: string; state: DocumentState } | undefined) {
+  const { me } = useSession();
+  const enabled = document?.state === "AUTHORIZED" && canSee(me.role, "archive.read");
+  const deliveries = useDocumentEmailDeliveries(document?.id ?? "", enabled);
+  return enabled && deliveries.data?.[0]?.status === "FAILED";
 }
 
 /** Las direcciones propuestas para enviar o reenviar: los correos vigentes de sus receptores. */

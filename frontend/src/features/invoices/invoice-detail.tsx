@@ -28,6 +28,7 @@ import {
 import { StateCell } from "@/features/documents/document-status-badge";
 import { LineItemList } from "@/features/documents/line-item-list";
 import { DocumentsSection } from "@/features/archive/documents-section";
+import { useEmailNeedsAttention } from "@/features/email/email-api";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { InvoiceCreditSection } from "@/features/credit-notes/invoice-credit-section";
 import { useInvoiceDebitNoteAction } from "@/features/debit-notes/invoice-debit-note-action";
@@ -72,6 +73,7 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
   const allowed = canSee(me.role, "invoices.read");
   const canRetry = canSee(me.role, "invoices.retrySigning");
   const invoice = useInvoice(invoiceId, allowed);
+  const emailAttention = useEmailNeedsAttention(invoice.data);
   // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
   useBreadcrumbLabel(invoice.data?.documentNumber);
   const retry = useRetrySigning();
@@ -249,6 +251,8 @@ export function InvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
               id: "documentos",
               label: "RIDE y XML",
               content: <DocumentsSection document={data} />,
+              // El último envío por correo falló (add-email-delivery, design D14).
+              attention: emailAttention,
             },
             {
               id: "notas-credito",

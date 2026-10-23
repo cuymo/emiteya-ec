@@ -3,7 +3,8 @@
 // administrador u operador. Objetivo: entregar el comprobante autorizado. Decisión: qué documento
 // descargar o si imprimir. P0: el estado del RIDE y "Descargar RIDE"; P1: "Imprimir", "XML
 // autorizado" y "XML firmado" (rotulado como firmado); P2: historial de entregas plegable; P3
-// (hashes, versiones del renderer y procedencia): no se muestran.
+// (hashes, versiones del renderer y procedencia): no se muestran. Al final, la tarjeta «Correo» de un
+// comprobante autorizado (add-email-delivery, design D14).
 "use client";
 
 import {
@@ -30,6 +31,7 @@ import {
   type DownloadKind,
 } from "./archive-api";
 import { stopReason } from "./archive-format";
+import { EmailSection } from "./email-section";
 import { documentKind, withArticle, type DocumentKind } from "./document-kinds";
 
 /** Historial plegable: descargas servidas y solicitudes de impresión, sin datos técnicos. */
@@ -116,17 +118,24 @@ export type ArchivedDocument = Readonly<{
 export function DocumentsSection({ document }: { document: ArchivedDocument }) {
   const kind = documentKind(document.documentType);
   return kind ? (
-    <KindDocumentsSection kind={kind} documentId={document.id} state={document.state} />
+    <KindDocumentsSection
+      kind={kind}
+      documentId={document.id}
+      documentType={document.documentType}
+      state={document.state}
+    />
   ) : null;
 }
 
 function KindDocumentsSection({
   kind,
   documentId,
+  documentType,
   state,
 }: {
   kind: DocumentKind;
   documentId: string;
+  documentType: DocumentType;
   state: DocumentState;
 }) {
   const { me } = useSession();
@@ -239,6 +248,10 @@ function KindDocumentsSection({
         )}
         {(documents.signedXml || documents.ride !== "NOT_APPLICABLE") && (
           <DeliveryHistory documentId={documentId} />
+        )}
+        {/* Después de las descargas: solo un comprobante autorizado sale por correo. */}
+        {state === "AUTHORIZED" && (
+          <EmailSection documentId={documentId} documentType={documentType} />
         )}
       </>
     );

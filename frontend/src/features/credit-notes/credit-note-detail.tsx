@@ -27,6 +27,7 @@ import {
   transmissionNeedsAttention,
 } from "@/features/documents/document-detail-tabs";
 import { DocumentsSection } from "@/features/archive/documents-section";
+import { useEmailNeedsAttention } from "@/features/email/email-api";
 import { LineItemList } from "@/features/documents/line-item-list";
 import { TransmissionSection } from "@/features/archive/transmission-section";
 import { ENVIRONMENT_LABELS } from "@/features/company/company-api";
@@ -66,6 +67,7 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
   const allowed = canSee(me.role, "creditNotes.read");
   const canRetry = canSee(me.role, "creditNotes.retrySigning");
   const note = useCreditNote(creditNoteId, allowed);
+  const emailAttention = useEmailNeedsAttention(note.data);
   // Miga final del shell: el número o el nombre del registro (adopt-premium-design-foundation-and-shell).
   useBreadcrumbLabel(note.data?.documentNumber);
   const retry = useRetryCreditNoteSigning();
@@ -283,6 +285,8 @@ export function CreditNoteDetailScreen({ creditNoteId }: { creditNoteId: string 
               id: "documentos",
               label: "RIDE y XML",
               content: <DocumentsSection document={data} />,
+              // El último envío por correo falló (add-email-delivery, design D14).
+              attention: emailAttention,
             },
           ]}
         />

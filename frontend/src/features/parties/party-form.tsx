@@ -40,6 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
+import { emailRowsSchema, toEmailRows } from "@/features/email/email-rows";
 import { useIdentificationTypes, useParty, useSaveParty } from "./parties-api";
 
 const LIST = "/terceros";
@@ -47,39 +48,14 @@ const TITLE_ID = "tercero-titulo";
 /** Una sola columna centrada en la página (decisión del propietario, 2026-10-22). */
 const PAGE = "mx-auto flex w-full max-w-2xl flex-col gap-6";
 
-/**
- * Hasta tres correos (add-email-delivery, design D14), una fila por correo porque `useFieldArray`
- * trabaja con objetos. Cada fila se valida en su posición con la regla del contrato, así el error
- * queda junto a su campo; una fila vacía no se envía.
- */
-const emailRowsSchema = z
-  .array(z.object({ address: z.string() }))
-  .max(PARTY_EMAILS_MAX, `Un tercero admite como máximo ${PARTY_EMAILS_MAX} correos.`)
-  .superRefine((rows, ctx) => {
-    const seen = new Set<string>();
-    rows.forEach(({ address }, index) => {
-      const email = address.trim();
-      if (email === "") return;
-      const result = partyEmailsSchema.element.safeParse(email);
-      if (!result.success) {
-        const message = result.error.issues[0]?.message ?? "El correo no tiene un formato válido.";
-        ctx.addIssue({ code: "custom", path: [index, "address"], message });
-        return;
-      }
-      const key = email.toLowerCase();
-      if (seen.has(key)) {
-        ctx.addIssue({
-          code: "custom",
-          path: [index, "address"],
-          message: "El correo está repetido.",
-        });
-      }
-      seen.add(key);
-    });
-  })
-  .transform((rows) => rows.map(({ address }) => address.trim()).filter((email) => email !== ""));
-
-const partyFormSchema = createPartySchema.extend({ emails: emailRowsSchema });
+/** Hasta tres correos, en una lista editable (add-email-delivery, design D14). */
+const partyFormSchema = createPartySchema.extend({
+  emails: emailRowsSchema({
+    max: PARTY_EMAILS_MAX,
+    address: partyEmailsSchema.element,
+    tooMany: `Un tercero admite como máximo ${PARTY_EMAILS_MAX} correos.`,
+  }),
+});
 type FormInput = z.input<typeof partyFormSchema>;
 const ROLE_OPTIONS = PARTY_ROLES.map((role) => ({ value: role, label: PARTY_ROLE_LABELS[role] }));
 const IDENTIFICATION_ERRORS = new Set([
@@ -102,7 +78,7 @@ const toForm = (
   identification: party?.identification ?? "",
   legalName: party?.legalName ?? "",
   address: party?.address ?? "",
-  emails: (party?.emails.length ? party.emails : [""]).map((address) => ({ address })),
+  emails: toEmailRows(party?.emails ?? []),
   phone: party?.phone ?? "",
   roles: party?.roles ?? [...initialRoles],
 });
