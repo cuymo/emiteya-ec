@@ -79,6 +79,10 @@ describe("composición del editor", () => {
       "GET /api/v1/invoices/drafts/draft-1": ok(draft()),
     });
     const section = await screen.findByRole("region", { name: "Datos de la factura" });
+    // El título de la sección no se ve: el de la página ya dice «Factura».
+    expect(
+      within(section).getByRole("heading", { level: 2, name: "Datos de la factura" }).className,
+    ).toContain("sr-only");
     const card = within(section).getByRole("group", { name: "Comprador" });
     expect(card.textContent).toContain(CUSTOMER.legalName);
     expect(within(card).getByText(`RUC ${CUSTOMER.identification}`)).toBeDefined();

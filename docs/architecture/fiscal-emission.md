@@ -531,7 +531,8 @@ persona, comprador, productos, pago, total y emitir, no el técnico de guardar p
   no calcula impuestos ni totales; solo suma los importes que se reparten entre varias formas de pago
   para decir cuánto falta. Una forma de pago todavía sin elegir no detiene la vista previa.
 - **Secciones.**
-  - **Datos de la factura.** El comprador es una ficha, no un campo (decisiones del propietario,
+  - **Datos de la factura,** sin título visible (el de la página ya dice «Factura»; la sección sigue
+    nombrada para la asistencia). El comprador es una ficha, no un campo (decisiones del propietario,
     2026-10-22): a la izquierda, el ícono de la persona (azul con comprador, gris sin él); su nombre
     y su identificación con el tipo («Cédula …», «RUC …», «Consumidor final · …»); y a la derecha
     «Cambiar» o «Elegir comprador», los dos en el azul primario. Antes de ellos, «Consumidor final»

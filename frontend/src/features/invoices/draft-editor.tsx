@@ -1004,7 +1004,9 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
             className="contents"
             data-slot="draft-fields"
           >
-            <FormSection title="Datos de la factura">
+            {/* Sin título visible: el título de la página ya dice «Factura» (decisión del
+                propietario, 2026-10-22); la sección sigue nombrada para la asistencia. */}
+            <FormSection title="Datos de la factura" hideTitle>
               <div className="flex flex-col gap-4">
                 <BuyerCard
                   buyer={buyer}
