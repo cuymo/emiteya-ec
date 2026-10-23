@@ -701,6 +701,8 @@ describe("pedidos del propietario sobre la retención (2026-10-22)", () => {
     });
     const change = await screen.findByRole("button", { name: "Cambiar proveedor" });
     expect(change.getAttribute("data-variant")).toBe("primary");
+    // El título con su estado va dentro del formulario, encima de sus campos.
+    expect(screen.getByRole("heading", { level: 1 }).closest("form")).not.toBeNull();
     expect(
       screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
     ).toEqual([

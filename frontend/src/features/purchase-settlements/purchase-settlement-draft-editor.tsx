@@ -364,14 +364,18 @@ function DraftEditor({
 
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <Header />
-
-      {operationError && (
-        <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
-      )}
-
       <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
+          {/* El título con su estado, dentro de la columna del formulario y justo encima de él: el
+              resumen empieza a su lado (decisión del propietario, 2026-10-22). */}
+          <Header />
+          {operationError && (
+            <OperationAlert
+              message={operationError.message}
+              action={recovery}
+              alertRef={alertRef}
+            />
+          )}
           <Section title="Establecimiento y punto de emisión">
             <EstablishmentPointFields
               establishments={establishments.data ?? []}
@@ -615,15 +619,17 @@ function DraftEditor({
                 Emitir liquidación de compra
               </Button>
             )}
-            {canEmit && emitHint && (
-              <p id={emitHintId} className="text-xs text-foreground-muted">
-                {emitHint}
-              </p>
-            )}
             <AsyncButton type="submit" variant="outline" pending={save.isPending}>
               <Save aria-hidden="true" data-icon="inline-start" />
               Guardar borrador
             </AsyncButton>
+            {/* Por qué no se puede emitir todavía, centrado debajo de «Guardar borrador»
+                (decisión del propietario, 2026-10-22); sigue describiendo «Emitir». */}
+            {canEmit && emitHint && (
+              <p id={emitHintId} className="text-center text-xs text-foreground-muted">
+                {emitHint}
+              </p>
+            )}
           </div>
         </aside>
       </form>

@@ -171,3 +171,28 @@ describe("StickySummaryPanel y StickyFormActions (D8)", () => {
     expect(document.querySelector("[data-slot=sticky-form-actions] p")).toBeNull();
   });
 });
+
+describe("título dentro de la columna del formulario (decisión del propietario, 2026-10-22)", () => {
+  it("el encabezado va arriba de la columna del formulario y el motivo, centrado bajo las acciones", () => {
+    const { container } = render(
+      <FormLayout
+        header={<h1>Factura</h1>}
+        panel={<StickySummaryPanel title="Resumen">Total</StickySummaryPanel>}
+        actions={
+          <StickyFormActions reason="Guarda los cambios antes de emitir." reasonId="motivo">
+            <Button>Guardar borrador</Button>
+          </StickyFormActions>
+        }
+      >
+        <FormSection title="Productos">contenido</FormSection>
+      </FormLayout>,
+    );
+    const main = container.querySelector("[data-slot=form-layout-main]")!;
+    // El título es lo primero de la columna del formulario, no una fila sobre el panel.
+    expect(main.firstElementChild?.querySelector("h1")?.textContent).toBe("Factura");
+    expect(container.querySelector("[data-slot=form-layout-rail] h1")).toBeNull();
+    expect(screen.getByText("Guarda los cambios antes de emitir.").className).toContain(
+      "text-center",
+    );
+  });
+});

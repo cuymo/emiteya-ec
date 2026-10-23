@@ -10,11 +10,17 @@ import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function FormLayout({
+  header,
   panel,
   actions,
   className,
   children,
 }: {
+  /**
+   * El título de la página y sus avisos, arriba de la columna del formulario: el panel empieza a su
+   * lado (decisión del propietario, 2026-10-22).
+   */
+  header?: ReactNode;
   /** El panel lateral, normalmente un `StickySummaryPanel`. */
   panel?: ReactNode;
   /** Las acciones del formulario, normalmente un `StickyFormActions`. */
@@ -27,6 +33,11 @@ export function FormLayout({
     <div data-slot="form-layout" className={cn("@container", className)}>
       <div className="grid gap-6 @form-rail:grid-cols-form-rail @form-rail:items-start">
         <div data-slot="form-layout-main" className="flex min-w-0 flex-col gap-8">
+          {header && (
+            <div data-slot="form-layout-header" className="flex flex-col gap-4">
+              {header}
+            </div>
+          )}
           {children}
         </div>
         {rail && (
@@ -111,7 +122,8 @@ export function StickyFormActions({
         {children}
       </div>
       {reason && (
-        <p id={reasonId} className="text-xs text-muted-foreground">
+        // Centrado debajo de los botones (decisión del propietario, 2026-10-22).
+        <p id={reasonId} className="text-center text-xs text-muted-foreground">
           {reason}
         </p>
       )}

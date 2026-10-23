@@ -464,14 +464,18 @@ function DraftEditor({
 
   return (
     <section aria-labelledby="editor-titulo" className="flex flex-col gap-6">
-      <EditorTitle entity="Nota de crédito" feminine state={draft ? "draft" : "new"} />
-
-      {operationError && (
-        <OperationAlert message={operationError.message} action={recovery} alertRef={alertRef} />
-      )}
-
       <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
+          {/* El título con su estado, dentro de la columna del formulario y justo encima de él: el
+              resumen empieza a su lado (decisión del propietario, 2026-10-22). */}
+          <EditorTitle entity="Nota de crédito" feminine state={draft ? "draft" : "new"} />
+          {operationError && (
+            <OperationAlert
+              message={operationError.message}
+              action={recovery}
+              alertRef={alertRef}
+            />
+          )}
           <Section title="Factura que se modifica" compact>
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-3 sm:flex-nowrap">
               <span className="flex min-w-0 flex-1 items-center gap-3">
