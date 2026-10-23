@@ -114,9 +114,16 @@ describe("borrador de retención", () => {
     const user = userEvent.setup();
     await user.clear(within(income).getByRole("textbox", { name: "Base imponible" }));
     await user.type(within(income).getByRole("textbox", { name: "Base imponible" }), "200.00");
-    expect(
-      within(income).getByLabelText("Cálculo de la retención 1 del documento 1").textContent,
-    ).toBe("Guarda el borrador para ver el porcentaje y el valor.");
+    expect(within(income).queryByLabelText("Cálculo de la retención 1 del documento 1")).toBeNull();
+    // El aviso de guardar va centrado debajo de «Guardar borrador» (decisión del propietario,
+    // 2026-10-22); el de emitir, centrado debajo de «Emitir retención».
+    const notice = screen.getByText("Guarda el borrador para ver el porcentaje y el valor.");
+    expect(notice.className).toContain("text-center");
+    const save = screen.getByRole("button", { name: "Guardar borrador" });
+    expect(save.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const emitHint = screen.getByText("Guarda los cambios antes de emitir.");
+    expect(emitHint.className).toContain("text-center");
+    expect(emitHint.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("ofrece solo los conceptos de renta y los códigos de IVA utilizables, con la nota del código 7", async () => {
@@ -695,6 +702,42 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
 });
 
 describe("pedidos del propietario sobre la retención (2026-10-22)", () => {
+  it("títulos más discretos, el documento con su número en la franja y Factura por defecto", async () => {
+    render(<WithholdingDraftScreen draftId="retd-1" />, {
+      "GET /api/v1/withholding-receipts/drafts/retd-1": ok(withholdingDraft()),
+    });
+    const first = await findSupport(1);
+    expect(screen.getByRole("heading", { level: 2, name: "Proveedor" }).className).toContain(
+      "text-sm",
+    );
+    for (const name of [
+      "Establecimiento y punto de emisión",
+      "Parte relacionada",
+      "Período fiscal",
+    ]) {
+      expect(screen.getByRole("heading", { level: 2, name }).className, name).toContain("sr-only");
+    }
+    expect(screen.getByRole("button", { name: "Ayuda: Documentos sustento" })).toBeDefined();
+    // El documento, 10 % y 90 %, con «Documento sustento 1» en su franja.
+    expect(first.className).toContain("sm:grid-cols-[minmax(0,10fr)_minmax(0,90fr)]");
+    const number = first.querySelector("[data-slot=item-number]") as HTMLElement;
+    expect(within(number).getByRole("heading", { level: 3 }).textContent).toBe(
+      "Documento sustento 1",
+    );
+    for (const name of ["Formas de pago", "Retenciones"]) {
+      expect(within(first).getByRole("heading", { level: 4, name }).className, name).toContain(
+        "sr-only",
+      );
+    }
+    // Un documento nuevo empieza como factura.
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Agregar documento sustento" }));
+    const type = within(support(2)).getByRole("radiogroup", { name: "Tipo de documento" });
+    expect(within(type).getByRole("radio", { name: "Factura" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+  });
+
   it("el proveedor es una ficha con «Cambiar proveedor» en azul, y el punto va antes de la parte relacionada", async () => {
     render(<WithholdingDraftScreen draftId="retd-1" />, {
       "GET /api/v1/withholding-receipts/drafts/retd-1": ok(withholdingDraft()),

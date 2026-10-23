@@ -17,6 +17,7 @@ import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 import { AddRowButton } from "@/components/add-row-button";
+import { NumberedItem } from "@/components/numbered-item";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { DatePickerField } from "@/components/date-picker-field";
 import { EntityPickerDialog, type EntityPickerQuery } from "@/components/entity-picker-dialog";
@@ -136,18 +137,21 @@ function OptionPicker<T extends { entryKey: string; code: string; label: string 
 function SubList({
   title,
   hint,
+  hideTitle = false,
   children,
 }: {
   title: string;
   /** La nota de la lista, en el tooltip de su título (decisión del propietario, 2026-10-22). */
   hint?: string;
+  /** El título solo para la asistencia, cuando las etiquetas de los campos ya lo dicen. */
+  hideTitle?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
   return (
     <section aria-labelledby={id} className="flex flex-col gap-2">
       <LabelWithHint label={title} hint={hint}>
-        <h4 id={id} className="text-sm font-semibold">
+        <h4 id={id} className={hideTitle ? "sr-only" : "text-sm font-semibold"}>
           {title}
         </h4>
       </LabelWithHint>
@@ -206,27 +210,28 @@ export function SupportCard({
   const { limits } = options;
 
   return (
-    <li
+    // El documento con su número en la franja de la izquierda, como los conceptos y las líneas
+    // (`NumberedItem`, decisión del propietario, 2026-10-22).
+    <NumberedItem
       aria-label={`Documento sustento ${position}`}
-      aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
+      label={`Documento sustento ${position}`}
+      invalid={issues.length > 0}
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-medium">Documento sustento {position}</h3>
-        {canRemove && (
-          <RowActionButton
-            icon={Trash2}
-            tone="danger"
-            label={`Quitar el documento sustento ${position}`}
-            onClick={onRemove}
-          />
-        )}
-      </div>
-
       <div className="flex flex-col gap-1">
-        <span id={typeLabelId} className="text-sm font-medium">
-          Tipo de documento
-        </span>
+        {/* Quitar el documento, en rojo, al final de la fila del tipo. */}
+        <div className="flex items-center justify-between gap-2">
+          <span id={typeLabelId} className="text-sm font-medium">
+            Tipo de documento
+          </span>
+          {canRemove && (
+            <RowActionButton
+              icon={Trash2}
+              tone="danger"
+              label={`Quitar el documento sustento ${position}`}
+              onClick={onRemove}
+            />
+          )}
+        </div>
         <SegmentedControl
           fullWidth
           aria-labelledby={typeLabelId}
@@ -498,7 +503,7 @@ export function SupportCard({
         </AddRowButton>
       </SubList>
 
-      <SubList title="Formas de pago">
+      <SubList title="Formas de pago" hideTitle>
         <ol className="flex flex-col gap-2">
           {payments.fields.map((field, p) => {
             const paymentPosition = p + 1;
@@ -580,7 +585,7 @@ export function SupportCard({
         </AddRowButton>
       </SubList>
 
-      <SubList title="Retenciones">
+      <SubList title="Retenciones" hideTitle>
         <ol className="flex flex-col gap-2">
           {items.fields.map((field, i) => {
             const itemPosition = i + 1;
@@ -691,16 +696,18 @@ export function SupportCard({
                     />
                   </FormField>
                 </div>
-                <p
-                  aria-label={`Cálculo de la retención ${itemPosition} del documento ${position}`}
-                  className="flex min-h-8 items-center text-sm tabular-nums"
-                >
-                  {result
-                    ? `${formatPercentage(result.percentage)} · valor retenido ${formatMoney(result.amount)}`
-                    : fresh
-                      ? "El porcentaje y el valor aparecen cuando la retención se puede calcular."
-                      : "Guarda el borrador para ver el porcentaje y el valor."}
-                </p>
+                {/* Con cambios sin guardar, el cálculo anterior no se muestra: el aviso de guardar va
+                    debajo de «Guardar borrador» (decisión del propietario, 2026-10-22). */}
+                {fresh && (
+                  <p
+                    aria-label={`Cálculo de la retención ${itemPosition} del documento ${position}`}
+                    className="flex min-h-8 items-center text-sm tabular-nums"
+                  >
+                    {result
+                      ? `${formatPercentage(result.percentage)} · valor retenido ${formatMoney(result.amount)}`
+                      : "El porcentaje y el valor aparecen cuando la retención se puede calcular."}
+                  </p>
+                )}
                 <IssueList issues={problems} />
               </li>
             );
@@ -720,6 +727,6 @@ export function SupportCard({
         </AddRowButton>
       </SubList>
       <IssueList issues={fresh ? own : []} />
-    </li>
+    </NumberedItem>
   );
 }

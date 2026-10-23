@@ -86,13 +86,37 @@ function useDefaultPoint(enabled: boolean) {
   });
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Sección del editor. Su título puede verse como la etiqueta de un campo (`compact`), llevar su nota
+ * en un tooltip (`hint`) o quedar solo para la asistencia (`hideTitle`), cuando los campos ya lo
+ * dicen (decisiones del propietario, 2026-10-22).
+ */
+function Section({
+  title,
+  compact = false,
+  hint,
+  hideTitle = false,
+  children,
+}: {
+  title: string;
+  compact?: boolean;
+  hint?: string;
+  hideTitle?: boolean;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className="text-lg font-semibold">
-        {title}
-      </h2>
+    <section aria-labelledby={id} className={cn("flex flex-col", compact ? "gap-1" : "gap-3")}>
+      <LabelWithHint label={title} hint={hint}>
+        <h2
+          id={id}
+          className={
+            hideTitle ? "sr-only" : compact ? "text-sm font-medium" : "text-lg font-semibold"
+          }
+        >
+          {title}
+        </h2>
+      </LabelWithHint>
       {children}
     </section>
   );
@@ -331,7 +355,7 @@ function DraftEditor({
               alertRef={alertRef}
             />
           )}
-          <Section title="Proveedor">
+          <Section title="Proveedor" compact>
             <SubjectCard subject={subject} onChoose={() => setChoosing(true)} />
             <SupplierChooser
               open={choosing}
@@ -345,7 +369,7 @@ function DraftEditor({
 
           {/* Establecimiento y punto en dos selectores dependientes, antes de la parte relacionada
               (decisión del propietario, 2026-10-22). */}
-          <Section title="Establecimiento y punto de emisión">
+          <Section title="Establecimiento y punto de emisión" hideTitle>
             <EstablishmentPointFields
               establishments={establishments.data ?? []}
               pointId={pointId}
@@ -355,7 +379,7 @@ function DraftEditor({
             />
           </Section>
 
-          <Section title="Parte relacionada">
+          <Section title="Parte relacionada" hideTitle>
             <div className="flex flex-col gap-1">
               <LabelWithHint
                 label="¿El proveedor es parte relacionada?"
@@ -380,7 +404,7 @@ function DraftEditor({
             </div>
           </Section>
 
-          <Section title="Período fiscal">
+          <Section title="Período fiscal" hideTitle>
             <div className="grid gap-2 sm:grid-cols-2">
               <FormField id="periodo-mes" label="Mes">
                 <Select
@@ -430,13 +454,10 @@ function DraftEditor({
             )}
           </Section>
 
-          <Section title="Documentos sustento">
-            <p className="text-sm text-foreground-muted">
-              Cada documento es una factura o nota de venta del proveedor, o una liquidación de
-              compra que la empresa emitió en los casos que la normativa permite, con las
-              retenciones que le hiciste. Los documentos son declaraciones tuyas: el sistema no los
-              busca ni los modifica.
-            </p>
+          <Section
+            title="Documentos sustento"
+            hint="Cada documento es una factura o nota de venta del proveedor, o una liquidación de compra que la empresa emitió en los casos que la normativa permite, con las retenciones que le hiciste. Los documentos son declaraciones tuyas: el sistema no los busca ni los modifica."
+          >
             <ol className="flex flex-col gap-3">
               {supports.fields.map((field, index) => (
                 <SupportCard
@@ -533,15 +554,21 @@ function DraftEditor({
                 Emitir retención
               </Button>
             )}
+            {/* Por qué no se puede emitir todavía, centrado debajo de «Emitir retención», y cómo
+                ver los porcentajes, centrado debajo de «Guardar borrador» (decisiones del
+                propietario, 2026-10-22). */}
+            {canEmit && emitHint && (
+              <p id={emitHintId} className="text-center text-xs text-foreground-muted">
+                {emitHint}
+              </p>
+            )}
             <AsyncButton type="submit" variant="outline" pending={save.isPending}>
               <Save aria-hidden="true" data-icon="inline-start" />
               Guardar borrador
             </AsyncButton>
-            {/* Por qué no se puede emitir todavía, centrado debajo de «Guardar borrador»
-                (decisión del propietario, 2026-10-22); sigue describiendo «Emitir». */}
-            {canEmit && emitHint && (
-              <p id={emitHintId} className="text-center text-xs text-foreground-muted">
-                {emitHint}
+            {!fresh && (
+              <p role="status" className="text-center text-xs text-foreground-muted">
+                Guarda el borrador para ver el porcentaje y el valor.
               </p>
             )}
           </div>

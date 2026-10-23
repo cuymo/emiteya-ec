@@ -61,8 +61,10 @@ export const blankTax = (): TaxValues => ({
 });
 export const blankPayment = (): PaymentValues => ({ paymentMethod: "", total: "" });
 export const blankItem = (): ItemValues => ({ tax: "1", entryKey: "", base: "" });
+// Un documento nuevo empieza como factura, el sustento más común (decisión del propietario,
+// 2026-10-22); un borrador guardado conserva lo suyo.
 export const blankSupport = (): SupportValues => ({
-  documentType: "",
+  documentType: "01",
   supportCode: "",
   number: "",
   issueDate: "",

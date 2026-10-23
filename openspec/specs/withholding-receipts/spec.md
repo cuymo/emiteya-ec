@@ -437,8 +437,8 @@ y, en la misma fila, «Elegir proveedor» o «Cambiar proveedor» en el azul pri
 y el punto de emisión en dos selectores lado a lado, con el punto solo entre los del establecimiento
 elegido, antes de la parte relacionada. La parte relacionada, el tipo de documento, el impuesto del
 documento y el impuesto a retener SHALL ocupar todo el ancho, con sus opciones repartidas por igual.
-Un impuesto nuevo SHALL empezar con IVA elegido y una retención nueva con Renta elegida; la parte
-relacionada sigue sin selección inicial. El concepto de renta, o el código de retención del IVA, y la
+Un documento sustento nuevo SHALL empezar con «Factura» como tipo, un impuesto nuevo con IVA elegido y
+una retención nueva con Renta elegida; la parte relacionada sigue sin selección inicial. El concepto de renta, o el código de retención del IVA, y la
 base imponible SHALL ir en una fila, mitad y mitad. «Agregar impuesto», «Agregar forma de pago»,
 «Agregar retención» y «Agregar documento sustento» SHALL verse como «Dividir el pago» en la factura,
 y las acciones de quitar SHALL ir en rojo. Los importes SHALL mostrarse con «$», y el total retenido
