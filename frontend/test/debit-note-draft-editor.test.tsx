@@ -94,19 +94,18 @@ describe("borrador de nota de débito", () => {
       "GET /api/v1/debit-notes/drafts/ndd-1": ok(debitNoteDraft()),
     });
     const first = await findConcept(1);
+    // La causa, entre las dos oficiales; el tratamiento, uno solo entre los de la factura.
+    expect(
+      within(within(first).getByRole("combobox", { name: "Causa" }))
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Intereses de mora", "Costos o gastos posteriores a la factura"]);
     expect(
       within(first)
         .getAllByRole("radio")
-        .map((radio) => radio.textContent),
-    ).toEqual([
-      "Intereses de mora",
-      "Costos o gastos posteriores a la factura",
-      "IVA 0 %",
-      "IVA 15 %",
-    ]);
-    expect(
-      within(first).getByRole("radio", { name: "IVA 15 %" }).getAttribute("aria-checked"),
-    ).toBe("true");
+        .map((radio) => radio.closest("label")?.textContent),
+    ).toEqual(["IVA 0 %", "IVA 15 %"]);
+    expect(within(first).getByRole("radio", { name: "IVA 15 %" })).toHaveProperty("checked", true);
     // Ninguna tarifa vigente que la factura no tenía.
     expect(screen.queryByRole("radio", { name: /IVA 5 %|IVA 12 %|IVA 13 %/ })).toBeNull();
     const method = screen.getByRole("combobox", { name: "Forma de pago" });
@@ -229,7 +228,10 @@ describe("borrador de nota de débito", () => {
     expect(document.activeElement).toBe(
       within(third).getByRole("textbox", { name: "Descripción" }),
     );
-    await user.click(within(third).getByRole("radio", { name: "Intereses de mora" }));
+    await user.selectOptions(
+      within(third).getByRole("combobox", { name: "Causa" }),
+      "LATE_PAYMENT_INTEREST",
+    );
     await user.type(within(third).getByRole("textbox", { name: "Descripción" }), " Mora extra ");
     await user.type(within(third).getByRole("textbox", { name: "Importe" }), "1.234");
     await user.click(within(third).getByRole("radio", { name: "IVA 15 %" }));
@@ -529,6 +531,27 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
 });
 
 describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => {
+  it("con un solo tratamiento en la factura, el tratamiento es una casilla que se marca y desmarca", async () => {
+    const base = debitNoteDraft();
+    const iva15 = { key: "2:4", taxCode: "2", rateCode: "4", percentage: "15", label: "15%" };
+    render(<DebitNoteDraftScreen draftId="ndd-1" />, {
+      "GET /api/v1/debit-notes/drafts/ndd-1": ok(
+        debitNoteDraft({ preview: { ...base.preview, taxTreatments: [iva15] } }),
+      ),
+    });
+    const user = userEvent.setup();
+    await findConcept(1);
+    await user.click(screen.getByRole("button", { name: "Agregar concepto" }));
+    const fresh = concept(concepts().length);
+    const box = within(fresh).getByRole("checkbox", { name: "IVA 15 %" });
+    expect(box).toHaveProperty("checked", false);
+    expect(within(fresh).queryByRole("radio")).toBeNull();
+    await user.click(box);
+    expect(box).toHaveProperty("checked", true);
+    await user.click(box);
+    expect(box).toHaveProperty("checked", false);
+  });
+
   it("el punto de emisión va antes de los conceptos, y la forma de pago al final", async () => {
     render(<DebitNoteDraftScreen draftId="ndd-1" />, {
       "GET /api/v1/debit-notes/drafts/ndd-1": ok(debitNoteDraft()),
@@ -607,9 +630,12 @@ describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => 
     expect(add.className).toContain("border-dashed");
     await user.click(add);
     const fresh = concept(concepts().length);
-    const interest = within(fresh).getByRole("radio", { name: "Intereses de mora" });
-    expect(interest.getAttribute("aria-checked")).toBe("true");
-    expect(interest.parentElement!.className).toContain("w-full");
+    const cause = within(fresh).getByRole("combobox", { name: "Causa" }) as HTMLSelectElement;
+    expect(cause.value).toBe("LATE_PAYMENT_INTEREST");
+    // Causa, importe y tratamiento en una fila de tres columnas cuando el concepto es ancho.
+    expect(fresh.querySelector("[data-slot=concept-fields]")?.className).toContain(
+      "@xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]",
+    );
     const description = within(fresh).getByRole("textbox", { name: "Descripción" });
     expect(description.tagName).toBe("TEXTAREA");
     await user.type(description, "Mora{Enter}de 30 días");

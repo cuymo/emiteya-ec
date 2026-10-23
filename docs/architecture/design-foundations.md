@@ -112,7 +112,7 @@ success  warning  destructive  info   (each with its -foreground)
 - **`input`** is the border of every field (owner decision, 2026-10-22): a soft gray, one step
   darker than the card `border` (`oklch(0.87 0 0)` light, `oklch(0.37 0 0)` dark). It covers
   inputs, selects, filter triggers, segmented controls, chips, the switch and the native
-  checkboxes, which drop their own dark border for it. It used to keep 3:1 against background and
+  checkboxes and radio buttons, which drop their own dark border for it. It used to keep 3:1 against background and
   surface (WCAG 1.4.11); the owner traded that for a lighter look. Every field keeps a visible
   label, and focus keeps its solid 3:1 ring. The token test checks that the border stays visible
   (at least 1.3:1) and below 3:1, and darker than the card border in the light theme.

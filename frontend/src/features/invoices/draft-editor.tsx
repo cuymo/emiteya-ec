@@ -49,6 +49,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Controller, useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
 import { z } from "zod";
+import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
@@ -1339,19 +1340,14 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
                   <div className="flex flex-col gap-2">
                     {/* A todo el ancho y punteado: se ve como el lugar donde nace otra forma de pago
                         (decisión del propietario, 2026-10-22). */}
-                    <Button
-                      variant="outline"
-                      size="default"
-                      className="h-12 w-full border-dashed hover:border-primary/50 hover:bg-transparent hover:bg-linear-to-r hover:from-primary/15 hover:via-primary/5 hover:to-primary/15 hover:text-primary max-md:h-12"
-                      onClick={addPayment}
-                    >
+                    <AddRowButton onClick={addPayment}>
                       {split ? (
                         <Plus aria-hidden="true" data-icon="inline-start" />
                       ) : (
                         <Split aria-hidden="true" data-icon="inline-start" />
                       )}
                       {split ? "Agregar otra forma de pago" : "Dividir el pago"}
-                    </Button>
+                    </AddRowButton>
                     {split && pending !== null && (
                       <p
                         role="status"

@@ -31,13 +31,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
 import { z } from "zod";
+import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney, Money } from "@/components/money";
-import { SegmentedControl } from "@/components/segmented-control";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ApiError, apiFetch } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
 import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
@@ -278,7 +279,11 @@ function OperationAlert({
   );
 }
 
-/** El tratamiento de un concepto, solo entre los de la factura: nunca una tarifa ajena. */
+/**
+ * El tratamiento de un concepto, solo entre los de la factura: nunca una tarifa ajena (decisión del
+ * propietario, 2026-10-22). Con uno solo, una casilla que lo asigna o lo quita; con varios, botones de
+ * opción, porque el concepto lleva uno y solo uno; desde seis, una lista.
+ */
 function TreatmentField({
   position,
   treatments,
@@ -290,26 +295,44 @@ function TreatmentField({
   value: string;
   onChange: (next: string) => void;
 }) {
-  const labelId = useId();
+  const hintId = useId();
   const hint = "Solo los tratamientos de IVA de la factura.";
   if (treatments.length <= SEGMENTED_TREATMENTS_MAX) {
+    const single = treatments.length === 1;
     return (
-      <div className="flex flex-col gap-1">
-        <span id={labelId} className="text-sm font-medium">
-          Tratamiento de IVA
-        </span>
-        <SegmentedControl
-          aria-labelledby={labelId}
-          fullWidth
-          options={treatments.map((treatment) => ({
-            value: treatment.key,
-            label: treatmentLabel(treatment),
-          }))}
-          value={value || undefined}
-          onChange={onChange}
-        />
-        <p className="text-xs text-foreground-muted">{hint}</p>
-      </div>
+      <fieldset className="flex min-w-0 flex-col gap-1" aria-describedby={hintId}>
+        <legend className="mb-1 text-sm font-medium">Tratamiento de IVA</legend>
+        <div className="flex flex-wrap gap-2">
+          {treatments.map((treatment) => {
+            const checked = value === treatment.key;
+            return (
+              <label
+                key={treatment.key}
+                className={cn(
+                  "flex h-10 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm max-md:h-11",
+                  checked
+                    ? "border-primary bg-active font-medium text-active-foreground"
+                    : "border-input hover:bg-surface-subtle",
+                )}
+              >
+                <input
+                  type={single ? "checkbox" : "radio"}
+                  {...(single ? {} : { name: `tratamiento-${position}` })}
+                  className="size-4 shrink-0"
+                  checked={checked}
+                  onChange={(event) =>
+                    onChange(single && !event.target.checked ? "" : treatment.key)
+                  }
+                />
+                {treatmentLabel(treatment)}
+              </label>
+            );
+          })}
+        </div>
+        <p id={hintId} className="text-xs text-foreground-muted">
+          {hint}
+        </p>
+      </fieldset>
     );
   }
   return (
@@ -494,8 +517,14 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
       <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
           <Section title="Factura que se modifica">
-            <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
-              <FileText aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
+            <div className="flex min-w-0 items-center gap-3 rounded-md border border-border bg-surface px-3 py-3">
+              {/* La factura con su ícono grande, como la persona en la ficha del comprador. */}
+              <span
+                aria-hidden="true"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+              >
+                <FileText className="size-5" />
+              </span>
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="font-medium tabular-nums">
                   Factura {draft.invoice.documentNumber}
@@ -542,7 +571,6 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 const current = values[index];
                 const conceptError = errors.concepts?.[index];
                 const problems = fresh ? conceptIssues(position) : [];
-                const causeLabelId = `causa-${field.id}`;
                 const description = form.register(`concepts.${index}.description`);
                 const descriptionHint = `Aparece en la nota de débito en una sola línea · ${
                   (current?.description ?? "").length
@@ -552,7 +580,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                     key={field.id}
                     aria-label={`Concepto ${position}`}
                     aria-invalid={problems.length > 0 || undefined}
-                    className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-3 aria-invalid:border-danger"
+                    className="@container flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-3 aria-invalid:border-danger"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="font-medium">Concepto {position}</h3>
@@ -565,54 +593,32 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                         />
                       )}
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <span id={causeLabelId} className="text-sm font-medium">
-                        Causa
-                      </span>
-                      <SegmentedControl
-                        aria-labelledby={causeLabelId}
-                        fullWidth
-                        options={DEBIT_NOTE_CAUSES.map((cause) => ({
-                          value: cause,
-                          label: DEBIT_NOTE_CAUSE_LABELS[cause],
-                        }))}
-                        value={current?.cause || undefined}
-                        onChange={(next) =>
-                          form.setValue(`concepts.${index}.cause`, next, { shouldDirty: true })
-                        }
-                      />
-                    </div>
-                    {/* Hasta 300 caracteres: un área de texto que crece con lo escrito, pero en una
-                        sola línea, como la exige el comprobante. */}
-                    <FormField
-                      id={`descripcion-${field.id}`}
-                      label="Descripción"
-                      hint={descriptionHint}
-                      error={conceptError?.description?.message}
+                    {/* Causa, importe y tratamiento en una fila de tres columnas (decisión del
+                        propietario, 2026-10-22); en un concepto angosto, uno debajo del otro. */}
+                    <div
+                      data-slot="concept-fields"
+                      className="grid gap-3 @xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] @xl:items-start"
                     >
-                      <textarea
-                        rows={2}
-                        maxLength={DEBIT_NOTE_DESCRIPTION_MAX}
-                        {...fieldAria(
-                          `descripcion-${field.id}`,
-                          conceptError?.description?.message,
-                          descriptionHint,
-                        )}
-                        {...description}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") event.preventDefault();
-                        }}
-                        onChange={(event) => {
-                          // Los saltos de línea pegados se vuelven espacios.
-                          if (/[\r\n]/.test(event.target.value)) {
-                            event.target.value = event.target.value.replace(/[\r\n]+/g, " ");
+                      <FormField id={`causa-${field.id}`} label="Causa">
+                        <Select
+                          id={`causa-${field.id}`}
+                          value={current?.cause ?? ""}
+                          onChange={(event) =>
+                            form.setValue(
+                              `concepts.${index}.cause`,
+                              event.target.value as DebitNoteCause | "",
+                              { shouldDirty: true },
+                            )
                           }
-                          void description.onChange(event);
-                        }}
-                        className="field-sizing-content min-h-16 w-full min-w-0 resize-none rounded-md border border-input bg-surface px-3 py-2 text-base text-foreground sm:text-sm aria-invalid:border-danger"
-                      />
-                    </FormField>
-                    <div className="grid gap-3 sm:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
+                        >
+                          {!current?.cause && <option value="">Elige la causa</option>}
+                          {DEBIT_NOTE_CAUSES.map((cause) => (
+                            <option key={cause} value={cause}>
+                              {DEBIT_NOTE_CAUSE_LABELS[cause]}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormField>
                       <FormField
                         id={`importe-${field.id}`}
                         label="Importe"
@@ -641,22 +647,50 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                         }
                       />
                     </div>
+                    {/* Hasta 300 caracteres: un área de texto de tres líneas que se puede agrandar,
+                        pero en una sola línea de texto, como la exige el comprobante. */}
+                    <FormField
+                      id={`descripcion-${field.id}`}
+                      label="Descripción"
+                      hint={descriptionHint}
+                      error={conceptError?.description?.message}
+                    >
+                      <textarea
+                        rows={3}
+                        maxLength={DEBIT_NOTE_DESCRIPTION_MAX}
+                        {...fieldAria(
+                          `descripcion-${field.id}`,
+                          conceptError?.description?.message,
+                          descriptionHint,
+                        )}
+                        {...description}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") event.preventDefault();
+                        }}
+                        onChange={(event) => {
+                          // Los saltos de línea pegados se vuelven espacios.
+                          if (/[\r\n]/.test(event.target.value)) {
+                            event.target.value = event.target.value.replace(/[\r\n]+/g, " ");
+                          }
+                          void description.onChange(event);
+                        }}
+                        className="min-h-24 w-full min-w-0 resize-y rounded-md border border-input bg-surface px-3 py-2 text-base text-foreground sm:text-sm aria-invalid:border-danger"
+                      />
+                    </FormField>
                     <IssueList issues={problems} />
                   </li>
                 );
               })}
             </ol>
-            {/* A todo el ancho y punteado: el lugar donde nace otro concepto. */}
-            <Button
+            {/* Como «Dividir el pago» en la factura: el mismo botón para agregar una fila. */}
+            <AddRowButton
               ref={addRef}
-              variant="outline"
-              className="w-full border-dashed"
               disabled={concepts.fields.length >= DEBIT_NOTE_CONCEPTS_MAX}
               onClick={addConcept}
             >
-              <Plus aria-hidden="true" />
+              <Plus aria-hidden="true" data-icon="inline-start" />
               Agregar concepto
-            </Button>
+            </AddRowButton>
           </Section>
 
           <Section title="Forma de pago">

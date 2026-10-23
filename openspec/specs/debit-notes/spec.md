@@ -207,12 +207,15 @@ Un usuario SHALL preparar la nota en un borrador: la factura, los conceptos con 
 ### Requirement: Editor de la nota de débito
 El editor SHALL presentar, en este orden, la factura que se modifica, el establecimiento y el punto
 de emisión, los conceptos y la forma de pago. El establecimiento y el punto SHALL elegirse en dos
-selectores lado a lado, y el punto solo entre los del establecimiento elegido. Un concepto nuevo
-SHALL empezar con la causa de intereses de mora elegida, en un control de dos opciones que ocupa todo
-el ancho; su descripción SHALL escribirse en un área de texto que muestra cuántos de los 300
-caracteres lleva y que no admite saltos de línea; su importe y su tratamiento de IVA SHALL ocupar la
-fila en tres cuartos y un cuarto. «Agregar concepto» SHALL ocupar todo el ancho, y quitar un concepto
-SHALL ir en rojo. Los importes SHALL mostrarse con «$», y el valor total en verde.
+selectores lado a lado, y el punto solo entre los del establecimiento elegido. En cada concepto, la
+causa, el importe y el tratamiento de IVA SHALL ir en una fila de tres columnas que se apilan cuando
+el concepto es angosto; un concepto nuevo SHALL empezar con la causa de intereses de mora elegida. El
+tratamiento SHALL marcarse con una casilla cuando la factura tiene uno solo, con botones de opción
+cuando tiene varios, porque el concepto lleva uno y solo uno, y con una lista desde seis. La
+descripción SHALL escribirse en un área de texto de tres líneas que muestra cuántos de los 300
+caracteres lleva y que no admite saltos de línea. «Agregar concepto» SHALL verse como «Dividir el
+pago» en la factura, y quitar un concepto SHALL ir en rojo. Los importes SHALL mostrarse con «$», y
+el valor total en verde.
 
 #### Scenario: Concepto nuevo
 - **WHEN** un operador agrega un concepto
@@ -221,6 +224,10 @@ SHALL ir en rojo. Los importes SHALL mostrarse con «$», y el valor total en ve
 #### Scenario: Punto de otro establecimiento
 - **WHEN** un operador cambia el establecimiento por uno con dos puntos de emisión
 - **THEN** el punto anterior deja de estar elegido y el selector de puntos ofrece solo los dos del establecimiento elegido
+
+#### Scenario: Un solo tratamiento
+- **WHEN** la factura que se modifica tiene solo el tratamiento IVA 15 %
+- **THEN** el tratamiento de cada concepto es una casilla «IVA 15 %» que se marca y se desmarca
 
 #### Scenario: Descripción en una línea
 - **WHEN** un operador pulsa Enter o pega un texto con saltos de línea en la descripción
