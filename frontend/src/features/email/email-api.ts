@@ -4,7 +4,7 @@
 // el diálogo genera al abrirse y reutiliza en sus reintentos.
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   IDEMPOTENCY_KEY_HEADER,
   emailAvailabilitySchema,
@@ -16,7 +16,8 @@ import {
   type UpdateEmailSettingsInput,
 } from "@facturador/contracts";
 import { z } from "zod";
-import { useMutationFeedback } from "@/components/feedback";
+import { errorMessage, toast, useMutationFeedback } from "@/components/feedback";
+import { isUnauthenticated } from "@/components/session";
 import { apiFetch } from "@/lib/api";
 import { DOCUMENTS_KEY } from "@/features/archive/archive-api";
 import { DASHBOARD_KEY } from "@/features/dashboard/dashboard-api";
@@ -86,19 +87,21 @@ export function useSaveEmailSettings(options: {
   });
 }
 
-/** Un `200` con `accepted: false` es un rechazo del servidor de correo, no un error de la API. */
-export function useSendTestEmail(options: {
-  onSuccess: (result: z.infer<typeof testEmailResultSchema>) => void;
-  onError: (error: unknown) => boolean;
-}) {
-  return useMutationFeedback({
+/**
+ * El resultado de la prueba se muestra dentro de su diálogo, no en un aviso flotante: un `200` con
+ * `accepted: false` es un rechazo del servidor de correo, no un error de la API. Solo un error que
+ * el diálogo no muestra (`onError` devuelve false) va a un aviso.
+ */
+export function useSendTestEmail(options: { onError: (error: unknown) => boolean }) {
+  return useMutation({
     mutationFn: (to: string) =>
       apiFetch("/email/test", { method: "POST", json: { to }, schema: testEmailResultSchema }),
-    success: (result) =>
-      result.accepted ? result.message : { message: result.message, tone: "warning" as const },
-    errorMessages: EMAIL_ERROR_MESSAGES,
-    onSuccess: options.onSuccess,
-    onError: options.onError,
+    onError: (error) => {
+      // La sesión vencida la resuelve el manejador global, que lleva al inicio de sesión.
+      if (isUnauthenticated(error) || options.onError(error)) return;
+      const message = errorMessage(error, EMAIL_ERROR_MESSAGES);
+      toast.error(message, { id: message });
+    },
   });
 }
 

@@ -86,6 +86,28 @@ const shows = (page: Page, text: string | RegExp) =>
 
 const FIRST_INVOICE = "001-001-000000123";
 
+/** El servidor de correo de la empresa (add-email-delivery, tarea 8.4). */
+const emailSettings = (settings: Record<string, unknown> | null) => ({
+  "GET /api/v1/email/settings": {
+    status: 200,
+    body: { data: { settings, deliveryEnabled: true, plaintextAllowed: false } },
+  },
+});
+const EMAIL_SETTINGS = {
+  host: "smtp.ferreteriaandina.ec",
+  port: 587,
+  security: "STARTTLS",
+  username: "facturas@ferreteriaandina.ec",
+  passwordSet: true,
+  fromName: "Ferretería Andina",
+  fromAddress: "facturas@ferreteriaandina.ec",
+  bccAddress: null,
+  autoSend: true,
+  testRecipient: "pruebas@ferreteriaandina.ec",
+  version: 2,
+  updatedAt: "2026-10-14T14:00:00.000Z",
+};
+
 export const STATES: State[] = [
   // Facturas: la lista de referencia de la base compartida.
   {
@@ -397,6 +419,45 @@ export const STATES: State[] = [
     ready: async (page) => {
       await heading(page, "Empresa");
       await expect(page.getByRole("textbox").first()).toBeVisible();
+    },
+  },
+  // Correos (add-email-delivery, tarea 8.4): listo, sin configurar y el diálogo de prueba.
+  {
+    route: "correos",
+    state: "listo",
+    path: "/configuracion/correos",
+    group: "configuracion",
+    widths: PAIR,
+    scenario: { overrides: emailSettings(EMAIL_SETTINGS) },
+    ready: async (page) => {
+      await heading(page, "Correos");
+      await shows(page, "Contraseña guardada");
+    },
+  },
+  {
+    route: "correos",
+    state: "sin-configurar",
+    path: "/configuracion/correos",
+    group: "configuracion",
+    widths: PAIR,
+    scenario: { overrides: emailSettings(null) },
+    ready: async (page) => {
+      await heading(page, "Correos");
+      await shows(page, "Sin configurar");
+    },
+  },
+  {
+    route: "correos",
+    state: "prueba",
+    path: "/configuracion/correos",
+    group: "configuracion",
+    widths: PAIR,
+    viewportOnly: true,
+    scenario: { overrides: emailSettings(EMAIL_SETTINGS) },
+    ready: (page) => heading(page, "Correos"),
+    act: async (page) => {
+      await page.getByRole("button", { name: "Enviar correo de prueba" }).click();
+      await expect(page.getByRole("dialog", { name: "Enviar correo de prueba" })).toBeVisible();
     },
   },
   {

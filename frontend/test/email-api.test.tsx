@@ -1,6 +1,6 @@
 // Datos del correo (add-email-delivery, tarea 8.2, design D14): las rutas y los cuerpos de cada
-// consulta y mutación, el mensaje de «sin cambios», el aviso de un correo de prueba rechazado, el
-// texto del límite de pruebas, y la Idempotency-Key del reenvío con lo que vuelve a consultar.
+// consulta y mutación, el mensaje de «sin cambios», el correo de prueba rechazado como resultado, el
+// límite de pruebas en su texto, y la Idempotency-Key del reenvío con lo que vuelve a consultar.
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -80,8 +80,13 @@ function Save({ input }: { input: typeof INPUT }) {
 }
 
 function Test() {
-  const test = useSendTestEmail({ onSuccess: () => undefined, onError: () => false });
-  return <button onClick={() => test.mutate("pruebas@empresa.ec")}>Probar</button>;
+  const test = useSendTestEmail({ onError: () => false });
+  return (
+    <>
+      <button onClick={() => test.mutate("pruebas@empresa.ec")}>Probar</button>
+      {test.data && <p>Resultado: {test.data.message}</p>}
+    </>
+  );
 }
 
 function Resend({ count }: { count: () => number }) {
@@ -162,7 +167,7 @@ describe("datos del correo", () => {
     });
   });
 
-  it("un correo de prueba rechazado avisa con el mensaje del servidor", async () => {
+  it("un correo de prueba rechazado es un resultado con el motivo del servidor, no un error", async () => {
     const user = userEvent.setup();
     const calls = mockApi({
       "POST /api/v1/email/test": ok({
@@ -175,12 +180,12 @@ describe("datos del correo", () => {
     renderApp(<Test />);
     await user.click(screen.getByRole("button", { name: "Probar" }));
     expect(
-      await screen.findByText("El servidor rechazó el usuario o la contraseña."),
+      await screen.findByText("Resultado: El servidor rechazó el usuario o la contraseña."),
     ).toBeDefined();
     expect(calls).toEqual([{ key: "POST /api/v1/email/test", body: { to: "pruebas@empresa.ec" } }]);
   });
 
-  it("el límite de correos de prueba se explica en su propio texto", async () => {
+  it("un rechazo que el diálogo no muestra va a un aviso, y el límite tiene su texto", async () => {
     const user = userEvent.setup();
     mockApi({
       "POST /api/v1/email/test": () => ({
