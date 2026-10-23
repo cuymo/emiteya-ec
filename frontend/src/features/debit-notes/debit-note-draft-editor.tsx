@@ -46,7 +46,6 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ApiError, apiFetch } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
 import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
@@ -82,9 +81,6 @@ type FormValues = {
   paymentMethod: string;
   concepts: ConceptValues[];
 };
-
-/** Hasta cinco tratamientos, un control segmentado; desde seis, una lista (design D23). */
-const SEGMENTED_TREATMENTS_MAX = 5;
 
 const blankConcept = (): ConceptValues => ({
   cause: DEBIT_NOTE_CAUSES[0],
@@ -281,9 +277,9 @@ function OperationAlert({
 }
 
 /**
- * El tratamiento de un concepto, solo entre los de la factura: nunca una tarifa ajena (decisión del
- * propietario, 2026-10-22). Con uno solo, una casilla que lo asigna o lo quita; con varios, botones de
- * opción, porque el concepto lleva uno y solo uno; desde seis, una lista.
+ * El tratamiento de un concepto, solo entre los de la factura: nunca una tarifa ajena. Siempre una
+ * lista, que ocupa lo mismo con uno que con varios tratamientos (decisión del propietario,
+ * 2026-10-22).
  */
 function TreatmentField({
   position,
@@ -296,46 +292,7 @@ function TreatmentField({
   value: string;
   onChange: (next: string) => void;
 }) {
-  const hintId = useId();
   const hint = "Solo los tratamientos de IVA de la factura.";
-  if (treatments.length <= SEGMENTED_TREATMENTS_MAX) {
-    const single = treatments.length === 1;
-    return (
-      <fieldset className="flex min-w-0 flex-col gap-1" aria-describedby={hintId}>
-        <legend className="mb-1 text-sm font-medium">Tratamiento de IVA</legend>
-        <div className="flex flex-wrap gap-2">
-          {treatments.map((treatment) => {
-            const checked = value === treatment.key;
-            return (
-              <label
-                key={treatment.key}
-                className={cn(
-                  "flex h-10 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm max-md:h-11",
-                  checked
-                    ? "border-primary bg-active font-medium text-active-foreground"
-                    : "border-input hover:bg-surface-subtle",
-                )}
-              >
-                <input
-                  type={single ? "checkbox" : "radio"}
-                  {...(single ? {} : { name: `tratamiento-${position}` })}
-                  className="size-4 shrink-0"
-                  checked={checked}
-                  onChange={(event) =>
-                    onChange(single && !event.target.checked ? "" : treatment.key)
-                  }
-                />
-                {treatmentLabel(treatment)}
-              </label>
-            );
-          })}
-        </div>
-        <p id={hintId} className="text-xs text-foreground-muted">
-          {hint}
-        </p>
-      </fieldset>
-    );
-  }
   return (
     <FormField id={`tratamiento-${position}`} label="Tratamiento de IVA" hint={hint}>
       <Select

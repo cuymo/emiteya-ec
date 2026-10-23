@@ -100,14 +100,16 @@ describe("borrador de nota de débito", () => {
         .getAllByRole("option")
         .map((option) => option.textContent),
     ).toEqual(["Intereses de mora", "Costos o gastos posteriores a la factura"]);
-    expect(
-      within(first)
-        .getAllByRole("radio")
-        .map((radio) => radio.closest("label")?.textContent),
-    ).toEqual(["IVA 0 %", "IVA 15 %"]);
-    expect(within(first).getByRole("radio", { name: "IVA 15 %" })).toHaveProperty("checked", true);
     // Ninguna tarifa vigente que la factura no tenía.
-    expect(screen.queryByRole("radio", { name: /IVA 5 %|IVA 12 %|IVA 13 %/ })).toBeNull();
+    const treatment = within(first).getByRole("combobox", {
+      name: "Tratamiento de IVA",
+    }) as HTMLSelectElement;
+    expect(
+      within(treatment)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Elige un tratamiento", "IVA 0 %", "IVA 15 %"]);
+    expect(treatment.selectedOptions[0]?.textContent).toBe("IVA 15 %");
     const method = screen.getByRole("combobox", { name: "Forma de pago" });
     await waitFor(() =>
       expect(
@@ -131,7 +133,7 @@ describe("borrador de nota de débito", () => {
     ).toBeDefined();
   });
 
-  it("desde seis tratamientos los ofrece en una lista, igual a la de la factura", async () => {
+  it("con seis tratamientos los ofrece en la misma lista, nombrados como en la factura", async () => {
     // Las denominaciones oficiales del catálogo: un porcentaje se nombra "IVA n %"; las demás, igual.
     const treatments = [
       ["0", "0", "0%"],
@@ -234,7 +236,10 @@ describe("borrador de nota de débito", () => {
     );
     await user.type(within(third).getByRole("textbox", { name: "Descripción" }), " Mora extra ");
     await user.type(within(third).getByRole("textbox", { name: "Importe" }), "1.234");
-    await user.click(within(third).getByRole("radio", { name: "IVA 15 %" }));
+    await user.selectOptions(
+      within(third).getByRole("combobox", { name: "Tratamiento de IVA" }),
+      "IVA 15 %",
+    );
     await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
     expect(await within(third).findByText(/hasta dos decimales|decimales/)).toBeDefined();
     expect(saved).toBeUndefined();
@@ -531,7 +536,7 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
 });
 
 describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => {
-  it("con un solo tratamiento en la factura, el tratamiento es una casilla que se marca y desmarca", async () => {
+  it("el tratamiento es una lista también con un solo tratamiento en la factura", async () => {
     const base = debitNoteDraft();
     const iva15 = { key: "2:4", taxCode: "2", rateCode: "4", percentage: "15", label: "15%" };
     render(<DebitNoteDraftScreen draftId="ndd-1" />, {
@@ -543,13 +548,19 @@ describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => 
     await findConcept(1);
     await user.click(screen.getByRole("button", { name: "Agregar concepto" }));
     const fresh = concept(concepts().length);
-    const box = within(fresh).getByRole("checkbox", { name: "IVA 15 %" });
-    expect(box).toHaveProperty("checked", false);
+    const select = within(fresh).getByRole("combobox", {
+      name: "Tratamiento de IVA",
+    }) as HTMLSelectElement;
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Elige un tratamiento", "IVA 15 %"]);
+    expect(select.value).toBe("");
+    expect(within(fresh).queryByRole("checkbox")).toBeNull();
     expect(within(fresh).queryByRole("radio")).toBeNull();
-    await user.click(box);
-    expect(box).toHaveProperty("checked", true);
-    await user.click(box);
-    expect(box).toHaveProperty("checked", false);
+    await user.selectOptions(select, "IVA 15 %");
+    expect(select.value).toBe("2:4");
   });
 
   it("el punto de emisión va antes de los conceptos, y la forma de pago al final", async () => {

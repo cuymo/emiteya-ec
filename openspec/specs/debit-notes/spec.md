@@ -210,8 +210,7 @@ de emisión, los conceptos y la forma de pago. El establecimiento y el punto SHA
 selectores lado a lado, y el punto solo entre los del establecimiento elegido. En cada concepto, la
 causa, el importe y el tratamiento de IVA SHALL ir en una fila de tres columnas que se apilan cuando
 el concepto es angosto; un concepto nuevo SHALL empezar con la causa de intereses de mora elegida. El
-tratamiento SHALL marcarse con una casilla cuando la factura tiene uno solo, con botones de opción
-cuando tiene varios, porque el concepto lleva uno y solo uno, y con una lista desde seis. La
+tratamiento SHALL elegirse en una lista con los tratamientos de la factura, tenga uno o varios. La
 descripción SHALL escribirse en un área de texto de tres líneas que muestra cuántos de los 300
 caracteres lleva y que no admite saltos de línea. «Agregar concepto» SHALL verse como «Dividir el
 pago» en la factura, y quitar un concepto SHALL ir en rojo. Los importes SHALL mostrarse con «$», y
@@ -227,7 +226,7 @@ el valor total en verde.
 
 #### Scenario: Un solo tratamiento
 - **WHEN** la factura que se modifica tiene solo el tratamiento IVA 15 %
-- **THEN** el tratamiento de cada concepto es una casilla «IVA 15 %» que se marca y se desmarca
+- **THEN** el tratamiento de cada concepto es una lista que ofrece solo «IVA 15 %»
 
 #### Scenario: Descripción en una línea
 - **WHEN** un operador pulsa Enter o pega un texto con saltos de línea en la descripción
