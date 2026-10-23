@@ -1,7 +1,8 @@
 // Avisos de la barra superior (decisión del propietario, 2026-10-22): la campana cuenta los avisos
 // pendientes y abre su lista; cada aviso sale de una condición del servidor (firma, preparación para
 // emitir y resumen del tablero), primero los que impiden emitir, y lleva a su sección solo si el rol
-// la abre.
+// la abre. Con el correo (add-email-delivery, tarea 11.2): los comprobantes sin enviar por correo,
+// con el enlace a la bandeja filtrada.
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +15,7 @@ const summary = (signals: {
   attention?: number;
   rejected?: number;
   outOfStock?: number;
+  emailFailed?: number;
 }): Route => {
   const data = {
     environment: "TEST",
@@ -32,7 +34,7 @@ const summary = (signals: {
     attention: {
       count: signals.attention ?? 0,
       rejectedLast30Days: signals.rejected ?? 0,
-      emailFailed: 0,
+      emailFailed: signals.emailFailed ?? 0,
     },
     drafts: { invoices: 0 },
     inventory: { outOfStock: signals.outOfStock ?? 0 },
@@ -139,6 +141,24 @@ describe("avisos de la barra superior", () => {
     expect(
       within(items[4]!).getByRole("link", { name: "Ir a Inventario" }).getAttribute("href"),
     ).toBe("/inventario");
+  });
+
+  it("avisa de los comprobantes sin enviar por correo y lleva a la bandeja filtrada", async () => {
+    renderMenu({ "GET /api/v1/dashboard": summary({ emailFailed: 2 }) }, OPERATOR_ME);
+    const list = await open("Avisos: 1 pendiente");
+    const [item] = within(list).getAllByRole("listitem");
+    expect(item!.getAttribute("data-tone")).toBe("warning");
+    expect(item!.textContent).toContain("2 comprobantes sin enviar por correo");
+    expect(item!.textContent).toContain("Su último envío falló.");
+    expect(
+      within(item!).getByRole("link", { name: "Ver los correos no enviados" }).getAttribute("href"),
+    ).toBe("/comprobantes?correo=no-enviado");
+  });
+
+  it("un solo comprobante sin enviar se dice en singular", async () => {
+    renderMenu({ "GET /api/v1/dashboard": summary({ emailFailed: 1 }) });
+    const list = await open("Avisos: 1 pendiente");
+    expect(within(list).getByText("1 comprobante sin enviar por correo")).toBeDefined();
   });
 
   it("al operador le dice a quién pedir lo que no puede resolver, sin enlace a Configuración", async () => {

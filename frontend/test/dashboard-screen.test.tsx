@@ -168,6 +168,20 @@ describe("tablero de Inicio", () => {
     );
   });
 
+  it("«Requieren atención» cuenta solo la atención del SRI, no los correos sin enviar", async () => {
+    renderHome({
+      "GET /api/v1/dashboard": () => ({
+        status: 200,
+        body: { data: { ...SUMMARY, attention: { ...SUMMARY.attention, emailFailed: 5 } } },
+      }),
+    });
+    await loaded();
+    const attention = document.querySelectorAll("[data-slot=dashboard-metric]")[2]!;
+    expect(attention.textContent).toContain("3");
+    expect(attention.textContent).not.toContain("5");
+    expect(attention.textContent).not.toMatch(/correo/i);
+  });
+
   it("las ventas de los seis meses tienen su tabla para la asistencia", async () => {
     renderHome();
     await loaded();

@@ -4,7 +4,8 @@
 // - La firma electrónica vencida, sin su clave o por vencer (`certificateValidity.read`).
 // - La empresa que todavía no puede emitir, con lo que le falta (`GET /company/status`).
 // - Del resumen del tablero (`invoices.read`): los comprobantes que requieren atención, los devueltos
-//   o no autorizados en 30 días y los productos agotados.
+//   o no autorizados en 30 días, los comprobantes cuyo último correo no se envió (add-email-delivery,
+//   que no cambia «Requieren atención» del tablero) y los productos agotados.
 // Cada aviso lleva a su sección solo si el rol puede abrirla; si no, dice a quién pedírselo.
 "use client";
 
@@ -134,6 +135,22 @@ export function useNotices(): Notice[] {
         title: `${count(summary.attention.rejectedLast30Days, "comprobante devuelto", "comprobantes devueltos")} o no autorizados`,
         detail: "En los últimos 30 días. Revisa el motivo antes de volver a emitir.",
         ...archive,
+      });
+    }
+    if (summary.attention.emailFailed > 0) {
+      notices.push({
+        id: "correos-no-enviados",
+        tone: "warning",
+        title: `${count(summary.attention.emailFailed, "comprobante", "comprobantes")} sin enviar por correo`,
+        detail: "Su último envío falló. Revisa el motivo y reenvíalo desde su detalle.",
+        ...(can("/comprobantes")
+          ? {
+              action: {
+                href: "/comprobantes?correo=no-enviado",
+                label: "Ver los correos no enviados",
+              },
+            }
+          : {}),
       });
     }
     if (summary.inventory.outOfStock > 0) {
