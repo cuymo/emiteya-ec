@@ -16,7 +16,14 @@ export const EMAIL_FAILURE_CODES = [
   "PLAINTEXT_NOT_ALLOWED",
   "NOT_CONFIGURED",
   "PASSWORD_UNAVAILABLE",
+  "ARTIFACT_MISSING",
   "UNKNOWN",
+  // Motivos de un envío sin destinatario o desactivado (design D2 y D3): no son fallos del servidor.
+  "NO_ADDRESS",
+  "CONSUMER_FINAL",
+  "NO_TEST_RECIPIENT",
+  "DELIVERY_DISABLED",
+  "AUTO_SEND_OFF",
 ] as const;
 export type EmailFailureCode = (typeof EMAIL_FAILURE_CODES)[number];
 
@@ -72,9 +79,35 @@ const FAILURES: Record<EmailFailureCode, { kind: EmailFailureClass; message: str
     message:
       "No se pudo usar la contraseña guardada del servidor de correo: vuelve a escribirla en Configuración → Correos.",
   },
+  ARTIFACT_MISSING: {
+    kind: "DETERMINISTIC",
+    message:
+      "Falta el XML autorizado o el RIDE del comprobante, o no pasó su verificación: el correo lleva siempre los dos.",
+  },
   UNKNOWN: {
     kind: "RETRYABLE",
     message: "El envío falló por un error inesperado del servidor de correo.",
+  },
+  NO_ADDRESS: {
+    kind: "DETERMINISTIC",
+    message: "El receptor no tiene correo: entrega el RIDE impreso si el receptor lo pide.",
+  },
+  CONSUMER_FINAL: {
+    kind: "DETERMINISTIC",
+    message:
+      "Comprobante a consumidor final, sin correo: entrega el RIDE impreso si el receptor lo pide.",
+  },
+  NO_TEST_RECIPIENT: {
+    kind: "DETERMINISTIC",
+    message: "Configura el correo de prueba para recibir los comprobantes del ambiente de Pruebas.",
+  },
+  DELIVERY_DISABLED: {
+    kind: "DETERMINISTIC",
+    message: "El envío de correos está desactivado en este despliegue.",
+  },
+  AUTO_SEND_OFF: {
+    kind: "DETERMINISTIC",
+    message: "El envío automático está desactivado: puedes enviar el correo a mano.",
   },
 };
 
