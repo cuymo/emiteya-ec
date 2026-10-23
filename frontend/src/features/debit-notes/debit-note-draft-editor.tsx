@@ -570,13 +570,14 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                     key={field.id}
                     aria-label={`Concepto ${position}`}
                     aria-invalid={problems.length > 0 || undefined}
-                    className="grid overflow-hidden rounded-md border border-border bg-surface aria-invalid:border-danger sm:grid-cols-[minmax(0,15fr)_minmax(0,85fr)]"
+                    className="grid overflow-hidden rounded-md border border-border bg-surface aria-invalid:border-danger sm:grid-cols-[minmax(0,10fr)_minmax(0,90fr)]"
                   >
-                    {/* El número del concepto en una franja azul, vertical en su columna del 15 %
-                        (decisión del propietario, 2026-10-22); en un teléfono, horizontal arriba. */}
+                    {/* El número del concepto en una franja con un degradado azul discreto, vertical en su
+                        columna del 10 % (decisiones del propietario, 2026-10-22); en un teléfono,
+                        horizontal arriba. */}
                     <div
                       data-slot="concept-number"
-                      className="flex items-center justify-center bg-primary px-3 py-2 text-primary-foreground sm:py-4"
+                      className="flex items-center justify-center border-primary/15 bg-linear-to-b from-primary/20 via-primary/10 to-primary/5 px-3 py-2 text-primary max-sm:border-b sm:border-r sm:py-4"
                     >
                       <h3 className="font-semibold whitespace-nowrap sm:rotate-180 sm:[writing-mode:vertical-rl]">
                         Concepto {position}

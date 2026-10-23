@@ -541,10 +541,12 @@ describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => 
       "GET /api/v1/debit-notes/drafts/ndd-1": ok(debitNoteDraft()),
     });
     const first = await findConcept(1);
-    // 15 % para el número, vertical en su franja azul, y 85 % para los campos.
-    expect(first.className).toContain("sm:grid-cols-[minmax(0,15fr)_minmax(0,85fr)]");
+    // 10 % para el número, vertical en su franja con un degradado azul discreto, y 90 % para los
+    // campos.
+    expect(first.className).toContain("sm:grid-cols-[minmax(0,10fr)_minmax(0,90fr)]");
     const number = first.querySelector("[data-slot=concept-number]") as HTMLElement;
-    expect(number.className).toContain("bg-primary");
+    expect(number.className).toContain("bg-linear-to-b");
+    expect(number.className).toContain("text-primary");
     expect(within(number).getByRole("heading", { level: 3 }).textContent).toBe("Concepto 1");
     expect(
       screen.getByRole("heading", { level: 2, name: "Establecimiento y punto de emisión" })
