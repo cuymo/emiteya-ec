@@ -238,6 +238,7 @@ en la petición.
 | `GET /email/settings` | `email.configure` | Sin la contraseña: `passwordSet`, y `deliveryEnabled` (el interruptor) para la interfaz |
 | `PUT /email/settings` | `email.configure` | Con `expectedVersion`; `password` opcional (ausente conserva la guardada); `409` con versión desactualizada; una segunda petición igual no cambia nada |
 | `POST /email/test` | `email.configure` | `{ to }`; respuesta `{ accepted, message, at }`; límite de 5 por minuto y empresa |
+| `GET /email/availability` | `email.resend` | Para la confirmación de la emisión: si hay servidor, si el envío del despliegue y el automático están encendidos, y el correo de prueba; nunca el servidor, el usuario ni la contraseña (requisito «Destino del correo al emitir») |
 | `GET /documents/:id/email-deliveries` | `archive.read` | El historial con sus intentos; `404` si el comprobante no es de la empresa |
 | `GET /documents/:id/email-recipients` | `email.resend` | Las direcciones propuestas para el reenvío, más `environment` y `testRedirect` |
 | `POST /documents/:id/email-deliveries` | `email.resend` | `{ recipients }`, de 1 a 10 sin repetir; `Idempotency-Key` obligatoria; misma clave y cuerpo distinto: `409 IDEMPOTENCY_KEY_REUSED`; `202` con el envío `PENDING`; `409 DOCUMENT_NOT_AUTHORIZED`; `409 EMAIL_DELIVERY_DISABLED`; `409 EMAIL_NOT_CONFIGURED` |
@@ -285,11 +286,28 @@ en la petición.
 - **Tamaño:** un RIDE de ~100 KB y un XML de ~10 KB por correo, leídos de PostgreSQL al ejecutar el
   trabajo. La concurrencia 2 acota la memoria.
 
-### D14. Interfaz (fases posteriores)
+### D14. Interfaz (fases 8 a 11)
 
-Brief de las pantallas nuevas (`cognitive-architecture.md`), para la fase de frontend.
+Brief de las pantallas nuevas (`cognitive-architecture.md`) y cómo se conectan con la API ya hecha.
 
-**Configuración → Correos**
+**Capa de datos** (`frontend/src/features/email/`)
+
+- `email-api.ts`, con el patrón de `signing-api.ts` y `archive-api.ts`:
+  - consultas: la configuración (`["email","settings"]`), la disponibilidad
+    (`["email","availability"]`), y el historial y las direcciones propuestas de un comprobante
+    (`["documents","email-deliveries",id]`, `["documents","email-recipients",id]`, perezosas);
+  - mutaciones con `useMutationFeedback`: guardar (con `expectedVersion`, y la contraseña solo si se
+    escribió), la prueba (un `200` con `accepted: false` es un rechazo, no un error) y el reenvío.
+- **Reenvío:** genera una `Idempotency-Key` al abrir el diálogo y la reutiliza en los reintentos de
+  ese diálogo, como los diálogos del inventario. Invalida el historial, la bandeja y el tablero.
+- **Errores que van a un campo:** `EMAIL_PLAINTEXT_NOT_ALLOWED` (seguridad),
+  `EMAIL_PASSWORD_REQUIRED` (contraseña) y `EMAIL_USERNAME_REQUIRED` (usuario).
+- **Otros errores:** `EMAIL_SETTINGS_CHANGED` muestra un aviso con «Recargar», como Empresa.
+  `EMAIL_TEST_RATE_LIMITED` (`429`) necesita su texto en `errorMessages`.
+- `email-format.ts`: la presentación de cada estado (etiqueta, variante de `Badge` e icono), como
+  `DOCUMENT_STATE_PRESENTATION`. El motivo de un envío lo da el servidor en español.
+
+**Configuración → Correos** (`/configuracion/correos`, después de Firma, `email.configure`)
 
 - **Quién:** el administrador, ocasionalmente.
 - **Para qué:** dejar el envío funcionando y comprobarlo.
@@ -299,23 +317,64 @@ Brief de las pantallas nuevas (`cognitive-architecture.md`), para la fase de fro
   - P1: servidor, puerto, seguridad, usuario, contraseña y remitente;
   - P2: copia oculta, correo de prueba y envío automático;
   - P3: nada.
-- **Composición:** formulario en una columna (`FormField` con ayudas en tooltip, `PasswordField`
-  con «contraseña guardada») y un `FormDialog` «Enviar correo de prueba».
+- **Composición:** el marco de Firma (`data-panel-width="form"`, centrado, con sus estados sin
+  permiso, de carga y de error con reintento) y la mecánica de Empresa (`useForm` con el esquema del
+  contrato, `FormField` con ayudas en tooltip, aviso de conflicto y `AsyncButton`).
+  - En una fila: servidor y puerto. Seguridad en un `Select`, donde «Sin cifrado» solo aparece si el
+    despliegue lo admite.
+  - Usuario, y la contraseña en `PasswordField` con «Contraseña guardada»: vacía, se conserva.
+  - Remitente (nombre y correo), copia oculta y correo de prueba, con su ayuda sobre Pruebas.
+  - El envío automático en una casilla: el formulario se guarda con su botón, así que no es un
+    `Switch`.
+  - «Enviar correo de prueba» abre un `FormDialog` con la dirección, como la carga de la firma, y
+    muestra dentro si el servidor la aceptó o su motivo.
 
-**Detalle del comprobante, pestaña Documentos**
+**Detalle del comprobante, pestaña de documentos**
 
-- **Composición:** una tarjeta «Correo» con el estado del último envío (insignia y motivo), sus
-  direcciones, «Reenviar correo» (`FormDialog` con las direcciones propuestas, editables) y un
-  «Historial de envíos» plegable con los intentos.
-- **Liquidaciones:** el recordatorio de imprimir los dos RIDE para firmar.
+- `archive/email-section.tsx` se dibuja dentro de `KindDocumentsSection`, después de las descargas:
+  los seis detalles la reciben sin cambios propios.
+- **Composición:** una tarjeta «Correo» con:
+  - el estado del último envío (insignia y motivo) y sus direcciones con su resultado;
+  - si fue al correo de prueba, la nota de Pruebas;
+  - «Reenviar correo», solo con `email.resend`;
+  - un «Historial de envíos» plegable con los intentos, como `DeliveryHistory`.
+- **Sin envíos:** «Todavía no se envió por correo».
+- **Liquidaciones:** el recordatorio de imprimir los dos RIDE para que los firme el proveedor.
+- **La pestaña** marca su atención cuando el último envío falló.
+- **Reenviar correo:** un `FormDialog` con las direcciones propuestas en una lista editable (hasta
+  10, con agregar y quitar) y, en Pruebas, la nota de que irá solo al correo de prueba.
 
-**Otras piezas**
+**Destino del correo en la confirmación «Emitir»** (requisito «Destino del correo al emitir»)
 
-- En «Emitir»: «Se enviará a: …», o el aviso «Sin correo: entrega el RIDE impreso si lo pide» con
-  «Agregar correo».
-- En la bandeja: el filtro «Correo no enviado» y un indicador en la fila.
-- En Avisos: «N comprobantes sin enviar por correo».
-- En Terceros: hasta tres correos con agregar y quitar.
+- Un componente compartido, `email/email-destination-notice.tsx`, en los seis `ConfirmDialog`, junto
+  a `EmissionEnvironmentNotice`.
+- **Datos:**
+  - la disponibilidad (`GET /email/availability`, que un operador sí puede leer);
+  - los correos del receptor, con `useParty` para los terceros que conoce el borrador (comprador,
+    proveedor, destinatarios y transportista);
+  - para las notas de crédito y de débito, `GET /documents/{facturaId}/email-recipients`, que
+    resuelve el comprador de la factura.
+- **Mensajes:**
+  - «Se enviará a: …»;
+  - en Pruebas: «Irá solo al correo de prueba: …»;
+  - «Sin correo: entrega el RIDE impreso si lo pide», con el enlace al tercero;
+  - consumidor final;
+  - envío automático apagado;
+  - sin servidor;
+  - envío apagado en el despliegue.
+
+**Bandeja, avisos y Terceros**
+
+- **Bandeja:** un `DataTableSelectFilter` «Correo» con «No enviado» (`correo=no-enviado` en la
+  dirección, `emailStatus=FAILED` en la API), en `filtersActive` y `clearFilters`. Un indicador del
+  correo junto al estado de la fila y en la tarjeta del teléfono.
+- **Avisos:** «N comprobantes sin enviar por correo», con el enlace a la bandeja filtrada.
+  «Requieren atención» del tablero no cambia: cuenta solo la atención del SRI.
+- **Terceros:** hasta tres correos en `PartyContactFields` (el formulario y `PartyDialog`), con
+  «Agregar correo» (`AddRowButton`) y quitar (`RowActionButton`), y el error de cada uno junto a su
+  campo.
+- **Tema:** solo el tema claro (decisión del propietario, 2026-10-22).
+- **Revisión:** cada pantalla nueva entra en la matriz de `visual/review` con sus fixtures.
 
 ## Operaciones sensibles
 

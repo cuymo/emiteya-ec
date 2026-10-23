@@ -45,23 +45,27 @@ al terminarlo.
 
 - [x] 7.1 Documentar el correo en `docs/architecture/integrations.md`, `backend.md`, `fiscal-emission.md` (RIDE y después correo), `docs/product/domain-model.md` (envíos e intentos), `docs/product/open-questions.md` (Q-24 implementada), `docs/product/capabilities.md` (`email-delivery`), la documentación de la API y `docs/security/` (custodia de la contraseña SMTP y las direcciones de los receptores como datos personales); verificar con `corepack pnpm format:check` y `openspec:validate`.
 
-## 8. Fase 8 · Interfaz: Configuración → Correos
+## 8. Fase 8 · Interfaz: capa de datos y Configuración → Correos
 
-- [ ] 8.1 Agregar la sección «Correos» después de Firma electrónica (`email.configure`), con sus consultas y mutaciones, el estado (listo, desactivado por el despliegue o sin configurar), el formulario con sus ayudas en tooltip, «contraseña guardada» y el diálogo «Enviar correo de prueba»; verificar con pruebas de componentes: carga, error con reintento, sin configurar, desactivado, guardado, validación, error del servidor junto al campo, prueba aceptada y rechazada, permiso, teclado, las ocho pestañas en orden, y teléfono y escritorio en tema claro.
+- [ ] 8.1 Backend: agregar `GET /api/v1/email/availability` (`email.resend`): si hay servidor, si el envío del despliegue y el automático están encendidos y el correo de prueba, sin el servidor, el usuario ni la contraseña; con su contrato, su ruta en el OpenAPI y la prueba de rutas; verificar con pruebas de integración (el operador la lee sin datos del servidor, sin sesión `401`, cada empresa ve la suya).
+- [ ] 8.2 Agregar `frontend/src/features/email/email-api.ts` (configuración, disponibilidad, prueba, historial, direcciones propuestas y reenvío con una `Idempotency-Key` por diálogo, sus claves e invalidaciones, y los errores que van a cada campo) y `email-format.ts` (la presentación de cada estado); verificar con pruebas unitarias del formato y de los parámetros de cada consulta y mutación.
+- [ ] 8.3 Agregar el destino «Correos» después de Firma en `routes.ts` (`email.configure`, icono de correo, palabras clave «correo», «SMTP» y «servidor de correo») y su página `app/(app)/configuracion/correos/page.tsx`; verificar con las pruebas de la configuración en pestañas (las ocho secciones en orden), de las rutas y de la paleta de comandos.
+- [ ] 8.4 Construir la pantalla «Correos» (design D14): estado listo, desactivado por el despliegue o sin configurar; el formulario con servidor y puerto, seguridad (sin cifrado solo si el despliegue lo admite), usuario, contraseña con «Contraseña guardada», remitente, copia oculta, correo de prueba y envío automático; el aviso de conflicto con «Recargar»; los errores del servidor junto a su campo; y el diálogo «Enviar correo de prueba» con el resultado dentro; verificar con pruebas de componentes: carga, error con reintento, sin permiso, sin configurar, desactivado, guardado sin repetir la contraseña, conflicto, errores por campo, prueba aceptada, rechazada, desactivada y limitada, teclado, y teléfono y escritorio en tema claro.
 
 ## 9. Fase 9 · Interfaz: terceros con hasta tres correos
 
-- [ ] 9.1 Llevar el formulario y el diálogo del tercero a una lista de hasta tres correos con agregar y quitar; verificar con pruebas de componentes: alta con varios, límite de tres, repetido, inválido, edición de un tercero existente y teclado.
+- [ ] 9.1 Llevar `PartyContactFields` (formulario y `PartyDialog`) a una lista de hasta tres correos con «Agregar correo» y quitar, y el error de cada uno junto a su campo; verificar con pruebas de componentes: alta con varios, límite de tres, repetido, inválido, quitar, edición de un tercero existente que conserva sus correos y teclado.
 
 ## 10. Fase 10 · Interfaz: el correo del comprobante
 
-- [ ] 10.1 Agregar en la pestaña Documentos de los seis detalles la tarjeta «Correo» (estado del último envío con su motivo, direcciones, historial plegable con los intentos, «Reenviar correo» con las direcciones propuestas y editables y una `Idempotency-Key` por confirmación, la nota de Pruebas y el recordatorio de los dos RIDE de la liquidación); verificar con pruebas de componentes de cada estado, del reenvío con éxito y con error, sin permiso sin el botón, y teclado.
-- [ ] 10.2 Mostrar en la confirmación «Emitir» de los seis editores «Se enviará a: …», o el aviso «Sin correo: entrega el RIDE impreso si lo pide» con «Agregar correo»; verificar con pruebas de componentes por tipo, incluido el consumidor final y Pruebas.
+- [ ] 10.1 Agregar `archive/email-section.tsx` en la pestaña de documentos de los seis detalles (design D14): el último envío con su insignia, su motivo y sus direcciones, la nota de Pruebas, el recordatorio de los dos RIDE de la liquidación, el historial plegable con los intentos, la atención de la pestaña cuando el último falló, y «Reenviar correo» (solo con `email.resend`) con las direcciones propuestas y editables; verificar con pruebas de componentes de cada estado, sin envíos, del reenvío con éxito, con error y repetido, sin permiso sin el botón, y teclado.
+- [ ] 10.2 Agregar `email/email-destination-notice.tsx` a la confirmación «Emitir» de los seis editores (receptor con correos, sin correo o consumidor final, Pruebas, automático o despliegue apagado, sin servidor), con los correos del tercero o, en las notas, las direcciones de su factura; verificar con pruebas de componentes por tipo y por caso, incluido el operador.
 
 ## 11. Fase 11 · Interfaz: bandeja, avisos y revisión
 
-- [ ] 11.1 Agregar a la bandeja el filtro «Correo no enviado» y el indicador por fila, y a Avisos «N comprobantes sin enviar por correo» con su enlace; verificar con pruebas de componentes y de los avisos.
-- [ ] 11.2 Revisar las pantallas con la lista de comprobación del frontend (`docs/quality/`) en escritorio y teléfono, solo tema claro, y documentarlas en `docs/architecture/` (navegación, sistema de componentes y `frontend.md`); verificar con capturas de la app desplegada.
+- [ ] 11.1 Agregar a la bandeja el filtro «Correo» con «No enviado» (`correo=no-enviado`, en `filtersActive` y `clearFilters`) y el indicador del correo en la fila y en la tarjeta del teléfono; verificar con pruebas de componentes del filtro, de la dirección y del indicador.
+- [ ] 11.2 Agregar a Avisos «N comprobantes sin enviar por correo» con el enlace a la bandeja filtrada, sin cambiar «Requieren atención» del tablero; verificar con las pruebas de los avisos.
+- [ ] 11.3 Revisar las pantallas con la lista de comprobación del frontend (`docs/quality/frontend-checklist.md`) en escritorio y teléfono, solo tema claro, con sus entradas y fixtures en `visual/review`; documentarlas en `docs/architecture/` (`frontend.md`, `navigation-responsive.md`, `component-system.md`, `data-tables.md`, `forms-and-workflows.md` y `fiscal-emission.md`); verificar con capturas de la app desplegada.
 
 ## 12. Verificación
 

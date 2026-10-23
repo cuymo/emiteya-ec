@@ -246,6 +246,32 @@ explícita para su buzón de pruebas; por defecto, y en producción, se rechaza.
 - **WHEN** un administrador intenta guardar un servidor sin cifrado en un despliegue que no lo habilita
 - **THEN** el sistema lo rechaza indicando que se requiere TLS
 
+### Requirement: Destino del correo al emitir
+Antes de confirmar la emisión de un comprobante, el sistema SHALL mostrar a qué direcciones irá su
+correo automático o por qué no saldrá: receptor sin correo o consumidor final, ambiente de Pruebas,
+envío automático apagado, servidor sin configurar o envío apagado en el despliegue. Un operador SHALL
+ver ese destino sin ver los datos del servidor de correo.
+
+#### Scenario: Receptor con correo
+- **WHEN** un operador confirma la emisión en Producción de una factura a un comprador con los correos `compras@cliente.ec` y `pagos@cliente.ec`
+- **THEN** la confirmación dice que el correo irá a esas dos direcciones
+
+#### Scenario: Sin correo del receptor
+- **WHEN** un usuario confirma la emisión de una factura a un comprador sin correo, o al consumidor final
+- **THEN** la confirmación dice que no se enviará correo y que se entrega el RIDE impreso si el receptor lo pide
+
+#### Scenario: Ambiente de Pruebas
+- **WHEN** un usuario confirma la emisión en Pruebas con el correo de prueba `revision@empresa.ec`
+- **THEN** la confirmación dice que el correo irá solo a `revision@empresa.ec`
+
+#### Scenario: Envío apagado
+- **WHEN** el envío automático de la empresa o el envío del despliegue está apagado, o no hay servidor configurado
+- **THEN** la confirmación dice que no se enviará correo y por qué
+
+#### Scenario: Operador sin datos del servidor
+- **WHEN** un operador abre la confirmación de la emisión
+- **THEN** ve el destino del correo, y ninguna respuesta que recibe contiene el servidor, el usuario ni la contraseña del correo
+
 ### Requirement: Permisos del correo
 Solo el administrador SHALL consultar y cambiar el servidor de correo y enviar correos de prueba.
 El administrador y el operador SHALL poder ver los envíos de un comprobante y reenviarlo. Sin sesión
