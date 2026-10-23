@@ -206,8 +206,9 @@ from the reference template's dashboard layout (ADR 0028).
   - **What it offers:** the existing creation screens the role allows (invoice, credit note, debit
     note, withholding, shipping guide and purchase settlement).
   - **What it does:** it only navigates. It never creates a draft, reserves a number or emits.
-  - **Style:** the `primary` variant, solid blue, full width and with its text centered (owner
-    decision, 2026-10-22).
+  - **Style:** a soft blue gradient with primary-blue text instead of a solid fill, the same height
+    and width as the sidebar items, with its text centered (owner decisions, 2026-10-22 and
+    2026-10-23).
   - **Collapsed:** an icon button named «Nuevo». It is 44px on mobile.
 - **Command palette** (`CommandPalette`).
   - **Opening:** Ctrl/⌘ + K from any authenticated screen, or its trigger in the topbar.

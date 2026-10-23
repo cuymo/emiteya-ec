@@ -2,7 +2,8 @@
 // «Creación rápida»). Derivada del «Quick Create» de `nav-main.tsx` de la plantilla «Studio Admin»
 // (MIT; frontend/THIRD_PARTY_NOTICES.md), con comportamiento real: un menú con las pantallas de
 // creación existentes que el rol permite. Solo navega; nunca crea un borrador, reserva un número ni
-// emite. Usa la variante `outline`: está en todas las pantallas y no compite con su acción principal.
+// emite. Lleva un degradado azul discreto, no el relleno del primario (decisión del propietario,
+// 2026-10-23).
 "use client";
 
 import { Plus } from "lucide-react";
@@ -18,6 +19,7 @@ import {
 import { useSidebar } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { permissionsOf, visibleCreateActions } from "@/lib/navigation/routes";
+import { cn } from "@/lib/utils";
 
 export function QuickCreateMenu() {
   const { me } = useSession();
@@ -26,14 +28,24 @@ export function QuickCreateMenu() {
   if (actions.length === 0) return null;
   const collapsed = state === "collapsed" && !isMobile;
 
-  // En el azul primario, a todo el ancho y con el texto centrado (decisión del propietario,
-  // 2026-10-22).
+  // Con un degradado azul discreto en lugar del relleno sólido, del alto y el ancho de los items
+  // de la barra y con el texto centrado (decisiones del propietario, 2026-10-22 y 2026-10-23).
+  const gradient = cn(
+    "border-primary/30 bg-linear-to-r from-primary/20 via-primary/10 to-primary/5 text-primary",
+    "hover:bg-transparent hover:from-primary/30 hover:via-primary/15 hover:to-primary/10 hover:text-primary",
+    "aria-expanded:bg-transparent aria-expanded:text-primary",
+  );
   const trigger = collapsed ? (
-    <Button variant="primary" size="icon-sm" aria-label="Nuevo" className="self-center">
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label="Nuevo"
+      className={cn(gradient, "self-center")}
+    >
       <Plus aria-hidden="true" />
     </Button>
   ) : (
-    <Button variant="primary" size="default" className="h-10 w-full justify-center">
+    <Button variant="ghost" size="sm" className={cn(gradient, "w-full justify-center")}>
       <Plus aria-hidden="true" data-icon="inline-start" />
       Nuevo
     </Button>

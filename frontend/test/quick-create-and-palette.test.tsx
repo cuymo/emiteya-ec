@@ -33,9 +33,12 @@ describe("creación rápida", () => {
     const calls = api();
     renderShell();
     await screen.findByText("contenido");
-    // En el azul primario, a todo el ancho y centrado (decisión del propietario, 2026-10-22).
+    // Con un degradado azul discreto, del alto de los items, a todo el ancho y centrado
+    // (decisiones del propietario, 2026-10-22 y 2026-10-23).
     const trigger = screen.getByRole("button", { name: "Nuevo" });
-    expect(trigger.getAttribute("data-variant")).toBe("primary");
+    expect(trigger.className).toContain("bg-linear-to-r");
+    expect(trigger.className).not.toContain("bg-primary ");
+    expect(trigger.getAttribute("data-size")).toBe("sm");
     expect(trigger.className).toContain("justify-center");
     expect(trigger.className).toContain("w-full");
     // Al pasar el puntero, los destinos de la barra lateral toman el mismo efecto que el activo.
