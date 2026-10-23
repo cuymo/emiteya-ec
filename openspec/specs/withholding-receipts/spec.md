@@ -430,3 +430,24 @@ retención SHALL verlos. Ninguna otra pantalla de la lista SHALL repetir los bor
 #### Scenario: Borradores de otra empresa
 - **WHEN** otra empresa de la instalación tiene borradores de retención
 - **THEN** ninguno aparece en la lista ni cuenta en su total
+
+### Requirement: Editor de la retención
+El editor SHALL seguir el diseño de los demás editores: el proveedor en una ficha con su ícono grande
+y, en la misma fila, «Elegir proveedor» o «Cambiar proveedor» en el azul primario; el establecimiento
+y el punto de emisión en dos selectores lado a lado, con el punto solo entre los del establecimiento
+elegido, antes de la parte relacionada. La parte relacionada, el tipo de documento, el impuesto del
+documento y el impuesto a retener SHALL ocupar todo el ancho, con sus opciones repartidas por igual.
+Un impuesto nuevo SHALL empezar con IVA elegido y una retención nueva con Renta elegida; la parte
+relacionada sigue sin selección inicial. El concepto de renta, o el código de retención del IVA, y la
+base imponible SHALL ir en una fila, mitad y mitad. «Agregar impuesto», «Agregar forma de pago»,
+«Agregar retención» y «Agregar documento sustento» SHALL verse como «Dividir el pago» en la factura,
+y las acciones de quitar SHALL ir en rojo. Los importes SHALL mostrarse con «$», y el total retenido
+en verde.
+
+#### Scenario: Documento nuevo
+- **WHEN** un operador agrega un documento sustento
+- **THEN** su primer impuesto tiene elegido IVA y su primera retención tiene elegida Renta
+
+#### Scenario: Orden del editor
+- **WHEN** un operador abre un borrador de retención
+- **THEN** ve el proveedor, el establecimiento y el punto de emisión, la parte relacionada, el período fiscal y los documentos sustento, en ese orden

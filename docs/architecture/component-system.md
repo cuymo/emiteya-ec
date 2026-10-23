@@ -241,7 +241,9 @@ Shared components own interaction consistency, not business policy.
   `tone="danger"` for remove actions, with the icon in red (owner decision, 2026-10-22).
 - `AddRowButton` (`components/add-row-button.tsx`) adds a row at the end of a form list: dashed,
   full width, 48 px tall, with a soft bluish gradient on hover instead of a solid fill. «Dividir el
-  pago», «Agregar concepto», «Agregar línea» and «Agregar pago» use it, so they always match.
+  pago», «Agregar concepto», «Agregar línea», «Agregar pago» and the withholding editor's «Agregar
+  impuesto», «Agregar forma de pago», «Agregar retención» and «Agregar documento sustento» use it, so
+  they always match.
 - `SingleLineTextarea` (`components/single-line-textarea.tsx`) is a three-line, resizable textarea
   for long texts the document carries on one line (the debit note concept and the purchase
   settlement line descriptions): Enter does not break the line and pasted line breaks become

@@ -93,10 +93,10 @@ describe("borrador de retención", () => {
     const income = item(1);
     expect(
       within(income).getByLabelText("Cálculo de la retención 1 del documento 1").textContent,
-    ).toBe("1,75 % · valor retenido USD 1,75");
+    ).toBe("1,75 % · valor retenido $1,75");
     expect(
       within(item(2)).getByLabelText("Cálculo de la retención 2 del documento 1").textContent,
-    ).toBe("10 % · valor retenido USD 1,50");
+    ).toBe("10 % · valor retenido $1,50");
     // Solo la base es un campo: ni el porcentaje ni el valor se escriben.
     expect(
       within(income)
@@ -109,7 +109,7 @@ describe("borrador de retención", () => {
     );
     expect(within(income).queryByRole("textbox", { name: /Porcentaje|Valor retenido/ })).toBeNull();
     const summary = screen.getByRole("complementary", { name: "Resumen" });
-    expect(within(summary).getByText("USD 3,25")).toBeDefined();
+    expect(within(summary).getByText("$3,25")).toBeDefined();
     // Al editar, el cálculo anterior deja de mostrarse hasta guardar.
     const user = userEvent.setup();
     await user.clear(within(income).getByRole("textbox", { name: "Base imponible" }));
@@ -375,7 +375,7 @@ describe("borrador de retención", () => {
     expect(within(dialog).getByText("PROVEEDORA DEL SUR S.A.")).toBeDefined();
     expect(within(dialog).getByText("Octubre de 2026")).toBeDefined();
     expect(within(dialog).getByText("001-001-000000123")).toBeDefined();
-    expect(within(dialog).getByText("USD 3,25")).toBeDefined();
+    expect(within(dialog).getByText("$3,25")).toBeDefined();
     expect(within(dialog).queryByRole("checkbox")).toBeNull();
     await user.click(within(dialog).getByRole("button", { name: "Emitir retención" }));
     await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/retenciones/ret-1"));
@@ -692,4 +692,82 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
       expect(within(dialog).queryByText("Producción")).toBeNull();
     });
   }
+});
+
+describe("pedidos del propietario sobre la retención (2026-10-22)", () => {
+  it("el proveedor es una ficha con «Cambiar proveedor» en azul, y el punto va antes de la parte relacionada", async () => {
+    render(<WithholdingDraftScreen draftId="retd-1" />, {
+      "GET /api/v1/withholding-receipts/drafts/retd-1": ok(withholdingDraft()),
+    });
+    const change = await screen.findByRole("button", { name: "Cambiar proveedor" });
+    expect(change.getAttribute("data-variant")).toBe("primary");
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual([
+      "Proveedor",
+      "Establecimiento y punto de emisión",
+      "Parte relacionada",
+      "Período fiscal",
+      "Documentos sustento",
+      "Resumen",
+    ]);
+    // Con un solo punto en la empresa, el establecimiento y el punto se muestran como datos.
+    expect(await screen.findByText("001-001")).toBeDefined();
+    expect(
+      screen.getByRole("radiogroup", { name: "¿El proveedor es parte relacionada?" }).className,
+    ).toContain("w-full");
+    for (const name of [
+      "Agregar impuesto",
+      "Agregar forma de pago",
+      "Agregar retención",
+      "Agregar documento sustento",
+    ]) {
+      const button = screen.getAllByRole("button", { name })[0]!;
+      expect(button.className, name).toContain("w-full");
+      expect(button.className, name).toContain("border-dashed");
+    }
+  });
+
+  it("un documento nuevo empieza con IVA en el impuesto y Renta en la retención, a todo el ancho", async () => {
+    render(<WithholdingDraftScreen draftId="retd-1" />, {
+      "GET /api/v1/withholding-receipts/drafts/retd-1": ok(withholdingDraft()),
+    });
+    await findSupport(1);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Agregar documento sustento" }));
+    const fresh = support(2);
+    const chosen = (group: HTMLElement) =>
+      within(group)
+        .getAllByRole("radio")
+        .filter((radio) => radio.getAttribute("aria-checked") === "true")
+        .map((radio) => radio.textContent);
+    const tax = within(fresh).getByRole("radiogroup", { name: "Impuesto" });
+    expect(chosen(tax)).toEqual(["IVA"]);
+    expect(tax.className).toContain("w-full");
+    const withheld = within(fresh).getByRole("radiogroup", { name: "Impuesto a retener" });
+    expect(chosen(withheld)).toEqual(["Renta"]);
+    expect(withheld.className).toContain("w-full");
+    expect(
+      within(fresh).getByRole("radiogroup", { name: "Tipo de documento" }).className,
+    ).toContain("w-full");
+    // El concepto de renta y la base, en la misma fila.
+    const item = within(fresh).getByRole("listitem", { name: "Retención 1 del documento 2" });
+    const row = within(item).getByRole("textbox", { name: "Base imponible" }).closest(".grid");
+    expect(row?.className).toContain("sm:grid-cols-2");
+    expect(within(row as HTMLElement).getByText("Concepto de renta")).toBeDefined();
+  });
+
+  it("quitar un documento, un impuesto, un pago o una retención va en rojo", async () => {
+    render(<WithholdingDraftScreen draftId="retd-1" />, {
+      "GET /api/v1/withholding-receipts/drafts/retd-1": ok(withholdingDraft()),
+    });
+    await findSupport(1);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Agregar impuesto" }));
+    const remove = screen.getByRole("button", { name: "Quitar el impuesto 1 del documento 1" });
+    expect(remove.className).toContain("text-danger");
+    expect(
+      screen.getByRole("button", { name: "Quitar la retención 1 del documento 1" }).className,
+    ).toContain("text-danger");
+  });
 });

@@ -16,15 +16,17 @@ import type {
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
+import { AddRowButton } from "@/components/add-row-button";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { DatePickerField } from "@/components/date-picker-field";
 import { EntityPickerDialog, type EntityPickerQuery } from "@/components/entity-picker-dialog";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { formatMoney } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatPercentage } from "@/lib/decimal";
 import {
   blankItem,
   blankPayment,
@@ -103,7 +105,7 @@ function OptionPicker<T extends { entryKey: string; code: string; label: string 
         aria-labelledby={labelId}
         aria-describedby={`${labelId}-value`}
         aria-invalid={invalid || undefined}
-        className="h-auto min-h-8 justify-between text-left font-normal whitespace-normal"
+        className="h-auto min-h-10 justify-between text-left font-normal whitespace-normal max-md:min-h-11"
         onClick={() => setOpen(true)}
       >
         <span id={`${labelId}-value`} className="min-w-0 break-words">
@@ -202,6 +204,7 @@ export function SupportCard({
         {canRemove && (
           <RowActionButton
             icon={Trash2}
+            tone="danger"
             label={`Quitar el documento sustento ${position}`}
             onClick={onRemove}
           />
@@ -213,6 +216,7 @@ export function SupportCard({
           Tipo de documento
         </span>
         <SegmentedControl
+          fullWidth
           aria-labelledby={typeLabelId}
           options={options.documentTypes.map((type) => ({
             value: type.code,
@@ -349,12 +353,15 @@ export function SupportCard({
                 aria-invalid={problems.length > 0 || undefined}
                 className="flex flex-col gap-2 rounded-md border border-border px-2 py-2 aria-invalid:border-danger"
               >
-                <div className="flex flex-wrap items-end justify-between gap-2">
-                  <div className="flex flex-col gap-1">
+                {/* El impuesto a todo el ancho, con IVA elegido en uno nuevo (decisión del
+                    propietario, 2026-10-22); quitar, en rojo, a su derecha. */}
+                <div className="flex items-end gap-2">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <span id={labelId} className="text-sm font-medium">
                       Impuesto
                     </span>
                     <SegmentedControl
+                      fullWidth
                       aria-labelledby={labelId}
                       options={options.supportTaxes.map((tax) => ({
                         value: tax.tax,
@@ -371,6 +378,7 @@ export function SupportCard({
                   {taxes.fields.length > 1 && (
                     <RowActionButton
                       icon={Trash2}
+                      tone="danger"
                       label={`Quitar el impuesto ${taxPosition} del documento ${position}`}
                       onClick={() => {
                         taxes.remove(t);
@@ -465,10 +473,8 @@ export function SupportCard({
             );
           })}
         </ol>
-        <Button
+        <AddRowButton
           ref={addTaxRef}
-          variant="outline"
-          className="self-start"
           disabled={taxes.fields.length >= limits.taxesPerSupport}
           onClick={() =>
             taxes.append(blankTax(), {
@@ -476,9 +482,9 @@ export function SupportCard({
             })
           }
         >
-          <Plus aria-hidden="true" />
+          <Plus aria-hidden="true" data-icon="inline-start" />
           Agregar impuesto
-        </Button>
+        </AddRowButton>
       </SubList>
 
       <SubList title="Formas de pago">
@@ -535,6 +541,7 @@ export function SupportCard({
                   {payments.fields.length > 1 && (
                     <RowActionButton
                       icon={Trash2}
+                      tone="danger"
                       label={`Quitar la forma de pago ${paymentPosition} del documento ${position}`}
                       onClick={() => {
                         payments.remove(p);
@@ -548,10 +555,8 @@ export function SupportCard({
             );
           })}
         </ol>
-        <Button
+        <AddRowButton
           ref={addPaymentRef}
-          variant="outline"
-          className="self-start"
           disabled={payments.fields.length >= limits.paymentsPerSupport}
           onClick={() =>
             payments.append(blankPayment(), {
@@ -559,9 +564,9 @@ export function SupportCard({
             })
           }
         >
-          <Plus aria-hidden="true" />
+          <Plus aria-hidden="true" data-icon="inline-start" />
           Agregar forma de pago
-        </Button>
+        </AddRowButton>
       </SubList>
 
       <SubList title="Retenciones">
@@ -581,12 +586,15 @@ export function SupportCard({
                 aria-invalid={problems.length > 0 || undefined}
                 className="flex flex-col gap-2 rounded-md border border-border px-2 py-2 aria-invalid:border-danger"
               >
-                <div className="flex flex-wrap items-end justify-between gap-2">
-                  <div className="flex flex-col gap-1">
+                {/* El impuesto a retener a todo el ancho, con Renta elegida en una nueva (decisión
+                    del propietario, 2026-10-22). */}
+                <div className="flex items-end gap-2">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <span id={labelId} className="text-sm font-medium">
                       Impuesto a retener
                     </span>
                     <SegmentedControl
+                      fullWidth
                       aria-labelledby={labelId}
                       options={options.withholdingTaxes.map((tax) => ({
                         value: tax.code,
@@ -602,6 +610,7 @@ export function SupportCard({
                   {items.fields.length > 1 && (
                     <RowActionButton
                       icon={Trash2}
+                      tone="danger"
                       label={`Quitar la retención ${itemPosition} del documento ${position}`}
                       onClick={() => {
                         items.remove(i);
@@ -610,53 +619,55 @@ export function SupportCard({
                     />
                   )}
                 </div>
-                {current?.tax === INCOME ? (
-                  <OptionPicker
-                    label="Concepto de renta"
-                    title="Elegir el concepto de renta"
-                    options={options.incomeConcepts}
-                    value={current.entryKey}
-                    describe={conceptLabel}
-                    invalid={problems.length > 0}
-                    onChange={(next) => set(`${base}.withholdings.${i}.entryKey`, next)}
-                  />
-                ) : (
-                  <FormField
-                    id={`codigo-iva-${field.id}`}
-                    label="Código de retención del IVA"
-                    hint={ivaCode?.percentage === "0" ? ivaCode.sourceRef : undefined}
-                  >
-                    <Select
-                      {...fieldAria(
-                        `codigo-iva-${field.id}`,
-                        undefined,
-                        ivaCode?.percentage === "0" ? ivaCode.sourceRef : undefined,
-                      )}
-                      disabled={!current?.tax}
-                      value={current?.entryKey ?? ""}
-                      onChange={(event) =>
-                        set(`${base}.withholdings.${i}.entryKey`, event.target.value)
-                      }
+                {/* El concepto (o el código del IVA) y la base en una fila, mitad y mitad (decisión
+                    del propietario, 2026-10-22); el cálculo del servidor, debajo. */}
+                <div className="grid items-start gap-2 sm:grid-cols-2">
+                  {current?.tax === INCOME ? (
+                    <OptionPicker
+                      label="Concepto de renta"
+                      title="Elegir el concepto de renta"
+                      options={options.incomeConcepts}
+                      value={current.entryKey}
+                      describe={conceptLabel}
+                      invalid={problems.length > 0}
+                      onChange={(next) => set(`${base}.withholdings.${i}.entryKey`, next)}
+                    />
+                  ) : (
+                    <FormField
+                      id={`codigo-iva-${field.id}`}
+                      label="Código de retención del IVA"
+                      hint={ivaCode?.percentage === "0" ? ivaCode.sourceRef : undefined}
                     >
-                      <option value="">
-                        {current?.tax ? "Elige el código" : "Elige primero el impuesto"}
-                      </option>
-                      {options.ivaCodes.map((code) => (
-                        <option key={code.entryKey} value={code.entryKey}>
-                          {code.code} · {code.label}
-                        </option>
-                      ))}
-                      {current?.tax &&
-                        current.entryKey &&
-                        !options.ivaCodes.some((code) => code.entryKey === current.entryKey) && (
-                          <option value={current.entryKey}>
-                            Código {current.entryKey} (no disponible)
-                          </option>
+                      <Select
+                        {...fieldAria(
+                          `codigo-iva-${field.id}`,
+                          undefined,
+                          ivaCode?.percentage === "0" ? ivaCode.sourceRef : undefined,
                         )}
-                    </Select>
-                  </FormField>
-                )}
-                <div className="grid items-end gap-2 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
+                        disabled={!current?.tax}
+                        value={current?.entryKey ?? ""}
+                        onChange={(event) =>
+                          set(`${base}.withholdings.${i}.entryKey`, event.target.value)
+                        }
+                      >
+                        <option value="">
+                          {current?.tax ? "Elige el código" : "Elige primero el impuesto"}
+                        </option>
+                        {options.ivaCodes.map((code) => (
+                          <option key={code.entryKey} value={code.entryKey}>
+                            {code.code} · {code.label}
+                          </option>
+                        ))}
+                        {current?.tax &&
+                          current.entryKey &&
+                          !options.ivaCodes.some((code) => code.entryKey === current.entryKey) && (
+                            <option value={current.entryKey}>
+                              Código {current.entryKey} (no disponible)
+                            </option>
+                          )}
+                      </Select>
+                    </FormField>
+                  )}
                   <FormField
                     id={`base-retencion-${field.id}`}
                     label="Base imponible"
@@ -668,26 +679,24 @@ export function SupportCard({
                       {...form.register(`${base}.withholdings.${i}.base`)}
                     />
                   </FormField>
-                  <p
-                    aria-label={`Cálculo de la retención ${itemPosition} del documento ${position}`}
-                    className="flex min-h-8 items-center text-sm tabular-nums"
-                  >
-                    {result
-                      ? `${formatPercentage(result.percentage)} · valor retenido ${formatUsd(result.amount)}`
-                      : fresh
-                        ? "El porcentaje y el valor aparecen cuando la retención se puede calcular."
-                        : "Guarda el borrador para ver el porcentaje y el valor."}
-                  </p>
                 </div>
+                <p
+                  aria-label={`Cálculo de la retención ${itemPosition} del documento ${position}`}
+                  className="flex min-h-8 items-center text-sm tabular-nums"
+                >
+                  {result
+                    ? `${formatPercentage(result.percentage)} · valor retenido ${formatMoney(result.amount)}`
+                    : fresh
+                      ? "El porcentaje y el valor aparecen cuando la retención se puede calcular."
+                      : "Guarda el borrador para ver el porcentaje y el valor."}
+                </p>
                 <IssueList issues={problems} />
               </li>
             );
           })}
         </ol>
-        <Button
+        <AddRowButton
           ref={addItemRef}
-          variant="outline"
-          className="self-start"
           disabled={items.fields.length >= limits.itemsPerSupport}
           onClick={() =>
             items.append(blankItem(), {
@@ -695,9 +704,9 @@ export function SupportCard({
             })
           }
         >
-          <Plus aria-hidden="true" />
+          <Plus aria-hidden="true" data-icon="inline-start" />
           Agregar retención
-        </Button>
+        </AddRowButton>
       </SubList>
       <IssueList issues={fresh ? own : []} />
     </li>

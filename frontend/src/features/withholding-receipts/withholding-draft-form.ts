@@ -50,15 +50,17 @@ export type FormValues = {
   supports: SupportValues[];
 };
 
+// Un impuesto nuevo empieza en IVA y una retención nueva en Renta, los más comunes (decisión del
+// propietario, 2026-10-22); un borrador guardado conserva lo que tenía.
 export const blankTax = (): TaxValues => ({
-  tax: "",
+  tax: "2",
   rateEntryKey: "",
   rate: "",
   base: "",
   amount: "",
 });
 export const blankPayment = (): PaymentValues => ({ paymentMethod: "", total: "" });
-export const blankItem = (): ItemValues => ({ tax: "", entryKey: "", base: "" });
+export const blankItem = (): ItemValues => ({ tax: "1", entryKey: "", base: "" });
 export const blankSupport = (): SupportValues => ({
   documentType: "",
   supportCode: "",

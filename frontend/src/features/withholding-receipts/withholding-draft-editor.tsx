@@ -19,30 +19,29 @@ import {
   type WithholdingIssue,
   type WithholdingOptionsView,
 } from "@facturador/contracts";
-import { Plus, UserRound } from "lucide-react";
+import { Plus, Save, Send, UserRound, UserRoundPen, UserSearch } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
+import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { formatMoney, Money } from "@/components/money";
 import { SegmentedControl } from "@/components/segmented-control";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatUsd } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
-import {
-  DEFAULT_POINT_KEY,
-  pointLabel,
-  useEstablishments,
-} from "@/features/establishments/establishments-api";
+import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
+import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import {
   blankSupport,
@@ -120,14 +119,47 @@ function OperationAlert({
   );
 }
 
-function SubjectCard({ subject }: { subject: Subject }) {
+/**
+ * El proveedor como una ficha: su ícono grande, sus datos y, en la misma fila, el botón para elegirlo
+ * o cambiarlo, como en los demás editores (decisión del propietario, 2026-10-22).
+ */
+function SubjectCard({ subject, onChoose }: { subject: Subject | null; onChoose: () => void }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
-      <UserRound aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-      <span className="flex min-w-0 flex-col">
-        <span className="font-medium break-words">{subject.legalName}</span>
-        <span className="text-sm text-foreground-muted tabular-nums">{subject.identification}</span>
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-3 rounded-md border bg-surface px-3 py-3 sm:flex-nowrap",
+        subject ? "border-border" : "border-dashed",
+      )}
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-3">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-full",
+            subject ? "bg-primary/10 text-primary" : "bg-muted text-foreground-muted",
+          )}
+        >
+          <UserRound className="size-5" />
+        </span>
+        {subject ? (
+          <span className="flex min-w-0 flex-col">
+            <span className="font-medium break-words">{subject.legalName}</span>
+            <span className="text-sm text-foreground-muted tabular-nums">
+              {subject.identification}
+            </span>
+          </span>
+        ) : (
+          <span className="text-sm text-foreground-muted">Elige el proveedor retenido.</span>
+        )}
       </span>
+      <Button variant="primary" className="shrink-0" onClick={onChoose}>
+        {subject ? (
+          <UserRoundPen aria-hidden="true" data-icon="inline-start" />
+        ) : (
+          <UserSearch aria-hidden="true" data-icon="inline-start" />
+        )}
+        {subject ? "Cambiar proveedor" : "Elegir proveedor"}
+      </Button>
     </div>
   );
 }
@@ -229,15 +261,6 @@ function DraftEditor({
     },
   });
 
-  const points = (establishments.data ?? []).flatMap((establishment) =>
-    establishment.emissionPoints
-      .filter((point) => point.available || point.id === form.getValues("emissionPointId"))
-      .map((point) => ({
-        id: point.id,
-        label: `${pointLabel(establishment, point)} · ${establishment.address}`,
-      })),
-  );
-
   const preview = draft.preview;
   const fresh = !isDirty;
   const issues = preview.issues;
@@ -303,14 +326,7 @@ function DraftEditor({
       <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
           <Section title="Proveedor">
-            {subject ? (
-              <SubjectCard subject={subject} />
-            ) : (
-              <p className="text-sm text-foreground-muted">Elige el proveedor retenido.</p>
-            )}
-            <Button variant="outline" className="self-start" onClick={() => setChoosing(true)}>
-              {subject ? "Cambiar proveedor" : "Elegir proveedor"}
-            </Button>
+            <SubjectCard subject={subject} onChoose={() => setChoosing(true)} />
             <SupplierChooser
               open={choosing}
               onOpenChange={setChoosing}
@@ -321,12 +337,25 @@ function DraftEditor({
             />
           </Section>
 
+          {/* Establecimiento y punto en dos selectores dependientes, antes de la parte relacionada
+              (decisión del propietario, 2026-10-22). */}
+          <Section title="Establecimiento y punto de emisión">
+            <EstablishmentPointFields
+              establishments={establishments.data ?? []}
+              pointId={pointId}
+              onPointChange={(next) =>
+                form.setValue("emissionPointId", next, { shouldDirty: true })
+              }
+            />
+          </Section>
+
           <Section title="Parte relacionada">
             <div className="flex flex-col gap-1">
               <span id={relatedLabelId} className="text-sm font-medium">
                 ¿El proveedor es parte relacionada?
               </span>
               <SegmentedControl
+                fullWidth
                 aria-labelledby={relatedLabelId}
                 aria-describedby={`${relatedLabelId}-hint`}
                 options={[
@@ -414,41 +443,20 @@ function DraftEditor({
                 />
               ))}
             </ol>
-            <Button
+            <AddRowButton
               ref={addRef}
-              variant="outline"
-              className="self-start"
               disabled={supports.fields.length >= options.limits.supports}
               onClick={addSupport}
             >
-              <Plus aria-hidden="true" />
+              <Plus aria-hidden="true" data-icon="inline-start" />
               Agregar documento sustento
-            </Button>
+            </AddRowButton>
             {supports.fields.length >= options.limits.supports && (
               <p className="text-xs text-foreground-muted">
                 Llegaste al máximo de {options.limits.supports} documentos por retención, un límite
                 del sistema (no del SRI).
               </p>
             )}
-          </Section>
-
-          <Section title="Punto de emisión">
-            <FormField id="punto" label="Punto de emisión">
-              <Select
-                {...fieldAria("punto", undefined)}
-                value={pointId}
-                onChange={(event) =>
-                  form.setValue("emissionPointId", event.target.value, { shouldDirty: true })
-                }
-              >
-                <option value="">Elige un punto</option>
-                {points.map((point) => (
-                  <option key={point.id} value={point.id}>
-                    {point.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
           </Section>
         </div>
 
@@ -477,13 +485,13 @@ function DraftEditor({
                       <dt className="break-words">
                         Documento {support.position} · {item.code}
                       </dt>
-                      <dd className="text-right">{formatUsd(item.amount)}</dd>
+                      <dd className="text-right">{formatMoney(item.amount)}</dd>
                     </div>
                   )),
                 )}
                 <dt className="font-semibold">Total retenido</dt>
-                <dd className="text-right font-semibold">
-                  {preview.totals ? formatUsd(preview.totals.withheld) : "Sin calcular"}
+                <dd className={cn("text-right font-semibold", preview.totals && "text-money")}>
+                  {preview.totals ? formatMoney(preview.totals.withheld) : "Sin calcular"}
                 </dd>
               </dl>
             )}
@@ -512,6 +520,7 @@ function DraftEditor({
                   setConfirming(true);
                 }}
               >
+                <Send aria-hidden="true" data-icon="inline-start" />
                 Emitir retención
               </Button>
             )}
@@ -521,6 +530,7 @@ function DraftEditor({
               </p>
             )}
             <AsyncButton type="submit" variant="outline" pending={save.isPending}>
+              <Save aria-hidden="true" data-icon="inline-start" />
               Guardar borrador
             </AsyncButton>
           </div>
@@ -579,7 +589,7 @@ function DraftEditor({
               </dd>
               <dt className="text-foreground-muted">Total retenido</dt>
               <dd className="tabular-nums">
-                {preview.totals ? formatUsd(preview.totals.withheld) : "—"}
+                {preview.totals ? <Money amount={preview.totals.withheld} /> : "—"}
               </dd>
             </dl>
             <EmissionEnvironmentNotice document="retención" />
