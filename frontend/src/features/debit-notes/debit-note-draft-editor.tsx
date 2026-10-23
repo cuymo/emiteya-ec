@@ -583,7 +583,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                         propietario, 2026-10-22); en un concepto angosto, uno debajo del otro. */}
                       <div
                         data-slot="concept-fields"
-                        className="grid gap-3 @xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] @xl:items-start"
+                        className="grid gap-3 @xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.3fr)] @xl:items-start"
                       >
                         <FormField id={`causa-${field.id}`} label="Causa">
                           <Select

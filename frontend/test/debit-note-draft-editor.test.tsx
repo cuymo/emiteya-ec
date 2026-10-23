@@ -677,7 +677,7 @@ describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => 
     expect(cause.value).toBe("LATE_PAYMENT_INTEREST");
     // Causa, importe y tratamiento en una fila de tres columnas cuando el concepto es ancho.
     expect(fresh.querySelector("[data-slot=concept-fields]")?.className).toContain(
-      "@xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]",
+      "@xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.3fr)]",
     );
     const description = within(fresh).getByRole("textbox", { name: "Descripción" });
     expect(description.tagName).toBe("TEXTAREA");
