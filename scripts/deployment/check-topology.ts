@@ -608,6 +608,12 @@ export async function main(): Promise<number> {
       "SRI_TRANSMISSION_ENABLED=0 en toda la ejecución",
       rendered.services.backend?.environment?.SRI_TRANSMISSION_ENABLED === "0",
     );
+    checks.record(
+      "EMAIL_DELIVERY_ENABLED=0 y sin SMTP sin cifrado en la topología por defecto",
+      rendered.services.backend?.environment?.EMAIL_DELIVERY_ENABLED === "0" &&
+        rendered.services.backend?.environment?.EMAIL_ALLOW_PLAINTEXT_SMTP === "0" &&
+        !("mailpit" in rendered.services),
+    );
   } catch (error) {
     checks.record("el ensayo terminó sin errores inesperados", false, String(error).slice(0, 500));
   } finally {

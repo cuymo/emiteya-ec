@@ -1,0 +1,15 @@
+# Salida a Internet del backend hacia el servidor de correo de la empresa (add-email-delivery,
+# design D12; ADR 0029). Solo por decisión explícita del dueño, separada de la salida al SRI
+# (compose.sri-egress.yaml) y de una segunda acción: declarar EMAIL_DELIVERY_ENABLED=1, que este
+# archivo no cambia. Compose no restringe puertos ni destinos: limita en el firewall del host la
+# salida de la API al servidor y al puerto SMTP (465 o 587). Nunca en las pruebas, en la CI ni en la
+# topología por defecto:
+#   docker compose -f deploy/compose.yaml -f deploy/compose.smtp-egress.yaml up -d
+services:
+  backend:
+    networks:
+      app: {}
+      smtp-egress: {}
+
+networks:
+  smtp-egress: {}

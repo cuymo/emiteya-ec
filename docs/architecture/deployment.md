@@ -182,7 +182,7 @@ un solo paso es P2.
   UID 1000), `tls_certificate` y `tls_private_key`. `deploy/production.env.example` lista las
   variables con marcadores.
 - **Configuración fijada.** `NODE_ENV=production`, `SRI_TRANSMISSION_ENABLED=0`,
-  `BETTER_AUTH_URL=${PUBLIC_ORIGIN}`, `TRUST_PROXY=${PROXY_APP_IP}`, `API_INTERNAL_URL` (argumento de
+  `EMAIL_DELIVERY_ENABLED=0`, `EMAIL_ALLOW_PLAINTEXT_SMTP=0`, `BETTER_AUTH_URL=${PUBLIC_ORIGIN}`, `TRUST_PROXY=${PROXY_APP_IP}`, `API_INTERNAL_URL` (argumento de
   build y entorno de la interfaz) y `DATA_EXPORT_DIRECTORY`, declarados en el Compose.
 - **Arranque.** `postgres` sano (`pg_isready`), luego `migrate` terminado con éxito, luego `backend`
   (salud de vida `/health/live`), luego `frontend` (`GET /iniciar-sesion`) y `proxy`. Si una
@@ -199,6 +199,27 @@ un solo paso es P2.
   `SRI_TRANSMISSION_ENABLED=0`. Para el uso real del SRI, el dueño da dos pasos separados y
   deliberados: añadir `deploy/compose.sri-egress.yaml`, que solo conecta la API a una red con salida,
   y declarar `SRI_TRANSMISSION_ENABLED=1`. Ni las pruebas ni la CI levantan ese override.
+- **Salida al servidor de correo** (`add-email-delivery`). También son dos pasos separados y
+  deliberados, independientes de los del SRI:
+  - añadir `deploy/compose.smtp-egress.yaml`, que solo conecta la API a una red con salida;
+  - declarar `EMAIL_DELIVERY_ENABLED=1` con un override propio del operador (el Compose de
+    referencia la fija en `0`).
+
+  Compose no restringe puertos ni destinos: limita en el firewall del host la salida de la API al
+  servidor y al puerto SMTP de la empresa (465 o 587). El servidor, el usuario y la contraseña se
+  registran en la aplicación (Configuración → Correos), nunca en el entorno.
+- **Entregabilidad.** El correo sale con el remitente que configura cada empresa. Para que no llegue
+  como spam, el dominio del remitente necesita sus registros SPF, DKIM y DMARC, que configura su
+  proveedor de correo; el sistema no los firma.
+- **Buzón de pruebas en la revisión local** (`deploy/compose.mailpit.yaml`). Agrega Mailpit, que
+  atrapa los correos sin entregarlos a nadie y los muestra en `http://127.0.0.1:8025`:
+  - su SMTP (1025) solo se alcanza por la red interna `app`, y la API sigue sin salida;
+  - publica su página solo en el bucle local, por la red `mailpit-ui`, y no tiene relevo configurado;
+  - es el único override que pone `EMAIL_DELIVERY_ENABLED=1` y `EMAIL_ALLOW_PLAINTEXT_SMTP=1`;
+  - en Configuración → Correos se registra el servidor `mailpit`, puerto 1025, sin cifrado y sin
+    usuario.
+
+  Nunca se usa en producción: un servidor sin cifrado solo se admite con esa variable.
 
 ### Servicios
 

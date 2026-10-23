@@ -1,0 +1,34 @@
+# Buzón de pruebas del despliegue local de revisión (add-email-delivery, design D12; ADR 0029).
+# Mailpit atrapa todos los correos sin entregarlos a nadie y los muestra en una página local
+# (http://127.0.0.1:8025). Su SMTP (1025) solo se alcanza por la red interna `app`; la API sigue sin
+# salida a Internet. Solo aquí se enciende el envío y se admite un servidor sin cifrado. Nunca en
+# producción:
+#   docker compose -f deploy/compose.yaml -f deploy/compose.mailpit.yaml up -d
+# Después, en Configuración → Correos: servidor «mailpit», puerto 1025, sin cifrado y sin usuario.
+services:
+  backend:
+    environment:
+      EMAIL_DELIVERY_ENABLED: "1"
+      EMAIL_ALLOW_PLAINTEXT_SMTP: "1"
+
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    environment:
+      # Los mensajes viven en memoria y se descartan al recrear el contenedor; nunca se reenvían.
+      MP_MAX_MESSAGES: "500"
+    # `app` para recibir el SMTP de la API; `mailpit-ui` solo para publicar la página en el bucle
+    # local (una red interna no publica puertos). Mailpit no tiene relevo configurado: no envía.
+    networks:
+      app: {}
+      mailpit-ui: {}
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+
+networks:
+  mailpit-ui: {}

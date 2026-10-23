@@ -70,6 +70,9 @@ services:
       DATA_EXPORT_DIRECTORY: /var/lib/facturador/exports
       CERTIFICATE_MASTER_KEY_FILE: /run/secrets/certificate_master_key
       SRI_TRANSMISSION_ENABLED: "0"
+      # El correo nace apagado y sin conexión sin cifrado (add-email-delivery, design D7 y D12).
+      EMAIL_DELIVERY_ENABLED: "0"
+      EMAIL_ALLOW_PLAINTEXT_SMTP: "0"
     secrets: [certificate_master_key]
     volumes:
       - exports:/var/lib/facturador/exports
