@@ -29,7 +29,7 @@ The groups and destinations, in this order:
 | Documentos    | Archivo de comprobantes                                                                                   |
 | Maestros      | Terceros, Productos                                                                                       |
 | Análisis      | Reportes                                                                                                  |
-| Configuración | Usuarios, Empresa, Establecimientos, Firma electrónica, Catálogos fiscales, Ambiente, Portabilidad de datos |
+| Configuración | Usuarios, Empresa, Establecimientos, Firma electrónica, Correos, Catálogos fiscales, Ambiente, Portabilidad de datos |
 
 - **Sales and documents.**
   - **Drafts have no destination of their own** (unify-drafts-into-document-lists, design D6):

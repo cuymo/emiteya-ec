@@ -206,6 +206,8 @@ describe("paleta de comandos", () => {
       ["contraseña", "Mi cuenta"],
       ["IVA", "Catálogos fiscales"],
       ["certificado", "Firma electrónica"],
+      ["SMTP", "Correos"],
+      ["servidor de correo", "Correos"],
       ["numeración", "Establecimientos"],
       ["facturas emitidas", "Archivo de comprobantes"],
       ["factura sin emitir", "Facturas"],
@@ -298,6 +300,9 @@ describe("filtro de la paleta", () => {
     );
     expect(keywords("Firma electrónica")).toEqual(
       expect.arrayContaining(["certificado", "P12", "PKCS12"]),
+    );
+    expect(keywords("Correos")).toEqual(
+      expect.arrayContaining(["correo", "SMTP", "servidor de correo"]),
     );
     expect(keywords("Mi cuenta")).toEqual(expect.arrayContaining(["contraseña", "password"]));
     expect(keywords("Establecimientos")).toEqual(

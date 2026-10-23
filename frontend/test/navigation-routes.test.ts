@@ -41,9 +41,9 @@ const labels = (can: ReturnType<typeof permissionsOf>) =>
   ]);
 
 describe("modelo de rutas", () => {
-  it("cada una de las 41 páginas autenticadas encaja con un destino o una pantalla interna", () => {
+  it("cada una de las 42 páginas autenticadas encaja con un destino o una pantalla interna", () => {
     // Las 42 páginas del frontend menos el inicio de sesión, que queda fuera del shell.
-    expect(AUTHENTICATED).toHaveLength(41);
+    expect(AUTHENTICATED).toHaveLength(42);
     expect(pageUrls(join(APP, "(auth)"))).toEqual(["/iniciar-sesion"]);
     for (const url of AUTHENTICATED) {
       expect(resolveRoute(url), url).not.toBeNull();
@@ -68,6 +68,7 @@ describe("modelo de rutas", () => {
           "Empresa",
           "Establecimientos",
           "Firma electrónica",
+          "Correos",
           "Catálogos fiscales",
           "Ambiente",
           "Portabilidad de datos",
@@ -111,6 +112,7 @@ describe("modelo de rutas", () => {
       "Empresa",
       "Establecimientos",
       "Firma electrónica",
+      "Correos",
       "Catálogos fiscales",
       "Ambiente",
       "Portabilidad de datos",

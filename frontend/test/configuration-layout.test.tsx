@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 describe("Configuración en pestañas", () => {
-  it("el administrador ve las siete secciones en orden, con la actual marcada", async () => {
+  it("el administrador ve las ocho secciones en orden, con la actual marcada", async () => {
     renderLayout(ADMIN_ME);
     await screen.findByText("panel");
     const links = within(tabs()).getAllByRole("link");
@@ -41,6 +41,7 @@ describe("Configuración en pestañas", () => {
       ["Empresa", "/configuracion/empresa"],
       ["Establecimientos", "/configuracion/establecimientos"],
       ["Firma electrónica", "/configuracion/firma"],
+      ["Correos", "/configuracion/correos"],
       ["Catálogos fiscales", "/configuracion/catalogos-fiscales"],
       ["Ambiente", "/configuracion/ambiente"],
       ["Portabilidad de datos", "/configuracion/portabilidad"],

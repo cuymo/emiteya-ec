@@ -17,6 +17,7 @@ import {
   Globe,
   HardDriveDownload,
   House,
+  Mail,
   Package,
   ReceiptText,
   Settings,
@@ -233,6 +234,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         icon: FileKey,
         permission: "certificate.read",
         keywords: ["certificado", "firma", "P12", "PKCS12"],
+      },
+      {
+        href: "/configuracion/correos",
+        label: "Correos",
+        icon: Mail,
+        permission: "email.configure",
+        keywords: ["correo", "SMTP", "servidor de correo", "email"],
       },
       {
         href: "/configuracion/catalogos-fiscales",
