@@ -112,9 +112,14 @@ entering Configuración lands on Usuarios; an operator, on Catálogos fiscales.
   one), so every section keeps its deep link, its permission guard and its own `h1`. They look like
   the document detail tabs (`tabTriggerClassName`).
 - **`/configuracion`** has no permission of its own and redirects to the first tab the role sees.
-- **Width.** The tabs take the whole workspace column; the panel below takes the width its screen
-  declares with `data-panel-width` (`form` or `reading`), aligned with the tabs.
-- **Narrow screens.** The tab row scrolls horizontally, never the page, with the open tab in view.
+- **Vertical tabs.** From a 48rem container (`@settings-nav:`, `--container-settings-nav`) the tabs
+  are a 13rem column to the left of the panel, like a sidebar (owner decision, 2026-10-23): full
+  width items aligned left, no underline, the open one and the hovered one on the soft active blue,
+  and the column sticks below the top bar while the page scrolls (`grid-cols-settings-nav`).
+- **Width.** The panel takes the width its screen declares with `data-panel-width` (`form` or
+  `reading`), to the right of the vertical tabs or below the tab row.
+- **Narrow screens.** Below that container the tabs stay a row above the panel that scrolls
+  horizontally, never the page, with the open tab in view.
 
 ## Application Shell
 

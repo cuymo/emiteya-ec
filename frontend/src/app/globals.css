@@ -294,6 +294,10 @@
   /* Contenedor desde el que una sección de configuración pone su título y su descripción a la
      izquierda de sus campos, con la variante `@settings-split:` (Empresa). */
   --container-settings-split: 48rem;
+  /* Contenedor desde el que las secciones de Configuración pasan de una fila de pestañas a una
+     columna vertical a la izquierda, como una barra lateral, con la variante `@settings-nav:`
+     (decisión del propietario, 2026-10-23). */
+  --container-settings-nav: 48rem;
 }
 
 /* Columnas de los formularios (productize-invoice-editor-and-composition-foundation, design D5 y
@@ -311,6 +315,11 @@
   /* La forma de pago y el importe en cuatro quintos y un quinto (decisión del propietario,
      2026-10-22); el importe, de al menos 10rem para la cifra y su «Quitar». */
   grid-template-columns: minmax(0, 4fr) minmax(10rem, 1fr);
+}
+@utility grid-cols-settings-nav {
+  /* La columna de las secciones de Configuración y su panel (decisión del propietario,
+     2026-10-23). */
+  grid-template-columns: 13rem minmax(0, 1fr);
 }
 @utility grid-cols-metric {
   /* El icono de un indicador de Inicio y su contenido en 10 % y 90 % (decisión del propietario,

@@ -78,6 +78,20 @@ describe("Configuración en pestañas", () => {
     expect(tabs().closest("[data-slot=configuration-panel]")).toBeNull();
   });
 
+  it("con espacio, las secciones van en una columna vertical a la izquierda, como una barra lateral", async () => {
+    renderLayout(ADMIN_ME, <section data-panel-width="form">formulario</section>);
+    await screen.findByText("formulario");
+    // Decisión del propietario, 2026-10-23: en una fila desplazable solo en una pantalla angosta.
+    const layout = tabs().parentElement as HTMLElement;
+    expect(layout.className).toContain("@settings-nav:grid-cols-settings-nav");
+    expect(tabs().className).toContain("@settings-nav:flex-col");
+    expect(tabs().className).toContain("@settings-nav:sticky");
+    const current = within(tabs()).getByRole("link", { name: "Usuarios" });
+    expect(current.getAttribute("aria-current")).toBe("page");
+    expect(current.className).toContain("@settings-nav:aria-[current=page]:bg-active");
+    expect(current.className).toContain("@settings-nav:justify-start");
+  });
+
   it("/configuracion lleva a la primera pestaña que el rol ve", async () => {
     navigation.pathname = "/configuracion";
     renderLayout(OPERATOR_ME, <ConfigurationIndex />);

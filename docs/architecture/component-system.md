@@ -105,11 +105,12 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
   - The shell centers every screen in a workspace column. A screen narrows it by declaring its role
     on its root, also in its loading, error and no-permission states:
     `data-page-width="form"` (Mi cuenta) or `data-page-width="reading"` (the readiness screen).
-    The Configuración sections live under their tabs, which take the whole column: their screens
+    The Configuración sections live beside their vertical tabs (below the tab row on narrow
+    screens; owner decision, 2026-10-23): their screens
     declare `data-panel-width="form"` (Establecimientos and Firma electrónica) or
     `data-panel-width="reading"` (Ambiente), and the tab panel narrows to it. Usuarios and Portabilidad keep the full width because they hold data tables.
   - Establecimientos also adds `data-panel-align="center"`: with no visible title (the tab names
-    it; its `h1` is only for screen readers), its list is centered under the tabs, and creating an
+    it; its `h1` is only for screen readers), its list is centered in the panel, and creating an
     establishment is a dashed card that closes the list instead of a header button. Each
     establishment ends with a dashed «Agregar punto de emisión» row, and its actions («Corregir
     dirección», «Desactivar» or «Reactivar», also on each point) are outline buttons with their
