@@ -42,6 +42,13 @@ while the condition holds.
   emission confirmation of every editor that emits, with icon and text. In Pruebas it says that the
   document will have no tax validity; when the environment cannot be confirmed it says so; in
   Producción it says nothing, and the confirmation shows Producción as context.
+- **The email destination goes in the same confirmation** (`EmailDestinationNotice`,
+  `frontend/src/features/email/`, add-email-delivery). It says where the automatic email will go, or
+  why none will. It decides in the server's order: delivery off in the installation, no server,
+  automatic sending off, Pruebas (only the test address), then the receiver's emails. Without them,
+  it says to hand over the printed RIDE, with a link to the party in another tab. An operator sees it
+  through `GET /email/availability`, never the server settings. It only loads the receiver's emails
+  when the email would go to them.
 
 ## Toast Contract
 

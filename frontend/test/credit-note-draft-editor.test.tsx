@@ -488,4 +488,31 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
       expect(within(dialog).queryByText("Producción")).toBeNull();
     });
   }
+
+  // El destino del correo va en la misma confirmación (add-email-delivery, tarea 10.2).
+  it("PRODUCTION: la confirmación dice a dónde irá el correo", async () => {
+    const EXPECTED_DESTINATION = "Se enviará por correo a: compras@cliente.ec.";
+    render(<CreditNoteDraftScreen draftId="cnd-1" />, {
+      "GET /api/v1/credit-notes/drafts/cnd-1": ok(creditNoteDraft()),
+      "GET /api/v1/company/status": companyStatus("PRODUCTION"),
+      "GET /api/v1/email/availability": ok({
+        configured: true,
+        deliveryEnabled: true,
+        autoSend: true,
+        testRecipient: null,
+      }),
+      "GET /api/v1/documents/inv-1/email-recipients": ok({
+        recipients: ["compras@cliente.ec"],
+        environment: "PRODUCTION",
+        testRedirect: false,
+        testRecipient: null,
+      }),
+    });
+    const dialog = await openEmission(userEvent.setup());
+    expect(
+      (await within(dialog).findByText(EXPECTED_DESTINATION)).closest(
+        "[data-slot=email-destination-notice]",
+      ),
+    ).not.toBeNull();
+  });
 });

@@ -46,6 +46,7 @@ import { ApiError, apiFetch } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
+import { EmailDestinationNotice } from "@/features/email/email-destination-notice";
 import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
@@ -778,6 +779,27 @@ function DraftEditor({
               </dd>
             </dl>
             <EmissionEnvironmentNotice document="guía de remisión" />
+            {/* Los destinatarios terceros y el transportista tercero, como el servidor. */}
+            <EmailDestinationNotice
+              open={confirming}
+              receivers={{
+                parties: [
+                  ...draft.recipients.flatMap(({ recipient }) =>
+                    recipient?.kind === "PARTY"
+                      ? [{ id: recipient.partyId, legalName: recipient.party?.legalName ?? "" }]
+                      : [],
+                  ),
+                  ...(draft.transporter?.source === "PARTY"
+                    ? [
+                        {
+                          id: draft.transporter.partyId,
+                          legalName: draft.transporter.party?.legalName ?? "",
+                        },
+                      ]
+                    : []),
+                ],
+              }}
+            />
           </div>
         }
       >

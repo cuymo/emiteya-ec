@@ -42,6 +42,7 @@ import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
+import { EmailDestinationNotice } from "@/features/email/email-destination-notice";
 import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
 import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
@@ -631,6 +632,10 @@ function DraftEditor({
               </dd>
             </dl>
             <EmissionEnvironmentNotice document="retención" />
+            <EmailDestinationNotice
+              open={confirming}
+              receivers={{ parties: draft.party ? [draft.party] : [] }}
+            />
           </div>
         }
       >

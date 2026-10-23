@@ -73,6 +73,24 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+const emailParty = (id: string, legalName: string, emails: string[]) =>
+  ok({
+    id,
+    identificationType: "04",
+    identificationTypeLabel: "RUC",
+    identification: "0992877878001",
+    legalName,
+    address: null,
+    emails,
+    phone: null,
+    roles: [],
+    status: "ACTIVE",
+    systemRecord: null,
+    version: 1,
+    createdAt: "2026-10-03T10:00:00.000Z",
+    updatedAt: "2026-10-03T10:00:00.000Z",
+  });
+
 describe("composición del editor", () => {
   it("el comprador es una ficha con su identificación, y un solo punto se muestra sin selector", async () => {
     render(<DraftEditorScreen draftId="draft-1" />, {
@@ -427,6 +445,32 @@ describe("ambiente junto a la emisión y confirmación", () => {
     expect(
       within(dialog).getByText("Pruebas · esta factura no tendrá validez tributaria."),
     ).toBeDefined();
+  });
+
+  // El destino del correo va en la misma confirmación (add-email-delivery, tarea 10.2).
+  it("Producción: la confirmación dice a dónde irá el correo del comprador", async () => {
+    render(<DraftEditorScreen draftId="draft-1" />, {
+      "GET /api/v1/invoices/drafts/draft-1": ok(draft()),
+      "GET /api/v1/company/status": status("PRODUCTION"),
+      "GET /api/v1/email/availability": ok({
+        configured: true,
+        deliveryEnabled: true,
+        autoSend: true,
+        testRecipient: null,
+      }),
+      "GET /api/v1/parties/party-1": emailParty("party-1", "EL PERNO CIA. LTDA.", [
+        "compras@cliente.ec",
+        "pagos@cliente.ec",
+      ]),
+    });
+    const dialog = await openConfirmation();
+    expect(
+      (
+        await within(dialog).findByText(
+          "Se enviará por correo a: compras@cliente.ec, pagos@cliente.ec.",
+        )
+      ).closest("[data-slot=email-destination-notice]"),
+    ).not.toBeNull();
   });
 
   it("Producción: contexto en la confirmación, sin aviso ni presentación de éxito", async () => {

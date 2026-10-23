@@ -59,7 +59,7 @@ al terminarlo.
 ## 10. Fase 10 · Interfaz: el correo del comprobante
 
 - [x] 10.1 Agregar `archive/email-section.tsx` en la pestaña de documentos de los seis detalles (design D14): el último envío con su insignia, su motivo y sus direcciones, la nota de Pruebas, el recordatorio de los dos RIDE de la liquidación, el historial plegable con los intentos, la atención de la pestaña cuando el último falló, y «Reenviar correo» (solo con `email.resend`) con las direcciones propuestas y editables; verificar con pruebas de componentes de cada estado, sin envíos, del reenvío con éxito, con error y repetido, sin permiso sin el botón, y teclado.
-- [ ] 10.2 Agregar `email/email-destination-notice.tsx` a la confirmación «Emitir» de los seis editores (receptor con correos, sin correo o consumidor final, Pruebas, automático o despliegue apagado, sin servidor), con los correos del tercero o, en las notas, las direcciones de su factura; verificar con pruebas de componentes por tipo y por caso, incluido el operador.
+- [x] 10.2 Agregar `email/email-destination-notice.tsx` a la confirmación «Emitir» de los seis editores (receptor con correos, sin correo o consumidor final, Pruebas, automático o despliegue apagado, sin servidor), con los correos del tercero o, en las notas, las direcciones de su factura; verificar con pruebas de componentes por tipo y por caso, incluido el operador.
 
 ## 11. Fase 11 · Interfaz: bandeja, avisos y revisión
 

@@ -53,6 +53,7 @@ import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
+import { EmailDestinationNotice } from "@/features/email/email-destination-notice";
 import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
 import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
 import { useCatalogEntries } from "@/features/fiscal-catalogs/catalogs-api";
@@ -842,6 +843,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
               <dd>{preview.payment?.label ?? "—"}</dd>
             </dl>
             <EmissionEnvironmentNotice document="nota de débito" />
+            <EmailDestinationNotice open={confirming} receivers={{ invoiceId: draft.invoice.id }} />
           </div>
         }
       >

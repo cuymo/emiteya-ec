@@ -84,6 +84,24 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const emailParty = (id: string, legalName: string, emails: string[]) =>
+  ok({
+    id,
+    identificationType: "04",
+    identificationTypeLabel: "RUC",
+    identification: "0992877878001",
+    legalName,
+    address: null,
+    emails,
+    phone: null,
+    roles: [],
+    status: "ACTIVE",
+    systemRecord: null,
+    version: 1,
+    createdAt: "2026-10-03T10:00:00.000Z",
+    updatedAt: "2026-10-03T10:00:00.000Z",
+  });
+
 describe("borrador de retención", () => {
   it("el porcentaje y el valor retenido son los del servidor y nunca se editan", async () => {
     render(<WithholdingDraftScreen draftId="retd-1" />, {
@@ -699,6 +717,30 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
       expect(within(dialog).queryByText("Producción")).toBeNull();
     });
   }
+
+  // El destino del correo va en la misma confirmación (add-email-delivery, tarea 10.2).
+  it("PRODUCTION: la confirmación dice a dónde irá el correo", async () => {
+    const EXPECTED_DESTINATION = "Se enviará por correo a: ventas@proveedora.ec.";
+    render(<WithholdingDraftScreen draftId="retd-1" />, {
+      "GET /api/v1/withholding-receipts/drafts/retd-1": ok(withholdingDraft()),
+      "GET /api/v1/company/status": companyStatus("PRODUCTION"),
+      "GET /api/v1/email/availability": ok({
+        configured: true,
+        deliveryEnabled: true,
+        autoSend: true,
+        testRecipient: null,
+      }),
+      "GET /api/v1/parties/prov-1": emailParty("prov-1", "PROVEEDORA DEL SUR S.A.", [
+        "ventas@proveedora.ec",
+      ]),
+    });
+    const dialog = await openEmission(userEvent.setup());
+    expect(
+      (await within(dialog).findByText(EXPECTED_DESTINATION)).closest(
+        "[data-slot=email-destination-notice]",
+      ),
+    ).not.toBeNull();
+  });
 });
 
 describe("pedidos del propietario sobre la retención (2026-10-22)", () => {

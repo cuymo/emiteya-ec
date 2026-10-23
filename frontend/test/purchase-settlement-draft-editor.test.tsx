@@ -165,6 +165,24 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const emailParty = (id: string, legalName: string, emails: string[]) =>
+  ok({
+    id,
+    identificationType: "04",
+    identificationTypeLabel: "RUC",
+    identification: "0992877878001",
+    legalName,
+    address: null,
+    emails,
+    phone: null,
+    roles: [],
+    status: "ACTIVE",
+    systemRecord: null,
+    version: 1,
+    createdAt: "2026-10-03T10:00:00.000Z",
+    updatedAt: "2026-10-03T10:00:00.000Z",
+  });
+
 describe("borrador de liquidación de compra", () => {
   it("un borrador nuevo no precarga forma de pago, plazo, unidad de tiempo ni tarifa, y toma el punto predeterminado", async () => {
     render(<PurchaseSettlementDraftScreen draftId="lcd-1" />, {
@@ -749,4 +767,26 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
       expect(within(dialog).queryByText("Producción")).toBeNull();
     });
   }
+
+  // El destino del correo va en la misma confirmación (add-email-delivery, tarea 10.2).
+  it("PRODUCTION: la confirmación dice a dónde irá el correo", async () => {
+    const EXPECTED_DESTINATION = /No se enviará por correo: María Quishpe no tiene correo/;
+    render(<PurchaseSettlementDraftScreen draftId="lcd-1" />, {
+      "GET /api/v1/purchase-settlements/drafts/lcd-1": ok(settlementDraft()),
+      "GET /api/v1/company/status": companyStatus("PRODUCTION"),
+      "GET /api/v1/email/availability": ok({
+        configured: true,
+        deliveryEnabled: true,
+        autoSend: true,
+        testRecipient: null,
+      }),
+      "GET /api/v1/parties/prov-1": emailParty("prov-1", "María Quishpe", []),
+    });
+    const dialog = await openEmission(userEvent.setup());
+    expect(
+      (await within(dialog).findByText(EXPECTED_DESTINATION)).closest(
+        "[data-slot=email-destination-notice]",
+      ),
+    ).not.toBeNull();
+  });
 });

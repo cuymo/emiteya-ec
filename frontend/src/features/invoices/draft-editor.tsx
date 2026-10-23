@@ -73,6 +73,7 @@ import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
+import { EmailDestinationNotice } from "@/features/email/email-destination-notice";
 import {
   DEFAULT_POINT_KEY,
   pointLabel,
@@ -1504,6 +1505,17 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
               </dd>
             </dl>
             <EmissionEnvironmentNotice document="factura" />
+            <EmailDestinationNotice
+              open={confirming}
+              receivers={
+                buyer
+                  ? {
+                      parties: [{ id: buyer.id, legalName: buyer.legalName }],
+                      consumerFinal: buyer.consumerFinal,
+                    }
+                  : { parties: [] }
+              }
+            />
             {buyer?.consumerFinal && (
               <p className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-foreground">
                 Una factura a consumidor final tiene restricciones para anularse o corregirse con

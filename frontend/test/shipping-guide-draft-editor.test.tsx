@@ -171,6 +171,24 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const emailParty = (id: string, legalName: string, emails: string[]) =>
+  ok({
+    id,
+    identificationType: "04",
+    identificationTypeLabel: "RUC",
+    identification: "0992877878001",
+    legalName,
+    address: null,
+    emails,
+    phone: null,
+    roles: [],
+    status: "ACTIVE",
+    systemRecord: null,
+    version: 1,
+    createdAt: "2026-10-03T10:00:00.000Z",
+    updatedAt: "2026-10-03T10:00:00.000Z",
+  });
+
 describe("borrador de guía de remisión", () => {
   it("solo ofrece transportistas con el rol, deshabilita los que no caben con su motivo y no asigna roles", async () => {
     let saved: Record<string, unknown> | undefined;
@@ -776,6 +794,46 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
       expect(within(dialog).queryByText("Producción")).toBeNull();
     });
   }
+
+  // El destino del correo va en la misma confirmación (add-email-delivery, tarea 10.2).
+  it("PRODUCTION: la confirmación dice a dónde irá el correo", async () => {
+    const EXPECTED_DESTINATION = "Se enviará por correo a: compras@perno.ec, flota@andinos.ec.";
+    render(<ShippingGuideDraftScreen draftId="grd-1" />, {
+      "GET /api/v1/shipping-guides/drafts/grd-1": ok(
+        guideDraft({
+          transporter: {
+            source: "PARTY",
+            partyId: "car-1",
+            party: {
+              id: "car-1",
+              identificationType: "04",
+              identification: "1791111111001",
+              legalName: "TRANSPORTES ANDINOS S.A.",
+              selectable: true,
+              reason: null,
+            },
+          },
+        }),
+      ),
+      "GET /api/v1/company/status": companyStatus("PRODUCTION"),
+      "GET /api/v1/email/availability": ok({
+        configured: true,
+        deliveryEnabled: true,
+        autoSend: true,
+        testRecipient: null,
+      }),
+      "GET /api/v1/parties/cli-1": emailParty("cli-1", "EL PERNO CIA. LTDA.", ["compras@perno.ec"]),
+      "GET /api/v1/parties/car-1": emailParty("car-1", "TRANSPORTES ANDINOS S.A.", [
+        "flota@andinos.ec",
+      ]),
+    });
+    const dialog = await openEmission(userEvent.setup());
+    expect(
+      (await within(dialog).findByText(EXPECTED_DESTINATION)).closest(
+        "[data-slot=email-destination-notice]",
+      ),
+    ).not.toBeNull();
+  });
 });
 
 describe("pedidos del propietario sobre la guía de remisión (2026-10-22)", () => {

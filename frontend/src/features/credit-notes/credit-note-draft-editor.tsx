@@ -48,6 +48,7 @@ import { canSee } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
+import { EmailDestinationNotice } from "@/features/email/email-destination-notice";
 import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
 import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
 import { newDocumentHref } from "@/features/documents/new-document";
@@ -819,6 +820,10 @@ function DraftEditor({
                 </dd>
               </dl>
               <EmissionEnvironmentNotice document="nota de crédito" />
+              <EmailDestinationNotice
+                open={confirming}
+                receivers={{ invoiceId: draft.invoice.id }}
+              />
             </div>
           }
         >
