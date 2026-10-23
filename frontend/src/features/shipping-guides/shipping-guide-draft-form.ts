@@ -175,7 +175,9 @@ export const formSchema = z
 
 export const toForm = (draft: ShippingGuideDraftView): FormValues => ({
   emissionPointId: draft.emissionPoint?.id ?? "",
-  transporterSource: draft.transporter?.source ?? "",
+  // Sin transporte guardado, «Tercero» queda elegido (decisión del propietario, 2026-10-22): sin
+  // transportista elegido no se envía, así que el borrador sigue igual al guardado.
+  transporterSource: draft.transporter?.source ?? "PARTY",
   carrierId: draft.transporter?.source === "PARTY" ? draft.transporter.partyId : "",
   carrierName:
     draft.transporter?.source === "PARTY" ? (draft.transporter.party?.legalName ?? "") : "",

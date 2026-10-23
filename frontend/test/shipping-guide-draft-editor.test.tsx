@@ -222,11 +222,12 @@ describe("borrador de guía de remisión", () => {
     await findRecipient(1);
     const user = userEvent.setup();
     const source = screen.getByRole("radiogroup", { name: "¿Quién transporta?" });
+    // Sin transporte guardado, «Tercero» queda elegido (decisión del propietario, 2026-10-22).
     expect(
       within(source)
         .getAllByRole("radio")
         .map((radio) => radio.getAttribute("aria-checked")),
-    ).toEqual(["false", "false"]);
+    ).toEqual(["false", "true"]);
     await user.click(within(source).getByRole("radio", { name: "Tercero" }));
     await user.click(screen.getByRole("button", { name: "Elegir transportista" }));
     const picker = await screen.findByRole("dialog", { name: "Elegir transportista" });
@@ -389,7 +390,7 @@ describe("borrador de guía de remisión", () => {
     await user.click(within(dialog).getByRole("button", { name: "Agregar 1 mercancía" }));
     const added = detailRow(3);
     expect(
-      within(within(added).getByRole("radiogroup", { name: "Detalle 3" }))
+      within(within(added).getByRole("radiogroup", { name: "Tipo del detalle 3" }))
         .getByRole("radio", { name: "Línea libre" })
         .getAttribute("aria-checked"),
     ).toBe("true");
@@ -463,18 +464,30 @@ describe("borrador de guía de remisión", () => {
         status: 404,
         body: errorBody("DEFAULT_EMISSION_POINT_NOT_FOUND", "x"),
       }),
+      // Dos puntos: el establecimiento y el punto se eligen en sus selectores dependientes.
+      "GET /api/v1/establishments": ok([
+        {
+          id: "est-1",
+          code: "001",
+          address: "Av. 6 de Diciembre, Quito",
+          status: "ACTIVE",
+          emissionPoints: [
+            { id: "pto-1", code: "001", status: "ACTIVE", available: true },
+            { id: "pto-2", code: "002", status: "ACTIVE", available: true },
+          ],
+        },
+      ]),
     });
     await findRecipient(1);
     const user = userEvent.setup();
     const departure = screen.getByRole("textbox", { name: "Dirección de partida" });
     expect(departure).toHaveProperty("value", "");
-    await screen.findByRole("option", { name: /^001-001 · / });
+    await screen.findByRole("option", { name: "001-001" });
     await user.selectOptions(screen.getByRole("combobox", { name: "Punto de emisión" }), "pto-1");
     expect(departure).toHaveProperty("value", "Av. 6 de Diciembre, Quito");
     await user.clear(departure);
     await user.type(departure, "Bodega norte");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Punto de emisión" }), "");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Punto de emisión" }), "pto-1");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Punto de emisión" }), "pto-2");
     expect(departure).toHaveProperty("value", "Bodega norte");
   });
 
@@ -766,6 +779,43 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
 });
 
 describe("pedidos del propietario sobre la guía de remisión (2026-10-22)", () => {
+  it("destinatarios y detalles con su número en la franja, títulos discretos y el punto al final", async () => {
+    render(<ShippingGuideDraftScreen draftId="grd-1" />, {
+      "GET /api/v1/shipping-guides/drafts/grd-1": ok(guideDraft()),
+    });
+    const card = await findRecipient(1);
+    for (const name of ["Transporte", "Fechas y partida", "Punto de emisión"]) {
+      expect(screen.getByRole("heading", { level: 2, name }).className, name).toContain("sr-only");
+    }
+    expect(screen.getByRole("button", { name: "Ayuda: Destinatarios" })).toBeDefined();
+    // El destinatario y su detalle, 10 % y 90 %, con su rótulo en la franja.
+    expect(card.className).toContain("sm:grid-cols-[minmax(0,10fr)_minmax(0,90fr)]");
+    expect(
+      within(card.querySelector("[data-slot=item-number]") as HTMLElement).getByRole("heading", {
+        level: 3,
+      }).textContent,
+    ).toBe("Destinatario 1");
+    const detail = detailRow(1);
+    expect(
+      within(detail.querySelector("[data-slot=item-number]") as HTMLElement).getByRole("heading", {
+        level: 5,
+      }).textContent,
+    ).toBe("Detalle 1");
+    expect(within(card).getByRole("heading", { level: 4, name: "Detalles" }).className).toContain(
+      "text-base",
+    );
+    // El código de destino, abreviado, con el texto completo en su tooltip.
+    expect(within(card).getByText(/^Código del establecimiento de destino:/)).toBeDefined();
+    // Un separador debajo de «Agregar destinatario»; el punto, en sus selectores (aquí, uno solo).
+    expect(
+      screen
+        .getByRole("button", { name: "Agregar destinatario" })
+        .closest("section")
+        ?.nextElementSibling?.getAttribute("data-slot"),
+    ).toBe("separator");
+    expect(await screen.findByText("001-001")).toBeDefined();
+  });
+
   const eligible = {
     id: "inv-1",
     documentNumber: "001-001-000000123",
@@ -815,7 +865,7 @@ describe("pedidos del propietario sobre la guía de remisión (2026-10-22)", () 
     for (const name of ["¿Quién transporta?", "Punto de partida"]) {
       expect(screen.getByRole("radiogroup", { name }).className, name).toContain("w-full");
     }
-    for (const name of ["Destinatario", "Comprobante de venta", "Detalle 1"]) {
+    for (const name of ["Destinatario", "Comprobante de venta", "Tipo del detalle 1"]) {
       expect(within(card).getByRole("radiogroup", { name }).className, name).toContain("w-full");
     }
     expect(screen.getByRole("textbox", { name: "Placa" }).className).not.toContain("max-w");
@@ -827,7 +877,7 @@ describe("pedidos del propietario sobre la guía de remisión (2026-10-22)", () 
     expect(row?.className).toContain("sm:grid-cols-2");
     expect(
       within(row as HTMLElement).getByRole("textbox", {
-        name: "Código del establecimiento de destino (opcional)",
+        name: "Cód. de establecimiento (opcional)",
       }),
     ).toBeDefined();
     for (const name of ["Agregar detalle", "Agregar destinatario"]) {

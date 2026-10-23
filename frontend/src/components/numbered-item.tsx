@@ -7,16 +7,20 @@ import { cn } from "@/lib/utils";
 
 export function NumberedItem({
   label,
+  level = 3,
   invalid = false,
   className,
   children,
   ...props
 }: Omit<ComponentProps<"li">, "children"> & {
   label: string;
+  /** El nivel del título del rótulo: 3, o más dentro de otro elemento numerado. */
+  level?: 3 | 4 | 5;
   /** Si el elemento tiene problemas: el borde va en rojo. */
   invalid?: boolean;
   children: ReactNode;
 }) {
+  const Heading = `h${level}` as const;
   return (
     <li
       aria-invalid={invalid || undefined}
@@ -30,9 +34,9 @@ export function NumberedItem({
         data-slot="item-number"
         className="flex items-center justify-center border-primary/15 bg-linear-to-b from-primary/20 via-primary/10 to-primary/5 px-3 py-2 text-primary max-sm:border-b sm:border-r sm:py-4"
       >
-        <h3 className="font-semibold whitespace-nowrap sm:rotate-180 sm:[writing-mode:vertical-rl]">
+        <Heading className="font-semibold whitespace-nowrap sm:rotate-180 sm:[writing-mode:vertical-rl]">
           {label}
-        </h3>
+        </Heading>
       </div>
       <div className="@container flex min-w-0 flex-col gap-3 p-3">{children}</div>
     </li>

@@ -554,7 +554,10 @@ tercero y la factura sustento SHALL mostrarse como una ficha con su ícono grand
 el botón para elegirlos o cambiarlos en el azul primario. La factura elegida SHALL mostrar su número,
 su comprador, su fecha y su total, con «Cargar mercancías de la factura» junto a «Cambiar factura».
 Un destinatario nuevo, o uno guardado sin sustento, SHALL empezar con «Factura» como comprobante de
-venta, sin que el borrador cuente como modificado. El motivo del traslado
+venta, y un borrador sin transporte guardado con «Tercero» como quien transporta, sin que el borrador
+cuente como modificado. Cada destinatario y cada detalle SHALL llevar su número («Destinatario 1»,
+«Detalle 1») vertical en una franja a la izquierda, con sus campos a la derecha, y el establecimiento
+y el punto de emisión SHALL elegirse en dos selectores dependientes lado a lado. El motivo del traslado
 SHALL escribirse en un área de texto que no admite saltos de línea, y la ruta y el código del
 establecimiento de destino SHALL ir en una fila, mitad y mitad. «Agregar detalle» y «Agregar
 destinatario» SHALL verse como «Dividir el pago» en la factura, y las acciones de quitar SHALL ir en

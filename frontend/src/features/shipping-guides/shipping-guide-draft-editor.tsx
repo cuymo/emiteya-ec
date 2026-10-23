@@ -41,16 +41,14 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { ApiError, apiFetch } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
-import {
-  DEFAULT_POINT_KEY,
-  pointLabel,
-  useEstablishments,
-} from "@/features/establishments/establishments-api";
+import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
+import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
 import { PartyDialog } from "@/features/parties/party-dialog";
 import {
   blankRecipient,
@@ -91,13 +89,29 @@ function useDefaultPoint(enabled: boolean) {
   });
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Sección del editor. Su título puede llevar su nota en un tooltip (`hint`) o quedar solo para la
+ * asistencia (`hideTitle`), cuando los campos ya lo dicen (decisiones del propietario, 2026-10-22).
+ */
+function Section({
+  title,
+  hint,
+  hideTitle = false,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  hideTitle?: boolean;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className="text-lg font-semibold">
-        {title}
-      </h2>
+      <LabelWithHint label={title} hint={hint}>
+        <h2 id={id} className={hideTitle ? "sr-only" : "text-lg font-semibold"}>
+          {title}
+        </h2>
+      </LabelWithHint>
       {children}
     </section>
   );
@@ -311,14 +325,6 @@ function DraftEditor({
     },
   });
 
-  const points = (establishments.data ?? []).flatMap((establishment) =>
-    establishment.emissionPoints
-      .filter((point) => point.available || point.id === pointId)
-      .map((point) => ({
-        id: point.id,
-        label: `${pointLabel(establishment, point)} · ${establishment.address}`,
-      })),
-  );
   const origin = options.establishments.find((establishment) => establishment.id === originId);
 
   const preview = draft.preview;
@@ -409,7 +415,7 @@ function DraftEditor({
               alertRef={alertRef}
             />
           )}
-          <Section title="Transporte">
+          <Section title="Transporte" hideTitle>
             <div className="flex flex-col gap-1">
               <span id={sourceLabelId} className="text-sm font-medium">
                 ¿Quién transporta?
@@ -491,7 +497,7 @@ function DraftEditor({
             </FormField>
           </Section>
 
-          <Section title="Fechas y partida">
+          <Section title="Fechas y partida" hideTitle>
             <div className="grid gap-2 sm:grid-cols-2">
               <DatePickerField
                 label="Fecha de inicio del transporte"
@@ -574,11 +580,10 @@ function DraftEditor({
             )}
           </Section>
 
-          <Section title="Destinatarios">
-            <p className="text-sm text-foreground-muted">
-              Cada destinatario recibe parte de la mercadería, con su sustento: una factura
-              autorizada de la empresa o, sin factura, uno de los casos del art. 30 que declares.
-            </p>
+          <Section
+            title="Destinatarios"
+            hint="Cada destinatario recibe parte de la mercadería, con su sustento: una factura autorizada de la empresa o, sin factura, uno de los casos del art. 30 que declares."
+          >
             <ol className="flex flex-col gap-3">
               {recipients.fields.map((field, index) => (
                 <RecipientCard
@@ -616,24 +621,20 @@ function DraftEditor({
             )}
           </Section>
 
-          <Section title="Punto de emisión">
-            <FormField id="punto" label="Punto de emisión">
-              <Select
-                {...fieldAria("punto", undefined)}
-                value={pointId}
-                onChange={(event) => {
-                  set("emissionPointId", event.target.value);
-                  proposeDeparture(event.target.value);
-                }}
-              >
-                <option value="">Elige un punto</option>
-                {points.map((point) => (
-                  <option key={point.id} value={point.id}>
-                    {point.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
+          {/* Un separador debajo de «Agregar destinatario» (decisión del propietario, 2026-10-22). */}
+          <Separator />
+
+          {/* El establecimiento y el punto en dos selectores dependientes, mitad y mitad, sin
+              título visible (decisión del propietario, 2026-10-22). */}
+          <Section title="Punto de emisión" hideTitle>
+            <EstablishmentPointFields
+              establishments={establishments.data ?? []}
+              pointId={pointId}
+              onPointChange={(next) => {
+                set("emissionPointId", next);
+                proposeDeparture(next);
+              }}
+            />
           </Section>
         </div>
 

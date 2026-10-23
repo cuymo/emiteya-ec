@@ -35,6 +35,7 @@ import {
 import { useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
 import { AddRowButton } from "@/components/add-row-button";
+import { NumberedItem } from "@/components/numbered-item";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { LabelWithHint } from "@/components/field-hint";
@@ -85,11 +86,20 @@ export function IssueList({ issues }: { issues: readonly ShippingGuideIssue[] })
   );
 }
 
-function SubList({ title, children }: { title: string; children: ReactNode }) {
+function SubList({
+  title,
+  prominent = false,
+  children,
+}: {
+  title: string;
+  /** Un título más grande, como el de «Detalles» (decisión del propietario, 2026-10-22). */
+  prominent?: boolean;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
     <section aria-labelledby={id} className="flex flex-col gap-2">
-      <h4 id={id} className="text-sm font-semibold">
+      <h4 id={id} className={prominent ? "text-base font-semibold" : "text-sm font-semibold"}>
         {title}
       </h4>
       {children}
@@ -280,17 +290,19 @@ function DetailRow({
   const mainCode = previewDetail?.mainCode ?? detail.productMainCode;
   const auxiliaryCode = previewDetail?.auxiliaryCode ?? detail.productAuxiliaryCode;
   return (
-    <li
+    // El detalle con su número en la franja de la izquierda (`NumberedItem`, decisión del
+    // propietario, 2026-10-22), dentro del destinatario.
+    <NumberedItem
       aria-label={`Detalle ${position} del destinatario ${recipientIndex + 1}`}
-      aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-2 rounded-md border border-border px-2 py-2 aria-invalid:border-danger"
+      label={`Detalle ${position}`}
+      level={5}
+      invalid={issues.length > 0}
     >
-      {/* Producto o línea libre a todo el ancho; quitar, en rojo, a su derecha (decisión del
-          propietario, 2026-10-22). */}
+      {/* Producto o línea libre a todo el ancho; quitar, en rojo, a su derecha. */}
       <div className="flex items-end gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span id={modeLabelId} className="text-sm font-medium">
-            Detalle {position}
+          <span id={modeLabelId} className="sr-only">
+            Tipo del detalle {position}
           </span>
           <SegmentedControl
             fullWidth
@@ -422,7 +434,7 @@ function DetailRow({
         </FormField>
       </div>
       <IssueList issues={issues} />
-    </li>
+    </NumberedItem>
   );
 }
 
@@ -533,27 +545,28 @@ export function RecipientCard({
   };
 
   return (
-    <li
+    // El destinatario con su número en la franja de la izquierda (`NumberedItem`, decisión del
+    // propietario, 2026-10-22).
+    <NumberedItem
       aria-label={`Destinatario ${position}`}
-      aria-invalid={issues.length > 0 || undefined}
-      className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-2 aria-invalid:border-danger"
+      label={`Destinatario ${position}`}
+      invalid={issues.length > 0}
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-medium">Destinatario {position}</h3>
-        {canRemove && (
-          <RowActionButton
-            icon={Trash2}
-            tone="danger"
-            label={`Quitar el destinatario ${position}`}
-            onClick={onRemove}
-          />
-        )}
-      </div>
-
       <div className="flex flex-col gap-1">
-        <span id={kindLabelId} className="text-sm font-medium">
-          Destinatario
-        </span>
+        {/* Quitar el destinatario, en rojo, al final de la fila de su clase. */}
+        <div className="flex items-center justify-between gap-2">
+          <span id={kindLabelId} className="text-sm font-medium">
+            Destinatario
+          </span>
+          {canRemove && (
+            <RowActionButton
+              icon={Trash2}
+              tone="danger"
+              label={`Quitar el destinatario ${position}`}
+              onClick={onRemove}
+            />
+          )}
+        </div>
         <SegmentedControl
           fullWidth
           aria-labelledby={kindLabelId}
@@ -730,8 +743,10 @@ export function RecipientCard({
             {recipient.kind === "PARTY" && (
               <FormField
                 id={id("codigo-destino")}
-                label="Código del establecimiento de destino (opcional)"
-                hint="Tres dígitos, si el destinatario te lo indicó."
+                // Abreviada para que quepa en una línea; el texto completo va en su tooltip
+                // (decisión del propietario, 2026-10-22).
+                label="Cód. de establecimiento (opcional)"
+                hint="Código del establecimiento de destino: tres dígitos, si el destinatario te lo indicó."
                 error={errors?.destinationEstablishmentCode?.message}
               >
                 <Input
@@ -740,7 +755,7 @@ export function RecipientCard({
                   {...fieldAria(
                     id("codigo-destino"),
                     errors?.destinationEstablishmentCode?.message,
-                    "Tres dígitos, si el destinatario te lo indicó.",
+                    "Código del establecimiento de destino: tres dígitos, si el destinatario te lo indicó.",
                   )}
                   {...form.register(`${base}.destinationEstablishmentCode`)}
                 />
@@ -884,7 +899,7 @@ export function RecipientCard({
         </>
       )}
 
-      <SubList title="Detalle">
+      <SubList title="Detalles" prominent>
         <ol className="flex flex-col gap-2">
           {details.fields.map((field, d) => (
             <DetailRow
@@ -926,6 +941,6 @@ export function RecipientCard({
         )}
       </SubList>
       <IssueList issues={own} />
-    </li>
+    </NumberedItem>
   );
 }
