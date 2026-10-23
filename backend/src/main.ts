@@ -57,6 +57,7 @@ import {
 import { createPartiesPortabilitySources } from "./modules/parties/infrastructure/index.ts";
 import { createProductsPortabilitySources } from "./modules/products/infrastructure/index.ts";
 import { createSigningPortabilitySources } from "./modules/signing/infrastructure/index.ts";
+import { emailModule } from "./modules/email/infrastructure/index.ts";
 import { createTaxpayerPortabilitySources } from "./modules/taxpayer/infrastructure/index.ts";
 import { createWithholdingPortabilitySources } from "./modules/withholding-receipts/infrastructure/index.ts";
 import { dataPortabilityModule } from "./modules/data-portability/infrastructure/index.ts";
@@ -352,6 +353,17 @@ apiRouter.use(
 );
 apiRouter.use(...fiscalRouters({ prisma: database.prisma, authorizer }));
 apiRouter.use(...signing.routers);
+// Entrega por correo (add-email-delivery): el servidor de correo de la empresa y su prueba.
+const email = emailModule({
+  prisma: database.prisma,
+  authorizer,
+  custody: certificateCustody,
+  policy: {
+    deliveryEnabled: env.EMAIL_DELIVERY_ENABLED,
+    plaintextAllowed: env.EMAIL_ALLOW_PLAINTEXT_SMTP,
+  },
+});
+apiRouter.use(...email.routers);
 apiRouter.use(...catalogsModule({ prisma: database.prisma, authorizer }).routers);
 apiRouter.use(
   ...partiesModule({ prisma: database.prisma, authorizer, rules: catalogQueries }).routers,

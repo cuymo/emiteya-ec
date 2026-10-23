@@ -255,6 +255,7 @@ import {
   listDataExportsQuerySchema,
 } from "../data-portability.ts";
 import { dashboardViewSchema } from "../dashboard.ts";
+import { emailSettingsResponseSchema, updateEmailSettingsSchema } from "../email.ts";
 import { defineRoute, type RouteDefinition } from "./route.ts";
 
 // Documentado con la política de contraseñas por defecto; la longitud real es configuración.
@@ -914,6 +915,45 @@ export const apiRoutes: readonly RouteDefinition[] = [
         schema: successEnvelope(expiryAlertResultSchema),
       },
       ...configErrors,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/email/settings",
+    summary: "Consultar el servidor de correo de la empresa (add-email-delivery)",
+    responses: {
+      200: {
+        description:
+          "La configuración, o null sin configurar, y lo que decide el despliegue (envío encendido, conexión sin cifrado admitida). Nunca incluye la contraseña: solo si hay una guardada.",
+        schema: successEnvelope(emailSettingsResponseSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/email/settings",
+    summary:
+      "Registrar o cambiar el servidor de correo de la empresa; sin contraseña se conserva la guardada",
+    request: { body: updateEmailSettingsSchema },
+    responses: {
+      200: {
+        description: "Configuración vigente. Lo mismo dos veces no cambia nada ni sube la versión.",
+        schema: successEnvelope(emailSettingsResponseSchema),
+      },
+      400: {
+        description:
+          "Datos inválidos, sin cifrado en un despliegue que no lo admite (EMAIL_PLAINTEXT_NOT_ALLOWED), usuario sin contraseña (EMAIL_PASSWORD_REQUIRED) o contraseña sin usuario (EMAIL_USERNAME_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      409: {
+        description:
+          "La configuración cambió después de abrirla (EMAIL_SETTINGS_CHANGED) o la instalación no tiene custodia de secretos para guardar la contraseña (EMAIL_CUSTODY_DISABLED).",
+        schema: errorEnvelopeSchema,
+      },
     },
   }),
   defineRoute({

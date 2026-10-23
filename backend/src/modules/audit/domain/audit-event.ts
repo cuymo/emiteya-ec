@@ -101,6 +101,12 @@ export const AUDIT_ACTIONS = [
   "data_export.completed",
   "data_export.failed",
   "data_export.download_started",
+  // add-email-delivery, design D11: los cambios del servidor de correo (sin la contraseña, solo que
+  // cambió), cada correo de prueba con su dirección y su resultado, y cada reenvío manual con el
+  // comprobante y las direcciones. El envío automático no se audita: su historial es la fuente.
+  "email_settings.changed",
+  "email.test_sent",
+  "email.resent",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
