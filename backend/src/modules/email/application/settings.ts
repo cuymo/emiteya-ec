@@ -2,7 +2,7 @@
 // «Servidor de correo de la empresa»). Solo el administrador lo consulta y lo cambia. La contraseña
 // se cifra con la clave maestra de custodia y nunca sale: la consulta dice si hay una guardada. Un
 // guardado sin cambios no sube la versión ni audita; uno con cambios exige la versión vigente.
-import { updateEmailSettingsSchema } from "@facturador/contracts";
+import { updateEmailSettingsSchema, type EmailAvailability } from "@facturador/contracts";
 import { parseInput, type Authorizer } from "../../identity/application/authorization.ts";
 import type { RequestContext } from "../../identity/application/request-context.ts";
 import {
@@ -92,6 +92,21 @@ export function createEmailSettings(deps: EmailSettingsDependencies) {
     async get(ctx: RequestContext): Promise<EmailSettingsState> {
       authorizer.requirePermission(ctx, "email.configure");
       return state(await deps.settings.find(ctx.companyId));
+    },
+
+    /**
+     * Lo que la confirmación de la emisión necesita saber (requisito «Destino del correo al emitir»):
+     * también para el operador, sin el servidor, el usuario ni la contraseña.
+     */
+    async availability(ctx: RequestContext): Promise<EmailAvailability> {
+      authorizer.requirePermission(ctx, "email.resend");
+      const settings = await deps.settings.find(ctx.companyId);
+      return {
+        configured: settings !== null,
+        deliveryEnabled: policy.deliveryEnabled,
+        autoSend: settings?.autoSend ?? false,
+        testRecipient: settings?.testRecipient ?? null,
+      };
     },
 
     async update(ctx: RequestContext, body: unknown): Promise<EmailSettingsState> {

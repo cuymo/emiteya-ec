@@ -256,6 +256,7 @@ import {
 } from "../data-portability.ts";
 import { dashboardViewSchema } from "../dashboard.ts";
 import {
+  emailAvailabilitySchema,
   emailDeliveryViewSchema,
   emailRecipientsViewSchema,
   emailSettingsResponseSchema,
@@ -935,6 +936,21 @@ export const apiRoutes: readonly RouteDefinition[] = [
         description:
           "La configuración, o null sin configurar, y lo que decide el despliegue (envío encendido, conexión sin cifrado admitida). Nunca incluye la contraseña: solo si hay una guardada.",
         schema: successEnvelope(emailSettingsResponseSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/email/availability",
+    summary:
+      "Consultar si el correo de un comprobante saldrá: servidor registrado, envío encendido, envío automático y correo de prueba",
+    responses: {
+      200: {
+        description:
+          "Para la confirmación de la emisión, también del operador. Nunca incluye el servidor, el usuario ni la contraseña.",
+        schema: successEnvelope(emailAvailabilitySchema),
       },
       401: errors[401],
       403: errors[403],

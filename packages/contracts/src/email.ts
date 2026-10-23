@@ -124,6 +124,22 @@ export const emailSettingsResponseSchema = z.strictObject({
 });
 export type EmailSettingsResponse = z.infer<typeof emailSettingsResponseSchema>;
 
+/**
+ * GET /email/availability: lo que la confirmación de la emisión necesita saber del correo, también
+ * para el operador. Nunca el servidor, el usuario ni la contraseña.
+ */
+export const emailAvailabilitySchema = z.strictObject({
+  /** Si la empresa registró su servidor de correo. */
+  configured: z.boolean(),
+  /** `EMAIL_DELIVERY_ENABLED` del despliegue. */
+  deliveryEnabled: z.boolean(),
+  /** El envío automático de la empresa; false sin servidor. */
+  autoSend: z.boolean(),
+  /** El único destino de los comprobantes del ambiente de Pruebas. */
+  testRecipient: z.string().nullable(),
+});
+export type EmailAvailability = z.infer<typeof emailAvailabilitySchema>;
+
 /** POST /email/test. */
 export const sendTestEmailSchema = strictBody({ to: emailAddressSchema });
 export type SendTestEmailInput = z.input<typeof sendTestEmailSchema>;

@@ -118,6 +118,7 @@ describe("generación de OpenAPI", () => {
       "/documents/{documentId}/ride",
       "/documents/{documentId}/ride-attempts",
       "/documents/{documentId}/signed-xml",
+      "/email/availability",
       "/email/settings",
       "/email/test",
       "/establishments",

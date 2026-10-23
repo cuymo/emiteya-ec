@@ -338,6 +338,7 @@ su receptor con el XML autorizado y el RIDE, con el servidor SMTP de la empresa 
 | --- | --- | --- |
 | `GET /api/v1/email/settings` | El servidor de correo sin la contraseña (`passwordSet`), y si el despliegue tiene el envío encendido y admite un servidor sin cifrado | `email.configure` |
 | `PUT /api/v1/email/settings` | Registrar o cambiar el servidor con `expectedVersion` (null la primera vez); sin `password` se conserva la guardada; lo mismo dos veces no cambia nada; `409 EMAIL_SETTINGS_CHANGED`, `400 EMAIL_PLAINTEXT_NOT_ALLOWED`, `EMAIL_PASSWORD_REQUIRED` o `EMAIL_USERNAME_REQUIRED`, `409 EMAIL_CUSTODY_DISABLED`. Audita `email_settings.changed` sin secretos | `email.configure` |
+| `GET /api/v1/email/availability` | Para la confirmación de la emisión, también del operador: si hay servidor, si el envío del despliegue y el automático están encendidos y el correo de prueba; nunca el servidor, el usuario ni la contraseña | `email.resend` |
 | `POST /api/v1/email/test` | Correo de prueba a una dirección; responde si el servidor lo aceptó o el motivo; `409 EMAIL_DELIVERY_DISABLED` o `EMAIL_NOT_CONFIGURED`; 5 por minuto y empresa (`429`). Audita `email.test_sent` | `email.configure` |
 | `GET /api/v1/documents/{documentId}/email-deliveries` | Historial de envíos del comprobante con sus intentos, sin contenido ni configuración | `archive.read` |
 | `GET /api/v1/documents/{documentId}/email-recipients` | Direcciones propuestas: los correos vigentes de sus receptores, el ambiente y el correo de prueba | `email.resend` |

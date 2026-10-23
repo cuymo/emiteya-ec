@@ -77,6 +77,10 @@ export function emailRouter({
     res.status(200).json({ data: toEmailSettingsResponse(await settings.get(contextOf(res))) });
   });
 
+  router.get("/email/availability", async (_req, res) => {
+    res.status(200).json({ data: await settings.availability(contextOf(res)) });
+  });
+
   router.put("/email/settings", async (req, res) => {
     const state = await settings.update(contextOf(res), req.body);
     res.status(200).json({ data: toEmailSettingsResponse(state) });

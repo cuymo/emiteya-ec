@@ -201,6 +201,22 @@ describe("API del servidor de correo", () => {
     expect(await secretOf(companyA)).toBeNull();
   });
 
+  it("el operador lee la disponibilidad del correo sin ningún dato del servidor", async () => {
+    const res = await call("operatorA", "get", "/email/availability");
+    expect(res.status).toBe(200);
+    expect((res.body as { data: unknown }).data).toEqual({
+      configured: true,
+      deliveryEnabled: false,
+      autoSend: true,
+      testRecipient: "revision@empresa.ec",
+    });
+    const json = JSON.stringify(res.body);
+    for (const leak of ["smtp.empresa.ec", "facturas@empresa.ec", "username", "password", "host"]) {
+      expect(json).not.toContain(leak);
+    }
+    expect((await request(api.app).get("/api/v1/email/availability")).status).toBe(401);
+  });
+
   it("el operador no consulta ni cambia el servidor, y nada revela la configuración", async () => {
     for (const res of [
       await call("operatorA", "get"),
@@ -220,6 +236,13 @@ describe("API del servidor de correo", () => {
   it("cada empresa ve y cambia solo su configuración", async () => {
     const b = await call("adminB", "get");
     expect(bodyOf(b).data.settings).toBeNull();
+    const availability = await call("adminB", "get", "/email/availability");
+    expect((availability.body as { data: unknown }).data).toEqual({
+      configured: false,
+      deliveryEnabled: false,
+      autoSend: false,
+      testRecipient: null,
+    });
     const saved = await call("adminB", "put").send(settings({ host: "smtp.b.ec" }));
     expect(saved.status).toBe(200);
     expect(bodyOf(await call("adminA", "get")).data.settings?.host).toBe("smtp.empresa.ec");
