@@ -38,6 +38,8 @@ export const PERMISSIONS = [
   "archive.read",
   "archive.download",
   "archive.retryRide",
+  "email.configure",
+  "email.resend",
   "inventory.read",
   "inventory.entry",
   "inventory.adjust",
@@ -117,6 +119,9 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "archive.read",
     "archive.download",
     "archive.retryRide",
+    // add-email-delivery, design D10: el servidor de correo, el correo de prueba y el reenvío.
+    "email.configure",
+    "email.resend",
     // add-minimal-inventory, design D11: consultar, entradas, ajustes, inicializar y el control de
     // stock de un producto con inventario inicializado.
     "inventory.read",
@@ -195,6 +200,9 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
     "archive.read",
     "archive.download",
     "archive.retryRide",
+    // add-email-delivery, design D10: reenviar el correo de un comprobante autorizado, como el
+    // administrador; el servidor de correo y el correo de prueba son solo del administrador.
+    "email.resend",
     // add-minimal-inventory, design D11: consulta el inventario y registra entradas manuales; no
     // inicializa, no ajusta ni cambia el control de un producto con inventario.
     "inventory.read",

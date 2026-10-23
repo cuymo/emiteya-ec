@@ -38,6 +38,8 @@ export type Permission =
   | "archive.read"
   | "archive.download"
   | "archive.retryRide"
+  | "email.configure"
+  | "email.resend"
   | "inventory.read"
   | "inventory.entry"
   | "inventory.adjust"
@@ -109,6 +111,8 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "archive.read",
     "archive.download",
     "archive.retryRide",
+    "email.configure",
+    "email.resend",
     "inventory.read",
     "inventory.entry",
     "inventory.adjust",
@@ -162,6 +166,7 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
     "archive.read",
     "archive.download",
     "archive.retryRide",
+    "email.resend",
     "inventory.read",
     "inventory.entry",
     "creditNotes.read",

@@ -50,6 +50,8 @@ const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "archive.read": { ADMIN: true, OPERATOR: true },
   "archive.download": { ADMIN: true, OPERATOR: true },
   "archive.retryRide": { ADMIN: true, OPERATOR: true },
+  "email.configure": { ADMIN: true, OPERATOR: false },
+  "email.resend": { ADMIN: true, OPERATOR: true },
   // add-minimal-inventory, design D11: el operador consulta y registra entradas; el resto es del
   // administrador.
   "inventory.read": { ADMIN: true, OPERATOR: true },
