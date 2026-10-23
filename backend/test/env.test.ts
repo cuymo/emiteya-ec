@@ -590,6 +590,73 @@ describe("RIDE (add-document-archive, design D6)", () => {
   });
 });
 
+describe("entrega por correo (add-email-delivery, design D5 a D7)", () => {
+  const EMAIL = {
+    EMAIL_SMTP_CONNECTION_TIMEOUT_MS: [1_000, 120_000, 10_000],
+    EMAIL_SMTP_SOCKET_TIMEOUT_MS: [5_000, 300_000, 60_000],
+    EMAIL_JOB_WORKERS: [0, 4, 2],
+    EMAIL_JOB_POLL_INTERVAL_MS: [100, 60_000, 2_000],
+    EMAIL_JOB_MAX_ATTEMPTS: [1, 50, 12],
+    EMAIL_RETRY_BASE_SECONDS: [1, 3_600, 60],
+    EMAIL_DELIVERY_DEADLINE_HOURS: [24, 168, 26],
+  } as const;
+
+  it("nace apagada, sin conexión sin cifrado, y aplica los valores por defecto", () => {
+    expect(loadEnv(valid)).toMatchObject({
+      EMAIL_DELIVERY_ENABLED: false,
+      EMAIL_ALLOW_PLAINTEXT_SMTP: false,
+      EMAIL_JOB_LEASE_SECONDS: 300,
+      EMAIL_RETRY_CAP_SECONDS: 7_200,
+      ...Object.fromEntries(
+        Object.entries(EMAIL).map(([name, [, , fallback]]) => [name, fallback]),
+      ),
+    });
+  });
+
+  it("solo se encienden con 1", () => {
+    const on = loadEnv({ ...valid, EMAIL_DELIVERY_ENABLED: "1", EMAIL_ALLOW_PLAINTEXT_SMTP: "1" });
+    expect(on.EMAIL_DELIVERY_ENABLED).toBe(true);
+    expect(on.EMAIL_ALLOW_PLAINTEXT_SMTP).toBe(true);
+    expect(
+      envError({ ...valid, EMAIL_DELIVERY_ENABLED: "true", EMAIL_ALLOW_PLAINTEXT_SMTP: "si" })
+        ?.variables,
+    ).toEqual(["EMAIL_DELIVERY_ENABLED", "EMAIL_ALLOW_PLAINTEXT_SMTP"]);
+  });
+
+  it("acepta los bordes de cada rango", () => {
+    // Con el arriendo máximo, para que los plazos más largos del servidor quepan en él.
+    const roomy = { ...valid, EMAIL_JOB_LEASE_SECONDS: "3600" };
+    for (const [name, [min, max]] of Object.entries(EMAIL)) {
+      expect(loadEnv({ ...roomy, [name]: String(min) })).toMatchObject({ [name]: min });
+      expect(loadEnv({ ...roomy, [name]: String(max) })).toMatchObject({ [name]: max });
+    }
+  });
+
+  it("rechaza valores fuera de rango sin mostrarlos", () => {
+    const below = Object.fromEntries(
+      Object.entries(EMAIL).map(([name, [min]]) => [name, String(min - 1)]),
+    );
+    const error = envError({ ...valid, ...below });
+    expect(error?.variables).toEqual(Object.keys(EMAIL));
+    expect(error?.message).not.toContain("119999");
+    // Los reintentos cubren al menos 24 h.
+    expect(envError({ ...valid, EMAIL_DELIVERY_DEADLINE_HOURS: "23" })?.variables).toEqual([
+      "EMAIL_DELIVERY_DEADLINE_HOURS",
+    ]);
+  });
+
+  it("el arriendo cubre los plazos del servidor de correo y el techo no baja de la base", () => {
+    expect(
+      envError({ ...valid, EMAIL_JOB_LEASE_SECONDS: "60", EMAIL_SMTP_SOCKET_TIMEOUT_MS: "60000" })
+        ?.variables,
+    ).toEqual(["EMAIL_JOB_LEASE_SECONDS"]);
+    expect(
+      envError({ ...valid, EMAIL_RETRY_BASE_SECONDS: "600", EMAIL_RETRY_CAP_SECONDS: "300" })
+        ?.variables,
+    ).toEqual(["EMAIL_RETRY_CAP_SECONDS"]);
+  });
+});
+
 describe("exportación de los reportes (add-reports-export, design D11)", () => {
   const REPORTS = {
     REPORT_EXPORT_MAX_ROWS: [1, 250_000, 100_000],

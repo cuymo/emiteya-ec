@@ -370,6 +370,26 @@ Variables de `add-document-archive` (design D6). Son configuración operativa, n
 - El build copia las fuentes Noto Sans 2.015 (Regular y Bold), su licencia OFL y `manifest.json` a `dist/assets/fonts/noto-sans/`, y `check:ride-assets` comprueba cada archivo con el hash que fija el código. Es una comprobación distinta de `check:xsd-artifact`; `verify` ejecuta las dos.
 - Al arrancar, la API verifica las fuentes. Si falta un archivo, el manifiesto no coincide o un hash no coincide, registra qué archivo falla (sin rutas absolutas), `ride_assets_available` vale 0 y `/health/ready` responde `503` con `rideAssets: "unavailable"`, un detalle propio distinto del de los XSD. El RIDE nunca usa fuentes del sistema.
 
+
+### Entrega por correo
+
+Variables de `add-email-delivery` (design D5 a D7). Son configuración operativa, no reglas
+normativas. El servidor SMTP de cada empresa se registra en la aplicación (Configuración → Correos),
+con su contraseña cifrada con la clave maestra de custodia; ninguna variable lo contiene.
+
+| Variable | Obligatoria | Default | Uso |
+| --- | --- | --- | --- |
+| `EMAIL_DELIVERY_ENABLED` | No | 0 | `1` habilita el envío. Nace apagado: apagado, el sistema no conecta con ningún servidor de correo, los envíos quedan desactivados y encenderlo después no los envía. |
+| `EMAIL_ALLOW_PLAINTEXT_SMTP` | No | 0 | `1` admite un servidor sin cifrado. Solo para el buzón de pruebas del despliegue de revisión; prohibido en producción. |
+| `EMAIL_SMTP_CONNECTION_TIMEOUT_MS` | No | 10000 | Plazo de la conexión y del saludo del servidor, cada uno (1000 a 120000). |
+| `EMAIL_SMTP_SOCKET_TIMEOUT_MS` | No | 60000 | Inactividad máxima del socket durante el envío (5000 a 300000). |
+| `EMAIL_JOB_WORKERS` | No | 2 | Workers de la cola `email.` en el proceso de la API (0 a 4; 0 los desactiva). Un servidor lento no frena el RIDE ni la transmisión. |
+| `EMAIL_JOB_LEASE_SECONDS` | No | 300 | Arriendo de un envío (30 a 3600). Debe cubrir dos veces el plazo de conexión más el del socket y 30 s de margen; si no, la API no arranca. |
+| `EMAIL_JOB_POLL_INTERVAL_MS` | No | 2000 | Sondeo de la cola del correo (100 a 60000). |
+| `EMAIL_JOB_MAX_ATTEMPTS` | No | 12 | Intentos de un envío (1 a 50). Al agotarlos, el envío queda fallido con su motivo. |
+| `EMAIL_RETRY_BASE_SECONDS`, `EMAIL_RETRY_CAP_SECONDS` | No | 60 y 7200 | Espera creciente entre intentos de un fallo temporal: base (1 a 3600) y techo (60 a 86400, no menor que la base). |
+| `EMAIL_DELIVERY_DEADLINE_HOURS` | No | 26 | Plazo total de los reintentos (24 a 168): cubre al menos 24 h. |
+
 ### Exportación de los reportes
 
 Variables de `add-reports-export` (design D11). Son defensas de recursos del proyecto, no límites

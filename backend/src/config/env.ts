@@ -104,6 +104,19 @@ export function sriTransportBudgetMs(
   return SRI_CONNECT_TIMEOUT_MS + env.SRI_REQUEST_TIMEOUT_MS + env.SRI_BODY_TIMEOUT_MS;
 }
 
+/** Margen del arriendo del correo sobre su presupuesto (add-email-delivery, design D6). */
+export const EMAIL_LEASE_MARGIN_MS = 30_000;
+
+/**
+ * Presupuesto de un envío por correo: la conexión y el saludo, cada uno con su plazo, y el plazo de
+ * inactividad del socket durante el envío del mensaje.
+ */
+export function emailTransportBudgetMs(
+  env: Pick<Env, "EMAIL_SMTP_CONNECTION_TIMEOUT_MS" | "EMAIL_SMTP_SOCKET_TIMEOUT_MS">,
+) {
+  return 2 * env.EMAIL_SMTP_CONNECTION_TIMEOUT_MS + env.EMAIL_SMTP_SOCKET_TIMEOUT_MS;
+}
+
 // Defaults de docs/security/hardening.md; son configuración, no contrato.
 export const envSchema = z
   .object({
@@ -227,6 +240,28 @@ export const envSchema = z
     RIDE_TASK_TIMEOUT_MS: int(5_000, 120_000).default(30_000),
     RIDE_JOB_MAX_ATTEMPTS: int(1, 50).default(5),
     RIDE_SWEEP_INTERVAL_SECONDS: int(10, 86_400).default(300),
+    // Entrega por correo (add-email-delivery, design D5 a D7 y D12): configuración operativa, no
+    // normativa. Nace apagada, como la transmisión: apagada, el sistema no conecta con ningún
+    // servidor de correo. Sin cifrado solo con la variable explícita del buzón de pruebas del
+    // despliegue de revisión; la documentación de producción la prohíbe. Los reintentos cubren al
+    // menos 24 h (spec, «Reintentos de los fallos temporales»).
+    EMAIL_DELIVERY_ENABLED: z
+      .enum(["0", "1"])
+      .default("0")
+      .transform((value) => value === "1"),
+    EMAIL_ALLOW_PLAINTEXT_SMTP: z
+      .enum(["0", "1"])
+      .default("0")
+      .transform((value) => value === "1"),
+    EMAIL_SMTP_CONNECTION_TIMEOUT_MS: int(1_000, 120_000).default(10_000),
+    EMAIL_SMTP_SOCKET_TIMEOUT_MS: int(5_000, 300_000).default(60_000),
+    EMAIL_JOB_WORKERS: int(0, 4).default(2),
+    EMAIL_JOB_LEASE_SECONDS: int(30, 3_600).default(300),
+    EMAIL_JOB_POLL_INTERVAL_MS: int(100, 60_000).default(2_000),
+    EMAIL_JOB_MAX_ATTEMPTS: int(1, 50).default(12),
+    EMAIL_RETRY_BASE_SECONDS: int(1, 3_600).default(60),
+    EMAIL_RETRY_CAP_SECONDS: int(60, 86_400).default(7_200),
+    EMAIL_DELIVERY_DEADLINE_HOURS: int(24, 168).default(26),
     // Directorio de las fuentes del RIDE y su manifiesto. Sin valor: `dist/assets/fonts/noto-sans/`
     // en el build y `assets/fonts/noto-sans/` en desarrollo y pruebas.
     RIDE_FONTS_DIRECTORY: z.string().min(1).optional(),
@@ -322,6 +357,21 @@ export const envSchema = z
         code: "custom",
         path: ["SRI_JOB_LEASE_SECONDS"],
         message: "no cubre los plazos del transporte",
+      });
+    }
+    // Un arriendo del correo cubre la conexión, el saludo y el envío con su margen.
+    if (env.EMAIL_JOB_LEASE_SECONDS * 1_000 < emailTransportBudgetMs(env) + EMAIL_LEASE_MARGIN_MS) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["EMAIL_JOB_LEASE_SECONDS"],
+        message: "no cubre los plazos del servidor de correo",
+      });
+    }
+    if (env.EMAIL_RETRY_CAP_SECONDS < env.EMAIL_RETRY_BASE_SECONDS) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["EMAIL_RETRY_CAP_SECONDS"],
+        message: "menor que la base",
       });
     }
     if (env.SRI_POLL_BACKOFF_CAP_SECONDS < env.SRI_POLL_BACKOFF_BASE_SECONDS) {
