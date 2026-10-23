@@ -5,7 +5,8 @@
 // D20), la guía de remisión (add-shipping-guides, tarea 11.1, design D21) y la liquidación de compra
 // (add-purchase-settlements, tarea 11.1, design D20): el filtro de tipo en la URL, el tipo bajo el
 // número, la contraparte (el proveedor, rotulado "Proveedor", en la liquidación) y el enlace al
-// detalle según el tipo.
+// detalle según el tipo. Con el correo (add-email-delivery, tarea 11.1): el filtro «Correo» en la URL
+// y el indicador del último envío en la fila y en la tarjeta.
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -503,5 +504,63 @@ describe("Comprobantes", () => {
     await waitFor(() =>
       expect(calls.some((entry) => entry.key === "GET /api/v1/documents/doc-1/ride")).toBe(true),
     );
+  });
+});
+
+describe("correo en la bandeja (add-email-delivery)", () => {
+  it("el filtro «Correo» vive en la URL, llega a la API como emailStatus y se limpia", async () => {
+    navigation.search = new URLSearchParams("correo=no-enviado");
+    const calls = render({ "GET /api/v1/documents": paged([]) });
+    expect(
+      (await screen.findAllByText("No hay comprobantes que coincidan")).length,
+    ).toBeGreaterThan(0);
+    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/documents?"))!;
+    expect(new URLSearchParams(call.key.split("?")[1]).get("emailStatus")).toBe("FAILED");
+    expect(screen.getByRole("combobox", { name: "Correo" }).textContent).toContain("No enviado");
+    await chooseFilter("Correo", "Todos");
+    expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes", { scroll: false });
+    await userEvent.setup().click(screen.getAllByRole("button", { name: "Limpiar filtros" })[0]!);
+    expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes", { scroll: false });
+  });
+
+  it("elegir «No enviado» escribe correo=no-enviado en la URL", async () => {
+    render({ "GET /api/v1/documents": paged([item()]) });
+    await screen.findAllByText("001-001-000000001");
+    await chooseFilter("Correo", "No enviado");
+    expect(navigation.replace).toHaveBeenLastCalledWith("/comprobantes?correo=no-enviado", {
+      scroll: false,
+    });
+  });
+
+  it("un valor desconocido de correo en la URL no filtra", async () => {
+    navigation.search = new URLSearchParams("correo=entregado");
+    const calls = render({ "GET /api/v1/documents": paged([item()]) });
+    await screen.findAllByText("001-001-000000001");
+    const call = calls.find((entry) => entry.key.startsWith("GET /api/v1/documents?"))!;
+    expect(new URLSearchParams(call.key.split("?")[1]).has("emailStatus")).toBe(false);
+  });
+
+  it("el indicador va junto al estado: un icono con su nombre en la fila y con su texto en la tarjeta", async () => {
+    render({
+      "GET /api/v1/documents": paged([
+        item({ email: { status: "FAILED" } }),
+        item({ id: "doc-2", number: "001-001-000000002", email: { status: "SENT" } }),
+        item({ id: "doc-3", number: "001-001-000000003", email: null }),
+      ]),
+    });
+    const table = await screen.findByRole("table", { name: "Comprobantes emitidos" });
+    await within(table).findByText("001-001-000000003");
+    const failed = within(table).getByRole("img", { name: "Correo: no enviado" });
+    expect(failed.getAttribute("title")).toBe("Correo: no enviado");
+    expect(failed.className).toContain("text-danger");
+    expect(within(table).getByRole("img", { name: "Correo: enviado" })).toBeDefined();
+    const third = within(table).getByText("001-001-000000003").closest("tr")!;
+    expect(third.querySelector("[data-email-status]")).toBeNull();
+    // En la tarjeta del teléfono, con su texto.
+    expect(
+      screen
+        .getAllByText("Correo: no enviado")
+        .some((element) => element.tagName === "SPAN" && !element.closest("table")),
+    ).toBe(true);
   });
 });

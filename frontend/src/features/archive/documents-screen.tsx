@@ -9,7 +9,9 @@
 // design D15; add-debit-notes, design D19; add-shipping-guides, design D21; add-withholding-receipts,
 // design D20; add-purchase-settlements, design D20); en la retención, el total es el retenido y el
 // receptor el sujeto retenido; la guía no tiene total y su receptor es su único destinatario o "N
-// destinatarios"; en la liquidación, la contraparte es su proveedor y se rotula "Proveedor".
+// destinatarios"; en la liquidación, la contraparte es su proveedor y se rotula "Proveedor". Junto al
+// estado, el indicador del último correo y el filtro «Correo» con «No enviado» (add-email-delivery,
+// design D14).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -44,6 +46,7 @@ import { canSee } from "@/lib/permissions";
 import { pointLabel, useEstablishments } from "@/features/establishments/establishments-api";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { StateCell } from "@/features/documents/document-status-badge";
+import { EmailIndicator } from "@/features/email/email-indicator";
 import { useDocuments, useDownloadDocument } from "./archive-api";
 import { RIDE_STATUS_LABELS, receiverOf } from "./archive-format";
 import { EMITTED_DOCUMENT_TYPES, documentKind } from "./document-kinds";
@@ -78,6 +81,8 @@ const TYPE_FILTERS = [
 ] as const;
 const isTypeFilter = (value: string | null): value is (typeof EMITTED_DOCUMENT_TYPES)[number] =>
   EMITTED_DOCUMENT_TYPES.some((type) => type === value);
+/** «No enviado» en la URL: el último envío por correo falló (`emailStatus=FAILED` en la API). */
+const EMAIL_NOT_SENT = "no-enviado";
 const detailPath = (item: DocumentListItem) => documentKind(item.documentType)?.detailPath;
 /** "Proveedor" cuando la contraparte no es un comprador (la liquidación de compra). */
 const counterpartyLabel = (item: DocumentListItem) =>
@@ -99,6 +104,7 @@ function useUrlState() {
   const pageSize = sizeParam >= 1 && sizeParam <= PAGE_SIZE_MAX ? sizeParam : PAGE_SIZE_DEFAULT;
   const value = (key: string) => params.get(key) ?? "";
   const typeParam = params.get("tipo");
+  const emailParam = params.get("correo");
   // La última consulta pedida: dos cambios seguidos (Desde y luego Hasta) se acumulan aunque el
   // primero todavía no haya llegado a la URL.
   const current = params.toString();
@@ -128,6 +134,8 @@ function useUrlState() {
     identification: value("identificacion"),
     establishmentId: value("establecimiento"),
     emissionPointId: value("punto"),
+    // Un valor desconocido en la URL no filtra.
+    emailFilter: emailParam === EMAIL_NOT_SENT ? EMAIL_NOT_SENT : undefined,
     update,
   };
 }
@@ -187,6 +195,7 @@ export function DocumentsScreen() {
       identification: url.identification,
       establishmentId: url.establishmentId,
       emissionPointId: url.emissionPointId,
+      emailStatus: url.emailFilter ? "FAILED" : undefined,
       page: url.page,
       pageSize: url.pageSize,
     },
@@ -201,7 +210,8 @@ export function DocumentsScreen() {
     url.to !== "" ||
     url.identification !== "" ||
     url.establishmentId !== "" ||
-    url.emissionPointId !== "";
+    url.emissionPointId !== "" ||
+    url.emailFilter !== undefined;
   const establishmentOptions = establishments.data ?? [];
   const selectedEstablishment = establishmentOptions.find(
     (establishment) => establishment.id === url.establishmentId,
@@ -275,7 +285,10 @@ export function DocumentsScreen() {
         id: "state",
         header: "Estado",
         cell: ({ row }) => (
-          <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
+          <span className="inline-flex items-center gap-1.5">
+            <StateCell state={row.original.state} stopped={row.original.transmissionStopped} />
+            <EmailIndicator status={row.original.email?.status ?? null} />
+          </span>
         ),
       },
       {
@@ -313,6 +326,7 @@ export function DocumentsScreen() {
       identificacion: null,
       establecimiento: null,
       punto: null,
+      correo: null,
     });
   };
 
@@ -381,6 +395,13 @@ export function DocumentsScreen() {
               label: filter.label,
             }))}
             onChange={(next) => url.update({ tipo: next ?? null })}
+          />
+          <DataTableSelectFilter
+            label="Correo"
+            value={url.emailFilter}
+            allLabel="Todos"
+            options={[{ value: EMAIL_NOT_SENT, label: "No enviado" }]}
+            onChange={(next) => url.update({ correo: next ?? null })}
           />
           <DataTableSelectFilter
             label="Establecimiento"
@@ -490,7 +511,10 @@ export function DocumentsScreen() {
                 </span>
                 {item.total === null ? null : <MoneyCell amount={item.total} />}
               </span>
-              <StateCell state={item.state} stopped={item.transmissionStopped} />
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <StateCell state={item.state} stopped={item.transmissionStopped} />
+                <EmailIndicator status={item.email?.status ?? null} withLabel />
+              </span>
             </div>
           );
         }}

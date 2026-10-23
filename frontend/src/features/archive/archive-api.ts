@@ -34,6 +34,8 @@ export type DocumentsQuery = {
   identification: string;
   establishmentId: string;
   emissionPointId: string;
+  /** Solo los comprobantes cuyo último correo no se envió (add-email-delivery). */
+  emailStatus?: "FAILED" | undefined;
   page: number;
   pageSize: number;
 };
@@ -55,6 +57,7 @@ export function useDocuments(query: DocumentsQuery, enabled: boolean) {
   }
   if (query.state) params.set("state", query.state);
   if (query.documentType) params.set("documentType", query.documentType);
+  if (query.emailStatus) params.set("emailStatus", query.emailStatus);
   return useQuery({
     queryKey: [...DOCUMENTS_KEY, "list", query],
     enabled,
