@@ -150,6 +150,27 @@ versión y SHA-256 en `security/gitleaks.json`, y corre en la CI en el workflow 
 - Enforce per-user and total size limits.
 - Keep storage paths, buckets, and provider names out of responses and the interface.
 
+## Correo saliente
+
+Proyecto (`add-email-delivery`; ADR 0029):
+
+- **Contraseña SMTP.** Cifrada en reposo con el sobre de `platform/secrets` y la clave maestra de
+  custodia; nunca vuelve en una respuesta (la consulta dice `passwordSet`), en un log ni en la
+  auditoría, que registra `smtpLoginChanged` sin valores. Sin custodia, no se guarda.
+- **Transporte.** TLS directo o STARTTLS con el certificado verificado y TLS 1.2 o superior; la
+  conexión sin cifrado se rechaza salvo con `EMAIL_ALLOW_PLAINTEXT_SMTP=1`, que solo pone el buzón de
+  pruebas local. nodemailer no lee archivos ni URL: los adjuntos son bytes en memoria verificados
+  por SHA-256.
+- **Salida de red.** La API no tiene salida por defecto; el override `compose.smtp-egress.yaml` es
+  una decisión explícita, separada del interruptor `EMAIL_DELIVERY_ENABLED` (apagado por defecto).
+- **Datos personales.** Las direcciones de los receptores están en sus terceros (hasta tres) y en el
+  historial de cada envío, que las conserva aunque el tercero cambie. El reenvío las audita. Los logs
+  del correo llevan solo los identificadores del envío y del comprobante y el código del fallo,
+  nunca direcciones, contenido ni la respuesta completa del servidor. El paquete de portabilidad
+  incluye los correos de los terceros, pero no el historial de envíos.
+- **Límites.** Correo de prueba: 5 por minuto y empresa. Reenvío: de 1 a 10 direcciones, solo de
+  comprobantes autorizados, idempotente por clave.
+
 ## Dependencies And Supply Chain
 
 - Prefer the standard library or an existing utility. Every dependency is a liability.

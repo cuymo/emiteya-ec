@@ -51,10 +51,15 @@ Activos propios del facturador, además de los genéricos:
 - Ambiente activo: Pruebas frente a Producción.
 - XSD, catálogos fiscales y matriz de casos especiales distribuidos con cada release.
 - Reloj del servidor, del que depende la validez de la firma.
+- Contraseña del servidor de correo de cada empresa (`add-email-delivery`): permite enviar correo en
+  su nombre.
+- Direcciones de correo de los receptores: datos personales de terceros, en los terceros y en el
+  historial de cada envío.
 
 Límites de confianza adicionales:
 
 - API y job runner hacia los Web Services del SRI.
+- Job runner del correo hacia el servidor SMTP que configura cada empresa.
 - Repositorio y release hacia los XSD y los catálogos que se empaquetan.
 
 | Threat | Impact | Mitigation |
@@ -71,3 +76,9 @@ Límites de confianza adicionales:
 | Desfase o manipulación del reloj | Firmas rechazadas por el SRI | NTP o equivalente obligatorio en la infraestructura, con evidencia operativa fuera de la aplicación (CTX §20.5; `../architecture/deployment.md`). |
 | Clave de acceso usada para consultar comprobantes ajenos | Exposición de datos fiscales | La clave es dato fiscal con control de acceso; las consultas se limitan a la empresa de la sesión (CTX §47). |
 | Abuso de la emisión por un usuario autorizado | Consumo de secuenciales o comprobantes indebidos | Roles por operación, límite de tasa en la emisión y auditoría de cada transición. |
+| Exfiltración de la contraseña SMTP | Correo enviado en nombre de la empresa | El mismo sobre AES-256-GCM que la firma, con AAD ligado a la empresa; nunca se devuelve ni se registra; la auditoría solo dice que cambió (`add-email-delivery`, design D9). |
+| Inyección de cabeceras en el correo | Destinatarios o contenido alterados | Remitente, servidor y usuario sin saltos de línea (contrato y CHECK); el asunto quita los saltos de los textos del snapshot; el HTML se escapa; las direcciones se validan una por una. |
+| Servidor SMTP malicioso o interceptado | Credenciales robadas o correo alterado | TLS directo o STARTTLS con el certificado verificado y TLS 1.2 o superior; sin un certificado válido no se envían las credenciales; sin cifrado solo en el buzón de pruebas local. |
+| Uso del servidor SMTP configurable para sondear la red | Conexiones a servicios internos | Solo el administrador lo configura, con auditoría; la API no tiene salida sin el override explícito; el firewall del host limita la salida al servidor y al puerto SMTP; el correo de prueba tiene un límite por minuto. |
+| Comprobantes de Pruebas enviados a clientes reales | Confusión sobre su validez | En Pruebas el correo va solo al correo de prueba configurado, con el asunto marcado «PRUEBAS – sin validez tributaria». |
+| Envío masivo por un usuario autorizado | Spam en nombre de la empresa | Reenvío solo de comprobantes autorizados, de 1 a 10 direcciones, idempotente por clave y auditado con sus direcciones. |

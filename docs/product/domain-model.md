@@ -235,7 +235,26 @@ tabla es un mapa funcional (ERS §8, CTX §63):
   - un fallo de entrega no cambia el estado fiscal;
   - una solicitud rechazada por sesión, permiso, empresa, disponibilidad o integridad no deja entrega;
   - es de solo agregado, y el actor no se puede borrar mientras tenga entregas (ERS RF-409);
-  - el correo es P1, fuera del MVP. Cuando llegue, sus eventos reflejarán la evidencia real del proveedor (por ejemplo `EMAIL_SUBMITTED`, `EMAIL_ACCEPTED` o `EMAIL_BOUNCED`), detrás de un puerto de notificación.
+  - el correo no entra en este historial: lo implementa `add-email-delivery` con su propio registro (`email_delivery`), cuyos estados reflejan la evidencia del servidor de correo, nunca la recepción.
+
+### `email_settings` — Servidor de correo de la empresa
+
+- Purpose: el servidor SMTP con el que la empresa entrega sus comprobantes autorizados (`add-email-delivery`, design D8).
+- Key attributes: servidor, puerto, seguridad (`TLS`, `STARTTLS` o `NONE`, este último solo en el buzón de pruebas), usuario opcional, nombre y correo del remitente, copia oculta opcional, envío automático, correo de prueba para el ambiente de Pruebas y versión. Una fila por empresa.
+- La contraseña vive aparte (`email_settings_secret`), en un sobre AES-256-GCM con la clave maestra de custodia, y nunca sale del backend.
+
+### `email_delivery` — Envío por correo
+
+- Purpose: la entrega de un comprobante autorizado a su receptor por correo, con el XML autorizado y el RIDE (`add-email-delivery`, design D2 a D8; Res. NAC-DGERCGC18-00000233, art. 6).
+- Key attributes: comprobante, origen (`AUTOMATIC` o `MANUAL` con quien lo pidió, su clave de idempotencia y la huella de la solicitud), ambiente del comprobante, si fue al correo de prueba, estado, direcciones con su resultado, intentos, motivo y momentos.
+- Estados: `PENDING`, `RETRYING`, `SENT` (el servidor de correo lo aceptó), `FAILED`, `NO_RECIPIENT` y `DISABLED`.
+- Invariants:
+  - un solo envío automático por comprobante; nace con el RIDE guardado, en su transacción;
+  - nunca afirma que el receptor recibió ni leyó el correo;
+  - un fallo nunca cambia el estado fiscal del comprobante;
+  - las direcciones usadas quedan en el envío: cambiar después el correo del tercero no cambia su historial;
+  - en Pruebas, la única dirección es el correo de prueba;
+  - los intentos (`email_delivery_attempt`) son de solo agregado, con el código SMTP y un detalle técnico recortado, sin credenciales ni contenido.
 
 ### `audit_event` — Evento de auditoría
 

@@ -308,6 +308,38 @@ datos personales, y no hay eventos ni entregas por comprobante. Una solicitud o 
 rechazadas no se auditan. Los logs de la portabilidad llevan la referencia de la exportación, la
 fase, los conteos y las duraciones, nunca rutas del sistema de archivos ni contenido.
 
+## Entrega por correo
+
+Señales de `add-email-delivery` (design D13), en `/metrics` y sin la empresa, el comprobante ni las
+direcciones en las etiquetas.
+
+| Métrica | Tipo | Qué mide |
+| --- | --- | --- |
+| `email_delivery_total{outcome}` | Counter | Envíos terminados o reprogramados: `sent`, `failed`, `retrying`, `no_recipient` o `disabled` |
+| `email_send_duration_seconds` | Histograma | De la conexión SMTP a la respuesta del servidor |
+| `email_delivery_enabled` | Gauge | 1 si el despliegue tiene el envío encendido (`EMAIL_DELIVERY_ENABLED`) |
+
+Alertas propuestas:
+
+- envíos fallidos: cualquier aumento de `email_delivery_total{outcome="failed"}`; el aviso de la
+  interfaz cuenta los comprobantes con su último envío fallido;
+- servidor de correo inestable: `email_delivery_total{outcome="retrying"}` sostenido;
+- envío apagado sin querer en producción: `email_delivery_enabled == 0` con
+  `email_delivery_total{outcome="disabled"}` en aumento.
+
+Los eventos de auditoría del correo (design D11) son tres:
+
+- `email_settings.changed`: el administrador, con los campos cambiados y sus valores no secretos;
+  la contraseña solo como `smtpLoginChanged`.
+- `email.test_sent`: el administrador, con la dirección de prueba, si el servidor la aceptó y el
+  código del fallo.
+- `email.resent`: quien reenvía, con el comprobante, las direcciones, el ambiente y si fue al correo
+  de prueba.
+
+El envío automático no se audita: su historial (`email_delivery` y sus intentos) es la fuente. Los
+logs del correo llevan el envío, el comprobante y el código del fallo, nunca direcciones, contenido,
+credenciales ni la respuesta completa del servidor.
+
 ## Logging Rules
 
 - Do not log secrets.

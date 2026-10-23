@@ -143,6 +143,10 @@ En este proyecto (Q-30, design D8 de `add-invoice-emission`):
   - el render corre en `RideWorkerPool`, una instancia de la primitiva `platform/workers/worker-pool.ts` independiente del pool criptográfico;
   - un pool ocupado o un apagado reprograman sin gastar el intento; un plazo vencido, un worker caído o un error inesperado reintentan con backoff hasta `RIDE_JOB_MAX_ATTEMPTS`; un rechazo determinista detiene el job con su motivo. El comprobante sigue `AUTHORIZED`;
   - un usuario con `archive.retryRide` reintenta una generación detenida.
+- Correo (`add-email-delivery`, design D2, D6 y D7):
+  - `email.send_document`, deduplicado por envío (`email.send_document:{deliveryId}`), nace en la misma transacción que guarda el RIDE, por un seguidor del RIDE (`followers` de `createRideHandler`) que compone `main.ts`, o con un reenvío;
+  - lo toma un runner propio del prefijo `email.` con `EMAIL_JOB_WORKERS` lazos, que nunca se pausa: con el envío apagado, cada envío termina desactivado sin conectar;
+  - un fallo temporal del servidor reintenta con backoff (`EMAIL_RETRY_*`) hasta `EMAIL_JOB_MAX_ATTEMPTS` o `EMAIL_DELIVERY_DEADLINE_HOURS`; uno definitivo cierra el envío fallido con su motivo. El comprobante sigue `AUTHORIZED`.
 - Inventario (`add-minimal-inventory`, design D5): la salida de una factura no es un job. La registra un seguidor de las transiciones en la misma transacción que la transición a `AUTHORIZED`; un fallo revierte la autorización, el job reintenta y reclasifica la respuesta ya guardada del SRI sin volver a llamarlo.
 - Cancellation: los jobs fiscales no se cancelan, porque el comprobante ya tiene efectos ante el SRI; un administrador puede ordenar una reconciliación manual, que también reactiva un envío detenido. `MANUAL_REVIEW` es un estado fiscal y solo sale con esa reconciliación (Q-06, resuelta en `add-sri-transmission`). Los jobs `portability.export` no se cancelan en la versión 1: la generación termina lista o fallida (`add-data-portability`, design D25).
 - Progress reporting: el estado fiscal del comprobante es el progreso visible; las exportaciones de portabilidad informan su fase y, cuando se conoce el total, los comprobantes agregados, sin un porcentaje estimado.
@@ -299,6 +303,7 @@ compone como puerto (`DashboardSources`).
 | Comprobantes con la transmisión detenida | `fiscal` (`createTransmissionReader().stoppedDocumentIds`) | Los `sri.*` detenidos sin un job posterior |
 | Borradores pendientes | `invoices` (`invoiceDraftCount`) | `invoice_draft` en `DRAFT` |
 | Productos agotados | `inventory` (`outOfStockCount`) | `stock_balance` con saldo cero o negativo |
+| Correos no enviados | `email` (`createEmailStatusSource().countFailedDocuments`) | El último `email_delivery` de cada comprobante del ambiente, si falló |
 | Ambiente | `taxpayer` (`currentEnvironment`) | La configuración vigente |
 
 - **Ventas.** Solo las facturas `AUTHORIZED`; los meses son los de la fecha de emisión, que ya es la
@@ -306,6 +311,41 @@ compone como puerto (`DashboardSources`).
 - **Permiso.** `invoices.read`.
 - **Dirección.** Ningún módulo importa `dashboard`, salvo `main.ts`, y `dashboard` solo importa
   `identity` y `catalogs`; `test/architecture/dashboard-dependency-direction.test.ts` lo comprueba.
+
+## Entrega por correo
+
+El módulo `email` (spec `email-delivery`; `add-email-delivery`) entrega cada comprobante autorizado a
+su receptor con el XML autorizado y el RIDE, con el servidor SMTP de la empresa (ADR 0029).
+
+- **Tablas propias.** `email_settings` y `email_settings_secret` (la contraseña en un sobre
+  AES-256-GCM de `platform/secrets`, con la clave maestra de custodia), `email_delivery` y
+  `email_delivery_attempt` (de solo agregado).
+- **Lecturas ajenas por puertos.** Los comprobantes y sus archivos los da `fiscal`
+  (`createDeliverableDocumentSource`); los correos de los terceros, `parties`
+  (`createPartyEmailSource`). `main.ts` los compone. `email` solo importa `identity` y `audit`, y
+  nadie lo importa salvo `main.ts`; el estado de los envíos lo exporta a la bandeja y al tablero
+  (`createEmailStatusSource`). `test/architecture/email-dependency-direction.test.ts` lo comprueba.
+- **Destinatarios.** Salen del snapshot del comprobante: el comprador (factura), el comprador de la
+  factura modificada (notas), el proveedor (retención y liquidación), y los destinatarios terceros y
+  el transportista tercero (guía). Se usan los correos vigentes del tercero al enviar y quedan en el
+  envío. En Pruebas, solo el correo de prueba.
+- **Transporte.** nodemailer, un transporte por envío, TLS con certificado verificado y TLS 1.2 o
+  superior; sin cifrado solo con `EMAIL_ALLOW_PLAINTEXT_SMTP=1`. Los fallos se clasifican en una
+  tabla cerrada (`email/domain/failures.ts`) con su motivo en español; el detalle del servidor se
+  guarda recortado y sin la contraseña solo en el intento.
+
+| Método y ruta | Uso | Permiso |
+| --- | --- | --- |
+| `GET /api/v1/email/settings` | El servidor de correo sin la contraseña (`passwordSet`), y si el despliegue tiene el envío encendido y admite un servidor sin cifrado | `email.configure` |
+| `PUT /api/v1/email/settings` | Registrar o cambiar el servidor con `expectedVersion` (null la primera vez); sin `password` se conserva la guardada; lo mismo dos veces no cambia nada; `409 EMAIL_SETTINGS_CHANGED`, `400 EMAIL_PLAINTEXT_NOT_ALLOWED`, `EMAIL_PASSWORD_REQUIRED` o `EMAIL_USERNAME_REQUIRED`, `409 EMAIL_CUSTODY_DISABLED`. Audita `email_settings.changed` sin secretos | `email.configure` |
+| `POST /api/v1/email/test` | Correo de prueba a una dirección; responde si el servidor lo aceptó o el motivo; `409 EMAIL_DELIVERY_DISABLED` o `EMAIL_NOT_CONFIGURED`; 5 por minuto y empresa (`429`). Audita `email.test_sent` | `email.configure` |
+| `GET /api/v1/documents/{documentId}/email-deliveries` | Historial de envíos del comprobante con sus intentos, sin contenido ni configuración | `archive.read` |
+| `GET /api/v1/documents/{documentId}/email-recipients` | Direcciones propuestas: los correos vigentes de sus receptores, el ambiente y el correo de prueba | `email.resend` |
+| `POST /api/v1/documents/{documentId}/email-deliveries` | Reenvío a 1–10 direcciones con `Idempotency-Key` (misma clave y cuerpo: el mismo envío; otro cuerpo: `409 IDEMPOTENCY_KEY_REUSED`); `202`; `409 DOCUMENT_NOT_AUTHORIZED`, `EMAIL_DELIVERY_DISABLED`, `EMAIL_NOT_CONFIGURED` o `EMAIL_TEST_RECIPIENT_MISSING`. Audita `email.resent` con las direcciones | `email.resend` |
+
+- La empresa sale de la sesión; un comprobante de otra empresa es `404 DOCUMENT_NOT_FOUND`.
+- La bandeja acepta `emailStatus=FAILED` y cada fila trae `email: { status } | null`; el tablero
+  suma `attention.emailFailed`.
 
 ## Portabilidad de datos
 

@@ -96,7 +96,7 @@ En este orden, sin job, artefacto durable, TTL ni URL firmada:
 | Retenciones | Fecha, Número, Identificación, Sujeto retenido, Período fiscal, Impuesto, Código, Base, Porcentaje, Valor retenido, Estado, Ambiente |
 | Existencias | Código, Producto, Saldo |
 | Movimientos | Fecha y hora, Código, Producto, Tipo, Cantidad, Saldo resultante, Comprobante |
-| Terceros | Identificación, Razón social, Correo, Teléfono, Roles, Estado |
+| Terceros | Identificación, Razón social, Correo (los correos del tercero en su orden, separados por comas), Teléfono, Roles, Estado |
 
 **Importes por tipo:**
 

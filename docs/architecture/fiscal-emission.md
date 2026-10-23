@@ -620,7 +620,7 @@ Cambio 8. El RIDE se dibuja en `backend/src/modules/sri-engine/infrastructure/ri
 
 | Método y ruta | Uso | Permiso |
 | --- | --- | --- |
-| `GET /api/v1/documents` | Bandeja: comprobantes desde `RESERVED`, nunca borradores, con filtros de fecha de emisión (`from`, `to`, inclusivos), tipo, estado, identificación del receptor, búsqueda por número o receptor, establecimiento y punto; de la fecha más reciente a la más antigua y, en el mismo día, del creado más tarde al más temprano, con los documentos disponibles (`ride`: `AVAILABLE`, `PENDING`, `STOPPED` o `NOT_APPLICABLE`; `authorizedXml` y `signedXml`) | `archive.read` |
+| `GET /api/v1/documents` | Bandeja: comprobantes desde `RESERVED`, nunca borradores, con filtros de fecha de emisión (`from`, `to`, inclusivos), tipo, estado, identificación del receptor, búsqueda por número o receptor, establecimiento, punto y el último envío por correo fallido (`emailStatus=FAILED`, con la fuente del módulo `email`); de la fecha más reciente a la más antigua y, en el mismo día, del creado más tarde al más temprano, con los documentos disponibles (`ride`: `AVAILABLE`, `PENDING`, `STOPPED` o `NOT_APPLICABLE`; `authorizedXml` y `signedXml`) y el estado del último envío por correo (`email`) | `archive.read` |
 | `GET /api/v1/documents/{documentId}` | Resumen: lo mismo que la bandeja, los artefactos con su tipo, SHA-256, tamaño, fecha y la procedencia del RIDE, y la generación del RIDE con su motivo si está detenida | `archive.read` |
 | `GET /api/v1/documents/{documentId}/ride` | RIDE guardado; registra `DOWNLOAD` | `archive.download` |
 | `GET /api/v1/documents/{documentId}/authorized-xml` | XML autorizado que devolvió el SRI; registra `DOWNLOAD` | `archive.download` |

@@ -43,7 +43,7 @@ al terminarlo.
 
 ## 7. Fase 7 · Documentación del backend
 
-- [ ] 7.1 Documentar el correo en `docs/architecture/integrations.md`, `backend.md`, `fiscal-emission.md` (RIDE y después correo), `docs/product/domain-model.md` (envíos e intentos), `docs/product/open-questions.md` (Q-24 implementada), `docs/product/capabilities.md` (`email-delivery`), la documentación de la API y `docs/security/` (custodia de la contraseña SMTP y las direcciones de los receptores como datos personales); verificar con `corepack pnpm format:check` y `openspec:validate`.
+- [x] 7.1 Documentar el correo en `docs/architecture/integrations.md`, `backend.md`, `fiscal-emission.md` (RIDE y después correo), `docs/product/domain-model.md` (envíos e intentos), `docs/product/open-questions.md` (Q-24 implementada), `docs/product/capabilities.md` (`email-delivery`), la documentación de la API y `docs/security/` (custodia de la contraseña SMTP y las direcciones de los receptores como datos personales); verificar con `corepack pnpm format:check` y `openspec:validate`.
 
 ## 8. Fase 8 · Interfaz: Configuración → Correos
 

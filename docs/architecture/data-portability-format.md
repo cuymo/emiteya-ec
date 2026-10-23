@@ -201,7 +201,7 @@ Seis libros XLSX escritos con el escritor compartido (`platform/xlsx/`, ADR 0023
 | Identificación | Texto |
 | Razón social | Texto |
 | Dirección | Texto |
-| Correo | Texto |
+| Correo | Texto: los correos del tercero en su orden, separados por comas (hasta tres; `add-email-delivery`) |
 | Teléfono | Texto |
 | Roles | Texto |
 | Estado | Texto |
