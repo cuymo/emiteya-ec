@@ -206,7 +206,9 @@
   - El contrato pasa de `email` a `emails: string[]` (máximo 3, sin repetir sin distinguir
     mayúsculas). Es un cambio incompatible de la API; su único consumidor es el frontend, que se
     ajusta en la misma tarea para seguir compilando.
-- **Cascada:** todas las tablas nuevas se borran en cascada con la empresa.
+- **Referencias:** a la empresa, al comprobante y al usuario son `Restrict`, como en el resto del
+  archivo: las empresas y los comprobantes no se borran, y un usuario con envíos tampoco. Solo el
+  secreto se borra en cascada con su configuración.
 
 ### D9. La bóveda pasa a `platform/secrets`
 

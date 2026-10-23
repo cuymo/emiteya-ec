@@ -50,6 +50,8 @@ model User {
   jobsRequested               Job[]                           @relation("JobRequester")
   sriAttemptsInitiated        SriAttempt[]                    @relation("SriAttemptInitiator")
   documentDeliveries          DocumentDeliveryEvent[]         @relation("DocumentDeliveryActor")
+  emailSettingsUpdated        EmailSettings[]                 @relation("EmailSettingsUpdater")
+  emailDeliveriesRequested    EmailDelivery[]                 @relation("EmailDeliveryRequester")
   stockInitializations        StockBalance[]                  @relation("StockInitializer")
   stockMovements              StockMovement[]                 @relation("StockMovementActor")
   creditNoteDraftsCreated     CreditNoteDraft[]               @relation("CreditNoteDraftCreator")
@@ -138,6 +140,7 @@ model Organization {
   fiscalSequences            FiscalSequence[]
   signingCertificates        SigningCertificate[]
   signingCertificateSettings SigningCertificateSettings?
+  emailSettings              EmailSettings?
   fiscalCatalogSettings      CompanyFiscalCatalogSetting[]
   parties                    Party[]
   products                   Product[]
@@ -820,6 +823,7 @@ model ElectronicDocument {
   artifacts                DocumentArtifact[]
   idempotency              IdempotencyRecord[]
   deliveries               DocumentDeliveryEvent[]
+  emailDeliveries          EmailDelivery[]
   stockMovements           StockMovement[]
   /// add-credit-notes: borradores de nota sobre esta factura, y el borrador que emitió esta nota.
   creditDrafts             CreditNoteDraft[]             @relation("CreditNoteDraftInvoice")
@@ -937,6 +941,101 @@ model DocumentDeliveryEvent {
 
   @@index([companyId, documentId, occurredAt])
   @@map("document_delivery_event")
+}
+
+// Servidor de correo de la empresa (add-email-delivery, design D8): una fila por empresa, mutable, con
+// versión para la concurrencia optimista. La contraseña vive aparte, cifrada (design D9).
+model EmailSettings {
+  companyId     String               @id @map("company_id")
+  company       Organization         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  /// Sin saltos de línea; el puerto entre 1 y 65535; TLS, STARTTLS o NONE (CHECK en la migración).
+  host          String               @db.VarChar(253)
+  port          Int
+  security      String
+  /// Sin usuario, el servidor no pide autenticación (como el buzón de pruebas).
+  username      String?              @db.VarChar(320)
+  fromName      String               @map("from_name") @db.VarChar(120)
+  fromAddress   String               @map("from_address") @db.VarChar(320)
+  bccAddress    String?              @map("bcc_address") @db.VarChar(320)
+  autoSend      Boolean              @default(true) @map("auto_send")
+  /// Único destino de los correos de los comprobantes del ambiente de Pruebas.
+  testRecipient String?              @map("test_recipient") @db.VarChar(320)
+  version       Int                  @default(1)
+  updatedAt     DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedBy     String               @map("updated_by")
+  updater       User                 @relation("EmailSettingsUpdater", fields: [updatedBy], references: [id], onDelete: Restrict)
+  secret        EmailSettingsSecret?
+
+  @@map("email_settings")
+}
+
+// Contraseña SMTP en un sobre AES-256-GCM (design D9), con la clave maestra de custodia.
+model EmailSettingsSecret {
+  companyId          String        @id @map("company_id")
+  settings           EmailSettings @relation(fields: [companyId], references: [companyId], onDelete: Cascade)
+  formatVersion      Int           @map("format_version") @db.SmallInt
+  keyVersion         String        @map("key_version")
+  keyCheck           Bytes         @map("key_check")
+  wrappedKey         Bytes         @map("wrapped_key")
+  wrappedKeyNonce    Bytes         @map("wrapped_key_nonce")
+  passwordCiphertext Bytes         @map("password_ciphertext")
+  passwordNonce      Bytes         @map("password_nonce")
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("email_settings_secret")
+}
+
+// Un envío por correo de un comprobante (design D2, D3 y D8): automático, uno como máximo por
+// comprobante (índice único parcial en la migración), o un reenvío con su actor y su clave de
+// idempotencia. Su estado cambia; sus intentos son de solo agregado.
+model EmailDelivery {
+  id                 String                 @id @default(uuid())
+  companyId          String                 @map("company_id")
+  documentId         String                 @map("document_id")
+  document           ElectronicDocument     @relation(fields: [companyId, documentId], references: [companyId, id], onDelete: Restrict)
+  /// AUTOMATIC o MANUAL; MANUAL con actor, clave y huella (CHECK en la migración).
+  origin             String
+  requestedBy        String?                @map("requested_by")
+  requester          User?                  @relation("EmailDeliveryRequester", fields: [requestedBy], references: [id], onDelete: Restrict)
+  idempotencyKey     String?                @map("idempotency_key") @db.VarChar(100)
+  requestFingerprint String?                @map("request_fingerprint") @db.Char(64)
+  /// El ambiente en que se autorizó el comprobante: TEST o PRODUCTION.
+  environment        String
+  testRedirect       Boolean                @default(false) @map("test_redirect")
+  /// PENDING, RETRYING, SENT, FAILED, NO_RECIPIENT o DISABLED (CHECK en la migración).
+  status             String
+  /// Lista de { address, outcome, reason }: las direcciones usadas y el resultado de cada una.
+  recipients         Json                   @default("[]")
+  messageId          String?                @map("message_id")
+  attemptCount       Int                    @default(0) @map("attempt_count")
+  failureCode        String?                @map("failure_code")
+  failureReason      String?                @map("failure_reason") @db.VarChar(300)
+  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  sentAt             DateTime?              @map("sent_at") @db.Timestamptz(3)
+  finishedAt         DateTime?              @map("finished_at") @db.Timestamptz(3)
+  attempts           EmailDeliveryAttempt[]
+
+  @@unique([companyId, idempotencyKey])
+  @@index([companyId, status])
+  @@index([companyId, documentId, createdAt])
+  @@map("email_delivery")
+}
+
+// Un intento de un envío (design D6): de solo agregado, con el código SMTP y un detalle recortado,
+// nunca credenciales ni el contenido del correo.
+model EmailDeliveryAttempt {
+  id         String        @id @default(uuid())
+  deliveryId String        @map("delivery_id")
+  delivery   EmailDelivery @relation(fields: [deliveryId], references: [id], onDelete: Restrict)
+  number     Int
+  at         DateTime      @default(now()) @db.Timestamptz(3)
+  /// SENT, RETRYABLE o DETERMINISTIC (CHECK en la migración).
+  outcome    String
+  smtpCode   Int?          @map("smtp_code")
+  detail     String?       @db.VarChar(200)
+
+  @@unique([deliveryId, number])
+  @@map("email_delivery_attempt")
 }
 
 // Registro de idempotencia de la emisión (Q-30, design D8): empresa, operación y clave, con la huella
