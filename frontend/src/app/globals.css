@@ -312,6 +312,11 @@
      2026-10-22); el importe, de al menos 10rem para la cifra y su «Quitar». */
   grid-template-columns: minmax(0, 4fr) minmax(10rem, 1fr);
 }
+@utility grid-cols-metric {
+  /* El icono de un indicador de Inicio y su contenido en 10 % y 90 % (decisión del propietario,
+     2026-10-23); la columna del icono, de al menos su ancho. */
+  grid-template-columns: minmax(2.5rem, 10fr) minmax(0, 90fr);
+}
 
 /* Con una barra de acciones fija al pie (`StickyFormActions`), el foco que el navegador lleva a la
    vista nunca queda debajo de ella (design D8). */

@@ -87,7 +87,12 @@ const DocumentsChart = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
 );
 
-/** Un indicador: su cifra, una línea de contexto y, si aplica, adónde ir. */
+/**
+ * Un indicador: su cifra, una línea de contexto y, si aplica, adónde ir. El icono grande a la
+ * izquierda, en 10 % y 90 % (al menos el ancho del icono), con todo el contenido alineado a la
+ * izquierda; el enlace lleva una flecha porque navega a otra pantalla de la aplicación (decisiones
+ * del propietario, 2026-10-23).
+ */
 function Metric({
   title,
   icon: Icon,
@@ -107,23 +112,34 @@ function Metric({
 }) {
   return (
     <Card size="sm" data-slot="dashboard-metric">
-      <CardHeader>
-        <CardDescription className="flex items-center gap-2">
-          <Icon
-            aria-hidden="true"
-            className={cn("size-4", tone === "warning" ? "text-warning" : "text-foreground-muted")}
-          />
-          {title}
-        </CardDescription>
-        <CardTitle className="text-2xl font-semibold tabular-nums">{value}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex items-center justify-between gap-2 text-xs text-foreground-muted">
-        <span>{detail}</span>
-        {href && hrefLabel && (
-          <Link href={href} className="shrink-0 font-medium text-primary hover:underline">
-            {hrefLabel}
-          </Link>
-        )}
+      <CardContent className="grid flex-1 grid-cols-metric items-start gap-3">
+        <span
+          aria-hidden="true"
+          data-slot="dashboard-metric-icon"
+          className={cn(
+            "flex size-10 items-center justify-center rounded-full",
+            tone === "warning" ? "bg-warning/15 text-warning" : "bg-primary/10 text-primary",
+          )}
+        >
+          <Icon className="size-5" />
+        </span>
+        <div className="flex min-w-0 flex-col items-start gap-1 self-stretch">
+          <CardDescription>{title}</CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums">{value}</CardTitle>
+          {detail && <p className="text-xs text-foreground-muted">{detail}</p>}
+          {href && hrefLabel && (
+            <Link
+              href={href}
+              className="group/metric-link mt-auto inline-flex items-center gap-1 pt-1 text-xs font-medium text-primary hover:underline"
+            >
+              {hrefLabel}
+              <ArrowRight
+                aria-hidden="true"
+                className="size-3.5 transition-transform group-hover/metric-link:translate-x-0.5"
+              />
+            </Link>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

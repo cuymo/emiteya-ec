@@ -154,11 +154,15 @@ describe("tablero de Inicio", () => {
     expect(metrics[1]!.textContent).toContain("19");
     expect(metrics[1]!.textContent).toContain("15 autorizadas");
     expect(metrics[2]!.textContent).toContain("2 devueltos o no autorizados en 30 días");
-    expect(
-      within(metrics[3] as HTMLElement)
-        .getByRole("link", { name: "Ver borradores" })
-        .getAttribute("href"),
-    ).toBe("/facturas?estado=borradores");
+    const drafts = within(metrics[3] as HTMLElement).getByRole("link", { name: "Ver borradores" });
+    expect(drafts.getAttribute("href")).toBe("/facturas?estado=borradores");
+    // El icono grande a la izquierda (10 % y 90 %) y una flecha en el enlace, que navega dentro de
+    // la aplicación (decisiones del propietario, 2026-10-23).
+    for (const metric of metrics) {
+      expect(metric.querySelector("[data-slot=dashboard-metric-icon] svg")).not.toBeNull();
+    }
+    expect(drafts.querySelector("svg")).not.toBeNull();
+    expect(drafts.getAttribute("target")).toBeNull();
     expect(screen.getByRole("link", { name: "Nueva factura" }).getAttribute("href")).toBe(
       "/borradores/nuevo",
     );
