@@ -536,6 +536,34 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
 });
 
 describe("pedidos del propietario sobre la nota de débito (2026-10-22)", () => {
+  it("el número del concepto va en una franja azul y los títulos son más discretos", async () => {
+    render(<DebitNoteDraftScreen draftId="ndd-1" />, {
+      "GET /api/v1/debit-notes/drafts/ndd-1": ok(debitNoteDraft()),
+    });
+    const first = await findConcept(1);
+    // 15 % para el número, vertical en su franja azul, y 85 % para los campos.
+    expect(first.className).toContain("sm:grid-cols-[minmax(0,15fr)_minmax(0,85fr)]");
+    const number = first.querySelector("[data-slot=concept-number]") as HTMLElement;
+    expect(number.className).toContain("bg-primary");
+    expect(within(number).getByRole("heading", { level: 3 }).textContent).toBe("Concepto 1");
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Establecimiento y punto de emisión" })
+        .className,
+    ).toContain("sr-only");
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Factura que se modifica" }).className,
+    ).toContain("text-sm");
+    // La nota de los conceptos va en el tooltip de su título.
+    expect(screen.getByRole("button", { name: "Ayuda: Conceptos" })).toBeDefined();
+    // Con cambios sin guardar, el aviso de emitir va centrado debajo de «Guardar borrador».
+    const user = userEvent.setup();
+    await user.type(within(first).getByRole("textbox", { name: "Descripción" }), " extra");
+    const hint = await screen.findByText("Guarda los cambios antes de emitir.");
+    expect(hint.className).toContain("text-center");
+    const save = screen.getByRole("button", { name: "Guardar borrador" });
+    expect(save.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("el tratamiento es una lista también con un solo tratamiento en la factura", async () => {
     const base = debitNoteDraft();
     const iva15 = { key: "2:4", taxCode: "2", rateCode: "4", percentage: "15", label: "15%" };

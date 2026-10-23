@@ -37,6 +37,7 @@ import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { errorMessage } from "@/components/feedback";
+import { LabelWithHint } from "@/components/field-hint";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney, Money } from "@/components/money";
 import { useSession } from "@/components/session";
@@ -47,6 +48,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ApiError, apiFetch } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
 import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
@@ -174,22 +176,37 @@ function useDefaultPoint(enabled: boolean) {
   });
 }
 
+/**
+ * Sección del editor. Su título puede verse como la etiqueta de un campo (`compact`), llevar su nota
+ * en un tooltip (`hint`) o quedar solo para la asistencia (`hideTitle`), cuando los campos ya lo
+ * dicen (decisiones del propietario, 2026-10-22).
+ */
 function Section({
   title,
+  compact = false,
+  hint,
   hideTitle = false,
   children,
 }: {
   title: string;
-  /** El título solo para la asistencia, cuando la etiqueta del campo ya lo dice. */
+  compact?: boolean;
+  hint?: string;
   hideTitle?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className={hideTitle ? "sr-only" : "text-lg font-semibold"}>
-        {title}
-      </h2>
+    <section aria-labelledby={id} className={cn("flex flex-col", compact ? "gap-1" : "gap-3")}>
+      <LabelWithHint label={title} hint={hint}>
+        <h2
+          id={id}
+          className={
+            hideTitle ? "sr-only" : compact ? "text-sm font-medium" : "text-lg font-semibold"
+          }
+        >
+          {title}
+        </h2>
+      </LabelWithHint>
       {children}
     </section>
   );
@@ -296,15 +313,23 @@ function TreatmentField({
   treatments,
   value,
   onChange,
+  action,
 }: {
   position: number;
   treatments: readonly DebitNoteTaxTreatmentView[];
   value: string;
   onChange: (next: string) => void;
+  /** Quitar el concepto, junto a la lista, ahora que el número del concepto va en su franja. */
+  action?: ReactNode;
 }) {
   const hint = "Solo los tratamientos de IVA de la factura.";
   return (
-    <FormField id={`tratamiento-${position}`} label="Tratamiento de IVA" hint={hint}>
+    <FormField
+      id={`tratamiento-${position}`}
+      label="Tratamiento de IVA"
+      hint={hint}
+      {...(action ? { action } : {})}
+    >
       <Select
         {...fieldAria(`tratamiento-${position}`, undefined, hint)}
         value={value}
@@ -480,7 +505,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
 
       <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
-          <Section title="Factura que se modifica">
+          <Section title="Factura que se modifica" compact>
             <div className="flex min-w-0 items-center gap-3 rounded-md border border-border bg-surface px-3 py-3">
               {/* La factura con su ícono grande, como la persona en la ficha del comprador. */}
               <span
@@ -514,7 +539,7 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
           </Section>
 
           {/* Antes de los conceptos (decisión del propietario, 2026-10-22): de dónde sale la nota. */}
-          <Section title="Establecimiento y punto de emisión">
+          <Section title="Establecimiento y punto de emisión" hideTitle>
             <EstablishmentPointFields
               establishments={establishments.data ?? []}
               pointId={pointId}
@@ -524,11 +549,10 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
             />
           </Section>
 
-          <Section title="Conceptos">
-            <p className="text-sm text-foreground-muted">
-              Cada concepto es un cobro posterior a la factura: intereses de mora o un costo o gasto
-              posterior a ella, con el tratamiento de IVA de la factura que le corresponde.
-            </p>
+          <Section
+            title="Conceptos"
+            hint="Cada concepto es un cobro posterior a la factura: intereses de mora o un costo o gasto posterior a ella, con el tratamiento de IVA de la factura que le corresponde."
+          >
             <ol className="flex flex-col gap-3">
               {concepts.fields.map((field, index) => {
                 const position = index + 1;
@@ -542,93 +566,104 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                     key={field.id}
                     aria-label={`Concepto ${position}`}
                     aria-invalid={problems.length > 0 || undefined}
-                    className="@container flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-3 aria-invalid:border-danger"
+                    className="grid overflow-hidden rounded-md border border-border bg-surface aria-invalid:border-danger sm:grid-cols-[minmax(0,15fr)_minmax(0,85fr)]"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-medium">Concepto {position}</h3>
-                      {concepts.fields.length > 1 && (
-                        <RowActionButton
-                          icon={Trash2}
-                          tone="danger"
-                          label={`Quitar el concepto ${position}`}
-                          onClick={() => removeConcept(index)}
-                        />
-                      )}
-                    </div>
-                    {/* Causa, importe y tratamiento en una fila de tres columnas (decisión del
-                        propietario, 2026-10-22); en un concepto angosto, uno debajo del otro. */}
+                    {/* El número del concepto en una franja azul, vertical en su columna del 15 %
+                        (decisión del propietario, 2026-10-22); en un teléfono, horizontal arriba. */}
                     <div
-                      data-slot="concept-fields"
-                      className="grid gap-3 @xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] @xl:items-start"
+                      data-slot="concept-number"
+                      className="flex items-center justify-center bg-primary px-3 py-2 text-primary-foreground sm:py-4"
                     >
-                      <FormField id={`causa-${field.id}`} label="Causa">
-                        <Select
-                          id={`causa-${field.id}`}
-                          value={current?.cause ?? ""}
-                          onChange={(event) =>
-                            form.setValue(
-                              `concepts.${index}.cause`,
-                              event.target.value as DebitNoteCause | "",
-                              { shouldDirty: true },
+                      <h3 className="font-semibold whitespace-nowrap sm:rotate-180 sm:[writing-mode:vertical-rl]">
+                        Concepto {position}
+                      </h3>
+                    </div>
+                    <div className="@container flex min-w-0 flex-col gap-3 p-3">
+                      {/* Causa, importe y tratamiento en una fila de tres columnas (decisión del
+                        propietario, 2026-10-22); en un concepto angosto, uno debajo del otro. */}
+                      <div
+                        data-slot="concept-fields"
+                        className="grid gap-3 @xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] @xl:items-start"
+                      >
+                        <FormField id={`causa-${field.id}`} label="Causa">
+                          <Select
+                            id={`causa-${field.id}`}
+                            value={current?.cause ?? ""}
+                            onChange={(event) =>
+                              form.setValue(
+                                `concepts.${index}.cause`,
+                                event.target.value as DebitNoteCause | "",
+                                { shouldDirty: true },
+                              )
+                            }
+                          >
+                            {!current?.cause && <option value="">Elige la causa</option>}
+                            {DEBIT_NOTE_CAUSES.map((cause) => (
+                              <option key={cause} value={cause}>
+                                {DEBIT_NOTE_CAUSE_LABELS[cause]}
+                              </option>
+                            ))}
+                          </Select>
+                        </FormField>
+                        <FormField
+                          id={`importe-${field.id}`}
+                          label="Importe"
+                          hint="Sin IVA, en dólares."
+                          error={conceptError?.amount?.message}
+                        >
+                          <Input
+                            inputMode="decimal"
+                            className="text-right tabular-nums"
+                            {...fieldAria(
+                              `importe-${field.id}`,
+                              conceptError?.amount?.message,
+                              "Sin IVA, en dólares.",
+                            )}
+                            {...form.register(`concepts.${index}.amount`)}
+                          />
+                        </FormField>
+                        <TreatmentField
+                          position={position}
+                          treatments={treatments}
+                          action={
+                            concepts.fields.length > 1 && (
+                              <RowActionButton
+                                icon={Trash2}
+                                tone="danger"
+                                label={`Quitar el concepto ${position}`}
+                                onClick={() => removeConcept(index)}
+                              />
                             )
                           }
-                        >
-                          {!current?.cause && <option value="">Elige la causa</option>}
-                          {DEBIT_NOTE_CAUSES.map((cause) => (
-                            <option key={cause} value={cause}>
-                              {DEBIT_NOTE_CAUSE_LABELS[cause]}
-                            </option>
-                          ))}
-                        </Select>
-                      </FormField>
+                          value={current?.taxTreatment ?? ""}
+                          onChange={(next) =>
+                            form.setValue(`concepts.${index}.taxTreatment`, next, {
+                              shouldDirty: true,
+                            })
+                          }
+                        />
+                      </div>
+                      {/* Hasta 300 caracteres: un área de texto de tres líneas que se puede agrandar,
+                        pero en una sola línea de texto, como la exige el comprobante. */}
                       <FormField
-                        id={`importe-${field.id}`}
-                        label="Importe"
-                        hint="Sin IVA, en dólares."
-                        error={conceptError?.amount?.message}
+                        id={`descripcion-${field.id}`}
+                        label="Descripción"
+                        hint={descriptionHint}
+                        counter={descriptionCount}
+                        error={conceptError?.description?.message}
                       >
-                        <Input
-                          inputMode="decimal"
-                          className="text-right tabular-nums"
+                        <SingleLineTextarea
+                          maxLength={DEBIT_NOTE_DESCRIPTION_MAX}
                           {...fieldAria(
-                            `importe-${field.id}`,
-                            conceptError?.amount?.message,
-                            "Sin IVA, en dólares.",
+                            `descripcion-${field.id}`,
+                            conceptError?.description?.message,
+                            descriptionHint,
                           )}
-                          {...form.register(`concepts.${index}.amount`)}
+                          {...form.register(`concepts.${index}.description`)}
                         />
                       </FormField>
-                      <TreatmentField
-                        position={position}
-                        treatments={treatments}
-                        value={current?.taxTreatment ?? ""}
-                        onChange={(next) =>
-                          form.setValue(`concepts.${index}.taxTreatment`, next, {
-                            shouldDirty: true,
-                          })
-                        }
-                      />
+                      <IssueList issues={problems} />
                     </div>
-                    {/* Hasta 300 caracteres: un área de texto de tres líneas que se puede agrandar,
-                        pero en una sola línea de texto, como la exige el comprobante. */}
-                    <FormField
-                      id={`descripcion-${field.id}`}
-                      label="Descripción"
-                      hint={descriptionHint}
-                      counter={descriptionCount}
-                      error={conceptError?.description?.message}
-                    >
-                      <SingleLineTextarea
-                        maxLength={DEBIT_NOTE_DESCRIPTION_MAX}
-                        {...fieldAria(
-                          `descripcion-${field.id}`,
-                          conceptError?.description?.message,
-                          descriptionHint,
-                        )}
-                        {...form.register(`concepts.${index}.description`)}
-                      />
-                    </FormField>
-                    <IssueList issues={problems} />
                   </li>
                 );
               })}
@@ -746,14 +781,16 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 Emitir nota de débito
               </Button>
             )}
-            {canEmit && emitHint && (
-              <p id={emitHintId} className="text-xs text-foreground-muted">
-                {emitHint}
-              </p>
-            )}
             <AsyncButton type="submit" variant="outline" pending={save.isPending}>
               Guardar borrador
             </AsyncButton>
+            {/* Por qué no se puede emitir todavía, centrado debajo de «Guardar borrador»
+                (decisión del propietario, 2026-10-22); sigue describiendo «Emitir». */}
+            {canEmit && emitHint && (
+              <p id={emitHintId} className="text-center text-xs text-foreground-muted">
+                {emitHint}
+              </p>
+            )}
           </div>
         </aside>
       </form>
@@ -918,7 +955,7 @@ export function NewDebitNoteDraftScreen({ invoiceId = null }: { invoiceId?: stri
   return (
     <Fallback state="new">
       {error && <OperationAlert message={error} alertRef={alertRef} />}
-      <Section title="Factura que se modifica">
+      <Section title="Factura que se modifica" compact>
         <ChosenInvoice
           invoiceId={invoiceId}
           pending={create.isPending}
