@@ -545,3 +545,25 @@ guía de remisión SHALL verlos. Ninguna otra pantalla de la lista SHALL repetir
 #### Scenario: Borradores de otra empresa
 - **WHEN** otra empresa de la instalación tiene borradores de guía de remisión
 - **THEN** ninguno aparece en la lista ni cuenta en su total
+
+### Requirement: Editor de la guía de remisión
+El editor SHALL seguir el diseño de los demás editores. Quién transporta, el punto de partida, la
+clase de destinatario, el comprobante de venta y el modo de cada detalle SHALL ocupar todo el ancho,
+con sus opciones repartidas por igual, y la placa también. El transportista tercero, el destinatario
+tercero y la factura sustento SHALL mostrarse como una ficha con su ícono grande y, en la misma fila,
+el botón para elegirlos o cambiarlos en el azul primario. La factura elegida SHALL mostrar su número,
+su comprador, su fecha y su total, con «Cargar mercancías de la factura» junto a «Cambiar factura».
+Un destinatario nuevo, o uno guardado sin sustento, SHALL empezar con «Factura» como comprobante de
+venta, sin que el borrador cuente como modificado. El motivo del traslado
+SHALL escribirse en un área de texto que no admite saltos de línea, y la ruta y el código del
+establecimiento de destino SHALL ir en una fila, mitad y mitad. «Agregar detalle» y «Agregar
+destinatario» SHALL verse como «Dividir el pago» en la factura, y las acciones de quitar SHALL ir en
+rojo.
+
+#### Scenario: Factura elegida
+- **WHEN** un destinatario tiene como sustento la factura 001-001-000000123
+- **THEN** su ficha muestra el número, el comprador, la fecha y el total, con «Cambiar factura» y «Cargar mercancías de la factura» a la derecha
+
+#### Scenario: Destinatario nuevo
+- **WHEN** un operador agrega un destinatario y elige un tercero
+- **THEN** el comprobante de venta tiene elegida «Factura»

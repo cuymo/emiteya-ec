@@ -20,17 +20,19 @@ import {
   type ShippingGuideDraftView,
   type ShippingGuideOptionsView,
 } from "@facturador/contracts";
-import { Plus, Truck } from "lucide-react";
+import { Plus, Save, Send, Truck, UserRoundPen, UserSearch } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
+import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DatePickerField } from "@/components/date-picker-field";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { PickedCard } from "@/components/picked-card";
 import { SegmentedControl } from "@/components/segmented-control";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
@@ -407,6 +409,7 @@ function DraftEditor({
                 ¿Quién transporta?
               </span>
               <SegmentedControl
+                fullWidth
                 aria-labelledby={sourceLabelId}
                 options={[
                   { value: "SELF", label: "Propio" },
@@ -416,39 +419,47 @@ function DraftEditor({
                 onChange={(next) => set("transporterSource", next)}
               />
             </div>
+            {/* El transportista como una ficha con su ícono grande y, si es un tercero, el botón
+                para elegirlo o cambiarlo en la misma fila (decisión del propietario, 2026-10-22). */}
             {transporterSource === "SELF" && (
-              <p className="flex items-center gap-2 rounded-md border border-border bg-surface-subtle px-3 py-2 text-sm">
-                <Truck aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-                <span className="flex min-w-0 flex-col">
-                  <span className="font-medium break-words">
-                    {options.issuerIdentity?.legalName ?? "La empresa"}
-                  </span>
-                  <span className="text-foreground-muted tabular-nums">
-                    RUC {options.issuerIdentity?.ruc ?? "sin registrar"} · transporte propio
-                  </span>
+              <PickedCard icon={Truck} picked>
+                <span className="font-medium break-words">
+                  {options.issuerIdentity?.legalName ?? "La empresa"}
                 </span>
-              </p>
+                <span className="text-sm text-foreground-muted tabular-nums">
+                  RUC {options.issuerIdentity?.ruc ?? "sin registrar"} · transporte propio
+                </span>
+              </PickedCard>
             )}
             {transporterSource === "PARTY" && (
               <>
-                {values.carrierId ? (
-                  <p className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
-                    <Truck aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-                    <span className="flex min-w-0 flex-col">
+                <PickedCard
+                  icon={Truck}
+                  picked={Boolean(values.carrierId)}
+                  actions={
+                    <Button variant="primary" onClick={() => setChoosing(true)}>
+                      {values.carrierId ? (
+                        <UserRoundPen aria-hidden="true" data-icon="inline-start" />
+                      ) : (
+                        <UserSearch aria-hidden="true" data-icon="inline-start" />
+                      )}
+                      {values.carrierId ? "Cambiar transportista" : "Elegir transportista"}
+                    </Button>
+                  }
+                >
+                  {values.carrierId ? (
+                    <>
                       <span className="font-medium break-words">{values.carrierName}</span>
-                      <span className="text-foreground-muted tabular-nums">
+                      <span className="text-sm text-foreground-muted tabular-nums">
                         {values.carrierIdentification}
                       </span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-foreground-muted">
+                      Elige un tercero con el rol de transportista.
                     </span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-foreground-muted">
-                    Elige un tercero con el rol de transportista.
-                  </p>
-                )}
-                <Button variant="outline" className="self-start" onClick={() => setChoosing(true)}>
-                  {values.carrierId ? "Cambiar transportista" : "Elegir transportista"}
-                </Button>
+                  )}
+                </PickedCard>
                 <CarrierChooser
                   open={choosing}
                   onOpenChange={setChoosing}
@@ -463,7 +474,6 @@ function DraftEditor({
               error={errors.plate?.message}
             >
               <Input
-                className="max-w-120"
                 autoComplete="off"
                 {...fieldAria(
                   "placa",
@@ -499,6 +509,7 @@ function DraftEditor({
                 Punto de partida
               </span>
               <SegmentedControl
+                fullWidth
                 aria-labelledby={departureLabelId}
                 options={[
                   { value: "ESTABLISHMENT", label: "Establecimiento propio" },
@@ -530,7 +541,7 @@ function DraftEditor({
                   </span>
                   <p
                     aria-labelledby="partida-derivada"
-                    className="min-h-8 rounded-md border border-border bg-surface-subtle px-2 py-1 text-sm break-words"
+                    className="flex min-h-10 items-center rounded-md border border-border bg-surface-subtle px-3 py-2 text-sm break-words"
                   >
                     {origin?.address ?? "—"}
                   </p>
@@ -576,16 +587,14 @@ function DraftEditor({
                 />
               ))}
             </ol>
-            <Button
+            <AddRowButton
               ref={addRef}
-              variant="outline"
-              className="self-start"
               disabled={recipients.fields.length >= limits.recipients}
               onClick={addRecipient}
             >
-              <Plus aria-hidden="true" />
+              <Plus aria-hidden="true" data-icon="inline-start" />
               Agregar destinatario
-            </Button>
+            </AddRowButton>
             {recipients.fields.length >= limits.recipients && (
               <p className="text-xs text-foreground-muted">
                 Llegaste al máximo de {limits.recipients} destinatarios por guía, un límite del
@@ -684,6 +693,7 @@ function DraftEditor({
                   setConfirming(true);
                 }}
               >
+                <Send aria-hidden="true" data-icon="inline-start" />
                 Emitir guía de remisión
               </Button>
             )}
@@ -693,6 +703,7 @@ function DraftEditor({
               </p>
             )}
             <AsyncButton type="submit" variant="outline" pending={save.isPending}>
+              <Save aria-hidden="true" data-icon="inline-start" />
               Guardar borrador
             </AsyncButton>
           </div>

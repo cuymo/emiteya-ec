@@ -86,7 +86,9 @@ export const blankRecipient = (): RecipientValues => ({
   motive: "",
   route: "",
   destinationEstablishmentCode: "",
-  supportKind: "",
+  // Un destinatario nuevo empieza con la factura como comprobante de venta (decisión del
+  // propietario, 2026-10-22); sin factura elegida, el sustento no se envía.
+  supportKind: "INTERNAL_INVOICE",
   invoiceId: "",
   invoiceNumber: "",
   exceptionCase: "",
@@ -206,7 +208,9 @@ export const toForm = (draft: ShippingGuideDraftView): FormValues => ({
           motive: recipient.motive ?? "",
           route: recipient.route ?? "",
           destinationEstablishmentCode: recipient.destinationEstablishmentCode ?? "",
-          supportKind: recipient.support?.kind ?? "",
+          // Sin sustento guardado, «Factura» queda elegida, como en un destinatario nuevo: sin
+          // factura elegida no se envía, así que el borrador sigue igual al guardado.
+          supportKind: recipient.support?.kind ?? "INTERNAL_INVOICE",
           invoiceId:
             recipient.support?.kind === "INTERNAL_INVOICE" ? recipient.support.invoiceId : "",
           invoiceNumber:

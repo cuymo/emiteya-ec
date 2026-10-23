@@ -242,8 +242,12 @@ Shared components own interaction consistency, not business policy.
 - `AddRowButton` (`components/add-row-button.tsx`) adds a row at the end of a form list: dashed,
   full width, 48 px tall, with a soft bluish gradient on hover instead of a solid fill. «Dividir el
   pago», «Agregar concepto», «Agregar línea», «Agregar pago» and the withholding editor's «Agregar
-  impuesto», «Agregar forma de pago», «Agregar retención» and «Agregar documento sustento» use it, so
-  they always match.
+  impuesto», «Agregar forma de pago», «Agregar retención» and «Agregar documento sustento», and the
+  shipping guide editor's «Agregar detalle» and «Agregar destinatario» use it, so they always match.
+- `PickedCard` (`components/picked-card.tsx`) shows what a form picked as a card: a large icon in a
+  circle, the data, and on the same row, at the right, the actions to choose or change it (stacked
+  when there are several). Without a pick the border is dashed and the icon muted. The shipping
+  guide editor uses it for the carrier, the recipient and the support invoice.
 - `SingleLineTextarea` (`components/single-line-textarea.tsx`) is a three-line, resizable textarea
   for long texts the document carries on one line (the debit note concept and the purchase
   settlement line descriptions): Enter does not break the line and pasted line breaks become

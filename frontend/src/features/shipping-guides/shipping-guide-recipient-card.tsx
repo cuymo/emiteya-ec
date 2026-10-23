@@ -18,20 +18,38 @@ import {
   type ShippingInvoiceGoodsView,
   type ShippingRecipientPartyView,
 } from "@facturador/contracts";
-import { ChevronDown, PackageOpen, Plus, Trash2, UserRound } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ChevronDown,
+  FilePen,
+  FileSearch,
+  FileText,
+  PackageOpen,
+  PackageSearch,
+  Plus,
+  Trash2,
+  UserRound,
+  UserRoundPen,
+  UserSearch,
+} from "lucide-react";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useWatch, type UseFormReturn } from "react-hook-form";
+import { AddRowButton } from "@/components/add-row-button";
 import { RowActionButton } from "@/components/data-table/table-controls";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { Money } from "@/components/money";
+import { PickedCard } from "@/components/picked-card";
 import { SegmentedControl } from "@/components/segmented-control";
 import { SelectionCardGroup } from "@/components/selection-card-group";
+import { SingleLineTextarea } from "@/components/single-line-textarea";
 import { ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatDecimal } from "@/lib/decimal";
+import { cn } from "@/lib/utils";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { PartyDialog } from "@/features/parties/party-dialog";
 import {
@@ -51,6 +69,7 @@ import {
 
 /** Un destinatario creado desde la guía nace sin roles: la guía nunca los asigna (design D7). */
 const NO_ROLES = [] as const;
+const MOTIVE_MAX = 300;
 
 export function IssueList({ issues }: { issues: readonly ShippingGuideIssue[] }) {
   if (issues.length === 0) return null;
@@ -87,23 +106,11 @@ function ReadOnly({ label, value, hint }: { label: string; value: string; hint?:
       </span>
       <p
         aria-labelledby={id}
-        className="min-h-8 rounded-md border border-border bg-surface-subtle px-2 py-1 text-sm break-words"
+        className="flex min-h-10 items-center rounded-md border border-border bg-surface-subtle px-3 py-2 text-sm break-words"
       >
         {value || "—"}
       </p>
       {hint && <p className="text-xs text-foreground-muted">{hint}</p>}
-    </div>
-  );
-}
-
-function PartyCard({ name, identification }: { name: string; identification: string }) {
-  return (
-    <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
-      <UserRound aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-      <span className="flex min-w-0 flex-col">
-        <span className="font-medium break-words">{name}</span>
-        <span className="text-sm text-foreground-muted tabular-nums">{identification}</span>
-      </span>
     </div>
   );
 }
@@ -275,12 +282,15 @@ function DetailRow({
       aria-invalid={issues.length > 0 || undefined}
       className="flex flex-col gap-2 rounded-md border border-border px-2 py-2 aria-invalid:border-danger"
     >
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div className="flex flex-col gap-1">
+      {/* Producto o línea libre a todo el ancho; quitar, en rojo, a su derecha (decisión del
+          propietario, 2026-10-22). */}
+      <div className="flex items-end gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span id={modeLabelId} className="text-sm font-medium">
             Detalle {position}
           </span>
           <SegmentedControl
+            fullWidth
             aria-labelledby={modeLabelId}
             options={[
               { value: "PRODUCT", label: "Producto" },
@@ -304,6 +314,7 @@ function DetailRow({
         {canRemove && (
           <RowActionButton
             icon={Trash2}
+            tone="danger"
             label={`Quitar el detalle ${position} del destinatario ${recipientIndex + 1}`}
             onClick={onRemove}
           />
@@ -315,7 +326,7 @@ function DetailRow({
             <span className="text-sm font-medium">Producto</span>
             <Button
               variant="outline"
-              className="h-auto min-h-8 justify-between text-left font-normal whitespace-normal"
+              className="h-auto min-h-10 justify-between text-left font-normal whitespace-normal max-md:min-h-11"
               aria-label={
                 detail.productId
                   ? `Cambiar el producto del detalle ${position}: ${detail.productName}`
@@ -323,7 +334,8 @@ function DetailRow({
               }
               onClick={() => setChoosing(true)}
             >
-              <span className="min-w-0 break-words">
+              <span className="flex min-w-0 items-center gap-2 break-words">
+                <PackageSearch aria-hidden="true" className="size-4 shrink-0" />
                 {detail.productId ? detail.productName || "Producto elegido" : "Elegir producto"}
               </span>
               <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
@@ -452,6 +464,8 @@ export function RecipientCard({
   const [creatingParty, setCreatingParty] = useState(false);
   const [choosingInvoice, setChoosingInvoice] = useState(false);
   const [loadingGoods, setLoadingGoods] = useState(false);
+  /** La factura recién elegida, con sus datos; la de un borrador guardado se busca por su número. */
+  const [chosenInvoice, setChosenInvoice] = useState<ShippingEligibleInvoiceView | null>(null);
   const kindLabelId = useId();
   const supportLabelId = useId();
   const caseLabelId = useId();
@@ -479,6 +493,26 @@ export function RecipientCard({
     }));
   const ownCase = partyCases.OWN_ESTABLISHMENT_TRANSFER;
   const { limits } = options;
+  const justChosen = chosenInvoice?.id === recipient.invoiceId ? chosenInvoice : null;
+  const savedInvoice = useQuery({
+    queryKey: [...SHIPPING_GUIDES_KEY, "eligible-invoices", "detail", recipient.invoiceId],
+    enabled: Boolean(recipient.invoiceId && recipient.invoiceNumber) && !justChosen,
+    staleTime: 5 * 60_000,
+    queryFn: async ({ signal }) => {
+      const page = await fetchShippingEligibleInvoices({
+        search: recipient.invoiceNumber,
+        page: 1,
+        pageSize: 10,
+        signal,
+      });
+      return page.items.find((invoice) => invoice.id === recipient.invoiceId) ?? null;
+    },
+  });
+  const invoice = justChosen ?? savedInvoice.data ?? null;
+  const previewSupport = previewRecipient?.support;
+  const previewInvoice =
+    fresh && previewSupport?.kind === "INTERNAL_INVOICE" ? previewSupport.invoice : null;
+  const motiveHint = `En una sola línea · ${recipient.motive.length}/${MOTIVE_MAX}`;
 
   const chooseParty = (
     party: Pick<ShippingRecipientPartyView, "id" | "legalName" | "identification" | "address">,
@@ -489,9 +523,10 @@ export function RecipientCard({
     // La dirección se propone con la del tercero y se puede corregir.
     if (!recipient.address.trim() && party.address) set(`${base}.address`, party.address);
   };
-  const chooseInvoice = (invoice: ShippingEligibleInvoiceView) => {
-    set(`${base}.invoiceId`, invoice.id);
-    set(`${base}.invoiceNumber`, invoice.documentNumber);
+  const chooseInvoice = (chosen: ShippingEligibleInvoiceView) => {
+    setChosenInvoice(chosen);
+    set(`${base}.invoiceId`, chosen.id);
+    set(`${base}.invoiceNumber`, chosen.documentNumber);
   };
   const addDetails = (added: DetailValues[]) => {
     // Un detalle vacío se reemplaza por las mercancías confirmadas.
@@ -513,6 +548,7 @@ export function RecipientCard({
         {canRemove && (
           <RowActionButton
             icon={Trash2}
+            tone="danger"
             label={`Quitar el destinatario ${position}`}
             onClick={onRemove}
           />
@@ -524,6 +560,7 @@ export function RecipientCard({
           Destinatario
         </span>
         <SegmentedControl
+          fullWidth
           aria-labelledby={kindLabelId}
           options={[
             { value: "PARTY", label: "Tercero" },
@@ -536,7 +573,8 @@ export function RecipientCard({
               set(`${base}.supportKind`, "DECLARED_EXCEPTION");
               set(`${base}.exceptionCase`, "OWN_ESTABLISHMENT_TRANSFER");
             } else if (recipient.exceptionCase === "OWN_ESTABLISHMENT_TRANSFER") {
-              set(`${base}.supportKind`, "");
+              // De vuelta a un tercero, el sustento vuelve a ser una factura, como en uno nuevo.
+              set(`${base}.supportKind`, "INTERNAL_INVOICE");
               set(`${base}.exceptionCase`, "");
             }
           }}
@@ -545,16 +583,36 @@ export function RecipientCard({
 
       {recipient.kind === "PARTY" && (
         <>
-          {recipient.partyId ? (
-            <PartyCard name={recipient.partyName} identification={recipient.partyIdentification} />
-          ) : (
-            <p className="text-sm text-foreground-muted">
-              Elige el tercero que recibe la mercadería: RUC, cédula o pasaporte, con cualquier rol.
-            </p>
-          )}
-          <Button variant="outline" className="self-start" onClick={() => setChoosingParty(true)}>
-            {recipient.partyId ? "Cambiar destinatario" : "Elegir destinatario"}
-          </Button>
+          {/* El destinatario como una ficha con su ícono grande y el botón en la misma fila
+              (decisión del propietario, 2026-10-22). */}
+          <PickedCard
+            icon={UserRound}
+            picked={Boolean(recipient.partyId)}
+            actions={
+              <Button variant="primary" onClick={() => setChoosingParty(true)}>
+                {recipient.partyId ? (
+                  <UserRoundPen aria-hidden="true" data-icon="inline-start" />
+                ) : (
+                  <UserSearch aria-hidden="true" data-icon="inline-start" />
+                )}
+                {recipient.partyId ? "Cambiar destinatario" : "Elegir destinatario"}
+              </Button>
+            }
+          >
+            {recipient.partyId ? (
+              <>
+                <span className="font-medium break-words">{recipient.partyName}</span>
+                <span className="text-sm text-foreground-muted tabular-nums">
+                  {recipient.partyIdentification}
+                </span>
+              </>
+            ) : (
+              <span className="text-sm text-foreground-muted">
+                Elige el tercero que recibe la mercadería: RUC, cédula o pasaporte, con cualquier
+                rol.
+              </span>
+            )}
+          </PickedCard>
           <EntityPickerDialog<ShippingRecipientPartyView>
             open={choosingParty}
             onOpenChange={setChoosingParty}
@@ -650,44 +708,49 @@ export function RecipientCard({
 
       {recipient.kind !== "" && (
         <>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <FormField
-              id={id("motivo")}
-              label="Motivo del traslado"
-              error={errors?.motive?.message}
-            >
-              <Input
-                {...fieldAria(id("motivo"), errors?.motive?.message)}
-                {...form.register(`${base}.motive`)}
-              />
-            </FormField>
+          {/* El motivo a todo el ancho, en un área de texto; la ruta y el código de destino en
+              una fila, mitad y mitad (decisión del propietario, 2026-10-22). */}
+          <FormField
+            id={id("motivo")}
+            label="Motivo del traslado"
+            hint={motiveHint}
+            error={errors?.motive?.message}
+          >
+            <SingleLineTextarea
+              maxLength={MOTIVE_MAX}
+              {...fieldAria(id("motivo"), errors?.motive?.message, motiveHint)}
+              {...form.register(`${base}.motive`)}
+            />
+          </FormField>
+          <div
+            className={cn("grid items-start gap-2", recipient.kind === "PARTY" && "sm:grid-cols-2")}
+          >
             <FormField id={id("ruta")} label="Ruta (opcional)" error={errors?.route?.message}>
               <Input
                 {...fieldAria(id("ruta"), errors?.route?.message)}
                 {...form.register(`${base}.route`)}
               />
             </FormField>
+            {recipient.kind === "PARTY" && (
+              <FormField
+                id={id("codigo-destino")}
+                label="Código del establecimiento de destino (opcional)"
+                hint="Tres dígitos, si el destinatario te lo indicó."
+                error={errors?.destinationEstablishmentCode?.message}
+              >
+                <Input
+                  inputMode="numeric"
+                  maxLength={3}
+                  {...fieldAria(
+                    id("codigo-destino"),
+                    errors?.destinationEstablishmentCode?.message,
+                    "Tres dígitos, si el destinatario te lo indicó.",
+                  )}
+                  {...form.register(`${base}.destinationEstablishmentCode`)}
+                />
+              </FormField>
+            )}
           </div>
-          {recipient.kind === "PARTY" && (
-            <FormField
-              id={id("codigo-destino")}
-              label="Código del establecimiento de destino (opcional)"
-              hint="Tres dígitos, si el destinatario te lo indicó."
-              error={errors?.destinationEstablishmentCode?.message}
-            >
-              <Input
-                inputMode="numeric"
-                maxLength={3}
-                className="max-w-64"
-                {...fieldAria(
-                  id("codigo-destino"),
-                  errors?.destinationEstablishmentCode?.message,
-                  "Tres dígitos, si el destinatario te lo indicó.",
-                )}
-                {...form.register(`${base}.destinationEstablishmentCode`)}
-              />
-            </FormField>
-          )}
 
           <SubList title="Sustento">
             {recipient.kind === "OWN_COMPANY" ? (
@@ -701,6 +764,7 @@ export function RecipientCard({
                     Comprobante de venta
                   </span>
                   <SegmentedControl
+                    fullWidth
                     aria-labelledby={supportLabelId}
                     options={[
                       { value: "INTERNAL_INVOICE", label: "Factura" },
@@ -712,29 +776,61 @@ export function RecipientCard({
                 </div>
                 {recipient.supportKind === "INTERNAL_INVOICE" && (
                   <>
-                    {recipient.invoiceId ? (
-                      <p className="text-sm">
-                        Factura{" "}
-                        <span className="font-medium tabular-nums">
-                          {recipient.invoiceNumber || "elegida"}
+                    {/* La factura con sus datos a la izquierda y, a la derecha, cambiarla y cargar
+                        sus mercancías (decisión del propietario, 2026-10-22). */}
+                    <PickedCard
+                      icon={FileText}
+                      picked={Boolean(recipient.invoiceId)}
+                      actions={
+                        <>
+                          <Button variant="primary" onClick={() => setChoosingInvoice(true)}>
+                            {recipient.invoiceId ? (
+                              <FilePen aria-hidden="true" data-icon="inline-start" />
+                            ) : (
+                              <FileSearch aria-hidden="true" data-icon="inline-start" />
+                            )}
+                            {recipient.invoiceId ? "Cambiar factura" : "Elegir factura"}
+                          </Button>
+                          {recipient.invoiceId && (
+                            <Button variant="outline" onClick={() => setLoadingGoods(true)}>
+                              <PackageOpen aria-hidden="true" data-icon="inline-start" />
+                              Cargar mercancías de la factura
+                            </Button>
+                          )}
+                        </>
+                      }
+                    >
+                      {recipient.invoiceId ? (
+                        <>
+                          <span className="font-medium tabular-nums">
+                            Factura {recipient.invoiceNumber || "elegida"}
+                          </span>
+                          {invoice ? (
+                            <span className="text-sm break-words text-foreground-muted">
+                              {invoice.buyerName} ·{" "}
+                              <span className="tabular-nums">{invoice.buyerIdentification}</span> ·{" "}
+                              {formatIssueDate(invoice.issueDate)} · Total{" "}
+                              <Money amount={invoice.total} />
+                            </span>
+                          ) : (
+                            previewInvoice && (
+                              <span className="text-sm text-foreground-muted">
+                                Emitida el {formatIssueDate(previewInvoice.issueDate)}
+                              </span>
+                            )
+                          )}
+                          {previewInvoice?.authorizationNumber && (
+                            <span className="text-xs break-all text-foreground-muted tabular-nums">
+                              Autorización {previewInvoice.authorizationNumber}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-sm text-foreground-muted">
+                          Una factura autorizada de la empresa, también a consumidor final.
                         </span>
-                      </p>
-                    ) : (
-                      <p className="text-sm text-foreground-muted">
-                        Una factura autorizada de la empresa, también a consumidor final.
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" onClick={() => setChoosingInvoice(true)}>
-                        {recipient.invoiceId ? "Cambiar factura" : "Elegir factura"}
-                      </Button>
-                      {recipient.invoiceId && (
-                        <Button variant="outline" onClick={() => setLoadingGoods(true)}>
-                          <PackageOpen aria-hidden="true" />
-                          Cargar mercancías de la factura
-                        </Button>
                       )}
-                    </div>
+                    </PickedCard>
                     <EntityPickerDialog<ShippingEligibleInvoiceView>
                       open={choosingInvoice}
                       onOpenChange={setChoosingInvoice}
@@ -812,10 +908,8 @@ export function RecipientCard({
             />
           ))}
         </ol>
-        <Button
+        <AddRowButton
           ref={addDetailRef}
-          variant="outline"
-          className="self-start"
           disabled={details.fields.length >= limits.detailsPerRecipient}
           onClick={() =>
             details.append(blankDetail(), {
@@ -823,9 +917,9 @@ export function RecipientCard({
             })
           }
         >
-          <Plus aria-hidden="true" />
+          <Plus aria-hidden="true" data-icon="inline-start" />
           Agregar detalle
-        </Button>
+        </AddRowButton>
         {details.fields.length >= limits.detailsPerRecipient && (
           <p className="text-xs text-foreground-muted">
             Llegaste al máximo de {limits.detailsPerRecipient} detalles por destinatario, un límite

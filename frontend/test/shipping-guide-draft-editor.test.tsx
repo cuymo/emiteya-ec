@@ -764,3 +764,110 @@ describe("aviso de Pruebas al emitir (productize-invoice-editor-and-composition-
     });
   }
 });
+
+describe("pedidos del propietario sobre la guía de remisión (2026-10-22)", () => {
+  const eligible = {
+    id: "inv-1",
+    documentNumber: "001-001-000000123",
+    issueDate: "2026-10-05",
+    buyerIdentification: "0992877878001",
+    buyerName: "EL PERNO CIA. LTDA.",
+    total: "115.00",
+  };
+
+  it("la factura elegida muestra sus datos, con cambiarla y cargar sus mercancías a la derecha", async () => {
+    const calls = render(<ShippingGuideDraftScreen draftId="grd-1" />, {
+      "GET /api/v1/shipping-guides/drafts/grd-1": ok(guideDraft()),
+      "GET /api/v1/shipping-guides/eligible-invoices": page([eligible]),
+    });
+    const card = await findRecipient(1);
+    // La factura del borrador guardado se busca por su número para mostrar sus datos.
+    expect(await within(card).findByText(/EL PERNO CIA\. LTDA\. ·/)).toBeDefined();
+    expect(within(card).getByText("$115,00")).toBeDefined();
+    expect(
+      calls.some(
+        (call) =>
+          call.key.startsWith("GET /api/v1/shipping-guides/eligible-invoices?") &&
+          call.key.includes("search=001-001-000000123"),
+      ),
+    ).toBe(true);
+    const change = within(card).getByRole("button", { name: "Cambiar factura" });
+    expect(change.getAttribute("data-variant")).toBe("primary");
+    const invoiceCard = change.closest("[data-slot=picked-card]") as HTMLElement;
+    expect(within(invoiceCard).getByText("Factura 001-001-000000123")).toBeDefined();
+    expect(
+      within(invoiceCard).getByRole("button", { name: "Cargar mercancías de la factura" }),
+    ).toBeDefined();
+  });
+
+  it("el destinatario es una ficha con «Cambiar destinatario» en azul y los controles van a todo el ancho", async () => {
+    render(<ShippingGuideDraftScreen draftId="grd-1" />, {
+      "GET /api/v1/shipping-guides/drafts/grd-1": ok(guideDraft()),
+    });
+    const card = await findRecipient(1);
+    const change = within(card).getByRole("button", { name: "Cambiar destinatario" });
+    expect(change.getAttribute("data-variant")).toBe("primary");
+    expect(
+      within(change.closest("[data-slot=picked-card]") as HTMLElement).getByText(
+        "EL PERNO CIA. LTDA.",
+      ),
+    ).toBeDefined();
+    for (const name of ["¿Quién transporta?", "Punto de partida"]) {
+      expect(screen.getByRole("radiogroup", { name }).className, name).toContain("w-full");
+    }
+    for (const name of ["Destinatario", "Comprobante de venta", "Detalle 1"]) {
+      expect(within(card).getByRole("radiogroup", { name }).className, name).toContain("w-full");
+    }
+    expect(screen.getByRole("textbox", { name: "Placa" }).className).not.toContain("max-w");
+    // El motivo es un área de texto; la ruta y el código de destino, en una fila.
+    expect(within(card).getByRole("textbox", { name: "Motivo del traslado" }).tagName).toBe(
+      "TEXTAREA",
+    );
+    const row = within(card).getByRole("textbox", { name: "Ruta (opcional)" }).closest(".grid");
+    expect(row?.className).toContain("sm:grid-cols-2");
+    expect(
+      within(row as HTMLElement).getByRole("textbox", {
+        name: "Código del establecimiento de destino (opcional)",
+      }),
+    ).toBeDefined();
+    for (const name of ["Agregar detalle", "Agregar destinatario"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button.className, name).toContain("w-full");
+      expect(button.className, name).toContain("border-dashed");
+    }
+  });
+
+  it("un destinatario guardado sin sustento muestra Factura elegida, sin cambios por guardar", async () => {
+    const base = guideDraft();
+    render(<ShippingGuideDraftScreen draftId="grd-1" />, {
+      "GET /api/v1/shipping-guides/drafts/grd-1": ok(
+        guideDraft({ recipients: [{ ...base.recipients[0]!, support: null }] }),
+      ),
+    });
+    const card = await findRecipient(1);
+    expect(
+      within(within(card).getByRole("radiogroup", { name: "Comprobante de venta" }))
+        .getByRole("radio", { name: "Factura" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+    expect(within(card).getByRole("button", { name: "Elegir factura" })).toBeDefined();
+    expect(screen.queryByText("Guarda los cambios antes de emitir.")).toBeNull();
+  });
+
+  it("un destinatario nuevo empieza con Factura como comprobante de venta", async () => {
+    render(<ShippingGuideDraftScreen draftId="grd-1" />, {
+      "GET /api/v1/shipping-guides/drafts/grd-1": ok(guideDraft()),
+    });
+    await findRecipient(1);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Agregar destinatario" }));
+    const fresh = recipientCard(2);
+    await user.click(within(fresh).getByRole("radio", { name: "Tercero" }));
+    expect(
+      within(within(fresh).getByRole("radiogroup", { name: "Comprobante de venta" }))
+        .getByRole("radio", { name: "Factura" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+    expect(within(fresh).getByRole("button", { name: "Elegir factura" })).toBeDefined();
+  });
+});
