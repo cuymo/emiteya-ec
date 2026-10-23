@@ -109,7 +109,9 @@ design D3). No screen builds its own header.
   the first save (informative tone), «Borrador» for a saved document draft (the neutral badge of
   the lists) and «Corrección» when correcting a record. Document editors use `EditorTitle`; the
   entity creation dialogs (tercero, usuario, establecimiento) pass the same badge to `FormDialog`.
-  Breadcrumbs keep their wording.
+  In a document editor the title row sits inside the form column, right above the fields
+  (`FormLayout`'s `header` in the invoice), so the summary rail starts beside it; the reason an
+  action is unavailable is centered below «Guardar borrador». Breadcrumbs keep their wording.
 - **Fixed rhythm:** the title block is at least 40px high, the height of the default button, with
   the title centered. The title lands on the same y with or without an action.
 - **Spacing:** 8px between the breadcrumb row and the title, and 24px from the header to the content
