@@ -6,7 +6,7 @@
 // (add-purchase-settlements, tarea 11.1, design D20): el filtro de tipo en la URL, el tipo bajo el
 // número, la contraparte (el proveedor, rotulado "Proveedor", en la liquidación) y el enlace al
 // detalle según el tipo.
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
@@ -14,6 +14,7 @@ import { DocumentsScreen } from "@/features/archive/documents-screen";
 import {
   ADMIN_ME,
   OPERATOR_ME,
+  chooseDate,
   errorBody,
   mockApi,
   navigation,
@@ -481,8 +482,9 @@ describe("Comprobantes", () => {
   it("dos fechas seguidas se acumulan aunque la primera todavía no esté en la URL", async () => {
     render({ "GET /api/v1/documents": paged([item()]) });
     await screen.findAllByText("001-001-000000001");
-    fireEvent.change(screen.getByLabelText("Desde"), { target: { value: "2026-12-31" } });
-    fireEvent.change(screen.getByLabelText("Hasta"), { target: { value: "2026-01-01" } });
+    const user = userEvent.setup();
+    await chooseDate(user, "Desde", "2026-12-31");
+    await chooseDate(user, "Hasta", "2026-01-01");
     const query = new URLSearchParams(navigation.replace.mock.lastCall![0].split("?")[1]);
     expect(Object.fromEntries(query)).toEqual({ desde: "2026-12-31", hasta: "2026-01-01" });
   });

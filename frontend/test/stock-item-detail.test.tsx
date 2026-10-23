@@ -2,7 +2,7 @@
 // el rol, diálogos con su validación, la clave de idempotencia repetida en el reintento, un solo
 // envío ante el doble clic, los 409 explicados, el foco tras cada acción, la confirmación para
 // desactivar y el rango inválido del kárdex.
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
@@ -10,6 +10,9 @@ import { StockItemDetailScreen } from "@/features/inventory/stock-item-detail";
 import {
   ADMIN_ME,
   OPERATOR_ME,
+  calendarDay,
+  chooseDate,
+  openCalendar,
   errorBody,
   mockApi,
   navigation,
@@ -366,10 +369,16 @@ describe("detalle del inventario", () => {
     expect(within(table).getByText("Sistema")).toBeDefined();
     expect(within(table).getByText("-2")).toBeDefined();
     const before = calls.length;
-    fireEvent.change(screen.getByLabelText("Desde"), { target: { value: "2026-10-15" } });
-    fireEvent.change(screen.getByLabelText("Hasta"), { target: { value: "2026-10-01" } });
-    expect((await screen.findAllByText("Revisa el rango de fechas")).length).toBeGreaterThan(0);
-    expect(screen.getByLabelText("Hasta").getAttribute("aria-invalid")).toBe("true");
+    // El calendario de «Hasta» no deja elegir un día anterior a «Desde»: el rango no se invierte.
+    const user = userEvent.setup();
+    await chooseDate(user, "Desde", "2026-10-15");
+    const calendar = await openCalendar(user, "Hasta", "2026-10-01");
+    expect(
+      within(calendar).getByRole("button", { name: calendarDay("2026-10-01") }),
+    ).toHaveProperty("disabled", true);
+    expect(
+      within(calendar).getByRole("button", { name: calendarDay("2026-10-20") }),
+    ).toHaveProperty("disabled", false);
     expect(
       calls
         .slice(before)

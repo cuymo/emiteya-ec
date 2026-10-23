@@ -1,6 +1,7 @@
 // Utilidades de prueba: proveedores reales de la aplicación, navegación simulada y un fetch que
 // responde por método y ruta, como lo haría el backend.
-import { render } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { vi } from "vitest";
 import { SemanticToaster } from "@/components/feedback";
@@ -64,4 +65,35 @@ export const OPERATOR_ME = {
 
 export function errorBody(code: string, message: string) {
   return { error: { code, message, requestId: "req-prueba-1" } };
+}
+
+const monthName = new Intl.DateTimeFormat("es-EC", { month: "long" });
+
+/** El nombre accesible de un día del calendario, como «15 de octubre de 2026», sin el día de la semana. */
+export const calendarDay = (iso: string) => {
+  const [year, month, day] = iso.split("-").map(Number);
+  const name = monthName.format(new Date(year!, month! - 1, 1));
+  return new RegExp(`\\b${day} de ${name} de ${year}`);
+};
+
+/** Abre el calendario de un `DatePickerField`, va al año y al mes de la fecha, y devuelve el calendario. */
+export async function openCalendar(user: UserEvent, label: string, iso: string) {
+  const [year, month] = iso.split("-").map(Number);
+  await user.click(screen.getByLabelText(label));
+  const calendar = await screen.findByRole("dialog");
+  await user.selectOptions(
+    within(calendar).getByRole("combobox", { name: "Elegir el año" }),
+    String(year),
+  );
+  await user.selectOptions(
+    within(calendar).getByRole("combobox", { name: "Elegir el mes" }),
+    String(month! - 1),
+  );
+  return calendar;
+}
+
+/** Elige una fecha en un `DatePickerField` como lo haría el usuario: con su calendario. */
+export async function chooseDate(user: UserEvent, label: string, iso: string) {
+  const calendar = await openCalendar(user, label, iso);
+  await user.click(within(calendar).getByRole("button", { name: calendarDay(iso) }));
 }
