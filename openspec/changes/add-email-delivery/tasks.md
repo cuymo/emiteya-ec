@@ -39,7 +39,7 @@ al terminarlo.
 ## 6. Fase 6 · Despliegue
 
 - [x] 6.1 Agregar `deploy/compose.smtp-egress.yaml` (red de salida propia, separada de la del SRI) y `deploy/compose.mailpit.yaml` (imagen fija, SMTP solo interno, página solo en `127.0.0.1`, `EMAIL_DELIVERY_ENABLED=1` y `EMAIL_ALLOW_PLAINTEXT_SMTP=1`), y documentarlos en `docs/architecture/deployment.md` con la recomendación de firewall y de SPF, DKIM y DMARC; verificar con `docker compose config` de la topología por defecto (sin cambios ni salida) y de cada override.
-- [ ] 6.2 Comprobar en el despliegue local de revisión con Mailpit, con `SRI_TRANSMISSION_ENABLED=0` verificado y sin ninguna conexión al SRI: la configuración del correo, el correo de prueba y el reenvío de un comprobante ya autorizado de la base local, visibles en Mailpit con sus dos adjuntos; registrar la evidencia sin datos sensibles.
+- [x] 6.2 Comprobar en el despliegue local de revisión con Mailpit, con `SRI_TRANSMISSION_ENABLED=0` verificado y sin ninguna conexión al SRI: la configuración del correo, el correo de prueba y el reenvío de un comprobante ya autorizado de la base local, visibles en Mailpit con sus dos adjuntos; registrar la evidencia sin datos sensibles.
 
 ## 7. Fase 7 · Documentación del backend
 
