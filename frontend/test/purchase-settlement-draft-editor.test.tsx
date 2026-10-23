@@ -177,11 +177,8 @@ describe("borrador de liquidación de compra", () => {
     expect((within(payment).getByLabelText("Plazo") as HTMLInputElement).value).toBe("");
     expect((within(payment).getByLabelText("Unidad de tiempo") as HTMLInputElement).value).toBe("");
     expect((within(lineCard(1)).getByLabelText("IVA") as HTMLSelectElement).value).toBe("");
-    await waitFor(() =>
-      expect(
-        (screen.getByRole("combobox", { name: "Punto de emisión" }) as HTMLSelectElement).value,
-      ).toBe("pto-1"),
-    );
+    // Con un solo punto en la empresa, el punto predeterminado se muestra como dato.
+    expect(await screen.findByText("001-001")).toBeDefined();
     // La vista previa informa lo que falta, y la emisión queda bloqueada hasta guardar.
     expect(screen.getByRole("button", { name: "Emitir liquidación de compra" })).toHaveProperty(
       "disabled",
@@ -428,7 +425,7 @@ describe("borrador de liquidación de compra", () => {
     expect(within(paymentRow(2)).getByText("Pago 2: escribe el plazo.")).toBeDefined();
     const summary = screen.getByRole("complementary", { name: "Resumen" });
     expect(within(summary).getByText(/faltan 6\.00/)).toBeDefined();
-    expect(screen.getByText("Pagos USD 100,00 de un importe total de USD 106,00.")).toBeDefined();
+    expect(screen.getByText("Pagos $100,00 de un importe total de $106,00.")).toBeDefined();
     expect(screen.getByRole("button", { name: "Emitir liquidación de compra" })).toHaveProperty(
       "disabled",
       true,
@@ -441,10 +438,10 @@ describe("borrador de liquidación de compra", () => {
       "GET /api/v1/purchase-settlements/drafts/lcd-1": ok(settlementDraft()),
     });
     const summary = await screen.findByRole("complementary", { name: "Resumen" });
-    await within(summary).findByText("USD 106,00");
+    await within(summary).findByText("$106,00");
     expect(within(summary).getByText("Subtotal 15%")).toBeDefined();
     expect(within(summary).getByText("IVA 15 %")).toBeDefined();
-    expect(within(summary).getByText("USD 6,00")).toBeDefined();
+    expect(within(summary).getByText("$6,00")).toBeDefined();
     expect(
       within(summary).getByText(
         "Esta operación requiere la retención correspondiente conforme a la normativa aplicable.",
@@ -453,9 +450,7 @@ describe("borrador de liquidación de compra", () => {
     // El aviso no presenta la retención como emitida.
     expect(within(summary).queryByText(/retención (emitida|asociada|registrada)/i)).toBeNull();
     for (const text of STATEMENT_TEXTS) expect(within(summary).getByText(text)).toBeDefined();
-    expect(
-      within(lineCard(1)).getByText(/Base imponible USD 40,00 · IVA 15 % USD 6,00/),
-    ).toBeDefined();
+    expect(within(lineCard(1)).getByText(/Base imponible \$40,00 · IVA 15 % \$6,00/)).toBeDefined();
   });
 
   it("emitir pide las cuatro declaraciones por separado, sin casilla genérica, y lleva al detalle", async () => {
@@ -628,6 +623,27 @@ function NewPurchaseSettlement() {
     </>
   );
 }
+
+describe("pedidos del propietario sobre la liquidación (2026-10-22)", () => {
+  it("el proveedor es una ficha con «Cambiar proveedor» en azul, y las líneas siguen el diseño de los otros editores", async () => {
+    render(<PurchaseSettlementDraftScreen draftId="lcd-1" />, {
+      "GET /api/v1/purchase-settlements/drafts/lcd-1": ok(settlementDraft()),
+    });
+    const change = await screen.findByRole("button", { name: "Cambiar proveedor" });
+    expect(change.getAttribute("data-variant")).toBe("primary");
+    // Con producto, «Quitar producto» ocupa el cuarto de la fila; la descripción es un área de texto.
+    const line = lineCard(1);
+    expect(within(line).getByRole("button", { name: /Quitar el producto/ }).className).toContain(
+      "text-danger",
+    );
+    expect(within(line).getByRole("textbox", { name: "Descripción" }).tagName).toBe("TEXTAREA");
+    for (const name of ["Agregar línea", "Agregar pago"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button.className, name).toContain("w-full");
+      expect(button.className, name).toContain("border-dashed");
+    }
+  });
+});
 
 describe("nueva liquidación de compra sobre la lista (decisión del propietario, 2026-10-22)", () => {
   it("el botón prepara el borrador con el punto predeterminado y abre su editor", async () => {

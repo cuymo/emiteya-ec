@@ -6,13 +6,14 @@
 // propuestos.
 "use client";
 
-import type {
-  ProductView,
-  PurchaseSettlementDraftView,
-  PurchaseSettlementIssue,
-  PurchaseSettlementOptionsView,
+import {
+  PURCHASE_SETTLEMENT_TEXT_MAX,
+  type ProductView,
+  type PurchaseSettlementDraftView,
+  type PurchaseSettlementIssue,
+  type PurchaseSettlementOptionsView,
 } from "@facturador/contracts";
-import { ChevronDown, Trash2, X } from "lucide-react";
+import { ChevronDown, PackageSearch, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 import { RowActionButton } from "@/components/data-table/table-controls";
@@ -21,7 +22,10 @@ import { fieldAria, FormField } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { formatPercentage, formatUsd } from "@/lib/decimal";
+import { SingleLineTextarea } from "@/components/single-line-textarea";
+import { formatMoney } from "@/components/money";
+import { formatPercentage } from "@/lib/decimal";
+import { cn } from "@/lib/utils";
 import type { FormValues } from "./purchase-settlement-draft-form";
 import { PURCHASE_SETTLEMENTS_KEY, fetchPurchaseProducts } from "./purchase-settlements-api";
 
@@ -79,7 +83,9 @@ export function LineCard({
     set(`${base}.productId`, "");
     set(`${base}.productName`, "");
   };
-  const descriptionHint = "Lo que se compra, como figurará en el comprobante.";
+  const descriptionHint = `Lo que se compra, como figurará en el comprobante, en una sola línea · ${
+    (line.description ?? "").length
+  }/${PURCHASE_SETTLEMENT_TEXT_MAX.description}`;
   const unitHint = "Opcional. Por ejemplo: kg, saco, jornal.";
   return (
     <li
@@ -90,13 +96,25 @@ export function LineCard({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Línea {position}</h3>
         {canRemove && (
-          <RowActionButton icon={Trash2} label={`Quitar la línea ${position}`} onClick={onRemove} />
+          <RowActionButton
+            icon={Trash2}
+            tone="danger"
+            label={`Quitar la línea ${position}`}
+            onClick={onRemove}
+          />
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      {/* El producto y «Quitar producto» en tres cuartos y un cuarto; sin producto, la elección
+          ocupa toda la fila (decisión del propietario, 2026-10-22). */}
+      <div
+        className={cn(
+          "grid gap-2 text-sm",
+          line.productId && "sm:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]",
+        )}
+      >
         <Button
           variant="outline"
-          className="h-auto min-h-8 justify-between text-left font-normal whitespace-normal"
+          className="h-auto min-h-10 w-full justify-between text-left font-normal whitespace-normal"
           aria-label={
             line.productId
               ? `Cambiar el producto de la línea ${position}: ${line.productName}`
@@ -104,7 +122,8 @@ export function LineCard({
           }
           onClick={() => setChoosing(true)}
         >
-          <span className="min-w-0 break-words">
+          <span className="flex min-w-0 items-center gap-2 break-words">
+            <PackageSearch aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
             {line.productId
               ? `Producto: ${line.productName || "elegido"}`
               : "Elegir producto (opcional)"}
@@ -113,7 +132,8 @@ export function LineCard({
         </Button>
         {line.productId && (
           <Button
-            variant="ghost"
+            variant="outline"
+            className="min-h-10 w-full text-danger hover:bg-danger/10 hover:text-danger"
             aria-label={`Quitar el producto de la línea ${position}`}
             onClick={clearProduct}
           >
@@ -176,8 +196,8 @@ export function LineCard({
         hint={descriptionHint}
         error={errors?.description?.message}
       >
-        <Input
-          autoComplete="off"
+        <SingleLineTextarea
+          maxLength={PURCHASE_SETTLEMENT_TEXT_MAX.description}
           {...fieldAria(id("descripcion"), errors?.description?.message, descriptionHint)}
           {...form.register(`${base}.description`)}
         />
@@ -254,8 +274,8 @@ export function LineCard({
       </div>
       {previewLine?.tax && (
         <p className="text-sm text-foreground-muted tabular-nums">
-          Base imponible {formatUsd(previewLine.taxableBase)} · IVA{" "}
-          {formatPercentage(previewLine.tax.percentage)} {formatUsd(previewLine.tax.amount)}
+          Base imponible {formatMoney(previewLine.taxableBase)} · IVA{" "}
+          {formatPercentage(previewLine.tax.percentage)} {formatMoney(previewLine.tax.amount)}
         </p>
       )}
       <IssueList issues={issues} />
@@ -294,7 +314,12 @@ export function PaymentRow({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Pago {position}</h3>
         {canRemove && (
-          <RowActionButton icon={Trash2} label={`Quitar el pago ${position}`} onClick={onRemove} />
+          <RowActionButton
+            icon={Trash2}
+            tone="danger"
+            label={`Quitar el pago ${position}`}
+            onClick={onRemove}
+          />
         )}
       </div>
       <div className="grid gap-2 sm:grid-cols-2">

@@ -39,6 +39,7 @@ import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { formatMoney, Money } from "@/components/money";
 import { useSession } from "@/components/session";
+import { SingleLineTextarea } from "@/components/single-line-textarea";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -571,7 +572,6 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                 const current = values[index];
                 const conceptError = errors.concepts?.[index];
                 const problems = fresh ? conceptIssues(position) : [];
-                const description = form.register(`concepts.${index}.description`);
                 const descriptionHint = `Aparece en la nota de débito en una sola línea · ${
                   (current?.description ?? "").length
                 }/${DEBIT_NOTE_DESCRIPTION_MAX}`;
@@ -655,26 +655,14 @@ function DraftEditor({ draft, canEmit }: { draft: DebitNoteDraftView; canEmit: b
                       hint={descriptionHint}
                       error={conceptError?.description?.message}
                     >
-                      <textarea
-                        rows={3}
+                      <SingleLineTextarea
                         maxLength={DEBIT_NOTE_DESCRIPTION_MAX}
                         {...fieldAria(
                           `descripcion-${field.id}`,
                           conceptError?.description?.message,
                           descriptionHint,
                         )}
-                        {...description}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") event.preventDefault();
-                        }}
-                        onChange={(event) => {
-                          // Los saltos de línea pegados se vuelven espacios.
-                          if (/[\r\n]/.test(event.target.value)) {
-                            event.target.value = event.target.value.replace(/[\r\n]+/g, " ");
-                          }
-                          void description.onChange(event);
-                        }}
-                        className="min-h-24 w-full min-w-0 resize-y rounded-md border border-input bg-surface px-3 py-2 text-base text-foreground sm:text-sm aria-invalid:border-danger"
+                        {...form.register(`concepts.${index}.description`)}
                       />
                     </FormField>
                     <IssueList issues={problems} />

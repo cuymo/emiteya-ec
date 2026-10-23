@@ -21,31 +21,30 @@ import {
   type PurchaseSettlementStatement,
   type PurchaseSettlementSupplierView,
 } from "@facturador/contracts";
-import { Info, Plus, UserRound } from "lucide-react";
+import { Info, Plus, Save, Send, UserRound, UserRoundPen, UserSearch } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
+import { AddRowButton } from "@/components/add-row-button";
 import { AsyncButton } from "@/components/async-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { errorMessage } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
+import { formatMoney, Money } from "@/components/money";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatPercentage, formatUsd } from "@/lib/decimal";
+import { formatPercentage } from "@/lib/decimal";
 import { canSee } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { EmissionEnvironmentNotice } from "@/features/company/emission-environment-notice";
-import {
-  DEFAULT_POINT_KEY,
-  pointLabel,
-  useEstablishments,
-} from "@/features/establishments/establishments-api";
+import { DEFAULT_POINT_KEY, useEstablishments } from "@/features/establishments/establishments-api";
+import { EstablishmentPointFields } from "@/features/establishments/establishment-point-fields";
 import { formatIssueDate } from "@/features/invoices/invoice-format";
 import { PartyDialog } from "@/features/parties/party-dialog";
 import {
@@ -296,15 +295,6 @@ function DraftEditor({
     },
   });
 
-  const points = (establishments.data ?? []).flatMap((establishment) =>
-    establishment.emissionPoints
-      .filter((point) => point.available || point.id === pointId)
-      .map((point) => ({
-        id: point.id,
-        label: `${pointLabel(establishment, point)} · ${establishment.address}`,
-      })),
-  );
-
   const preview = draft.preview;
   const fresh = !isDirty;
   const issues = preview.issues;
@@ -368,7 +358,7 @@ function DraftEditor({
   /** Lo que falta o sobra de los pagos frente al importe total, según la vista previa. */
   const paymentsDifference =
     fresh && totals && preview.paymentsTotal !== null
-      ? `Pagos ${formatUsd(preview.paymentsTotal)} de un importe total de ${formatUsd(totals.total)}.`
+      ? `Pagos ${formatMoney(preview.paymentsTotal)} de un importe total de ${formatMoney(totals.total)}.`
       : null;
 
   return (
@@ -381,45 +371,60 @@ function DraftEditor({
 
       <form noValidate onSubmit={onSave} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
-          <Section title="Punto de emisión">
-            <FormField id="punto" label="Punto de emisión">
-              <Select
-                {...fieldAria("punto", undefined)}
-                value={pointId}
-                onChange={(event) =>
-                  form.setValue("emissionPointId", event.target.value, { shouldDirty: true })
-                }
-              >
-                <option value="">Elige un punto</option>
-                {points.map((point) => (
-                  <option key={point.id} value={point.id}>
-                    {point.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
+          <Section title="Establecimiento y punto de emisión">
+            <EstablishmentPointFields
+              establishments={establishments.data ?? []}
+              pointId={pointId}
+              onPointChange={(next) =>
+                form.setValue("emissionPointId", next, { shouldDirty: true })
+              }
+            />
           </Section>
 
           <Section title="Proveedor">
             <p className="text-sm text-foreground-muted">
               Una persona natural con cédula o pasaporte y el rol de proveedor en Terceros.
             </p>
-            {supplier ? (
-              <p className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
-                <UserRound aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-                <span className="flex min-w-0 flex-col">
-                  <span className="font-medium break-words">{supplier.legalName}</span>
-                  <span className="text-foreground-muted tabular-nums">
-                    {supplier.identification}
-                  </span>
+            {/* El proveedor como una ficha: su ícono grande, sus datos y, en la misma fila, el botón
+                para elegirlo o cambiarlo (decisión del propietario, 2026-10-22). */}
+            <div
+              className={cn(
+                "flex flex-wrap items-center justify-between gap-3 rounded-md border bg-surface px-3 py-3 sm:flex-nowrap",
+                supplier ? "border-border" : "border-dashed",
+              )}
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "flex size-10 shrink-0 items-center justify-center rounded-full",
+                    supplier ? "bg-primary/10 text-primary" : "bg-muted text-foreground-muted",
+                  )}
+                >
+                  <UserRound className="size-5" />
                 </span>
-              </p>
-            ) : (
-              <p className="text-sm text-foreground-muted">Todavía no elegiste el proveedor.</p>
-            )}
-            <Button variant="outline" className="self-start" onClick={() => setChoosing(true)}>
-              {supplier ? "Cambiar proveedor" : "Elegir proveedor"}
-            </Button>
+                {supplier ? (
+                  <span className="flex min-w-0 flex-col">
+                    <span className="font-medium break-words">{supplier.legalName}</span>
+                    <span className="text-sm text-foreground-muted tabular-nums">
+                      {supplier.identification}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-sm text-foreground-muted">
+                    Todavía no elegiste el proveedor.
+                  </span>
+                )}
+              </span>
+              <Button variant="primary" className="shrink-0" onClick={() => setChoosing(true)}>
+                {supplier ? (
+                  <UserRoundPen aria-hidden="true" data-icon="inline-start" />
+                ) : (
+                  <UserSearch aria-hidden="true" data-icon="inline-start" />
+                )}
+                {supplier ? "Cambiar proveedor" : "Elegir proveedor"}
+              </Button>
+            </div>
             <SupplierChooser open={choosing} onOpenChange={setChoosing} onChoose={chooseSupplier} />
             <FormField
               id="direccion-proveedor"
@@ -452,16 +457,14 @@ function DraftEditor({
                 />
               ))}
             </ol>
-            <Button
+            <AddRowButton
               ref={addLineRef}
-              variant="outline"
-              className="self-start"
               disabled={lines.fields.length >= limits.lines}
               onClick={() => lines.append(blankLine())}
             >
-              <Plus aria-hidden="true" />
+              <Plus aria-hidden="true" data-icon="inline-start" />
               Agregar línea
-            </Button>
+            </AddRowButton>
             {lines.fields.length >= limits.lines && (
               <p className="text-xs text-foreground-muted">
                 Llegaste al máximo de {limits.lines} líneas por liquidación, un límite del sistema
@@ -488,16 +491,14 @@ function DraftEditor({
                 />
               ))}
             </ol>
-            <Button
+            <AddRowButton
               ref={addPaymentRef}
-              variant="outline"
-              className="self-start"
               disabled={payments.fields.length >= limits.payments}
               onClick={() => payments.append(blankPayment())}
             >
-              <Plus aria-hidden="true" />
+              <Plus aria-hidden="true" data-icon="inline-start" />
               Agregar pago
-            </Button>
+            </AddRowButton>
             {payments.fields.length >= limits.payments && (
               <p className="text-xs text-foreground-muted">
                 Llegaste al máximo de {limits.payments} pagos por liquidación, un límite del sistema
@@ -544,23 +545,25 @@ function DraftEditor({
                       {totals.taxes.map((tax) => (
                         <div key={`base-${tax.rateCode}`} className="contents">
                           <dt>Subtotal {tax.label}</dt>
-                          <dd className="text-right">{formatUsd(tax.base)}</dd>
+                          <dd className="text-right">{formatMoney(tax.base)}</dd>
                         </div>
                       ))}
                       <dt>Subtotal sin impuestos</dt>
-                      <dd className="text-right">{formatUsd(totals.withoutTaxes)}</dd>
+                      <dd className="text-right">{formatMoney(totals.withoutTaxes)}</dd>
                       <dt>Descuento</dt>
-                      <dd className="text-right">{formatUsd(totals.discount)}</dd>
+                      <dd className="text-right">{formatMoney(totals.discount)}</dd>
                       {totals.taxes
                         .filter((tax) => tax.rateKind === "PERCENTAGE" && tax.percentage !== "0")
                         .map((tax) => (
                           <div key={`iva-${tax.rateCode}`} className="contents">
                             <dt>IVA {formatPercentage(tax.percentage)}</dt>
-                            <dd className="text-right">{formatUsd(tax.amount)}</dd>
+                            <dd className="text-right">{formatMoney(tax.amount)}</dd>
                           </div>
                         ))}
                       <dt className="font-semibold">Importe total</dt>
-                      <dd className="text-right font-semibold">{formatUsd(totals.total)}</dd>
+                      <dd className="text-right text-lg font-semibold text-money">
+                        {formatMoney(totals.total)}
+                      </dd>
                     </>
                   ) : (
                     <>
@@ -607,6 +610,7 @@ function DraftEditor({
                   setConfirming(true);
                 }}
               >
+                <Send aria-hidden="true" data-icon="inline-start" />
                 Emitir liquidación de compra
               </Button>
             )}
@@ -616,6 +620,7 @@ function DraftEditor({
               </p>
             )}
             <AsyncButton type="submit" variant="outline" pending={save.isPending}>
+              <Save aria-hidden="true" data-icon="inline-start" />
               Guardar borrador
             </AsyncButton>
           </div>
@@ -667,7 +672,9 @@ function DraftEditor({
                   : "—"}
               </dd>
               <dt className="text-foreground-muted">Importe total</dt>
-              <dd className="tabular-nums max-sm:mb-1">{totals ? formatUsd(totals.total) : "—"}</dd>
+              <dd className="tabular-nums max-sm:mb-1">
+                {totals ? <Money amount={totals.total} /> : "—"}
+              </dd>
               <dt className="text-foreground-muted">Líneas y pagos</dt>
               <dd className="max-sm:mb-1">
                 {draft.lines.length === 1 ? "1 línea" : `${draft.lines.length} líneas`} ·{" "}

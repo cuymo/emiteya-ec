@@ -271,6 +271,24 @@ Un usuario SHALL preparar la liquidación en un borrador: el punto de emisión, 
 - **WHEN** un usuario emite con una versión del borrador que otro cambio ya reemplazó
 - **THEN** el sistema rechaza la emisión indicando que el borrador cambió, sin reservar número
 
+### Requirement: Editor de la liquidación de compra
+El editor SHALL seguir el diseño de los demás editores: el establecimiento y el punto de emisión en
+dos selectores lado a lado, con el punto solo entre los del establecimiento elegido; el proveedor en
+una ficha con su ícono grande y, en la misma fila, «Elegir proveedor» o «Cambiar proveedor» en el
+azul primario. En cada línea, el producto y «Quitar producto» SHALL ocupar la fila en tres cuartos y
+un cuarto, y la elección del producto toda la fila cuando no hay uno; la descripción SHALL escribirse
+en un área de texto que muestra cuántos de los 300 caracteres lleva y que no admite saltos de línea.
+«Agregar línea» y «Agregar pago» SHALL verse como «Dividir el pago» en la factura, y quitar una línea
+o un pago SHALL ir en rojo. Los importes SHALL mostrarse con «$», y el importe total en verde.
+
+#### Scenario: Línea con producto
+- **WHEN** un operador elige un producto para una línea
+- **THEN** la fila muestra el producto en tres cuartos y «Quitar producto» en el cuarto restante
+
+#### Scenario: Proveedor elegido
+- **WHEN** el borrador ya tiene proveedor
+- **THEN** su ficha muestra su nombre y su identificación, con «Cambiar proveedor» en azul a la derecha
+
 ### Requirement: Reserva de la liquidación sin efectos parciales
 La reserva de una liquidación SHALL ocurrir en una sola transacción, sin I/O externo: el secuencial, la clave, el comprobante, el registro de la liquidación con su proveedor y sus cuatro declaraciones, el borrador emitido, el registro de idempotencia y la auditoría. Si cualquier paso falla, no queda nada de lo anterior. Las comprobaciones que no consumen número ocurren antes.
 
