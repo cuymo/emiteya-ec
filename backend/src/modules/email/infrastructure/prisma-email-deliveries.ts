@@ -100,6 +100,58 @@ export function createEmailDeliveryRepository(
       });
     },
 
+    async listByDocument(companyId, documentId) {
+      const rows = await db.emailDelivery.findMany({
+        where: { companyId, documentId },
+        include: {
+          requester: { select: { name: true } },
+          attempts: {
+            select: { number: true, at: true, outcome: true, smtpCode: true },
+            orderBy: { number: "asc" },
+          },
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      });
+      return rows.map((row) => ({
+        ...toDeliveryRecord(row),
+        requesterName: row.requester?.name ?? null,
+        attempts: row.attempts.map((attempt) => ({
+          number: attempt.number,
+          at: attempt.at,
+          outcome: attempt.outcome as "SENT" | "RETRYABLE" | "DETERMINISTIC",
+          smtpCode: attempt.smtpCode,
+        })),
+      }));
+    },
+
+    async lockIdempotencyKey(companyId, key) {
+      await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`email-resend:${companyId}:${key}`}))`;
+    },
+
+    async findByIdempotencyKey(companyId, key) {
+      const row = await db.emailDelivery.findFirst({ where: { companyId, idempotencyKey: key } });
+      return row ? { ...toDeliveryRecord(row), requestFingerprint: row.requestFingerprint } : null;
+    },
+
+    async createManual(input) {
+      const row = await db.emailDelivery.create({
+        data: {
+          companyId: input.companyId,
+          documentId: input.documentId,
+          origin: "MANUAL",
+          requestedBy: input.requestedBy,
+          idempotencyKey: input.idempotencyKey,
+          requestFingerprint: input.requestFingerprint,
+          environment: input.environment,
+          testRedirect: input.testRedirect,
+          status: "PENDING",
+          recipients: input.recipients.map((address) => ({ address, outcome: null, reason: null })),
+          createdAt: input.at,
+        },
+      });
+      return toDeliveryRecord(row);
+    },
+
     async recordAttempt(companyId, deliveryId, attempt, update) {
       await db.emailDeliveryAttempt.create({
         data: {

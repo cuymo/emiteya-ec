@@ -256,7 +256,11 @@ import {
 } from "../data-portability.ts";
 import { dashboardViewSchema } from "../dashboard.ts";
 import {
+  emailDeliveryViewSchema,
+  emailRecipientsViewSchema,
   emailSettingsResponseSchema,
+  resendEmailHeadersSchema,
+  resendEmailSchema,
   sendTestEmailSchema,
   testEmailResultSchema,
   updateEmailSettingsSchema,
@@ -1643,6 +1647,70 @@ export const apiRoutes: readonly RouteDefinition[] = [
       409: {
         description:
           "El RIDE ya existe (RIDE_ALREADY_AVAILABLE), su generación está programada o en curso (RIDE_GENERATION_IN_PROGRESS) o el comprobante no está autorizado (DOCUMENT_NOT_AUTHORIZED).",
+        schema: errorEnvelopeSchema,
+      },
+    },
+  }),
+  // Envíos por correo de un comprobante (add-email-delivery, design D10).
+  defineRoute({
+    method: "get",
+    path: "/documents/:documentId/email-deliveries",
+    summary: "Consultar el historial de envíos por correo de un comprobante",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      200: {
+        description:
+          "Los envíos, del más reciente al más antiguo, con su estado, sus direcciones, su origen, su motivo y sus intentos; sin el contenido del correo ni la configuración.",
+        schema: successEnvelope(z.array(emailDeliveryViewSchema)),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotFound,
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/documents/:documentId/email-recipients",
+    summary:
+      "Consultar las direcciones propuestas para enviar o reenviar el correo de un comprobante",
+    request: { params: documentIdParamsSchema },
+    responses: {
+      200: {
+        description:
+          "Los correos vigentes de sus receptores, el ambiente y, en Pruebas, el correo de prueba al que irá.",
+        schema: successEnvelope(emailRecipientsViewSchema),
+      },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotFound,
+    },
+  }),
+  defineRoute({
+    method: "post",
+    path: "/documents/:documentId/email-deliveries",
+    summary: "Enviar o reenviar por correo un comprobante autorizado a las direcciones dadas",
+    request: {
+      params: documentIdParamsSchema,
+      headers: resendEmailHeadersSchema,
+      body: resendEmailSchema,
+    },
+    responses: {
+      202: {
+        description:
+          "Envío programado. La misma clave con la misma solicitud devuelve el mismo envío. En Pruebas va solo al correo de prueba.",
+        schema: successEnvelope(emailDeliveryViewSchema),
+      },
+      400: {
+        description:
+          "Direcciones inválidas o repetidas, más de 10, o sin la cabecera Idempotency-Key (IDEMPOTENCY_KEY_REQUIRED).",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: documentNotFound,
+      409: {
+        description:
+          "El comprobante no está autorizado (DOCUMENT_NOT_AUTHORIZED), el envío está desactivado en el despliegue (EMAIL_DELIVERY_DISABLED), la empresa no tiene servidor de correo (EMAIL_NOT_CONFIGURED), falta el correo de prueba de un comprobante de Pruebas (EMAIL_TEST_RECIPIENT_MISSING) o la clave ya se usó con otra solicitud (IDEMPOTENCY_KEY_REUSED).",
         schema: errorEnvelopeSchema,
       },
     },

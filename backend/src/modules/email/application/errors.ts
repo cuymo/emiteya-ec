@@ -1,6 +1,6 @@
 // Errores del correo con código estable para la API (add-email-delivery, design D10). Ningún mensaje
 // incluye la contraseña ni la respuesta técnica completa del servidor de correo.
-import { AppError, ConflictError } from "../../../platform/http/errors.ts";
+import { AppError, ConflictError, NotFoundError } from "../../../platform/http/errors.ts";
 
 export const emailSettingsChanged = () =>
   new ConflictError(
@@ -55,4 +55,25 @@ export const emailTestRateLimited = () =>
     "EMAIL_TEST_RATE_LIMITED",
     429,
     `Puedes enviar hasta ${TEST_EMAILS_PER_MINUTE} correos de prueba por minuto. Espera un momento.`,
+  );
+
+export const documentNotFound = () =>
+  new NotFoundError("DOCUMENT_NOT_FOUND", "El comprobante no existe.");
+
+export const documentNotAuthorized = () =>
+  new ConflictError(
+    "DOCUMENT_NOT_AUTHORIZED",
+    "Solo se envía por correo un comprobante autorizado por el SRI.",
+  );
+
+export const emailTestRecipientMissing = () =>
+  new ConflictError(
+    "EMAIL_TEST_RECIPIENT_MISSING",
+    "Este comprobante es del ambiente de Pruebas: configura el correo de prueba para enviarlo.",
+  );
+
+export const emailIdempotencyKeyReused = () =>
+  new ConflictError(
+    "IDEMPOTENCY_KEY_REUSED",
+    "Esta clave de idempotencia ya se usó con otro envío. Genera una clave nueva para otro reenvío.",
   );

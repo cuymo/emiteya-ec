@@ -41,6 +41,7 @@ export function createDeliverableDocumentSource(db: DbClient) {
         issueDate: document.issueDate,
         accessKey: document.accessKey,
         state: document.state,
+        environment: document.authorization?.environment ?? document.environment,
         authorization: document.authorization
           ? {
               number: document.authorization.number,

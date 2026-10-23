@@ -3,14 +3,12 @@
 import type { Registry } from "@prometheus-io/client";
 import type { CertificateCustodyConfig } from "../../../config/env.ts";
 import type { PrismaClient } from "../../../generated/prisma/client.ts";
-import type { DbClient } from "../../../platform/db/database.ts";
 import type { JobStore } from "../../../platform/jobs/jobs.ts";
 import type { JobHandler } from "../../../platform/jobs/runner.ts";
 import type { Authorizer } from "../../identity/application/authorization.ts";
 import {
   EMAIL_SEND_JOB_TYPE,
   emailRideFollower,
-  type AuthorizedDocumentRef,
   type EmailJobSettings,
 } from "../application/automatic.ts";
 import type {
@@ -19,6 +17,7 @@ import type {
   MailTransport,
   PartyEmailReader,
 } from "../application/ports.ts";
+import { createDocumentDeliveries } from "../application/document-deliveries.ts";
 import { createSendDocumentHandler } from "../application/send-handler.ts";
 import { createEmailSettings } from "../application/settings.ts";
 import { createTestEmail } from "../application/test-email.ts";
@@ -43,7 +42,7 @@ export type EmailModuleOptions = Readonly<{
   /** El esquema de la conexión, para el SQL que califica sus tablas (como la cola). */
   schema?: string;
   /** El envío de los comprobantes: su cola y las fuentes que exportan `fiscal` y `parties`. */
-  delivery?: Readonly<{
+  delivery: Readonly<{
     jobs: JobStore;
     documents: DeliverableDocumentReader;
     parties: PartyEmailReader;
@@ -91,46 +90,52 @@ export function emailModule(options: EmailModuleOptions) {
   });
   const schema = options.schema ?? "public";
   const { delivery } = options;
-  const rideFollowers: ((
-    db: DbClient,
-    document: AuthorizedDocumentRef,
-    at: Date,
-  ) => Promise<void>)[] = delivery
-    ? [
-        emailRideFollower({
-          repositories: (db) => ({
-            deliveries: createEmailDeliveryRepository(db, schema),
-            settings: createEmailSettingsRepository(db),
-          }),
-          jobs: delivery.jobs,
-          policy: options.policy,
-          settings: delivery.job,
-        }),
-      ]
-    : [];
-  const handlers: Record<string, JobHandler> = delivery
-    ? {
-        [EMAIL_SEND_JOB_TYPE]: createSendDocumentHandler({
-          deliveries: createEmailDeliveryRepository(options.prisma, schema),
-          settings: repository,
-          documents: delivery.documents,
-          parties: delivery.parties,
-          vault,
-          transport,
-          uow: createEmailDeliveryUnitOfWork(options.prisma, schema),
-          jobs: delivery.jobs,
-          policy: options.policy,
-          settingsOfJob: delivery.job,
-          ...(delivery.metrics
-            ? { observer: registerEmailMetrics(delivery.metrics, options.policy) }
-            : {}),
-          logger: delivery.logger,
-          ...(delivery.random ? { random: delivery.random } : {}),
-        }),
-      }
-    : {};
+  const deliveries = createEmailDeliveryRepository(options.prisma, schema);
+  const deliveryUow = createEmailDeliveryUnitOfWork(options.prisma, schema);
+  const rideFollowers = [
+    emailRideFollower({
+      repositories: (db) => ({
+        deliveries: createEmailDeliveryRepository(db, schema),
+        settings: createEmailSettingsRepository(db),
+      }),
+      jobs: delivery.jobs,
+      policy: options.policy,
+      settings: delivery.job,
+    }),
+  ];
+  const handlers: Record<string, JobHandler> = {
+    [EMAIL_SEND_JOB_TYPE]: createSendDocumentHandler({
+      deliveries,
+      settings: repository,
+      documents: delivery.documents,
+      parties: delivery.parties,
+      vault,
+      transport,
+      uow: deliveryUow,
+      jobs: delivery.jobs,
+      policy: options.policy,
+      settingsOfJob: delivery.job,
+      ...(delivery.metrics
+        ? { observer: registerEmailMetrics(delivery.metrics, options.policy) }
+        : {}),
+      logger: delivery.logger,
+      ...(delivery.random ? { random: delivery.random } : {}),
+    }),
+  };
+  const documents = createDocumentDeliveries({
+    deliveries,
+    uow: deliveryUow,
+    settings: repository,
+    documents: delivery.documents,
+    parties: delivery.parties,
+    jobs: delivery.jobs,
+    authorizer: options.authorizer,
+    policy: options.policy,
+    jobSettings: delivery.job,
+    ...(options.now ? { now: options.now } : {}),
+  });
   return {
-    routers: [emailRouter({ settings, testEmail })],
+    routers: [emailRouter({ settings, testEmail, documents })],
     settings,
     transport,
     rideFollowers,

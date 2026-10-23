@@ -175,7 +175,40 @@ export interface EmailDeliveryRepository {
     attempt: DeliveryAttempt,
     update: DeliveryUpdate,
   ): Promise<void>;
+  /** Los envíos de un comprobante, del más reciente al más antiguo, con sus intentos. */
+  listByDocument(companyId: string, documentId: string): Promise<EmailDeliveryHistoryEntry[]>;
+  /** Serializa los reenvíos con la misma clave en la empresa, dentro de la transacción. */
+  lockIdempotencyKey(companyId: string, key: string): Promise<void>;
+  findByIdempotencyKey(
+    companyId: string,
+    key: string,
+  ): Promise<(EmailDeliveryRecord & Readonly<{ requestFingerprint: string | null }>) | null>;
+  createManual(
+    input: Readonly<{
+      companyId: string;
+      documentId: string;
+      environment: Environment;
+      testRedirect: boolean;
+      recipients: readonly string[];
+      requestedBy: string;
+      idempotencyKey: string;
+      requestFingerprint: string;
+      at: Date;
+    }>,
+  ): Promise<EmailDeliveryRecord>;
 }
+
+/** Un envío con sus intentos y el nombre de quien lo pidió, para su historial (design D10). */
+export type EmailDeliveryHistoryEntry = EmailDeliveryRecord &
+  Readonly<{
+    requesterName: string | null;
+    attempts: readonly Readonly<{
+      number: number;
+      at: Date;
+      outcome: DeliveryAttempt["outcome"];
+      smtpCode: number | null;
+    }>[];
+  }>;
 
 /** Un comprobante para su correo, leído por la fuente que exporta `fiscal` (design D1). */
 export type DeliverableDocument = Readonly<{
@@ -186,6 +219,8 @@ export type DeliverableDocument = Readonly<{
   issueDate: string;
   accessKey: string;
   state: string;
+  /** El ambiente del comprobante; el de su autorización, si está autorizado. */
+  environment: Environment;
   authorization: Readonly<{ number: string; environment: Environment }> | null;
   issuerName: string;
   receiverName: string | null;
@@ -214,7 +249,11 @@ export interface PartyEmailReader {
   ): Promise<ReadonlyMap<string, readonly string[]>>;
 }
 
-export type EmailDeliveryScope = Readonly<{ db: DbClient; deliveries: EmailDeliveryRepository }>;
+export type EmailDeliveryScope = Readonly<{
+  db: DbClient;
+  deliveries: EmailDeliveryRepository;
+  audit: AuditLog;
+}>;
 
 export interface EmailDeliveryUnitOfWork {
   run<T>(work: (scope: EmailDeliveryScope) => Promise<T>): Promise<T>;

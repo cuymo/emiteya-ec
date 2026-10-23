@@ -12,6 +12,7 @@ import type { SigningCertificates } from "../../src/modules/signing/application/
 import { signingCertificateRouter } from "../../src/modules/signing/infrastructure/http/signing-certificate-router.ts";
 import type { EmailSettings } from "../../src/modules/email/application/settings.ts";
 import type { TestEmail } from "../../src/modules/email/application/test-email.ts";
+import type { DocumentDeliveries } from "../../src/modules/email/application/document-deliveries.ts";
 import { emailRouter } from "../../src/modules/email/infrastructure/http/email-router.ts";
 import type { FiscalCatalogs } from "../../src/modules/catalogs/application/fiscal-catalogs.ts";
 import { fiscalCatalogsRouter } from "../../src/modules/catalogs/infrastructure/http/fiscal-catalogs-router.ts";
@@ -85,7 +86,11 @@ describe("rutas documentadas", () => {
       }),
       ...fiscalRouters({ prisma: {} as PrismaClient, authorizer: {} as Authorizer }),
       signingCertificateRouter({} as SigningCertificates, { maxBytes: 1 }),
-      emailRouter({ settings: {} as EmailSettings, testEmail: {} as TestEmail }),
+      emailRouter({
+        settings: {} as EmailSettings,
+        testEmail: {} as TestEmail,
+        documents: {} as DocumentDeliveries,
+      }),
       fiscalCatalogsRouter({} as FiscalCatalogs),
       partiesRouter({} as Parties),
       inventoryRouter({} as Inventory),

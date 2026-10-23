@@ -3,6 +3,7 @@
 // contraseña SMTP solo entra en el cambio de la configuración y nunca sale: la consulta dice si hay
 // una guardada.
 import { z } from "zod";
+import { IDEMPOTENCY_KEY_HEADER, IDEMPOTENCY_KEY_PATTERN } from "./invoices.ts";
 import { environmentSchema, optionalText, strictBody } from "./taxpayer.ts";
 
 export const EMAIL_SECURITIES = ["TLS", "STARTTLS", "NONE"] as const;
@@ -218,3 +219,10 @@ export const resendEmailSchema = strictBody({
     }),
 });
 export type ResendEmailInput = z.input<typeof resendEmailSchema>;
+
+/** Cabecera del reenvío: la misma clave con la misma solicitud devuelve el mismo envío. */
+export const resendEmailHeadersSchema = z.object({
+  [IDEMPOTENCY_KEY_HEADER]: z
+    .string({ error: "La cabecera Idempotency-Key es obligatoria." })
+    .regex(IDEMPOTENCY_KEY_PATTERN, "La cabecera Idempotency-Key no es válida."),
+});
