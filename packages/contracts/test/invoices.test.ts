@@ -155,6 +155,7 @@ describe("contrato de la emisión", () => {
     expect(invoiceRoutes).toEqual([
       "GET /invoices/drafts",
       "POST /invoices/drafts",
+      "POST /invoices/drafts/preview",
       "GET /invoices/drafts/:draftId",
       "PUT /invoices/drafts/:draftId",
       "DELETE /invoices/drafts/:draftId",
@@ -164,6 +165,7 @@ describe("contrato de la emisión", () => {
       "GET /invoices/:invoiceId/transmission",
       "POST /invoices/:invoiceId/reconciliations",
       "POST /invoices/:invoiceId/signing-attempts",
+      "GET /invoices/entries",
     ]);
   });
 });
