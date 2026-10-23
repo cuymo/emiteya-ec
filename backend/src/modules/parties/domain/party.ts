@@ -10,7 +10,7 @@ export type PartyRecord = {
   identification: string;
   legalName: string;
   address: string | null;
-  email: string | null;
+  emails: readonly string[];
   phone: string | null;
   roles: PartyRole[];
   status: RecordStatus;
@@ -54,7 +54,15 @@ export function partySearchKeys(data: Pick<PartyData, "legalName" | "identificat
   };
 }
 
-const CONTACT_FIELDS = ["address", "email", "phone"] as const;
+const CONTACT_FIELDS = ["address", "emails", "phone"] as const;
+
+const sameContact = (
+  before: string | null | readonly string[],
+  after: string | null | readonly string[],
+) =>
+  Array.isArray(before) && Array.isArray(after)
+    ? before.join("\n") === after.join("\n")
+    : before === after;
 
 /**
  * Cambios auditables de una corrección (design D13): valor anterior y nuevo de la identidad, la
@@ -76,7 +84,7 @@ export function partyChanges(
     changes["roles.from"] = before.roles;
     changes["roles.to"] = after.roles;
   }
-  const changedFields = CONTACT_FIELDS.filter((field) => before[field] !== after[field]);
+  const changedFields = CONTACT_FIELDS.filter((field) => !sameContact(before[field], after[field]));
   if (changedFields.length > 0) changes.changedFields = changedFields;
   return Object.keys(changes).length > 0 ? changes : null;
 }

@@ -95,7 +95,7 @@ pendientes (`Q-xx`) están en `open-questions.md`.
 ### `party` — Tercero
 
 - Purpose: persona u organización reutilizable en cualquier rol (ERS RF-320).
-- Key attributes: tipo y número de identificación, razón social o nombres, dirección, correo, teléfono, roles opcionales y combinables (`CUSTOMER`, `SUPPLIER`, `CARRIER`), estado (`ACTIVE`/`INACTIVE`), `systemRecord` y versión.
+- Key attributes: tipo y número de identificación, razón social o nombres, dirección, hasta tres correos en su orden (`party_email`, sin repetirse sin distinguir mayúsculas; `add-email-delivery`), teléfono, roles opcionales y combinables (`CUSTOMER`, `SUPPLIER`, `CARRIER`), estado (`ACTIVE`/`INACTIVE`), `systemRecord` y versión.
 - Invariants:
   - Identificación única por empresa, tipo y número, también con terceros desactivados.
   - Se valida con la regla de formato del catálogo de tipos de identificación vigente; ningún RUC se rechaza por un algoritmo local único (ERS RF-322, CTX §9.1). El tipo `07` está reservado al consumidor final.

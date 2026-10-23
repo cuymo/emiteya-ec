@@ -200,9 +200,14 @@
   - El último envío de un comprobante es el más reciente por `created_at`.
 - **`email_delivery_attempt`:** de solo agregado, con un trigger como `audit_event`. Campos:
   `delivery_id`, `number`, `at`, `outcome`, `smtp_code` y `detail` recortado.
-- **Correos del tercero:** `party.email` pasa a `party.emails text[]`.
-  - `CHECK (cardinality(emails) <= 3)`; cada dirección ya validada por el contrato.
-  - La migración copia el correo existente a una lista de un elemento y borra la columna anterior.
+- **Correos del tercero:** `party.email` pasa a una tabla propia, `party_email` (tercero, posición del
+  1 al 3 y dirección), con un índice único por tercero y `lower(address)`.
+  - La base hace cumplir el máximo de tres y que no se repitan; el formato lo valida el contrato.
+  - La migración copia el correo existente como el primero y borra la columna anterior.
+  - Una tabla y no una columna `text[]` en `party`: Prisma escribe siempre una columna de lista con
+    su valor por defecto, y una columna nueva en `party` rompería las pruebas de las migraciones
+    anteriores, que escriben terceros en esquemas sin ella.
+  - Los reportes y la portabilidad muestran los correos en una sola columna, separados por comas.
   - El contrato pasa de `email` a `emails: string[]` (máximo 3, sin repetir sin distinguir
     mayúsculas). Es un cambio incompatible de la API; su único consumidor es el frontend, que se
     ajusta en la misma tarea para seguir compilando.

@@ -10650,11 +10650,11 @@
                               "null"
                             ]
                           },
-                          "email": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                          "emails": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
                           },
                           "phone": {
                             "type": [
@@ -10716,7 +10716,7 @@
                           "identification",
                           "legalName",
                           "address",
-                          "email",
+                          "emails",
                           "phone",
                           "roles",
                           "status",
@@ -10918,11 +10918,13 @@
                       "null"
                     ]
                   },
-                  "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                  "emails": {
+                    "default": [],
+                    "maxItems": 3,
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   },
                   "phone": {
                     "type": [
@@ -10989,11 +10991,11 @@
                             "null"
                           ]
                         },
-                        "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "emails": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "phone": {
                           "type": [
@@ -11055,7 +11057,7 @@
                         "identification",
                         "legalName",
                         "address",
-                        "email",
+                        "emails",
                         "phone",
                         "roles",
                         "status",
@@ -11296,11 +11298,11 @@
                             "null"
                           ]
                         },
-                        "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "emails": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "phone": {
                           "type": [
@@ -11362,7 +11364,7 @@
                         "identification",
                         "legalName",
                         "address",
-                        "email",
+                        "emails",
                         "phone",
                         "roles",
                         "status",
@@ -11555,11 +11557,13 @@
                       "null"
                     ]
                   },
-                  "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                  "emails": {
+                    "default": [],
+                    "maxItems": 3,
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   },
                   "phone": {
                     "type": [
@@ -11632,11 +11636,11 @@
                             "null"
                           ]
                         },
-                        "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "emails": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "phone": {
                           "type": [
@@ -11698,7 +11702,7 @@
                         "identification",
                         "legalName",
                         "address",
-                        "email",
+                        "emails",
                         "phone",
                         "roles",
                         "status",
@@ -12003,11 +12007,11 @@
                             "null"
                           ]
                         },
-                        "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "emails": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         },
                         "phone": {
                           "type": [
@@ -12069,7 +12073,7 @@
                         "identification",
                         "legalName",
                         "address",
-                        "email",
+                        "emails",
                         "phone",
                         "roles",
                         "status",

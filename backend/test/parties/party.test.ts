@@ -24,7 +24,7 @@ const before: PartyRecord = {
   identification: "1790012345001",
   legalName: "Comercial Andina S.A.",
   address: "Quito",
-  email: "a@b.ec",
+  emails: ["a@b.ec"],
   phone: null,
   roles: ["CUSTOMER"],
   status: "ACTIVE",
@@ -38,7 +38,7 @@ const data = {
   identification: before.identification,
   legalName: before.legalName,
   address: before.address,
-  email: before.email,
+  emails: [...before.emails],
   phone: before.phone,
   roles: before.roles,
 };
@@ -84,7 +84,7 @@ describe("partyChanges", () => {
         ...data,
         identification: "1790012345002",
         roles: ["CUSTOMER", "CARRIER"],
-        email: "otro@b.ec",
+        emails: ["a@b.ec", "otro@b.ec"],
         phone: "022",
       }),
     ).toEqual({
@@ -92,7 +92,15 @@ describe("partyChanges", () => {
       "identification.to": "1790012345002",
       "roles.from": ["CUSTOMER"],
       "roles.to": ["CUSTOMER", "CARRIER"],
-      changedFields: ["email", "phone"],
+      changedFields: ["emails", "phone"],
+    });
+  });
+
+  it("los mismos correos en el mismo orden no son un cambio; otro orden sí", () => {
+    const two = { ...before, emails: ["a@b.ec", "c@d.ec"] };
+    expect(partyChanges(two, { ...data, emails: ["a@b.ec", "c@d.ec"] })).toBeNull();
+    expect(partyChanges(two, { ...data, emails: ["c@d.ec", "a@b.ec"] })).toEqual({
+      changedFields: ["emails"],
     });
   });
 });

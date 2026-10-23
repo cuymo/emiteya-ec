@@ -13,7 +13,7 @@ export function toPartyView(party: PartyResult): PartyView {
     identification: party.identification,
     legalName: party.legalName,
     address: party.address,
-    email: party.email,
+    emails: [...party.emails],
     phone: party.phone,
     roles: party.roles,
     status: party.status,

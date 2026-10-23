@@ -21,7 +21,7 @@ const party = (overrides: Record<string, unknown> = {}) => ({
   identification: "1790012345001",
   legalName: "Comercial Andina S.A.",
   address: null,
-  email: null,
+  emails: [],
   phone: null,
   roles: ["CUSTOMER"],
   status: "ACTIVE",
@@ -243,7 +243,7 @@ describe("página del formulario de tercero", () => {
       identification: "1790012345001",
       legalName: "Comercial Andina S.A.",
       address: null,
-      email: null,
+      emails: [],
       phone: null,
       roles: ["CUSTOMER", "CARRIER"],
     });
@@ -306,6 +306,34 @@ describe("página del formulario de tercero", () => {
       legalName: "Andina Corregida S.A.",
       expectedVersion: 1,
     });
+  });
+
+  it("corrige el primer correo y conserva los demás (add-email-delivery)", async () => {
+    const calls = renderForm(
+      {
+        "GET /api/v1/parties/p-1": () => ({
+          status: 200,
+          body: { data: party({ emails: ["compras@cliente.ec", "pagos@cliente.ec"] }) },
+        }),
+        "PUT /api/v1/parties/p-1": () => ({
+          status: 200,
+          body: { data: party({ emails: ["ventas@cliente.ec", "pagos@cliente.ec"], version: 2 }) },
+        }),
+      },
+      "p-1",
+    );
+    const form = await formOf("Tercero Corrección");
+    const user = userEvent.setup();
+    const email = within(form).getByLabelText("Correo (opcional)");
+    expect((email as HTMLInputElement).value).toBe("compras@cliente.ec");
+    await user.clear(email);
+    await user.type(email, " ventas@cliente.ec ");
+    await user.click(within(form).getByRole("button", { name: "Guardar cambios" }));
+    await vi.waitFor(() =>
+      expect(calls.find((c) => c.key === "PUT /api/v1/parties/p-1")?.body).toMatchObject({
+        emails: ["ventas@cliente.ec", "pagos@cliente.ec"],
+      }),
+    );
   });
 
   it("el consumidor final no se corrige", async () => {

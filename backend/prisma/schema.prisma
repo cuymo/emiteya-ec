@@ -620,7 +620,8 @@ model Party {
   identification             String                    @db.VarChar(20)
   legalName                  String                    @map("legal_name") @db.VarChar(300)
   address                    String?                   @db.VarChar(300)
-  email                      String?                   @db.VarChar(300)
+  /// Hasta tres correos, en su orden (add-email-delivery, design D8).
+  emails                     PartyEmail[]
   phone                      String?                   @db.VarChar(50)
   roles                      String[]                  @default([])
   status                     String                    @default("ACTIVE")
@@ -653,6 +654,21 @@ model Party {
   @@index([companyId, searchIdentification])
   @@index([companyId, status, searchName, id])
   @@map("party")
+}
+
+// Correo de un tercero (add-email-delivery, design D8): hasta tres por tercero, en su orden, sin
+// repetirse sin distinguir mayúsculas (CHECK e índice único en la migración). En su propia tabla, no
+// en una columna del tercero: el tercero no cambia y la base hace cumplir el máximo y la unicidad.
+model PartyEmail {
+  partyId   String @map("party_id")
+  companyId String @map("company_id")
+  party     Party  @relation(fields: [companyId, partyId], references: [companyId, id], onDelete: Cascade)
+  /// Del 1 al 3 (CHECK en la migración).
+  position  Int    @db.SmallInt
+  address   String @db.VarChar(300)
+
+  @@id([partyId, position])
+  @@map("party_email")
 }
 
 // Producto o servicio de una empresa (add-parties-and-products, design D6 y D9): precio unitario

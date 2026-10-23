@@ -9,6 +9,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createPartySchema,
+  partyEmailsSchema,
   PARTY_ROLE_LABELS,
   PARTY_ROLES,
   type PartyData,
@@ -19,7 +20,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import type { z } from "zod";
+import { z } from "zod";
 import { FormStateBadge } from "@/components/form-state-badge";
 import { AsyncButton } from "@/components/async-button";
 import { ChipMultiSelect } from "@/components/chip-multi-select";
@@ -42,7 +43,18 @@ const TITLE_ID = "tercero-titulo";
 /** Una sola columna centrada en la página (decisión del propietario, 2026-10-22). */
 const PAGE = "mx-auto flex w-full max-w-2xl flex-col gap-6";
 
-type FormInput = z.input<typeof createPartySchema>;
+/**
+ * El formulario edita por ahora el primer correo y conserva los demás; los campos vacíos no se
+ * envían (add-email-delivery; la interfaz de los tres correos llega en su fase de interfaz).
+ */
+const partyFormSchema = createPartySchema.extend({
+  emails: z
+    .array(z.string())
+    .default([])
+    .transform((emails) => emails.map((email) => email.trim()).filter((email) => email !== ""))
+    .pipe(partyEmailsSchema),
+});
+type FormInput = z.input<typeof partyFormSchema>;
 const ROLE_OPTIONS = PARTY_ROLES.map((role) => ({ value: role, label: PARTY_ROLE_LABELS[role] }));
 const IDENTIFICATION_ERRORS = new Set([
   "PARTY_IDENTIFICATION_INVALID",
@@ -64,7 +76,7 @@ const toForm = (
   identification: party?.identification ?? "",
   legalName: party?.legalName ?? "",
   address: party?.address ?? "",
-  email: party?.email ?? "",
+  emails: party?.emails.length ? [...party.emails] : [""],
   phone: party?.phone ?? "",
   roles: party?.roles ?? [...initialRoles],
 });
@@ -88,7 +100,7 @@ export function usePartyForm({
   const [taken, setTaken] = useState<string>();
   const types = useIdentificationTypes(enabled);
   const form = useForm<FormInput, unknown, PartyData>({
-    resolver: zodResolver(createPartySchema),
+    resolver: zodResolver(partyFormSchema),
     defaultValues: toForm(party, initialRoles),
   });
   const save = useSaveParty({
@@ -242,6 +254,7 @@ export function PartyRolesField({ state }: { state: PartyFormState }) {
 export function PartyContactFields({ state }: { state: PartyFormState }) {
   const { form } = state;
   const { errors } = form.formState;
+  const emailError = errors.emails?.[0]?.message ?? errors.emails?.message;
   return (
     <>
       <FormField id="party-address" label="Dirección (opcional)" error={errors.address?.message}>
@@ -251,10 +264,10 @@ export function PartyContactFields({ state }: { state: PartyFormState }) {
         />
       </FormField>
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField id="party-email" label="Correo (opcional)" error={errors.email?.message}>
+        <FormField id="party-email" label="Correo (opcional)" error={emailError}>
           <Input
-            {...fieldAria("party-email", errors.email?.message)}
-            {...form.register("email")}
+            {...fieldAria("party-email", emailError)}
+            {...form.register("emails.0")}
             type="email"
             inputMode="email"
             autoCapitalize="none"

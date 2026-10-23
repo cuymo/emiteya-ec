@@ -38,7 +38,7 @@ describe("contrato de terceros", () => {
     expect(parsed).toEqual({
       ...party,
       address: null,
-      email: null,
+      emails: [],
       phone: null,
       roles: ["CUSTOMER", "SUPPLIER"],
     });
@@ -62,13 +62,38 @@ describe("contrato de terceros", () => {
     expect(createPartySchema.safeParse({ ...party, legalName: "x".repeat(301) }).success).toBe(
       false,
     );
-    expect(createPartySchema.safeParse({ ...party, email: "no-es-correo" }).success).toBe(false);
+    expect(createPartySchema.safeParse({ ...party, emails: ["no-es-correo"] }).success).toBe(false);
     expect(createPartySchema.safeParse({ ...party, identification: "1".repeat(21) }).success).toBe(
       false,
     );
     expect(createPartySchema.safeParse({ ...party, identificationType: "4" }).success).toBe(false);
     expect(createPartySchema.safeParse({ ...party, roles: ["DESTINATARIO"] }).success).toBe(false);
     expect(updatePartySchema.safeParse(party).success).toBe(false);
+  });
+
+  it("admite hasta tres correos distintos, recortados y en su orden (add-email-delivery)", () => {
+    expect(
+      createPartySchema.parse({
+        ...party,
+        emails: [" compras@cliente.ec ", "contabilidad@cliente.ec"],
+      }).emails,
+    ).toEqual(["compras@cliente.ec", "contabilidad@cliente.ec"]);
+    const four = createPartySchema.safeParse({
+      ...party,
+      emails: ["a@x.ec", "b@x.ec", "c@x.ec", "d@x.ec"],
+    });
+    expect(messages(four)).toContain("Un tercero admite como máximo 3 correos.");
+    const repeated = createPartySchema.safeParse({
+      ...party,
+      emails: ["Compras@Cliente.ec", "compras@cliente.ec"],
+    });
+    expect(repeated.success).toBe(false);
+    expect(repeated.error?.issues[0]).toMatchObject({
+      path: ["emails", 1],
+      message: "El correo está repetido.",
+    });
+    expect(createPartySchema.safeParse({ ...party, emails: [""] }).success).toBe(false);
+    expect(createPartySchema.safeParse({ ...party, email: "a@x.ec" }).success).toBe(false);
   });
 });
 

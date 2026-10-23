@@ -10,7 +10,7 @@ export const CUSTOMER = {
   identification: "0992877878001",
   legalName: "EL PERNO CIA. LTDA.",
   address: null,
-  email: null,
+  emails: [],
   phone: null,
   roles: ["CUSTOMER"],
   status: "ACTIVE",

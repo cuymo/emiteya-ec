@@ -92,9 +92,34 @@ describe("invariantes de terceros y productos en la base de datos", () => {
       expect(
         await fails(prisma.party.create({ data: party(companyA, { ...id, legalName: "A\nB" }) })),
       ).toMatch(/party_text_check/);
+      // Correos (add-email-delivery, design D8): hasta tres, con forma de correo y sin repetirse.
+      const withEmails = await prisma.party.create({
+        data: party(companyA, {
+          ...id,
+          identification: "1790000009001",
+          emails: {
+            create: [
+              { position: 1, address: "a@x.ec" },
+              { position: 2, address: "b@x.ec" },
+            ],
+          },
+        }),
+      });
+      const email = (position: number, address: string) =>
+        prisma.partyEmail.create({
+          data: { partyId: withEmails.id, companyId: companyA, position, address },
+        });
+      expect(await fails(email(4, "d@x.ec"))).toMatch(/party_email_values_check/);
+      expect(await fails(email(3, "c x@x.ec"))).toMatch(/party_email_values_check/);
+      expect(await fails(email(3, "A@X.EC"))).toMatch(/party_email_party_id_address_key/);
+      expect(await fails(email(2, "c@x.ec"))).toMatch(/Unique|unique|P2002/);
       expect(
-        await fails(prisma.party.create({ data: party(companyA, { ...id, email: "" }) })),
-      ).toMatch(/party_text_check/);
+        await fails(
+          prisma.partyEmail.create({
+            data: { partyId: withEmails.id, companyId: companyB, position: 3, address: "c@x.ec" },
+          }),
+        ),
+      ).toMatch(/party_email_company_id_party_id_fkey/);
       expect(
         await fails(
           prisma.party.create({ data: party(companyA, { ...id, identificationType: "4" }) }),

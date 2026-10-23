@@ -29,6 +29,8 @@ export type SystemRecord = z.infer<typeof systemRecordSchema>;
 export const IDENTIFICATION_MAX_LENGTH = 20;
 export const PARTY_ADDRESS_MAX_LENGTH = 300;
 export const PARTY_EMAIL_MAX_LENGTH = 300;
+/** Correos de un tercero (add-email-delivery, decisión del propietario, 2026-10-23). */
+export const PARTY_EMAILS_MAX = 3;
 export const PARTY_PHONE_MAX_LENGTH = 50;
 const SINGLE_LINE = /^[^\r\n]*$/;
 
@@ -58,6 +60,25 @@ const addressSchema = z
 const emailSchema = z
   .email({ error: "El correo no tiene un formato válido." })
   .max(PARTY_EMAIL_MAX_LENGTH, "El correo no tiene un formato válido.");
+/**
+ * Hasta tres correos válidos y distintos sin distinguir mayúsculas, en el orden en que se escriben.
+ * Cada uno se recorta; uno vacío es inválido (la interfaz no envía los campos vacíos).
+ */
+export const partyEmailsSchema = z
+  .array(z.string({ error: "El correo no tiene un formato válido." }).trim().pipe(emailSchema), {
+    error: "Los correos no son válidos.",
+  })
+  .max(PARTY_EMAILS_MAX, `Un tercero admite como máximo ${PARTY_EMAILS_MAX} correos.`)
+  .superRefine((emails, ctx) => {
+    const seen = new Set<string>();
+    emails.forEach((email, index) => {
+      const key = email.toLowerCase();
+      if (seen.has(key)) {
+        ctx.addIssue({ code: "custom", path: [index], message: "El correo está repetido." });
+      }
+      seen.add(key);
+    });
+  });
 const phoneSchema = z
   .string()
   .max(
@@ -81,7 +102,7 @@ export const partyShape = {
     FISCAL_TEXT_MAX_LENGTH,
   ),
   address: optionalText(addressSchema, "La dirección no es válida."),
-  email: optionalText(emailSchema, "El correo no tiene un formato válido."),
+  emails: partyEmailsSchema.default([]),
   phone: optionalText(phoneSchema, "El teléfono no es válido."),
   roles: rolesSchema,
 };
@@ -127,7 +148,7 @@ export const partyViewSchema = z.strictObject({
   identification: z.string(),
   legalName: z.string(),
   address: z.string().nullable(),
-  email: z.string().nullable(),
+  emails: z.array(z.string()),
   phone: z.string().nullable(),
   roles: z.array(partyRoleSchema),
   status: recordStatusSchema,

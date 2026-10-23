@@ -253,7 +253,7 @@ describe("borrador de liquidación de compra", () => {
               identification: "1710034065",
               legalName: "Rosa Chicaiza",
               address: "Recinto El Paraíso, Quinindé",
-              email: null,
+              emails: [],
               phone: null,
               roles: ["SUPPLIER"],
               status: "ACTIVE",

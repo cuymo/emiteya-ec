@@ -8,7 +8,15 @@ import { escapeLike, searchKey } from "../../../platform/search/search-key.ts";
 import { DuplicateIdentificationError, type PartyRepository } from "../application/ports.ts";
 import { partySearchKeys, type PartyRecord } from "../domain/party.ts";
 
-type PartyRow = Prisma.PartyGetPayload<object>;
+// Los correos del tercero viven en su propia tabla, en su orden (add-email-delivery, design D8).
+const WITH_EMAILS = {
+  emails: { select: { address: true }, orderBy: { position: "asc" } },
+} as const satisfies Prisma.PartyInclude;
+
+type PartyRow = Prisma.PartyGetPayload<{ include: typeof WITH_EMAILS }>;
+
+const emailRows = (emails: readonly string[]) =>
+  emails.map((address, index) => ({ position: index + 1, address }));
 
 function toRecord(row: PartyRow): PartyRecord {
   return {
@@ -18,7 +26,7 @@ function toRecord(row: PartyRow): PartyRecord {
     identification: row.identification,
     legalName: row.legalName,
     address: row.address,
-    email: row.email,
+    emails: row.emails.map((email) => email.address),
     phone: row.phone,
     roles: row.roles as PartyRole[],
     status: row.status as RecordStatus,
@@ -47,7 +55,10 @@ async function translateUnique<T>(operation: () => Promise<T>): Promise<T> {
 export function createPartyRepository(db: DbClient): PartyRepository {
   return {
     async find(companyId, partyId) {
-      const row = await db.party.findFirst({ where: { id: partyId, companyId } });
+      const row = await db.party.findFirst({
+        where: { id: partyId, companyId },
+        include: WITH_EMAILS,
+      });
       return row ? toRecord(row) : null;
     },
 
@@ -60,6 +71,7 @@ export function createPartyRepository(db: DbClient): PartyRepository {
             identification,
           },
         },
+        include: WITH_EMAILS,
       });
       return row ? toRecord(row) : null;
     },
@@ -87,6 +99,7 @@ export function createPartyRepository(db: DbClient): PartyRepository {
       const [rows, total] = await Promise.all([
         db.party.findMany({
           where,
+          include: WITH_EMAILS,
           orderBy,
           skip: (query.page - 1) * query.pageSize,
           take: query.pageSize,
@@ -103,10 +116,12 @@ export function createPartyRepository(db: DbClient): PartyRepository {
             data: {
               companyId,
               ...data,
+              emails: { create: emailRows(data.emails) },
               ...partySearchKeys(data),
               createdBy: userId,
               updatedBy: userId,
             },
+            include: WITH_EMAILS,
           }),
         ),
       );
@@ -114,16 +129,23 @@ export function createPartyRepository(db: DbClient): PartyRepository {
 
     updateIfVersion(companyId, partyId, expectedVersion, data, userId) {
       return translateUnique(async () => {
+        const { emails, ...fields } = data;
         const { count } = await db.party.updateMany({
           where: { id: partyId, companyId, version: expectedVersion, systemRecord: null },
           data: {
-            ...data,
+            ...fields,
             ...partySearchKeys(data),
             version: { increment: 1 },
             updatedBy: userId,
           },
         });
-        return count === 1;
+        if (count !== 1) return false;
+        // Corre en la transacción de la corrección: los correos se reemplazan junto con el tercero.
+        await db.partyEmail.deleteMany({ where: { partyId, companyId } });
+        await db.partyEmail.createMany({
+          data: emailRows(emails).map((row) => ({ ...row, partyId, companyId })),
+        });
+        return true;
       });
     },
 

@@ -53,7 +53,15 @@ describe("fuente de Terceros y ambiente vigente", () => {
     // Datos vigentes: el correo corregido.
     await prisma.party.update({
       where: { id: id.maria },
-      data: { email: "maria@ejemplo.ec", phone: "0991234567" },
+      data: {
+        emails: {
+          create: [
+            { position: 1, address: "maria@ejemplo.ec" },
+            { position: 2, address: "pagos@ejemplo.ec" },
+          ],
+        },
+        phone: "0991234567",
+      },
     });
     // La empresa A pasa a Producción; la B no tiene configuración.
     const admin = {
@@ -97,7 +105,8 @@ describe("fuente de Terceros y ambiente vigente", () => {
       id: id.maria,
       identification: "0102030405",
       legalName: "María Pérez",
-      email: "maria@ejemplo.ec",
+      // Los correos del tercero en una sola columna (add-email-delivery).
+      email: "maria@ejemplo.ec, pagos@ejemplo.ec",
       phone: "0991234567",
       roles: ["CUSTOMER"],
       status: "ACTIVE",

@@ -188,7 +188,9 @@ describe("generación del paquete de portabilidad", () => {
           late = (await insertDocument(prisma, a, "SIGNED", { issueDate: "2026-10-03" })).accessKey;
           await prisma.party.update({
             where: { id: ids.party! },
-            data: { email: "tarde@ejemplo.invalid" },
+            data: {
+              emails: { deleteMany: {}, create: { position: 1, address: "tarde@ejemplo.invalid" } },
+            },
           });
           // El recibido se autoriza durante la generación: entra recibido, sin su XML autorizado.
           await prisma.electronicDocument.update({

@@ -21,9 +21,13 @@ type Raw = {
 
 export function createPartiesReportSource(schema: string): ReportSource<PartiesFilters, PartyRow> {
   const parties = qualifiedTable(schema, "party");
+  const partyEmails = qualifiedTable(schema, "party_email");
   return sqlReportSource<PartiesFilters, Raw, PartyRow>({
     query: (companyId, filters) => ({
-      select: Prisma.sql`p.id, p.identification, p.legal_name, p.email, p.phone, p.roles, p.status`,
+      // Los correos del tercero en una sola columna, separados por comas (add-email-delivery).
+      select: Prisma.sql`p.id, p.identification, p.legal_name,
+        (SELECT string_agg(e.address, ', ' ORDER BY e.position) FROM ${partyEmails} e
+          WHERE e.party_id = p.id) AS email, p.phone, p.roles, p.status`,
       from: Prisma.sql`${parties} p WHERE ${Prisma.join(
         [
           Prisma.sql`p.company_id = ${companyId}`,

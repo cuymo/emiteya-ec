@@ -6,11 +6,14 @@ import { qualifiedTable, sqlCompanyBatches } from "../../../platform/db/report-s
 
 export function createPartiesPortabilitySources(schema: string) {
   const parties = qualifiedTable(schema, "party");
+  const partyEmails = qualifiedTable(schema, "party_email");
   return {
     parties: sqlCompanyBatches({
       query: (companyId) => ({
         select: Prisma.sql`p.identification_type, p.identification, p.legal_name, p.address,
-          p.email, p.phone, p.roles, p.status, p.system_record, p.created_at, p.updated_at`,
+          (SELECT string_agg(e.address, ', ' ORDER BY e.position) FROM ${partyEmails} e
+            WHERE e.party_id = p.id) AS email, p.phone, p.roles, p.status,
+          p.system_record, p.created_at, p.updated_at`,
         from: Prisma.sql`${parties} p WHERE p.company_id = ${companyId}`,
         orderBy: Prisma.sql`p.search_name, p.id`,
       }),

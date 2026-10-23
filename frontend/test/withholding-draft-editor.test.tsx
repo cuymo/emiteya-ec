@@ -619,7 +619,7 @@ describe("nueva retención sobre la lista (decisión del propietario, 2026-10-22
               identification: "1792345678001",
               legalName: "SERVICIOS ANDINOS S.A.",
               address: null,
-              email: null,
+              emails: [],
               phone: null,
               roles: ["SUPPLIER"],
               status: "ACTIVE",

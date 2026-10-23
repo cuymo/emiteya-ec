@@ -106,12 +106,28 @@ describe("API de terceros", () => {
       expect((await list("adminA", "?role=CUSTOMER&search=sin%20rol")).data).toEqual([]);
     });
 
+    it("registra un tercero con dos correos, en su orden (add-email-delivery)", async () => {
+      const view = await created("adminA", {
+        identification: "1791212121001",
+        emails: ["compras@cliente.ec", "contabilidad@cliente.ec"],
+      });
+      expect(view.emails).toEqual(["compras@cliente.ec", "contabilidad@cliente.ec"]);
+      const read = await call("adminA", "get", `/parties/${view.id}`);
+      expect(bodyOf(read).data.emails).toEqual(["compras@cliente.ec", "contabilidad@cliente.ec"]);
+    });
+
     it("rechaza datos fuera de sus límites sin crear nada", async () => {
       const before = await db.database.prisma.party.count();
       for (const body of [
         party({ identification: "1793333333001", legalName: "" }),
         party({ identification: "1793333333001", legalName: "x".repeat(301) }),
-        party({ identification: "1793333333001", email: "no-es-correo" }),
+        party({ identification: "1793333333001", emails: ["no-es-correo"] }),
+        party({
+          identification: "1793333333001",
+          emails: ["a@x.ec", "b@x.ec", "c@x.ec", "d@x.ec"],
+        }),
+        party({ identification: "1793333333001", emails: ["a@x.ec", "A@X.EC"] }),
+        party({ identification: "1793333333001", email: "a@x.ec" }),
       ]) {
         expect((await create("adminA", body)).status).toBe(400);
       }
@@ -422,14 +438,14 @@ describe("API de terceros", () => {
       const view = await created("adminA", {
         identification: "1783333333001",
         legalName: "Auditada S.A.",
-        email: "antes@auditada.ec",
+        emails: ["antes@auditada.ec"],
         phone: "022222222",
       });
       const fix = await call("adminA", "put", `/parties/${view.id}`).send(
         party({
           identification: "1783333334001",
           legalName: "Auditada S.A.",
-          email: "despues@auditada.ec",
+          emails: ["despues@auditada.ec", "otro@auditada.ec"],
           phone: "023333333",
           expectedVersion: 1,
         }),
@@ -449,7 +465,7 @@ describe("API de terceros", () => {
         partyId: view.id,
         "identification.from": "1783333333001",
         "identification.to": "1783333334001",
-        changedFields: ["email", "phone"],
+        changedFields: ["emails", "phone"],
       });
       const json = JSON.stringify(events);
       for (const secret of ["antes@auditada.ec", "despues@auditada.ec", "022222222", "023333333"]) {
@@ -475,7 +491,11 @@ describe("API de terceros", () => {
       expect(
         (
           await call("adminA", "put", `/parties/${view.id}`).send(
-            party({ identification: "1784444444001", email: "no-es-correo", expectedVersion: 1 }),
+            party({
+              identification: "1784444444001",
+              emails: ["no-es-correo"],
+              expectedVersion: 1,
+            }),
           )
         ).status,
       ).toBe(400);
