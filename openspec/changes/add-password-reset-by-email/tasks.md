@@ -5,7 +5,7 @@
 
 ## 2. Pantallas
 
-- [ ] 2.1 Rediseñar el ingreso como una tarjeta con el logo y «¿Olvidaste tu contraseña?», y agregar `/recuperar-contrasena` y `/restablecer-contrasena`; verificar con pruebas de las tres pantallas.
+- [x] 2.1 Rediseñar el ingreso como una tarjeta con el logo y «¿Olvidaste tu contraseña?», y agregar `/recuperar-contrasena` y `/restablecer-contrasena`; verificar con pruebas de las tres pantallas.
 
 ## 3. Documentación y revisión
 

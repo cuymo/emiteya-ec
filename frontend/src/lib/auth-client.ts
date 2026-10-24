@@ -6,6 +6,7 @@ export type AuthErrorKind =
   | "rate_limited"
   | "invalid_current_password"
   | "password_policy"
+  | "invalid_token"
   | "unauthenticated"
   | "unexpected";
 
@@ -24,6 +25,7 @@ const MESSAGES: Record<AuthErrorKind, string> = {
   rate_limited: "Demasiados intentos. Espera unos minutos e intenta de nuevo.",
   invalid_current_password: "La contraseña actual no es correcta.",
   password_policy: "La contraseña nueva no cumple la longitud permitida.",
+  invalid_token: "El enlace ya no sirve: venció o ya se usó. Pide otro.",
   unauthenticated: "Tu sesión terminó. Inicia sesión de nuevo.",
   unexpected: "No pudimos completar la operación. Intenta de nuevo.",
 };
@@ -55,6 +57,7 @@ function classify(status: number, code: string | undefined): AuthErrorKind {
   if (code === "PASSWORD_POLICY" || code === "PASSWORD_TOO_SHORT" || code === "PASSWORD_TOO_LONG") {
     return "password_policy";
   }
+  if (code === "INVALID_TOKEN") return "invalid_token";
   if (status === 401) return "unauthenticated";
   return "unexpected";
 }
@@ -70,6 +73,19 @@ export function signOut(): Promise<void> {
 /** El servidor invalida siempre las demás sesiones (design D6). */
 export function changeOwnPassword(currentPassword: string, newPassword: string): Promise<void> {
   return authPost("/change-password", { currentPassword, newPassword, revokeOtherSessions: true });
+}
+
+/**
+ * Pide el enlace de recuperación (add-password-reset-by-email). El servidor responde lo mismo exista
+ * o no la cuenta; solo un error de red o el límite de intentos llegan como error.
+ */
+export function requestPasswordReset(email: string): Promise<void> {
+  return authPost("/request-password-reset", { email });
+}
+
+/** Pone la contraseña nueva con el token del enlace; el servidor cierra todas las sesiones. */
+export function resetPassword(token: string, newPassword: string): Promise<void> {
+  return authPost("/reset-password", { token, newPassword });
 }
 
 /** Ruta interna segura para volver tras iniciar sesión; evita redirecciones a otros orígenes. */

@@ -1,9 +1,12 @@
 // Iniciar sesión (design D12). Usuario: cualquiera, también quien entra por primera vez. Objetivo:
 // entrar. Información mínima: correo, contraseña y error si ocurre. Acción principal: Iniciar sesión.
+// En la tarjeta con el logo, con «¿Olvidaste tu contraseña?» junto a la contraseña
+// (add-password-reset-by-email, design D6).
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,10 +15,10 @@ import { AsyncButton } from "@/components/async-button";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { PasswordField } from "@/components/password-field";
 import { Skeleton } from "@/components/states";
-import { BrandLogo } from "@/components/brand-logo";
 import { ME_KEY, useMe } from "@/components/session";
 import { Input } from "@/components/ui/input";
 import { AuthError, safeNextPath, signIn } from "@/lib/auth-client";
+import { AuthCard } from "./auth-card";
 
 const loginSchema = z.object({
   email: z.email({ error: "Escribe tu correo." }),
@@ -59,18 +62,8 @@ export function LoginScreen() {
   });
 
   return (
-    <main
-      id="contenido"
-      className="flex min-h-dvh items-center justify-center bg-background px-4 py-12"
-    >
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <div className="flex flex-col gap-1">
-          <p className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <BrandLogo className="h-9" />
-            EmiteYa
-          </p>
-          <h1 className="text-3xl font-bold">Iniciar sesión</h1>
-        </div>
+    <AuthCard title="Iniciar sesión" description="Ingresa con tu correo y tu contraseña.">
+      <div className="flex flex-col gap-4">
         {expired && !error && (
           <p
             role="status"
@@ -89,9 +82,23 @@ export function LoginScreen() {
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
+              placeholder="tucorreo@empresa.ec"
             />
           </FormField>
-          <FormField id="password" label="Contraseña" error={errors.password?.message}>
+          <FormField
+            id="password"
+            label="Contraseña"
+            error={errors.password?.message}
+            labelClassName="justify-between"
+            badge={
+              <Link
+                href="/recuperar-contrasena"
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            }
+          >
             <PasswordField
               {...fieldAria("password", errors.password?.message)}
               {...form.register("password")}
@@ -115,33 +122,20 @@ export function LoginScreen() {
             Iniciar sesión
           </AsyncButton>
         </form>
-        <p className="text-sm text-foreground-muted">
-          ¿Olvidaste tu contraseña? Pide a un administrador que la restablezca.
-        </p>
       </div>
-    </main>
+    </AuthCard>
   );
 }
 
 /** Misma geometría que la pantalla mientras se leen los parámetros de la URL. */
 export function LoginSkeleton() {
   return (
-    <main
-      className="flex min-h-dvh items-center justify-center bg-background px-4 py-12"
-      aria-busy="true"
-    >
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <div className="flex flex-col gap-1">
-          <p className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <BrandLogo className="h-9" />
-            EmiteYa
-          </p>
-          <h1 className="text-3xl font-bold">Iniciar sesión</h1>
-        </div>
+    <AuthCard title="Iniciar sesión" description="Ingresa con tu correo y tu contraseña." busy>
+      <div className="flex flex-col gap-4">
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-10 w-full" />
       </div>
-    </main>
+    </AuthCard>
   );
 }

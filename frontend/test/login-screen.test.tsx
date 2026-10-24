@@ -36,12 +36,13 @@ describe("pantalla Iniciar sesión", () => {
     expect(logo.getAttribute("alt")).toBe("");
   });
 
-  it("indica que un administrador restablece la contraseña, sin recuperación por correo", () => {
+  it("es una tarjeta con «¿Olvidaste tu contraseña?», que lleva a recuperarla (add-password-reset-by-email)", () => {
     mockApi({ "GET /api/v1/me": unauthenticated });
     renderApp(<LoginScreen />);
+    expect(document.querySelector("[data-slot=auth-card]")).not.toBeNull();
     expect(
-      screen.getByText("¿Olvidaste tu contraseña? Pide a un administrador que la restablezca."),
-    ).toBeDefined();
+      screen.getByRole("link", { name: "¿Olvidaste tu contraseña?" }).getAttribute("href"),
+    ).toBe("/recuperar-contrasena");
     expect(screen.getByRole("heading", { name: "Iniciar sesión" })).toBeDefined();
     expect(screen.getByLabelText("Correo").getAttribute("autocomplete")).toBe("username");
     expect(screen.getByLabelText("Contraseña").getAttribute("autocomplete")).toBe(
