@@ -13,15 +13,14 @@ import {
   emailNotConfigured,
   emailTestRateLimited,
 } from "./errors.ts";
-import {
-  SmtpPasswordUnavailableError,
-  type EmailDeploymentPolicy,
-  type EmailSettingsRepository,
-  type EmailUnitOfWork,
-  type MailTransport,
-  type SmtpConnection,
-  type SmtpPasswordVault,
+import type {
+  EmailDeploymentPolicy,
+  EmailSettingsRepository,
+  EmailUnitOfWork,
+  MailTransport,
+  SmtpPasswordVault,
 } from "./ports.ts";
+import { openSmtpConnection } from "./smtp-connection.ts";
 
 const WINDOW_MS = 60_000;
 
@@ -49,30 +48,6 @@ export function createTestEmail(deps: TestEmailDependencies) {
     recent.set(companyId, times);
   }
 
-  async function connectionOf(
-    companyId: string,
-    settings: NonNullable<Awaited<ReturnType<EmailSettingsRepository["find"]>>>,
-  ): Promise<SmtpConnection | EmailFailureCode> {
-    let password: string | null = null;
-    if (settings.username !== null) {
-      const sealed = await deps.settings.findSecret(companyId);
-      if (sealed === null || deps.vault === null) return "PASSWORD_UNAVAILABLE";
-      try {
-        password = deps.vault.open(sealed, companyId);
-      } catch (error) {
-        if (error instanceof SmtpPasswordUnavailableError) return "PASSWORD_UNAVAILABLE";
-        throw error;
-      }
-    }
-    return {
-      host: settings.host,
-      port: settings.port,
-      security: settings.security,
-      username: settings.username,
-      password,
-    };
-  }
-
   return {
     async send(ctx: RequestContext, body: unknown): Promise<TestEmailResult> {
       deps.authorizer.requirePermission(ctx, "email.configure");
@@ -82,7 +57,12 @@ export function createTestEmail(deps: TestEmailDependencies) {
       if (settings === null) throw emailNotConfigured();
       reserveSlot(ctx.companyId);
 
-      const connection = await connectionOf(ctx.companyId, settings);
+      const connection = await openSmtpConnection(
+        deps.settings,
+        deps.vault,
+        ctx.companyId,
+        settings,
+      );
       let failure: EmailFailureCode | null;
       if (typeof connection === "string") failure = connection;
       else {

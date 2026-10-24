@@ -19,6 +19,7 @@ import {
 import { createAuthorizer } from "./modules/identity/application/authorization.ts";
 import { provisionInstallation } from "./modules/identity/application/provisioning.ts";
 import { createUserAdministration } from "./modules/identity/application/user-administration.ts";
+import type { PasswordResetMailer } from "./modules/identity/application/password-reset.ts";
 import {
   authSettingsFromEnv,
   createAuth,
@@ -228,7 +229,21 @@ const closers: Closer[] = [{ name: "database", close: database.close }];
 const metrics = createMetrics();
 const securityEvents = createSecurityEventLog(logger, metrics.registry);
 const authSettings = authSettingsFromEnv(env);
-const auth = createAuth({ prisma: database.prisma, settings: authSettings, securityEvents });
+// El enlace de recuperación se envía con el módulo `email`, que se compone más abajo porque depende
+// de la autorización (add-password-reset-by-email, design D3). Hasta entonces no hay envío.
+let passwordResetMailer: PasswordResetMailer | null = null;
+const auth = createAuth({
+  prisma: database.prisma,
+  settings: authSettings,
+  securityEvents,
+  passwordReset: {
+    publicOrigin: canonicalApiOrigin,
+    mailer: {
+      send: (input) =>
+        passwordResetMailer ? passwordResetMailer.send(input) : Promise.resolve("no_mail_server"),
+    },
+  },
+});
 const catalogQueries = fiscalCatalogQueries(database.prisma);
 // Toda empresa nueva confirma con su consumidor final (add-parties-and-products, design D5).
 const uow = createUnitOfWork(database.prisma, auth, authSettings, [
@@ -429,6 +444,7 @@ const email = emailModule({
     logger,
   },
 });
+passwordResetMailer = email.passwordReset;
 apiRouter.use(...email.routers);
 // Bandeja de comprobantes y sus documentos (add-document-archive, design D2, D5, D8 a D10).
 apiRouter.use(

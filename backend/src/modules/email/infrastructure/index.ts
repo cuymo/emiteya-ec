@@ -20,6 +20,7 @@ import type {
 import { createDocumentDeliveries } from "../application/document-deliveries.ts";
 import { createSendDocumentHandler } from "../application/send-handler.ts";
 import { createEmailSettings } from "../application/settings.ts";
+import { createPasswordResetEmail } from "../application/password-reset-email.ts";
 import { createTestEmail } from "../application/test-email.ts";
 import { emailRouter } from "./http/email-router.ts";
 import { createSmtpPasswordVault } from "./password-vault.ts";
@@ -143,5 +144,12 @@ export function emailModule(options: EmailModuleOptions) {
     handlers,
     /** El estado del correo de los comprobantes, para la bandeja y el tablero. */
     statuses: createEmailStatusSource(options.prisma, schema),
+    /** El enlace de recuperación de la contraseña (add-password-reset-by-email). */
+    passwordReset: createPasswordResetEmail({
+      settings: repository,
+      vault,
+      transport,
+      policy: options.policy,
+    }),
   };
 }

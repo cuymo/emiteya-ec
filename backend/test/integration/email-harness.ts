@@ -21,12 +21,22 @@ export type EmailHarnessOptions = {
   policy?: Partial<EmailDeploymentPolicy>;
   custody?: CertificateCustodyConfig;
   now?: () => Date;
+  /** La recuperación de la contraseña enviada con este módulo (add-password-reset-by-email). */
+  passwordReset?: { publicOrigin: string };
 };
 
 export function buildEmailApp(db: MigratedSchema, options: EmailHarnessOptions = {}) {
   let built: ReturnType<typeof emailModule> | undefined;
   const app = buildAuthApp(db, {
     trustProxy: 1,
+    ...(options.passwordReset
+      ? {
+          passwordReset: {
+            publicOrigin: options.passwordReset.publicOrigin,
+            mailer: { send: (input) => email().passwordReset.send(input) },
+          },
+        }
+      : {}),
     apiRouter: ({ context, memberships, securityEvents }) => {
       const authorizer = createAuthorizer({ memberships, securityEvents });
       const email = emailModule({
