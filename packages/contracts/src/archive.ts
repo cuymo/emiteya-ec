@@ -41,7 +41,7 @@ export const listDocumentsQuerySchema = z
       .trim()
       .regex(/^[A-Za-z0-9]{1,20}$/, "La identificación no es válida.")
       .optional(),
-    /** Número del comprobante o nombre del receptor. */
+    /** Número del comprobante, o nombre o identificación del receptor (también de los destinatarios). */
     search: searchParam,
     establishmentId: idFilter("El establecimiento no es válido.").optional(),
     emissionPointId: idFilter("El punto de emisión no es válido.").optional(),

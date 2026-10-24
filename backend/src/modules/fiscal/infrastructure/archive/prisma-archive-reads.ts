@@ -111,12 +111,20 @@ function whereOf(companyId: string, filters: ArchiveFilters): Prisma.ElectronicD
       ...(search
         ? [
             {
+              // Número, nombre o identificación del receptor, también de cualquier destinatario de
+              // una guía (refine-archive-search).
               OR: [
                 { documentNumber: { contains: search } },
                 { buyerName: { contains: search, mode: "insensitive" as const } },
+                { buyerIdentification: { contains: search } },
                 {
                   recipients: {
-                    some: { name: { contains: search, mode: "insensitive" as const } },
+                    some: {
+                      OR: [
+                        { name: { contains: search, mode: "insensitive" as const } },
+                        { identification: { contains: search } },
+                      ],
+                    },
                   },
                 },
               ],

@@ -210,6 +210,8 @@ describe("bandeja de comprobantes sobre HTTP", () => {
     expect(ids(await list(a, { identification: "0992877878001" }))).toEqual([docs.buyer!.id]);
     expect(ids(await list(a, { search: docs.oct16!.documentNumber }))).toEqual([docs.oct16!.id]);
     expect(ids(await list(a, { search: "perno" }))).toEqual([docs.buyer!.id]);
+    // La identificación del comprador, también en la búsqueda (refine-archive-search).
+    expect(ids(await list(a, { search: "0992877878001" }))).toEqual([docs.buyer!.id]);
   });
 
   it("muestra la guía sin total con su único destinatario o el número de destinatarios", async () => {
@@ -265,6 +267,9 @@ describe("bandeja de comprobantes sobre HTTP", () => {
     expect(ids(await list(a, { identification: "0102030405" }))).toEqual([docs.guideSingle!.id]);
     expect(ids(await list(a, { search: "juan torres" }))).toEqual([docs.guideMany!.id]);
     expect(ids(await list(b, { identification: "1712345678" }))).toEqual([]);
+    // La búsqueda también encuentra por identificación (refine-archive-search).
+    expect(ids(await list(a, { search: "1712345678" }))).toEqual([docs.guideMany!.id]);
+    expect(ids(await list(b, { search: "1712345678" }))).toEqual([]);
   });
 
   it("rechaza un filtro inválido sin consultar", async () => {

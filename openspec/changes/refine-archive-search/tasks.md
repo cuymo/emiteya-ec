@@ -1,6 +1,6 @@
 ## 1. Búsqueda por identificación
 
-- [ ] 1.1 Incluir la identificación del comprador y de los destinatarios en la búsqueda de la bandeja (`prisma-archive-reads.ts`); verificar con la prueba de integración de la bandeja, también por empresa.
+- [x] 1.1 Incluir la identificación del comprador y de los destinatarios en la búsqueda de la bandeja (`prisma-archive-reads.ts`); verificar con la prueba de integración de la bandeja, también por empresa.
 
 ## 2. Interfaz del Archivo de comprobantes
 
