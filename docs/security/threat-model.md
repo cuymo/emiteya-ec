@@ -55,6 +55,8 @@ Activos propios del facturador, además de los genéricos:
   su nombre.
 - Direcciones de correo de los receptores: datos personales de terceros, en los terceros y en el
   historial de cada envío.
+- Avatar propio de cada usuario (`redesign-account-profile`): un dato personal que solo su dueño
+  consulta, por `/api/v1/me/avatar`, sin identificador en la ruta.
 
 Límites de confianza adicionales:
 

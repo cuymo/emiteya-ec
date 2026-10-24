@@ -150,6 +150,22 @@ versión y SHA-256 en `security/gitleaks.json`, y corre en la CI en el workflow 
 - Enforce per-user and total size limits.
 - Keep storage paths, buckets, and provider names out of responses and the interface.
 
+### Avatar propio (`redesign-account-profile`)
+
+- **Qué es:** una foto del propio usuario, PNG o JPEG reconocida por su contenido con la inspección
+  compartida de `platform/images` (como el logo), de hasta `AVATAR_MAX_BYTES` (512 KB por defecto)
+  y 4096 px por lado. SVG y GIF se rechazan.
+- **Dónde vive:** en la tabla `user_avatar`, una fila por identidad, borrada en cascada con ella. No
+  se escribe en disco ni tiene una ruta controlada por el cliente.
+- **Quién lo ve:** solo su dueño, en su perfil y en su menú de cuenta. `PUT`, `GET` y
+  `DELETE /api/v1/me/avatar` resuelven al usuario desde la sesión, sin identificador en la ruta. No
+  existe ninguna operación para leer o quitar el avatar de otro: ni un administrador de la misma
+  empresa ni otra empresa pueden leerlo, cambiarlo ni saber si existe.
+- **Respuesta:** `GET` lo sirve con `Cache-Control: private, no-cache`, `ETag` con su SHA-256 y
+  `X-Content-Type-Options: nosniff`, desde el mismo origen. La CSP no cambia.
+- **Dato personal:** no se audita, no está en la lista de Usuarios ni en el paquete de
+  portabilidad, y se conserva hasta que el usuario lo quita o se borra su identidad.
+
 ## Correo saliente
 
 Proyecto (`add-email-delivery`; ADR 0029):

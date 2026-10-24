@@ -23,7 +23,7 @@
 
 - [x] 5.1 Implementar `PUT`, `GET` y `DELETE /api/v1/me/avatar` (cuerpo binario PNG/JPEG, inspección compartida, límite configurable, upsert por usuario, sin auditoría; `GET` con `private, no-cache`, `ETag` y `nosniff`); verificar con pruebas de integración: cargar, reemplazar, quitar, formato no admitido, tamaño y dimensiones excesivos, la misma imagen dos veces con una sola fila, cargas a la vez con una sola fila, `404` sin avatar.
 - [x] 5.2 Verificar el aislamiento con pruebas de integración: un administrador de la misma empresa y un usuario de otra empresa no pueden leer, cambiar, quitar ni detectar un avatar ajeno; la lista de Usuarios y el paquete de portabilidad no incluyen avatares; ningún evento de auditoría por el avatar.
-- [ ] 5.3 Documentar las operaciones nuevas de `/api/v1/me` en la documentación de la API y el avatar como dato personal en `docs/security/` (quién lo ve, retención y exclusión de la portabilidad).
+- [x] 5.3 Documentar las operaciones nuevas de `/api/v1/me` en la documentación de la API y el avatar como dato personal en `docs/security/` (quién lo ve, retención y exclusión de la portabilidad).
 
 ## 6. Avatar en la interfaz (primero, decisión del propietario, 2026-10-24)
 
