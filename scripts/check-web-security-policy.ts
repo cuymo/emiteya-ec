@@ -655,6 +655,36 @@ async function checkBrowserFlows(
   );
 
   await step(
+    "5c. Las pantallas de recuperación de la contraseña respetan la política",
+    state,
+    async () => {
+      // add-password-reset-by-email: las dos pantallas sin sesión cargan e hidratan con la política
+      // activa, y el token del fragmento sale de la dirección. No se envía ninguna solicitud.
+      const recovery = await context.newPage();
+      try {
+        await recovery.goto("/recuperar-contrasena");
+        await recovery
+          .getByRole("heading", { name: "Recuperar tu contraseña" })
+          .waitFor({ timeout: STEP_TIMEOUT_MS });
+        await recovery.goto("/restablecer-contrasena#token=comprobacion-csp");
+        await recovery
+          .getByRole("heading", { name: "Poner una contraseña nueva" })
+          .waitFor({ timeout: STEP_TIMEOUT_MS });
+        const hash = await recovery.evaluate(() => window.location.hash);
+        check(
+          "5c. Las pantallas de recuperación de la contraseña respetan la política",
+          at("5c. Las pantallas de recuperación de la contraseña respetan la política") === 0 &&
+            hash === "",
+          "las dos pantallas cargaron sin violaciones y el token salió de la dirección",
+        );
+      } finally {
+        await recovery.close();
+      }
+    },
+    page,
+  );
+
+  await step(
     "5b. El recorrido de bienvenida no viola la política",
     state,
     async () => {

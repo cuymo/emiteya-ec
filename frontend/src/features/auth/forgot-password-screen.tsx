@@ -51,7 +51,7 @@ export function ForgotPasswordScreen() {
 
   if (sent) {
     return (
-      <AuthCard title="Revisa tu correo" footer={BACK}>
+      <AuthCard title="Revisa tu correo">
         <div role="status" className="flex flex-col gap-4 text-sm">
           <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
             <MailCheck aria-hidden="true" className="size-5" />

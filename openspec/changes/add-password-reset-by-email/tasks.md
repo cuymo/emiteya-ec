@@ -9,4 +9,4 @@
 
 ## 3. Documentación y revisión
 
-- [ ] 3.1 Actualizar la seguridad, `backend.md`, `frontend.md` y el script de la política de seguridad, y revisar las pantallas en escritorio y teléfono.
+- [x] 3.1 Actualizar la seguridad, `backend.md`, `frontend.md` y el script de la política de seguridad, y revisar las pantallas en escritorio y teléfono.

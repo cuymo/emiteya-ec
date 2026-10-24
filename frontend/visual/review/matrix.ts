@@ -709,6 +709,53 @@ export const STATES: State[] = [
       await expect(page.locator("[data-slot=brand-logo]").first()).toBeVisible();
     },
   },
+  // Recuperación de la contraseña por correo (add-password-reset-by-email): la tarjeta de cada
+  // pantalla sin sesión, la respuesta tras pedir el enlace y el enlace vencido.
+  {
+    route: "recuperar-contrasena",
+    state: "formulario",
+    path: "/recuperar-contrasena",
+    group: "shell",
+    widths: PAIR,
+    scenario: { persona: "anonymous" },
+    ready: (page) => heading(page, "Recuperar tu contraseña"),
+  },
+  {
+    route: "recuperar-contrasena",
+    state: "enviado",
+    path: "/recuperar-contrasena",
+    group: "shell",
+    widths: PAIR,
+    scenario: { persona: "anonymous" },
+    ready: (page) => heading(page, "Recuperar tu contraseña"),
+    act: async (page) => {
+      // El servidor de autenticación no forma parte del arnés: la respuesta es la de siempre.
+      await page.route("**/api/auth/request-password-reset", (route) =>
+        route.fulfill({ status: 200, json: { status: true } }),
+      );
+      await page.getByLabel("Correo").fill("ana@empresa.ec");
+      await page.getByRole("button", { name: "Enviar enlace" }).click();
+      await heading(page, "Revisa tu correo");
+    },
+  },
+  {
+    route: "restablecer-contrasena",
+    state: "formulario",
+    path: "/restablecer-contrasena#token=revision-visual",
+    group: "shell",
+    widths: PAIR,
+    scenario: { persona: "anonymous" },
+    ready: (page) => heading(page, "Poner una contraseña nueva"),
+  },
+  {
+    route: "restablecer-contrasena",
+    state: "vencido",
+    path: "/restablecer-contrasena",
+    group: "shell",
+    widths: ["1440"],
+    scenario: { persona: "anonymous" },
+    ready: (page) => heading(page, "El enlace ya no sirve"),
+  },
   {
     route: "barra-lateral",
     state: "marca",
