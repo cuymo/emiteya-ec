@@ -463,6 +463,31 @@ export const STATES: State[] = [
       await shows(page, "001-001-000000123");
     },
   },
+  // Foto de perfil (redesign-account-profile): en Mi cuenta y dentro del menú de cuenta.
+  {
+    route: "mi-cuenta",
+    state: "foto",
+    path: "/mi-cuenta",
+    group: "configuracion",
+    widths: PAIR,
+    ready: async (page) => {
+      await heading(page, "Mi cuenta");
+      await expect(page.getByRole("button", { name: "Subir foto" })).toBeVisible();
+    },
+  },
+  {
+    route: "menu-cuenta",
+    state: "abierto",
+    path: "/facturas",
+    group: "shell",
+    widths: PAIR,
+    viewportOnly: true,
+    ready: (page) => heading(page, "Facturas"),
+    act: async (page) => {
+      await page.getByRole("button", { name: /^Cuenta de / }).click();
+      await expect(page.getByRole("menu")).toBeVisible();
+    },
+  },
   // La marca (add-brand-logo): el logo en el inicio de sesión y en la cabecera de la barra lateral.
   {
     route: "iniciar-sesion",

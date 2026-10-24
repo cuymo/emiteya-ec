@@ -74,7 +74,11 @@ export function AvatarSection() {
     const photo = profile.data.avatar;
     body = (
       <div className="flex flex-wrap items-center gap-4">
-        <UserAvatar name={me.name} version={photo?.version} className="size-20 text-2xl" />
+        <UserAvatar
+          name={me.name}
+          version={photo?.version}
+          className="size-20 [&_[data-slot=avatar-fallback]]:text-2xl"
+        />
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <Button

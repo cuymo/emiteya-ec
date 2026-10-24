@@ -413,6 +413,20 @@ function reply(
         body: { data, meta: { page: 1, pageSize: 25, total: data.length, environment } },
       };
     }
+    // Perfil propio, sin foto (redesign-account-profile).
+    case "GET /api/v1/me/profile":
+      return {
+        status: 200,
+        body: {
+          data: {
+            ...ME[scenario.persona],
+            membershipStatus: "ACTIVE",
+            memberSince: "2026-10-01T15:00:00.000Z",
+            avatar: null,
+            avatarMaxBytes: 524288,
+          },
+        },
+      };
     case "GET /api/v1/invoices":
       return invoiceList(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
     case "GET /api/v1/invoices/entries":
