@@ -17,6 +17,10 @@ import {
 } from "@facturador/contracts";
 import { z } from "zod";
 import { DEFAULT_LOGO_MAX_BYTES, LOGO_MAX_BYTES_RANGE } from "../modules/taxpayer/domain/logo.ts";
+import {
+  AVATAR_MAX_BYTES_RANGE,
+  DEFAULT_AVATAR_MAX_BYTES,
+} from "../modules/identity/domain/avatar.ts";
 import { canonicalOrigin } from "../platform/http/request-origin.ts";
 
 /** Una dirección IP explícita o un bloque CIDR con prefijo de 1 en adelante (design D3). */
@@ -140,6 +144,11 @@ export const envSchema = z
     // Tamaño máximo del logo (design D5); por defecto 512 KiB, entre 16 KiB y 2 MiB.
     LOGO_MAX_BYTES: int(LOGO_MAX_BYTES_RANGE.min, LOGO_MAX_BYTES_RANGE.max).default(
       DEFAULT_LOGO_MAX_BYTES,
+    ),
+    // Tamaño máximo del avatar propio (redesign-account-profile, design D4); por defecto 512 KiB,
+    // entre 16 KiB y 2 MiB.
+    AVATAR_MAX_BYTES: int(AVATAR_MAX_BYTES_RANGE.min, AVATAR_MAX_BYTES_RANGE.max).default(
+      DEFAULT_AVATAR_MAX_BYTES,
     ),
     // Custodia de la firma electrónica (add-signing-certificate, design D6). La clave se valida al
     // arrancar la API (loadCertificateCustody); nunca se guarda en la base de datos (ADR 0011).

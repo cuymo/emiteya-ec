@@ -7,7 +7,7 @@
 ## 2. Datos del avatar y configuración
 
 - [x] 2.1 Agregar al esquema de Prisma la tabla del avatar (identidad como clave primaria con borrado en cascada, contenido binario, tipo, tamaño, SHA-256, momento) y su migración; verificar con `db:generate` y aplicando la migración en la base de pruebas.
-- [ ] 2.2 Agregar `AVATAR_MAX_BYTES` a la configuración (por defecto 512 KB, entre 16 KB y 2 MB) y a `backend/.env.example`; verificar con las pruebas de configuración (valor por defecto y rango) y documentarla en `docs/architecture/deployment.md`.
+- [x] 2.2 Agregar `AVATAR_MAX_BYTES` a la configuración (por defecto 512 KB, entre 16 KB y 2 MB) y a `backend/.env.example`; verificar con las pruebas de configuración (valor por defecto y rango) y documentarla en `docs/architecture/deployment.md`.
 
 ## 3. Contratos y permiso
 

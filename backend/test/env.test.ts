@@ -123,6 +123,17 @@ describe("configuración por entorno", () => {
     }
   });
 
+  it("aplica el tamaño máximo del avatar por defecto y rechaza uno fuera de rango sin mostrarlo", () => {
+    expect(loadEnv(valid).AVATAR_MAX_BYTES).toBe(512 * 1024);
+    expect(loadEnv({ ...valid, AVATAR_MAX_BYTES: "2097152" }).AVATAR_MAX_BYTES).toBe(2097152);
+    for (const value of ["16383", "2097153", "mucho"]) {
+      const error = envError({ ...valid, AVATAR_MAX_BYTES: value });
+      expect(error?.variables, value).toEqual(["AVATAR_MAX_BYTES"]);
+      expect(error?.message).toContain("AVATAR_MAX_BYTES: valor inválido");
+      expect(error?.message).not.toContain(value);
+    }
+  });
+
   it("rechaza el secreto de ejemplo en producción, sin mostrarlo", () => {
     expect(loadEnv({ ...valid, BETTER_AUTH_SECRET: EXAMPLE_AUTH_SECRET }).NODE_ENV).toBe(
       "development",

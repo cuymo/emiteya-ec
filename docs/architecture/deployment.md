@@ -86,7 +86,7 @@ solo de configuración.
 
 El proxy inverso que enruta `/api` no puede admitir menos que el cuerpo legítimo más grande de la
 API, el borrador de una liquidación de compra (4 MiB). El borrador de una guía de remisión admite
-2 MiB, y el logo, `LOGO_MAX_BYTES`. Si el techo del proxy es menor, el proxy corta la petición antes
+2 MiB, el logo, `LOGO_MAX_BYTES`, y el avatar, `AVATAR_MAX_BYTES`. Si el techo del proxy es menor, el proxy corta la petición antes
 de que la API pueda responder con su mensaje.
 
 - El ejemplo de Nginx de "Configuración de la empresa" (`client_max_body_size 1m;`) cubre el logo
@@ -492,6 +492,7 @@ Variable que valida la API al arrancar (cambio `add-taxpayer-setup`, design D5):
 | Variable | Obligatoria | Default | Uso |
 | --- | --- | --- | --- |
 | `LOGO_MAX_BYTES` | No | 524288 (512 KiB) | Tamaño máximo del logo de la empresa, entre 16384 (16 KiB) y 2097152 (2 MiB). Fuera de ese rango la API no arranca y nombra la variable sin mostrar su valor. |
+| `AVATAR_MAX_BYTES` | No | 524288 (512 KiB) | Tamaño máximo del avatar propio de cada usuario (`redesign-account-profile`), entre 16384 (16 KiB) y 2097152 (2 MiB). Fuera de ese rango la API no arranca y nombra la variable sin mostrar su valor. |
 
 El logo se carga con `PUT /api/v1/taxpayer/logo` como cuerpo binario. El proxy inverso debe
 admitir cuerpos de al menos `LOGO_MAX_BYTES` en las rutas `/api`; si su límite es menor, el
