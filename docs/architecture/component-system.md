@@ -317,6 +317,18 @@ or dynamic labels do not shift neighboring content. Use consistent medium icon s
 at least 44px touch targets for header, navigation, dialog close, and other standalone
 touch actions.
 
+## Field Focus
+
+Fields do not use the blue focus outline (owner decision, 2026-10-24). This covers text, password
+and search inputs, text areas, native selects, the prefixed dropdowns (`select-trigger`), the date
+picker (`date-picker-trigger`), checkboxes and radios.
+
+- **On focus:** a field gets a dark gray border (`--color-foreground-muted`) and a soft gray halo
+  of 3 px. An invalid field keeps its red border.
+- **Where:** the rule lives once in `globals.css`, so no field repeats focus classes.
+- **Other controls:** buttons, tabs, toggles and links keep the blue focus outline. Focus is always
+  visible for keyboard users.
+
 ## Ownership And Documentation
 
 Document meaningful contract changes in `frontend.md` or an ADR. When replacing a shared

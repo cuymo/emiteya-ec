@@ -119,4 +119,12 @@ describe("CSS del sistema de diseño", () => {
       /@container \(width >= 57.5rem\)\s*\{(?:\s*\.[^{]+\{[^}]*\})*?\s*\.\\@form-rail\\:flex-row\s*\{\s*flex-direction: row/,
     );
   });
+
+  it("los campos se enfocan con un borde y un halo grises, sin el contorno azul", () => {
+    // Decisión del propietario, 2026-10-24.
+    const rule = css.slice(css.indexOf('[data-slot="date-picker-trigger"]):focus-visible'));
+    expect(rule).toMatch(/^[^}]*outline: none/);
+    expect(rule).toMatch(/^[^}]*border-color: var\(--color-foreground-muted\)/);
+    expect(rule).toMatch(/^[^}]*box-shadow: 0 0 0 3px/);
+  });
 });

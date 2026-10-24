@@ -43,7 +43,8 @@ export function SelectMenuTrigger({
       data-size={size}
       className={cn(
         "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none",
-        "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+        // El foco gris de los campos lo pone globals.css (decisión del propietario, 2026-10-24).
+        "disabled:cursor-not-allowed disabled:opacity-50",
         "data-placeholder:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-8 max-md:data-[size=sm]:h-11 max-md:data-[size=default]:h-11",
         "*:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5",
         "hover:bg-muted dark:bg-input/30 dark:hover:bg-input/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",

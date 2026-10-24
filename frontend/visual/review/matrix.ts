@@ -488,6 +488,19 @@ export const STATES: State[] = [
       await expect(page.getByRole("menu")).toBeVisible();
     },
   },
+  // Foco gris de los campos (decisión del propietario, 2026-10-24).
+  {
+    route: "empresa",
+    state: "campo-enfocado",
+    path: "/configuracion/empresa",
+    group: "configuracion",
+    widths: ["1440"],
+    viewportOnly: true,
+    ready: (page) => heading(page, "Empresa"),
+    act: async (page) => {
+      await page.getByLabel("Razón social").click();
+    },
+  },
   // La marca (add-brand-logo): el logo en el inicio de sesión y en la cabecera de la barra lateral.
   {
     route: "iniciar-sesion",

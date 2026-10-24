@@ -88,13 +88,15 @@ export function DatePickerField({
             <button
               id={id}
               type="button"
+              data-slot="date-picker-trigger"
               aria-labelledby={`${labelId} ${valueId}`}
               aria-invalid={error ? true : undefined}
               aria-describedby={describedBy}
               className={cn(
                 "flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-surface pl-3 text-left text-base text-foreground sm:text-sm max-md:h-11",
                 compact && "h-8 rounded-lg pl-2",
-                "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none aria-invalid:border-danger",
+                // El foco gris de los campos lo pone globals.css (decisión del propietario, 2026-10-24).
+                "aria-invalid:border-danger",
                 value ? "pr-10" : "pr-3",
               )}
             >
