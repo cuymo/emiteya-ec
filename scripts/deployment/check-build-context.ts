@@ -24,6 +24,7 @@ export const ALLOWED = [
   "frontend/package.json",
   "frontend/next.config.ts",
   "frontend/src/lib/api-internal-url.ts",
+  "frontend/public/brand/logo-emiteyaec.webp",
   "docs/product/sri-xsd/factura.xsd",
   "docs/product/w3c-xsd/xmldsig.xsd",
 ];

@@ -39,6 +39,8 @@ WORKDIR /app
 COPY --from=production-deps /deploy/package.json ./package.json
 COPY --from=production-deps /deploy/node_modules ./node_modules
 COPY --from=build /repo/frontend/.next ./.next
+# Recursos estáticos que se sirven tal cual, como el logo (`public/brand/`).
+COPY --from=build /repo/frontend/public ./public
 COPY --from=build /repo/frontend/next.config.ts ./next.config.ts
 COPY --from=build /repo/frontend/src/lib/api-internal-url.ts ./src/lib/api-internal-url.ts
 USER node

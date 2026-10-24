@@ -34,6 +34,7 @@
 !frontend/next-env.d.ts
 !frontend/postcss.config.mjs
 !frontend/src/
+!frontend/public/
 
 # XSD canónicos que copia el build del backend.
 !docs/product/sri-xsd/
