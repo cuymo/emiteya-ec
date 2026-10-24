@@ -27,6 +27,15 @@ async function submit(email: string, password: string) {
 }
 
 describe("pantalla Iniciar sesión", () => {
+  it("muestra el logo junto al nombre EmiteYa, sin repetir el nombre (add-brand-logo)", () => {
+    mockApi({ "GET /api/v1/me": unauthenticated });
+    renderApp(<LoginScreen />);
+    const brand = screen.getByText("EmiteYa");
+    const logo = brand.querySelector("[data-slot=brand-logo]")!;
+    expect(logo.getAttribute("src")).toContain("/brand/logo-emiteyaec-mark.webp");
+    expect(logo.getAttribute("alt")).toBe("");
+  });
+
   it("indica que un administrador restablece la contraseña, sin recuperación por correo", () => {
     mockApi({ "GET /api/v1/me": unauthenticated });
     renderApp(<LoginScreen />);

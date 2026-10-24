@@ -761,10 +761,15 @@ async function checkBrowserFlows(
       await page
         .getByRole("button", { name: "Contraer barra lateral" })
         .waitFor({ timeout: STEP_TIMEOUT_MS });
-      await page.getByRole("button", { name: "Nuevo" }).click();
-      await page.getByRole("menu").waitFor({ timeout: STEP_TIMEOUT_MS });
+      // La creación rápida vive en la paleta de comandos (add-brand-logo).
+      await page.keyboard.press("Control+KeyK");
+      await palette.waitFor({ timeout: STEP_TIMEOUT_MS });
+      await palette.getByRole("combobox").fill("nueva");
+      await palette
+        .getByRole("option", { name: "Nueva factura" })
+        .waitFor({ timeout: STEP_TIMEOUT_MS });
       await page.keyboard.press("Escape");
-      await page.getByRole("menu").waitFor({ state: "hidden", timeout: STEP_TIMEOUT_MS });
+      await palette.waitFor({ state: "hidden", timeout: STEP_TIMEOUT_MS });
       check(
         "27. El shell funciona con la política",
         true,

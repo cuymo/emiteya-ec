@@ -1,5 +1,6 @@
 // Creación rápida y paleta de comandos del shell (spec web-application-shell; adopt-premium-design-
-// foundation-and-shell, design D13 y D14): solo navegan, filtran según el rol, se manejan con el
+// foundation-and-shell, design D13 y D14; desde add-brand-logo, la creación rápida vive en la paleta y
+// la barra lateral lleva el logo): solo navegan, filtran según el rol, se manejan con el
 // teclado y devuelven el foco, y la paleta no consulta al servidor mientras se escribe. Corrección
 // del control de calidad UX (design D26, tarea 14.7): la paleta declara su alcance, «Buscar pantalla
 // o acción», reconoce sinónimos y, sin coincidencias, no afirma que un registro no exista.
@@ -27,28 +28,48 @@ afterEach(() => {
 
 const apiCalls = (calls: { key: string }[]) => calls.filter((call) => call.key.includes("/api/"));
 
-describe("creación rápida", () => {
-  it("lleva a la pantalla de nueva factura y no crea nada por sí misma", async () => {
+describe("creación rápida en la paleta (add-brand-logo)", () => {
+  const openPalette = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.keyboard("{Control>}k{/Control}");
+    return screen.findByRole("dialog", { name: "Paleta de comandos" });
+  };
+
+  it("la barra lateral lleva el logo y el nombre a Inicio, sin el botón «Nuevo»", async () => {
+    api();
+    renderShell();
+    await screen.findByText("contenido");
+    expect(screen.queryByRole("button", { name: "Nuevo" })).toBeNull();
+    const home = screen.getByRole("link", { name: "EmiteYa" });
+    expect(home.getAttribute("href")).toBe("/");
+    const logo = home.querySelector("[data-slot=brand-logo]") as HTMLImageElement;
+    expect(logo.getAttribute("src")).toContain("/brand/logo-emiteyaec-mark.webp");
+    // Decorativo: el nombre visible ya da el nombre accesible del enlace.
+    expect(logo.getAttribute("alt")).toBe("");
+    // Al pasar el puntero, los destinos de la barra lateral toman el mismo efecto que el activo.
+    expect(screen.getByRole("link", { name: "Facturas" }).className).toContain("hover:bg-active");
+  });
+
+  it("contraída, la cabecera conserva el logo y su enlace a Inicio", async () => {
+    api();
+    renderShell({ sidebarDefaultOpen: false });
+    await screen.findByText("contenido");
+    const home = screen.getByRole("link", { name: "EmiteYa" });
+    expect(home.querySelector("[data-slot=brand-logo]")).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Nuevo" })).toBeNull();
+  });
+
+  it("la paleta ofrece las seis acciones de crear y la nueva factura solo navega", async () => {
     const user = userEvent.setup();
     const calls = api();
     renderShell();
     await screen.findByText("contenido");
-    // Con un degradado azul discreto, del alto de los items, a todo el ancho y centrado
-    // (decisiones del propietario, 2026-10-22 y 2026-10-23).
-    const trigger = screen.getByRole("button", { name: "Nuevo" });
-    expect(trigger.className).toContain("bg-linear-to-r");
-    expect(trigger.className).not.toContain("bg-primary ");
-    expect(trigger.getAttribute("data-size")).toBe("sm");
-    expect(trigger.className).toContain("justify-center");
-    expect(trigger.className).toContain("w-full");
-    // Al pasar el puntero, los destinos de la barra lateral toman el mismo efecto que el activo.
-    expect(screen.getByRole("link", { name: "Facturas" }).className).toContain("hover:bg-active");
-    await user.click(trigger);
-    const menu = await screen.findByRole("menu");
+    const dialog = await openPalette(user);
+    await user.type(within(dialog).getByRole("combobox"), "nueva");
     expect(
-      within(menu)
-        .getAllByRole("menuitem")
-        .map((item) => item.textContent),
+      within(dialog)
+        .getAllByRole("option")
+        .map((option) => option.textContent)
+        .filter((text) => text?.startsWith("Nueva")),
     ).toEqual([
       "Nueva factura",
       "Nueva nota de crédito",
@@ -57,9 +78,8 @@ describe("creación rápida", () => {
       "Nueva guía de remisión",
       "Nueva liquidación de compra",
     ]);
-    const link = within(menu).getByRole("menuitem", { name: "Nueva factura" });
-    expect(link.getAttribute("href")).toBe("/borradores/nuevo");
-    // Abrirla no envía ninguna petición que cree algo.
+    await user.click(within(dialog).getByRole("option", { name: "Nueva factura" }));
+    expect(navigation.push).toHaveBeenCalledWith("/borradores/nuevo");
     expect(apiCalls(calls).filter((call) => !call.key.startsWith("GET "))).toEqual([]);
   });
 
@@ -87,37 +107,22 @@ describe("creación rápida", () => {
     const calls = api();
     renderShell();
     await screen.findByText("contenido");
-    const trigger = screen.getByRole("button", { name: "Nuevo" });
-    await user.click(trigger);
-    await screen.findByRole("menu");
+    await openPalette(user);
     await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
-    expect(document.activeElement).toBe(trigger);
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(navigation.push).not.toHaveBeenCalled();
     expect(apiCalls(calls).filter((call) => !call.key.startsWith("GET "))).toEqual([]);
   });
 
-  it("se maneja con el teclado y devuelve el foco al control que la abrió", async () => {
+  it("con el teclado se elige una acción de crear con las flechas y Enter", async () => {
     const user = userEvent.setup();
     api();
     renderShell();
     await screen.findByText("contenido");
-    const trigger = screen.getByRole("button", { name: "Nuevo" });
-    trigger.focus();
-    await user.keyboard("{Enter}");
-    await screen.findByRole("menu");
-    await user.keyboard("{ArrowDown}");
-    expect(document.activeElement?.textContent).toBe("Nueva nota de crédito");
-    await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
-    expect(document.activeElement).toBe(trigger);
-  });
-
-  it("colapsada, es un botón de icono con su nombre", async () => {
-    api();
-    renderShell({ sidebarDefaultOpen: false });
-    await screen.findByText("contenido");
-    expect(screen.getByRole("button", { name: "Nuevo" }).textContent).toBe("");
+    const dialog = await openPalette(user);
+    await user.type(within(dialog).getByRole("combobox"), "nueva nota");
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(navigation.push).toHaveBeenCalledWith("/notas-debito?nueva=1");
   });
 });
 

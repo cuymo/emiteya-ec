@@ -343,8 +343,11 @@ test.describe("ventas, borradores y archivo (D25; unify-drafts-into-document-lis
     browser,
   }) => {
     const page = await open(browser, "/facturas", { width: 1440, height: 900 });
-    await page.getByRole("button", { name: "Nuevo" }).click();
-    await page.getByRole("menuitem", { name: "Nueva factura" }).click();
+    // La creación rápida vive en la paleta de comandos (add-brand-logo).
+    await page.keyboard.press("Control+KeyK");
+    const palette = page.getByRole("dialog", { name: "Paleta de comandos" });
+    await palette.getByRole("combobox").fill("nueva factura");
+    await palette.getByRole("option", { name: "Nueva factura" }).click();
     await page.waitForURL((url) => url.pathname === "/borradores/nuevo");
     await expect(nav(page).locator('a[aria-current="page"]')).toHaveText("Facturas");
     const crumbs = page.getByRole("navigation", { name: "Ruta de navegación" });

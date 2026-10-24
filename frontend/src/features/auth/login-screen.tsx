@@ -12,6 +12,7 @@ import { AsyncButton } from "@/components/async-button";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { PasswordField } from "@/components/password-field";
 import { Skeleton } from "@/components/states";
+import { BrandLogo } from "@/components/brand-logo";
 import { ME_KEY, useMe } from "@/components/session";
 import { Input } from "@/components/ui/input";
 import { AuthError, safeNextPath, signIn } from "@/lib/auth-client";
@@ -64,7 +65,10 @@ export function LoginScreen() {
     >
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-foreground-muted">EmiteYa</p>
+          <p className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <BrandLogo className="h-9" />
+            EmiteYa
+          </p>
           <h1 className="text-3xl font-bold">Iniciar sesión</h1>
         </div>
         {expired && !error && (
@@ -128,7 +132,10 @@ export function LoginSkeleton() {
     >
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-foreground-muted">EmiteYa</p>
+          <p className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <BrandLogo className="h-9" />
+            EmiteYa
+          </p>
           <h1 className="text-3xl font-bold">Iniciar sesión</h1>
         </div>
         <Skeleton className="h-16 w-full" />

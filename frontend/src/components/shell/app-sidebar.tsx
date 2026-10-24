@@ -9,10 +9,11 @@
 // vista de la barra en la carga y en cada cambio de ruta (design D23).
 "use client";
 
-import { ChevronDown, Receipt } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 import { useSession } from "@/components/session";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -164,7 +165,7 @@ function useActiveDestinationInView(container: RefObject<HTMLDivElement | null>,
   }, [container, revision]);
 }
 
-export function AppSidebar({ headerAction }: { headerAction?: ReactNode }) {
+export function AppSidebar() {
   const { me } = useSession();
   const pathname = usePathname();
   const { state, openMobile } = useSidebar();
@@ -177,15 +178,16 @@ export function AppSidebar({ headerAction }: { headerAction?: ReactNode }) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="EmiteYa">
+            {/* El logo y el nombre llevan a Inicio; contraída, queda el logo con su ayuda
+                (add-brand-logo). */}
+            <SidebarMenuButton asChild tooltip="EmiteYa" className="h-12 gap-2.5">
               <Link href="/" className="font-semibold">
-                <Receipt aria-hidden="true" />
-                <span className="text-base">EmiteYa</span>
+                <BrandLogo className="h-8 group-data-[collapsible=icon]:h-4" />
+                <span className="text-lg">EmiteYa</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {headerAction}
       </SidebarHeader>
       <SidebarContent ref={content}>
         <nav aria-label="Navegación principal" className="flex min-h-full flex-col">

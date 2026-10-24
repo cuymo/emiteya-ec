@@ -3,8 +3,8 @@
 ### Requirement: Nombre visible del producto
 La interfaz SHALL identificar el producto como EmiteYa: en el shell, en el inicio de sesión y en el
 título de cada pantalla. El logo oficial de EmiteYa SHALL acompañar al nombre en la cabecera de la
-barra lateral y en el inicio de sesión, con «EmiteYa» como texto alternativo, y SHALL ser el icono
-de la web en el navegador. «Facturador SRI» no SHALL aparecer como nombre del producto en la
+barra lateral y en el inicio de sesión, sin repetir el nombre para las tecnologías de asistencia, y
+SHALL ser el icono de la web en el navegador. «Facturador SRI» no SHALL aparecer como nombre del producto en la
 interfaz.
 
 #### Scenario: Título de una pantalla
