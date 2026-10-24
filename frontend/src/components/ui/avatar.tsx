@@ -1,7 +1,9 @@
 // Derivado de la plantilla «Studio Admin» 2.2.0, `src/components/ui/avatar.tsx` (MIT;
 // frontend/THIRD_PARTY_NOTICES.md). Adaptado (adopt-premium-design-foundation-and-shell, design D6 y
-// D7): solo iniciales. Sin `AvatarImage`, ni imágenes remotas, ni grupos o insignias que no se usan.
-// Las iniciales son decorativas: el nombre accesible lo da el control o el texto que acompaña.
+// D7): las iniciales y, desde redesign-account-profile, la foto propia servida por la API del mismo
+// origen (`AvatarImage`), con las iniciales mientras carga o si falla. Sin imágenes remotas, ni grupos
+// o insignias que no se usan. Son decorativas: el nombre accesible lo da el control o el texto que
+// acompaña.
 "use client";
 
 import { Avatar as AvatarPrimitive } from "radix-ui";
@@ -21,6 +23,18 @@ export function Avatar({
         "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten",
         className,
       )}
+      {...props}
+    />
+  );
+}
+
+/** La foto, de la API del mismo origen; Radix muestra las iniciales hasta que carga. */
+export function AvatarImage({ className, ...props }: ComponentProps<typeof AvatarPrimitive.Image>) {
+  return (
+    <AvatarPrimitive.Image
+      data-slot="avatar-image"
+      alt=""
+      className={cn("aspect-square size-full rounded-full object-cover", className)}
       {...props}
     />
   );
