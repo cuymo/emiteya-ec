@@ -12,7 +12,8 @@
 // destinatarios"; en la liquidación, la contraparte es su proveedor y se rotula "Proveedor". Junto al
 // estado, el indicador del último correo y el filtro «Correo» con «No enviado» (add-email-delivery,
 // design D14). La búsqueda encuentra por número, receptor o identificación, y las fechas van a su
-// izquierda, de su mismo tamaño; los desplegables se reparten su fila (refine-archive-search).
+// izquierda, de su mismo tamaño; los desplegables se reparten su fila (refine-archive-search). La
+// cabecera va en dos columnas, 25 % y 75 %, con los tres campos en una sola fila (2026-10-24).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -437,7 +438,7 @@ export function DocumentsScreen() {
             value={url.from}
             max={url.to || undefined}
             onChange={(value) => url.update({ desde: value })}
-            className="w-[calc(50%-0.25rem)] md:w-auto md:max-w-72 md:flex-1"
+            className="w-[calc(50%-0.25rem)] md:w-auto md:min-w-0 md:flex-1"
           />
           <DatePickerField
             compact
@@ -446,18 +447,18 @@ export function DocumentsScreen() {
             min={url.from || undefined}
             error={rangeError}
             onChange={(value) => url.update({ hasta: value })}
-            className="w-[calc(50%-0.25rem)] md:w-auto md:max-w-72 md:flex-1"
+            className="w-[calc(50%-0.25rem)] md:w-auto md:min-w-0 md:flex-1"
           />
           <SearchInput
             value={searchDraft}
             onChange={setSearchDraft}
             label="Buscar por número, receptor o identificación"
             placeholder="Número, receptor o identificación"
-            className="sm:w-full md:max-w-72 md:flex-1"
+            className="sm:w-full md:min-w-0 md:flex-1"
           />
         </>
       }
-      searchRow
+      headerSplit
       filters={filters}
       filtersFill
     >

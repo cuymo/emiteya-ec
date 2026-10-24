@@ -592,8 +592,13 @@ describe("búsqueda, fechas y filtros (refine-archive-search)", () => {
     expect(to.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(from.className).toContain("h-8");
     expect(from.textContent).toContain("Desde");
-    expect(from.closest("div.flex-col")?.className).toContain("md:max-w-72");
-    expect(search.parentElement?.className).toContain("md:max-w-72");
+    // Los tres campos se reparten el 75 % derecho de la cabecera, en una sola fila (2026-10-24).
+    expect(from.closest("div.flex-col")?.className).toContain("md:flex-1");
+    expect(search.parentElement?.className).toContain("md:flex-1");
+    const card = search.closest("[data-slot=data-table-card]")!;
+    expect(card.firstElementChild?.className).toContain(
+      "md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]",
+    );
   });
 
   it("los desplegables se reparten toda la fila", async () => {

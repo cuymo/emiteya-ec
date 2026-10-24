@@ -157,10 +157,11 @@ Let the user recognize a value without reading every cell.
 - Do not color whole rows for routine states; reserve that for a condition that needs attention now.
 
 The document archive (`refine-archive-search`) shows how a list with dates arranges its header:
-- **Header controls:** «Desde» and «Hasta» go in the header, on their own row aligned to the right,
-  just left of the search (`DataTableCard` with `searchRow`). They are compact `DatePickerField`s:
-  the search's height and border, the label read by assistive technology and shown as the
-  placeholder, up to 18 rem each.
+- **Header controls:** from 768 px the header has two columns (`DataTableCard` with `headerSplit`;
+  owner decision, 2026-10-24): the title and description in the left 25 %, and «Desde», «Hasta»
+  and the search in the right 75 %, on one row that they share equally, without wrapping. On a
+  phone they stack. The dates are compact `DatePickerField`s: the search's height and border, with
+  the label read by assistive technology and shown as the placeholder.
 - **Search:** it finds a document by number, receiver name or receiver identification, so the list
   has no separate identification field.
 - **Filters:** the dropdowns grow to fill their row (`filtersFill`, `DataTableSelectFilter` with

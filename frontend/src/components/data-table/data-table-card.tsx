@@ -5,7 +5,8 @@
 // - El título es el encabezado de la pantalla (`h1`), o de su sección (`h2`) cuando la tabla es una
 //   parte de una página mayor.
 // - En un teléfono, las acciones bajan debajo del título y la búsqueda ocupa la fila entera.
-// - Si la búsqueda y sus controles no caben junto al título, bajan a su propia fila, a la derecha.
+// - Si la búsqueda y sus controles no caben junto al título, bajan a su propia fila, a la derecha;
+//   con `headerSplit`, la cabecera va en dos columnas, 25 % y 75 %.
 // - Sin casillas de selección ni contador: el producto no tiene acciones masivas.
 // - Es una región con el nombre de su título, como las pantallas a las que sustituye.
 import type { ReactNode } from "react";
@@ -22,7 +23,7 @@ export function DataTableCard({
   filters,
   filtersEnd,
   filtersFill = false,
-  searchRow = false,
+  headerSplit = false,
   lead,
   className,
   busy,
@@ -42,8 +43,12 @@ export function DataTableCard({
   filtersEnd?: ReactNode;
   /** Los filtros ocupan toda su fila (refine-archive-search). */
   filtersFill?: boolean;
-  /** La búsqueda y sus controles van en su propia fila, a la derecha (refine-archive-search). */
-  searchRow?: boolean;
+  /**
+   * Cabecera en dos columnas desde 768 px: el título y la descripción en el 25 % izquierdo, y la
+   * búsqueda y sus controles en el 75 % derecho, en una sola fila que ocupan entera (decisión del
+   * propietario, 2026-10-24).
+   */
+  headerSplit?: boolean;
   /** Antes de los filtros, como los borradores en curso del módulo. */
   lead?: ReactNode;
   className?: string;
@@ -55,7 +60,14 @@ export function DataTableCard({
   return (
     <section aria-labelledby={titleId} aria-busy={busy || undefined}>
       <Card data-slot="data-table-card" className={className}>
-        <CardHeader className="flex flex-col gap-3 border-b md:flex-row md:flex-wrap md:items-start md:justify-between">
+        <CardHeader
+          className={cn(
+            "flex flex-col gap-3 border-b",
+            headerSplit
+              ? "md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:grid-rows-1! md:items-center md:gap-6"
+              : "md:flex-row md:flex-wrap md:items-start md:justify-between",
+          )}
+        >
           <div className="flex min-w-0 flex-col gap-1.5">
             <Heading id={titleId} className="text-xl leading-none font-semibold">
               {title}
@@ -68,7 +80,7 @@ export function DataTableCard({
             <div
               className={cn(
                 "flex w-full flex-wrap items-center gap-2 md:ml-auto md:w-auto md:flex-nowrap md:justify-end",
-                searchRow && "md:w-full",
+                headerSplit && "md:w-full",
               )}
             >
               {search}
