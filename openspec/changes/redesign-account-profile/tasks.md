@@ -35,7 +35,7 @@
 
 - [x] 7.1 Agregar en el frontend la mutación del nombre, invalidando la sesión al cambiarlo; verificar con pruebas unitarias.
 - [x] 7.2 Rediseñar «Mi cuenta» como página de perfil según el ajuste del propietario del 2026-10-24 (design D8): el avatar al inicio con «Cambiar foto» y «Quitar foto», el nombre, el correo e insignias debajo (rol, «Activa», empresa y «Cuenta desde»), y las pestañas «Datos» (el nombre editable y los datos de la cuenta, con la nota del correo), «Cambiar contraseña» y «Establecimiento predeterminado» con `?pestana=`; verificar con pruebas de componentes: carga, error con reintento, sin avatar, con avatar, editar el nombre (éxito, error junto al campo, el nombre nuevo en la sesión), las pestañas con el teclado y la dirección.
-- [ ] 7.3 Revisar la página con la lista de comprobación del frontend (`docs/quality/`) en escritorio y teléfono, solo tema claro, y documentar la pantalla y sus componentes en `docs/architecture/` (navegación y sistema de componentes); verificar con capturas.
+- [x] 7.3 Revisar la página con la lista de comprobación del frontend (`docs/quality/`) en escritorio y teléfono, solo tema claro, y documentar la pantalla y sus componentes en `docs/architecture/` (navegación y sistema de componentes); verificar con capturas.
 
 ## 8. Verificación
 

@@ -123,7 +123,10 @@ export function ProfileHeader() {
 
   if (profile.isPending) {
     return (
-      <div data-slot="profile-header" className="flex items-center gap-5">
+      <div
+        data-slot="profile-header"
+        className="flex items-center gap-5 rounded-xl bg-card bg-linear-to-br from-primary/8 to-card p-5 ring-1 ring-foreground/10 sm:p-6"
+      >
         <Skeleton className="size-24 rounded-full" />
         <div className="flex flex-1 flex-col gap-2">
           <h1 id="cuenta-titulo" className="text-2xl font-bold">
@@ -147,11 +150,14 @@ export function ProfileHeader() {
   }
   const photo = profile.data.avatar;
   return (
-    <div data-slot="profile-header" className="flex flex-col gap-5 sm:flex-row sm:items-start">
+    <div
+      data-slot="profile-header"
+      className="flex flex-col gap-5 rounded-xl bg-card bg-linear-to-br from-primary/8 to-card p-5 ring-1 ring-foreground/10 sm:p-6 sm:flex-row sm:items-start"
+    >
       <UserAvatar
         name={profile.data.name}
         version={photo?.version}
-        className="size-24 shrink-0 [&_[data-slot=avatar-fallback]]:text-3xl"
+        className="size-24 shrink-0 ring-4 ring-background [&_[data-slot=avatar-fallback]]:bg-primary/10 [&_[data-slot=avatar-fallback]]:text-3xl [&_[data-slot=avatar-fallback]]:text-primary"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">

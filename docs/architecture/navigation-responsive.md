@@ -64,7 +64,10 @@ Shortened on 2026-10-24 (`reorganize-main-navigation`). The groups and destinati
   - **Exception:** inside a document, registering a party stays in `PartyDialog`, so the draft is
     not left behind. It shares the fields and the save logic of `party-form.tsx`.
 
-- **Mi cuenta** lives in the account menu, not in the sidebar.
+- **Mi cuenta** lives in the account menu, not in the sidebar. It is a profile page: the avatar
+  header with the account badges, and the tabs «Datos», «Cambiar contraseña» and «Establecimiento
+  predeterminado» in `?pestana=` (`redesign-account-profile`). Its breadcrumb is «Mi cuenta»; its
+  `h1` is the user's name.
 - **Permissions.** Each destination keeps the permission of the earlier navigation. The operator
   sees every group up to Reportes and, in Configuración, only Catálogos fiscales.
 - **Single source.** `frontend/src/lib/navigation/routes.ts` is the only source of:

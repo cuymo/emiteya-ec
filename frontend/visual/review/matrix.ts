@@ -660,14 +660,41 @@ export const STATES: State[] = [
   },
   // Foto de perfil (redesign-account-profile): en Mi cuenta y dentro del menú de cuenta.
   {
+    // La página de perfil (redesign-account-profile, design D8 con el ajuste del propietario del
+    // 2026-10-24): el avatar con las insignias y una captura por pestaña.
     route: "mi-cuenta",
-    state: "foto",
+    state: "datos",
     path: "/mi-cuenta",
     group: "configuracion",
     widths: PAIR,
     ready: async (page) => {
-      await heading(page, "Mi cuenta");
+      await heading(page, "Ana Admin");
       await expect(page.getByRole("button", { name: "Subir foto" })).toBeVisible();
+      await expect(page.getByRole("textbox", { name: "Nombre" })).toBeVisible();
+    },
+  },
+  {
+    route: "mi-cuenta",
+    state: "contrasena",
+    path: "/mi-cuenta?pestana=contrasena",
+    group: "configuracion",
+    widths: ["1440"],
+    ready: async (page) => {
+      await heading(page, "Ana Admin");
+      await expect(page.getByLabel("Contraseña actual")).toBeVisible();
+    },
+  },
+  {
+    route: "mi-cuenta",
+    state: "establecimiento",
+    path: "/mi-cuenta?pestana=establecimiento",
+    group: "configuracion",
+    widths: ["1440"],
+    ready: async (page) => {
+      await heading(page, "Ana Admin");
+      await expect(
+        page.getByRole("heading", { name: "Punto de emisión predeterminado" }),
+      ).toBeVisible();
     },
   },
   {
