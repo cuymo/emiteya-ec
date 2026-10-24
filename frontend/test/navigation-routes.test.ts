@@ -53,14 +53,22 @@ describe("modelo de rutas", () => {
   it("el administrador ve todos los grupos y destinos, en el orden de la spec", () => {
     expect(labels(permissionsOf("ADMIN"))).toEqual([
       ["Inicio", ["Inicio"]],
-      // Corrección del control de calidad UX (design D25): Borradores pasa a Ventas como «Borradores
-      // de facturas» y Comprobantes se llama «Archivo de comprobantes»; las rutas no cambian.
-      ["Ventas", ["Facturas", "Notas de crédito", "Notas de débito"]],
-      ["Compras", ["Liquidaciones de compra", "Retenciones"]],
-      ["Logística", ["Guías de remisión", "Inventario"]],
-      ["Documentos", ["Archivo de comprobantes"]],
-      ["Maestros", ["Terceros", "Productos"]],
-      ["Análisis", ["Reportes"]],
+      // reorganize-main-navigation: los comprobantes juntos, con la vista transversal primero; las
+      // rutas no cambian.
+      [
+        "Comprobantes",
+        [
+          "Todos los comprobantes",
+          "Facturas",
+          "Notas de crédito",
+          "Notas de débito",
+          "Retenciones",
+          "Liquidaciones de compra",
+          "Guías de remisión",
+        ],
+      ],
+      ["Administración", ["Clientes y proveedores", "Productos", "Inventario"]],
+      ["Reportes", ["Reportes"]],
       [
         "Configuración",
         [
@@ -77,15 +85,15 @@ describe("modelo de rutas", () => {
     ]);
   });
 
-  it("el operador ve los mismos grupos hasta Análisis y en Configuración solo Catálogos fiscales", () => {
+  it("el operador ve los mismos grupos hasta Reportes y en Configuración solo Catálogos fiscales", () => {
     const groups = labels(permissionsOf("OPERATOR"));
-    expect(groups.slice(0, 7)).toEqual(labels(permissionsOf("ADMIN")).slice(0, 7));
+    expect(groups.slice(0, 4)).toEqual(labels(permissionsOf("ADMIN")).slice(0, 4));
     expect(groups.at(-1)).toEqual(["Configuración", ["Catálogos fiscales"]]);
   });
 
   it("un grupo sin destinos visibles no aparece", () => {
     const groups = visibleGroups((permission) => permission === "invoices.read");
-    expect(groups.map((group) => group.label)).toEqual(["Inicio", "Ventas"]);
+    expect(groups.map((group) => group.label)).toEqual(["Inicio", "Comprobantes"]);
   });
 
   it("marca el destino de las pantallas internas", () => {
@@ -98,8 +106,8 @@ describe("modelo de rutas", () => {
     // adopt-premium-design-foundation-and-shell, que lo colgaba de Borradores de facturas).
     expect(destination("/borradores/nuevo")).toBe("Facturas");
     expect(destination("/borradores/d-1")).toBe("Facturas");
-    expect(resolveRoute("/borradores/nuevo")?.group?.label).toBe("Ventas");
-    expect(resolveRoute("/comprobantes")?.destination.label).toBe("Archivo de comprobantes");
+    expect(resolveRoute("/borradores/nuevo")?.group?.label).toBe("Comprobantes");
+    expect(resolveRoute("/comprobantes")?.destination.label).toBe("Todos los comprobantes");
     expect(destination("/inventario/p1")).toBe("Inventario");
     expect(destination("/")).toBe("Inicio");
     expect(destination("/mi-cuenta")).toBe("Mi cuenta");
@@ -142,53 +150,54 @@ describe("migas", () => {
 
   it("una pantalla interna muestra su grupo, su destino como enlace y la pantalla actual", () => {
     expect(crumbs("/facturas/abc")).toEqual([
-      "Ventas",
+      "Comprobantes",
       "Facturas→/facturas",
       "[Detalle de factura]",
     ]);
     expect(crumbs("/facturas/abc", "001-001-000000123")).toEqual([
-      "Ventas",
+      "Comprobantes",
       "Facturas→/facturas",
       "[001-001-000000123]",
     ]);
     expect(crumbs("/notas-credito/borradores/d1")).toEqual([
-      "Ventas",
+      "Comprobantes",
       "Notas de crédito→/notas-credito",
       "[Borrador de nota de crédito]",
     ]);
     expect(crumbs("/inventario/p1", "Tornillo 3/8")).toEqual([
-      "Logística",
+      "Administración",
       "Inventario→/inventario",
       "[Tornillo 3/8]",
     ]);
     // Terceros y Productos registran y corrigen en su página (decisión del propietario, 2026-10-17).
     expect(crumbs("/productos/nuevo")).toEqual([
-      "Maestros",
+      "Administración",
       "Productos→/productos",
       "[Nuevo producto]",
     ]);
     expect(crumbs("/terceros/p-1", "Comercial Andina S.A.")).toEqual([
-      "Maestros",
-      "Terceros→/terceros",
+      "Administración",
+      "Clientes y proveedores→/terceros",
       "[Comercial Andina S.A.]",
     ]);
     // productize-invoice-editor-and-composition-foundation, D12 y PO-1.
     expect(crumbs("/borradores/nuevo")).toEqual([
-      "Ventas",
+      "Comprobantes",
       "Facturas→/facturas",
       "[Nueva factura]",
     ]);
     expect(crumbs("/borradores/d-1")).toEqual([
-      "Ventas",
+      "Comprobantes",
       "Facturas→/facturas",
       "[Borrador de factura]",
     ]);
   });
 
-  it("un destino muestra su grupo y su nombre; Inicio y Mi cuenta, solo su nombre", () => {
+  it("un destino muestra su grupo y su nombre; Inicio, Reportes y Mi cuenta, solo su nombre", () => {
     expect(crumbs("/configuracion/empresa")).toEqual(["Configuración", "[Empresa]"]);
-    expect(crumbs("/facturas")).toEqual(["Ventas", "[Facturas]"]);
-    expect(crumbs("/comprobantes")).toEqual(["Documentos", "[Archivo de comprobantes]"]);
+    expect(crumbs("/facturas")).toEqual(["Comprobantes", "[Facturas]"]);
+    expect(crumbs("/comprobantes")).toEqual(["Comprobantes", "[Todos los comprobantes]"]);
+    expect(crumbs("/reportes")).toEqual(["[Reportes]"]);
     expect(crumbs("/")).toEqual(["[Inicio]"]);
     expect(crumbs("/mi-cuenta")).toEqual(["[Mi cuenta]"]);
     expect(crumbs("/nada-que-ver")).toEqual([]);

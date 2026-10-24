@@ -206,15 +206,15 @@ describe("paleta de comandos", () => {
     const input = within(dialog).getByRole("combobox");
     const before = calls.length;
     for (const [query, label] of [
-      ["clientes", "Terceros"],
-      ["proveedor", "Terceros"],
+      ["clientes", "Clientes y proveedores"],
+      ["proveedor", "Clientes y proveedores"],
       ["contraseña", "Mi cuenta"],
       ["IVA", "Catálogos fiscales"],
       ["certificado", "Firma electrónica"],
       ["SMTP", "Correos"],
       ["servidor de correo", "Correos"],
       ["numeración", "Establecimientos"],
-      ["facturas emitidas", "Archivo de comprobantes"],
+      ["facturas emitidas", "Todos los comprobantes"],
       ["factura sin emitir", "Facturas"],
     ] as const) {
       await user.clear(input);
@@ -297,7 +297,7 @@ describe("filtro de la paleta", () => {
       [MI_CUENTA, ...NAV_GROUPS.flatMap((group) => group.destinations)].find(
         (destination) => destination.label === label,
       )?.keywords ?? [];
-    expect(keywords("Terceros")).toEqual(
+    expect(keywords("Clientes y proveedores")).toEqual(
       expect.arrayContaining(["clientes", "proveedores", "transportistas", "contactos"]),
     );
     expect(keywords("Catálogos fiscales")).toEqual(
@@ -313,7 +313,9 @@ describe("filtro de la paleta", () => {
     expect(keywords("Establecimientos")).toEqual(
       expect.arrayContaining(["secuencial", "numeración", "número"]),
     );
-    expect(paletteFilter("Terceros", "CLIENTE", keywords("Terceros"))).toBe(1);
+    expect(
+      paletteFilter("Clientes y proveedores", "CLIENTE", keywords("Clientes y proveedores")),
+    ).toBe(1);
     expect(paletteFilter("Mi cuenta", "contrasena", keywords("Mi cuenta"))).toBe(1);
   });
 });

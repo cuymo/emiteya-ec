@@ -50,6 +50,11 @@ export type NavGroup = {
    * pliega fuera de sus pantallas (design D24) y lleva su icono. Los dos aparecen en las migas.
    */
   section: boolean;
+  /**
+   * Un grupo de un solo destino que va suelto en la barra, sin título, y no se repite en las migas
+   * (Inicio y Reportes).
+   */
+  loose?: boolean;
   icon?: LucideIcon;
   destinations: Destination[];
 };
@@ -91,12 +96,21 @@ export const MI_CUENTA: Destination = {
 
 /** Grupos y destinos en el orden de la spec; como máximo dos niveles. */
 export const NAV_GROUPS: readonly NavGroup[] = [
-  { id: "inicio", label: "Inicio", section: false, destinations: [INICIO] },
+  { id: "inicio", label: "Inicio", section: false, loose: true, destinations: [INICIO] },
   {
-    id: "ventas",
-    label: "Ventas",
+    // Todos los tipos de comprobante juntos, con la vista transversal primero (decisión del
+    // propietario, 2026-10-24).
+    id: "comprobantes",
+    label: "Comprobantes",
     section: false,
     destinations: [
+      {
+        href: "/comprobantes",
+        label: "Todos los comprobantes",
+        icon: FolderArchive,
+        permission: "archive.read",
+        keywords: ["comprobantes", "documentos", "archivo", "facturas emitidas"],
+      },
       {
         // Los borradores van en la propia lista, con el estado «Borrador»
         // (unify-drafts-into-document-lists, design D6): sin un destino aparte.
@@ -118,13 +132,12 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         icon: FilePlus,
         permission: "debitNotes.read",
       },
-    ],
-  },
-  {
-    id: "compras",
-    label: "Compras",
-    section: false,
-    destinations: [
+      {
+        href: "/retenciones",
+        label: "Retenciones",
+        icon: ReceiptText,
+        permission: "withholdings.read",
+      },
       {
         href: "/liquidaciones-compra",
         label: "Liquidaciones de compra",
@@ -132,50 +145,21 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         permission: "purchaseSettlements.read",
       },
       {
-        href: "/retenciones",
-        label: "Retenciones",
-        icon: ReceiptText,
-        permission: "withholdings.read",
-      },
-    ],
-  },
-  {
-    id: "logistica",
-    label: "Logística",
-    section: false,
-    destinations: [
-      {
         href: "/guias-remision",
         label: "Guías de remisión",
         icon: Truck,
         permission: "shippingGuides.read",
       },
-      { href: "/inventario", label: "Inventario", icon: Warehouse, permission: "inventory.read" },
     ],
   },
   {
-    id: "documentos",
-    label: "Documentos",
-    section: false,
-    destinations: [
-      {
-        // Vista transversal de los comprobantes de todos los tipos.
-        href: "/comprobantes",
-        label: "Archivo de comprobantes",
-        icon: FolderArchive,
-        permission: "archive.read",
-        keywords: ["comprobantes", "documentos", "archivo", "facturas emitidas"],
-      },
-    ],
-  },
-  {
-    id: "maestros",
-    label: "Maestros",
+    id: "administracion",
+    label: "Administración",
     section: false,
     destinations: [
       {
         href: "/terceros",
-        label: "Terceros",
+        label: "Clientes y proveedores",
         icon: Contact,
         permission: "parties.read",
         keywords: [
@@ -190,12 +174,14 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         ],
       },
       { href: "/productos", label: "Productos", icon: Package, permission: "products.read" },
+      { href: "/inventario", label: "Inventario", icon: Warehouse, permission: "inventory.read" },
     ],
   },
   {
-    id: "analisis",
-    label: "Análisis",
+    id: "reportes",
+    label: "Reportes",
     section: false,
+    loose: true,
     destinations: [
       { href: "/reportes", label: "Reportes", icon: FileSpreadsheet, permission: "reports.read" },
     ],
@@ -524,12 +510,12 @@ export type Crumb = { label: string; href?: string; current?: boolean };
 /**
  * Migas jerárquicas de la barra superior, después del enlace a Inicio: el grupo de la navegación, el
  * destino (un enlace en una pantalla interna) y la pantalla actual, que en un detalle es su registro.
- * Inicio no repite su grupo.
+ * Un grupo suelto (Inicio, Reportes) no se repite.
  */
 export function breadcrumbsFor(route: ResolvedRoute | null, recordLabel?: string | null): Crumb[] {
   if (!route) return [];
   const crumbs: Crumb[] = [];
-  if (route.group && route.group.id !== "inicio") crumbs.push({ label: route.group.label });
+  if (route.group && !route.group.loose) crumbs.push({ label: route.group.label });
   if (route.leaf) {
     crumbs.push({ label: route.destination.label, href: route.destination.href });
     crumbs.push({ label: recordLabel || route.leaf, current: true });

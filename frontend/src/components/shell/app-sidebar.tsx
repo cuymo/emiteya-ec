@@ -3,16 +3,17 @@
 // Derivada de `app-sidebar.tsx` y `nav-main.tsx` de la plantilla «Studio Admin» (MIT;
 // frontend/THIRD_PARTY_NOTICES.md): los grupos y destinos salen del modelo de rutas canónico y del rol
 // de la sesión; sin tarjeta de soporte, Inbox, insignias ni navegación de demostración. En móvil, los
-// grupos se pliegan (navigation-responsive.md), con el del destino actual abierto. La sección
-// Configuración es un solo enlace al pie, a su primera pestaña que el rol ve: sus secciones son
-// pestañas de una página (decisión del propietario, 2026-10-16). El destino actual se desplaza a la
-// vista de la barra en la carga y en cada cambio de ruta (design D23).
+// grupos se pliegan (navigation-responsive.md), con el del destino actual abierto. Inicio y Reportes
+// van sueltos, sin título, y una línea separa los bloques (reorganize-main-navigation). La sección
+// Configuración es un solo enlace después de Reportes, a su primera pestaña que el rol ve: sus
+// secciones son pestañas de una página (decisión del propietario, 2026-10-16). El destino actual se
+// desplaza a la vista de la barra en la carga y en cada cambio de ruta (design D23).
 "use client";
 
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, type RefObject } from "react";
+import { Fragment, useEffect, useRef, type RefObject } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { useSession } from "@/components/session";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -26,6 +27,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -78,10 +80,10 @@ function NavSection({ group, activeHref }: { group: NavGroup; activeHref: string
   if (group.section) {
     return <SectionLink group={group} active={containsActive} />;
   }
-  // Inicio es un destino suelto, sin etiqueta de grupo.
-  if (group.id === "inicio") {
+  // Inicio y Reportes son destinos sueltos, sin etiqueta de grupo.
+  if (group.loose) {
     return (
-      <SidebarGroup className="pb-0">
+      <SidebarGroup className="py-1">
         <SidebarGroupContent>
           <GroupMenu group={group} activeHref={activeHref} />
         </SidebarGroupContent>
@@ -121,14 +123,14 @@ function NavSection({ group, activeHref }: { group: NavGroup; activeHref: string
 }
 
 /**
- * Una sección como un solo enlace al pie de la barra: lleva a su primera pantalla y queda activa en
- * cualquiera de ellas, que se recorren con las pestañas de la página.
+ * Una sección como un solo enlace suelto: lleva a su primera pantalla y queda activa en cualquiera de
+ * ellas, que se recorren con las pestañas de la página.
  */
 function SectionLink({ group, active }: { group: NavGroup; active: boolean }) {
   const first = group.destinations[0];
   if (!first) return null;
   return (
-    <SidebarGroup className="mt-auto">
+    <SidebarGroup className="py-1">
       <SidebarGroupContent>
         <SidebarMenu>
           <DestinationLink
@@ -191,8 +193,12 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent ref={content}>
         <nav aria-label="Navegación principal" className="flex min-h-full flex-col">
-          {groups.map((group) => (
-            <NavSection key={group.id} group={group} activeHref={activeHref} />
+          {groups.map((group, index) => (
+            <Fragment key={group.id}>
+              {/* Reportes y Configuración forman el último bloque, sin línea entre ellos. */}
+              {index > 0 && !group.section && <SidebarSeparator />}
+              <NavSection group={group} activeHref={activeHref} />
+            </Fragment>
           ))}
         </nav>
       </SidebarContent>

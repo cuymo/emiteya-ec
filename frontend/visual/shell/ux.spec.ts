@@ -68,17 +68,17 @@ async function destinationHrefs(page: Page): Promise<string[]> {
 
 test.describe("SH-1: cada icono de la barra colapsada responde al clic en su centro", () => {
   for (const [persona, viewport, expected] of [
-    ["admin", { width: 1440, height: 900 }, 14],
-    ["admin", { width: 1024, height: 768 }, 14],
-    ["operator", { width: 1440, height: 900 }, 14],
+    ["admin", { width: 1440, height: 900 }, 13],
+    ["admin", { width: 1024, height: 768 }, 13],
+    ["operator", { width: 1440, height: 900 }, 13],
   ] as const) {
     test(`${persona} a ${viewport.width}x${viewport.height}`, async ({ browser }) => {
       test.setTimeout(240_000);
       const page = await open(browser, "/", viewport, { scenario: { persona }, collapsed: true });
       await expect(page.getByRole("button", { name: "Expandir barra lateral" })).toBeVisible();
       const hrefs = await destinationHrefs(page);
-      // Inicio, 4 de Ventas, 2 de Compras, 2 de Logística, 1 de Documentos, 2 de Maestros, 1 de
-      // Análisis y Configuración, un solo destino hacia su primera pestaña.
+      // Inicio, 7 de Comprobantes, 3 de Administración, Reportes y Configuración, un solo destino
+      // hacia su primera pestaña.
       expect(hrefs).toHaveLength(expected);
       const dead: string[] = [];
       for (const href of hrefs) {
@@ -108,7 +108,7 @@ test.describe("SH-2: a poca altura, cada destino se alcanza con el puntero", () 
       }) => {
         const page = await open(browser, "/facturas", viewport, { collapsed });
         const hrefs = await destinationHrefs(page);
-        expect(hrefs).toHaveLength(14);
+        expect(hrefs).toHaveLength(13);
         const unreachable: string[] = [];
         for (const href of hrefs) {
           const link = nav(page).locator(`a[href="${href}"]`);
@@ -293,13 +293,13 @@ test.describe("paleta veraz sobre su alcance (D26)", () => {
     const dialog = page.getByRole("dialog", { name: "Paleta de comandos" });
     const input = dialog.getByRole("combobox");
     for (const [query, label] of [
-      ["clientes", "Terceros"],
-      ["transportista", "Terceros"],
+      ["clientes", "Clientes y proveedores"],
+      ["transportista", "Clientes y proveedores"],
       ["IVA", "Catálogos fiscales"],
       ["PKCS12", "Firma electrónica"],
       ["contraseña", "Mi cuenta"],
       ["numeración", "Establecimientos"],
-      ["documentos", "Archivo de comprobantes"],
+      ["documentos", "Todos los comprobantes"],
       ["factura pendiente", "Facturas"],
     ] as const) {
       await input.fill(query);
@@ -318,17 +318,22 @@ test.describe("paleta veraz sobre su alcance (D26)", () => {
   });
 });
 
-test.describe("ventas, borradores y archivo (D25; unify-drafts-into-document-lists, D6)", () => {
-  test("Ventas no tiene un destino de borradores y Archivo de comprobantes va en Documentos", async ({
+test.describe("comprobantes, borradores y archivo (D25; reorganize-main-navigation)", () => {
+  test("Comprobantes empieza por Todos los comprobantes y no tiene un destino de borradores", async ({
     browser,
   }) => {
     const page = await open(browser, "/facturas", { width: 1440, height: 900 });
     const labels = await nav(page)
       .locator('a[data-sidebar="menu-button"]')
       .evaluateAll((links) => links.map((link) => link.textContent!.trim()));
-    expect(labels.slice(1, 4)).toEqual(["Facturas", "Notas de crédito", "Notas de débito"]);
+    expect(labels.slice(1, 5)).toEqual([
+      "Todos los comprobantes",
+      "Facturas",
+      "Notas de crédito",
+      "Notas de débito",
+    ]);
     await expect(nav(page).getByRole("link", { name: /Borradores/ })).toHaveCount(0);
-    await expect(nav(page).getByRole("link", { name: "Archivo de comprobantes" })).toHaveAttribute(
+    await expect(nav(page).getByRole("link", { name: "Todos los comprobantes" })).toHaveAttribute(
       "href",
       "/comprobantes",
     );

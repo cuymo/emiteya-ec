@@ -75,21 +75,20 @@ describe("shell autenticado: comportamiento conservado", () => {
   });
 
   it("administrador y operador ven los destinos operativos en sus grupos nuevos", async () => {
-    // Antes estaban todos en «Operación»; ahora Ventas, Compras, Logística, Documentos, Maestros y
-    // Análisis (arquitectura de información aprobada).
+    // reorganize-main-navigation: Comprobantes y Administración; Inicio y Reportes van sueltos.
     const destinations: Record<string, string> = {
       Inicio: "/",
       Facturas: "/facturas",
-      // Comprobantes se llama «Archivo de comprobantes» (design D25). Los borradores de factura
-      // van en la lista de Facturas (unify-drafts-into-document-lists, design D6).
+      // Los borradores de factura van en la lista de Facturas (unify-drafts-into-document-lists,
+      // design D6).
       "Notas de crédito": "/notas-credito",
       "Notas de débito": "/notas-debito",
       "Liquidaciones de compra": "/liquidaciones-compra",
       Retenciones: "/retenciones",
       "Guías de remisión": "/guias-remision",
       Inventario: "/inventario",
-      "Archivo de comprobantes": "/comprobantes",
-      Terceros: "/terceros",
+      "Todos los comprobantes": "/comprobantes",
+      "Clientes y proveedores": "/terceros",
       Productos: "/productos",
       Reportes: "/reportes",
     };
@@ -98,14 +97,7 @@ describe("shell autenticado: comportamiento conservado", () => {
       navigation.pathname = "/";
       const view = renderShell();
       await screen.findByText("contenido");
-      for (const label of [
-        "Ventas",
-        "Compras",
-        "Logística",
-        "Documentos",
-        "Maestros",
-        "Análisis",
-      ]) {
+      for (const label of ["Comprobantes", "Administración"]) {
         expect(within(mainNav()).getByText(label)).toBeDefined();
       }
       for (const [name, href] of Object.entries(destinations)) {
@@ -431,7 +423,7 @@ describe("navegación adaptable", () => {
     await user.click(menu);
     const panel = await screen.findByRole("dialog", { name: "Menú" });
     // Los grupos se pliegan en móvil; se abren para elegir un destino.
-    await user.click(within(panel).getByRole("button", { name: "Ventas" }));
+    await user.click(within(panel).getByRole("button", { name: "Comprobantes" }));
     await user.click(within(panel).getByRole("link", { name: "Facturas" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(document.activeElement).toBe(menu);
@@ -507,7 +499,7 @@ describe("migas", () => {
     await screen.findByText("contenido");
     const [nav] = breadcrumb();
     expect(within(nav!).getByRole("link", { name: "Inicio" }).getAttribute("href")).toBe("/");
-    expect(within(nav!).getByText("Ventas")).toBeDefined();
+    expect(within(nav!).getByText("Comprobantes")).toBeDefined();
     expect(within(nav!).getByText("Facturas").getAttribute("aria-current")).toBe("page");
   });
 
