@@ -46,12 +46,13 @@ describe("perfil y avatar propios", () => {
     expect(res.status, `inicio de sesión de ${email}`).toBe(200);
     return res.cookie;
   };
-  const call = (method: "get" | "put" | "delete", url: string, cookie: string) =>
-    request(api.app)
-      [method](`/api/v1${url}`)
+  const call = (method: "get" | "put" | "delete", url: string, cookie: string) => {
+    const agent = request(api.app);
+    return agent[method](`/api/v1${url}`)
       .set("Origin", BASE_URL)
       .set("Cookie", cookie)
       .set("X-Forwarded-For", ip());
+  };
   const upload = (cookie: string, content: Buffer, type = "image/png") =>
     call("put", "/me/avatar", cookie).set("Content-Type", type).send(content);
   const avatarRows = () => db.database.prisma.userAvatar.findMany();
