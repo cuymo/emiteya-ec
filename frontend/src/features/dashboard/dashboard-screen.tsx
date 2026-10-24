@@ -3,7 +3,6 @@
 // revisar o qué hacer a continuación. Composición de tarjetas de la plantilla «Studio Admin» (MIT;
 // frontend/THIRD_PARTY_NOTICES.md), con los datos del servidor (`GET /dashboard`) en el ambiente
 // vigente:
-// - si la empresa todavía no puede emitir, primero sus requisitos;
 // - cuatro indicadores comerciales (redesign-dashboard-indicators): ventas autorizadas con su
 //   variación, facturas autorizadas sobre las emitidas, problemas de autorización y borradores;
 // - con los charts de shadcn/ui (`dashboard-charts.tsx`), cada uno con su tabla para la asistencia:
@@ -72,7 +71,6 @@ import { DOCUMENT_KINDS } from "@/features/archive/document-kinds";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { DocumentStatusBadge } from "@/features/documents/document-status-badge";
 import { useEmailAvailability } from "@/features/email/email-api";
-import { ReadinessChecks } from "@/features/home/readiness-screen";
 import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
 import { useCertificateValidity } from "@/features/signing/signing-api";
 import { useDashboard } from "./dashboard-api";
@@ -378,13 +376,11 @@ function Dashboard({ data }: { data: DashboardView }) {
   const validity = useCertificateValidity(true);
   const availability = useEmailAvailability(true);
   const canCreate = canSee(me.role, "invoices.draft");
-  const canConfigure = canSee(me.role, "taxpayer.configure");
   const currentMonth = data.today.slice(0, 7);
   const previousMonth = data.monthly.at(-2)?.month;
   const invoices = data.month.invoices;
   const hasActivity = data.recent.length > 0;
   const environment = ENVIRONMENT_LABELS[data.environment];
-  const readiness = status.data?.readiness;
   const certificate = validity.data;
   const customerRows: RankingRow[] = data.topCustomers.map((customer) => ({
     key: customer.identification,
@@ -445,29 +441,6 @@ function Dashboard({ data }: { data: DashboardView }) {
           </Button>
         )}
       </header>
-
-      {readiness && !readiness.ready && status.data && (
-        <Card
-          data-slot="dashboard-readiness"
-          data-tour="inicio-requisitos"
-          className="ring-warning/40"
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TriangleAlert aria-hidden="true" className="size-4 text-warning" />
-              Tu empresa todavía no puede emitir
-            </CardTitle>
-            <CardDescription>
-              {canConfigure
-                ? "Completa estos requisitos para emitir comprobantes."
-                : "Pide a un administrador que complete la configuración."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <ReadinessChecks status={status.data} canConfigure={canConfigure} />
-          </CardContent>
-        </Card>
-      )}
 
       <div data-tour="inicio-indicadores" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric

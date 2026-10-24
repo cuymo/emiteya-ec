@@ -40,9 +40,10 @@ export const TOUR_SEGMENTS: readonly TourSegment[] = [
           "En un minuto te mostramos lo esencial: tu resumen, la configuración de tu empresa y cómo emitir tu primera factura.",
       },
       {
-        selector: anchor("inicio-requisitos"),
+        selector: anchor("primeros-pasos"),
         title: "Lo que falta para emitir",
-        description: "Mientras tu empresa no pueda emitir, aquí ves qué completar y dónde hacerlo.",
+        description:
+          "Mientras tu empresa no pueda emitir, este botón te lleva a Primeros pasos: qué completar y dónde hacerlo.",
         side: "bottom",
       },
       {

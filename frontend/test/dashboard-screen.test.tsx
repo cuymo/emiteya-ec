@@ -410,13 +410,11 @@ describe("tablero de Inicio", () => {
     expect(within(table).getByText("Autorizado")).toBeDefined();
   });
 
-  it("si la empresa no puede emitir, sus requisitos van primero", async () => {
+  it("los requisitos pendientes no van en el tablero: tienen su página (redesign-dashboard-indicators, 4.1)", async () => {
     renderHome({ "GET /api/v1/company/status": () => status(false) });
-    const readiness = await screen.findByText("Tu empresa todavía no puede emitir");
-    expect(readiness.closest("[data-slot=dashboard-readiness]")?.textContent).toContain(
-      "Firma electrónica",
-    );
-    expect(readiness.closest('[data-tour="inicio-requisitos"]')).not.toBeNull();
+    await loaded();
+    expect(screen.queryByText("Tu empresa todavía no puede emitir")).toBeNull();
+    expect(document.querySelector("[data-slot=dashboard-readiness]")).toBeNull();
   });
 
   it("sin comprobantes invita a emitir el primero", async () => {

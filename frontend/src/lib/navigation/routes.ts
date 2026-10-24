@@ -17,6 +17,7 @@ import {
   Globe,
   HardDriveDownload,
   House,
+  ListChecks,
   Mail,
   Package,
   ReceiptText,
@@ -92,6 +93,18 @@ export const MI_CUENTA: Destination = {
   icon: UserRound,
   permission: null,
   keywords: ["contraseña", "password", "cuenta", "perfil"],
+};
+/**
+ * Los requisitos para emitir, fuera de Inicio (redesign-dashboard-indicators, tarea 4.1): la barra
+ * superior lleva aquí mientras falte alguno. Sin permiso propio: cada requisito dice si el rol puede
+ * resolverlo.
+ */
+export const PRIMEROS_PASOS: Destination = {
+  href: "/primeros-pasos",
+  label: "Primeros pasos",
+  icon: ListChecks,
+  permission: null,
+  keywords: ["falta configurar", "requisitos", "preparación", "emitir", "configuración inicial"],
 };
 
 /** Grupos y destinos en el orden de la spec; como máximo dos niveles. */
@@ -463,6 +476,7 @@ export type ResolvedRoute = {
 
 function findDestination(href: string): { destination: Destination; group: NavGroup | null } {
   if (href === MI_CUENTA.href) return { destination: MI_CUENTA, group: null };
+  if (href === PRIMEROS_PASOS.href) return { destination: PRIMEROS_PASOS, group: null };
   for (const group of NAV_GROUPS) {
     const destination = group.destinations.find((candidate) => candidate.href === href);
     if (destination) return { destination, group };
@@ -473,9 +487,11 @@ function findDestination(href: string): { destination: Destination; group: NavGr
 /** Resuelve una ruta en su destino, su grupo, su pantalla interna y el permiso que exige. */
 export function resolveRoute(pathname: string): ResolvedRoute | null {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
-  const exact = [MI_CUENTA, ...NAV_GROUPS.flatMap((group) => group.destinations)].find(
-    (destination) => destination.href === path,
-  );
+  const exact = [
+    MI_CUENTA,
+    PRIMEROS_PASOS,
+    ...NAV_GROUPS.flatMap((group) => group.destinations),
+  ].find((destination) => destination.href === path);
   if (exact) {
     return {
       ...findDestination(exact.href),

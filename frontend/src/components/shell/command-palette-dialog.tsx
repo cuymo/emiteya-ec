@@ -19,6 +19,7 @@ import {
 import { paletteFilter } from "@/lib/navigation/palette-filter";
 import {
   MI_CUENTA,
+  PRIMEROS_PASOS,
   permissionsOf,
   visibleCreateActions,
   visibleGroups,
@@ -39,6 +40,7 @@ export default function CommandPaletteDialog({
       group.destinations.map((destination) => ({ destination, group: group.label })),
     ),
     { destination: MI_CUENTA, group: "Cuenta" },
+    { destination: PRIMEROS_PASOS, group: "Cuenta" },
   ];
   const actions = visibleCreateActions(can);
   const go = (href: string) => {

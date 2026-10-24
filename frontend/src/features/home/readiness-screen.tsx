@@ -1,5 +1,6 @@
-// Inicio: preparación para emitir (add-taxpayer-setup, design D9 y D14). Usuario: administrador y
-// operador. Objetivo: saber si la empresa puede emitir y, si no, qué falta. Decisión: qué requisito
+// Primeros pasos: la preparación para emitir (add-taxpayer-setup, design D9 y D14), en su propia
+// página desde redesign-dashboard-indicators (tarea 4.1): la barra superior lleva aquí con «Falta
+// configurar» mientras falte algo, y el tablero ya no la repite. Usuario: administrador y operador. Objetivo: saber si la empresa puede emitir y, si no, qué falta. Decisión: qué requisito
 // resolver primero o a quién pedírselo. Acción principal: para el administrador, el enlace al primer
 // requisito pendiente; el operador no tiene acción. P2: ambiente vigente.
 "use client";
@@ -18,7 +19,7 @@ import {
   useCompanyStatus,
 } from "@/features/company/company-api";
 
-/** Los requisitos para emitir, con el enlace al primero pendiente; también los usa el tablero. */
+/** Los requisitos para emitir, con el enlace al primero pendiente. */
 export function ReadinessChecks({
   status,
   canConfigure,
@@ -95,7 +96,7 @@ export function ReadinessScreen() {
         className="flex flex-col gap-6"
       >
         <h1 id="inicio-titulo" className="text-3xl font-bold">
-          Preparación para emitir
+          Primeros pasos
         </h1>
         <ErrorState message={errorMessage(status.error)} onRetry={() => void status.refetch()} />
       </section>
@@ -111,8 +112,11 @@ export function ReadinessScreen() {
     >
       <div className="flex flex-col gap-2">
         <h1 id="inicio-titulo" className="text-3xl font-bold">
-          Preparación para emitir
+          Primeros pasos
         </h1>
+        <p className="text-sm text-foreground-muted">
+          Lo que tu empresa necesita para emitir comprobantes electrónicos.
+        </p>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           {ready ? (
             <StatusBadge tone="success" label="Lista para emitir" icon={CircleCheck} />
@@ -140,7 +144,7 @@ export function ReadinessScreen() {
 export function ReadinessSkeleton() {
   return (
     <section aria-busy="true" data-page-width="reading" className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Preparación para emitir</h1>
+      <h1 className="text-3xl font-bold">Primeros pasos</h1>
       <Skeleton className="h-6 w-32" />
       <Skeleton className="h-48 w-full" />
     </section>

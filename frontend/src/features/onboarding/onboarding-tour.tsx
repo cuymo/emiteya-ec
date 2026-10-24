@@ -29,10 +29,8 @@ export function useOnboardingTour(): { start: () => void } {
   return useContext(TourContext) ?? { start: () => {} };
 }
 
-/** El tablero ya cargó: muestra sus indicadores o, si la empresa no puede emitir, sus requisitos. */
-const dashboardShown = () =>
-  document.querySelector(`${anchor("inicio-indicadores")}, ${anchor("inicio-requisitos")}`) !==
-  null;
+/** El tablero ya cargó: muestra sus indicadores. */
+const dashboardShown = () => document.querySelector(anchor("inicio-indicadores")) !== null;
 
 export function OnboardingTourProvider({ children }: { children: ReactNode }) {
   const { me } = useSession();

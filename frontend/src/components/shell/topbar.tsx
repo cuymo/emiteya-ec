@@ -98,10 +98,13 @@ export function Topbar({
   environment,
   search,
   notifications,
+  setup,
 }: {
   company: ReactNode;
   environment: ReactNode;
   search?: ReactNode;
+  /** «Falta configurar», mientras la empresa no pueda emitir (redesign-dashboard-indicators). */
+  setup?: ReactNode;
   /** La campana de avisos, a la izquierda de la identidad. */
   notifications?: ReactNode;
 }) {
@@ -121,6 +124,7 @@ export function Topbar({
           <TopbarHeading />
         </div>
         <div data-slot="topbar-end" className="flex shrink-0 items-center gap-2 md:gap-3">
+          {setup}
           {search}
           <FullscreenToggle />
           {notifications}

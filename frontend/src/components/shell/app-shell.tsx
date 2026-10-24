@@ -13,6 +13,7 @@ import { BreadcrumbLabelProvider } from "./breadcrumb-label";
 import { CommandPalette } from "./command-palette";
 import { RouteGuard } from "./route-guard";
 import { NotificationsMenu } from "@/features/notifications/notifications-menu";
+import { SetupButton } from "@/features/home/setup-button";
 import { OnboardingTourProvider } from "@/features/onboarding/onboarding-tour";
 import { TOPBAR_ACTION, Topbar } from "./topbar";
 
@@ -50,6 +51,7 @@ export function AppShell({
             <Topbar
               company={company}
               environment={environment}
+              setup={<SetupButton />}
               search={<CommandPalette />}
               notifications={<NotificationsMenu className={TOPBAR_ACTION} />}
             />

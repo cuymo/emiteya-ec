@@ -41,10 +41,10 @@ const labels = (can: ReturnType<typeof permissionsOf>) =>
   ]);
 
 describe("modelo de rutas", () => {
-  it("cada una de las 42 páginas autenticadas encaja con un destino o una pantalla interna", () => {
+  it("cada una de las 43 páginas autenticadas encaja con un destino o una pantalla interna", () => {
     // Las páginas del frontend menos las de sin sesión, que quedan fuera del shell: el inicio de
     // sesión y la recuperación de la contraseña (add-password-reset-by-email).
-    expect(AUTHENTICATED).toHaveLength(42);
+    expect(AUTHENTICATED).toHaveLength(43);
     expect(pageUrls(join(APP, "(auth)")).sort()).toEqual([
       "/iniciar-sesion",
       "/recuperar-contrasena",
