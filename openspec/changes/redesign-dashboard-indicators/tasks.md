@@ -1,6 +1,6 @@
 ## 1. Resumen del servidor
 
-- [ ] 1.1 Agregar al contrato del tablero la variación de las ventas, los correos en cola, la transmisión encendida y la última comunicación con el SRI; calcular la variación en el servidor y componer los puertos nuevos de `fiscal` y `email` en `main.ts` y en el arnés; verificar con pruebas unitarias del cálculo y la prueba de integración del tablero.
+- [x] 1.1 Agregar al contrato del tablero la variación de las ventas, los correos en cola, la transmisión encendida y la última comunicación con el SRI; calcular la variación en el servidor y componer los puertos nuevos de `fiscal` y `email` en `main.ts` y en el arnés; verificar con pruebas unitarias del cálculo y la prueba de integración del tablero.
 
 ## 2. Tablero
 

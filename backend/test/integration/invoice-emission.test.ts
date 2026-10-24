@@ -198,6 +198,11 @@ describe("emisión de facturas hasta RESERVED", () => {
       expect(view.month.invoices.authorizedCount).toBe(0);
       expect(view.recent[0]?.documentType).toBe("01");
       expect(view.drafts.invoices).toBeGreaterThanOrEqual(1);
+      // redesign-dashboard-indicators: sin ventas el mes anterior no hay variación, y la conexión
+      // con el SRI sale de lo guardado, sin contactarlo.
+      expect(view.month.invoices.previousChangePercent).toBeNull();
+      expect(view.email.pending).toBe(0);
+      expect(view.sri).toEqual({ transmissionEnabled: false, lastContact: null });
       const other = await call(companies.r!.cookies.admin, "get", "/dashboard");
       const otherView = (other.body as { data: DashboardView }).data;
       expect(otherView.recent.map((row) => row.id)).not.toContain(view.recent[0]?.id);

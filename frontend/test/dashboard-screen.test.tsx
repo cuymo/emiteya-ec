@@ -27,6 +27,7 @@ const SUMMARY = {
       authorizedCount: 15,
       issuedCount: 19,
       previousAuthorizedTotal: "46346.22",
+      previousChangePercent: "-60.8",
     },
     byType: [
       { documentType: "01", issued: 19, authorized: 15, authorizedTotal: "18162.13" },
@@ -39,6 +40,8 @@ const SUMMARY = {
     authorizedCount: index === 5 ? 15 : 30,
   })),
   attention: { count: 3, rejectedLast30Days: 2, emailFailed: 0 },
+  email: { pending: 0 },
+  sri: { transmissionEnabled: true, lastContact: null },
   drafts: { invoices: 4 },
   inventory: { outOfStock: 1 },
   topCustomers: [

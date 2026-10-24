@@ -5,6 +5,7 @@ import { apiRoutes } from "@facturador/contracts";
 import type { Authorizer } from "../../src/modules/identity/application/authorization.ts";
 import type { UserAdministration } from "../../src/modules/identity/application/user-administration.ts";
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
+import { profileRouter } from "../../src/modules/identity/infrastructure/http/profile-router.ts";
 import type { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { taxpayerRouters } from "../../src/modules/taxpayer/infrastructure/index.ts";
 import { fiscalRouters } from "../../src/modules/fiscal/infrastructure/index.ts";
@@ -79,6 +80,10 @@ describe("rutas documentadas", () => {
     // Los routers solo se inspeccionan: ninguna dependencia se usa al construirlos.
     const routers = [
       usersRouter({} as UserAdministration),
+      profileRouter({
+        profile: {} as Parameters<typeof profileRouter>[0]["profile"],
+        avatarMaxBytes: 1,
+      }),
       ...taxpayerRouters({
         prisma: {} as PrismaClient,
         authorizer: {} as Authorizer,
@@ -189,8 +194,10 @@ describe("rutas documentadas", () => {
       "put /signing-certificate/expiry-alert",
     ]);
     // La descarga del paquete de portabilidad nunca lleva la firma, su archivo ni su contraseña
-    // (spec data-portability, "Exclusión de la firma y los secretos").
-    expect(apiRoutes.filter((route) => /p12|pfx|password|download|file/i.test(route.path))).toEqual(
+    // (spec data-portability, "Exclusión de la firma y los secretos"). «Perfil» no es un archivo.
+    expect(
+      apiRoutes.filter((route) => /p12|pfx|password|download|(?<!pro)file/i.test(route.path)),
+    ).toEqual(
       apiRoutes.filter((route) =>
         /\/users\/:userId\/password|^\/data-exports\/:id\/download$/.test(route.path),
       ),

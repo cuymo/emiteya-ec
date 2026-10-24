@@ -42,6 +42,14 @@ export function createEmailStatusSource(db: DbClient, schema = "public") {
         WHERE "status" = 'FAILED' AND "environment" = ${environment}`);
       return Number(row?.total ?? 0);
     },
+
+    /** Cuántos comprobantes del ambiente tienen su último envío en cola o reintentando. */
+    async countPendingDocuments(companyId: string, environment: Environment): Promise<number> {
+      const [row] = await db.$queryRaw<{ total: bigint }[]>(Prisma.sql`
+        SELECT count(*) AS total FROM (${latest(companyId, Prisma.empty)}) AS latest
+        WHERE "status" IN ('PENDING', 'RETRYING') AND "environment" = ${environment}`);
+      return Number(row?.total ?? 0);
+    },
   };
 }
 

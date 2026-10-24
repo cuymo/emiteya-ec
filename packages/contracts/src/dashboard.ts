@@ -26,6 +26,14 @@ export const dashboardViewSchema = z.strictObject({
       issuedCount: count,
       /** Lo autorizado en todo el mes anterior, para comparar. */
       previousAuthorizedTotal: sum,
+      /**
+       * Variación de lo autorizado frente al mes anterior, en porcentaje con un decimal y signo
+       * (redesign-dashboard-indicators, design D1); `null` si el mes anterior no tuvo ventas.
+       */
+      previousChangePercent: z
+        .string()
+        .regex(/^-?\d+\.\d$/)
+        .nullable(),
     }),
     /** Un renglón por tipo con comprobantes en el mes; la guía no tiene total. */
     byType: z.array(
@@ -52,6 +60,23 @@ export const dashboardViewSchema = z.strictObject({
     rejectedLast30Days: count,
     /** Autorizados cuyo último envío por correo falló (add-email-delivery). */
     emailFailed: count,
+  }),
+  /** Comprobantes con su último envío por correo en cola o reintentando (design D3). */
+  email: z.strictObject({ pending: count }),
+  /**
+   * La transmisión al SRI, leída de lo guardado: el resumen nunca contacta al SRI (design D2).
+   * `lastContact` es el último intento de la empresa en su ambiente vigente.
+   */
+  sri: z.strictObject({
+    /** `SRI_TRANSMISSION_ENABLED` del despliegue. */
+    transmissionEnabled: z.boolean(),
+    lastContact: z
+      .strictObject({
+        at: z.iso.datetime(),
+        /** Si el intento recibió una respuesta HTTP menor que 500. */
+        reached: z.boolean(),
+      })
+      .nullable(),
   }),
   drafts: z.strictObject({ invoices: count }),
   inventory: z.strictObject({

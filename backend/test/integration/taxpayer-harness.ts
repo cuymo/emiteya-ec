@@ -29,6 +29,7 @@ import { createEmailStatusSource } from "../../src/modules/email/infrastructure/
 import {
   createDocumentSummary,
   createTransmissionReader,
+  sriLastContact,
 } from "../../src/modules/fiscal/infrastructure/index.ts";
 import { invoiceDraftCount } from "../../src/modules/invoices/infrastructure/index.ts";
 import { outOfStockCount } from "../../src/modules/inventory/infrastructure/index.ts";
@@ -525,7 +526,15 @@ export function buildTaxpayerApp(
                 companyId,
                 environment,
               ),
+            emailPending: (companyId, environment) =>
+              createEmailStatusSource(db.database.prisma, db.name).countPendingDocuments(
+                companyId,
+                environment,
+              ),
+            sriLastContact: (companyId, environment) =>
+              sriLastContact(db.database.prisma, companyId, environment),
           },
+          sriTransmissionEnabled: false,
           ...(options.now ? { now: options.now } : {}),
         }).routers,
       );

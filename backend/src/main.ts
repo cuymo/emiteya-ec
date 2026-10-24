@@ -53,6 +53,7 @@ import { dashboardModule } from "./modules/dashboard/infrastructure/index.ts";
 import { createCatalogPortabilitySources } from "./modules/catalogs/infrastructure/index.ts";
 import {
   createDocumentSummary,
+  sriLastContact,
   createFiscalPortabilitySources,
   createTransmissionReader,
 } from "./modules/fiscal/infrastructure/index.ts";
@@ -635,7 +636,12 @@ apiRouter.use(
       outOfStock: outOfStockCount,
       emailFailed: (companyId, environment) =>
         email.statuses.countFailedDocuments(companyId, environment),
+      emailPending: (companyId, environment) =>
+        email.statuses.countPendingDocuments(companyId, environment),
+      sriLastContact: (companyId, environment) =>
+        sriLastContact(database.prisma, companyId, environment),
     },
+    sriTransmissionEnabled: env.SRI_TRANSMISSION_ENABLED,
   }).routers,
 );
 

@@ -99,6 +99,18 @@ describe("correos no enviados a la vista", () => {
     expect(await source.countFailedDocuments(b.companyId, "PRODUCTION")).toBe(1);
   });
 
+  it("el conteo de los correos en cola sigue el último envío (redesign-dashboard-indicators)", async () => {
+    const source = createEmailStatusSource(db.database.prisma, db.name);
+    expect(await source.countPendingDocuments(a.companyId, "PRODUCTION")).toBe(0);
+    await delivery(silent, "PENDING");
+    await delivery(sent, "RETRYING");
+    expect(await source.countPendingDocuments(a.companyId, "PRODUCTION")).toBe(2);
+    expect(await source.countPendingDocuments(a.companyId, "TEST")).toBe(0);
+    expect(await source.countPendingDocuments(b.companyId, "PRODUCTION")).toBe(0);
+    await delivery(silent, "SENT");
+    expect(await source.countPendingDocuments(a.companyId, "PRODUCTION")).toBe(1);
+  });
+
   it("un estado del correo desconocido se rechaza sin consultar", async () => {
     const res = await list(a, { emailStatus: "DELIVERED" });
     expect(res.status).toBe(400);

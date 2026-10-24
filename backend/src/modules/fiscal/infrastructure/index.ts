@@ -87,3 +87,4 @@ export type { InvoiceTaxProjection, ReportAmountProjection } from "./reports/amo
 export { createFiscalPortabilitySources } from "./portability/portability-sources.ts";
 // Tablero de Inicio: el resumen de los comprobantes, compuesto en main.ts como puerto.
 export { createDocumentSummary } from "./dashboard/document-summary.ts";
+export { sriLastContact } from "./dashboard/sri-contact.ts";

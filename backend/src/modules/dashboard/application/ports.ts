@@ -11,6 +11,9 @@ export type DocumentSummaryQuery = Readonly<{
   stoppedIds: readonly string[];
 }>;
 
+/** El último intento con el SRI: cuándo empezó y si recibió una respuesta HTTP menor que 500. */
+export type SriContact = Readonly<{ at: Date; reached: boolean }>;
+
 /** Lo que el resumen de los comprobantes aporta al tablero. */
 export type DocumentSummary = Readonly<{
   monthly: readonly DashboardView["monthly"][number][];
@@ -31,4 +34,8 @@ export type DashboardSources = Readonly<{
   outOfStock(db: DbClient, companyId: string): Promise<number>;
   /** Autorizados del ambiente con su último envío por correo fallido (add-email-delivery). */
   emailFailed(companyId: string, environment: Environment): Promise<number>;
+  /** Comprobantes del ambiente con su último envío por correo en cola o reintentando. */
+  emailPending(companyId: string, environment: Environment): Promise<number>;
+  /** El último intento guardado con el SRI en el ambiente; nunca contacta al SRI. */
+  sriLastContact(companyId: string, environment: Environment): Promise<SriContact | null>;
 }>;
