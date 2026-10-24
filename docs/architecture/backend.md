@@ -304,10 +304,17 @@ compone como puerto (`DashboardSources`).
 | Borradores pendientes | `invoices` (`invoiceDraftCount`) | `invoice_draft` en `DRAFT` |
 | Productos agotados | `inventory` (`outOfStockCount`) | `stock_balance` con saldo cero o negativo |
 | Correos no enviados | `email` (`createEmailStatusSource().countFailedDocuments`) | El último `email_delivery` de cada comprobante del ambiente, si falló |
+| Correos en cola | `email` (`createEmailStatusSource().countPendingDocuments`) | El último `email_delivery` de cada comprobante del ambiente, si está `PENDING` o `RETRYING` |
+| Última comunicación con el SRI | `fiscal` (`sriLastContact`) | El último `sri_attempt` de la empresa en el ambiente: su inicio y si recibió una respuesta HTTP menor que 500. Nunca contacta al SRI |
 | Ambiente | `taxpayer` (`currentEnvironment`) | La configuración vigente |
 
 - **Ventas.** Solo las facturas `AUTHORIZED`; los meses son los de la fecha de emisión, que ya es la
   de Ecuador. Las sumas son `NUMERIC` en SQL y salen como cadenas decimales canónicas.
+- **Variación de las ventas** (`redesign-dashboard-indicators`). `previousChangePercent` la calcula
+  el servicio con aritmética decimal exacta (`changePercent`): un decimal, redondeado a la mitad
+  hacia arriba, con signo, y `null` sin ventas el mes anterior. El navegador no divide importes.
+- **Transmisión encendida.** `sri.transmissionEnabled` es `SRI_TRANSMISSION_ENABLED`, que `main.ts`
+  pasa al módulo.
 - **Permiso.** `invoices.read`.
 - **Dirección.** Ningún módulo importa `dashboard`, salvo `main.ts`, y `dashboard` solo importa
   `identity` y `catalogs`; `test/architecture/dashboard-dependency-direction.test.ts` lo comprueba.

@@ -9,4 +9,4 @@
 
 ## 3. Documentación y revisión
 
-- [ ] 3.1 Actualizar la documentación del tablero y revisar Inicio en escritorio, teléfono y tema oscuro.
+- [x] 3.1 Actualizar la documentación del tablero y revisar Inicio en escritorio, teléfono y tema oscuro.
