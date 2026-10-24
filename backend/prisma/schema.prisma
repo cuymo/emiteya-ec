@@ -67,6 +67,7 @@ model User {
   purchaseDraftsUpdated       PurchaseSettlementDraft[]       @relation("PurchaseSettlementDraftUpdater")
   purchaseDeclarations        PurchaseSettlementDeclaration[] @relation("PurchaseSettlementDeclarant")
   dataExportsRequested        DataExport[]                    @relation("DataExportRequester")
+  avatar                      UserAvatar?
 
   @@unique([email])
   @@map("user")
@@ -268,6 +269,21 @@ model CompanyConfigVersion {
 }
 
 // Asset inmutable de la configuración, como el logo (ADR 0017, design D5). Solo de agregado.
+/// Avatar propio de un usuario (redesign-account-profile, design D4): una fila como máximo, privada
+/// del usuario. No pertenece a una empresa y se borra con la identidad.
+model UserAvatar {
+  userId    String   @id @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Tipo detectado por el contenido (CHECK en la migración).
+  mimeType  String   @map("mime_type")
+  sizeBytes Int      @map("size_bytes")
+  sha256    String   @db.Char(64)
+  content   Bytes
+  updatedAt DateTime @map("updated_at") @db.Timestamptz(3)
+
+  @@map("user_avatar")
+}
+
 model ConfigurationAsset {
   id          String                 @id @default(uuid())
   companyId   String                 @map("company_id")
