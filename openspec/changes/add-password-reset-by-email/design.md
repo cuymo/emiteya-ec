@@ -68,7 +68,7 @@ Nunca llevan el correo en claro, el token ni el enlace.
 
 - **Ingreso** (`/iniciar-sesion`): tarjeta centrada de unos 24rem, sobre el fondo de la aplicación.
   Arriba, el logo y «EmiteYa»; el título «Iniciar sesión» y una línea de ayuda. Debajo, el correo,
-  la contraseña con «¿Olvidaste tu contraseña?» a su derecha, y «Iniciar sesión» a todo el ancho.
+  la contraseña con «¿Olvidaste tu contraseña?» debajo, alineado a la derecha (decisión del propietario, 2026-10-24), y «Iniciar sesión» a todo el ancho.
 - **Recuperar** (`/recuperar-contrasena`): el correo y «Enviar enlace». Después, siempre el mismo
   mensaje: si el correo pertenece a una cuenta activa y su empresa tiene el correo configurado,
   llega un enlace que vence en 30 minutos; si no llega, un administrador puede ponerle una

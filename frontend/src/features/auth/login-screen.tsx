@@ -1,6 +1,6 @@
 // Iniciar sesión (design D12). Usuario: cualquiera, también quien entra por primera vez. Objetivo:
 // entrar. Información mínima: correo, contraseña y error si ocurre. Acción principal: Iniciar sesión.
-// En la tarjeta con el logo, con «¿Olvidaste tu contraseña?» junto a la contraseña
+// En la tarjeta con el logo, con «¿Olvidaste tu contraseña?» debajo de la contraseña
 // (add-password-reset-by-email, design D6).
 "use client";
 
@@ -85,26 +85,22 @@ export function LoginScreen() {
               placeholder="tucorreo@empresa.ec"
             />
           </FormField>
-          <FormField
-            id="password"
-            label="Contraseña"
-            error={errors.password?.message}
-            labelClassName="justify-between"
-            badge={
-              <Link
-                href="/recuperar-contrasena"
-                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-            }
-          >
-            <PasswordField
-              {...fieldAria("password", errors.password?.message)}
-              {...form.register("password")}
-              autoComplete="current-password"
-            />
-          </FormField>
+          <div className="flex flex-col gap-1.5">
+            <FormField id="password" label="Contraseña" error={errors.password?.message}>
+              <PasswordField
+                {...fieldAria("password", errors.password?.message)}
+                {...form.register("password")}
+                autoComplete="current-password"
+              />
+            </FormField>
+            {/* Debajo del campo de la contraseña (decisión del propietario, 2026-10-24). */}
+            <Link
+              href="/recuperar-contrasena"
+              className="self-end text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           {error && (
             <p
               role="alert"
