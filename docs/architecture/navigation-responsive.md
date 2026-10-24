@@ -64,6 +64,11 @@ Shortened on 2026-10-24 (`reorganize-main-navigation`). The groups and destinati
   - **Exception:** inside a document, registering a party stays in `PartyDialog`, so the draft is
     not left behind. It shares the fields and the save logic of `party-form.tsx`.
 
+- **Primeros pasos** (`/primeros-pasos`, redesign-dashboard-indicators) is outside the sidebar too:
+  while the company cannot emit, the topbar shows «Falta configurar» with the number of pending
+  requirements, before «Buscar», and it disappears once the company is ready. The page lists the
+  requirements with the link to solve each one when the role can; the palette finds it by
+  «requisitos» or «falta configurar». Inicio no longer shows the requirements.
 - **Mi cuenta** lives in the account menu, not in the sidebar. It is a profile page: the avatar
   header with the account badges, and the tabs «Datos», «Cambiar contraseña» and «Establecimiento
   predeterminado» in `?pestana=` (`redesign-account-profile`). Its breadcrumb is «Mi cuenta»; its

@@ -381,6 +381,19 @@ export const STATES: State[] = [
     ready: (page) => tourAt(page, "Te damos la bienvenida a EmiteYa"),
     act: (page) => advanceTour(page, "3. Emite la factura"),
   },
+  // Primeros pasos fuera de Inicio (redesign-dashboard-indicators, tarea 4.1): la página con los
+  // requisitos y, en la barra superior, «Falta configurar» con el número de pendientes.
+  {
+    route: "primeros-pasos",
+    state: "pendiente",
+    path: "/primeros-pasos",
+    group: "shell",
+    widths: ["1440", "390"],
+    ready: async (page) => {
+      await expect(page.getByRole("list", { name: "Requisitos" })).toBeVisible();
+      await expect(page.getByRole("link", { name: /^Falta configurar/ })).toBeVisible();
+    },
+  },
   // Barra superior en cada ambiente, sobre Facturas.
   {
     route: "facturas",

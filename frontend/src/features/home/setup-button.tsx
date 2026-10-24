@@ -35,7 +35,7 @@ export function SetupButton() {
       <span className="max-md:sr-only">Falta configurar</span>
       <span
         aria-hidden="true"
-        className="flex min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs font-semibold text-warning-foreground tabular-nums max-md:absolute max-md:translate-x-3 max-md:-translate-y-3"
+        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs leading-none font-semibold text-warning-foreground tabular-nums max-md:absolute max-md:-top-1 max-md:-right-1 max-md:h-4.5 max-md:min-w-4.5 max-md:px-1 max-md:ring-2 max-md:ring-background"
       >
         {pending}
       </span>
