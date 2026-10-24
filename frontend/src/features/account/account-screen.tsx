@@ -1,12 +1,12 @@
-// Mi cuenta (design D12 de add-user-access y D14 de add-taxpayer-setup). Usuario: cualquiera.
-// Objetivo: ver su acceso, cambiar su contraseña y elegir su punto de emisión predeterminado.
-// Página completa porque no es una fila de ninguna tabla. P0: cambio de contraseña. P1: nombre,
-// correo y rol como etiquetas de solo lectura, y la foto de perfil (redesign-account-profile). Acción
-// principal: Cambiar contraseña.
+// Mi cuenta como página de perfil (redesign-account-profile, design D8, con el ajuste del propietario
+// del 2026-10-24). Usuario: cualquiera. Objetivo: confirmar con qué cuenta trabaja y corregir su
+// nombre, su foto, su contraseña o su punto predeterminado. Arriba, el avatar con el nombre, el
+// correo y las insignias de la cuenta; debajo, las pestañas «Datos», «Cambiar contraseña» y
+// «Establecimiento predeterminado», con la elegida en la dirección (`?pestana=`).
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { ChangeOwnPasswordInput } from "@facturador/contracts";
+import { changeOwnNameSchema, type ChangeOwnPasswordInput } from "@facturador/contracts";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { AsyncButton } from "@/components/async-button";
@@ -14,10 +14,15 @@ import { useMutationFeedback } from "@/components/feedback";
 import { fieldAria, FormField } from "@/components/form-dialog";
 import { PasswordField } from "@/components/password-field";
 import { useSession } from "@/components/session";
+import { Input } from "@/components/ui/input";
+import { useCompanyStatus } from "@/features/company/company-api";
+import { DocumentDetailTabs } from "@/features/documents/document-detail-tabs";
+import { ApiError } from "@/lib/api";
 import { AuthError, changeOwnPassword } from "@/lib/auth-client";
 import { ROLE_LABELS } from "@/lib/permissions";
-import { AvatarSection } from "./avatar-section";
 import { DefaultPointSection } from "./default-point-section";
+import { ProfileHeader } from "./profile-header";
+import { useChangeName, useOwnProfile } from "./profile-api";
 
 // La longitud de la contraseña es configuración del despliegue: la valida el servidor, cuyo mensaje
 // indica el valor vigente. El cliente solo exige ambos campos.
@@ -26,8 +31,91 @@ const schema = z.strictObject({
   newPassword: z.string().min(1, "Escribe la contraseña nueva."),
 });
 
-export function AccountScreen() {
+const FULL_DATE = new Intl.DateTimeFormat("es-EC", {
+  dateStyle: "long",
+  timeZone: "America/Guayaquil",
+});
+
+/** «Datos»: el nombre editable y, de solo lectura, el correo, el rol, el estado y la empresa. */
+function AccountDetails() {
   const { me } = useSession();
+  const profile = useOwnProfile();
+  const company = useCompanyStatus().data?.displayName;
+  const form = useForm<{ name: string }>({
+    resolver: zodResolver(changeOwnNameSchema),
+    values: { name: profile.data?.name ?? me.name },
+  });
+  const { errors, isDirty } = form.formState;
+  const change = useChangeName({
+    onError: (cause) => {
+      if (cause instanceof ApiError && cause.status === 400) {
+        form.setError("name", { message: cause.message }, { shouldFocus: true });
+        return true;
+      }
+      return false;
+    },
+  });
+  const data = profile.data;
+  return (
+    <div className="flex flex-col gap-6 pt-2">
+      <form
+        aria-labelledby="nombre-titulo"
+        noValidate
+        onSubmit={form.handleSubmit(({ name }) => change.mutate(name))}
+        className="flex flex-col gap-3"
+      >
+        <h2 id="nombre-titulo" className="text-lg font-semibold">
+          Tus datos
+        </h2>
+        <FormField id="account-name" label="Nombre" error={errors.name?.message}>
+          <Input
+            {...fieldAria("account-name", errors.name?.message)}
+            {...form.register("name")}
+            autoComplete="name"
+          />
+        </FormField>
+        <div>
+          <AsyncButton
+            type="submit"
+            pending={change.isPending}
+            pendingLabel="Guardando el nombre"
+            disabled={!isDirty}
+          >
+            Guardar nombre
+          </AsyncButton>
+        </div>
+      </form>
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-[10rem_1fr]">
+        <dt className="text-foreground-muted">Correo</dt>
+        <dd className="flex flex-col gap-0.5">
+          <span className="break-words">{me.email}</span>
+          <span className="text-xs text-foreground-muted">
+            Es tu usuario para iniciar sesión; por ahora no se puede cambiar.
+          </span>
+        </dd>
+        <dt className="text-foreground-muted">Rol</dt>
+        <dd>{ROLE_LABELS[me.role]}</dd>
+        {data && (
+          <>
+            <dt className="text-foreground-muted">Estado</dt>
+            <dd>{data.membershipStatus === "ACTIVE" ? "Activa" : "Desactivada"}</dd>
+            <dt className="text-foreground-muted">Cuenta desde</dt>
+            <dd>{FULL_DATE.format(new Date(data.memberSince))}</dd>
+          </>
+        )}
+        {company && (
+          <>
+            <dt className="text-foreground-muted">Empresa</dt>
+            <dd className="break-words">{company}</dd>
+          </>
+        )}
+      </dl>
+    </div>
+  );
+}
+
+/** «Cambiar contraseña»: pide la actual y cierra las demás sesiones. */
+function PasswordTab() {
   const form = useForm<ChangeOwnPasswordInput>({
     resolver: zodResolver(schema),
     defaultValues: { currentPassword: "", newPassword: "" },
@@ -53,67 +141,72 @@ export function AccountScreen() {
   });
 
   return (
-    <section aria-labelledby="cuenta-titulo" data-page-width="form" className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <h1 id="cuenta-titulo" className="text-3xl font-bold">
-          Mi cuenta
-        </h1>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-          <dt className="text-foreground-muted">Nombre</dt>
-          <dd className="break-words">{me.name}</dd>
-          <dt className="text-foreground-muted">Correo</dt>
-          <dd className="break-words">{me.email}</dd>
-          <dt className="text-foreground-muted">Rol</dt>
-          <dd>{ROLE_LABELS[me.role]}</dd>
-        </dl>
+    <form
+      aria-labelledby="contrasena-titulo"
+      noValidate
+      onSubmit={form.handleSubmit((input) => change.mutate(input))}
+      className="flex flex-col gap-4 pt-2"
+    >
+      <div className="flex flex-col gap-1">
+        <h2 id="contrasena-titulo" className="text-lg font-semibold">
+          Cambiar contraseña
+        </h2>
+        <p className="text-sm text-foreground-muted">
+          Al cambiarla se cerrarán tus sesiones en otros dispositivos.
+        </p>
       </div>
-
-      <AvatarSection />
-
-      <form
-        aria-labelledby="contrasena-titulo"
-        noValidate
-        onSubmit={form.handleSubmit((input) => change.mutate(input))}
-        className="flex flex-col gap-4"
+      <FormField
+        id="current-password"
+        label="Contraseña actual"
+        error={errors.currentPassword?.message}
       >
-        <div className="flex flex-col gap-1">
-          <h2 id="contrasena-titulo" className="text-lg font-semibold">
-            Cambiar contraseña
-          </h2>
-          <p className="text-sm text-foreground-muted">
-            Al cambiarla se cerrarán tus sesiones en otros dispositivos.
-          </p>
-        </div>
-        <FormField
-          id="current-password"
-          label="Contraseña actual"
-          error={errors.currentPassword?.message}
+        <PasswordField
+          {...fieldAria("current-password", errors.currentPassword?.message)}
+          {...form.register("currentPassword")}
+          autoComplete="current-password"
+        />
+      </FormField>
+      <FormField id="new-password" label="Contraseña nueva" error={errors.newPassword?.message}>
+        <PasswordField
+          {...fieldAria("new-password", errors.newPassword?.message)}
+          {...form.register("newPassword")}
+          autoComplete="new-password"
+        />
+      </FormField>
+      <div>
+        <AsyncButton
+          type="submit"
+          pending={change.isPending}
+          pendingLabel="Cambiando la contraseña"
         >
-          <PasswordField
-            {...fieldAria("current-password", errors.currentPassword?.message)}
-            {...form.register("currentPassword")}
-            autoComplete="current-password"
-          />
-        </FormField>
-        <FormField id="new-password" label="Contraseña nueva" error={errors.newPassword?.message}>
-          <PasswordField
-            {...fieldAria("new-password", errors.newPassword?.message)}
-            {...form.register("newPassword")}
-            autoComplete="new-password"
-          />
-        </FormField>
-        <div>
-          <AsyncButton
-            type="submit"
-            pending={change.isPending}
-            pendingLabel="Cambiando la contraseña"
-          >
-            Cambiar contraseña
-          </AsyncButton>
-        </div>
-      </form>
+          Cambiar contraseña
+        </AsyncButton>
+      </div>
+    </form>
+  );
+}
 
-      <DefaultPointSection />
+export function AccountScreen() {
+  return (
+    <section aria-labelledby="cuenta-titulo" data-page-width="form" className="flex flex-col gap-8">
+      <ProfileHeader />
+      <DocumentDetailTabs
+        label="Secciones de tu cuenta"
+        param="pestana"
+        tabs={[
+          { id: "datos", label: "Datos", content: <AccountDetails /> },
+          { id: "contrasena", label: "Cambiar contraseña", content: <PasswordTab /> },
+          {
+            id: "establecimiento",
+            label: "Establecimiento predeterminado",
+            content: (
+              <div className="pt-2">
+                <DefaultPointSection />
+              </div>
+            ),
+          },
+        ]}
+      />
     </section>
   );
 }

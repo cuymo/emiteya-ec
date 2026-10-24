@@ -7,6 +7,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ownProfileSchema } from "@facturador/contracts";
 import { useMutationFeedback } from "@/components/feedback";
+import { ME_KEY } from "@/components/session";
 import { apiFetch } from "@/lib/api";
 
 export const PROFILE_KEY = ["me", "profile"] as const;
@@ -60,6 +61,25 @@ export function useReplaceAvatar(options: { onError: (error: unknown) => boolean
     success: () => "Actualizaste tu foto de perfil.",
     invalidate: [PROFILE_KEY],
     onError: options.onError,
+  });
+}
+
+/**
+ * Cambia el nombre propio (redesign-account-profile, design D9): invalida la sesión y el perfil, así
+ * que la barra superior y el menú de cuenta muestran el nombre nuevo sin recargar.
+ */
+export function useChangeName(options: {
+  onError: (error: unknown) => boolean;
+  onSuccess?: () => void;
+}) {
+  return useMutationFeedback({
+    mutationFn: (name: string) =>
+      apiFetch("/me/name", { method: "PUT", json: { name }, schema: ownProfileSchema }),
+    success: () => "Actualizaste tu nombre.",
+    // `PROFILE_KEY` empieza por `ME_KEY`: los dos se vuelven a leer.
+    invalidate: [ME_KEY],
+    onError: options.onError,
+    ...(options.onSuccess ? { onSuccess: options.onSuccess } : {}),
   });
 }
 

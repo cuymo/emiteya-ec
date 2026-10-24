@@ -29,19 +29,28 @@ const ATTENTION_STATES: readonly InvoiceState[] = [
 export const transmissionNeedsAttention = (state: InvoiceState, stopped: boolean) =>
   stopped || ATTENTION_STATES.includes(state);
 
-export function DocumentDetailTabs({ tabs, label }: { tabs: readonly DetailTab[]; label: string }) {
+export function DocumentDetailTabs({
+  tabs,
+  label,
+  param = "seccion",
+}: {
+  tabs: readonly DetailTab[];
+  label: string;
+  /** El parámetro de la dirección con la pestaña elegida; Mi cuenta usa `pestana`. */
+  param?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const requested = searchParams.get("seccion");
+  const requested = searchParams.get(param);
   const [active, setActive] = useState(
     tabs.some((tab) => tab.id === requested) ? requested! : tabs[0]!.id,
   );
   const select = (id: string) => {
     setActive(id);
     const params = new URLSearchParams(searchParams.toString());
-    if (id === tabs[0]!.id) params.delete("seccion");
-    else params.set("seccion", id);
+    if (id === tabs[0]!.id) params.delete(param);
+    else params.set(param, id);
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };

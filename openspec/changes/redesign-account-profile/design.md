@@ -112,6 +112,12 @@ Brief de la pantalla:
 - **Niveles:** P0 el avatar o las iniciales, el nombre y las insignias del rol y del estado; P1 el
   correo, la empresa y «Cuenta desde»; P2 el punto predeterminado y el formulario de contraseña, en
   sus pestañas; P3 nada.
+- **Ajuste del propietario (2026-10-24), que prevalece sobre la composición de abajo:** el avatar
+  va al inicio, con insignias debajo del nombre (el rol, «Activa», la empresa y «Cuenta desde»), y
+  las pestañas son «Datos» (el nombre editable y los datos de la cuenta), «Cambiar contraseña» y
+  «Establecimiento predeterminado», con `?pestana=datos|contrasena|establecimiento`. Sin carril
+  lateral: la empresa y el estado van en las insignias y en «Datos». El nombre se edita dentro de
+  «Datos», sin diálogo.
 - **Composición** (ejemplo del propietario):
   - Cabecera a todo el ancho: el avatar en un círculo grande con «Cambiar foto» y «Quitar foto»; el
     nombre (`h1`), «correo · rol»; insignias del rol y «Activo»; a la derecha, «Editar perfil»

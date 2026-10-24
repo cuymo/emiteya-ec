@@ -1,6 +1,6 @@
-// «Foto de perfil» en Mi cuenta (redesign-account-profile, tarea 6.2, design D8b): sin foto con las
-// iniciales, con foto, cargarla, quitarla, el formato rechazado en el cliente y el tamaño rechazado
-// por el servidor junto al control, y el teclado.
+// Cabecera del perfil en Mi cuenta (redesign-account-profile, tareas 6.2 y 7.2, design D8): sin foto
+// con las iniciales, con foto, cargarla, quitarla, el formato rechazado en el cliente y el tamaño
+// rechazado por el servidor junto al control, las insignias de la cuenta y el teclado.
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -39,8 +39,10 @@ function render(routes: Record<string, Route>) {
   );
   return calls;
 }
-const section = async () =>
-  (await screen.findByRole("heading", { name: "Foto de perfil" })).closest("section")!;
+const section = async () => {
+  await screen.findByRole("button", { name: /Subir foto|Cambiar foto/ });
+  return document.querySelector<HTMLElement>("[data-slot=profile-header]")!;
+};
 const fileInput = () => document.getElementById("foto-archivo") as HTMLInputElement;
 
 beforeEach(() => {
