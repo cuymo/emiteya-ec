@@ -132,7 +132,8 @@ describe("emisión de facturas hasta RESERVED", () => {
         },
       },
     });
-    for (const slug of ["a", "r"]) {
+    // «d», solo para el tablero: sus emisiones no corren los números que esperan las de «a».
+    for (const slug of ["a", "r", "d"]) {
       companies[slug] = await readyCompany(api, db, { slug, pool, p12Dir });
     }
   }, 180_000);
@@ -183,7 +184,7 @@ describe("emisión de facturas hasta RESERVED", () => {
 
   describe("tablero de Inicio (spec dashboard)", () => {
     it("resume los comprobantes del ambiente vigente sin contar los de otra empresa", async () => {
-      const a = companies.a!;
+      const a = companies.d!;
       const draft = await draftFor(a);
       expect((await emit(a, draft)).status).toBe(201);
       await draftFor(a);

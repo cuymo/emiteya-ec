@@ -207,6 +207,11 @@ describe("consulta de facturas", () => {
     expect(
       (await db.database.prisma.invoiceDraft.findUniqueOrThrow({ where: { id: draftId } })).status,
     ).toBe("DRAFT");
+    // Sin este borrador, la lista unificada de la empresa cuenta solo los suyos.
+    const removed = await request(api.app)
+      .delete(`/api/v1/invoices/drafts/${draftId}`)
+      .set("Cookie", a.cookies.operator);
+    expect(removed.status).toBe(204);
   });
 
   it("rechaza un estado desconocido en el filtro", async () => {
