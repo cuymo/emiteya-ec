@@ -29,6 +29,12 @@ export function createSecurityEventLog(logger: Logger, registry: Registry): Secu
     labelNames: ["method", "reason"] as const,
     registers: [registry],
   });
+  const resetRequests = new Counter({
+    name: "auth_password_reset_requests_total",
+    help: "Solicitudes del enlace de recuperación de la contraseña por resultado.",
+    labelNames: ["outcome"] as const,
+    registers: [registry],
+  });
   const log = logger.child({ channel: "security" });
 
   return {
@@ -76,6 +82,29 @@ export function createSecurityEventLog(logger: Logger, registry: Registry): Secu
               requestId: event.correlationId,
             },
             "contraseña propia cambiada",
+          );
+          return;
+        case "password_reset_requested":
+          resetRequests.inc({ outcome: event.outcome });
+          log.info(
+            {
+              event: event.type,
+              outcome: event.outcome,
+              ip: event.ip,
+              requestId: event.correlationId,
+            },
+            "enlace de recuperación solicitado",
+          );
+          return;
+        case "password_reset_completed":
+          log.info(
+            {
+              event: event.type,
+              actorUserId: event.actorUserId,
+              companyId: event.companyId,
+              requestId: event.correlationId,
+            },
+            "contraseña restablecida con el enlace",
           );
           return;
         case "request_origin_rejected":

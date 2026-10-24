@@ -20,6 +20,7 @@ import {
   mountAuth,
   type Auth,
   type AuthSettings,
+  type PasswordResetSettings,
 } from "../../src/modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "../../src/modules/identity/infrastructure/http/request-context.ts";
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
@@ -66,6 +67,8 @@ export function buildAuthApp(
     trustProxy?: number | false;
     apiRouter?: (deps: ApiDependencies) => Router;
     jsonBodyExceptions?: (req: Request) => boolean;
+    /** La recuperación por correo con un enviador de prueba (add-password-reset-by-email). */
+    passwordReset?: PasswordResetSettings;
   } = {},
 ) {
   const settings = testAuthSettings(options.settings);
@@ -80,7 +83,12 @@ export function buildAuthApp(
       securityLog.emit(event);
     },
   };
-  const auth = createAuth({ prisma: db.database.prisma, settings, securityEvents });
+  const auth = createAuth({
+    prisma: db.database.prisma,
+    settings,
+    securityEvents,
+    ...(options.passwordReset ? { passwordReset: options.passwordReset } : {}),
+  });
   const uow = createUnitOfWork(db.database.prisma, auth, settings);
   const memberships = createMembershipReader(db.database.prisma);
   const context = requireContext({

@@ -1,7 +1,7 @@
 // Tests de contrato del módulo de integración con Better Auth (design D2b). Replican los criterios
 // de S-1 que dependen de la configuración. Una actualización de Better Auth solo se acepta si pasan.
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createMigratedSchema, type MigratedSchema } from "./database.ts";
 import { insertCompany } from "./fixtures.ts";
 import {
@@ -28,6 +28,7 @@ describe("contrato de Better Auth", () => {
     operator: "operador@contrato.ec",
     inactive: "inactivo@contrato.ec",
     second: "segundo@contrato.ec",
+    reset: "recupera@contrato.ec",
   };
 
   beforeAll(async () => {
@@ -37,6 +38,7 @@ describe("contrato de Better Auth", () => {
     await createMember(base.uow, companyId, { name: "Admin", email: emails.admin, role: "ADMIN" });
     await createMember(base.uow, companyId, { name: "Operador", email: emails.operator });
     await createMember(base.uow, companyId, { name: "Segundo", email: emails.second });
+    await createMember(base.uow, companyId, { name: "Recupera", email: emails.reset });
     const inactive = await createMember(base.uow, companyId, {
       name: "Inactivo",
       email: emails.inactive,
@@ -152,11 +154,13 @@ describe("contrato de Better Auth", () => {
           method: [options?.method ?? "GET"].flat()[0] ?? "GET",
         }));
 
-    it("solo iniciar sesión, cerrar sesión y cambiar la contraseña propia están permitidos", () => {
+    it("solo iniciar y cerrar sesión, cambiar la contraseña propia y la recuperación por correo", () => {
       expect(CLIENT_ENDPOINTS.map((e) => `${e.method} ${e.path}`)).toEqual([
         "POST /sign-in/email",
         "POST /sign-out",
         "POST /change-password",
+        "POST /request-password-reset",
+        "POST /reset-password",
       ]);
     });
 
@@ -172,7 +176,8 @@ describe("contrato de Better Auth", () => {
           "/verify-password",
           "/list-sessions",
           "/sign-up/email",
-          "/request-password-reset",
+          // La redirección con el token en la consulta sigue cerrada (add-password-reset-by-email, D1).
+          "/reset-password/:token",
           "/admin/set-role",
           "/admin/impersonate-user",
           "/organization/update-member-role",
@@ -256,17 +261,144 @@ describe("contrato de Better Auth", () => {
     });
   });
 
-  describe("sin recuperación pública de contraseña", () => {
-    it("solicitar una recuperación falla y no crea ningún token", async () => {
-      const c = client();
-      const res = await c.post("/api/auth/request-password-reset").send({ email: emails.operator });
-      expect(res.status).toBeGreaterThanOrEqual(400);
-      expect(await db.database.prisma.verification.count()).toBe(0);
-      const reset = await c
+  describe("recuperación de la contraseña por correo (add-password-reset-by-email)", () => {
+    type Sent = {
+      to: string;
+      companyIds: readonly string[];
+      link: string;
+      expiresInMinutes: number;
+    };
+
+    /** Un cliente con un enviador de prueba que guarda cada enlace. */
+    function resetClient(outcome: "sent" | "no_mail_server" = "sent") {
+      const sent: Sent[] = [];
+      const c = client({
+        passwordReset: {
+          publicOrigin: "https://emiteya.example.ec",
+          mailer: {
+            send: (input) => {
+              sent.push(input);
+              return Promise.resolve(outcome);
+            },
+          },
+        },
+      });
+      const requestReset = (email: string) =>
+        c.post("/api/auth/request-password-reset").send({ email });
+      return { ...c, sent, requestReset };
+    }
+    const tokenOf = (link: string) => decodeURIComponent(link.split("#token=")[1] ?? "");
+    const resetEvents = (c: { events: { type: string }[] }) =>
+      c.events.filter((event) => event.type.startsWith("password_reset"));
+
+    it("envía un enlace al frontend, la contraseña nueva cierra las sesiones y el enlace sirve una vez", async () => {
+      const c = resetClient();
+      const { cookie } = await c.signIn(emails.reset, PASSWORD);
+      expect(await getSessionUserId(c.auth, { cookie })).toBeTruthy();
+
+      const res = await c.requestReset(emails.reset);
+      expect(res.status).toBe(200);
+      await vi.waitFor(() => expect(c.sent).toHaveLength(1));
+      const [mail] = c.sent;
+      expect(mail).toMatchObject({
+        to: emails.reset,
+        companyIds: [companyId],
+        expiresInMinutes: 30,
+      });
+      expect(mail!.link).toMatch(/^https:\/\/emiteya\.example\.ec\/restablecer-contrasena#token=/);
+      const token = tokenOf(mail!.link);
+      // El token nunca se guarda en claro.
+      const stored = await db.database.prisma.verification.findMany({
+        select: { identifier: true },
+      });
+      expect(stored.some((row) => row.identifier.includes(token))).toBe(false);
+
+      const weak = await c.post("/api/auth/reset-password").send({ newPassword: "corta", token });
+      expect(weak.status).toBe(400);
+      expect((weak.body as { code?: string }).code).toBe("PASSWORD_POLICY");
+
+      const NEW = "contrasena-nueva-segura-1";
+      const done = await c.post("/api/auth/reset-password").send({ newPassword: NEW, token });
+      expect(done.status).toBe(200);
+      expect(await getSessionUserId(c.auth, { cookie })).toBeNull();
+      expect((await c.signIn(emails.reset, PASSWORD)).status).toBe(401);
+      expect((await c.signIn(emails.reset, NEW)).status).toBe(200);
+
+      const again = await c.post("/api/auth/reset-password").send({ newPassword: PASSWORD, token });
+      expect(again.status).toBe(400);
+      await vi.waitFor(() =>
+        expect(resetEvents(c).map((event) => event.type)).toEqual([
+          "password_reset_requested",
+          "password_reset_completed",
+        ]),
+      );
+      expect(JSON.stringify(c.events)).not.toContain(token);
+      expect(JSON.stringify(c.events)).not.toContain(emails.reset);
+      expect(c.logs()).not.toContain(token);
+    });
+
+    it("responde igual sin cuenta o con la cuenta desactivada, y no envía nada", async () => {
+      const c = resetClient();
+      const active = await c.requestReset(emails.second);
+      const unknown = await c.requestReset("nadie@contrato.ec");
+      const inactive = await c.requestReset(emails.inactive);
+      for (const res of [unknown, inactive]) {
+        expect(res.status).toBe(active.status);
+        expect(res.body).toEqual(active.body);
+      }
+      await vi.waitFor(() =>
+        expect(
+          resetEvents(c)
+            .map((event) => (event as { outcome?: string }).outcome)
+            .sort(),
+        ).toEqual(["inactive_membership", "no_account", "sent"]),
+      );
+      expect(c.sent.map((mail) => mail.to)).toEqual([emails.second]);
+    });
+
+    it("un enlace vencido o inventado no cambia la contraseña", async () => {
+      const c = resetClient();
+      await c.requestReset(emails.second);
+      await vi.waitFor(() => expect(c.sent).toHaveLength(1));
+      await db.database.prisma.verification.updateMany({
+        data: { expiresAt: new Date(Date.now() - 1_000) },
+      });
+      const expired = await c
         .post("/api/auth/reset-password")
-        .send({ newPassword: "nueva-contrasena-123", token: "inventado" });
-      expect(reset.status).toBeGreaterThanOrEqual(400);
-      expect((await c.signIn(emails.operator, PASSWORD)).status).toBe(200);
+        .send({ newPassword: "contrasena-nueva-segura-2", token: tokenOf(c.sent[0]!.link) });
+      expect(expired.status).toBe(400);
+      const invented = await c
+        .post("/api/auth/reset-password")
+        .send({ newPassword: "contrasena-nueva-segura-2", token: "inventado" });
+      expect(invented.status).toBe(400);
+      expect((await c.signIn(emails.second, PASSWORD)).status).toBe(200);
+    });
+
+    it("más de tres solicitudes del mismo correo e IP en 15 minutos no envían más, con la misma respuesta", async () => {
+      const c = resetClient();
+      const responses = [];
+      for (let i = 0; i < 5; i++) responses.push(await c.requestReset(emails.second));
+      for (const res of responses) {
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(responses[0]!.body);
+      }
+      await vi.waitFor(() =>
+        expect(
+          resetEvents(c).filter((event) => (event as { outcome?: string }).outcome === "throttled"),
+        ).toHaveLength(2),
+      );
+      expect(c.sent).toHaveLength(3);
+    });
+
+    it("sin servidor de correo en la empresa, la respuesta es la misma y queda el evento", async () => {
+      const c = resetClient("no_mail_server");
+      const res = await c.requestReset(emails.admin);
+      expect(res.status).toBe(200);
+      await vi.waitFor(() =>
+        expect(resetEvents(c).map((event) => (event as { outcome?: string }).outcome)).toEqual([
+          "no_mail_server",
+        ]),
+      );
     });
   });
 

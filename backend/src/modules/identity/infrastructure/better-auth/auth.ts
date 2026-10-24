@@ -5,7 +5,12 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import type { PrismaClient } from "../../../../generated/prisma/client.ts";
 import {
+  PASSWORD_RESET_MINUTES,
+  type PasswordResetMailer,
+} from "../../application/password-reset.ts";
+import {
   NO_SECURITY_EVENTS,
+  type PasswordResetOutcome,
   type SecurityEventSink,
   type SignInFailureReason,
 } from "../../application/security-events.ts";
@@ -17,6 +22,8 @@ import { CLIENT_IP_HEADER, REQUEST_ID_HEADER } from "./server-headers.ts";
 export const AUTH_BASE_PATH = "/api/auth";
 const SIGN_IN_PATH = "/sign-in/email";
 const CHANGE_PASSWORD_PATH = "/change-password";
+const REQUEST_RESET_PATH = "/request-password-reset";
+const RESET_PASSWORD_PATH = "/reset-password";
 
 /**
  * Superficie HTTP de Better Auth (design D2): denegada por defecto. Solo las operaciones que usan
@@ -28,6 +35,14 @@ export const CLIENT_ENDPOINTS = [
   { method: "POST", path: SIGN_IN_PATH, purpose: "Iniciar sesión" },
   { method: "POST", path: "/sign-out", purpose: "Cerrar sesión" },
   { method: "POST", path: CHANGE_PASSWORD_PATH, purpose: "Cambiar la contraseña propia" },
+  // add-password-reset-by-email, design D1. `GET /reset-password/:token`, que redirige con el
+  // token en la consulta, sigue cerrado: el enlace va al frontend con el token en el fragmento.
+  { method: "POST", path: REQUEST_RESET_PATH, purpose: "Pedir el enlace de recuperación" },
+  {
+    method: "POST",
+    path: RESET_PASSWORD_PATH,
+    purpose: "Poner una contraseña nueva con el enlace",
+  },
 ] as const;
 
 export function isClientEndpoint(method: string, path: string): boolean {
@@ -48,10 +63,23 @@ export type AuthSettings = Readonly<{
   ipRateLimit: Readonly<{ max: number; windowSeconds: number }>;
 }>;
 
+/** Solicitudes del enlace por correo e IP (design D4): como mucho 3 cada 15 minutos. */
+export const PASSWORD_RESET_REQUESTS = { max: 3, windowMs: 15 * 60_000 } as const;
+/** Límite por IP de los dos endpoints de la recuperación (design D4). */
+const PASSWORD_RESET_IP_LIMIT = { window: 15 * 60, max: 10 } as const;
+
+/** La recuperación por correo: sin ella, los endpoints responden que no está disponible. */
+export type PasswordResetSettings = Readonly<{
+  mailer: PasswordResetMailer;
+  /** Origen público del frontend, donde vive `/restablecer-contrasena`. */
+  publicOrigin: string;
+}>;
+
 export type AuthDependencies = {
   prisma: PrismaClient;
   settings: AuthSettings;
   securityEvents?: SecurityEventSink;
+  passwordReset?: PasswordResetSettings;
   now?: () => number;
 };
 
@@ -61,13 +89,20 @@ function bodyEmail(body: unknown): string {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
 
+/** Enlace de la pantalla de la contraseña nueva, con el token en el fragmento (design D2). */
+export function passwordResetLink(publicOrigin: string, token: string): string {
+  return `${new URL(publicOrigin).origin}/restablecer-contrasena#token=${encodeURIComponent(token)}`;
+}
+
 export function createAuth({
   prisma,
   settings,
   securityEvents = NO_SECURITY_EVENTS,
+  passwordReset,
   now = Date.now,
 }: AuthDependencies) {
   const throttle = new LoginThrottle(settings.loginFailures, now);
+  const resetThrottle = new LoginThrottle(PASSWORD_RESET_REQUESTS, now);
 
   /** Categoría interna del fallo, calculada fuera del camino de la respuesta para no variar su tiempo. */
   async function failureReason(email: string): Promise<SignInFailureReason> {
@@ -87,6 +122,69 @@ export function createAuth({
       select: { organizationId: true, role: true },
     });
     return membership && can(membership.role, "account.changePassword") ? membership : null;
+  }
+
+  /** Las empresas de las membresías activas, de la más antigua a la más nueva (design D3). */
+  async function activeCompanies(userId: string): Promise<string[]> {
+    const members = await prisma.member.findMany({
+      where: { userId, status: "ACTIVE" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: { organizationId: true },
+    });
+    return members.map((member) => member.organizationId);
+  }
+
+  function reportReset(
+    outcome: PasswordResetOutcome,
+    ip: string | null,
+    correlationId: string | null,
+  ) {
+    securityEvents.emit({ type: "password_reset_requested", outcome, ip, correlationId });
+  }
+
+  /**
+   * Envía el enlace en segundo plano (design D3): la respuesta sale enseguida y su tiempo no depende
+   * de la cuenta, del servidor de correo ni del resultado. Un fallo solo queda en el evento.
+   */
+  function sendResetLink(
+    user: { id: string; email: string },
+    token: string,
+    request: Request | undefined,
+  ) {
+    const ip = request?.headers.get(CLIENT_IP_HEADER) || null;
+    const correlationId = request?.headers.get(REQUEST_ID_HEADER) ?? null;
+    const key = `${user.email.trim().toLowerCase()}|${ip ?? ""}`;
+    if (resetThrottle.isBlocked(key)) return reportReset("throttled", ip, correlationId);
+    resetThrottle.recordFailure(key);
+    if (!passwordReset) return;
+    const { mailer, publicOrigin } = passwordReset;
+    setImmediate(() => {
+      activeCompanies(user.id)
+        .then(async (companyIds): Promise<PasswordResetOutcome> => {
+          if (companyIds.length === 0) return "inactive_membership";
+          return mailer.send({
+            to: user.email,
+            companyIds,
+            link: passwordResetLink(publicOrigin, token),
+            expiresInMinutes: PASSWORD_RESET_MINUTES,
+          });
+        })
+        .catch((): PasswordResetOutcome => "send_failed")
+        .then((outcome) => reportReset(outcome, ip, correlationId))
+        .catch(() => {});
+    });
+  }
+
+  /** Una solicitud para un correo sin cuenta solo deja su evento, fuera del camino de la respuesta. */
+  function reportUnknownReset(email: string, ip: string | null, correlationId: string | null) {
+    setImmediate(() => {
+      prisma.user
+        .findUnique({ where: { email }, select: { id: true } })
+        .then((user) => {
+          if (!user) reportReset("no_account", ip, correlationId);
+        })
+        .catch(() => {});
+    });
   }
 
   function reportFailure(email: string, ip: string | null, correlationId: string | null) {
@@ -112,7 +210,25 @@ export function createAuth({
       disableSignUp: true,
       minPasswordLength: settings.password.minLength,
       maxPasswordLength: settings.password.maxLength,
+      // add-password-reset-by-email, design D1.
+      resetPasswordTokenExpiresIn: PASSWORD_RESET_MINUTES * 60,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: async ({ user, token }, request) => {
+        sendResetLink(user, token, request);
+        return Promise.resolve();
+      },
+      onPasswordReset: async ({ user }, request) => {
+        const companyIds = await activeCompanies(user.id);
+        securityEvents.emit({
+          type: "password_reset_completed",
+          actorUserId: user.id,
+          companyId: companyIds[0] ?? null,
+          correlationId: request?.headers.get(REQUEST_ID_HEADER) ?? null,
+        });
+      },
     },
+    // El token del enlace se guarda con hash: la tabla `verification` nunca lo tiene en claro (D1).
+    verification: { storeIdentifier: "hashed" },
     // Sesiones en base de datos sin caché en cookie: la revocación rige en la siguiente petición.
     session: { cookieCache: { enabled: false } },
     // Capa 2 del límite (D9): por IP, en memoria, solo contra ráfagas.
@@ -124,6 +240,8 @@ export function createAuth({
           window: settings.ipRateLimit.windowSeconds,
           max: settings.ipRateLimit.max,
         },
+        [REQUEST_RESET_PATH]: PASSWORD_RESET_IP_LIMIT,
+        [RESET_PASSWORD_PATH]: PASSWORD_RESET_IP_LIMIT,
       },
     },
     advanced: {
@@ -137,6 +255,18 @@ export function createAuth({
         // llamadas de servidor (auth.api.*) no son peticiones HTTP y no se ven afectadas.
         if (ctx.request && !isClientEndpoint(ctx.request.method, ctx.path)) {
           throw new APIError("NOT_FOUND");
+        }
+        if (ctx.path === RESET_PASSWORD_PATH) {
+          // La contraseña nueva cumple la misma política que el cambio de la propia (design D4).
+          const body = (ctx.body ?? {}) as Record<string, unknown>;
+          const policy = passwordSchema(settings.password).safeParse(body.newPassword);
+          if (typeof body.newPassword === "string" && !policy.success) {
+            throw new APIError("BAD_REQUEST", {
+              code: "PASSWORD_POLICY",
+              message: policy.error.issues[0]?.message ?? "La contraseña no es válida.",
+            });
+          }
+          return;
         }
         if (ctx.path === CHANGE_PASSWORD_PATH) {
           const session = await getSessionFromCtx(ctx);
@@ -170,6 +300,14 @@ export function createAuth({
         }
       }),
       after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === REQUEST_RESET_PATH) {
+          reportUnknownReset(
+            bodyEmail(ctx.body),
+            ctx.headers?.get(CLIENT_IP_HEADER) || null,
+            ctx.headers?.get(REQUEST_ID_HEADER) ?? null,
+          );
+          return;
+        }
         if (ctx.path === CHANGE_PASSWORD_PATH && !(ctx.context.returned instanceof APIError)) {
           const returned = ctx.context.returned as { user?: { id?: string } } | undefined;
           const userId = ctx.context.session?.user.id ?? returned?.user?.id;

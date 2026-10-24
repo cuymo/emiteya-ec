@@ -8,8 +8,11 @@ export {
   CLIENT_ENDPOINTS,
   createAuth,
   isClientEndpoint,
+  passwordResetLink,
+  PASSWORD_RESET_REQUESTS,
   type Auth,
   type AuthSettings,
+  type PasswordResetSettings,
 } from "./auth.ts";
 export { getSessionUserId, mountAuth } from "./http.ts";
 export { createUnitOfWork, type CompanyInitializer } from "./unit-of-work.ts";
