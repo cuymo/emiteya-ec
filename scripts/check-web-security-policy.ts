@@ -134,13 +134,6 @@ const directivesOf = (policy: string) =>
     }),
   );
 
-/** Elige un tema en el menú de cuenta, como lo haría el usuario. */
-async function chooseTheme(page: Page, label: "Oscuro" | "Claro"): Promise<void> {
-  await page.getByRole("button", { name: /^Cuenta de / }).click();
-  await page.getByRole("menuitemradio", { name: label }).click();
-  await page.getByRole("menu").waitFor({ state: "hidden", timeout: STEP_TIMEOUT_MS });
-}
-
 async function until(condition: () => boolean | Promise<boolean>, what: string): Promise<void> {
   const deadline = Date.now() + STEP_TIMEOUT_MS;
   while (Date.now() < deadline) {
@@ -676,7 +669,9 @@ async function checkBrowserFlows(
       // tumbar la pestaña en la navegación siguiente, y eso no es parte de la política.
       const page = await context.newPage();
       try {
-        await page.goto(`/facturas/${invoice.id}`);
+        // Las descargas viven en la pestaña «RIDE y XML» del detalle (decisión del propietario,
+        // 2026-10-16).
+        await page.goto(`/facturas/${invoice.id}?seccion=documentos`);
         const downloadButton = page.getByRole("button", { name: "Descargar RIDE" });
         await downloadButton.waitFor({ timeout: STEP_TIMEOUT_MS });
         const download = page.waitForEvent("download", { timeout: STEP_TIMEOUT_MS });
@@ -723,27 +718,19 @@ async function checkBrowserFlows(
   );
 
   await step(
-    "Diálogo, tema y logo",
+    "Diálogo y logo",
     state,
     async () => {
-      // Configuración empieza plegada fuera de sus pantallas (adopt-premium-design-foundation-and-
-      // shell, design D24): se abre como lo haría el usuario antes de elegir Usuarios.
+      // Configuración es un solo enlace al pie de la barra lateral, que lleva a su primera pestaña:
+      // Usuarios para el administrador (decisión del propietario, 2026-10-16).
       const nav = page.getByRole("navigation", { name: "Navegación principal" });
-      const configuracion = nav.getByRole("button", { name: "Configuración" });
-      if ((await configuracion.getAttribute("aria-expanded")) !== "true")
-        await configuracion.click();
-      await nav.getByRole("link", { name: "Usuarios" }).click();
+      await nav.getByRole("link", { name: "Configuración" }).click();
       await page.waitForURL("**/configuracion/usuarios");
       await page.getByRole("button", { name: "Crear usuario" }).click();
       await page.getByRole("dialog").waitFor({ timeout: STEP_TIMEOUT_MS });
       await page.keyboard.press("Escape");
       await page.getByRole("dialog").waitFor({ state: "hidden", timeout: STEP_TIMEOUT_MS });
-      // El tema vive en el menú de cuenta a todas las anchuras
-      // (productize-invoice-editor-and-composition-foundation, spec «Tema accesible»).
-      await chooseTheme(page, "Oscuro");
-      await page.waitForFunction(() => document.documentElement.classList.contains("dark"));
-      await chooseTheme(page, "Claro");
-      await page.waitForFunction(() => !document.documentElement.classList.contains("dark"));
+      // Sin cambio de tema: la interfaz siempre va en claro (decisión del propietario, 2026-10-22).
       await page.goto("/configuracion/empresa");
       const logo = page.getByAltText("Logo vigente de la empresa");
       await logo.waitFor({ timeout: STEP_TIMEOUT_MS });
@@ -752,11 +739,7 @@ async function checkBrowserFlows(
           (document.querySelector<HTMLImageElement>('img[alt="Logo vigente de la empresa"]')
             ?.naturalWidth ?? 0) > 0,
       );
-      check(
-        "19. Los recursos necesarios cargan",
-        true,
-        "JavaScript, CSS, el diálogo, el cambio de tema y el logo",
-      );
+      check("19. Los recursos necesarios cargan", true, "JavaScript, CSS, el diálogo y el logo");
     },
     page,
   );
@@ -1109,12 +1092,13 @@ async function measureStyleVariants(
     await page.getByLabel("Contraseña", { exact: true }).fill(ADMIN.password);
     await page.getByRole("button", { name: "Iniciar sesión" }).click();
     await page.getByRole("button", { name: /^Cuenta de / }).waitFor({ timeout: STEP_TIMEOUT_MS });
-    await page.getByRole("link", { name: "Usuarios" }).first().click();
+    await page
+      .getByRole("navigation", { name: "Navegación principal" })
+      .getByRole("link", { name: "Configuración" })
+      .click();
     await page.getByRole("button", { name: "Crear usuario" }).click();
     await page.getByRole("dialog").waitFor({ timeout: STEP_TIMEOUT_MS });
     await page.keyboard.press("Escape");
-    await chooseTheme(page, "Oscuro");
-    await chooseTheme(page, "Claro");
     await page.getByRole("button", { name: /^Cuenta de / }).click();
     await page.keyboard.press("Escape");
     await page.goto("/comprobantes");
