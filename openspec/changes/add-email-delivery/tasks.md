@@ -65,7 +65,7 @@ al terminarlo.
 
 - [x] 11.1 Agregar a la bandeja el filtro «Correo» con «No enviado» (`correo=no-enviado`, en `filtersActive` y `clearFilters`) y el indicador del correo en la fila y en la tarjeta del teléfono; verificar con pruebas de componentes del filtro, de la dirección y del indicador.
 - [x] 11.2 Agregar a Avisos «N comprobantes sin enviar por correo» con el enlace a la bandeja filtrada, sin cambiar «Requieren atención» del tablero; verificar con las pruebas de los avisos.
-- [ ] 11.3 Revisar las pantallas con la lista de comprobación del frontend (`docs/quality/frontend-checklist.md`) en escritorio y teléfono, solo tema claro, con sus entradas y fixtures en `visual/review`; documentarlas en `docs/architecture/` (`frontend.md`, `navigation-responsive.md`, `component-system.md`, `data-tables.md`, `forms-and-workflows.md` y `fiscal-emission.md`); verificar con capturas de la app desplegada.
+- [x] 11.3 Revisar las pantallas con la lista de comprobación del frontend (`docs/quality/frontend-checklist.md`) en escritorio y teléfono, solo tema claro, con sus entradas y fixtures en `visual/review`; documentarlas en `docs/architecture/` (`frontend.md`, `navigation-responsive.md`, `component-system.md`, `data-tables.md`, `forms-and-workflows.md` y `fiscal-emission.md`); verificar con capturas de la app desplegada.
 
 ## 12. Verificación
 
