@@ -5,6 +5,7 @@ import type { Role } from "@facturador/contracts";
 export type Permission =
   | "account.read"
   | "account.changePassword"
+  | "account.updateProfile"
   | "users.read"
   | "users.create"
   | "users.changeRole"
@@ -78,6 +79,7 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
     "account.read",
     "account.changePassword",
+    "account.updateProfile",
     "users.read",
     "users.create",
     "users.changeRole",
@@ -150,6 +152,7 @@ const VISIBLE: Record<Role, ReadonlySet<Permission>> = {
   OPERATOR: new Set<Permission>([
     "account.read",
     "account.changePassword",
+    "account.updateProfile",
     "account.setDefaultEmissionPoint",
     "establishments.read",
     "readiness.read",

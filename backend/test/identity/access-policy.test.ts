@@ -10,6 +10,7 @@ import { ROLES, type Role } from "../../src/modules/identity/domain/roles.ts";
 const MATRIX: Record<Permission, Record<Role, boolean>> = {
   "account.read": { ADMIN: true, OPERATOR: true },
   "account.changePassword": { ADMIN: true, OPERATOR: true },
+  "account.updateProfile": { ADMIN: true, OPERATOR: true },
   "users.read": { ADMIN: true, OPERATOR: false },
   "users.create": { ADMIN: true, OPERATOR: false },
   "users.changeRole": { ADMIN: true, OPERATOR: false },

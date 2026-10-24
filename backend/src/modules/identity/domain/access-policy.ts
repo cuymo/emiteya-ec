@@ -5,6 +5,8 @@ import { isRole, type Role } from "./roles.ts";
 export const PERMISSIONS = [
   "account.read",
   "account.changePassword",
+  /** Nombre y avatar propios (redesign-account-profile). */
+  "account.updateProfile",
   "users.read",
   "users.create",
   "users.changeRole",
@@ -80,6 +82,7 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
   ADMIN: new Set<Permission>([
     "account.read",
     "account.changePassword",
+    "account.updateProfile",
     "users.read",
     "users.create",
     "users.changeRole",
@@ -176,6 +179,7 @@ const POLICY: Readonly<Record<Role, ReadonlySet<string>>> = {
   OPERATOR: new Set<Permission>([
     "account.read",
     "account.changePassword",
+    "account.updateProfile",
     "account.setDefaultEmissionPoint",
     "establishments.read",
     "readiness.read",

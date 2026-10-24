@@ -130,6 +130,7 @@ denegado por defecto;
 | --- | --- | --- | --- |
 | `account.read` | Consultar la cuenta propia | Sí | Sí |
 | `account.changePassword` | Cambiar la contraseña propia | Sí | Sí |
+| `account.updateProfile` | Cambiar el nombre propio y cargar o quitar el avatar propio (`redesign-account-profile`) | Sí | Sí |
 | `users.read` | Consultar los usuarios de la empresa | Sí | No |
 | `users.create` | Crear un usuario | Sí | No |
 | `users.changeRole` | Cambiar el rol de otro usuario | Sí | No |
