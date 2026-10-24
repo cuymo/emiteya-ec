@@ -16,13 +16,13 @@
 
 ## 4. API del perfil y del nombre propio
 
-- [ ] 4.1 Implementar `GET /api/v1/me/profile` con el usuario de la sesión; verificar con pruebas de integración: perfil propio sin credenciales ni ids internos, `401` sin sesión, `403` sin membresía activa.
+- [x] 4.1 Implementar `GET /api/v1/me/profile` con el usuario de la sesión; verificar con pruebas de integración: perfil propio sin credenciales ni ids internos, `401` sin sesión o sin membresía activa, como el resto de la API, que no revela si la identidad existe.
 - [ ] 4.2 Implementar `PUT /api/v1/me/name` con compara y cambia en una transacción y el evento `user.name_changed` (anterior y nuevo); verificar con pruebas de integración: cambio exitoso visible en la lista de Usuarios, nombre inválido (vacío, largo, salto de línea), mismo nombre sin evento, dos solicitudes iguales a la vez con un solo evento, sin ruta para cambiar a otro usuario, y el evento en la empresa activa.
 
 ## 5. API del avatar propio
 
-- [ ] 5.1 Implementar `PUT`, `GET` y `DELETE /api/v1/me/avatar` (cuerpo binario PNG/JPEG, inspección compartida, límite configurable, upsert por usuario, sin auditoría; `GET` con `private, no-cache`, `ETag` y `nosniff`); verificar con pruebas de integración: cargar, reemplazar, quitar, formato no admitido, tamaño y dimensiones excesivos, la misma imagen dos veces con una sola fila, cargas a la vez con una sola fila, `404` sin avatar.
-- [ ] 5.2 Verificar el aislamiento con pruebas de integración: un administrador de la misma empresa y un usuario de otra empresa no pueden leer, cambiar, quitar ni detectar un avatar ajeno; la lista de Usuarios y el paquete de portabilidad no incluyen avatares; ningún evento de auditoría por el avatar.
+- [x] 5.1 Implementar `PUT`, `GET` y `DELETE /api/v1/me/avatar` (cuerpo binario PNG/JPEG, inspección compartida, límite configurable, upsert por usuario, sin auditoría; `GET` con `private, no-cache`, `ETag` y `nosniff`); verificar con pruebas de integración: cargar, reemplazar, quitar, formato no admitido, tamaño y dimensiones excesivos, la misma imagen dos veces con una sola fila, cargas a la vez con una sola fila, `404` sin avatar.
+- [x] 5.2 Verificar el aislamiento con pruebas de integración: un administrador de la misma empresa y un usuario de otra empresa no pueden leer, cambiar, quitar ni detectar un avatar ajeno; la lista de Usuarios y el paquete de portabilidad no incluyen avatares; ningún evento de auditoría por el avatar.
 - [ ] 5.3 Documentar las operaciones nuevas de `/api/v1/me` en la documentación de la API y el avatar como dato personal en `docs/security/` (quién lo ve, retención y exclusión de la portabilidad).
 
 ## 6. Avatar en la interfaz (primero, decisión del propietario, 2026-10-24)

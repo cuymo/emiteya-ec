@@ -28,6 +28,9 @@ import {
 } from "./modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "./modules/identity/infrastructure/http/request-context.ts";
 import { usersRouter } from "./modules/identity/infrastructure/http/users-router.ts";
+import { profileRouter } from "./modules/identity/infrastructure/http/profile-router.ts";
+import { createPrismaAvatars } from "./modules/identity/infrastructure/prisma-avatars.ts";
+import { createOwnProfile } from "./modules/identity/application/own-profile.ts";
 import {
   catalogsModule,
   fiscalCatalogQueries,
@@ -346,6 +349,18 @@ apiRouter.use(
       schemas: userSchemas(passwordPolicy(env)),
     }),
   ),
+);
+// Perfil y avatar propios (redesign-account-profile): el avatar es privado de su dueño.
+apiRouter.use(
+  profileRouter({
+    profile: createOwnProfile({
+      memberships,
+      avatars: createPrismaAvatars(database.prisma),
+      authorizer,
+      avatarMaxBytes: env.AVATAR_MAX_BYTES,
+    }),
+    avatarMaxBytes: env.AVATAR_MAX_BYTES,
+  }),
 );
 apiRouter.use(
   ...taxpayerRouters({

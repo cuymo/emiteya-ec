@@ -23,6 +23,9 @@ import {
 } from "../../src/modules/identity/infrastructure/better-auth/index.ts";
 import { requireContext } from "../../src/modules/identity/infrastructure/http/request-context.ts";
 import { usersRouter } from "../../src/modules/identity/infrastructure/http/users-router.ts";
+import { profileRouter } from "../../src/modules/identity/infrastructure/http/profile-router.ts";
+import { createPrismaAvatars } from "../../src/modules/identity/infrastructure/prisma-avatars.ts";
+import { createOwnProfile } from "../../src/modules/identity/application/own-profile.ts";
 import { createMembershipReader } from "../../src/modules/identity/infrastructure/prisma-memberships.ts";
 import { createSecurityEventLog } from "../../src/modules/identity/infrastructure/security-event-log.ts";
 import { createLogger } from "../../src/platform/logging/logger.ts";
@@ -169,5 +172,44 @@ export function buildUsersApp(
             }),
           ),
         ),
+  });
+}
+
+/** Usuarios, perfil y avatar propios montados como en main.ts (redesign-account-profile). */
+export function buildProfileApp(
+  db: MigratedSchema,
+  options: Omit<Parameters<typeof buildAuthApp>[1] & object, "apiRouter"> & {
+    avatarMaxBytes?: number;
+  } = {},
+) {
+  const { avatarMaxBytes = 512 * 1024, ...rest } = options;
+  return buildAuthApp(db, {
+    ...rest,
+    apiRouter: ({ context, uow, memberships, securityEvents }) => {
+      const authorizer = createAuthorizer({ memberships, securityEvents });
+      return Router()
+        .use(context)
+        .use(
+          usersRouter(
+            createUserAdministration({
+              uow,
+              memberships,
+              authorizer,
+              schemas: userSchemas(testAuthSettings(rest.settings).password),
+            }),
+          ),
+        )
+        .use(
+          profileRouter({
+            profile: createOwnProfile({
+              memberships,
+              avatars: createPrismaAvatars(db.database.prisma),
+              authorizer,
+              avatarMaxBytes,
+            }),
+            avatarMaxBytes,
+          }),
+        );
+    },
   });
 }

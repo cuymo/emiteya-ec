@@ -32,7 +32,8 @@
 
 - `GET /me/profile`: nombre, correo, rol, estado de la membresía, `memberSince` (fecha de alta de la
   identidad) y `avatar: { version } | null`, donde `version` son los primeros 16 caracteres del
-  SHA-256 de la imagen, para la URL de la imagen.
+  SHA-256 de la imagen, para la URL de la imagen; y `avatarMaxBytes`, el límite configurado, para
+  los mensajes de la interfaz.
 - `PUT /me/name` con `{ name }`: devuelve el perfil.
 - `PUT /me/avatar` con la imagen como cuerpo binario (`image/png` o `image/jpeg`, `express.raw`,
   como el logo); `DELETE /me/avatar`; `GET /me/avatar` sirve la imagen.
@@ -157,7 +158,7 @@ Brief de la pantalla:
 | Idempotencia | Natural, por comparación | Natural, por SHA-256 |
 | Restricciones | Longitud y formato validados; correo y unicidad sin tocar | Clave primaria por usuario; tipo y tamaño validados antes de escribir |
 | Auditoría | `user.name_changed`, en la misma transacción | No (decisión del propietario: uso solo personal) |
-| Pruebas de autorización | Sin sesión `401`; sin membresía activa `403`; sin rutas con id | Igual, y que otro usuario o empresa no lee ni detecta un avatar |
+| Pruebas de autorización | Sin sesión o sin membresía activa `401` (como toda la API); sin rutas con id | Igual, y que otro usuario o empresa no lee ni detecta un avatar |
 | Fugas | Ninguna: solo devuelve el perfil propio | Solo `GET /me/avatar` lo sirve, a su dueño; no está en Usuarios ni en la portabilidad |
 
 ## Risks / Trade-offs
