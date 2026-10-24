@@ -319,15 +319,17 @@ touch actions.
 
 ## Field Focus
 
-Fields do not use the blue focus outline (owner decision, 2026-10-24). This covers text, password
-and search inputs, text areas, native selects, the prefixed dropdowns (`select-trigger`), the date
-picker (`date-picker-trigger`), checkboxes and radios.
+Fields do not change on focus (owner decisions, 2026-10-24). This covers text, password and search
+inputs, text areas, native selects, the prefixed dropdowns (`select-trigger`), the date picker
+(`date-picker-trigger`), checkboxes and radios.
 
-- **On focus:** a field gets a dark gray border (`--color-foreground-muted`) and a soft gray halo
-  of 3 px. An invalid field keeps its red border.
+- **On focus:** a field has no outline and no halo, and keeps its border. The text cursor marks
+  the active text field. An invalid field keeps its red border.
 - **Where:** the rule lives once in `globals.css`, so no field repeats focus classes.
-- **Other controls:** buttons, tabs, toggles and links keep the blue focus outline. Focus is always
-  visible for keyboard users.
+- **Other controls:** buttons, tabs, toggles and links keep the blue focus outline.
+- **Trade-off:** for keyboard users, the dropdowns, the date picker and the checkboxes show no
+  focus of their own. The owner accepted this; restoring a visible field focus means changing
+  this single rule.
 
 ## Ownership And Documentation
 

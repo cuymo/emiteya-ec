@@ -354,17 +354,13 @@ html:has([data-slot="sticky-form-actions"]) {
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
   }
-  /* Los campos (texto, contraseña, búsqueda, áreas de texto, selects, casillas y opciones), al
-     enfocarse, llevan un borde gris oscuro y un halo gris suave en lugar del contorno azul (decisión
-     del propietario, 2026-10-24). Sigue siendo un foco visible, con contraste suficiente sobre la
-     superficie; los botones, las pestañas y los enlaces conservan el suyo. */
+  /* Los campos (texto, contraseña, búsqueda, áreas de texto, selects, casillas y opciones) no cambian
+     al enfocarse: sin contorno, sin halo y con su mismo borde (decisión del propietario, 2026-10-24,
+     que reemplaza el borde gris del mismo día). El cursor de texto marca el campo activo; los
+     botones, las pestañas y los enlaces conservan su contorno azul. */
   :is(input, textarea, select, [data-slot="select-trigger"], [data-slot="date-picker-trigger"]):focus-visible {
     outline: none;
-    border-color: var(--color-foreground-muted);
-    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-foreground-muted) 18%, transparent);
-  }
-  :is(input, textarea, select)[aria-invalid="true"]:focus-visible {
-    border-color: var(--color-danger);
+    box-shadow: none;
   }
   /* Casillas de verificación sin la apariencia nativa, cuyo borde oscuro pintaba el navegador: el
      mismo borde `input` que los demás campos y, marcadas, el azul primario con su marca. El tamaño

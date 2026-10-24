@@ -120,11 +120,11 @@ describe("CSS del sistema de diseño", () => {
     );
   });
 
-  it("los campos se enfocan con un borde y un halo grises, sin el contorno azul", () => {
+  it("los campos no cambian al enfocarse: sin contorno ni halo", () => {
     // Decisión del propietario, 2026-10-24.
     const rule = css.slice(css.indexOf('[data-slot="date-picker-trigger"]):focus-visible'));
     expect(rule).toMatch(/^[^}]*outline: none/);
-    expect(rule).toMatch(/^[^}]*border-color: var\(--color-foreground-muted\)/);
-    expect(rule).toMatch(/^[^}]*box-shadow: 0 0 0 3px/);
+    expect(rule).toMatch(/^[^}]*box-shadow: none/);
+    expect(rule).not.toMatch(/^[^}]*border-color/);
   });
 });
