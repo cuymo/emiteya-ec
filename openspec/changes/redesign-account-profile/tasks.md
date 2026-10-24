@@ -28,7 +28,7 @@
 ## 6. Avatar en la interfaz (primero, decisión del propietario, 2026-10-24)
 
 - [x] 6.1 Agregar en el frontend la consulta del perfil y las mutaciones del avatar (reducción a 512 px en el navegador con `createImageBitmap` y `canvas`, con el archivo tal cual como respaldo); verificar con pruebas unitarias de la API y de la reducción con su respaldo.
-- [ ] 6.2 Agregar a la «Mi cuenta» actual la sección «Foto de perfil» (avatar o iniciales, «Cambiar foto» y «Quitar foto»); verificar con pruebas de componentes: sin avatar, con avatar, cargar, quitar, formato rechazado y tamaño excedido junto al control, y teclado.
+- [x] 6.2 Agregar a la «Mi cuenta» actual la sección «Foto de perfil» (avatar o iniciales, «Cambiar foto» y «Quitar foto»); verificar con pruebas de componentes: sin avatar, con avatar, cargar, quitar, formato rechazado y tamaño excedido junto al control, y teclado.
 - [ ] 6.3 Mostrar el avatar (o las iniciales) dentro del menú de cuenta, junto al nombre, leyendo el perfil solo al abrirlo; verificar con pruebas de componentes: con avatar, sin avatar, mientras carga y el botón de la barra superior sin avatar.
 
 ## 7. Página de perfil y nombre en la interfaz
