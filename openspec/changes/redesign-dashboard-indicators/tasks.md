@@ -4,8 +4,8 @@
 
 ## 2. Tablero
 
-- [ ] 2.1 Rediseñar los cuatro indicadores con su icono, su enlace, la variación y el degradado azul suave; verificar con las pruebas del tablero.
-- [ ] 2.2 Reemplazar «Estado del sistema» por «Estado de facturación electrónica» con la firma, la conexión con el SRI y la entrega de comprobantes; verificar con las pruebas del tablero y del rol operador.
+- [x] 2.1 Rediseñar los cuatro indicadores con su icono, su enlace, la variación y el degradado azul suave; verificar con las pruebas del tablero.
+- [x] 2.2 Reemplazar «Estado del sistema» por «Estado de facturación electrónica» con la firma, la conexión con el SRI y la entrega de comprobantes; verificar con las pruebas del tablero y del rol operador.
 
 ## 3. Documentación y revisión
 

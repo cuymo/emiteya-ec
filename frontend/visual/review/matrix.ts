@@ -228,6 +228,97 @@ export const STATES: State[] = [
       await expect(page.getByRole("dialog", { name: "Eliminar borrador" })).toBeVisible();
     },
   },
+  // Inicio con indicadores comerciales y el estado de facturación electrónica
+  // (redesign-dashboard-indicators): ventas al alza, 15 de 18 facturas, problemas y correos fallidos.
+  {
+    route: "inicio",
+    state: "resumen",
+    path: "/",
+    group: "shell",
+    scenario: {
+      overrides: {
+        "GET /api/v1/dashboard": {
+          status: 200,
+          body: {
+            data: {
+              environment: "TEST",
+              today: "2026-10-14",
+              month: {
+                start: "2026-10-01",
+                invoices: {
+                  authorizedTotal: "34815.53",
+                  authorizedCount: 15,
+                  issuedCount: 18,
+                  previousAuthorizedTotal: "31795.92",
+                  previousChangePercent: "9.5",
+                },
+                byType: [
+                  { documentType: "01", issued: 18, authorized: 15, authorizedTotal: "34815.53" },
+                  { documentType: "04", issued: 2, authorized: 2, authorizedTotal: "120.00" },
+                ],
+              },
+              monthly: ["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"].map(
+                (month, index) => ({
+                  month,
+                  authorizedTotal: [
+                    "22100.00",
+                    "25840.10",
+                    "27410.00",
+                    "30120.45",
+                    "31795.92",
+                    "34815.53",
+                  ][index]!,
+                  authorizedCount: [11, 12, 13, 14, 14, 15][index]!,
+                }),
+              ),
+              attention: { count: 1, rejectedLast30Days: 3, emailFailed: 2 },
+              email: { pending: 0 },
+              sri: {
+                transmissionEnabled: true,
+                lastContact: { at: "2026-10-14T14:20:00.000Z", reached: true },
+              },
+              drafts: { invoices: 15 },
+              inventory: { outOfStock: 0 },
+              topCustomers: [],
+              topProducts: [],
+              recent: [],
+            },
+          },
+        },
+        "GET /api/v1/company/status": {
+          status: 200,
+          body: {
+            data: {
+              environment: "TEST",
+              displayName: "Ferretería Andina",
+              readiness: {
+                ready: true,
+                checks: [
+                  { key: "TAXPAYER_DATA", status: "MET" },
+                  { key: "EMISSION_POINT", status: "MET" },
+                  { key: "SIGNING_CERTIFICATE", status: "MET" },
+                ],
+              },
+            },
+          },
+        },
+        "GET /api/v1/email/availability": {
+          status: 200,
+          body: {
+            data: {
+              configured: true,
+              deliveryEnabled: true,
+              autoSend: true,
+              testRecipient: "pruebas@ferreteriaandina.ec",
+            },
+          },
+        },
+      },
+    },
+    widths: ["1440", "1024", "390"],
+    dark: ["1440"],
+    ready: (page) => heading(page, "Resumen"),
+  },
   // Barra superior en cada ambiente, sobre Facturas.
   {
     route: "facturas",

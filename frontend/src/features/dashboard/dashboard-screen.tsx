@@ -4,31 +4,41 @@
 // frontend/THIRD_PARTY_NOTICES.md), con los datos del servidor (`GET /dashboard`) en el ambiente
 // vigente:
 // - si la empresa todavía no puede emitir, primero sus requisitos;
-// - cuatro indicadores: ventas autorizadas, facturas, lo que requiere atención y borradores;
+// - cuatro indicadores comerciales (redesign-dashboard-indicators): ventas autorizadas con su
+//   variación, facturas autorizadas sobre las emitidas, problemas de autorización y borradores;
 // - con los charts de shadcn/ui (`dashboard-charts.tsx`), cada uno con su tabla para la asistencia:
 //   las ventas de los seis últimos meses en una línea con área, los mejores clientes en una dona con
 //   su leyenda y los productos más vendidos en columnas con su código;
 // - los comprobantes del mes por tipo, en barras apiladas de lo autorizado sobre lo emitido, también
 //   con su tabla para la asistencia;
-// - el estado del sistema (firma, ambiente y existencias): cuatro estados distintos, en una lista con
-//   icono y texto, no en un gráfico, cada uno con un acceso rápido «Ir» a su sección si el rol la ve;
+// - el estado de facturación electrónica (firma, conexión con el SRI y entrega de comprobantes), en
+//   una lista con su estado en texto, cada fila enlazada a su sección si el rol la ve;
 // - los últimos comprobantes, enlazados a su detalle.
 // Las ventas son las facturas autorizadas; los importes son los del servidor, sin cálculos aquí.
 "use client";
 
-import { DOCUMENT_TYPE_LABELS, type DashboardView } from "@facturador/contracts";
 import {
-  ArrowRight,
+  DOCUMENT_TYPE_LABELS,
+  type CertificateValidityView,
+  type DashboardView,
+  type EmailAvailability,
+} from "@facturador/contracts";
+import {
+  ArrowUpRight,
+  ChevronRight,
   CircleAlert,
-  CircleCheck,
-  FileClock,
+  FileCheck2,
   FilePen,
   FileText,
   KeyRound,
+  Mail,
+  Minus,
   Plus,
-  ReceiptText,
+  RadioTower,
+  TrendingDown,
+  TrendingUp,
   TriangleAlert,
-  Warehouse,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -61,8 +71,9 @@ import { cn } from "@/lib/utils";
 import { DOCUMENT_KINDS } from "@/features/archive/document-kinds";
 import { ENVIRONMENT_LABELS, useCompanyStatus } from "@/features/company/company-api";
 import { DocumentStatusBadge } from "@/features/documents/document-status-badge";
+import { useEmailAvailability } from "@/features/email/email-api";
 import { ReadinessChecks } from "@/features/home/readiness-screen";
-import { formatIssueDate } from "@/features/invoices/invoice-format";
+import { formatDateTime, formatIssueDate } from "@/features/invoices/invoice-format";
 import { useCertificateValidity } from "@/features/signing/signing-api";
 import { useDashboard } from "./dashboard-api";
 import type { DocumentTypeRow, RankingRow } from "./dashboard-charts";
@@ -87,126 +98,285 @@ const DocumentsChart = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
 );
 
+type Tone = "success" | "warning" | "danger" | "neutral" | "info";
+
+const ICON_TONES = {
+  primary: "border-primary/20 bg-primary/10 text-primary",
+  warning: "border-warning/30 bg-warning/10 text-warning",
+  neutral: "border-border bg-muted text-foreground-muted",
+} as const;
+
 /**
- * Un indicador: su cifra, una línea de contexto y, si aplica, adónde ir. El icono grande a la
- * izquierda, en 10 % y 90 % (al menos el ancho del icono), con todo el contenido alineado a la
- * izquierda; el enlace lleva una flecha porque navega a otra pantalla de la aplicación (decisiones
- * del propietario, 2026-10-23).
+ * Un indicador (redesign-dashboard-indicators, design D4): el icono en su caja, un enlace con flecha
+ * a su lista arriba a la derecha, el título, la cifra con su insignia y una línea de contexto. Un
+ * degradado azul suave sube desde el pie de la tarjeta.
  */
 function Metric({
   title,
   icon: Icon,
+  tone = "primary",
   value,
+  of,
+  badge,
   detail,
   href,
   hrefLabel,
-  tone = "neutral",
 }: {
   title: string;
   icon: LucideIcon;
+  tone?: keyof typeof ICON_TONES;
   value: string;
+  /** El total del que forma parte la cifra, como «15 / 18». */
+  of?: string;
+  badge?: ReactNode;
   detail: ReactNode;
-  href?: string;
-  hrefLabel?: string;
-  tone?: "neutral" | "warning";
+  href: string;
+  hrefLabel: string;
 }) {
   return (
-    <Card size="sm" data-slot="dashboard-metric">
-      <CardContent className="grid flex-1 grid-cols-metric items-start gap-3">
-        <span
-          aria-hidden="true"
-          data-slot="dashboard-metric-icon"
-          className={cn(
-            "flex size-10 items-center justify-center rounded-full",
-            tone === "warning" ? "bg-warning/15 text-warning" : "bg-primary/10 text-primary",
-          )}
-        >
-          <Icon className="size-5" />
-        </span>
-        <div className="flex min-w-0 flex-col items-start gap-1 self-stretch">
+    <Card
+      size="sm"
+      data-slot="dashboard-metric"
+      className="bg-linear-to-t from-primary/8 to-card dark:from-primary/15"
+    >
+      <CardContent className="flex flex-1 flex-col gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <span
+            aria-hidden="true"
+            data-slot="dashboard-metric-icon"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-lg border",
+              ICON_TONES[tone],
+            )}
+          >
+            <Icon className="size-4" />
+          </span>
+          <Link
+            href={href}
+            aria-label={hrefLabel}
+            title={hrefLabel}
+            className="-m-1 rounded-md p-1 text-foreground-muted transition-colors hover:bg-muted hover:text-foreground max-md:p-2.5"
+          >
+            <ArrowUpRight aria-hidden="true" className="size-4" />
+          </Link>
+        </div>
+        <div className="flex min-w-0 flex-col gap-1">
           <CardDescription>{title}</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums">{value}</CardTitle>
-          {detail && <p className="text-xs text-foreground-muted">{detail}</p>}
-          {href && hrefLabel && (
-            <Link
-              href={href}
-              className="group/metric-link mt-auto inline-flex items-center gap-1 pt-1 text-xs font-medium text-primary hover:underline"
-            >
-              {hrefLabel}
-              <ArrowRight
-                aria-hidden="true"
-                className="size-3.5 transition-transform group-hover/metric-link:translate-x-0.5"
-              />
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <CardTitle className="text-2xl font-semibold tabular-nums">
+              {value}
+              {of !== undefined && (
+                <span className="text-base font-medium text-foreground-muted"> / {of}</span>
+              )}
+            </CardTitle>
+            {badge}
+          </div>
+          <p className="text-xs text-foreground-muted">{detail}</p>
         </div>
       </CardContent>
     </Card>
   );
 }
 
+/** La variación de las ventas, que calcula el servidor: con signo y flecha, nunca solo color. */
+function TrendBadge({ percent }: { percent: string }) {
+  const negative = percent.startsWith("-");
+  const zero = Number(percent) === 0;
+  const Icon = zero ? Minus : negative ? TrendingDown : TrendingUp;
+  const text = formatDecimal(negative ? percent.slice(1) : percent, { minFractionDigits: 1 });
+  return (
+    <Badge
+      data-slot="dashboard-trend"
+      variant={zero ? "neutral" : negative ? "destructive" : "success"}
+      className="tabular-nums"
+    >
+      <Icon aria-hidden="true" />
+      {zero ? "" : negative ? "−" : "+"}
+      {text} %
+    </Badge>
+  );
+}
+
+const STATUS_BADGES: Record<Tone, "success" | "warning" | "destructive" | "neutral" | "info"> = {
+  success: "success",
+  warning: "warning",
+  danger: "destructive",
+  neutral: "neutral",
+  info: "info",
+};
+
 /**
- * Un dato del estado del sistema: su nombre, debajo su valor con icono y tono, y a la derecha el
- * acceso rápido «Ir» a su sección (decisión del propietario, 2026-10-22). El botón solo aparece si
- * el rol puede abrir esa sección, con el permiso que exige la navegación.
+ * Una fila del estado de facturación electrónica (design D2, D3 y D5): su nombre, el detalle debajo
+ * y el estado en texto a la derecha. Enlaza a su sección solo si el rol puede abrirla, con el permiso
+ * que exige la navegación.
  */
-function StatusRow({
+function InvoicingRow({
   icon: Icon,
   label,
-  value,
+  detail,
+  status,
   tone,
   href,
 }: {
   icon: LucideIcon;
   label: string;
-  value: string;
-  tone: "success" | "warning" | "danger" | "neutral";
-  /** La sección del dato, como `/inventario`. */
-  href: string;
+  detail: string;
+  status: string;
+  tone: Tone;
+  /** La sección de la fila, como `/configuracion/firma`. */
+  href?: string;
 }) {
   const { me } = useSession();
-  const route = resolveRoute(href);
+  const route = href ? resolveRoute(href.split("?")[0]!) : null;
   const reachable =
-    route !== null && (route.permission === null || canSee(me.role, route.permission));
-  const ToneIcon = tone === "success" ? CircleCheck : tone === "neutral" ? null : TriangleAlert;
+    href !== undefined &&
+    route !== null &&
+    (route.permission === null || canSee(me.role, route.permission));
+  const content = (
+    <>
+      <span
+        aria-hidden="true"
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-foreground-muted"
+      >
+        <Icon className="size-4" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-sm font-medium">{label}</span>
+        <span className="text-xs text-foreground-muted">{detail}</span>
+      </span>
+      <Badge variant={STATUS_BADGES[tone]} className="shrink-0">
+        {status}
+      </Badge>
+    </>
+  );
   return (
-    <li className="flex items-center gap-3 py-2.5">
-      <Icon aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm">{label}</span>
-        <span
-          className={cn(
-            "flex items-center gap-1 text-sm font-medium",
-            tone === "success" && "text-success",
-            tone === "warning" && "text-foreground",
-            tone === "danger" && "text-danger",
-          )}
+    <li data-slot="invoicing-status" className="py-1">
+      {reachable ? (
+        <Link
+          href={href}
+          className="group/status -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted"
         >
-          {ToneIcon && (
-            <ToneIcon
-              aria-hidden="true"
-              className={cn("size-4 shrink-0", tone === "warning" && "text-warning")}
-            />
-          )}
-          {value}
-        </span>
-      </div>
-      {reachable && (
-        <Button asChild variant="outline" size="sm" className="shrink-0">
-          <Link href={href} aria-label={`Ir a ${route.destination.label}`}>
-            Ir
-            <ArrowRight aria-hidden="true" data-icon="inline-end" />
-          </Link>
-        </Button>
+          {content}
+          <ChevronRight
+            aria-hidden="true"
+            className="size-4 shrink-0 text-foreground-muted transition-transform group-hover/status:translate-x-0.5"
+          />
+        </Link>
+      ) : (
+        <div className="flex items-center gap-3 py-2">{content}</div>
       )}
     </li>
   );
+}
+
+type RowState = { detail: string; status: string; tone: Tone; href?: string };
+
+function certificateState(certificate: CertificateValidityView | undefined): RowState {
+  if (!certificate)
+    return { detail: "Consultando la firma…", status: "Consultando", tone: "neutral" };
+  switch (certificate.state) {
+    case "NONE":
+      return {
+        detail: "Todavía no cargas la firma electrónica",
+        status: "Sin cargar",
+        tone: "danger",
+      };
+    case "EXPIRED":
+      return { detail: "La firma venció: no puedes emitir", status: "Vencida", tone: "danger" };
+    case "KEY_UNAVAILABLE":
+      return {
+        detail: "La clave guardada no se puede usar",
+        status: "No utilizable",
+        tone: "danger",
+      };
+    case "EXPIRING":
+      return {
+        detail: `Vence en ${certificate.daysToExpiry ?? 0} días`,
+        status: "Por vencer",
+        tone: "warning",
+      };
+    default:
+      return {
+        detail:
+          certificate.daysToExpiry !== null
+            ? `Vigente · Vence en ${certificate.daysToExpiry} días`
+            : "Vigente",
+        status: "Activa",
+        tone: "success",
+      };
+  }
+}
+
+/** Design D2: de los intentos guardados; el tablero nunca contacta al SRI. */
+function sriState(sri: DashboardView["sri"]): RowState {
+  if (!sri.transmissionEnabled) {
+    return {
+      detail: "El envío al SRI está apagado en este servidor",
+      status: "Apagado",
+      tone: "neutral",
+    };
+  }
+  if (!sri.lastContact) {
+    return {
+      detail: "Todavía no hay comunicaciones con el SRI",
+      status: "Sin datos",
+      tone: "neutral",
+    };
+  }
+  const at = formatDateTime(sri.lastContact.at);
+  return sri.lastContact.reached
+    ? { detail: `Última comunicación correcta: ${at}`, status: "Disponible", tone: "success" }
+    : {
+        detail: `La última comunicación no tuvo respuesta: ${at}`,
+        status: "Sin respuesta",
+        tone: "danger",
+      };
+}
+
+const emails = (count: number) =>
+  count === 1 ? "1 correo" : `${formatDecimal(String(count))} correos`;
+
+/** Design D3: la disponibilidad del correo y los envíos del resumen, en ese orden. */
+function deliveryState(
+  availability: EmailAvailability | undefined,
+  failed: number,
+  pending: number,
+): RowState {
+  if (availability && !availability.deliveryEnabled) {
+    return { detail: "El envío por correo está apagado", status: "Apagado", tone: "neutral" };
+  }
+  if (availability && !availability.configured) {
+    return {
+      detail: "Falta configurar el servidor de correo",
+      status: "Configurar",
+      tone: "warning",
+      href: "/configuracion/correos",
+    };
+  }
+  if (failed > 0) {
+    return {
+      detail: `${emails(failed)} sin enviar`,
+      status: "Revisar",
+      tone: "warning",
+      href: "/comprobantes?correo=no-enviado",
+    };
+  }
+  if (pending > 0) {
+    return { detail: `${emails(pending)} en cola`, status: "Enviando", tone: "info" };
+  }
+  return { detail: "Los correos están al día", status: "Al día", tone: "success" };
+}
+
+/** «83,3 %»: la parte de las facturas del mes que ya están autorizadas, de dos conteos. */
+function shareOf(part: number, whole: number): string {
+  return `${formatDecimal(String(Math.round((part * 1000) / whole) / 10))} %`;
 }
 
 function Dashboard({ data }: { data: DashboardView }) {
   const { me } = useSession();
   const status = useCompanyStatus();
   const validity = useCertificateValidity(true);
+  const availability = useEmailAvailability(true);
   const canCreate = canSee(me.role, "invoices.draft");
   const canConfigure = canSee(me.role, "taxpayer.configure");
   const currentMonth = data.today.slice(0, 7);
@@ -244,23 +414,14 @@ function Dashboard({ data }: { data: DashboardView }) {
         : product.description),
   }));
 
-  const certificateRow = !certificate
-    ? { value: "Consultando…", tone: "neutral" as const }
-    : certificate.state === "NONE"
-      ? { value: "Sin cargar", tone: "danger" as const }
-      : certificate.state === "EXPIRED"
-        ? { value: "Vencida", tone: "danger" as const }
-        : certificate.state === "KEY_UNAVAILABLE"
-          ? { value: "No utilizable", tone: "danger" as const }
-          : certificate.state === "EXPIRING"
-            ? { value: `Vence en ${certificate.daysToExpiry ?? 0} días`, tone: "warning" as const }
-            : {
-                value:
-                  certificate.daysToExpiry !== null
-                    ? `Vigente · ${certificate.daysToExpiry} días`
-                    : "Vigente",
-                tone: "success" as const,
-              };
+  const certificateRow = certificateState(certificate);
+  const sriRow = sriState(data.sri);
+  const deliveryRow = deliveryState(
+    availability.data,
+    data.attention.emailFailed,
+    data.email.pending,
+  );
+  const rejected = data.attention.rejectedLast30Days;
 
   return (
     <section aria-labelledby="inicio-titulo" className="flex flex-col gap-6">
@@ -306,43 +467,48 @@ function Dashboard({ data }: { data: DashboardView }) {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
-          title={`Ventas autorizadas de ${monthName(currentMonth)}`}
-          icon={ReceiptText}
+          title={`Ventas autorizadas · ${monthName(currentMonth)}`}
+          icon={Wallet}
           value={formatUsd(invoices.authorizedTotal)}
+          badge={
+            invoices.previousChangePercent !== null && (
+              <TrendBadge percent={invoices.previousChangePercent} />
+            )
+          }
           detail={
             previousMonth
-              ? `En ${monthName(previousMonth)}: ${formatUsd(invoices.previousAuthorizedTotal)}`
-              : null
+              ? `Frente a ${formatUsd(invoices.previousAuthorizedTotal)} en ${monthName(previousMonth)}`
+              : "Sin un mes anterior para comparar"
           }
+          href="/facturas?estado=autorizadas"
+          hrefLabel="Ver facturas autorizadas"
         />
         <Metric
-          title="Facturas del mes"
-          icon={FileText}
-          value={formatDecimal(String(invoices.issuedCount))}
+          title="Facturas autorizadas"
+          icon={FileCheck2}
+          value={formatDecimal(String(invoices.authorizedCount))}
+          of={formatDecimal(String(invoices.issuedCount))}
           detail={
-            invoices.authorizedCount === 1
-              ? "1 autorizada"
-              : `${formatDecimal(String(invoices.authorizedCount))} autorizadas`
+            invoices.issuedCount > 0
+              ? `${shareOf(invoices.authorizedCount, invoices.issuedCount)} de las facturas del mes`
+              : "Todavía no hay facturas este mes"
           }
           href="/facturas"
           hrefLabel="Ver facturas"
         />
         <Metric
-          title="Requieren atención"
-          icon={data.attention.count > 0 ? CircleAlert : CircleCheck}
-          tone={data.attention.count > 0 ? "warning" : "neutral"}
-          value={formatDecimal(String(data.attention.count))}
-          detail={
-            data.attention.rejectedLast30Days > 0
-              ? `${data.attention.rejectedLast30Days} devueltos o no autorizados en 30 días`
-              : "Sin rechazos en 30 días"
-          }
-          href="/comprobantes"
-          hrefLabel="Revisar"
+          title="Problemas de autorización"
+          icon={TriangleAlert}
+          tone={rejected > 0 ? "warning" : "neutral"}
+          value={formatDecimal(String(rejected))}
+          detail="Devueltos o no autorizados en 30 días"
+          href="/comprobantes?estado=devueltos"
+          hrefLabel="Ver comprobantes devueltos"
         />
         <Metric
-          title="Borradores de facturas"
+          title="Facturas en borrador"
           icon={FilePen}
+          tone="neutral"
           value={formatDecimal(String(data.drafts.invoices))}
           detail={data.drafts.invoices > 0 ? "Pendientes de emitir" : "Ninguno pendiente"}
           href="/facturas?estado=borradores"
@@ -359,7 +525,8 @@ function Dashboard({ data }: { data: DashboardView }) {
               <Badge variant="neutral">{environment}</Badge>
             </CardAction>
           </CardHeader>
-          <CardContent>
+          {/* `relative`: la tabla para la asistencia, fuera de la vista, no ensancha la página. */}
+          <CardContent className="relative">
             <SalesChart monthly={data.monthly} />
             <SalesTable monthly={data.monthly} />
           </CardContent>
@@ -374,7 +541,7 @@ function Dashboard({ data }: { data: DashboardView }) {
             {typeRows.length === 0 ? (
               <p className="text-sm text-foreground-muted">Todavía no hay comprobantes este mes.</p>
             ) : (
-              <div data-slot="documents-chart">
+              <div data-slot="documents-chart" className="relative">
                 <DocumentsChart rows={typeRows} />
                 <DocumentsTable rows={typeRows} />
               </div>
@@ -395,7 +562,7 @@ function Dashboard({ data }: { data: DashboardView }) {
                 Aún no hay facturas autorizadas este mes.
               </p>
             ) : (
-              <div data-slot="ranking-chart">
+              <div data-slot="ranking-chart" className="relative">
                 <ShareChart rows={customerRows} />
                 <RankingTable
                   rows={customerRows}
@@ -419,7 +586,7 @@ function Dashboard({ data }: { data: DashboardView }) {
                 Aún no hay facturas autorizadas este mes.
               </p>
             ) : (
-              <div data-slot="ranking-chart">
+              <div data-slot="ranking-chart" className="relative">
                 <ColumnChart rows={productRows} />
                 <RankingTable
                   rows={productRows}
@@ -434,39 +601,21 @@ function Dashboard({ data }: { data: DashboardView }) {
 
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Estado del sistema</CardTitle>
-            <CardDescription>Lo que permite seguir emitiendo.</CardDescription>
+            <CardTitle>Estado de facturación electrónica</CardTitle>
+            <CardDescription>
+              Lo que necesitas para emitir y entregar tus comprobantes.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="flex flex-col divide-y divide-border">
-              <StatusRow
+              <InvoicingRow
                 icon={KeyRound}
                 label="Firma electrónica"
-                value={certificateRow.value}
-                tone={certificateRow.tone}
+                {...certificateRow}
                 href="/configuracion/firma"
               />
-              <StatusRow
-                icon={FileClock}
-                label="Ambiente"
-                value={environment}
-                tone={data.environment === "TEST" ? "warning" : "neutral"}
-                href="/configuracion/ambiente"
-              />
-              <StatusRow
-                icon={Warehouse}
-                label="Productos agotados"
-                value={String(data.inventory.outOfStock)}
-                tone={data.inventory.outOfStock > 0 ? "warning" : "success"}
-                href="/inventario"
-              />
-              <StatusRow
-                icon={CircleAlert}
-                label="Comprobantes con atención"
-                value={String(data.attention.count)}
-                tone={data.attention.count > 0 ? "warning" : "success"}
-                href="/comprobantes"
-              />
+              <InvoicingRow icon={RadioTower} label="Conexión con SRI" {...sriRow} />
+              <InvoicingRow icon={Mail} label="Entrega de comprobantes" {...deliveryRow} />
             </ul>
           </CardContent>
         </Card>

@@ -1,5 +1,5 @@
 // Tablero de Inicio: indicadores, ventas de los seis últimos meses con su tabla para la asistencia,
-// comprobantes por tipo, mejores clientes y productos, estado del sistema, últimos comprobantes,
+// comprobantes por tipo, mejores clientes y productos, estado de facturación electrónica, últimos comprobantes,
 // requisitos pendientes, vacío y error. El servidor está simulado.
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -117,6 +117,12 @@ function renderHome(
         },
       },
     }),
+    "GET /api/v1/email/availability": () => ({
+      status: 200,
+      body: {
+        data: { configured: true, deliveryEnabled: true, autoSend: true, testRecipient: null },
+      },
+    }),
     "GET /api/v1/dashboard": () => ({ status: 200, body: { data: SUMMARY } }),
     ...routes,
   });
@@ -134,7 +140,18 @@ const card = (title: string) =>
 
 /** El tablero con datos, no su esqueleto, que también lleva el título. */
 const loaded = () =>
-  screen.findByText("Ventas autorizadas de octubre", undefined, { timeout: 5_000 });
+  screen.findByText("Ventas autorizadas · octubre", undefined, { timeout: 5_000 });
+
+/** El tablero con un resumen distinto del de base. */
+const withSummary = (patch: Record<string, unknown>) => ({
+  "GET /api/v1/dashboard": () => ({ status: 200, body: { data: { ...SUMMARY, ...patch } } }),
+});
+
+/** Las filas del estado de facturación electrónica: nombre, detalle y estado. */
+const invoicingRows = () =>
+  Array.from(
+    card("Estado de facturación electrónica").querySelectorAll("[data-slot=invoicing-status]"),
+  ).map((row) => (row as HTMLElement).innerText ?? row.textContent);
 
 beforeEach(() => {
   navigation.pathname = "/";
@@ -145,44 +162,91 @@ afterEach(() => {
 });
 
 describe("tablero de Inicio", () => {
-  it("muestra los indicadores del mes con su contexto y adónde ir", async () => {
+  it("muestra los indicadores comerciales con su contexto y adónde ir", async () => {
     renderHome();
     await loaded();
     expect(screen.getByRole("heading", { level: 1, name: "Resumen" })).toBeDefined();
-    const metrics = document.querySelectorAll("[data-slot=dashboard-metric]");
+    const metrics = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-slot=dashboard-metric]"),
+    );
     expect(metrics).toHaveLength(4);
-    expect(metrics[0]!.textContent).toContain("Ventas autorizadas de octubre");
+    // redesign-dashboard-indicators, design D4: la variación la da el servidor, con signo y flecha.
     expect(metrics[0]!.textContent).toContain("USD 18.162,13");
-    expect(metrics[0]!.textContent).toContain("En septiembre: USD 46.346,22");
-    expect(metrics[1]!.textContent).toContain("19");
-    expect(metrics[1]!.textContent).toContain("15 autorizadas");
-    expect(metrics[2]!.textContent).toContain("2 devueltos o no autorizados en 30 días");
-    const drafts = within(metrics[3] as HTMLElement).getByRole("link", { name: "Ver borradores" });
-    expect(drafts.getAttribute("href")).toBe("/facturas?estado=borradores");
-    // El icono grande a la izquierda (10 % y 90 %) y una flecha en el enlace, que navega dentro de
-    // la aplicación (decisiones del propietario, 2026-10-23).
+    const trend = metrics[0]!.querySelector("[data-slot=dashboard-trend]")!;
+    expect(trend.textContent).toBe("−60,8 %");
+    expect(trend.getAttribute("data-variant")).toBe("destructive");
+    expect(trend.querySelector("svg.lucide-trending-down")).not.toBeNull();
+    expect(metrics[0]!.textContent).toContain("Frente a USD 46.346,22 en septiembre");
+    expect(metrics[1]!.textContent).toContain("Facturas autorizadas15 / 19");
+    expect(metrics[1]!.textContent).toContain("78,9 % de las facturas del mes");
+    expect(metrics[2]!.textContent).toContain("Problemas de autorización2");
+    expect(metrics[2]!.textContent).toContain("Devueltos o no autorizados en 30 días");
+    expect(metrics[3]!.textContent).toContain("Facturas en borrador4");
+    expect(metrics[3]!.textContent).toContain("Pendientes de emitir");
+    // Cada uno lleva su icono en una caja, un enlace con flecha a su lista y el degradado azul.
+    expect(
+      metrics.map((metric) => {
+        const link = within(metric).getByRole("link");
+        return [link.getAttribute("aria-label"), link.getAttribute("href")];
+      }),
+    ).toEqual([
+      ["Ver facturas autorizadas", "/facturas?estado=autorizadas"],
+      ["Ver facturas", "/facturas"],
+      ["Ver comprobantes devueltos", "/comprobantes?estado=devueltos"],
+      ["Ver borradores", "/facturas?estado=borradores"],
+    ]);
     for (const metric of metrics) {
       expect(metric.querySelector("[data-slot=dashboard-metric-icon] svg")).not.toBeNull();
+      expect(metric.querySelector("a svg.lucide-arrow-up-right")).not.toBeNull();
+      expect(metric.className).toContain("bg-linear-to-t");
+      expect(metric.className).toContain("from-primary/8");
     }
-    expect(drafts.querySelector("svg")).not.toBeNull();
-    expect(drafts.getAttribute("target")).toBeNull();
     expect(screen.getByRole("link", { name: "Nueva factura" }).getAttribute("href")).toBe(
       "/borradores/nuevo",
     );
   });
 
-  it("«Requieren atención» cuenta solo la atención del SRI, no los correos sin enviar", async () => {
-    renderHome({
-      "GET /api/v1/dashboard": () => ({
-        status: 200,
-        body: { data: { ...SUMMARY, attention: { ...SUMMARY.attention, emailFailed: 5 } } },
+  it("la variación sube en verde, no aparece sin mes anterior y los problemas en ámbar", async () => {
+    renderHome(
+      withSummary({
+        month: {
+          ...SUMMARY.month,
+          invoices: { ...SUMMARY.month.invoices, previousChangePercent: "9.5" },
+        },
       }),
-    });
+    );
     await loaded();
-    const attention = document.querySelectorAll("[data-slot=dashboard-metric]")[2]!;
-    expect(attention.textContent).toContain("3");
-    expect(attention.textContent).not.toContain("5");
-    expect(attention.textContent).not.toMatch(/correo/i);
+    const [sales, , problems] = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-slot=dashboard-metric]"),
+    );
+    const trend = sales!.querySelector("[data-slot=dashboard-trend]")!;
+    expect(trend.textContent).toBe("+9,5 %");
+    expect(trend.getAttribute("data-variant")).toBe("success");
+    expect(problems!.querySelector("[data-slot=dashboard-metric-icon]")!.className).toContain(
+      "text-warning",
+    );
+  });
+
+  it("sin ventas el mes anterior no hay variación", async () => {
+    renderHome(
+      withSummary({
+        month: {
+          ...SUMMARY.month,
+          invoices: { ...SUMMARY.month.invoices, previousChangePercent: null },
+        },
+      }),
+    );
+    await loaded();
+    expect(document.querySelector("[data-slot=dashboard-trend]")).toBeNull();
+  });
+
+  it("«Problemas de autorización» no cuenta los correos sin enviar", async () => {
+    renderHome(withSummary({ attention: { ...SUMMARY.attention, emailFailed: 5 } }));
+    await loaded();
+    const problems = document.querySelectorAll("[data-slot=dashboard-metric]")[2]!;
+    expect(problems.textContent).toContain("2");
+    expect(problems.textContent).not.toContain("5");
+    expect(problems.textContent).not.toMatch(/correo/i);
   });
 
   it("las ventas de los seis meses tienen su tabla para la asistencia", async () => {
@@ -195,7 +259,7 @@ describe("tablero de Inicio", () => {
     expect(rows.at(-1)!.textContent).toContain("USD 18.162,13");
   });
 
-  it("los comprobantes por tipo, los clientes, los productos y el estado del sistema", async () => {
+  it("los comprobantes por tipo, los clientes, los productos y el estado de facturación", async () => {
     renderHome();
     await loaded();
     // Los comprobantes por tipo van en un gráfico de barras apiladas con su tabla para la asistencia.
@@ -214,22 +278,92 @@ describe("tablero de Inicio", () => {
     expect(card("Mejores clientes").textContent).toContain("ANA JARAMILLO ORTIZ");
     expect(card("Mejores clientes").textContent).toContain("USD 3.851,29");
     expect(card("Productos más vendidos").textContent).toContain("TAL-18V · 27 unidades");
-    const system = card("Estado del sistema");
-    expect(await within(system).findByText("Vigente · 257 días")).toBeDefined();
-    // Cada dato tiene su acceso rápido «Ir» a la sección.
-    const shortcuts = within(system).getAllByRole("link");
-    expect(shortcuts.map((link) => [link.textContent, link.getAttribute("aria-label")])).toEqual([
-      ["Ir", "Ir a Firma electrónica"],
-      ["Ir", "Ir a Ambiente"],
-      ["Ir", "Ir a Inventario"],
-      ["Ir", "Ir a Todos los comprobantes"],
-    ]);
-    expect(shortcuts.map((link) => link.getAttribute("href"))).toEqual([
-      "/configuracion/firma",
-      "/configuracion/ambiente",
-      "/inventario",
-      "/comprobantes",
-    ]);
+    const status = card("Estado de facturación electrónica");
+    expect(await within(status).findByText("Vigente · Vence en 257 días")).toBeDefined();
+    await waitFor(() =>
+      expect(invoicingRows()).toEqual([
+        "Firma electrónicaVigente · Vence en 257 díasActiva",
+        "Conexión con SRITodavía no hay comunicaciones con el SRISin datos",
+        "Entrega de comprobantesLos correos están al díaAl día",
+      ]),
+    );
+    // Solo la firma tiene una sección que abrir aquí; el administrador la abre.
+    expect(
+      within(status)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/configuracion/firma"]);
+  });
+
+  it("la conexión con el SRI sale de la última comunicación guardada", async () => {
+    const at = "2026-10-15T15:30:00.000Z";
+    for (const [sri, expected] of [
+      [
+        { transmissionEnabled: false, lastContact: null },
+        /^Conexión con SRIEl envío al SRI está apagado en este servidorApagado$/,
+      ],
+      [
+        { transmissionEnabled: true, lastContact: { at, reached: true } },
+        /^Conexión con SRIÚltima comunicación correcta: .+Disponible$/,
+      ],
+      [
+        { transmissionEnabled: true, lastContact: { at, reached: false } },
+        /^Conexión con SRILa última comunicación no tuvo respuesta: .+Sin respuesta$/,
+      ],
+    ] as const) {
+      const view = renderHome(withSummary({ sri }));
+      await loaded();
+      expect(invoicingRows()[1]).toMatch(expected);
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("la entrega de comprobantes pide revisar los correos fallidos y lleva a la bandeja", async () => {
+    renderHome(
+      withSummary({
+        attention: { ...SUMMARY.attention, emailFailed: 2 },
+        email: { pending: 1 },
+      }),
+    );
+    await loaded();
+    await waitFor(() =>
+      expect(invoicingRows()[2]).toBe("Entrega de comprobantes2 correos sin enviarRevisar"),
+    );
+    const row = card("Estado de facturación electrónica").querySelectorAll(
+      "[data-slot=invoicing-status]",
+    )[2]!;
+    expect(
+      within(row as HTMLElement)
+        .getByRole("link")
+        .getAttribute("href"),
+    ).toBe("/comprobantes?correo=no-enviado");
+  });
+
+  it("la entrega muestra la cola, el servidor sin configurar y el envío apagado", async () => {
+    const availability = (configured: boolean, deliveryEnabled: boolean) => ({
+      "GET /api/v1/email/availability": () => ({
+        status: 200,
+        body: { data: { configured, deliveryEnabled, autoSend: configured, testRecipient: null } },
+      }),
+    });
+    for (const [routes, expected] of [
+      [
+        { ...withSummary({ email: { pending: 3 } }), ...availability(true, true) },
+        "Entrega de comprobantes3 correos en colaEnviando",
+      ],
+      [
+        availability(false, true),
+        "Entrega de comprobantesFalta configurar el servidor de correoConfigurar",
+      ],
+      [availability(true, false), "Entrega de comprobantesEl envío por correo está apagadoApagado"],
+    ] as const) {
+      const view = renderHome(routes);
+      await loaded();
+      await waitFor(() => expect(invoicingRows()[2]).toBe(expected));
+      view.unmount();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("los rankings de clientes y productos son gráficos con su tabla para la asistencia", async () => {
@@ -307,16 +441,17 @@ describe("tablero de Inicio", () => {
     expect((await screen.findAllByText("USD 18.162,13")).length).toBeGreaterThan(0);
   }, 10_000);
 
-  it("el operador también ve el tablero, con los accesos rápidos de las secciones que abre", async () => {
-    renderHome({}, OPERATOR_ME);
+  it("el operador también ve el tablero, sin el enlace de la firma, que es de Configuración", async () => {
+    renderHome(withSummary({ attention: { ...SUMMARY.attention, emailFailed: 1 } }), OPERATOR_ME);
     expect(await loaded()).toBeDefined();
-    // La firma y el ambiente son de Configuración, que el operador no abre: su estado sí se ve.
-    const system = card("Estado del sistema");
-    expect(within(system).getByText("Firma electrónica")).toBeDefined();
-    expect(
-      within(system)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("aria-label")),
-    ).toEqual(["Ir a Inventario", "Ir a Todos los comprobantes"]);
+    const status = card("Estado de facturación electrónica");
+    expect(await within(status).findByText("Vigente · Vence en 257 días")).toBeDefined();
+    await waitFor(() =>
+      expect(
+        within(status)
+          .getAllByRole("link")
+          .map((link) => link.getAttribute("href")),
+      ).toEqual(["/comprobantes?correo=no-enviado"]),
+    );
   });
 });
