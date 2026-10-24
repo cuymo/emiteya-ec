@@ -125,7 +125,8 @@ export function createTour({
         if (!leaving) finish();
       },
       onPopoverRender: (popover) => {
-        popover.nextButton.focus({ preventScroll: true });
+        // driver.js enfoca la «×» después de este gancho: el foco va a «Siguiente», la acción del paso.
+        window.setTimeout(() => popover.nextButton.focus({ preventScroll: true }), 0);
       },
     });
     active.drive(fromEnd ? steps.length - 1 : 0);

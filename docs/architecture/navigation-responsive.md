@@ -251,6 +251,38 @@ from the reference template's dashboard layout (ADR 0028).
     later change.
   - **Behavior:** choosing an entry navigates and closes the palette, and Escape returns focus to the
     trigger. Its content loads on first opening, so it does not grow every route's first load.
+- **Onboarding tour** (`add-onboarding-tour`, owner decision, 2026-10-24; ADR 0030). A guided tour
+  with driver.js (`features/onboarding/`) that only points and explains: it never saves, emits or
+  changes data.
+  - **Segments:** one per screen, each with the permission that enables it.
+    - **Inicio** (`/`): the welcome, what is missing to emit (only while the company cannot), the
+      indicators, the electronic invoicing status and the Configuración link in the sidebar.
+    - **Configuración** (`/configuracion/empresa`, `taxpayer.configure`): its sections, then
+      Empresa, Establecimientos, Firma electrónica, Correos and Ambiente. An operator skips it.
+    - **Primera factura** (`/borradores/nuevo`, `invoices.draft`): the buyer, the products and
+      «Emitir factura», then a closing step. Opening the editor creates no draft.
+  - **Moving on:** the tour navigates with the router, waits up to 8 s for the next screen's first
+    anchor and shows only the steps whose element is visible. A missing step (the requirements of a
+    ready company, the sidebar on a phone, «Emitir factura» for a role that cannot emit) is
+    skipped. «Anterior» on a segment's first step returns to the previous segment's last step.
+  - **Anchors:** `data-tour` attributes (`inicio-indicadores`, `inicio-requisitos`,
+    `inicio-estado`, `configuracion-secciones`, `factura-comprador`, `factura-productos` and
+    `factura-emitir`), plus the sidebar's Configuración link and the section links. The screen
+    tests check that every anchor of the tour exists.
+  - **First visit:** it opens by itself when the user reaches Inicio and the dashboard has shown
+    its indicators or its requirements, unless `localStorage` holds `emiteya.recorrido.v1:{email}`.
+    A deep link to another screen does not open it. Finishing or closing it (the «×», Escape or a
+    click outside) stores that key; starting it does not. Without storage it is simply offered
+    again.
+  - **Replay:** «Ver recorrido» in the account menu starts it from the welcome on any screen.
+  - **Presentation:** the popover is a dialog with its title and description, the progress as
+    «Inicio · 2 de 5», «Anterior», «Siguiente» (focused) and «Terminar», and «Cerrar el recorrido»
+    on the «×». `globals.css` styles it with the tokens (`emiteya-tour`); without animation under
+    reduced motion. Its texts are fixed in the code, never user or company data, because driver.js
+    writes them with `innerHTML`.
+  - **Harnesses:** the visual harness and the security-policy script store the key before loading,
+    so the tour never covers their captures; the visual matrix opens it on purpose with
+    `tour: true`, and the security script checks it under the policy (step 5b).
 
 ## Submodules Instead Of Tabs
 

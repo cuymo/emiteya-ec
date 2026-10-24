@@ -56,6 +56,8 @@ import {
 const ROOT = join(import.meta.dirname, "..");
 const FRONTEND = join(ROOT, "frontend");
 const ADMIN = { email: "admin@csp.check", password: "contrasena-admin-csp-1" };
+/** La clave del recorrido de bienvenida visto del administrador (add-onboarding-tour, design D3). */
+const TOUR_KEY = `emiteya.recorrido.v1:${ADMIN.email}`;
 const STEP_TIMEOUT_MS = 30_000;
 /** Puerto de las páginas atacantes: `localhost` es del mismo sitio que el origen, `127.0.0.1` no. */
 const ATTACKER_PORT = 3001;
@@ -562,6 +564,13 @@ async function watchViolations(
   await context.exposeBinding("__cspReport", (_source, v: Omit<Violation, "phase">) => {
     violations.push({ ...v, phase: state.phase });
   });
+  // El recorrido de bienvenida (add-onboarding-tour) queda visto para que no tape los flujos; el
+  // paso 5b lo abre a propósito, con `check.recorrido`, para comprobarlo bajo la política.
+  await context.addInitScript((key: string) => {
+    if (window.localStorage.getItem("check.recorrido") === null) {
+      window.localStorage.setItem(key, "visto");
+    }
+  }, TOUR_KEY);
   await context.addInitScript(() => {
     document.addEventListener("securitypolicyviolation", (event) => {
       (window as unknown as { __cspReport: (v: unknown) => void }).__cspReport({
@@ -641,6 +650,37 @@ async function checkBrowserFlows(
         "la página hidrató y tomó el formulario",
       );
       check("17. El flujo de /api/auth funciona", true, "inicio de sesión y sesión activa");
+    },
+    page,
+  );
+
+  await step(
+    "5b. El recorrido de bienvenida no viola la política",
+    state,
+    async () => {
+      // driver.js posiciona con el CSSOM y escribe textos fijos: con la política activa, el
+      // recorrido se abre, avanza y se cierra sin violaciones.
+      await page.evaluate((key) => {
+        window.localStorage.setItem("check.recorrido", "1");
+        window.localStorage.removeItem(key);
+      }, TOUR_KEY);
+      await page.goto("/");
+      await page.locator(".driver-popover").waitFor({ timeout: STEP_TIMEOUT_MS });
+      await page.getByRole("button", { name: "Siguiente" }).click();
+      await page.getByRole("button", { name: "Siguiente" }).click();
+      await page.getByRole("button", { name: "Cerrar el recorrido" }).click();
+      await page
+        .locator(".driver-popover")
+        .waitFor({ state: "detached", timeout: STEP_TIMEOUT_MS });
+      const remembered = await page.evaluate((key) => {
+        window.localStorage.removeItem("check.recorrido");
+        return window.localStorage.getItem(key) !== null;
+      }, TOUR_KEY);
+      check(
+        "5b. El recorrido de bienvenida no viola la política",
+        at("5b. El recorrido de bienvenida no viola la política") === 0 && remembered,
+        "el recorrido se abrió, avanzó y se cerró, y quedó recordado",
+      );
     },
     page,
   );

@@ -108,6 +108,23 @@ const EMAIL_SETTINGS = {
   updatedAt: "2026-10-14T14:00:00.000Z",
 };
 
+/** El recorrido de bienvenida muestra el paso con ese título. */
+async function tourAt(page: Page, title: string) {
+  await expect(page.locator(".driver-popover-title")).toHaveText(title, { timeout: 15_000 });
+}
+
+/** Avanza el recorrido con «Siguiente» hasta el paso con ese título, también entre pantallas. */
+async function advanceTour(page: Page, title: string) {
+  const current = page.locator(".driver-popover-title");
+  for (let step = 0; step < 25; step += 1) {
+    if ((await current.textContent()) === title) return;
+    await page.locator(".driver-popover-next-btn").click();
+    await page.waitForTimeout(150);
+    await expect(current).toBeVisible({ timeout: 15_000 });
+  }
+  await tourAt(page, title);
+}
+
 export const STATES: State[] = [
   // Facturas: la lista de referencia de la base compartida.
   {
@@ -318,6 +335,51 @@ export const STATES: State[] = [
     widths: ["1440", "1024", "390"],
     dark: ["1440"],
     ready: (page) => heading(page, "Resumen"),
+  },
+  // Recorrido de bienvenida (add-onboarding-tour): la bienvenida en el primer ingreso y un paso de
+  // cada tramo, avanzando con «Siguiente» como el usuario.
+  {
+    route: "recorrido",
+    state: "bienvenida",
+    path: "/",
+    group: "shell",
+    scenario: { persona: "admin", tour: true },
+    widths: ["1440", "390"],
+    viewportOnly: true,
+    ready: (page) => tourAt(page, "Te damos la bienvenida a EmiteYa"),
+  },
+  {
+    route: "recorrido",
+    state: "indicadores",
+    path: "/",
+    group: "shell",
+    scenario: { persona: "admin", tour: true },
+    widths: ["1440", "390"],
+    viewportOnly: true,
+    ready: (page) => tourAt(page, "Te damos la bienvenida a EmiteYa"),
+    act: (page) => advanceTour(page, "Tu mes de un vistazo"),
+  },
+  {
+    route: "recorrido",
+    state: "configuracion",
+    path: "/",
+    group: "shell",
+    scenario: { persona: "admin", tour: true },
+    widths: ["1440"],
+    viewportOnly: true,
+    ready: (page) => tourAt(page, "Te damos la bienvenida a EmiteYa"),
+    act: (page) => advanceTour(page, "Firma electrónica"),
+  },
+  {
+    route: "recorrido",
+    state: "factura",
+    path: "/",
+    group: "shell",
+    scenario: { persona: "admin", tour: true },
+    widths: ["1440", "390"],
+    viewportOnly: true,
+    ready: (page) => tourAt(page, "Te damos la bienvenida a EmiteYa"),
+    act: (page) => advanceTour(page, "3. Emite la factura"),
   },
   // Barra superior en cada ambiente, sobre Facturas.
   {

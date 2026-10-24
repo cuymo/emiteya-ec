@@ -128,6 +128,7 @@ describe("ejecución del recorrido", () => {
       "Inicio · 1 de 2",
     );
     expect(document.querySelector(".driver-popover")?.getAttribute("role")).toBe("dialog");
+    await waitFor(() => expect(document.activeElement?.textContent).toBe("Siguiente"));
     await user.click(button("Siguiente"));
     await waitFor(() => expect(popoverTitle()).toBe("Uno"));
     // El último paso de un tramo que no es el final sigue al próximo.

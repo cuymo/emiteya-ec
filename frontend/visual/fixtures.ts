@@ -14,6 +14,11 @@ export type Scenario = {
   invoices?: InvoiceSummary[];
   /** Respuestas propias de una prueba, por `MÉTODO /ruta`; se consultan antes que las comunes. */
   overrides?: Record<string, Reply>;
+  /**
+   * Abre el recorrido de bienvenida como en un primer ingreso (add-onboarding-tour). Sin esto, el
+   * recorrido queda visto para que no tape las capturas.
+   */
+  tour?: boolean;
 };
 
 /** Servidor del build de producción que arranca `playwright.config.ts`. */
@@ -458,6 +463,11 @@ export async function openPage(
     viewport: DESKTOP,
     ...options,
   });
+  if (!scenario.tour && scenario.persona !== "anonymous") {
+    await context.addInitScript((key: string) => {
+      window.localStorage.setItem(key, "visto");
+    }, `emiteya.recorrido.v1:${ME[scenario.persona].email}`);
+  }
   const page = await context.newPage();
   await page.clock.setFixedTime(FIXED_NOW);
   const recorder: Recorder = { unexpected: [], external: [] };

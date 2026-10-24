@@ -5,4 +5,4 @@
 
 ## 2. Arneses, documentación y revisión
 
-- [ ] 2.1 Marcar el recorrido como visto en el arnés visual y en el script de la política de seguridad, actualizar la documentación y revisar el recorrido en escritorio y teléfono.
+- [x] 2.1 Marcar el recorrido como visto en el arnés visual y en el script de la política de seguridad, actualizar la documentación y revisar el recorrido en escritorio y teléfono.

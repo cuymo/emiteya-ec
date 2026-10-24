@@ -27,7 +27,7 @@ pasos (un selector `data-tour`, un título, una descripción y el lado de la ven
 | --- | --- | --- | --- |
 | Inicio | `/` | `invoices.read` | Bienvenida, indicadores, requisitos pendientes, estado de facturación electrónica, Configuración en la barra |
 | Configuración | `/configuracion/empresa` | `taxpayer.configure` | Pestañas, Empresa, Establecimientos, Firma electrónica, Correos, Ambiente |
-| Primera factura | `/facturas`, luego `/borradores/nuevo` | `invoices.draft` | «Nueva factura»; comprador, productos y «Emitir factura» |
+| Primera factura | `/borradores/nuevo` | `invoices.draft` | Comprador (que recuerda que «Nueva factura» abre el editor), productos, «Emitir factura» y el cierre |
 
 - Al pasar de tramo, el recorrido navega con el router, espera hasta 8 s a que aparezca el primer
   elemento del tramo y abre driver.js con los pasos cuyo elemento está a la vista. «Anterior» en el
