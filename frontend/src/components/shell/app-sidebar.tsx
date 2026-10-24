@@ -130,7 +130,8 @@ function SectionLink({ group, active }: { group: NavGroup; active: boolean }) {
   const first = group.destinations[0];
   if (!first) return null;
   return (
-    <SidebarGroup className="py-1">
+    // Sigue a Reportes en el mismo bloque, con la distancia de los enlaces de un grupo.
+    <SidebarGroup className="pt-0 pb-1">
       <SidebarGroupContent>
         <SidebarMenu>
           <DestinationLink
