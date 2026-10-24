@@ -4,7 +4,8 @@
 // fecha como «dd/mm/aaaa» y su nombre accesible lleva la etiqueta y la fecha. El calendario, en
 // español, abre en la fecha elegida (o en el mes del límite más cercano), con el mes y el año en
 // listas, y deshabilita los días fuera de `min` y `max`. El valor es la fecha de calendario
-// `YYYY-MM-DD`, o "" sin fecha.
+// `YYYY-MM-DD`, o "" sin fecha. `compact`: del tamaño de la búsqueda de una lista, con la etiqueta solo
+// para las tecnologías de asistencia y como texto de ejemplo (refine-archive-search).
 "use client";
 
 import { CalendarDays, X } from "lucide-react";
@@ -37,6 +38,7 @@ export function DatePickerField({
   max,
   hint,
   className,
+  compact = false,
 }: {
   label: string;
   value: string;
@@ -47,6 +49,8 @@ export function DatePickerField({
   min?: string;
   max?: string;
   className?: string;
+  /** Junto a la búsqueda de una lista: su mismo tamaño y la etiqueta como texto de ejemplo. */
+  compact?: boolean;
 }) {
   const id = useId();
   const labelId = `${id}-label`;
@@ -67,11 +71,17 @@ export function DatePickerField({
     (minDate && minDate > today ? minDate : maxDate && maxDate < today ? maxDate : today);
   return (
     <div className={cn("flex flex-col gap-1", className)}>
-      <LabelWithHint label={label} hint={hint} hintId={hintId}>
-        <Label id={labelId} htmlFor={id}>
+      {compact ? (
+        <Label id={labelId} htmlFor={id} className="sr-only">
           {label}
         </Label>
-      </LabelWithHint>
+      ) : (
+        <LabelWithHint label={label} hint={hint} hintId={hintId}>
+          <Label id={labelId} htmlFor={id}>
+            {label}
+          </Label>
+        </LabelWithHint>
+      )}
       <div className="relative">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -83,6 +93,7 @@ export function DatePickerField({
               aria-describedby={describedBy}
               className={cn(
                 "flex h-10 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-surface pl-3 text-left text-base text-foreground sm:text-sm max-md:h-11",
+                compact && "h-8 rounded-lg pl-2",
                 "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none aria-invalid:border-danger",
                 value ? "pr-10" : "pr-3",
               )}
@@ -92,7 +103,7 @@ export function DatePickerField({
                 id={valueId}
                 className={cn("min-w-0 truncate tabular-nums", !value && "text-foreground-muted")}
               >
-                {value ? toDisplay(value) : "Elige una fecha"}
+                {value ? toDisplay(value) : compact ? label : "Elige una fecha"}
               </span>
             </button>
           </PopoverTrigger>
@@ -128,7 +139,7 @@ export function DatePickerField({
         )}
       </div>
       {error && (
-        <p id={errorId} className="text-sm text-danger">
+        <p id={errorId} className={cn("text-danger", compact ? "text-xs" : "text-sm")}>
           {error}
         </p>
       )}

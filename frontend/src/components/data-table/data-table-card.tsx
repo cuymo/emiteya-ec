@@ -5,6 +5,7 @@
 // - El título es el encabezado de la pantalla (`h1`), o de su sección (`h2`) cuando la tabla es una
 //   parte de una página mayor.
 // - En un teléfono, las acciones bajan debajo del título y la búsqueda ocupa la fila entera.
+// - Si la búsqueda y sus controles no caben junto al título, bajan a su propia fila, a la derecha.
 // - Sin casillas de selección ni contador: el producto no tiene acciones masivas.
 // - Es una región con el nombre de su título, como las pantallas a las que sustituye.
 import type { ReactNode } from "react";
@@ -20,6 +21,8 @@ export function DataTableCard({
   actions,
   filters,
   filtersEnd,
+  filtersFill = false,
+  searchRow = false,
   lead,
   className,
   busy,
@@ -37,6 +40,10 @@ export function DataTableCard({
   filters?: ReactNode;
   /** Al final de la fila de filtros, como «Limpiar filtros». */
   filtersEnd?: ReactNode;
+  /** Los filtros ocupan toda su fila (refine-archive-search). */
+  filtersFill?: boolean;
+  /** La búsqueda y sus controles van en su propia fila, a la derecha (refine-archive-search). */
+  searchRow?: boolean;
   /** Antes de los filtros, como los borradores en curso del módulo. */
   lead?: ReactNode;
   className?: string;
@@ -48,7 +55,7 @@ export function DataTableCard({
   return (
     <section aria-labelledby={titleId} aria-busy={busy || undefined}>
       <Card data-slot="data-table-card" className={className}>
-        <CardHeader className="flex flex-col gap-3 border-b md:flex-row md:items-start md:justify-between">
+        <CardHeader className="flex flex-col gap-3 border-b md:flex-row md:flex-wrap md:items-start md:justify-between">
           <div className="flex min-w-0 flex-col gap-1.5">
             <Heading id={titleId} className="text-xl leading-none font-semibold">
               {title}
@@ -58,7 +65,12 @@ export function DataTableCard({
             )}
           </div>
           {(search || actions) && (
-            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:flex-nowrap md:justify-end">
+            <div
+              className={cn(
+                "flex w-full flex-wrap items-center gap-2 md:ml-auto md:w-auto md:flex-nowrap md:justify-end",
+                searchRow && "md:w-full",
+              )}
+            >
               {search}
               {actions}
             </div>
@@ -71,6 +83,7 @@ export function DataTableCard({
               <div
                 className={cn(
                   "flex flex-wrap items-center gap-3 max-md:w-full",
+                  filtersFill && "w-full",
                   !filters && "hidden",
                 )}
               >

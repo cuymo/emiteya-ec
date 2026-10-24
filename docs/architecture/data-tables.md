@@ -156,6 +156,17 @@ Let the user recognize a value without reading every cell.
 - Use an inline control in a cell only for a reversible change with immediate feedback.
 - Do not color whole rows for routine states; reserve that for a condition that needs attention now.
 
+The document archive (`refine-archive-search`) shows how a list with dates arranges its header:
+- **Header controls:** «Desde» and «Hasta» go in the header, on their own row aligned to the right,
+  just left of the search (`DataTableCard` with `searchRow`). They are compact `DatePickerField`s:
+  the search's height and border, the label read by assistive technology and shown as the
+  placeholder, up to 18 rem each.
+- **Search:** it finds a document by number, receiver name or receiver identification, so the list
+  has no separate identification field.
+- **Filters:** the dropdowns grow to fill their row (`filtersFill`, `DataTableSelectFilter` with
+  `grow`). Each asks for at least 12 rem; when they do not fit, the rest wrap to another row that
+  also fills the width.
+
 In the document archive, the last email of each row sits next to its state (`EmailIndicator`,
 add-email-delivery). In the table it is an icon with its accessible name and a tooltip
 («Correo: no enviado»). On the phone card it also carries its text, because a phone has no hover.

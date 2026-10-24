@@ -444,7 +444,7 @@ describe("Comprobantes", () => {
 
   it("los filtros viven en la URL y llegan a la API", async () => {
     navigation.search = new URLSearchParams(
-      "estado=autorizados&desde=2026-10-01&hasta=2026-10-15&identificacion=0992877878001&establecimiento=est-1&punto=pto-1&q=perno",
+      "estado=autorizados&desde=2026-10-01&hasta=2026-10-15&establecimiento=est-1&punto=pto-1&q=0992877878001",
     );
     const calls = render({ "GET /api/v1/documents": paged([]) });
     expect(
@@ -456,10 +456,10 @@ describe("Comprobantes", () => {
       state: "AUTHORIZED",
       from: "2026-10-01",
       to: "2026-10-15",
-      identification: "0992877878001",
       establishmentId: "est-1",
       emissionPointId: "pto-1",
-      search: "perno",
+      // La identificación del receptor se busca en el mismo campo (refine-archive-search).
+      search: "0992877878001",
     });
     const user = userEvent.setup();
     await chooseFilter("Estado", "Devueltos");
@@ -562,5 +562,49 @@ describe("correo en la bandeja (add-email-delivery)", () => {
         .getAllByText("Correo: no enviado")
         .some((element) => element.tagName === "SPAN" && !element.closest("table")),
     ).toBe(true);
+  });
+});
+
+describe("búsqueda, fechas y filtros (refine-archive-search)", () => {
+  it("la búsqueda declara número, receptor o identificación, sin campo aparte de identificación", async () => {
+    render({ "GET /api/v1/documents": paged([item()]) });
+    await screen.findAllByText("001-001-000000001");
+    const search = screen.getByRole("searchbox", {
+      name: "Buscar por número, receptor o identificación",
+    });
+    expect(search.getAttribute("placeholder")).toBe("Número, receptor o identificación");
+    expect(screen.queryByLabelText("Identificación del receptor")).toBeNull();
+  });
+
+  it("las fechas van a la izquierda de la búsqueda, de su tamaño, con la etiqueta como texto de ejemplo", async () => {
+    render({ "GET /api/v1/documents": paged([item()]) });
+    await screen.findAllByText("001-001-000000001");
+    const search = screen.getByRole("searchbox", {
+      name: "Buscar por número, receptor o identificación",
+    });
+    const header =
+      search.closest("[data-slot=card-header]") ?? search.closest("header") ?? document.body;
+    const from = screen.getByRole("button", { name: /^Desde/ });
+    const to = screen.getByRole("button", { name: /^Hasta/ });
+    expect(header.contains(from) && header.contains(to)).toBe(true);
+    // En el orden del documento: Desde, Hasta y la búsqueda.
+    expect(from.compareDocumentPosition(to) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(to.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(from.className).toContain("h-8");
+    expect(from.textContent).toContain("Desde");
+    expect(from.closest("div.flex-col")?.className).toContain("md:max-w-72");
+    expect(search.parentElement?.className).toContain("md:max-w-72");
+  });
+
+  it("los desplegables se reparten toda la fila", async () => {
+    render({ "GET /api/v1/documents": paged([item()]) });
+    await screen.findAllByText("001-001-000000001");
+    for (const name of ["Estado", "Tipo", "Correo", "Establecimiento", "Punto de emisión"]) {
+      expect(screen.getByRole("combobox", { name }).className, name).toContain(
+        "md:flex-[1_1_12rem]",
+      );
+    }
+    const row = screen.getByRole("combobox", { name: "Estado" }).parentElement!;
+    expect(row.className).toContain("w-full");
   });
 });

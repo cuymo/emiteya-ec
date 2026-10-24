@@ -436,6 +436,19 @@ export const STATES: State[] = [
       await expect(page.getByRole("textbox").first()).toBeVisible();
     },
   },
+  // Archivo de comprobantes (refine-archive-search): fechas junto a la búsqueda y filtros a lo ancho.
+  {
+    route: "comprobantes",
+    state: "filtros",
+    path: "/comprobantes",
+    group: "listas",
+    widths: ["1440", "1024", "390"],
+    viewportOnly: true,
+    ready: async (page) => {
+      await heading(page, "Archivo de comprobantes");
+      await shows(page, "001-001-000000123");
+    },
+  },
   // La marca (add-brand-logo): el logo en el inicio de sesión y en la cabecera de la barra lateral.
   {
     route: "iniciar-sesion",

@@ -11,7 +11,8 @@
 // receptor el sujeto retenido; la guía no tiene total y su receptor es su único destinatario o "N
 // destinatarios"; en la liquidación, la contraparte es su proveedor y se rotula "Proveedor". Junto al
 // estado, el indicador del último correo y el filtro «Correo» con «No enviado» (add-email-delivery,
-// design D14).
+// design D14). La búsqueda encuentra por número, receptor o identificación, y las fechas van a su
+// izquierda, de su mismo tamaño; los desplegables se reparten su fila (refine-archive-search).
 "use client";
 
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table";
@@ -34,7 +35,6 @@ import { DatePickerField } from "@/components/date-picker-field";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
 import {
   MoneyCell,
   MutedCell,
@@ -131,7 +131,6 @@ function useUrlState() {
     documentType: isTypeFilter(typeParam) ? typeParam : undefined,
     from: value("desde"),
     to: value("hasta"),
-    identification: value("identificacion"),
     establishmentId: value("establecimiento"),
     emissionPointId: value("punto"),
     // Un valor desconocido en la URL no filtra.
@@ -163,7 +162,6 @@ export function DocumentsScreen() {
   const allowed = canSee(me.role, "archive.read");
   const url = useUrlState();
   const [searchDraft, setSearchDraft] = useState(url.search);
-  const [identificationDraft, setIdentificationDraft] = useState(url.identification);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [visibility] = useState<VisibilityState>({});
   const establishments = useEstablishments(allowed && canSee(me.role, "establishments.read"));
@@ -173,11 +171,6 @@ export function DocumentsScreen() {
     const timer = setTimeout(() => url.update({ q: searchDraft.trim() }), 300);
     return () => clearTimeout(timer);
   }, [searchDraft, url]);
-  useEffect(() => {
-    if (identificationDraft.trim() === url.identification) return;
-    const timer = setTimeout(() => url.update({ identificacion: identificationDraft.trim() }), 300);
-    return () => clearTimeout(timer);
-  }, [identificationDraft, url]);
 
   // Un rango invertido se explica en el campo y no se consulta.
   const rangeError =
@@ -192,7 +185,7 @@ export function DocumentsScreen() {
       state,
       from: url.from,
       to: url.to,
-      identification: url.identification,
+      identification: "",
       establishmentId: url.establishmentId,
       emissionPointId: url.emissionPointId,
       emailStatus: url.emailFilter ? "FAILED" : undefined,
@@ -208,7 +201,6 @@ export function DocumentsScreen() {
     url.filter !== "todos" ||
     url.from !== "" ||
     url.to !== "" ||
-    url.identification !== "" ||
     url.establishmentId !== "" ||
     url.emissionPointId !== "" ||
     url.emailFilter !== undefined;
@@ -316,14 +308,12 @@ export function DocumentsScreen() {
 
   const clearFilters = () => {
     setSearchDraft("");
-    setIdentificationDraft("");
     url.update({
       q: null,
       tipo: null,
       estado: null,
       desde: null,
       hasta: null,
-      identificacion: null,
       establecimiento: null,
       punto: null,
       correo: null,
@@ -369,6 +359,7 @@ export function DocumentsScreen() {
     <>
       <DataTableSelectFilter
         label="Estado"
+        grow
         value={url.filter}
         options={STATE_FILTERS}
         onChange={(value) => url.update({ estado: value === "todos" ? null : value })}
@@ -388,6 +379,7 @@ export function DocumentsScreen() {
         <div className="flex flex-col gap-3 md:contents">
           <DataTableSelectFilter
             label="Tipo"
+            grow
             value={url.documentType}
             allLabel="Todos"
             options={TYPE_FILTERS.filter((filter) => filter.value !== "").map((filter) => ({
@@ -398,6 +390,7 @@ export function DocumentsScreen() {
           />
           <DataTableSelectFilter
             label="Correo"
+            grow
             value={url.emailFilter}
             allLabel="Todos"
             options={[{ value: EMAIL_NOT_SENT, label: "No enviado" }]}
@@ -405,6 +398,7 @@ export function DocumentsScreen() {
           />
           <DataTableSelectFilter
             label="Establecimiento"
+            grow
             value={url.establishmentId || undefined}
             allLabel="Todos"
             options={establishmentOptions.map((establishment) => ({
@@ -415,6 +409,7 @@ export function DocumentsScreen() {
           />
           <DataTableSelectFilter
             label="Punto de emisión"
+            grow
             value={url.emissionPointId || undefined}
             allLabel="Todos"
             disabled={!selectedEstablishment}
@@ -427,30 +422,6 @@ export function DocumentsScreen() {
             onChange={(next) => url.update({ punto: next ?? null })}
           />
         </div>
-        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 md:w-auto md:min-w-xl">
-          <DatePickerField
-            label="Desde"
-            value={url.from}
-            max={url.to || undefined}
-            onChange={(value) => url.update({ desde: value })}
-          />
-          <DatePickerField
-            label="Hasta"
-            value={url.to}
-            min={url.from || undefined}
-            error={rangeError}
-            onChange={(value) => url.update({ hasta: value })}
-          />
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="filtro-identificacion">Identificación del receptor</Label>
-            <Input
-              id="filtro-identificacion"
-              inputMode="numeric"
-              value={identificationDraft}
-              onChange={(event) => setIdentificationDraft(event.target.value)}
-            />
-          </div>
-        </div>
       </div>
     </>
   );
@@ -459,14 +430,36 @@ export function DocumentsScreen() {
     <DataTableCard
       {...CARD}
       search={
-        <SearchInput
-          value={searchDraft}
-          onChange={setSearchDraft}
-          label="Buscar por número o receptor"
-          placeholder="Número o receptor"
-        />
+        <>
+          <DatePickerField
+            compact
+            label="Desde"
+            value={url.from}
+            max={url.to || undefined}
+            onChange={(value) => url.update({ desde: value })}
+            className="w-[calc(50%-0.25rem)] md:w-auto md:max-w-72 md:flex-1"
+          />
+          <DatePickerField
+            compact
+            label="Hasta"
+            value={url.to}
+            min={url.from || undefined}
+            error={rangeError}
+            onChange={(value) => url.update({ hasta: value })}
+            className="w-[calc(50%-0.25rem)] md:w-auto md:max-w-72 md:flex-1"
+          />
+          <SearchInput
+            value={searchDraft}
+            onChange={setSearchDraft}
+            label="Buscar por número, receptor o identificación"
+            placeholder="Número, receptor o identificación"
+            className="sm:w-full md:max-w-72 md:flex-1"
+          />
+        </>
       }
+      searchRow
       filters={filters}
+      filtersFill
     >
       <AppDataTable
         label="Comprobantes emitidos"

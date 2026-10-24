@@ -18,6 +18,7 @@ import {
   SelectMenuTrigger,
   SelectMenuValue,
 } from "@/components/ui/select-menu";
+import { cn } from "@/lib/utils";
 
 export type SelectFilterOption<T extends string> = {
   value: T;
@@ -41,6 +42,11 @@ type SelectFilterProps<T extends string> = {
    * (decisión del propietario, 2026-10-22).
    */
   fullWidth?: boolean;
+  /**
+   * Se reparte el ancho de la fila con los demás filtros visibles, desde 768 px; con menos de 12
+   * rem por filtro, los que no caben pasan a otra fila (refine-archive-search).
+   */
+  grow?: boolean;
 } & (
   | {
       /** Nombre de la opción que quita el filtro, como «Todos». */
@@ -60,6 +66,7 @@ export function DataTableSelectFilter<T extends string>({
   align = "start",
   disabled = false,
   fullWidth = false,
+  grow = false,
 }: SelectFilterProps<T>) {
   // Sin `allLabel` nunca se elige la opción que quita el filtro: el valor siempre es una opción.
   const change = onChange as (value: T | undefined) => void;
@@ -72,9 +79,13 @@ export function DataTableSelectFilter<T extends string>({
       <SelectMenuTrigger
         size="sm"
         aria-label={label}
-        className={
-          fullWidth ? "h-10 w-full justify-start max-md:h-11" : "max-md:w-full max-md:justify-start"
-        }
+        className={cn(
+          fullWidth
+            ? "h-10 w-full justify-start max-md:h-11"
+            : "max-md:w-full max-md:justify-start",
+          // Al menos 12 rem: si no caben, pasan a otra fila, que también llenan.
+          grow && "md:flex-[1_1_12rem]",
+        )}
       >
         <span aria-hidden="true" className="text-muted-foreground">
           {label}:

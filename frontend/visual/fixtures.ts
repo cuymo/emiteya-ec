@@ -351,6 +351,28 @@ function reply(
           },
         },
       };
+    // El Archivo de comprobantes (refine-archive-search): tres comprobantes, uno con su correo fallido.
+    case "GET /api/v1/documents": {
+      const row = (index: number, number: string, buyer: string, identification: string) => ({
+        id: `doc-${index}`,
+        documentType: "01",
+        number,
+        issueDate: "2026-10-14",
+        buyer: { name: buyer, identification },
+        total: ["28.75", "1250.00", "45.10"][index]!,
+        recipients: null,
+        state: "AUTHORIZED",
+        transmissionStopped: false,
+        documents: { ride: "AVAILABLE", authorizedXml: true, signedXml: true },
+        email: index === 0 ? { status: "FAILED" } : { status: "SENT" },
+      });
+      const data = [
+        row(0, "001-001-000000123", "EL PERNO CIA. LTDA.", "0992877878001"),
+        row(1, "001-001-000000122", "Comercial Andina S.A.", "1790012345001"),
+        row(2, "001-001-000000121", "María José Paredes", "0102030405"),
+      ];
+      return { status: 200, body: { data, meta: { page: 1, pageSize: 25, total: data.length } } };
+    }
     case "GET /api/v1/invoices":
       return invoiceList(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
     case "GET /api/v1/invoices/entries":

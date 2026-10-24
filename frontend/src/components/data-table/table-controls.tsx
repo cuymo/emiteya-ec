@@ -20,14 +20,17 @@ export function SearchInput({
   onChange,
   label,
   placeholder,
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
   label: string;
   placeholder?: string;
+  /** El ancho del contenedor, si la lista lo cambia. */
+  className?: string;
 }) {
   return (
-    <div className="relative w-full sm:w-64">
+    <div className={cn("relative w-full sm:w-64", className)}>
       <Search
         aria-hidden="true"
         className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-foreground-muted"
