@@ -214,6 +214,7 @@ export function buildProfileApp(
               avatars: createPrismaAvatars(db.database.prisma),
               authorizer,
               avatarMaxBytes,
+              uow,
             }),
             avatarMaxBytes,
           }),

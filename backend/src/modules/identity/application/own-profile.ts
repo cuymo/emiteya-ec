@@ -2,7 +2,7 @@
 // del contexto de la sesión: ninguna operación recibe un identificador, así que cambiar un id no
 // alcanza a otra cuenta. El avatar es privado de su dueño y no se audita.
 import { createHash } from "node:crypto";
-import type { OwnProfile } from "@facturador/contracts";
+import { changeOwnNameSchema, type OwnProfile } from "@facturador/contracts";
 import { AppError, NotFoundError } from "../../../platform/http/errors.ts";
 import {
   IMAGE_MAX_DIMENSION,
@@ -11,9 +11,10 @@ import {
   type ImageInspection,
   type ImageMimeType,
 } from "../../../platform/images/inspection.ts";
-import { UserNotFoundError, type Authorizer } from "./authorization.ts";
+import { UserNotFoundError, parseInput, type Authorizer } from "./authorization.ts";
 import type { MembershipReader } from "./memberships.ts";
 import type { RequestContext } from "./request-context.ts";
+import type { UnitOfWork } from "./unit-of-work.ts";
 
 export type StoredAvatar = Readonly<{
   mimeType: ImageMimeType;
@@ -55,6 +56,8 @@ export function createOwnProfile(deps: {
   avatars: AvatarStore;
   authorizer: Authorizer;
   avatarMaxBytes: number;
+  /** El nombre propio y su auditoría, en una transacción (design D3). */
+  uow?: UnitOfWork;
   now?: () => Date;
 }) {
   const now = deps.now ?? (() => new Date());
@@ -77,6 +80,32 @@ export function createOwnProfile(deps: {
   return {
     async profile(ctx: RequestContext): Promise<OwnProfile> {
       deps.authorizer.requirePermission(ctx, "account.read");
+      return profileOf(ctx);
+    },
+
+    /**
+     * Cambia el nombre propio (design D3): compara y cambia en una transacción, con el evento
+     * `user.name_changed` en la empresa activa. El mismo nombre no cambia nada ni deja evento.
+     */
+    async changeName(ctx: RequestContext, body: unknown): Promise<OwnProfile> {
+      deps.authorizer.requirePermission(ctx, "account.updateProfile");
+      const { name } = parseInput(changeOwnNameSchema, body);
+      const uow = deps.uow;
+      if (!uow) throw new Error("El cambio del nombre necesita la unidad de trabajo");
+      await uow.run(async (scope) => {
+        const before = await scope.identity.findUserName(ctx.userId);
+        if (before === null) throw new UserNotFoundError();
+        if (before === name) return;
+        if (!(await scope.identity.renameUser(ctx.userId, before, name))) return;
+        await scope.audit.append({
+          companyId: ctx.companyId,
+          actor: { type: "USER", userId: ctx.userId },
+          action: "user.name_changed",
+          targetUserId: ctx.userId,
+          changes: { from: before, to: name },
+          correlationId: ctx.requestId,
+        });
+      });
       return profileOf(ctx);
     },
 

@@ -17,7 +17,7 @@
 ## 4. API del perfil y del nombre propio
 
 - [x] 4.1 Implementar `GET /api/v1/me/profile` con el usuario de la sesión; verificar con pruebas de integración: perfil propio sin credenciales ni ids internos, `401` sin sesión o sin membresía activa, como el resto de la API, que no revela si la identidad existe.
-- [ ] 4.2 Implementar `PUT /api/v1/me/name` con compara y cambia en una transacción y el evento `user.name_changed` (anterior y nuevo); verificar con pruebas de integración: cambio exitoso visible en la lista de Usuarios, nombre inválido (vacío, largo, salto de línea), mismo nombre sin evento, dos solicitudes iguales a la vez con un solo evento, sin ruta para cambiar a otro usuario, y el evento en la empresa activa.
+- [x] 4.2 Implementar `PUT /api/v1/me/name` con compara y cambia en una transacción y el evento `user.name_changed` (anterior y nuevo); verificar con pruebas de integración: cambio exitoso visible en la lista de Usuarios, nombre inválido (vacío, largo, salto de línea), mismo nombre sin evento, dos solicitudes iguales a la vez con un solo evento, sin ruta para cambiar a otro usuario, y el evento en la empresa activa.
 
 ## 5. API del avatar propio
 

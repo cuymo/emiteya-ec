@@ -40,6 +40,10 @@ export function profileRouter({
     res.status(200).json({ data: await profile.profile(contextOf(res)) });
   });
 
+  router.put("/me/name", async (req, res) => {
+    res.status(200).json({ data: await profile.changeName(contextOf(res), req.body) });
+  });
+
   router.get("/me/avatar", async (_req, res) => {
     const avatar = await profile.readAvatar(contextOf(res));
     res

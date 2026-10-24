@@ -14,6 +14,8 @@ export const AUDIT_ACTIONS = [
   "user.reactivated",
   "user.password_set",
   "user.recovered",
+  // redesign-account-profile, design D3: el nombre propio, anterior y nuevo.
+  "user.name_changed",
   // add-taxpayer-setup, design D11.
   "taxpayer.configured",
   "taxpayer.environment_changed",

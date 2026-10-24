@@ -234,4 +234,73 @@ describe("perfil y avatar propios", () => {
     });
     expect(audits).toEqual([]);
   });
+
+  describe("nombre propio (tarea 4.2, design D3)", () => {
+    const rename = (cookie: string, body: unknown) =>
+      call("put", "/me/name", cookie)
+        .set("Content-Type", "application/json")
+        .send(body as object);
+    const nameEvents = () =>
+      db.database.prisma.auditEvent.findMany({
+        where: { action: "user.name_changed" },
+        orderBy: { occurredAt: "asc" },
+      });
+
+    it("cambia el nombre, se ve en la lista de Usuarios y deja su evento en la empresa activa", async () => {
+      const res = await rename(cookies.operator!, { name: "  Óscar Ortega  " });
+      expect(res.status, JSON.stringify(res.body)).toBe(200);
+      expect(bodyOf(res).data.name).toBe("Óscar Ortega");
+      const list = await call("get", "/users", cookies.admin!);
+      expect(JSON.stringify(list.body)).toContain("Óscar Ortega");
+      const [event] = await nameEvents();
+      expect(event).toMatchObject({
+        companyId: companyA,
+        actorUserId: ids.operator,
+        targetUserId: ids.operator,
+        changes: { from: "Óscar Operador", to: "Óscar Ortega" },
+      });
+    });
+
+    it("el mismo nombre no cambia nada ni deja evento", async () => {
+      const before = (await nameEvents()).length;
+      const res = await rename(cookies.operator!, { name: "Óscar Ortega" });
+      expect(res.status).toBe(200);
+      expect((await nameEvents()).length).toBe(before);
+    });
+
+    it("rechaza un nombre vacío, demasiado largo o con salto de línea", async () => {
+      for (const name of ["   ", "x".repeat(500), "Óscar\nOrtega"]) {
+        const res = await rename(cookies.operator!, { name });
+        expect(res.status, name.slice(0, 10)).toBe(400);
+      }
+      const profile = await call("get", "/me/profile", cookies.operator!);
+      expect(bodyOf(profile).data.name).toBe("Óscar Ortega");
+    });
+
+    it("dos cambios iguales a la vez dejan un solo evento", async () => {
+      const before = (await nameEvents()).length;
+      const [first, second] = await Promise.all([
+        rename(cookies.operator!, { name: "Óscar O." }),
+        rename(cookies.operator!, { name: "Óscar O." }),
+      ]);
+      expect([first.status, second.status]).toEqual([200, 200]);
+      expect((await nameEvents()).length).toBe(before + 1);
+    });
+
+    it("no hay ruta para cambiar el nombre de otro usuario, ni con un id en el cuerpo", async () => {
+      const other = await call("put", `/users/${ids.admin}/name`, cookies.admin!)
+        .set("Content-Type", "application/json")
+        .send({ name: "Intruso" });
+      expect(other.status).toBe(404);
+      const withId = await rename(cookies.operator!, { name: "Intruso", userId: ids.admin });
+      expect(withId.status).toBe(400);
+      const admin = await call("get", "/me/profile", cookies.admin!);
+      expect(bodyOf(admin).data.name).toBe("Ana Admin");
+    });
+
+    it("sin sesión responde 401", async () => {
+      const res = await rename("", { name: "Nadie" });
+      expect(res.status).toBe(401);
+    });
+  });
 });

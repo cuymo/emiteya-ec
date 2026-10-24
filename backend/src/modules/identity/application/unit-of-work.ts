@@ -20,6 +20,13 @@ export interface IdentityWriter {
   /** Reemplaza la contraseña e invalida todas las sesiones del usuario. */
   setPassword(userId: string, password: string): Promise<void>;
   revokeSessions(userId: string): Promise<void>;
+  /**
+   * Cambia el nombre si sigue siendo `before` (compara y cambia): `false` si otro cambio llegó
+   * antes o si ya tenía ese nombre.
+   */
+  renameUser(userId: string, before: string, name: string): Promise<boolean>;
+  /** El nombre actual de la identidad, o null si no existe. */
+  findUserName(userId: string): Promise<string | null>;
 }
 
 export interface CompanyReader {

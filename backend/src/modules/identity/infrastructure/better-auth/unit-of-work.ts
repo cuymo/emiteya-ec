@@ -27,7 +27,11 @@ function isEmailInUse(error: unknown): boolean {
   return (error as { code?: unknown } | null)?.code === "P2002";
 }
 
-function createIdentityWriter(auth: Auth, policy: AuthSettings["password"]): IdentityWriter {
+function createIdentityWriter(
+  tx: DbClient,
+  auth: Auth,
+  policy: AuthSettings["password"],
+): IdentityWriter {
   const assertPolicy = (password: string) => {
     // createUser del plugin admin no aplica la longitud (S-1, E2): se exige aquí también.
     if (password.length < policy.minLength || password.length > policy.maxLength) {
@@ -96,6 +100,21 @@ function createIdentityWriter(auth: Auth, policy: AuthSettings["password"]): Ide
     async revokeSessions(userId) {
       await (await auth.$context).internalAdapter.deleteUserSessions(userId);
     },
+
+    async findUserName(userId) {
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { name: true } });
+      return user?.name ?? null;
+    },
+
+    async renameUser(userId, before, name) {
+      // Con dos cambios iguales a la vez, el segundo espera la fila del primero y ya no la encuentra
+      // con el nombre anterior: un solo cambio y un solo evento (redesign-account-profile, D3).
+      const { count } = await tx.user.updateMany({
+        where: { id: userId, name: before },
+        data: { name, updatedAt: new Date() },
+      });
+      return count === 1;
+    },
   };
 }
 
@@ -113,7 +132,7 @@ function createScope(
   initializers: readonly CompanyInitializer[],
 ): TransactionScope {
   return {
-    identity: createIdentityWriter(auth, settings.password),
+    identity: createIdentityWriter(tx, auth, settings.password),
     audit: createAuditLog(tx),
     memberships: createMembershipReader(tx),
     companies: createCompanyReader(tx),

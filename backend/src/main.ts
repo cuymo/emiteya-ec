@@ -374,6 +374,7 @@ apiRouter.use(
       avatars: createPrismaAvatars(database.prisma),
       authorizer,
       avatarMaxBytes: env.AVATAR_MAX_BYTES,
+      uow,
     }),
     avatarMaxBytes: env.AVATAR_MAX_BYTES,
   }),

@@ -20,6 +20,7 @@ import {
 import {
   AVATAR_RESPONSE_CONTENT_TYPES,
   AVATAR_UPLOAD_CONTENT_TYPES,
+  changeOwnNameSchema,
   listUsersQuerySchema,
   meSchema,
   ownProfileSchema,
@@ -555,6 +556,21 @@ export const apiRoutes: readonly RouteDefinition[] = [
     summary: "Consultar el perfil propio: nombre, correo, rol, estado, antigüedad y avatar",
     responses: {
       200: { description: "Perfil propio.", schema: successEnvelope(ownProfileSchema) },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/me/name",
+    summary: "Cambiar el nombre propio; el mismo nombre no cambia nada",
+    request: { body: changeOwnNameSchema },
+    responses: {
+      200: {
+        description: "Perfil propio con el nombre nuevo.",
+        schema: successEnvelope(ownProfileSchema),
+      },
+      400: errors[400],
       401: errors[401],
       403: errors[403],
     },
