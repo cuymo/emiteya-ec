@@ -72,6 +72,10 @@ describe("shell autenticado: comportamiento conservado", () => {
     expect(
       within(mainNav()).getByRole("link", { name: "Configuración" }).getAttribute("href"),
     ).toBe("/configuracion/catalogos-fiscales");
+    // El paso «Configuración» del recorrido de bienvenida encuentra este enlace.
+    expect(
+      document.querySelector('nav[aria-label="Navegación principal"] a[href^="/configuracion"]'),
+    ).not.toBeNull();
   });
 
   it("administrador y operador ven los destinos operativos en sus grupos nuevos", async () => {

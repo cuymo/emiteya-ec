@@ -13,6 +13,7 @@ import { BreadcrumbLabelProvider } from "./breadcrumb-label";
 import { CommandPalette } from "./command-palette";
 import { RouteGuard } from "./route-guard";
 import { NotificationsMenu } from "@/features/notifications/notifications-menu";
+import { OnboardingTourProvider } from "@/features/onboarding/onboarding-tour";
 import { TOPBAR_ACTION, Topbar } from "./topbar";
 
 function SkipLink() {
@@ -40,33 +41,35 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <BreadcrumbLabelProvider>
-      <SkipLink />
-      <SidebarProvider defaultOpen={sidebarDefaultOpen}>
-        <AppSidebar />
-        <SidebarInset>
-          <Topbar
-            company={company}
-            environment={environment}
-            search={<CommandPalette />}
-            notifications={<NotificationsMenu className={TOPBAR_ACTION} />}
-          />
-          {notices}
-          <main
-            id="contenido"
-            tabIndex={-1}
-            className="min-w-0 flex-1 px-4 py-6 outline-none md:px-6"
-          >
-            {/* Columna centrada: el ancho de un espacio de trabajo, o el que declara la pantalla con
+    <OnboardingTourProvider>
+      <BreadcrumbLabelProvider>
+        <SkipLink />
+        <SidebarProvider defaultOpen={sidebarDefaultOpen}>
+          <AppSidebar />
+          <SidebarInset>
+            <Topbar
+              company={company}
+              environment={environment}
+              search={<CommandPalette />}
+              notifications={<NotificationsMenu className={TOPBAR_ACTION} />}
+            />
+            {notices}
+            <main
+              id="contenido"
+              tabIndex={-1}
+              className="min-w-0 flex-1 px-4 py-6 outline-none md:px-6"
+            >
+              {/* Columna centrada: el ancho de un espacio de trabajo, o el que declara la pantalla con
                 `data-page-width` en su raíz (lectura o formulario). Las migas y el título de la
                 ruta van en la barra superior. */}
-            <div className="mx-auto w-full max-w-workspace has-data-[page-width=form]:max-w-form has-data-[page-width=reading]:max-w-reading">
-              <RouteGuard>{children}</RouteGuard>
-            </div>
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </BreadcrumbLabelProvider>
+              <div className="mx-auto w-full max-w-workspace has-data-[page-width=form]:max-w-form has-data-[page-width=reading]:max-w-reading">
+                <RouteGuard>{children}</RouteGuard>
+              </div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+      </BreadcrumbLabelProvider>
+    </OnboardingTourProvider>
   );
 }
 

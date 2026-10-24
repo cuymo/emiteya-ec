@@ -350,7 +350,7 @@ function BuyerCard({
   const labelId = useId();
   const problemId = useId();
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1" data-tour="factura-comprador">
       <span id={labelId} className="text-sm font-medium">
         Comprador
       </span>
@@ -871,6 +871,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
       variant="primary"
       disabled={!ready || busy}
       aria-describedby={emitReason ? emitReasonId : undefined}
+      data-tour="factura-emitir"
       onClick={() => setConfirming(true)}
     >
       <Send aria-hidden="true" data-icon="inline-start" />
@@ -1083,6 +1084,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
 
             <FormSection
               title="Productos"
+              tour="factura-productos"
               action={
                 lines.fields.length > 0 ? (
                   <Button variant="primary" size="default" onClick={() => setPickingProduct(true)}>

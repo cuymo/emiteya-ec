@@ -80,6 +80,7 @@ export function ConfigurationLayout({ children }: { children: ReactNode }) {
         <nav
           ref={nav}
           aria-label="Secciones de configuración"
+          data-tour="configuracion-secciones"
           className={cn(
             "flex w-full items-center gap-1 overflow-x-auto border-b border-border",
             "@settings-nav:sticky @settings-nav:top-(--configuration-nav-stick,4rem) @settings-nav:flex-col @settings-nav:items-stretch @settings-nav:overflow-visible @settings-nav:border-b-0",

@@ -447,7 +447,11 @@ function Dashboard({ data }: { data: DashboardView }) {
       </header>
 
       {readiness && !readiness.ready && status.data && (
-        <Card data-slot="dashboard-readiness" className="ring-warning/40">
+        <Card
+          data-slot="dashboard-readiness"
+          data-tour="inicio-requisitos"
+          className="ring-warning/40"
+        >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TriangleAlert aria-hidden="true" className="size-4 text-warning" />
@@ -465,7 +469,7 @@ function Dashboard({ data }: { data: DashboardView }) {
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-tour="inicio-indicadores" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           title={`Ventas autorizadas · ${monthName(currentMonth)}`}
           icon={Wallet}
@@ -599,7 +603,7 @@ function Dashboard({ data }: { data: DashboardView }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="inicio-estado">
           <CardHeader className="border-b">
             <CardTitle>Estado de facturación electrónica</CardTitle>
             <CardDescription>

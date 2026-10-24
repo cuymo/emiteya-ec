@@ -10,7 +10,7 @@
 // perfil se lee solo al abrir el menú y nunca lo hace esperar.
 "use client";
 
-import { Building2, ChevronDown, LogOut, UserRound } from "lucide-react";
+import { Building2, ChevronDown, Compass, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 import { useSession } from "@/components/session";
@@ -25,10 +25,12 @@ import {
 import { ROLE_LABELS } from "@/lib/permissions";
 import { useOwnProfile } from "@/features/account/profile-api";
 import { UserAvatar } from "@/features/account/user-avatar";
+import { useOnboardingTour } from "@/features/onboarding/onboarding-tour";
 
 export function AccountMenu({ company }: { company?: ReactNode }) {
   const { me, signOut } = useSession();
   const [leaving, setLeaving] = useState(false);
+  const tour = useOnboardingTour();
   const [open, setOpen] = useState(false);
   const profile = useOwnProfile(open);
   const companyId = useId();
@@ -81,6 +83,11 @@ export function AccountMenu({ company }: { company?: ReactNode }) {
             <UserRound aria-hidden="true" />
             Mi cuenta
           </Link>
+        </DropdownMenuItem>
+        {/* Repite el recorrido de bienvenida desde el principio (add-onboarding-tour). */}
+        <DropdownMenuItem onSelect={() => tour.start()}>
+          <Compass aria-hidden="true" />
+          Ver recorrido
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

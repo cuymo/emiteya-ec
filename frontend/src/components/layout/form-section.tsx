@@ -14,6 +14,7 @@ export function FormSection({
   hideTitle = false,
   action,
   className,
+  tour,
   children,
 }: {
   title: string;
@@ -28,6 +29,8 @@ export function FormSection({
   /** Una acción de la sección, como «Agregar producto». */
   action?: ReactNode;
   className?: string;
+  /** Ancla del recorrido de bienvenida (`data-tour`, add-onboarding-tour). */
+  tour?: string;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -35,6 +38,7 @@ export function FormSection({
     <section
       aria-labelledby={titleId}
       data-slot="form-section"
+      data-tour={tour}
       className={cn(
         "flex flex-col gap-4 border-t border-border pt-6 first:border-t-0 first:pt-0",
         className,

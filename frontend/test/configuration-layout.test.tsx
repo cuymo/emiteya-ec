@@ -1,6 +1,7 @@
 // Configuración en una página con pestañas: las secciones que el rol ve, en el orden de la
 // navegación, cada una un enlace a su dirección con la actual marcada, el panel con el ancho que pide
 // su pantalla y `/configuracion` llevando a la primera pestaña.
+import { TOUR_SEGMENTS } from "@/features/onboarding/tour-steps";
 import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
@@ -9,6 +10,12 @@ import {
   ConfigurationLayout,
 } from "@/features/configuration/configuration-layout";
 import { ADMIN_ME, OPERATOR_ME, mockApi, navigation, renderApp } from "./harness";
+
+/** Los selectores del recorrido de bienvenida de un tramo (add-onboarding-tour). */
+const tourSelectors = (id: string) =>
+  TOUR_SEGMENTS.find((segment) => segment.id === id)!.steps.flatMap((step) =>
+    step.selector ? [step.selector] : [],
+  );
 
 function renderLayout(me: typeof ADMIN_ME | typeof OPERATOR_ME, child = <p>panel</p>) {
   mockApi({ "GET /api/v1/me": () => ({ status: 200, body: { data: me } }) });
@@ -49,6 +56,10 @@ describe("Configuración en pestañas", () => {
     expect(
       within(tabs()).getByRole("link", { name: "Usuarios" }).getAttribute("aria-current"),
     ).toBe("page");
+    // Cada paso del tramo Configuración del recorrido encuentra su pestaña.
+    for (const selector of tourSelectors("configuracion")) {
+      expect(document.querySelector(selector), selector).not.toBeNull();
+    }
     expect(
       within(tabs()).getByRole("link", { name: "Empresa" }).getAttribute("aria-current"),
     ).toBeNull();

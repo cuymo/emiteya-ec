@@ -1,6 +1,7 @@
 // Tablero de Inicio: indicadores, ventas de los seis últimos meses con su tabla para la asistencia,
 // comprobantes por tipo, mejores clientes y productos, estado de facturación electrónica, últimos comprobantes,
 // requisitos pendientes, vacío y error. El servidor está simulado.
+import { TOUR_SEGMENTS } from "@/features/onboarding/tour-steps";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,6 +16,12 @@ import {
   renderApp,
   type Route,
 } from "./harness";
+
+/** Los selectores del recorrido de bienvenida de un tramo (add-onboarding-tour). */
+const tourSelectors = (id: string) =>
+  TOUR_SEGMENTS.find((segment) => segment.id === id)!.steps.flatMap((step) =>
+    step.selector ? [step.selector] : [],
+  );
 
 const months = ["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"];
 const SUMMARY = {
@@ -204,6 +211,12 @@ describe("tablero de Inicio", () => {
     expect(screen.getByRole("link", { name: "Nueva factura" }).getAttribute("href")).toBe(
       "/borradores/nuevo",
     );
+    // Anclajes del tramo Inicio del recorrido; los requisitos solo aparecen si faltan.
+    for (const selector of tourSelectors("inicio").filter(
+      (selector) => selector.includes("inicio-") && !selector.includes("requisitos"),
+    )) {
+      expect(document.querySelector(selector), selector).not.toBeNull();
+    }
   });
 
   it("la variación sube en verde, no aparece sin mes anterior y los problemas en ámbar", async () => {
@@ -403,6 +416,7 @@ describe("tablero de Inicio", () => {
     expect(readiness.closest("[data-slot=dashboard-readiness]")?.textContent).toContain(
       "Firma electrónica",
     );
+    expect(readiness.closest('[data-tour="inicio-requisitos"]')).not.toBeNull();
   });
 
   it("sin comprobantes invita a emitir el primero", async () => {

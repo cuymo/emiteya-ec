@@ -4,6 +4,7 @@
 // falta; el estado del guardado como texto discreto; ambiente junto a la emisión y en la
 // confirmación; y los estados de la pantalla. El servidor está simulado: ninguna prueba contacta el
 // SRI ni emite de verdad.
+import { TOUR_SEGMENTS } from "@/features/onboarding/tour-steps";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,6 +20,12 @@ import {
   paged,
   render,
 } from "./invoice-draft-fixtures";
+
+/** Los selectores del recorrido de bienvenida de un tramo (add-onboarding-tour). */
+const tourSelectors = (id: string) =>
+  TOUR_SEGMENTS.find((segment) => segment.id === id)!.steps.flatMap((step) =>
+    step.selector ? [step.selector] : [],
+  );
 
 const button = (name: string) => screen.getByRole("button", { name });
 const summary = () => screen.getByRole("complementary", { name: "Resumen" });
@@ -184,6 +191,10 @@ describe("emitir como acción principal", () => {
     const checklist = within(summary()).getByRole("list");
     expect(checklist.textContent).toContain("Comprador: falta");
     expect(checklist.textContent).toContain("Punto de emisión: listo");
+    // Cada paso del tramo «Primera factura» del recorrido encuentra su elemento.
+    for (const selector of tourSelectors("factura")) {
+      expect(document.querySelector(selector), selector).not.toBeNull();
+    }
   });
 
   it("una factura nueva completa se emite sin guardarla antes: guarda y emite en la confirmación", async () => {
