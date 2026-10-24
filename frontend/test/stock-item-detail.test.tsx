@@ -277,6 +277,12 @@ describe("detalle del inventario", () => {
     expect(
       within(dialog).getByText(/Las facturas ya emitidas con el control activo/),
     ).toBeDefined();
+    // Confirmar una eliminación va en rojo sólido; desactivar, en rojo suave (decisión del propietario, 2026-10-24).
+    expect(
+      within(dialog)
+        .getByRole("button", { name: "Desactivar control" })
+        .getAttribute("data-variant"),
+    ).toBe("destructive");
     await user.click(within(dialog).getByRole("button", { name: "Desactivar control" }));
     expect(await screen.findByRole("button", { name: "Activar control" })).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Activar control" }));

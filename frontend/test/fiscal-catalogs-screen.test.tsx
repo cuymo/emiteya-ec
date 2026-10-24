@@ -723,6 +723,10 @@ describe("Catálogos fiscales con productos (add-parties-and-products, design D1
     const user = userEvent.setup();
     await user.click(within(fourteen).getByRole("switch", { name: "14%" }));
     const dialog = await screen.findByRole("dialog", { name: "¿Deshabilitar 14%?" });
+    // Confirmar una eliminación va en rojo sólido; desactivar, en rojo suave (decisión del propietario, 2026-10-24).
+    expect(
+      within(dialog).getByRole("button", { name: "Deshabilitar" }).getAttribute("data-variant"),
+    ).toBe("destructive");
     await user.click(within(dialog).getByRole("button", { name: "Deshabilitar" }));
     expect(
       await screen.findByText("Deshabilitaste la tarifa de IVA 14% para tu empresa."),

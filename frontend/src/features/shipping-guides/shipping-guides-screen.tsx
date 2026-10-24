@@ -385,7 +385,7 @@ export function ShippingGuidesScreen() {
           </p>
         }
         confirmLabel="Eliminar borrador"
-        tone="destructive"
+        tone="danger"
         pending={remove.isPending}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
       />

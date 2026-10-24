@@ -148,7 +148,7 @@ export function LogoField({
         title="Eliminar el logo"
         description="Los comprobantes que se emitan después no llevarán logo. Los ya emitidos conservan el suyo."
         confirmLabel="Eliminar logo"
-        tone="destructive"
+        tone="danger"
         pending={remove.isPending}
         onConfirm={() => {
           if (version !== null) remove.mutate({ expectedVersion: version });

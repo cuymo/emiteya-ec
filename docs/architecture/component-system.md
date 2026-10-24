@@ -70,7 +70,16 @@ tokens, the CSP and the accessibility rules, and recorded in the change's tracea
 - **`danger` is the solid red main action** (owner decision, 2026-10-16) for the riskiest step,
   such as switching to Producción, on the screen and in its confirmation (`ConfirmDialog`
   `tone="danger"`). Like `primary`, one per screen. `destructive` stays the soft red for
-  deleting, and a red-text outline marks «Desactivar».
+  deleting on the screen, and a red-text outline marks «Desactivar».
+- **Confirmation colors** (owner decision, 2026-10-24): the confirming button of a
+  `ConfirmDialog` takes its color from the consequence.
+  - **Solid red (`danger`):** the step cannot be undone, such as «Eliminar borrador», «Eliminar
+    logo» and «Cambiar a Producción».
+  - **Soft red (`destructive`):** a reversible step that switches something off, such as
+    «Desactivar control» and «Deshabilitar» a catalog entry.
+  - **Blue (`primary`):** a normal step, such as «Emitir», «Preparar borrador», «Generar
+    exportación», «Reconciliar» and «Volver a Pruebas». Emitting stays blue in Producción: the
+    dialog already names the environment and says the emission cannot be undone.
 - **Active is blue** (owner decision, 2026-10-17; replaces the neutral selection of design D10).
   Everything active or chosen uses the primary blue, never gray, and never by color alone.
   - **Tokens:** `--active` is a soft blue tint and `--active-foreground` is the primary blue

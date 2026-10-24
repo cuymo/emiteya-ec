@@ -231,6 +231,7 @@ function EntryRow({
         title={`¿Deshabilitar ${entryLabel(entry)}?`}
         description={`La usan ${products}: ${usage === 1 ? "pasará" : "pasarán"} a Revisar impuestos hasta que la habilites otra vez o les asignes otra entrada.`}
         confirmLabel="Deshabilitar"
+        tone="destructive"
         pending={setEnablement.isPending}
         onConfirm={() =>
           setEnablement.mutate(

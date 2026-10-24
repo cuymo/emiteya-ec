@@ -698,6 +698,12 @@ describe("borradores en la lista (unify-drafts-into-document-lists, D5)", () => 
     );
     await user.click(await screen.findByRole("menuitem", { name: "Eliminar borrador" }));
     const dialog = await screen.findByRole("dialog", { name: "Eliminar borrador" });
+    // Confirmar una eliminación va en rojo sólido; desactivar, en rojo suave (decisión del propietario, 2026-10-24).
+    expect(
+      within(dialog)
+        .getByRole("button", { name: "Eliminar borrador" })
+        .getAttribute("data-variant"),
+    ).toBe("danger");
     await user.click(within(dialog).getByRole("button", { name: "Eliminar borrador" }));
     await waitFor(() =>
       expect(calls.some((call) => call.key === "DELETE /api/v1/invoices/drafts/d-1")).toBe(true),

@@ -186,6 +186,48 @@ export const STATES: State[] = [
       await expect(page.getByRole("menu")).toBeVisible();
     },
   },
+  // Confirmar una eliminación va en rojo sólido (decisión del propietario, 2026-10-24).
+  {
+    route: "facturas",
+    state: "eliminar-borrador",
+    path: "/facturas",
+    group: "listas",
+    scenario: {
+      overrides: {
+        "GET /api/v1/invoices/entries": {
+          status: 200,
+          body: {
+            data: [
+              {
+                kind: "DRAFT",
+                draft: {
+                  id: "d-1",
+                  version: 1,
+                  emissionPoint: null,
+                  buyer: null,
+                  lineCount: 0,
+                  previewTotal: null,
+                  updatedAt: "2026-10-14T14:00:00.000Z",
+                },
+              },
+            ],
+            meta: { page: 1, pageSize: 25, total: 1 },
+          },
+        },
+      },
+    },
+    widths: ["1440"],
+    viewportOnly: true,
+    ready: (page) => heading(page, "Facturas"),
+    act: async (page) => {
+      await page
+        .getByRole("button", { name: "Acciones del borrador de factura sin comprador" })
+        .filter({ visible: true })
+        .click();
+      await page.getByRole("menuitem", { name: "Eliminar borrador" }).click();
+      await expect(page.getByRole("dialog", { name: "Eliminar borrador" })).toBeVisible();
+    },
+  },
   // Barra superior en cada ambiente, sobre Facturas.
   {
     route: "facturas",

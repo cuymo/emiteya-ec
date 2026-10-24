@@ -536,7 +536,7 @@ export function InvoicesScreen() {
             : ""
         }
         confirmLabel="Eliminar borrador"
-        tone="destructive"
+        tone="danger"
         pending={deleteDraft.isPending}
         onConfirm={() => {
           if (deleting) deleteDraft.mutate(deleting.id);

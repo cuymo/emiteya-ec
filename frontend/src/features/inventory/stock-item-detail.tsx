@@ -519,6 +519,7 @@ export function StockItemDetailScreen({ productId }: { productId: string }) {
           </div>
         }
         confirmLabel="Desactivar control"
+        tone="destructive"
         pending={tracking.isPending}
         onCloseAutoFocus={onDialogCloseFocus}
         onConfirm={() => tracking.mutate({ productId: data.productId, tracked: false })}
