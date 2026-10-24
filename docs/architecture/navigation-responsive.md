@@ -115,8 +115,8 @@ entering Configuración lands on Usuarios; an operator, on Catálogos fiscales.
   are a 13rem column to the left of the panel, like a sidebar (owner decision, 2026-10-23): full
   width items aligned left, no underline, the open one and the hovered one on the soft active blue,
   and the column sticks below the top bar while the page scrolls (`grid-cols-settings-nav`).
-  - **Background and height** (owner decision, 2026-10-24): the column is a rounded panel on the
-    gray of secondary surfaces (`bg-surface-subtle`). It reaches the bottom of the window: its
+  - **Background and height** (owner decision, 2026-10-24): the column is a rounded panel with the
+    background of the left sidebar (`bg-sidebar`). It reaches the bottom of the window: its
     minimum height is 100dvh minus where it starts. The column also sticks right below the top
     bar, including the environment strip.
   - **Measuring:** the layout measures both offsets after mounting and again when the shell

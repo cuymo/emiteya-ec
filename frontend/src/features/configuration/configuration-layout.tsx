@@ -8,9 +8,9 @@
 // 2026-10-23); en una pantalla angosta siguen en una fila desplazable encima del panel. El panel toma
 // el ancho que declara la pantalla (`data-panel-width`: formulario o lectura). Una pantalla sin
 // título propio puede centrarlo con `data-panel-align="center"` (Establecimientos). La columna lleva el
-// fondo gris de las superficies secundarias y llega hasta el pie de la ventana (decisión del
-// propietario, 2026-10-24): su alto mínimo es 100dvh menos donde empieza, medido al montar, porque la
-// cabecera cambia de alto con el ambiente y los avisos.
+// fondo de la barra lateral izquierda (`bg-sidebar`) y llega hasta el pie de la ventana (decisiones
+// del propietario, 2026-10-24): su alto mínimo es 100dvh menos donde empieza, medido al montar,
+// porque la cabecera cambia de alto con el ambiente y los avisos.
 "use client";
 
 import Link from "next/link";
@@ -83,7 +83,7 @@ export function ConfigurationLayout({ children }: { children: ReactNode }) {
           className={cn(
             "flex w-full items-center gap-1 overflow-x-auto border-b border-border",
             "@settings-nav:sticky @settings-nav:top-(--configuration-nav-stick,4rem) @settings-nav:flex-col @settings-nav:items-stretch @settings-nav:overflow-visible @settings-nav:border-b-0",
-            "@settings-nav:rounded-lg @settings-nav:bg-surface-subtle @settings-nav:p-2",
+            "@settings-nav:rounded-lg @settings-nav:bg-sidebar @settings-nav:p-2",
             "@settings-nav:min-h-[calc(100dvh-var(--configuration-nav-top,9rem))]",
           )}
         >
