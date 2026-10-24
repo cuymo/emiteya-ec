@@ -212,9 +212,14 @@ from the reference template's dashboard layout (ADR 0028).
   `globals.css`, unused.
 - **Account menu.** Its trigger is the whole identity (owner decision, 2026-10-22): the building
   tile, the company and, under it, the person's name with a chevron; the company is announced as
-  its description. On a phone its touch area grows to 44px. Its accessible name is «Cuenta de {nombre}». It shows the name,
-  email and role,
-  plus Mi cuenta and Cerrar sesión, which disables itself after the first selection.
+  its description. On a phone its touch area grows to 44px. Its accessible name is «Cuenta de
+  {nombre}».
+  - **Contents:** the person's own photo, or their initials (`UserAvatar`), beside their name,
+    email and role; then Mi cuenta and Cerrar sesión, which disables itself after the first
+    selection.
+  - **Photo:** the trigger keeps the building tile and never shows the photo (owner decision,
+    2026-10-24; `redesign-account-profile`). The menu reads `GET /me/profile` only when it opens,
+    with the same query as Mi cuenta, and shows the initials while it loads.
 - **Skip link.** «Saltar al contenido» is the first focusable element and targets `main#contenido`.
 - **Quick Create** lives in the command palette (add-brand-logo; owner decision, 2026-10-24: no
   «Nuevo» button in the sidebar).
