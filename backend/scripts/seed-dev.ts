@@ -568,7 +568,8 @@ async function seedThroughApi() {
       identification: input.identification,
       legalName: input.legalName,
       address: input.address,
-      email: `contacto${parties.length + 1}@ejemplo.ec`,
+      // Hasta tres correos por tercero (add-email-delivery).
+      emails: [`contacto${parties.length + 1}@ejemplo.ec`],
       phone: `09${String(80000000 + parties.length * 1379).slice(0, 8)}`,
       roles: input.roles,
     });
