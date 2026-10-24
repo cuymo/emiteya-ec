@@ -90,8 +90,8 @@ In this repository, migrated screens use `PageHeader` (`frontend/src/components/
 
 Breadcrumbs live in the shell's top bar, without a title, for every screen (owner
 decision on the header, 2026-10-16; `navigation-responsive.md`). No screen paints its own, and no
-«back» link repeats a breadcrumb. The shell's Quick Create stays an
-`outline` secondary control.
+«back» link repeats a breadcrumb. The shell's Quick Create lives in the command palette, so it
+never competes with a screen's primary action.
 
 ### `PageHeader` grammar
 

@@ -63,8 +63,7 @@ The groups and destinations, in this order:
 - **Single source.** `frontend/src/lib/navigation/routes.ts` is the only source of:
   - the sidebar and the current destination;
   - the breadcrumbs;
-  - the command palette;
-  - Quick Create;
+  - the command palette, with its Quick Create actions;
   - the forbidden-destination guard.
 
   It holds the groups, the destinations, the internal routes of each destination (detail, new
@@ -127,8 +126,9 @@ The authenticated shell (`frontend/src/components/shell/`, spec `web-application
 from the reference template's dashboard layout (ADR 0028).
 
 - **Sidebar** (`AppSidebar`):
-  - **Header:** the EmiteYa brand (text plus a neutral Lucide mark) linking to Inicio, and Quick
-    Create.
+  - **Header:** the EmiteYa logo and name linking to Inicio (`BrandLogo`, add-brand-logo). The
+    logo is decorative, since the name beside it gives the link its accessible name. Collapsed, the
+    logo stays with the «EmiteYa» tooltip. There is no creation button (owner decision, 2026-10-24).
   - **Body:** the groups of the route model, with a solid but restrained active treatment
     (`aria-current="page"`).
   - **From 768px:** it collapses to icons and back with its toggle or Ctrl/⌘ + B. A collapsed
@@ -208,14 +208,11 @@ from the reference template's dashboard layout (ADR 0028).
   email and role,
   plus Mi cuenta and Cerrar sesión, which disables itself after the first selection.
 - **Skip link.** «Saltar al contenido» is the first focusable element and targets `main#contenido`.
-- **Quick Create** (`QuickCreateMenu`, «Nuevo», in the sidebar header).
+- **Quick Create** lives in the command palette (add-brand-logo; owner decision, 2026-10-24: no
+  «Nuevo» button in the sidebar).
   - **What it offers:** the existing creation screens the role allows (invoice, credit note, debit
-    note, withholding, shipping guide and purchase settlement).
+    note, withholding, shipping guide and purchase settlement), in the palette's «Crear» group.
   - **What it does:** it only navigates. It never creates a draft, reserves a number or emits.
-  - **Style:** a soft blue gradient with primary-blue text instead of a solid fill, the same height
-    and width as the sidebar items, with its text centered (owner decisions, 2026-10-22 and
-    2026-10-23).
-  - **Collapsed:** an icon button named «Nuevo». It is 44px on mobile.
 - **Command palette** (`CommandPalette`).
   - **Opening:** Ctrl/⌘ + K from any authenticated screen, or its trigger in the topbar.
   - **Truthful scope** (design D26): the trigger reads «Buscar» with the shortcut, its accessible

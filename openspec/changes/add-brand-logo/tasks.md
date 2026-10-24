@@ -9,4 +9,4 @@
 
 ## 3. Documentación y revisión
 
-- [ ] 3.1 Documentar la marca y la creación rápida en `docs/architecture/` y revisar la barra lateral y el inicio de sesión en escritorio y teléfono.
+- [x] 3.1 Documentar la marca y la creación rápida en `docs/architecture/` y revisar la barra lateral y el inicio de sesión en escritorio y teléfono.

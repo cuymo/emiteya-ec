@@ -271,7 +271,7 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
         - tableta;
         - móvil cerrado y con el panel abierto;
         - Producción con un operador, y Producción en móvil;
-        - paleta de comandos y creación rápida abiertas;
+        - la paleta de comandos abierta, con la creación rápida;
         - carga, error inesperado, dirección inexistente y destino no permitido;
         - un destino de Configuración con la sección abierta, y el mismo en una ventana baja con el
           destino actual a la vista;

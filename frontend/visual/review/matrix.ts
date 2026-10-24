@@ -436,6 +436,47 @@ export const STATES: State[] = [
       await expect(page.getByRole("textbox").first()).toBeVisible();
     },
   },
+  // La marca (add-brand-logo): el logo en el inicio de sesión y en la cabecera de la barra lateral.
+  {
+    route: "iniciar-sesion",
+    state: "marca",
+    path: "/iniciar-sesion",
+    group: "shell",
+    widths: PAIR,
+    scenario: { persona: "anonymous" },
+    ready: async (page) => {
+      await heading(page, "Iniciar sesión");
+      await expect(page.locator("[data-slot=brand-logo]").first()).toBeVisible();
+    },
+  },
+  {
+    route: "barra-lateral",
+    state: "marca",
+    path: "/facturas",
+    group: "shell",
+    widths: ["1440", "1024c"],
+    viewportOnly: true,
+    ready: async (page) => {
+      await heading(page, "Facturas");
+      await expect(page.locator("[data-slot=brand-logo]").first()).toBeVisible();
+    },
+  },
+  {
+    route: "barra-lateral",
+    state: "marca-movil",
+    path: "/facturas",
+    group: "shell",
+    widths: ["390"],
+    viewportOnly: true,
+    ready: (page) => heading(page, "Facturas"),
+    act: async (page) => {
+      await page
+        .getByRole("button", { name: /barra lateral|navegación|Menú/i })
+        .first()
+        .click();
+      await expect(page.locator("[data-slot=brand-logo]").first()).toBeVisible();
+    },
+  },
   // Correos (add-email-delivery, tarea 8.4): listo, sin configurar y el diálogo de prueba.
   {
     route: "correos",
