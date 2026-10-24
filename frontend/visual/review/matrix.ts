@@ -504,6 +504,21 @@ export const STATES: State[] = [
       await expect(page.locator("[data-slot=brand-logo]").first()).toBeVisible();
     },
   },
+  // La columna gris de Configuración llega al pie y queda bajo la barra superior al desplazar
+  // (decisión del propietario, 2026-10-24).
+  {
+    route: "empresa",
+    state: "desplazada",
+    path: "/configuracion/empresa",
+    group: "configuracion",
+    widths: ["1440"],
+    viewportOnly: true,
+    ready: (page) => heading(page, "Empresa"),
+    act: async (page) => {
+      await page.mouse.wheel(0, 2000);
+      await page.waitForTimeout(300);
+    },
+  },
   // Correos (add-email-delivery, tarea 8.4): listo, sin configurar y el diálogo de prueba.
   {
     route: "correos",

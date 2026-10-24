@@ -115,6 +115,14 @@ entering Configuración lands on Usuarios; an operator, on Catálogos fiscales.
   are a 13rem column to the left of the panel, like a sidebar (owner decision, 2026-10-23): full
   width items aligned left, no underline, the open one and the hovered one on the soft active blue,
   and the column sticks below the top bar while the page scrolls (`grid-cols-settings-nav`).
+  - **Background and height** (owner decision, 2026-10-24): the column is a rounded panel on the
+    gray of secondary surfaces (`bg-surface-subtle`). It reaches the bottom of the window: its
+    minimum height is 100dvh minus where it starts. The column also sticks right below the top
+    bar, including the environment strip.
+  - **Measuring:** the layout measures both offsets after mounting and again when the shell
+    resizes, because the environment strip and the notices arrive later. It sets them as CSS
+    variables through the CSSOM (`--configuration-nav-top`, `--configuration-nav-stick`), since
+    the CSP blocks `style` attributes in the server HTML.
 - **Width.** The panel takes the width its screen declares with `data-panel-width` (`form` or
   `reading`), to the right of the vertical tabs or below the tab row.
 - **Narrow screens.** Below that container the tabs stay a row above the panel that scrolls

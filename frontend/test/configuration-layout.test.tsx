@@ -93,6 +93,18 @@ describe("Configuración en pestañas", () => {
     expect(current.className).toContain("@settings-nav:justify-start");
   });
 
+  it("con espacio, la columna lleva el fondo gris y llega hasta el pie de la ventana", async () => {
+    renderLayout(ADMIN_ME, <section data-panel-width="form">formulario</section>);
+    await screen.findByText("formulario");
+    // Decisión del propietario, 2026-10-24.
+    expect(tabs().className).toContain("@settings-nav:bg-surface-subtle");
+    expect(tabs().className).toContain(
+      "@settings-nav:min-h-[calc(100dvh-var(--configuration-nav-top,9rem))]",
+    );
+    // Donde empieza la columna, más el margen inferior del contenido, por el CSSOM.
+    expect(tabs().style.getPropertyValue("--configuration-nav-top")).toMatch(/^\d+px$/);
+  });
+
   it("/configuracion lleva a la primera pestaña que el rol ve", async () => {
     navigation.pathname = "/configuracion";
     renderLayout(OPERATOR_ME, <ConfigurationIndex />);

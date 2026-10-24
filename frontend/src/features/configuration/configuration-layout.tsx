@@ -7,12 +7,15 @@
 // barra lateral, fija al desplazar, y el panel va a su derecha (decisión del propietario,
 // 2026-10-23); en una pantalla angosta siguen en una fila desplazable encima del panel. El panel toma
 // el ancho que declara la pantalla (`data-panel-width`: formulario o lectura). Una pantalla sin
-// título propio puede centrarlo con `data-panel-align="center"` (Establecimientos).
+// título propio puede centrarlo con `data-panel-align="center"` (Establecimientos). La columna lleva el
+// fondo gris de las superficies secundarias y llega hasta el pie de la ventana (decisión del
+// propietario, 2026-10-24): su alto mínimo es 100dvh menos donde empieza, medido al montar, porque la
+// cabecera cambia de alto con el ambiente y los avisos.
 "use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useSession } from "@/components/session";
 import { tabTriggerClassName } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -35,6 +38,34 @@ export function ConfigurationLayout({ children }: { children: ReactNode }) {
   const tabs = configurationDestinations(permissionsOf(me.role));
   const activeHref = resolveRoute(pathname)?.destination.href;
   const nav = useRef<HTMLElement>(null);
+  // Dónde empieza la columna con la página arriba, más el margen inferior del contenido (24 px).
+  // Por el CSSOM y no con un atributo `style`, que la CSP bloquea en el HTML del servidor.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const element = nav.current;
+      if (!element) return;
+      const top = Math.round(element.getBoundingClientRect().top + window.scrollY + 24);
+      element.style.setProperty("--configuration-nav-top", `${top}px`);
+      // Pegada bajo la barra superior fija (su borde inferior, que incluye la franja del ambiente),
+      // con el margen del contenido.
+      const topbar = document
+        .getElementById("contenido")
+        ?.parentElement?.querySelector(":scope > header");
+      const stick = Math.round((topbar?.getBoundingClientRect().bottom ?? 64) + 24);
+      element.style.setProperty("--configuration-nav-stick", `${stick}px`);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    // La franja del ambiente y los avisos llegan después de montar y bajan la columna.
+    const shell = document.getElementById("contenido")?.parentElement;
+    const observer =
+      shell && typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (shell) observer?.observe(shell);
+    return () => {
+      window.removeEventListener("resize", measure);
+      observer?.disconnect();
+    };
+  }, []);
 
   // En una pantalla estrecha, la pestaña actual queda a la vista dentro de la fila desplazable.
   useEffect(() => {
@@ -51,7 +82,9 @@ export function ConfigurationLayout({ children }: { children: ReactNode }) {
           aria-label="Secciones de configuración"
           className={cn(
             "flex w-full items-center gap-1 overflow-x-auto border-b border-border",
-            "@settings-nav:sticky @settings-nav:top-16 @settings-nav:flex-col @settings-nav:items-stretch @settings-nav:overflow-visible @settings-nav:border-b-0",
+            "@settings-nav:sticky @settings-nav:top-(--configuration-nav-stick,4rem) @settings-nav:flex-col @settings-nav:items-stretch @settings-nav:overflow-visible @settings-nav:border-b-0",
+            "@settings-nav:rounded-lg @settings-nav:bg-surface-subtle @settings-nav:p-2",
+            "@settings-nav:min-h-[calc(100dvh-var(--configuration-nav-top,9rem))]",
           )}
         >
           {tabs.map((tab) => {
