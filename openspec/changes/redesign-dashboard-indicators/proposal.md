@@ -27,12 +27,17 @@ inventario, que ya tienen su lugar en la barra superior y en Inventario.
 - El resumen del servidor agrega la variación de las ventas, la última comunicación con el SRI, si
   la transmisión está encendida y los correos en cola.
 
+- **Primeros pasos fuera de Inicio** (decisión del propietario, 2026-10-24): los requisitos para
+  emitir salen del tablero y van a su propia página, «Primeros pasos»; mientras falte alguno, la
+  barra superior muestra «Falta configurar» con el número de pendientes.
+
 ## Capabilities
 
 ### Modified Capabilities
 
 - `dashboard`: «Resumen de la actividad de la empresa» (los datos nuevos) y «Tablero de Inicio» (los
-  indicadores y el panel nuevo).
+  indicadores, el panel nuevo y sin los requisitos pendientes).
+- `web-application-shell`: requisito nuevo «Primeros pasos fuera de Inicio».
 
 ## Impact
 
