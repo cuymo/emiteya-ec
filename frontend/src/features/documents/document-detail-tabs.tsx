@@ -46,7 +46,14 @@ export function DocumentDetailTabs({ tabs, label }: { tabs: readonly DetailTab[]
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
   return (
-    <Tabs value={active} onValueChange={select} data-slot="document-detail-tabs">
+    // `min-w-0`: en la rejilla del detalle, las pestañas que no caben se desplazan en su fila en lugar
+    // de ensanchar la página (a 390 px, cuatro pestañas desbordaban 96 px).
+    <Tabs
+      value={active}
+      onValueChange={select}
+      data-slot="document-detail-tabs"
+      className="min-w-0"
+    >
       <TabsList aria-label={label}>
         {tabs.map((tab) => (
           <TabsTrigger key={tab.id} value={tab.id}>

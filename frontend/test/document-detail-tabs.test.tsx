@@ -28,6 +28,13 @@ beforeEach(() => {
 });
 
 describe("pestañas del detalle", () => {
+  it("en la rejilla del detalle se encogen, así sus pestañas se desplazan y no ensanchan la página", () => {
+    render(<DocumentDetailTabs label="Secciones" tabs={TABS} />);
+    const root = document.querySelector("[data-slot=document-detail-tabs]")!;
+    expect(root.className.split(/\s+/)).toContain("min-w-0");
+    expect(screen.getByRole("tablist").className).toContain("overflow-x-auto");
+  });
+
   it("abre la primera, muestra solo su contenido y marca la que requiere atención", () => {
     render(<DocumentDetailTabs label="Secciones de la factura" tabs={TABS} />);
     expect(screen.getByRole("tablist", { name: "Secciones de la factura" })).toBeDefined();
