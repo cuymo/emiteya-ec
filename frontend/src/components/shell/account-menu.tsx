@@ -5,6 +5,9 @@
 // superior (decisión del propietario, 2026-10-22): la ficha del edificio, la empresa y, debajo, el
 // nombre de la persona con un chevrón; en un teléfono su zona táctil crece hasta 44 px sin mover
 // nada. Sin control de tema: la interfaz siempre va en claro (decisión del propietario, 2026-10-22).
+// Al abrirlo, el encabezado lleva la foto propia o las iniciales junto al nombre; el botón conserva el
+// icono del establecimiento (redesign-account-profile, decisión del propietario, 2026-10-24). El
+// perfil se lee solo al abrir el menú y nunca lo hace esperar.
 "use client";
 
 import { Building2, ChevronDown, LogOut, UserRound } from "lucide-react";
@@ -20,13 +23,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ROLE_LABELS } from "@/lib/permissions";
+import { useOwnProfile } from "@/features/account/profile-api";
+import { UserAvatar } from "@/features/account/user-avatar";
 
 export function AccountMenu({ company }: { company?: ReactNode }) {
   const { me, signOut } = useSession();
   const [leaving, setLeaving] = useState(false);
+  const [open, setOpen] = useState(false);
+  const profile = useOwnProfile(open);
   const companyId = useId();
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -60,10 +67,13 @@ export function AccountMenu({ company }: { company?: ReactNode }) {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-56">
-        <DropdownMenuLabel className="flex flex-col gap-0.5 px-2 py-1.5 font-normal">
-          <span className="truncate text-sm font-semibold text-foreground">{me.name}</span>
-          <span className="truncate text-xs text-muted-foreground">{me.email}</span>
-          <span className="truncate text-xs text-muted-foreground">{ROLE_LABELS[me.role]}</span>
+        <DropdownMenuLabel className="flex items-center gap-3 px-2 py-1.5 font-normal">
+          <UserAvatar name={me.name} version={profile.data?.avatar?.version} size="lg" />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate text-sm font-semibold text-foreground">{me.name}</span>
+            <span className="truncate text-xs text-muted-foreground">{me.email}</span>
+            <span className="truncate text-xs text-muted-foreground">{ROLE_LABELS[me.role]}</span>
+          </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>

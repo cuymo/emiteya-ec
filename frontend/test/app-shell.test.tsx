@@ -164,6 +164,49 @@ describe("shell autenticado: comportamiento conservado", () => {
   });
 });
 
+describe("avatar en el menú de cuenta (redesign-account-profile)", () => {
+  const profile = (avatar: { version: string } | null) => ({
+    "GET /api/v1/me/profile": () => ({
+      status: 200,
+      body: {
+        data: {
+          name: "Ana Admin",
+          email: "ana@empresa.ec",
+          role: "ADMIN",
+          membershipStatus: "ACTIVE",
+          memberSince: "2026-10-01T15:00:00.000Z",
+          avatar,
+          avatarMaxBytes: 524288,
+        },
+      },
+    }),
+  });
+
+  it("al abrir el menú lee el perfil y muestra la foto junto al nombre; el botón no la lleva", async () => {
+    const user = userEvent.setup();
+    const calls = api({ routes: profile({ version: "abc123" }) });
+    renderShell();
+    const trigger = await screen.findByRole("button", { name: "Cuenta de Ana Admin" });
+    // Antes de abrirlo no se consulta el perfil, y el botón conserva el icono del establecimiento.
+    expect(calls.some((call) => call.key === "GET /api/v1/me/profile")).toBe(false);
+    expect(trigger.querySelector("[data-slot=avatar]")).toBeNull();
+    await user.click(trigger);
+    const menu = await screen.findByRole("menu");
+    await waitFor(() => expect(menu.querySelector("[data-has-photo=true]")).not.toBeNull());
+    expect(within(menu).getByText("ana@empresa.ec")).toBeDefined();
+  });
+
+  it("sin foto, o mientras carga, el menú muestra las iniciales", async () => {
+    const user = userEvent.setup();
+    api({ routes: profile(null) });
+    renderShell();
+    await user.click(await screen.findByRole("button", { name: "Cuenta de Ana Admin" }));
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getByText("AA")).toBeDefined();
+    expect(menu.querySelector("[data-has-photo=false]")).not.toBeNull();
+  });
+});
+
 describe("nombre del producto", () => {
   it("el shell identifica el producto como EmiteYa y nunca como Facturador SRI", async () => {
     api();

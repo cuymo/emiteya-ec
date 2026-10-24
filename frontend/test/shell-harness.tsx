@@ -35,6 +35,7 @@ export function api({
     notAfter: "2027-06-30T23:59:59.000Z",
     daysToExpiry: 259,
   },
+  routes = {},
 }: ShellOptions = {}) {
   return mockApi({
     "GET /api/v1/me": () => ({ status: 200, body: { data: me } }),
@@ -53,6 +54,7 @@ export function api({
           },
     "GET /api/v1/signing-certificate/validity": () => ({ status: 200, body: { data: validity } }),
     "POST /api/auth/sign-out": () => ({ status: 200, body: { success: true } }),
+    ...routes,
   });
 }
 
