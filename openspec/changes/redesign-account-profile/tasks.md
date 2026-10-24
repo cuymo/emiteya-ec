@@ -11,7 +11,7 @@
 
 ## 3. Contratos y permiso
 
-- [ ] 3.1 Agregar a `packages/contracts` los esquemas del perfil propio (`name`, `email`, `role`, `membershipStatus`, `memberSince`, `avatar: { version } | null`) y del cambio de nombre (`userNameSchema` sin saltos de línea), y regenerar el OpenAPI; verificar con las pruebas de contratos y `openapi:check`.
+- [x] 3.1 Agregar a `packages/contracts` los esquemas del perfil propio (`name`, `email`, `role`, `membershipStatus`, `memberSince`, `avatar: { version } | null`) y del cambio de nombre (`userNameSchema` sin saltos de línea), y regenerar el OpenAPI; verificar con las pruebas de contratos y `openapi:check`.
 - [ ] 3.2 Agregar el permiso `account.updateProfile` a los roles Administrador y Operador en `access-policy.ts`; verificar con las pruebas de la política y documentarlo en `docs/security/access-control.md`.
 
 ## 4. API del perfil y del nombre propio

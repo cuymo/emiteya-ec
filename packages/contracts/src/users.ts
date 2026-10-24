@@ -76,6 +76,36 @@ export type ChangeOwnPasswordInput = z.infer<UserSchemas["changeOwnPassword"]>;
 // el rol global de Better Auth.
 export const meSchema = z.strictObject({ name: z.string(), email: z.string(), role: roleSchema });
 
+/**
+ * Perfil propio (redesign-account-profile, design D1): lo que la página de perfil y el menú de
+ * cuenta muestran. `avatar.version` son los primeros 16 caracteres del SHA-256 de la imagen, para su
+ * URL; sin avatar, null. `avatarMaxBytes` es el límite configurado (AVATAR_MAX_BYTES).
+ */
+export const ownProfileSchema = z.strictObject({
+  name: z.string(),
+  email: z.string(),
+  role: roleSchema,
+  membershipStatus: membershipStatusSchema,
+  memberSince: z.iso.datetime(),
+  avatar: z.strictObject({ version: z.string() }).nullable(),
+  avatarMaxBytes: z.number().int(),
+});
+export type OwnProfile = z.infer<typeof ownProfileSchema>;
+
+/** Cambio del nombre propio: el de la administración de usuarios, sin saltos de línea. */
+export const changeOwnNameSchema = strict({
+  name: userNameSchema.regex(/^[^\r\n]*$/, "El nombre no puede tener saltos de línea."),
+});
+export type ChangeOwnNameInput = z.infer<typeof changeOwnNameSchema>;
+
+/** Tipos con que se puede enviar el avatar; el formato real se reconoce por el contenido. */
+export const AVATAR_UPLOAD_CONTENT_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "application/octet-stream",
+] as const;
+export const AVATAR_RESPONSE_CONTENT_TYPES = ["image/png", "image/jpeg"] as const;
+
 export const userViewSchema = z.strictObject({
   id: z.string(),
   name: z.string(),

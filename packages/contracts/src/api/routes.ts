@@ -18,8 +18,11 @@ import {
   withholdingReceiptEntryViewSchema,
 } from "../document-entries.ts";
 import {
+  AVATAR_RESPONSE_CONTENT_TYPES,
+  AVATAR_UPLOAD_CONTENT_TYPES,
   listUsersQuerySchema,
   meSchema,
+  ownProfileSchema,
   userIdParamsSchema,
   userListMetaSchema,
   userSchemas,
@@ -542,6 +545,62 @@ export const apiRoutes: readonly RouteDefinition[] = [
     responses: {
       200: { description: "Cuenta propia.", schema: successEnvelope(meSchema) },
       401: errors[401],
+    },
+  }),
+  // Perfil y avatar propios (redesign-account-profile, design D1 y D6): sin identificadores en la
+  // ruta, siempre el usuario de la sesión.
+  defineRoute({
+    method: "get",
+    path: "/me/profile",
+    summary: "Consultar el perfil propio: nombre, correo, rol, estado, antigüedad y avatar",
+    responses: {
+      200: { description: "Perfil propio.", schema: successEnvelope(ownProfileSchema) },
+      401: errors[401],
+      403: errors[403],
+    },
+  }),
+  defineRoute({
+    method: "get",
+    path: "/me/avatar",
+    summary: "Descargar el avatar propio; solo lo sirve a su dueño",
+    responses: {
+      200: {
+        description: "Imagen del avatar propio.",
+        binaryContentTypes: AVATAR_RESPONSE_CONTENT_TYPES,
+      },
+      401: errors[401],
+      403: errors[403],
+      404: { description: "El usuario no tiene avatar.", schema: errorEnvelopeSchema },
+    },
+  }),
+  defineRoute({
+    method: "put",
+    path: "/me/avatar",
+    summary: "Cargar o reemplazar el avatar propio con el contenido de la imagen (PNG o JPEG)",
+    request: { binaryBody: { contentTypes: AVATAR_UPLOAD_CONTENT_TYPES } },
+    responses: {
+      200: {
+        description: "Perfil propio con el avatar nuevo.",
+        schema: successEnvelope(ownProfileSchema),
+      },
+      400: {
+        description:
+          "La imagen no es de un formato admitido, no se puede leer o es demasiado grande en píxeles.",
+        schema: errorEnvelopeSchema,
+      },
+      401: errors[401],
+      403: errors[403],
+      413: { description: "La imagen supera el tamaño máximo.", schema: errorEnvelopeSchema },
+    },
+  }),
+  defineRoute({
+    method: "delete",
+    path: "/me/avatar",
+    summary: "Quitar el avatar propio",
+    responses: {
+      200: { description: "Perfil propio sin avatar.", schema: successEnvelope(ownProfileSchema) },
+      401: errors[401],
+      403: errors[403],
     },
   }),
   defineRoute({
