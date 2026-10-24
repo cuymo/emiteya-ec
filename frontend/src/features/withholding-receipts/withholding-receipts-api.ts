@@ -50,9 +50,9 @@ export const WITHHOLDING_CONFLICT_MESSAGES: Record<string, string> = {
   WITHHOLDING_ENTRY_NOT_USABLE:
     "Un concepto o código ya no está vigente o habilitado. Elige otro con la vista previa actualizada.",
   WITHHOLDING_SUBJECT_INACTIVE:
-    "El proveedor está desactivado. Actívalo en Terceros o elige otro proveedor.",
+    "El proveedor está desactivado. Actívalo en Clientes y proveedores o elige otro proveedor.",
   WITHHOLDING_SUBJECT_NOT_SUPPLIER:
-    "El tercero ya no tiene el rol de proveedor. Agrégaselo en Terceros o elige otro proveedor.",
+    "El tercero ya no tiene el rol de proveedor. Agrégaselo en Clientes y proveedores o elige otro proveedor.",
   WITHHOLDING_FISCAL_PERIOD_IN_FUTURE:
     "El período fiscal es posterior al mes de emisión. Elige el mes de emisión o uno anterior.",
   WITHHOLDING_SUPPORT_DATE_AFTER_ISSUE:

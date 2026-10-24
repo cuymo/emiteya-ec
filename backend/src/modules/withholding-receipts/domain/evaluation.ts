@@ -247,7 +247,7 @@ function subjectIssues(input: WithholdingEvaluationInput): WithholdingIssue[] {
     issues.push(
       issue(
         "WITHHOLDING_SUBJECT_INACTIVE",
-        `El proveedor ${subject.legalName} está inactivo: actívalo en Terceros o elige otro.`,
+        `El proveedor ${subject.legalName} está inactivo: actívalo en Clientes y proveedores o elige otro.`,
       ),
     );
   } else if (subject.consumerFinal || subject.identificationType === "07") {
@@ -268,7 +268,7 @@ function subjectIssues(input: WithholdingEvaluationInput): WithholdingIssue[] {
     issues.push(
       issue(
         "WITHHOLDING_SUBJECT_NOT_SUPPLIER",
-        `${subject.legalName} no tiene el rol de proveedor: agrégalo en Terceros.`,
+        `${subject.legalName} no tiene el rol de proveedor: agrégalo en Clientes y proveedores.`,
       ),
     );
   }

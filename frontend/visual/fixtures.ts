@@ -351,7 +351,7 @@ function reply(
           },
         },
       };
-    // El Archivo de comprobantes (refine-archive-search): tres comprobantes, uno con su correo fallido.
+    // El Todos los comprobantes (refine-archive-search): tres comprobantes, uno con su correo fallido.
     case "GET /api/v1/documents": {
       const row = (index: number, number: string, buyer: string, identification: string) => ({
         id: `doc-${index}`,

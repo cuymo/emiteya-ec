@@ -189,7 +189,7 @@ function CarrierChooser({
           onSelect: () => setCreating(true),
         }}
         emptyTitle="No hay transportistas que coincidan"
-        emptyDescription="Registra el transportista o agrégale el rol de transportista en Terceros."
+        emptyDescription="Registra el transportista o agrégale el rol de transportista en Clientes y proveedores."
       />
       <PartyDialog
         open={creating}

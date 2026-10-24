@@ -246,7 +246,7 @@ function carrierIssues(input: ShippingGuideEvaluationInput): {
   if (party.status !== "ACTIVE") {
     return fail(
       "SHIPPING_GUIDE_CARRIER_INACTIVE",
-      `El transportista ${party.legalName} está inactivo: actívalo en Terceros o elige otro.`,
+      `El transportista ${party.legalName} está inactivo: actívalo en Clientes y proveedores o elige otro.`,
     );
   }
   if (party.consumerFinal || party.identificationType === "07") {
@@ -264,7 +264,7 @@ function carrierIssues(input: ShippingGuideEvaluationInput): {
   if (!party.roles.includes("CARRIER")) {
     return fail(
       "SHIPPING_GUIDE_CARRIER_ROLE_REQUIRED",
-      `${party.legalName} no tiene el rol de transportista: configúralo como transportista en Terceros antes de elegirlo.`,
+      `${party.legalName} no tiene el rol de transportista: configúralo como transportista en Clientes y proveedores antes de elegirlo.`,
     );
   }
   if (party.identification.length > CARRIER_IDENTIFICATION_MAX) {
@@ -522,7 +522,7 @@ function recipientIssues(
       issues.push(
         issue(
           "SHIPPING_GUIDE_RECIPIENT_INACTIVE",
-          `El destinatario ${party.legalName} está inactivo: actívalo en Terceros o elige otro.`,
+          `El destinatario ${party.legalName} está inactivo: actívalo en Clientes y proveedores o elige otro.`,
           at,
         ),
       );

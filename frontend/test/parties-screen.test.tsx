@@ -118,7 +118,7 @@ const renderForm = (routes: Record<string, Route>, partyId?: string) =>
   );
 const formOf = (name: string) => screen.findByRole("form", { name });
 
-const table = () => screen.findByRole("table", { name: "Terceros de la empresa" });
+const table = () => screen.findByRole("table", { name: "Clientes y proveedores de la empresa" });
 
 beforeEach(() => {
   navigation.pathname = "/terceros";
@@ -130,7 +130,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("pantalla Terceros", () => {
+describe("pantalla Clientes y proveedores", () => {
   it("lista identificación con su tipo, razón social, roles y estado; el consumidor final, del sistema y sin acciones", async () => {
     renderParties({ "GET /api/v1/parties": page([party(), CONSUMER]) });
     await screen.findAllByText("Comercial Andina S.A.");
@@ -331,9 +331,9 @@ describe("página del formulario de tercero", () => {
     expect(
       await screen.findByText("El tercero no existe", undefined, { timeout: 5_000 }),
     ).toBeDefined();
-    expect(screen.getByRole("link", { name: "Ir a Terceros" }).getAttribute("href")).toBe(
-      "/terceros",
-    );
+    expect(
+      screen.getByRole("link", { name: "Ir a Clientes y proveedores" }).getAttribute("href"),
+    ).toBe("/terceros");
   }, 10_000);
 });
 
@@ -506,7 +506,7 @@ describe("correos del tercero", () => {
   });
 });
 
-describe("pantalla Terceros sin permiso", () => {
+describe("pantalla Clientes y proveedores sin permiso", () => {
   it("explica que no tiene acceso y no consulta la lista", async () => {
     vi.resetModules();
     vi.doMock("@/lib/permissions", async (importOriginal) => {
@@ -521,7 +521,7 @@ describe("pantalla Terceros sin permiso", () => {
         <Screen />
       </Gate>,
     );
-    expect(await screen.findByText("No tienes acceso a Terceros")).toBeDefined();
+    expect(await screen.findByText("No tienes acceso a Clientes y proveedores")).toBeDefined();
     expect(calls.some((c) => c.key.startsWith("GET /api/v1/parties"))).toBe(false);
     vi.doUnmock("@/lib/permissions");
   });

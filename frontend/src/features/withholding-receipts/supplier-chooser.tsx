@@ -72,7 +72,7 @@ export function SupplierChooser({
           },
         }}
         emptyTitle="No hay proveedores que coincidan"
-        emptyDescription="Registra el proveedor o revisa que tenga el rol de proveedor en Terceros."
+        emptyDescription="Registra el proveedor o revisa que tenga el rol de proveedor en Clientes y proveedores."
       />
       <PartyDialog
         open={creating}

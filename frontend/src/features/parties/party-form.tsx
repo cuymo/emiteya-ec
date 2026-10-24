@@ -468,7 +468,7 @@ export function PartyFormScreen({ partyId }: { partyId?: string }) {
             }
             action={
               <Button variant="outline" asChild>
-                <Link href={LIST}>Ir a Terceros</Link>
+                <Link href={LIST}>Ir a Clientes y proveedores</Link>
               </Button>
             }
           />

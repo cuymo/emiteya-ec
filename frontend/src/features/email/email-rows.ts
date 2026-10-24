@@ -1,4 +1,4 @@
-// Una lista editable de correos (add-email-delivery, design D14), que comparten Terceros y el
+// Una lista editable de correos (add-email-delivery, design D14), que comparten Clientes y proveedores y el
 // reenvío: una fila por correo porque `useFieldArray` trabaja con objetos. Cada fila se valida en su
 // posición con la regla del contrato, así el error queda junto a su campo; una fila vacía no se
 // envía.

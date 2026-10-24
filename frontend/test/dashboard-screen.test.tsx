@@ -219,7 +219,7 @@ describe("tablero de Inicio", () => {
       ["Ir", "Ir a Firma electrónica"],
       ["Ir", "Ir a Ambiente"],
       ["Ir", "Ir a Inventario"],
-      ["Ir", "Ir a Archivo de comprobantes"],
+      ["Ir", "Ir a Todos los comprobantes"],
     ]);
     expect(shortcuts.map((link) => link.getAttribute("href"))).toEqual([
       "/configuracion/firma",
@@ -314,6 +314,6 @@ describe("tablero de Inicio", () => {
       within(system)
         .getAllByRole("link")
         .map((link) => link.getAttribute("aria-label")),
-    ).toEqual(["Ir a Inventario", "Ir a Archivo de comprobantes"]);
+    ).toEqual(["Ir a Inventario", "Ir a Todos los comprobantes"]);
   });
 });

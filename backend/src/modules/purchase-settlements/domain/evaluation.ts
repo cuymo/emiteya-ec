@@ -186,7 +186,7 @@ function supplierIssues(input: PurchaseSettlementEvaluationInput): PurchaseSettl
     return [
       issue(
         "PURCHASE_SETTLEMENT_SUPPLIER_INACTIVE",
-        `El proveedor ${supplier.legalName} está inactivo: actívalo en Terceros o elige otro.`,
+        `El proveedor ${supplier.legalName} está inactivo: actívalo en Clientes y proveedores o elige otro.`,
         { field },
       ),
     ];
@@ -217,7 +217,7 @@ function supplierIssues(input: PurchaseSettlementEvaluationInput): PurchaseSettl
     return [
       issue(
         "PURCHASE_SETTLEMENT_SUPPLIER_ROLE_REQUIRED",
-        `${supplier.legalName} no tiene el rol de proveedor: márcalo como proveedor en Terceros. La liquidación no asigna roles.`,
+        `${supplier.legalName} no tiene el rol de proveedor: márcalo como proveedor en Clientes y proveedores. La liquidación no asigna roles.`,
         { field },
       ),
     ];

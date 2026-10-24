@@ -209,7 +209,7 @@ function SupplierChooser({
           onSelect: () => setCreating(true),
         }}
         emptyTitle="No hay proveedores que coincidan"
-        emptyDescription="Registra el proveedor o agrégale el rol de proveedor en Terceros."
+        emptyDescription="Registra el proveedor o agrégale el rol de proveedor en Clientes y proveedores."
       />
       <PartyDialog
         open={creating}
@@ -342,7 +342,7 @@ function DraftEditor({
   const statements = policy.statements;
   const allDeclared = statements.every((statement) => declared.includes(statement.id));
   const addressHint =
-    "La del proveedor, propuesta desde Terceros al elegirlo; corrígela si hace falta.";
+    "La del proveedor, propuesta desde Clientes y proveedores al elegirlo; corrígela si hace falta.";
 
   const onSave = form.handleSubmit((formValues) => {
     setOperationError(undefined);
@@ -416,7 +416,7 @@ function DraftEditor({
           <Section
             title="Proveedor"
             compact
-            hint="Una persona natural con cédula o pasaporte y el rol de proveedor en Terceros."
+            hint="Una persona natural con cédula o pasaporte y el rol de proveedor en Clientes y proveedores."
           >
             {/* El proveedor como una ficha: su ícono grande, sus datos y, en la misma fila, el botón
                 para elegirlo o cambiarlo (decisión del propietario, 2026-10-22). */}

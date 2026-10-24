@@ -54,7 +54,7 @@ const ROLE_FILTERS: readonly { value: RoleFilter; label: string }[] = [
 ];
 
 const CARD = {
-  title: "Terceros",
+  title: "Clientes y proveedores",
   titleId: "terceros-titulo",
   description: "Tus clientes, proveedores y transportistas, para usarlos en los comprobantes.",
 };
@@ -231,7 +231,7 @@ export function PartiesScreen() {
         <div className="px-4 pb-4">
           <EmptyState
             kind="no-permission"
-            title="No tienes acceso a Terceros"
+            title="No tienes acceso a Clientes y proveedores"
             description="Pide a un administrador que revise tu rol."
           />
         </div>
@@ -307,7 +307,7 @@ export function PartiesScreen() {
       }
     >
       <AppDataTable
-        label="Terceros de la empresa"
+        label="Clientes y proveedores de la empresa"
         columns={columns}
         data={parties.data?.data ?? []}
         getRowId={(party) => party.id}

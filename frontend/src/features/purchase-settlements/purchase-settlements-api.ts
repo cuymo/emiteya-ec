@@ -53,7 +53,7 @@ export const PURCHASE_SETTLEMENT_CONFLICT_MESSAGES: Record<string, string> = {
   PURCHASE_SETTLEMENT_RESOURCE_LIMIT:
     "El borrador supera un límite de recursos del sistema (no es una regla del SRI). Quita líneas o pagos.",
   PURCHASE_SETTLEMENT_SUPPLIER_ROLE_REQUIRED:
-    "El tercero no tiene el rol de proveedor. Agrégaselo en Terceros o elige otro proveedor.",
+    "El tercero no tiene el rol de proveedor. Agrégaselo en Clientes y proveedores o elige otro proveedor.",
   PURCHASE_SETTLEMENT_DECLARATION_REQUIRED:
     "Confirma las cuatro declaraciones de procedencia antes de emitir.",
   PURCHASE_SETTLEMENT_DECLARATION_VERSION_MISMATCH:

@@ -436,7 +436,7 @@ export const STATES: State[] = [
       await expect(page.getByRole("textbox").first()).toBeVisible();
     },
   },
-  // Archivo de comprobantes (refine-archive-search): fechas junto a la búsqueda y filtros a lo ancho.
+  // Todos los comprobantes (refine-archive-search): fechas junto a la búsqueda y filtros a lo ancho.
   {
     route: "comprobantes",
     state: "filtros",
@@ -445,7 +445,7 @@ export const STATES: State[] = [
     widths: ["1440", "1024", "390"],
     viewportOnly: true,
     ready: async (page) => {
-      await heading(page, "Archivo de comprobantes");
+      await heading(page, "Todos los comprobantes");
       await shows(page, "001-001-000000123");
     },
   },

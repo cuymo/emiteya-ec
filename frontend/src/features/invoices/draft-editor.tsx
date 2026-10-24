@@ -1424,7 +1424,7 @@ function DraftEditor({ draft, canEmit }: { draft: DraftView | null; canEmit: boo
           onSelect: chooseConsumerFinal,
         }}
         emptyTitle="Todavía no hay clientes"
-        emptyDescription="Registra al comprador en Terceros con el rol de cliente."
+        emptyDescription="Registra al comprador en Clientes y proveedores con el rol de cliente."
       />
       <ProductPickerDialog
         open={pickingProduct}

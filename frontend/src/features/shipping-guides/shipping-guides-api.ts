@@ -59,7 +59,7 @@ export const SHIPPING_GUIDE_CONFLICT_MESSAGES: Record<string, string> = {
   SHIPPING_GUIDE_START_BEFORE_ISSUE:
     "La fecha de inicio del transporte es anterior a la de emisión, que es la de hoy. Corrige la fecha de inicio.",
   SHIPPING_GUIDE_CARRIER_ROLE_REQUIRED:
-    "El tercero no tiene el rol de transportista. Agrégaselo en Terceros o elige otro transportista.",
+    "El tercero no tiene el rol de transportista. Agrégaselo en Clientes y proveedores o elige otro transportista.",
   SHIPPING_GUIDE_DECLARATION_REQUIRED:
     "Confirma la declaración de los traslados sin factura antes de emitir.",
   SHIPPING_GUIDE_DECLARATION_VERSION_MISMATCH:

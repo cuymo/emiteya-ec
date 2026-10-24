@@ -90,7 +90,7 @@ const counterpartyLabel = (item: DocumentListItem) =>
   documentKind(item.documentType)?.counterpartyLabel ?? null;
 
 const CARD = {
-  title: "Archivo de comprobantes",
+  title: "Todos los comprobantes",
   titleId: "comprobantes-titulo",
   description: "Todos los comprobantes que emites, con su estado ante el SRI y su RIDE.",
 };
@@ -299,7 +299,7 @@ export function DocumentsScreen() {
         <div className="px-4 pb-4">
           <EmptyState
             kind="no-permission"
-            title="No tienes acceso al Archivo de comprobantes"
+            title="No tienes acceso a los comprobantes"
             description="Pide a un administrador que revise tu rol."
           />
         </div>

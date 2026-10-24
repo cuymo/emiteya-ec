@@ -81,7 +81,7 @@ describe("evaluación de la liquidación de compra", () => {
       const role = evaluatePurchaseSettlement(
         evaluationInput({ supplier: { ...SUPPLIER, roles: [] } }),
       );
-      expect(role.issues[0]!.message).toMatch(/márcalo como proveedor en Terceros/);
+      expect(role.issues[0]!.message).toMatch(/márcalo como proveedor en Clientes y proveedores/);
     });
 
     it("pasaporte es válido", () => {

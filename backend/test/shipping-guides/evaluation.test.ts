@@ -184,7 +184,9 @@ describe("evaluación de la guía de remisión", () => {
         ["p-1", party()],
       ]);
       const roleless = evaluate({ transporter: { source: "PARTY", partyId: "c-1" } }, { parties });
-      expect(roleless.issues[0]?.message).toContain("configúralo como transportista en Terceros");
+      expect(roleless.issues[0]?.message).toContain(
+        "configúralo como transportista en Clientes y proveedores",
+      );
     });
   });
 

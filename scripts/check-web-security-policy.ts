@@ -649,7 +649,7 @@ async function checkBrowserFlows(
     "16. /api/v1 en el mismo origen funciona",
     state,
     async () => {
-      await page.getByRole("link", { name: "Archivo de comprobantes" }).first().click();
+      await page.getByRole("link", { name: "Todos los comprobantes" }).first().click();
       await page.waitForURL("**/comprobantes");
       await page.getByText(invoice.number).first().waitFor({ timeout: STEP_TIMEOUT_MS });
       check(
